@@ -1050,9 +1050,37 @@ define Emitter
             return LLVMBuildCall2(builder, func_type, func, null as pointer[LLVMValueRef], 0, "call")
         }
 
-        ; TODO: Emit arguments and create proper call
-        ; For now, return null for calls with arguments
-        LLVMValueRef(null)
+        ; Emit arguments and create proper call
+        let arg_count call.args.length
+        let result_type map_type(call.result_type)
+
+        ; Build args vector - allocate with page
+        var args_array Vector[LLVMValueRef]#(arg_count)
+        var param_types Vector[LLVMTypeRef]#(arg_count)
+
+        ; Emit each argument
+        var i: size_t 0
+        while i < arg_count
+        {
+            let arg_ptr call.args.get(i)
+            if arg_ptr <> null
+            {
+                let arg_operand arg_ptr.unwrap()
+                let arg_value emit_operand(arg_operand)
+                args_array.put(i, arg_value)
+
+                ; Get parameter type from the emitted value
+                let arg_type LLVMTypeOf(arg_value)
+                param_types.put(i, arg_type)
+            }
+            set i: i + 1
+        }
+
+        ; Create function type with parameter types
+        let func_type LLVMFunctionType(result_type, param_types.data, arg_count as u32, 0)
+
+        ; Build the call with arguments
+        LLVMBuildCall2(builder, func_type, func, args_array.data, arg_count as u32, "call")
     }
 
     ; ========================================================================
@@ -1309,29 +1337,97 @@ define Emitter
     ; Emit a tuple construction
     function emit_tuple(this, tuple: PlannedTuple) returns LLVMValueRef
     {
-        ; TODO: Implement proper tuple construction
-        ; For now, handle simple case of single-element tuple
         if tuple.components = null
             return LLVMValueRef(null)
 
         if tuple.components.length = 0
             return LLVMValueRef(null)
 
-        ; If single component with no name, just emit the value
-        if tuple.components.length = 1
+        ; Check if this is struct construction vs grouped expression
+        ; If TupleType has a name and it's not just "Tuple", it's struct construction
+        var is_struct_construction false
+        if tuple.tuple_type.name.data <> null
         {
-            let comp tuple.components.get(0)
-            if comp <> null
+            ; Simple check: if name is not empty and not "Tuple"
+            if tuple.tuple_type.name.get_length() > 0
             {
-                if comp.name = null
+                set is_struct_construction: true
+                ; Exception: single component with no name isn't struct construction
+                ; (it's a grouped expression like (2 + 3))
+                if tuple.components.length = 1
                 {
-                    return emit_operands(comp.value)
+                    let first tuple.components.get(0)
+                    if first <> null
+                    {
+                        if first.name = null
+                            set is_struct_construction: false
+                    }
                 }
             }
         }
 
-        ; TODO: Construct actual struct for multi-component tuples
-        LLVMValueRef(null)
+        ; If single component with no name and not struct construction, just emit the value
+        if tuple.components.length = 1
+        {
+            if ~is_struct_construction
+            {
+                let comp tuple.components.get(0)
+                if comp <> null
+                {
+                    if comp.name = null
+                        return emit_operands(comp.value)
+                }
+            }
+        }
+
+        ; For struct construction, emit all component values first
+        let comp_count tuple.components.length
+
+        ; Emit component values
+        var comp_values Vector[LLVMValueRef]#(comp_count)
+        var comp_types Vector[LLVMTypeRef]#(comp_count)
+
+        var i: size_t 0
+        while i < comp_count
+        {
+            let comp_ptr tuple.components.get(i)
+            if comp_ptr <> null
+            {
+                let comp comp_ptr.unwrap()
+                let comp_value emit_operands(comp.value)
+                comp_values.put(i, comp_value)
+
+                let comp_type LLVMTypeOf(comp_value)
+                comp_types.put(i, comp_type)
+            }
+            set i: i + 1
+        }
+
+        ; Get or create struct type
+        var struct_type lookup_struct_cache(tuple.tuple_type.mangled_name)
+        if struct_type.handle = null
+        {
+            ; Create anonymous struct type
+            set struct_type: LLVMStructTypeInContext(context, comp_types.data, comp_count as u32, 0)
+        }
+
+        ; Allocate on stack (for non-region allocations)
+        let tuple_ptr LLVMBuildAlloca(builder, struct_type, "tuple")
+
+        ; Store component values into struct fields
+        set i: 0
+        while i < comp_count
+        {
+            let comp_value comp_values.get(i)
+            if comp_value <> null
+            {
+                let field_ptr LLVMBuildStructGEP2(builder, struct_type, tuple_ptr, i as u32, "tuple.field")
+                LLVMBuildStore(builder, comp_value.unwrap(), field_ptr)
+            }
+            set i: i + 1
+        }
+
+        tuple_ptr
     }
 
     ; Emit a matrix (array literal)
