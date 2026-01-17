@@ -1025,14 +1025,13 @@ define Emitter
         }
 
         ; Look up the function
-        let func lookup_function_cache(call.mangled_name)
+        var func lookup_function_cache(call.mangled_name)
         if func.handle = null
         {
             ; Try to find it in the module
-            let func2 LLVMGetNamedFunction(llvm_module, call.mangled_name.data)
-            if func2.handle = null
+            set func: LLVMGetNamedFunction(llvm_module, call.mangled_name.data)
+            if func.handle = null
                 return LLVMValueRef(null)
-            set func: func2
         }
 
         ; Build arguments
