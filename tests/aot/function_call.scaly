@@ -1,0 +1,11 @@
+; AOT Test: Function call
+; Expected: 42
+
+function answer() returns int
+    42
+
+let result answer()
+if result = 42
+    print("42")
+else
+    print("WRONG")

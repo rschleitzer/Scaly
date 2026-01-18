@@ -1,0 +1,14 @@
+; AOT Test: Recursive function (factorial)
+; Expected: 120
+
+function factorial(n: int) returns int
+    if n <= 1
+        1
+    else
+        n * factorial(n - 1)
+
+let result factorial(5)
+if result = 120
+    print("120")
+else
+    print("WRONG")

@@ -1,0 +1,18 @@
+; AOT Test: Choose expression pattern matching
+; Expected: 7
+
+define Option union(Some: int, None)
+
+function get_value(opt: Option) returns int
+    choose opt
+        when Some: s
+            s
+        else
+            0
+
+let some Option.Some(7)
+let result get_value(some)
+if result = 7
+    print("7")
+else
+    print("WRONG")

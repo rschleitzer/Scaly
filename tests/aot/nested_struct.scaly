@@ -1,0 +1,14 @@
+; AOT Test: Nested struct access
+; Expected: 25
+
+define Point(x: int, y: int)
+define Rectangle(origin: Point, size: Point)
+
+let origin Point(10, 15)
+let size Point(100, 200)
+let rect Rectangle(origin, size)
+let sum rect.origin.x + rect.origin.y
+if sum = 25
+    print("25")
+else
+    print("WRONG")

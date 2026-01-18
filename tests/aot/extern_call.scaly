@@ -1,0 +1,11 @@
+; AOT Test: External C function call
+; Expected: 5
+
+function strlen(s: pointer[i8]) returns size_t extern
+
+let msg "hello"
+let len strlen(msg)
+if len = 5
+    print("5")
+else
+    print("WRONG")

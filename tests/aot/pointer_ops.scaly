@@ -1,0 +1,15 @@
+; AOT Test: Pointer operations
+; Expected: 42
+
+define Node(value: int)
+
+function get_value(node_ptr: pointer[Node]) returns int
+    (*node_ptr).value
+
+let node Node(42)
+let ptr &node
+let result get_value(ptr)
+if result = 42
+    print("42")
+else
+    print("WRONG")
