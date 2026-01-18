@@ -1853,6 +1853,6 @@ use scaly.scalyc.parser.ParserError
 
 function test() returns int
 {
-    ; Tests disabled - choose/when pattern bindings not yet working in JIT
+    ; TODO: Add Modeler tests
     0
 }
