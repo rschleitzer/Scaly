@@ -4,18 +4,22 @@
 define compiler
 {
     module lexer   ; Lexer - must come before parser
-    module parser  ; Parser - depends on lexer
+    ; module parser  ; Uses choose/when - disabled until pattern bindings work
     module Syntax  ; Generated from scaly.sgm - must come first, used by other modules
     module Model
-    module Modeler
+    ; module Modeler  ; Uses choose/when - disabled until pattern bindings work
     module Plan
-    module Planner
+    ; module Planner  ; Uses choose/when - disabled until pattern bindings work
     module LLVM
-    module Emitter
+    ; module Emitter  ; Uses choose/when - disabled until pattern bindings work
 
     function test() returns int
     {
-        ; Submodule tests disabled - not yet working in JIT
+        ; Blocked by: choose/when pattern bindings not emitted correctly
+        ; - Modeler.test(): uses choose parser.parse_*#() when Success: literal
+        ; - Planner.test(): uses Page.allocate_exclusive_page()
+        ; - Emitter.test(): uses LLVM bindings with complex types
+        ; - parser.test(): uses Lexer#().token
         0
     }
 }
