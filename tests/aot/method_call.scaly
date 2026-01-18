@@ -1,0 +1,15 @@
+; AOT Test: Method calls on structs
+; Expected: 25
+
+define Point(x: int, y: int)
+{
+    function distance_squared(this) returns int
+        this.x * this.x + this.y * this.y
+}
+
+let p Point(3, 4)
+let d p.distance_squared()
+if d = 25
+    print("25")
+else
+    print("WRONG")

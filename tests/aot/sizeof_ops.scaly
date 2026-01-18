@@ -1,0 +1,8 @@
+; AOT Test: sizeof operator
+; Expected: 8
+
+let int_size sizeof int
+if int_size = 8
+    print("8")
+else
+    print("WRONG")

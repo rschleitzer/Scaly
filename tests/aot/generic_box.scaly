@@ -1,0 +1,10 @@
+; AOT Test: Generic type instantiation
+; Expected: 42
+
+define Box[T](value: T)
+
+let b Box[int](42)
+if b.value = 42
+    print("42")
+else
+    print("WRONG")

@@ -1,0 +1,10 @@
+; AOT Test: For loop with range
+; Expected: 6
+
+var sum: int 0
+for i in 4
+    set sum: sum + i
+if sum = 6
+    print("6")
+else
+    print("WRONG")

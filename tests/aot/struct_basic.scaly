@@ -1,0 +1,11 @@
+; AOT Test: Basic struct
+; Expected: 30
+
+define Point(x: int, y: int)
+
+let p Point(10, 20)
+let sum p.x + p.y
+if sum = 30
+    print("30")
+else
+    print("WRONG")
