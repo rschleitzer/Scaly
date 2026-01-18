@@ -19,9 +19,17 @@ define compiler
         if result <> 0
             return result
 
+        set result: parser.test()
+        if result <> 0
+            return 200 + result
+
         set result: Planner.test()
         if result <> 0
             return 100 + result
+
+        set result: Emitter.test()
+        if result <> 0
+            return 300 + result
 
         0
     }
