@@ -347,7 +347,7 @@ function handle_component#(syntax: ComponentSyntax) returns Component
                     let name_op (*name_op_ptr)
                     choose name_op.expression
                         when type_expr: TypeSyntax
-                            set name: String#(type_expr.name.name)
+                            set name: String$(type_expr.name.name)
                         else {}
                 }
             }
@@ -845,7 +845,7 @@ function handle_binding_item#(syntax: BindingSyntax) returns Item
     Item(
         Span(syntax.start, syntax.end),
         false,
-        String#(syntax.name),
+        String$(syntax.name),
         item_type,
         Vector[Attribute]#(0)
     )
@@ -960,7 +960,7 @@ function handle_item#(is_private: bool, syntax: ItemSyntax) returns Item
     Item(
         Span(syntax.start, syntax.end),
         is_private,
-        String#(syntax.name),
+        String$(syntax.name),
         item_type,
         Vector[Attribute]#(0)
     )
@@ -1830,7 +1830,7 @@ function build_program#(file_name: String, program_name: String, syntax: Program
     var packages Vector[Module]#(0)
 
     ; Build main module
-    let path String#("")
+    let path String$("")
     let main_module build_module#(path, file_name, program_name, syntax.file, false)
 
     ; Handle top-level statements

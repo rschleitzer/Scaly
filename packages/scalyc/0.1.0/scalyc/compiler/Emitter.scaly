@@ -358,32 +358,32 @@ define Emitter
     procedure init_intrinsic_types(this)
     {
         ; void
-        register_intrinsic_type(String#("void"), LLVMVoidTypeInContext(context), 0, 0, false)
+        register_intrinsic_type(String$("void"), LLVMVoidTypeInContext(context), 0, 0, false)
 
         ; bool (i1)
-        register_intrinsic_type(String#("bool"), LLVMInt1TypeInContext(context), 1, 1, false)
+        register_intrinsic_type(String$("bool"), LLVMInt1TypeInContext(context), 1, 1, false)
 
         ; char (i8)
-        register_intrinsic_type(String#("char"), LLVMInt8TypeInContext(context), 1, 1, true)
+        register_intrinsic_type(String$("char"), LLVMInt8TypeInContext(context), 1, 1, true)
 
         ; Signed integers
-        register_intrinsic_type(String#("i8"), LLVMInt8TypeInContext(context), 1, 1, true)
-        register_intrinsic_type(String#("i16"), LLVMInt16TypeInContext(context), 2, 2, true)
-        register_intrinsic_type(String#("i32"), LLVMInt32TypeInContext(context), 4, 4, true)
-        register_intrinsic_type(String#("i64"), LLVMInt64TypeInContext(context), 8, 8, true)
-        register_intrinsic_type(String#("int"), LLVMInt32TypeInContext(context), 4, 4, true)
+        register_intrinsic_type(String$("i8"), LLVMInt8TypeInContext(context), 1, 1, true)
+        register_intrinsic_type(String$("i16"), LLVMInt16TypeInContext(context), 2, 2, true)
+        register_intrinsic_type(String$("i32"), LLVMInt32TypeInContext(context), 4, 4, true)
+        register_intrinsic_type(String$("i64"), LLVMInt64TypeInContext(context), 8, 8, true)
+        register_intrinsic_type(String$("int"), LLVMInt32TypeInContext(context), 4, 4, true)
 
         ; Unsigned integers
-        register_intrinsic_type(String#("u8"), LLVMInt8TypeInContext(context), 1, 1, false)
-        register_intrinsic_type(String#("u16"), LLVMInt16TypeInContext(context), 2, 2, false)
-        register_intrinsic_type(String#("u32"), LLVMInt32TypeInContext(context), 4, 4, false)
-        register_intrinsic_type(String#("u64"), LLVMInt64TypeInContext(context), 8, 8, false)
-        register_intrinsic_type(String#("uint"), LLVMInt32TypeInContext(context), 4, 4, false)
-        register_intrinsic_type(String#("size_t"), LLVMInt64TypeInContext(context), 8, 8, false)
+        register_intrinsic_type(String$("u8"), LLVMInt8TypeInContext(context), 1, 1, false)
+        register_intrinsic_type(String$("u16"), LLVMInt16TypeInContext(context), 2, 2, false)
+        register_intrinsic_type(String$("u32"), LLVMInt32TypeInContext(context), 4, 4, false)
+        register_intrinsic_type(String$("u64"), LLVMInt64TypeInContext(context), 8, 8, false)
+        register_intrinsic_type(String$("uint"), LLVMInt32TypeInContext(context), 4, 4, false)
+        register_intrinsic_type(String$("size_t"), LLVMInt64TypeInContext(context), 8, 8, false)
 
         ; Floating point
-        register_intrinsic_type(String#("float"), LLVMFloatTypeInContext(context), 4, 4, true)
-        register_intrinsic_type(String#("double"), LLVMDoubleTypeInContext(context), 8, 8, true)
+        register_intrinsic_type(String$("float"), LLVMFloatTypeInContext(context), 4, 4, true)
+        register_intrinsic_type(String$("double"), LLVMDoubleTypeInContext(context), 8, 8, true)
     }
 
     procedure register_intrinsic_type(this, name: String, llvm_type: LLVMTypeRef, size: size_t, alignment: size_t, is_signed: bool)
@@ -533,7 +533,7 @@ define Emitter
             return intr_type
 
         ; Handle pointer types
-        if planned_type.name.equals(String#("pointer"))
+        if planned_type.name.equals(String$("pointer"))
         {
             ; Use opaque pointer (ptr) for LLVM 15+
             let ptr_type LLVMPointerTypeInContext(context, 0)
@@ -542,7 +542,7 @@ define Emitter
         }
 
         ; Handle ref types (same as pointer at LLVM level)
-        if planned_type.name.equals(String#("ref"))
+        if planned_type.name.equals(String$("ref"))
         {
             let ptr_type LLVMPointerTypeInContext(context, 0)
             cache_type(planned_type.mangled_name, ptr_type)
@@ -744,8 +744,8 @@ define Emitter
 
         ; Use unmangled "main" for linker compatibility (C entry point)
         var func_name func.mangled_name
-        if func.name.equals(String#("main"))
-            set func_name: String#("main")
+        if func.name.equals(String$("main"))
+            set func_name: String$("main")
 
         let llvm_func LLVMAddFunction(llvm_module, func_name.c_data(), func_type)
 
@@ -791,7 +791,7 @@ define Emitter
                 set current_function: llvm_func
 
                 ; Create entry block
-                let entry_name String#("entry")
+                let entry_name String$("entry")
                 let entry_block LLVMAppendBasicBlockInContext(context, llvm_func, entry_name.c_data())
                 LLVMPositionBuilderAtEnd(builder, entry_block)
 
@@ -985,7 +985,7 @@ define Emitter
             if plan.statements.length > 0
             {
                 ; Create main function if not already present
-                let main_name String#("main")
+                let main_name String$("main")
                 let main_func LLVMGetNamedFunction(llvm_module, main_name.c_data())
                 if main_func.handle = null
                 {
@@ -994,7 +994,7 @@ define Emitter
                     let new_main LLVMAddFunction(llvm_module, main_name.c_data(), main_type)
                     set current_function: new_main
 
-                    let entry_name String#("entry")
+                    let entry_name String$("entry")
                     let entry_block LLVMAppendBasicBlockInContext(context, new_main, entry_name.c_data())
                     LLVMPositionBuilderAtEnd(builder, entry_block)
 
@@ -1177,12 +1177,12 @@ define Emitter
                 ; Use void type as placeholder when no type info available
                 let void_type PlannedType#(
                     Span(0, 0),
-                    String#("void"),
-                    String#("v"),
+                    String$("void"),
+                    String$("v"),
                     null,
                     scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.UnspecifiedLifetime()),
                     null,
-                    String#(""),
+                    String$(""),
                     null
                 )
                 return emit_constant(c, void_type)
@@ -1437,7 +1437,7 @@ define Emitter
         let is_float is_floating_point_type(result_type)
 
         ; Negation
-        if op_name.equals(String#("-"))
+        if op_name.equals(String$("-"))
         {
             if is_float
                 return LLVMBuildFNeg(builder, operand, "fneg")
@@ -1445,23 +1445,23 @@ define Emitter
         }
 
         ; Unary plus (identity)
-        if op_name.equals(String#("+"))
+        if op_name.equals(String$("+"))
             return operand
 
         ; Logical not
-        if op_name.equals(String#("!"))
+        if op_name.equals(String$("!"))
             return LLVMBuildNot(builder, operand, "not")
 
         ; Bitwise not
-        if op_name.equals(String#("~"))
+        if op_name.equals(String$("~"))
             return LLVMBuildNot(builder, operand, "bitnot")
 
         ; Dereference
-        if op_name.equals(String#("*"))
+        if op_name.equals(String$("*"))
             return LLVMBuildLoad2(builder, ty, operand, "deref")
 
         ; Address-of (operand should already be a pointer)
-        if op_name.equals(String#("&"))
+        if op_name.equals(String$("&"))
             return operand
 
         LLVMValueRef(null)
@@ -1475,7 +1475,7 @@ define Emitter
         let is_signed is_signed_type(result_type)
 
         ; Addition
-        if op_name.equals(String#("+"))
+        if op_name.equals(String$("+"))
         {
             if is_float
                 return LLVMBuildFAdd(builder, left, right, "fadd")
@@ -1483,7 +1483,7 @@ define Emitter
         }
 
         ; Subtraction
-        if op_name.equals(String#("-"))
+        if op_name.equals(String$("-"))
         {
             if is_float
                 return LLVMBuildFSub(builder, left, right, "fsub")
@@ -1491,7 +1491,7 @@ define Emitter
         }
 
         ; Multiplication
-        if op_name.equals(String#("*"))
+        if op_name.equals(String$("*"))
         {
             if is_float
                 return LLVMBuildFMul(builder, left, right, "fmul")
@@ -1499,7 +1499,7 @@ define Emitter
         }
 
         ; Division
-        if op_name.equals(String#("/"))
+        if op_name.equals(String$("/"))
         {
             if is_float
                 return LLVMBuildFDiv(builder, left, right, "fdiv")
@@ -1509,7 +1509,7 @@ define Emitter
         }
 
         ; Modulo
-        if op_name.equals(String#("%"))
+        if op_name.equals(String$("%"))
         {
             if is_float
                 return LLVMBuildFRem(builder, left, right, "frem")
@@ -1519,23 +1519,23 @@ define Emitter
         }
 
         ; Bitwise AND
-        if op_name.equals(String#("&"))
+        if op_name.equals(String$("&"))
             return LLVMBuildAnd(builder, left, right, "and")
 
         ; Bitwise OR
-        if op_name.equals(String#("|"))
+        if op_name.equals(String$("|"))
             return LLVMBuildOr(builder, left, right, "or")
 
         ; Bitwise XOR
-        if op_name.equals(String#("^"))
+        if op_name.equals(String$("^"))
             return LLVMBuildXor(builder, left, right, "xor")
 
         ; Left shift
-        if op_name.equals(String#("<<"))
+        if op_name.equals(String$("<<"))
             return LLVMBuildShl(builder, left, right, "shl")
 
         ; Right shift
-        if op_name.equals(String#(">>"))
+        if op_name.equals(String$(">>"))
         {
             if is_signed
                 return LLVMBuildAShr(builder, left, right, "ashr")
@@ -1543,21 +1543,21 @@ define Emitter
         }
 
         ; Comparison operators
-        if op_name.equals(String#("="))
+        if op_name.equals(String$("="))
         {
             if is_float
                 return LLVMBuildFCmp(builder, LLVMRealPredicate.OEQ(), left, right, "eq")
             return LLVMBuildICmp(builder, LLVMIntPredicate.EQ(), left, right, "eq")
         }
 
-        if op_name.equals(String#("<>"))
+        if op_name.equals(String$("<>"))
         {
             if is_float
                 return LLVMBuildFCmp(builder, LLVMRealPredicate.ONE(), left, right, "ne")
             return LLVMBuildICmp(builder, LLVMIntPredicate.NE(), left, right, "ne")
         }
 
-        if op_name.equals(String#("<"))
+        if op_name.equals(String$("<"))
         {
             if is_float
                 return LLVMBuildFCmp(builder, LLVMRealPredicate.OLT(), left, right, "lt")
@@ -1566,7 +1566,7 @@ define Emitter
             return LLVMBuildICmp(builder, LLVMIntPredicate.ULT(), left, right, "lt")
         }
 
-        if op_name.equals(String#("<="))
+        if op_name.equals(String$("<="))
         {
             if is_float
                 return LLVMBuildFCmp(builder, LLVMRealPredicate.OLE(), left, right, "le")
@@ -1575,7 +1575,7 @@ define Emitter
             return LLVMBuildICmp(builder, LLVMIntPredicate.ULE(), left, right, "le")
         }
 
-        if op_name.equals(String#(">"))
+        if op_name.equals(String$(">"))
         {
             if is_float
                 return LLVMBuildFCmp(builder, LLVMRealPredicate.OGT(), left, right, "gt")
@@ -1584,7 +1584,7 @@ define Emitter
             return LLVMBuildICmp(builder, LLVMIntPredicate.UGT(), left, right, "gt")
         }
 
-        if op_name.equals(String#(">="))
+        if op_name.equals(String$(">="))
         {
             if is_float
                 return LLVMBuildFCmp(builder, LLVMRealPredicate.OGE(), left, right, "ge")
@@ -1603,7 +1603,7 @@ define Emitter
         let name call.name
 
         ; Handle Option::unwrap - extract payload from union
-        if name.equals(String#("unwrap"))
+        if name.equals(String$("unwrap"))
         {
             if call.args <> null
             {
@@ -1647,7 +1647,7 @@ define Emitter
         }
 
         ; Handle Option::unwrap_or - return value or default
-        if name.equals(String#("unwrap_or"))
+        if name.equals(String$("unwrap_or"))
         {
             if call.args <> null
             {
@@ -1681,9 +1681,9 @@ define Emitter
     ; Check if type is floating point
     function is_floating_point_type(this, t: PlannedType) returns bool
     {
-        if t.name.equals(String#("float"))
+        if t.name.equals(String$("float"))
             return true
-        if t.name.equals(String#("double"))
+        if t.name.equals(String$("double"))
             return true
         false
     }
@@ -1692,17 +1692,17 @@ define Emitter
     function is_signed_type(this, t: PlannedType) returns bool
     {
         ; Unsigned types start with 'u' or are size_t
-        if t.name.equals(String#("u8"))
+        if t.name.equals(String$("u8"))
             return false
-        if t.name.equals(String#("u16"))
+        if t.name.equals(String$("u16"))
             return false
-        if t.name.equals(String#("u32"))
+        if t.name.equals(String$("u32"))
             return false
-        if t.name.equals(String#("u64"))
+        if t.name.equals(String$("u64"))
             return false
-        if t.name.equals(String#("uint"))
+        if t.name.equals(String$("uint"))
             return false
-        if t.name.equals(String#("size_t"))
+        if t.name.equals(String$("size_t"))
             return false
         ; Everything else is signed by default
         true
@@ -1963,11 +1963,11 @@ define Emitter
         }
 
         ; Create basic blocks
-        let then_block create_block(String#("if.then"))
+        let then_block create_block(String$("if.then"))
         var else_block LLVMBasicBlockRef(null)
         if if_expr.alternative <> null
-            set else_block: create_block(String#("if.else"))
-        let merge_block create_block(String#("if.end"))
+            set else_block: create_block(String$("if.else"))
+        let merge_block create_block(String$("if.end"))
 
         ; Branch based on condition
         if else_block.handle <> null
@@ -2067,10 +2067,10 @@ define Emitter
             return LLVMValueRef(null)
 
         ; Create blocks
-        let merge_block create_block(String#("match.end"))
+        let merge_block create_block(String$("match.end"))
         var default_block LLVMBasicBlockRef(null)
         if match_expr.alternative <> null
-            set default_block: create_block(String#("match.else"))
+            set default_block: create_block(String$("match.else"))
         else
             set default_block: merge_block
 
@@ -2083,7 +2083,7 @@ define Emitter
         {
             for branch in match_expr.branches
             {
-                let case_block create_block(String#("match.case"))
+                let case_block create_block(String$("match.case"))
 
                 ; Add cases to switch
                 if branch.cases <> null
@@ -2157,8 +2157,8 @@ define Emitter
         let tag LLVMBuildLoad2(builder, i8_ty, tag_ptr, "tag")
 
         ; Create blocks
-        let merge_block create_block(String#("choose.end"))
-        let default_block create_block(String#("choose.else"))
+        let merge_block create_block(String$("choose.end"))
+        let default_block create_block(String$("choose.else"))
 
         ; Create switch instruction
         let case_count choose_expr.cases.length as int
@@ -2169,7 +2169,7 @@ define Emitter
         {
             for when_case in choose_expr.cases
             {
-                let case_block create_block(String#("choose.when"))
+                let case_block create_block(String$("choose.when"))
                 let tag_const LLVMConstInt(i8_ty, when_case.variant_index, 0)
                 LLVMAddCase(switch_inst, tag_const, case_block)
 
@@ -2244,10 +2244,10 @@ define Emitter
         LLVMBuildStore(builder, zero, loop_counter)
 
         ; Create basic blocks
-        let cond_block create_block(String#("for.cond"))
-        let body_block create_block(String#("for.body"))
-        let incr_block create_block(String#("for.incr"))
-        let exit_block create_block(String#("for.exit"))
+        let cond_block create_block(String$("for.cond"))
+        let body_block create_block(String$("for.body"))
+        let incr_block create_block(String$("for.incr"))
+        let exit_block create_block(String$("for.exit"))
 
         ; Push loop context for break/continue
         push_loop(exit_block, incr_block)
@@ -2338,9 +2338,9 @@ define Emitter
             return LLVMValueRef(null)
 
         ; Create basic blocks
-        let cond_block create_block(String#("for.cond"))
-        let body_block create_block(String#("for.body"))
-        let exit_block create_block(String#("for.exit"))
+        let cond_block create_block(String$("for.cond"))
+        let body_block create_block(String$("for.body"))
+        let exit_block create_block(String$("for.exit"))
 
         ; Push loop context
         push_loop(exit_block, cond_block)
@@ -2396,9 +2396,9 @@ define Emitter
     function emit_while(this, while_expr: PlannedWhile) returns LLVMValueRef
     {
         ; Create basic blocks
-        let cond_block create_block(String#("while.cond"))
-        let body_block create_block(String#("while.body"))
-        let exit_block create_block(String#("while.exit"))
+        let cond_block create_block(String$("while.cond"))
+        let body_block create_block(String$("while.body"))
+        let exit_block create_block(String$("while.exit"))
 
         ; Push loop context
         push_loop(exit_block, cond_block)
@@ -2421,7 +2421,7 @@ define Emitter
         choose while_expr.cond.binding_item.name
             when name: Some
             {
-                if while_expr.cond.binding_type.equals(String#("var"))
+                if while_expr.cond.binding_type.equals(String$("var"))
                 {
                     let ty LLVMTypeOf(cond_value)
                     let alloca LLVMBuildAlloca(builder, ty, name.c_data())
@@ -2501,9 +2501,9 @@ define Emitter
         let tag LLVMBuildLoad2(builder, i8_ty, tag_ptr, "tag")
 
         ; Create blocks
-        let ok_block create_block(String#("try.ok"))
-        let err_block create_block(String#("try.err"))
-        let merge_block create_block(String#("try.end"))
+        let ok_block create_block(String$("try.ok"))
+        let err_block create_block(String$("try.err"))
+        let merge_block create_block(String$("try.end"))
 
         ; Check if tag is 0 (Ok)
         let zero LLVMConstInt(i8_ty, 0, 0)
@@ -2522,7 +2522,7 @@ define Emitter
         choose try_expr.cond.binding_item.name
             when name: Some
             {
-                if try_expr.cond.binding_type.equals(String#("var"))
+                if try_expr.cond.binding_type.equals(String$("var"))
                 {
                     let alloca LLVMBuildAlloca(builder, i64_ty, name.c_data())
                     LLVMBuildStore(builder, ok_value, alloca)
@@ -2551,8 +2551,8 @@ define Emitter
                 ; If multiple catches, create a switch on the tag
                 if try_expr.catches.length > 1
                 {
-                    let catch_end_block create_block(String#("catch.end"))
-                    let catch_default_block create_block(String#("catch.default"))
+                    let catch_end_block create_block(String$("catch.end"))
+                    let catch_default_block create_block(String$("catch.default"))
 
                     ; Create switch on tag (tags 1, 2, 3... for different error variants)
                     let catch_count try_expr.catches.length as int
@@ -2560,7 +2560,7 @@ define Emitter
 
                     for catch_case in try_expr.catches
                     {
-                        let catch_block create_block(String#("catch.case"))
+                        let catch_block create_block(String$("catch.case"))
                         let catch_tag_const LLVMConstInt(i8_ty, catch_case.variant_index, 0)
                         LLVMAddCase(catch_switch, catch_tag_const, catch_block)
 
@@ -2843,7 +2843,7 @@ define Emitter
         if is_option
         {
             ; Check if variant is None
-            if vc.variant_name.equals(String#("None"))
+            if vc.variant_name.equals(String$("None"))
             {
                 ; None = null pointer
                 let ptr_type LLVMPointerTypeInContext(context, 0)
@@ -2851,7 +2851,7 @@ define Emitter
             }
 
             ; For Some, check if we have a value and the type uses NPO
-            if vc.variant_name.equals(String#("Some"))
+            if vc.variant_name.equals(String$("Some"))
             {
                 if vc.value <> null
                 {
@@ -2990,7 +2990,7 @@ define Emitter
                     when call: Call
                     {
                         ; Handle dereference assignment like *ptr = value
-                        if call.name.equals(String#("*"))
+                        if call.name.equals(String$("*"))
                         {
                             if call.args <> null
                             {
@@ -3030,7 +3030,7 @@ define Emitter
         var current_type map_type(planned_var.variable_type)
 
         ; If variable is pointer[T], we need to load the pointer first
-        if planned_var.variable_type.name.equals(String#("pointer"))
+        if planned_var.variable_type.name.equals(String$("pointer"))
         {
             let ptr_type LLVMPointerTypeInContext(context, 0)
             set current_ptr: LLVMBuildLoad2(builder, ptr_type, var_ptr, "ptr.load")
@@ -3088,7 +3088,7 @@ define Emitter
                     ; Get the type from the value
                     let ty LLVMTypeOf(value)
 
-                    if binding.binding_type.equals(String#("var"))
+                    if binding.binding_type.equals(String$("var"))
                     {
                         ; Mutable binding: allocate on stack
                         let alloca LLVMBuildAlloca(builder, ty, name.c_data())
@@ -3142,7 +3142,7 @@ define Emitter
         if current_region.local_page.handle <> null
         {
             ; First try to call deallocate_extensions if the Page runtime is available
-            let dealloc_name String#("_ZN4scaly6memory4Page22deallocate_extensionsE")
+            let dealloc_name String$("_ZN4scaly6memory4Page22deallocate_extensionsE")
             let dealloc_fn LLVMGetNamedFunction(llvm_module, dealloc_name.c_data())
             if dealloc_fn.handle <> null
             {
@@ -3158,7 +3158,7 @@ define Emitter
             }
 
             ; Free the local page itself
-            let free_name String#("free")
+            let free_name String$("free")
             let free_fn LLVMGetNamedFunction(llvm_module, free_name.c_data())
             if free_fn.handle <> null
             {
@@ -3317,12 +3317,12 @@ define Emitter
             if current_region.local_page.handle <> null
             {
                 ; Save watermark: call Page.save_watermark(local_page)
-                let save_wm_name String#("_ZN4scaly6memory4Page14save_watermarkE")
+                let save_wm_name String$("_ZN4scaly6memory4Page14save_watermarkE")
                 let save_wm_fn LLVMGetNamedFunction(llvm_module, save_wm_name.c_data())
                 if save_wm_fn.handle <> null
                 {
                     ; BlockWatermark is a struct - get its type
-                    let watermark_name String#("BlockWatermark")
+                    let watermark_name String$("BlockWatermark")
                     var watermark_type lookup_struct_cache(watermark_name)
                     if watermark_type.handle = null
                     {
@@ -3386,7 +3386,7 @@ define Emitter
     ; Emit a call to restore_watermark
     procedure emit_restore_watermark(this, watermark: LLVMValueRef)
     {
-        let restore_wm_name String#("_ZN4scaly6memory4Page17restore_watermarkE")
+        let restore_wm_name String$("_ZN4scaly6memory4Page17restore_watermarkE")
         let restore_wm_fn LLVMGetNamedFunction(llvm_module, restore_wm_name.c_data())
         if restore_wm_fn.handle <> null
         {
@@ -3455,24 +3455,24 @@ function test() returns int
     ; ========================================================================
 
     ; Test 100: End-to-end compilation of simple integer expression
-    var parser Parser#(String#("42"))
+    var parser Parser#(String$("42"))
     choose parser.parse_program#()
         when err: Error
             return 100
         when syntax: Success
         {
             ; Model the parsed program
-            let program build_program#(String#("test.scaly"), String#("test"), syntax)
+            let program build_program#(String$("test.scaly"), String$("test"), syntax)
 
             ; Plan the program
-            var planner Planner#(String#("test.scaly"))
+            var planner Planner#(String$("test.scaly"))
             let plan planner.plan_program(program)
             if plan = null
                 return 101
 
             ; Emit the plan
             var emitter Emitter#()
-            let emit_result emitter.emit(plan, String#("test_module"))
+            let emit_result emitter.emit(plan, String$("test_module"))
             if emit_result = false
                 return 102
 
@@ -3487,226 +3487,226 @@ function test() returns int
         }
 
     ; Test 110: End-to-end with function definition
-    set parser: Parser#(String#("function answer() returns int\n    42"))
+    set parser: Parser#(String$("function answer() returns int\n    42"))
     choose parser.parse_program#()
         when err: Error
             return 110
         when syntax: Success
         {
-            let program build_program#(String#("test2.scaly"), String#("test2"), syntax)
-            var planner Planner#(String#("test2.scaly"))
+            let program build_program#(String$("test2.scaly"), String$("test2"), syntax)
+            var planner Planner#(String$("test2.scaly"))
             let plan planner.plan_program(program)
             if plan = null
                 return 111
 
             var emitter Emitter#()
-            let emit_result emitter.emit(plan, String#("test2_module"))
+            let emit_result emitter.emit(plan, String$("test2_module"))
             if emit_result = false
                 return 112
 
             ; Verify the function was emitted
-            let answer_fn LLVMGetNamedFunction(emitter.llvm_module, String#("_Z6answerv").c_data())
+            let answer_fn LLVMGetNamedFunction(emitter.llvm_module, String$("_Z6answerv").c_data())
             if answer_fn.handle = null
                 return 113
         }
 
     ; Test 120: End-to-end with struct definition
-    set parser: Parser#(String#("define Point(x: int, y: int)"))
+    set parser: Parser#(String$("define Point(x: int, y: int)"))
     choose parser.parse_program#()
         when err: Error
             return 120
         when syntax: Success
         {
-            let program build_program#(String#("test3.scaly"), String#("test3"), syntax)
-            var planner Planner#(String#("test3.scaly"))
+            let program build_program#(String$("test3.scaly"), String$("test3"), syntax)
+            var planner Planner#(String$("test3.scaly"))
             let plan planner.plan_program(program)
             if plan = null
                 return 121
 
             var emitter Emitter#()
-            let emit_result emitter.emit(plan, String#("test3_module"))
+            let emit_result emitter.emit(plan, String$("test3_module"))
             if emit_result = false
                 return 122
         }
 
     ; Test 130: End-to-end with if expression
-    set parser: Parser#(String#("if true\n    1\nelse\n    0"))
+    set parser: Parser#(String$("if true\n    1\nelse\n    0"))
     choose parser.parse_program#()
         when err: Error
             return 130
         when syntax: Success
         {
-            let program build_program#(String#("test4.scaly"), String#("test4"), syntax)
-            var planner Planner#(String#("test4.scaly"))
+            let program build_program#(String$("test4.scaly"), String$("test4"), syntax)
+            var planner Planner#(String$("test4.scaly"))
             let plan planner.plan_program(program)
             if plan = null
                 return 131
 
             var emitter Emitter#()
-            let emit_result emitter.emit(plan, String#("test4_module"))
+            let emit_result emitter.emit(plan, String$("test4_module"))
             if emit_result = false
                 return 132
         }
 
     ; Test 140: End-to-end with let binding and arithmetic
-    set parser: Parser#(String#("let x 10\nlet y 20\nlet sum x + y"))
+    set parser: Parser#(String$("let x 10\nlet y 20\nlet sum x + y"))
     choose parser.parse_program#()
         when err: Error
             return 140
         when syntax: Success
         {
-            let program build_program#(String#("test5.scaly"), String#("test5"), syntax)
-            var planner Planner#(String#("test5.scaly"))
+            let program build_program#(String$("test5.scaly"), String$("test5"), syntax)
+            var planner Planner#(String$("test5.scaly"))
             let plan planner.plan_program(program)
             if plan = null
                 return 141
 
             var emitter Emitter#()
-            let emit_result emitter.emit(plan, String#("test5_module"))
+            let emit_result emitter.emit(plan, String$("test5_module"))
             if emit_result = false
                 return 142
         }
 
     ; Test 150: End-to-end with while loop
-    set parser: Parser#(String#("var i: int 0\nwhile i < 10\n    set i: i + 1"))
+    set parser: Parser#(String$("var i: int 0\nwhile i < 10\n    set i: i + 1"))
     choose parser.parse_program#()
         when err: Error
             return 150
         when syntax: Success
         {
-            let program build_program#(String#("test6.scaly"), String#("test6"), syntax)
-            var planner Planner#(String#("test6.scaly"))
+            let program build_program#(String$("test6.scaly"), String$("test6"), syntax)
+            var planner Planner#(String$("test6.scaly"))
             let plan planner.plan_program(program)
             if plan = null
                 return 151
 
             var emitter Emitter#()
-            let emit_result emitter.emit(plan, String#("test6_module"))
+            let emit_result emitter.emit(plan, String$("test6_module"))
             if emit_result = false
                 return 152
         }
 
     ; Test 160: End-to-end with function call
-    set parser: Parser#(String#("function double(x: int) returns int\n    x * 2\n\nlet result double(21)"))
+    set parser: Parser#(String$("function double(x: int) returns int\n    x * 2\n\nlet result double(21)"))
     choose parser.parse_program#()
         when err: Error
             return 160
         when syntax: Success
         {
-            let program build_program#(String#("test7.scaly"), String#("test7"), syntax)
-            var planner Planner#(String#("test7.scaly"))
+            let program build_program#(String$("test7.scaly"), String$("test7"), syntax)
+            var planner Planner#(String$("test7.scaly"))
             let plan planner.plan_program(program)
             if plan = null
                 return 161
 
             var emitter Emitter#()
-            let emit_result emitter.emit(plan, String#("test7_module"))
+            let emit_result emitter.emit(plan, String$("test7_module"))
             if emit_result = false
                 return 162
 
             ; Verify double function was emitted
-            let double_fn LLVMGetNamedFunction(emitter.llvm_module, String#("_Z6doublei").c_data())
+            let double_fn LLVMGetNamedFunction(emitter.llvm_module, String$("_Z6doublei").c_data())
             if double_fn.handle = null
                 return 163
         }
 
     ; Test 170: End-to-end with union definition
-    set parser: Parser#(String#("define Option union(Some: int, None)"))
+    set parser: Parser#(String$("define Option union(Some: int, None)"))
     choose parser.parse_program#()
         when err: Error
             return 170
         when syntax: Success
         {
-            let program build_program#(String#("test8.scaly"), String#("test8"), syntax)
-            var planner Planner#(String#("test8.scaly"))
+            let program build_program#(String$("test8.scaly"), String$("test8"), syntax)
+            var planner Planner#(String$("test8.scaly"))
             let plan planner.plan_program(program)
             if plan = null
                 return 171
 
             var emitter Emitter#()
-            let emit_result emitter.emit(plan, String#("test8_module"))
+            let emit_result emitter.emit(plan, String$("test8_module"))
             if emit_result = false
                 return 172
         }
 
     ; Test 180: End-to-end with union variant construction
-    set parser: Parser#(String#("define Option union(Some: int, None)\nlet opt Option.Some(42)"))
+    set parser: Parser#(String$("define Option union(Some: int, None)\nlet opt Option.Some(42)"))
     choose parser.parse_program#()
         when err: Error
             return 180
         when syntax: Success
         {
-            let program build_program#(String#("test9.scaly"), String#("test9"), syntax)
-            var planner Planner#(String#("test9.scaly"))
+            let program build_program#(String$("test9.scaly"), String$("test9"), syntax)
+            var planner Planner#(String$("test9.scaly"))
             let plan planner.plan_program(program)
             if plan = null
                 return 181
 
             var emitter Emitter#()
-            let emit_result emitter.emit(plan, String#("test9_module"))
+            let emit_result emitter.emit(plan, String$("test9_module"))
             if emit_result = false
                 return 182
         }
 
     ; Test 190: End-to-end with choose/when pattern matching
-    set parser: Parser#(String#("define Option union(Some: int, None)\nfunction unwrap(opt: Option) returns int\n    choose opt\n        when v: Some\n            v\n        else\n            0"))
+    set parser: Parser#(String$("define Option union(Some: int, None)\nfunction unwrap(opt: Option) returns int\n    choose opt\n        when v: Some\n            v\n        else\n            0"))
     choose parser.parse_program#()
         when err: Error
             return 190
         when syntax: Success
         {
-            let program build_program#(String#("test10.scaly"), String#("test10"), syntax)
-            var planner Planner#(String#("test10.scaly"))
+            let program build_program#(String$("test10.scaly"), String$("test10"), syntax)
+            var planner Planner#(String$("test10.scaly"))
             let plan planner.plan_program(program)
             if plan = null
                 return 191
 
             var emitter Emitter#()
-            let emit_result emitter.emit(plan, String#("test10_module"))
+            let emit_result emitter.emit(plan, String$("test10_module"))
             if emit_result = false
                 return 192
 
             ; Verify unwrap function was emitted
-            let unwrap_fn LLVMGetNamedFunction(emitter.llvm_module, String#("_Z6unwrap6Option").c_data())
+            let unwrap_fn LLVMGetNamedFunction(emitter.llvm_module, String$("_Z6unwrap6Option").c_data())
             if unwrap_fn.handle = null
                 return 193
         }
 
     ; Test 200: End-to-end with generic type
-    set parser: Parser#(String#("define Box[T](value: T)\nlet b Box[int](42)"))
+    set parser: Parser#(String$("define Box[T](value: T)\nlet b Box[int](42)"))
     choose parser.parse_program#()
         when err: Error
             return 200
         when syntax: Success
         {
-            let program build_program#(String#("test11.scaly"), String#("test11"), syntax)
-            var planner Planner#(String#("test11.scaly"))
+            let program build_program#(String$("test11.scaly"), String$("test11"), syntax)
+            var planner Planner#(String$("test11.scaly"))
             let plan planner.plan_program(program)
             if plan = null
                 return 201
 
             var emitter Emitter#()
-            let emit_result emitter.emit(plan, String#("test11_module"))
+            let emit_result emitter.emit(plan, String$("test11_module"))
             if emit_result = false
                 return 202
         }
 
     ; Test 210: Complex program with struct, method, and mutation
     ; This mimics lexer-like code patterns
-    set parser: Parser#(String#("define Lexer(text: pointer[char], pos: int)\n{\n    function current_char(this) returns char\n        *(text + pos)\n    procedure advance#(this)\n        set pos: pos + 1\n}\nvar lex Lexer(\"test\", 0)\nlet ch lex.current_char()"))
+    set parser: Parser#(String$("define Lexer(text: pointer[char], pos: int)\n{\n    function current_char(this) returns char\n        *(text + pos)\n    procedure advance#(this)\n        set pos: pos + 1\n}\nvar lex Lexer(\"test\", 0)\nlet ch lex.current_char()"))
     choose parser.parse_program#()
         when err: Error
             return 210
         when syntax: Success
         {
-            let program build_program#(String#("test12.scaly"), String#("test12"), syntax)
-            var planner Planner#(String#("test12.scaly"))
+            let program build_program#(String$("test12.scaly"), String$("test12"), syntax)
+            var planner Planner#(String$("test12.scaly"))
             let plan planner.plan_program(program)
             if plan = null
                 return 211
 
             var emitter Emitter#()
-            let emit_result emitter.emit(plan, String#("test12_module"))
+            let emit_result emitter.emit(plan, String$("test12_module"))
             if emit_result = false
                 return 212
         }
