@@ -338,36 +338,69 @@ define Parser
 function test() returns int
 {
     ; Test 1: Parse a simple literal
-    var parser Parser#(String#(\"42\"))
-    choose parser.parse_literal#()
-        when Error: err
+    var parser Parser$(String$(\"42\"))
+    choose parser.parse_literal$()
+        when err: Error
             return 1
-        when Success: literal
+        when literal: Success
         {
             if ~parser.is_at_end()
                 return 2
         }
 
     ; Test 2: Parse an identifier expression
-    set parser: Parser#(String#(\"foo\"))
-    choose parser.parse_name#()
-        when Error: err
+    set parser: Parser$(String$(\"foo\"))
+    choose parser.parse_name$()
+        when err: Error
             return 3
-        when Success: name
+        when name: Success
         {
             if ~parser.is_at_end()
                 return 4
         }
 
     ; Test 3: Parse a function definition
-    set parser: Parser#(String#(\"function hello() returns int 42\"))
-    choose parser.parse_function#()
-        when Error: err
+    set parser: Parser$(String$(\"function hello() returns int 42\"))
+    choose parser.parse_function$()
+        when err: Error
             return 5
-        when Success: func
+        when func: Success
         {
             if ~parser.is_at_end()
                 return 6
+        }
+
+    ; Test 4: Parse a structure definition
+    set parser: Parser$(String$(\"define a ()\"))
+    choose parser.parse_definition$()
+        when err: Error
+            return 7
+        when def: Success
+        {
+            if ~parser.is_at_end()
+                return 8
+        }
+
+    ; Test 5: Parse a structure with properties
+    set parser: Parser$(String$(\"define Point (x: int, y: int)\"))
+    choose parser.parse_definition$()
+        when err: Error
+            return 9
+        when def: Success
+        {
+            if ~parser.is_at_end()
+                return 10
+        }
+
+    ; Test 6: Parse a union definition
+    set parser: Parser$(String$(\"define Option union (Some: int, None)\"))
+    choose parser.parse_definition$()
+        when err: Error
+            return 11
+        when def: Success
+        {
+            if ~parser.is_at_end()
+                return 12
         }
 
     0
