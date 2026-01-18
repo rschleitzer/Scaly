@@ -3141,13 +3141,35 @@ define Emitter
         ; Clean up local page before returning
         if current_region.local_page.handle <> null
         {
-            ; TODO: Check if page was used and call deallocate_extensions if needed
-            ; For now, simplified: just free the local page if it exists
-            let free_fn LLVMGetNamedFunction(llvm_module, "free")
+            ; First try to call deallocate_extensions if the Page runtime is available
+            let dealloc_name String#("_ZN4scaly6memory4Page22deallocate_extensionsE")
+            let dealloc_fn LLVMGetNamedFunction(llvm_module, dealloc_name.c_data())
+            if dealloc_fn.handle <> null
+            {
+                ; Call deallocate_extensions(local_page)
+                var dealloc_args Vector[LLVMValueRef]#(1)
+                dealloc_args.put(0, current_region.local_page)
+                let ptr_type LLVMPointerTypeInContext(context, 0)
+                let void_type LLVMVoidTypeInContext(context)
+                var dealloc_param_types Vector[LLVMTypeRef]#(1)
+                dealloc_param_types.put(0, ptr_type)
+                let dealloc_func_type LLVMFunctionType(void_type, dealloc_param_types.data, 1, 0)
+                LLVMBuildCall2(builder, dealloc_func_type, dealloc_fn, dealloc_args.data, 1, "")
+            }
+
+            ; Free the local page itself
+            let free_name String#("free")
+            let free_fn LLVMGetNamedFunction(llvm_module, free_name.c_data())
             if free_fn.handle <> null
             {
-                ; Build array of args
-                ; TODO: Need proper arg array handling
+                var free_args Vector[LLVMValueRef]#(1)
+                free_args.put(0, current_region.local_page)
+                let ptr_type LLVMPointerTypeInContext(context, 0)
+                let void_type LLVMVoidTypeInContext(context)
+                var free_param_types Vector[LLVMTypeRef]#(1)
+                free_param_types.put(0, ptr_type)
+                let free_func_type LLVMFunctionType(void_type, free_param_types.data, 1, 0)
+                LLVMBuildCall2(builder, free_func_type, free_fn, free_args.data, 1, "")
             }
         }
 
@@ -3277,7 +3299,7 @@ define Emitter
                         if current_region.local_page.handle <> null
                         {
                             ; Call restore_watermark(local_page, watermark)
-                            ; TODO: Need proper call with args
+                            emit_restore_watermark(cleanup.watermark)
                         }
                     }
                 }
@@ -3294,8 +3316,37 @@ define Emitter
         {
             if current_region.local_page.handle <> null
             {
-                ; Save watermark: call Page_save_watermark(local_page)
-                ; TODO: Implement proper watermark saving
+                ; Save watermark: call Page.save_watermark(local_page)
+                let save_wm_name String#("_ZN4scaly6memory4Page14save_watermarkE")
+                let save_wm_fn LLVMGetNamedFunction(llvm_module, save_wm_name.c_data())
+                if save_wm_fn.handle <> null
+                {
+                    ; BlockWatermark is a struct - get its type
+                    let watermark_name String#("BlockWatermark")
+                    var watermark_type lookup_struct_cache(watermark_name)
+                    if watermark_type.handle = null
+                    {
+                        ; Create an opaque watermark type (4 pointers = 32 bytes on 64-bit)
+                        set watermark_type: LLVMStructCreateNamed(context, watermark_name.c_data())
+                        let ptr_type LLVMPointerTypeInContext(context, 0)
+                        var wm_fields Vector[LLVMTypeRef]#(4)
+                        wm_fields.put(0, ptr_type)  ; page
+                        wm_fields.put(1, ptr_type)  ; next_object
+                        wm_fields.put(2, ptr_type)  ; extension_tail
+                        wm_fields.put(3, ptr_type)  ; exclusive_head
+                        LLVMStructSetBody(watermark_type, wm_fields.data, 4, 0)
+                        cache_struct(watermark_name, watermark_type)
+                    }
+
+                    ; Call save_watermark
+                    var save_args Vector[LLVMValueRef]#(1)
+                    save_args.put(0, current_region.local_page)
+                    let ptr_type LLVMPointerTypeInContext(context, 0)
+                    var save_param_types Vector[LLVMTypeRef]#(1)
+                    save_param_types.put(0, ptr_type)
+                    let save_func_type LLVMFunctionType(watermark_type, save_param_types.data, 1, 0)
+                    set watermark: LLVMBuildCall2(builder, save_func_type, save_wm_fn, save_args.data, 1, "watermark")
+                }
             }
         }
         let ctx BlockCleanupContext(watermark, needs_cleanup)
@@ -3320,7 +3371,7 @@ define Emitter
                         if current_region.local_page.handle <> null
                         {
                             ; Call restore_watermark
-                            ; TODO: Implement proper watermark restoration
+                            emit_restore_watermark(cleanup.watermark)
                         }
                     }
                 }
@@ -3330,6 +3381,31 @@ define Emitter
         ; Remove from stack (shrink length)
         if block_cleanup_stack.length > 0
             set block_cleanup_stack.length: block_cleanup_stack.length - 1
+    }
+
+    ; Emit a call to restore_watermark
+    procedure emit_restore_watermark(this, watermark: LLVMValueRef)
+    {
+        let restore_wm_name String#("_ZN4scaly6memory4Page17restore_watermarkE")
+        let restore_wm_fn LLVMGetNamedFunction(llvm_module, restore_wm_name.c_data())
+        if restore_wm_fn.handle <> null
+        {
+            ; Call restore_watermark(local_page, watermark)
+            var restore_args Vector[LLVMValueRef]#(2)
+            restore_args.put(0, current_region.local_page)
+            restore_args.put(1, watermark)
+
+            let ptr_type LLVMPointerTypeInContext(context, 0)
+            let void_type LLVMVoidTypeInContext(context)
+            let watermark_type LLVMTypeOf(watermark)
+
+            var restore_param_types Vector[LLVMTypeRef]#(2)
+            restore_param_types.put(0, ptr_type)       ; Page pointer
+            restore_param_types.put(1, watermark_type) ; BlockWatermark
+
+            let restore_func_type LLVMFunctionType(void_type, restore_param_types.data, 2, 0)
+            LLVMBuildCall2(builder, restore_func_type, restore_wm_fn, restore_args.data, 2, "")
+        }
     }
 
     ; ========================================================================
