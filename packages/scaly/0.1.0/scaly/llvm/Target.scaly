@@ -1,0 +1,163 @@
+; LLVM-C Target Machine and Code Generation API bindings
+; For AOT (Ahead-of-Time) compilation
+
+; ===========================================================================
+; Target Initialization
+; ===========================================================================
+; These initialize the native target for code generation
+function LLVMInitializeNativeTarget() returns int extern
+function LLVMInitializeNativeAsmParser() returns int extern
+function LLVMInitializeNativeAsmPrinter() returns int extern
+
+; Initialize all targets (alternative to native-only)
+function LLVMInitializeAllTargetInfos() extern
+function LLVMInitializeAllTargets() extern
+function LLVMInitializeAllTargetMCs() extern
+function LLVMInitializeAllAsmPrinters() extern
+function LLVMInitializeAllAsmParsers() extern
+
+; ===========================================================================
+; Target Triple
+; ===========================================================================
+function LLVMGetDefaultTargetTriple() returns pointer[char] extern
+function LLVMNormalizeTargetTriple(Triple: pointer[const_char]) returns pointer[char] extern
+function LLVMGetHostCPUName() returns pointer[char] extern
+function LLVMGetHostCPUFeatures() returns pointer[char] extern
+
+; ===========================================================================
+; Target Lookup
+; ===========================================================================
+function LLVMGetTargetFromTriple(Triple: pointer[const_char], T: pointer[pointer[void]], ErrorMessage: pointer[pointer[char]]) returns int extern
+function LLVMGetTargetFromName(Name: pointer[const_char]) returns pointer[void] extern
+function LLVMGetFirstTarget() returns pointer[void] extern
+function LLVMGetNextTarget(T: pointer[void]) returns pointer[void] extern
+
+; Target properties
+function LLVMGetTargetName(T: pointer[void]) returns pointer[const_char] extern
+function LLVMGetTargetDescription(T: pointer[void]) returns pointer[const_char] extern
+function LLVMTargetHasJIT(T: pointer[void]) returns int extern
+function LLVMTargetHasTargetMachine(T: pointer[void]) returns int extern
+function LLVMTargetHasAsmBackend(T: pointer[void]) returns int extern
+
+; ===========================================================================
+; Target Machine Creation
+; ===========================================================================
+; Code generation optimization level
+define LLVMCodeGenLevelNone: int 0
+define LLVMCodeGenLevelLess: int 1
+define LLVMCodeGenLevelDefault: int 2
+define LLVMCodeGenLevelAggressive: int 3
+
+; Relocation mode
+define LLVMRelocDefault: int 0
+define LLVMRelocStatic: int 1
+define LLVMRelocPIC: int 2
+define LLVMRelocDynamicNoPic: int 3
+define LLVMRelocROPI: int 4
+define LLVMRelocRWPI: int 5
+define LLVMRelocROPI_RWPI: int 6
+
+; Code model
+define LLVMCodeModelDefault: int 0
+define LLVMCodeModelJITDefault: int 1
+define LLVMCodeModelTiny: int 2
+define LLVMCodeModelSmall: int 3
+define LLVMCodeModelKernel: int 4
+define LLVMCodeModelMedium: int 5
+define LLVMCodeModelLarge: int 6
+
+function LLVMCreateTargetMachine(T: pointer[void], Triple: pointer[const_char], CPU: pointer[const_char], Features: pointer[const_char], Level: int, Reloc: int, CodeModel: int) returns pointer[void] extern
+function LLVMDisposeTargetMachine(T: pointer[void]) extern
+
+; Target machine properties
+function LLVMGetTargetMachineTarget(T: pointer[void]) returns pointer[void] extern
+function LLVMGetTargetMachineTriple(T: pointer[void]) returns pointer[char] extern
+function LLVMGetTargetMachineCPU(T: pointer[void]) returns pointer[char] extern
+function LLVMGetTargetMachineFeatureString(T: pointer[void]) returns pointer[char] extern
+
+; ===========================================================================
+; Target Data Layout
+; ===========================================================================
+function LLVMCreateTargetDataLayout(T: pointer[void]) returns pointer[void] extern
+function LLVMDisposeTargetData(TD: pointer[void]) extern
+function LLVMCopyStringRepOfTargetData(TD: pointer[void]) returns pointer[char] extern
+
+; Data layout from module
+function LLVMGetModuleDataLayout(M: pointer[void]) returns pointer[void] extern
+function LLVMSetModuleDataLayout(M: pointer[void], DL: pointer[void]) extern
+
+; Size/alignment queries
+function LLVMSizeOfTypeInBits(TD: pointer[void], Ty: pointer[void]) returns i64 extern
+function LLVMStoreSizeOfType(TD: pointer[void], Ty: pointer[void]) returns i64 extern
+function LLVMABISizeOfType(TD: pointer[void], Ty: pointer[void]) returns i64 extern
+function LLVMABIAlignmentOfType(TD: pointer[void], Ty: pointer[void]) returns int extern
+function LLVMCallFrameAlignmentOfType(TD: pointer[void], Ty: pointer[void]) returns int extern
+function LLVMPreferredAlignmentOfType(TD: pointer[void], Ty: pointer[void]) returns int extern
+function LLVMPreferredAlignmentOfGlobal(TD: pointer[void], GlobalVar: pointer[void]) returns int extern
+function LLVMPointerSize(TD: pointer[void]) returns int extern
+function LLVMPointerSizeForAS(TD: pointer[void], AS: int) returns int extern
+
+; Offset queries
+function LLVMOffsetOfElement(TD: pointer[void], StructTy: pointer[void], Element: int) returns i64 extern
+function LLVMElementAtOffset(TD: pointer[void], StructTy: pointer[void], Offset: i64) returns int extern
+
+; ===========================================================================
+; Code Emission
+; ===========================================================================
+; File type for emission
+define LLVMAssemblyFile: int 0
+define LLVMObjectFile: int 1
+
+function LLVMTargetMachineEmitToFile(T: pointer[void], M: pointer[void], Filename: pointer[const_char], codegen: int, ErrorMessage: pointer[pointer[char]]) returns int extern
+function LLVMTargetMachineEmitToMemoryBuffer(T: pointer[void], M: pointer[void], codegen: int, ErrorMessage: pointer[pointer[char]], OutMemBuf: pointer[pointer[void]]) returns int extern
+
+; ===========================================================================
+; Memory Buffer Operations
+; ===========================================================================
+function LLVMCreateMemoryBufferWithContentsOfFile(Path: pointer[const_char], OutMemBuf: pointer[pointer[void]], OutMessage: pointer[pointer[char]]) returns int extern
+function LLVMCreateMemoryBufferWithSTDIN(OutMemBuf: pointer[pointer[void]], OutMessage: pointer[pointer[char]]) returns int extern
+function LLVMCreateMemoryBufferWithMemoryRange(InputData: pointer[const_char], InputDataLength: size_t, BufferName: pointer[const_char], RequiresNullTerminator: int) returns pointer[void] extern
+function LLVMCreateMemoryBufferWithMemoryRangeCopy(InputData: pointer[const_char], InputDataLength: size_t, BufferName: pointer[const_char]) returns pointer[void] extern
+function LLVMGetBufferStart(MemBuf: pointer[void]) returns pointer[const_char] extern
+function LLVMGetBufferSize(MemBuf: pointer[void]) returns size_t extern
+function LLVMDisposeMemoryBuffer(MemBuf: pointer[void]) extern
+
+; ===========================================================================
+; Bitcode Operations
+; ===========================================================================
+function LLVMWriteBitcodeToFile(M: pointer[void], Path: pointer[const_char]) returns int extern
+function LLVMWriteBitcodeToMemoryBuffer(M: pointer[void]) returns pointer[void] extern
+
+function LLVMParseBitcode2(MemBuf: pointer[void], OutModule: pointer[pointer[void]]) returns int extern
+function LLVMParseBitcodeInContext2(ContextRef: pointer[void], MemBuf: pointer[void], OutModule: pointer[pointer[void]]) returns int extern
+function LLVMGetBitcodeModuleInContext2(ContextRef: pointer[void], MemBuf: pointer[void], OutM: pointer[pointer[void]]) returns int extern
+
+; ===========================================================================
+; Pass Manager (for optimization)
+; ===========================================================================
+function LLVMCreatePassManager() returns pointer[void] extern
+function LLVMCreateFunctionPassManagerForModule(M: pointer[void]) returns pointer[void] extern
+function LLVMRunPassManager(PM: pointer[void], M: pointer[void]) returns int extern
+function LLVMInitializeFunctionPassManager(FPM: pointer[void]) returns int extern
+function LLVMRunFunctionPassManager(FPM: pointer[void], F: pointer[void]) returns int extern
+function LLVMFinalizeFunctionPassManager(FPM: pointer[void]) returns int extern
+function LLVMDisposePassManager(PM: pointer[void]) extern
+
+; ===========================================================================
+; Pass Manager Builder (for configuring optimization levels)
+; ===========================================================================
+function LLVMPassManagerBuilderCreate() returns pointer[void] extern
+function LLVMPassManagerBuilderDispose(PMB: pointer[void]) extern
+function LLVMPassManagerBuilderSetOptLevel(PMB: pointer[void], OptLevel: int) extern
+function LLVMPassManagerBuilderSetSizeLevel(PMB: pointer[void], SizeLevel: int) extern
+function LLVMPassManagerBuilderSetDisableUnitAtATime(PMB: pointer[void], Value: int) extern
+function LLVMPassManagerBuilderSetDisableUnrollLoops(PMB: pointer[void], Value: int) extern
+function LLVMPassManagerBuilderSetDisableSimplifyLibCalls(PMB: pointer[void], Value: int) extern
+function LLVMPassManagerBuilderUseInlinerWithThreshold(PMB: pointer[void], Threshold: int) extern
+function LLVMPassManagerBuilderPopulateFunctionPassManager(PMB: pointer[void], PM: pointer[void]) extern
+function LLVMPassManagerBuilderPopulateModulePassManager(PMB: pointer[void], PM: pointer[void]) extern
+
+; ===========================================================================
+; Linking
+; ===========================================================================
+function LLVMLinkModules2(Dest: pointer[void], Src: pointer[void]) returns int extern

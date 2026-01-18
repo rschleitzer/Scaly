@@ -2309,21 +2309,43 @@ llvm::Expected<llvm::Value*> Emitter::emitOperands(const std::vector<PlannedOper
 
 llvm::Expected<llvm::Value*> Emitter::emitOperand(const PlannedOperand &Op) {
     llvm::Value *Value = nullptr;
+    bool KeepOriginalPointer = false;  // Track if we should keep the original pointer for procedure calls
+
+    // Check if we're calling a procedure on a mutable variable - if so, we need
+    // to keep the original pointer instead of loading the value
+    if (Op.MemberAccess && !Op.MemberAccess->empty()) {
+        const auto &FirstAccess = (*Op.MemberAccess)[0];
+        if (FirstAccess.IsProcedure && FirstAccess.IsZeroArgMethodCall) {
+            if (auto *Var = std::get_if<PlannedVariable>(&Op.Expr)) {
+                if (Var->IsMutable) {
+                    // For procedures on mutable variables, get the pointer directly
+                    llvm::Value *VarPtr = lookupVariable(Var->Name);
+                    if (VarPtr) {
+                        Value = VarPtr;
+                        KeepOriginalPointer = true;
+                    }
+                }
+            }
+        }
+    }
 
     // Handle constants specially since they need type info
-    if (auto *Const = std::get_if<PlannedConstant>(&Op.Expr)) {
-        Value = emitConstant(*Const, Op.ResultType);
-    } else {
-        auto ExprResult = emitExpression(Op.Expr);
-        if (!ExprResult)
-            return ExprResult.takeError();
-        Value = *ExprResult;
+    if (!Value) {
+        if (auto *Const = std::get_if<PlannedConstant>(&Op.Expr)) {
+            Value = emitConstant(*Const, Op.ResultType);
+        } else {
+            auto ExprResult = emitExpression(Op.Expr);
+            if (!ExprResult)
+                return ExprResult.takeError();
+            Value = *ExprResult;
+        }
     }
 
     // Apply member access chain if present
     if (Op.MemberAccess && !Op.MemberAccess->empty() && Value) {
         // If Value is a pointer to a struct, we need to load it first for extractvalue
-        if (Value->getType()->isPointerTy()) {
+        // UNLESS we're keeping the original pointer for a procedure call
+        if (Value->getType()->isPointerTy() && !KeepOriginalPointer) {
             // Get the type to load based on the expression type
             PlannedType BaseType;
             if (auto *Var = std::get_if<PlannedVariable>(&Op.Expr)) {
@@ -2639,6 +2661,17 @@ llvm::Expected<llvm::Value*> Emitter::emitCall(const PlannedCall &Call) {
                                     Args.push_back(*PtrVal);
                                     PassedPointerDirectly = true;
                                 }
+                            }
+                        }
+                    }
+                    // Check if argument is a mutable variable of struct type (not pointer type)
+                    // Pass the original alloca pointer so mutations are visible to caller
+                    else if (auto *Var = std::get_if<PlannedVariable>(&Arg.Expr)) {
+                        if (Var->IsMutable && !Var->VariableType.isPointer()) {
+                            llvm::Value *VarPtr = lookupVariable(Var->Name);
+                            if (VarPtr && VarPtr->getType()->isPointerTy()) {
+                                Args.push_back(VarPtr);
+                                PassedPointerDirectly = true;
                             }
                         }
                     }

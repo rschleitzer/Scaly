@@ -1,0 +1,201 @@
+; LLVM-C IR Builder API bindings
+; All instruction building operations
+
+; ===========================================================================
+; Builder Creation and Positioning
+; ===========================================================================
+function LLVMCreateBuilderInContext(C: pointer[void]) returns pointer[void] extern
+function LLVMCreateBuilder() returns pointer[void] extern
+function LLVMPositionBuilder(Builder: pointer[void], Block: pointer[void], Instr: pointer[void]) extern
+function LLVMPositionBuilderBefore(Builder: pointer[void], Instr: pointer[void]) extern
+function LLVMPositionBuilderAtEnd(Builder: pointer[void], Block: pointer[void]) extern
+function LLVMGetInsertBlock(Builder: pointer[void]) returns pointer[void] extern
+function LLVMClearInsertionPosition(Builder: pointer[void]) extern
+function LLVMInsertIntoBuilder(Builder: pointer[void], Instr: pointer[void]) extern
+function LLVMInsertIntoBuilderWithName(Builder: pointer[void], Instr: pointer[void], Name: pointer[const_char]) extern
+function LLVMDisposeBuilder(Builder: pointer[void]) extern
+
+; ===========================================================================
+; Terminator Instructions
+; ===========================================================================
+function LLVMBuildRetVoid(Builder: pointer[void]) returns pointer[void] extern
+function LLVMBuildRet(Builder: pointer[void], V: pointer[void]) returns pointer[void] extern
+function LLVMBuildAggregateRet(Builder: pointer[void], RetVals: pointer[pointer[void]], N: int) returns pointer[void] extern
+function LLVMBuildBr(Builder: pointer[void], Dest: pointer[void]) returns pointer[void] extern
+function LLVMBuildCondBr(Builder: pointer[void], If: pointer[void], Then: pointer[void], Else: pointer[void]) returns pointer[void] extern
+function LLVMBuildSwitch(Builder: pointer[void], V: pointer[void], Else: pointer[void], NumCases: int) returns pointer[void] extern
+function LLVMBuildIndirectBr(Builder: pointer[void], Addr: pointer[void], NumDests: int) returns pointer[void] extern
+function LLVMBuildUnreachable(Builder: pointer[void]) returns pointer[void] extern
+
+; Switch instruction helpers
+function LLVMAddCase(Switch: pointer[void], OnVal: pointer[void], Dest: pointer[void]) extern
+function LLVMAddDestination(IndirectBr: pointer[void], Dest: pointer[void]) extern
+
+; ===========================================================================
+; Arithmetic Operations - Integer
+; ===========================================================================
+function LLVMBuildAdd(Builder: pointer[void], LHS: pointer[void], RHS: pointer[void], Name: pointer[const_char]) returns pointer[void] extern
+function LLVMBuildNSWAdd(Builder: pointer[void], LHS: pointer[void], RHS: pointer[void], Name: pointer[const_char]) returns pointer[void] extern
+function LLVMBuildNUWAdd(Builder: pointer[void], LHS: pointer[void], RHS: pointer[void], Name: pointer[const_char]) returns pointer[void] extern
+function LLVMBuildSub(Builder: pointer[void], LHS: pointer[void], RHS: pointer[void], Name: pointer[const_char]) returns pointer[void] extern
+function LLVMBuildNSWSub(Builder: pointer[void], LHS: pointer[void], RHS: pointer[void], Name: pointer[const_char]) returns pointer[void] extern
+function LLVMBuildNUWSub(Builder: pointer[void], LHS: pointer[void], RHS: pointer[void], Name: pointer[const_char]) returns pointer[void] extern
+function LLVMBuildMul(Builder: pointer[void], LHS: pointer[void], RHS: pointer[void], Name: pointer[const_char]) returns pointer[void] extern
+function LLVMBuildNSWMul(Builder: pointer[void], LHS: pointer[void], RHS: pointer[void], Name: pointer[const_char]) returns pointer[void] extern
+function LLVMBuildNUWMul(Builder: pointer[void], LHS: pointer[void], RHS: pointer[void], Name: pointer[const_char]) returns pointer[void] extern
+function LLVMBuildUDiv(Builder: pointer[void], LHS: pointer[void], RHS: pointer[void], Name: pointer[const_char]) returns pointer[void] extern
+function LLVMBuildExactUDiv(Builder: pointer[void], LHS: pointer[void], RHS: pointer[void], Name: pointer[const_char]) returns pointer[void] extern
+function LLVMBuildSDiv(Builder: pointer[void], LHS: pointer[void], RHS: pointer[void], Name: pointer[const_char]) returns pointer[void] extern
+function LLVMBuildExactSDiv(Builder: pointer[void], LHS: pointer[void], RHS: pointer[void], Name: pointer[const_char]) returns pointer[void] extern
+function LLVMBuildURem(Builder: pointer[void], LHS: pointer[void], RHS: pointer[void], Name: pointer[const_char]) returns pointer[void] extern
+function LLVMBuildSRem(Builder: pointer[void], LHS: pointer[void], RHS: pointer[void], Name: pointer[const_char]) returns pointer[void] extern
+function LLVMBuildNeg(Builder: pointer[void], V: pointer[void], Name: pointer[const_char]) returns pointer[void] extern
+function LLVMBuildNSWNeg(Builder: pointer[void], V: pointer[void], Name: pointer[const_char]) returns pointer[void] extern
+function LLVMBuildNUWNeg(Builder: pointer[void], V: pointer[void], Name: pointer[const_char]) returns pointer[void] extern
+
+; ===========================================================================
+; Arithmetic Operations - Floating Point
+; ===========================================================================
+function LLVMBuildFAdd(Builder: pointer[void], LHS: pointer[void], RHS: pointer[void], Name: pointer[const_char]) returns pointer[void] extern
+function LLVMBuildFSub(Builder: pointer[void], LHS: pointer[void], RHS: pointer[void], Name: pointer[const_char]) returns pointer[void] extern
+function LLVMBuildFMul(Builder: pointer[void], LHS: pointer[void], RHS: pointer[void], Name: pointer[const_char]) returns pointer[void] extern
+function LLVMBuildFDiv(Builder: pointer[void], LHS: pointer[void], RHS: pointer[void], Name: pointer[const_char]) returns pointer[void] extern
+function LLVMBuildFRem(Builder: pointer[void], LHS: pointer[void], RHS: pointer[void], Name: pointer[const_char]) returns pointer[void] extern
+function LLVMBuildFNeg(Builder: pointer[void], V: pointer[void], Name: pointer[const_char]) returns pointer[void] extern
+
+; ===========================================================================
+; Bitwise Operations
+; ===========================================================================
+function LLVMBuildShl(Builder: pointer[void], LHS: pointer[void], RHS: pointer[void], Name: pointer[const_char]) returns pointer[void] extern
+function LLVMBuildLShr(Builder: pointer[void], LHS: pointer[void], RHS: pointer[void], Name: pointer[const_char]) returns pointer[void] extern
+function LLVMBuildAShr(Builder: pointer[void], LHS: pointer[void], RHS: pointer[void], Name: pointer[const_char]) returns pointer[void] extern
+function LLVMBuildAnd(Builder: pointer[void], LHS: pointer[void], RHS: pointer[void], Name: pointer[const_char]) returns pointer[void] extern
+function LLVMBuildOr(Builder: pointer[void], LHS: pointer[void], RHS: pointer[void], Name: pointer[const_char]) returns pointer[void] extern
+function LLVMBuildXor(Builder: pointer[void], LHS: pointer[void], RHS: pointer[void], Name: pointer[const_char]) returns pointer[void] extern
+function LLVMBuildNot(Builder: pointer[void], V: pointer[void], Name: pointer[const_char]) returns pointer[void] extern
+
+; ===========================================================================
+; Memory Operations
+; ===========================================================================
+function LLVMBuildMalloc(Builder: pointer[void], Ty: pointer[void], Name: pointer[const_char]) returns pointer[void] extern
+function LLVMBuildArrayMalloc(Builder: pointer[void], Ty: pointer[void], Val: pointer[void], Name: pointer[const_char]) returns pointer[void] extern
+function LLVMBuildMemSet(Builder: pointer[void], Ptr: pointer[void], Val: pointer[void], Len: pointer[void], Align: int) returns pointer[void] extern
+function LLVMBuildMemCpy(Builder: pointer[void], Dst: pointer[void], DstAlign: int, Src: pointer[void], SrcAlign: int, Size: pointer[void]) returns pointer[void] extern
+function LLVMBuildMemMove(Builder: pointer[void], Dst: pointer[void], DstAlign: int, Src: pointer[void], SrcAlign: int, Size: pointer[void]) returns pointer[void] extern
+function LLVMBuildAlloca(Builder: pointer[void], Ty: pointer[void], Name: pointer[const_char]) returns pointer[void] extern
+function LLVMBuildArrayAlloca(Builder: pointer[void], Ty: pointer[void], Val: pointer[void], Name: pointer[const_char]) returns pointer[void] extern
+function LLVMBuildFree(Builder: pointer[void], PointerVal: pointer[void]) returns pointer[void] extern
+function LLVMBuildLoad2(Builder: pointer[void], Ty: pointer[void], PointerVal: pointer[void], Name: pointer[const_char]) returns pointer[void] extern
+function LLVMBuildStore(Builder: pointer[void], Val: pointer[void], Ptr: pointer[void]) returns pointer[void] extern
+
+; ===========================================================================
+; GetElementPtr (GEP) Operations
+; ===========================================================================
+function LLVMBuildGEP2(Builder: pointer[void], Ty: pointer[void], Pointer: pointer[void], Indices: pointer[pointer[void]], NumIndices: int, Name: pointer[const_char]) returns pointer[void] extern
+function LLVMBuildInBoundsGEP2(Builder: pointer[void], Ty: pointer[void], Pointer: pointer[void], Indices: pointer[pointer[void]], NumIndices: int, Name: pointer[const_char]) returns pointer[void] extern
+function LLVMBuildStructGEP2(Builder: pointer[void], Ty: pointer[void], Pointer: pointer[void], Idx: int, Name: pointer[const_char]) returns pointer[void] extern
+
+; ===========================================================================
+; Cast Operations
+; ===========================================================================
+function LLVMBuildTrunc(Builder: pointer[void], Val: pointer[void], DestTy: pointer[void], Name: pointer[const_char]) returns pointer[void] extern
+function LLVMBuildZExt(Builder: pointer[void], Val: pointer[void], DestTy: pointer[void], Name: pointer[const_char]) returns pointer[void] extern
+function LLVMBuildSExt(Builder: pointer[void], Val: pointer[void], DestTy: pointer[void], Name: pointer[const_char]) returns pointer[void] extern
+function LLVMBuildFPToUI(Builder: pointer[void], Val: pointer[void], DestTy: pointer[void], Name: pointer[const_char]) returns pointer[void] extern
+function LLVMBuildFPToSI(Builder: pointer[void], Val: pointer[void], DestTy: pointer[void], Name: pointer[const_char]) returns pointer[void] extern
+function LLVMBuildUIToFP(Builder: pointer[void], Val: pointer[void], DestTy: pointer[void], Name: pointer[const_char]) returns pointer[void] extern
+function LLVMBuildSIToFP(Builder: pointer[void], Val: pointer[void], DestTy: pointer[void], Name: pointer[const_char]) returns pointer[void] extern
+function LLVMBuildFPTrunc(Builder: pointer[void], Val: pointer[void], DestTy: pointer[void], Name: pointer[const_char]) returns pointer[void] extern
+function LLVMBuildFPExt(Builder: pointer[void], Val: pointer[void], DestTy: pointer[void], Name: pointer[const_char]) returns pointer[void] extern
+function LLVMBuildPtrToInt(Builder: pointer[void], Val: pointer[void], DestTy: pointer[void], Name: pointer[const_char]) returns pointer[void] extern
+function LLVMBuildIntToPtr(Builder: pointer[void], Val: pointer[void], DestTy: pointer[void], Name: pointer[const_char]) returns pointer[void] extern
+function LLVMBuildBitCast(Builder: pointer[void], Val: pointer[void], DestTy: pointer[void], Name: pointer[const_char]) returns pointer[void] extern
+function LLVMBuildAddrSpaceCast(Builder: pointer[void], Val: pointer[void], DestTy: pointer[void], Name: pointer[const_char]) returns pointer[void] extern
+function LLVMBuildZExtOrBitCast(Builder: pointer[void], Val: pointer[void], DestTy: pointer[void], Name: pointer[const_char]) returns pointer[void] extern
+function LLVMBuildSExtOrBitCast(Builder: pointer[void], Val: pointer[void], DestTy: pointer[void], Name: pointer[const_char]) returns pointer[void] extern
+function LLVMBuildTruncOrBitCast(Builder: pointer[void], Val: pointer[void], DestTy: pointer[void], Name: pointer[const_char]) returns pointer[void] extern
+function LLVMBuildPointerCast(Builder: pointer[void], Val: pointer[void], DestTy: pointer[void], Name: pointer[const_char]) returns pointer[void] extern
+function LLVMBuildIntCast2(Builder: pointer[void], Val: pointer[void], DestTy: pointer[void], IsSigned: int, Name: pointer[const_char]) returns pointer[void] extern
+function LLVMBuildFPCast(Builder: pointer[void], Val: pointer[void], DestTy: pointer[void], Name: pointer[const_char]) returns pointer[void] extern
+
+; ===========================================================================
+; Comparison Operations
+; ===========================================================================
+
+; Integer comparison predicates
+define LLVMIntEQ: int 32   ; equal
+define LLVMIntNE: int 33   ; not equal
+define LLVMIntUGT: int 34  ; unsigned greater than
+define LLVMIntUGE: int 35  ; unsigned greater or equal
+define LLVMIntULT: int 36  ; unsigned less than
+define LLVMIntULE: int 37  ; unsigned less or equal
+define LLVMIntSGT: int 38  ; signed greater than
+define LLVMIntSGE: int 39  ; signed greater or equal
+define LLVMIntSLT: int 40  ; signed less than
+define LLVMIntSLE: int 41  ; signed less or equal
+
+; Floating-point comparison predicates
+define LLVMRealPredicateFalse: int 0   ; always false
+define LLVMRealOEQ: int 1   ; ordered and equal
+define LLVMRealOGT: int 2   ; ordered and greater than
+define LLVMRealOGE: int 3   ; ordered and greater or equal
+define LLVMRealOLT: int 4   ; ordered and less than
+define LLVMRealOLE: int 5   ; ordered and less or equal
+define LLVMRealONE: int 6   ; ordered and not equal
+define LLVMRealORD: int 7   ; ordered (no nans)
+define LLVMRealUNO: int 8   ; unordered (either nans)
+define LLVMRealUEQ: int 9   ; unordered or equal
+define LLVMRealUGT: int 10  ; unordered or greater than
+define LLVMRealUGE: int 11  ; unordered or greater or equal
+define LLVMRealULT: int 12  ; unordered or less than
+define LLVMRealULE: int 13  ; unordered or less or equal
+define LLVMRealUNE: int 14  ; unordered or not equal
+define LLVMRealPredicateTrue: int 15   ; always true
+
+function LLVMBuildICmp(Builder: pointer[void], Op: int, LHS: pointer[void], RHS: pointer[void], Name: pointer[const_char]) returns pointer[void] extern
+function LLVMBuildFCmp(Builder: pointer[void], Op: int, LHS: pointer[void], RHS: pointer[void], Name: pointer[const_char]) returns pointer[void] extern
+
+; ===========================================================================
+; Miscellaneous Instructions
+; ===========================================================================
+function LLVMBuildPhi(Builder: pointer[void], Ty: pointer[void], Name: pointer[const_char]) returns pointer[void] extern
+function LLVMBuildCall2(Builder: pointer[void], Ty: pointer[void], Fn: pointer[void], Args: pointer[pointer[void]], NumArgs: int, Name: pointer[const_char]) returns pointer[void] extern
+function LLVMBuildSelect(Builder: pointer[void], If: pointer[void], Then: pointer[void], Else: pointer[void], Name: pointer[const_char]) returns pointer[void] extern
+function LLVMBuildVAArg(Builder: pointer[void], List: pointer[void], Ty: pointer[void], Name: pointer[const_char]) returns pointer[void] extern
+function LLVMBuildExtractElement(Builder: pointer[void], VecVal: pointer[void], Index: pointer[void], Name: pointer[const_char]) returns pointer[void] extern
+function LLVMBuildInsertElement(Builder: pointer[void], VecVal: pointer[void], EltVal: pointer[void], Index: pointer[void], Name: pointer[const_char]) returns pointer[void] extern
+function LLVMBuildShuffleVector(Builder: pointer[void], V1: pointer[void], V2: pointer[void], Mask: pointer[void], Name: pointer[const_char]) returns pointer[void] extern
+function LLVMBuildExtractValue(Builder: pointer[void], AggVal: pointer[void], Index: int, Name: pointer[const_char]) returns pointer[void] extern
+function LLVMBuildInsertValue(Builder: pointer[void], AggVal: pointer[void], EltVal: pointer[void], Index: int, Name: pointer[const_char]) returns pointer[void] extern
+function LLVMBuildFreeze(Builder: pointer[void], Val: pointer[void], Name: pointer[const_char]) returns pointer[void] extern
+
+; ===========================================================================
+; Phi Node Helpers
+; ===========================================================================
+function LLVMAddIncoming(PhiNode: pointer[void], IncomingValues: pointer[pointer[void]], IncomingBlocks: pointer[pointer[void]], Count: int) extern
+function LLVMCountIncoming(PhiNode: pointer[void]) returns int extern
+function LLVMGetIncomingValue(PhiNode: pointer[void], Index: int) returns pointer[void] extern
+function LLVMGetIncomingBlock(PhiNode: pointer[void], Index: int) returns pointer[void] extern
+
+; ===========================================================================
+; Atomic Operations (for future use)
+; ===========================================================================
+function LLVMBuildFence(Builder: pointer[void], Ordering: int, SingleThread: int, Name: pointer[const_char]) returns pointer[void] extern
+function LLVMBuildAtomicRMW(Builder: pointer[void], Op: int, Ptr: pointer[void], Val: pointer[void], Ordering: int, SingleThread: int) returns pointer[void] extern
+function LLVMBuildAtomicCmpXchg(Builder: pointer[void], Ptr: pointer[void], Cmp: pointer[void], New: pointer[void], SuccessOrdering: int, FailureOrdering: int, SingleThread: int) returns pointer[void] extern
+
+; ===========================================================================
+; Pointer Arithmetic
+; ===========================================================================
+function LLVMBuildPtrDiff2(Builder: pointer[void], ElemTy: pointer[void], LHS: pointer[void], RHS: pointer[void], Name: pointer[const_char]) returns pointer[void] extern
+
+; ===========================================================================
+; Global String Operations
+; ===========================================================================
+function LLVMBuildGlobalString(Builder: pointer[void], Str: pointer[const_char], Name: pointer[const_char]) returns pointer[void] extern
+function LLVMBuildGlobalStringPtr(Builder: pointer[void], Str: pointer[const_char], Name: pointer[const_char]) returns pointer[void] extern
+
+; ===========================================================================
+; IsA Type Checks
+; ===========================================================================
+function LLVMIsATerminatorInst(Val: pointer[void]) returns pointer[void] extern

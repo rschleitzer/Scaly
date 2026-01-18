@@ -1,0 +1,19 @@
+; AOT Test: Simple procedure mutation
+; Expected: 1
+
+define Box(value: int)
+{
+    procedure set_value(this, new_value: int)
+        set value: new_value
+
+    function get_value(this) returns int
+        value
+}
+
+var b Box(0)
+b.set_value(1)
+let v b.get_value()
+if v = 1
+    print("1")
+else
+    print("0")
