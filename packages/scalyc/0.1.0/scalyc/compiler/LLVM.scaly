@@ -66,6 +66,26 @@ define LLVMRealPredicate
     function UNE() returns int { 14 }     ; unordered or not equal
 }
 
+; LLVMTypeKind - Type kind for LLVMGetTypeKind
+define LLVMTypeKind
+{
+    function Void() returns int { 0 }
+    function Half() returns int { 1 }
+    function Float() returns int { 2 }
+    function Double() returns int { 3 }
+    function X86_FP80() returns int { 4 }
+    function FP128() returns int { 5 }
+    function PPC_FP128() returns int { 6 }
+    function Label() returns int { 7 }
+    function Integer() returns int { 8 }
+    function Function() returns int { 9 }
+    function Struct() returns int { 10 }
+    function Array() returns int { 11 }
+    function Pointer() returns int { 12 }
+    function Vector() returns int { 13 }
+    function Metadata() returns int { 14 }
+}
+
 ; LLVMLinkage - Linkage types
 define LLVMLinkage
 {
@@ -160,6 +180,7 @@ function LLVMInt16TypeInContext(context: LLVMContextRef) returns LLVMTypeRef ext
 function LLVMInt32TypeInContext(context: LLVMContextRef) returns LLVMTypeRef extern
 function LLVMInt64TypeInContext(context: LLVMContextRef) returns LLVMTypeRef extern
 function LLVMIntTypeInContext(context: LLVMContextRef, num_bits: int) returns LLVMTypeRef extern
+function LLVMGetIntTypeWidth(int_type: LLVMTypeRef) returns int extern
 
 ; Floating point types
 function LLVMFloatTypeInContext(context: LLVMContextRef) returns LLVMTypeRef extern
