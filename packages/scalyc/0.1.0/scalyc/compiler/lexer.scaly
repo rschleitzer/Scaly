@@ -1,14 +1,11 @@
 package scaly 0.1.0
 
-use scaly.memory.Page
-use scaly.containers.Array
 use scaly.containers.String
 
 define lexer
 {
     ; Literal types
     define StringLiteral(value: String)
-    define CharacterLiteral(value: String)
     define FragmentLiteral(value: String)
     define IntegerLiteral(value: String)
     define BooleanLiteral(value: bool)
@@ -17,7 +14,6 @@ define lexer
 
     define Literal union (
         String: StringLiteral,
-        Character: CharacterLiteral,
         Fragment: FragmentLiteral,
         Integer: IntegerLiteral,
         Boolean: BooleanLiteral,
@@ -44,23 +40,1061 @@ define lexer
         Literal: LiteralToken
     )
 
-    ; Minimal Lexer - just enough to test compilation
+    ; ========================================================================
+    ; Lexer - Tokenizes Scaly source code
+    ; ========================================================================
+
     define Lexer
     (
         source: String
-        current: size_t
+        current: pointer[char]
+        end: pointer[char]
+        position: size_t
+        previous_position: size_t
+        token: Token
     )
     {
-        init (source: String)
+        init (src: String)
         {
-            set this.source: source
-            set current: 0
+            set source: src
+            if src.length = 0
+            {
+                set current: null
+                set end: null
+            }
+            else
+            {
+                set current: src.get_buffer()
+                set end: src.get_buffer() + src.length
+            }
+            set position: 0
+            set previous_position: 0
+            set token: Token.Empty(EmptyToken())
+            if current <> null
+                skip_whitespace(true)
+        }
+
+        procedure read_character(this)
+        {
+            if current = null
+                return
+            set current: current + 1
+            set position: position + 1
+            if current >= end
+                set current: null
+        }
+
+        procedure empty(this)
+        {
+            set token: Token.Empty(EmptyToken())
+        }
+
+        function is_at_end(this) returns bool
+            current = null
+
+        procedure advance(this)
+        {
+            set previous_position: position
+
+            if current = null
+                return
+
+            let c *current
+
+            ; Identifier: starts with letter
+            if ((c >= 97) && (c <= 122)) || ((c >= 65) && (c <= 90))  ; a-z, A-Z
+            {
+                set token: scan_identifier()
+                skip_whitespace(false)
+                return
+            }
+
+            ; Number: starts with 1-9
+            if (c >= 49) && (c <= 57)  ; '1'-'9'
+            {
+                set token: scan_integer_literal(current, 0)
+                skip_whitespace(false)
+                return
+            }
+
+            ; Operators: + - * / = % & | ~ < >
+            if (c = 43) || (c = 45) || (c = 42) || (c = 47) || (c = 61) ||
+               (c = 37) || (c = 38) || (c = 124) || (c = 126) || (c = 60) || (c = 62)
+            {
+                set token: scan_operator()
+                skip_whitespace(false)
+                return
+            }
+
+            ; Punctuation (no linefeed skip): } ) ] . ? ! $ # ^
+            if (c = 125) || (c = 41) || (c = 93) || (c = 46) ||
+               (c = 63) || (c = 33) || (c = 36) || (c = 35) || (c = 94)
+            {
+                set token: Token.Punctuation(PunctuationToken(c as u8))
+                read_character()
+                skip_whitespace(false)
+                return
+            }
+
+            ; Punctuation (with linefeed skip): { ( [ ,
+            if (c = 123) || (c = 40) || (c = 91) || (c = 44)
+            {
+                set token: Token.Punctuation(PunctuationToken(c as u8))
+                read_character()
+                skip_whitespace(true)
+                return
+            }
+
+            ; Newline
+            if c = 10  ; '\n'
+            {
+                set token: scan_line_feed()
+                skip_whitespace(false)
+                return
+            }
+
+            ; Colon
+            if c = 58  ; ':'
+            {
+                read_character()
+                set token: Token.Colon(ColonToken())
+                skip_whitespace(false)
+                return
+            }
+
+            ; Numeric literal starting with 0
+            if c = 48  ; '0'
+            {
+                set token: scan_numeric_literal()
+                skip_whitespace(false)
+                return
+            }
+
+            ; Attribute
+            if c = 64  ; '@'
+            {
+                read_character()
+                set token: scan_attribute()
+                skip_whitespace(false)
+                return
+            }
+
+            ; String literal
+            if c = 34  ; '"'
+            {
+                set token: scan_string_literal()
+                skip_whitespace(false)
+                return
+            }
+
+            ; String identifier (freeform identifier)
+            if c = 39  ; '\''
+            {
+                set token: scan_string_identifier()
+                skip_whitespace(false)
+                return
+            }
+
+            ; Fragment literal
+            if c = 96  ; '`'
+            {
+                set token: scan_fragment_literal()
+                skip_whitespace(false)
+                return
+            }
+
+            ; Invalid token
+            set token: Token.Invalid(InvalidToken())
+            skip_whitespace(false)
+        }
+
+        function scan_line_feed(this) returns Token
+        {
+            ; We just saw a \n, advance past it
+            read_character()
+
+            while true
+            {
+                skip_whitespace(false)
+                if current = null
+                    return Token.Colon(ColonToken())
+
+                let c *current
+
+                if c = 10  ; '\n'
+                {
+                    read_character()
+                    continue
+                }
+
+                ; Skip comments and continue collapsing linefeeds
+                if c = 59  ; ';'
+                {
+                    read_character()
+                    if (current <> null) && (*current = 42)  ; '*'
+                    {
+                        read_character()
+                        handle_multi_line_comment()
+                    }
+                    else
+                        handle_single_line_comment()
+                    continue
+                }
+
+                return Token.Colon(ColonToken())
+            }
+        }
+
+        function scan_identifier(this) returns Token
+        {
+            let start current
+            var length: size_t 0
+
+            while true
+            {
+                if current = null
+                {
+                    if length = 0
+                        return Token.Invalid(InvalidToken())
+                    return Token.Identifier(IdentifierToken(String$(start, length)))
+                }
+
+                let c *current
+                if ((c >= 97) && (c <= 122)) ||   ; a-z
+                   ((c >= 65) && (c <= 90)) ||    ; A-Z
+                   ((c >= 48) && (c <= 57)) ||    ; 0-9
+                   (c = 95)                        ; _
+                {
+                    read_character()
+                    set length: length + 1
+                }
+                else
+                    return Token.Identifier(IdentifierToken(String$(start, length)))
+            }
+        }
+
+        function scan_attribute(this) returns Token
+        {
+            let start current
+            var length: size_t 0
+
+            while true
+            {
+                if current = null
+                {
+                    if length = 0
+                        return Token.Invalid(InvalidToken())
+                    return Token.Attribute(AttributeToken(String$(start, length)))
+                }
+
+                let c *current
+                if ((c >= 97) && (c <= 122)) ||   ; a-z
+                   ((c >= 65) && (c <= 90)) ||    ; A-Z
+                   ((c >= 48) && (c <= 57)) ||    ; 0-9
+                   (c = 95)                        ; _
+                {
+                    read_character()
+                    set length: length + 1
+                }
+                else
+                    return Token.Attribute(AttributeToken(String$(start, length)))
+            }
+        }
+
+        function scan_operator(this) returns Token
+        {
+            let start current
+            var length: size_t 0
+
+            while true
+            {
+                read_character()
+                set length: length + 1
+
+                if current = null
+                {
+                    if length = 1
+                        return Token.Invalid(InvalidToken())
+                    return Token.Identifier(IdentifierToken(String$(start, length)))
+                }
+
+                let c *current
+                ; + - * / = % & | ^ ~ < >
+                if (c = 43) || (c = 45) || (c = 42) || (c = 47) || (c = 61) ||
+                   (c = 37) || (c = 38) || (c = 124) || (c = 94) || (c = 126) ||
+                   (c = 60) || (c = 62)
+                    continue
+                else
+                    return Token.Identifier(IdentifierToken(String$(start, length)))
+            }
+        }
+
+        function scan_string_literal(this) returns Token
+        {
+            let start current + 1
+            var length: size_t 0
+
+            while true
+            {
+                read_character()
+                set length: length + 1
+
+                if current = null
+                    return Token.Invalid(InvalidToken())
+
+                let c *current
+
+                if c = 34  ; '"' - end of string
+                {
+                    read_character()
+                    return Token.Literal(LiteralToken(Literal.String(StringLiteral(String$(start, length - 1)))))
+                }
+
+                if c = 92  ; '\\' - escape sequence
+                {
+                    read_character()
+                    set length: length + 1
+                    if current = null
+                        return Token.Invalid(InvalidToken())
+
+                    let e *current
+                    ; Valid escapes: " \ ' n r t 0 u
+                    if (e = 34) || (e = 92) || (e = 39) || (e = 110) ||
+                       (e = 114) || (e = 116) || (e = 48)
+                        continue
+
+                    if e = 117  ; 'u' - unicode escape \uXXXX
+                    {
+                        var i 0
+                        while i < 4
+                        {
+                            read_character()
+                            set length: length + 1
+                            if current = null
+                                return Token.Invalid(InvalidToken())
+                            let h *current
+                            if ~(((h >= 48) && (h <= 57)) ||    ; 0-9
+                                 ((h >= 97) && (h <= 102)) ||   ; a-f
+                                 ((h >= 65) && (h <= 70)))      ; A-F
+                                return Token.Invalid(InvalidToken())
+                            set i: i + 1
+                        }
+                        continue
+                    }
+
+                    return Token.Invalid(InvalidToken())
+                }
+            }
+        }
+
+        ; Single-quoted strings are freeform identifiers (like SQL's 'column name')
+        function scan_string_identifier(this) returns Token
+        {
+            let start current + 1
+            var length: size_t 0
+
+            while true
+            {
+                read_character()
+                set length: length + 1
+
+                if current = null
+                    return Token.Invalid(InvalidToken())
+
+                let c *current
+
+                if c = 39  ; '\'' - end of string identifier
+                {
+                    read_character()
+                    return Token.Identifier(IdentifierToken(String$(start, length - 1)))
+                }
+
+                if c = 92  ; '\\' - escape sequence
+                {
+                    read_character()
+                    set length: length + 1
+                    if current = null
+                        return Token.Invalid(InvalidToken())
+
+                    let e *current
+                    ; Valid escapes: " \ ' n r t 0 u
+                    if (e = 34) || (e = 92) || (e = 39) || (e = 110) ||
+                       (e = 114) || (e = 116) || (e = 48)
+                        continue
+
+                    if e = 117  ; 'u' - unicode escape \uXXXX
+                    {
+                        var i 0
+                        while i < 4
+                        {
+                            read_character()
+                            set length: length + 1
+                            if current = null
+                                return Token.Invalid(InvalidToken())
+                            let h *current
+                            if ~(((h >= 48) && (h <= 57)) ||
+                                 ((h >= 97) && (h <= 102)) ||
+                                 ((h >= 65) && (h <= 70)))
+                                return Token.Invalid(InvalidToken())
+                            set i: i + 1
+                        }
+                        continue
+                    }
+
+                    return Token.Invalid(InvalidToken())
+                }
+            }
+        }
+
+        function scan_fragment_literal(this) returns Token
+        {
+            let start current + 1
+            var length: size_t 0
+
+            while true
+            {
+                read_character()
+                set length: length + 1
+
+                if current = null
+                    return Token.Invalid(InvalidToken())
+
+                let c *current
+
+                if c = 96  ; '`' - end of fragment
+                {
+                    read_character()
+                    return Token.Literal(LiteralToken(Literal.Fragment(FragmentLiteral(String$(start, length - 1)))))
+                }
+
+                if c = 92  ; '\\' - escape sequence
+                {
+                    read_character()
+                    set length: length + 1
+                    if current = null
+                        return Token.Invalid(InvalidToken())
+
+                    let e *current
+                    ; Valid escapes: ` \ ' n r t 0
+                    if (e = 96) || (e = 92) || (e = 39) || (e = 110) ||
+                       (e = 114) || (e = 116) || (e = 48)
+                        continue
+
+                    return Token.Invalid(InvalidToken())
+                }
+            }
+        }
+
+        function scan_numeric_literal(this) returns Token
+        {
+            let start current
+            var length: size_t 0
+
+            read_character()
+            set length: length + 1
+
+            if current = null
+                return Token.Literal(LiteralToken(Literal.Integer(IntegerLiteral(String$(start, length)))))
+
+            let c *current
+
+            if (c >= 48) && (c <= 57)  ; '0'-'9'
+                return scan_integer_literal(start, length)
+
+            if c = 46  ; '.'
+                return scan_fraction(start, length)
+
+            if (c = 69) || (c = 101)  ; 'E' or 'e'
+                return scan_exponent(start, length)
+
+            if c = 120  ; 'x'
+                return scan_hex_literal(start, length)
+
+            if c = 66  ; 'B'
+                return scan_boolean_literal()
+
+            return Token.Literal(LiteralToken(Literal.Integer(IntegerLiteral(String$(start, length)))))
+        }
+
+        function scan_integer_literal(this, start: pointer[char], initial_length: size_t) returns Token
+        {
+            var length initial_length
+
+            while true
+            {
+                read_character()
+                set length: length + 1
+
+                if current = null
+                    return Token.Literal(LiteralToken(Literal.Integer(IntegerLiteral(String$(start, length)))))
+
+                let c *current
+
+                if (c >= 48) && (c <= 57)  ; '0'-'9'
+                    continue
+
+                if c = 46  ; '.'
+                    return scan_fraction(start, length)
+
+                if (c = 69) || (c = 101)  ; 'E' or 'e'
+                    return scan_exponent(start, length)
+
+                return Token.Literal(LiteralToken(Literal.Integer(IntegerLiteral(String$(start, length)))))
+            }
+        }
+
+        function scan_fraction(this, start: pointer[char], initial_length: size_t) returns Token
+        {
+            var length initial_length
+
+            while true
+            {
+                read_character()
+                set length: length + 1
+
+                if current = null
+                    return Token.Literal(LiteralToken(Literal.FloatingPoint(FloatingPointLiteral(String$(start, length)))))
+
+                let c *current
+
+                if (c >= 48) && (c <= 57)  ; '0'-'9'
+                    continue
+
+                if (c = 69) || (c = 101)  ; 'E' or 'e'
+                    return scan_exponent(start, length)
+
+                return Token.Literal(LiteralToken(Literal.FloatingPoint(FloatingPointLiteral(String$(start, length)))))
+            }
+        }
+
+        function scan_exponent(this, start: pointer[char], initial_length: size_t) returns Token
+        {
+            var length initial_length
+
+            while true
+            {
+                read_character()
+                set length: length + 1
+
+                if current = null
+                    return Token.Literal(LiteralToken(Literal.FloatingPoint(FloatingPointLiteral(String$(start, length)))))
+
+                let c *current
+
+                if (c >= 48) && (c <= 57)  ; '0'-'9'
+                    continue
+
+                return Token.Literal(LiteralToken(Literal.FloatingPoint(FloatingPointLiteral(String$(start, length)))))
+            }
+        }
+
+        function scan_hex_literal(this, start: pointer[char], initial_length: size_t) returns Token
+        {
+            var length initial_length
+
+            while true
+            {
+                read_character()
+                set length: length + 1
+
+                if current = null
+                    return Token.Literal(LiteralToken(Literal.Hex(HexLiteral(String$(start, length)))))
+
+                let c *current
+
+                if ((c >= 48) && (c <= 57)) ||   ; 0-9
+                   ((c >= 65) && (c <= 70)) ||   ; A-F
+                   ((c >= 97) && (c <= 102))     ; a-f
+                    continue
+
+                return Token.Literal(LiteralToken(Literal.Hex(HexLiteral(String$(start, length)))))
+            }
+        }
+
+        function scan_boolean_literal(this) returns Token
+        {
+            read_character()
+
+            if current = null
+                return Token.Invalid(InvalidToken())
+
+            let c *current
+
+            if (c <> 48) && (c <> 49)  ; not '0' and not '1'
+                return Token.Invalid(InvalidToken())
+
+            read_character()
+            return Token.Literal(LiteralToken(Literal.Boolean(BooleanLiteral(c = 49))))
+        }
+
+        procedure skip_whitespace(this, skip_line_feed: bool)
+        {
+            while true
+            {
+                if current = null
+                    return
+
+                let c *current
+
+                ; Space, tab, carriage return
+                if (c = 32) || (c = 9) || (c = 13)
+                {
+                    read_character()
+                    continue
+                }
+
+                ; Newline
+                if c = 10
+                {
+                    if skip_line_feed
+                    {
+                        read_character()
+                        continue
+                    }
+                    return
+                }
+
+                ; Line continuation: backslash followed by newline
+                if c = 92  ; '\'
+                {
+                    read_character()
+                    if current = null
+                        return
+                    let n *current
+                    if n = 13  ; '\r'
+                    {
+                        read_character()
+                        read_character()
+                        continue
+                    }
+                    if n = 10  ; '\n'
+                    {
+                        read_character()
+                        continue
+                    }
+                    return
+                }
+
+                ; Comment
+                if c = 59  ; ';'
+                {
+                    read_character()
+                    if current = null
+                        return
+                    if *current <> 42  ; not '*'
+                    {
+                        read_character()
+                        handle_single_line_comment()
+                    }
+                    else
+                    {
+                        read_character()
+                        handle_multi_line_comment()
+                    }
+                    continue
+                }
+
+                return
+            }
+        }
+
+        procedure handle_single_line_comment(this)
+        {
+            while true
+            {
+                if current = null
+                    return
+                if *current = 10  ; '\n'
+                {
+                    ; Don't consume the newline - leave it for scan_line_feed to generate ColonToken
+                    return
+                }
+                read_character()
+            }
+        }
+
+        procedure handle_multi_line_comment(this)
+        {
+            while true
+            {
+                if current = null
+                    return
+
+                let c *current
+
+                if c = 59  ; ';'
+                {
+                    read_character()
+                    if current = null
+                        return
+                    if *current = 42  ; '*' - nested comment
+                    {
+                        read_character()
+                        handle_multi_line_comment()
+                    }
+                    continue
+                }
+
+                if c = 42  ; '*'
+                {
+                    read_character()
+                    if current = null
+                        return
+                    if *current = 59  ; ';' - end of comment
+                    {
+                        read_character()
+                        return
+                    }
+                    continue
+                }
+
+                read_character()
+            }
+        }
+
+        ; Parser helper: parse keyword
+        function parse_keyword(this, keyword: String) returns bool
+        {
+            choose token
+                when e: Empty
+                    advance()
+                else {}
+
+            choose token
+                when ident: Identifier
+                {
+                    if ident.name.equals(keyword)
+                    {
+                        empty()
+                        return true
+                    }
+                }
+                else {}
+
+            false
+        }
+
+        ; Parser helper: parse identifier, returns empty string if not found
+        function parse_identifier#(page, this) returns String
+        {
+            choose token
+                when e: Empty
+                    advance()
+                else {}
+
+            choose token
+                when ident: Identifier
+                {
+                    let name String^page(ident.name.get_buffer(), ident.name.length)
+                    empty()
+                    return name
+                }
+                else {}
+
+            String^page("", 0)
+        }
+
+        ; Parser helper: peek identifier without consuming
+        function peek_identifier#(page, this) returns String
+        {
+            choose token
+                when e: Empty
+                    advance()
+                else {}
+
+            choose token
+                when ident: Identifier
+                    return String^page(ident.name.get_buffer(), ident.name.length)
+                else {}
+
+            String^page("", 0)
+        }
+
+        ; Parser helper: parse attribute
+        function parse_attribute#(page, this) returns String
+        {
+            choose token
+                when e: Empty
+                    advance()
+                else {}
+
+            choose token
+                when attr: Attribute
+                {
+                    let name String^page(attr.name.get_buffer(), attr.name.length)
+                    empty()
+                    return name
+                }
+                else {}
+
+            String^page("", 0)
+        }
+
+        ; Parser helper: parse punctuation
+        function parse_punctuation(this, c: u8) returns bool
+        {
+            choose token
+                when e: Empty
+                    advance()
+                else {}
+
+            choose token
+                when punct: Punctuation
+                {
+                    if punct.sign = c
+                    {
+                        empty()
+                        return true
+                    }
+                }
+                else {}
+
+            false
+        }
+
+        ; Parser helper: parse colon
+        function parse_colon(this) returns bool
+        {
+            choose token
+                when e: Empty
+                    advance()
+                else {}
+
+            choose token
+                when c: Colon
+                {
+                    empty()
+                    return true
+                }
+                when e: Empty
+                {
+                    empty()
+                    return true
+                }
+                else {}
+
+            false
         }
     }
 
-    ; Main test function - minimal version
+    ; ========================================================================
+    ; Test function
+    ; ========================================================================
+
     function test() returns int
     {
+        ; Test 1: Empty input
+        {
+            var lexer Lexer(String$(""))
+            choose lexer.token
+                when e: Empty {}
+                else
+                    return 1
+            if lexer.is_at_end() = false
+                return 2
+        }
+
+        ; Test 2: Identifier
+        {
+            var lexer Lexer(String$("abc_123"))
+            lexer.advance()
+            choose lexer.token
+                when ident: Identifier
+                {
+                    if ident.name.equals(String$("abc_123")) = false
+                        return 3
+                }
+                else
+                    return 4
+        }
+
+        ; Test 3: Integer literal
+        {
+            var lexer Lexer(String$("42"))
+            lexer.advance()
+            choose lexer.token
+                when lit: Literal
+                {
+                    choose lit.value
+                        when i: Integer
+                        {
+                            if i.value.equals(String$("42")) = false
+                                return 5
+                        }
+                        else
+                            return 6
+                }
+                else
+                    return 7
+        }
+
+        ; Test 4: Colon from newline
+        {
+            var lexer Lexer(String$("a\nb"))
+            lexer.advance()  ; 'a'
+            lexer.advance()  ; newline -> colon
+            choose lexer.token
+                when c: Colon {}
+                else
+                    return 8
+        }
+
+        ; Test 5: Single-line comment (doesn't swallow newline)
+        {
+            var lexer Lexer(String$("a;comment\nb"))
+            lexer.advance()  ; 'a'
+            lexer.advance()  ; newline -> colon (comment skipped)
+            choose lexer.token
+                when c: Colon {}
+                else
+                    return 9
+            lexer.advance()  ; 'b'
+            choose lexer.token
+                when ident: Identifier
+                {
+                    if ident.name.equals(String$("b")) = false
+                        return 10
+                }
+                else
+                    return 11
+        }
+
+        ; Test 6: String literal
+        {
+            var lexer Lexer(String$("\"hello\""))
+            lexer.advance()
+            choose lexer.token
+                when lit: Literal
+                {
+                    choose lit.value
+                        when s: String
+                        {
+                            if s.value.equals(String$("hello")) = false
+                                return 12
+                        }
+                        else
+                            return 13
+                }
+                else
+                    return 14
+        }
+
+        ; Test 7: Freeform identifier (single quotes)
+        {
+            var lexer Lexer(String$("'my identifier'"))
+            lexer.advance()
+            choose lexer.token
+                when ident: Identifier
+                {
+                    if ident.name.equals(String$("my identifier")) = false
+                        return 15
+                }
+                else
+                    return 16
+        }
+
+        ; Test 8: Hex literal
+        {
+            var lexer Lexer(String$("0xABcd"))
+            lexer.advance()
+            choose lexer.token
+                when lit: Literal
+                {
+                    choose lit.value
+                        when h: Hex
+                        {
+                            if h.value.equals(String$("0xABcd")) = false
+                                return 17
+                        }
+                        else
+                            return 18
+                }
+                else
+                    return 19
+        }
+
+        ; Test 9: Boolean literal
+        {
+            var lexer Lexer(String$("0B1"))
+            lexer.advance()
+            choose lexer.token
+                when lit: Literal
+                {
+                    choose lit.value
+                        when b: Boolean
+                        {
+                            if b.value = false
+                                return 20
+                        }
+                        else
+                            return 21
+                }
+                else
+                    return 22
+        }
+
+        ; Test 10: Floating point
+        {
+            var lexer Lexer(String$("3.14"))
+            lexer.advance()
+            choose lexer.token
+                when lit: Literal
+                {
+                    choose lit.value
+                        when fp: FloatingPoint
+                        {
+                            if fp.value.equals(String$("3.14")) = false
+                                return 23
+                        }
+                        else
+                            return 24
+                }
+                else
+                    return 25
+        }
+
+        ; Test 11: Operator
+        {
+            var lexer Lexer(String$("<>"))
+            lexer.advance()
+            choose lexer.token
+                when ident: Identifier
+                {
+                    if ident.name.equals(String$("<>")) = false
+                        return 26
+                }
+                else
+                    return 27
+        }
+
+        ; Test 12: Attribute
+        {
+            var lexer Lexer(String$("@summary"))
+            lexer.advance()
+            choose lexer.token
+                when attr: Attribute
+                {
+                    if attr.name.equals(String$("summary")) = false
+                        return 28
+                }
+                else
+                    return 29
+        }
+
+        ; Test 13: Multi-line comment
+        {
+            var lexer Lexer(String$(";* comment *;x"))
+            lexer.advance()
+            choose lexer.token
+                when ident: Identifier
+                {
+                    if ident.name.equals(String$("x")) = false
+                        return 30
+                }
+                else
+                    return 31
+        }
+
         0
     }
 }
