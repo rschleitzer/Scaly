@@ -547,44 +547,219 @@ function test_lexer_creation() returns int
 }
 
 ; Tokenization tests
-;
-; NOTE: Calling procedures on stack-allocated structs doesn't work correctly.
-; The procedure receives a copy of the struct, not a pointer to the original.
-; This is a known compiler limitation. Workaround: use page-allocated structs
-; or embed the struct in a page-allocated container (like Parser does with Lexer).
-;
-; For these tests, we disable tokenization tests that require calling advance#
-; on a local Lexer. The parser tests verify lexer functionality indirectly.
 
 function test_tokenize_integers() returns int
-    0  ; Disabled - procedure mutation on stack structs doesn't work
+{
+    ; Test tokenizing an integer
+    var lexer Lexer(String#("42"))
+    lexer.advance#()
+
+    ; Check that we got a Literal token
+    choose lexer.token
+        when Literal: lit
+            ; Check that it's an Integer literal
+            choose lit.value
+                when Integer: int_lit
+                    ; Verify the value
+                    if int_lit.value.equals(String#("42"))
+                        return 0
+                    return -3
+                else
+                    return -2
+        else
+            return -1
+}
 
 function test_tokenize_booleans() returns int
-    0  ; Disabled - procedure mutation on stack structs doesn't work
+{
+    ; Test true literal
+    var lexer Lexer(String#("true"))
+    lexer.advance#()
+    choose lexer.token
+        when Literal: lit
+            choose lit.value
+                when Boolean: bool_lit
+                    if ~bool_lit.value
+                        return -1
+                else
+                    return -2
+        else
+            return -3
+
+    ; Test false literal
+    set lexer: Lexer(String#("false"))
+    lexer.advance#()
+    choose lexer.token
+        when Literal: lit
+            choose lit.value
+                when Boolean: bool_lit
+                    if bool_lit.value
+                        return -4
+                    return 0
+                else
+                    return -5
+        else
+            return -6
+}
 
 function test_tokenize_strings() returns int
-    0  ; Disabled - procedure mutation on stack structs doesn't work
+{
+    var lexer Lexer(String#("\"hello\""))
+    lexer.advance#()
+    choose lexer.token
+        when Literal: lit
+            choose lit.value
+                when String: str_lit
+                    if str_lit.value.equals(String#("hello"))
+                        return 0
+                    return -1
+                else
+                    return -2
+        else
+            return -3
+}
 
 function test_tokenize_identifiers() returns int
-    0  ; Disabled - procedure mutation on stack structs doesn't work
+{
+    var lexer Lexer(String#("foo"))
+    lexer.advance#()
+    choose lexer.token
+        when Identifier: id
+            if id.name.equals(String#("foo"))
+                return 0
+            return -1
+        else
+            return -2
+}
 
 function test_tokenize_operators() returns int
-    0  ; Disabled - procedure mutation on stack structs doesn't work
+{
+    var lexer Lexer(String#("++"))
+    lexer.advance#()
+    choose lexer.token
+        when Identifier: id
+            ; Operators are scanned as identifiers
+            if id.name.equals(String#("++"))
+                return 0
+            return -1
+        else
+            return -2
+}
 
 function test_tokenize_punctuation() returns int
-    0  ; Disabled - procedure mutation on stack structs doesn't work
+{
+    var lexer Lexer(String#("("))
+    lexer.advance#()
+    choose lexer.token
+        when Punctuation: p
+            if p.sign = "(" as u8
+                return 0
+            return -1
+        else
+            return -2
+}
 
 function test_tokenize_sequence() returns int
-    0  ; Disabled - procedure mutation on stack structs doesn't work
+{
+    ; Test a sequence of tokens: "let x 42"
+    var lexer Lexer(String#("let x 42"))
+
+    ; First token: 'let' identifier
+    lexer.advance#()
+    choose lexer.token
+        when Identifier: id
+            if ~id.name.equals(String#("let"))
+                return -1
+        else
+            return -2
+
+    ; Second token: 'x' identifier
+    lexer.advance#()
+    choose lexer.token
+        when Identifier: id
+            if ~id.name.equals(String#("x"))
+                return -3
+        else
+            return -4
+
+    ; Third token: '42' integer literal
+    lexer.advance#()
+    choose lexer.token
+        when Literal: lit
+            choose lit.value
+                when Integer: int_lit
+                    if int_lit.value.equals(String#("42"))
+                        return 0
+                    return -5
+                else
+                    return -6
+        else
+            return -7
+}
 
 function test_tokenize_comments() returns int
-    0  ; Disabled - procedure mutation on stack structs doesn't work
+{
+    ; Test that single-line comments are skipped
+    var lexer Lexer(String#("; comment\n42"))
+    lexer.advance#()
+    choose lexer.token
+        when Literal: lit
+            choose lit.value
+                when Integer: int_lit
+                    if int_lit.value.equals(String#("42"))
+                        return 0
+                    return -1
+                else
+                    return -2
+        else
+            return -3
+}
 
 function test_tokenize_colon() returns int
-    0  ; Disabled - procedure mutation on stack structs doesn't work
+{
+    var lexer Lexer(String#("foo: bar"))
+
+    ; First token: 'foo' identifier
+    lexer.advance#()
+    choose lexer.token
+        when Identifier: id
+            if ~id.name.equals(String#("foo"))
+                return -1
+        else
+            return -2
+
+    ; Second token: colon
+    lexer.advance#()
+    choose lexer.token
+        when Colon: c
+            ; Colon matched
+            0
+        else
+            return -3
+
+    ; Third token: 'bar' identifier
+    lexer.advance#()
+    choose lexer.token
+        when Identifier: id
+            if id.name.equals(String#("bar"))
+                return 0
+            return -4
+        else
+            return -5
+}
 
 function test_tokenize_attributes() returns int
-    0  ; Disabled - procedure mutation on stack structs doesn't work
+{
+    var lexer Lexer(String#("@summary"))
+    lexer.advance#()
+    choose lexer.token
+        when Attribute: attr
+            if attr.name.equals(String#("summary"))
+                return 0
+            return -1
+        else
+            return -2
+}
 
 ; Main test function
 function test() returns int

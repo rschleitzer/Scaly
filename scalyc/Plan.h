@@ -462,6 +462,7 @@ struct PlannedMemberAccess {
     size_t FieldIndex;       // Index in struct layout
     bool IsMethod = false;   // True if this is a method reference
     bool IsZeroArgMethodCall = false;  // True if auto-calling a zero-arg method
+    bool IsProcedure = false; // True if method is a procedure (can mutate 'this')
     bool IsUnionValue = false; // True if extracting .value from a union
     PlannedType ParentType;  // Type of the struct/union being accessed
     PlannedType ResultType;  // Type after this access

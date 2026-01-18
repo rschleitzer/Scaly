@@ -1,9 +1,12 @@
 use scaly.memory.runtime
+use scaly.containers.String
 
 define io
 {
     module Console
     module File
+    module Directory
+    module Path
 
     function test_direct() returns int
     {
@@ -77,6 +80,71 @@ define io
         0
     }
 
+    function test_file_exists() returns int
+    {
+        ; Test File.exists with a file we know exists
+        var test_path String$("/tmp/scaly_string_test.txt")
+        if File.exists(test_path) = false
+            return -30
+
+        ; Test with a file that doesn't exist
+        var nonexistent String$("/tmp/scaly_nonexistent_file_12345.txt")
+        if File.exists(nonexistent) = true
+            return -31
+
+        0
+    }
+
+    function test_directory() returns int
+    {
+        ; Test Directory.exists with /tmp which should exist
+        var tmp_path String$("/tmp")
+        if Directory.exists(tmp_path) = false
+            return -40
+
+        ; Test Directory.is_directory with /tmp
+        if Directory.is_directory(tmp_path) = false
+            return -41
+
+        ; Test with a nonexistent path
+        var nonexistent String$("/nonexistent_dir_12345")
+        if Directory.is_directory(nonexistent) = true
+            return -42
+
+        ; Test that a file is not a directory
+        var file_path String$("/tmp/scaly_string_test.txt")
+        if Directory.is_directory(file_path) = true
+            return -43
+
+        0
+    }
+
+    function test_path() returns int
+    {
+        ; Test Path.join
+        var dir String$("/tmp")
+        var file String$("test.txt")
+        var joined Path.join$(dir, file)
+        var expected String$("/tmp/test.txt")
+        if joined.equals(expected) = false
+            return -50
+
+        ; Test Path.get_file_name
+        var full_path String$("/tmp/test.txt")
+        var file_name Path.get_file_name$(full_path)
+        var expected_name String$("test.txt")
+        if file_name.equals(expected_name) = false
+            return -51
+
+        ; Test Path.get_directory_name
+        var dir_name Path.get_directory_name$(full_path)
+        var expected_dir String$("/tmp")
+        if dir_name.equals(expected_dir) = false
+            return -52
+
+        0
+    }
+
     function test() returns int
     {
         var result test_direct()
@@ -89,6 +157,15 @@ define io
         if result <> 0
             return result
         set result: test_file_string()
+        if result <> 0
+            return result
+        set result: test_file_exists()
+        if result <> 0
+            return result
+        set result: test_directory()
+        if result <> 0
+            return result
+        set result: test_path()
         if result <> 0
             return result
         0

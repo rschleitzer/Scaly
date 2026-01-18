@@ -1,14 +1,27 @@
 use scaly.containers.String
+use scaly.memory.runtime
 
 ; C unistd constants
 define F_OK: int 0
 
 define Directory
 {
+    ; Check if a path exists (file or directory)
     function exists(path: String) returns bool
     {
         let path_c_string path.to_c_string$()
         access(path_c_string, F_OK) = 0
+    }
+
+    ; Check if a path is a directory (not a file)
+    function is_directory(path: String) returns bool
+    {
+        let path_c_string path.to_c_string$()
+        var dir opendir(path_c_string)
+        if dir = null
+            return false
+        closedir(dir)
+        true
     }
 
     function create(path: String) returns bool

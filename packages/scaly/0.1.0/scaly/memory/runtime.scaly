@@ -20,3 +20,20 @@ function fwrite(ptr: pointer[void], size: size_t, count: size_t, stream: pointer
 function fseek(stream: pointer[void], offset: int, origin: int) returns int extern
 function ftell(stream: pointer[void]) returns int extern
 function rewind(stream: pointer[void]) extern
+
+; Directory functions (dirent.h)
+function opendir(name: pointer[const_char]) returns pointer[void] extern
+function closedir(dirp: pointer[void]) returns int extern
+
+; File system functions (unistd.h)
+function access(path: pointer[const_char], mode: int) returns int extern
+function unlink(path: pointer[const_char]) returns int extern
+function rmdir(path: pointer[const_char]) returns int extern
+function mkdir(path: pointer[const_char], mode: int) returns int extern
+
+; Path functions (libgen.h)
+function dirname(path: pointer[char]) returns pointer[char] extern
+function basename(path: pointer[char]) returns pointer[char] extern
+
+; String comparison (string.h)
+function strcmp(s1: pointer[const_char], s2: pointer[const_char]) returns int extern

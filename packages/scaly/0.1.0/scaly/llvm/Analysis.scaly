@@ -1,0 +1,165 @@
+; LLVM-C Analysis and Verification API bindings
+; Module verification and debugging support
+
+; ===========================================================================
+; Module Verification
+; ===========================================================================
+; Verifier failure action
+define LLVMAbortProcessAction: int 0    ; verifier will print and abort()
+define LLVMPrintMessageAction: int 1    ; verifier will print and return 1
+define LLVMReturnStatusAction: int 2    ; verifier will just return 1
+
+function LLVMVerifyModule(M: pointer[void], Action: int, OutMessage: pointer[pointer[char]]) returns int extern
+function LLVMVerifyFunction(Fn: pointer[void], Action: int) returns int extern
+function LLVMViewFunctionCFG(Fn: pointer[void]) extern
+function LLVMViewFunctionCFGOnly(Fn: pointer[void]) extern
+
+; ===========================================================================
+; Debug Info Builder
+; ===========================================================================
+function LLVMCreateDIBuilder(M: pointer[void]) returns pointer[void] extern
+function LLVMCreateDIBuilderDisallowUnresolved(M: pointer[void]) returns pointer[void] extern
+function LLVMDisposeDIBuilder(Builder: pointer[void]) extern
+function LLVMDIBuilderFinalize(Builder: pointer[void]) extern
+function LLVMDIBuilderFinalizeSubprogram(Builder: pointer[void], Subprogram: pointer[void]) extern
+
+; ===========================================================================
+; Debug Info - Compile Unit
+; ===========================================================================
+; DWARF source language codes
+define DW_LANG_C89: int 1
+define DW_LANG_C: int 2
+define DW_LANG_C_plus_plus: int 4
+define DW_LANG_C99: int 12
+define DW_LANG_C11: int 29
+define DW_LANG_C_plus_plus_11: int 33
+define DW_LANG_C_plus_plus_14: int 34
+
+; DWARF emission kind
+define LLVMDWARFEmissionNone: int 0
+define LLVMDWARFEmissionFull: int 1
+define LLVMDWARFEmissionLineTablesOnly: int 2
+
+function LLVMDIBuilderCreateCompileUnit(Builder: pointer[void], Lang: int, FileRef: pointer[void], Producer: pointer[const_char], ProducerLen: size_t, isOptimized: int, Flags: pointer[const_char], FlagsLen: size_t, RuntimeVer: int, SplitName: pointer[const_char], SplitNameLen: size_t, Kind: int, DWOId: int, SplitDebugInlining: int, DebugInfoForProfiling: int, SysRoot: pointer[const_char], SysRootLen: size_t, SDK: pointer[const_char], SDKLen: size_t) returns pointer[void] extern
+
+function LLVMDIBuilderCreateFile(Builder: pointer[void], Filename: pointer[const_char], FilenameLen: size_t, Directory: pointer[const_char], DirectoryLen: size_t) returns pointer[void] extern
+
+; ===========================================================================
+; Debug Info - Types
+; ===========================================================================
+; Type encoding
+define DW_ATE_address: int 1
+define DW_ATE_boolean: int 2
+define DW_ATE_float: int 4
+define DW_ATE_signed: int 5
+define DW_ATE_signed_char: int 6
+define DW_ATE_unsigned: int 7
+define DW_ATE_unsigned_char: int 8
+
+function LLVMDIBuilderCreateBasicType(Builder: pointer[void], Name: pointer[const_char], NameLen: size_t, SizeInBits: i64, Encoding: int, Flags: int) returns pointer[void] extern
+
+function LLVMDIBuilderCreatePointerType(Builder: pointer[void], PointeeTy: pointer[void], SizeInBits: i64, AlignInBits: int, AddressSpace: int, Name: pointer[const_char], NameLen: size_t) returns pointer[void] extern
+
+function LLVMDIBuilderCreateStructType(Builder: pointer[void], Scope: pointer[void], Name: pointer[const_char], NameLen: size_t, File: pointer[void], LineNumber: int, SizeInBits: i64, AlignInBits: int, Flags: int, DerivedFrom: pointer[void], Elements: pointer[pointer[void]], NumElements: int, RunTimeLang: int, VTableHolder: pointer[void], UniqueId: pointer[const_char], UniqueIdLen: size_t) returns pointer[void] extern
+
+function LLVMDIBuilderCreateMemberType(Builder: pointer[void], Scope: pointer[void], Name: pointer[const_char], NameLen: size_t, File: pointer[void], LineNo: int, SizeInBits: i64, AlignInBits: int, OffsetInBits: i64, Flags: int, Ty: pointer[void]) returns pointer[void] extern
+
+function LLVMDIBuilderCreateArrayType(Builder: pointer[void], Size: i64, AlignInBits: int, Ty: pointer[void], Subscripts: pointer[pointer[void]], NumSubscripts: int) returns pointer[void] extern
+
+function LLVMDIBuilderCreateTypedef(Builder: pointer[void], Type: pointer[void], Name: pointer[const_char], NameLen: size_t, File: pointer[void], LineNo: int, Scope: pointer[void], AlignInBits: int) returns pointer[void] extern
+
+function LLVMDIBuilderCreateSubroutineType(Builder: pointer[void], File: pointer[void], ParameterTypes: pointer[pointer[void]], NumParameterTypes: int, Flags: int) returns pointer[void] extern
+
+function LLVMDIBuilderGetOrCreateSubrange(Builder: pointer[void], LowerBound: i64, Count: i64) returns pointer[void] extern
+
+function LLVMDIBuilderGetOrCreateArray(Builder: pointer[void], Data: pointer[pointer[void]], NumElements: size_t) returns pointer[void] extern
+
+; ===========================================================================
+; Debug Info - Scopes and Subprograms
+; ===========================================================================
+; Subprogram flags
+define LLVMDIFlagZero: int 0
+define LLVMDIFlagPrivate: int 1
+define LLVMDIFlagProtected: int 2
+define LLVMDIFlagPublic: int 3
+define LLVMDIFlagLocalToUnit: int 1024
+define LLVMDIFlagDefinition: int 2048
+define LLVMDIFlagOptimized: int 16384
+
+function LLVMDIBuilderCreateFunction(Builder: pointer[void], Scope: pointer[void], Name: pointer[const_char], NameLen: size_t, LinkageName: pointer[const_char], LinkageNameLen: size_t, File: pointer[void], LineNo: int, Ty: pointer[void], IsLocalToUnit: int, IsDefinition: int, ScopeLine: int, Flags: int, IsOptimized: int) returns pointer[void] extern
+
+function LLVMDIBuilderCreateLexicalBlock(Builder: pointer[void], Scope: pointer[void], File: pointer[void], Line: int, Column: int) returns pointer[void] extern
+
+function LLVMDIBuilderCreateLexicalBlockFile(Builder: pointer[void], Scope: pointer[void], File: pointer[void], Discriminator: int) returns pointer[void] extern
+
+function LLVMDIBuilderCreateNameSpace(Builder: pointer[void], ParentScope: pointer[void], Name: pointer[const_char], NameLen: size_t, ExportSymbols: int) returns pointer[void] extern
+
+; ===========================================================================
+; Debug Info - Variables
+; ===========================================================================
+function LLVMDIBuilderCreateAutoVariable(Builder: pointer[void], Scope: pointer[void], Name: pointer[const_char], NameLen: size_t, File: pointer[void], LineNo: int, Ty: pointer[void], AlwaysPreserve: int, Flags: int, AlignInBits: int) returns pointer[void] extern
+
+function LLVMDIBuilderCreateParameterVariable(Builder: pointer[void], Scope: pointer[void], Name: pointer[const_char], NameLen: size_t, ArgNo: int, File: pointer[void], LineNo: int, Ty: pointer[void], AlwaysPreserve: int, Flags: int) returns pointer[void] extern
+
+function LLVMDIBuilderCreateGlobalVariableExpression(Builder: pointer[void], Scope: pointer[void], Name: pointer[const_char], NameLen: size_t, Linkage: pointer[const_char], LinkLen: size_t, File: pointer[void], LineNo: int, Ty: pointer[void], LocalToUnit: int, Expr: pointer[void], Decl: pointer[void], AlignInBits: int) returns pointer[void] extern
+
+; ===========================================================================
+; Debug Info - Expressions and Locations
+; ===========================================================================
+function LLVMDIBuilderCreateExpression(Builder: pointer[void], Addr: pointer[i64], Length: size_t) returns pointer[void] extern
+
+function LLVMDIBuilderCreateConstantValueExpression(Builder: pointer[void], Value: i64) returns pointer[void] extern
+
+function LLVMDIBuilderInsertDeclareBefore(Builder: pointer[void], Storage: pointer[void], VarInfo: pointer[void], Expr: pointer[void], DebugLoc: pointer[void], Instr: pointer[void]) returns pointer[void] extern
+
+function LLVMDIBuilderInsertDeclareAtEnd(Builder: pointer[void], Storage: pointer[void], VarInfo: pointer[void], Expr: pointer[void], DebugLoc: pointer[void], Block: pointer[void]) returns pointer[void] extern
+
+function LLVMDIBuilderInsertDbgValueBefore(Builder: pointer[void], Val: pointer[void], VarInfo: pointer[void], Expr: pointer[void], DebugLoc: pointer[void], Instr: pointer[void]) returns pointer[void] extern
+
+function LLVMDIBuilderInsertDbgValueAtEnd(Builder: pointer[void], Val: pointer[void], VarInfo: pointer[void], Expr: pointer[void], DebugLoc: pointer[void], Block: pointer[void]) returns pointer[void] extern
+
+; ===========================================================================
+; Debug Locations
+; ===========================================================================
+function LLVMDILocationGetLine(Location: pointer[void]) returns int extern
+function LLVMDILocationGetColumn(Location: pointer[void]) returns int extern
+function LLVMDILocationGetScope(Location: pointer[void]) returns pointer[void] extern
+function LLVMDILocationGetInlinedAt(Location: pointer[void]) returns pointer[void] extern
+function LLVMDILocationGetFile(Location: pointer[void]) returns pointer[void] extern
+
+function LLVMDIBuilderCreateDebugLocation(Ctx: pointer[void], Line: int, Column: int, Scope: pointer[void], InlinedAt: pointer[void]) returns pointer[void] extern
+
+; Attach debug location to instruction
+function LLVMSetCurrentDebugLocation2(Builder: pointer[void], Loc: pointer[void]) extern
+function LLVMGetCurrentDebugLocation2(Builder: pointer[void]) returns pointer[void] extern
+
+; Module debug info version
+function LLVMGetModuleDebugMetadataVersion(M: pointer[void]) returns int extern
+function LLVMStripModuleDebugInfo(M: pointer[void]) returns int extern
+
+; ===========================================================================
+; Metadata Operations
+; ===========================================================================
+function LLVMSetSubprogram(Func: pointer[void], SP: pointer[void]) extern
+function LLVMGetSubprogram(Func: pointer[void]) returns pointer[void] extern
+
+function LLVMInstructionGetDebugLoc(Inst: pointer[void]) returns pointer[void] extern
+function LLVMInstructionSetDebugLoc(Inst: pointer[void], Loc: pointer[void]) extern
+
+; Module flags
+function LLVMAddModuleFlag(M: pointer[void], Behavior: int, Key: pointer[const_char], KeyLen: size_t, Val: pointer[void]) extern
+function LLVMGetModuleFlag(M: pointer[void], Key: pointer[const_char], KeyLen: size_t) returns pointer[void] extern
+
+; Module flag behaviors
+define LLVMModuleFlagBehaviorError: int 1
+define LLVMModuleFlagBehaviorWarning: int 2
+define LLVMModuleFlagBehaviorRequire: int 3
+define LLVMModuleFlagBehaviorOverride: int 4
+define LLVMModuleFlagBehaviorAppend: int 5
+define LLVMModuleFlagBehaviorAppendUnique: int 6
+
+; Create metadata values
+function LLVMMDStringInContext2(C: pointer[void], Str: pointer[const_char], SLen: size_t) returns pointer[void] extern
+function LLVMMDNodeInContext2(C: pointer[void], MDs: pointer[pointer[void]], Count: size_t) returns pointer[void] extern
+function LLVMValueAsMetadata(Val: pointer[void]) returns pointer[void] extern
+function LLVMMetadataAsValue(C: pointer[void], MD: pointer[void]) returns pointer[void] extern

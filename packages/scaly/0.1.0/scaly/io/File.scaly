@@ -6,8 +6,17 @@ define SEEK_SET: int 0
 define SEEK_CUR: int 1
 define SEEK_END: int 2
 
+; C unistd constants
+define F_OK: int 0
+
 define File
 {
+    function exists(path: String) returns bool
+    {
+        let path_c_string path.to_c_string$()
+        access(path_c_string, F_OK) = 0
+    }
+
     function read_to_string#(rp, path: String) returns String
     {
         var file fopen(path.to_c_string$(), "rb")

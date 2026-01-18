@@ -1,0 +1,319 @@
+; LLVM-C Core API bindings
+; Context, Module, Types, Values, Constants, Functions
+
+; ===========================================================================
+; Opaque Types (all represented as pointer[void] in Scaly)
+; ===========================================================================
+; LLVMContextRef     - LLVM context handle
+; LLVMModuleRef      - LLVM module handle
+; LLVMTypeRef        - LLVM type handle
+; LLVMValueRef       - LLVM value handle (includes functions, constants, instructions)
+; LLVMBasicBlockRef  - LLVM basic block handle
+; LLVMBuilderRef     - LLVM IR builder handle
+
+; ===========================================================================
+; Context Operations
+; ===========================================================================
+function LLVMContextCreate() returns pointer[void] extern
+function LLVMContextDispose(C: pointer[void]) extern
+function LLVMGetGlobalContext() returns pointer[void] extern
+
+; ===========================================================================
+; Module Operations
+; ===========================================================================
+function LLVMModuleCreateWithName(ModuleID: pointer[const_char]) returns pointer[void] extern
+function LLVMModuleCreateWithNameInContext(ModuleID: pointer[const_char], C: pointer[void]) returns pointer[void] extern
+function LLVMDisposeModule(M: pointer[void]) extern
+function LLVMCloneModule(M: pointer[void]) returns pointer[void] extern
+
+; Module properties
+function LLVMGetModuleIdentifier(M: pointer[void], Len: pointer[size_t]) returns pointer[const_char] extern
+function LLVMSetModuleIdentifier(M: pointer[void], Ident: pointer[const_char], Len: size_t) extern
+function LLVMGetDataLayoutStr(M: pointer[void]) returns pointer[const_char] extern
+function LLVMSetDataLayout(M: pointer[void], DataLayoutStr: pointer[const_char]) extern
+function LLVMGetTarget(M: pointer[void]) returns pointer[const_char] extern
+function LLVMSetTarget(M: pointer[void], Triple: pointer[const_char]) extern
+
+; Module output
+function LLVMPrintModuleToString(M: pointer[void]) returns pointer[char] extern
+function LLVMPrintModuleToFile(M: pointer[void], Filename: pointer[const_char], ErrorMessage: pointer[pointer[char]]) returns int extern
+function LLVMDisposeMessage(Message: pointer[char]) extern
+
+; ===========================================================================
+; Type Operations - Integer Types
+; ===========================================================================
+function LLVMInt1TypeInContext(C: pointer[void]) returns pointer[void] extern
+function LLVMInt8TypeInContext(C: pointer[void]) returns pointer[void] extern
+function LLVMInt16TypeInContext(C: pointer[void]) returns pointer[void] extern
+function LLVMInt32TypeInContext(C: pointer[void]) returns pointer[void] extern
+function LLVMInt64TypeInContext(C: pointer[void]) returns pointer[void] extern
+function LLVMInt128TypeInContext(C: pointer[void]) returns pointer[void] extern
+function LLVMIntTypeInContext(C: pointer[void], NumBits: int) returns pointer[void] extern
+
+; Convenience wrappers using global context
+function LLVMInt1Type() returns pointer[void] extern
+function LLVMInt8Type() returns pointer[void] extern
+function LLVMInt16Type() returns pointer[void] extern
+function LLVMInt32Type() returns pointer[void] extern
+function LLVMInt64Type() returns pointer[void] extern
+function LLVMInt128Type() returns pointer[void] extern
+function LLVMIntType(NumBits: int) returns pointer[void] extern
+
+; Integer type properties
+function LLVMGetIntTypeWidth(IntegerTy: pointer[void]) returns int extern
+
+; ===========================================================================
+; Type Operations - Floating Point Types
+; ===========================================================================
+function LLVMHalfTypeInContext(C: pointer[void]) returns pointer[void] extern
+function LLVMFloatTypeInContext(C: pointer[void]) returns pointer[void] extern
+function LLVMDoubleTypeInContext(C: pointer[void]) returns pointer[void] extern
+function LLVMX86FP80TypeInContext(C: pointer[void]) returns pointer[void] extern
+function LLVMFP128TypeInContext(C: pointer[void]) returns pointer[void] extern
+
+function LLVMHalfType() returns pointer[void] extern
+function LLVMFloatType() returns pointer[void] extern
+function LLVMDoubleType() returns pointer[void] extern
+
+; ===========================================================================
+; Type Operations - Void Type
+; ===========================================================================
+function LLVMVoidTypeInContext(C: pointer[void]) returns pointer[void] extern
+function LLVMVoidType() returns pointer[void] extern
+
+; ===========================================================================
+; Type Operations - Pointer Types
+; ===========================================================================
+function LLVMPointerType(ElementType: pointer[void], AddressSpace: int) returns pointer[void] extern
+function LLVMPointerTypeInContext(C: pointer[void], AddressSpace: int) returns pointer[void] extern
+function LLVMPointerTypeIsOpaque(Ty: pointer[void]) returns int extern
+function LLVMGetPointerAddressSpace(PointerTy: pointer[void]) returns int extern
+
+; ===========================================================================
+; Type Operations - Array Types
+; ===========================================================================
+function LLVMArrayType(ElementType: pointer[void], ElementCount: int) returns pointer[void] extern
+function LLVMArrayType2(ElementType: pointer[void], ElementCount: i64) returns pointer[void] extern
+function LLVMGetArrayLength(ArrayTy: pointer[void]) returns int extern
+function LLVMGetArrayLength2(ArrayTy: pointer[void]) returns i64 extern
+function LLVMGetElementType(Ty: pointer[void]) returns pointer[void] extern
+
+; ===========================================================================
+; Type Operations - Structure Types
+; ===========================================================================
+function LLVMStructTypeInContext(C: pointer[void], ElementTypes: pointer[pointer[void]], ElementCount: int, Packed: int) returns pointer[void] extern
+function LLVMStructType(ElementTypes: pointer[pointer[void]], ElementCount: int, Packed: int) returns pointer[void] extern
+function LLVMStructCreateNamed(C: pointer[void], Name: pointer[const_char]) returns pointer[void] extern
+function LLVMStructSetBody(StructTy: pointer[void], ElementTypes: pointer[pointer[void]], ElementCount: int, Packed: int) extern
+function LLVMGetStructName(Ty: pointer[void]) returns pointer[const_char] extern
+function LLVMCountStructElementTypes(StructTy: pointer[void]) returns int extern
+function LLVMGetStructElementTypes(StructTy: pointer[void], Dest: pointer[pointer[void]]) extern
+function LLVMStructGetTypeAtIndex(StructTy: pointer[void], i: int) returns pointer[void] extern
+function LLVMIsPackedStruct(StructTy: pointer[void]) returns int extern
+function LLVMIsOpaqueStruct(StructTy: pointer[void]) returns int extern
+function LLVMIsLiteralStruct(StructTy: pointer[void]) returns int extern
+
+; ===========================================================================
+; Type Operations - Function Types
+; ===========================================================================
+function LLVMFunctionType(ReturnType: pointer[void], ParamTypes: pointer[pointer[void]], ParamCount: int, IsVarArg: int) returns pointer[void] extern
+function LLVMIsFunctionVarArg(FunctionTy: pointer[void]) returns int extern
+function LLVMGetReturnType(FunctionTy: pointer[void]) returns pointer[void] extern
+function LLVMCountParamTypes(FunctionTy: pointer[void]) returns int extern
+function LLVMGetParamTypes(FunctionTy: pointer[void], Dest: pointer[pointer[void]]) extern
+
+; ===========================================================================
+; Type Operations - General
+; ===========================================================================
+; Type kind enumeration values (LLVMTypeKind)
+define LLVMVoidTypeKind: int 0
+define LLVMHalfTypeKind: int 1
+define LLVMFloatTypeKind: int 2
+define LLVMDoubleTypeKind: int 3
+define LLVMX86_FP80TypeKind: int 4
+define LLVMFP128TypeKind: int 5
+define LLVMLabelTypeKind: int 7
+define LLVMIntegerTypeKind: int 8
+define LLVMFunctionTypeKind: int 9
+define LLVMStructTypeKind: int 10
+define LLVMArrayTypeKind: int 11
+define LLVMPointerTypeKind: int 12
+define LLVMVectorTypeKind: int 13
+define LLVMMetadataTypeKind: int 14
+define LLVMTokenTypeKind: int 16
+
+function LLVMGetTypeKind(Ty: pointer[void]) returns int extern
+function LLVMTypeIsSized(Ty: pointer[void]) returns int extern
+function LLVMGetTypeContext(Ty: pointer[void]) returns pointer[void] extern
+function LLVMPrintTypeToString(Val: pointer[void]) returns pointer[char] extern
+
+; ===========================================================================
+; Value Operations - General
+; ===========================================================================
+function LLVMTypeOf(Val: pointer[void]) returns pointer[void] extern
+function LLVMGetValueKind(Val: pointer[void]) returns int extern
+function LLVMGetValueName2(Val: pointer[void], Length: pointer[size_t]) returns pointer[const_char] extern
+function LLVMSetValueName2(Val: pointer[void], Name: pointer[const_char], NameLen: size_t) extern
+function LLVMPrintValueToString(Val: pointer[void]) returns pointer[char] extern
+function LLVMReplaceAllUsesWith(OldVal: pointer[void], NewVal: pointer[void]) extern
+function LLVMIsConstant(Val: pointer[void]) returns int extern
+function LLVMIsUndef(Val: pointer[void]) returns int extern
+function LLVMIsPoison(Val: pointer[void]) returns int extern
+
+; ===========================================================================
+; Constant Operations - Scalar Constants
+; ===========================================================================
+function LLVMConstInt(IntTy: pointer[void], N: i64, SignExtend: int) returns pointer[void] extern
+function LLVMConstIntOfArbitraryPrecision(IntTy: pointer[void], NumWords: int, Words: pointer[i64]) returns pointer[void] extern
+function LLVMConstIntOfString(IntTy: pointer[void], Text: pointer[const_char], Radix: i8) returns pointer[void] extern
+function LLVMConstReal(RealTy: pointer[void], N: double) returns pointer[void] extern
+function LLVMConstRealOfString(RealTy: pointer[void], Text: pointer[const_char]) returns pointer[void] extern
+
+; Constant inspection
+function LLVMConstIntGetZExtValue(ConstantVal: pointer[void]) returns i64 extern
+function LLVMConstIntGetSExtValue(ConstantVal: pointer[void]) returns i64 extern
+
+; ===========================================================================
+; Constant Operations - Null and Undefined
+; ===========================================================================
+function LLVMConstNull(Ty: pointer[void]) returns pointer[void] extern
+function LLVMConstAllOnes(Ty: pointer[void]) returns pointer[void] extern
+function LLVMGetUndef(Ty: pointer[void]) returns pointer[void] extern
+function LLVMGetPoison(Ty: pointer[void]) returns pointer[void] extern
+function LLVMIsNull(Val: pointer[void]) returns int extern
+
+; ===========================================================================
+; Constant Operations - String Constants
+; ===========================================================================
+function LLVMConstStringInContext(C: pointer[void], Str: pointer[const_char], Length: int, DontNullTerminate: int) returns pointer[void] extern
+function LLVMConstString(Str: pointer[const_char], Length: int, DontNullTerminate: int) returns pointer[void] extern
+function LLVMIsConstantString(c: pointer[void]) returns int extern
+function LLVMGetAsString(c: pointer[void], Length: pointer[size_t]) returns pointer[const_char] extern
+
+; ===========================================================================
+; Constant Operations - Aggregate Constants
+; ===========================================================================
+function LLVMConstStructInContext(C: pointer[void], ConstantVals: pointer[pointer[void]], Count: int, Packed: int) returns pointer[void] extern
+function LLVMConstStruct(ConstantVals: pointer[pointer[void]], Count: int, Packed: int) returns pointer[void] extern
+function LLVMConstArray(ElementTy: pointer[void], ConstantVals: pointer[pointer[void]], Length: int) returns pointer[void] extern
+function LLVMConstArray2(ElementTy: pointer[void], ConstantVals: pointer[pointer[void]], Length: i64) returns pointer[void] extern
+function LLVMConstNamedStruct(StructTy: pointer[void], ConstantVals: pointer[pointer[void]], Count: int) returns pointer[void] extern
+
+; ===========================================================================
+; Constant Expressions
+; ===========================================================================
+function LLVMAlignOf(Ty: pointer[void]) returns pointer[void] extern
+function LLVMSizeOf(Ty: pointer[void]) returns pointer[void] extern
+function LLVMConstNeg(ConstantVal: pointer[void]) returns pointer[void] extern
+function LLVMConstNot(ConstantVal: pointer[void]) returns pointer[void] extern
+function LLVMConstAdd(LHSConstant: pointer[void], RHSConstant: pointer[void]) returns pointer[void] extern
+function LLVMConstSub(LHSConstant: pointer[void], RHSConstant: pointer[void]) returns pointer[void] extern
+function LLVMConstMul(LHSConstant: pointer[void], RHSConstant: pointer[void]) returns pointer[void] extern
+function LLVMConstGEP2(Ty: pointer[void], ConstantVal: pointer[void], ConstantIndices: pointer[pointer[void]], NumIndices: int) returns pointer[void] extern
+function LLVMConstInBoundsGEP2(Ty: pointer[void], ConstantVal: pointer[void], ConstantIndices: pointer[pointer[void]], NumIndices: int) returns pointer[void] extern
+function LLVMConstTrunc(ConstantVal: pointer[void], ToType: pointer[void]) returns pointer[void] extern
+function LLVMConstSExt(ConstantVal: pointer[void], ToType: pointer[void]) returns pointer[void] extern
+function LLVMConstZExt(ConstantVal: pointer[void], ToType: pointer[void]) returns pointer[void] extern
+function LLVMConstBitCast(ConstantVal: pointer[void], ToType: pointer[void]) returns pointer[void] extern
+function LLVMConstIntCast(ConstantVal: pointer[void], ToType: pointer[void], isSigned: int) returns pointer[void] extern
+
+; ===========================================================================
+; Global Values
+; ===========================================================================
+function LLVMGetGlobalParent(Global: pointer[void]) returns pointer[void] extern
+function LLVMIsDeclaration(Global: pointer[void]) returns int extern
+function LLVMGetLinkage(Global: pointer[void]) returns int extern
+function LLVMSetLinkage(Global: pointer[void], Linkage: int) extern
+function LLVMGetSection(Global: pointer[void]) returns pointer[const_char] extern
+function LLVMSetSection(Global: pointer[void], Section: pointer[const_char]) extern
+function LLVMGetVisibility(Global: pointer[void]) returns int extern
+function LLVMSetVisibility(Global: pointer[void], Viz: int) extern
+function LLVMGetAlignment(V: pointer[void]) returns int extern
+function LLVMSetAlignment(V: pointer[void], Bytes: int) extern
+
+; Linkage types
+define LLVMExternalLinkage: int 0
+define LLVMAvailableExternallyLinkage: int 1
+define LLVMLinkOnceAnyLinkage: int 2
+define LLVMLinkOnceODRLinkage: int 3
+define LLVMWeakAnyLinkage: int 5
+define LLVMWeakODRLinkage: int 6
+define LLVMAppendingLinkage: int 7
+define LLVMInternalLinkage: int 8
+define LLVMPrivateLinkage: int 9
+define LLVMExternalWeakLinkage: int 12
+define LLVMCommonLinkage: int 14
+
+; ===========================================================================
+; Global Variables
+; ===========================================================================
+function LLVMAddGlobal(M: pointer[void], Ty: pointer[void], Name: pointer[const_char]) returns pointer[void] extern
+function LLVMAddGlobalInAddressSpace(M: pointer[void], Ty: pointer[void], Name: pointer[const_char], AddressSpace: int) returns pointer[void] extern
+function LLVMGetNamedGlobal(M: pointer[void], Name: pointer[const_char]) returns pointer[void] extern
+function LLVMGetFirstGlobal(M: pointer[void]) returns pointer[void] extern
+function LLVMGetLastGlobal(M: pointer[void]) returns pointer[void] extern
+function LLVMGetNextGlobal(GlobalVar: pointer[void]) returns pointer[void] extern
+function LLVMGetPreviousGlobal(GlobalVar: pointer[void]) returns pointer[void] extern
+function LLVMDeleteGlobal(GlobalVar: pointer[void]) extern
+function LLVMGetInitializer(GlobalVar: pointer[void]) returns pointer[void] extern
+function LLVMSetInitializer(GlobalVar: pointer[void], ConstantVal: pointer[void]) extern
+function LLVMIsThreadLocal(GlobalVar: pointer[void]) returns int extern
+function LLVMSetThreadLocal(GlobalVar: pointer[void], IsThreadLocal: int) extern
+function LLVMIsGlobalConstant(GlobalVar: pointer[void]) returns int extern
+function LLVMSetGlobalConstant(GlobalVar: pointer[void], IsConstant: int) extern
+function LLVMGetValueType(GlobalVar: pointer[void]) returns pointer[void] extern
+
+; ===========================================================================
+; Function Operations
+; ===========================================================================
+function LLVMAddFunction(M: pointer[void], Name: pointer[const_char], FunctionTy: pointer[void]) returns pointer[void] extern
+function LLVMGetNamedFunction(M: pointer[void], Name: pointer[const_char]) returns pointer[void] extern
+function LLVMGetFirstFunction(M: pointer[void]) returns pointer[void] extern
+function LLVMGetLastFunction(M: pointer[void]) returns pointer[void] extern
+function LLVMGetNextFunction(Fn: pointer[void]) returns pointer[void] extern
+function LLVMGetPreviousFunction(Fn: pointer[void]) returns pointer[void] extern
+function LLVMDeleteFunction(Fn: pointer[void]) extern
+
+; Function parameters
+function LLVMCountParams(Fn: pointer[void]) returns int extern
+function LLVMGetParams(Fn: pointer[void], Params: pointer[pointer[void]]) extern
+function LLVMGetParam(Fn: pointer[void], Index: int) returns pointer[void] extern
+
+; ===========================================================================
+; Basic Block Operations
+; ===========================================================================
+function LLVMBasicBlockAsValue(BB: pointer[void]) returns pointer[void] extern
+function LLVMValueIsBasicBlock(Val: pointer[void]) returns int extern
+function LLVMValueAsBasicBlock(Val: pointer[void]) returns pointer[void] extern
+function LLVMGetBasicBlockName(BB: pointer[void]) returns pointer[const_char] extern
+function LLVMGetBasicBlockParent(BB: pointer[void]) returns pointer[void] extern
+function LLVMGetBasicBlockTerminator(BB: pointer[void]) returns pointer[void] extern
+function LLVMCountBasicBlocks(Fn: pointer[void]) returns int extern
+function LLVMGetBasicBlocks(Fn: pointer[void], BasicBlocks: pointer[pointer[void]]) extern
+function LLVMGetFirstBasicBlock(Fn: pointer[void]) returns pointer[void] extern
+function LLVMGetLastBasicBlock(Fn: pointer[void]) returns pointer[void] extern
+function LLVMGetNextBasicBlock(BB: pointer[void]) returns pointer[void] extern
+function LLVMGetPreviousBasicBlock(BB: pointer[void]) returns pointer[void] extern
+function LLVMGetEntryBasicBlock(Fn: pointer[void]) returns pointer[void] extern
+
+function LLVMCreateBasicBlockInContext(C: pointer[void], Name: pointer[const_char]) returns pointer[void] extern
+function LLVMAppendBasicBlockInContext(C: pointer[void], Fn: pointer[void], Name: pointer[const_char]) returns pointer[void] extern
+function LLVMAppendBasicBlock(Fn: pointer[void], Name: pointer[const_char]) returns pointer[void] extern
+function LLVMInsertBasicBlockInContext(C: pointer[void], BB: pointer[void], Name: pointer[const_char]) returns pointer[void] extern
+function LLVMInsertBasicBlock(InsertBeforeBB: pointer[void], Name: pointer[const_char]) returns pointer[void] extern
+function LLVMDeleteBasicBlock(BB: pointer[void]) extern
+function LLVMRemoveBasicBlockFromParent(BB: pointer[void]) extern
+function LLVMMoveBasicBlockBefore(BB: pointer[void], MovePos: pointer[void]) extern
+function LLVMMoveBasicBlockAfter(BB: pointer[void], MovePos: pointer[void]) extern
+
+; ===========================================================================
+; Instruction Operations
+; ===========================================================================
+function LLVMGetInstructionParent(Inst: pointer[void]) returns pointer[void] extern
+function LLVMGetFirstInstruction(BB: pointer[void]) returns pointer[void] extern
+function LLVMGetLastInstruction(BB: pointer[void]) returns pointer[void] extern
+function LLVMGetNextInstruction(Inst: pointer[void]) returns pointer[void] extern
+function LLVMGetPreviousInstruction(Inst: pointer[void]) returns pointer[void] extern
+function LLVMInstructionRemoveFromParent(Inst: pointer[void]) extern
+function LLVMInstructionEraseFromParent(Inst: pointer[void]) extern
+function LLVMGetInstructionOpcode(Inst: pointer[void]) returns int extern

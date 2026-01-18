@@ -1,0 +1,18 @@
+; LLVM-C API Bindings for Scaly
+; Provides access to LLVM's C API for code generation
+
+define llvm
+{
+    module Core      ; Context, Module, Types, Values, Constants, Functions
+    module Builder   ; IR Builder operations
+    module Target    ; Target machine, AOT compilation
+    module Analysis  ; Verification, Debug info
+
+    ; Simple test to verify LLVM bindings compile correctly
+    function test() returns int
+    {
+        ; Just verify the module compiles - actual LLVM testing
+        ; requires linking against LLVM libraries
+        0
+    }
+}

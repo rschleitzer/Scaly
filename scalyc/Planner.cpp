@@ -4888,6 +4888,7 @@ llvm::Expected<std::vector<PlannedMemberAccess>> Planner::resolveMemberAccessCha
                                 Access.FieldIndex = SIZE_MAX;
                                 Access.IsMethod = true;
                                 Access.IsZeroArgMethodCall = true;
+                                Access.IsProcedure = !Func->Pure;
                                 Access.ParentType = LookupType;
                                 Access.ResultType = std::move(*Resolved);
                                 Result.push_back(std::move(Access));
@@ -4897,11 +4898,30 @@ llvm::Expected<std::vector<PlannedMemberAccess>> Planner::resolveMemberAccessCha
                             }
                         }
 
+                        // Zero-arg procedure without return type (e.g., procedure increment(this))
+                        if (isZeroArg && !Func->Returns && !Func->Pure) {
+                            PlannedMemberAccess Access;
+                            Access.Name = MemberName;
+                            Access.FieldIndex = SIZE_MAX;
+                            Access.IsMethod = true;
+                            Access.IsZeroArgMethodCall = true;
+                            Access.IsProcedure = true;
+                            Access.ParentType = LookupType;
+                            // Procedures without return type return void
+                            Access.ResultType.Name = "void";
+                            Access.ResultType.MangledName = "v";
+                            Result.push_back(std::move(Access));
+                            Current = Result.back().ResultType;
+                            Found = true;
+                            break;
+                        }
+
                         // Multi-argument method or no return type - return function reference
                         PlannedMemberAccess Access;
                         Access.Name = MemberName;
                         Access.FieldIndex = SIZE_MAX;  // Special marker for methods
                         Access.IsMethod = true;
+                        Access.IsProcedure = !Func->Pure;
                         Access.ParentType = LookupType;  // Use dereferenced type for auto-deref
                         Access.ResultType.Name = "function";
                         Access.ResultType.MangledName = "Pv";

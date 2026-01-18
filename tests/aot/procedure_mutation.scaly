@@ -1,0 +1,19 @@
+; AOT Test: Procedure mutation on structs
+; Expected: 42
+
+define Counter(value: int)
+{
+    procedure increment(this)
+        set value: value + 1
+
+    function get_value(this) returns int
+        value
+}
+
+var c Counter(41)
+c.increment()
+let v c.get_value()
+if v = 42
+    print("42")
+else
+    print("WRONG")
