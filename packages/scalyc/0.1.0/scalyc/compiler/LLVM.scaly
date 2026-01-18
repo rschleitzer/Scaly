@@ -283,6 +283,9 @@ function LLVMAddGlobal(mod: LLVMModuleRef, type: LLVMTypeRef, name: pointer[cons
 ; Get a global variable by name
 function LLVMGetNamedGlobal(mod: LLVMModuleRef, name: pointer[const_char]) returns LLVMValueRef extern
 
+; Get the value type of a global variable
+function LLVMGlobalGetValueType(gv: LLVMValueRef) returns LLVMTypeRef extern
+
 ; Set initializer for global
 procedure LLVMSetInitializer(global_var: LLVMValueRef, constant_val: LLVMValueRef) extern
 
