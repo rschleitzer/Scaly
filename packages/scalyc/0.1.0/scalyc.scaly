@@ -3,16 +3,11 @@ package scaly 0.1.0
 use scaly.containers.String
 
 define scalyc {
-    ; Modules commented out until they parse correctly
-    ; module lexer
-    ; module parser
-    ; module compiler
-    ; module cli
+    module compiler
+    ; module cli  ; CLI not yet implemented
 
     function test() returns int
     {
-        ; Minimal test - just verify basic compilation works
-        ; Submodule tests disabled until parse errors are fixed
-        0
+        compiler.test()
     }
 }
