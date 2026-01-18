@@ -4626,11 +4626,16 @@ define Planner
 
 function test() returns int
 {
-    ; Test String# allocation and member access
-    let name String#("test")
-    let len name.length
-    if len <> 4
+    ; Test size_to_string first (simpler, uses StringBuilder internally)
+    let str4 Planner.size_to_string(4)
+    if str4.equals(String#("4")) = false
         return 1
+
+    ; Test encode_name (builds on size_to_string)
+    let name String#("test")
+    let encoded Planner.encode_name(name)
+    if encoded.equals(String#("4test")) = false
+        return 99
 
     ; Test strip_package_prefix
     let qualified String#("scaly.containers.String")
