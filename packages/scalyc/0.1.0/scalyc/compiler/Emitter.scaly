@@ -3431,6 +3431,11 @@ define Emitter
 ; Test function
 ; ============================================================================
 
+use scaly.scalyc.parser.Parser
+use scaly.scalyc.parser.ParserError
+use scaly.compiler.Modeler.build_program
+use scaly.compiler.Planner.Planner
+
 function test() returns int
 {
     ; Test EmitterConfig initialization
@@ -3444,6 +3449,166 @@ function test() returns int
     let region RegionInfo#()
     if region.local_page.handle <> null
         return 3
+
+    ; ========================================================================
+    ; End-to-End Test: Parse → Model → Plan → Emit (error codes 100+)
+    ; ========================================================================
+
+    ; Test 100: End-to-end compilation of simple integer expression
+    var parser Parser#(String#("42"))
+    choose parser.parse_program#()
+        when Error: err
+            return 100
+        when Success: syntax
+        {
+            ; Model the parsed program
+            let program build_program#(String#("test.scaly"), String#("test"), syntax)
+
+            ; Plan the program
+            var planner Planner#(String#("test.scaly"))
+            let plan planner.plan_program(program)
+            if plan = null
+                return 101
+
+            ; Emit the plan
+            var emitter Emitter#()
+            let emit_result emitter.emit(plan, String#("test_module"))
+            if emit_result = false
+                return 102
+
+            ; Verify module was created
+            if emitter.llvm_module.handle = null
+                return 103
+
+            ; Get module IR string to verify it's not empty
+            let ir emitter.print_module_to_string()
+            if ir = null
+                return 104
+        }
+
+    ; Test 110: End-to-end with function definition
+    set parser: Parser#(String#("function answer() returns int\n    42"))
+    choose parser.parse_program#()
+        when Error: err
+            return 110
+        when Success: syntax
+        {
+            let program build_program#(String#("test2.scaly"), String#("test2"), syntax)
+            var planner Planner#(String#("test2.scaly"))
+            let plan planner.plan_program(program)
+            if plan = null
+                return 111
+
+            var emitter Emitter#()
+            let emit_result emitter.emit(plan, String#("test2_module"))
+            if emit_result = false
+                return 112
+
+            ; Verify the function was emitted
+            let answer_fn LLVMGetNamedFunction(emitter.llvm_module, String#("_Z6answerv").c_data())
+            if answer_fn.handle = null
+                return 113
+        }
+
+    ; Test 120: End-to-end with struct definition
+    set parser: Parser#(String#("define Point(x: int, y: int)"))
+    choose parser.parse_program#()
+        when Error: err
+            return 120
+        when Success: syntax
+        {
+            let program build_program#(String#("test3.scaly"), String#("test3"), syntax)
+            var planner Planner#(String#("test3.scaly"))
+            let plan planner.plan_program(program)
+            if plan = null
+                return 121
+
+            var emitter Emitter#()
+            let emit_result emitter.emit(plan, String#("test3_module"))
+            if emit_result = false
+                return 122
+        }
+
+    ; Test 130: End-to-end with if expression
+    set parser: Parser#(String#("if true\n    1\nelse\n    0"))
+    choose parser.parse_program#()
+        when Error: err
+            return 130
+        when Success: syntax
+        {
+            let program build_program#(String#("test4.scaly"), String#("test4"), syntax)
+            var planner Planner#(String#("test4.scaly"))
+            let plan planner.plan_program(program)
+            if plan = null
+                return 131
+
+            var emitter Emitter#()
+            let emit_result emitter.emit(plan, String#("test4_module"))
+            if emit_result = false
+                return 132
+        }
+
+    ; Test 140: End-to-end with let binding and arithmetic
+    set parser: Parser#(String#("let x 10\nlet y 20\nlet sum x + y"))
+    choose parser.parse_program#()
+        when Error: err
+            return 140
+        when Success: syntax
+        {
+            let program build_program#(String#("test5.scaly"), String#("test5"), syntax)
+            var planner Planner#(String#("test5.scaly"))
+            let plan planner.plan_program(program)
+            if plan = null
+                return 141
+
+            var emitter Emitter#()
+            let emit_result emitter.emit(plan, String#("test5_module"))
+            if emit_result = false
+                return 142
+        }
+
+    ; Test 150: End-to-end with while loop
+    set parser: Parser#(String#("var i: int 0\nwhile i < 10\n    set i: i + 1"))
+    choose parser.parse_program#()
+        when Error: err
+            return 150
+        when Success: syntax
+        {
+            let program build_program#(String#("test6.scaly"), String#("test6"), syntax)
+            var planner Planner#(String#("test6.scaly"))
+            let plan planner.plan_program(program)
+            if plan = null
+                return 151
+
+            var emitter Emitter#()
+            let emit_result emitter.emit(plan, String#("test6_module"))
+            if emit_result = false
+                return 152
+        }
+
+    ; Test 160: End-to-end with function call
+    set parser: Parser#(String#("function double(x: int) returns int\n    x * 2\n\nlet result double(21)"))
+    choose parser.parse_program#()
+        when Error: err
+            return 160
+        when Success: syntax
+        {
+            let program build_program#(String#("test7.scaly"), String#("test7"), syntax)
+            var planner Planner#(String#("test7.scaly"))
+            let plan planner.plan_program(program)
+            if plan = null
+                return 161
+
+            var emitter Emitter#()
+            let emit_result emitter.emit(plan, String#("test7_module"))
+            if emit_result = false
+                return 162
+
+            ; Verify double function was emitted
+            let double_fn LLVMGetNamedFunction(emitter.llvm_module, String#("_Z6doublei").c_data())
+            if double_fn.handle = null
+                return 163
+        }
 
     0
 }
