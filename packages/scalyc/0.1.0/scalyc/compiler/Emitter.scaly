@@ -3691,6 +3691,26 @@ function test() returns int
                 return 202
         }
 
+    ; Test 210: Complex program with struct, method, and mutation
+    ; This mimics lexer-like code patterns
+    set parser: Parser#(String#("define Lexer(text: pointer[char], pos: int)\n{\n    function current_char(this) returns char\n        *(text + pos)\n    procedure advance#(this)\n        set pos: pos + 1\n}\nvar lex Lexer(\"test\", 0)\nlet ch lex.current_char()"))
+    choose parser.parse_program#()
+        when Error: err
+            return 210
+        when Success: syntax
+        {
+            let program build_program#(String#("test12.scaly"), String#("test12"), syntax)
+            var planner Planner#(String#("test12.scaly"))
+            let plan planner.plan_program(program)
+            if plan = null
+                return 211
+
+            var emitter Emitter#()
+            let emit_result emitter.emit(plan, String#("test12_module"))
+            if emit_result = false
+                return 212
+        }
+
     0
 }
 
