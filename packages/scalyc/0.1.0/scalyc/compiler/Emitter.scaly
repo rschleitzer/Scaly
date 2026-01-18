@@ -60,6 +60,7 @@ use scaly.compiler.LLVM.LLVMValueRef
 use scaly.compiler.LLVM.LLVMBasicBlockRef
 use scaly.compiler.LLVM.LLVMIntPredicate
 use scaly.compiler.LLVM.LLVMRealPredicate
+use scaly.compiler.LLVM.LLVMTypeKind
 use scaly.compiler.LLVM.LLVMLinkage
 
 ; LLVM functions
@@ -115,6 +116,7 @@ use scaly.compiler.LLVM.LLVMFunctionType
 use scaly.compiler.LLVM.LLVMGetBasicBlockTerminator
 use scaly.compiler.LLVM.LLVMGetElementType
 use scaly.compiler.LLVM.LLVMGetInsertBlock
+use scaly.compiler.LLVM.LLVMGetIntTypeWidth
 use scaly.compiler.LLVM.LLVMGetNamedFunction
 use scaly.compiler.LLVM.LLVMGetNamedGlobal
 use scaly.compiler.LLVM.LLVMGetReturnType
@@ -868,14 +870,85 @@ define Emitter
         ; Apply member access chain if present
         if op.member_access <> null
         {
-            if op.member_access.length > 0
+            let chain_ref op.member_access.unwrap()
+            let chain (*chain_ref)
+            if chain.length > 0
             {
-                ; TODO: Handle member access chain
-                ; For now, just return the base value
+                set value: emit_member_access_chain(value, chain, op.result_type)
             }
         }
 
         value
+    }
+
+    ; Emit member access chain (e.g., person.address.city)
+    function emit_member_access_chain(this, base_value: LLVMValueRef, chain: Vector[PlannedMemberAccess], result_type: PlannedType) returns LLVMValueRef
+    {
+        var current_value base_value
+
+        ; If base value is a pointer, we may need to load the struct
+        if LLVMGetTypeKind(LLVMTypeOf(current_value)) = LLVMTypeKind.Pointer()
+        {
+            ; Get the first member's parent type to know what to load
+            let first chain.get(0)
+            if first <> null
+            {
+                let parent_type first.parent_type
+                let struct_type map_type(parent_type)
+                if struct_type.handle <> null
+                {
+                    set current_value: LLVMBuildLoad2(builder, struct_type, current_value, "load.struct")
+                }
+            }
+        }
+
+        ; Iterate through each member access in the chain
+        var i: size_t 0
+        while i < chain.length
+        {
+            let access_ptr chain.get(i)
+            if access_ptr <> null
+            {
+                let access access_ptr.unwrap()
+
+                ; Handle union .value extraction specially
+                if access.is_union_value
+                {
+                    ; Union layout is { i8 tag, [size x i8] data }
+                    ; Store to alloca, GEP to field 1, bitcast, and load
+                    let union_type map_type(access.parent_type)
+                    let result_ty map_type(access.result_type)
+
+                    ; Store the union value to an alloca
+                    let union_ptr LLVMBuildAlloca(builder, union_type, "union.tmp")
+                    LLVMBuildStore(builder, current_value, union_ptr)
+
+                    ; GEP to field 1 (the data field)
+                    let data_ptr LLVMBuildStructGEP2(builder, union_type, union_ptr, 1, "union.data.ptr")
+
+                    ; Load the value (assuming pointer result type for now)
+                    set current_value: LLVMBuildLoad2(builder, result_ty, data_ptr, "union.value")
+                }
+                else
+                {
+                    ; If current value is still a pointer, load it first
+                    if LLVMGetTypeKind(LLVMTypeOf(current_value)) = LLVMTypeKind.Pointer()
+                    {
+                        let struct_type map_type(access.parent_type)
+                        if struct_type.handle <> null
+                        {
+                            set current_value: LLVMBuildLoad2(builder, struct_type, current_value, "deref")
+                        }
+                    }
+
+                    ; Use extractvalue for struct field access
+                    set current_value: LLVMBuildExtractValue(builder, current_value, access.field_index as u32, access.name.c_data())
+                }
+            }
+            set i: i + 1
+        }
+
+        current_value
     }
 
     ; Emit an expression
@@ -2090,22 +2163,248 @@ define Emitter
     ; Emit is expression (type test)
     function emit_is(this, is_expr: PlannedIs) returns LLVMValueRef
     {
-        ; TODO: Implement is expression emission
-        LLVMValueRef(null)
+        ; Emit the value to test
+        if is_expr.value = null
+        {
+            ; No value to test - return false
+            let i1_type LLVMInt1TypeInContext(context)
+            return LLVMConstInt(i1_type, 0, 0)
+        }
+
+        let union_value emit_operand(is_expr.value.unwrap())
+
+        ; Handle "is null" for optional types
+        if is_expr.is_null_check
+        {
+            ; For pointer types, compare to null
+            let ptr_type LLVMPointerTypeInContext(context, 0)
+            let null_ptr LLVMConstNull(ptr_type)
+            return LLVMBuildICmp(builder, LLVMIntPredicate.EQ(), union_value, null_ptr, "is.null")
+        }
+
+        ; For union variant check: compare tag with expected variant_tag
+        ; Union layout: { i8 tag, [maxSize x i8] data }
+        let i8_type LLVMInt8TypeInContext(context)
+        let i1_type LLVMInt1TypeInContext(context)
+
+        ; Get the union type from cache
+        var union_llvm_type lookup_struct_cache(is_expr.union_name)
+        if union_llvm_type.handle = null
+        {
+            ; Try with mangled name
+            set union_llvm_type: lookup_struct_cache(is_expr.test_type.mangled_name)
+        }
+
+        ; Store the union value to get a pointer
+        var union_ptr union_value
+        if LLVMGetTypeKind(LLVMTypeOf(union_value)) <> LLVMTypeKind.Pointer()
+        {
+            ; Need to store to alloca
+            if union_llvm_type.handle <> null
+            {
+                set union_ptr: LLVMBuildAlloca(builder, union_llvm_type, "is.union")
+                LLVMBuildStore(builder, union_value, union_ptr)
+            }
+            else
+            {
+                ; Fallback: use the value's type
+                let val_type LLVMTypeOf(union_value)
+                set union_ptr: LLVMBuildAlloca(builder, val_type, "is.union")
+                LLVMBuildStore(builder, union_value, union_ptr)
+                set union_llvm_type: val_type
+            }
+        }
+
+        ; GEP to tag field (index 0)
+        let tag_ptr LLVMBuildStructGEP2(builder, union_llvm_type, union_ptr, 0, "is.tag.ptr")
+
+        ; Load the tag
+        let tag LLVMBuildLoad2(builder, i8_type, tag_ptr, "is.tag")
+
+        ; Compare with expected variant tag
+        let expected_tag LLVMConstInt(i8_type, is_expr.variant_tag, 0)
+        LLVMBuildICmp(builder, LLVMIntPredicate.EQ(), tag, expected_tag, "is.result")
     }
 
     ; Emit as expression (type cast)
     function emit_as(this, as_expr: PlannedAs) returns LLVMValueRef
     {
-        ; TODO: Implement as expression emission
-        LLVMValueRef(null)
+        ; Emit the value being cast
+        if as_expr.value = null
+            return LLVMValueRef(null)
+
+        let src_value emit_operand(as_expr.value.unwrap())
+        let src_type LLVMTypeOf(src_value)
+        let dst_type map_type(as_expr.target_type)
+
+        if dst_type.handle = null
+            return LLVMValueRef(null)
+
+        ; Check type kinds
+        let src_kind LLVMGetTypeKind(src_type)
+        let dst_kind LLVMGetTypeKind(dst_type)
+
+        let ptr_kind LLVMTypeKind.Pointer()
+        let int_kind LLVMTypeKind.Integer()
+        let float_kind LLVMTypeKind.Float()
+        let double_kind LLVMTypeKind.Double()
+
+        ; Pointer to pointer: bitcast
+        if src_kind = ptr_kind
+        {
+            if dst_kind = ptr_kind
+                return LLVMBuildBitCast(builder, src_value, dst_type, "as.ptr")
+
+            ; Pointer to integer: ptrtoint
+            if dst_kind = int_kind
+                return LLVMBuildPtrToInt(builder, src_value, dst_type, "as.ptrtoint")
+        }
+
+        ; Integer cases
+        if src_kind = int_kind
+        {
+            ; Integer to pointer: inttoptr
+            if dst_kind = ptr_kind
+                return LLVMBuildIntToPtr(builder, src_value, dst_type, "as.inttoptr")
+
+            ; Integer to integer: may need trunc, zext, or sext
+            if dst_kind = int_kind
+            {
+                let src_bits LLVMGetIntTypeWidth(src_type)
+                let dst_bits LLVMGetIntTypeWidth(dst_type)
+
+                if src_bits > dst_bits
+                    return LLVMBuildTrunc(builder, src_value, dst_type, "as.trunc")
+
+                if src_bits < dst_bits
+                    return LLVMBuildZExt(builder, src_value, dst_type, "as.zext")
+
+                ; Same size - no-op
+                return src_value
+            }
+
+            ; Integer to float: sitofp
+            if dst_kind = float_kind
+                return LLVMBuildSIToFP(builder, src_value, dst_type, "as.sitofp")
+            if dst_kind = double_kind
+                return LLVMBuildSIToFP(builder, src_value, dst_type, "as.sitofp")
+        }
+
+        ; Float to integer: fptosi
+        if src_kind = float_kind
+        {
+            if dst_kind = int_kind
+                return LLVMBuildFPToSI(builder, src_value, dst_type, "as.fptosi")
+        }
+        if src_kind = double_kind
+        {
+            if dst_kind = int_kind
+                return LLVMBuildFPToSI(builder, src_value, dst_type, "as.fptosi")
+        }
+
+        ; Fallback: return source value unchanged
+        src_value
     }
 
-    ; Emit variant construction
+    ; Emit variant construction (e.g., Result.Ok(value), Option.Some(value))
     function emit_variant_construction(this, vc: PlannedVariantConstruction) returns LLVMValueRef
     {
-        ; TODO: Implement variant construction emission
-        LLVMValueRef(null)
+        ; Check for Option with NPO (Null Pointer Optimization)
+        ; NPO applies when the union is Option and inner type is pointer/ref
+        var is_option false
+        if vc.union_type.name.get_length() >= 6
+        {
+            ; Check if name starts with "Option"
+            let name_ptr vc.union_type.name.c_data()
+            if (*name_ptr) = 79  ; 'O'
+            {
+                if (*(name_ptr + 1)) = 112  ; 'p'
+                {
+                    if (*(name_ptr + 2)) = 116  ; 't'
+                    {
+                        if (*(name_ptr + 3)) = 105  ; 'i'
+                        {
+                            if (*(name_ptr + 4)) = 111  ; 'o'
+                            {
+                                if (*(name_ptr + 5)) = 110  ; 'n'
+                                {
+                                    set is_option: true
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        ; For NPO Option types, handle specially
+        if is_option
+        {
+            ; Check if variant is None
+            if vc.variant_name.equals(String#("None"))
+            {
+                ; None = null pointer
+                let ptr_type LLVMPointerTypeInContext(context, 0)
+                return LLVMConstNull(ptr_type)
+            }
+
+            ; For Some, check if we have a value and the type uses NPO
+            if vc.variant_name.equals(String#("Some"))
+            {
+                if vc.value <> null
+                {
+                    let value emit_operand(vc.value.unwrap())
+                    let value_type LLVMTypeOf(value)
+
+                    ; If the inner value is already a pointer, return it directly
+                    if LLVMGetTypeKind(value_type) = LLVMTypeKind.Pointer()
+                        return value
+
+                    ; Otherwise, allocate and store (still uses NPO representation)
+                    let value_ptr LLVMBuildAlloca(builder, value_type, "option.some")
+                    LLVMBuildStore(builder, value, value_ptr)
+                    return value_ptr
+                }
+            }
+        }
+
+        ; General union variant construction
+        ; Union layout: { i8 tag, [maxSize x i8] data }
+
+        ; Look up the union type from cache
+        var union_type lookup_struct_cache(vc.union_type.mangled_name)
+        if union_type.handle = null
+        {
+            set union_type: lookup_struct_cache(vc.union_type.name)
+        }
+
+        if union_type.handle = null
+        {
+            ; Can't find union type - return null
+            return LLVMValueRef(null)
+        }
+
+        ; Allocate space for the union
+        let union_ptr LLVMBuildAlloca(builder, union_type, "variant.ptr")
+
+        ; Store the tag (field 0)
+        let i8_type LLVMInt8TypeInContext(context)
+        let tag_ptr LLVMBuildStructGEP2(builder, union_type, union_ptr, 0, "variant.tag.ptr")
+        let tag_value LLVMConstInt(i8_type, vc.variant_tag, 0)
+        LLVMBuildStore(builder, tag_value, tag_ptr)
+
+        ; Store the value (field 1) if present
+        if vc.value <> null
+        {
+            let value emit_operand(vc.value.unwrap())
+            let data_ptr LLVMBuildStructGEP2(builder, union_type, union_ptr, 1, "variant.data.ptr")
+
+            ; Store value to data field
+            LLVMBuildStore(builder, value, data_ptr)
+        }
+
+        ; Load and return the union value
+        LLVMBuildLoad2(builder, union_type, union_ptr, "variant.val")
     }
 
     ; ========================================================================
