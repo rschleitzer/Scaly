@@ -166,8 +166,8 @@ define Planner
         set planned_globals: HashMapBuilder#()
         set type_substitutions: HashMapBuilder#()
         set scopes: Vector[Scope]#()
-        set structure_ctx: StructureContext(String#(""), null, null)
-        set namespace_ctx: NamespaceContext(String#(""), null, null)
+        set structure_ctx: StructureContext(String$(""), null, null)
+        set namespace_ctx: NamespaceContext(String$(""), null, null)
         set current_function_uses_local_lifetime: false
         set current_plan: null
     }
@@ -243,29 +243,29 @@ define Planner
     function encode_type(this, t: PlannedType) returns String
     {
         ; Built-in types use single-letter codes (Itanium ABI)
-        if t.name.equals(String#("void"))
-            return String#("v")
-        if t.name.equals(String#("bool"))
-            return String#("b")
-        if t.name.equals(String#("char"))
-            return String#("c")
-        if t.name.equals(String#("int"))
-            return String#("i")
-        if t.name.equals(String#("uint"))
-            return String#("j")
-        if t.name.equals(String#("long"))
-            return String#("l")
-        if t.name.equals(String#("ulong"))
-            return String#("m")
-        if t.name.equals(String#("float"))
-            return String#("f")
-        if t.name.equals(String#("double"))
-            return String#("d")
-        if t.name.equals(String#("size_t"))
-            return String#("m")  ; size_t -> unsigned long
+        if t.name.equals(String$("void"))
+            return String$("v")
+        if t.name.equals(String$("bool"))
+            return String$("b")
+        if t.name.equals(String$("char"))
+            return String$("c")
+        if t.name.equals(String$("int"))
+            return String$("i")
+        if t.name.equals(String$("uint"))
+            return String$("j")
+        if t.name.equals(String$("long"))
+            return String$("l")
+        if t.name.equals(String$("ulong"))
+            return String$("m")
+        if t.name.equals(String$("float"))
+            return String$("f")
+        if t.name.equals(String$("double"))
+            return String$("d")
+        if t.name.equals(String$("size_t"))
+            return String$("m")  ; size_t -> unsigned long
 
         ; Pointer types: pointer[T] -> P + encoded(T)
-        if t.name.equals(String#("pointer"))
+        if t.name.equals(String$("pointer"))
         {
             if t.generics <> null
             {
@@ -275,7 +275,7 @@ define Planner
                         when inner_ref: Some
                         {
                             let result StringBuilder#()
-                            result.append(String#("P"))
+                            result.append(String$("P"))
                             result.append(encode_type(*inner_ref))
                             return result.to_string#()
                         }
@@ -284,7 +284,7 @@ define Planner
         }
 
         ; Ref types: ref[T] -> R + encoded(T)
-        if t.name.equals(String#("ref"))
+        if t.name.equals(String$("ref"))
         {
             if t.generics <> null
             {
@@ -294,7 +294,7 @@ define Planner
                         when inner_ref: Some
                         {
                             let result StringBuilder#()
-                            result.append(String#("R"))
+                            result.append(String$("R"))
                             result.append(encode_type(*inner_ref))
                             return result.to_string#()
                         }
@@ -311,12 +311,12 @@ define Planner
                 let base_name strip_suffix#(t.name)
                 let result StringBuilder#()
                 result.append(encode_name(base_name))
-                result.append(String#("I"))
+                result.append(String$("I"))
                 for arg in t.generics
                 {
                     result.append(encode_type(arg))
                 }
-                result.append(String#("E"))
+                result.append(String$("E"))
                 return result.to_string#()
             }
         }
@@ -331,7 +331,7 @@ define Planner
     function mangle_type(this, t: PlannedType) returns String
     {
         let result StringBuilder#()
-        result.append(String#("_Z"))
+        result.append(String$("_Z"))
         result.append(encode_type(t))
         result.to_string#()
     }
@@ -340,7 +340,7 @@ define Planner
     function mangle_structure(this, name: String, generic_args: ref[Vector[PlannedType]]?) returns String
     {
         let result StringBuilder#()
-        result.append(String#("_Z"))
+        result.append(String$("_Z"))
 
         if generic_args = null
         {
@@ -356,12 +356,12 @@ define Planner
 
         ; Itanium ABI: Name + I + args + E
         result.append(encode_name(name))
-        result.append(String#("I"))
+        result.append(String$("I"))
         for arg in generic_args
         {
             result.append(encode_type(arg))
         }
-        result.append(String#("E"))
+        result.append(String$("E"))
         result.to_string#()
     }
 
@@ -369,15 +369,15 @@ define Planner
     function mangle_function(this, name: String, params: Vector[PlannedItem], parent: pointer[PlannedType]) returns String
     {
         let result StringBuilder#()
-        result.append(String#("_Z"))
+        result.append(String$("_Z"))
 
         ; Nested name if inside a type
         if parent <> null
         {
-            result.append(String#("N"))
+            result.append(String$("N"))
             result.append(encode_type(*parent))
             result.append(encode_name(name))
-            result.append(String#("E"))
+            result.append(String$("E"))
         }
         else
         {
@@ -390,7 +390,7 @@ define Planner
         {
             if param.name <> null
             {
-                if param.name.unwrap_or(String#("")).equals(String#("this"))
+                if param.name.unwrap_or(String$("")).equals(String$("this"))
                     continue
             }
             choose param.item_type
@@ -402,7 +402,7 @@ define Planner
         }
 
         if has_explicit_params = false
-            result.append(String#("v"))  ; void parameters
+            result.append(String$("v"))  ; void parameters
 
         result.to_string#()
     }
@@ -415,7 +415,7 @@ define Planner
     ; e.g., "scaly.containers.String" -> "String"
     function strip_package_prefix#(rp, name: String) returns String
     {
-        if name.starts_with(String#("scaly."))
+        if name.starts_with(String$("scaly."))
         {
             let last_dot name.last_index_of("." as char)
             if last_dot > 0
@@ -450,7 +450,7 @@ define Planner
     {
         ; Simple implementation for small numbers
         if n = 0
-            return String#("0")
+            return String$("0")
 
         let result StringBuilder#()
         var value n
@@ -694,7 +694,7 @@ define Planner
         {
             for arg in args
             {
-                result.append(String#("."))
+                result.append(String$("."))
                 result.append(strip_package_prefix#(arg.name))
             }
         }
@@ -709,41 +709,41 @@ define Planner
     ; Check if a type is a primitive type
     function is_primitive_type(name: String) returns bool
     {
-        if name.equals(String#("void"))
+        if name.equals(String$("void"))
             return true
-        if name.equals(String#("bool"))
+        if name.equals(String$("bool"))
             return true
-        if name.equals(String#("char"))
+        if name.equals(String$("char"))
             return true
-        if name.equals(String#("int"))
+        if name.equals(String$("int"))
             return true
-        if name.equals(String#("uint"))
+        if name.equals(String$("uint"))
             return true
-        if name.equals(String#("long"))
+        if name.equals(String$("long"))
             return true
-        if name.equals(String#("ulong"))
+        if name.equals(String$("ulong"))
             return true
-        if name.equals(String#("float"))
+        if name.equals(String$("float"))
             return true
-        if name.equals(String#("double"))
+        if name.equals(String$("double"))
             return true
-        if name.equals(String#("size_t"))
+        if name.equals(String$("size_t"))
             return true
-        if name.equals(String#("i8"))
+        if name.equals(String$("i8"))
             return true
-        if name.equals(String#("i16"))
+        if name.equals(String$("i16"))
             return true
-        if name.equals(String#("i32"))
+        if name.equals(String$("i32"))
             return true
-        if name.equals(String#("i64"))
+        if name.equals(String$("i64"))
             return true
-        if name.equals(String#("u8"))
+        if name.equals(String$("u8"))
             return true
-        if name.equals(String#("u16"))
+        if name.equals(String$("u16"))
             return true
-        if name.equals(String#("u32"))
+        if name.equals(String$("u32"))
             return true
-        if name.equals(String#("u64"))
+        if name.equals(String$("u64"))
             return true
         false
     }
@@ -751,7 +751,7 @@ define Planner
     ; Check if a type is a pointer type
     function is_pointer_type(t: PlannedType) returns bool
     {
-        if t.name.equals(String#("pointer"))
+        if t.name.equals(String$("pointer"))
         {
             if t.generics <> null
                 return t.generics.length > 0
@@ -762,7 +762,7 @@ define Planner
     ; Check if a type is a ref type
     function is_ref_type(t: PlannedType) returns bool
     {
-        if t.name.equals(String#("ref"))
+        if t.name.equals(String$("ref"))
         {
             if t.generics <> null
                 return t.generics.length > 0
@@ -839,9 +839,9 @@ define Planner
         ; NPO: Allow null (pointer[void]) to be assigned to Option types
         ; This handles: var x: Option[T] null  or  var x: ref[T]? null
         ; where null represents the None case (with NPO, it's just a null pointer)
-        if param_type.name.equals(String#("Option"))
+        if param_type.name.equals(String$("Option"))
         {
-            if arg_type.name.equals(String#("pointer"))
+            if arg_type.name.equals(String$("pointer"))
             {
                 if arg_type.generics <> null
                 {
@@ -850,21 +850,21 @@ define Planner
                         choose arg_type.generics.get(0)
                             when inner_ref: Some
                             {
-                                if (*inner_ref).name.equals(String#("void"))
+                                if (*inner_ref).name.equals(String$("void"))
                                     return true
                             }
                     }
                 }
             }
             ; Also handle null type directly
-            if arg_type.name.equals(String#("null"))
+            if arg_type.name.equals(String$("null"))
                 return true
         }
 
         ; Also check if param_type is an Option instantiation (e.g., "Option.ref.T")
-        if param_type.name.starts_with(String#("Option."))
+        if param_type.name.starts_with(String$("Option."))
         {
-            if arg_type.name.equals(String#("pointer"))
+            if arg_type.name.equals(String$("pointer"))
             {
                 if arg_type.generics <> null
                 {
@@ -873,13 +873,13 @@ define Planner
                         choose arg_type.generics.get(0)
                             when inner_ref: Some
                             {
-                                if (*inner_ref).name.equals(String#("void"))
+                                if (*inner_ref).name.equals(String$("void"))
                                     return true
                             }
                     }
                 }
             }
-            if arg_type.name.equals(String#("null"))
+            if arg_type.name.equals(String$("null"))
                 return true
         }
 
@@ -897,31 +897,31 @@ define Planner
     ; Check if a type name represents an integer type
     function is_integer_type(name: String) returns bool
     {
-        if name.equals(String#("int"))
+        if name.equals(String$("int"))
             return true
-        if name.equals(String#("uint"))
+        if name.equals(String$("uint"))
             return true
-        if name.equals(String#("long"))
+        if name.equals(String$("long"))
             return true
-        if name.equals(String#("ulong"))
+        if name.equals(String$("ulong"))
             return true
-        if name.equals(String#("size_t"))
+        if name.equals(String$("size_t"))
             return true
-        if name.equals(String#("i8"))
+        if name.equals(String$("i8"))
             return true
-        if name.equals(String#("i16"))
+        if name.equals(String$("i16"))
             return true
-        if name.equals(String#("i32"))
+        if name.equals(String$("i32"))
             return true
-        if name.equals(String#("i64"))
+        if name.equals(String$("i64"))
             return true
-        if name.equals(String#("u8"))
+        if name.equals(String$("u8"))
             return true
-        if name.equals(String#("u16"))
+        if name.equals(String$("u16"))
             return true
-        if name.equals(String#("u32"))
+        if name.equals(String$("u32"))
             return true
-        if name.equals(String#("u64"))
+        if name.equals(String$("u64"))
             return true
         false
     }
@@ -935,7 +935,7 @@ define Planner
     function build_type_name(path: Vector[String]) returns String
     {
         if path.length = 0
-            return String#("")
+            return String$("")
 
         let result StringBuilder#()
         var first true
@@ -944,7 +944,7 @@ define Planner
         {
             let component *component_ptr
             if first = false
-                result.append(String#("."))
+                result.append(String$("."))
             result.append(component)
             set first: false
         }
@@ -958,12 +958,12 @@ define Planner
     {
         let result PlannedType#(
             t.span,                     ; loc
-            String#(""),                ; name (will be set)
-            String#(""),                ; mangled_name (will be set)
+            String$(""),                ; name (will be set)
+            String$(""),                ; mangled_name (will be set)
             null,                       ; generics
             t.lifetime,                 ; life
             null,                       ; origin
-            String#(""),                ; array_size
+            String$(""),                ; array_size
             null                        ; variable
         )
 
@@ -1003,7 +1003,7 @@ define Planner
         }
 
         ; Handle intrinsic pointer type
-        if name.equals(String#("pointer"))
+        if name.equals(String$("pointer"))
         {
             if result.generics <> null
             {
@@ -1014,7 +1014,7 @@ define Planner
                         when inner_ref: Some
                         {
                             let mangled StringBuilder#()
-                            mangled.append(String#("P"))
+                            mangled.append(String$("P"))
                             mangled.append((*inner_ref).mangled_name)
                             set result.mangled_name: mangled.to_string#()
                             return result
@@ -1026,7 +1026,7 @@ define Planner
         }
 
         ; Handle intrinsic ref type
-        if name.equals(String#("ref"))
+        if name.equals(String$("ref"))
         {
             if result.generics <> null
             {
@@ -1037,7 +1037,7 @@ define Planner
                         when inner_ref: Some
                         {
                             let mangled StringBuilder#()
-                            mangled.append(String#("R"))
+                            mangled.append(String$("R"))
                             mangled.append((*inner_ref).mangled_name)
                             set result.mangled_name: mangled.to_string#()
                             return result
@@ -1130,7 +1130,7 @@ define Planner
                 args,
                 scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.Unspecified()),
                 null,
-                String#(""),
+                String$(""),
                 null
             )
             return result
@@ -1147,7 +1147,7 @@ define Planner
                 args,
                 scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.Unspecified()),
                 null,
-                String#(""),
+                String$(""),
                 null
             )
             return result
@@ -1178,7 +1178,7 @@ define Planner
             args,
             scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.Unspecified()),
             null,
-            String#(""),
+            String$(""),
             null
         )
 
@@ -1206,12 +1206,12 @@ define Planner
             {
                 PlannedType#(
                     b.span,
-                    String#("bool"),
-                    String#("b"),
+                    String$("bool"),
+                    String$("b"),
                     null,
                     scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.Unspecified()),
                     null,
-                    String#(""),
+                    String$(""),
                     null
                 )
             }
@@ -1219,12 +1219,12 @@ define Planner
             {
                 PlannedType#(
                     i.span,
-                    String#("int"),
-                    String#("i"),
+                    String$("int"),
+                    String$("i"),
                     null,
                     scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.Unspecified()),
                     null,
-                    String#(""),
+                    String$(""),
                     null
                 )
             }
@@ -1232,12 +1232,12 @@ define Planner
             {
                 PlannedType#(
                     h.span,
-                    String#("size_t"),
-                    String#("m"),
+                    String$("size_t"),
+                    String$("m"),
                     null,
                     scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.Unspecified()),
                     null,
-                    String#(""),
+                    String$(""),
                     null
                 )
             }
@@ -1245,12 +1245,12 @@ define Planner
             {
                 PlannedType#(
                     f.span,
-                    String#("float"),
-                    String#("f"),
+                    String$("float"),
+                    String$("f"),
                     null,
                     scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.Unspecified()),
                     null,
-                    String#(""),
+                    String$(""),
                     null
                 )
             }
@@ -1259,24 +1259,24 @@ define Planner
                 ; String constants have type pointer[char]
                 let char_type PlannedType#(
                     s.span,
-                    String#("char"),
-                    String#("c"),
+                    String$("char"),
+                    String$("c"),
                     null,
                     scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.Unspecified()),
                     null,
-                    String#(""),
+                    String$(""),
                     null
                 )
                 let generics Vector[PlannedType]#()
                 generics.put(0, char_type)
                 PlannedType#(
                     s.span,
-                    String#("pointer"),
-                    String#("Pc"),
+                    String$("pointer"),
+                    String$("Pc"),
                     generics,
                     scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.Unspecified()),
                     null,
-                    String#(""),
+                    String$(""),
                     null
                 )
             }
@@ -1284,12 +1284,12 @@ define Planner
             {
                 PlannedType#(
                     ch.span,
-                    String#("char"),
-                    String#("c"),
+                    String$("char"),
+                    String$("c"),
                     null,
                     scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.Unspecified()),
                     null,
-                    String#(""),
+                    String$(""),
                     null
                 )
             }
@@ -1298,24 +1298,24 @@ define Planner
                 ; Fragment constants are like strings
                 let char_type PlannedType#(
                     fr.span,
-                    String#("char"),
-                    String#("c"),
+                    String$("char"),
+                    String$("c"),
                     null,
                     scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.Unspecified()),
                     null,
-                    String#(""),
+                    String$(""),
                     null
                 )
                 let generics Vector[PlannedType]#()
                 generics.put(0, char_type)
                 PlannedType#(
                     fr.span,
-                    String#("pointer"),
-                    String#("Pc"),
+                    String$("pointer"),
+                    String$("Pc"),
                     generics,
                     scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.Unspecified()),
                     null,
-                    String#(""),
+                    String$(""),
                     null
                 )
             }
@@ -1330,12 +1330,12 @@ define Planner
     {
         PlannedType#(
             Span(0, 0),
-            String#("void"),
-            String#("v"),
+            String$("void"),
+            String$("v"),
             null,
             scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.Unspecified()),
             null,
-            String#(""),
+            String$(""),
             null
         )
     }
@@ -1345,12 +1345,12 @@ define Planner
     {
         PlannedType#(
             Span(0, 0),
-            String#("bool"),
-            String#("b"),
+            String$("bool"),
+            String$("b"),
             null,
             scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.Unspecified()),
             null,
-            String#(""),
+            String$(""),
             null
         )
     }
@@ -1360,12 +1360,12 @@ define Planner
     {
         PlannedType#(
             Span(0, 0),
-            String#("int"),
-            String#("i"),
+            String$("int"),
+            String$("i"),
             null,
             scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.Unspecified()),
             null,
-            String#(""),
+            String$(""),
             null
         )
     }
@@ -1375,12 +1375,12 @@ define Planner
     {
         PlannedType#(
             Span(0, 0),
-            String#("size_t"),
-            String#("m"),
+            String$("size_t"),
+            String$("m"),
             null,
             scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.Unspecified()),
             null,
-            String#(""),
+            String$(""),
             null
         )
     }
@@ -1390,12 +1390,12 @@ define Planner
     {
         PlannedType#(
             Span(0, 0),
-            String#("char"),
-            String#("c"),
+            String$("char"),
+            String$("c"),
             null,
             scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.Unspecified()),
             null,
-            String#(""),
+            String$(""),
             null
         )
     }
@@ -1405,12 +1405,12 @@ define Planner
     {
         PlannedType#(
             Span(0, 0),
-            String#("float"),
-            String#("f"),
+            String$("float"),
+            String$("f"),
             null,
             scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.Unspecified()),
             null,
-            String#(""),
+            String$(""),
             null
         )
     }
@@ -1422,17 +1422,17 @@ define Planner
         generics.put(0, inner)
 
         let mangled StringBuilder#()
-        mangled.append(String#("P"))
+        mangled.append(String$("P"))
         mangled.append(inner.mangled_name)
 
         PlannedType#(
             Span(0, 0),
-            String#("pointer"),
+            String$("pointer"),
             mangled.to_string#(),
             generics,
             scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.Unspecified()),
             null,
-            String#(""),
+            String$(""),
             null
         )
     }
@@ -1444,17 +1444,17 @@ define Planner
         generics.put(0, inner)
 
         let mangled StringBuilder#()
-        mangled.append(String#("R"))
+        mangled.append(String$("R"))
         mangled.append(inner.mangled_name)
 
         PlannedType#(
             Span(0, 0),
-            String#("ref"),
+            String$("ref"),
             mangled.to_string#(),
             generics,
             scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.Unspecified()),
             null,
-            String#(""),
+            String$(""),
             null
         )
     }
@@ -1685,7 +1685,7 @@ define Planner
                 ; Check for boolean literals (true/false parsed as Type names)
                 let name build_type_name(t.name)
 
-                if name.equals(String#("true"))
+                if name.equals(String$("true"))
                 {
                     let bool_const scaly.compiler.Model.Constant.Boolean(
                         scaly.compiler.Model.BooleanConstant(t.span, true)
@@ -1694,7 +1694,7 @@ define Planner
                     return result
                 }
 
-                if name.equals(String#("false"))
+                if name.equals(String$("false"))
                 {
                     let bool_const scaly.compiler.Model.Constant.Boolean(
                         scaly.compiler.Model.BooleanConstant(t.span, false)
@@ -1704,17 +1704,17 @@ define Planner
                 }
 
                 ; null is handled as a special type, not a constant
-                if name.equals(String#("null"))
+                if name.equals(String$("null"))
                 {
                     ; Create a null type (pointer[void])
                     let null_type PlannedType#(
                         t.span,
-                        String#("null"),
-                        String#("Pv"),
+                        String$("null"),
+                        String$("Pv"),
                         null,
                         scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.Unspecified()),
                         null,
-                        String#(""),
+                        String$(""),
                         null
                     )
                     let result PlannedExpression.Type#(null_type)
@@ -1746,12 +1746,12 @@ define Planner
                             {
                                 ; Found property - need to access via 'this'
                                 ; For now, return a variable reference to 'this' and handle in operand
-                                let this_bind lookup_local(String#("this"))
+                                let this_bind lookup_local(String$("this"))
                                 if this_bind <> null
                                 {
                                     let planned_var PlannedVariable#(
                                         t.span,
-                                        String#("this"),
+                                        String$("this"),
                                         this_bind.binding_type,
                                         false
                                     )
@@ -2137,8 +2137,8 @@ define Planner
             make_void_type(),   ; collection_type
             make_void_type(),   ; iterator_type
             inferred_type,
-            String#(""),        ; get_iterator_method
-            String#("")         ; next_method
+            String$(""),        ; get_iterator_method
+            String$("")         ; next_method
         )
 
         result
@@ -2238,7 +2238,7 @@ define Planner
         }
 
         ; Determine if this is mutable
-        let is_mutable bind.binding_type.equals(String#("var"))
+        let is_mutable bind.binding_type.equals(String$("var"))
 
         ; Determine if this is on page
         var is_on_page false
@@ -2402,7 +2402,7 @@ define Planner
             when call_life: Call
             {
                 let page_ptr_type make_page_pointer_type()
-                bind_local(String#("rp"), page_ptr_type, false, true)
+                bind_local(String$("rp"), page_ptr_type, false, true)
             }
             else
             {
@@ -2426,7 +2426,7 @@ define Planner
                 ; Handle 'this' parameter: if no explicit type, use Parent type
                 if planned.name <> null
                 {
-                    if planned.name.equals(String#("this"))
+                    if planned.name.equals(String$("this"))
                     {
                         if planned.item_type = null
                         {
@@ -2548,12 +2548,12 @@ define Planner
     {
         let page_type PlannedType#(
             Span(0, 0),
-            String#("scaly.memory.Page"),
-            String#("N4scaly6memory4PageE"),
+            String$("scaly.memory.Page"),
+            String$("N4scaly6memory4PageE"),
             null,
             scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.Unspecified()),
             null,
-            String#(""),
+            String$(""),
             null
         )
 
@@ -2562,12 +2562,12 @@ define Planner
 
         PlannedType#(
             Span(0, 0),
-            String#("pointer"),
-            String#("PN4scaly6memory4PageE"),
+            String$("pointer"),
+            String$("PN4scaly6memory4PageE"),
             generics,
             scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.Unspecified()),
             null,
-            String#(""),
+            String$(""),
             null
         )
     }
@@ -2598,7 +2598,7 @@ define Planner
                 ; Handle 'this' parameter
                 if planned.name <> null
                 {
-                    if planned.name.equals(String#("this"))
+                    if planned.name.equals(String$("this"))
                     {
                         if planned.item_type = null
                         {
@@ -2805,7 +2805,7 @@ define Planner
             null,
             scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.Unspecified()),
             null,
-            String#(""),
+            String$(""),
             null
         )
 
@@ -2930,7 +2930,7 @@ define Planner
             null,
             scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.Unspecified()),
             null,
-            String#(""),
+            String$(""),
             null
         )
 
@@ -3047,7 +3047,7 @@ define Planner
             null,
             scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.Unspecified()),
             null,
-            String#(""),
+            String$(""),
             null
         )
 
@@ -3301,63 +3301,63 @@ define Planner
     function get_operator_precedence(op: String) returns int
     {
         ; Level 1 - lowest precedence: logical OR
-        if op.equals(String#("||"))
+        if op.equals(String$("||"))
             return 1
 
         ; Level 2: logical AND
-        if op.equals(String#("&&"))
+        if op.equals(String$("&&"))
             return 2
 
         ; Level 3: bitwise OR
-        if op.equals(String#("|"))
+        if op.equals(String$("|"))
             return 3
 
         ; Level 4: bitwise XOR
-        if op.equals(String#("^"))
+        if op.equals(String$("^"))
             return 4
 
         ; Level 5: bitwise AND
-        if op.equals(String#("&"))
+        if op.equals(String$("&"))
             return 5
 
         ; Level 6: equality
-        if op.equals(String#("="))
+        if op.equals(String$("="))
             return 6
-        if op.equals(String#("<>"))
+        if op.equals(String$("<>"))
             return 6
 
         ; Level 7: relational
-        if op.equals(String#("<"))
+        if op.equals(String$("<"))
             return 7
-        if op.equals(String#(">"))
+        if op.equals(String$(">"))
             return 7
-        if op.equals(String#("<="))
+        if op.equals(String$("<="))
             return 7
-        if op.equals(String#(">="))
+        if op.equals(String$(">="))
             return 7
 
         ; Level 8: shift
-        if op.equals(String#("<<"))
+        if op.equals(String$("<<"))
             return 8
-        if op.equals(String#(">>"))
+        if op.equals(String$(">>"))
             return 8
 
         ; Level 9: additive
-        if op.equals(String#("+"))
+        if op.equals(String$("+"))
             return 9
-        if op.equals(String#("-"))
+        if op.equals(String$("-"))
             return 9
 
         ; Level 10 - highest precedence: multiplicative
-        if op.equals(String#("*"))
+        if op.equals(String$("*"))
             return 10
-        if op.equals(String#("/"))
+        if op.equals(String$("/"))
             return 10
-        if op.equals(String#("%"))
+        if op.equals(String$("%"))
             return 10
-        if op.equals(String#("div"))
+        if op.equals(String$("div"))
             return 10
-        if op.equals(String#("mod"))
+        if op.equals(String$("mod"))
             return 10
 
         0  ; Unknown operator
@@ -3371,9 +3371,9 @@ define Planner
             return false
 
         ; Check for known prefix functions that act like unary operators
-        if name.equals(String#("abs"))
+        if name.equals(String$("abs"))
             return true
-        if name.equals(String#("not"))
+        if name.equals(String$("not"))
             return true
 
         ; Get first character
@@ -3644,7 +3644,7 @@ define Planner
                     choose param.name
                         when name_ref: Some
                         {
-                            if name_ref.equals(String#("this")) = false
+                            if name_ref.equals(String$("this")) = false
                                 set param_count: param_count + 1
                         }
                         else
@@ -3674,7 +3674,7 @@ define Planner
                         choose param.name
                             when name_ref: Some
                             {
-                                if name_ref.equals(String#("this"))
+                                if name_ref.equals(String$("this"))
                                     set is_this: true
                             }
 
@@ -3842,28 +3842,28 @@ define Planner
     function is_intrinsic_binary_operator(name: String, left: PlannedType, right: PlannedType) returns bool
     {
         ; Arithmetic operators on numeric types
-        if name.equals(String#("+")) | name.equals(String#("-")) | name.equals(String#("*")) | name.equals(String#("/")) | name.equals(String#("%"))
+        if name.equals(String$("+")) | name.equals(String$("-")) | name.equals(String$("*")) | name.equals(String$("/")) | name.equals(String$("%"))
         {
             if is_integer_type(left.name) & is_integer_type(right.name)
                 return true
-            if left.name.equals(String#("float")) & right.name.equals(String#("float"))
+            if left.name.equals(String$("float")) & right.name.equals(String$("float"))
                 return true
-            if left.name.equals(String#("double")) & right.name.equals(String#("double"))
+            if left.name.equals(String$("double")) & right.name.equals(String$("double"))
                 return true
         }
 
         ; Comparison operators
-        if name.equals(String#("=")) | name.equals(String#("<>")) | name.equals(String#("<")) | name.equals(String#(">")) | name.equals(String#("<=")) | name.equals(String#(">="))
+        if name.equals(String$("=")) | name.equals(String$("<>")) | name.equals(String$("<")) | name.equals(String$(">")) | name.equals(String$("<=")) | name.equals(String$(">="))
         {
             if is_integer_type(left.name) & is_integer_type(right.name)
                 return true
-            if left.name.equals(String#("float")) & right.name.equals(String#("float"))
+            if left.name.equals(String$("float")) & right.name.equals(String$("float"))
                 return true
-            if left.name.equals(String#("double")) & right.name.equals(String#("double"))
+            if left.name.equals(String$("double")) & right.name.equals(String$("double"))
                 return true
-            if left.name.equals(String#("bool")) & right.name.equals(String#("bool"))
+            if left.name.equals(String$("bool")) & right.name.equals(String$("bool"))
                 return true
-            if left.name.equals(String#("char")) & right.name.equals(String#("char"))
+            if left.name.equals(String$("char")) & right.name.equals(String$("char"))
                 return true
             ; Pointer comparison
             if is_pointer_type(left) & is_pointer_type(right)
@@ -3871,21 +3871,21 @@ define Planner
         }
 
         ; Bitwise operators on integers
-        if name.equals(String#("&")) | name.equals(String#("|")) | name.equals(String#("^")) | name.equals(String#("<<")) | name.equals(String#(">>"))
+        if name.equals(String$("&")) | name.equals(String$("|")) | name.equals(String$("^")) | name.equals(String$("<<")) | name.equals(String$(">>"))
         {
             if is_integer_type(left.name) & is_integer_type(right.name)
                 return true
         }
 
         ; Logical operators on bool
-        if name.equals(String#("&&")) | name.equals(String#("||"))
+        if name.equals(String$("&&")) | name.equals(String$("||"))
         {
-            if left.name.equals(String#("bool")) & right.name.equals(String#("bool"))
+            if left.name.equals(String$("bool")) & right.name.equals(String$("bool"))
                 return true
         }
 
         ; Pointer arithmetic: pointer + int, pointer - int
-        if name.equals(String#("+")) | name.equals(String#("-"))
+        if name.equals(String$("+")) | name.equals(String$("-"))
         {
             if is_pointer_type(left) & is_integer_type(right.name)
                 return true
@@ -3898,11 +3898,11 @@ define Planner
     function compute_intrinsic_operator_result(name: String, left: PlannedType, right: PlannedType) returns PlannedType
     {
         ; Comparison operators always return bool
-        if name.equals(String#("=")) | name.equals(String#("<>")) | name.equals(String#("<")) | name.equals(String#(">")) | name.equals(String#("<=")) | name.equals(String#(">="))
+        if name.equals(String$("=")) | name.equals(String$("<>")) | name.equals(String$("<")) | name.equals(String$(">")) | name.equals(String$("<=")) | name.equals(String$(">="))
             return make_bool_type()
 
         ; Logical operators return bool
-        if name.equals(String#("&&")) | name.equals(String#("||"))
+        if name.equals(String$("&&")) | name.equals(String$("||"))
             return make_bool_type()
 
         ; Pointer arithmetic returns pointer
@@ -3919,7 +3919,7 @@ define Planner
     {
         ; Simple mangling for intrinsic operators
         let result StringBuilder#()
-        result.append(String#("_ZN"))
+        result.append(String$("_ZN"))
         result.append(encode_name(name))
         ; Use mangled_name from the types if available
         if left.mangled_name.length > 0
@@ -3930,7 +3930,7 @@ define Planner
             result.append(right.mangled_name)
         else
             result.append(encode_name(right.name))
-        result.append(String#("E"))
+        result.append(String$("E"))
         result.to_string#()
     }
 
@@ -3954,7 +3954,7 @@ define Planner
                 null,
                 scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.Unspecified()),
                 null,
-                String#(""),
+                String$(""),
                 null
             )
             return result
@@ -4087,7 +4087,7 @@ define Planner
     function resolve_prefix_operator_call(this, name: String, loc: Span, operand: PlannedType) returns ref[PlannedType]?
     {
         ; Dereference operator: *ptr -> element type
-        if name.equals(String#("*"))
+        if name.equals(String$("*"))
         {
             let element_type get_pointer_element_type(operand)
             if element_type <> null
@@ -4098,53 +4098,53 @@ define Planner
         }
 
         ; Address-of operator: &val -> pointer[typeof(val)]
-        if name.equals(String#("&"))
+        if name.equals(String$("&"))
         {
             let generics Vector[PlannedType]#()
             generics.put(0, operand)
 
             let result StringBuilder#()
-            result.append(String#("P"))
+            result.append(String$("P"))
             result.append(operand.mangled_name)
 
             let ptr_type PlannedType#(
                 loc,
-                String#("pointer"),
+                String$("pointer"),
                 result.to_string#(),
                 generics,
                 scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.Unspecified()),
                 null,
-                String#(""),
+                String$(""),
                 null
             )
             return ptr_type
         }
 
         ; Negation: -x for numeric types
-        if name.equals(String#("-"))
+        if name.equals(String$("-"))
         {
             if is_numeric_type(operand.name)
                 return operand
         }
 
         ; Unary plus: +x for numeric types
-        if name.equals(String#("+"))
+        if name.equals(String$("+"))
         {
             if is_numeric_type(operand.name)
                 return operand
         }
 
         ; Bitwise not: ~x for integers
-        if name.equals(String#("~"))
+        if name.equals(String$("~"))
         {
             if is_integer_type(operand.name)
                 return operand
         }
 
         ; Logical not: !x for bool
-        if name.equals(String#("!"))
+        if name.equals(String$("!"))
         {
-            if operand.name.equals(String#("bool"))
+            if operand.name.equals(String$("bool"))
                 return operand
         }
 
@@ -4156,13 +4156,13 @@ define Planner
     {
         if is_integer_type(name)
             return true
-        if name.equals(String#("float"))
+        if name.equals(String$("float"))
             return true
-        if name.equals(String#("double"))
+        if name.equals(String$("double"))
             return true
-        if name.equals(String#("f32"))
+        if name.equals(String$("f32"))
             return true
-        if name.equals(String#("f64"))
+        if name.equals(String$("f64"))
             return true
 
         false
@@ -4229,7 +4229,7 @@ define Planner
                                 choose param.name
                                     when n_ref: Some
                                     {
-                                        if n_ref.equals(String#("this")) = false
+                                        if n_ref.equals(String$("this")) = false
                                         {
                                             set has_only_this: false
                                             set param_count: param_count + 1
@@ -4541,7 +4541,7 @@ define Planner
                 return null
 
             ; Get operator
-            var op_name String String#("")
+            var op_name String String$("")
             var op_loc Span Span(0, 0)
             choose ops.get(split_idx)
                 when op_ref: Some
@@ -4628,67 +4628,67 @@ function test() returns int
 {
     ; Test size_to_string first (simpler, uses StringBuilder internally)
     let str4 Planner.size_to_string(4)
-    if str4.equals(String#("4")) = false
+    if str4.equals(String$("4")) = false
         return 1
 
     ; Test encode_name (builds on size_to_string)
-    let name String#("test")
+    let name String$("test")
     let encoded Planner.encode_name(name)
-    if encoded.equals(String#("4test")) = false
+    if encoded.equals(String$("4test")) = false
         return 99
 
     ; Test strip_package_prefix
-    let qualified String#("scaly.containers.String")
+    let qualified String$("scaly.containers.String")
     let stripped Planner.strip_package_prefix#(qualified)
-    if stripped.equals(String#("String")) = false
+    if stripped.equals(String$("String")) = false
         return 2
 
     ; Test strip_suffix
-    let with_suffix String#("Vector.char")
+    let with_suffix String$("Vector.char")
     let base Planner.strip_suffix#(with_suffix)
-    if base.equals(String#("Vector")) = false
+    if base.equals(String$("Vector")) = false
         return 3
 
     ; Test size_to_string
     let str42 Planner.size_to_string(42)
-    if str42.equals(String#("42")) = false
+    if str42.equals(String$("42")) = false
         return 4
 
     ; Test is_primitive_type
-    if Planner.is_primitive_type(String#("int")) = false
+    if Planner.is_primitive_type(String$("int")) = false
         return 5
-    if Planner.is_primitive_type(String#("bool")) = false
+    if Planner.is_primitive_type(String$("bool")) = false
         return 6
-    if Planner.is_primitive_type(String#("Vector")) = true
+    if Planner.is_primitive_type(String$("Vector")) = true
         return 7
 
     ; Test generate_cache_key
-    let cache_key Planner.generate_cache_key(String#("Vector"), null)
-    if cache_key.equals(String#("Vector")) = false
+    let cache_key Planner.generate_cache_key(String$("Vector"), null)
+    if cache_key.equals(String$("Vector")) = false
         return 8
 
     ; Test build_type_name
     let path Vector[String]$()
-    path.put(0, String#("scaly"))
-    path.put(1, String#("containers"))
-    path.put(2, String#("Vector"))
+    path.put(0, String$("scaly"))
+    path.put(1, String$("containers"))
+    path.put(2, String$("Vector"))
     let type_name Planner.build_type_name(path)
-    if type_name.equals(String#("scaly.containers.Vector")) = false
+    if type_name.equals(String$("scaly.containers.Vector")) = false
         return 9
 
     ; Test make_int_type
     let int_type Planner.make_int_type()
-    if int_type.name.equals(String#("int")) = false
+    if int_type.name.equals(String$("int")) = false
         return 10
-    if int_type.mangled_name.equals(String#("i")) = false
+    if int_type.mangled_name.equals(String$("i")) = false
         return 11
 
     ; Test make_pointer_type
     let char_type Planner.make_char_type()
     let ptr_char Planner.make_pointer_type(char_type)
-    if ptr_char.name.equals(String#("pointer")) = false
+    if ptr_char.name.equals(String$("pointer")) = false
         return 12
-    if ptr_char.mangled_name.equals(String#("Pc")) = false
+    if ptr_char.mangled_name.equals(String$("Pc")) = false
         return 13
 
     ; Test infer_constant_type for integer
@@ -4696,7 +4696,7 @@ function test() returns int
         scaly.compiler.Model.IntegerConstant(Span(0, 0), 42)
     )
     let int_inferred Planner.infer_constant_type(int_const)
-    if int_inferred.name.equals(String#("int")) = false
+    if int_inferred.name.equals(String$("int")) = false
         return 14
 
     ; Test infer_constant_type for boolean
@@ -4704,7 +4704,7 @@ function test() returns int
         scaly.compiler.Model.BooleanConstant(Span(0, 0), true)
     )
     let bool_inferred Planner.infer_constant_type(bool_const)
-    if bool_inferred.name.equals(String#("bool")) = false
+    if bool_inferred.name.equals(String$("bool")) = false
         return 15
 
     ; ========================================================================
@@ -4712,11 +4712,11 @@ function test() returns int
     ; ========================================================================
 
     ; Test get_operator_precedence - verify * > + > = > && > ||
-    let prec_mul Planner.get_operator_precedence(String#("*"))
-    let prec_add Planner.get_operator_precedence(String#("+"))
-    let prec_eq Planner.get_operator_precedence(String#("="))
-    let prec_and Planner.get_operator_precedence(String#("&&"))
-    let prec_or Planner.get_operator_precedence(String#("||"))
+    let prec_mul Planner.get_operator_precedence(String$("*"))
+    let prec_add Planner.get_operator_precedence(String$("+"))
+    let prec_eq Planner.get_operator_precedence(String$("="))
+    let prec_and Planner.get_operator_precedence(String$("&&"))
+    let prec_or Planner.get_operator_precedence(String$("||"))
 
     ; * should have highest precedence (10)
     if prec_mul <> 10
@@ -4749,34 +4749,34 @@ function test() returns int
         return 108
 
     ; Test unknown operator returns 0
-    let prec_unknown Planner.get_operator_precedence(String#("foo"))
+    let prec_unknown Planner.get_operator_precedence(String$("foo"))
     if prec_unknown <> 0
         return 109
 
     ; Test is_operator_name for operators
-    if Planner.is_operator_name(String#("+")) = false
+    if Planner.is_operator_name(String$("+")) = false
         return 110
-    if Planner.is_operator_name(String#("-")) = false
+    if Planner.is_operator_name(String$("-")) = false
         return 111
-    if Planner.is_operator_name(String#("*")) = false
+    if Planner.is_operator_name(String$("*")) = false
         return 112
-    if Planner.is_operator_name(String#("=")) = false
+    if Planner.is_operator_name(String$("=")) = false
         return 113
-    if Planner.is_operator_name(String#("<>")) = false
+    if Planner.is_operator_name(String$("<>")) = false
         return 114
-    if Planner.is_operator_name(String#("&&")) = false
+    if Planner.is_operator_name(String$("&&")) = false
         return 115
 
     ; Test is_operator_name for non-operators
-    if Planner.is_operator_name(String#("foo")) = true
+    if Planner.is_operator_name(String$("foo")) = true
         return 116
-    if Planner.is_operator_name(String#("bar")) = true
+    if Planner.is_operator_name(String$("bar")) = true
         return 117
-    if Planner.is_operator_name(String#("test")) = true
+    if Planner.is_operator_name(String$("test")) = true
         return 118
 
     ; Test special prefix functions recognized as operators
-    if Planner.is_operator_name(String#("abs")) = false
+    if Planner.is_operator_name(String$("abs")) = false
         return 119
 
     ; ========================================================================
@@ -4785,63 +4785,63 @@ function test() returns int
 
     ; Test is_intrinsic_binary_operator for arithmetic on integers
     let int_t Planner.make_int_type()
-    if Planner.is_intrinsic_binary_operator(String#("+"), int_t, int_t) = false
+    if Planner.is_intrinsic_binary_operator(String$("+"), int_t, int_t) = false
         return 200
-    if Planner.is_intrinsic_binary_operator(String#("-"), int_t, int_t) = false
+    if Planner.is_intrinsic_binary_operator(String$("-"), int_t, int_t) = false
         return 201
-    if Planner.is_intrinsic_binary_operator(String#("*"), int_t, int_t) = false
+    if Planner.is_intrinsic_binary_operator(String$("*"), int_t, int_t) = false
         return 202
 
     ; Test is_intrinsic_binary_operator for comparison on integers
-    if Planner.is_intrinsic_binary_operator(String#("="), int_t, int_t) = false
+    if Planner.is_intrinsic_binary_operator(String$("="), int_t, int_t) = false
         return 203
-    if Planner.is_intrinsic_binary_operator(String#("<>"), int_t, int_t) = false
+    if Planner.is_intrinsic_binary_operator(String$("<>"), int_t, int_t) = false
         return 204
-    if Planner.is_intrinsic_binary_operator(String#("<"), int_t, int_t) = false
+    if Planner.is_intrinsic_binary_operator(String$("<"), int_t, int_t) = false
         return 205
 
     ; Test is_intrinsic_binary_operator for logical on bools
     let bool_t Planner.make_bool_type()
-    if Planner.is_intrinsic_binary_operator(String#("&&"), bool_t, bool_t) = false
+    if Planner.is_intrinsic_binary_operator(String$("&&"), bool_t, bool_t) = false
         return 206
-    if Planner.is_intrinsic_binary_operator(String#("||"), bool_t, bool_t) = false
+    if Planner.is_intrinsic_binary_operator(String$("||"), bool_t, bool_t) = false
         return 207
 
     ; Test that non-intrinsic operations return false
-    if Planner.is_intrinsic_binary_operator(String#("+"), bool_t, bool_t) = true
+    if Planner.is_intrinsic_binary_operator(String$("+"), bool_t, bool_t) = true
         return 208
-    if Planner.is_intrinsic_binary_operator(String#("&&"), int_t, int_t) = true
+    if Planner.is_intrinsic_binary_operator(String$("&&"), int_t, int_t) = true
         return 209
 
     ; Test compute_intrinsic_operator_result
     ; Comparison operators return bool
-    let cmp_result Planner.compute_intrinsic_operator_result(String#("="), int_t, int_t)
-    if cmp_result.name.equals(String#("bool")) = false
+    let cmp_result Planner.compute_intrinsic_operator_result(String$("="), int_t, int_t)
+    if cmp_result.name.equals(String$("bool")) = false
         return 210
-    let lt_result Planner.compute_intrinsic_operator_result(String#("<"), int_t, int_t)
-    if lt_result.name.equals(String#("bool")) = false
+    let lt_result Planner.compute_intrinsic_operator_result(String$("<"), int_t, int_t)
+    if lt_result.name.equals(String$("bool")) = false
         return 211
 
     ; Logical operators return bool
-    let and_result Planner.compute_intrinsic_operator_result(String#("&&"), bool_t, bool_t)
-    if and_result.name.equals(String#("bool")) = false
+    let and_result Planner.compute_intrinsic_operator_result(String$("&&"), bool_t, bool_t)
+    if and_result.name.equals(String$("bool")) = false
         return 212
 
     ; Arithmetic operators return left type
-    let add_result Planner.compute_intrinsic_operator_result(String#("+"), int_t, int_t)
-    if add_result.name.equals(String#("int")) = false
+    let add_result Planner.compute_intrinsic_operator_result(String$("+"), int_t, int_t)
+    if add_result.name.equals(String$("int")) = false
         return 213
 
     ; Test bitwise operators on integers
-    if Planner.is_intrinsic_binary_operator(String#("&"), int_t, int_t) = false
+    if Planner.is_intrinsic_binary_operator(String$("&"), int_t, int_t) = false
         return 214
-    if Planner.is_intrinsic_binary_operator(String#("|"), int_t, int_t) = false
+    if Planner.is_intrinsic_binary_operator(String$("|"), int_t, int_t) = false
         return 215
-    if Planner.is_intrinsic_binary_operator(String#("^"), int_t, int_t) = false
+    if Planner.is_intrinsic_binary_operator(String$("^"), int_t, int_t) = false
         return 216
 
     ; Test compute_intrinsic_operator_mangled
-    let mangled Planner.compute_intrinsic_operator_mangled(String#("+"), int_t, int_t)
+    let mangled Planner.compute_intrinsic_operator_mangled(String$("+"), int_t, int_t)
     if mangled.length = 0
         return 217
 
@@ -4850,19 +4850,19 @@ function test() returns int
     ; ========================================================================
 
     ; Test is_numeric_type
-    if Planner.is_numeric_type(String#("int")) = false
+    if Planner.is_numeric_type(String$("int")) = false
         return 300
-    if Planner.is_numeric_type(String#("float")) = false
+    if Planner.is_numeric_type(String$("float")) = false
         return 301
-    if Planner.is_numeric_type(String#("double")) = false
+    if Planner.is_numeric_type(String$("double")) = false
         return 302
-    if Planner.is_numeric_type(String#("i32")) = false
+    if Planner.is_numeric_type(String$("i32")) = false
         return 303
-    if Planner.is_numeric_type(String#("f64")) = false
+    if Planner.is_numeric_type(String$("f64")) = false
         return 304
-    if Planner.is_numeric_type(String#("bool")) = true
+    if Planner.is_numeric_type(String$("bool")) = true
         return 305
-    if Planner.is_numeric_type(String#("char")) = true
+    if Planner.is_numeric_type(String$("char")) = true
         return 306
 
     ; ========================================================================
