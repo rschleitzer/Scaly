@@ -1,0 +1,58 @@
+; AOT Test: Generic types with lifetime modifiers
+; Expected: 100
+
+function malloc(size: size_t) returns pointer[void] extern
+function free(ptr: pointer[void]) extern
+
+; Define a Page type (required for lifetime syntax)
+define Page(buffer: pointer[void], offset: size_t)
+{
+    function allocate(this: Page, size: size_t, align: size_t) returns pointer[void]
+    {
+        let aligned (offset + align - (1 as size_t)) & (~(align - (1 as size_t)))
+        set offset: aligned + size
+        buffer + aligned
+    }
+}
+
+; Generic container with init# for lifetime-aware allocation
+define Container[T](data: pointer[T], length: size_t)
+{
+    init ()
+    {
+        set data: null
+        set length: 0
+    }
+
+    init#(page, size: size_t)
+    {
+        set length: size
+        if size > 0
+            set data: page.allocate(size * sizeof T, alignof T) as pointer[T]
+        else
+            set data: null
+    }
+
+    function get(this, index: size_t) returns T
+        *(data + index)
+
+    procedure set_item(this, index: size_t, value: T)
+        set *(data + index): value
+}
+
+; Test generic with ^page lifetime
+let buf malloc(4096 as size_t)
+var page Page(buf, 0)
+let page_ptr &page
+
+; Create Container[int] on page
+var container Container[int]^page_ptr(10)
+container.set_item(0, 100)
+let result container.get(0)
+
+free(buf)
+
+if result = 100
+    print("100")
+else
+    print("WRONG")

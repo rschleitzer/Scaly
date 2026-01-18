@@ -1,0 +1,33 @@
+; AOT Test: Nested generic types
+; Expected: 42
+
+define Box[T](value: T)
+{
+    function get(this) returns T
+        value
+}
+
+define Pair[A, B](first: A, second: B)
+{
+    function get_first(this) returns A
+        first
+
+    function get_second(this) returns B
+        second
+}
+
+; Nested single-param generic: Box[Box[int]]
+let inner Box[int](42)
+let outer Box[Box[int]](inner)
+
+; Nested multi-param generic: Pair[int, Pair[int, int]]
+let inner_pair Pair[int, int](10, 20)
+let outer_pair Pair[int, Pair[int, int]](5, inner_pair)
+
+; Extract nested value
+let result outer.get().get()
+
+if result = 42
+    print("42")
+else
+    print("WRONG")
