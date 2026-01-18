@@ -4,21 +4,17 @@
 define compiler
 {
     module lexer   ; Lexer - must come before parser
-    ; module parser  ; Uses choose/when - disabled until pattern bindings work
+    module parser
     module Syntax  ; Generated from scaly.sgm - must come first, used by other modules
     module Model
     module Modeler
     module Plan
-    ; module Planner  ; Uses choose/when - disabled until pattern bindings work
+    module Planner
     module LLVM
-    ; module Emitter  ; Uses choose/when - disabled until pattern bindings work
+    module Emitter
 
     function test() returns int
     {
-        ; Remaining blockers:
-        ; - parser.test(): member access on heap structs (Lexer#().token)
-        ; - Planner.test(): uses Page.allocate_exclusive_page()
-        ; - Emitter.test(): LLVM bindings with complex types
         0
     }
 }
