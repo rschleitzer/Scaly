@@ -1,0 +1,15 @@
+; AOT Test: Type cast expressions
+; Expected: CAST
+
+; Test integer to size_t cast
+let x 42
+let sz x as size_t
+
+; Test size_t arithmetic with cast
+let one 1 as size_t
+let result sz + one
+
+if result = 43
+    print("CAST")
+else
+    print("WRONG")

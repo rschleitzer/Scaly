@@ -1,0 +1,15 @@
+; AOT Test: Pointer type casts
+; Expected: PTR
+
+define Node(value: int)
+
+let n Node(42)
+let ptr &n
+let void_ptr ptr as pointer[void]
+let back_ptr void_ptr as pointer[Node]
+let result (*back_ptr).value
+
+if result = 42
+    print("PTR")
+else
+    print("WRONG")

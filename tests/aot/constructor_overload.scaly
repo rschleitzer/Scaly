@@ -1,0 +1,28 @@
+; AOT Test: Constructor overloading (multiple init methods)
+; Expected: 35
+
+define Point(x: int, y: int)
+{
+    init()
+    {
+        set x: 10
+        set y: 20
+    }
+
+    init(a: int, b: int)
+    {
+        set x: a
+        set y: b
+    }
+}
+
+; Test default constructor
+let p1 Point()
+; Test parameterized constructor
+let p2 Point(5, 7)
+
+; p1.x + p1.y should be 30, p2.x * p2.y should be 35
+if p2.x * p2.y = 35
+    print("35")
+else
+    print("WRONG")

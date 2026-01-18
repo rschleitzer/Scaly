@@ -1,0 +1,45 @@
+; AOT Test: init# lifetime-dependent constructors
+; Expected: 100
+
+function malloc(size: size_t) returns pointer[void] extern
+function free(ptr: pointer[void]) extern
+
+; Define a Page type (required for ^page syntax)
+define Page(buffer: pointer[void], offset: size_t)
+{
+    function allocate(this: Page, size: size_t, align: size_t) returns pointer[void]
+    {
+        let aligned (offset + align - (1 as size_t)) & (~(align - (1 as size_t)))
+        set offset: aligned + size
+        buffer + aligned
+    }
+}
+
+; Data type that uses init# to allocate on provided page
+define Data(ptr: pointer[int])
+{
+    init#(page, value: int)
+    {
+        set ptr: page.allocate(sizeof int, alignof int) as pointer[int]
+        set *ptr: value
+    }
+
+    function get_value(this) returns int
+        *ptr
+}
+
+; Allocate buffer and create page
+let buf malloc(1024 as size_t)
+var page Page(buf, 0)
+let page_ptr &page
+
+; Create Data using init# - allocates on 'page_ptr'
+let d Data^page_ptr(100)
+let result d.get_value()
+
+free(buf)
+
+if result = 100
+    print("100")
+else
+    print("WRONG")
