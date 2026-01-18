@@ -3610,6 +3610,87 @@ function test() returns int
                 return 163
         }
 
+    ; Test 170: End-to-end with union definition
+    set parser: Parser#(String#("define Option union(Some: int, None)"))
+    choose parser.parse_program#()
+        when Error: err
+            return 170
+        when Success: syntax
+        {
+            let program build_program#(String#("test8.scaly"), String#("test8"), syntax)
+            var planner Planner#(String#("test8.scaly"))
+            let plan planner.plan_program(program)
+            if plan = null
+                return 171
+
+            var emitter Emitter#()
+            let emit_result emitter.emit(plan, String#("test8_module"))
+            if emit_result = false
+                return 172
+        }
+
+    ; Test 180: End-to-end with union variant construction
+    set parser: Parser#(String#("define Option union(Some: int, None)\nlet opt Option.Some(42)"))
+    choose parser.parse_program#()
+        when Error: err
+            return 180
+        when Success: syntax
+        {
+            let program build_program#(String#("test9.scaly"), String#("test9"), syntax)
+            var planner Planner#(String#("test9.scaly"))
+            let plan planner.plan_program(program)
+            if plan = null
+                return 181
+
+            var emitter Emitter#()
+            let emit_result emitter.emit(plan, String#("test9_module"))
+            if emit_result = false
+                return 182
+        }
+
+    ; Test 190: End-to-end with choose/when pattern matching
+    set parser: Parser#(String#("define Option union(Some: int, None)\nfunction unwrap(opt: Option) returns int\n    choose opt\n        when Some: v\n            v\n        else\n            0"))
+    choose parser.parse_program#()
+        when Error: err
+            return 190
+        when Success: syntax
+        {
+            let program build_program#(String#("test10.scaly"), String#("test10"), syntax)
+            var planner Planner#(String#("test10.scaly"))
+            let plan planner.plan_program(program)
+            if plan = null
+                return 191
+
+            var emitter Emitter#()
+            let emit_result emitter.emit(plan, String#("test10_module"))
+            if emit_result = false
+                return 192
+
+            ; Verify unwrap function was emitted
+            let unwrap_fn LLVMGetNamedFunction(emitter.llvm_module, String#("_Z6unwrap6Option").c_data())
+            if unwrap_fn.handle = null
+                return 193
+        }
+
+    ; Test 200: End-to-end with generic type
+    set parser: Parser#(String#("define Box[T](value: T)\nlet b Box[int](42)"))
+    choose parser.parse_program#()
+        when Error: err
+            return 200
+        when Success: syntax
+        {
+            let program build_program#(String#("test11.scaly"), String#("test11"), syntax)
+            var planner Planner#(String#("test11.scaly"))
+            let plan planner.plan_program(program)
+            if plan = null
+                return 201
+
+            var emitter Emitter#()
+            let emit_result emitter.emit(plan, String#("test11_module"))
+            if emit_result = false
+                return 202
+        }
+
     0
 }
 
