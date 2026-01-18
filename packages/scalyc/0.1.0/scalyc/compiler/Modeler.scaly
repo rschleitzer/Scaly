@@ -1477,8 +1477,8 @@ function handle_constituent#(path: String, syntax: MemberSyntax, symbols_builder
         }
         when FunctionSyntax: func
         {
-            let function build_function#(func.start, func.end, func.target, false, true)
-            Member.Function(function)
+            let fn build_function#(func.start, func.end, func.target, false, true)
+            Member.Function(fn)
         }
         when ProcedureSyntax: proc
         {
@@ -1551,8 +1551,8 @@ function handle_declaration#(path: String, syntax: DeclarationSyntax, symbols_bu
         }
         when FunctionSyntax: func
         {
-            let function build_function#(func.start, func.end, func.target, false, true)
-            Member.Function(function)
+            let fn build_function#(func.start, func.end, func.target, false, true)
+            Member.Function(fn)
         }
         when ProcedureSyntax: proc
         {
@@ -1582,8 +1582,8 @@ function handle_export#(path: String, syntax: ExportSyntax, is_private: bool, sy
         }
         when FunctionSyntax: func
         {
-            let function build_function#(func.start, func.end, func.target, is_private, true)
-            Member.Function(function)
+            let fn build_function#(func.start, func.end, func.target, is_private, true)
+            Member.Function(fn)
         }
         when OperatorSyntax: op
         {
