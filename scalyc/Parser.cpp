@@ -2149,25 +2149,7 @@ llvm::Expected<std::vector<OperandSyntax>*> Parser::parseOperandList() {
             }
             return List;
         }
-
-        // Check if this operand contains a control-flow expression
-        // Control-flow expressions (if, while, for, choose, match, try, block)
-        // are complete statements and should not have additional operands after them
-        const auto& Expr = NodeOrErr->expression;
-        bool IsControlFlow = std::holds_alternative<IfSyntax>(Expr.Value) ||
-                             std::holds_alternative<WhileSyntax>(Expr.Value) ||
-                             std::holds_alternative<ForSyntax>(Expr.Value) ||
-                             std::holds_alternative<ChooseSyntax>(Expr.Value) ||
-                             std::holds_alternative<MatchSyntax>(Expr.Value) ||
-                             std::holds_alternative<TrySyntax>(Expr.Value) ||
-                             std::holds_alternative<BlockSyntax>(Expr.Value);
-
         List->push_back(std::move(*NodeOrErr));
-
-        // Stop after control-flow expressions - they are complete operations
-        if (IsControlFlow) {
-            return List;
-        }
     }
 }
 
@@ -2839,10 +2821,6 @@ llvm::Expected<std::vector<StatementSyntax>*> Parser::parseStatementList() {
 }
 
 llvm::Expected<StatementSyntax> Parser::parseStatement() {
-    // Ensure we have a real token before capturing start position
-    // (parseColon from previous statement may have left us with EmptyToken)
-    if (is<EmptyToken>(Lex.token()))
-        Lex.advance();
     size_t Start = Lex.previousPosition();
 
     auto CommandOrErr = parseCommand();

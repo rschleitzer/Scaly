@@ -66,6 +66,8 @@ use scaly.compiler.LLVM.LLVMLinkage
 ; LLVM functions
 use scaly.compiler.LLVM.LLVMAddCase
 use scaly.compiler.LLVM.LLVMAddFunction
+use scaly.compiler.LLVM.LLVMAddIncoming
+use scaly.compiler.LLVM.LLVMBuildPhi
 use scaly.compiler.LLVM.LLVMAppendBasicBlockInContext
 use scaly.compiler.LLVM.LLVMBuildAShr
 use scaly.compiler.LLVM.LLVMBuildAdd
@@ -119,6 +121,7 @@ use scaly.compiler.LLVM.LLVMGetInsertBlock
 use scaly.compiler.LLVM.LLVMGetIntTypeWidth
 use scaly.compiler.LLVM.LLVMGetNamedFunction
 use scaly.compiler.LLVM.LLVMGetNamedGlobal
+use scaly.compiler.LLVM.LLVMGlobalGetValueType
 use scaly.compiler.LLVM.LLVMGetReturnType
 use scaly.compiler.LLVM.LLVMGetTypeKind
 use scaly.compiler.LLVM.LLVMInt16TypeInContext
@@ -615,11 +618,25 @@ define Emitter
         if struct.properties.length = 0
             return llvm_struct
 
-        ; Collect element types
+        ; Collect element types from properties
         let element_count struct.properties.length
-        ; Allocate array for element types (would need proper array allocation)
-        ; For now, return the opaque struct - body will be set later
-        ; TODO: Implement proper struct body setting
+        var element_types Vector[LLVMTypeRef]#(element_count)
+
+        var i: size_t 0
+        while i < element_count
+        {
+            let prop_ptr struct.properties.get(i)
+            if prop_ptr <> null
+            {
+                let prop prop_ptr.unwrap()
+                let prop_llvm_type map_type(prop.prop_type)
+                element_types.put(i, prop_llvm_type)
+            }
+            set i: i + 1
+        }
+
+        ; Set the struct body (not packed)
+        LLVMStructSetBody(llvm_struct, element_types.data, element_count as int, 0)
 
         llvm_struct
     }
@@ -637,12 +654,38 @@ define Emitter
             return cached
 
         ; Create named struct for the union
-        ; Layout: { tag: i32, data: [max_variant_size x i8] }
+        ; Layout: { tag: i8, data: [max_variant_size x i8] }
         let llvm_union LLVMStructCreateNamed(context, union_type.mangled_name.c_data())
         cache_struct(union_type.name, llvm_union)
         cache_struct(union_type.mangled_name, llvm_union)
 
-        ; TODO: Set struct body with tag and data fields
+        ; Build union body: { i8 tag, [data_size x i8] data }
+        let i8_type LLVMInt8TypeInContext(context)
+
+        ; Data size is total size minus tag size (1 byte for i8 tag)
+        ; Account for alignment padding
+        var data_size union_type.size
+        if data_size > 0
+            set data_size: data_size - 1
+
+        ; If no data, just use tag alone
+        if data_size = 0
+        {
+            var element_types Vector[LLVMTypeRef]#(1)
+            element_types.put(0, i8_type)
+            LLVMStructSetBody(llvm_union, element_types.data, 1, 0)
+        }
+        else
+        {
+            ; Create data array type
+            let data_array_type LLVMArrayType2(i8_type, data_size)
+
+            var element_types Vector[LLVMTypeRef]#(2)
+            element_types.put(0, i8_type)       ; tag field
+            element_types.put(1, data_array_type) ; data field
+
+            LLVMStructSetBody(llvm_union, element_types.data, 2, 0)
+        }
 
         llvm_union
     }
@@ -664,15 +707,40 @@ define Emitter
         if func.return_type <> null
             set llvm_return_type: map_type(func.return_type.unwrap())
 
-        ; Count parameters
-        var param_count 0
+        ; Build parameter types array
+        var param_count: size_t 0
+        var param_types_ptr: pointer[LLVMTypeRef] null as pointer[LLVMTypeRef]
+
         if func.input <> null
-            set param_count: func.input.length
+        {
+            let input_ref func.input.unwrap()
+            let input (*input_ref)
+            set param_count: input.length
 
-        ; TODO: Build parameter types array and create function type
-        ; For now, create a simple function with no parameters
+            if param_count > 0
+            {
+                var param_types Vector[LLVMTypeRef]#(param_count)
+                var i: size_t 0
+                while i < param_count
+                {
+                    let item_ptr input.get(i)
+                    if item_ptr <> null
+                    {
+                        let item (*item_ptr)
+                        if item.item_type <> null
+                        {
+                            let item_type item.item_type.unwrap()
+                            let llvm_param_type map_type(item_type)
+                            param_types.put(i, llvm_param_type)
+                        }
+                    }
+                    set i: i + 1
+                }
+                set param_types_ptr: param_types.data
+            }
+        }
 
-        let func_type LLVMFunctionType(llvm_return_type, null as pointer[LLVMTypeRef], 0, 0)
+        let func_type LLVMFunctionType(llvm_return_type, param_types_ptr, param_count as int, 0)
 
         ; Use unmangled "main" for linker compatibility (C entry point)
         var func_name func.mangled_name
@@ -691,6 +759,98 @@ define Emitter
         cache_function(func.mangled_name, llvm_func)
 
         llvm_func
+    }
+
+    ; Emit function body (implementation)
+    function emit_function_body(this, func: PlannedFunction) returns bool
+    {
+        ; Get the LLVM function (should already be declared)
+        let llvm_func lookup_function_cache(func.mangled_name)
+        if llvm_func.handle = null
+            return false
+
+        ; Skip extern functions - they have no body
+        choose func.impl
+            when Extern: ext
+            {
+                return true
+            }
+            when Intrinsic: intr
+            {
+                ; Intrinsic functions are handled specially at call sites
+                return true
+            }
+            when Instruction: inst
+            {
+                ; Instruction-level functions are handled specially
+                return true
+            }
+            when Action: action
+            {
+                ; Emit the function body
+                set current_function: llvm_func
+
+                ; Create entry block
+                let entry_name String#("entry")
+                let entry_block LLVMAppendBasicBlockInContext(context, llvm_func, entry_name.c_data())
+                LLVMPositionBuilderAtEnd(builder, entry_block)
+
+                ; Bind parameters as local variables
+                if func.input <> null
+                {
+                    let input_ref func.input.unwrap()
+                    let input (*input_ref)
+                    var i: size_t 0
+                    while i < input.length
+                    {
+                        let item_ptr input.get(i)
+                        if item_ptr <> null
+                        {
+                            let item (*item_ptr)
+                            if item.name <> null
+                            {
+                                let param_name (*item.name.unwrap())
+                                let param_value LLVMGetParam(llvm_func, i as int)
+                                define_variable(param_name, param_value)
+                            }
+                        }
+                        set i: i + 1
+                    }
+                }
+
+                ; Emit the action (function body)
+                let result emit_action(action)
+
+                ; Add return if not already terminated
+                let term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock(builder))
+                if term.handle = null
+                {
+                    ; Add appropriate return based on return type
+                    if func.return_type <> null
+                    {
+                        if result.handle <> null
+                            LLVMBuildRet(builder, result)
+                        else
+                        {
+                            ; Return void if no value
+                            LLVMBuildRetVoid(builder)
+                        }
+                    }
+                    else
+                    {
+                        LLVMBuildRetVoid(builder)
+                    }
+                }
+
+                ; Clear local variables for next function
+                clear_local_variables()
+
+                return true
+            }
+            else
+            {
+                return false
+            }
     }
 
     ; ========================================================================
@@ -722,8 +882,7 @@ define Emitter
             when FloatingPoint: fp
             {
                 let llvm_type LLVMDoubleTypeInContext(context)
-                ; TODO: Parse string to double - for now use 0.0
-                return LLVMConstReal(llvm_type, 0.0)
+                return LLVMConstReal(llvm_type, fp.value)
             }
             when String: s
             {
@@ -792,9 +951,67 @@ define Emitter
                 emit_function_decl(func)
         }
 
-        ; TODO: Emit function bodies
-        ; TODO: Emit global variables
-        ; TODO: Emit main wrapper for top-level statements
+        ; Emit function bodies
+        if plan.functions <> null
+        {
+            for func in plan.functions
+                emit_function_body(func)
+        }
+
+        ; Emit global variables
+        if plan.globals <> null
+        {
+            for global in plan.globals
+            {
+                let global_type map_type(global.global_type)
+                let gv LLVMAddGlobal(llvm_module, global_type, global.mangled_name.c_data())
+
+                ; Set initializer if present
+                if global.value <> null
+                {
+                    let init_value emit_operands(global.value)
+                    if init_value.handle <> null
+                        LLVMSetInitializer(gv, init_value)
+                }
+
+                ; Globals are constant by default (no is_mutable field)
+                LLVMSetGlobalConstant(gv, 1)
+            }
+        }
+
+        ; Emit main wrapper for top-level statements if present
+        if plan.statements <> null
+        {
+            if plan.statements.length > 0
+            {
+                ; Create main function if not already present
+                let main_name String#("main")
+                let main_func LLVMGetNamedFunction(llvm_module, main_name.c_data())
+                if main_func.handle = null
+                {
+                    let i32_type LLVMInt32TypeInContext(context)
+                    let main_type LLVMFunctionType(i32_type, null as pointer[LLVMTypeRef], 0, 0)
+                    let new_main LLVMAddFunction(llvm_module, main_name.c_data(), main_type)
+                    set current_function: new_main
+
+                    let entry_name String#("entry")
+                    let entry_block LLVMAppendBasicBlockInContext(context, new_main, entry_name.c_data())
+                    LLVMPositionBuilderAtEnd(builder, entry_block)
+
+                    ; Emit top-level statements
+                    for stmt in plan.statements
+                        emit_statement(stmt)
+
+                    ; Return 0 if not terminated
+                    let term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock(builder))
+                    if term.handle = null
+                    {
+                        let zero LLVMConstInt(i32_type, 0, 0)
+                        LLVMBuildRet(builder, zero)
+                    }
+                }
+            }
+        }
 
         true
     }
@@ -1076,8 +1293,25 @@ define Emitter
         if gv.handle = null
             return LLVMValueRef(null)
 
-        ; Get pointer to first element
-        ; TODO: Create proper GEP for array access
+        ; Check if this is an array type (has array_size set)
+        if global.global_type.array_size.get_length() > 0
+        {
+            ; For arrays, create GEP to get pointer to first element
+            let element_type map_type(global.global_type)
+            let i64_type LLVMInt64TypeInContext(context)
+            let zero LLVMConstInt(i64_type, 0, 0)
+
+            ; Build indices array [0, 0] to get pointer to first element
+            var indices Vector[LLVMValueRef]#(2)
+            indices.put(0, zero)
+            indices.put(1, zero)
+
+            ; Get global's type (array type)
+            let gv_type LLVMGlobalGetValueType(gv)
+
+            return LLVMBuildInBoundsGEP2(builder, gv_type, gv, indices.data, 2, "array.ptr")
+        }
+
         gv
     }
 
@@ -1365,7 +1599,78 @@ define Emitter
     ; Emit an intrinsic function call
     function emit_intrinsic_function(this, call: PlannedCall) returns LLVMValueRef
     {
-        ; TODO: Handle intrinsic functions like abs, sqrt, etc.
+        ; Get the function name
+        let name call.name
+
+        ; Handle Option::unwrap - extract payload from union
+        if name.equals(String#("unwrap"))
+        {
+            if call.args <> null
+            {
+                if call.args.length = 1
+                {
+                    let arg call.args.get(0)
+                    if arg <> null
+                    {
+                        let option_value emit_operand(arg.unwrap())
+                        let result_ty map_type(call.result_type)
+
+                        if result_ty.handle = null
+                            return LLVMValueRef(null)
+
+                        ; Check if this is an NPO Option (pointer type)
+                        ; For NPO, just load from the pointer
+                        if LLVMGetTypeKind(LLVMTypeOf(option_value)) = LLVMTypeKind.Pointer()
+                        {
+                            ; Check if result is also a pointer (NPO case)
+                            if LLVMGetTypeKind(result_ty) = LLVMTypeKind.Pointer()
+                            {
+                                return LLVMBuildLoad2(builder, result_ty, option_value, "unwrap.npo")
+                            }
+
+                            ; Regular union case - option_value is pointer to union
+                            ; Union layout: { i8 tag, [N x i8] payload }
+                            ; GEP to field 1 (payload) and load
+                            let option_type LLVMTypeOf(option_value)
+
+                            ; Try to get struct type from cache
+                            ; For now, use direct load assuming NPO representation
+                            return LLVMBuildLoad2(builder, result_ty, option_value, "unwrap.value")
+                        }
+
+                        ; If option_value is already a struct value, extract field 1
+                        ; This shouldn't normally happen for well-formed code
+                        return option_value
+                    }
+                }
+            }
+        }
+
+        ; Handle Option::unwrap_or - return value or default
+        if name.equals(String#("unwrap_or"))
+        {
+            if call.args <> null
+            {
+                if call.args.length = 2
+                {
+                    ; First arg is the Option, second is the default
+                    let opt_arg call.args.get(0)
+                    let def_arg call.args.get(1)
+
+                    if opt_arg <> null
+                    {
+                        if def_arg <> null
+                        {
+                            ; For now, just return the default value
+                            ; Full implementation would check if option has value
+                            return emit_operand(def_arg.unwrap())
+                        }
+                    }
+                }
+            }
+        }
+
+        ; Unknown intrinsic function - return null
         LLVMValueRef(null)
     }
 
@@ -1506,8 +1811,86 @@ define Emitter
     ; Emit a matrix (array literal)
     function emit_matrix(this, matrix: PlannedMatrix) returns LLVMValueRef
     {
-        ; TODO: Implement matrix/array construction
-        LLVMValueRef(null)
+        if matrix.operations = null
+            return LLVMValueRef(null)
+
+        let ops_ref matrix.operations.unwrap()
+        let ops (*ops_ref)
+
+        ; For a 1D array, operations is a vector of single-element vectors
+        ; Count total elements
+        var total_count: size_t 0
+        var row_idx: size_t 0
+        while row_idx < ops.length
+        {
+            let row_ptr ops.get(row_idx)
+            if row_ptr <> null
+            {
+                let row (*row_ptr)
+                set total_count: total_count + row.length
+            }
+            set row_idx: row_idx + 1
+        }
+
+        if total_count = 0
+            return LLVMValueRef(null)
+
+        ; Emit all element values
+        var element_values Vector[LLVMValueRef]#(total_count)
+        var elem_idx: size_t 0
+        set row_idx: 0
+        while row_idx < ops.length
+        {
+            let row_ptr ops.get(row_idx)
+            if row_ptr <> null
+            {
+                let row (*row_ptr)
+                var col_idx: size_t 0
+                while col_idx < row.length
+                {
+                    let operand_ptr row.get(col_idx)
+                    if operand_ptr <> null
+                    {
+                        let operand operand_ptr.unwrap()
+                        let value emit_operand(operand)
+                        element_values.put(elem_idx, value)
+                        set elem_idx: elem_idx + 1
+                    }
+                    set col_idx: col_idx + 1
+                }
+            }
+            set row_idx: row_idx + 1
+        }
+
+        ; Create array type
+        let element_llvm_type map_type(matrix.element_type)
+        let array_type LLVMArrayType2(element_llvm_type, total_count)
+
+        ; Allocate array on stack
+        let array_ptr LLVMBuildAlloca(builder, array_type, "array")
+
+        ; Store each element using GEP
+        let i64_type LLVMInt64TypeInContext(context)
+        let zero LLVMConstInt(i64_type, 0, 0)
+
+        set elem_idx: 0
+        while elem_idx < total_count
+        {
+            let elem_value element_values.get(elem_idx)
+            if elem_value <> null
+            {
+                ; Build GEP with indices [0, elem_idx]
+                var indices Vector[LLVMValueRef]#(2)
+                indices.put(0, zero)
+                indices.put(1, LLVMConstInt(i64_type, elem_idx, 0))
+
+                let elem_ptr LLVMBuildInBoundsGEP2(builder, array_type, array_ptr, indices.data, 2, "array.elem")
+                LLVMBuildStore(builder, elem_value.unwrap(), elem_ptr)
+            }
+            set elem_idx: elem_idx + 1
+        }
+
+        array_ptr
     }
 
     ; ========================================================================
@@ -1600,7 +1983,7 @@ define Emitter
             when Some: stmt_ref
             {
                 ; Use emit_statement which handles all statement types
-                emit_statement(*stmt_ref)
+                set then_value: emit_statement(*stmt_ref)
             }
             else { }
 
@@ -1621,7 +2004,7 @@ define Emitter
             choose if_expr.alternative
                 when Some: stmt_ref
                 {
-                    emit_statement(*stmt_ref)
+                    set else_value: emit_statement(*stmt_ref)
                 }
                 else { }
 
@@ -1639,10 +2022,28 @@ define Emitter
         {
             if else_value.handle <> null
             {
-                let then_ty LLVMTypeOf(then_value)
-                let else_ty LLVMTypeOf(else_value)
-                ; TODO: Compare types and create PHI if same
-                ; For now, return then_value
+                if then_end_block.handle <> null
+                {
+                    if else_end_block.handle <> null
+                    {
+                        let then_ty LLVMTypeOf(then_value)
+                        let else_ty LLVMTypeOf(else_value)
+
+                        ; Create PHI node (types should match for well-formed code)
+                        let phi LLVMBuildPhi(builder, then_ty, "if.value")
+
+                        ; Add incoming values - need arrays for LLVMAddIncoming
+                        var values Vector[LLVMValueRef]#(2)
+                        var blocks Vector[LLVMBasicBlockRef]#(2)
+                        values.put(0, then_value)
+                        values.put(1, else_value)
+                        blocks.put(0, then_end_block)
+                        blocks.put(1, else_end_block)
+
+                        LLVMAddIncoming(phi, values.data, blocks.data, 2)
+                        return phi
+                    }
+                }
             }
         }
 
@@ -1920,7 +2321,16 @@ define Emitter
         let iter_type map_type(for_expr.iterator_type)
         let iter_alloca LLVMBuildAlloca(builder, iter_type, "iter.alloca")
 
-        ; TODO: Call get_iterator - need proper arg array
+        ; Build args for get_iterator call (just the collection pointer)
+        var get_iter_args Vector[LLVMValueRef]#(1)
+        var get_iter_param_types Vector[LLVMTypeRef]#(1)
+        get_iter_args.put(0, collection_ptr)
+        get_iter_param_types.put(0, LLVMTypeOf(collection_ptr))
+
+        ; Create function type and call get_iterator
+        let get_iter_func_type LLVMFunctionType(iter_type, get_iter_param_types.data, 1, 0)
+        let iterator LLVMBuildCall2(builder, get_iter_func_type, get_iter_fn, get_iter_args.data, 1, "iterator")
+        LLVMBuildStore(builder, iterator, iter_alloca)
 
         ; Look up next function
         let next_fn LLVMGetNamedFunction(llvm_module, for_expr.next_method.c_data())
@@ -1941,14 +2351,32 @@ define Emitter
         ; Condition block: call next(), check if null
         LLVMPositionBuilderAtEnd(builder, cond_block)
 
-        ; TODO: Call next() with iterator pointer
-        ; let next_result LLVMBuildCall2(...)
+        ; Load iterator and call next()
+        let iter_ptr_type LLVMPointerTypeInContext(context, 0)
+        let element_type map_type(for_expr.element_type)
+        let option_element_type LLVMPointerTypeInContext(context, 0)  ; Option[T] represented as nullable pointer
 
-        ; For now, create unreachable exit condition
-        LLVMBuildBr(builder, exit_block)
+        ; Build args for next call (iterator pointer)
+        var next_args Vector[LLVMValueRef]#(1)
+        var next_param_types Vector[LLVMTypeRef]#(1)
+        next_args.put(0, iter_alloca)
+        next_param_types.put(0, iter_ptr_type)
+
+        ; Create function type and call next
+        let next_func_type LLVMFunctionType(option_element_type, next_param_types.data, 1, 0)
+        let next_result LLVMBuildCall2(builder, next_func_type, next_fn, next_args.data, 1, "next")
+
+        ; Check if result is null (None)
+        let null_ptr LLVMConstNull(option_element_type)
+        let is_null LLVMBuildICmp(builder, LLVMIntPredicate.EQ(), next_result, null_ptr, "is.done")
+        LLVMBuildCondBr(builder, is_null, exit_block, body_block)
 
         ; Body block
         LLVMPositionBuilderAtEnd(builder, body_block)
+
+        ; Bind the loop variable to the next result (unwrapped from Option)
+        ; For pointer-based iteration, next_result is already the element pointer
+        define_variable(for_expr.identifier, next_result)
 
         ; Execute loop body
         emit_action(for_expr.body)
@@ -2112,12 +2540,86 @@ define Emitter
         ; Emit Err block
         LLVMPositionBuilderAtEnd(builder, err_block)
 
-        ; Handle catches
+        ; Handle catches - pattern match on error variants
         if try_expr.catches <> null
         {
-            for catch_case in try_expr.catches
+            if try_expr.catches.length > 0
             {
-                ; TODO: Implement catch matching
+                ; Extract error data from the union's data field
+                let err_data_ptr LLVMBuildStructGEP2(builder, result_type, result_ptr, 1, "err.data.ptr")
+
+                ; If multiple catches, create a switch on the tag
+                if try_expr.catches.length > 1
+                {
+                    let catch_end_block create_block(String#("catch.end"))
+                    let catch_default_block create_block(String#("catch.default"))
+
+                    ; Create switch on tag (tags 1, 2, 3... for different error variants)
+                    let catch_count try_expr.catches.length as int
+                    let catch_switch LLVMBuildSwitch(builder, tag, catch_default_block, catch_count)
+
+                    for catch_case in try_expr.catches
+                    {
+                        let catch_block create_block(String#("catch.case"))
+                        let catch_tag_const LLVMConstInt(i8_ty, catch_case.variant_index, 0)
+                        LLVMAddCase(catch_switch, catch_tag_const, catch_block)
+
+                        LLVMPositionBuilderAtEnd(builder, catch_block)
+
+                        ; Bind error value if name present
+                        if catch_case.name.length > 0
+                        {
+                            let err_ty map_type(catch_case.variant_type)
+                            let err_value LLVMBuildLoad2(builder, err_ty, err_data_ptr, "err.val")
+                            define_variable(catch_case.name, err_value)
+                        }
+
+                        ; Execute catch consequent
+                        choose catch_case.consequent
+                            when Some: stmt_ref
+                            {
+                                emit_statement(*stmt_ref)
+                            }
+                            else { }
+
+                        ; Jump to catch end if no terminator
+                        let catch_term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock(builder))
+                        if catch_term.handle = null
+                            LLVMBuildBr(builder, catch_end_block)
+                    }
+
+                    ; Default block jumps to alternative handling
+                    LLVMPositionBuilderAtEnd(builder, catch_default_block)
+                    LLVMBuildBr(builder, catch_end_block)
+
+                    ; Continue from catch end
+                    LLVMPositionBuilderAtEnd(builder, catch_end_block)
+                }
+                else
+                {
+                    ; Single catch - just bind and execute
+                    let single_catch try_expr.catches.get(0)
+                    if single_catch <> null
+                    {
+                        let catch_case single_catch.unwrap()
+
+                        ; Bind error value if name present
+                        if catch_case.name.length > 0
+                        {
+                            let err_ty map_type(catch_case.variant_type)
+                            let err_value LLVMBuildLoad2(builder, err_ty, err_data_ptr, "err.val")
+                            define_variable(catch_case.name, err_value)
+                        }
+
+                        ; Execute catch consequent
+                        choose catch_case.consequent
+                            when Some: stmt_ref
+                            {
+                                emit_statement(*stmt_ref)
+                            }
+                            else { }
+                    }
+                }
             }
         }
 
@@ -2473,8 +2975,7 @@ define Emitter
                         {
                             if target_op.member_access.length > 0
                             {
-                                ; TODO: Handle member access chain for assignment
-                                ; For now, use simple GEP-based field access
+                                ; GEP-based field assignment for member access chains
                                 return emit_member_assignment(var_ptr, variable, target_op.member_access, value)
                             }
                         }
