@@ -9,21 +9,21 @@
     <tests id = choose-on-variants title = "Choose on Variant Construction">
         <prose>Choose can match directly on constructed variants.
         <test id = choose-match-some program = program><input>define Option union(Some: int, None)
-choose Option.Some(7): when Some: v: v else 0<expect>7
+choose Option.Some(7): when v: Some: v else 0<expect>7
         <test id = choose-match-none program = program><input>define Option union(Some: int, None)
-choose Option.None: when Some: v: v else 0<expect>0
+choose Option.None: when v: Some: v else 0<expect>0
 
     <tests id = choose-binding title = "Choose with Binding">
         <prose>When a variant carries a value, the value can be bound to a name.
         <test id = choose-bind-value program = program><input>define Result union(Ok: int, Err: int)
-choose Result.Ok(42): when Ok: x: x + 1 else 0<expect>43
+choose Result.Ok(42): when x: Ok: x + 1 else 0<expect>43
 
     <tests id = choose-multiple-when title = "Multiple When Clauses">
         <prose>Choose can have multiple when clauses to match different variants.
         <test id = choose-multi-match-first program = program><input>define Result union(Ok: int, Err: int)
-choose Result.Ok(10): when Ok: x: x when Err: e: e + 100<expect>10
+choose Result.Ok(10): when x: Ok: x when e: Err: e + 100<expect>10
         <test id = choose-multi-match-second program = program><input>define Result union(Ok: int, Err: int)
-choose Result.Err(5): when Ok: x: x when Err: e: e + 100<expect>105
+choose Result.Err(5): when x: Ok: x when e: Err: e + 100<expect>105
 
 </category>
 
@@ -43,15 +43,15 @@ check(Option[int].Some(42))<expect>1
     <tests id = optional-sugar title = "Optional Type Sugar">
         <prose>T? is syntactic sugar for Option[T].
         <test id = optional-sugar-unwrap program = program><input>define Option[T] union: (Some: T, None)
-function unwrap(x: int?) returns int: choose x: when Some: v: v else 0
+function unwrap(x: int?) returns int: choose x: when v: Some: v else 0
 unwrap(Option[int].Some(42))<expect>42
 
     <tests id = generic-option title = "Generic Option Types">
         <prose>Generic unions like Option[T] work with choose for pattern matching.
         <test id = generic-option-some program = program><input>define Option[T] union: (Some: T, None)
-choose Option[int].Some(42): when Some: v: v else 0<expect>42
+choose Option[int].Some(42): when v: Some: v else 0<expect>42
         <test id = generic-option-none program = program><input>define Option[T] union: (Some: T, None)
-choose Option[int].None: when Some: v: v else -1<expect>-1
+choose Option[int].None: when v: Some: v else -1<expect>-1
 
 </category>
 
@@ -62,9 +62,9 @@ choose Option[int].None: when Some: v: v else -1<expect>-1
     <tests id = variant-construct title = "Construct Variants">
         <prose>Variants are constructed with Type.Variant(value) syntax.
         <test id = variant-ok program = program><input>define Result union: (Ok: int, Error: int)
-choose Result.Ok(42): when Ok: x: x else 0<expect>42
+choose Result.Ok(42): when x: Ok: x else 0<expect>42
         <test id = variant-error program = program><input>define Result union: (Ok: int, Error: int)
-choose Result.Error(100): when Error: e: e else 0<expect>100
+choose Result.Error(100): when e: Error: e else 0<expect>100
 
     <tests id = variant-is title = "Variant Is Expression">
         <prose>The is expression tests if a union value matches a variant.

@@ -10143,16 +10143,26 @@ llvm::Expected<PlannedBinding> Planner::planBinding(const Binding &Bind) {
 
     // Filter out control flow statements that were incorrectly parsed into the binding's operation
     // This is a workaround for a parser bug where `var i 1 \n while ...` puts the while in the binding
+    // BUT: only filter if there are preceding non-control-flow operands. If the binding starts with
+    // control flow (e.g., `let x choose ...`), that's legitimate and should be kept.
     std::vector<Operand> FilteredOps;
+    bool HasNonControlFlowOp = false;
     for (const auto& Op : Bind.Operation) {
-        // Skip control flow expressions that shouldn't be in a binding's value
-        if (std::holds_alternative<While>(Op.Expr) ||
-            std::holds_alternative<For>(Op.Expr) ||
-            std::holds_alternative<If>(Op.Expr) ||
-            std::holds_alternative<Match>(Op.Expr) ||
-            std::holds_alternative<Choose>(Op.Expr) ||
-            std::holds_alternative<Try>(Op.Expr)) {
-            continue;  // Skip - this should be a separate statement
+        bool IsControlFlow = std::holds_alternative<While>(Op.Expr) ||
+                             std::holds_alternative<For>(Op.Expr) ||
+                             std::holds_alternative<If>(Op.Expr) ||
+                             std::holds_alternative<Match>(Op.Expr) ||
+                             std::holds_alternative<Choose>(Op.Expr) ||
+                             std::holds_alternative<Try>(Op.Expr);
+
+        // Only skip control flow if we've already seen a non-control-flow operand
+        // (the bug case: `var i 1 \n while ...` has `1` before `while`)
+        if (IsControlFlow && HasNonControlFlowOp) {
+            continue;  // Skip - this is a separate statement incorrectly parsed into binding
+        }
+
+        if (!IsControlFlow) {
+            HasNonControlFlowOp = true;
         }
         FilteredOps.push_back(Op);
     }

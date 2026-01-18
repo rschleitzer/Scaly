@@ -7,7 +7,7 @@ define compiler
     ; module parser  ; Uses choose/when - disabled until pattern bindings work
     module Syntax  ; Generated from scaly.sgm - must come first, used by other modules
     module Model
-    ; module Modeler  ; Uses choose/when - disabled until pattern bindings work
+    module Modeler
     module Plan
     ; module Planner  ; Uses choose/when - disabled until pattern bindings work
     module LLVM
@@ -15,11 +15,10 @@ define compiler
 
     function test() returns int
     {
-        ; Blocked by: choose/when pattern bindings not emitted correctly
-        ; - Modeler.test(): uses choose parser.parse_*#() when Success: literal
+        ; Remaining blockers:
+        ; - parser.test(): member access on heap structs (Lexer#().token)
         ; - Planner.test(): uses Page.allocate_exclusive_page()
-        ; - Emitter.test(): uses LLVM bindings with complex types
-        ; - parser.test(): uses Lexer#().token
+        ; - Emitter.test(): LLVM bindings with complex types
         0
     }
 }

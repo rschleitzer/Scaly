@@ -184,19 +184,19 @@ function handle_literal(syntax: LiteralSyntax) returns Constant
 {
     let loc Span(syntax.start, syntax.end)
     choose syntax.literal
-        when StringLiteral: str
+        when str: StringLiteral
             Constant.String(StringConstant(loc, str.value))
-        when CharacterLiteral: chr
+        when chr: CharacterLiteral
             Constant.Character(CharacterConstant(loc, chr.value))
-        when FragmentLiteral: frag
+        when frag: FragmentLiteral
             Constant.Fragment(FragmentConstant(loc, frag.value))
-        when IntegerLiteral: int_lit
+        when int_lit: IntegerLiteral
             Constant.Integer(IntegerConstant(loc, 0))
-        when BooleanLiteral: bool_lit
+        when bool_lit: BooleanLiteral
             Constant.Boolean(BooleanConstant(loc, bool_lit.value))
-        when FloatingPointLiteral: float_lit
+        when float_lit: FloatingPointLiteral
             Constant.FloatingPoint(FloatingPointConstant(loc, 0.0))
-        when HexLiteral: hex_lit
+        when hex_lit: HexLiteral
             Constant.Hex(HexConstant(loc, 0))
         else
             Constant.Integer(IntegerConstant(loc, 0))
@@ -213,13 +213,13 @@ function handle_lifetime(syntax: ref[LifetimeSyntax]?) returns Lifetime
 
     let lifetime_syntax (*syntax)
     choose lifetime_syntax
-        when CallSyntax: call
+        when call: CallSyntax
             Lifetime.Call(Call(Span(call.start, call.end)))
-        when LocalSyntax: local
+        when local: LocalSyntax
             Lifetime.Local(Local(Span(local.start, local.end)))
-        when ReferenceSyntax: ref
+        when ref: ReferenceSyntax
             Lifetime.Reference(Reference(Span(ref.start, ref.end), ref.location))
-        when ThrownSyntax: thrown
+        when thrown: ThrownSyntax
             Lifetime.Thrown(Thrown(Span(thrown.start, thrown.end)))
         else
             Lifetime.Unspecified(Unspecified())
@@ -289,7 +289,7 @@ function handle_type#(syntax: TypeSyntax) returns ref[Type]?
 function handle_binding_annotation#(annotation: BindingAnnotationSyntax) returns ref[Type]?
 {
     choose annotation.spec
-        when TypeSyntax: type_syntax
+        when type_syntax: TypeSyntax
             handle_type#(type_syntax)
         else
             null
@@ -346,7 +346,7 @@ function handle_component#(syntax: ComponentSyntax) returns Component
                 {
                     let name_op (*name_op_ptr)
                     choose name_op.expression
-                        when TypeSyntax: type_expr
+                        when type_expr: TypeSyntax
                             set name: String#(type_expr.name.name)
                         else {}
                 }
@@ -409,9 +409,9 @@ function handle_block#(syntax: BlockSyntax) returns Block
 function handle_expression#(syntax: ExpressionSyntax) returns Expression
 {
     choose syntax
-        when LiteralSyntax: lit
+        when lit: LiteralSyntax
             Expression.Constant(handle_literal(lit))
-        when NameSyntax: name_syntax
+        when name_syntax: NameSyntax
         {
             ; Convert NameSyntax to Type expression
             ; Count extensions to determine path size
@@ -445,27 +445,27 @@ function handle_expression#(syntax: ExpressionSyntax) returns Expression
                 Lifetime.Unspecified(Unspecified())
             ))
         }
-        when ObjectSyntax: obj
+        when obj: ObjectSyntax
             Expression.Tuple(handle_object#(obj))
-        when VectorSyntax: vec
+        when vec: VectorSyntax
             Expression.Matrix(handle_vector#(vec))
-        when BlockSyntax: blk
+        when blk: BlockSyntax
             Expression.Block(handle_block#(blk))
-        when IfSyntax: if_syntax
+        when if_syntax: IfSyntax
             Expression.If(handle_if#(if_syntax))
-        when MatchSyntax: match_syntax
+        when match_syntax: MatchSyntax
             Expression.Match(handle_match#(match_syntax))
-        when ChooseSyntax: choose_syntax
+        when choose_syntax: ChooseSyntax
             Expression.Choose(handle_choose#(choose_syntax))
-        when ForSyntax: for_syntax
+        when for_syntax: ForSyntax
             Expression.For(handle_for#(for_syntax))
-        when WhileSyntax: while_syntax
+        when while_syntax: WhileSyntax
             Expression.While(handle_while#(while_syntax))
-        when TrySyntax: try_syntax
+        when try_syntax: TrySyntax
             Expression.Try(handle_try#(try_syntax))
-        when SizeOfSyntax: sizeof_syntax
+        when sizeof_syntax: SizeOfSyntax
             Expression.SizeOf(handle_sizeof#(sizeof_syntax))
-        when IsSyntax: is_syntax
+        when is_syntax: IsSyntax
             Expression.Is(handle_is#(is_syntax))
         else
             Expression.Constant(Constant.Integer(IntegerConstant(Span(0, 0), 0)))
@@ -633,9 +633,9 @@ function handle_when#(syntax: WhenSyntax) returns When
 function handle_action#(syntax: ActionSyntax) returns Action
 {
     choose syntax
-        when OperationSyntax: op
+        when op: OperationSyntax
             Action(handle_operands#(op.operands), Vector[Operand]#(0))
-        when SetSyntax: set_syntax
+        when set_syntax: SetSyntax
             Action(handle_operands#(set_syntax.source), handle_operands#(set_syntax.target))
         else
             Action(Vector[Operand]#(0), Vector[Operand]#(0))
@@ -669,7 +669,7 @@ function handle_while#(syntax: WhileSyntax) returns While
 function handle_condition#(syntax: ConditionSyntax) returns Binding
 {
     choose syntax
-        when OperationSyntax: op
+        when op: OperationSyntax
         {
             let operands handle_operands#(op.operands)
             Binding(
@@ -679,7 +679,7 @@ function handle_condition#(syntax: ConditionSyntax) returns Binding
                 operands
             )
         }
-        when LetSyntax: let_syntax
+        when let_syntax: LetSyntax
         {
             let item handle_binding_item#(let_syntax.binding)
             let operation handle_operands#(let_syntax.binding.operation)
@@ -854,12 +854,12 @@ function handle_binding_item#(syntax: BindingSyntax) returns Item
 function handle_command#(syntax: CommandSyntax) returns Statement
 {
     choose syntax
-        when OperationSyntax: op
+        when op: OperationSyntax
         {
             let operands handle_operands#(op.operands)
             Statement.Action(Action(operands, Vector[Operand]#(0)))
         }
-        when LetSyntax: let_syntax
+        when let_syntax: LetSyntax
         {
             let item handle_binding_item#(let_syntax.binding)
             let operation handle_operands#(let_syntax.binding.operation)
@@ -870,7 +870,7 @@ function handle_command#(syntax: CommandSyntax) returns Statement
                 operation
             ))
         }
-        when VarSyntax: var_syntax
+        when var_syntax: VarSyntax
         {
             let item handle_binding_item#(var_syntax.binding)
             let operation handle_operands#(var_syntax.binding.operation)
@@ -881,7 +881,7 @@ function handle_command#(syntax: CommandSyntax) returns Statement
                 operation
             ))
         }
-        when MutableSyntax: mut_syntax
+        when mut_syntax: MutableSyntax
         {
             let item handle_binding_item#(mut_syntax.binding)
             let operation handle_operands#(mut_syntax.binding.operation)
@@ -892,25 +892,25 @@ function handle_command#(syntax: CommandSyntax) returns Statement
                 operation
             ))
         }
-        when SetSyntax: set_syntax
+        when set_syntax: SetSyntax
         {
             let target handle_operands#(set_syntax.target)
             let source handle_operands#(set_syntax.source)
             Statement.Action(Action(source, target))
         }
-        when BreakSyntax: break_syntax
+        when break_syntax: BreakSyntax
         {
             let result handle_operands#(break_syntax.result)
             Statement.Break(Break(Span(break_syntax.start, break_syntax.end), result))
         }
-        when ContinueSyntax: continue_syntax
+        when continue_syntax: ContinueSyntax
             Statement.Continue(Continue(Span(continue_syntax.start, continue_syntax.end)))
-        when ReturnSyntax: return_syntax
+        when return_syntax: ReturnSyntax
         {
             let result handle_operands#(return_syntax.result)
             Statement.Return(Return(Span(return_syntax.start, return_syntax.end), result))
         }
-        when ThrowSyntax: throw_syntax
+        when throw_syntax: ThrowSyntax
         {
             let result handle_operands#(throw_syntax.result)
             Statement.Throw(Throw(Span(throw_syntax.start, throw_syntax.end), result))
@@ -1006,13 +1006,13 @@ function handle_attribute#(syntax: AttributeSyntax) returns Attribute
 function handle_model#(syntax: ModelSyntax) returns Model
 {
     choose syntax
-        when LiteralSyntax: lit
+        when lit: LiteralSyntax
             Model.Constant(handle_literal(lit))
-        when NameSyntax: name
+        when name: NameSyntax
             Model.Variable(name.name)
-        when ObjectSyntax: obj
+        when obj: ObjectSyntax
             Model.Tuple(handle_object#(obj))
-        when VectorSyntax: vec
+        when vec: VectorSyntax
             Model.Matrix(handle_vector#(vec))
         else
             Model.Variable("")
@@ -1071,7 +1071,7 @@ function handle_generic_parameter#(syntax: GenericParameterSyntax) returns Gener
 function handle_parameter_set#(syntax: ParameterSetSyntax) returns Vector[Item]
 {
     choose syntax
-        when ParametersSyntax: params
+        when params: ParametersSyntax
         {
             if params.items = null
                 return Vector[Item]#(0)
@@ -1091,7 +1091,7 @@ function handle_parameter_set#(syntax: ParameterSetSyntax) returns Vector[Item]
             }
             result
         }
-        when TypeSyntax: type_syn
+        when type_syn: TypeSyntax
         {
             let type_result handle_type#(type_syn)
             var result Vector[Item]#(1)
@@ -1115,13 +1115,13 @@ function handle_parameter_set#(syntax: ParameterSetSyntax) returns Vector[Item]
 function handle_implementation#(syntax: ImplementationSyntax) returns Implementation
 {
     choose syntax
-        when ActionSyntax: act
+        when act: ActionSyntax
             Implementation.Action(handle_action#(act))
-        when ExternSyntax: ext
+        when ext: ExternSyntax
             Implementation.Extern(Extern(Span(ext.start, ext.end)))
-        when InstructionSyntax: inst
+        when inst: InstructionSyntax
             Implementation.Instruction(Instruction(Span(inst.start, inst.end)))
-        when IntrinsicSyntax: intr
+        when intr: IntrinsicSyntax
             Implementation.Intrinsic(Intrinsic(Span(intr.start, intr.end)))
         else
             Implementation.Action(Action(Vector[Operand]#(0), Vector[Operand]#(0)))
@@ -1134,7 +1134,7 @@ function handle_implementation#(syntax: ImplementationSyntax) returns Implementa
 function build_function#(start: size_t, end_pos: size_t, syntax: TargetSyntax, is_private: bool, pure: bool) returns Function
 {
     choose syntax
-        when NamedSyntax: named
+        when named: NamedSyntax
         {
             var input Vector[Item]#(0)
             if named.routine.parameters <> null
@@ -1193,7 +1193,7 @@ function build_function#(start: size_t, end_pos: size_t, syntax: TargetSyntax, i
 function handle_operator#(syntax: OperatorSyntax, is_private: bool) returns Operator
 {
     choose syntax.target
-        when NamedSyntax: named
+        when named: NamedSyntax
         {
             var input Vector[Item]#(0)
             if named.routine.parameters <> null
@@ -1228,7 +1228,7 @@ function handle_operator#(syntax: OperatorSyntax, is_private: bool) returns Oper
                 impl
             )
         }
-        when RoutineSyntax: routine
+        when routine: RoutineSyntax
         {
             ; Handle index operator []
             var input Vector[Item]#(0)
@@ -1357,13 +1357,13 @@ function handle_class#(name: String, path: String, syntax: ClassSyntax, is_priva
             {
                 let part (*part_ptr)
                 choose part
-                    when FieldSyntax: field
+                    when field: FieldSyntax
                     {
                         let property handle_property#(true, field.property)
                         symbols_builder.add(property.name, Nameable.Property(property))
                         properties.put(i, property)
                     }
-                    when PropertySyntax: prop
+                    when prop: PropertySyntax
                     {
                         let property handle_property#(false, prop)
                         symbols_builder.add(property.name, Nameable.Property(property))
@@ -1469,29 +1469,29 @@ function handle_class#(name: String, path: String, syntax: ClassSyntax, is_priva
 function handle_constituent#(path: String, syntax: MemberSyntax, symbols_builder: pointer[HashMapBuilder[String, Nameable]]) returns Member
 {
     choose syntax.constituent
-        when DefinitionSyntax: def
+        when def: DefinitionSyntax
         {
             let concept handle_definition#(path, def, false)
             (*symbols_builder).add(concept.name, Nameable.Concept(concept))
             Member.Concept(concept)
         }
-        when FunctionSyntax: func
+        when func: FunctionSyntax
         {
             let fn build_function#(func.start, func.end, func.target, false, true)
             Member.Function(fn)
         }
-        when ProcedureSyntax: proc
+        when proc: ProcedureSyntax
         {
             let proc_fn build_function#(proc.start, proc.end, proc.target, false, false)
             Member.Function(proc_fn)
         }
-        when OperatorSyntax: op
+        when op: OperatorSyntax
         {
             let operator_ handle_operator#(op, false)
             (*symbols_builder).add(operator_.name, Nameable.Operator(operator_))
             Member.Operator(operator_)
         }
-        when ModuleSyntax: mod
+        when mod: ModuleSyntax
         {
             ; Modules are handled separately
             Member.Package(Vector[Module]#(0))
@@ -1541,31 +1541,31 @@ function handle_namespace#(name: String, path: String, syntax: NamespaceSyntax, 
 function handle_declaration#(path: String, syntax: DeclarationSyntax, symbols_builder: pointer[HashMapBuilder[String, Nameable]]) returns Member
 {
     choose syntax.symbol
-        when PrivateSyntax: private_syntax
+        when private_syntax: PrivateSyntax
             handle_export#(path, private_syntax.export_, true, symbols_builder)
-        when DefinitionSyntax: def
+        when def: DefinitionSyntax
         {
             let concept handle_definition#(path, def, false)
             (*symbols_builder).add(concept.name, Nameable.Concept(concept))
             Member.Concept(concept)
         }
-        when FunctionSyntax: func
+        when func: FunctionSyntax
         {
             let fn build_function#(func.start, func.end, func.target, false, true)
             Member.Function(fn)
         }
-        when ProcedureSyntax: proc
+        when proc: ProcedureSyntax
         {
             let proc_fn build_function#(proc.start, proc.end, proc.target, false, false)
             Member.Function(proc_fn)
         }
-        when OperatorSyntax: op
+        when op: OperatorSyntax
         {
             let operator_ handle_operator#(op, false)
             (*symbols_builder).add(operator_.name, Nameable.Operator(operator_))
             Member.Operator(operator_)
         }
-        when ModuleSyntax: mod
+        when mod: ModuleSyntax
             Member.Package(Vector[Module]#(0))
         else
             Member.Package(Vector[Module]#(0))
@@ -1574,24 +1574,24 @@ function handle_declaration#(path: String, syntax: DeclarationSyntax, symbols_bu
 function handle_export#(path: String, syntax: ExportSyntax, is_private: bool, symbols_builder: pointer[HashMapBuilder[String, Nameable]]) returns Member
 {
     choose syntax
-        when DefinitionSyntax: def
+        when def: DefinitionSyntax
         {
             let concept handle_definition#(path, def, is_private)
             (*symbols_builder).add(concept.name, Nameable.Concept(concept))
             Member.Concept(concept)
         }
-        when FunctionSyntax: func
+        when func: FunctionSyntax
         {
             let fn build_function#(func.start, func.end, func.target, is_private, true)
             Member.Function(fn)
         }
-        when OperatorSyntax: op
+        when op: OperatorSyntax
         {
             let operator_ handle_operator#(op, is_private)
             (*symbols_builder).add(operator_.name, Nameable.Operator(operator_))
             Member.Operator(operator_)
         }
-        when ModuleSyntax: mod
+        when mod: ModuleSyntax
             Member.Package(Vector[Module]#(0))
         else
             Member.Package(Vector[Module]#(0))
@@ -1719,22 +1719,22 @@ function handle_definition#(path: String, syntax: DefinitionSyntax, is_private: 
 
     ; Create the Definition variant based on concept type
     let definition choose syntax.concept_
-        when ClassSyntax: class_syntax
+        when class_syntax: ClassSyntax
         {
             let structure handle_class#(name, path, class_syntax, is_private)
             Definition.Structure(structure)
         }
-        when NamespaceSyntax: namespace_syntax
+        when namespace_syntax: NamespaceSyntax
         {
             let namespace_ handle_namespace#(name, path, namespace_syntax, is_private)
             Definition.Namespace(namespace_)
         }
-        when UnionSyntax: union_syntax
+        when union_syntax: UnionSyntax
         {
             let union_ handle_union#(name, path, union_syntax, is_private)
             Definition.Union(union_)
         }
-        when ConstantSyntax: constant_syntax
+        when constant_syntax: ConstantSyntax
         {
             if constant_syntax.operation = null
             {
@@ -1750,7 +1750,7 @@ function handle_definition#(path: String, syntax: DefinitionSyntax, is_private: 
                 Definition.Global(Global(loc, *const_type, operation))
             }
         }
-        when IntrinsicSyntax: intrinsic_syntax
+        when intrinsic_syntax: IntrinsicSyntax
             Definition.Intrinsic(Intrinsic(Span(intrinsic_syntax.start, intrinsic_syntax.end)))
         else
             Definition.Intrinsic(Intrinsic(loc))

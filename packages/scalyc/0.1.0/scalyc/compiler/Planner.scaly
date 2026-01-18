@@ -272,7 +272,7 @@ define Planner
                 if t.generics.length > 0
                 {
                     choose t.generics.get(0)
-                        when Some: inner_ref
+                        when inner_ref: Some
                         {
                             let result StringBuilder#()
                             result.append(String#("P"))
@@ -291,7 +291,7 @@ define Planner
                 if t.generics.length > 0
                 {
                     choose t.generics.get(0)
-                        when Some: inner_ref
+                        when inner_ref: Some
                         {
                             let result StringBuilder#()
                             result.append(String#("R"))
@@ -394,7 +394,7 @@ define Planner
                     continue
             }
             choose param.item_type
-                when Some: type_ref
+                when type_ref: Some
                 {
                     result.append(encode_type(*type_ref))
                     set has_explicit_params: true
@@ -439,7 +439,7 @@ define Planner
     {
         ; Unspecified = stack allocation, everything else = page allocation
         choose life
-            when Unspecified: u
+            when u: Unspecified
                 false
             else
                 true
@@ -603,7 +603,7 @@ define Planner
         for member in namespace_ctx.namespace.members
         {
             choose member
-                when Function: func
+                when func: Function
                 {
                     if func.name.equals(name)
                     {
@@ -646,7 +646,7 @@ define Planner
                         {
                             let member *member_ptr
                             choose member
-                                when Function: func
+                                when func: Function
                                 {
                                     if func.name.equals(func_name)
                                         return func
@@ -848,7 +848,7 @@ define Planner
                     if arg_type.generics.length > 0
                     {
                         choose arg_type.generics.get(0)
-                            when Some: inner_ref
+                            when inner_ref: Some
                             {
                                 if (*inner_ref).name.equals(String#("void"))
                                     return true
@@ -871,7 +871,7 @@ define Planner
                     if arg_type.generics.length > 0
                     {
                         choose arg_type.generics.get(0)
-                            when Some: inner_ref
+                            when inner_ref: Some
                             {
                                 if (*inner_ref).name.equals(String#("void"))
                                     return true
@@ -1011,7 +1011,7 @@ define Planner
                 {
                     ; pointer[T] - Itanium ABI uses P prefix
                     choose result.generics.get(0)
-                        when Some: inner_ref
+                        when inner_ref: Some
                         {
                             let mangled StringBuilder#()
                             mangled.append(String#("P"))
@@ -1034,7 +1034,7 @@ define Planner
                 {
                     ; ref[T] - use R prefix
                     choose result.generics.get(0)
-                        when Some: inner_ref
+                        when inner_ref: Some
                         {
                             let mangled StringBuilder#()
                             mangled.append(String#("R"))
@@ -1202,7 +1202,7 @@ define Planner
         let loc Span(0, 0)
 
         choose c
-            when Boolean: b
+            when b: Boolean
             {
                 PlannedType#(
                     b.span,
@@ -1215,7 +1215,7 @@ define Planner
                     null
                 )
             }
-            when Integer: i
+            when i: Integer
             {
                 PlannedType#(
                     i.span,
@@ -1228,7 +1228,7 @@ define Planner
                     null
                 )
             }
-            when Hex: h
+            when h: Hex
             {
                 PlannedType#(
                     h.span,
@@ -1241,7 +1241,7 @@ define Planner
                     null
                 )
             }
-            when FloatingPoint: f
+            when f: FloatingPoint
             {
                 PlannedType#(
                     f.span,
@@ -1254,7 +1254,7 @@ define Planner
                     null
                 )
             }
-            when String: s
+            when s: String
             {
                 ; String constants have type pointer[char]
                 let char_type PlannedType#(
@@ -1280,7 +1280,7 @@ define Planner
                     null
                 )
             }
-            when Character: ch
+            when ch: Character
             {
                 PlannedType#(
                     ch.span,
@@ -1293,7 +1293,7 @@ define Planner
                     null
                 )
             }
-            when Fragment: fr
+            when fr: Fragment
             {
                 ; Fragment constants are like strings
                 let char_type PlannedType#(
@@ -1481,7 +1481,7 @@ define Planner
 
         ; Resolve type if present
         choose it.type
-            when Some: typ
+            when typ: Some
             {
                 let resolved resolve_type(typ, it.span)
                 if resolved = null
@@ -1520,7 +1520,7 @@ define Planner
     {
         ; Property must have a type
         choose prop.type
-            when Some: typ
+            when typ: Some
             {
                 let resolved_type resolve_type(typ, prop.span)
                 if resolved_type = null
@@ -1539,7 +1539,7 @@ define Planner
 
                 ; Plan initializer if present
                 choose prop.initializer
-                    when Some: init_ops
+                    when init_ops: Some
                     {
                         let planned_init plan_operands(init_ops)
                         if planned_init = null
@@ -1590,7 +1590,7 @@ define Planner
 
         ; Resolve type if present
         choose v.type
-            when Some: typ
+            when typ: Some
             {
                 let resolved resolve_type(typ, v.span)
                 if resolved = null
@@ -1674,13 +1674,13 @@ define Planner
     function plan_expression(this, expr: scaly.compiler.Model.Expression) returns ref[PlannedExpression]?
     {
         choose expr
-            when Constant: c
+            when c: Constant
             {
                 ; Wrap constant in PlannedConstant
                 let result PlannedExpression.Constant#(PlannedConstant(c))
                 return result
             }
-            when Type: t
+            when t: Type
             {
                 ; Check for boolean literals (true/false parsed as Type names)
                 let name build_type_name(t.name)
@@ -1770,7 +1770,7 @@ define Planner
                 let result PlannedExpression.Type#(resolved)
                 return result
             }
-            when Tuple: tup
+            when tup: Tuple
             {
                 let planned plan_tuple(tup)
                 if planned = null
@@ -1778,7 +1778,7 @@ define Planner
                 let result PlannedExpression.Tuple#(planned)
                 return result
             }
-            when Matrix: mat
+            when mat: Matrix
             {
                 let planned plan_matrix(mat)
                 if planned = null
@@ -1786,7 +1786,7 @@ define Planner
                 let result PlannedExpression.Matrix#(planned)
                 return result
             }
-            when Block: blk
+            when blk: Block
             {
                 let planned plan_block(blk)
                 if planned = null
@@ -1794,7 +1794,7 @@ define Planner
                 let result PlannedExpression.Block#(planned)
                 return result
             }
-            when If: if_expr
+            when if_expr: If
             {
                 let planned plan_if(if_expr)
                 if planned = null
@@ -1802,7 +1802,7 @@ define Planner
                 let result PlannedExpression.If#(planned)
                 return result
             }
-            when Match: match_expr
+            when match_expr: Match
             {
                 let planned plan_match(match_expr)
                 if planned = null
@@ -1810,7 +1810,7 @@ define Planner
                 let result PlannedExpression.Match#(planned)
                 return result
             }
-            when Choose: choose_expr
+            when choose_expr: Choose
             {
                 let planned plan_choose(choose_expr)
                 if planned = null
@@ -1818,7 +1818,7 @@ define Planner
                 let result PlannedExpression.Choose#(planned)
                 return result
             }
-            when For: for_expr
+            when for_expr: For
             {
                 let planned plan_for(for_expr)
                 if planned = null
@@ -1826,7 +1826,7 @@ define Planner
                 let result PlannedExpression.For#(planned)
                 return result
             }
-            when While: while_expr
+            when while_expr: While
             {
                 let planned plan_while(while_expr)
                 if planned = null
@@ -1834,7 +1834,7 @@ define Planner
                 let result PlannedExpression.While#(planned)
                 return result
             }
-            when Try: try_expr
+            when try_expr: Try
             {
                 let planned plan_try(try_expr)
                 if planned = null
@@ -1842,7 +1842,7 @@ define Planner
                 let result PlannedExpression.Try#(planned)
                 return result
             }
-            when SizeOf: sizeof_expr
+            when sizeof_expr: SizeOf
             {
                 let resolved resolve_type(sizeof_expr.type, sizeof_expr.span)
                 if resolved = null
@@ -1852,12 +1852,12 @@ define Planner
                 let result PlannedExpression.SizeOf#(planned)
                 return result
             }
-            when Is: is_expr
+            when is_expr: Is
             {
                 ; TODO: Implement is expression planning
                 return null
             }
-            when New: new_expr
+            when new_expr: New
             {
                 ; TODO: Implement new expression planning
                 return null
@@ -1872,58 +1872,58 @@ define Planner
 
         let e *expr  ; Dereference to get PlannedExpression
         choose e
-            when Constant: c
+            when c: Constant
             {
                 let const_val: Constant c.value
                 return infer_constant_type(const_val)
             }
-            when Type: t
+            when t: Type
                 return t
-            when Variable: v
+            when v: Variable
                 return v.variable_type
-            when GlobalRef: g
+            when g: GlobalRef
                 return g.global_type
-            when Call: call
+            when call: Call
                 return call.result_type
-            when Tuple: tup
+            when tup: Tuple
                 return tup.tuple_type
-            when Matrix: mat
+            when mat: Matrix
                 return mat.element_type
-            when Block: blk
+            when blk: Block
             {
                 ; Block type is type of last statement
                 ; For now return void
                 return make_void_type()
             }
-            when If: if_expr
+            when if_expr: If
             {
                 ; TODO: Infer from branches
                 return make_void_type()
             }
-            when Match: match_expr
+            when match_expr: Match
             {
                 ; TODO: Infer from branches
                 return make_void_type()
             }
-            when Choose: choose_expr
+            when choose_expr: Choose
             {
                 ; TODO: Infer from branches
                 return make_void_type()
             }
-            when For: for_expr
+            when for_expr: For
                 return make_void_type()
-            when While: while_expr
+            when while_expr: While
                 return make_void_type()
-            when Try: try_expr
+            when try_expr: Try
             {
                 ; TODO: Infer from condition
                 return make_void_type()
             }
-            when SizeOf: sizeof_expr
+            when sizeof_expr: SizeOf
                 return make_size_type()
-            when Is: is_expr
+            when is_expr: Is
                 return make_bool_type()
-            when VariantConstruction: vc
+            when vc: VariantConstruction
                 return vc.union_type
     }
 
@@ -1998,12 +1998,12 @@ define Planner
                 if result.operations.length > 0
                 {
                     choose result.operations.get(0)
-                        when Some: first_row_ref
+                        when first_row_ref: Some
                         {
                             if (*first_row_ref).length > 0
                             {
                                 choose (*first_row_ref).get(0)
-                                    when Some: first_elem_ref
+                                    when first_elem_ref: Some
                                         set result.element_type: (*first_elem_ref).result_type
                             }
                         }
@@ -2106,7 +2106,7 @@ define Planner
         if expr.length = 0
             return make_int_type()
         choose expr.get(expr.length - 1)
-            when Some: last_op
+            when last_op: Some
                 (*last_op).result_type
             else
                 make_int_type()
@@ -2247,17 +2247,17 @@ define Planner
             if operation.length > 0
             {
                 choose operation.get(operation.length - 1)
-                    when Some: last
+                    when last: Some
                         set is_on_page: is_on_page_lifetime((*last).result_type.life)
             }
         }
 
         ; Register in current scope
         choose item.name
-            when Some: name_ref
+            when name_ref: Some
             {
                 choose item.item_type
-                    when Some: type_ref
+                    when type_ref: Some
                         bind_local(*name_ref, *type_ref, is_mutable, is_on_page)
             }
 
@@ -2280,7 +2280,7 @@ define Planner
     function plan_statement(this, stmt: scaly.compiler.Model.Statement) returns ref[PlannedStatement]?
     {
         choose stmt
-            when Action: act
+            when act: Action
             {
                 let planned plan_action(act)
                 if planned = null
@@ -2288,7 +2288,7 @@ define Planner
                 let result PlannedStatement.Action#(planned)
                 return result
             }
-            when Binding: bind
+            when bind: Binding
             {
                 let planned plan_binding(bind)
                 if planned = null
@@ -2296,27 +2296,27 @@ define Planner
                 let result PlannedStatement.Binding#(planned)
                 return result
             }
-            when Break: brk
+            when brk: Break
             {
                 let planned_result plan_operands(brk.result)
                 let planned PlannedBreak#(brk.span, planned_result)
                 let result PlannedStatement.Break#(planned)
                 return result
             }
-            when Continue: cont
+            when cont: Continue
             {
                 let planned PlannedContinue#(cont.span)
                 let result PlannedStatement.Continue#(planned)
                 return result
             }
-            when Return: ret
+            when ret: Return
             {
                 let planned_result plan_operands(ret.result)
                 let planned PlannedReturn#(ret.span, planned_result)
                 let result PlannedStatement.Return#(planned)
                 return result
             }
-            when Throw: thr
+            when thr: Throw
             {
                 let planned_result plan_operands(thr.result)
                 let planned PlannedThrow#(thr.span, planned_result)
@@ -2354,7 +2354,7 @@ define Planner
     function plan_implementation(this, impl: scaly.compiler.Model.Implementation) returns ref[PlannedImplementation]?
     {
         choose impl
-            when Action: act
+            when act: Action
             {
                 let planned plan_action(act)
                 if planned = null
@@ -2362,19 +2362,19 @@ define Planner
                 let result PlannedImplementation.Action#(planned)
                 return result
             }
-            when Extern: ext
+            when ext: Extern
             {
                 let planned PlannedExternImpl#(ext.span)
                 let result PlannedImplementation.Extern#(planned)
                 return result
             }
-            when Instruction: instr
+            when instr: Instruction
             {
                 let planned PlannedInstructionImpl#(instr.span)
                 let result PlannedImplementation.Instruction#(planned)
                 return result
             }
-            when Intrinsic: intr
+            when intr: Intrinsic
             {
                 let planned PlannedIntrinsicImpl#(intr.span)
                 let result PlannedImplementation.Intrinsic#(planned)
@@ -2399,7 +2399,7 @@ define Planner
         ; Check if function has Call lifetime (needs implicit page parameter)
         ; The page parameter is now derived from the lifetime field
         choose func.lifetime
-            when Call: call_life
+            when call_life: Call
             {
                 let page_ptr_type make_page_pointer_type()
                 bind_local(String#("rp"), page_ptr_type, false, true)
@@ -2438,10 +2438,10 @@ define Planner
 
                 ; Define parameter in scope
                 choose planned.name
-                    when Some: name_ref
+                    when name_ref: Some
                     {
                         choose planned.item_type
-                            when Some: type_ref
+                            when type_ref: Some
                                 bind_local(*name_ref, *type_ref, false, false)
                     }
 
@@ -2477,7 +2477,7 @@ define Planner
         ; Plan return type
         var ret_type ref[PlannedType] null
         choose func.returns_
-            when Some: ret
+            when ret: Some
             {
                 set ret_type: resolve_type(ret, func.span)
                 if ret_type = null
@@ -2492,7 +2492,7 @@ define Planner
         ; Plan throws type
         var thrown_type ref[PlannedType] null
         choose func.throws_
-            when Some: thr
+            when thr: Some
             {
                 set thrown_type: resolve_type(thr, func.span)
                 if thrown_type = null
@@ -2610,10 +2610,10 @@ define Planner
 
                 ; Define parameter in scope
                 choose planned.name
-                    when Some: name_ref
+                    when name_ref: Some
                     {
                         choose planned.item_type
-                            when Some: type_ref
+                            when type_ref: Some
                                 bind_local(*name_ref, *type_ref, false, false)
                     }
 
@@ -2624,13 +2624,13 @@ define Planner
         ; Plan return type
         var ret_type ref[PlannedType] null
         choose op.returns_
-            when Some: ret
+            when ret: Some
                 set ret_type: resolve_type(ret, op.span)
 
         ; Plan throws type
         var thrown_type ref[PlannedType] null
         choose op.throws_
-            when Some: thr
+            when thr: Some
                 set thrown_type: resolve_type(thr, op.span)
 
         ; Plan implementation
@@ -2726,7 +2726,7 @@ define Planner
     function plan_definition(this, def: scaly.compiler.Model.Definition, name: String) returns ref[PlannedDefinition]?
     {
         choose def
-            when Structure: struct
+            when struct: Structure
             {
                 let planned plan_structure(struct, name)
                 if planned = null
@@ -2734,7 +2734,7 @@ define Planner
                 let result PlannedDefinition.Structure#(planned)
                 return result
             }
-            when Union: union_def
+            when union_def: Union
             {
                 let planned plan_union(union_def, name)
                 if planned = null
@@ -2742,7 +2742,7 @@ define Planner
                 let result PlannedDefinition.Union#(planned)
                 return result
             }
-            when Namespace: ns
+            when ns: Namespace
             {
                 let planned plan_namespace(ns, name)
                 if planned = null
@@ -2750,7 +2750,7 @@ define Planner
                 let result PlannedDefinition.Namespace#(planned)
                 return result
             }
-            when Global: global
+            when global: Global
             {
                 let planned plan_global(global, name)
                 if planned = null
@@ -2758,7 +2758,7 @@ define Planner
                 let result PlannedDefinition.Global#(planned)
                 return result
             }
-            when Type: type_alias
+            when type_alias: Type
             {
                 let resolved resolve_type(type_alias, type_alias.span)
                 if resolved = null
@@ -2766,7 +2766,7 @@ define Planner
                 let result PlannedDefinition.Type#(resolved)
                 return result
             }
-            when Intrinsic: intr
+            when intr: Intrinsic
             {
                 ; Intrinsic definition - create a minimal structure placeholder
                 let placeholder PlannedStructure#(
@@ -2832,7 +2832,7 @@ define Planner
             for member in struct.members
             {
                 choose member
-                    when Function: func
+                    when func: Function
                     {
                         let planned plan_function(func, struct_type)
                         if planned <> null
@@ -2843,15 +2843,15 @@ define Planner
                                 set methods: meths
                             }
                             choose methods
-                                when Some: m
+                                when m: Some
                                     m.put(m.length, planned)
                         }
                     }
-                    when Operator: op
+                    when op: Operator
                     {
                         ; Skip operators for now
                     }
-                    when Concept: conc
+                    when conc: Concept
                     {
                         ; Skip nested concepts for now
                     }
@@ -2865,7 +2865,7 @@ define Planner
             for member in struct.members
             {
                 choose member
-                    when Operator: op
+                    when op: Operator
                     {
                         let planned plan_operator(op, struct_type)
                         if planned <> null
@@ -2876,7 +2876,7 @@ define Planner
                                 set operators: ops
                             }
                             choose operators
-                                when Some: o
+                                when o: Some
                                     o.put(o.length, planned)
                         }
                     }
@@ -2959,7 +2959,7 @@ define Planner
             for member in union_def.members
             {
                 choose member
-                    when Function: func
+                    when func: Function
                     {
                         let planned plan_function(func, union_type)
                         if planned <> null
@@ -2970,7 +2970,7 @@ define Planner
                                 set methods: meths
                             }
                             choose methods
-                                when Some: m
+                                when m: Some
                                     m.put(m.length, planned)
                         }
                     }
@@ -2988,7 +2988,7 @@ define Planner
             for member in union_def.members
             {
                 choose member
-                    when Operator: op
+                    when op: Operator
                     {
                         let planned plan_operator(op, union_type)
                         if planned <> null
@@ -2999,7 +2999,7 @@ define Planner
                                 set operators: ops
                             }
                             choose operators
-                                when Some: o
+                                when o: Some
                                     o.put(o.length, planned)
                         }
                     }
@@ -3086,11 +3086,11 @@ define Planner
             for member in ns.members
             {
                 choose member
-                    when Function: func
+                    when func: Function
                     {
                         let planned plan_function(func, &parent_type)
                         choose planned
-                            when Some: p_ref
+                            when p_ref: Some
                             {
                                 if functions = null
                                 {
@@ -3098,7 +3098,7 @@ define Planner
                                     set functions: funcs
                                 }
                                 choose functions
-                                    when Some: f
+                                    when f: Some
                                     {
                                         f.put(f.length, p_ref)
 
@@ -3121,7 +3121,7 @@ define Planner
             for member in ns.members
             {
                 choose member
-                    when Operator: op
+                    when op: Operator
                     {
                         let planned plan_operator(op, &parent_type)
                         if planned <> null
@@ -3132,7 +3132,7 @@ define Planner
                                 set operators: ops
                             }
                             choose operators
-                                when Some: o
+                                when o: Some
                                     o.put(o.length, planned)
                         }
                     }
@@ -3234,13 +3234,13 @@ define Planner
             for member in mod.members
             {
                 choose member
-                    when Package: pkg_modules
+                    when pkg_modules: Package
                     {
                         ; Plan the package's modules
                         for pkg_mod in pkg_modules
                         {
                             choose plan_module(pkg_mod)
-                                when Some: p_ref
+                                when p_ref: Some
                                 {
                                     if result.modules = null
                                         set result.modules: Vector[PlannedModule]#()
@@ -3248,21 +3248,21 @@ define Planner
                                 }
                         }
                     }
-                    when Concept: conc
+                    when conc: Concept
                     {
                         choose plan_concept(conc)
-                            when Some: p_ref
+                            when p_ref: Some
                             {
                                 if result.concepts = null
                                     set result.concepts: Vector[PlannedConcept]#()
                                 result.concepts.put(result.concepts.length, p_ref)
                             }
                     }
-                    when Function: func
+                    when func: Function
                     {
                         let null_type_ptr: pointer[PlannedType] null
                         choose plan_function(func, null_type_ptr)
-                            when Some: p_ref
+                            when p_ref: Some
                             {
                                 if result.functions = null
                                     set result.functions: Vector[PlannedFunction]#()
@@ -3272,11 +3272,11 @@ define Planner
                                 cache_function((*p_ref).mangled_name, *p_ref)
                             }
                     }
-                    when Operator: op
+                    when op: Operator
                     {
                         let null_type_ptr: pointer[PlannedType] null
                         choose plan_operator(op, null_type_ptr)
-                            when Some: p_ref
+                            when p_ref: Some
                             {
                                 if result.operators = null
                                     set result.operators: Vector[PlannedOperator]#()
@@ -3448,7 +3448,7 @@ define Planner
                             method,
                             method.mangled_name,
                             choose method.return_type
-                                when Some: rt
+                                when rt: Some
                                     *rt
                                 else
                                     make_void_type(),
@@ -3478,7 +3478,7 @@ define Planner
                             method,
                             method.mangled_name,
                             choose method.return_type
-                                when Some: rt
+                                when rt: Some
                                     *rt
                                 else
                                     make_void_type(),
@@ -3509,7 +3509,7 @@ define Planner
                             method,
                             method.mangled_name,
                             choose method.return_type
-                                when Some: rt
+                                when rt: Some
                                     *rt
                                 else
                                     make_void_type(),
@@ -3542,7 +3542,7 @@ define Planner
                                     method,
                                     method.mangled_name,
                                     choose method.return_type
-                                        when Some: rt
+                                        when rt: Some
                                             *rt
                                         else
                                             make_void_type(),
@@ -3642,7 +3642,7 @@ define Planner
                 for param in method.input
                 {
                     choose param.name
-                        when Some: name_ref
+                        when name_ref: Some
                         {
                             if name_ref.equals(String#("this")) = false
                                 set param_count: param_count + 1
@@ -3672,7 +3672,7 @@ define Planner
                         ; Skip 'this' parameter
                         var is_this false
                         choose param.name
-                            when Some: name_ref
+                            when name_ref: Some
                             {
                                 if name_ref.equals(String#("this"))
                                     set is_this: true
@@ -3682,10 +3682,10 @@ define Planner
                             continue
 
                         choose arg_types.get(arg_idx)
-                            when Some: arg_type_ref
+                            when arg_type_ref: Some
                             {
                                 choose param.item_type
-                                    when Some: param_type_ref
+                                    when param_type_ref: Some
                                     {
                                         if types_compatible(*param_type_ref, *arg_type_ref) = false
                                             set types_match: false
@@ -3705,7 +3705,7 @@ define Planner
                 method,
                 method.mangled_name,
                 choose method.return_type
-                    when Some: rt
+                    when rt: Some
                         *rt
                     else
                         make_void_type(),
@@ -3747,10 +3747,10 @@ define Planner
                         if op.input.length >= 2
                         {
                             choose op.input.get(1)
-                                when Some: second_param_ref
+                                when second_param_ref: Some
                                 {
                                     choose (*second_param_ref).item_type
-                                        when Some: param_type_ref
+                                        when param_type_ref: Some
                                         {
                                             if types_compatible(*param_type_ref, right) = false
                                                 continue
@@ -3762,7 +3762,7 @@ define Planner
                     ; Found matching operator - get return type
                     var op_ret_type PlannedType make_void_type()
                     choose op.return_type
-                        when Some: rt
+                        when rt: Some
                             set op_ret_type: *rt
 
                     let result OperatorMatch#(
@@ -3792,10 +3792,10 @@ define Planner
                         if op.input.length >= 2
                         {
                             choose op.input.get(1)
-                                when Some: second_param_ref
+                                when second_param_ref: Some
                                 {
                                     choose (*second_param_ref).item_type
-                                        when Some: param_type_ref
+                                        when param_type_ref: Some
                                         {
                                             if types_compatible(*param_type_ref, right) = false
                                                 continue
@@ -3806,7 +3806,7 @@ define Planner
 
                     var union_op_ret_type PlannedType make_void_type()
                     choose op.return_type
-                        when Some: rt
+                        when rt: Some
                             set union_op_ret_type: *rt
 
                     let result OperatorMatch#(
@@ -3969,7 +3969,7 @@ define Planner
         if sibling <> null
         {
             choose sibling.returns_
-                when Some: ret
+                when ret: Some
                     return resolve_type(ret, loc)
 
             ; No return type - void
@@ -3981,7 +3981,7 @@ define Planner
         if cached <> null
         {
             choose cached.return_type
-                when Some: rt
+                when rt: Some
                     return rt
 
             return make_void_type()
@@ -4013,10 +4013,10 @@ define Planner
                         if op.input.length >= 2
                         {
                             choose op.input.get(1)
-                                when Some: second_param_ref
+                                when second_param_ref: Some
                                 {
                                     choose (*second_param_ref).item_type
-                                        when Some: param_type_ref
+                                        when param_type_ref: Some
                                         {
                                             if types_compatible(*param_type_ref, right) = false
                                                 continue
@@ -4027,7 +4027,7 @@ define Planner
 
                     ; Found matching operator - return its return type
                     choose op.return_type
-                        when Some: rt
+                        when rt: Some
                             return rt
 
                     return make_void_type()
@@ -4051,10 +4051,10 @@ define Planner
                         if op.input.length >= 2
                         {
                             choose op.input.get(1)
-                                when Some: second_param_ref
+                                when second_param_ref: Some
                                 {
                                     choose (*second_param_ref).item_type
-                                        when Some: param_type_ref
+                                        when param_type_ref: Some
                                         {
                                             if types_compatible(*param_type_ref, right) = false
                                                 continue
@@ -4064,7 +4064,7 @@ define Planner
                     }
 
                     choose op.return_type
-                        when Some: rt
+                        when rt: Some
                             return rt
 
                     return make_void_type()
@@ -4227,7 +4227,7 @@ define Planner
                             for param in method.input
                             {
                                 choose param.name
-                                    when Some: n_ref
+                                    when n_ref: Some
                                     {
                                         if n_ref.equals(String#("this")) = false
                                         {
@@ -4248,7 +4248,7 @@ define Planner
                         {
                             var ret_type PlannedType make_void_type()
                             choose method.return_type
-                                when Some: rt
+                                when rt: Some
                                     set ret_type: *rt
 
                             let result PlannedMemberAccess#(
@@ -4280,7 +4280,7 @@ define Planner
                     {
                         var variant_type_val PlannedType make_void_type()
                         choose variant.var_type
-                            when Some: vt_ref
+                            when vt_ref: Some
                                 set variant_type_val: *vt_ref
 
                         let result PlannedMemberAccess#(
@@ -4341,17 +4341,17 @@ define Planner
         if ops.length = 1
         {
             choose ops.get(0)
-                when Some: first_ref
+                when first_ref: Some
                     return (*first_ref).result_type
         }
 
         ; Check for prefix operator at start
         choose ops.get(0)
-            when Some: first_ref
+            when first_ref: Some
             {
                 let first *first_ref
                 choose first.expr
-                    when PlannedType: type_expr
+                    when type_expr: PlannedType
                     {
                         if is_operator_name(type_expr.name)
                         {
@@ -4364,7 +4364,7 @@ define Planner
                                 while i < ops.length
                                 {
                                     choose ops.get(i)
-                                        when Some: op_ref
+                                        when op_ref: Some
                                             rest_ops.put(rest_ops.length, *op_ref)
                                     set i: i + 1
                                 }
@@ -4383,20 +4383,20 @@ define Planner
         ; First operand becomes context, process remaining left-to-right
         var context PlannedType make_void_type()
         choose ops.get(0)
-            when Some: first_ref
+            when first_ref: Some
                 set context: (*first_ref).result_type
 
         var idx 1 as size_t
         while idx < ops.length
         {
             choose ops.get(idx)
-                when Some: current_ref
+                when current_ref: Some
                 {
                     let current *current_ref
 
                     ; Check if current is an operator
                     choose current.expr
-                        when PlannedType: type_expr
+                        when type_expr: PlannedType
                         {
                             if is_operator_name(type_expr.name)
                             {
@@ -4404,7 +4404,7 @@ define Planner
                                 if idx + 1 < ops.length
                                 {
                                     choose ops.get(idx + 1)
-                                        when Some: right_ref
+                                        when right_ref: Some
                                         {
                                             let right (*right_ref).result_type
                                             let op_result resolve_operator_call(type_expr.name, current.loc, context, right)
@@ -4436,18 +4436,18 @@ define Planner
         if ops.length = 1
         {
             choose ops.get(0)
-                when Some: first_ref
+                when first_ref: Some
                     return first_ref
             return null
         }
 
         ; Handle prefix operator (e.g., -x, *ptr)
         choose ops.get(0)
-            when Some: first_ref
+            when first_ref: Some
             {
                 let first *first_ref
                 choose first.expr
-                    when PlannedType: type_expr
+                    when type_expr: PlannedType
                     {
                         if is_operator_name(type_expr.name)
                         {
@@ -4455,7 +4455,7 @@ define Planner
                             {
                                 ; Prefix operator - apply to next operand
                                 choose ops.get(1)
-                                    when Some: operand_ref
+                                    when operand_ref: Some
                                     {
                                         let operand_result resolve_prefix_operator_call(type_expr.name, first.loc, (*operand_ref).result_type)
                                         if operand_result <> null
@@ -4477,7 +4477,7 @@ define Planner
                                                 while i < ops.length
                                                 {
                                                     choose ops.get(i)
-                                                        when Some: op_ref
+                                                        when op_ref: Some
                                                             rest_ops.put(rest_ops.length, *op_ref)
                                                     set i: i + 1
                                                 }
@@ -4503,10 +4503,10 @@ define Planner
             if i mod 2 = 1  ; Operators are at odd indices
             {
                 choose ops.get(i)
-                    when Some: op_ref
+                    when op_ref: Some
                     {
                         choose (*op_ref).expr
-                            when PlannedType: type_expr
+                            when type_expr: PlannedType
                             {
                                 let prec get_operator_precedence(type_expr.name)
                                 if prec > 0
@@ -4532,7 +4532,7 @@ define Planner
             while li < split_idx
             {
                 choose ops.get(li)
-                    when Some: op_ref
+                    when op_ref: Some
                         left_ops.put(left_ops.length, *op_ref)
                 set li: li + 1
             }
@@ -4544,11 +4544,11 @@ define Planner
             var op_name String String#("")
             var op_loc Span Span(0, 0)
             choose ops.get(split_idx)
-                when Some: op_ref
+                when op_ref: Some
                 {
                     set op_loc: (*op_ref).loc
                     choose (*op_ref).expr
-                        when PlannedType: type_expr
+                        when type_expr: PlannedType
                             set op_name: type_expr.name
                 }
 
@@ -4558,7 +4558,7 @@ define Planner
             while ri < ops.length
             {
                 choose ops.get(ri)
-                    when Some: op_ref
+                    when op_ref: Some
                         right_ops.put(right_ops.length, *op_ref)
                 set ri: ri + 1
             }
@@ -4583,7 +4583,7 @@ define Planner
 
         ; Fallback: return first operand
         choose ops.get(0)
-            when Some: first_ref
+            when first_ref: Some
                 return first_ref
 
         null

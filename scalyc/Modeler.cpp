@@ -801,10 +801,15 @@ llvm::Expected<Match> Modeler::handleMatch(const MatchSyntax &Syntax) {
 }
 
 llvm::Expected<When> Modeler::handleWhen(const WhenSyntax &Syntax) {
-    // Syntax.variant = variant type name (e.g., "Some" in "when Some: v")
-    // Syntax.name = binding name (e.g., "v" in "when Some: v")
+    // Syntax.name = binding name (e.g., "v" in "when v: Some")
+    // Syntax.variant = variant type path (e.g., "Some" or "Foo.Bar")
     std::vector<std::string> VariantPath;
-    VariantPath.push_back(std::string(Syntax.variant));
+    VariantPath.push_back(std::string(Syntax.variant.name));
+    if (Syntax.variant.extensions) {
+        for (const auto &Ext : *Syntax.variant.extensions) {
+            VariantPath.push_back(std::string(Ext.name));
+        }
+    }
 
     auto Cons = handleCommand(Syntax.command);
     if (!Cons)
