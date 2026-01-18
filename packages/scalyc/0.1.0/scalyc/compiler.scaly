@@ -15,8 +15,14 @@ define compiler
 
     function test() returns int
     {
-        ; Individual module tests cause segfault in JIT - disabled for now
-        ; TODO: Debug why lexer.test() or Planner.test() crashes
+        var result lexer.test()
+        if result <> 0
+            return result
+
+        set result: Planner.test()
+        if result <> 0
+            return 100 + result
+
         0
     }
 }
