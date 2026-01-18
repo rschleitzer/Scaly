@@ -1731,8 +1731,13 @@ llvm::Expected<Namespace> Modeler::handleNamespace(llvm::StringRef Name,
     std::map<std::string, std::shared_ptr<Nameable>> Symbols;
 
     // Construct namespace path: Path/Name/ for module lookups
+    // But don't append if path already ends with the namespace name
+    // (happens when module file contains define X where X matches module name)
     llvm::SmallString<256> NamespacePath(Path);
-    llvm::sys::path::append(NamespacePath, Name);
+    llvm::StringRef LastComponent = llvm::sys::path::filename(Path);
+    if (LastComponent != Name) {
+        llvm::sys::path::append(NamespacePath, Name);
+    }
 
     if (Syntax.declarations) {
         for (const auto &D : *Syntax.declarations) {
@@ -1761,7 +1766,7 @@ llvm::Expected<Namespace> Modeler::handleNamespace(llvm::StringRef Name,
                             if (Op) {
                                 Members.push_back(std::move(*Op));
                             }
-                        } else if constexpr (std::is_same_v<ET, ModuleSyntax>) {
+                                } else if constexpr (std::is_same_v<ET, ModuleSyntax>) {
                             auto Mod = handleModule(NamespacePath.str(), E, true);
                             if (Mod) {
                                 Modules.push_back(std::move(*Mod));
@@ -1921,8 +1926,15 @@ llvm::Expected<Module> Modeler::buildReferencedModule(llvm::StringRef Path,
             llvm::inconvertibleErrorCode());
     }
 
-    // Build the module
-    return buildModule(Path.str(), FilePath.str().str(), Name.str(), *FileResult, Private);
+    // Build the module with updated path for submodule resolution
+    llvm::SmallString<256> ModulePath;
+    if (!Path.empty()) {
+        ModulePath = Path;
+        llvm::sys::path::append(ModulePath, Name);
+    } else {
+        ModulePath = Name;
+    }
+    return buildModule(ModulePath.str().str(), FilePath.str().str(), Name.str(), *FileResult, Private);
 }
 
 llvm::Expected<Module> Modeler::handleModule(llvm::StringRef Path,

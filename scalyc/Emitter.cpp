@@ -2861,8 +2861,17 @@ llvm::Expected<llvm::Value*> Emitter::emitCall(const PlannedCall &Call) {
                 // $ = local page
                 Page = CurrentRegion.LocalPage;
             } else if (std::holds_alternative<CallLifetime>(Call.Life)) {
-                // # = caller's return page
+                // # = caller's return page, with fallback to local page
                 Page = CurrentRegion.ReturnPage;
+                if (!Page) {
+                    Page = CurrentRegion.LocalPage;
+                }
+                // If still no page, allocate on-demand BEFORE struct allocation
+                // This is critical: the struct must be on a page for Page.get(this) to work
+                if (!Page && PageAllocatePage) {
+                    CurrentRegion.LocalPage = Builder->CreateCall(PageAllocatePage, {}, "local_page.ondemand");
+                    Page = CurrentRegion.LocalPage;
+                }
             } else if (std::holds_alternative<ReferenceLifetime>(Call.Life)) {
                 // ^name = first argument is the page pointer
                 if (!Args.empty()) {

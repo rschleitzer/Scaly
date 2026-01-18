@@ -20,6 +20,21 @@ define Array[T]
         set vector: Vector[T]^exclusive_page(size)
     }
 
+    ; Page-aware initializers for use when Array is allocated on a specific page
+    init# (page)
+    {
+        set length: 0
+        set vector: null
+    }
+
+    init# (page, size: size_t)
+    {
+        set length: 0
+        set vector: null
+        let exclusive_page page.allocate_exclusive_page()
+        set vector: Vector[T]^exclusive_page(size)
+    }
+
     function get_buffer(this: Array[T]) returns pointer[T]
     {
         if vector = null

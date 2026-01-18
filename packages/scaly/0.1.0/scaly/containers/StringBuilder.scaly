@@ -6,31 +6,34 @@ define StringBuilder
     buffer: Array[char]
 )
 {
-    init ()
+    ; StringBuilder requires page allocation because Array.add() uses Page.get(this)
+    ; Use StringBuilder#() to allocate on caller's page
+
+    init# (page)
     {
-        set buffer: Array[char]()
+        set buffer: Array[char]^page()
     }
 
-    init (size: size_t)
+    init# (page, size: size_t)
     {
-        set buffer: Array[char](size)
+        set buffer: Array[char]^page(size)
     }
 
-    init (character: char)
+    init# (page, character: char)
     {
-        set buffer: Array[char]()
+        set buffer: Array[char]^page()
         append(character)
     }
 
-    init (string: String)
+    init# (page, string: String)
     {
-        set buffer: Array[char]()
+        set buffer: Array[char]^page()
         append(string)
     }
 
-    init (c_string: pointer[const_char])
+    init# (page, c_string: pointer[const_char])
     {
-        set buffer: Array[char]()
+        set buffer: Array[char]^page()
         append(c_string)
     }
 
