@@ -428,9 +428,9 @@
 
 <syntax id = When                         multiple
     <content link = when
-    <content identifier                                     property = variant
-    <content colon
     <content identifier                                     property = name
+    <content colon
+    <content link = Name                                    property = variant
     <content colon                                 optional
     <content link = Command                                 property = command
     <content colon                                 optional

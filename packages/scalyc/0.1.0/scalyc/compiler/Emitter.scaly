@@ -771,21 +771,21 @@ define Emitter
 
         ; Skip extern functions - they have no body
         choose func.impl
-            when Extern: ext
+            when ext: Extern
             {
                 return true
             }
-            when Intrinsic: intr
+            when intr: Intrinsic
             {
                 ; Intrinsic functions are handled specially at call sites
                 return true
             }
-            when Instruction: inst
+            when inst: Instruction
             {
                 ; Instruction-level functions are handled specially
                 return true
             }
-            when Action: action
+            when action: Action
             {
                 ; Emit the function body
                 set current_function: llvm_func
@@ -861,7 +861,7 @@ define Emitter
     function emit_constant(this, const: PlannedConstant, result_type: PlannedType) returns LLVMValueRef
     {
         choose const.value
-            when Boolean: b
+            when b: Boolean
             {
                 let llvm_type LLVMInt1TypeInContext(context)
                 if b.value
@@ -869,26 +869,26 @@ define Emitter
                 else
                     return LLVMConstInt(llvm_type, 0, 0)
             }
-            when Integer: i
+            when i: Integer
             {
                 let llvm_type LLVMInt32TypeInContext(context)
                 return LLVMConstInt(llvm_type, i.value as size_t, 1)
             }
-            when Hex: h
+            when h: Hex
             {
                 let llvm_type LLVMInt64TypeInContext(context)
                 return LLVMConstInt(llvm_type, h.value, 0)
             }
-            when FloatingPoint: fp
+            when fp: FloatingPoint
             {
                 let llvm_type LLVMDoubleTypeInContext(context)
                 return LLVMConstReal(llvm_type, fp.value)
             }
-            when String: s
+            when s: String
             {
                 return LLVMConstStringInContext(context, s.value.c_data(), s.value.length as int, 0)
             }
-            when Character: c
+            when c: Character
             {
                 let llvm_type LLVMInt8TypeInContext(context)
                 ; Get first character
@@ -899,11 +899,11 @@ define Emitter
                 }
                 return LLVMConstInt(llvm_type, 0, 0)
             }
-            when Fragment: fr
+            when fr: Fragment
             {
                 return LLVMConstStringInContext(context, fr.value.c_data(), fr.value.length as int, 0)
             }
-            when Null: n
+            when n: Null
             {
                 let ptr_type LLVMPointerTypeInContext(context, 0)
                 return LLVMConstPointerNull(ptr_type)
@@ -1075,7 +1075,7 @@ define Emitter
 
         ; Emit the expression
         choose op.expr
-            when Constant: c
+            when c: Constant
             {
                 set value: emit_constant(c, op.result_type)
             }
@@ -1172,7 +1172,7 @@ define Emitter
     function emit_expression(this, expr: PlannedExpression) returns LLVMValueRef
     {
         choose expr
-            when Constant: c
+            when c: Constant
             {
                 ; Use void type as placeholder when no type info available
                 let void_type PlannedType#(
@@ -1187,76 +1187,76 @@ define Emitter
                 )
                 return emit_constant(c, void_type)
             }
-            when Type: t
+            when t: Type
             {
                 ; Type used as expression - error
                 return LLVMValueRef(null)
             }
-            when Variable: v
+            when v: Variable
             {
                 return emit_variable(v)
             }
-            when GlobalRef: g
+            when g: GlobalRef
             {
                 return emit_global_ref(g)
             }
-            when Call: c
+            when c: Call
             {
                 return emit_call(c)
             }
-            when Tuple: t
+            when t: Tuple
             {
                 return emit_tuple(t)
             }
-            when Matrix: m
+            when m: Matrix
             {
                 return emit_matrix(m)
             }
-            when Block: b
+            when b: Block
             {
                 return emit_block(b)
             }
-            when If: i
+            when i: If
             {
                 return emit_if(i)
             }
-            when Match: m
+            when m: Match
             {
                 return emit_match(m)
             }
-            when Choose: c
+            when c: Choose
             {
                 return emit_choose(c)
             }
-            when For: f
+            when f: For
             {
                 return emit_for(f)
             }
-            when While: w
+            when w: While
             {
                 return emit_while(w)
             }
-            when Try: t
+            when t: Try
             {
                 return emit_try(t)
             }
-            when SizeOf: s
+            when s: SizeOf
             {
                 return emit_sizeof(s)
             }
-            when AlignOf: a
+            when a: AlignOf
             {
                 return emit_alignof(a)
             }
-            when Is: i
+            when i: Is
             {
                 return emit_is(i)
             }
-            when As: a
+            when a: As
             {
                 return emit_as(a)
             }
-            when VariantConstruction: vc
+            when vc: VariantConstruction
             {
                 return emit_variant_construction(vc)
             }
@@ -1910,7 +1910,7 @@ define Emitter
             for stmt in block.statements
             {
                 choose stmt
-                    when Action: action
+                    when action: Action
                     {
                         let value emit_action(action)
                         ; Only save value if it's not an assignment
@@ -1922,7 +1922,7 @@ define Emitter
                                 set last_value: value
                         }
                     }
-                    when Return: ret
+                    when ret: Return
                     {
                         emit_return(ret)
                         pop_block_cleanup(false)
@@ -1980,7 +1980,7 @@ define Emitter
         var then_value LLVMValueRef(null)
 
         choose if_expr.consequent
-            when Some: stmt_ref
+            when stmt_ref: Some
             {
                 ; Use emit_statement which handles all statement types
                 set then_value: emit_statement(*stmt_ref)
@@ -2002,7 +2002,7 @@ define Emitter
             LLVMPositionBuilderAtEnd(builder, else_block)
 
             choose if_expr.alternative
-                when Some: stmt_ref
+                when stmt_ref: Some
                 {
                     set else_value: emit_statement(*stmt_ref)
                 }
@@ -2099,7 +2099,7 @@ define Emitter
                 ; Emit case body
                 LLVMPositionBuilderAtEnd(builder, case_block)
                 choose branch.consequent
-                    when Some: stmt_ref
+                    when stmt_ref: Some
                     {
                         emit_statement(*stmt_ref)
                     }
@@ -2113,7 +2113,7 @@ define Emitter
 
         ; Emit alternative if present
         choose match_expr.alternative
-            when Some: stmt_ref
+            when stmt_ref: Some
             {
                 LLVMPositionBuilderAtEnd(builder, default_block)
                 emit_statement(*stmt_ref)
@@ -2187,7 +2187,7 @@ define Emitter
 
                 ; Emit consequent
                 choose when_case.consequent
-                    when Some: stmt_ref
+                    when stmt_ref: Some
                     {
                         emit_statement(*stmt_ref)
                     }
@@ -2202,7 +2202,7 @@ define Emitter
         ; Emit alternative (else)
         LLVMPositionBuilderAtEnd(builder, default_block)
         choose choose_expr.alternative
-            when Some: stmt_ref
+            when stmt_ref: Some
             {
                 emit_statement(*stmt_ref)
             }
@@ -2419,7 +2419,7 @@ define Emitter
 
         ; Handle "while let" binding
         choose while_expr.cond.binding_item.name
-            when Some: name
+            when name: Some
             {
                 if while_expr.cond.binding_type.equals(String#("var"))
                 {
@@ -2483,7 +2483,7 @@ define Emitter
         if type_kind <> 12
         {
             choose try_expr.cond.binding_item.name
-                when Some: name
+                when name: Some
                 {
                     define_variable(name, result_value)
                 }
@@ -2520,7 +2520,7 @@ define Emitter
 
         ; Bind value if name present
         choose try_expr.cond.binding_item.name
-            when Some: name
+            when name: Some
             {
                 if try_expr.cond.binding_type.equals(String#("var"))
                 {
@@ -2576,7 +2576,7 @@ define Emitter
 
                         ; Execute catch consequent
                         choose catch_case.consequent
-                            when Some: stmt_ref
+                            when stmt_ref: Some
                             {
                                 emit_statement(*stmt_ref)
                             }
@@ -2613,7 +2613,7 @@ define Emitter
 
                         ; Execute catch consequent
                         choose catch_case.consequent
-                            when Some: stmt_ref
+                            when stmt_ref: Some
                             {
                                 emit_statement(*stmt_ref)
                             }
@@ -2625,7 +2625,7 @@ define Emitter
 
         ; Handle alternative
         choose try_expr.alternative
-            when Some: stmt_ref
+            when stmt_ref: Some
             {
                 emit_statement(*stmt_ref)
             }
@@ -2917,28 +2917,28 @@ define Emitter
     function emit_statement(this, stmt: PlannedStatement) returns bool
     {
         choose stmt
-            when Action: action
+            when action: Action
             {
                 let result emit_action(action)
                 return result.handle <> null
             }
-            when Binding: binding
+            when binding: Binding
             {
                 return emit_binding(binding)
             }
-            when Return: ret
+            when ret: Return
             {
                 return emit_return(ret)
             }
-            when Throw: throw_stmt
+            when throw_stmt: Throw
             {
                 return emit_throw(throw_stmt)
             }
-            when Break: brk
+            when brk: Break
             {
                 return emit_break(brk)
             }
-            when Continue: cont
+            when cont: Continue
             {
                 return emit_continue(cont)
             }
@@ -2963,7 +2963,7 @@ define Emitter
                     return value
 
                 choose target_op.expr
-                    when Variable: variable
+                    when variable: Variable
                     {
                         ; Look up the variable's pointer
                         let var_ptr lookup_variable(variable.name)
@@ -2987,7 +2987,7 @@ define Emitter
                         ; Store the value to the variable
                         LLVMBuildStore(builder, value, var_ptr)
                     }
-                    when Call: call
+                    when call: Call
                     {
                         ; Handle dereference assignment like *ptr = value
                         if call.name.equals(String#("*"))
@@ -2998,7 +2998,7 @@ define Emitter
                                 {
                                     ; Emit the argument to get the pointer
                                     choose call.args.get(0)
-                                        when Some: arg
+                                        when arg: Some
                                         {
                                             let ptr emit_operand(*arg)
                                             if ptr.handle <> null
@@ -3041,7 +3041,7 @@ define Emitter
                 if planned_var.variable_type.generics.length > 0
                 {
                     choose planned_var.variable_type.generics.get(0)
-                        when Some: inner_type
+                        when inner_type: Some
                         {
                             set current_type: map_type(*inner_type)
                         }
@@ -3081,7 +3081,7 @@ define Emitter
 
         ; Create alloca for the binding
         choose binding.binding_item.name
-            when Some: name
+            when name: Some
             {
                 if value.handle <> null
                 {
@@ -3105,7 +3105,7 @@ define Emitter
                 {
                     ; No initialization - check for type annotation
                     choose binding.binding_item.item_type
-                        when Some: item_type
+                        when item_type: Some
                         {
                             let ty map_type(*item_type)
                             let alloca LLVMBuildAlloca(builder, ty, name.c_data())
@@ -3457,9 +3457,9 @@ function test() returns int
     ; Test 100: End-to-end compilation of simple integer expression
     var parser Parser#(String#("42"))
     choose parser.parse_program#()
-        when Error: err
+        when err: Error
             return 100
-        when Success: syntax
+        when syntax: Success
         {
             ; Model the parsed program
             let program build_program#(String#("test.scaly"), String#("test"), syntax)
@@ -3489,9 +3489,9 @@ function test() returns int
     ; Test 110: End-to-end with function definition
     set parser: Parser#(String#("function answer() returns int\n    42"))
     choose parser.parse_program#()
-        when Error: err
+        when err: Error
             return 110
-        when Success: syntax
+        when syntax: Success
         {
             let program build_program#(String#("test2.scaly"), String#("test2"), syntax)
             var planner Planner#(String#("test2.scaly"))
@@ -3513,9 +3513,9 @@ function test() returns int
     ; Test 120: End-to-end with struct definition
     set parser: Parser#(String#("define Point(x: int, y: int)"))
     choose parser.parse_program#()
-        when Error: err
+        when err: Error
             return 120
-        when Success: syntax
+        when syntax: Success
         {
             let program build_program#(String#("test3.scaly"), String#("test3"), syntax)
             var planner Planner#(String#("test3.scaly"))
@@ -3532,9 +3532,9 @@ function test() returns int
     ; Test 130: End-to-end with if expression
     set parser: Parser#(String#("if true\n    1\nelse\n    0"))
     choose parser.parse_program#()
-        when Error: err
+        when err: Error
             return 130
-        when Success: syntax
+        when syntax: Success
         {
             let program build_program#(String#("test4.scaly"), String#("test4"), syntax)
             var planner Planner#(String#("test4.scaly"))
@@ -3551,9 +3551,9 @@ function test() returns int
     ; Test 140: End-to-end with let binding and arithmetic
     set parser: Parser#(String#("let x 10\nlet y 20\nlet sum x + y"))
     choose parser.parse_program#()
-        when Error: err
+        when err: Error
             return 140
-        when Success: syntax
+        when syntax: Success
         {
             let program build_program#(String#("test5.scaly"), String#("test5"), syntax)
             var planner Planner#(String#("test5.scaly"))
@@ -3570,9 +3570,9 @@ function test() returns int
     ; Test 150: End-to-end with while loop
     set parser: Parser#(String#("var i: int 0\nwhile i < 10\n    set i: i + 1"))
     choose parser.parse_program#()
-        when Error: err
+        when err: Error
             return 150
-        when Success: syntax
+        when syntax: Success
         {
             let program build_program#(String#("test6.scaly"), String#("test6"), syntax)
             var planner Planner#(String#("test6.scaly"))
@@ -3589,9 +3589,9 @@ function test() returns int
     ; Test 160: End-to-end with function call
     set parser: Parser#(String#("function double(x: int) returns int\n    x * 2\n\nlet result double(21)"))
     choose parser.parse_program#()
-        when Error: err
+        when err: Error
             return 160
-        when Success: syntax
+        when syntax: Success
         {
             let program build_program#(String#("test7.scaly"), String#("test7"), syntax)
             var planner Planner#(String#("test7.scaly"))
@@ -3613,9 +3613,9 @@ function test() returns int
     ; Test 170: End-to-end with union definition
     set parser: Parser#(String#("define Option union(Some: int, None)"))
     choose parser.parse_program#()
-        when Error: err
+        when err: Error
             return 170
-        when Success: syntax
+        when syntax: Success
         {
             let program build_program#(String#("test8.scaly"), String#("test8"), syntax)
             var planner Planner#(String#("test8.scaly"))
@@ -3632,9 +3632,9 @@ function test() returns int
     ; Test 180: End-to-end with union variant construction
     set parser: Parser#(String#("define Option union(Some: int, None)\nlet opt Option.Some(42)"))
     choose parser.parse_program#()
-        when Error: err
+        when err: Error
             return 180
-        when Success: syntax
+        when syntax: Success
         {
             let program build_program#(String#("test9.scaly"), String#("test9"), syntax)
             var planner Planner#(String#("test9.scaly"))
@@ -3649,11 +3649,11 @@ function test() returns int
         }
 
     ; Test 190: End-to-end with choose/when pattern matching
-    set parser: Parser#(String#("define Option union(Some: int, None)\nfunction unwrap(opt: Option) returns int\n    choose opt\n        when Some: v\n            v\n        else\n            0"))
+    set parser: Parser#(String#("define Option union(Some: int, None)\nfunction unwrap(opt: Option) returns int\n    choose opt\n        when v: Some\n            v\n        else\n            0"))
     choose parser.parse_program#()
-        when Error: err
+        when err: Error
             return 190
-        when Success: syntax
+        when syntax: Success
         {
             let program build_program#(String#("test10.scaly"), String#("test10"), syntax)
             var planner Planner#(String#("test10.scaly"))
@@ -3675,9 +3675,9 @@ function test() returns int
     ; Test 200: End-to-end with generic type
     set parser: Parser#(String#("define Box[T](value: T)\nlet b Box[int](42)"))
     choose parser.parse_program#()
-        when Error: err
+        when err: Error
             return 200
-        when Success: syntax
+        when syntax: Success
         {
             let program build_program#(String#("test11.scaly"), String#("test11"), syntax)
             var planner Planner#(String#("test11.scaly"))
@@ -3695,9 +3695,9 @@ function test() returns int
     ; This mimics lexer-like code patterns
     set parser: Parser#(String#("define Lexer(text: pointer[char], pos: int)\n{\n    function current_char(this) returns char\n        *(text + pos)\n    procedure advance#(this)\n        set pos: pos + 1\n}\nvar lex Lexer(\"test\", 0)\nlet ch lex.current_char()"))
     choose parser.parse_program#()
-        when Error: err
+        when err: Error
             return 210
-        when Success: syntax
+        when syntax: Success
         {
             let program build_program#(String#("test12.scaly"), String#("test12"), syntax)
             var planner Planner#(String#("test12.scaly"))

@@ -16,7 +16,7 @@ define Option[T] union
     function is_some(this: Option[T]) returns bool
     {
         choose this
-            when Some: v
+            when v: Some
                 true
             else
                 false
@@ -26,7 +26,7 @@ define Option[T] union
     function is_none(this: Option[T]) returns bool
     {
         choose this
-            when Some: v
+            when v: Some
                 false
             else
                 true
@@ -41,7 +41,7 @@ define Option[T] union
     function unwrap_or(this: Option[T], default: T) returns T
     {
         choose this
-            when Some: v
+            when v: Some
                 v
             else
                 default
@@ -52,7 +52,7 @@ define Option[T] union
     ; function map[U](this: Option[T], f: function(T) returns U) returns Option[U]
     ; {
     ;     choose this
-    ;         when Some: v
+    ;         when v: Some
     ;             Option[U].Some(f(v))
     ;         else
     ;             Option[U].None

@@ -88,7 +88,7 @@ static llvm::Expected<double> evalFloat(llvm::StringRef Source) {
 // Choose on Variant Construction
 static void test_CHOOSE_MATCH_SOME() {
     const char* Name = "CHOOSE-MATCH-SOME";
-    auto Result = evalInt("define Option union(Some: int, None)\nchoose Option.Some(7): when Some: v: v else 0");
+    auto Result = evalInt("define Option union(Some: int, None)\nchoose Option.Some(7): when v: Some: v else 0");
     if (!Result) {
         std::string ErrMsg;
         llvm::raw_string_ostream OS(ErrMsg);
@@ -106,7 +106,7 @@ static void test_CHOOSE_MATCH_SOME() {
 
 static void test_CHOOSE_MATCH_NONE() {
     const char* Name = "CHOOSE-MATCH-NONE";
-    auto Result = evalInt("define Option union(Some: int, None)\nchoose Option.None: when Some: v: v else 0");
+    auto Result = evalInt("define Option union(Some: int, None)\nchoose Option.None: when v: Some: v else 0");
     if (!Result) {
         std::string ErrMsg;
         llvm::raw_string_ostream OS(ErrMsg);
@@ -126,7 +126,7 @@ static void test_CHOOSE_MATCH_NONE() {
 // Choose with Binding
 static void test_CHOOSE_BIND_VALUE() {
     const char* Name = "CHOOSE-BIND-VALUE";
-    auto Result = evalInt("define Result union(Ok: int, Err: int)\nchoose Result.Ok(42): when Ok: x: x + 1 else 0");
+    auto Result = evalInt("define Result union(Ok: int, Err: int)\nchoose Result.Ok(42): when x: Ok: x + 1 else 0");
     if (!Result) {
         std::string ErrMsg;
         llvm::raw_string_ostream OS(ErrMsg);
@@ -146,7 +146,7 @@ static void test_CHOOSE_BIND_VALUE() {
 // Multiple When Clauses
 static void test_CHOOSE_MULTI_MATCH_FIRST() {
     const char* Name = "CHOOSE-MULTI-MATCH-FIRST";
-    auto Result = evalInt("define Result union(Ok: int, Err: int)\nchoose Result.Ok(10): when Ok: x: x when Err: e: e + 100");
+    auto Result = evalInt("define Result union(Ok: int, Err: int)\nchoose Result.Ok(10): when x: Ok: x when e: Err: e + 100");
     if (!Result) {
         std::string ErrMsg;
         llvm::raw_string_ostream OS(ErrMsg);
@@ -164,7 +164,7 @@ static void test_CHOOSE_MULTI_MATCH_FIRST() {
 
 static void test_CHOOSE_MULTI_MATCH_SECOND() {
     const char* Name = "CHOOSE-MULTI-MATCH-SECOND";
-    auto Result = evalInt("define Result union(Ok: int, Err: int)\nchoose Result.Err(5): when Ok: x: x when Err: e: e + 100");
+    auto Result = evalInt("define Result union(Ok: int, Err: int)\nchoose Result.Err(5): when x: Ok: x when e: Err: e + 100");
     if (!Result) {
         std::string ErrMsg;
         llvm::raw_string_ostream OS(ErrMsg);
@@ -223,7 +223,7 @@ static void test_IS_NULL_SOME() {
 // Optional Type Sugar
 static void test_OPTIONAL_SUGAR_UNWRAP() {
     const char* Name = "OPTIONAL-SUGAR-UNWRAP";
-    auto Result = evalInt("define Option[T] union: (Some: T, None)\nfunction unwrap(x: int?) returns int: choose x: when Some: v: v else 0\nunwrap(Option[int].Some(42))");
+    auto Result = evalInt("define Option[T] union: (Some: T, None)\nfunction unwrap(x: int?) returns int: choose x: when v: Some: v else 0\nunwrap(Option[int].Some(42))");
     if (!Result) {
         std::string ErrMsg;
         llvm::raw_string_ostream OS(ErrMsg);
@@ -243,7 +243,7 @@ static void test_OPTIONAL_SUGAR_UNWRAP() {
 // Generic Option Types
 static void test_GENERIC_OPTION_SOME() {
     const char* Name = "GENERIC-OPTION-SOME";
-    auto Result = evalInt("define Option[T] union: (Some: T, None)\nchoose Option[int].Some(42): when Some: v: v else 0");
+    auto Result = evalInt("define Option[T] union: (Some: T, None)\nchoose Option[int].Some(42): when v: Some: v else 0");
     if (!Result) {
         std::string ErrMsg;
         llvm::raw_string_ostream OS(ErrMsg);
@@ -261,7 +261,7 @@ static void test_GENERIC_OPTION_SOME() {
 
 static void test_GENERIC_OPTION_NONE() {
     const char* Name = "GENERIC-OPTION-NONE";
-    auto Result = evalInt("define Option[T] union: (Some: T, None)\nchoose Option[int].None: when Some: v: v else -1");
+    auto Result = evalInt("define Option[T] union: (Some: T, None)\nchoose Option[int].None: when v: Some: v else -1");
     if (!Result) {
         std::string ErrMsg;
         llvm::raw_string_ostream OS(ErrMsg);
@@ -282,7 +282,7 @@ static void test_GENERIC_OPTION_NONE() {
 // Construct Variants
 static void test_VARIANT_OK() {
     const char* Name = "VARIANT-OK";
-    auto Result = evalInt("define Result union: (Ok: int, Error: int)\nchoose Result.Ok(42): when Ok: x: x else 0");
+    auto Result = evalInt("define Result union: (Ok: int, Error: int)\nchoose Result.Ok(42): when x: Ok: x else 0");
     if (!Result) {
         std::string ErrMsg;
         llvm::raw_string_ostream OS(ErrMsg);
@@ -300,7 +300,7 @@ static void test_VARIANT_OK() {
 
 static void test_VARIANT_ERROR() {
     const char* Name = "VARIANT-ERROR";
-    auto Result = evalInt("define Result union: (Ok: int, Error: int)\nchoose Result.Error(100): when Error: e: e else 0");
+    auto Result = evalInt("define Result union: (Ok: int, Error: int)\nchoose Result.Error(100): when e: Error: e else 0");
     if (!Result) {
         std::string ErrMsg;
         llvm::raw_string_ostream OS(ErrMsg);

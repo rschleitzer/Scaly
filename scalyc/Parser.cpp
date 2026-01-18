@@ -3019,18 +3019,6 @@ llvm::Expected<WhenSyntax> Parser::parseWhen() {
     if (!Lex.parseKeyword("when"))
         return different();
 
-    llvm::StringRef Variant = Lex.peekIdentifier();
-    if (Variant.empty())
-        return invalid(Lex, Start, Lex.position(), "expected identifier");
-    if (Keywords.count(Variant)) {
-        std::string Msg = "'" + Variant.str() + "' is a reserved keyword";
-        return invalid(Lex, Start, Lex.position(), Msg);
-    }
-    Lex.parseIdentifier();  // Consume the identifier
-
-    if (!Lex.parseColon())
-        return invalid(Lex, Start, Lex.position(), "expected colon or newline");
-
     llvm::StringRef Name = Lex.peekIdentifier();
     if (Name.empty())
         return invalid(Lex, Start, Lex.position(), "expected identifier");
@@ -3039,6 +3027,18 @@ llvm::Expected<WhenSyntax> Parser::parseWhen() {
         return invalid(Lex, Start, Lex.position(), Msg);
     }
     Lex.parseIdentifier();  // Consume the identifier
+
+    if (!Lex.parseColon())
+        return invalid(Lex, Start, Lex.position(), "expected colon or newline");
+
+    auto VariantOrErr = parseName();
+    if (!VariantOrErr) {
+        std::string ErrMsg = llvm::toString(VariantOrErr.takeError());
+        if (ErrMsg != "different syntax")
+            return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        return invalid(Lex, Start, Lex.position(), "expected Name");
+    }
+    auto Variant = std::move(*VariantOrErr);
 
     Lex.parseColon();
 
@@ -3055,7 +3055,7 @@ llvm::Expected<WhenSyntax> Parser::parseWhen() {
 
     size_t End = Lex.position();
 
-    return WhenSyntax{Start, End, Variant, Name, Command};
+    return WhenSyntax{Start, End, Name, Variant, Command};
 
 }
 

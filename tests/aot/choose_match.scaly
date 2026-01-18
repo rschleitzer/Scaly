@@ -5,7 +5,7 @@ define Option union(Some: int, None)
 
 function get_value(opt: Option) returns int
     choose opt
-        when Some: s
+        when s: Some
             s
         else
             0
