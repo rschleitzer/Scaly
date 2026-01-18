@@ -7985,8 +7985,13 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                                     }
                                 }
 
-                                // Plan the static method
-                                auto PlannedFunc = planFunction(*StaticMethod, nullptr);
+                                // Create parent type for correct mangling
+                                PlannedType StaticMethodParent;
+                                StaticMethodParent.Name = TypeName;
+                                StaticMethodParent.MangledName = encodeName(TypeName);
+
+                                // Plan the static method with parent type
+                                auto PlannedFunc = planFunction(*StaticMethod, &StaticMethodParent);
                                 if (!PlannedFunc) {
                                     return PlannedFunc.takeError();
                                 }
