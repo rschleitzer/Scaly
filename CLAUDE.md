@@ -30,14 +30,14 @@ The current approach builds the compiler in **idiomatic C++** with **LLVM code g
 
 The C++ compiler pipeline is **feature-complete** (Lexer → Parser → Modeler → Planner → Emitter → LLVM). Path to self-hosting:
 
-| Phase | Goal | Key Tasks |
-|-------|------|-----------|
-| 1 | Validate AOT | Compile+run standalone program, verify linking, test RBMM |
-| 2 | Complete stdlib | HashMap[K,V] (critical), String, File I/O, Result[T,E] |
-| 3 | Port to Scaly | Lexer → Parser → Modeler → Planner → Emitter (use LLVM C API) |
-| 4 | Bootstrap | C++ compiles Scaly compiler → stage1 compiles itself → verify stage2 = stage1 |
+| Phase | Goal | Status |
+|-------|------|--------|
+| 1 | Validate AOT | **Done** - 26+ AOT tests in `tests/aot/`, linking works |
+| 2 | Complete stdlib | In progress - memory, containers, io, llvm modules exist |
+| 3 | Port to Scaly | Next - LLVM-C bindings in `packages/scaly/0.1.0/scaly/llvm.scaly` |
+| 4 | Bootstrap | Future - C++ compiles Scaly compiler → stage1 compiles itself |
 
-**Next tasks:** (1) Test AOT: `./scalyc/build/scalyc -o hello hello.scaly` (2) Implement HashMap[K,V] (3) Add LLVM C API bindings (4) Port Lexer.cpp to Scaly
+**Current focus:** Complete stdlib modules (containers, io), then port Lexer.cpp to Scaly using the LLVM-C bindings.
 
 ### LLVM Coding Guidelines
 
@@ -182,6 +182,7 @@ tests/*.sgm  →  codegen  →  scalyc/Tests.cpp (executable tests)
 - `tests/expressions.sgm` - Literals, operations, bindings
 - `tests/definitions.sgm` - Structures, unions, namespaces
 - `tests/choose.sgm` - Pattern matching
+- `tests/controlflow.sgm` - Control flow (if, while, for, return)
 
 **Benefits of literate testing:**
 - Documentation IS the specification - no drift between docs and behavior
@@ -195,6 +196,44 @@ tests/*.sgm  →  codegen  →  scalyc/Tests.cpp (executable tests)
 ```
 
 This runs `openjade -G -t sgml -d codegen/scaly.dsl scaly.sgm`
+
+### AOT (Ahead-of-Time) Testing
+
+In addition to JIT-based literate tests, the compiler has **AOT tests** - standalone Scaly programs that are compiled to object code and executed:
+
+```
+tests/aot/
+├── arithmetic.scaly      # Basic arithmetic operations
+├── binding.scaly         # Variable bindings (let, var)
+├── boolean.scaly         # Boolean operations
+├── function_call.scaly   # Function calls and returns
+├── generic_box.scaly     # Generic type instantiation
+├── hello.scaly           # Hello world (printf)
+├── pointer_ops.scaly     # Pointer arithmetic and dereferencing
+├── string_literal.scaly  # String handling
+└── ... (26+ test files)
+```
+
+**Running AOT tests:**
+```bash
+# Compile and run a single AOT test
+./scalyc/build/scalyc -o tests/aot/build/hello tests/aot/hello.scaly
+./tests/aot/build/hello
+
+# The build directory contains compiled binaries
+ls tests/aot/build/
+```
+
+**Why both JIT and AOT tests:**
+- **JIT tests** (SGML-based): Fast iteration, immediate feedback, good for language semantics
+- **AOT tests**: Validate full compilation pipeline, linking, runtime behavior, RBMM
+
+**Test categories in AOT:**
+- Basic: `arithmetic`, `boolean`, `binding`, `string_literal`
+- Functions: `function_call`, `function_pointer`, `generic_box`, `generic_function`
+- Memory: `pointer_ops`, `struct_ops`, `array_ops`
+- Control flow: `if_else`, `while_loop`, `for_loop`
+- Advanced: `method_call`, `operator_overload`, `choose_when`
 
 ### Memory Model: Function vs Procedure
 
@@ -347,59 +386,7 @@ Scaly has a built-in package system with no external tooling or configuration fi
 - **No external tools**: No `cargo`, `npm`, `nvm` - the compiler handles building, versioning, and dependency resolution
 - **Multiple versions coexist**: Different versions of the same package can exist in one binary, solving the diamond dependency problem
 
-**Why source-only distribution:**
-- **Simplicity**: A package is just a directory of `.scaly` files - copy to distribute
-- **Transparency**: Fits open source culture; consumers can read, learn from, and contribute to packages
-- **Generics require source**: Monomorphization happens at consumer compile time - generic types need full source anyway
-- **Community building**: No barriers to understanding how packages work
-- **Future optimization**: Compiled artifact caching (like Rust's `.rlib`) can be added later without changing the distribution model
-
-**Version in directory structure:**
-
-Package versions are encoded in the filesystem - the directory path is the single source of truth:
-
-```
-packages/
-└── scaly/
-    └── 0.1.0/
-        ├── scaly.scaly           ; entry file, just contains definitions
-        └── scaly/
-            ├── memory.scaly      ; define memory { module Page ... }
-            └── memory/
-                ├── Page.scaly
-                ├── PageNode.scaly
-                ├── PageList.scaly
-                └── PageListIterator.scaly
-```
-
-This enables simple distribution - just copy directories.
-
-**No version in code:**
-
-The package version comes entirely from the filesystem path. The entry file contains only definitions:
-
-```scaly
-; packages/scaly/0.1.0/scaly.scaly
-define scaly
-{
-    module memory
-}
-```
-
-No `define packagename version` syntax - the version is the directory name. One source of truth.
-
-**Publishing packages:**
-
-Publishing is simple - just host your package directory somewhere:
-
-```bash
-# Create a release on GitHub, or host a tarball
-# Consumers download and extract:
-curl -L https://github.com/user/scaly/archive/0.1.0.tar.gz | tar xz
-mv scaly-0.1.0 packages/scaly/0.1.0/
-```
-
-No special tooling required. A central registry on scaly.io may be added later for discovery as the ecosystem grows.
+**Version in directory structure:** Package versions are encoded in the filesystem path (`packages/scaly/0.1.0/`). No version in code - the directory name is the single source of truth.
 
 **Three distinct statements:**
 
@@ -422,143 +409,9 @@ use scaly.memory.Page   ; now can write Page instead of scaly.memory.Page
 use scaly.memory.PageList
 ```
 
-All three can appear in any source file. The compiler collects `package` declarations during source tree traversal. If multiple files declare the same package with the same version, they're deduplicated. Conflicting versions of the same package within one package are an error.
+**Package resolution:** `./packages/` → `/usr/share/scaly/packages/` → `-I` paths. Dependencies are not transitively visible. Circular package dependencies are forbidden.
 
-**Example usage:**
-```scaly
-; my-app/main.scaly
-package scaly 0.1.0
-
-use scaly.memory.Page
-
-function main()
-{
-    let page Page.allocate_page()
-    ; ...
-}
-```
-
-**Package resolution:**
-
-The compiler searches for packages in this order:
-
-1. `./packages/` - Project-local (vendored dependencies, checked into repo)
-2. `/usr/share/scaly/packages/` - System-wide (stdlib, OS-installed packages)
-3. Paths from `-I` flags (in order given)
-
-For `package scaly 0.1.0`, the compiler looks for:
-- `./packages/scaly/0.1.0/scaly.scaly`
-- `/usr/share/scaly/packages/scaly/0.1.0/scaly.scaly`
-- `<-I path>/scaly/0.1.0/scaly.scaly`
-
-Additional paths (organization shared, personal convenience) are added via `-I`:
-
-```bash
-scalyc -I/org/shared/packages -I~/my-packages main.scaly
-```
-
-**Transitive dependencies:**
-
-Dependencies are **not transitively visible**. Each package must explicitly declare what it uses:
-
-```
-my-app
-└── lib-a 1.0
-    └── scaly 0.1.0
-```
-
-In this example, my-app can only see lib-a's API. Even though lib-a uses scaly internally, my-app cannot access `scaly.memory.Page` unless it explicitly declares `package scaly 0.1.0`.
-
-The compiler still compiles all transitive dependencies (required for monomorphization), but namespace visibility is explicit. This ensures:
-- Clean encapsulation - dependencies are implementation details
-- No accidental coupling to transitive dependencies
-- Explicit, reproducible dependency graphs
-
-If lib-a exposes scaly types in its public API, it should document that consumers need to also declare the dependency.
-
-**Circular dependencies:**
-
-Circular package dependencies are **forbidden** (compiler error):
-
-```
-package-a → package-b → package-a   ; ERROR: cycle detected
-```
-
-If you have a cycle, extract shared concepts into a separate package:
-
-```
-Before:  package-a ←→ package-b
-After:   package-a → package-common ← package-b
-```
-
-This forces clean architecture and avoids complex initialization ordering issues. Cycles are almost always a sign that some shared concepts should be extracted.
-
-Note: This applies to *packages*. Module cycles within the same package are also discouraged but may be allowed since they compile together.
-
-**Standard library (stdlib):**
-
-The stdlib is implicitly available without declaration:
-
-- **Primitives** (`int`, `bool`, `float`, etc.) are built into the compiler
-- **stdlib** (operators, `Vector`, `String` methods, etc.) is automatically available
-- stdlib version is tied to compiler version - deterministic and reproducible
-- Lives in `/usr/share/scaly/packages/stdlib/<compiler-version>/`
-
-No boilerplate needed for common operations:
-
-```scaly
-; Just works - no package declaration needed
-function example() returns int
-{
-    3 + 4 * 5   ; operators from stdlib
-}
-```
-
-**Opting out of stdlib:**
-
-Use `--no-stdlib` for bare-metal/embedded scenarios:
-
-```bash
-scalyc --no-stdlib kernel.scaly
-```
-
-When opted out, only primitives are available. Use cases:
-- OS kernels
-- Embedded systems
-- Custom runtime implementations
-- Freestanding environments
-
-**Diamond dependency solution:**
-
-When dependencies require different versions of the same package:
-
-```
-your-app
-├── lib-a 1.0 → uses json 2.0.1
-└── lib-b 1.0 → uses json 3.0.0
-```
-
-Both versions are compiled into the final binary. Each dependent sees only its expected version. Types from different versions are distinct (`json_2_0_1::Value` ≠ `json_3_0_0::Value`).
-
-**Version in mangled names (Itanium compatible):**
-
-Package version is encoded into the namespace name using underscores:
-
-```
-Package: json version 2.0.1
-Function: parse(input: String)
-
-Namespace: json_2_0_1
-Mangled:   _ZN10json_2_0_15parseE...
-```
-
-This is 100% Itanium ABI compatible - `c++filt` sees a namespace named `json_2_0_1`. No ABI extensions required.
-
-**Why exact versions:**
-- Reproducible builds by default
-- No resolver algorithm needed - compiler loads exactly what you specify
-- Simple mental model - if it works, it works forever
-- Trade-off: more potential duplication, but correctness is prioritized
+**Standard library (stdlib):** Primitives and stdlib are implicitly available. Use `--no-prelude` for bare-metal/embedded. Diamond dependencies are solved by compiling both versions - version is encoded in mangled names (Itanium ABI compatible: `json_2_0_1`).
 
 ## Project Structure
 
@@ -570,18 +423,28 @@ Single monolithic executable with GCC-style command line:
 scalyc [options] <input-files>
 
 Options:
-  -o <file>       Output file
-  -c              Compile only (no link)
-  -S              Emit LLVM IR
-  -I<path>        Add package search path
-  --no-stdlib     Disable implicit stdlib (for bare-metal/embedded)
-  --test          Run compiled-in test suite
-  --test=<name>   Run specific test
-  -v              Verbose output
+  -o <file>         Output file
+  -c                Compile only (no link)
+  -S                Emit LLVM IR
+  -I<path>          Add package search path
+  -L<path>          Add library search path
+  -l<library>       Link library
+  -flto             Enable Link Time Optimization
+  --no-prelude      Disable implicit prelude loading
+  --test            Run compiled-in test suite
+  --test-name <n>   Run specific test by name
+  -v                Verbose output
+
+Pipeline stages (for debugging):
+  -lex              Lex input and print tokens
+  -parse            Parse input and validate syntax
+  -model            Build semantic model
+  -plan             Run planner (type resolution, name mangling)
+  -run <function>   JIT-execute a function by name
 ```
 
 **Source files:**
-- `main.cpp` - Entry point, command line parsing
+- `main.cpp` - Entry point, command line parsing, test runner
 - `Lexer.h/cpp` - Lexical analysis
 - `Syntax.h` - Generated AST types from scaly.sgm
 - `Parser.h/cpp` - Generated parser from scaly.sgm
@@ -592,7 +455,16 @@ Options:
 - `PlannerError.h/cpp` - Errors for planning phase
 - `Planner.h/cpp` - Model → Plan (inference, monomorphization, mangling)
 - `Emitter.h/cpp` - Plan → LLVM IR generation, JIT execution, AOT compilation
-- `Tests.h/cpp` - Generated from scaly.sgm
+
+**Test files:**
+- `ExpressionTests.cpp` - Generated from tests/expressions.sgm
+- `DefinitionTests.cpp` - Generated from tests/definitions.sgm
+- `ChooseTests.cpp` - Generated from tests/choose.sgm
+- `ControlFlowTests.cpp` - Generated from tests/controlflow.sgm
+- `LexerTests.cpp` - Manual lexer tests
+- `ParserTests.cpp` - Manual parser tests
+- `ModuleTests.cpp` - Package/module loading tests
+- `EmitterTests.cpp` - LLVM IR generation tests
 
 ### Compiler Pipeline Architecture
 
@@ -614,65 +486,25 @@ LLVM → Object code / JIT execution
 
 ### Planner Architecture (Model → Plan)
 
-The Planner transforms the abstract semantic Model into a concrete execution Plan. It has three conceptual phases:
+The Planner transforms the abstract semantic Model into a concrete execution Plan:
 
-**Phase 1: Type Inference (Hindley-Milner)**
-- Generate type variables for unknowns
-- Collect constraints from expressions
-- Unify/solve constraints
-- Support let-polymorphism for generic functions
-- Designed for full inference (needed for future DSSSL→Scaly transpiler)
+1. **Type Inference** (Hindley-Milner): Generate type variables, collect constraints, unify/solve
+2. **Monomorphization**: Instantiate generic types with concrete types, cache instantiations
+3. **Name Mangling** (Itanium ABI): `List[int].get(index: int)` → `_ZN4ListIiE3getEi` (works with `c++filt`)
 
-**Phase 2: Monomorphization**
-- Instantiate generic types with inferred/specified concrete types
-- Create specialized versions of generic functions
-- Track instantiation provenance (where generic was defined, where instantiated)
-- Cache instantiations to avoid duplicates
-
-**Phase 3: Name Mangling (Itanium ABI inspired)**
-- Generate unique symbol names for LLVM
-- Format: `_Z` prefix + length-prefixed names + encoded types
-- Example: `List[int].get(index: int)` → `_ZN4ListIiE3getEi`
-- Compatible with `c++filt` for debugging
-- Both readable name (for debug info) and mangled name (for LLVM) stored in Plan
-
-**Key data structures:**
-
-```cpp
-// Type variable for inference
-struct TypeVariable {
-    uint64_t Id;
-};
-
-// Instantiation tracking for debug info backtracking
-struct InstantiationInfo {
-    Span DefinitionLoc;      // Where List[T] was defined
-    Span InstantiationLoc;   // Where List[int] was requested
-    std::vector<std::string> TypeArgs;
-};
-
-// Resolved type with both names
-struct PlannedType {
-    std::string Name;        // "List.int" - for debug info
-    std::string MangledName; // "_Z4ListIiE" - for LLVM
-    std::unique_ptr<InstantiationInfo> Origin;
-};
-```
-
-**Debug info support:**
-- All Span information preserved through pipeline
-- InstantiationInfo enables backtracking from monomorphized code to source
-- Supports CodeLLDB debugging in VS Code
-- DWARF generation in Emitter uses readable names + source locations
+Debug info preserves source locations through the pipeline for CodeLLDB debugging.
 
 ### Language Specification (codegen/)
 
 DSSSL/Scheme scripts that process scaly.sgm:
-- `scaly.dsl` - Main DSSSL stylesheet
+- `scaly.dsl` - Main DSSSL stylesheet (entry point)
 - `parser.scm` - Parser generation logic
-- `tests.scm` - Test code generation logic
-- `docbook.scm` - Documentation generation logic
-- `helpers.scm` - Shared helper functions
+- `syntax.scm`, `syntax-scaly.scm` - Syntax/AST code generation
+- `helpers.scm`, `rules.scm` - Helper and rule functions
+- `testcpp.scm`, `testdoc.scm` - Test generation for C++ and docs
+- `fodeclare.scm` - FOD (Flow Object Declaration) processing
+- `grammar-doc.scm` - Grammar documentation generation
+- `test-expressions.dsl`, `test-definitions.dsl`, `test-choose.dsl`, `test-controlflow.dsl` - Individual test stylesheets
 
 ### Standard Library and Runtime (packages/)
 
@@ -683,14 +515,17 @@ The `packages/` directory contains the **active development** of Scaly's standar
 packages/
 └── scaly/
     └── 0.1.0/
-        ├── scaly.scaly           # Package entry: define scaly { module memory }
+        ├── scaly.scaly           # Package entry with test orchestration
         └── scaly/
-            ├── memory.scaly      # Memory module definition
-            └── memory/
-                ├── Page.scaly
-                ├── PageNode.scaly
-                ├── PageList.scaly
-                └── PageListIterator.scaly
+            ├── memory.scaly      # Memory module (Page-based allocation)
+            ├── memory/
+            │   ├── Page.scaly
+            │   ├── PageNode.scaly
+            │   ├── PageList.scaly
+            │   └── PageListIterator.scaly
+            ├── containers.scaly  # Containers (Vector, List, HashMap, etc.)
+            ├── io.scaly          # File/Directory I/O, Console
+            └── llvm.scaly        # LLVM-C API bindings (for self-hosting)
 ```
 
 **Development approach:**
@@ -709,53 +544,13 @@ packages/
 ./scalyc/build/scalyc -v --plan packages/scaly/0.1.0/scaly/memory/Page.scaly
 ```
 
-### Reference Implementation (Retired)
+### Reference Implementation (retired/)
 
-The `retired/` directory contains the previous transpiler-based implementation. It is **not actively developed** but serves as a rich reference for:
+The `retired/` directory contains the previous transpiler-based implementation (C++ target). Not actively developed but useful as reference for API design, algorithms, and syntax patterns. The retired code exercises complex features (generics, self-referencing types, `choose`/`when`, lifetime annotations) and can be used to test the compiler:
 
-- **Structure and API design**: How modules, types, and functions should be organized
-- **Algorithm implementations**: Memory management, containers, JSON parsing, etc.
-- **Syntax patterns**: Real-world usage of Scaly language features
-
-**Contents:**
-- **retired/packages/scaly/**: Complete Scaly runtime with memory, containers, io, json, compiler
-- **retired/extension/**: VSCode extension for Scaly language support
-
-**Key differences from active development:**
-| Aspect | Retired (Transpiler) | Active (LLVM) |
-|--------|---------------------|---------------|
-| Target | C++ source code | LLVM IR directly |
-| Runtime | C++ stdlib | Native Scaly runtime |
-| Memory | `rp`/`ep` parameters | Automatic RBMM |
-| Testing | External C++ compiler | JIT execution |
-
-**Using retired code as reference:**
-When implementing new stdlib features, consult the retired code for:
-1. Type definitions and API signatures
-2. Algorithm logic (adapt, don't copy verbatim)
-3. Test case ideas and edge cases
-4. Module organization patterns
-
-### Compiler Testing with Retired Code
-
-The `retired/packages/scaly/` package remains useful for testing the compiler's ability to parse and plan complex Scaly code.
-
-**Testing commands:**
 ```bash
-# Test parser/modeler with complex retired code
-./scalyc/build/scalyc -v --plan retired/packages/scaly/scaly/containers/Node.scaly
-
-# Test full package parsing
-cd retired/packages/scaly && ../../../scalyc/build/scalyc -v --plan scaly.scaly
+./scalyc/build/scalyc -v -plan retired/packages/scaly/scaly/containers/Node.scaly
 ```
-
-**What the retired code exercises:**
-- Generic types: `Node[T]`, `Vector[T]`, `List[T]`, `HashMap[K,V]`
-- Self-referencing types: `pointer[Node[T]]` within `Node[T]`
-- Module system: `module` declarations, `use` statements
-- All syntax: `init`, `procedure`, `function`, `operator`, `choose`/`when`
-- Attributes: `@summary`, `@remarks` on types and parameters
-- Lifetime annotations: `$` (local page), `#` (caller's page), `^name` (reference)
 
 ## Language Features
 
@@ -912,49 +707,9 @@ else
     return null
 ```
 
-### Standard Library and Operator Precedence
+### Operator Precedence
 
-The standard library (`stdlib.scaly`) defines arithmetic operators with precedence encoded in **wrapper types**:
-
-```scaly
-; Wrapper types encode precedence level
-define Sum(left: int, right: int)
-{
-    function value(this) returns int intrinsic
-}
-define Product(left: int, right: int)
-{
-    function value(this) returns int intrinsic
-}
-
-; Primitive operators return wrappers (intrinsic = compiler-implemented)
-operator +(left: int, right: int) returns Sum intrinsic
-operator *(left: int, right: int) returns Product intrinsic
-
-; Higher precedence operators "reach into" lower precedence wrappers
-operator *(left: Sum, right: int) returns Sum
-{
-    Sum(left.left, left.right * right)  ; Multiply only the right component
-}
-
-; Lower precedence operators evaluate higher precedence wrappers first
-operator +(left: Product, right: int) returns Sum
-{
-    Sum(left.value, right)  ; .value collapses Product to int
-}
-```
-
-**How it works:**
-- `3 + 4` → `Sum(3, 4)` (wrapper, not yet computed)
-- `3 + 4 * 5` → `Sum(3, 4) * 5` → `Sum(3, 20)` (multiplication reaches into Sum)
-- Parentheses collapse wrappers: `(3 + 4) * 5` → `7 * 5` → `Product(7, 5)`
-- Final result collapsed at expression boundary
-
-**Key design principles:**
-- No hardcoded operators in runtime - all defined in stdlib
-- Precedence emerges from type-based operator dispatch
-- Unary functions (`-`, `+`, `abs`) are prefix when context is empty
-- Binary operators are postfix, taking left from context and right as argument
+Precedence is encoded in **wrapper types** (e.g., `Sum`, `Product`). No hardcoded operators - precedence emerges from type-based dispatch. `3 + 4 * 5` → `Sum(3, 4) * 5` → `Sum(3, 20)`. Parentheses collapse wrappers.
 
 ### Programs and Libraries
 - A program contains top-level statements with access to argc/argv
@@ -1039,24 +794,32 @@ fi
 
 ```bash
 # Regenerate code from specification only
-./mkp   # Generates Parser.cpp, Tests.cpp, docs/*.xml
+./mkp   # Generates Parser.cpp, Syntax.h, *Tests.cpp, docs/*.xml
 
 # Build only (after code generation)
 cd scalyc/build && make
 
-# Run tests
+# Run all JIT tests
 ./scalyc/build/scalyc --test
 
-# Run specific test
-./scalyc/build/scalyc --test=arithmetic
+# Run specific JIT test
+./scalyc/build/scalyc --test-name arithmetic
+
+# Run AOT test (compile and execute)
+./scalyc/build/scalyc -o tests/aot/build/hello tests/aot/hello.scaly
+./tests/aot/build/hello
 ```
 
 ### mkp
 
-Runs openjade to generate parser and test code from SGML grammar:
+Runs openjade to generate parser and test code from SGML:
 - `scalyc/Parser.cpp` - Generated parser from `scaly.sgm`
 - `scalyc/Syntax.h` - Generated AST types from `scaly.sgm`
-- Test files from `tests/*.sgm` (expressions, definitions, choose, controlflow)
+- `scalyc/ExpressionTests.cpp` - Generated from `tests/expressions.sgm`
+- `scalyc/DefinitionTests.cpp` - Generated from `tests/definitions.sgm`
+- `scalyc/ChooseTests.cpp` - Generated from `tests/choose.sgm`
+- `scalyc/ControlFlowTests.cpp` - Generated from `tests/controlflow.sgm`
+- `docs/*.xml` - DocBook documentation
 
 ### Dependencies
 
@@ -1111,10 +874,16 @@ brew install llvm@18 cmake openjade
 ├── scaly.sgm             # Grammar specification (generates Parser.cpp, Syntax.h)
 ├── grammar.dtd           # DTD for grammar structure
 ├── test.dtd              # DTD for literate test structure
-├── tests/                # Literate tests (documentation + executable tests)
-│   ├── expressions.sgm   # Literals, operations, bindings
-│   ├── definitions.sgm   # Structures, unions, namespaces
-│   └── choose.sgm        # Pattern matching
+├── tests/                # Test files
+│   ├── expressions.sgm   # Literate: Literals, operations, bindings
+│   ├── definitions.sgm   # Literate: Structures, unions, namespaces
+│   ├── choose.sgm        # Literate: Pattern matching
+│   ├── controlflow.sgm   # Literate: Control flow
+│   └── aot/              # AOT tests (standalone Scaly programs)
+│       ├── arithmetic.scaly
+│       ├── hello.scaly
+│       ├── generic_box.scaly
+│       └── ... (26+ test files)
 ├── build.sh              # Main build script (codegen + compile)
 ├── mkp                   # Codegen script (generates Parser.cpp, Syntax.h, test files)
 ├── stdlib.scaly          # Standard library (operators, functions)
@@ -1133,19 +902,24 @@ brew install llvm@18 cmake openjade
 │   ├── Emitter.h / Emitter.cpp  # LLVM IR generation, JIT, AOT
 │   ├── LexerTests.cpp
 │   ├── ParserTests.cpp
+│   ├── ModuleTests.cpp       # Package/module loading tests
+│   ├── EmitterTests.cpp      # LLVM IR generation tests
 │   └── build/            # CMake build directory
 ├── packages/             # Active stdlib and runtime development
 │   └── scaly/
-│       └── 0.1.0/        # Scaly core package (memory, containers, etc.)
+│       └── 0.1.0/        # Scaly core package
 │           ├── scaly.scaly
 │           └── scaly/
-│               └── memory/
+│               ├── memory.scaly, memory/
+│               ├── containers.scaly
+│               ├── io.scaly
+│               └── llvm.scaly
 ├── codegen/              # DSSSL code generation scripts
-│   ├── scaly.dsl         # Main stylesheet
+│   ├── scaly.dsl         # Main stylesheet (entry point)
 │   ├── parser.scm        # Parser generation
-│   ├── tests.scm         # Test generation
-│   ├── docbook.scm       # Documentation generation
-│   └── helpers.scm       # Shared utilities
+│   ├── syntax.scm        # Syntax/AST generation
+│   ├── helpers.scm       # Shared utilities
+│   └── test-*.dsl        # Individual test stylesheets
 ├── docs/                 # Generated DocBook (deployed to scaly.io)
 └── retired/              # Previous implementations (reference only)
 ```
