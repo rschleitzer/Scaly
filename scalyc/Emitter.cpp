@@ -155,7 +155,7 @@ void Emitter::initIntrinsicTypes() {
     IntrinsicTypes["size_t"] = IntrinsicTypes["u64"];
     IntrinsicTypes["float"] = IntrinsicTypes["f32"];
     IntrinsicTypes["double"] = IntrinsicTypes["f64"];
-    IntrinsicTypes["char"] = IntrinsicTypes["i32"];  // Unicode code point
+    IntrinsicTypes["char"] = IntrinsicTypes["i8"];  // C-compatible char (byte)
 }
 
 // ============================================================================

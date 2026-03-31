@@ -863,6 +863,11 @@ bool Planner::typesCompatible(const PlannedType &ParamType, const PlannedType &A
         if (ParamType.Generics[0].Name == "const_char" && ArgType.Generics[0].Name == "char") {
             return true;
         }
+        // pointer[char] <-> pointer[i8] (char is an alias for i8)
+        if ((ParamType.Generics[0].Name == "char" && ArgType.Generics[0].Name == "i8") ||
+            (ParamType.Generics[0].Name == "i8" && ArgType.Generics[0].Name == "char")) {
+            return true;
+        }
     }
 
     // Allow any pointer[T] to be passed where pointer[void] is expected
