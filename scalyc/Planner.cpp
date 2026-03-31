@@ -11988,8 +11988,14 @@ llvm::Expected<PlannedConcept> Planner::planConcept(const Concept &Conc) {
             return *Planned;
         }
         else if constexpr (std::is_same_v<T, Union>) {
-            // Check if union is already being planned or fully planned
-            auto ExistingIt = InstantiatedUnions.find(Conc.Name);
+            // Check if this exact union is already planned
+            // Use qualified key when inside a namespace to avoid collisions
+            std::string UnionKey = Conc.Name;
+            if (!CurrentNamespaceName.empty()) {
+                UnionKey = CurrentNamespaceName + "::" + Conc.Name;
+            }
+
+            auto ExistingIt = InstantiatedUnions.find(UnionKey);
             if (ExistingIt != InstantiatedUnions.end()) {
                 return ExistingIt->second;
             }
@@ -11998,15 +12004,20 @@ llvm::Expected<PlannedConcept> Planner::planConcept(const Concept &Conc) {
             PlannedUnion Placeholder;
             Placeholder.Name = Conc.Name;
             Placeholder.MangledName = encodeName(Conc.Name);
-            InstantiatedUnions[Conc.Name] = std::move(Placeholder);
+            InstantiatedUnions[UnionKey] = std::move(Placeholder);
 
             auto Planned = planUnion(Def, Conc.Name, {});
             if (!Planned) {
-                InstantiatedUnions.erase(Conc.Name);  // Remove placeholder on error
+                InstantiatedUnions.erase(UnionKey);
                 return Planned.takeError();
             }
-            // Replace placeholder with actual planned union
-            InstantiatedUnions[Conc.Name] = *Planned;
+            // Store under qualified key
+            InstantiatedUnions[UnionKey] = *Planned;
+            // Also store under unqualified name only if NOT inside a namespace
+            // This prevents namespace-scoped unions from shadowing top-level ones
+            if (CurrentNamespaceName.empty()) {
+                InstantiatedUnions[Conc.Name] = *Planned;
+            }
             return *Planned;
         }
         else if constexpr (std::is_same_v<T, Namespace>) {
