@@ -3447,6 +3447,12 @@ llvm::Expected<llvm::Value*> Emitter::emitBlock(const PlannedBlock &Block) {
 
     llvm::Value *LastValue = nullptr;
     for (const auto &Stmt : Block.Statements) {
+        // Skip remaining statements if block is already terminated
+        // (e.g., an if-branch emitted a return that terminated the current block)
+        if (Builder->GetInsertBlock()->getTerminator()) {
+            break;
+        }
+
         // For PlannedAction, capture the result value (the block's result is the last value)
         if (auto *Action = std::get_if<PlannedAction>(&Stmt)) {
             auto ValueOrErr = emitAction(*Action);
