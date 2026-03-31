@@ -4,7 +4,7 @@ use scaly.containers.String
 
 define scalyc {
     module compiler
-    ; module cli  ; CLI not yet implemented
+    module cli
 
     function test() returns int
     {

@@ -240,13 +240,13 @@ define cli
 
         ; Parse the program
         var syntax: parser.ProgramSyntax
-        choose p.parse_program$()
-            when error: ParserError
+        choose p.parse_program#()
+            when err: Error
             {
                 Console.println("Parse error")
                 return 2
             }
-            when value: program
+            when program: Success
             {
                 set syntax: program
             }
@@ -381,8 +381,8 @@ define cli
     ; Main entry point
     function main(argc: int, argv: pointer[pointer[char]]) returns int
     {
-        var opts cli.parse_args$(argc, argv)
-        return cli.run$(opts)
+        var opts cli.parse_args#(argc, argv)
+        return cli.run#(opts)
     }
 
     ; Test function
@@ -401,22 +401,22 @@ define cli
 
         ; Test 2: Test extract_program_name
         var path1 String$("/path/to/hello.scaly")
-        var name1 cli.extract_program_name$(path1)
+        var name1 cli.extract_program_name#(path1)
         if name1.equals(String$("hello")) = false
             return -10
 
         var path2 String$("simple.scaly")
-        var name2 cli.extract_program_name$(path2)
+        var name2 cli.extract_program_name#(path2)
         if name2.equals(String$("simple")) = false
             return -11
 
         ; Test 3: Test pipeline on a minimal program
-        var result cli.test_pipeline$()
+        var result cli.test_pipeline#()
         if result <> 0
             return result - 100
 
         ; Test 4: Test pipeline on hello.scaly from disk
-        set result: cli.test_hello_scaly$()
+        set result: cli.test_hello_scaly#()
         if result <> 0
             return result - 200
 
@@ -438,12 +438,12 @@ define cli
         ; Stage 1: Parse
         var p parser.Parser$(source)
         var syntax: parser.ProgramSyntax
-        choose p.parse_program$()
-            when error: ParserError
+        choose p.parse_program#()
+            when err: Error
             {
                 return -2  ; Parse failed
             }
-            when value: program
+            when program: Success
             {
                 set syntax: program
             }
@@ -479,12 +479,12 @@ define cli
         ; Stage 1: Parse
         var p parser.Parser$(source)
         var syntax: parser.ProgramSyntax
-        choose p.parse_program$()
-            when error: ParserError
+        choose p.parse_program#()
+            when err: Error
             {
                 return -1  ; Parse failed
             }
-            when value: program
+            when program: Success
             {
                 set syntax: program
             }
