@@ -2329,9 +2329,20 @@ llvm::Expected<llvm::Value*> Emitter::emitOperands(const std::vector<PlannedOper
         );
     }
 
-    // After collapseOperandSequence, we typically have a single collapsed operand
-    // that contains the full expression tree (calls, operators, is expressions, etc.)
-    return emitOperand(Ops[0]);
+    // Emit all operands in sequence, return the value of the last one.
+    // Multiple operands arise when if-expressions with return are followed
+    // by more expressions in the same operation (e.g., if ... return \n if ... return \n 0).
+    llvm::Value *LastValue = nullptr;
+    for (const auto &Op : Ops) {
+        // Skip if block is already terminated (e.g., a previous if emitted a return)
+        if (Builder->GetInsertBlock()->getTerminator())
+            break;
+        auto ValueOrErr = emitOperand(Op);
+        if (!ValueOrErr)
+            return ValueOrErr.takeError();
+        LastValue = *ValueOrErr;
+    }
+    return LastValue;
 }
 
 llvm::Expected<llvm::Value*> Emitter::emitOperand(const PlannedOperand &Op) {
