@@ -643,17 +643,29 @@ llvm::Type *Emitter::mapType(const PlannedType &Type) {
     if (CurrentPlan) {
         // Try to find by Name (e.g., "Box.int")
         auto StructIt = CurrentPlan->Structures.find(Type.Name);
+        if (StructIt == CurrentPlan->Structures.end()) {
+            // Try to find by MangledName
+            for (const auto &[Key, Struct] : CurrentPlan->Structures) {
+                if (Struct.MangledName == Type.MangledName) {
+                    StructIt = CurrentPlan->Structures.find(Key);
+                    break;
+                }
+            }
+        }
+        if (StructIt == CurrentPlan->Structures.end()) {
+            // Try searching by namespace-qualified suffix (e.g., "lexer::EmptyToken")
+            for (const auto &[Key, Val] : CurrentPlan->Structures) {
+                if (Key.size() > Type.Name.size() &&
+                    Key.substr(Key.size() - Type.Name.size()) == Type.Name &&
+                    Key[Key.size() - Type.Name.size() - 1] == ':') {
+                    StructIt = CurrentPlan->Structures.find(Key);
+                    break;
+                }
+            }
+        }
         if (StructIt != CurrentPlan->Structures.end()) {
             auto *StructTy = emitStructType(StructIt->second);
             return StructTy;
-        }
-
-        // Try to find by MangledName
-        for (const auto &[Key, Struct] : CurrentPlan->Structures) {
-            if (Struct.MangledName == Type.MangledName) {
-                auto *StructTy = emitStructType(Struct);
-                return StructTy;
-            }
         }
 
         // Check unions too

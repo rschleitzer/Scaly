@@ -3693,7 +3693,7 @@ function test() returns int
 
     ; Test 210: Complex program with struct, method, and mutation
     ; This mimics lexer-like code patterns
-    set parser: Parser#(String$("define Lexer(text: pointer[char], pos: int)\n{\n    function current_char(this) returns char\n        *(text + pos)\n    procedure advance#(this)\n        set pos: pos + 1\n}\nvar lex Lexer(\"test\", 0)\nlet ch lex.current_char()"))
+    set parser: Parser#(String$("define Scanner(text: pointer[char], pos: int)\n{\n    function current_char(this) returns char\n        *(text + pos)\n    procedure advance#(this)\n        set pos: pos + 1\n}\nvar lex Scanner(\"test\", 0)\nlet ch lex.current_char()"))
     choose parser.parse_program#()
         when err: Error
             return 210
