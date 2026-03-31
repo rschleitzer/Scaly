@@ -4,7 +4,6 @@
 define stdlib
 {
     module operators
-    module runtime
 }
 
 ; Platform constants
