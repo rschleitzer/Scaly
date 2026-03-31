@@ -22,50 +22,6 @@ define ParserError union (
     Invalid: InvalidSyntax
 )
 
-; Syntax node definitions
-"
-    (apply-to-nodelist (node-list-reverse (select-elements (children (current-node)) "syntax")) (lambda (syntax-node)
-        (if (not (abstract? syntax-node))
-            ;; Concrete syntax - generate struct
-            ($
-"
-define "(id syntax-node)"Syntax
-(
-    start: size_t
-    end: size_t"
-                (apply-to-children-of syntax-node (lambda (content) ($
-                    (if (property content) ($
-"
-    "(property content)": "
-                        (case (type content)
-                            (("syntax") ($
-                                (if (or (optional? content) (multiple? content)) "ref[" "")
-                                (if (multiple? content) "Vector[" "")
-                                (link content)"Syntax"
-                                (if (multiple? content) "]" "")
-                                (if (or (optional? content) (multiple? content)) "]?" "")))
-                            (("identifier" "attribute") "String")
-                            (("literal") "Literal")
-                            (("keyword" "punctuation" "colon") "bool")
-                            (else "; unknown type")
-                        )
-                    )"")
-                )))
-"
-)
-"           )
-            ;; Abstract syntax - generate union
-            ($
-"
-define "(id syntax-node)"Syntax union ("
-                (apply-to-children-of syntax-node (lambda (content) ($
-"
-    "(link content)": "(link content)"Syntax"
-                )))
-"
-)
-"           )
-        )
-    ))
-))
+; Syntax types are defined in Syntax.scaly (loaded as module Syntax by compiler.scaly)
+"))
 ]]>

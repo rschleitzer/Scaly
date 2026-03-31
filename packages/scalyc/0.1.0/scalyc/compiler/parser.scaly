@@ -299,6 +299,16 @@ define Parser
             }
             when Success: node
                 return SymbolSyntax.Function(node)
+        choose parse_procedure#()
+            when Error: err
+            {
+                choose err
+                    when Invalid: i
+                        throw ParserError.Invalid(i)
+                    when Different: d {}
+            }
+            when Success: node
+                return SymbolSyntax.Procedure(node)
         choose parse_operator#()
             when Error: err
             {
@@ -390,6 +400,16 @@ define Parser
             }
             when Success: node
                 return ExportSyntax.Function(node)
+        choose parse_procedure#()
+            when Error: err
+            {
+                choose err
+                    when Invalid: i
+                        throw ParserError.Invalid(i)
+                    when Different: d {}
+            }
+            when Success: node
+                return ExportSyntax.Procedure(node)
         choose parse_operator#()
             when Error: err
             {
