@@ -980,6 +980,17 @@ llvm::Expected<Action> Modeler::handleAction(const ActionSyntax &Syntax) {
             if (!Source)
                 return Source.takeError();
             return Action{std::move(*Source), std::move(*Target)};
+        } else if constexpr (std::is_same_v<T, BlockSyntax>) {
+            auto Blk = handleBlock(A);
+            if (!Blk)
+                return Blk.takeError();
+            // Wrap the block as a single operand in the action source
+            Operand BlockOp;
+            BlockOp.Loc = Blk->Loc;
+            BlockOp.Expr = std::move(*Blk);
+            std::vector<Operand> Source;
+            Source.push_back(std::move(BlockOp));
+            return Action{std::move(Source), {}};
         }
         return makeNotImplementedError(File, "Unknown action", Span{0, 0});
     }, Syntax.Value);
@@ -1366,6 +1377,7 @@ llvm::Expected<Function> Modeler::buildFunction(size_t Start, size_t End,
                     auto Act = handleAction(I);
                     if (Act)
                         return std::move(*Act);
+                    llvm::consumeError(Act.takeError());
                     return Action{{}, {}};
                 } else if constexpr (std::is_same_v<IT, ExternSyntax>) {
                     return ExternImpl{Span{I.Start, I.End}};
@@ -1440,6 +1452,7 @@ llvm::Expected<Operator> Modeler::handleOperator(const OperatorSyntax &Syntax,
                     auto Act = handleAction(I);
                     if (Act)
                         return std::move(*Act);
+                    llvm::consumeError(Act.takeError());
                     return Action{{}, {}};
                 } else if constexpr (std::is_same_v<IT, ExternSyntax>) {
                     return ExternImpl{Span{I.Start, I.End}};
@@ -1498,6 +1511,7 @@ llvm::Expected<Operator> Modeler::handleOperator(const OperatorSyntax &Syntax,
                     auto Act = handleAction(I);
                     if (Act)
                         return std::move(*Act);
+                    llvm::consumeError(Act.takeError());
                     return Action{{}, {}};
                 } else if constexpr (std::is_same_v<IT, ExternSyntax>) {
                     return ExternImpl{Span{I.Start, I.End}};
