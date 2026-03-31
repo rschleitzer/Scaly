@@ -11909,8 +11909,20 @@ llvm::Expected<PlannedNamespace> Planner::planNamespace(const Namespace &NS,
                 return PlannedOp.takeError();
             }
             Result.Operators.push_back(std::move(*PlannedOp));
+        } else if (auto *Conc = std::get_if<Concept>(&Member)) {
+            // Register concept in symbol table
+            Concepts[Conc->Name] = Conc;
+
+            auto PlannedConc = planConcept(*Conc);
+            if (!PlannedConc) {
+                ModuleStack.pop_back();
+                CurrentNamespaceName = OldNamespaceName;
+                CurrentNamespace = OldNamespace;
+                CurrentNamespaceModules = OldNamespaceModules;
+                return PlannedConc.takeError();
+            }
+            Result.Concepts.push_back(std::move(*PlannedConc));
         }
-        // Skip Concept members for now
     }
 
     ModuleStack.pop_back();
