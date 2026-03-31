@@ -658,6 +658,21 @@ llvm::Type *Emitter::mapType(const PlannedType &Type) {
 
         // Check unions too
         auto UnionIt = CurrentPlan->Unions.find(Type.Name);
+        if (UnionIt == CurrentPlan->Unions.end()) {
+            // Try with MangledName
+            UnionIt = CurrentPlan->Unions.find(Type.MangledName);
+        }
+        if (UnionIt == CurrentPlan->Unions.end()) {
+            // Try searching by substring (for namespace-qualified keys like "lexer::Token")
+            for (const auto &[Key, Val] : CurrentPlan->Unions) {
+                if (Key.size() > Type.Name.size() &&
+                    Key.substr(Key.size() - Type.Name.size()) == Type.Name &&
+                    Key[Key.size() - Type.Name.size() - 1] == ':') {
+                    UnionIt = CurrentPlan->Unions.find(Key);
+                    break;
+                }
+            }
+        }
         if (UnionIt != CurrentPlan->Unions.end()) {
             auto *UnionTy = emitUnionType(UnionIt->second);
             return UnionTy;
