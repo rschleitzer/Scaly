@@ -3,9 +3,9 @@
 
 define compiler
 {
+    module Syntax  ; Generated from scaly.sgm - must come first, used by other modules
     module lexer   ; Lexer - must come before parser
     module parser
-    module Syntax  ; Generated from scaly.sgm - must come first, used by other modules
     module Model
     module Modeler
     module Plan

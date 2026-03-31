@@ -7722,6 +7722,10 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                     const std::string& VariantName = TypeExpr->Name[1];
 
                     auto UnionIt = InstantiatedUnions.find(UnionName);
+                    // Try qualified name if not found (for unions inside namespaces)
+                    if (UnionIt == InstantiatedUnions.end() && !CurrentNamespaceName.empty()) {
+                        UnionIt = InstantiatedUnions.find(CurrentNamespaceName + "::" + UnionName);
+                    }
                     if (UnionIt != InstantiatedUnions.end()) {
                         const PlannedUnion& Union = UnionIt->second;
 
@@ -10505,6 +10509,10 @@ llvm::Expected<PlannedChoose> Planner::planChoose(const Choose &ChooseExpr) {
         if (UnionIt == InstantiatedUnions.end()) {
             UnionIt = InstantiatedUnions.find(FallbackName);
         }
+        // Try qualified name for namespace-scoped unions
+        if (UnionIt == InstantiatedUnions.end() && !CurrentNamespaceName.empty()) {
+            UnionIt = InstantiatedUnions.find(CurrentNamespaceName + "::" + FallbackName);
+        }
         if (UnionIt == InstantiatedUnions.end()) {
             // Try searching for a key containing FallbackName
             for (const auto &[Key, Val] : InstantiatedUnions) {
@@ -12005,31 +12013,36 @@ llvm::Expected<PlannedConcept> Planner::planConcept(const Concept &Conc) {
             return *Planned;
         }
         else if constexpr (std::is_same_v<T, Union>) {
-            // Use mangled name as the canonical key to avoid collisions
-            // between unions with the same name in different namespaces
-            std::string MangledKey = encodeName(Conc.Name);
+            // Use qualified key when inside a namespace to avoid collisions
+            std::string UnionKey = Conc.Name;
+            if (!CurrentNamespaceName.empty()) {
+                UnionKey = CurrentNamespaceName + "::" + Conc.Name;
+            }
 
-            // Check if union is already being planned or fully planned
-            auto ExistingIt = InstantiatedUnions.find(Conc.Name);
+            // Check if this exact union is already planned
+            auto ExistingIt = InstantiatedUnions.find(UnionKey);
             if (ExistingIt != InstantiatedUnions.end() &&
-                ExistingIt->second.Variants.size() == Def.Variants.size()) {
-                // Same name AND same number of variants - likely the same union
+                !ExistingIt->second.Variants.empty()) {
                 return ExistingIt->second;
             }
 
             // Insert placeholder BEFORE planning to handle recursive planning
             PlannedUnion Placeholder;
             Placeholder.Name = Conc.Name;
-            Placeholder.MangledName = MangledKey;
-            InstantiatedUnions[Conc.Name] = std::move(Placeholder);
+            Placeholder.MangledName = encodeName(Conc.Name);
+            InstantiatedUnions[UnionKey] = std::move(Placeholder);
 
             auto Planned = planUnion(Def, Conc.Name, {});
             if (!Planned) {
-                InstantiatedUnions.erase(Conc.Name);
+                InstantiatedUnions.erase(UnionKey);
                 return Planned.takeError();
             }
-            // Replace placeholder with actual planned union
-            InstantiatedUnions[Conc.Name] = *Planned;
+            InstantiatedUnions[UnionKey] = *Planned;
+            // Also register under simple name if not inside a namespace
+            // (namespace-scoped unions don't shadow top-level ones)
+            if (CurrentNamespaceName.empty()) {
+                InstantiatedUnions[Conc.Name] = *Planned;
+            }
             return *Planned;
         }
         else if constexpr (std::is_same_v<T, Namespace>) {
