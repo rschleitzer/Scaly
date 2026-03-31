@@ -118,8 +118,7 @@ define lexer
             }
 
             ; Operators: + - * / = % & | ~ < >
-            if (c = 43) || (c = 45) || (c = 42) || (c = 47) || (c = 61) ||
-               (c = 37) || (c = 38) || (c = 124) || (c = 126) || (c = 60) || (c = 62)
+            if (c = 43) || (c = 45) || (c = 42) || (c = 47) || (c = 61) || (c = 37) || (c = 38) || (c = 124) || (c = 126) || (c = 60) || (c = 62)
             {
                 set token: scan_operator()
                 skip_whitespace(false)
@@ -127,8 +126,7 @@ define lexer
             }
 
             ; Punctuation (no linefeed skip): } ) ] . ? ! $ # ^
-            if (c = 125) || (c = 41) || (c = 93) || (c = 46) ||
-               (c = 63) || (c = 33) || (c = 36) || (c = 35) || (c = 94)
+            if (c = 125) || (c = 41) || (c = 93) || (c = 46) || (c = 63) || (c = 33) || (c = 36) || (c = 35) || (c = 94)
             {
                 set token: Token.Punctuation(PunctuationToken(c as u8))
                 read_character()
@@ -260,10 +258,7 @@ define lexer
                 }
 
                 let c *current
-                if ((c >= 97) && (c <= 122)) ||   ; a-z
-                   ((c >= 65) && (c <= 90)) ||    ; A-Z
-                   ((c >= 48) && (c <= 57)) ||    ; 0-9
-                   (c = 95)                        ; _
+                if ((c >= 97) && (c <= 122)) || ((c >= 65) && (c <= 90)) || ((c >= 48) && (c <= 57)) || (c = 95)
                 {
                     read_character()
                     set length: length + 1
@@ -288,10 +283,7 @@ define lexer
                 }
 
                 let c *current
-                if ((c >= 97) && (c <= 122)) ||   ; a-z
-                   ((c >= 65) && (c <= 90)) ||    ; A-Z
-                   ((c >= 48) && (c <= 57)) ||    ; 0-9
-                   (c = 95)                        ; _
+                if ((c >= 97) && (c <= 122)) || ((c >= 65) && (c <= 90)) || ((c >= 48) && (c <= 57)) || (c = 95)
                 {
                     read_character()
                     set length: length + 1
@@ -320,9 +312,7 @@ define lexer
 
                 let c *current
                 ; + - * / = % & | ^ ~ < >
-                if (c = 43) || (c = 45) || (c = 42) || (c = 47) || (c = 61) ||
-                   (c = 37) || (c = 38) || (c = 124) || (c = 94) || (c = 126) ||
-                   (c = 60) || (c = 62)
+                if (c = 43) || (c = 45) || (c = 42) || (c = 47) || (c = 61) || (c = 37) || (c = 38) || (c = 124) || (c = 94) || (c = 126) || (c = 60) || (c = 62)
                     continue
                 else
                     return Token.Identifier(IdentifierToken(String$(start, length)))
@@ -359,8 +349,7 @@ define lexer
 
                     let e *current
                     ; Valid escapes: " \ ' n r t 0 u
-                    if (e = 34) || (e = 92) || (e = 39) || (e = 110) ||
-                       (e = 114) || (e = 116) || (e = 48)
+                    if (e = 34) || (e = 92) || (e = 39) || (e = 110) || (e = 114) || (e = 116) || (e = 48)
                         continue
 
                     if e = 117  ; 'u' - unicode escape \uXXXX
@@ -373,9 +362,7 @@ define lexer
                             if current = null
                                 return Token.Invalid(InvalidToken())
                             let h *current
-                            if ~(((h >= 48) && (h <= 57)) ||    ; 0-9
-                                 ((h >= 97) && (h <= 102)) ||   ; a-f
-                                 ((h >= 65) && (h <= 70)))      ; A-F
+                            if ~(((h >= 48) && (h <= 57)) || ((h >= 97) && (h <= 102)) || ((h >= 65) && (h <= 70)))
                                 return Token.Invalid(InvalidToken())
                             set i: i + 1
                         }
@@ -418,8 +405,7 @@ define lexer
 
                     let e *current
                     ; Valid escapes: " \ ' n r t 0 u
-                    if (e = 34) || (e = 92) || (e = 39) || (e = 110) ||
-                       (e = 114) || (e = 116) || (e = 48)
+                    if (e = 34) || (e = 92) || (e = 39) || (e = 110) || (e = 114) || (e = 116) || (e = 48)
                         continue
 
                     if e = 117  ; 'u' - unicode escape \uXXXX
@@ -432,9 +418,7 @@ define lexer
                             if current = null
                                 return Token.Invalid(InvalidToken())
                             let h *current
-                            if ~(((h >= 48) && (h <= 57)) ||
-                                 ((h >= 97) && (h <= 102)) ||
-                                 ((h >= 65) && (h <= 70)))
+                            if ~(((h >= 48) && (h <= 57)) || ((h >= 97) && (h <= 102)) || ((h >= 65) && (h <= 70)))
                                 return Token.Invalid(InvalidToken())
                             set i: i + 1
                         }
@@ -476,8 +460,7 @@ define lexer
 
                     let e *current
                     ; Valid escapes: ` \ ' n r t 0
-                    if (e = 96) || (e = 92) || (e = 39) || (e = 110) ||
-                       (e = 114) || (e = 116) || (e = 48)
+                    if (e = 96) || (e = 92) || (e = 39) || (e = 110) || (e = 114) || (e = 116) || (e = 48)
                         continue
 
                     return Token.Invalid(InvalidToken())
@@ -602,9 +585,7 @@ define lexer
 
                 let c *current
 
-                if ((c >= 48) && (c <= 57)) ||   ; 0-9
-                   ((c >= 65) && (c <= 70)) ||   ; A-F
-                   ((c >= 97) && (c <= 102))     ; a-f
+                if ((c >= 48) && (c <= 57)) || ((c >= 65) && (c <= 70)) || ((c >= 97) && (c <= 102))
                     continue
 
                 return Token.Literal(LiteralToken(Literal.Hex(HexLiteral(String$(start, length)))))
