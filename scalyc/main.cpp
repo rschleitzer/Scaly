@@ -1,6 +1,7 @@
 #include "Lexer.h"
 #include "LexerTests.h"
 #include "Parser.h"
+#include "SyntaxDump.h"
 #include "Modeler.h"
 #include "Planner.h"
 #include "Emitter.h"
@@ -193,7 +194,7 @@ static int lexFile(StringRef Filename) {
     return 0;
 }
 
-// Parse a file and validate syntax
+// Parse a file, validate syntax, and dump AST as JSON
 static int parseFile(StringRef Filename) {
     auto BufOrErr = MemoryBuffer::getFileOrSTDIN(Filename);
     if (!BufOrErr) {
@@ -210,9 +211,9 @@ static int parseFile(StringRef Filename) {
         return 1;
     }
 
-    if (Verbose) {
-        outs() << "Parse successful: " << Filename << "\n";
-    }
+    scaly::SyntaxDumper Dumper(outs());
+    Dumper.dump(*Result);
+    outs() << "\n";
     return 0;
 }
 

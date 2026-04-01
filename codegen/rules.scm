@@ -12,6 +12,9 @@
         (file "scalyc/Parser.cpp"
             (generate-parser-cpp)
         )
+        (file "scalyc/SyntaxDump.h"
+            (generate-syntax-dump-cpp)
+        )
         (file "packages/scalyc/0.1.0/scalyc/compiler/Syntax.scaly"
             (generate-syntax-scaly)
         )
