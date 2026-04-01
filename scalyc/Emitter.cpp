@@ -2907,9 +2907,8 @@ llvm::Expected<llvm::Value*> Emitter::emitCall(const PlannedCall &Call) {
                 }
                 // If still no page, allocate on-demand BEFORE struct allocation
                 // This is critical: the struct must be on a page for Page.get(this) to work
-                if (!Page && PageAllocatePage && !PageAllocatePage->isDeclaration()) {
-                    CurrentRegion.LocalPage = Builder->CreateCall(PageAllocatePage, {}, "local_page.ondemand");
-                    Page = CurrentRegion.LocalPage;
+                if (!Page) {
+                    Page = getOrCreateLocalPage();
                 }
             } else if (std::holds_alternative<ReferenceLifetime>(Call.Life)) {
                 // ^name = first argument is the page pointer
@@ -2961,10 +2960,7 @@ llvm::Expected<llvm::Value*> Emitter::emitCall(const PlannedCall &Call) {
             // If we still don't have a page, allocate one on demand
             // This handles cases like String#() inside a non-function# function
             if (!PageArg) {
-                if (PageAllocatePage && !PageAllocatePage->isDeclaration()) {
-                    CurrentRegion.LocalPage = Builder->CreateCall(PageAllocatePage, {}, "local_page.ondemand");
-                    PageArg = CurrentRegion.LocalPage;
-                }
+                PageArg = getOrCreateLocalPage();
             }
             if (PageArg) {
                 InitArgs.push_back(PageArg);
@@ -3035,9 +3031,8 @@ llvm::Expected<llvm::Value*> Emitter::emitCall(const PlannedCall &Call) {
 
         // If we still don't have a page, allocate one on demand
         // This handles cases like func#() inside a non-function# function
-        if (!FuncPageArg && PageAllocatePage && !PageAllocatePage->isDeclaration()) {
-            CurrentRegion.LocalPage = Builder->CreateCall(PageAllocatePage, {}, "local_page.ondemand");
-            FuncPageArg = CurrentRegion.LocalPage;
+        if (!FuncPageArg) {
+            FuncPageArg = getOrCreateLocalPage();
         }
     }
 
@@ -3110,6 +3105,9 @@ llvm::Expected<llvm::Value*> Emitter::emitCall(const PlannedCall &Call) {
                 auto *Alloca = createEntryBlockAlloca(ArgVal->getType(), "sret.arg.tmp");
                 Builder->CreateStore(ArgVal, Alloca);
                 CallArgs.push_back(Alloca);
+            } else if (!ParamTy->isPointerTy() && ArgVal->getType()->isPointerTy()) {
+                // Load value from alloca when param expects value type (e.g., i64)
+                CallArgs.push_back(Builder->CreateLoad(ParamTy, ArgVal, "arg.load"));
             } else {
                 CallArgs.push_back(ArgVal);
             }
@@ -5635,6 +5633,22 @@ llvm::AllocaInst *Emitter::createEntryBlockAlloca(llvm::Type *Ty, llvm::StringRe
         }
     }
     return TmpBuilder.CreateAlloca(Ty, nullptr, Name);
+}
+
+llvm::Value *Emitter::getOrCreateLocalPage() {
+    if (CurrentRegion.LocalPage) return CurrentRegion.LocalPage;
+    if (!PageAllocatePage || PageAllocatePage->isDeclaration()) return nullptr;
+    // Insert the call in the entry block so it dominates all uses
+    llvm::IRBuilder<> TmpBuilder(&CurrentFunction->getEntryBlock(),
+                                  CurrentFunction->getEntryBlock().begin());
+    if (AllocaInsertPt) {
+        if (auto *NextNode = AllocaInsertPt->getNextNode())
+            TmpBuilder.SetInsertPoint(NextNode);
+        else
+            TmpBuilder.SetInsertPoint(&CurrentFunction->getEntryBlock());
+    }
+    CurrentRegion.LocalPage = TmpBuilder.CreateCall(PageAllocatePage, {}, "local_page.ondemand");
+    return CurrentRegion.LocalPage;
 }
 
 llvm::BasicBlock *Emitter::createBlock(llvm::StringRef Name) {

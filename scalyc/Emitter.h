@@ -343,6 +343,7 @@ private:
     // Create an alloca in the entry block of the current function
     // This ensures allocas don't grow the stack inside loops
     llvm::AllocaInst *createEntryBlockAlloca(llvm::Type *Ty, llvm::StringRef Name = "");
+    llvm::Value *getOrCreateLocalPage();
 
     // Create a basic block in current function
     llvm::BasicBlock *createBlock(llvm::StringRef Name);
