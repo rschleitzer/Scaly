@@ -16,7 +16,9 @@ define Slice[T](data: pointer[T], length: size_t)
     function get(this, index: size_t) returns ref[T]?
     {
         guard index >= length
+        {
             return null
+        }
         data + index
     }
 
@@ -24,7 +26,9 @@ define Slice[T](data: pointer[T], length: size_t)
     operator [](index: size_t) returns ref[T]?
     {
         guard index >= length
+        {
             return null
+        }
         data + index
     }
 
@@ -38,11 +42,17 @@ define Slice[T](data: pointer[T], length: size_t)
         var from start
         var to end
         guard from > length
+        {
             set from: length
+        }
         guard to > length
+        {
             set to: length
+        }
         guard from > to
+        {
             set from: to
+        }
         Slice[T](data + from, to - from)
     }
 
@@ -58,9 +68,13 @@ define Slice[T](data: pointer[T], length: size_t)
     function equals(this, other: Slice[T]) returns bool
     {
         guard length <> other.length
+        {
             return false
+        }
         guard length = 0
+        {
             return true
+        }
         memcmp(data as pointer[void], other.data as pointer[void], length * sizeof T) = 0
     }
 
@@ -74,7 +88,9 @@ define Slice[T](data: pointer[T], length: size_t)
     function starts_with(this, prefix: Slice[T]) returns bool
     {
         guard prefix.length > length
+        {
             return false
+        }
         subslice(0, prefix.length).equals(prefix)
     }
 
@@ -82,7 +98,9 @@ define Slice[T](data: pointer[T], length: size_t)
     function ends_with(this, suffix: Slice[T]) returns bool
     {
         guard suffix.length > length
+        {
             return false
+        }
         subslice(length - suffix.length, length).equals(suffix)
     }
 
@@ -102,7 +120,9 @@ define SliceIterator[T](slice: Slice[T], position: size_t(0))
     function next(this) returns pointer[T]
     {
         guard position >= slice.length
+        {
             return null
+        }
         let result slice.data + position
         set position: position + 1
         result

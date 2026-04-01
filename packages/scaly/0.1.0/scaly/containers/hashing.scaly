@@ -18,7 +18,9 @@ function is_prime(candidate: size_t) returns bool
         {
             set divisor: divisor + 2
             guard (candidate % divisor) = 0
+            {
                 return false
+            }
         }
         return true
     }
@@ -33,7 +35,9 @@ function get_prime(size: size_t) returns size_t
         while i < 30
         {
             guard *(hashing.HASH_PRIMES + i) >= size
+            {
                 return *(hashing.HASH_PRIMES + i)
+            }
             set i: i + 1
         }
     }
@@ -43,7 +47,9 @@ function get_prime(size: size_t) returns size_t
         while i < SIZE_MAX
         {
             guard is_prime(i)
+            {
                 return i
+            }
 
             set i: i + 2
         }

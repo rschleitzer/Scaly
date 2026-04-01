@@ -355,7 +355,7 @@ static void test_BREAK_IN_FOR() {
 
 static void test_BREAK_IN_WHILE() {
     const char* Name = "BREAK-IN-WHILE";
-    auto Result = evalInt("var x 0\nwhile x < 100 : { set x : x + 1: guard x = 5 : break }\nx");
+    auto Result = evalInt("var x 0\nwhile x < 100 : { set x : x + 1: guard x = 5 : { break } }\nx");
     if (!Result) {
         std::string ErrMsg;
         llvm::raw_string_ostream OS(ErrMsg);

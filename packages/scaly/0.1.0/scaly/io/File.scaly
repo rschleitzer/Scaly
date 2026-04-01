@@ -20,8 +20,10 @@ define File
     function read_to_string#(rp, path: String) returns String
     {
         var file fopen(path.to_c_string$(), "rb")
-        if file = null
+        guard file = null
+        {
             return String()
+        }
 
         fseek(file, 0, SEEK_END)
         let size ftell(file)
@@ -36,8 +38,10 @@ define File
     function write_from_string(path: String, contents: String) returns bool
     {
         var file fopen(path.to_c_string$(), "wb")
-        if file = null
+        guard file = null
+        {
             return false
+        }
 
         fwrite(contents.get_buffer(), 1, contents.get_length(), file)
         fclose(file)
