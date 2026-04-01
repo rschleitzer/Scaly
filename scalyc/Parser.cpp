@@ -2605,23 +2605,30 @@ llvm::Expected<IfSyntax> Parser::parseIf() {
     if (!Lex.parseColon())
         return invalid(Lex, Start, Lex.position(), "expected colon or newline");
 
-    auto ConsequentOrErr = parseThen();
+    auto ConsequentOrErr = parseCommand();
     if (!ConsequentOrErr) {
         std::string ErrMsg = llvm::toString(ConsequentOrErr.takeError());
         if (ErrMsg != "different syntax")
             return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
-        return invalid(Lex, Start, Lex.position(), "expected Then");
+        return invalid(Lex, Start, Lex.position(), "expected Command");
     }
     auto Consequent = std::move(*ConsequentOrErr);
 
-    ElseSyntax* Alternative = nullptr;
-    {
-        auto ParseResult = parseElse();
-        if (ParseResult)
-            Alternative = new ElseSyntax(std::move(*ParseResult));
-        else
-            llvm::consumeError(ParseResult.takeError());
+    Lex.parseColon();
+
+    if (!Lex.parseKeyword("else"))
+        return invalid(Lex, Start, Lex.position(), "expected 'else'");
+
+    Lex.parseColon();
+
+    auto AlternativeOrErr = parseCommand();
+    if (!AlternativeOrErr) {
+        std::string ErrMsg = llvm::toString(AlternativeOrErr.takeError());
+        if (ErrMsg != "different syntax")
+            return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        return invalid(Lex, Start, Lex.position(), "expected Command");
     }
+    auto Alternative = std::move(*AlternativeOrErr);
 
     size_t End = Lex.position();
 

@@ -732,17 +732,14 @@ llvm::Expected<If> Modeler::handleIf(const IfSyntax &Syntax) {
     if (!Cond)
         return Cond.takeError();
 
-    auto Cons = handleCommand(Syntax.consequent.command);
+    auto Cons = handleCommand(Syntax.consequent);
     if (!Cons)
         return Cons.takeError();
 
-    std::unique_ptr<Statement> Alt;
-    if (Syntax.alternative) {
-        auto AltResult = handleCommand(Syntax.alternative->alternative);
-        if (!AltResult)
-            return AltResult.takeError();
-        Alt = std::make_unique<Statement>(std::move(*AltResult));
-    }
+    auto AltResult = handleCommand(Syntax.alternative);
+    if (!AltResult)
+        return AltResult.takeError();
+    auto Alt = std::make_unique<Statement>(std::move(*AltResult));
 
     return If{
         Span{Syntax.Start, Syntax.End},

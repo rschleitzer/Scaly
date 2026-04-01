@@ -448,8 +448,8 @@ struct IfSyntax {
     size_t Start;
     size_t End;
     std::vector<OperandSyntax>* condition;
-    ThenSyntax consequent;
-    ElseSyntax* alternative;
+    CommandSyntax consequent;
+    CommandSyntax alternative;
 };
 
 struct ElementSyntax {
