@@ -4489,11 +4489,33 @@ llvm::Expected<llvm::Value*> Emitter::emitForIterator(const PlannedFor &For) {
         // Function uses sret - allocate space and pass as first arg
         llvm::Type *IterType = mapType(For.IteratorType);
         auto *IterAlloca = createEntryBlockAlloca(IterType, "iter.alloca");
-        Builder->CreateCall(GetIterFn, {IterAlloca, CollectionPtr});
+
+        // Check for implicit rp parameter
+        std::vector<llvm::Value*> GetIterArgs = {IterAlloca};
+        if (ImplicitRpFunctions.count(For.GetIteratorMethod)) {
+            llvm::Value *Page = CurrentRegion.ReturnPage ? CurrentRegion.ReturnPage : CurrentRegion.LocalPage;
+            if (!Page && PageAllocatePage) {
+                CurrentRegion.LocalPage = Builder->CreateCall(PageAllocatePage, {}, "local_page.implicit");
+                Page = CurrentRegion.LocalPage;
+            }
+            if (Page) GetIterArgs.push_back(Page);
+        }
+        GetIterArgs.push_back(CollectionPtr);
+        Builder->CreateCall(GetIterFn, GetIterArgs);
         Iterator = IterAlloca;
     } else {
         // Function returns directly
-        Iterator = Builder->CreateCall(GetIterFn, {CollectionPtr}, "iter");
+        std::vector<llvm::Value*> GetIterArgs2;
+        if (ImplicitRpFunctions.count(For.GetIteratorMethod)) {
+            llvm::Value *Page = CurrentRegion.ReturnPage ? CurrentRegion.ReturnPage : CurrentRegion.LocalPage;
+            if (!Page && PageAllocatePage) {
+                CurrentRegion.LocalPage = Builder->CreateCall(PageAllocatePage, {}, "local_page.implicit");
+                Page = CurrentRegion.LocalPage;
+            }
+            if (Page) GetIterArgs2.push_back(Page);
+        }
+        GetIterArgs2.push_back(CollectionPtr);
+        Iterator = Builder->CreateCall(GetIterFn, GetIterArgs2, "iter");
         // Store iterator on stack for mutation by next()
         auto *IterAlloca = createEntryBlockAlloca(Iterator->getType(), "iter.alloca");
         Builder->CreateStore(Iterator, IterAlloca);
