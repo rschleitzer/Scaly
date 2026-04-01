@@ -246,7 +246,7 @@ sum</programlisting></entry>
             </row>
             <row>
               <entry><programlisting>var x 0
-while x &lt; 100 : { set x : x + 1: if x = 5 : break }
+while x &lt; 100 : { set x : x + 1: guard x = 5 : break }
 x</programlisting></entry>
               <entry><literal>5
 
