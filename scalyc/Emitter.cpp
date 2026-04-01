@@ -1165,7 +1165,7 @@ llvm::Error Emitter::emitFunctionBody(const PlannedFunction &Func,
         NeedsLocalPage = true;
     }
 
-    if (NeedsLocalPage) {
+    if (NeedsLocalPage && PageAllocatePage && !PageAllocatePage->isDeclaration()) {
         CurrentRegion.LocalPage = Builder->CreateCall(PageAllocatePage, {}, "local_page");
     } else {
         CurrentRegion.LocalPage = nullptr;  // Will use stack allocation as fallback
@@ -2907,7 +2907,7 @@ llvm::Expected<llvm::Value*> Emitter::emitCall(const PlannedCall &Call) {
                 }
                 // If still no page, allocate on-demand BEFORE struct allocation
                 // This is critical: the struct must be on a page for Page.get(this) to work
-                if (!Page && PageAllocatePage) {
+                if (!Page && PageAllocatePage && !PageAllocatePage->isDeclaration()) {
                     CurrentRegion.LocalPage = Builder->CreateCall(PageAllocatePage, {}, "local_page.ondemand");
                     Page = CurrentRegion.LocalPage;
                 }
@@ -2961,10 +2961,9 @@ llvm::Expected<llvm::Value*> Emitter::emitCall(const PlannedCall &Call) {
             // If we still don't have a page, allocate one on demand
             // This handles cases like String#() inside a non-function# function
             if (!PageArg) {
-                if (PageAllocatePage) {
+                if (PageAllocatePage && !PageAllocatePage->isDeclaration()) {
                     CurrentRegion.LocalPage = Builder->CreateCall(PageAllocatePage, {}, "local_page.ondemand");
                     PageArg = CurrentRegion.LocalPage;
-                } else {
                 }
             }
             if (PageArg) {
@@ -3036,7 +3035,7 @@ llvm::Expected<llvm::Value*> Emitter::emitCall(const PlannedCall &Call) {
 
         // If we still don't have a page, allocate one on demand
         // This handles cases like func#() inside a non-function# function
-        if (!FuncPageArg && PageAllocatePage) {
+        if (!FuncPageArg && PageAllocatePage && !PageAllocatePage->isDeclaration()) {
             CurrentRegion.LocalPage = Builder->CreateCall(PageAllocatePage, {}, "local_page.ondemand");
             FuncPageArg = CurrentRegion.LocalPage;
         }
