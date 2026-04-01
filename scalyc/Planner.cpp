@@ -819,6 +819,23 @@ static bool isIntegerType(llvm::StringRef Normalized) {
            Normalized == "size_t" || Normalized == "int" || Normalized == "uint" || Normalized == "char";
 }
 
+bool Planner::needsImplicitReturnPage(const Function &Func) {
+    if (Func.PageParameter) return false;  // already explicit
+    if (!Func.Returns) return false;
+    std::string RetName;
+    for (const auto &Part : Func.Returns->Name) {
+        if (!RetName.empty()) RetName += ".";
+        RetName += Part;
+    }
+    static const std::set<std::string> PrimitiveTypes = {
+        "void", "bool", "int", "uint", "char",
+        "i8", "i16", "i32", "i64", "u8", "u16", "u32", "u64",
+        "f32", "f64", "float", "double", "size_t", "size",
+        "pointer", "ref"
+    };
+    return !RetName.empty() && PrimitiveTypes.find(RetName) == PrimitiveTypes.end();
+}
+
 bool Planner::typesCompatible(const PlannedType &ParamType, const PlannedType &ArgType) {
     // First check for exact equality
     if (typesEqual(ParamType, ArgType)) return true;
@@ -1517,7 +1534,7 @@ std::optional<Planner::MethodMatch> Planner::lookupMethod(
                     if (Func->Name == MethodName) {
                         MethodMatch Match;
                         Match.Method = Func;
-                        Match.RequiresPageParam = Func->PageParameter.has_value();
+                        Match.RequiresPageParam = (Func->PageParameter.has_value() || needsImplicitReturnPage(*Func));
                         Match.CanThrow = Func->Throws != nullptr;
                         if (Func->Throws) {
                             // Throws type will be resolved when method is called
@@ -1561,7 +1578,7 @@ std::optional<Planner::MethodMatch> Planner::lookupMethod(
                             }
                             Params.push_back(Item);
                         }
-                        Match.MangledName = mangleFunction(Func->Name, Params, &ParentType, Func->PageParameter.has_value());
+                        Match.MangledName = mangleFunction(Func->Name, Params, &ParentType, (Func->PageParameter.has_value() || needsImplicitReturnPage(*Func)));
 
                         // Resolve return type
                         if (Func->Returns) {
@@ -1861,7 +1878,7 @@ std::optional<Planner::MethodMatch> Planner::lookupMethod(
                     if (Func->Name == MethodName) {
                         MethodMatch Match;
                         Match.Method = Func;
-                        Match.RequiresPageParam = Func->PageParameter.has_value();
+                        Match.RequiresPageParam = (Func->PageParameter.has_value() || needsImplicitReturnPage(*Func));
                         Match.CanThrow = Func->Throws != nullptr;
                         if (Func->Throws) {
                             // Throws type will be resolved when method is called
@@ -1909,7 +1926,7 @@ std::optional<Planner::MethodMatch> Planner::lookupMethod(
                             }
                             Params.push_back(Item);
                         }
-                        Match.MangledName = mangleFunction(Func->Name, Params, &ParentType, Func->PageParameter.has_value());
+                        Match.MangledName = mangleFunction(Func->Name, Params, &ParentType, (Func->PageParameter.has_value() || needsImplicitReturnPage(*Func)));
 
                         // Resolve return type
                         if (Func->Returns) {
@@ -2035,7 +2052,7 @@ std::optional<Planner::MethodMatch> Planner::lookupMethod(
                     if (Func->Name == MethodName) {
                         MethodMatch Match;
                         Match.Method = Func;
-                        Match.RequiresPageParam = Func->PageParameter.has_value();
+                        Match.RequiresPageParam = (Func->PageParameter.has_value() || needsImplicitReturnPage(*Func));
 
                         std::map<std::string, PlannedType> OldSubst = TypeSubstitutions;
                         if (!Conc->Parameters.empty() && !LookupType.Generics.empty()) {
@@ -2075,7 +2092,7 @@ std::optional<Planner::MethodMatch> Planner::lookupMethod(
                             }
                             Params.push_back(Item);
                         }
-                        Match.MangledName = mangleFunction(Func->Name, Params, &ParentType, Func->PageParameter.has_value());
+                        Match.MangledName = mangleFunction(Func->Name, Params, &ParentType, (Func->PageParameter.has_value() || needsImplicitReturnPage(*Func)));
 
                         if (Func->Returns) {
                             auto Resolved = resolveType(*Func->Returns, Loc);
@@ -7097,8 +7114,11 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                                     }
                                 }
                                 else {
-                                    return makePlannerNotImplementedError(File, Op.Loc,
-                                        "method# '" + MethodName + "' must be called with #, $, or ^page syntax");
+                                    // Implicit rp: treat unspecified lifetime as CallLifetime
+                                    CurrentFunctionUsesLocalLifetime = true;
+                                    if (!ScopeInfoStack.empty()) {
+                                        ScopeInfoStack.back().HasLocalAllocations = true;
+                                    }
                                 }
                             }
                             // If the Type has a ReferenceLifetime but method doesn't have PageParameter,
@@ -7467,8 +7487,10 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                                 }
                             }
                             else {
-                                return makePlannerNotImplementedError(File, Op.Loc,
-                                    "function# '" + FuncName + "' must be called with #, $, or ^page syntax");
+                                CurrentFunctionUsesLocalLifetime = true;
+                                if (!ScopeInfoStack.empty()) {
+                                    ScopeInfoStack.back().HasLocalAllocations = true;
+                                }
                             }
                         }
 
@@ -7638,8 +7660,10 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                             }
                         }
                         else {
-                            return makePlannerNotImplementedError(File, Op.Loc,
-                                "method# '" + MethodName + "' must be called with #, $, or ^page syntax");
+                            CurrentFunctionUsesLocalLifetime = true;
+                            if (!ScopeInfoStack.empty()) {
+                                ScopeInfoStack.back().HasLocalAllocations = true;
+                            }
                         }
                     }
                     // If the method Type has a ReferenceLifetime but method doesn't have PageParameter,
@@ -8074,8 +8098,10 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                                         }
                                     }
                                     else {
-                                        return makePlannerNotImplementedError(File, Op.Loc,
-                                            "function# '" + MethodName + "' must be called with #, $, or ^page syntax");
+                                        CurrentFunctionUsesLocalLifetime = true;
+                                        if (!ScopeInfoStack.empty()) {
+                                            ScopeInfoStack.back().HasLocalAllocations = true;
+                                        }
                                     }
                                 }
 
@@ -8216,8 +8242,10 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                                         }
                                     }
                                     else {
-                                        return makePlannerNotImplementedError(File, Op.Loc,
-                                            "function# '" + MethodName + "' must be called with #, $, or ^page syntax");
+                                        CurrentFunctionUsesLocalLifetime = true;
+                                        if (!ScopeInfoStack.empty()) {
+                                            ScopeInfoStack.back().HasLocalAllocations = true;
+                                        }
                                     }
                                 }
 
@@ -9096,7 +9124,7 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                                 ParentType.Name = FoundStruct->Name;
                                 ParentType.MangledName = FoundStruct->MangledName;
                                 // Don't set Generics here - we use MangledName directly in mangleFunction
-                                MangledName = mangleFunction(FuncName, ParamItems, &ParentType, MatchedFunc && MatchedFunc->PageParameter.has_value());
+                                MangledName = mangleFunction(FuncName, ParamItems, &ParentType, MatchedFunc && (MatchedFunc->PageParameter.has_value() || needsImplicitReturnPage(*MatchedFunc)));
                                 // Check if method needs to be planned for generic instantiation
                                 if (InstantiatedFunctions.find(MangledName) == InstantiatedFunctions.end()) {
                                     // Plan the sibling method on demand
@@ -9115,16 +9143,16 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                                 PlannedType ParentType;
                                 ParentType.Name = BaseName;
                                 ParentType.MangledName = encodeName(BaseName);
-                                MangledName = mangleFunction(FuncName, ParamItems, &ParentType, MatchedFunc && MatchedFunc->PageParameter.has_value());
+                                MangledName = mangleFunction(FuncName, ParamItems, &ParentType, MatchedFunc && (MatchedFunc->PageParameter.has_value() || needsImplicitReturnPage(*MatchedFunc)));
                             }
                         } else if (IsNamespaceSibling) {
                             // Sibling function in the same namespace - use namespace prefix
                             PlannedType ParentType;
                             ParentType.Name = CurrentNamespaceName;
                             ParentType.MangledName = encodeName(CurrentNamespaceName);
-                            MangledName = mangleFunction(FuncName, ParamItems, &ParentType, MatchedFunc && MatchedFunc->PageParameter.has_value());
+                            MangledName = mangleFunction(FuncName, ParamItems, &ParentType, MatchedFunc && (MatchedFunc->PageParameter.has_value() || needsImplicitReturnPage(*MatchedFunc)));
                         } else {
-                            MangledName = mangleFunction(FuncName, ParamItems, nullptr, MatchedFunc && MatchedFunc->PageParameter.has_value());
+                            MangledName = mangleFunction(FuncName, ParamItems, nullptr, MatchedFunc && (MatchedFunc->PageParameter.has_value() || needsImplicitReturnPage(*MatchedFunc)));
                         }
 
                         // Create the function call
@@ -9148,7 +9176,7 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
 
                         // Handle function# page parameter
                         // Use FuncCallLifetime which holds either TypeExpr->Life or the lifetime from the next operand
-                        if (MatchedFunc && MatchedFunc->PageParameter) {
+                        if (MatchedFunc && (MatchedFunc->PageParameter || needsImplicitReturnPage(*MatchedFunc))) {
                             // Function requires a page parameter - check call site lifetime
                             Call.RequiresPageParam = true;
                             Call.Life = FuncCallLifetime;
@@ -9197,8 +9225,10 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                                 }
                             }
                             else {
-                                return makePlannerNotImplementedError(File, Op.Loc,
-                                    "function# '" + FuncName + "' must be called with #, $, or ^page syntax");
+                                CurrentFunctionUsesLocalLifetime = true;
+                                if (!ScopeInfoStack.empty()) {
+                                    ScopeInfoStack.back().HasLocalAllocations = true;
+                                }
                             }
                         }
 
@@ -10947,6 +10977,12 @@ llvm::Expected<PlannedFunction> Planner::planFunction(const Function &Func,
     Result.Life = Func.Life;
     Result.PageParameter = Func.PageParameter;
 
+    // Implicit return page: functions returning class types (struct/union) get an
+    // automatic rp parameter for # allocations in the body.
+    if (!Result.PageParameter && needsImplicitReturnPage(Func)) {
+        Result.PageParameter = std::make_optional<std::string>("_rp");
+    }
+
     // Save and reset tracking for $ allocations in function body
     // This allows nested planFunction calls (e.g., when planning constructors)
     // without corrupting the outer function's NeedsLocalPage flag
@@ -10954,8 +10990,8 @@ llvm::Expected<PlannedFunction> Planner::planFunction(const Function &Func,
     CurrentFunctionUsesLocalLifetime = false;
     pushScope();
 
-    // If function# was used, define the page parameter in scope
-    if (Func.PageParameter) {
+    // If function has a page parameter (explicit or implicit), define it in scope
+    if (Result.PageParameter) {
         PlannedType PagePtrType;
         PagePtrType.Loc = Func.Loc;
         PagePtrType.Name = "pointer";
@@ -10967,7 +11003,7 @@ llvm::Expected<PlannedFunction> Planner::planFunction(const Function &Func,
         PageType.MangledName = "N4scaly6memory4PageE";
         PagePtrType.Generics.push_back(PageType);
 
-        defineLocal(*Func.PageParameter, PagePtrType, false);
+        defineLocal(*Result.PageParameter, PagePtrType, false);
     }
 
     // If function has a ReferenceLifetime, add implicit region parameter
@@ -11054,7 +11090,7 @@ llvm::Expected<PlannedFunction> Planner::planFunction(const Function &Func,
     // Compute mangled name early to enable cache lookup
     // For extern functions, use the unmangled C name for linking
     bool IsExtern = std::holds_alternative<ExternImpl>(Func.Impl);
-    std::string EarlyMangledName = IsExtern ? Func.Name : mangleFunction(Func.Name, Result.Input, Parent, Func.PageParameter.has_value());
+    std::string EarlyMangledName = IsExtern ? Func.Name : mangleFunction(Func.Name, Result.Input, Parent, Result.PageParameter.has_value());
 
     // Check cache - if this function was already planned, return the cached version
     auto CacheIt = InstantiatedFunctions.find(EarlyMangledName);

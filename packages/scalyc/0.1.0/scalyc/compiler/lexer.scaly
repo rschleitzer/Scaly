@@ -266,7 +266,7 @@ define lexer
                     {
                         return Token.Invalid(InvalidToken())
                     }
-                    return Token.Identifier(IdentifierToken(String$(start, length)))
+                    return Token.Identifier(IdentifierToken(String#(start, length)))
                 }
 
                 let c *current
@@ -276,7 +276,7 @@ define lexer
                     set length: length + 1
                 }
                 else
-                    return Token.Identifier(IdentifierToken(String$(start, length)))
+                    return Token.Identifier(IdentifierToken(String#(start, length)))
             }
         }
 
@@ -293,7 +293,7 @@ define lexer
                     {
                         return Token.Invalid(InvalidToken())
                     }
-                    return Token.Attribute(AttributeToken(String$(start, length)))
+                    return Token.Attribute(AttributeToken(String#(start, length)))
                 }
 
                 let c *current
@@ -303,7 +303,7 @@ define lexer
                     set length: length + 1
                 }
                 else
-                    return Token.Attribute(AttributeToken(String$(start, length)))
+                    return Token.Attribute(AttributeToken(String#(start, length)))
             }
         }
 
@@ -323,7 +323,7 @@ define lexer
                     {
                         return Token.Invalid(InvalidToken())
                     }
-                    return Token.Identifier(IdentifierToken(String$(start, length)))
+                    return Token.Identifier(IdentifierToken(String#(start, length)))
                 }
 
                 let c *current
@@ -331,7 +331,7 @@ define lexer
                 if (c = 43) || (c = 45) || (c = 42) || (c = 47) || (c = 61) || (c = 37) || (c = 38) || (c = 124) || (c = 94) || (c = 126) || (c = 60) || (c = 62)
                     continue
                 else
-                    return Token.Identifier(IdentifierToken(String$(start, length)))
+                    return Token.Identifier(IdentifierToken(String#(start, length)))
             }
         }
 
@@ -355,7 +355,7 @@ define lexer
                 guard c = 34  ; '"' - end of string
                 {
                     read_character()
-                    return Token.Literal(LiteralToken(Literal.String(StringLiteral(String$(start, length - 1)))))
+                    return Token.Literal(LiteralToken(Literal.String(StringLiteral(String#(start, length - 1)))))
                 }
 
                 guard c = 92  ; '\\' - escape sequence
@@ -421,7 +421,7 @@ define lexer
                 guard c = 39  ; '\'' - end of string identifier
                 {
                     read_character()
-                    return Token.Identifier(IdentifierToken(String$(start, length - 1)))
+                    return Token.Identifier(IdentifierToken(String#(start, length - 1)))
                 }
 
                 guard c = 92  ; '\\' - escape sequence
@@ -486,7 +486,7 @@ define lexer
                 guard c = 96  ; '`' - end of fragment
                 {
                     read_character()
-                    return Token.Literal(LiteralToken(Literal.Fragment(FragmentLiteral(String$(start, length - 1)))))
+                    return Token.Literal(LiteralToken(Literal.Fragment(FragmentLiteral(String#(start, length - 1)))))
                 }
 
                 guard c = 92  ; '\\' - escape sequence
@@ -520,7 +520,7 @@ define lexer
 
             guard current = null
             {
-                return Token.Literal(LiteralToken(Literal.Integer(IntegerLiteral(String$(start, length)))))
+                return Token.Literal(LiteralToken(Literal.Integer(IntegerLiteral(String#(start, length)))))
             }
 
             let c *current
@@ -550,7 +550,7 @@ define lexer
                 return scan_boolean_literal()
             }
 
-            return Token.Literal(LiteralToken(Literal.Integer(IntegerLiteral(String$(start, length)))))
+            return Token.Literal(LiteralToken(Literal.Integer(IntegerLiteral(String#(start, length)))))
         }
 
         function scan_integer_literal(this, start: pointer[char], initial_length: size_t) returns Token
@@ -564,7 +564,7 @@ define lexer
 
                 guard current = null
                 {
-                    return Token.Literal(LiteralToken(Literal.Integer(IntegerLiteral(String$(start, length)))))
+                    return Token.Literal(LiteralToken(Literal.Integer(IntegerLiteral(String#(start, length)))))
                 }
 
                 let c *current
@@ -584,7 +584,7 @@ define lexer
                     return scan_exponent(start, length)
                 }
 
-                return Token.Literal(LiteralToken(Literal.Integer(IntegerLiteral(String$(start, length)))))
+                return Token.Literal(LiteralToken(Literal.Integer(IntegerLiteral(String#(start, length)))))
             }
         }
 
@@ -599,7 +599,7 @@ define lexer
 
                 guard current = null
                 {
-                    return Token.Literal(LiteralToken(Literal.FloatingPoint(FloatingPointLiteral(String$(start, length)))))
+                    return Token.Literal(LiteralToken(Literal.FloatingPoint(FloatingPointLiteral(String#(start, length)))))
                 }
 
                 let c *current
@@ -614,7 +614,7 @@ define lexer
                     return scan_exponent(start, length)
                 }
 
-                return Token.Literal(LiteralToken(Literal.FloatingPoint(FloatingPointLiteral(String$(start, length)))))
+                return Token.Literal(LiteralToken(Literal.FloatingPoint(FloatingPointLiteral(String#(start, length)))))
             }
         }
 
@@ -629,7 +629,7 @@ define lexer
 
                 guard current = null
                 {
-                    return Token.Literal(LiteralToken(Literal.FloatingPoint(FloatingPointLiteral(String$(start, length)))))
+                    return Token.Literal(LiteralToken(Literal.FloatingPoint(FloatingPointLiteral(String#(start, length)))))
                 }
 
                 let c *current
@@ -639,7 +639,7 @@ define lexer
                     continue
                 }
 
-                return Token.Literal(LiteralToken(Literal.FloatingPoint(FloatingPointLiteral(String$(start, length)))))
+                return Token.Literal(LiteralToken(Literal.FloatingPoint(FloatingPointLiteral(String#(start, length)))))
             }
         }
 
@@ -654,7 +654,7 @@ define lexer
 
                 guard current = null
                 {
-                    return Token.Literal(LiteralToken(Literal.Hex(HexLiteral(String$(start, length)))))
+                    return Token.Literal(LiteralToken(Literal.Hex(HexLiteral(String#(start, length)))))
                 }
 
                 let c *current
@@ -664,7 +664,7 @@ define lexer
                     continue
                 }
 
-                return Token.Literal(LiteralToken(Literal.Hex(HexLiteral(String$(start, length)))))
+                return Token.Literal(LiteralToken(Literal.Hex(HexLiteral(String#(start, length)))))
             }
         }
 

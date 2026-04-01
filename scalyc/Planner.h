@@ -498,6 +498,10 @@ private:
         const PlannedType &StructType,
         const std::vector<PlannedType> &ArgTypes);
 
+    // Check if a function needs an implicit return page parameter
+    // based on returning a non-primitive (class) type
+    static bool needsImplicitReturnPage(const Function &Func);
+
     // ========== Type Inference ==========
 
     // Infer the type of a constant

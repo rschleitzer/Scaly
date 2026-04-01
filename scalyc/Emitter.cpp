@@ -1020,6 +1020,7 @@ llvm::Function *Emitter::emitFunctionDecl(const PlannedFunction &Func) {
         ParamIdx++;
     }
     if (Func.PageParameter) {
+        ImplicitRpFunctions.insert(Func.MangledName);
         // Page parameter - skip it for attribute setting
         ParamIdx++;
     }
@@ -3062,9 +3063,23 @@ llvm::Expected<llvm::Value*> Emitter::emitCall(const PlannedCall &Call) {
         std::vector<llvm::Value*> CallArgs;
         CallArgs.push_back(RetPtr);
 
-        // If function# was used, pass the page as second argument (after sret)
+        // If function# was used (or implicit rp), pass the page as second argument (after sret)
         auto *FuncTy = Func->getFunctionType();
         size_t FirstUserArg = 1;  // Start after sret
+
+        // Auto-detect implicit rp: if callee has implicit rp (tracked in ImplicitRpFunctions),
+        // auto-provide a page argument
+        if (!FuncPageArg && ImplicitRpFunctions.count(Call.MangledName)) {
+            if (CurrentRegion.ReturnPage) {
+                FuncPageArg = CurrentRegion.ReturnPage;
+            } else if (CurrentRegion.LocalPage) {
+                FuncPageArg = CurrentRegion.LocalPage;
+            } else if (PageAllocatePage) {
+                CurrentRegion.LocalPage = Builder->CreateCall(PageAllocatePage, {}, "local_page.implicit");
+                FuncPageArg = CurrentRegion.LocalPage;
+            }
+        }
+
         if (FuncPageArg) {
             CallArgs.push_back(FuncPageArg);
             FirstUserArg = 2;
@@ -3113,6 +3128,18 @@ llvm::Expected<llvm::Value*> Emitter::emitCall(const PlannedCall &Call) {
 
     // Check if this is a throwing function (non-sret case)
     bool IsThrowingFunction = ThrowingFunctions.count(Call.MangledName) > 0;
+
+    // Auto-detect implicit rp for non-sret path
+    if (!FuncPageArg && ImplicitRpFunctions.count(Call.MangledName)) {
+        if (CurrentRegion.ReturnPage) {
+            FuncPageArg = CurrentRegion.ReturnPage;
+        } else if (CurrentRegion.LocalPage) {
+            FuncPageArg = CurrentRegion.LocalPage;
+        } else if (PageAllocatePage) {
+            CurrentRegion.LocalPage = Builder->CreateCall(PageAllocatePage, {}, "local_page.implicit");
+            FuncPageArg = CurrentRegion.LocalPage;
+        }
+    }
 
     // If no user arguments (after accounting for page offset), handle special cases
     if (Args.size() <= FuncArgsOffset) {

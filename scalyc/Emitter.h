@@ -110,6 +110,7 @@ private:
 
     // Track which functions can throw (populated when emitting declarations)
     std::set<std::string> ThrowingFunctions;
+    std::set<std::string> ImplicitRpFunctions;
 
     // Intrinsic type info (baked in)
     std::map<std::string, IntrinsicTypeInfo> IntrinsicTypes;
