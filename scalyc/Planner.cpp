@@ -10128,29 +10128,12 @@ llvm::Expected<PlannedAction> Planner::planAction(const Action &Act) {
         return PlannedSource.takeError();
     }
 
-    // Collapse operand sequence to create PlannedCall structures for operators.
-    // However, if there are multiple standalone if-expressions (from if-return cascades),
-    // keep them all as separate operands so each gets emitted.
-    bool HasMultipleIfs = false;
-    if (PlannedSource->size() > 1) {
-        int IfCount = 0;
-        for (const auto &Op : *PlannedSource) {
-            if (std::holds_alternative<PlannedIf>(Op.Expr))
-                IfCount++;
-        }
-        HasMultipleIfs = (IfCount > 1);
+    // Collapse operand sequence to create PlannedCall structures for operators
+    auto CollapsedSource = collapseOperandSequence(std::move(*PlannedSource));
+    if (!CollapsedSource) {
+        return CollapsedSource.takeError();
     }
-
-    if (HasMultipleIfs) {
-        // Keep all operands as-is - each if-expression will be emitted separately
-        Result.Source = std::move(*PlannedSource);
-    } else {
-        auto CollapsedSource = collapseOperandSequence(std::move(*PlannedSource));
-        if (!CollapsedSource) {
-            return CollapsedSource.takeError();
-        }
-        Result.Source.push_back(std::move(*CollapsedSource));
-    }
+    Result.Source.push_back(std::move(*CollapsedSource));
 
     // Compute the result type of the source operation sequence
     auto SeqType = resolveOperationSequence(Result.Source);
