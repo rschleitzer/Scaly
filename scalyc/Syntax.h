@@ -86,6 +86,7 @@ struct TrySyntax;
 struct ConditionSyntax;
 struct WhenSyntax;
 struct CommandSyntax;
+struct GuardSyntax;
 struct LetSyntax;
 struct VarSyntax;
 struct MutableSyntax;
@@ -365,8 +366,15 @@ struct LetSyntax {
     BindingSyntax binding;
 };
 
+struct GuardSyntax {
+    size_t Start;
+    size_t End;
+    std::vector<OperandSyntax>* condition;
+    ActionSyntax body;
+};
+
 struct CommandSyntax {
-    std::variant<OperationSyntax, LetSyntax, VarSyntax, MutableSyntax, SetSyntax, ContinueSyntax, BreakSyntax, ReturnSyntax, ThrowSyntax> Value;
+    std::variant<OperationSyntax, LetSyntax, VarSyntax, MutableSyntax, SetSyntax, GuardSyntax, ContinueSyntax, BreakSyntax, ReturnSyntax, ThrowSyntax> Value;
 };
 
 struct WhenSyntax {
@@ -448,8 +456,8 @@ struct IfSyntax {
     size_t Start;
     size_t End;
     std::vector<OperandSyntax>* condition;
-    CommandSyntax consequent;
-    CommandSyntax alternative;
+    ThenSyntax consequent;
+    ElseSyntax alternative;
 };
 
 struct ElementSyntax {
