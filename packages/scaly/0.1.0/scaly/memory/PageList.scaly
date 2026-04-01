@@ -15,7 +15,7 @@ define PageList
         var previous_node: pointer[PageNode] null
         while node <> null
         {
-            if node.page = element
+            guard node.page = element
             {
                 if previous_node <> null
                     set previous_node.next: node.next

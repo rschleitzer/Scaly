@@ -12,8 +12,10 @@ define io
     {
         ; Direct write call to test if external functions work in io module
         let result write(1, "Direct test\n" as pointer[void], 12 as size_t)
-        if result <> 12
+        guard result <> 12
+        {
             return -1
+        }
         0
     }
 
@@ -35,25 +37,33 @@ define io
         let content_len 26 as size_t
 
         var file fopen(test_path, "wb")
-        if file = null
+        guard file = null
+        {
             return -10
+        }
 
         let written fwrite(test_content as pointer[void], 1, content_len, file)
         fclose(file)
-        if written <> content_len
+        guard written <> content_len
+        {
             return -11
+        }
 
         ; Read the file back
         set file: fopen(test_path, "rb")
-        if file = null
+        guard file = null
+        {
             return -12
+        }
 
         var buffer char[64]
         let read_count fread(buffer, 1, 64 as size_t, file)
         fclose(file)
 
-        if read_count <> content_len
+        guard read_count <> content_len
+        {
             return -13
+        }
 
         ; Success - raw file I/O works
         0
@@ -66,16 +76,22 @@ define io
         var test_content String$("Hello from String-based I/O!")
 
         ; Write using String API
-        if File.write_from_string(test_path, test_content) = false
+        guard File.write_from_string(test_path, test_content) = false
+        {
             return -20
+        }
 
         ; Read back using String API
         var read_content File.read_to_string$(test_path)
-        if read_content.get_length() <> test_content.get_length()
+        guard read_content.get_length() <> test_content.get_length()
+        {
             return -21
+        }
 
-        if read_content.equals(test_content) = false
+        guard read_content.equals(test_content) = false
+        {
             return -22
+        }
 
         0
     }
@@ -84,13 +100,17 @@ define io
     {
         ; Test File.exists with a file we know exists
         var test_path String$("/tmp/scaly_string_test.txt")
-        if File.exists(test_path) = false
+        guard File.exists(test_path) = false
+        {
             return -30
+        }
 
         ; Test with a file that doesn't exist
         var nonexistent String$("/tmp/scaly_nonexistent_file_12345.txt")
-        if File.exists(nonexistent) = true
+        guard File.exists(nonexistent) = true
+        {
             return -31
+        }
 
         0
     }
@@ -99,22 +119,30 @@ define io
     {
         ; Test Directory.exists with /tmp which should exist
         var tmp_path String$("/tmp")
-        if Directory.exists(tmp_path) = false
+        guard Directory.exists(tmp_path) = false
+        {
             return -40
+        }
 
         ; Test Directory.is_directory with /tmp
-        if Directory.is_directory(tmp_path) = false
+        guard Directory.is_directory(tmp_path) = false
+        {
             return -41
+        }
 
         ; Test with a nonexistent path
         var nonexistent String$("/nonexistent_dir_12345")
-        if Directory.is_directory(nonexistent) = true
+        guard Directory.is_directory(nonexistent) = true
+        {
             return -42
+        }
 
         ; Test that a file is not a directory
         var file_path String$("/tmp/scaly_string_test.txt")
-        if Directory.is_directory(file_path) = true
+        guard Directory.is_directory(file_path) = true
+        {
             return -43
+        }
 
         0
     }
@@ -126,21 +154,27 @@ define io
         var file String$("test.txt")
         var joined Path.join$(dir, file)
         var expected String$("/tmp/test.txt")
-        if joined.equals(expected) = false
+        guard joined.equals(expected) = false
+        {
             return -50
+        }
 
         ; Test Path.get_file_name
         var full_path String$("/tmp/test.txt")
         var file_name Path.get_file_name$(full_path)
         var expected_name String$("test.txt")
-        if file_name.equals(expected_name) = false
+        guard file_name.equals(expected_name) = false
+        {
             return -51
+        }
 
         ; Test Path.get_directory_name
         var dir_name Path.get_directory_name$(full_path)
         var expected_dir String$("/tmp")
-        if dir_name.equals(expected_dir) = false
+        guard dir_name.equals(expected_dir) = false
+        {
             return -52
+        }
 
         0
     }
@@ -148,26 +182,40 @@ define io
     function test() returns int
     {
         var result test_direct()
-        if result <> 0
+        guard result <> 0
+        {
             return result
+        }
         set result: test_console()
-        if result <> 0
+        guard result <> 0
+        {
             return result
+        }
         set result: test_file_raw()
-        if result <> 0
+        guard result <> 0
+        {
             return result
+        }
         set result: test_file_string()
-        if result <> 0
+        guard result <> 0
+        {
             return result
+        }
         set result: test_file_exists()
-        if result <> 0
+        guard result <> 0
+        {
             return result
+        }
         set result: test_directory()
-        if result <> 0
+        guard result <> 0
+        {
             return result
+        }
         set result: test_path()
-        if result <> 0
+        guard result <> 0
+        {
             return result
+        }
         0
     }
 }

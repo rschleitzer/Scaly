@@ -59,8 +59,10 @@ define HashSetBuilder[T]
         var iterator slot_list.get_iterator()
         while let item iterator.next()
         {
-            if value.equals(item.value)
+            guard value.equals(item.value)
+            {
                 return false
+            }
         }
 
         let own_page Page.get(slots as pointer[void])
@@ -72,16 +74,22 @@ define HashSetBuilder[T]
 
     function contains(this: HashSetBuilder[T], value: T) returns bool
     {
-        if slots = null
+        guard slots = null
+        {
             return false
+        }
 
         let hash value.hash()
         let slot_number hash % slots.length
         let slot slots.get_ptr(slot_number)
         var iterator slot.get_iterator()
         while let item iterator.next()
-            if value.equals(item.value)
+        {
+            guard value.equals(item.value)
+            {
                 return true
+            }
+        }
 
         return false
     }

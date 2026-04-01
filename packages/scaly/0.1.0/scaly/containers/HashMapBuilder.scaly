@@ -61,8 +61,10 @@ define HashMapBuilder[K, V]
         var iterator slot_list.get_iterator()
         while let item iterator.next()
         {
-            if key.equals(item.value.key)
+            guard key.equals(item.value.key)
+            {
                 return false
+            }
         }
 
         let own_page Page.get(slots as pointer[void])
@@ -74,8 +76,10 @@ define HashMapBuilder[K, V]
 
     function contains(this: HashMapBuilder[K, V], key: K) returns bool
     {
-        if slots = null
+        guard slots = null
+        {
             return false
+        }
 
         let hash key.hash()
         let slot_number hash % slots.length
@@ -83,8 +87,10 @@ define HashMapBuilder[K, V]
         var iterator slot.get_iterator()
         while let item iterator.next()
         {
-            if key.equals(item.value.key)
+            guard key.equals(item.value.key)
+            {
                 return true
+            }
         }
 
         return false
@@ -92,15 +98,19 @@ define HashMapBuilder[K, V]
 
     function get(this: HashMapBuilder[K, V], key: K) returns ref[V]?
     {
-        if slots = null
+        guard slots = null
+        {
             return null
+        }
 
         let slot slots.get_ptr(key.hash() % slots.length)
         var iterator slot.get_iterator()
         while let item iterator.next()
         {
-            if key.equals(item.value.key)
+            guard key.equals(item.value.key)
+            {
                 return &item.value.value
+            }
         }
 
         return null
