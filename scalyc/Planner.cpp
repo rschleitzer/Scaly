@@ -816,7 +816,7 @@ bool Planner::typesEqual(const PlannedType &A, const PlannedType &B) {
 static bool isIntegerType(llvm::StringRef Normalized) {
     return Normalized == "i64" || Normalized == "i32" || Normalized == "i16" || Normalized == "i8" ||
            Normalized == "u64" || Normalized == "u32" || Normalized == "u16" || Normalized == "u8" ||
-           Normalized == "size_t" || Normalized == "int" || Normalized == "uint";
+           Normalized == "size_t" || Normalized == "int" || Normalized == "uint" || Normalized == "char";
 }
 
 bool Planner::typesCompatible(const PlannedType &ParamType, const PlannedType &ArgType) {

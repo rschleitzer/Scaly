@@ -492,20 +492,14 @@ function handle_if#(syntax: IfSyntax) returns If
     let condition handle_operands#(syntax.condition)
     let cons_stmt handle_command#(syntax.consequent.command)
 
-    var alternative: ref[Statement]? null
-    guard syntax.alternative <> null
-    {
-        let else_syntax (*syntax.alternative)
-        let alt_stmt handle_command#(else_syntax.alternative)
-        set alternative: Statement#(alt_stmt)
-    }
+    let alt_stmt handle_command#(syntax.alternative.alternative)
 
     If(
         Span(syntax.start, syntax.end),
         condition,
         null,
         cons_stmt,
-        alternative
+        Statement#(alt_stmt)
     )
 }
 
