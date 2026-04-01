@@ -43,8 +43,10 @@ define Page
             {
                 let object current_page.allocate(size, align)
                 let page_of_allocated_object get(object)
-                if page_of_allocated_object <> current_page
+                guard page_of_allocated_object <> current_page
+                {
                     set current_page: page_of_allocated_object
+                }
                 return object
             }
 

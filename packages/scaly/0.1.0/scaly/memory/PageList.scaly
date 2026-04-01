@@ -17,10 +17,14 @@ define PageList
         {
             guard node.page = element
             {
-                if previous_node <> null
+                guard previous_node <> null
+                {
                     set previous_node.next: node.next
-                if node = head
+                }
+                guard node = head
+                {
                     set head: null
+                }
                 return true
             }
             set previous_node: node

@@ -10,7 +10,7 @@ define HashMapBuilder[K, V]
     {
         set length: 0
         set slots: null
-        if vec.length > 0
+        guard vec.length > 0
         {
             reallocate(vec.length)
             var vector_iterator VectorIterator[KeyValuePair[K, V]](&vec)
@@ -26,7 +26,7 @@ define HashMapBuilder[K, V]
         let slots_page own_page.allocate_exclusive_page()
         let new_slots Vector[BuilderList[Slot[KeyValuePair[K, V]]]]^slots_page(hash_size)
 
-        if slots <> null
+        guard slots <> null
         {
             var vector_iterator VectorIterator[BuilderList[Slot[KeyValuePair[K, V]]]](slots)
             while let element vector_iterator.next()
@@ -48,8 +48,10 @@ define HashMapBuilder[K, V]
     function add(this: HashMapBuilder[K, V], key: K, value: V) returns bool
     {
         let hash_size hashing.get_prime(length + 1)
-        if slots = null || hash_size > slots.length
+        guard slots = null || hash_size > slots.length
+        {
             reallocate(length + 1)
+        }
         return add_internal(key, value)
     }
 

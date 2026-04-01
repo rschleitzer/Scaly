@@ -199,7 +199,7 @@ define cli
             return 1
         }
 
-        if opts.verbose
+        guard opts.verbose
         {
             Console.println("Compiling: ")
             ; TODO: print input file
@@ -213,7 +213,7 @@ define cli
             return 1
         }
 
-        if opts.verbose
+        guard opts.verbose
         {
             Console.println("Read source file successfully")
         }
@@ -251,7 +251,7 @@ define cli
                 set syntax: program
             }
 
-        if opts.verbose
+        guard opts.verbose
         {
             Console.println("Parsing completed successfully")
         }
@@ -271,7 +271,7 @@ define cli
 
         let model Modeler.build_program#(opts.input_file, program_name, syntax)
 
-        if opts.verbose
+        guard opts.verbose
         {
             Console.println("Model built successfully")
         }
@@ -295,7 +295,7 @@ define cli
             return 4
         }
 
-        if opts.verbose
+        guard opts.verbose
         {
             Console.println("Planning completed successfully")
         }
@@ -322,7 +322,7 @@ define cli
             return 5
         }
 
-        if opts.verbose
+        guard opts.verbose
         {
             Console.println("Code generation completed successfully")
         }
@@ -349,10 +349,14 @@ define cli
         while i < file_path.get_length() as int
         {
             let c file_path.get(i as size_t)
-            if c = "/" as char
+            guard c = "/" as char
+            {
                 set start: i + 1
-            if c = "\\" as char
+            }
+            guard c = "\\" as char
+            {
                 set start: i + 1
+            }
             set i: i + 1
         }
 
@@ -362,7 +366,7 @@ define cli
         while i >= start
         {
             let c file_path.get(i as size_t)
-            if c = "." as char
+            guard c = "." as char
             {
                 set end: i
                 ; break - just use assignment for now

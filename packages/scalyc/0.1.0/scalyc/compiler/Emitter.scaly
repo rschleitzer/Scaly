@@ -397,14 +397,20 @@ define Emitter
     ; Dispose of LLVM resources
     procedure dispose(this)
     {
-        if builder.handle <> null
+        guard builder.handle <> null
+        {
             LLVMDisposeBuilder(builder)
+        }
 
-        if llvm_module.handle <> null
+        guard llvm_module.handle <> null
+        {
             LLVMDisposeModule(llvm_module)
+        }
 
-        if context.handle <> null
+        guard context.handle <> null
+        {
             LLVMContextDispose(context)
+        }
     }
 
     ; ========================================================================
