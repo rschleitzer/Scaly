@@ -1165,7 +1165,7 @@ llvm::Error Emitter::emitFunctionBody(const PlannedFunction &Func,
         NeedsLocalPage = true;
     }
 
-    if (NeedsLocalPage && PageAllocatePage && !PageAllocatePage->isDeclaration()) {
+    if (NeedsLocalPage && PageAllocatePage) {
         CurrentRegion.LocalPage = Builder->CreateCall(PageAllocatePage, {}, "local_page");
     } else {
         CurrentRegion.LocalPage = nullptr;  // Will use stack allocation as fallback

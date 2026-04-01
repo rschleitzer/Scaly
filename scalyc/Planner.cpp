@@ -827,13 +827,17 @@ bool Planner::needsImplicitReturnPage(const Function &Func) {
         if (!RetName.empty()) RetName += ".";
         RetName += Part;
     }
+    if (RetName.empty()) return false;
     static const std::set<std::string> PrimitiveTypes = {
         "void", "bool", "int", "uint", "char",
         "i8", "i16", "i32", "i64", "u8", "u16", "u32", "u64",
         "f32", "f64", "float", "double", "size_t", "size",
         "pointer", "ref"
     };
-    return !RetName.empty() && PrimitiveTypes.find(RetName) == PrimitiveTypes.end();
+    if (PrimitiveTypes.count(RetName)) return false;
+    // Skip single-letter names (generic type parameters like T, K, V)
+    if (RetName.size() == 1 && std::isupper(RetName[0])) return false;
+    return true;
 }
 
 bool Planner::typesCompatible(const PlannedType &ParamType, const PlannedType &ArgType) {
