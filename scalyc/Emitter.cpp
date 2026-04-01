@@ -3029,10 +3029,12 @@ llvm::Expected<llvm::Value*> Emitter::emitCall(const PlannedCall &Call) {
             }
         }
 
-        // If we still don't have a page, allocate one on demand
-        // This handles cases like func#() inside a non-function# function
+        // If we still don't have a page, use return page if available, else allocate on demand
         if (!FuncPageArg) {
-            FuncPageArg = getOrCreateLocalPage();
+            if (CurrentRegion.ReturnPage)
+                FuncPageArg = CurrentRegion.ReturnPage;
+            else
+                FuncPageArg = getOrCreateLocalPage();
         }
     }
 
