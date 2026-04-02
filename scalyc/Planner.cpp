@@ -2484,25 +2484,19 @@ std::optional<Planner::InitializerMatch> Planner::findInitializer(
 
         // Search for matching initializer in the cached PlannedStructure
         for (const auto &Init : Struct.Initializers) {
-            // Check if parameter count matches
-            if (Init.Input.size() != ArgTypes.size()) {
-                continue;
-            }
-
-            // Check if all parameter types match
-            bool AllMatch = true;
-            for (size_t i = 0; i < ArgTypes.size(); ++i) {
-                if (!Init.Input[i].ItemType) {
-                    // Parameter has no type - treat as match
-                    continue;
+            // Cached initializers have page parameter already excluded from Input
+            {
+                if (Init.Input.size() != ArgTypes.size()) continue;
+                bool AllMatch = true;
+                for (size_t i = 0; i < ArgTypes.size(); ++i) {
+                    if (!Init.Input[i].ItemType) continue;
+                    if (!typesCompatible(*Init.Input[i].ItemType, ArgTypes[i])) {
+                        AllMatch = false;
+                        break;
+                    }
                 }
-                if (!typesCompatible(*Init.Input[i].ItemType, ArgTypes[i])) {
-                    AllMatch = false;
-                    break;
-                }
-            }
+                if (!AllMatch) continue;
 
-            if (AllMatch) {
                 InitializerMatch Match;
                 Match.Init = &Init;
                 Match.MangledName = Init.MangledName;
@@ -2551,31 +2545,28 @@ std::optional<Planner::InitializerMatch> Planner::findInitializer(
 
             // Check each original initializer
             for (const auto &Init : OrigStruct.Initializers) {
-                if (Init.Input.size() != ArgTypes.size()) {
-                    continue;
+                // Try direct match first, then with page offset for init#
+                bool FoundMatch = false;
+                for (size_t PageOffset : {size_t(0), Init.PageParameter.has_value() ? size_t(1) : size_t(0)}) {
+                    if (Init.Input.size() - PageOffset != ArgTypes.size()) continue;
+                    bool AllMatch = true;
+                    for (size_t i = 0; i < ArgTypes.size(); ++i) {
+                        if (!Init.Input[i + PageOffset].ItemType) continue;
+                        auto ParamTypeResult = resolveType(*Init.Input[i + PageOffset].ItemType, Init.Loc);
+                        if (!ParamTypeResult) {
+                            llvm::consumeError(ParamTypeResult.takeError());
+                            AllMatch = false;
+                            break;
+                        }
+                        if (!typesCompatible(*ParamTypeResult, ArgTypes[i])) {
+                            AllMatch = false;
+                            break;
+                        }
+                    }
+                    if (AllMatch) { FoundMatch = true; break; }
                 }
 
-                bool AllMatch = true;
-                for (size_t i = 0; i < ArgTypes.size(); ++i) {
-                    if (!Init.Input[i].ItemType) {
-                        continue; // No type specified = match
-                    }
-
-                    // Resolve the parameter type with current substitutions
-                    auto ParamTypeResult = resolveType(*Init.Input[i].ItemType, Init.Loc);
-                    if (!ParamTypeResult) {
-                        llvm::consumeError(ParamTypeResult.takeError());
-                        AllMatch = false;
-                        break;
-                    }
-
-                    if (!typesCompatible(*ParamTypeResult, ArgTypes[i])) {
-                        AllMatch = false;
-                        break;
-                    }
-                }
-
-                if (AllMatch) {
+                if (FoundMatch) {
                     // Found a match - need to actually plan the initializer
                     // so that the Emitter can find it
 
@@ -8714,7 +8705,6 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                             // Check if there's a matching zero-argument initializer
                             std::vector<PlannedType> ArgTypes;  // Empty
                             auto InitMatch = findInitializer(StructType, ArgTypes);
-
                             if (InitMatch) {
                                 // Generate a PlannedCall to the initializer
                                 PlannedCall Call;
