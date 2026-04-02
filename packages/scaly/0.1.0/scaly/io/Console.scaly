@@ -13,7 +13,7 @@ define Console
 
     function println(message: pointer[const_char])
     {
-        print(message)
+        Console.print(message)
         write(STDOUT_FD, "\n" as pointer[void], 1 as size_t)
     }
 }

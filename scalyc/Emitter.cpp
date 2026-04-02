@@ -196,10 +196,10 @@ void Emitter::initRBMM() {
 
     // Create Page struct type
     // Page { next_object: ptr, current_page: ptr, next_page: ptr, exclusive_pages: PageList }
-    // For now, we treat PageList as an opaque struct (pointer + pointer for simplicity)
-    // The actual layout is: { ptr, ptr, ptr, { ptr, ptr } }
+    // PageList has a single field: head: pointer[PageNode]
+    // Layout: { ptr, ptr, ptr, { ptr } }
     PageType = llvm::StructType::create(*Context, "Page");
-    auto *PageListType = llvm::StructType::create(*Context, {PtrTy, PtrTy}, "PageList");
+    auto *PageListType = llvm::StructType::create(*Context, {PtrTy}, "PageList");
     PageType->setBody({PtrTy, PtrTy, PtrTy, PageListType});
 
     // Note: aligned_alloc and free are now declared as 'extern' in Scaly source code
