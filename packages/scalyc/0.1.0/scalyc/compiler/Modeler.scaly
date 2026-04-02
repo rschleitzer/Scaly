@@ -7,6 +7,8 @@ use scaly.containers.String
 use scaly.containers.Vector
 use scaly.containers.HashMap
 use scaly.containers.HashMapBuilder
+use scaly.scalyc.parser.Parser
+use scaly.scalyc.parser.ParserError
 
 ; Model types
 use scaly.compiler.Model.Span
@@ -1874,10 +1876,6 @@ function build_program#(file_name: String, program_name: String, syntax: Program
 ; ============================================================================
 ; Test function
 ; ============================================================================
-
-use scaly.scalyc.parser.Parser
-use scaly.scalyc.parser.ParserError
-
 
 function test() returns int
 {

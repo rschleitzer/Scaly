@@ -186,18 +186,18 @@ define Planner
     {
         ; Remove the last scope
         ; TODO: proper pop() when Vector supports it
-        if scopes.length > 0
+        guard scopes.length > 0
             set scopes.length: scopes.length - 1
     }
 
     procedure bind_local(this, name: String, binding_type: PlannedType, is_mutable: bool, is_on_page: bool)
     {
-        if scopes.length > 0
+        guard scopes.length > 0
         {
             let scope scopes.get(scopes.length - 1)
-            if scope <> null
+            guard scope <> null
             {
-                if scope.bindings <> null
+                guard scope.bindings <> null
                     scope.bindings.add(name, LocalBinding(binding_type, is_mutable, is_on_page))
             }
         }
@@ -425,7 +425,7 @@ define Planner
                 }
         }
 
-        if has_explicit_params = false
+        guard has_explicit_params = false
             result.append(String$("v"))  ; void parameters
 
         result.to_string#()
@@ -499,7 +499,7 @@ define Planner
         {
             set i: i - 1
             let d digits.get(i)
-            if d <> null
+            guard d <> null
                 result.append(*d)
         }
 
@@ -649,7 +649,7 @@ define Planner
                     {
                         ; Match by argument count (excluding 'this' for methods)
                         var input_count 0
-                        if func.input <> null
+                        guard func.input <> null
                             set input_count: func.input.length as int
                         guard input_count = arg_count
                         {
@@ -738,7 +738,7 @@ define Planner
         let result StringBuilder#()
         result.append(base_name)
 
-        if args <> null
+        guard args <> null
         {
             for arg in args
             {
@@ -1085,7 +1085,7 @@ define Planner
         for component_ptr in path
         {
             let component *component_ptr
-            if first = false
+            guard first = false
                 result.append(String$("."))
             result.append(component)
             set first: false
@@ -1322,7 +1322,7 @@ define Planner
         {
             let param *param_ptr
             let arg args.get(i)
-            if arg <> null
+            guard arg <> null
                 add_type_substitution(param.name, *arg)
             set i: i + 1
         }
@@ -1634,7 +1634,7 @@ define Planner
         )
 
         ; Copy name if present
-        if it.name <> null
+        guard it.name <> null
             set result.name: it.name
 
         ; Resolve type if present
@@ -1650,9 +1650,9 @@ define Planner
             }
 
         ; Plan attributes
-        if it.attributes <> null
+        guard it.attributes <> null
         {
-            if it.attributes.length > 0
+            guard it.attributes.length > 0
             {
                 set result.attributes: Vector[PlannedAttribute]#()
                 for attr in it.attributes
@@ -1712,9 +1712,9 @@ define Planner
                     }
 
                 ; Plan attributes
-                if prop.attributes <> null
+                guard prop.attributes <> null
                 {
-                    if prop.attributes.length > 0
+                    guard prop.attributes.length > 0
                     {
                         set result.attributes: Vector[PlannedAttribute]#()
                         for attr in prop.attributes
@@ -1765,9 +1765,9 @@ define Planner
             }
 
         ; Plan attributes
-        if v.attributes <> null
+        guard v.attributes <> null
         {
-            if v.attributes.length > 0
+            guard v.attributes.length > 0
             {
                 set result.attributes: Vector[PlannedAttribute]#()
                 for attr in v.attributes
@@ -2138,9 +2138,9 @@ define Planner
             null        ; region_arg
         )
 
-        if tup.components <> null
+        guard tup.components <> null
         {
-            if tup.components.length > 0
+            guard tup.components.length > 0
             {
                 set result.components: Vector[PlannedComponent]#()
                 for comp in tup.components
@@ -2176,25 +2176,25 @@ define Planner
             make_void_type()    ; element_type (TODO: infer)
         )
 
-        if mat.operations <> null
+        guard mat.operations <> null
         {
-            if mat.operations.length > 0
+            guard mat.operations.length > 0
             {
                 set result.operations: Vector[Vector[PlannedOperand]]#()
                 for row in mat.operations
                 {
                     let planned_row plan_operands(row)
-                    if planned_row <> null
+                    guard planned_row <> null
                         result.operations.put(result.operations.length, planned_row)
                 }
 
                 ; Infer element type from first element
-                if result.operations.length > 0
+                guard result.operations.length > 0
                 {
                     choose result.operations.get(0)
                         when first_row_ref: Some
                         {
-                            if (*first_row_ref).length > 0
+                            guard (*first_row_ref).length > 0
                             {
                                 choose (*first_row_ref).get(0)
                                     when first_elem_ref: Some
@@ -2224,15 +2224,15 @@ define Planner
             false       ; needs_local_page_cleanup
         )
 
-        if blk.statements <> null
+        guard blk.statements <> null
         {
-            if blk.statements.length > 0
+            guard blk.statements.length > 0
             {
                 set result.statements: Vector[PlannedStatement]#()
                 for stmt in blk.statements
                 {
                     let planned plan_statement(stmt)
-                    if planned <> null
+                    guard planned <> null
                         result.statements.put(result.statements.length, planned)
                 }
             }
@@ -2392,12 +2392,12 @@ define Planner
 
         ; Compute result type from source
         var result_type make_void_type()
-        if source <> null
+        guard source <> null
         {
-            if source.length > 0
+            guard source.length > 0
             {
                 let last source.get(source.length - 1)
-                if last <> null
+                guard last <> null
                     set result_type: last.result_type
             }
         }
@@ -2424,14 +2424,14 @@ define Planner
         let operation plan_operands(bind.operation)
 
         ; If item has no type, infer from operation
-        if item.item_type = null
+        guard item.item_type = null
         {
-            if operation <> null
+            guard operation <> null
             {
-                if operation.length > 0
+                guard operation.length > 0
                 {
                     let last operation.get(operation.length - 1)
-                    if last <> null
+                    guard last <> null
                         set item.item_type: last.result_type#
                 }
             }
@@ -2442,9 +2442,9 @@ define Planner
 
         ; Determine if this is on page
         var is_on_page false
-        if operation <> null
+        guard operation <> null
         {
-            if operation.length > 0
+            guard operation.length > 0
             {
                 choose operation.get(operation.length - 1)
                     when last: Some
@@ -2634,13 +2634,13 @@ define Planner
                 }
 
                 ; Handle 'this' parameter: if no explicit type, use Parent type
-                if planned.name <> null
+                guard planned.name <> null
                 {
-                    if planned.name.equals(String$("this"))
+                    guard planned.name.equals(String$("this"))
                     {
-                        if planned.item_type = null
+                        guard planned.item_type = null
                         {
-                            if parent <> null
+                            guard parent <> null
                                 set planned.item_type: parent
                         }
                     }
@@ -2806,13 +2806,13 @@ define Planner
                 }
 
                 ; Handle 'this' parameter
-                if planned.name <> null
+                guard planned.name <> null
                 {
-                    if planned.name.equals(String$("this"))
+                    guard planned.name.equals(String$("this"))
                     {
-                        if planned.item_type = null
+                        guard planned.item_type = null
                         {
-                            if parent <> null
+                            guard parent <> null
                                 set planned.item_type: parent
                         }
                     }
@@ -3033,7 +3033,7 @@ define Planner
 
         ; Plan properties
         var properties: ref[Vector[PlannedProperty]]? null
-        if struct.properties.length > 0
+        guard struct.properties.length > 0
         {
             let props Vector[PlannedProperty]#()
             set properties: props
@@ -3042,14 +3042,14 @@ define Planner
             for prop in struct.properties
             {
                 let planned plan_property(prop)
-                if planned <> null
+                guard planned <> null
                     props.put(props.length, planned)
             }
         }
 
         ; Plan methods (functions)
         var methods: ref[Vector[PlannedFunction]]? null
-        if struct.members.length > 0
+        guard struct.members.length > 0
         {
             for member in struct.members
             {
@@ -3057,9 +3057,9 @@ define Planner
                     when func: Function
                     {
                         let planned plan_function(func, struct_type)
-                        if planned <> null
+                        guard planned <> null
                         {
-                            if methods = null
+                            guard methods = null
                             {
                                 let meths Vector[PlannedFunction]#()
                                 set methods: meths
@@ -3082,7 +3082,7 @@ define Planner
 
         ; Plan operators
         var operators: ref[Vector[PlannedOperator]]? null
-        if struct.members.length > 0
+        guard struct.members.length > 0
         {
             for member in struct.members
             {
@@ -3090,9 +3090,9 @@ define Planner
                     when op: Operator
                     {
                         let planned plan_operator(op, struct_type)
-                        if planned <> null
+                        guard planned <> null
                         {
-                            if operators = null
+                            guard operators = null
                             {
                                 let ops Vector[PlannedOperator]#()
                                 set operators: ops
@@ -3158,7 +3158,7 @@ define Planner
 
         ; Plan variants
         var variants: ref[Vector[PlannedVariant]]? null
-        if union_def.variants.length > 0
+        guard union_def.variants.length > 0
         {
             let vars Vector[PlannedVariant]#()
             set variants: vars
@@ -3166,7 +3166,7 @@ define Planner
             for v in union_def.variants
             {
                 let planned plan_variant(v, tag)
-                if planned <> null
+                guard planned <> null
                 {
                     vars.put(vars.length, planned)
                     set tag: tag + 1
@@ -3176,7 +3176,7 @@ define Planner
 
         ; Plan methods
         var methods: ref[Vector[PlannedFunction]]? null
-        if union_def.members.length > 0
+        guard union_def.members.length > 0
         {
             for member in union_def.members
             {
@@ -3184,9 +3184,9 @@ define Planner
                     when func: Function
                     {
                         let planned plan_function(func, union_type)
-                        if planned <> null
+                        guard planned <> null
                         {
-                            if methods = null
+                            guard methods = null
                             {
                                 let meths Vector[PlannedFunction]#()
                                 set methods: meths
@@ -3205,7 +3205,7 @@ define Planner
 
         ; Plan operators
         var operators: ref[Vector[PlannedOperator]]? null
-        if union_def.members.length > 0
+        guard union_def.members.length > 0
         {
             for member in union_def.members
             {
@@ -3213,9 +3213,9 @@ define Planner
                     when op: Operator
                     {
                         let planned plan_operator(op, union_type)
-                        if planned <> null
+                        guard planned <> null
                         {
-                            if operators = null
+                            guard operators = null
                             {
                                 let ops Vector[PlannedOperator]#()
                                 set operators: ops
@@ -3283,7 +3283,7 @@ define Planner
         ; Store module references for sibling module.function() calls
         var modules: ref[Vector[PlannedModule]]? null
         var ns_modules: ref[Vector[ref[Module]]]? null
-        if ns.modules.length > 0
+        guard ns.modules.length > 0
         {
             let mods Vector[PlannedModule]#()
             let ns_mods Vector[ref[Module]]#()
@@ -3294,7 +3294,7 @@ define Planner
                 ; Store module reference for sibling lookup
                 ns_mods.put(ns_mods.length, mod)
                 let planned plan_module(mod)
-                if planned <> null
+                guard planned <> null
                     mods.put(mods.length, planned)
             }
             ; Update namespace context with module references
@@ -3303,7 +3303,7 @@ define Planner
 
         ; Plan functions with parent type for proper mangling
         var functions: ref[Vector[PlannedFunction]]? null
-        if ns.members.length > 0
+        guard ns.members.length > 0
         {
             for member in ns.members
             {
@@ -3314,7 +3314,7 @@ define Planner
                         choose planned
                             when p_ref: Some
                             {
-                                if functions = null
+                                guard functions = null
                                 {
                                     let funcs Vector[PlannedFunction]#()
                                     set functions: funcs
@@ -3338,7 +3338,7 @@ define Planner
 
         ; Plan operators with parent type for proper mangling
         var operators: ref[Vector[PlannedOperator]]? null
-        if ns.members.length > 0
+        guard ns.members.length > 0
         {
             for member in ns.members
             {
@@ -3346,9 +3346,9 @@ define Planner
                     when op: Operator
                     {
                         let planned plan_operator(op, &parent_type)
-                        if planned <> null
+                        guard planned <> null
                         {
-                            if operators = null
+                            guard operators = null
                             {
                                 let ops Vector[PlannedOperator]#()
                                 set operators: ops
@@ -3425,7 +3425,7 @@ define Planner
     {
         ; Save and update current file for error messages
         let old_file file
-        if mod.file.length > 0
+        guard mod.file.length > 0
             set file: mod.file
 
         let result PlannedModule#(
@@ -3438,22 +3438,22 @@ define Planner
         )
 
         ; Plan sub-modules first (so their concepts are available)
-        if mod.modules <> null
+        guard mod.modules <> null
         {
-            if mod.modules.length > 0
+            guard mod.modules.length > 0
             {
                 set result.modules: Vector[PlannedModule]#()
                 for sub_mod in mod.modules
                 {
                     let planned plan_module(sub_mod)
-                    if planned <> null
+                    guard planned <> null
                         result.modules.put(result.modules.length, planned)
                 }
             }
         }
 
         ; Plan members (Package, Concept, Function, Operator)
-        if mod.members <> null
+        guard mod.members <> null
         {
             for member in mod.members
             {
@@ -3466,7 +3466,7 @@ define Planner
                             choose plan_module(pkg_mod)
                                 when p_ref: Some
                                 {
-                                    if result.modules = null
+                                    guard result.modules = null
                                         set result.modules: Vector[PlannedModule]#()
                                     result.modules.put(result.modules.length, p_ref)
                                 }
@@ -3477,7 +3477,7 @@ define Planner
                         choose plan_concept(conc)
                             when p_ref: Some
                             {
-                                if result.concepts = null
+                                guard result.concepts = null
                                     set result.concepts: Vector[PlannedConcept]#()
                                 result.concepts.put(result.concepts.length, p_ref)
                             }
@@ -3488,7 +3488,7 @@ define Planner
                         choose plan_function(func, null_type_ptr)
                             when p_ref: Some
                             {
-                                if result.functions = null
+                                guard result.functions = null
                                     set result.functions: Vector[PlannedFunction]#()
                                 result.functions.put(result.functions.length, p_ref)
 
@@ -3502,7 +3502,7 @@ define Planner
                         choose plan_operator(op, null_type_ptr)
                             when p_ref: Some
                             {
-                                if result.operators = null
+                                guard result.operators = null
                                     set result.operators: Vector[PlannedOperator]#()
                                 result.operators.put(result.operators.length, p_ref)
                             }
@@ -3725,10 +3725,10 @@ define Planner
     {
         ; Auto-dereference pointer[T] and ref[T] for method lookup
         var lookup_type struct_type
-        if is_pointer_like_type(struct_type)
+        guard is_pointer_like_type(struct_type)
         {
             let inner get_inner_type(struct_type)
-            if inner <> null
+            guard inner <> null
                 set lookup_type: *inner
         }
 
@@ -3870,10 +3870,10 @@ define Planner
     {
         ; Auto-dereference pointer[T] and ref[T] for method lookup
         var lookup_type struct_type
-        if is_pointer_like_type(struct_type)
+        guard is_pointer_like_type(struct_type)
         {
             let inner get_inner_type(struct_type)
-            if inner <> null
+            guard inner <> null
                 set lookup_type: *inner
         }
 
@@ -3951,14 +3951,14 @@ define Planner
 
             ; Count non-this parameters
             var param_count 0
-            if method.input <> null
+            guard method.input <> null
             {
                 for param in method.input
                 {
                     choose param.name
                         when name_ref: Some
                         {
-                            if name_ref.equals(String$("this")) = false
+                            guard name_ref.equals(String$("this")) = false
                                 set param_count: param_count + 1
                         }
                         else
@@ -3968,7 +3968,7 @@ define Planner
 
             ; Check argument count
             var arg_count 0
-            if arg_types <> null
+            guard arg_types <> null
                 set arg_count: arg_types.length as int
 
             guard param_count <> arg_count
@@ -3990,7 +3990,7 @@ define Planner
                         choose param.name
                             when name_ref: Some
                             {
-                                if name_ref.equals(String$("this"))
+                                guard name_ref.equals(String$("this"))
                                     set is_this: true
                             }
 
@@ -4005,7 +4005,7 @@ define Planner
                                 choose param.item_type
                                     when param_type_ref: Some
                                     {
-                                        if types_compatible(*param_type_ref, *arg_type_ref) = false
+                                        guard types_compatible(*param_type_ref, *arg_type_ref) = false
                                             set types_match: false
                                     }
                             }
@@ -4320,7 +4320,7 @@ define Planner
 
         ; Try namespace sibling function
         var arg_count 0
-        if arg_types <> null
+        guard arg_types <> null
             set arg_count: arg_types.length as int
 
         let sibling lookup_namespace_sibling_function(name, arg_count)
@@ -4564,10 +4564,10 @@ define Planner
     {
         ; Auto-dereference pointer types
         var lookup_type base
-        if is_pointer_like_type(base)
+        guard is_pointer_like_type(base)
         {
             let inner get_inner_type(base)
-            if inner <> null
+            guard inner <> null
                 set lookup_type: *inner
         }
 
@@ -4608,14 +4608,14 @@ define Planner
                         ; Check if it's a zero-arg method (only 'this' param)
                         var param_count 0
                         var has_only_this true
-                        if method.input <> null
+                        guard method.input <> null
                         {
                             for param in method.input
                             {
                                 choose param.name
                                     when n_ref: Some
                                     {
-                                        if n_ref.equals(String$("this")) = false
+                                        guard n_ref.equals(String$("this")) = false
                                         {
                                             set has_only_this: false
                                             set param_count: param_count + 1
@@ -4802,7 +4802,7 @@ define Planner
                                         {
                                             let right (*right_ref).result_type
                                             let op_result resolve_operator_call(type_expr.name, current.loc, context, right)
-                                            if op_result <> null
+                                            guard op_result <> null
                                                 set context: *op_result
                                             set idx: idx + 2
                                             continue
@@ -4896,7 +4896,7 @@ define Planner
         var i 1 as size_t
         while i < ops.length
         {
-            if i mod 2 = 1  ; Operators are at odd indices
+            guard i mod 2 = 1  ; Operators are at odd indices
             {
                 choose ops.get(i)
                     when op_ref: Some
@@ -4905,9 +4905,9 @@ define Planner
                             when type_expr: PlannedType
                             {
                                 let prec get_operator_precedence(type_expr.name)
-                                if prec > 0
+                                guard prec > 0
                                 {
-                                    if prec <= min_prec
+                                    guard prec <= min_prec
                                     {
                                         set min_prec: prec
                                         set split_idx: i
