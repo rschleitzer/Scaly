@@ -152,6 +152,11 @@ llvm::Expected<std::optional<Module>> Modeler::loadPrelude() {
         // Parse error in prelude - this is a real error
         return ParseResult.takeError();
     }
+    if (!PreludeParser.isAtEnd()) {
+        return llvm::make_error<llvm::StringError>(
+            PreludePath + ": parse incomplete",
+            llvm::inconvertibleErrorCode());
+    }
 
     // Get directory for module building
     llvm::SmallString<256> PreludeDir(PreludePath);
@@ -1968,6 +1973,11 @@ llvm::Expected<Module> Modeler::buildReferencedModule(llvm::StringRef Path,
             FilePath.str().str() + ": " + llvm::toString(FileResult.takeError()),
             llvm::inconvertibleErrorCode());
     }
+    if (!ModuleParser.isAtEnd()) {
+        return llvm::make_error<llvm::StringError>(
+            FilePath.str().str() + ": parse incomplete",
+            llvm::inconvertibleErrorCode());
+    }
 
     // Build the module with updated path for submodule resolution
     llvm::SmallString<256> ModulePath;
@@ -2192,6 +2202,12 @@ llvm::Expected<Module> Modeler::resolvePackage(llvm::StringRef Name, const Versi
                 LoadingPackages.erase(Key);
                 return llvm::make_error<llvm::StringError>(
                     PkgPath.str().str() + ": " + llvm::toString(ParseResult.takeError()),
+                    llvm::inconvertibleErrorCode());
+            }
+            if (!PkgParser.isAtEnd()) {
+                LoadingPackages.erase(Key);
+                return llvm::make_error<llvm::StringError>(
+                    PkgPath.str().str() + ": parse incomplete",
                     llvm::inconvertibleErrorCode());
             }
 

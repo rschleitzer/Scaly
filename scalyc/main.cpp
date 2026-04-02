@@ -210,6 +210,10 @@ static int parseFile(StringRef Filename) {
         });
         return 1;
     }
+    if (!Parser.isAtEnd()) {
+        errs() << "scalyc: " << Filename << ": parse incomplete\n";
+        return 1;
+    }
 
     scaly::SyntaxDumper Dumper(outs());
     Dumper.dump(*Result);
@@ -231,6 +235,10 @@ static int modelFile(StringRef Filename) {
         handleAllErrors(ParseResult.takeError(), [&](const llvm::ErrorInfoBase &E) {
             errs() << "scalyc: " << Filename << ": " << E.message() << "\n";
         });
+        return 1;
+    }
+    if (!Parser.isAtEnd()) {
+        errs() << "scalyc: " << Filename << ": parse incomplete\n";
         return 1;
     }
 
@@ -275,6 +283,10 @@ static int planFile(StringRef Filename) {
         handleAllErrors(ParseResult.takeError(), [&](const llvm::ErrorInfoBase &E) {
             errs() << "scalyc: " << Filename << ": " << E.message() << "\n";
         });
+        return 1;
+    }
+    if (!Parser.isAtEnd()) {
+        errs() << "scalyc: " << Filename << ": parse incomplete\n";
         return 1;
     }
 
@@ -340,6 +352,10 @@ static int compileFile(StringRef Filename, StringRef OutputPath) {
         });
         return 1;
     }
+    if (!Parser.isAtEnd()) {
+        errs() << "scalyc: " << Filename << ": parse incomplete\n";
+        return 1;
+    }
 
     scaly::Modeler Modeler(Filename);
     Modeler.setEnablePrelude(!NoPrelude);
@@ -397,6 +413,10 @@ static int emitLLVMFile(StringRef Filename, StringRef OutputPath) {
         handleAllErrors(ParseResult.takeError(), [&](const llvm::ErrorInfoBase &E) {
             errs() << "scalyc: " << Filename << ": " << E.message() << "\n";
         });
+        return 1;
+    }
+    if (!Parser.isAtEnd()) {
+        errs() << "scalyc: " << Filename << ": parse incomplete\n";
         return 1;
     }
 
@@ -466,6 +486,10 @@ static int runFile(StringRef Filename, StringRef FunctionName) {
         handleAllErrors(ParseResult.takeError(), [&](const llvm::ErrorInfoBase &E) {
             errs() << "scalyc: " << Filename << ": " << E.message() << "\n";
         });
+        return 1;
+    }
+    if (!Parser.isAtEnd()) {
+        errs() << "scalyc: " << Filename << ": parse incomplete\n";
         return 1;
     }
 
@@ -618,6 +642,10 @@ static int compileToBitcode(StringRef Filename, StringRef OutputPath) {
         handleAllErrors(ParseResult.takeError(), [&](const llvm::ErrorInfoBase &E) {
             errs() << "scalyc: " << Filename << ": " << E.message() << "\n";
         });
+        return 1;
+    }
+    if (!Parser.isAtEnd()) {
+        errs() << "scalyc: " << Filename << ": parse incomplete\n";
         return 1;
     }
 

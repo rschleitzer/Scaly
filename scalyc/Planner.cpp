@@ -144,6 +144,10 @@ const Module* Planner::loadPackageOnDemand(llvm::StringRef PackageName) {
                 llvm::consumeError(ParseResult.takeError());
                 continue;  // Try next path
             }
+            if (!PkgParser.isAtEnd()) {
+                llvm::errs() << "scalyc: " << PkgPath << ": parse incomplete\n";
+                continue;  // Parse incomplete, try next path
+            }
 
             // Use Modeler to build the program model
             Modeler PkgModeler(PkgPath.str());
@@ -202,6 +206,10 @@ const Module* Planner::loadIntraPackageModule(llvm::StringRef BasePath, llvm::St
     auto ParseResult = ModParser.parseProgram();
     if (!ParseResult) {
         llvm::consumeError(ParseResult.takeError());
+        return nullptr;
+    }
+    if (!ModParser.isAtEnd()) {
+        llvm::errs() << "scalyc: " << ModulePath << ": parse incomplete\n";
         return nullptr;
     }
 
