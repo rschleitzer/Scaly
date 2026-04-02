@@ -3250,8 +3250,13 @@ llvm::Expected<llvm::Value*> Emitter::emitIntrinsicOp(
         IsSigned = false;
     }
 
-    // Pointer arithmetic: pointer + int, pointer - int
+    // Pointer comparisons are unsigned
     bool LeftIsPtr = Left->getType()->isPointerTy();
+    if (LeftIsPtr && Right->getType()->isPointerTy()) {
+        IsSigned = false;
+    }
+
+    // Pointer arithmetic: pointer + int, pointer - int
     bool RightIsInt = Right->getType()->isIntegerTy();
 
     if (LeftIsPtr && RightIsInt) {

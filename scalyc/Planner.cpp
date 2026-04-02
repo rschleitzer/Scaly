@@ -3028,10 +3028,11 @@ std::optional<Planner::OperatorMatch> Planner::findOperator(
         }
     }
 
-    // Pointer comparison: pointer[T] == pointer[T] returns bool
+    // Pointer comparison: pointer[T] op pointer[T] returns bool
     if (IsPointerType && Right.Name == "pointer") {
         std::string OpName = Name.str();
-        if (OpName == "=" || OpName == "==" || OpName == "<>" || OpName == "!=") {
+        if (OpName == "=" || OpName == "==" || OpName == "<>" || OpName == "!=" ||
+            OpName == "<" || OpName == ">" || OpName == "<=" || OpName == ">=") {
             OperatorMatch Match;
             Match.Op = nullptr;
             Match.IsIntrinsic = true;
