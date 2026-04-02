@@ -1943,13 +1943,22 @@ llvm::Expected<Module> Modeler::buildReferencedModule(llvm::StringRef Path,
     }
     FilePath += ".scaly";
 
-    // Read the file
+    // Read the file — if not found, check if this module was loaded from
+    // a different directory (cross-namespace sibling module resolution)
     auto BufOrErr = llvm::MemoryBuffer::getFile(FilePath);
     if (!BufOrErr) {
+        auto DirIt = KnownModuleDirs.find(Name.str());
+        if (DirIt != KnownModuleDirs.end() && DirIt->second != Path.str()) {
+            // Re-resolve from the directory where this module was originally found
+            return buildReferencedModule(DirIt->second, Name, Private);
+        }
         return llvm::make_error<llvm::StringError>(
             "cannot open module file: " + FilePath.str().str(),
             BufOrErr.getError());
     }
+
+    // Cache the directory for cross-namespace resolution
+    KnownModuleDirs[Name.str()] = Path.str();
 
     // Parse the file
     Parser ModuleParser((*BufOrErr)->getBuffer());

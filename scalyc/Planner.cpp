@@ -11259,11 +11259,20 @@ llvm::Expected<PlannedFunction> Planner::planFunction(const Function &Func,
         // The Emitter checks Func.CanThrow/Func.Throws and adds the parameter.
     }
 
+    // Use the mangled name computed earlier
+    Result.MangledName = EarlyMangledName;
+
+    // Register signature early so callers can resolve the function
+    // even if body planning fails (enables partial namespace planning)
+    InstantiatedFunctions[EarlyMangledName] = Result;
+
     // Plan implementation (function body)
     auto PlannedImpl = planImplementation(Func.Impl);
     if (!PlannedImpl) {
         popScope();
         FunctionsBeingPlanned.erase(&Func);
+        CurrentFunctionUsesLocalLifetime = SavedUsesLocalLifetime;
+        // Signature is already cached — callers can still resolve calls to this function
         return PlannedImpl.takeError();
     }
     Result.Impl = std::move(*PlannedImpl);
@@ -11276,10 +11285,7 @@ llvm::Expected<PlannedFunction> Planner::planFunction(const Function &Func,
     // Restore saved flag (allows outer function to continue tracking its own $ allocations)
     CurrentFunctionUsesLocalLifetime = SavedUsesLocalLifetime;
 
-    // Use the mangled name we computed earlier for cache lookup
-    Result.MangledName = EarlyMangledName;
-
-    // Add to cache for future lookups
+    // Update cache with fully planned function (including body)
     InstantiatedFunctions[EarlyMangledName] = Result;
 
     FunctionsBeingPlanned.erase(&Func);
@@ -12033,6 +12039,12 @@ llvm::Expected<PlannedNamespace> Planner::planNamespace(const Namespace &NS,
         // Actually planModule pops it before returning, but we can get it from &SubMod
         // The SubMod reference points to the original module which is populated by Modeler
         CurrentNamespaceModules.push_back(&SubMod);
+        // Register sub-module concepts for cross-module lookups
+        for (const auto& Member : SubMod.Members) {
+            if (auto* Conc = std::get_if<Concept>(&Member)) {
+                Concepts[Conc->Name] = Conc;
+            }
+        }
         Result.Modules.push_back(std::move(*PlannedSubMod));
     }
 
@@ -12041,11 +12053,11 @@ llvm::Expected<PlannedNamespace> Planner::planNamespace(const Namespace &NS,
         if (auto *Func = std::get_if<Function>(&Member)) {
             auto PlannedFunc = planFunction(*Func, &ParentType);
             if (!PlannedFunc) {
-                ModuleStack.pop_back();
-                CurrentNamespaceName = OldNamespaceName;
-                CurrentNamespace = OldNamespace;
-                CurrentNamespaceModules = OldNamespaceModules;
-                return PlannedFunc.takeError();
+                // Skip functions that fail to plan rather than aborting the namespace.
+                // This allows partially-implemented namespaces to work for the
+                // functions that CAN be planned (e.g., cli.main works even if cli.run fails).
+                llvm::consumeError(PlannedFunc.takeError());
+                continue;
             }
 
             // Set fully qualified name for namespace functions

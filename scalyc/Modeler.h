@@ -39,6 +39,7 @@ private:
     std::vector<std::string> PackageSearchPaths;
     std::set<std::string> LoadingPackages;  // For circular dependency detection
     std::map<std::string, Package> ResolvedPackages;  // Cache of resolved packages
+    std::map<std::string, std::string> KnownModuleDirs;  // module name → dir where it was found
     bool EnablePrelude = true;  // Auto-load prelude unless disabled
 
     // Load prelude module if enabled and available

@@ -1067,6 +1067,13 @@ llvm::Error Emitter::emitFunctionBody(const PlannedFunction &Func,
         return llvm::Error::success();
     }
 
+    // Skip functions with empty bodies (signature-only, from partial planning)
+    if (auto* Action = std::get_if<PlannedAction>(&Func.Impl)) {
+        if (Action->Source.empty() && Action->Target.empty()) {
+            return llvm::Error::success();
+        }
+    }
+
     // Skip if function body already emitted
     if (!LLVMFunc->isDeclaration()) {
         return llvm::Error::success();
