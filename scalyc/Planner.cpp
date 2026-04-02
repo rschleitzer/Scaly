@@ -6712,13 +6712,40 @@ llvm::Expected<PlannedOperand> Planner::planOperand(const Operand &Op) {
                 ResultOp.ResultType = PtrType;
                 return ResultOp;
             }
+            // Check if the name is a local variable - local variables
+            // (including parameters and when-bound variables) should be resolved
+            // as variables, not left as type references.
+            auto LocalBind = lookupLocalBinding(Name);
+            if (LocalBind) {
+                // Found as local variable - return it as a PlannedVariable
+                PlannedOperand ResultOp;
+                ResultOp.Loc = Op.Loc;
+                PlannedVariable Var;
+                Var.Loc = Op.Loc;
+                Var.Name = Name;
+                Var.VariableType = LocalBind->Type;
+                Var.IsMutable = LocalBind->IsMutable;
+                ResultOp.Expr = std::move(Var);
+                ResultOp.ResultType = LocalBind->Type;
+
+                // Apply explicit member access if present
+                if (Op.MemberAccess && !Op.MemberAccess->empty()) {
+                    auto MemberChain = resolveMemberAccessChain(ResultOp.ResultType,
+                                                                 *Op.MemberAccess, Op.Loc);
+                    if (!MemberChain) {
+                        return MemberChain.takeError();
+                    }
+                    ResultOp.MemberAccess = std::make_shared<std::vector<PlannedMemberAccess>>(
+                        std::move(*MemberChain));
+                    if (!ResultOp.MemberAccess->empty()) {
+                        ResultOp.ResultType = ResultOp.MemberAccess->back().ResultType;
+                    }
+                }
+                return ResultOp;
+            }
             // Check for implicit property access: when 'data' is used in a method body,
             // it should become 'this.data'. But ONLY if 'this' is actually in scope.
-            // This guards against context mismatches during recursive planning.
-            // IMPORTANT: Check if the name is a local variable first - local variables
-            // (including parameters) should shadow properties with the same name.
-            auto LocalBind = lookupLocalBinding(Name);
-            if (!LocalBind) {
+            {
                 auto ThisType = lookupLocal("this");
                 if (CurrentStructureProperties && ThisType) {
                     // Extract base name from CurrentStructureName for generic types

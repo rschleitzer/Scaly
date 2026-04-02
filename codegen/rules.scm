@@ -18,6 +18,9 @@
         (file "packages/scalyc/0.1.0/scalyc/compiler/Syntax.scaly"
             (generate-syntax-scaly)
         )
+        (file "packages/scalyc/0.1.0/scalyc/compiler/parser.scaly"
+            (generate-parser-scaly)
+        )
     )
 )
 ]]>
