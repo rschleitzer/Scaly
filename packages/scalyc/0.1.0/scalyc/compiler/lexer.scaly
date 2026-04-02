@@ -978,7 +978,7 @@ define lexer
             choose lexer.token
                 when ident: Identifier
                 {
-                    guard ident.name.equals(String$("abc_123")) = false
+                    guard ident.name.equals("abc_123") = false
                     {
                         return 3
                     }

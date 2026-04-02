@@ -2937,6 +2937,11 @@ std::optional<Planner::OperatorMatch> Planner::findOperator(
         } else if (BitwiseOps.count(OpName) && Left.Name != "f64" && Left.Name != "f32") {
             // Bitwise ops only on integers
             IsValidOp = true;
+        } else if ((OpName == "&&" || OpName == "||") && Left.Name == "bool" && Right.Name == "bool") {
+            // Logical operators on booleans
+            IsValidOp = true;
+            ResultType.Name = "bool";
+            ResultType.MangledName = "bool";
         }
 
         if (IsValidOp) {

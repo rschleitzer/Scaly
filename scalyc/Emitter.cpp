@@ -2505,8 +2505,8 @@ llvm::Expected<llvm::Value*> Emitter::emitOperand(const PlannedOperand &Op) {
                     "union.data.cast"
                 );
 
-                // Load the value
-                Value = Builder->CreateLoad(ResultTy, DataCast, "union.value");
+                // Load the value (align 1 because data is at offset 1 after i8 tag)
+                Value = Builder->CreateAlignedLoad(ResultTy, DataCast, llvm::Align(1), "union.value");
                 continue;
             }
 
@@ -2835,12 +2835,13 @@ llvm::Expected<llvm::Value*> Emitter::emitCall(const PlannedCall &Call) {
                     UnionTy, OptionValue, 1, "unwrap.payload.ptr");
 
                 // For reference types (pointer result), just load the pointer from payload
+                // Use align 1 because payload is at offset 1 (after i8 tag)
                 if (ResultTy->isPointerTy()) {
-                    return Builder->CreateLoad(ResultTy, PayloadPtr, "unwrap.ptr");
+                    return Builder->CreateAlignedLoad(ResultTy, PayloadPtr, llvm::Align(1), "unwrap.ptr");
                 }
 
                 // For value types, load from the payload area
-                return Builder->CreateLoad(ResultTy, PayloadPtr, "unwrap.value");
+                return Builder->CreateAlignedLoad(ResultTy, PayloadPtr, llvm::Align(1), "unwrap.value");
             } else {
                 // NPO Option - Args[0] is a pointer to the Option storage location
                 // For Option[ref[T]], the storage contains a pointer (T*), so Args[0] is T**
@@ -3368,6 +3369,14 @@ llvm::Expected<llvm::Value*> Emitter::emitIntrinsicOp(
         if (IsSigned)
             return Builder->CreateICmpSGE(Left, Right, "icmp_sge");
         return Builder->CreateICmpUGE(Left, Right, "icmp_uge");
+    }
+
+    // Logical operators (on i1 booleans, equivalent to bitwise)
+    if (OpName == "&&") {
+        return Builder->CreateAnd(Left, Right, "land");
+    }
+    if (OpName == "||") {
+        return Builder->CreateOr(Left, Right, "lor");
     }
 
     // Bitwise operators
@@ -3931,10 +3940,12 @@ llvm::Expected<llvm::Value*> Emitter::emitChoose(const PlannedChoose &Choose) {
                 llvm::PointerType::getUnqual(VarTy),
                 "variant.data.cast"
             );
-            llvm::Value *VarValue = Builder->CreateLoad(VarTy, DataCast, "variant.val");
+            // Use align 1 because the data area is at offset 1 (after the i8 tag)
+            // in the union struct, so it may not be naturally aligned
+            auto *VarLoad = Builder->CreateAlignedLoad(VarTy, DataCast, llvm::Align(1), "variant.val");
 
             // Bind the value to the variable name
-            LocalVariables[When.Name] = VarValue;
+            LocalVariables[When.Name] = VarLoad;
         }
 
         llvm::Value *CaseValue = nullptr;
@@ -5288,7 +5299,9 @@ llvm::Expected<llvm::Value*> Emitter::emitVariantConstruction(
             llvm::PointerType::getUnqual(ValueTy),
             "variant.data.cast"
         );
-        Builder->CreateStore(Value, DataCast);
+        // Use align 1 because the data area is at offset 1 (after the i8 tag)
+        // in the union struct, so it may not be naturally aligned
+        Builder->CreateAlignedStore(Value, DataCast, llvm::Align(1));
     }
 
     // Load and return the union value
