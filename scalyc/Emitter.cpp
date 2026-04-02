@@ -1032,23 +1032,18 @@ llvm::Function *Emitter::emitFunctionDecl(const PlannedFunction &Func) {
         if (Item.ItemType) {
             llvm::Type *ItemTy = mapType(*Item.ItemType);
             if (ItemTy->isStructTy() || ItemTy->isArrayTy()) {
-                // Borrowed parameter: noalias, readonly (for functions)
-                if (Func.Pure) {
-                    LLVMFunc->addParamAttr(ParamIdx, llvm::Attribute::ReadOnly);
-                }
+                // Note: readonly is NOT added here because the Scaly compiler
+                // does not yet enforce purity - a "function" may call procedures
+                // that mutate its parameters (e.g., scan_identifier calls
+                // read_character). Adding readonly would let LLVM cache loads
+                // and skip reloading after mutation, causing data corruption.
             }
         }
         ParamIdx++;
     }
 
-    // Set function attributes
-    if (Func.Pure) {
-        LLVMFunc->setDoesNotThrow();
-        // Pure functions don't access global state (for functions without exceptions)
-        if (!Func.Throws) {
-            LLVMFunc->setOnlyAccessesArgMemory();
-        }
-    }
+    // No function attributes — purity enforcement is not yet implemented,
+    // so nounwind/memory attributes on "pure" functions are unsafe.
 
     FunctionCache[Func.MangledName] = LLVMFunc;
 
@@ -5463,7 +5458,28 @@ llvm::Expected<llvm::Value*> Emitter::emitTuple(const PlannedTuple &Tuple) {
     unsigned NumStructFields = TupleTy->getNumElements();
     for (size_t i = 0; i < ComponentValues.size() && i < NumStructFields; ++i) {
         llvm::Value *FieldPtr = Builder->CreateStructGEP(TupleTy, TuplePtr, i, "tuple.field");
-        Builder->CreateStore(ComponentValues[i], FieldPtr);
+        llvm::Value *Val = ComponentValues[i];
+        // When a region-allocated init# result (e.g. String#()) is used as a
+        // component in struct construction, the LLVM value is a pointer to the
+        // page-allocated struct but the field expects the struct value.
+        // Detect this: the component's expression is a PlannedCall that is a
+        // region-allocated constructor (RequiresPageParam + non-stack Life).
+        if (Val->getType()->isPointerTy() && i < Tuple.Components.size()) {
+            const auto &Comp = Tuple.Components[i];
+            if (!Comp.Value.empty()) {
+                const auto &LastOp = Comp.Value.back();
+                if (auto *Call = std::get_if<PlannedCall>(&LastOp.Expr)) {
+                    if (Call->RequiresPageParam &&
+                        !std::holds_alternative<UnspecifiedLifetime>(Call->Life)) {
+                        llvm::Type *FieldTy = TupleTy->getElementType(i);
+                        if (FieldTy->isStructTy()) {
+                            Val = Builder->CreateLoad(FieldTy, Val, "field.load");
+                        }
+                    }
+                }
+            }
+        }
+        Builder->CreateStore(Val, FieldPtr);
     }
 
     // Initialize remaining fields with null/zero values (for struct constructors with defaults)

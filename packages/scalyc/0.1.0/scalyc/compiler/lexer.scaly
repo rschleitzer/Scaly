@@ -214,7 +214,7 @@ define lexer
             skip_whitespace(false)
         }
 
-        function scan_line_feed(this) returns Token
+        procedure scan_line_feed(this) returns Token
         {
             ; We just saw a \n, advance past it
             read_character()
@@ -253,7 +253,7 @@ define lexer
             }
         }
 
-        function scan_identifier(this) returns Token
+        procedure scan_identifier(this) returns Token
         {
             let start current
             var length: size_t 0
@@ -280,7 +280,7 @@ define lexer
             }
         }
 
-        function scan_attribute(this) returns Token
+        procedure scan_attribute(this) returns Token
         {
             let start current
             var length: size_t 0
@@ -307,7 +307,7 @@ define lexer
             }
         }
 
-        function scan_operator(this) returns Token
+        procedure scan_operator(this) returns Token
         {
             let start current
             var length: size_t 0
@@ -335,7 +335,7 @@ define lexer
             }
         }
 
-        function scan_string_literal(this) returns Token
+        procedure scan_string_literal(this) returns Token
         {
             let start current + 1
             var length: size_t 0
@@ -401,7 +401,7 @@ define lexer
         }
 
         ; Single-quoted strings are freeform identifiers (like SQL's 'column name')
-        function scan_string_identifier(this) returns Token
+        procedure scan_string_identifier(this) returns Token
         {
             let start current + 1
             var length: size_t 0
@@ -466,7 +466,7 @@ define lexer
             }
         }
 
-        function scan_fragment_literal(this) returns Token
+        procedure scan_fragment_literal(this) returns Token
         {
             let start current + 1
             var length: size_t 0
@@ -510,7 +510,7 @@ define lexer
             }
         }
 
-        function scan_numeric_literal(this) returns Token
+        procedure scan_numeric_literal(this) returns Token
         {
             let start current
             var length: size_t 0
@@ -553,7 +553,7 @@ define lexer
             return Token.Literal(LiteralToken(Literal.Integer(IntegerLiteral(String#(start, length)))))
         }
 
-        function scan_integer_literal(this, start: pointer[char], initial_length: size_t) returns Token
+        procedure scan_integer_literal(this, start: pointer[char], initial_length: size_t) returns Token
         {
             var length initial_length
 
@@ -588,7 +588,7 @@ define lexer
             }
         }
 
-        function scan_fraction(this, start: pointer[char], initial_length: size_t) returns Token
+        procedure scan_fraction(this, start: pointer[char], initial_length: size_t) returns Token
         {
             var length initial_length
 
@@ -618,7 +618,7 @@ define lexer
             }
         }
 
-        function scan_exponent(this, start: pointer[char], initial_length: size_t) returns Token
+        procedure scan_exponent(this, start: pointer[char], initial_length: size_t) returns Token
         {
             var length initial_length
 
@@ -643,7 +643,7 @@ define lexer
             }
         }
 
-        function scan_hex_literal(this, start: pointer[char], initial_length: size_t) returns Token
+        procedure scan_hex_literal(this, start: pointer[char], initial_length: size_t) returns Token
         {
             var length initial_length
 
@@ -668,7 +668,7 @@ define lexer
             }
         }
 
-        function scan_boolean_literal(this) returns Token
+        procedure scan_boolean_literal(this) returns Token
         {
             read_character()
 
@@ -828,7 +828,7 @@ define lexer
         }
 
         ; Parser helper: parse keyword
-        function parse_keyword(this, keyword: String) returns bool
+        procedure parse_keyword(this, keyword: String) returns bool
         {
             choose token
                 when e: Empty
@@ -850,7 +850,7 @@ define lexer
         }
 
         ; Parser helper: parse identifier, returns empty string if not found
-        function parse_identifier#(page, this) returns String
+        procedure parse_identifier#(page, this) returns String
         {
             choose token
                 when e: Empty
@@ -870,7 +870,7 @@ define lexer
         }
 
         ; Parser helper: peek identifier without consuming
-        function peek_identifier#(page, this) returns String
+        procedure peek_identifier#(page, this) returns String
         {
             choose token
                 when e: Empty
@@ -886,7 +886,7 @@ define lexer
         }
 
         ; Parser helper: parse attribute
-        function parse_attribute#(page, this) returns String
+        procedure parse_attribute#(page, this) returns String
         {
             choose token
                 when e: Empty
@@ -906,7 +906,7 @@ define lexer
         }
 
         ; Parser helper: parse punctuation
-        function parse_punctuation(this, c: u8) returns bool
+        procedure parse_punctuation(this, c: u8) returns bool
         {
             choose token
                 when e: Empty
@@ -928,7 +928,7 @@ define lexer
         }
 
         ; Parser helper: parse colon
-        function parse_colon(this) returns bool
+        procedure parse_colon(this) returns bool
         {
             choose token
                 when e: Empty
