@@ -395,6 +395,7 @@ private:
 
     // Check if a name refers to a function (vs variable/type)
     bool isFunction(llvm::StringRef Name);
+    bool isNamespaceSiblingFunction(llvm::StringRef Name);
 
     // Check if a name refers to an operator
     bool isOperatorName(llvm::StringRef Name);

@@ -1290,6 +1290,16 @@ bool Planner::isFunction(llvm::StringRef Name) {
     return !lookupFunction(Name).empty();
 }
 
+bool Planner::isNamespaceSiblingFunction(llvm::StringRef Name) {
+    if (CurrentNamespaceName.empty() || !CurrentNamespace) return false;
+    for (const auto& Member : CurrentNamespace->Members) {
+        if (auto* Func = std::get_if<Function>(&Member)) {
+            if (Func->Name == Name) return true;
+        }
+    }
+    return false;
+}
+
 bool Planner::isOperatorName(llvm::StringRef Name) {
     if (Name.empty()) return false;
 
@@ -6999,7 +7009,6 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                 if (TypeExpr->Name.size() >= 2 && (!TypeExpr->Generics || TypeExpr->Generics->empty())) {
                     // Check if first element is a local variable or a property
                     auto BindInfo = checkLocalOrProperty(TypeExpr->Name[0]);
-
                     // Check for: variable.method(args) OR variable.method#(args)
                     // In the second case, NextOp is a Lifetime and args are in ProcessedOps[i + 2]
                     bool HasArgsDirectly = std::holds_alternative<Tuple>(NextOp.Expr);
@@ -7392,7 +7401,6 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                     std::holds_alternative<Tuple>(NextOp.Expr)) {
                     const std::string& AliasName = TypeExpr->Name[0];
                     const std::string& FuncName = TypeExpr->Name[1];
-
                     // Search Use statements in the module stack
                     const Function* UseFunc = nullptr;
                     for (auto It = ModuleStack.rbegin(); It != ModuleStack.rend() && !UseFunc; ++It) {
@@ -7402,6 +7410,8 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                             if (!Use.Path.empty() && Use.Path.back() == AliasName) {
                                 // Found a matching use import - resolve the namespace
                                 const Concept* UseConcept = lookupConcept(AliasName);
+
+
                                 if (UseConcept) {
                                     // Look for the function in the namespace
                                     if (auto* NS = std::get_if<Namespace>(&UseConcept->Def)) {
@@ -7541,6 +7551,54 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                 }
             }
         }
+
+        // Fallback for 2-component qualified calls: search InstantiatedFunctions
+        // for already-planned functions (e.g., cli.main from "use scalyc.cli")
+        if (i + 1 < ProcessedOps.size()) {
+            const auto &NextOp = ProcessedOps[i + 1];
+            if (auto* TypeExpr = std::get_if<Type>(&Op.Expr)) {
+                if (TypeExpr->Name.size() == 2 && (!TypeExpr->Generics || TypeExpr->Generics->empty()) &&
+                    std::holds_alternative<Tuple>(NextOp.Expr)) {
+                    std::string QualifiedName = TypeExpr->Name[0] + "." + TypeExpr->Name[1];
+                    for (const auto& [MName, PFunc] : InstantiatedFunctions) {
+                        if (PFunc.Name == QualifiedName) {
+                            Operand ArgsOp = NextOp;
+                            ArgsOp.MemberAccess = nullptr;
+                            auto PlannedArgs = planOperand(ArgsOp);
+                            if (!PlannedArgs) return PlannedArgs.takeError();
+
+                            PlannedCall Call;
+                            Call.Loc = Op.Loc;
+                            Call.Name = TypeExpr->Name[1];
+                            Call.MangledName = PFunc.MangledName;
+                            Call.IsIntrinsic = false;
+                            Call.IsOperator = false;
+                            Call.CanThrow = PFunc.CanThrow;
+                            if (PFunc.Throws) Call.ThrowsType = PFunc.Throws;
+                            if (PFunc.Returns) Call.ResultType = *PFunc.Returns;
+
+                            Call.Args = std::make_shared<std::vector<PlannedOperand>>();
+                            if (auto* TupleExpr = std::get_if<PlannedTuple>(&PlannedArgs->Expr)) {
+                                for (auto& Comp : TupleExpr->Components) {
+                                    for (auto& ValOp : Comp.Value)
+                                        Call.Args->push_back(std::move(ValOp));
+                                }
+                            }
+
+                            PlannedOperand CallOp;
+                            CallOp.Loc = Op.Loc;
+                            CallOp.Expr = std::move(Call);
+                            if (PFunc.Returns) CallOp.ResultType = *PFunc.Returns;
+
+                            Result.push_back(std::move(CallOp));
+                            i++;
+                            goto next_qualified_call;
+                        }
+                    }
+                }
+            }
+        }
+        if (false) { next_qualified_call: continue; }
 
         // Check for method call pattern on any operand with member access
         // e.g., (*page).reset() where (*page) is a grouped dereference expression
@@ -8901,7 +8959,18 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                     }
 
                     // Check if it's a known function (not a struct/concept)
-                    if (isFunction(FuncName) && (HasFuncArgsDirectly || HasFuncLifetimeThenArgs || HasSingleArgWithoutParens)) {
+                    // Also recognize namespace sibling functions for unqualified calls:
+                    // greet() has no MemberAccess, while array.get_buffer() does
+                    bool IsKnownFunction = isFunction(FuncName);
+                    bool CouldBeNamespaceSibling = false;
+                    if (!IsKnownFunction && !Op.MemberAccess && HasFuncArgsDirectly) {
+                        auto BindInfo = checkLocalOrProperty(FuncName);
+                        if (!BindInfo.IsLocal && !BindInfo.IsProperty) {
+                            CouldBeNamespaceSibling = isNamespaceSiblingFunction(FuncName);
+                        }
+                    }
+
+                    if ((IsKnownFunction || CouldBeNamespaceSibling) && (HasFuncArgsDirectly || HasFuncLifetimeThenArgs || HasSingleArgWithoutParens)) {
                         // This is function(args) or function#(args) or function arg - create a function call
 
                         // Plan the arguments
@@ -8950,6 +9019,34 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
 
                         // Resolve the function call to get return type and match function
                         auto FuncResult = resolveFunctionCall(FuncName, Op.Loc, ArgTypes);
+                        if (!FuncResult && CouldBeNamespaceSibling) {
+                            // resolveFunctionCall doesn't search namespace members;
+                            // resolve return type directly from the declaration
+                            llvm::consumeError(FuncResult.takeError());
+                            bool FoundNsSibling = false;
+                            for (const auto& NsMember : CurrentNamespace->Members) {
+                                if (auto* NsFunc = std::get_if<Function>(&NsMember)) {
+                                    if (NsFunc->Name == FuncName &&
+                                        NsFunc->Parameters.empty() &&
+                                        NsFunc->Input.size() == ArgTypes.size()) {
+                                        if (NsFunc->Returns) {
+                                            FuncResult = resolveType(*NsFunc->Returns, Op.Loc);
+                                        } else {
+                                            PlannedType VoidType;
+                                            VoidType.Name = "void";
+                                            VoidType.MangledName = "v";
+                                            FuncResult = std::move(VoidType);
+                                        }
+                                        FoundNsSibling = true;
+                                        break;
+                                    }
+                                }
+                            }
+                            if (!FoundNsSibling) {
+                                FuncResult = makePlannerNotImplementedError(File, Op.Loc,
+                                    "namespace function not found: " + FuncName);
+                            }
+                        }
                         if (!FuncResult) {
                             return FuncResult.takeError();
                         }

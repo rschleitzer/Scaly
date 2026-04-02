@@ -1,0 +1,17 @@
+; AOT Test: Namespace sibling function call
+; Expected: 42
+
+define helper
+{
+    function greet() returns int
+        42
+
+    function test() returns int
+        greet()
+}
+
+let result helper.test()
+if result = 42
+    print("42")
+else
+    print("WRONG")
