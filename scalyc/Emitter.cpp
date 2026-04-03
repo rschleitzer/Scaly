@@ -2571,8 +2571,15 @@ llvm::Expected<llvm::Value*> Emitter::emitExpression(const PlannedExpression &Ex
                 );
             }
             if (E.IsMutable) {
-                // Mutable binding stored as pointer - load the value
+                // Mutable binding stored via alloca - load the stored value
+                // For heap-allocated objects ($/#/^ allocations), the alloca holds a pointer;
+                // load as ptr to get the heap pointer (not as struct which misinterprets it)
                 llvm::Type *Ty = mapType(E.VariableType);
+                if (auto *AI = llvm::dyn_cast<llvm::AllocaInst>(VarPtr)) {
+                    if (AI->getAllocatedType()->isPointerTy() && Ty->isStructTy()) {
+                        Ty = AI->getAllocatedType();  // Load as ptr, not struct
+                    }
+                }
                 return Builder->CreateLoad(Ty, VarPtr, E.Name);
             } else {
                 // Immutable binding stored as value directly
@@ -2708,12 +2715,21 @@ llvm::Expected<llvm::Value*> Emitter::emitCall(const PlannedCall &Call) {
                     }
                     // Check if argument is a mutable variable of struct type (not pointer type)
                     // Pass the original alloca pointer so mutations are visible to caller
+                    // But NOT for heap-allocated objects ($/#/^ allocations) stored as pointers —
+                    // those need to be loaded first since the alloca holds a pointer, not the struct
                     else if (auto *Var = std::get_if<PlannedVariable>(&Arg.Expr)) {
                         if (Var->IsMutable && !Var->VariableType.isPointer()) {
                             llvm::Value *VarPtr = lookupVariable(Var->Name);
                             if (VarPtr && VarPtr->getType()->isPointerTy()) {
-                                Args.push_back(VarPtr);
-                                PassedPointerDirectly = true;
+                                // Check if the alloca holds a pointer (heap allocation) vs struct value
+                                bool IsHeapAlloc = false;
+                                if (auto *AI = llvm::dyn_cast<llvm::AllocaInst>(VarPtr)) {
+                                    IsHeapAlloc = AI->getAllocatedType()->isPointerTy();
+                                }
+                                if (!IsHeapAlloc) {
+                                    Args.push_back(VarPtr);
+                                    PassedPointerDirectly = true;
+                                }
                             }
                         }
                     }
