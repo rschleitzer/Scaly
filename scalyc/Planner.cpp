@@ -7008,11 +7008,37 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                         CombinedOp.Loc = Op.Loc;
                         CombinedOp.Expr = CombinedType;
                         CombinedOp.MemberAccess = Op.MemberAccess;
+
+                        // Flatten current-namespace-qualified function calls: e.g., cli.parse_args# -> parse_args#
+                        // Only when inside the named namespace and followed by a Tuple (function call)
+                        // Note: i+1 is the Lifetime (already consumed), i+2 is the Tuple
+                        if (CombinedType.Name.size() == 2 && i + 2 < Ops.size() &&
+                            std::holds_alternative<Tuple>(Ops[i + 2].Expr) &&
+                            !CurrentNamespaceName.empty() && CombinedType.Name[0] == CurrentNamespaceName) {
+                            CombinedType.Name = {CombinedType.Name[1]};
+                            CombinedOp.Expr = CombinedType;
+                        }
+
                         ProcessedOps.push_back(std::move(CombinedOp));
                         i++;  // Skip the Lifetime operand
                         continue;
                     }
                 }
+            }
+        }
+
+        // Flatten current-namespace-qualified function calls: e.g., cli.print_usage() -> print_usage()
+        // Only when inside the named namespace and followed by a Tuple (function call)
+        if (auto* TypeExpr = std::get_if<Type>(&Op.Expr)) {
+            if (TypeExpr->Name.size() == 2 && (!TypeExpr->Generics || TypeExpr->Generics->empty()) &&
+                i + 1 < Ops.size() && std::holds_alternative<Tuple>(Ops[i + 1].Expr) &&
+                !CurrentNamespaceName.empty() && TypeExpr->Name[0] == CurrentNamespaceName) {
+                Operand FlatOp = Op;
+                Type FlatType = *TypeExpr;
+                FlatType.Name = {TypeExpr->Name[1]};
+                FlatOp.Expr = FlatType;
+                ProcessedOps.push_back(std::move(FlatOp));
+                continue;
             }
         }
 
