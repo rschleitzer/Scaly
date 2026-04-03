@@ -1224,16 +1224,17 @@ llvm::Error Emitter::emitFunctionBody(const PlannedFunction &Func,
             if (SretPtr && ReturnValue) {
                 if (ReturnValue->getType()->isStructTy()) {
                     Builder->CreateStore(ReturnValue, SretPtr);
-                } else {
-                    // Non-struct value being returned via sret (single field)
+                } else if (ReturnValue->getType()->isPointerTy()) {
+                    // Pointer to struct being returned via sret - load and copy
                     llvm::Type *SRetTy = LLVMFunc->getParamStructRetType(0);
-                    if (SRetTy && SRetTy->isStructTy()) {
-                        llvm::Value *FieldPtr = Builder->CreateStructGEP(
-                            SRetTy, SretPtr, 0, "sret.field");
-                        Builder->CreateStore(ReturnValue, FieldPtr);
+                    if (SRetTy) {
+                        llvm::Value *Loaded = Builder->CreateLoad(SRetTy, ReturnValue, "sret.load");
+                        Builder->CreateStore(Loaded, SretPtr);
                     } else {
                         Builder->CreateStore(ReturnValue, SretPtr);
                     }
+                } else {
+                    Builder->CreateStore(ReturnValue, SretPtr);
                 }
             }
             Builder->CreateRetVoid();
