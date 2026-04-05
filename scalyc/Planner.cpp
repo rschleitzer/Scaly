@@ -8987,6 +8987,7 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                     // NextOp must be a value expression, not an operator or tuple
                     bool HasSingleArgWithoutParens = false;
 
+                    // For known functions, check extended arg patterns
                     if (!HasFuncArgsDirectly && isFunction(FuncName)) {
                         // Check if NextOp is a lifetime marker (Type with empty name and non-Unspecified lifetime)
                         if (auto* LifeType = std::get_if<Type>(&NextOp.Expr)) {
@@ -9014,10 +9015,32 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                     // greet() has no MemberAccess, while array.get_buffer() does
                     bool IsKnownFunction = isFunction(FuncName);
                     bool CouldBeNamespaceSibling = false;
-                    if (!IsKnownFunction && !Op.MemberAccess && HasFuncArgsDirectly) {
-                        auto BindInfo = checkLocalOrProperty(FuncName);
-                        if (!BindInfo.IsLocal && !BindInfo.IsProperty) {
-                            CouldBeNamespaceSibling = isNamespaceSiblingFunction(FuncName);
+                    if (!IsKnownFunction && !Op.MemberAccess) {
+                        // Check namespace siblings for func() and func#() patterns only
+                        // (not func arg — that could misinterpret variable references)
+                        bool HasArgsPattern = HasFuncArgsDirectly;
+                        if (!HasArgsPattern) {
+                            if (auto* LifeType = std::get_if<Type>(&NextOp.Expr)) {
+                                if (LifeType->Name.empty() && !std::holds_alternative<UnspecifiedLifetime>(LifeType->Life)) {
+                                    if (i + 2 < ProcessedOps.size() && std::holds_alternative<Tuple>(ProcessedOps[i + 2].Expr)) {
+                                        HasArgsPattern = true;
+                                    }
+                                }
+                            }
+                        }
+                        if (HasArgsPattern) {
+                            auto BindInfo = checkLocalOrProperty(FuncName);
+                            if (!BindInfo.IsLocal && !BindInfo.IsProperty) {
+                                CouldBeNamespaceSibling = isNamespaceSiblingFunction(FuncName);
+                                // Set up lifetime-then-args for namespace sibling func#() calls
+                                if (CouldBeNamespaceSibling && !HasFuncArgsDirectly) {
+                                    if (auto* LifeType = std::get_if<Type>(&NextOp.Expr)) {
+                                        HasFuncLifetimeThenArgs = true;
+                                        FuncCallLifetime = LifeType->Life;
+                                        FuncArgsIndex = i + 2;
+                                    }
+                                }
+                            }
                         }
                     }
 
@@ -9077,9 +9100,15 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                             bool FoundNsSibling = false;
                             for (const auto& NsMember : CurrentNamespace->Members) {
                                 if (auto* NsFunc = std::get_if<Function>(&NsMember)) {
+                                    // Discount implicit 'this' parameter when matching arg count
+                                    size_t ExplicitInputCount = NsFunc->Input.size();
+                                    if (!NsFunc->Input.empty() && NsFunc->Input[0].Name &&
+                                        *NsFunc->Input[0].Name == "this") {
+                                        ExplicitInputCount--;
+                                    }
                                     if (NsFunc->Name == FuncName &&
                                         NsFunc->Parameters.empty() &&
-                                        NsFunc->Input.size() == ArgTypes.size()) {
+                                        ExplicitInputCount == ArgTypes.size()) {
                                         if (NsFunc->Returns) {
                                             FuncResult = resolveType(*NsFunc->Returns, Op.Loc);
                                         } else {
