@@ -1434,6 +1434,11 @@ llvm::Error Emitter::emitInitializerBody(const PlannedStructure &Struct,
         ++ArgIt;
     }
 
+    // Allocate local page if the initializer body has $ allocations
+    if (Init.NeedsLocalPage && PageAllocatePage) {
+        CurrentRegion.LocalPage = Builder->CreateCall(PageAllocatePage, {}, "local_page");
+    }
+
     // Bind additional parameters
     for (const auto &Item : Init.Input) {
         if (Item.Name) {
@@ -1447,6 +1452,34 @@ llvm::Error Emitter::emitInitializerBody(const PlannedStructure &Struct,
         auto ValueOrErr = emitAction(*Action);
         if (!ValueOrErr) {
             return ValueOrErr.takeError();
+        }
+    }
+
+    // Clean up local page before return if allocated
+    if (Init.NeedsLocalPage && CurrentRegion.LocalPage && PageType) {
+        if (!Builder->GetInsertBlock()->getTerminator()) {
+            // Check if the page was actually used for allocations
+            llvm::Value *NextObjectPtr = Builder->CreateStructGEP(PageType, CurrentRegion.LocalPage, 0, "next_object_ptr");
+            llvm::Value *NextObject = Builder->CreateLoad(Builder->getPtrTy(), NextObjectPtr, "next_object");
+            llvm::Value *PagePlus1 = Builder->CreateGEP(PageType, CurrentRegion.LocalPage,
+                                                        llvm::ConstantInt::get(llvm::Type::getInt64Ty(*Context), 1),
+                                                        "page_plus_1");
+            llvm::Value *WasUsed = Builder->CreateICmpNE(NextObject, PagePlus1, "page_was_used");
+
+            llvm::BasicBlock *CleanupBlock = llvm::BasicBlock::Create(*Context, "cleanup", CurrentFunction);
+            llvm::BasicBlock *ContinueBlock = llvm::BasicBlock::Create(*Context, "continue", CurrentFunction);
+            Builder->CreateCondBr(WasUsed, CleanupBlock, ContinueBlock);
+
+            Builder->SetInsertPoint(CleanupBlock);
+            if (PageDeallocateExtensions) {
+                Builder->CreateCall(PageDeallocateExtensions, {CurrentRegion.LocalPage});
+            }
+            Builder->CreateBr(ContinueBlock);
+
+            Builder->SetInsertPoint(ContinueBlock);
+            if (auto *FreeFn = Module->getFunction("free")) {
+                Builder->CreateCall(FreeFn, {CurrentRegion.LocalPage});
+            }
         }
     }
 

@@ -11497,6 +11497,10 @@ llvm::Expected<PlannedInitializer> Planner::planInitializer(const Initializer &I
     Result.Private = Init.Private;
     Result.PageParameter = Init.PageParameter;
 
+    // Save and reset $ allocation tracking for this initializer body
+    bool SavedUsesLocalLifetime = CurrentFunctionUsesLocalLifetime;
+    CurrentFunctionUsesLocalLifetime = false;
+
     pushScope();
 
     // If init# was used, define the page parameter in scope
@@ -11579,6 +11583,12 @@ llvm::Expected<PlannedInitializer> Planner::planInitializer(const Initializer &I
     }
 
     Result.MangledName = Mangled;
+
+    // Set the NeedsLocalPage flag based on $ allocations in the body
+    Result.NeedsLocalPage = CurrentFunctionUsesLocalLifetime;
+
+    // Restore outer function's $ tracking
+    CurrentFunctionUsesLocalLifetime = SavedUsesLocalLifetime;
 
     return Result;
 }

@@ -526,6 +526,7 @@ struct PlannedInitializer {
     std::string MangledName;
     std::vector<PlannedItem> Input;
     PlannedImplementation Impl;
+    bool NeedsLocalPage = false;  // True if body has $ allocations
 };
 
 struct PlannedDeInitializer {
