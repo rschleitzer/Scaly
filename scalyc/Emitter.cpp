@@ -1884,6 +1884,14 @@ llvm::Expected<llvm::Value*> Emitter::emitAction(const PlannedAction &Action) {
                 }
 
                 // Store the value to the pointer target
+                // If Value is a pointer to a struct value (by-pointer argument),
+                // load the struct value before storing
+                if (Value->getType()->isPointerTy()) {
+                    llvm::Type *StoreType = mapType(Action.ResultType);
+                    if (StoreType && StoreType->isStructTy()) {
+                        Value = Builder->CreateLoad(StoreType, Value, "deref.val");
+                    }
+                }
                 Builder->CreateStore(Value, CurrentPtr);
             } else {
                 return llvm::make_error<llvm::StringError>(
