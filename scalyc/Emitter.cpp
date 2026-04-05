@@ -1104,13 +1104,19 @@ llvm::Error Emitter::emitFunctionBody(const PlannedFunction &Func,
     llvm::Value *SretPtr = nullptr;
 
     // Skip sret if present (this is the return struct pointer, not a page)
-    if (Func.Returns) {
+    // When a function throws, the return is always wrapped in a Result struct (sret),
+    // even if the raw return type is a pointer or primitive.
+    bool HasSret = false;
+    if (Func.Throws) {
+        HasSret = true;
+    } else if (Func.Returns) {
         llvm::Type *RetTy = mapType(*Func.Returns);
-        if (RetTy->isStructTy() || RetTy->isArrayTy()) {
-            SretPtr = &*ArgIt;
-            ArgIt++;
-            ArgIdx++;
-        }
+        HasSret = RetTy->isStructTy() || RetTy->isArrayTy();
+    }
+    if (HasSret) {
+        SretPtr = &*ArgIt;
+        ArgIt++;
+        ArgIdx++;
     }
 
     // Handle function# page parameter
