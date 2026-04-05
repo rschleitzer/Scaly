@@ -2893,8 +2893,8 @@ llvm::Expected<llvm::Value*> Emitter::emitCall(const PlannedCall &Call) {
         // Get the struct type
         llvm::Type *StructTy;
         if (IsRegionAlloc) {
-            // For region allocation, ResultType is pointer[StructType]
-            if (!Call.ResultType.Generics.empty()) {
+            // For region allocation, ResultType may be pointer[StructType] or StructType directly
+            if (Call.ResultType.Name == "pointer" && !Call.ResultType.Generics.empty()) {
                 StructTy = mapType(Call.ResultType.Generics[0]);
             } else {
                 StructTy = mapType(Call.ResultType);
@@ -4985,17 +4985,32 @@ llvm::Expected<llvm::Value*> Emitter::emitTry(const PlannedTry &Try) {
 }
 
 llvm::Expected<llvm::Value*> Emitter::emitSizeOf(const PlannedSizeOf &SizeOf) {
-    // The size is already computed by the Planner - just emit it as a constant
     // sizeof returns a size_t (u64)
     llvm::Type *SizeTy = llvm::Type::getInt64Ty(*Context);
-    return llvm::ConstantInt::get(SizeTy, SizeOf.Size);
+    size_t Size = SizeOf.Size;
+    if (Size == 0) {
+        // Planner couldn't determine size (e.g., imported package types).
+        // Fall back to LLVM DataLayout computation.
+        llvm::Type *Ty = mapType(SizeOf.SizedType);
+        if (Ty) {
+            Size = getTypeSize(Ty);
+        }
+    }
+    return llvm::ConstantInt::get(SizeTy, Size);
 }
 
 llvm::Expected<llvm::Value*> Emitter::emitAlignOf(const PlannedAlignOf &AlignOf) {
-    // The alignment is already computed by the Planner - just emit it as a constant
     // alignof returns a size_t (u64)
     llvm::Type *SizeTy = llvm::Type::getInt64Ty(*Context);
-    return llvm::ConstantInt::get(SizeTy, AlignOf.Alignment);
+    size_t Alignment = AlignOf.Alignment;
+    if (Alignment == 0) {
+        // Fall back to LLVM DataLayout computation
+        llvm::Type *Ty = mapType(AlignOf.AlignedType);
+        if (Ty) {
+            Alignment = getTypeAlignment(Ty);
+        }
+    }
+    return llvm::ConstantInt::get(SizeTy, Alignment);
 }
 
 llvm::Expected<llvm::Value*> Emitter::emitIs(const PlannedIs &Is) {
@@ -5488,24 +5503,14 @@ llvm::Expected<llvm::Value*> Emitter::emitTuple(const PlannedTuple &Tuple) {
     for (size_t i = 0; i < ComponentValues.size() && i < NumStructFields; ++i) {
         llvm::Value *FieldPtr = Builder->CreateStructGEP(TupleTy, TuplePtr, i, "tuple.field");
         llvm::Value *Val = ComponentValues[i];
-        // When a region-allocated init# result (e.g. String#()) is used as a
-        // component in struct construction, the LLVM value is a pointer to the
-        // page-allocated struct but the field expects the struct value.
-        // Detect this: the component's expression is a PlannedCall that is a
-        // region-allocated constructor (RequiresPageParam + non-stack Life).
-        if (Val->getType()->isPointerTy() && i < Tuple.Components.size()) {
-            const auto &Comp = Tuple.Components[i];
-            if (!Comp.Value.empty()) {
-                const auto &LastOp = Comp.Value.back();
-                if (auto *Call = std::get_if<PlannedCall>(&LastOp.Expr)) {
-                    if (Call->RequiresPageParam &&
-                        !std::holds_alternative<UnspecifiedLifetime>(Call->Life)) {
-                        llvm::Type *FieldTy = TupleTy->getElementType(i);
-                        if (FieldTy->isStructTy()) {
-                            Val = Builder->CreateLoad(FieldTy, Val, "field.load");
-                        }
-                    }
-                }
+        // When a value is a pointer but the field expects a struct type,
+        // load the struct from the pointer before storing.
+        // This handles: region-allocated init# results, function arguments
+        // passed by pointer, and any other pointer-to-struct mismatch.
+        if (Val->getType()->isPointerTy()) {
+            llvm::Type *FieldTy = TupleTy->getElementType(i);
+            if (FieldTy->isStructTy() && !FieldTy->isOpaquePointerTy()) {
+                Val = Builder->CreateLoad(FieldTy, Val, "field.load");
             }
         }
         Builder->CreateStore(Val, FieldPtr);

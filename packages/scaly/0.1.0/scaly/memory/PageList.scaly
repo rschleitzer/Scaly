@@ -23,7 +23,7 @@ define PageList
                 }
                 guard node = head
                 {
-                    set head: null
+                    set head: node.next
                 }
                 return true
             }

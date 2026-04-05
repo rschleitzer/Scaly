@@ -9827,6 +9827,7 @@ llvm::Expected<PlannedExpression> Planner::planExpression(const Expression &Expr
 
         // Compute size based on type
         const std::string &TypeName = PSO.SizedType.Name;
+        // Compute size based on type
         if (TypeName == "bool" || TypeName == "i1") {
             PSO.Size = 1;
         } else if (TypeName == "i8" || TypeName == "u8" || TypeName == "char") {
@@ -9840,14 +9841,22 @@ llvm::Expected<PlannedExpression> Planner::planExpression(const Expression &Expr
             PSO.Size = 8;
         } else {
             // For structures and other types, look up in caches
+            // Try both the raw mangled name and with _Z prefix
             auto StructIt = InstantiatedStructures.find(PSO.SizedType.MangledName);
+            if (StructIt == InstantiatedStructures.end()) {
+                StructIt = InstantiatedStructures.find("_Z" + PSO.SizedType.MangledName);
+            }
             if (StructIt != InstantiatedStructures.end()) {
                 PSO.Size = StructIt->second.Size;
             } else {
                 auto UnionIt = InstantiatedUnions.find(PSO.SizedType.MangledName);
+                if (UnionIt == InstantiatedUnions.end()) {
+                    UnionIt = InstantiatedUnions.find("_Z" + PSO.SizedType.MangledName);
+                }
                 if (UnionIt != InstantiatedUnions.end()) {
                     PSO.Size = UnionIt->second.Size;
                 } else {
+                    // Try mapType as fallback for sizeof
                     PSO.Size = 0;  // Unknown type size
                 }
             }
@@ -9879,15 +9888,22 @@ llvm::Expected<PlannedExpression> Planner::planExpression(const Expression &Expr
             PAO.Alignment = 8;
         } else {
             // For structures and other types, look up in caches
+            // Try both the raw mangled name and with _Z prefix
             auto StructIt = InstantiatedStructures.find(PAO.AlignedType.MangledName);
+            if (StructIt == InstantiatedStructures.end()) {
+                StructIt = InstantiatedStructures.find("_Z" + PAO.AlignedType.MangledName);
+            }
             if (StructIt != InstantiatedStructures.end()) {
                 PAO.Alignment = StructIt->second.Alignment;
             } else {
                 auto UnionIt = InstantiatedUnions.find(PAO.AlignedType.MangledName);
+                if (UnionIt == InstantiatedUnions.end()) {
+                    UnionIt = InstantiatedUnions.find("_Z" + PAO.AlignedType.MangledName);
+                }
                 if (UnionIt != InstantiatedUnions.end()) {
                     PAO.Alignment = UnionIt->second.Alignment;
                 } else {
-                    PAO.Alignment = 1;  // Unknown type alignment defaults to 1
+                    PAO.Alignment = 0;  // Unknown - let Emitter compute from LLVM type
                 }
             }
         }
