@@ -2926,20 +2926,41 @@ llvm::Expected<llvm::Value*> Emitter::emitCall(const PlannedCall &Call) {
         } else if (Args.size() == 1) {
             // Unary operator - but handle address-of specially
             if (Call.Name == "&") {
-                // Address-of operator: we need to get a pointer, not a loaded value
-                // The argument was already emitted, so we need to check its type
+                // Address-of operator: compute a pointer to the storage location.
+                // When & is applied to a member access chain (e.g., &item.value.value),
+                // we must return a GEP into the original heap storage, NOT a pointer
+                // to a stack copy (which would be a dangling pointer after return).
                 llvm::Value *Operand = Args[0];
 
                 if (Operand->getType()->isPointerTy()) {
-                    // Already a pointer (from variable or GEP) - return it
                     return Operand;
-                } else {
-                    // The value was loaded - we need to store it and return the address
-                    // This happens when address-of is applied to an expression result
-                    auto *Alloca = createEntryBlockAlloca(Operand->getType(), "addr.tmp");
-                    Builder->CreateStore(Operand, Alloca);
-                    return Alloca;
                 }
+
+                // Use LastFieldBasePtr (set during operand emission) and the
+                // planned member access chain to build GEPs into the actual storage
+                if (LastFieldBasePtr && Call.Args && Call.Args->size() == 1) {
+                    const auto &Arg = (*Call.Args)[0];
+                    if (Arg.MemberAccess && !Arg.MemberAccess->empty()) {
+                        llvm::Value *Ptr = LastFieldBasePtr;
+                        for (const auto &Access : *Arg.MemberAccess) {
+                            if (Access.IsZeroArgMethodCall) break;
+                            llvm::Type *STy = mapType(Access.ParentType);
+                            if (STy && STy->isStructTy()) {
+                                Ptr = Builder->CreateStructGEP(
+                                    STy, Ptr, Access.FieldIndex, "addr.gep");
+                            } else {
+                                break;
+                            }
+                        }
+                        if (Ptr != LastFieldBasePtr)
+                            return Ptr;
+                    }
+                }
+
+                // Fallback: store to stack alloca
+                auto *Alloca = createEntryBlockAlloca(Operand->getType(), "addr.tmp");
+                Builder->CreateStore(Operand, Alloca);
+                return Alloca;
             }
             return emitIntrinsicUnaryOp(Call.Name, Args[0], Call.ResultType);
         }
@@ -5855,7 +5876,7 @@ llvm::Value *Emitter::getOrCreateLocalPage() {
     // Insert the call in the entry block so it dominates all uses
     llvm::IRBuilder<> TmpBuilder(&CurrentFunction->getEntryBlock(),
                                   CurrentFunction->getEntryBlock().begin());
-    if (AllocaInsertPt) {
+    if (AllocaInsertPt && AllocaInsertPt->getFunction() == CurrentFunction) {
         if (auto *NextNode = AllocaInsertPt->getNextNode())
             TmpBuilder.SetInsertPoint(NextNode);
         else
