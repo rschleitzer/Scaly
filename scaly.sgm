@@ -61,7 +61,7 @@
 <syntax id = GenericParameter             multiple
     <content identifier                                     property = name
     <content link = Attribute             multiple optional property = attributes
-    <content link = comma                          optional 
+    <content link = comma                          optional
 
 <syntax id = Concept                               abstract
     <content link = Class
@@ -75,7 +75,6 @@
     <content link = Structure                               property = structure
     <content colon                                 optional
     <content link = Body                           optional property = body
-    <content colon                                 optional
 
 <syntax id = Body
     <content link = left_curly
@@ -84,14 +83,12 @@
     <content link = DeInit                         optional property = deInit
     <content link = Member                multiple optional property = members
     <content link = right_curly
-    <content colon                                 optional
 
 <syntax id = Namespace
     <content link = left_curly
     <content link = Use                   multiple optional property = uses
     <content link = Declaration           multiple optional property = declarations
     <content link = right_curly
-    <content colon                                 optional
 
 <syntax id = Union
     <content link = union
@@ -101,19 +98,16 @@
     <content link = right_paren
     <content colon                                 optional
     <content link = Body                           optional property = body
-    <content colon                                 optional
 
 <syntax id = Variant                      multiple
     <content identifier                                     property = name
     <content link = Attribute             multiple optional property = attributes
     <content link = TypeAnnotation                 optional property = annotation
     <content link = comma                          optional
-    <content colon                                 optional
 
 <syntax id = Constant
     <content link = Type                                    property = type
     <content link = Operand               multiple optional property = operation
-    <content colon                                 optional
 
 <syntax id = Delegate
     <content link = delegate
@@ -149,7 +143,6 @@
     <content link = comma                          optional
     <content colon                                 optional
     <content link = Attribute             multiple optional property = attributes
-    <content colon                                 optional
 
 <syntax id = Returns
     <content link = returns
@@ -164,7 +157,6 @@
 <syntax id = Use                          multiple
     <content link = use
     <content link = Name                                    property = name
-    <content colon                                 optional
 
 <syntax id = Implement
     <content link = implement
@@ -175,7 +167,6 @@
     <content link = Use                   multiple optional property = uses
     <content link = Method                multiple optional property = methods
     <content link = right_curly
-    <content colon                                 optional
 
 <syntax id = Trait
     <content link = trait
@@ -186,7 +177,6 @@
     <content link = Use                   multiple optional property = uses
     <content link = Method                multiple optional property = functions
     <content link = right_curly
-    <content colon                                 optional
 
 <syntax id = Method                       multiple abstract
     <content link = Function
@@ -249,11 +239,9 @@
 
 <syntax id = Instruction
     <content link = instruction
-    <content colon                                 optional
 
 <syntax id = Intrinsic
     <content link = intrinsic
-    <content colon                                 optional
 
 <syntax id = Extends
     <content link = extends
@@ -272,7 +260,6 @@
 <syntax id = Attribute                    multiple
     <content attribute                                      property = name
     <content link = Model                                   property = model
-    <content colon                                 optional
 
 <syntax id = Model                                 abstract
     <content link = Literal
@@ -283,13 +270,11 @@
 <syntax id = Module
     <content link = module
     <content identifier                                     property = name
-    <content colon                                 optional
 
 <syntax id = Package                      multiple
     <content link = package
     <content link = Name                                    property = name
     <content link = Version                        optional property = version
-    <content colon                                 optional
 
 <syntax id = Version
     <content literal                                        property = majorMinor
@@ -495,7 +480,6 @@
     <content link = comma                          optional
     <content colon                                 optional
     <content link = Attribute             multiple optional property = attributes
-    <content colon                                 optional
 
 <syntax id = TypeAnnotation
     <content colon
@@ -504,13 +488,11 @@
 <syntax id = Continue
     <content link = continue
     <content link = Loop                           optional property = name
-    <content colon                                 optional
 
 <syntax id = Break
     <content link = break
     <content link = Loop                           optional property = name
     <content link = Operand               multiple optional property = result
-    <content colon                                 optional
 
 <syntax id = Loop
     <content link = loop
@@ -543,7 +525,6 @@
 <syntax id = Label
     <content link = label
     <content identifier                                     property = name
-    <content colon                                 optional
 
 <syntax id = Repeat
     <content link = repeat
@@ -608,7 +589,7 @@
 
 <syntax id = Call
     <content link = hash
- 
+
 <syntax id = Local
     <content link = dollar
 
@@ -638,12 +619,12 @@
 <keyword id = function
 <keyword id = guard
 <keyword id = if
-<keyword id = is
-<keyword id = init
 <keyword id = implement
 <keyword id = in
+<keyword id = init
 <keyword id = instruction
 <keyword id = intrinsic
+<keyword id = is
 <keyword id = label
 <keyword id = let
 <keyword id = loop
@@ -652,11 +633,11 @@
 <keyword id = module
 <keyword id = mutable
 <keyword id = operator
-<keyword id = procedure
 <keyword id = private
+<keyword id = procedure
+<keyword id = repeat
 <keyword id = return
 <keyword id = returns
-<keyword id = repeat
 <keyword id = set
 <keyword id = sizeof
 <keyword id = throw

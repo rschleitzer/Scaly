@@ -66,12 +66,12 @@ void Parser::initKeywords() {
     Keywords.insert("function");
     Keywords.insert("guard");
     Keywords.insert("if");
-    Keywords.insert("is");
-    Keywords.insert("init");
     Keywords.insert("implement");
     Keywords.insert("in");
+    Keywords.insert("init");
     Keywords.insert("instruction");
     Keywords.insert("intrinsic");
+    Keywords.insert("is");
     Keywords.insert("label");
     Keywords.insert("let");
     Keywords.insert("loop");
@@ -80,11 +80,11 @@ void Parser::initKeywords() {
     Keywords.insert("module");
     Keywords.insert("mutable");
     Keywords.insert("operator");
-    Keywords.insert("procedure");
     Keywords.insert("private");
+    Keywords.insert("procedure");
+    Keywords.insert("repeat");
     Keywords.insert("return");
     Keywords.insert("returns");
-    Keywords.insert("repeat");
     Keywords.insert("set");
     Keywords.insert("sizeof");
     Keywords.insert("throw");
@@ -667,8 +667,6 @@ llvm::Expected<ClassSyntax> Parser::parseClass() {
             llvm::consumeError(ParseResult.takeError());
     }
 
-    Lex.parseColon();
-
     size_t End = Lex.position();
 
     return ClassSyntax{Start, End, Structure, Body};
@@ -729,8 +727,6 @@ llvm::Expected<BodySyntax> Parser::parseBody() {
     if (!Lex.parsePunctuation('}'))
         return invalid(Lex, Start, Lex.position(), "expected '}'");
 
-    Lex.parseColon();
-
     size_t End = Lex.position();
 
     return BodySyntax{Start, End, Uses, Inits, DeInit, Members};
@@ -769,8 +765,6 @@ llvm::Expected<NamespaceSyntax> Parser::parseNamespace() {
 
     if (!Lex.parsePunctuation('}'))
         return invalid(Lex, Start, Lex.position(), "expected '}'");
-
-    Lex.parseColon();
 
     size_t End = Lex.position();
 
@@ -811,8 +805,6 @@ llvm::Expected<UnionSyntax> Parser::parseUnion() {
         else
             llvm::consumeError(ParseResult.takeError());
     }
-
-    Lex.parseColon();
 
     size_t End = Lex.position();
 
@@ -872,8 +864,6 @@ llvm::Expected<VariantSyntax> Parser::parseVariant() {
 
     Lex.parsePunctuation(',');
 
-    Lex.parseColon();
-
     size_t End = Lex.position();
 
     return VariantSyntax{Start, End, Name, Attributes, Annotation};
@@ -899,8 +889,6 @@ llvm::Expected<ConstantSyntax> Parser::parseConstant() {
                 return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
         }
     }
-
-    Lex.parseColon();
 
     size_t End = Lex.position();
 
@@ -1140,8 +1128,6 @@ llvm::Expected<ItemSyntax> Parser::parseItem() {
         }
     }
 
-    Lex.parseColon();
-
     size_t End = Lex.position();
 
     return ItemSyntax{Start, End, Name, Annotation, Attributes};
@@ -1250,8 +1236,6 @@ llvm::Expected<UseSyntax> Parser::parseUse() {
     }
     auto Name = std::move(*NameOrErr);
 
-    Lex.parseColon();
-
     size_t End = Lex.position();
 
     return UseSyntax{Start, End, Name};
@@ -1316,8 +1300,6 @@ llvm::Expected<ImplementSyntax> Parser::parseImplement() {
 
     if (!Lex.parsePunctuation('}'))
         return invalid(Lex, Start, Lex.position(), "expected '}'");
-
-    Lex.parseColon();
 
     size_t End = Lex.position();
 
@@ -1390,8 +1372,6 @@ llvm::Expected<TraitSyntax> Parser::parseTrait() {
 
     if (!Lex.parsePunctuation('}'))
         return invalid(Lex, Start, Lex.position(), "expected '}'");
-
-    Lex.parseColon();
 
     size_t End = Lex.position();
 
@@ -1788,8 +1768,6 @@ llvm::Expected<InstructionSyntax> Parser::parseInstruction() {
     if (!Lex.parseKeyword("instruction"))
         return different();
 
-    Lex.parseColon();
-
     size_t End = Lex.position();
 
     return InstructionSyntax{Start, End};
@@ -1801,8 +1779,6 @@ llvm::Expected<IntrinsicSyntax> Parser::parseIntrinsic() {
 
     if (!Lex.parseKeyword("intrinsic"))
         return different();
-
-    Lex.parseColon();
 
     size_t End = Lex.position();
 
@@ -1947,8 +1923,6 @@ llvm::Expected<AttributeSyntax> Parser::parseAttribute() {
     }
     auto Model = std::move(*ModelOrErr);
 
-    Lex.parseColon();
-
     size_t End = Lex.position();
 
     return AttributeSyntax{Start, End, Name, Model};
@@ -2010,8 +1984,6 @@ llvm::Expected<ModuleSyntax> Parser::parseModule() {
     }
     Lex.parseIdentifier();  // Consume the identifier
 
-    Lex.parseColon();
-
     size_t End = Lex.position();
 
     return ModuleSyntax{Start, End, Name};
@@ -2062,8 +2034,6 @@ llvm::Expected<PackageSyntax> Parser::parsePackage() {
         else
             llvm::consumeError(ParseResult.takeError());
     }
-
-    Lex.parseColon();
 
     size_t End = Lex.position();
 
@@ -3512,8 +3482,6 @@ llvm::Expected<PropertySyntax> Parser::parseProperty() {
         }
     }
 
-    Lex.parseColon();
-
     size_t End = Lex.position();
 
     return PropertySyntax{Start, End, Name, Annotation, Initializer, Attributes};
@@ -3556,8 +3524,6 @@ llvm::Expected<ContinueSyntax> Parser::parseContinue() {
             llvm::consumeError(ParseResult.takeError());
     }
 
-    Lex.parseColon();
-
     size_t End = Lex.position();
 
     return ContinueSyntax{Start, End, Name};
@@ -3590,8 +3556,6 @@ llvm::Expected<BreakSyntax> Parser::parseBreak() {
                 return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
         }
     }
-
-    Lex.parseColon();
 
     size_t End = Lex.position();
 
@@ -3778,8 +3742,6 @@ llvm::Expected<LabelSyntax> Parser::parseLabel() {
         return invalid(Lex, Start, Lex.position(), Msg);
     }
     Lex.parseIdentifier();  // Consume the identifier
-
-    Lex.parseColon();
 
     size_t End = Lex.position();
 

@@ -89,12 +89,12 @@ define Parser
         keywords_builder.add(String#("function"))
         keywords_builder.add(String#("guard"))
         keywords_builder.add(String#("if"))
-        keywords_builder.add(String#("is"))
-        keywords_builder.add(String#("init"))
         keywords_builder.add(String#("implement"))
         keywords_builder.add(String#("in"))
+        keywords_builder.add(String#("init"))
         keywords_builder.add(String#("instruction"))
         keywords_builder.add(String#("intrinsic"))
+        keywords_builder.add(String#("is"))
         keywords_builder.add(String#("label"))
         keywords_builder.add(String#("let"))
         keywords_builder.add(String#("loop"))
@@ -103,11 +103,11 @@ define Parser
         keywords_builder.add(String#("module"))
         keywords_builder.add(String#("mutable"))
         keywords_builder.add(String#("operator"))
-        keywords_builder.add(String#("procedure"))
         keywords_builder.add(String#("private"))
+        keywords_builder.add(String#("procedure"))
+        keywords_builder.add(String#("repeat"))
         keywords_builder.add(String#("return"))
         keywords_builder.add(String#("returns"))
-        keywords_builder.add(String#("repeat"))
         keywords_builder.add(String#("set"))
         keywords_builder.add(String#("sizeof"))
         keywords_builder.add(String#("throw"))
@@ -797,8 +797,6 @@ define Parser
             when success: Success
                 set body: success
 
-        lexer.parse_colon#()
-
         let end lexer.position
 
         ClassSyntax(start, end, structure, body)
@@ -870,8 +868,6 @@ define Parser
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#("expected '}'")))
         }
 
-        lexer.parse_colon#()
-
         let end lexer.position
 
         BodySyntax(start, end, uses, inits, deInit, members)
@@ -916,8 +912,6 @@ define Parser
         {
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#("expected '}'")))
         }
-
-        lexer.parse_colon#()
 
         let end lexer.position
 
@@ -973,8 +967,6 @@ define Parser
             }
             when success: Success
                 set body: success
-
-        lexer.parse_colon#()
 
         let end lexer.position
 
@@ -1043,8 +1035,6 @@ define Parser
 
         lexer.parse_punctuation#(ParserConstants.CHAR_COMMA())
 
-        lexer.parse_colon#()
-
         let end lexer.position
 
         VariantSyntax(start, end, name, attributes, annotation)
@@ -1074,8 +1064,6 @@ define Parser
             }
             when success: Success
                 set operation: success
-
-        lexer.parse_colon#()
 
         let end lexer.position
 
@@ -1358,8 +1346,6 @@ define Parser
             when success: Success
                 set attributes: success
 
-        lexer.parse_colon#()
-
         let end lexer.position
 
         ItemSyntax(start, end, name, annotation, attributes)
@@ -1494,8 +1480,6 @@ define Parser
             when success: Success
                 set name: success
 
-        lexer.parse_colon#()
-
         let end lexer.position
 
         UseSyntax(start, end, name)
@@ -1574,8 +1558,6 @@ define Parser
         {
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#("expected '}'")))
         }
-
-        lexer.parse_colon#()
 
         let end lexer.position
 
@@ -1666,8 +1648,6 @@ define Parser
         {
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#("expected '}'")))
         }
-
-        lexer.parse_colon#()
 
         let end lexer.position
 
@@ -2158,8 +2138,6 @@ define Parser
             throw ParserError.Different(DifferentSyntax())
         }
 
-        lexer.parse_colon#()
-
         let end lexer.position
 
         InstructionSyntax(start, end)
@@ -2173,8 +2151,6 @@ define Parser
         {
             throw ParserError.Different(DifferentSyntax())
         }
-
-        lexer.parse_colon#()
 
         let end lexer.position
 
@@ -2347,8 +2323,6 @@ define Parser
             when success: Success
                 set model: success
 
-        lexer.parse_colon#()
-
         let end lexer.position
 
         AttributeSyntax(start, end, name, model)
@@ -2414,8 +2388,6 @@ define Parser
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#("expected identifier")))
         }
 
-        lexer.parse_colon#()
-
         let end lexer.position
 
         ModuleSyntax(start, end, name)
@@ -2480,8 +2452,6 @@ define Parser
             }
             when success: Success
                 set version: success
-
-        lexer.parse_colon#()
 
         let end lexer.position
 
@@ -4283,8 +4253,6 @@ define Parser
             when success: Success
                 set attributes: success
 
-        lexer.parse_colon#()
-
         let end lexer.position
 
         PropertySyntax(start, end, name, annotation, initializer, attributes)
@@ -4340,8 +4308,6 @@ define Parser
             when success: Success
                 set name: success
 
-        lexer.parse_colon#()
-
         let end lexer.position
 
         ContinueSyntax(start, end, name)
@@ -4381,8 +4347,6 @@ define Parser
             }
             when success: Success
                 set result: success
-
-        lexer.parse_colon#()
 
         let end lexer.position
 
@@ -4608,8 +4572,6 @@ define Parser
         {
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#("expected identifier")))
         }
-
-        lexer.parse_colon#()
 
         let end lexer.position
 
