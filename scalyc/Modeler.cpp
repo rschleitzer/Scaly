@@ -2003,12 +2003,14 @@ llvm::Expected<Module> Modeler::buildModule(llvm::StringRef Path,
                                              const FileSyntax &Syntax,
                                              bool Private) {
     std::vector<Use> Uses;
-    if (Syntax.uses) {
-        for (const auto &U : *Syntax.uses) {
-            auto UseResult = handleUse(U);
-            if (!UseResult)
-                return UseResult.takeError();
-            Uses.push_back(std::move(*UseResult));
+    if (Syntax.declarations) {
+        for (const auto &D : *Syntax.declarations) {
+            if (auto* U = std::get_if<UseSyntax>(&D.Value)) {
+                auto UseResult = handleUse(*U);
+                if (!UseResult)
+                    return UseResult.takeError();
+                Uses.push_back(std::move(*UseResult));
+            }
         }
     }
 
@@ -2213,8 +2215,11 @@ llvm::Expected<Module> Modeler::resolvePackage(llvm::StringRef Name, const Versi
             }
 
             // Recursively resolve transitive package dependencies
-            if (ParseResult->file.packages) {
-                for (const auto &Pkg : *ParseResult->file.packages) {
+            if (ParseResult->file.declarations) {
+                for (const auto &D : *ParseResult->file.declarations) {
+                    auto* PkgPtr = std::get_if<PackageSyntax>(&D.Value);
+                    if (!PkgPtr) continue;
+                    const auto &Pkg = *PkgPtr;
                     std::string TransPkgName(Pkg.name.name);
                     Version TransVer{0, 0, 0};
                     if (Pkg.version) {
@@ -2291,8 +2296,11 @@ llvm::Expected<Program> Modeler::buildProgram(const ProgramSyntax &Syntax) {
     llvm::sys::path::remove_filename(BasePath);
 
     // Load packages (resolvePackage handles transitive deps and caches in ResolvedPackages)
-    if (Syntax.file.packages) {
-        for (const auto &Pkg : *Syntax.file.packages) {
+    if (Syntax.file.declarations) {
+        for (const auto &D : *Syntax.file.declarations) {
+            auto* PkgPtr = std::get_if<PackageSyntax>(&D.Value);
+            if (!PkgPtr) continue;
+            const auto &Pkg = *PkgPtr;
             // Get package name from NameSyntax
             std::string PkgName(Pkg.name.name);
 

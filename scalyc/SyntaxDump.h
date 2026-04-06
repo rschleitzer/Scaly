@@ -1503,26 +1503,6 @@ public:
         OS << "{"; nl(); Indent++;
         key("node"); OS << "\"File\","; nl();
         dumpSpan(N.Start, N.End);
-        if (N.packages) {
-            OS << ","; nl();
-            key("packages"); OS << "["; nl(); Indent++;
-            for (size_t i = 0; i < N.packages->size(); i++) {
-                indent(); dump((*N.packages)[i]);
-                if (i + 1 < N.packages->size()) OS << ",";
-                nl();
-            }
-            Indent--; indent(); OS << "]";
-        }
-        if (N.uses) {
-            OS << ","; nl();
-            key("uses"); OS << "["; nl(); Indent++;
-            for (size_t i = 0; i < N.uses->size(); i++) {
-                indent(); dump((*N.uses)[i]);
-                if (i + 1 < N.uses->size()) OS << ",";
-                nl();
-            }
-            Indent--; indent(); OS << "]";
-        }
         if (N.declarations) {
             OS << ","; nl();
             key("declarations"); OS << "["; nl(); Indent++;

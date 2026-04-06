@@ -181,32 +181,6 @@ define Parser
     {
         let start lexer.previous_position
 
-        let packages_start lexer.position
-        var packages: ref[Vector[PackageSyntax]]? null
-        choose parse_package_list#()
-            when err: Error
-            {
-                choose err
-                    when d: Different {}
-                    when i: Invalid
-                        throw ParserError.Invalid(i)
-            }
-            when success: Success
-                set packages: success
-
-        let uses_start lexer.position
-        var uses: ref[Vector[UseSyntax]]? null
-        choose parse_use_list#()
-            when err: Error
-            {
-                choose err
-                    when d: Different {}
-                    when i: Invalid
-                        throw ParserError.Invalid(i)
-            }
-            when success: Success
-                set uses: success
-
         let declarations_start lexer.position
         var declarations: ref[Vector[DeclarationSyntax]]? null
         choose parse_declaration_list#()
@@ -222,7 +196,7 @@ define Parser
 
         let end lexer.position
 
-        FileSyntax(start, end, packages, uses, declarations)
+        FileSyntax(start, end, declarations)
     }
 
     function parse_declaration_list#(rp, this: Parser) returns ref[Vector[DeclarationSyntax]]? throws ParserError
@@ -261,6 +235,26 @@ define Parser
             }
             when node: Success
                 return DeclarationSyntax.Empty(node)
+        choose parse_package#()
+            when err: Error
+            {
+                choose err
+                    when i: Invalid
+                        throw ParserError.Invalid(i)
+                    when d: Different {}
+            }
+            when node: Success
+                return DeclarationSyntax.Package(node)
+        choose parse_use#()
+            when err: Error
+            {
+                choose err
+                    when i: Invalid
+                        throw ParserError.Invalid(i)
+                    when d: Different {}
+            }
+            when node: Success
+                return DeclarationSyntax.Use(node)
         choose parse_private#()
             when err: Error
             {
@@ -2448,6 +2442,8 @@ define Parser
             }
             when success: Success
                 set version: success
+
+        lexer.parse_colon#()
 
         let end lexer.position
 

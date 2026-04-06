@@ -145,30 +145,6 @@ llvm::Expected<ProgramSyntax> Parser::parseProgram() {
 llvm::Expected<FileSyntax> Parser::parseFile() {
     size_t Start = Lex.previousPosition();
 
-    std::vector<PackageSyntax>* Packages = nullptr;
-    {
-        auto ParseResult = parsePackageList();
-        if (ParseResult)
-            Packages = *ParseResult;
-        else {
-            std::string ErrMsg = llvm::toString(ParseResult.takeError());
-            if (ErrMsg != "different syntax")
-                return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
-        }
-    }
-
-    std::vector<UseSyntax>* Uses = nullptr;
-    {
-        auto ParseResult = parseUseList();
-        if (ParseResult)
-            Uses = *ParseResult;
-        else {
-            std::string ErrMsg = llvm::toString(ParseResult.takeError());
-            if (ErrMsg != "different syntax")
-                return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
-        }
-    }
-
     std::vector<DeclarationSyntax>* Declarations = nullptr;
     {
         auto ParseResult = parseDeclarationList();
@@ -183,7 +159,7 @@ llvm::Expected<FileSyntax> Parser::parseFile() {
 
     size_t End = Lex.position();
 
-    return FileSyntax{Start, End, Packages, Uses, Declarations};
+    return FileSyntax{Start, End, Declarations};
 
 }
 
@@ -212,6 +188,22 @@ llvm::Expected<DeclarationSyntax> Parser::parseDeclaration() {
     std::string FirstRealError;
     {
         auto Result = parseEmpty();
+        if (Result)
+            return DeclarationSyntax{std::move(*Result)};
+        std::string ErrMsg = llvm::toString(Result.takeError());
+        if (ErrMsg != "different syntax" && FirstRealError.empty())
+            FirstRealError = std::move(ErrMsg);
+    }
+    {
+        auto Result = parsePackage();
+        if (Result)
+            return DeclarationSyntax{std::move(*Result)};
+        std::string ErrMsg = llvm::toString(Result.takeError());
+        if (ErrMsg != "different syntax" && FirstRealError.empty())
+            FirstRealError = std::move(ErrMsg);
+    }
+    {
+        auto Result = parseUse();
         if (Result)
             return DeclarationSyntax{std::move(*Result)};
         std::string ErrMsg = llvm::toString(Result.takeError());
@@ -2031,6 +2023,8 @@ llvm::Expected<PackageSyntax> Parser::parsePackage() {
         else
             llvm::consumeError(ParseResult.takeError());
     }
+
+    Lex.parseColon();
 
     size_t End = Lex.position();
 

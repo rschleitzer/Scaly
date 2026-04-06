@@ -872,6 +872,8 @@ define PrivateSyntax
 
 define DeclarationSyntax union (
     Empty: EmptySyntax
+    Package: PackageSyntax
+    Use: UseSyntax
     Private: PrivateSyntax
     Definition: DefinitionSyntax
     Function: FunctionSyntax
@@ -886,8 +888,6 @@ define FileSyntax
 (
     start: size_t
     end: size_t
-    packages: ref[Vector[PackageSyntax]]?
-    uses: ref[Vector[UseSyntax]]?
     declarations: ref[Vector[DeclarationSyntax]]?
 )
 

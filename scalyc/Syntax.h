@@ -817,14 +817,12 @@ struct PrivateSyntax {
 };
 
 struct DeclarationSyntax {
-    std::variant<EmptySyntax, PrivateSyntax, DefinitionSyntax, FunctionSyntax, ProcedureSyntax, OperatorSyntax, TraitSyntax, MacroSyntax, ModuleSyntax> Value;
+    std::variant<EmptySyntax, PackageSyntax, UseSyntax, PrivateSyntax, DefinitionSyntax, FunctionSyntax, ProcedureSyntax, OperatorSyntax, TraitSyntax, MacroSyntax, ModuleSyntax> Value;
 };
 
 struct FileSyntax {
     size_t Start;
     size_t End;
-    std::vector<PackageSyntax>* packages;
-    std::vector<UseSyntax>* uses;
     std::vector<DeclarationSyntax>* declarations;
 };
 
