@@ -1877,28 +1877,22 @@ llvm::Expected<Modeler::BodyResult> Modeler::handleBody(
         }
     }
 
-    if (Syntax.inits) {
-        for (const auto &I : *Syntax.inits) {
-            auto Init = handleInitializer(I, false);
-            if (!Init)
-                return Init.takeError();
-            Result.Initializers.push_back(std::move(*Init));
-        }
-    }
-
-    if (Syntax.deInit) {
-        auto DeInit = handleDeInitializer(*Syntax.deInit);
-        if (!DeInit)
-            return DeInit.takeError();
-        Result.Deinitializer = std::move(*DeInit);
-    }
-
     if (Syntax.members) {
         for (const auto &M : *Syntax.members) {
             std::visit([&](const auto &C) {
                 using CT = std::decay_t<decltype(C)>;
                 if constexpr (std::is_same_v<CT, EmptySyntax>) {
                     // Skip empty members (blank lines)
+                } else if constexpr (std::is_same_v<CT, InitSyntax>) {
+                    auto Init = handleInitializer(C, false);
+                    if (Init) {
+                        Result.Initializers.push_back(std::move(*Init));
+                    }
+                } else if constexpr (std::is_same_v<CT, DeInitSyntax>) {
+                    auto DeInit = handleDeInitializer(C);
+                    if (DeInit) {
+                        Result.Deinitializer = std::move(*DeInit);
+                    }
                 } else if constexpr (std::is_same_v<CT, DefinitionSyntax>) {
                     auto Def = handleDefinition(Path, C, false);
                     if (Def) {

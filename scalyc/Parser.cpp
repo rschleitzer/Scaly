@@ -397,6 +397,22 @@ llvm::Expected<MemberSyntax> Parser::parseMember() {
             FirstRealError = std::move(ErrMsg);
     }
     {
+        auto Result = parseInit();
+        if (Result)
+            return MemberSyntax{std::move(*Result)};
+        std::string ErrMsg = llvm::toString(Result.takeError());
+        if (ErrMsg != "different syntax" && FirstRealError.empty())
+            FirstRealError = std::move(ErrMsg);
+    }
+    {
+        auto Result = parseDeInit();
+        if (Result)
+            return MemberSyntax{std::move(*Result)};
+        std::string ErrMsg = llvm::toString(Result.takeError());
+        if (ErrMsg != "different syntax" && FirstRealError.empty())
+            FirstRealError = std::move(ErrMsg);
+    }
+    {
         auto Result = parseDefinition();
         if (Result)
             return MemberSyntax{std::move(*Result)};
@@ -691,27 +707,6 @@ llvm::Expected<BodySyntax> Parser::parseBody() {
         }
     }
 
-    std::vector<InitSyntax>* Inits = nullptr;
-    {
-        auto ParseResult = parseInitList();
-        if (ParseResult)
-            Inits = *ParseResult;
-        else {
-            std::string ErrMsg = llvm::toString(ParseResult.takeError());
-            if (ErrMsg != "different syntax")
-                return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
-        }
-    }
-
-    DeInitSyntax* DeInit = nullptr;
-    {
-        auto ParseResult = parseDeInit();
-        if (ParseResult)
-            DeInit = new DeInitSyntax(std::move(*ParseResult));
-        else
-            llvm::consumeError(ParseResult.takeError());
-    }
-
     std::vector<MemberSyntax>* Members = nullptr;
     {
         auto ParseResult = parseMemberList();
@@ -729,7 +724,7 @@ llvm::Expected<BodySyntax> Parser::parseBody() {
 
     size_t End = Lex.position();
 
-    return BodySyntax{Start, End, Uses, Inits, DeInit, Members};
+    return BodySyntax{Start, End, Uses, Members};
 
 }
 

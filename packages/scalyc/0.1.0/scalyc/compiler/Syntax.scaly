@@ -795,8 +795,6 @@ define BodySyntax
     start: size_t
     end: size_t
     uses: ref[Vector[UseSyntax]]?
-    inits: ref[Vector[InitSyntax]]?
-    deInit: ref[DeInitSyntax]?
     members: ref[Vector[MemberSyntax]]?
 )
 
@@ -844,6 +842,8 @@ define DefinitionSyntax
 
 define MemberSyntax union (
     Empty: EmptySyntax
+    Init: InitSyntax
+    DeInit: DeInitSyntax
     Definition: DefinitionSyntax
     Function: FunctionSyntax
     Procedure: ProcedureSyntax

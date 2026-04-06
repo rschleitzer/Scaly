@@ -766,8 +766,6 @@ struct BodySyntax {
     size_t Start;
     size_t End;
     std::vector<UseSyntax>* uses;
-    std::vector<InitSyntax>* inits;
-    DeInitSyntax* deInit;
     std::vector<MemberSyntax>* members;
 };
 
@@ -805,7 +803,7 @@ struct DefinitionSyntax {
 };
 
 struct MemberSyntax {
-    std::variant<EmptySyntax, DefinitionSyntax, FunctionSyntax, ProcedureSyntax, OperatorSyntax, ImplementSyntax, TraitSyntax, MacroSyntax, ModuleSyntax> Value;
+    std::variant<EmptySyntax, InitSyntax, DeInitSyntax, DefinitionSyntax, FunctionSyntax, ProcedureSyntax, OperatorSyntax, ImplementSyntax, TraitSyntax, MacroSyntax, ModuleSyntax> Value;
 };
 
 struct ExportSyntax {

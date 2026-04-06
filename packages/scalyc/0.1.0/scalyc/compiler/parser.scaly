@@ -473,6 +473,26 @@ define Parser
             }
             when node: Success
                 return MemberSyntax.Empty(node)
+        choose parse_init#()
+            when err: Error
+            {
+                choose err
+                    when i: Invalid
+                        throw ParserError.Invalid(i)
+                    when d: Different {}
+            }
+            when node: Success
+                return MemberSyntax.Init(node)
+        choose parse_deinit#()
+            when err: Error
+            {
+                choose err
+                    when i: Invalid
+                        throw ParserError.Invalid(i)
+                    when d: Different {}
+            }
+            when node: Success
+                return MemberSyntax.DeInit(node)
         choose parse_definition#()
             when err: Error
             {
@@ -824,32 +844,6 @@ define Parser
             when success: Success
                 set uses: success
 
-        let inits_start lexer.position
-        var inits: ref[Vector[InitSyntax]]? null
-        choose parse_init_list#()
-            when err: Error
-            {
-                choose err
-                    when d: Different {}
-                    when i: Invalid
-                        throw ParserError.Invalid(i)
-            }
-            when success: Success
-                set inits: success
-
-        let deInit_start lexer.position
-        var deInit: ref[DeInitSyntax]? null
-        choose parse_deinit#()
-            when err: Error
-            {
-                choose err
-                    when d: Different {}
-                    when i: Invalid
-                        throw ParserError.Invalid(i)
-            }
-            when success: Success
-                set deInit: success
-
         let members_start lexer.position
         var members: ref[Vector[MemberSyntax]]? null
         choose parse_member_list#()
@@ -870,7 +864,7 @@ define Parser
 
         let end lexer.position
 
-        BodySyntax(start, end, uses, inits, deInit, members)
+        BodySyntax(start, end, uses, members)
     }
 
     function parse_namespace#(rp, this: Parser) returns NamespaceSyntax throws ParserError

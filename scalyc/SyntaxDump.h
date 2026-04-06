@@ -1397,20 +1397,6 @@ public:
             }
             Indent--; indent(); OS << "]";
         }
-        if (N.inits) {
-            OS << ","; nl();
-            key("inits"); OS << "["; nl(); Indent++;
-            for (size_t i = 0; i < N.inits->size(); i++) {
-                indent(); dump((*N.inits)[i]);
-                if (i + 1 < N.inits->size()) OS << ",";
-                nl();
-            }
-            Indent--; indent(); OS << "]";
-        }
-        if (N.deInit) {
-            OS << ","; nl();
-            key("deInit"); dump(*N.deInit);
-        }
         if (N.members) {
             OS << ","; nl();
             key("members"); OS << "["; nl(); Indent++;

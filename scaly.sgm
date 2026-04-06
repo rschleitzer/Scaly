@@ -36,6 +36,8 @@
 
 <syntax id = Member                  multiple abstract
     <content link = Empty
+    <content link = Init
+    <content link = DeInit
     <content link = Definition
     <content link = Function
     <content link = Procedure
@@ -79,8 +81,6 @@
 <syntax id = Body
     <content link = left_curly
     <content link = Use                   multiple optional property = uses
-    <content link = Init                  multiple optional property = inits
-    <content link = DeInit                         optional property = deInit
     <content link = Member                multiple optional property = members
     <content link = right_curly
 
