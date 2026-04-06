@@ -491,24 +491,6 @@ public:
         key("binding"); dump(N.binding);
         nl(); Indent--; indent(); OS << "}";
     }
-    void dump(const GuardSyntax &N) {
-        OS << "{"; nl(); Indent++;
-        key("node"); OS << "\"Guard\","; nl();
-        dumpSpan(N.Start, N.End);
-        if (N.condition) {
-            OS << ","; nl();
-            key("condition"); OS << "["; nl(); Indent++;
-            for (size_t i = 0; i < N.condition->size(); i++) {
-                indent(); dump((*N.condition)[i]);
-                if (i + 1 < N.condition->size()) OS << ",";
-                nl();
-            }
-            Indent--; indent(); OS << "]";
-        }
-        OS << ","; nl();
-        key("body"); dump(N.body);
-        nl(); Indent--; indent(); OS << "}";
-    }
     void dump(const StatementSyntax &N) {
         std::visit([this](const auto &V) { dump(V); }, N.Value);
     }
@@ -689,8 +671,10 @@ public:
         }
         OS << ","; nl();
         key("consequent"); dump(N.consequent);
-        OS << ","; nl();
-        key("alternative"); dump(N.alternative);
+        if (N.alternative) {
+            OS << ","; nl();
+            key("alternative"); dump(*N.alternative);
+        }
         nl(); Indent--; indent(); OS << "}";
     }
     void dump(const ElementSyntax &N) {

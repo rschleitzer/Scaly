@@ -642,24 +642,6 @@ llvm::Expected<Statement> Modeler::handleStatement(
             if (!Source)
                 return Source.takeError();
             return Action{std::move(*Source), std::move(*Target)};
-        } else if constexpr (std::is_same_v<T, GuardSyntax>) {
-            auto Cond = handleOperands(C.condition);
-            if (!Cond)
-                return Cond.takeError();
-            auto Body = handleAction(C.body);
-            if (!Body)
-                return Body.takeError();
-            // Guard becomes an If with no alternative (no else)
-            Operand IfOp;
-            IfOp.Loc = Span{C.Start, C.End};
-            IfOp.Expr = If{
-                Span{C.Start, C.End},
-                std::move(*Cond),
-                nullptr,
-                std::make_unique<Statement>(std::move(*Body)),
-                nullptr
-            };
-            return Action{{std::move(IfOp)}, {}};
         } else if constexpr (std::is_same_v<T, ContinueSyntax>) {
             auto Cont = handleContinue(C);
             if (!Cont)
@@ -760,10 +742,13 @@ llvm::Expected<If> Modeler::handleIf(const IfSyntax &Syntax) {
     if (!Cons)
         return Cons.takeError();
 
-    auto AltResult = handleStatement(Syntax.alternative.alternative);
-    if (!AltResult)
-        return AltResult.takeError();
-    auto Alt = std::make_unique<Statement>(std::move(*AltResult));
+    std::unique_ptr<Statement> Alt;
+    if (Syntax.alternative) {
+        auto AltResult = handleStatement(Syntax.alternative->alternative);
+        if (!AltResult)
+            return AltResult.takeError();
+        Alt = std::make_unique<Statement>(std::move(*AltResult));
+    }
 
     return If{
         Span{Syntax.Start, Syntax.End},

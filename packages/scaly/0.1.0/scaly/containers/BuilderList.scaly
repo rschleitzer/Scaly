@@ -20,16 +20,14 @@ define BuilderList[T] (head: pointer[Node[T]])
         var previous_node: pointer[Node[T]] null
         while node <> null
         {
-            guard node.element = element
+            if node.element = element
             {
-                guard previous_node <> null
-                {
+                if previous_node <> null
                     set previous_node.next: node.next
-                }
-                guard node = head
-                {
+
+                if node = head
                     set head: node.next
-                }
+
                 return true
             }
 
@@ -41,10 +39,9 @@ define BuilderList[T] (head: pointer[Node[T]])
 
     function get_head(this: BuilderList[T]) returns ref[T]?
     {
-        guard head = null
-        {
+        if head = null
             return null
-        }
+
         &head.element
     }
 

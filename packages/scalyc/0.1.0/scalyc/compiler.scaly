@@ -16,34 +16,24 @@ define compiler
     function test() returns int
     {
         var result lexer.test()
-        guard result <> 0
-        {
+        if result <> 0
             return result
-        }
 
         set result: parser.test()
-        guard result <> 0
-        {
+        if result <> 0
             return 200 + result
-        }
 
         set result: Planner.test()
-        guard result <> 0
-        {
+        if result <> 0
             return 100 + result
-        }
 
         set result: Modeler.test()
-        guard result <> 0
-        {
+        if result <> 0
             return 400 + result
-        }
 
         set result: Emitter.test()
-        guard result <> 0
-        {
+        if result <> 0
             return 300 + result
-        }
 
         0
     }

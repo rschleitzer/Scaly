@@ -9,28 +9,20 @@ define scaly
     function test() returns int
     {
         var result memory.test()
-        guard result <> 0
-        {
+        if result <> 0
             return result - 100
-        }
 
         set result: containers.test()
-        guard result <> 0
-        {
+        if result <> 0
             return result - 200
-        }
 
         set result: io.test()
-        guard result <> 0
-        {
+        if result <> 0
             return result - 300
-        }
 
         set result: llvm.test()
-        guard result <> 0
-        {
+        if result <> 0
             return result - 400
-        }
 
         0
     }

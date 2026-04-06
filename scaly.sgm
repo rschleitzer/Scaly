@@ -351,7 +351,7 @@
     <content link = Operand               multiple          property = condition
     <content colon
     <content link = Then                                    property = consequent
-    <content link = Else                                    property = alternative
+    <content link = Else                           optional property = alternative
 
 <syntax id = Then
     <content link = Statement                               property = statement
@@ -419,17 +419,10 @@
     <content link = Var
     <content link = Mutable
     <content link = Set
-    <content link = Guard
     <content link = Continue
     <content link = Break
     <content link = Return
     <content link = Throw
-
-<syntax id = Guard
-    <content link = guard
-    <content link = Operand               multiple          property = condition
-    <content colon
-    <content link = Action                                  property = body
 
 <syntax id = Let
     <content link = let
@@ -619,7 +612,6 @@
 <keyword id = extern
 <keyword id = for
 <keyword id = function
-<keyword id = guard
 <keyword id = if
 <keyword id = implement
 <keyword id = in

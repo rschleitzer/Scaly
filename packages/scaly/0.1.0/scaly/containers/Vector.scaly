@@ -15,15 +15,11 @@ define VectorIterator[T]
 
     function next(this: VectorIterator[T]) returns pointer[T]
     {
-        guard vector = null
-        {
+        if vector = null
             return null
-        }
 
-        guard position = vector.length
-        {
+        if position = vector.length
             return null
-        }
 
         set position: position + 1
         return vector.get_ptr(position - 1)
@@ -117,39 +113,35 @@ define Vector[T]
 
     function get(this: Vector[T], i: size_t) returns ref[T]?
     {
-        guard i >= length
-        {
+        if i >= length
             return null
-        }
+
         data + i
     }
 
     ; Internal helper returning raw pointer for container implementations
     function get_ptr(this: Vector[T], i: size_t) returns pointer[T]
     {
-        guard i >= length
-        {
+        if i >= length
             return null
-        }
+
         data + i
     }
 
     function put(this: Vector[T], i: size_t, item: T) returns bool
     {
-        guard i >= length
-        {
+        if i >= length
             return false
-        }
+
         set *(data + i): item
         true
     }
 
     operator [](i: size_t) returns ref[T]?
     {
-        guard i >= length
-        {
+        if i >= length
             return null
-        }
+
         data + i
     }
 

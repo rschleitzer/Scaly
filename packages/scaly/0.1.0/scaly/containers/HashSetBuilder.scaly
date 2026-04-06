@@ -8,7 +8,7 @@ define HashSetBuilder[T]
     {
         set length: 0
         set slots: null
-        guard vec.length > 0
+        if vec.length > 0
         {
             reallocate(vec.length)
             var vector_iterator VectorIterator[T](&vec)
@@ -24,7 +24,7 @@ define HashSetBuilder[T]
         let slots_page own_page.allocate_exclusive_page()
         let new_slots Vector[BuilderList[Slot[T]]]^slots_page(hash_size)
 
-        guard slots <> null
+        if slots <> null
         {
             var vector_iterator VectorIterator[BuilderList[Slot[T]]](slots)
             while let element vector_iterator.next()
@@ -46,10 +46,9 @@ define HashSetBuilder[T]
     function add(this: HashSetBuilder[T], value: T) returns bool
     {
         let hash_size hashing.get_prime(length + 1)
-        guard slots = null || hash_size > slots.length
-        {
+        if slots = null || hash_size > slots.length
             reallocate(length + 1)
-        }
+
         return add_internal(value)
     }
 
@@ -61,10 +60,9 @@ define HashSetBuilder[T]
         var iterator slot_list.get_iterator()
         while let item iterator.next()
         {
-            guard value.equals(item.value)
-            {
+            if value.equals(item.value)
                 return false
-            }
+
         }
 
         let own_page Page.get(slots as pointer[void])
@@ -76,10 +74,8 @@ define HashSetBuilder[T]
 
     function contains(this: HashSetBuilder[T], value: T) returns bool
     {
-        guard slots = null
-        {
+        if slots = null
             return false
-        }
 
         let hash value.hash()
         let slot_number hash % slots.length
@@ -87,10 +83,9 @@ define HashSetBuilder[T]
         var iterator slot.get_iterator()
         while let item iterator.next()
         {
-            guard value.equals(item.value)
-            {
+            if value.equals(item.value)
                 return true
-            }
+
         }
 
         return false
