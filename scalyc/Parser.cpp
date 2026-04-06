@@ -1236,6 +1236,8 @@ llvm::Expected<UseSyntax> Parser::parseUse() {
     }
     auto Name = std::move(*NameOrErr);
 
+    Lex.parseColon();
+
     size_t End = Lex.position();
 
     return UseSyntax{Start, End, Name};

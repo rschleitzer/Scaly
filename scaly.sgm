@@ -157,6 +157,7 @@
 <syntax id = Use                          multiple
     <content link = use
     <content link = Name                                    property = name
+    <content colon                                 optional
 
 <syntax id = Implement
     <content link = implement
