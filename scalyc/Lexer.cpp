@@ -118,12 +118,7 @@ Token Lexer::scanLineFeed() {
         if (Current_ == nullptr) {
             return ColonToken{};
         }
-        if (*Current_ == '\n') {
-            readCharacter();  // consume the newline
-            continue;
-        }
-        // Skip comments and continue collapsing linefeeds
-        // Note: handleSingleLineComment consumes the trailing \n
+        // Skip comment-only lines (comments remain transparent)
         if (*Current_ == ';') {
             readCharacter();
             if (Current_ != nullptr && *Current_ == '*') {
@@ -131,9 +126,15 @@ Token Lexer::scanLineFeed() {
                 handleMultiLineComment();
             } else {
                 handleSingleLineComment();
+                // handleSingleLineComment stops at \n without consuming it
+                // Consume the trailing \n so the comment line is transparent
+                if (Current_ != nullptr && *Current_ == '\n') {
+                    readCharacter();
+                }
             }
             continue;
         }
+        // Blank lines are NOT collapsed - each \n produces its own ColonToken
         return ColonToken{};
     }
 }
@@ -657,8 +658,7 @@ bool Lexer::parseColon() {
         advance();
     }
 
-    // Accept Colon, Empty (linefeeds become ColonToken via scanLineFeed)
-    if (is<ColonToken>(Token_) || is<EmptyToken>(Token_)) {
+    if (is<ColonToken>(Token_)) {
         empty();
         return true;
     }

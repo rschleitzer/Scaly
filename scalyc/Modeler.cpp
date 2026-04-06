@@ -539,6 +539,8 @@ llvm::Expected<std::vector<Statement>> Modeler::handleStatements(
         return Result;
 
     for (const auto &S : *Syntax) {
+        if (std::holds_alternative<EmptySyntax>(S.Value))
+            continue;
         auto Stmt = handleStatement(S);
         if (!Stmt)
             return Stmt.takeError();
@@ -549,14 +551,13 @@ llvm::Expected<std::vector<Statement>> Modeler::handleStatements(
 
 llvm::Expected<Statement> Modeler::handleStatement(
     const StatementSyntax &Syntax) {
-    return handleCommand(Syntax.command);
-}
-
-llvm::Expected<Statement> Modeler::handleCommand(const CommandSyntax &Syntax) {
     return std::visit([&](const auto &C) -> llvm::Expected<Statement> {
         using T = std::decay_t<decltype(C)>;
 
-        if constexpr (std::is_same_v<T, OperationSyntax>) {
+        if constexpr (std::is_same_v<T, EmptySyntax>) {
+            // Empty command (blank line) - return empty action
+            return Action{{}, {}};
+        } else if constexpr (std::is_same_v<T, OperationSyntax>) {
             auto Ops = handleOperation(C);
             if (!Ops)
                 return Ops.takeError();
@@ -755,11 +756,11 @@ llvm::Expected<If> Modeler::handleIf(const IfSyntax &Syntax) {
     if (!Cond)
         return Cond.takeError();
 
-    auto Cons = handleCommand(Syntax.consequent.command);
+    auto Cons = handleStatement(Syntax.consequent.statement);
     if (!Cons)
         return Cons.takeError();
 
-    auto AltResult = handleCommand(Syntax.alternative.alternative);
+    auto AltResult = handleStatement(Syntax.alternative.alternative);
     if (!AltResult)
         return AltResult.takeError();
     auto Alt = std::make_unique<Statement>(std::move(*AltResult));
@@ -806,7 +807,7 @@ llvm::Expected<Match> Modeler::handleMatch(const MatchSyntax &Syntax) {
 
     std::unique_ptr<Statement> Alt;
     if (Syntax.alternative) {
-        auto AltResult = handleCommand(Syntax.alternative->alternative);
+        auto AltResult = handleStatement(Syntax.alternative->alternative);
         if (!AltResult)
             return AltResult.takeError();
         Alt = std::make_unique<Statement>(std::move(*AltResult));
@@ -831,7 +832,7 @@ llvm::Expected<When> Modeler::handleWhen(const WhenSyntax &Syntax) {
         }
     }
 
-    auto Cons = handleCommand(Syntax.command);
+    auto Cons = handleStatement(Syntax.statement);
     if (!Cons)
         return Cons.takeError();
 
@@ -860,7 +861,7 @@ llvm::Expected<Choose> Modeler::handleChoose(const ChooseSyntax &Syntax) {
 
     std::unique_ptr<Statement> Alt;
     if (Syntax.alternative) {
-        auto AltResult = handleCommand(Syntax.alternative->alternative);
+        auto AltResult = handleStatement(Syntax.alternative->alternative);
         if (!AltResult)
             return AltResult.takeError();
         Alt = std::make_unique<Statement>(std::move(*AltResult));
@@ -934,7 +935,7 @@ llvm::Expected<Try> Modeler::handleTry(const TrySyntax &Syntax) {
 
     std::unique_ptr<Statement> Alt;
     if (Syntax.dropper) {
-        auto AltResult = handleCommand(Syntax.dropper->alternative);
+        auto AltResult = handleStatement(Syntax.dropper->alternative);
         if (!AltResult)
             return AltResult.takeError();
         Alt = std::make_unique<Statement>(std::move(*AltResult));
@@ -1782,7 +1783,9 @@ llvm::Expected<Namespace> Modeler::handleNamespace(llvm::StringRef Name,
         for (const auto &D : *Syntax.declarations) {
             std::visit([&](const auto &S) {
                 using ST = std::decay_t<decltype(S)>;
-                if constexpr (std::is_same_v<ST, PrivateSyntax>) {
+                if constexpr (std::is_same_v<ST, EmptySyntax>) {
+                    // Skip empty declarations (blank lines)
+                } else if constexpr (std::is_same_v<ST, PrivateSyntax>) {
                     std::visit([&](const auto &E) {
                         using ET = std::decay_t<decltype(E)>;
                         if constexpr (std::is_same_v<ET, DefinitionSyntax>) {
@@ -1842,7 +1845,7 @@ llvm::Expected<Namespace> Modeler::handleNamespace(llvm::StringRef Name,
                         llvm::consumeError(Mod.takeError());
                     }
                 }
-            }, D.symbol.Value);
+            }, D.Value);
         }
     }
 
@@ -1894,7 +1897,9 @@ llvm::Expected<Modeler::BodyResult> Modeler::handleBody(
         for (const auto &M : *Syntax.members) {
             std::visit([&](const auto &C) {
                 using CT = std::decay_t<decltype(C)>;
-                if constexpr (std::is_same_v<CT, DefinitionSyntax>) {
+                if constexpr (std::is_same_v<CT, EmptySyntax>) {
+                    // Skip empty members (blank lines)
+                } else if constexpr (std::is_same_v<CT, DefinitionSyntax>) {
                     auto Def = handleDefinition(Path, C, false);
                     if (Def) {
                         Result.Members.push_back(std::move(*Def));
@@ -1926,7 +1931,7 @@ llvm::Expected<Modeler::BodyResult> Modeler::handleBody(
                         llvm::consumeError(Mod.takeError());
                     }
                 }
-            }, M.constituent.Value);
+            }, M.Value);
         }
     }
 
@@ -2025,7 +2030,9 @@ llvm::Expected<Module> Modeler::buildModule(llvm::StringRef Path,
 
             std::visit([&](const auto &S) {
                 using ST = std::decay_t<decltype(S)>;
-                if constexpr (std::is_same_v<ST, PrivateSyntax>) {
+                if constexpr (std::is_same_v<ST, EmptySyntax>) {
+                    // Skip empty declarations (blank lines)
+                } else if constexpr (std::is_same_v<ST, PrivateSyntax>) {
                     std::visit([&](const auto &E) {
                         using ET = std::decay_t<decltype(E)>;
                         if constexpr (std::is_same_v<ET, DefinitionSyntax>) {
@@ -2101,7 +2108,7 @@ llvm::Expected<Module> Modeler::buildModule(llvm::StringRef Path,
                         Err = Mod.takeError();
                     }
                 }
-            }, D.symbol.Value);
+            }, D.Value);
         }
     }
 

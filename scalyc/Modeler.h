@@ -72,7 +72,6 @@ private:
     // Block and statement handling
     llvm::Expected<Block> handleBlock(const BlockSyntax &Syntax);
     llvm::Expected<Statement> handleStatement(const StatementSyntax &Syntax);
-    llvm::Expected<Statement> handleCommand(const CommandSyntax &Syntax);
     llvm::Expected<std::vector<Statement>> handleStatements(
         const std::vector<StatementSyntax> *Syntax);
 

@@ -31,6 +31,12 @@ define Literal union (
 ; Syntax node definitions
 ; ============================================================================
 
+define EmptySyntax
+(
+    start: size_t
+    end: size_t
+)
+
 define ThrownSyntax
 (
     start: size_t
@@ -309,7 +315,8 @@ define GuardSyntax
     body: ActionSyntax
 )
 
-define CommandSyntax union (
+define StatementSyntax union (
+    Empty: EmptySyntax
     Operation: OperationSyntax
     Let: LetSyntax
     Var: VarSyntax
@@ -328,7 +335,7 @@ define WhenSyntax
     end: size_t
     name: String
     variant: NameSyntax
-    command: CommandSyntax
+    statement: StatementSyntax
 )
 
 define ConditionSyntax union (
@@ -363,13 +370,6 @@ define WhileSyntax
     action: ActionSyntax
 )
 
-define StatementSyntax
-(
-    start: size_t
-    end: size_t
-    command: CommandSyntax
-)
-
 define CaseSyntax
 (
     start: size_t
@@ -398,14 +398,14 @@ define ElseSyntax
 (
     start: size_t
     end: size_t
-    alternative: CommandSyntax
+    alternative: StatementSyntax
 )
 
 define ThenSyntax
 (
     start: size_t
     end: size_t
-    command: CommandSyntax
+    statement: StatementSyntax
 )
 
 define IfSyntax
@@ -842,7 +842,8 @@ define DefinitionSyntax
     concept_: ConceptSyntax
 )
 
-define ConstituentSyntax union (
+define MemberSyntax union (
+    Empty: EmptySyntax
     Definition: DefinitionSyntax
     Function: FunctionSyntax
     Procedure: ProcedureSyntax
@@ -851,13 +852,6 @@ define ConstituentSyntax union (
     Trait: TraitSyntax
     Macro: MacroSyntax
     Module: ModuleSyntax
-)
-
-define MemberSyntax
-(
-    start: size_t
-    end: size_t
-    constituent: ConstituentSyntax
 )
 
 define ExportSyntax union (
@@ -876,7 +870,8 @@ define PrivateSyntax
     export_: ExportSyntax
 )
 
-define SymbolSyntax union (
+define DeclarationSyntax union (
+    Empty: EmptySyntax
     Private: PrivateSyntax
     Definition: DefinitionSyntax
     Function: FunctionSyntax
@@ -885,13 +880,6 @@ define SymbolSyntax union (
     Trait: TraitSyntax
     Macro: MacroSyntax
     Module: ModuleSyntax
-)
-
-define DeclarationSyntax
-(
-    start: size_t
-    end: size_t
-    symbol: SymbolSyntax
 )
 
 define FileSyntax

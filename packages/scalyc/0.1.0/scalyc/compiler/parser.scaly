@@ -251,25 +251,16 @@ define Parser
 
     function parse_declaration#(rp, this: Parser) returns DeclarationSyntax throws ParserError
     {
-        let start lexer.previous_position
-
-        let symbol_start lexer.position
-        var symbol: SymbolSyntax
-        choose parse_symbol#()
+        choose parse_empty#()
             when err: Error
-                throw err
-            when success: Success
-                set symbol: success
-
-        lexer.parse_colon#()
-
-        let end lexer.position
-
-        DeclarationSyntax(start, end, symbol)
-    }
-
-    function parse_symbol#(rp, this: Parser) returns SymbolSyntax throws ParserError
-    {
+            {
+                choose err
+                    when i: Invalid
+                        throw ParserError.Invalid(i)
+                    when d: Different {}
+            }
+            when node: Success
+                return DeclarationSyntax.Empty(node)
         choose parse_private#()
             when err: Error
             {
@@ -279,7 +270,7 @@ define Parser
                     when d: Different {}
             }
             when node: Success
-                return SymbolSyntax.Private(node)
+                return DeclarationSyntax.Private(node)
         choose parse_definition#()
             when err: Error
             {
@@ -289,7 +280,7 @@ define Parser
                     when d: Different {}
             }
             when node: Success
-                return SymbolSyntax.Definition(node)
+                return DeclarationSyntax.Definition(node)
         choose parse_function#()
             when err: Error
             {
@@ -299,7 +290,7 @@ define Parser
                     when d: Different {}
             }
             when node: Success
-                return SymbolSyntax.Function(node)
+                return DeclarationSyntax.Function(node)
         choose parse_procedure#()
             when err: Error
             {
@@ -309,7 +300,7 @@ define Parser
                     when d: Different {}
             }
             when node: Success
-                return SymbolSyntax.Procedure(node)
+                return DeclarationSyntax.Procedure(node)
         choose parse_operator#()
             when err: Error
             {
@@ -319,7 +310,7 @@ define Parser
                     when d: Different {}
             }
             when node: Success
-                return SymbolSyntax.Operator(node)
+                return DeclarationSyntax.Operator(node)
         choose parse_trait#()
             when err: Error
             {
@@ -329,7 +320,7 @@ define Parser
                     when d: Different {}
             }
             when node: Success
-                return SymbolSyntax.Trait(node)
+                return DeclarationSyntax.Trait(node)
         choose parse_macro#()
             when err: Error
             {
@@ -339,7 +330,7 @@ define Parser
                     when d: Different {}
             }
             when node: Success
-                return SymbolSyntax.Macro(node)
+                return DeclarationSyntax.Macro(node)
         choose parse_module#()
             when err: Error
             {
@@ -349,7 +340,7 @@ define Parser
                     when d: Different {}
             }
             when node: Success
-                return SymbolSyntax.Module(node)
+                return DeclarationSyntax.Module(node)
         throw ParserError.Different(DifferentSyntax())
     }
 
@@ -472,25 +463,16 @@ define Parser
 
     function parse_member#(rp, this: Parser) returns MemberSyntax throws ParserError
     {
-        let start lexer.previous_position
-
-        let constituent_start lexer.position
-        var constituent: ConstituentSyntax
-        choose parse_constituent#()
+        choose parse_empty#()
             when err: Error
-                throw err
-            when success: Success
-                set constituent: success
-
-        lexer.parse_colon#()
-
-        let end lexer.position
-
-        MemberSyntax(start, end, constituent)
-    }
-
-    function parse_constituent#(rp, this: Parser) returns ConstituentSyntax throws ParserError
-    {
+            {
+                choose err
+                    when i: Invalid
+                        throw ParserError.Invalid(i)
+                    when d: Different {}
+            }
+            when node: Success
+                return MemberSyntax.Empty(node)
         choose parse_definition#()
             when err: Error
             {
@@ -500,7 +482,7 @@ define Parser
                     when d: Different {}
             }
             when node: Success
-                return ConstituentSyntax.Definition(node)
+                return MemberSyntax.Definition(node)
         choose parse_function#()
             when err: Error
             {
@@ -510,7 +492,7 @@ define Parser
                     when d: Different {}
             }
             when node: Success
-                return ConstituentSyntax.Function(node)
+                return MemberSyntax.Function(node)
         choose parse_procedure#()
             when err: Error
             {
@@ -520,7 +502,7 @@ define Parser
                     when d: Different {}
             }
             when node: Success
-                return ConstituentSyntax.Procedure(node)
+                return MemberSyntax.Procedure(node)
         choose parse_operator#()
             when err: Error
             {
@@ -530,7 +512,7 @@ define Parser
                     when d: Different {}
             }
             when node: Success
-                return ConstituentSyntax.Operator(node)
+                return MemberSyntax.Operator(node)
         choose parse_implement#()
             when err: Error
             {
@@ -540,7 +522,7 @@ define Parser
                     when d: Different {}
             }
             when node: Success
-                return ConstituentSyntax.Implement(node)
+                return MemberSyntax.Implement(node)
         choose parse_trait#()
             when err: Error
             {
@@ -550,7 +532,7 @@ define Parser
                     when d: Different {}
             }
             when node: Success
-                return ConstituentSyntax.Trait(node)
+                return MemberSyntax.Trait(node)
         choose parse_macro#()
             when err: Error
             {
@@ -560,7 +542,7 @@ define Parser
                     when d: Different {}
             }
             when node: Success
-                return ConstituentSyntax.Macro(node)
+                return MemberSyntax.Macro(node)
         choose parse_module#()
             when err: Error
             {
@@ -570,7 +552,7 @@ define Parser
                     when d: Different {}
             }
             when node: Success
-                return ConstituentSyntax.Module(node)
+                return MemberSyntax.Module(node)
         throw ParserError.Different(DifferentSyntax())
     }
 
@@ -3183,19 +3165,19 @@ define Parser
     {
         let start lexer.previous_position
 
-        let command_start lexer.position
-        var command: CommandSyntax
-        choose parse_command#()
+        let statement_start lexer.position
+        var statement: StatementSyntax
+        choose parse_statement#()
             when err: Error
                 throw err
             when success: Success
-                set command: success
+                set statement: success
 
         lexer.parse_colon#()
 
         let end lexer.position
 
-        ThenSyntax(start, end, command)
+        ThenSyntax(start, end, statement)
     }
 
     function parse_else#(rp, this: Parser) returns ElseSyntax throws ParserError
@@ -3210,13 +3192,13 @@ define Parser
         lexer.parse_colon#()
 
         let alternative_start lexer.position
-        var alternative: CommandSyntax
-        choose parse_command#()
+        var alternative: StatementSyntax
+        choose parse_statement#()
             when err: Error
             {
                 choose err
                     when d: Different
-                        throw ParserError.Invalid(InvalidSyntax(alternative_start, lexer.position, String#("expected Command")))
+                        throw ParserError.Invalid(InvalidSyntax(alternative_start, lexer.position, String#("expected Statement")))
                     when i: Invalid
                         throw ParserError.Invalid(i)
             }
@@ -3398,49 +3380,6 @@ define Parser
         let end lexer.position
 
         CaseSyntax(start, end, condition)
-    }
-
-    function parse_statement_list#(rp, this: Parser) returns ref[Vector[StatementSyntax]]? throws ParserError
-    {
-        var list List[StatementSyntax]$()
-        while true
-        {
-            choose parse_statement#()
-                when err: Error
-                {
-                    choose err
-                        when i: Invalid
-                            throw ParserError.Invalid(i)
-                        when d: Different
-                        {
-                            if list.head = null
-                                throw ParserError.Different(d)
-                            else
-                                return Vector[StatementSyntax]#(list)
-                        }
-                }
-                when node: Success
-                    list.add$(node)
-        }
-    }
-
-    function parse_statement#(rp, this: Parser) returns StatementSyntax throws ParserError
-    {
-        let start lexer.previous_position
-
-        let command_start lexer.position
-        var command: CommandSyntax
-        choose parse_command#()
-            when err: Error
-                throw err
-            when success: Success
-                set command: success
-
-        lexer.parse_colon#()
-
-        let end lexer.position
-
-        StatementSyntax(start, end, command)
     }
 
     function parse_while#(rp, this: Parser) returns WhileSyntax throws ParserError
@@ -3706,29 +3645,63 @@ define Parser
 
         lexer.parse_colon#()
 
-        let command_start lexer.position
-        var command: CommandSyntax
-        choose parse_command#()
+        let statement_start lexer.position
+        var statement: StatementSyntax
+        choose parse_statement#()
             when err: Error
             {
                 choose err
                     when d: Different
-                        throw ParserError.Invalid(InvalidSyntax(command_start, lexer.position, String#("expected Command")))
+                        throw ParserError.Invalid(InvalidSyntax(statement_start, lexer.position, String#("expected Statement")))
                     when i: Invalid
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set command: success
+                set statement: success
 
         lexer.parse_colon#()
 
         let end lexer.position
 
-        WhenSyntax(start, end, name, variant, command)
+        WhenSyntax(start, end, name, variant, statement)
     }
 
-    function parse_command#(rp, this: Parser) returns CommandSyntax throws ParserError
+    function parse_statement_list#(rp, this: Parser) returns ref[Vector[StatementSyntax]]? throws ParserError
     {
+        var list List[StatementSyntax]$()
+        while true
+        {
+            choose parse_statement#()
+                when err: Error
+                {
+                    choose err
+                        when i: Invalid
+                            throw ParserError.Invalid(i)
+                        when d: Different
+                        {
+                            if list.head = null
+                                throw ParserError.Different(d)
+                            else
+                                return Vector[StatementSyntax]#(list)
+                        }
+                }
+                when node: Success
+                    list.add$(node)
+        }
+    }
+
+    function parse_statement#(rp, this: Parser) returns StatementSyntax throws ParserError
+    {
+        choose parse_empty#()
+            when err: Error
+            {
+                choose err
+                    when i: Invalid
+                        throw ParserError.Invalid(i)
+                    when d: Different {}
+            }
+            when node: Success
+                return StatementSyntax.Empty(node)
         choose parse_operation#()
             when err: Error
             {
@@ -3738,7 +3711,7 @@ define Parser
                     when d: Different {}
             }
             when node: Success
-                return CommandSyntax.Operation(node)
+                return StatementSyntax.Operation(node)
         choose parse_let#()
             when err: Error
             {
@@ -3748,7 +3721,7 @@ define Parser
                     when d: Different {}
             }
             when node: Success
-                return CommandSyntax.Let(node)
+                return StatementSyntax.Let(node)
         choose parse_var#()
             when err: Error
             {
@@ -3758,7 +3731,7 @@ define Parser
                     when d: Different {}
             }
             when node: Success
-                return CommandSyntax.Var(node)
+                return StatementSyntax.Var(node)
         choose parse_mutable#()
             when err: Error
             {
@@ -3768,7 +3741,7 @@ define Parser
                     when d: Different {}
             }
             when node: Success
-                return CommandSyntax.Mutable(node)
+                return StatementSyntax.Mutable(node)
         choose parse_set#()
             when err: Error
             {
@@ -3778,7 +3751,7 @@ define Parser
                     when d: Different {}
             }
             when node: Success
-                return CommandSyntax.Set(node)
+                return StatementSyntax.Set(node)
         choose parse_guard#()
             when err: Error
             {
@@ -3788,7 +3761,7 @@ define Parser
                     when d: Different {}
             }
             when node: Success
-                return CommandSyntax.Guard(node)
+                return StatementSyntax.Guard(node)
         choose parse_continue#()
             when err: Error
             {
@@ -3798,7 +3771,7 @@ define Parser
                     when d: Different {}
             }
             when node: Success
-                return CommandSyntax.Continue(node)
+                return StatementSyntax.Continue(node)
         choose parse_break#()
             when err: Error
             {
@@ -3808,7 +3781,7 @@ define Parser
                     when d: Different {}
             }
             when node: Success
-                return CommandSyntax.Break(node)
+                return StatementSyntax.Break(node)
         choose parse_return#()
             when err: Error
             {
@@ -3818,7 +3791,7 @@ define Parser
                     when d: Different {}
             }
             when node: Success
-                return CommandSyntax.Return(node)
+                return StatementSyntax.Return(node)
         choose parse_throw#()
             when err: Error
             {
@@ -3828,7 +3801,7 @@ define Parser
                     when d: Different {}
             }
             when node: Success
-                return CommandSyntax.Throw(node)
+                return StatementSyntax.Throw(node)
         throw ParserError.Different(DifferentSyntax())
     }
 
@@ -5221,6 +5194,20 @@ define Parser
         let end lexer.position
 
         ThrownSyntax(start, end)
+    }
+
+    function parse_empty#(rp, this: Parser) returns EmptySyntax throws ParserError
+    {
+        let start lexer.previous_position
+
+        guard ~lexer.parse_colon#()
+        {
+            throw ParserError.Different(DifferentSyntax())
+        }
+
+        let end lexer.position
+
+        EmptySyntax(start, end)
     }
 
     function is_at_end(this: Parser) returns bool

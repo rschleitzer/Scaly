@@ -209,27 +209,19 @@ llvm::Expected<std::vector<DeclarationSyntax>*> Parser::parseDeclarationList() {
 }
 
 llvm::Expected<DeclarationSyntax> Parser::parseDeclaration() {
-    size_t Start = Lex.previousPosition();
-
-    auto SymbolOrErr = parseSymbol();
-    if (!SymbolOrErr)
-        return SymbolOrErr.takeError();
-    auto Symbol = std::move(*SymbolOrErr);
-
-    Lex.parseColon();
-
-    size_t End = Lex.position();
-
-    return DeclarationSyntax{Start, End, Symbol};
-
-}
-
-llvm::Expected<SymbolSyntax> Parser::parseSymbol() {
     std::string FirstRealError;
+    {
+        auto Result = parseEmpty();
+        if (Result)
+            return DeclarationSyntax{std::move(*Result)};
+        std::string ErrMsg = llvm::toString(Result.takeError());
+        if (ErrMsg != "different syntax" && FirstRealError.empty())
+            FirstRealError = std::move(ErrMsg);
+    }
     {
         auto Result = parsePrivate();
         if (Result)
-            return SymbolSyntax{std::move(*Result)};
+            return DeclarationSyntax{std::move(*Result)};
         std::string ErrMsg = llvm::toString(Result.takeError());
         if (ErrMsg != "different syntax" && FirstRealError.empty())
             FirstRealError = std::move(ErrMsg);
@@ -237,7 +229,7 @@ llvm::Expected<SymbolSyntax> Parser::parseSymbol() {
     {
         auto Result = parseDefinition();
         if (Result)
-            return SymbolSyntax{std::move(*Result)};
+            return DeclarationSyntax{std::move(*Result)};
         std::string ErrMsg = llvm::toString(Result.takeError());
         if (ErrMsg != "different syntax" && FirstRealError.empty())
             FirstRealError = std::move(ErrMsg);
@@ -245,7 +237,7 @@ llvm::Expected<SymbolSyntax> Parser::parseSymbol() {
     {
         auto Result = parseFunction();
         if (Result)
-            return SymbolSyntax{std::move(*Result)};
+            return DeclarationSyntax{std::move(*Result)};
         std::string ErrMsg = llvm::toString(Result.takeError());
         if (ErrMsg != "different syntax" && FirstRealError.empty())
             FirstRealError = std::move(ErrMsg);
@@ -253,7 +245,7 @@ llvm::Expected<SymbolSyntax> Parser::parseSymbol() {
     {
         auto Result = parseProcedure();
         if (Result)
-            return SymbolSyntax{std::move(*Result)};
+            return DeclarationSyntax{std::move(*Result)};
         std::string ErrMsg = llvm::toString(Result.takeError());
         if (ErrMsg != "different syntax" && FirstRealError.empty())
             FirstRealError = std::move(ErrMsg);
@@ -261,7 +253,7 @@ llvm::Expected<SymbolSyntax> Parser::parseSymbol() {
     {
         auto Result = parseOperator();
         if (Result)
-            return SymbolSyntax{std::move(*Result)};
+            return DeclarationSyntax{std::move(*Result)};
         std::string ErrMsg = llvm::toString(Result.takeError());
         if (ErrMsg != "different syntax" && FirstRealError.empty())
             FirstRealError = std::move(ErrMsg);
@@ -269,7 +261,7 @@ llvm::Expected<SymbolSyntax> Parser::parseSymbol() {
     {
         auto Result = parseTrait();
         if (Result)
-            return SymbolSyntax{std::move(*Result)};
+            return DeclarationSyntax{std::move(*Result)};
         std::string ErrMsg = llvm::toString(Result.takeError());
         if (ErrMsg != "different syntax" && FirstRealError.empty())
             FirstRealError = std::move(ErrMsg);
@@ -277,7 +269,7 @@ llvm::Expected<SymbolSyntax> Parser::parseSymbol() {
     {
         auto Result = parseMacro();
         if (Result)
-            return SymbolSyntax{std::move(*Result)};
+            return DeclarationSyntax{std::move(*Result)};
         std::string ErrMsg = llvm::toString(Result.takeError());
         if (ErrMsg != "different syntax" && FirstRealError.empty())
             FirstRealError = std::move(ErrMsg);
@@ -285,7 +277,7 @@ llvm::Expected<SymbolSyntax> Parser::parseSymbol() {
     {
         auto Result = parseModule();
         if (Result)
-            return SymbolSyntax{std::move(*Result)};
+            return DeclarationSyntax{std::move(*Result)};
         std::string ErrMsg = llvm::toString(Result.takeError());
         if (ErrMsg != "different syntax" && FirstRealError.empty())
             FirstRealError = std::move(ErrMsg);
@@ -395,27 +387,19 @@ llvm::Expected<std::vector<MemberSyntax>*> Parser::parseMemberList() {
 }
 
 llvm::Expected<MemberSyntax> Parser::parseMember() {
-    size_t Start = Lex.previousPosition();
-
-    auto ConstituentOrErr = parseConstituent();
-    if (!ConstituentOrErr)
-        return ConstituentOrErr.takeError();
-    auto Constituent = std::move(*ConstituentOrErr);
-
-    Lex.parseColon();
-
-    size_t End = Lex.position();
-
-    return MemberSyntax{Start, End, Constituent};
-
-}
-
-llvm::Expected<ConstituentSyntax> Parser::parseConstituent() {
     std::string FirstRealError;
+    {
+        auto Result = parseEmpty();
+        if (Result)
+            return MemberSyntax{std::move(*Result)};
+        std::string ErrMsg = llvm::toString(Result.takeError());
+        if (ErrMsg != "different syntax" && FirstRealError.empty())
+            FirstRealError = std::move(ErrMsg);
+    }
     {
         auto Result = parseDefinition();
         if (Result)
-            return ConstituentSyntax{std::move(*Result)};
+            return MemberSyntax{std::move(*Result)};
         std::string ErrMsg = llvm::toString(Result.takeError());
         if (ErrMsg != "different syntax" && FirstRealError.empty())
             FirstRealError = std::move(ErrMsg);
@@ -423,7 +407,7 @@ llvm::Expected<ConstituentSyntax> Parser::parseConstituent() {
     {
         auto Result = parseFunction();
         if (Result)
-            return ConstituentSyntax{std::move(*Result)};
+            return MemberSyntax{std::move(*Result)};
         std::string ErrMsg = llvm::toString(Result.takeError());
         if (ErrMsg != "different syntax" && FirstRealError.empty())
             FirstRealError = std::move(ErrMsg);
@@ -431,7 +415,7 @@ llvm::Expected<ConstituentSyntax> Parser::parseConstituent() {
     {
         auto Result = parseProcedure();
         if (Result)
-            return ConstituentSyntax{std::move(*Result)};
+            return MemberSyntax{std::move(*Result)};
         std::string ErrMsg = llvm::toString(Result.takeError());
         if (ErrMsg != "different syntax" && FirstRealError.empty())
             FirstRealError = std::move(ErrMsg);
@@ -439,7 +423,7 @@ llvm::Expected<ConstituentSyntax> Parser::parseConstituent() {
     {
         auto Result = parseOperator();
         if (Result)
-            return ConstituentSyntax{std::move(*Result)};
+            return MemberSyntax{std::move(*Result)};
         std::string ErrMsg = llvm::toString(Result.takeError());
         if (ErrMsg != "different syntax" && FirstRealError.empty())
             FirstRealError = std::move(ErrMsg);
@@ -447,7 +431,7 @@ llvm::Expected<ConstituentSyntax> Parser::parseConstituent() {
     {
         auto Result = parseImplement();
         if (Result)
-            return ConstituentSyntax{std::move(*Result)};
+            return MemberSyntax{std::move(*Result)};
         std::string ErrMsg = llvm::toString(Result.takeError());
         if (ErrMsg != "different syntax" && FirstRealError.empty())
             FirstRealError = std::move(ErrMsg);
@@ -455,7 +439,7 @@ llvm::Expected<ConstituentSyntax> Parser::parseConstituent() {
     {
         auto Result = parseTrait();
         if (Result)
-            return ConstituentSyntax{std::move(*Result)};
+            return MemberSyntax{std::move(*Result)};
         std::string ErrMsg = llvm::toString(Result.takeError());
         if (ErrMsg != "different syntax" && FirstRealError.empty())
             FirstRealError = std::move(ErrMsg);
@@ -463,7 +447,7 @@ llvm::Expected<ConstituentSyntax> Parser::parseConstituent() {
     {
         auto Result = parseMacro();
         if (Result)
-            return ConstituentSyntax{std::move(*Result)};
+            return MemberSyntax{std::move(*Result)};
         std::string ErrMsg = llvm::toString(Result.takeError());
         if (ErrMsg != "different syntax" && FirstRealError.empty())
             FirstRealError = std::move(ErrMsg);
@@ -471,7 +455,7 @@ llvm::Expected<ConstituentSyntax> Parser::parseConstituent() {
     {
         auto Result = parseModule();
         if (Result)
-            return ConstituentSyntax{std::move(*Result)};
+            return MemberSyntax{std::move(*Result)};
         std::string ErrMsg = llvm::toString(Result.takeError());
         if (ErrMsg != "different syntax" && FirstRealError.empty())
             FirstRealError = std::move(ErrMsg);
@@ -2633,16 +2617,16 @@ llvm::Expected<IfSyntax> Parser::parseIf() {
 llvm::Expected<ThenSyntax> Parser::parseThen() {
     size_t Start = Lex.previousPosition();
 
-    auto CommandOrErr = parseCommand();
-    if (!CommandOrErr)
-        return CommandOrErr.takeError();
-    auto Command = std::move(*CommandOrErr);
+    auto StatementOrErr = parseStatement();
+    if (!StatementOrErr)
+        return StatementOrErr.takeError();
+    auto Statement = std::move(*StatementOrErr);
 
     Lex.parseColon();
 
     size_t End = Lex.position();
 
-    return ThenSyntax{Start, End, Command};
+    return ThenSyntax{Start, End, Statement};
 
 }
 
@@ -2654,12 +2638,12 @@ llvm::Expected<ElseSyntax> Parser::parseElse() {
 
     Lex.parseColon();
 
-    auto AlternativeOrErr = parseCommand();
+    auto AlternativeOrErr = parseStatement();
     if (!AlternativeOrErr) {
         std::string ErrMsg = llvm::toString(AlternativeOrErr.takeError());
         if (ErrMsg != "different syntax")
             return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
-        return invalid(Lex, Start, Lex.position(), "expected Command");
+        return invalid(Lex, Start, Lex.position(), "expected Statement");
     }
     auto Alternative = std::move(*AlternativeOrErr);
 
@@ -2797,43 +2781,6 @@ llvm::Expected<CaseSyntax> Parser::parseCase() {
     size_t End = Lex.position();
 
     return CaseSyntax{Start, End, Condition};
-
-}
-
-llvm::Expected<std::vector<StatementSyntax>*> Parser::parseStatementList() {
-    auto *List = new std::vector<StatementSyntax>();
-    while (true) {
-        auto NodeOrErr = parseStatement();
-        if (!NodeOrErr) {
-            // Check if this is 'different' (no more items) vs real error
-            std::string ErrMsg = llvm::toString(NodeOrErr.takeError());
-            if (ErrMsg != "different syntax") {
-                delete List;
-                return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
-            }
-            if (List->empty()) {
-                delete List;
-                return different();
-            }
-            return List;
-        }
-        List->push_back(std::move(*NodeOrErr));
-    }
-}
-
-llvm::Expected<StatementSyntax> Parser::parseStatement() {
-    size_t Start = Lex.previousPosition();
-
-    auto CommandOrErr = parseCommand();
-    if (!CommandOrErr)
-        return CommandOrErr.takeError();
-    auto Command = std::move(*CommandOrErr);
-
-    Lex.parseColon();
-
-    size_t End = Lex.position();
-
-    return StatementSyntax{Start, End, Command};
 
 }
 
@@ -3043,29 +2990,58 @@ llvm::Expected<WhenSyntax> Parser::parseWhen() {
 
     Lex.parseColon();
 
-    auto CommandOrErr = parseCommand();
-    if (!CommandOrErr) {
-        std::string ErrMsg = llvm::toString(CommandOrErr.takeError());
+    auto StatementOrErr = parseStatement();
+    if (!StatementOrErr) {
+        std::string ErrMsg = llvm::toString(StatementOrErr.takeError());
         if (ErrMsg != "different syntax")
             return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
-        return invalid(Lex, Start, Lex.position(), "expected Command");
+        return invalid(Lex, Start, Lex.position(), "expected Statement");
     }
-    auto Command = std::move(*CommandOrErr);
+    auto Statement = std::move(*StatementOrErr);
 
     Lex.parseColon();
 
     size_t End = Lex.position();
 
-    return WhenSyntax{Start, End, Name, Variant, Command};
+    return WhenSyntax{Start, End, Name, Variant, Statement};
 
 }
 
-llvm::Expected<CommandSyntax> Parser::parseCommand() {
+llvm::Expected<std::vector<StatementSyntax>*> Parser::parseStatementList() {
+    auto *List = new std::vector<StatementSyntax>();
+    while (true) {
+        auto NodeOrErr = parseStatement();
+        if (!NodeOrErr) {
+            // Check if this is 'different' (no more items) vs real error
+            std::string ErrMsg = llvm::toString(NodeOrErr.takeError());
+            if (ErrMsg != "different syntax") {
+                delete List;
+                return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+            }
+            if (List->empty()) {
+                delete List;
+                return different();
+            }
+            return List;
+        }
+        List->push_back(std::move(*NodeOrErr));
+    }
+}
+
+llvm::Expected<StatementSyntax> Parser::parseStatement() {
     std::string FirstRealError;
+    {
+        auto Result = parseEmpty();
+        if (Result)
+            return StatementSyntax{std::move(*Result)};
+        std::string ErrMsg = llvm::toString(Result.takeError());
+        if (ErrMsg != "different syntax" && FirstRealError.empty())
+            FirstRealError = std::move(ErrMsg);
+    }
     {
         auto Result = parseOperation();
         if (Result)
-            return CommandSyntax{std::move(*Result)};
+            return StatementSyntax{std::move(*Result)};
         std::string ErrMsg = llvm::toString(Result.takeError());
         if (ErrMsg != "different syntax" && FirstRealError.empty())
             FirstRealError = std::move(ErrMsg);
@@ -3073,7 +3049,7 @@ llvm::Expected<CommandSyntax> Parser::parseCommand() {
     {
         auto Result = parseLet();
         if (Result)
-            return CommandSyntax{std::move(*Result)};
+            return StatementSyntax{std::move(*Result)};
         std::string ErrMsg = llvm::toString(Result.takeError());
         if (ErrMsg != "different syntax" && FirstRealError.empty())
             FirstRealError = std::move(ErrMsg);
@@ -3081,7 +3057,7 @@ llvm::Expected<CommandSyntax> Parser::parseCommand() {
     {
         auto Result = parseVar();
         if (Result)
-            return CommandSyntax{std::move(*Result)};
+            return StatementSyntax{std::move(*Result)};
         std::string ErrMsg = llvm::toString(Result.takeError());
         if (ErrMsg != "different syntax" && FirstRealError.empty())
             FirstRealError = std::move(ErrMsg);
@@ -3089,7 +3065,7 @@ llvm::Expected<CommandSyntax> Parser::parseCommand() {
     {
         auto Result = parseMutable();
         if (Result)
-            return CommandSyntax{std::move(*Result)};
+            return StatementSyntax{std::move(*Result)};
         std::string ErrMsg = llvm::toString(Result.takeError());
         if (ErrMsg != "different syntax" && FirstRealError.empty())
             FirstRealError = std::move(ErrMsg);
@@ -3097,7 +3073,7 @@ llvm::Expected<CommandSyntax> Parser::parseCommand() {
     {
         auto Result = parseSet();
         if (Result)
-            return CommandSyntax{std::move(*Result)};
+            return StatementSyntax{std::move(*Result)};
         std::string ErrMsg = llvm::toString(Result.takeError());
         if (ErrMsg != "different syntax" && FirstRealError.empty())
             FirstRealError = std::move(ErrMsg);
@@ -3105,7 +3081,7 @@ llvm::Expected<CommandSyntax> Parser::parseCommand() {
     {
         auto Result = parseGuard();
         if (Result)
-            return CommandSyntax{std::move(*Result)};
+            return StatementSyntax{std::move(*Result)};
         std::string ErrMsg = llvm::toString(Result.takeError());
         if (ErrMsg != "different syntax" && FirstRealError.empty())
             FirstRealError = std::move(ErrMsg);
@@ -3113,7 +3089,7 @@ llvm::Expected<CommandSyntax> Parser::parseCommand() {
     {
         auto Result = parseContinue();
         if (Result)
-            return CommandSyntax{std::move(*Result)};
+            return StatementSyntax{std::move(*Result)};
         std::string ErrMsg = llvm::toString(Result.takeError());
         if (ErrMsg != "different syntax" && FirstRealError.empty())
             FirstRealError = std::move(ErrMsg);
@@ -3121,7 +3097,7 @@ llvm::Expected<CommandSyntax> Parser::parseCommand() {
     {
         auto Result = parseBreak();
         if (Result)
-            return CommandSyntax{std::move(*Result)};
+            return StatementSyntax{std::move(*Result)};
         std::string ErrMsg = llvm::toString(Result.takeError());
         if (ErrMsg != "different syntax" && FirstRealError.empty())
             FirstRealError = std::move(ErrMsg);
@@ -3129,7 +3105,7 @@ llvm::Expected<CommandSyntax> Parser::parseCommand() {
     {
         auto Result = parseReturn();
         if (Result)
-            return CommandSyntax{std::move(*Result)};
+            return StatementSyntax{std::move(*Result)};
         std::string ErrMsg = llvm::toString(Result.takeError());
         if (ErrMsg != "different syntax" && FirstRealError.empty())
             FirstRealError = std::move(ErrMsg);
@@ -3137,7 +3113,7 @@ llvm::Expected<CommandSyntax> Parser::parseCommand() {
     {
         auto Result = parseThrow();
         if (Result)
-            return CommandSyntax{std::move(*Result)};
+            return StatementSyntax{std::move(*Result)};
         std::string ErrMsg = llvm::toString(Result.takeError());
         if (ErrMsg != "different syntax" && FirstRealError.empty())
             FirstRealError = std::move(ErrMsg);
@@ -4288,6 +4264,18 @@ llvm::Expected<ThrownSyntax> Parser::parseThrown() {
     size_t End = Lex.position();
 
     return ThrownSyntax{Start, End};
+
+}
+
+llvm::Expected<EmptySyntax> Parser::parseEmpty() {
+    size_t Start = Lex.previousPosition();
+
+    if (!Lex.parseColon())
+        return different();
+
+    size_t End = Lex.position();
+
+    return EmptySyntax{Start, End};
 
 }
 

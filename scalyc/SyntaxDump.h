@@ -39,6 +39,12 @@ public:
         key("end"); OS << End;
     }
 
+    void dump(const EmptySyntax &N) {
+        OS << "{"; nl(); Indent++;
+        key("node"); OS << "\"Empty\","; nl();
+        dumpSpan(N.Start, N.End);
+        nl(); Indent--; indent(); OS << "}";
+    }
     void dump(const ThrownSyntax &N) {
         OS << "{"; nl(); Indent++;
         key("node"); OS << "\"Thrown\","; nl();
@@ -503,7 +509,7 @@ public:
         key("body"); dump(N.body);
         nl(); Indent--; indent(); OS << "}";
     }
-    void dump(const CommandSyntax &N) {
+    void dump(const StatementSyntax &N) {
         std::visit([this](const auto &V) { dump(V); }, N.Value);
     }
     void dump(const WhenSyntax &N) {
@@ -515,7 +521,7 @@ public:
         OS << ","; nl();
         key("variant"); dump(N.variant);
         OS << ","; nl();
-        key("command"); dump(N.command);
+        key("statement"); dump(N.statement);
         nl(); Indent--; indent(); OS << "}";
     }
     void dump(const ConditionSyntax &N) {
@@ -585,14 +591,6 @@ public:
         }
         OS << ","; nl();
         key("action"); dump(N.action);
-        nl(); Indent--; indent(); OS << "}";
-    }
-    void dump(const StatementSyntax &N) {
-        OS << "{"; nl(); Indent++;
-        key("node"); OS << "\"Statement\","; nl();
-        dumpSpan(N.Start, N.End);
-        OS << ","; nl();
-        key("command"); dump(N.command);
         nl(); Indent--; indent(); OS << "}";
     }
     void dump(const CaseSyntax &N) {
@@ -672,7 +670,7 @@ public:
         key("node"); OS << "\"Then\","; nl();
         dumpSpan(N.Start, N.End);
         OS << ","; nl();
-        key("command"); dump(N.command);
+        key("statement"); dump(N.statement);
         nl(); Indent--; indent(); OS << "}";
     }
     void dump(const IfSyntax &N) {
@@ -1498,16 +1496,8 @@ public:
         key("concept_"); dump(N.concept_);
         nl(); Indent--; indent(); OS << "}";
     }
-    void dump(const ConstituentSyntax &N) {
-        std::visit([this](const auto &V) { dump(V); }, N.Value);
-    }
     void dump(const MemberSyntax &N) {
-        OS << "{"; nl(); Indent++;
-        key("node"); OS << "\"Member\","; nl();
-        dumpSpan(N.Start, N.End);
-        OS << ","; nl();
-        key("constituent"); dump(N.constituent);
-        nl(); Indent--; indent(); OS << "}";
+        std::visit([this](const auto &V) { dump(V); }, N.Value);
     }
     void dump(const ExportSyntax &N) {
         std::visit([this](const auto &V) { dump(V); }, N.Value);
@@ -1520,16 +1510,8 @@ public:
         key("export_"); dump(N.export_);
         nl(); Indent--; indent(); OS << "}";
     }
-    void dump(const SymbolSyntax &N) {
-        std::visit([this](const auto &V) { dump(V); }, N.Value);
-    }
     void dump(const DeclarationSyntax &N) {
-        OS << "{"; nl(); Indent++;
-        key("node"); OS << "\"Declaration\","; nl();
-        dumpSpan(N.Start, N.End);
-        OS << ","; nl();
-        key("symbol"); dump(N.symbol);
-        nl(); Indent--; indent(); OS << "}";
+        std::visit([this](const auto &V) { dump(V); }, N.Value);
     }
     void dump(const FileSyntax &N) {
         OS << "{"; nl(); Indent++;

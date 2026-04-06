@@ -15,11 +15,9 @@ namespace scaly {
 struct ProgramSyntax;
 struct FileSyntax;
 struct DeclarationSyntax;
-struct SymbolSyntax;
 struct PrivateSyntax;
 struct ExportSyntax;
 struct MemberSyntax;
-struct ConstituentSyntax;
 struct DefinitionSyntax;
 struct GenericParametersSyntax;
 struct GenericParameterSyntax;
@@ -79,13 +77,12 @@ struct ElseSyntax;
 struct MatchSyntax;
 struct BranchSyntax;
 struct CaseSyntax;
-struct StatementSyntax;
 struct WhileSyntax;
 struct ChooseSyntax;
 struct TrySyntax;
 struct ConditionSyntax;
 struct WhenSyntax;
-struct CommandSyntax;
+struct StatementSyntax;
 struct GuardSyntax;
 struct LetSyntax;
 struct VarSyntax;
@@ -124,6 +121,7 @@ struct CallSyntax;
 struct LocalSyntax;
 struct ReferenceSyntax;
 struct ThrownSyntax;
+struct EmptySyntax;
 
 // Parser error types
 struct DifferentSyntax {};
@@ -136,6 +134,11 @@ struct InvalidSyntax {
 using ParserError = std::variant<DifferentSyntax, InvalidSyntax>;
 
 // Syntax node definitions
+
+struct EmptySyntax {
+    size_t Start;
+    size_t End;
+};
 
 struct ThrownSyntax {
     size_t Start;
@@ -373,8 +376,8 @@ struct GuardSyntax {
     ActionSyntax body;
 };
 
-struct CommandSyntax {
-    std::variant<OperationSyntax, LetSyntax, VarSyntax, MutableSyntax, SetSyntax, GuardSyntax, ContinueSyntax, BreakSyntax, ReturnSyntax, ThrowSyntax> Value;
+struct StatementSyntax {
+    std::variant<EmptySyntax, OperationSyntax, LetSyntax, VarSyntax, MutableSyntax, SetSyntax, GuardSyntax, ContinueSyntax, BreakSyntax, ReturnSyntax, ThrowSyntax> Value;
 };
 
 struct WhenSyntax {
@@ -382,7 +385,7 @@ struct WhenSyntax {
     size_t End;
     llvm::StringRef name;
     NameSyntax variant;
-    CommandSyntax command;
+    StatementSyntax statement;
 };
 
 struct ConditionSyntax {
@@ -413,12 +416,6 @@ struct WhileSyntax {
     ActionSyntax action;
 };
 
-struct StatementSyntax {
-    size_t Start;
-    size_t End;
-    CommandSyntax command;
-};
-
 struct CaseSyntax {
     size_t Start;
     size_t End;
@@ -443,13 +440,13 @@ struct MatchSyntax {
 struct ElseSyntax {
     size_t Start;
     size_t End;
-    CommandSyntax alternative;
+    StatementSyntax alternative;
 };
 
 struct ThenSyntax {
     size_t Start;
     size_t End;
-    CommandSyntax command;
+    StatementSyntax statement;
 };
 
 struct IfSyntax {
@@ -807,14 +804,8 @@ struct DefinitionSyntax {
     ConceptSyntax concept_;
 };
 
-struct ConstituentSyntax {
-    std::variant<DefinitionSyntax, FunctionSyntax, ProcedureSyntax, OperatorSyntax, ImplementSyntax, TraitSyntax, MacroSyntax, ModuleSyntax> Value;
-};
-
 struct MemberSyntax {
-    size_t Start;
-    size_t End;
-    ConstituentSyntax constituent;
+    std::variant<EmptySyntax, DefinitionSyntax, FunctionSyntax, ProcedureSyntax, OperatorSyntax, ImplementSyntax, TraitSyntax, MacroSyntax, ModuleSyntax> Value;
 };
 
 struct ExportSyntax {
@@ -827,14 +818,8 @@ struct PrivateSyntax {
     ExportSyntax export_;
 };
 
-struct SymbolSyntax {
-    std::variant<PrivateSyntax, DefinitionSyntax, FunctionSyntax, ProcedureSyntax, OperatorSyntax, TraitSyntax, MacroSyntax, ModuleSyntax> Value;
-};
-
 struct DeclarationSyntax {
-    size_t Start;
-    size_t End;
-    SymbolSyntax symbol;
+    std::variant<EmptySyntax, PrivateSyntax, DefinitionSyntax, FunctionSyntax, ProcedureSyntax, OperatorSyntax, TraitSyntax, MacroSyntax, ModuleSyntax> Value;
 };
 
 struct FileSyntax {

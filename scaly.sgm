@@ -11,11 +11,8 @@
     <content link = Use                   multiple optional property = uses
     <content link = Declaration           multiple optional property = declarations
 
-<syntax id = Declaration                  multiple
-    <content link = Symbol                                  property = symbol
-    <content colon                                 optional
-
-<syntax id = Symbol                                abstract
+<syntax id = Declaration                  multiple abstract
+    <content link = Empty
     <content link = Private
     <content link = Definition
     <content link = Function
@@ -37,11 +34,8 @@
     <content link = Trait
     <content link = Module
 
-<syntax id = Member                  multiple
-    <content link = Constituent                             property = constituent
-    <content colon                                 optional
-
-<syntax id = Constituent                           abstract
+<syntax id = Member                  multiple abstract
+    <content link = Empty
     <content link = Definition
     <content link = Function
     <content link = Procedure
@@ -373,13 +367,13 @@
     <content link = Else                                    property = alternative
 
 <syntax id = Then
-    <content link = Command                                 property = command
+    <content link = Statement                               property = statement
     <content colon                                 optional
 
 <syntax id = Else
     <content link = else
     <content colon                                 optional
-    <content link = Command                                 property = alternative
+    <content link = Statement                               property = alternative
 
 <syntax id = Match
     <content link = match
@@ -396,10 +390,6 @@
 <syntax id = Case                         multiple
     <content link = case
     <content link = Operand               multiple          property = condition
-
-<syntax id = Statement                    multiple
-    <content link = Command                                 property = command
-    <content colon                                 optional
 
 <syntax id = While
     <content link = while
@@ -432,10 +422,11 @@
     <content colon
     <content link = Name                                    property = variant
     <content colon                                 optional
-    <content link = Command                                 property = command
+    <content link = Statement                               property = statement
     <content colon                                 optional
 
-<syntax id = Command                               abstract
+<syntax id = Statement                    multiple abstract
+    <content link = Empty
     <content link = Operation
     <content link = Let
     <content link = Var
@@ -627,6 +618,9 @@
 
 <syntax id = Thrown
     <content link = exclamation
+
+<syntax id = Empty
+    <content colon
 
 <keyword id = alignof
 <keyword id = as

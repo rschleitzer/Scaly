@@ -32,12 +32,10 @@ private:
     // Generated parse methods
     llvm::Expected<std::vector<DeclarationSyntax>*> parseDeclarationList();
     llvm::Expected<DeclarationSyntax> parseDeclaration();
-    llvm::Expected<SymbolSyntax> parseSymbol();
     llvm::Expected<PrivateSyntax> parsePrivate();
     llvm::Expected<ExportSyntax> parseExport();
     llvm::Expected<std::vector<MemberSyntax>*> parseMemberList();
     llvm::Expected<MemberSyntax> parseMember();
-    llvm::Expected<ConstituentSyntax> parseConstituent();
     llvm::Expected<DefinitionSyntax> parseDefinition();
     llvm::Expected<GenericParametersSyntax> parseGenericParameters();
     llvm::Expected<std::vector<GenericParameterSyntax>*> parseGenericParameterList();
@@ -113,15 +111,14 @@ private:
     llvm::Expected<BranchSyntax> parseBranch();
     llvm::Expected<std::vector<CaseSyntax>*> parseCaseList();
     llvm::Expected<CaseSyntax> parseCase();
-    llvm::Expected<std::vector<StatementSyntax>*> parseStatementList();
-    llvm::Expected<StatementSyntax> parseStatement();
     llvm::Expected<WhileSyntax> parseWhile();
     llvm::Expected<ChooseSyntax> parseChoose();
     llvm::Expected<TrySyntax> parseTry();
     llvm::Expected<ConditionSyntax> parseCondition();
     llvm::Expected<std::vector<WhenSyntax>*> parseWhenList();
     llvm::Expected<WhenSyntax> parseWhen();
-    llvm::Expected<CommandSyntax> parseCommand();
+    llvm::Expected<std::vector<StatementSyntax>*> parseStatementList();
+    llvm::Expected<StatementSyntax> parseStatement();
     llvm::Expected<GuardSyntax> parseGuard();
     llvm::Expected<LetSyntax> parseLet();
     llvm::Expected<VarSyntax> parseVar();
@@ -166,6 +163,7 @@ private:
     llvm::Expected<LocalSyntax> parseLocal();
     llvm::Expected<ReferenceSyntax> parseReference();
     llvm::Expected<ThrownSyntax> parseThrown();
+    llvm::Expected<EmptySyntax> parseEmpty();
 };
 
 } // namespace scaly
