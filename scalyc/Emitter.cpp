@@ -3239,11 +3239,8 @@ llvm::Expected<llvm::Value*> Emitter::emitCall(const PlannedCall &Call) {
                 FuncPageArg = CurrentRegion.ReturnPage;
             } else if (CurrentRegion.LocalPage) {
                 FuncPageArg = CurrentRegion.LocalPage;
-            } else if (PageAllocatePage) {
-                CurrentRegion.LocalPage = (PageAllocatePage && !PageAllocatePage->isDeclaration())
-                    ? static_cast<llvm::Value*>(Builder->CreateCall(PageAllocatePage, {}, "local_page.implicit"))
-                    : static_cast<llvm::Value*>(llvm::ConstantPointerNull::get(llvm::PointerType::get(*Context, 0)));
-                FuncPageArg = CurrentRegion.LocalPage;
+            } else {
+                FuncPageArg = getOrCreateLocalPage();
             }
         }
 
@@ -3305,11 +3302,8 @@ llvm::Expected<llvm::Value*> Emitter::emitCall(const PlannedCall &Call) {
             FuncPageArg = CurrentRegion.ReturnPage;
         } else if (CurrentRegion.LocalPage) {
             FuncPageArg = CurrentRegion.LocalPage;
-        } else if (PageAllocatePage) {
-            CurrentRegion.LocalPage = (PageAllocatePage && !PageAllocatePage->isDeclaration())
-                    ? static_cast<llvm::Value*>(Builder->CreateCall(PageAllocatePage, {}, "local_page.implicit"))
-                    : static_cast<llvm::Value*>(llvm::ConstantPointerNull::get(llvm::PointerType::get(*Context, 0)));
-            FuncPageArg = CurrentRegion.LocalPage;
+        } else {
+            FuncPageArg = getOrCreateLocalPage();
         }
     }
 
@@ -4689,11 +4683,8 @@ llvm::Expected<llvm::Value*> Emitter::emitForIterator(const PlannedFor &For) {
         std::vector<llvm::Value*> GetIterArgs = {IterAlloca};
         if (ImplicitRpFunctions.count(For.GetIteratorMethod)) {
             llvm::Value *Page = CurrentRegion.ReturnPage ? CurrentRegion.ReturnPage : CurrentRegion.LocalPage;
-            if (!Page && PageAllocatePage) {
-                CurrentRegion.LocalPage = (PageAllocatePage && !PageAllocatePage->isDeclaration())
-                    ? static_cast<llvm::Value*>(Builder->CreateCall(PageAllocatePage, {}, "local_page.implicit"))
-                    : static_cast<llvm::Value*>(llvm::ConstantPointerNull::get(llvm::PointerType::get(*Context, 0)));
-                Page = CurrentRegion.LocalPage;
+            if (!Page) {
+                Page = getOrCreateLocalPage();
             }
             if (Page) GetIterArgs.push_back(Page);
         }
@@ -4705,11 +4696,8 @@ llvm::Expected<llvm::Value*> Emitter::emitForIterator(const PlannedFor &For) {
         std::vector<llvm::Value*> GetIterArgs2;
         if (ImplicitRpFunctions.count(For.GetIteratorMethod)) {
             llvm::Value *Page = CurrentRegion.ReturnPage ? CurrentRegion.ReturnPage : CurrentRegion.LocalPage;
-            if (!Page && PageAllocatePage) {
-                CurrentRegion.LocalPage = (PageAllocatePage && !PageAllocatePage->isDeclaration())
-                    ? static_cast<llvm::Value*>(Builder->CreateCall(PageAllocatePage, {}, "local_page.implicit"))
-                    : static_cast<llvm::Value*>(llvm::ConstantPointerNull::get(llvm::PointerType::get(*Context, 0)));
-                Page = CurrentRegion.LocalPage;
+            if (!Page) {
+                Page = getOrCreateLocalPage();
             }
             if (Page) GetIterArgs2.push_back(Page);
         }
@@ -5863,7 +5851,7 @@ llvm::AllocaInst *Emitter::createEntryBlockAlloca(llvm::Type *Ty, llvm::StringRe
 
 llvm::Value *Emitter::getOrCreateLocalPage() {
     if (CurrentRegion.LocalPage) return CurrentRegion.LocalPage;
-    if (!PageAllocatePage || PageAllocatePage->isDeclaration()) return nullptr;
+    if (!PageAllocatePage) return nullptr;
     // Insert the call in the entry block so it dominates all uses
     llvm::IRBuilder<> TmpBuilder(&CurrentFunction->getEntryBlock(),
                                   CurrentFunction->getEntryBlock().begin());
