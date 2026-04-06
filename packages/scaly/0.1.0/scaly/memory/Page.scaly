@@ -107,9 +107,8 @@ define Page
         if next_object = null
             return
 
-        for exclusive_page_ptr in exclusive_pages
+        for exclusive_page in exclusive_pages
         {
-            let exclusive_page (*exclusive_page_ptr)
             exclusive_page.deallocate_extensions()
             free(exclusive_page as pointer[void])
         }

@@ -1079,6 +1079,10 @@ llvm::Error Emitter::emitFunctionBody(const PlannedFunction &Func,
         return llvm::Error::success();
     }
 
+    // Clear per-function state
+    LastFieldBasePtr = nullptr;
+    LastFieldBaseStructTy = nullptr;
+
     // Create entry block
     auto *EntryBB = llvm::BasicBlock::Create(*Context, "entry", LLVMFunc);
     Builder->SetInsertPoint(EntryBB);
@@ -2432,6 +2436,12 @@ llvm::Expected<llvm::Value*> Emitter::emitOperand(const PlannedOperand &Op) {
 
     // Apply member access chain if present
     if (Op.MemberAccess && !Op.MemberAccess->empty() && Value) {
+        // Track pointer to current struct for in-place field access.
+        // When a method is called on a struct field, we need the field's address
+        // (not a copy) so that mutations are visible to the caller.
+        llvm::Value *SourcePtr = nullptr;
+        llvm::Type *SourceStructTy = nullptr;
+
         // If Value is a pointer to a struct, we need to load it first for extractvalue
         // UNLESS we're keeping the original pointer for a procedure call
         if (Value->getType()->isPointerTy() && !KeepOriginalPointer) {
@@ -2451,10 +2461,14 @@ llvm::Expected<llvm::Value*> Emitter::emitOperand(const PlannedOperand &Op) {
                     // Load the pointed-to struct
                     auto &InnerType = BaseType.Generics[0];
                     llvm::Type *StructTy = mapType(InnerType);
+                    SourcePtr = Value;
+                    SourceStructTy = StructTy;
                     Value = Builder->CreateLoad(StructTy, Value, "load.struct");
                 } else {
                     // Load the struct directly
                     llvm::Type *StructTy = mapType(BaseType);
+                    SourcePtr = Value;
+                    SourceStructTy = StructTy;
                     Value = Builder->CreateLoad(StructTy, Value, "load.struct");
                 }
             }
@@ -2512,6 +2526,8 @@ llvm::Expected<llvm::Value*> Emitter::emitOperand(const PlannedOperand &Op) {
                     }
 
                     Value = Builder->CreateCall(MethodFunc, {ThisArg}, Access.Name + ".result");
+                    SourcePtr = nullptr;
+                    SourceStructTy = nullptr;
                     continue;
                 } else {
                     return llvm::make_error<llvm::StringError>(
@@ -2531,6 +2547,8 @@ llvm::Expected<llvm::Value*> Emitter::emitOperand(const PlannedOperand &Op) {
                         llvm::inconvertibleErrorCode()
                     );
                 }
+                SourcePtr = Value;
+                SourceStructTy = StructTy;
                 Value = Builder->CreateLoad(StructTy, Value, "deref");
             }
 
@@ -2557,6 +2575,8 @@ llvm::Expected<llvm::Value*> Emitter::emitOperand(const PlannedOperand &Op) {
 
                 // Load the value (align 1 because data is at offset 1 after i8 tag)
                 Value = Builder->CreateAlignedLoad(ResultTy, DataCast, llvm::Align(1), "union.value");
+                SourcePtr = nullptr;
+                SourceStructTy = nullptr;
                 continue;
             }
 
@@ -2582,6 +2602,22 @@ llvm::Expected<llvm::Value*> Emitter::emitOperand(const PlannedOperand &Op) {
                         llvm::inconvertibleErrorCode()
                     );
                 }
+            }
+
+            // Track source pointer info for in-place field access.
+            // This allows mutable method calls on this field to modify it in-place.
+            // We store the info to create the GEP lazily at the call site,
+            // avoiding domination issues across basic blocks.
+            if (SourcePtr && SourceStructTy &&
+                llvm::isa<llvm::StructType>(SourceStructTy)) {
+                LastFieldBasePtr = SourcePtr;
+                LastFieldBaseStructTy = SourceStructTy;
+                LastFieldIndex = Access.FieldIndex;
+                // Advance SourcePtr for chained field access
+                auto *FieldTy = llvm::cast<llvm::StructType>(SourceStructTy)->getElementType(Access.FieldIndex);
+                SourceStructTy = FieldTy->isStructTy() ? FieldTy : nullptr;
+            } else {
+                LastFieldBasePtr = nullptr;
             }
 
             // Use extractvalue for struct field access
@@ -2689,6 +2725,60 @@ llvm::Expected<llvm::Value*> Emitter::emitExpression(const PlannedExpression &Ex
 }
 
 llvm::Expected<llvm::Value*> Emitter::emitCall(const PlannedCall &Call) {
+    // Short-circuit evaluation for && and ||
+    // Both operands must NOT be eagerly evaluated; the right operand
+    // is only evaluated when the left operand doesn't determine the result.
+    if (Call.IsIntrinsic && Call.IsOperator && Call.Args && Call.Args->size() == 2 &&
+        (Call.Name == "||" || Call.Name == "&&")) {
+        bool IsOr = (Call.Name == "||");
+
+        // Evaluate left operand
+        auto LeftVal = emitOperand((*Call.Args)[0]);
+        if (!LeftVal)
+            return LeftVal.takeError();
+        llvm::Value *Left = *LeftVal;
+        if (!Left->getType()->isIntegerTy(1))
+            Left = Builder->CreateICmpNE(Left,
+                llvm::Constant::getNullValue(Left->getType()), "tobool");
+
+        llvm::BasicBlock *EntryBB = Builder->GetInsertBlock();
+        llvm::BasicBlock *RhsBB = llvm::BasicBlock::Create(
+            *Context, IsOr ? "lor.rhs" : "land.rhs", CurrentFunction);
+        llvm::BasicBlock *MergeBB = llvm::BasicBlock::Create(
+            *Context, IsOr ? "lor.end" : "land.end", CurrentFunction);
+
+        // ||: skip RHS if left is true; &&: skip RHS if left is false
+        if (IsOr)
+            Builder->CreateCondBr(Left, MergeBB, RhsBB);
+        else
+            Builder->CreateCondBr(Left, RhsBB, MergeBB);
+
+        // Evaluate right operand only when needed
+        Builder->SetInsertPoint(RhsBB);
+        auto RightVal = emitOperand((*Call.Args)[1]);
+        if (!RightVal)
+            return RightVal.takeError();
+        llvm::Value *Right = *RightVal;
+        if (!Right->getType()->isIntegerTy(1))
+            Right = Builder->CreateICmpNE(Right,
+                llvm::Constant::getNullValue(Right->getType()), "tobool");
+        llvm::BasicBlock *RhsEndBB = Builder->GetInsertBlock();
+        Builder->CreateBr(MergeBB);
+
+        // Merge with phi
+        Builder->SetInsertPoint(MergeBB);
+        auto *Phi = Builder->CreatePHI(llvm::Type::getInt1Ty(*Context), 2,
+            IsOr ? "lor.result" : "land.result");
+        if (IsOr) {
+            Phi->addIncoming(llvm::ConstantInt::getTrue(*Context), EntryBB);
+            Phi->addIncoming(Right, RhsEndBB);
+        } else {
+            Phi->addIncoming(llvm::ConstantInt::getFalse(*Context), EntryBB);
+            Phi->addIncoming(Right, RhsEndBB);
+        }
+        return static_cast<llvm::Value*>(Phi);
+    }
+
     // Look up the function first to know parameter types
     auto *Func = lookupFunction(Call.MangledName);
 
@@ -2696,6 +2786,11 @@ llvm::Expected<llvm::Value*> Emitter::emitCall(const PlannedCall &Call) {
     // Initializers have mangled names like _ZN<type>C1E<params>
     bool IsInitializerCall = Call.MangledName.find("C1E") != std::string::npos &&
                              Call.MangledName.rfind("_ZN", 0) == 0;
+
+    // Track first arg's field info for in-place method calls
+    llvm::Value *FirstArgFieldBasePtr = nullptr;
+    llvm::Type *FirstArgFieldBaseStructTy = nullptr;
+    unsigned FirstArgFieldIndex = 0;
 
     // Emit arguments, optimizing dereference-to-pointer conversions
     std::vector<llvm::Value*> Args;
@@ -2784,9 +2879,16 @@ llvm::Expected<llvm::Value*> Emitter::emitCall(const PlannedCall &Call) {
             }
 
             if (!PassedPointerDirectly) {
+                LastFieldBasePtr = nullptr;
                 auto ArgVal = emitOperand(Arg);
                 if (!ArgVal)
                     return ArgVal.takeError();
+                // Save the first arg's field info for the arg adjustment loop
+                if (i == 0 && LastFieldBasePtr) {
+                    FirstArgFieldBasePtr = LastFieldBasePtr;
+                    FirstArgFieldBaseStructTy = LastFieldBaseStructTy;
+                    FirstArgFieldIndex = LastFieldIndex;
+                }
                 llvm::Value *FinalArg = *ArgVal;
 
                 // Coerce argument type to match parameter type if needed
@@ -3288,10 +3390,18 @@ llvm::Expected<llvm::Value*> Emitter::emitCall(const PlannedCall &Call) {
         llvm::Type *ArgTy = ArgVal->getType();
 
         if (ParamTy->isPointerTy() && ArgTy->isStructTy()) {
-            // Create alloca at entry block and store the value
-            auto *Alloca = createEntryBlockAlloca(ArgTy, "arg.tmp");
-            Builder->CreateStore(ArgVal, Alloca);
-            AdjustedArgs.push_back(Alloca);
+            // For the first arg (this) of a method call, use the in-place field
+            // pointer if available so that mutations are visible to the caller.
+            if (i == FuncArgsOffset && FirstArgFieldBasePtr && FirstArgFieldBaseStructTy) {
+                auto *FieldPtr = Builder->CreateStructGEP(
+                    FirstArgFieldBaseStructTy, FirstArgFieldBasePtr, FirstArgFieldIndex, "field.inplace");
+                AdjustedArgs.push_back(FieldPtr);
+                FirstArgFieldBasePtr = nullptr;
+            } else {
+                auto *Alloca = createEntryBlockAlloca(ArgTy, "arg.tmp");
+                Builder->CreateStore(ArgVal, Alloca);
+                AdjustedArgs.push_back(Alloca);
+            }
         } else if (ParamTy->isIntegerTy() && ArgTy->isIntegerTy() && ParamTy != ArgTy) {
             // Integer type conversion (truncate or extend)
             AdjustedArgs.push_back(Builder->CreateIntCast(ArgVal, ParamTy, true, "arg.cast"));
@@ -5518,8 +5628,12 @@ llvm::Expected<llvm::Value*> Emitter::emitTuple(const PlannedTuple &Tuple) {
             // $ = local page
             Page = CurrentRegion.LocalPage;
         } else if (std::holds_alternative<CallLifetime>(Tuple.Life)) {
-            // # = caller's return page
+            // # = caller's return page, with fallback to local page
             Page = CurrentRegion.ReturnPage;
+            if (!Page)
+                Page = CurrentRegion.LocalPage;
+            if (!Page)
+                Page = getOrCreateLocalPage();
         } else if (std::holds_alternative<ReferenceLifetime>(Tuple.Life) && Tuple.RegionArg) {
             // ^name = emit the region argument
             auto PageOrErr = emitOperand(*Tuple.RegionArg);

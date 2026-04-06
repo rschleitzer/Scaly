@@ -143,6 +143,13 @@ private:
     llvm::Function *Free = nullptr;               // free(ptr)
     llvm::Function *ExitFunc = nullptr;           // exit(code)
 
+    // When a struct field is accessed via member access chain, these track
+    // the source pointer and field index. Used by emitCall to compute a GEP
+    // at the call site (instead of copying the field) for mutable method calls.
+    llvm::Value *LastFieldBasePtr = nullptr;
+    llvm::Type *LastFieldBaseStructTy = nullptr;
+    unsigned LastFieldIndex = 0;
+
     // Loop context for break/continue
     struct LoopContext {
         llvm::BasicBlock *ExitBlock;     // Target for 'break'

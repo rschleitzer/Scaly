@@ -5,7 +5,8 @@ define PageList
 {
     procedure add(this: PageList, element: pointer[Page])
     {
-        let new_node PageNode#(element, head)
+        let own_page Page.get(this as pointer[void])
+        let new_node PageNode^own_page(element, head)
         set head: new_node
     }
 
