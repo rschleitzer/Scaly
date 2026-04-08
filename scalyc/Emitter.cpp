@@ -3442,7 +3442,10 @@ llvm::Expected<llvm::Value*> Emitter::emitIntrinsicOp(
     bool IsSigned = true;  // Default to signed for now
 
     // Check if dealing with unsigned types
-    if (ResultType.Name.find('u') == 0) {  // u8, u16, u32, u64
+    if (ResultType.Name.find('u') == 0 ||  // u8, u16, u32, u64
+        ResultType.Name == "size_t" || ResultType.Name == "size" ||
+        ResultType.Name == "usize" || ResultType.Name == "bool" ||
+        ResultType.Name == "char") {
         IsSigned = false;
     }
 

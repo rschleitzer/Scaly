@@ -797,7 +797,7 @@ static std::string normalizeTypeName(llvm::StringRef Name) {
     if (Name == "size_t" || Name == "size" || Name == "u64" || Name == "usize") return "u64";
     if (Name == "u32") return "u32";
     if (Name == "u16") return "u16";
-    if (Name == "u8") return "u8";
+    if (Name == "u8" || Name == "char") return "u8";
     // Floating point aliases
     if (Name == "double" || Name == "f64") return "f64";
     if (Name == "float" || Name == "f32") return "f32";
@@ -2490,28 +2490,47 @@ std::optional<Planner::InitializerMatch> Planner::findInitializer(
         !StructIt->second.Initializers.empty()) {
         const PlannedStructure &Struct = StructIt->second;
 
-        // Search for matching initializer in the cached PlannedStructure
+        // Two-pass search: prefer exact type matches over compatible (widened) ones
+        // Pass 1: exact match only
         for (const auto &Init : Struct.Initializers) {
-            // Cached initializers have page parameter already excluded from Input
-            {
-                if (Init.Input.size() != ArgTypes.size()) continue;
-                bool AllMatch = true;
-                for (size_t i = 0; i < ArgTypes.size(); ++i) {
-                    if (!Init.Input[i].ItemType) continue;
-                    if (!typesCompatible(*Init.Input[i].ItemType, ArgTypes[i])) {
-                        AllMatch = false;
-                        break;
-                    }
+            if (Init.Input.size() != ArgTypes.size()) continue;
+            bool AllMatch = true;
+            for (size_t i = 0; i < ArgTypes.size(); ++i) {
+                if (!Init.Input[i].ItemType) continue;
+                if (!typesEqual(*Init.Input[i].ItemType, ArgTypes[i])) {
+                    AllMatch = false;
+                    break;
                 }
-                if (!AllMatch) continue;
-
-                InitializerMatch Match;
-                Match.Init = &Init;
-                Match.MangledName = Init.MangledName;
-                Match.StructType = StructType;
-                Match.RequiresPageParam = Init.PageParameter.has_value();
-                return Match;
             }
+            if (!AllMatch) continue;
+
+            InitializerMatch Match;
+            Match.Init = &Init;
+            Match.MangledName = Init.MangledName;
+            Match.StructType = StructType;
+            Match.RequiresPageParam = Init.PageParameter.has_value();
+            return Match;
+        }
+
+        // Pass 2: compatible match (allows integer widening, etc.)
+        for (const auto &Init : Struct.Initializers) {
+            if (Init.Input.size() != ArgTypes.size()) continue;
+            bool AllMatch = true;
+            for (size_t i = 0; i < ArgTypes.size(); ++i) {
+                if (!Init.Input[i].ItemType) continue;
+                if (!typesCompatible(*Init.Input[i].ItemType, ArgTypes[i])) {
+                    AllMatch = false;
+                    break;
+                }
+            }
+            if (!AllMatch) continue;
+
+            InitializerMatch Match;
+            Match.Init = &Init;
+            Match.MangledName = Init.MangledName;
+            Match.StructType = StructType;
+            Match.RequiresPageParam = Init.PageParameter.has_value();
+            return Match;
         }
         // Cache search didn't find a match - fall through to Concept lookup
     }
@@ -2551,10 +2570,8 @@ std::optional<Planner::InitializerMatch> Planner::findInitializer(
                 TypeSubstitutions[Conc->Parameters[I].Name] = StructType.Generics[I];
             }
 
-            // Check each original initializer
-            for (const auto &Init : OrigStruct.Initializers) {
-                // Try direct match first, then with page offset for init#
-                bool FoundMatch = false;
+            // Two-pass search: prefer exact type matches over compatible ones
+            auto matchInitializer = [&](const Initializer &Init, bool ExactOnly) -> bool {
                 for (size_t PageOffset : {size_t(0), Init.PageParameter.has_value() ? size_t(1) : size_t(0)}) {
                     if (Init.Input.size() - PageOffset != ArgTypes.size()) continue;
                     bool AllMatch = true;
@@ -2566,15 +2583,30 @@ std::optional<Planner::InitializerMatch> Planner::findInitializer(
                             AllMatch = false;
                             break;
                         }
-                        if (!typesCompatible(*ParamTypeResult, ArgTypes[i])) {
+                        if (ExactOnly ? !typesEqual(*ParamTypeResult, ArgTypes[i])
+                                      : !typesCompatible(*ParamTypeResult, ArgTypes[i])) {
                             AllMatch = false;
                             break;
                         }
                     }
-                    if (AllMatch) { FoundMatch = true; break; }
+                    if (AllMatch) return true;
                 }
+                return false;
+            };
 
-                if (FoundMatch) {
+            // Find the matching initializer (exact match first, then compatible)
+            const Initializer *MatchedInit = nullptr;
+            for (const auto &Init : OrigStruct.Initializers) {
+                if (matchInitializer(Init, true)) { MatchedInit = &Init; break; }
+            }
+            if (!MatchedInit) {
+                for (const auto &Init : OrigStruct.Initializers) {
+                    if (matchInitializer(Init, false)) { MatchedInit = &Init; break; }
+                }
+            }
+
+                if (MatchedInit) {
+                    const auto &Init = *MatchedInit;
                     // Found a match - need to actually plan the initializer
                     // so that the Emitter can find it
 
@@ -2645,7 +2677,6 @@ std::optional<Planner::InitializerMatch> Planner::findInitializer(
                     Match.RequiresPageParam = Init.PageParameter.has_value();
                     return Match;
                 }
-            }
 
             TypeSubstitutions = OldSubst;
         }
@@ -9151,46 +9182,70 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                             }
 
                             auto Candidates = lookupFunction(FuncName);
-                            for (const Function* Func : Candidates) {
-                                // Verify this function is actually a member of the current structure
-                                bool IsStructMember = false;
-                                if (CurrentStruct) {
-                                    for (const auto& Member : CurrentStruct->Members) {
-                                        if (auto* StructFunc = std::get_if<Function>(&Member)) {
-                                            if (StructFunc == Func) {
-                                                IsStructMember = true;
-                                                break;
+
+                            // Helper to check if function parameter types match argument types
+                            auto paramsMatch = [&](const Function* Func, size_t ParamOffset, bool ExactOnly) -> bool {
+                                for (size_t I = 0; I < ArgTypes.size(); ++I) {
+                                    size_t ParamIdx = I + ParamOffset;
+                                    if (!Func->Input[ParamIdx].ItemType) continue;
+                                    auto ParamTypeResult = resolveType(*Func->Input[ParamIdx].ItemType, Op.Loc);
+                                    if (!ParamTypeResult) {
+                                        llvm::consumeError(ParamTypeResult.takeError());
+                                        return false;
+                                    }
+                                    if (ExactOnly ? !typesEqual(*ParamTypeResult, ArgTypes[I])
+                                                  : !typesCompatible(*ParamTypeResult, ArgTypes[I])) {
+                                        return false;
+                                    }
+                                }
+                                return true;
+                            };
+
+                            // Two-pass: exact match first, then compatible
+                            for (bool ExactOnly : {true, false}) {
+                                if (MatchedFunc) break;
+                                for (const Function* Func : Candidates) {
+                                    bool IsStructMember = false;
+                                    if (CurrentStruct) {
+                                        for (const auto& Member : CurrentStruct->Members) {
+                                            if (auto* StructFunc = std::get_if<Function>(&Member)) {
+                                                if (StructFunc == Func) {
+                                                    IsStructMember = true;
+                                                    break;
+                                                }
                                             }
                                         }
                                     }
-                                }
 
-                                if (!IsStructMember) {
-                                    // Not a struct member, just track as potential match
-                                    if (!MatchedFunc && Func->Parameters.empty() &&
-                                        Func->Input.size() == ArgTypes.size()) {
-                                        MatchedFunc = Func;
+                                    if (!IsStructMember) {
+                                        if (!MatchedFunc && Func->Parameters.empty() &&
+                                            Func->Input.size() == ArgTypes.size() &&
+                                            paramsMatch(Func, 0, ExactOnly)) {
+                                            MatchedFunc = Func;
+                                        }
+                                        continue;
                                     }
-                                    continue;
-                                }
 
-                                // Check if this function takes 'this' as first param
-                                if (Func->Parameters.empty() &&
-                                    !Func->Input.empty() &&
-                                    Func->Input[0].Name &&
-                                    *Func->Input[0].Name == "this" &&
-                                    Func->Input.size() == ArgTypes.size() + 1) {
-                                    NeedsImplicitThis = true;
-                                    IsSiblingMethod = true;
-                                    MatchedFunc = Func;
-                                    break;
-                                }
-                                // Check if this is a static method (no 'this', but still a sibling)
-                                else if (Func->Parameters.empty() &&
-                                         Func->Input.size() == ArgTypes.size()) {
-                                    IsSiblingMethod = true;
-                                    MatchedFunc = Func;
-                                    // Don't break - prefer 'this' variant if it exists
+                                    // Check if this function takes 'this' as first param
+                                    if (Func->Parameters.empty() &&
+                                        !Func->Input.empty() &&
+                                        Func->Input[0].Name &&
+                                        *Func->Input[0].Name == "this" &&
+                                        Func->Input.size() == ArgTypes.size() + 1 &&
+                                        paramsMatch(Func, 1, ExactOnly)) {
+                                        NeedsImplicitThis = true;
+                                        IsSiblingMethod = true;
+                                        MatchedFunc = Func;
+                                        break;
+                                    }
+                                    // Check if this is a static method (no 'this', but still a sibling)
+                                    else if (Func->Parameters.empty() &&
+                                             Func->Input.size() == ArgTypes.size() &&
+                                             paramsMatch(Func, 0, ExactOnly)) {
+                                        IsSiblingMethod = true;
+                                        MatchedFunc = Func;
+                                        // Don't break - prefer 'this' variant if it exists
+                                    }
                                 }
                             }
                         }
