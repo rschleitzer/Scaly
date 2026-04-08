@@ -12491,12 +12491,38 @@ llvm::Expected<PlannedModule> Planner::planModule(const Module &Mod) {
 
                     // Navigate through the namespace modules
                     const Module* CurrentMod = nullptr;
-                    if (CurrentNS && U.Path.size() > 2) {
-                        // Find the first module (e.g., "compiler")
-                        for (const auto& NsMod : CurrentNS->Modules) {
-                            if (NsMod.Name == U.Path[1]) {
-                                CurrentMod = &NsMod;
-                                break;
+                    if (CurrentNS && U.Path.size() >= 2) {
+                        // For Path.size() == 2 (e.g., "use scalyc.cli"):
+                        //   Path[0] = package/namespace, Path[1] = target concept
+                        //   Look directly in the namespace's modules for the concept
+                        if (U.Path.size() == 2) {
+                            // Search namespace modules for a module matching the target
+                            for (const auto& NsMod : CurrentNS->Modules) {
+                                if (NsMod.Name == ShortName) {
+                                    CurrentMod = &NsMod;
+                                    break;
+                                }
+                            }
+                            // Also search namespace members directly
+                            if (!CurrentMod) {
+                                for (const auto& Member : CurrentNS->Members) {
+                                    if (auto* NsConc = std::get_if<Concept>(&Member)) {
+                                        if (NsConc->Name == ShortName) {
+                                            Conc = NsConc;
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // For Path.size() > 2: find the first module (e.g., "compiler")
+                        if (U.Path.size() > 2) {
+                            for (const auto& NsMod : CurrentNS->Modules) {
+                                if (NsMod.Name == U.Path[1]) {
+                                    CurrentMod = &NsMod;
+                                    break;
+                                }
                             }
                         }
 
