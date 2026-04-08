@@ -850,6 +850,8 @@ llvm::Expected<VariantSyntax> Parser::parseVariant() {
 
     Lex.parsePunctuation(',');
 
+    Lex.parseColon();
+
     size_t End = Lex.position();
 
     return VariantSyntax{Start, End, Name, Attributes, Annotation};

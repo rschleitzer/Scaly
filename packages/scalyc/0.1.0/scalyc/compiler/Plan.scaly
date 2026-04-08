@@ -46,10 +46,8 @@ define PlannedType
     generics: ref[Vector[PlannedType]]?   ; Resolved generic args (if any)
     life: Lifetime
     origin: ref[InstantiationInfo]?  ; null if not from generic
-
     ; For fixed-size array types: stores the size reference
     array_size: String
-
     ; For inference: may contain unresolved type variables
     variable: ref[TypeVariable]?  ; non-null if this is a type variable
 )
@@ -253,7 +251,6 @@ define PlannedFor
     identifier: String
     expr: ref[Vector[PlannedOperand]]?
     body: PlannedAction
-
     ; Iterator support fields
     is_iterator_loop: bool          ; true if iterator-based, false if integer range
     collection_type: PlannedType
@@ -621,14 +618,12 @@ define Plan
 (
     main_module: PlannedModule
     statements: ref[Vector[PlannedStatement]]?
-
     ; All instantiated types/functions (for quick lookup during emission)
     ; Note: In Scaly we'll use Vector pairs instead of maps for now
     structures: ref[Vector[PlannedStructure]]?
     unions: ref[Vector[PlannedUnion]]?
     functions: ref[Vector[PlannedFunction]]?
     globals: ref[Vector[PlannedGlobal]]?
-
     ; Type inference state
     next_type_var_id: size_t
     constraints: ref[Vector[TypeConstraint]]?

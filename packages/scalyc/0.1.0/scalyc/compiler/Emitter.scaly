@@ -256,49 +256,37 @@ define RegionInfo
 define Emitter
 (
     config: EmitterConfig
-
     ; LLVM handles
     context: LLVMContextRef
     llvm_module: LLVMModuleRef
     builder: LLVMBuilderRef
-
     ; Current plan being emitted
     current_plan: ref[Plan]?
-
     ; Type cache: name -> LLVM type (using parallel vectors)
     type_cache_names: ref[Vector[String]]?
     type_cache_types: ref[Vector[LLVMTypeRef]]?
-
     ; Struct cache: name -> LLVM struct type
     struct_cache_names: ref[Vector[String]]?
     struct_cache_types: ref[Vector[LLVMTypeRef]]?
-
     ; Function cache: mangled name -> LLVM function
     function_cache_names: ref[Vector[String]]?
     function_cache_funcs: ref[Vector[LLVMValueRef]]?
-
     ; Intrinsic types
     intrinsic_type_names: ref[Vector[String]]?
     intrinsic_types: ref[Vector[IntrinsicTypeInfo]]?
-
     ; Current function state
     current_function: LLVMValueRef
     current_block: LLVMBasicBlockRef
     current_function_can_throw: bool
-
     ; Local variables: name -> LLVM value
     local_var_names: ref[Vector[String]]?
     local_var_values: ref[Vector[LLVMValueRef]]?
-
     ; Region/lifetime management
     current_region: RegionInfo
-
     ; Loop context stack for break/continue
     loop_stack: ref[Vector[LoopContext]]?
-
     ; Block cleanup context stack
     block_cleanup_stack: ref[Vector[BlockCleanupContext]]?
-
     ; RBMM runtime functions
     page_type: LLVMTypeRef
     page_allocate: LLVMValueRef

@@ -87,7 +87,6 @@ define Parser
         keywords_builder.add(String#("extern"))
         keywords_builder.add(String#("for"))
         keywords_builder.add(String#("function"))
-        keywords_builder.add(String#("guard"))
         keywords_builder.add(String#("if"))
         keywords_builder.add(String#("implement"))
         keywords_builder.add(String#("in"))
@@ -994,6 +993,8 @@ define Parser
                 set annotation: success
 
         lexer.parse_punctuation#(ParserConstants.CHAR_COMMA())
+
+        lexer.parse_colon#()
 
         let end lexer.position
 
@@ -2991,13 +2992,12 @@ define Parser
                 set consequent: success
 
         let alternative_start lexer.position
-        var alternative: ElseSyntax
+        var alternative: ref[ElseSyntax]? null
         choose parse_else#()
             when err: Error
             {
                 choose err
-                    when d: Different
-                        throw ParserError.Invalid(InvalidSyntax(alternative_start, lexer.position, String#("expected Else")))
+                    when d: Different {}
                     when i: Invalid
                         throw ParserError.Invalid(i)
             }
@@ -3572,16 +3572,6 @@ define Parser
             }
             when node: Success
                 return StatementSyntax.Set(node)
-        choose parse_guard#()
-            when err: Error
-            {
-                choose err
-                    when i: Invalid
-                        throw ParserError.Invalid(i)
-                    when d: Different {}
-            }
-            when node: Success
-                return StatementSyntax.Guard(node)
         choose parse_continue#()
             when err: Error
             {
@@ -3623,49 +3613,6 @@ define Parser
             when node: Success
                 return StatementSyntax.Throw(node)
         throw ParserError.Different(DifferentSyntax())
-    }
-
-    function parse_guard#(rp, this: Parser) returns GuardSyntax throws ParserError
-    {
-        let start lexer.previous_position
-
-        if ~lexer.parse_keyword#(String#("guard"))
-            throw ParserError.Different(DifferentSyntax())
-
-        let condition_start lexer.position
-        var condition: ref[Vector[OperandSyntax]]?
-        choose parse_operand_list#()
-            when err: Error
-            {
-                choose err
-                    when d: Different
-                        throw ParserError.Invalid(InvalidSyntax(condition_start, lexer.position, String#("expected Operand")))
-                    when i: Invalid
-                        throw ParserError.Invalid(i)
-            }
-            when success: Success
-                set condition: success
-
-        if ~lexer.parse_colon#()
-            throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#("expected colon or newline")))
-
-        let body_start lexer.position
-        var body: ActionSyntax
-        choose parse_action#()
-            when err: Error
-            {
-                choose err
-                    when d: Different
-                        throw ParserError.Invalid(InvalidSyntax(body_start, lexer.position, String#("expected Action")))
-                    when i: Invalid
-                        throw ParserError.Invalid(i)
-            }
-            when success: Success
-                set body: success
-
-        let end lexer.position
-
-        GuardSyntax(start, end, condition, body)
     }
 
     function parse_let#(rp, this: Parser) returns LetSyntax throws ParserError
@@ -4945,7 +4892,6 @@ function test() returns int
         {
             if ~parser.is_at_end()
                 return 2
-
         }
 
     ; Test 2: Parse an identifier expression
@@ -4957,7 +4903,6 @@ function test() returns int
         {
             if ~parser.is_at_end()
                 return 4
-
         }
 
     ; Test 3: Parse a function definition
@@ -4969,7 +4914,6 @@ function test() returns int
         {
             if ~parser.is_at_end()
                 return 6
-
         }
 
     ; Test 4: Parse a structure definition
@@ -4981,7 +4925,6 @@ function test() returns int
         {
             if ~parser.is_at_end()
                 return 8
-
         }
 
     ; Test 5: Parse a structure with properties
@@ -4993,7 +4936,6 @@ function test() returns int
         {
             if ~parser.is_at_end()
                 return 10
-
         }
 
     ; Test 6: Parse a union definition
@@ -5005,7 +4947,6 @@ function test() returns int
         {
             if ~parser.is_at_end()
                 return 12
-
         }
 
     0

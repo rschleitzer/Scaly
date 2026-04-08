@@ -525,6 +525,10 @@ void Lexer::skipWhitespace(bool SkipLineFeed) {
             if (*Current_ != '*') {
                 readCharacter();
                 handleSingleLineComment();
+                // Consume trailing newline so it doesn't produce a spurious ColonToken
+                if (Current_ != nullptr && *Current_ == '\n') {
+                    readCharacter();
+                }
             } else {
                 readCharacter();
                 handleMultiLineComment();

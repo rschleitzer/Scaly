@@ -119,36 +119,27 @@ define NamespaceContext
 define Planner
 (
     file: String
-
     ; Symbol tables for resolution (flat cache, populated during planning)
     concepts: ref[HashMapBuilder[String, ref[Concept]?]]?
     functions: ref[HashMapBuilder[String, Vector[ref[Function]?]]]?
     operators: ref[HashMapBuilder[String, Vector[ref[Operator]?]]]?
-
     ; Instantiation cache - avoid duplicate monomorphization (O(1) lookups)
     instantiated_structures: ref[HashMapBuilder[String, PlannedStructure]]?
     instantiated_unions: ref[HashMapBuilder[String, PlannedUnion]]?
     instantiated_functions: ref[HashMapBuilder[String, PlannedFunction]]?
-
     ; Track functions currently being planned to prevent infinite recursion
     functions_being_planned: ref[HashSetBuilder[String]]?
-
     ; Global constants cache
     planned_globals: ref[HashMapBuilder[String, PlannedGlobal]]?
-
     ; Current generic substitution context
     type_substitutions: ref[HashMapBuilder[String, PlannedType]]?
-
     ; Scope stack for local variables
     scopes: ref[Vector[Scope]]?
-
     ; Planning context
     structure_ctx: StructureContext
     namespace_ctx: NamespaceContext
-
     ; Track if current function uses $ allocations (needs local page)
     current_function_uses_local_lifetime: bool
-
     ; Current plan being built
     current_plan: ref[Plan]?
 )

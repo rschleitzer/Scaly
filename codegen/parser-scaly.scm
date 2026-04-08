@@ -248,16 +248,13 @@ define Parser
                         (("keyword")
                             ($
 "
-        guard ~lexer.parse_keyword#(String#(\""(id (element-with-id (link content)))"\"))
-        {"
+        if ~lexer.parse_keyword#(String#(\""(id (element-with-id (link content)))"\"))"
                                 (if (equal? 1 (child-number content))
                                     "
             throw ParserError.Different(DifferentSyntax())
-        }
 "
                                     ($ "
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#(\"expected '"(id (element-with-id (link content)))"'\")))
-        }
 ")
                                 )
                             )
@@ -272,17 +269,13 @@ define Parser
                                 ;; Required punctuation
                                 ($
 "
-        guard ~lexer.parse_punctuation#("(punct-const-name (value (element-with-id (link content))))")"
+        if ~lexer.parse_punctuation#("(punct-const-name (value (element-with-id (link content))))")"
                                     (if (equal? 1 (child-number content))
                                         "
-        {
             throw ParserError.Different(DifferentSyntax())
-        }
 "
                                         ($ "
-        {
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#(\"expected '"(value (element-with-id (link content)))"'\")))
-        }
 ")
                                     )
                                 )
@@ -298,17 +291,13 @@ define Parser
                                 ;; Required colon
                                 ($
 "
-        guard ~lexer.parse_colon#()"
+        if ~lexer.parse_colon#()"
                                     (if (equal? 1 (child-number content))
                                         "
-        {
             throw ParserError.Different(DifferentSyntax())
-        }
 "
                                         "
-        {
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#(\"expected colon or newline\")))
-        }
 ")
                                 )
                             )
@@ -318,17 +307,13 @@ define Parser
                             ($
 "
         let " prop " lexer.parse_identifier#(keywords)
-        guard " prop ".length() = 0"
+        if " prop ".length() = 0"
                                 (if (equal? 1 (child-number content))
                                     "
-        {
             throw ParserError.Different(DifferentSyntax())
-        }
 "
                                     "
-        {
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#(\"expected identifier\")))
-        }
 ")
                             ))
                         )
@@ -337,17 +322,13 @@ define Parser
                             ($
 "
         let " prop " lexer.parse_attribute#()
-        guard " prop ".length() = 0"
+        if " prop ".length() = 0"
                                 (if (equal? 1 (child-number content))
                                     "
-        {
             throw ParserError.Different(DifferentSyntax())
-        }
 "
                                     "
-        {
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#(\"expected attribute\")))
-        }
 ")
                             ))
                         )
@@ -384,10 +365,8 @@ function test() returns int
             return 1
         when literal: Success
         {
-            guard ~parser.is_at_end()
-            {
+            if ~parser.is_at_end()
                 return 2
-            }
         }
 
     ; Test 2: Parse an identifier expression
@@ -397,10 +376,8 @@ function test() returns int
             return 3
         when name: Success
         {
-            guard ~parser.is_at_end()
-            {
+            if ~parser.is_at_end()
                 return 4
-            }
         }
 
     ; Test 3: Parse a function definition
@@ -410,10 +387,8 @@ function test() returns int
             return 5
         when func: Success
         {
-            guard ~parser.is_at_end()
-            {
+            if ~parser.is_at_end()
                 return 6
-            }
         }
 
     ; Test 4: Parse a structure definition
@@ -423,10 +398,8 @@ function test() returns int
             return 7
         when def: Success
         {
-            guard ~parser.is_at_end()
-            {
+            if ~parser.is_at_end()
                 return 8
-            }
         }
 
     ; Test 5: Parse a structure with properties
@@ -436,10 +409,8 @@ function test() returns int
             return 9
         when def: Success
         {
-            guard ~parser.is_at_end()
-            {
+            if ~parser.is_at_end()
                 return 10
-            }
         }
 
     ; Test 6: Parse a union definition
@@ -449,10 +420,8 @@ function test() returns int
             return 11
         when def: Success
         {
-            guard ~parser.is_at_end()
-            {
+            if ~parser.is_at_end()
                 return 12
-            }
         }
 
     0
