@@ -99,7 +99,6 @@ use scaly.compiler.Syntax.GenericArgumentsSyntax
 use scaly.compiler.Syntax.ExpressionSyntax
 use scaly.compiler.Syntax.OperandSyntax
 use scaly.compiler.Syntax.StatementSyntax
-use scaly.compiler.Syntax.CommandSyntax
 use scaly.compiler.Syntax.OperationSyntax
 use scaly.compiler.Syntax.LetSyntax
 use scaly.compiler.Syntax.VarSyntax
@@ -481,7 +480,7 @@ function handle_expression#(syntax: ExpressionSyntax) returns Expression
 function handle_if#(syntax: IfSyntax) returns If
 {
     let condition handle_operands#(syntax.condition)
-    let cons_stmt handle_command#(syntax.consequent.command)
+    let cons_stmt handle_command#(syntax.consequent.statement)
 
     let alt_stmt handle_command#(syntax.alternative.alternative)
 
@@ -618,7 +617,7 @@ function handle_when#(syntax: WhenSyntax) returns When
     var variant_path Vector[String]#(1)
     variant_path.put(0, syntax.variant)
 
-    let stmt handle_command#(syntax.command)
+    let stmt handle_command#(syntax.statement)
     When(
         Span(syntax.start, syntax.end),
         syntax.name,
@@ -848,7 +847,7 @@ function handle_binding_item#(syntax: BindingSyntax) returns Item
     )
 }
 
-function handle_command#(syntax: CommandSyntax) returns Statement
+function handle_command#(syntax: StatementSyntax) returns Statement
 {
     choose syntax
         when op: OperationSyntax
@@ -917,7 +916,7 @@ function handle_command#(syntax: CommandSyntax) returns Statement
 }
 
 function handle_statement#(syntax: StatementSyntax) returns Statement
-    handle_command#(syntax.command)
+    handle_command#(syntax)
 
 function handle_statements#(syntax: ref[Vector[StatementSyntax]]?) returns Vector[Statement]
 {
@@ -1403,46 +1402,37 @@ function handle_class#(name: String, path: String, syntax: ClassSyntax, is_priva
             }
         }
 
-        ; Handle inits
-        if body.inits <> null
-        {
-            let init_syns (*body.inits)
-            set initializers: Vector[Initializer]#(init_syns.length)
-            var i: size_t 0
-            while i < init_syns.length
-            {
-                let init_ptr init_syns.get(i)
-                if init_ptr <> null
-                {
-                    let init_syntax (*init_ptr)
-                    let init_ handle_initializer#(init_syntax, false)
-                    initializers.put(i, init_)
-                }
-                set i: i + 1
-            }
-        }
-
-        ; Handle deinit
-        if body.deInit <> null
-        {
-            let deinit_syntax (*body.deInit)
-            set deinitializer: handle_deinitializer#(deinit_syntax)
-        }
-
-        ; Handle members
+        ; Handle members (inits, deinit, and other members are all in body.members)
         if body.members <> null
         {
             let member_syns (*body.members)
-            set members: Vector[Member]#(member_syns.length)
+            let total member_syns.length
+            set initializers: Vector[Initializer]#(total)
+            set members: Vector[Member]#(total)
             var i: size_t 0
-            while i < member_syns.length
+            var init_idx: size_t 0
+            var member_idx: size_t 0
+            while i < total
             {
                 let member_ptr member_syns.get(i)
                 if member_ptr <> null
                 {
                     let member_syntax (*member_ptr)
-                    let member handle_constituent#(path, member_syntax, &symbols_builder)
-                    members.put(i, member)
+                    choose member_syntax
+                        when init_syntax: InitSyntax
+                        {
+                            let init_ handle_initializer#(init_syntax, false)
+                            initializers.put(init_idx, init_)
+                            set init_idx: init_idx + 1
+                        }
+                        when deinit_syntax: DeInitSyntax
+                            set deinitializer: handle_deinitializer#(deinit_syntax)
+                        else
+                        {
+                            let member handle_constituent#(path, member_syntax, &symbols_builder)
+                            members.put(member_idx, member)
+                            set member_idx: member_idx + 1
+                        }
                 }
                 set i: i + 1
             }
@@ -1466,7 +1456,7 @@ function handle_class#(name: String, path: String, syntax: ClassSyntax, is_priva
 
 function handle_constituent#(path: String, syntax: MemberSyntax, symbols_builder: pointer[HashMapBuilder[String, Nameable]]) returns Member
 {
-    choose syntax.constituent
+    choose syntax
         when def: DefinitionSyntax
         {
             let concept handle_definition#(path, def, false)
@@ -1538,7 +1528,7 @@ function handle_namespace#(name: String, path: String, syntax: NamespaceSyntax, 
 
 function handle_declaration#(path: String, syntax: DeclarationSyntax, symbols_builder: pointer[HashMapBuilder[String, Nameable]]) returns Member
 {
-    choose syntax.symbol
+    choose syntax
         when private_syntax: PrivateSyntax
             handle_export#(path, private_syntax.export_, true, symbols_builder)
         when def: DefinitionSyntax
@@ -1764,42 +1754,38 @@ function build_module#(path: String, file_name: String, name: String, syntax: Fi
 {
     var symbols_builder HashMapBuilder[String, Nameable]$()
 
-    ; Handle uses
+    ; Handle declarations (uses are now part of declarations)
     var uses Vector[Use]#(0)
-    if syntax.uses <> null
-    {
-        let use_syns (*syntax.uses)
-        set uses: Vector[Use]#(use_syns.length)
-        var i: size_t 0
-        while i < use_syns.length
-        {
-            let use_ptr use_syns.get(i)
-            if use_ptr <> null
-            {
-                let use_syntax (*use_ptr)
-                let use_ handle_use#(use_syntax)
-                uses.put(i, use_)
-            }
-            set i: i + 1
-        }
-    }
-
-    ; Handle declarations
     var modules Vector[Module]#(0)
     var members Vector[Member]#(0)
     if syntax.declarations <> null
     {
         let decl_syns (*syntax.declarations)
-        set members: Vector[Member]#(decl_syns.length)
+        let total decl_syns.length
+        set uses: Vector[Use]#(total)
+        set members: Vector[Member]#(total)
         var i: size_t 0
-        while i < decl_syns.length
+        var use_idx: size_t 0
+        var member_idx: size_t 0
+        while i < total
         {
             let decl_ptr decl_syns.get(i)
             if decl_ptr <> null
             {
                 let decl_syntax (*decl_ptr)
-                let member handle_declaration#(path, decl_syntax, &symbols_builder)
-                members.put(i, member)
+                choose decl_syntax
+                    when use_syntax: UseSyntax
+                    {
+                        let use_ handle_use#(use_syntax)
+                        uses.put(use_idx, use_)
+                        set use_idx: use_idx + 1
+                    }
+                    else
+                    {
+                        let member handle_declaration#(path, decl_syntax, &symbols_builder)
+                        members.put(member_idx, member)
+                        set member_idx: member_idx + 1
+                    }
             }
             set i: i + 1
         }

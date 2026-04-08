@@ -523,12 +523,13 @@ void Lexer::skipWhitespace(bool SkipLineFeed) {
                 return;
             }
             if (*Current_ != '*') {
-                readCharacter();
                 handleSingleLineComment();
-                // Consume trailing newline so it doesn't produce a spurious ColonToken
-                if (Current_ != nullptr && *Current_ == '\n') {
-                    readCharacter();
-                }
+                // Leave the trailing \n for the newline handling above.
+                // With SkipLineFeed=true (e.g., after '(' or constructor), the
+                // \n case at line 516 will consume it and continue.
+                // With SkipLineFeed=false (e.g., after a token), skipWhitespace
+                // returns at \n, and the next advance() produces a ColonToken
+                // via scanLineFeed — preserving the newline as a separator.
             } else {
                 readCharacter();
                 handleMultiLineComment();
