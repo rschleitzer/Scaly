@@ -295,6 +295,89 @@ void Emitter::declareRuntimeFunctions() {
     }
 }
 
+// Emit minimal RBMM function bodies for JIT mode.
+// These are simplified implementations of Page::allocate_page, Page::allocate,
+// and Page::deallocate_extensions that work without the full Scaly runtime.
+void Emitter::emitRBMMStubs() {
+    declareRuntimeFunctions();
+
+    auto *PtrTy = llvm::PointerType::getUnqual(*Context);
+    auto *I64Ty = llvm::Type::getInt64Ty(*Context);
+    auto *VoidTy = llvm::Type::getVoidTy(*Context);
+    llvm::Constant *PageSize = llvm::ConstantInt::get(I64Ty, 0x1000);
+
+    // --- Page::allocate_page() ---
+    // Calls aligned_alloc(0x1000, 0x1000), zeroes the struct, sets next_object = page + 1
+    if (PageAllocatePage && PageAllocatePage->isDeclaration()) {
+        auto *Entry = llvm::BasicBlock::Create(*Context, "entry", PageAllocatePage);
+        llvm::IRBuilder<> B(Entry);
+        llvm::Value *Mem = B.CreateCall(AlignedAlloc, {PageSize, PageSize}, "page");
+        // Zero the Page header (4 pointers)
+        B.CreateMemSet(Mem, B.getInt8(0), llvm::ConstantExpr::getSizeOf(PageType), llvm::MaybeAlign(8));
+        // next_object = page + 1 (pointer past the Page header)
+        llvm::Value *NextObj = B.CreateGEP(PageType, Mem, B.getInt64(1), "next_obj");
+        B.CreateStore(NextObj, B.CreateStructGEP(PageType, Mem, 0));
+        B.CreateRet(Mem);
+    }
+
+    // --- Page::allocate(size, align) ---
+    // Bump allocator: align next_object, check capacity, return pointer
+    if (PageAllocate && PageAllocate->isDeclaration()) {
+        auto *Entry = llvm::BasicBlock::Create(*Context, "entry", PageAllocate);
+        auto *AllocOk = llvm::BasicBlock::Create(*Context, "alloc.ok", PageAllocate);
+        auto *AllocFail = llvm::BasicBlock::Create(*Context, "alloc.fail", PageAllocate);
+        llvm::IRBuilder<> B(Entry);
+        llvm::Value *Self = PageAllocate->getArg(0);
+        llvm::Value *Size = PageAllocate->getArg(1);
+        llvm::Value *Align = PageAllocate->getArg(2);
+        // Load next_object
+        llvm::Value *NextObjPtr = B.CreateStructGEP(PageType, Self, 0, "next_obj_ptr");
+        llvm::Value *NextObj = B.CreateLoad(PtrTy, NextObjPtr, "next_obj");
+        llvm::Value *Location = B.CreatePtrToInt(NextObj, I64Ty, "loc");
+        // Align: (location + align - 1) & ~(align - 1)
+        llvm::Value *AlignM1 = B.CreateSub(Align, B.getInt64(1));
+        llvm::Value *Aligned = B.CreateAnd(B.CreateAdd(Location, AlignM1), B.CreateNot(AlignM1), "aligned");
+        // End of page
+        llvm::Value *PageInt = B.CreatePtrToInt(Self, I64Ty);
+        llvm::Value *PageEnd = B.CreateAdd(PageInt, llvm::ConstantInt::get(I64Ty, 0x1000), "page_end");
+        llvm::Value *NewEnd = B.CreateAdd(Aligned, Size, "new_end");
+        llvm::Value *Fits = B.CreateICmpULE(NewEnd, PageEnd, "fits");
+        B.CreateCondBr(Fits, AllocOk, AllocFail);
+
+        // Alloc OK: update next_object, return aligned pointer
+        B.SetInsertPoint(AllocOk);
+        llvm::Value *Result = B.CreateIntToPtr(Aligned, PtrTy, "result");
+        llvm::Value *NewNext = B.CreateIntToPtr(NewEnd, PtrTy, "new_next");
+        B.CreateStore(NewNext, NextObjPtr);
+        B.CreateRet(Result);
+
+        // Alloc fail: just return null (simplified - full impl would chain pages)
+        B.SetInsertPoint(AllocFail);
+        B.CreateRet(llvm::ConstantPointerNull::get(llvm::cast<llvm::PointerType>(PtrTy)));
+    }
+
+    // --- Page::deallocate_extensions() ---
+    // No-op for JIT stubs (pages are leaked in JIT tests)
+    if (PageDeallocateExtensions && PageDeallocateExtensions->isDeclaration()) {
+        auto *Entry = llvm::BasicBlock::Create(*Context, "entry", PageDeallocateExtensions);
+        llvm::IRBuilder<> B(Entry);
+        B.CreateRetVoid();
+    }
+
+    // --- Page::save_watermark() / restore_watermark() ---
+    // No-op stubs for JIT
+    if (PageSaveWatermark && PageSaveWatermark->isDeclaration()) {
+        auto *Entry = llvm::BasicBlock::Create(*Context, "entry", PageSaveWatermark);
+        llvm::IRBuilder<> B(Entry);
+        B.CreateRetVoid();
+    }
+    if (PageRestoreWatermark && PageRestoreWatermark->isDeclaration()) {
+        auto *Entry = llvm::BasicBlock::Create(*Context, "entry", PageRestoreWatermark);
+        llvm::IRBuilder<> B(Entry);
+        B.CreateRetVoid();
+    }
+}
+
 // ============================================================================
 // Main Emission Entry Point
 // ============================================================================
@@ -6295,10 +6378,17 @@ llvm::Expected<uint64_t> Emitter::jitExecuteRaw(const Plan &P, llvm::Type *Expec
         }
     }
 
+    // Provide RBMM function bodies for JIT mode (if not already defined by the Plan)
+    if (!PageInPlan) {
+        emitRBMMStubs();
+    }
+
     // Create JIT wrapper function
     auto *Wrapper = createJITWrapper(ExpectedType);
     CurrentFunction = Wrapper;
     LocalVariables.clear();
+    CurrentRegion = RegionInfo{};
+    CurrentFunctionCanThrow = false;
 
     // Set up alloca insertion point for the JIT wrapper
     // Insert the marker at the beginning of the entry block

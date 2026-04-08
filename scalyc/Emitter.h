@@ -173,6 +173,7 @@ private:
     void initDebugInfo(llvm::StringRef FileName);
     void initRBMM();  // Initialize Page type and runtime functions
     void declareRuntimeFunctions();  // Declare C runtime functions (aligned_alloc, free, exit)
+    void emitRBMMStubs();  // Emit minimal RBMM function bodies for JIT mode
 
     // ========================================================================
     // Type Mapping
