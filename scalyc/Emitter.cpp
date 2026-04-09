@@ -3510,12 +3510,24 @@ llvm::Expected<llvm::Value*> Emitter::emitCall(const PlannedCall &Call) {
         AdjustedArgs.push_back(CalleeExceptionPage);
     }
 
+    // Detect extern LLVM C API calls — their wrapper struct args need handle extraction
+    bool IsLLVMExtern = Func->getName().starts_with("LLVM");
+
     for (size_t i = FuncArgsOffset; i < Args.size() && i - FuncArgsOffset + ParamOffset < FuncTy->getNumParams(); ++i) {
         llvm::Value *ArgVal = Args[i];
         llvm::Type *ParamTy = FuncTy->getParamType(i - FuncArgsOffset + ParamOffset);
         llvm::Type *ArgTy = ArgVal->getType();
 
         if (ParamTy->isPointerTy() && ArgTy->isStructTy()) {
+            // For extern LLVM C API calls, extract the handle from wrapper structs
+            // (e.g., LLVMBuilderRef{ptr} → ptr)
+            if (IsLLVMExtern) {
+                auto *STy = llvm::cast<llvm::StructType>(ArgTy);
+                if (STy->getNumElements() == 1 && STy->getElementType(0)->isPointerTy()) {
+                    AdjustedArgs.push_back(Builder->CreateExtractValue(ArgVal, 0, "handle"));
+                    continue;
+                }
+            }
             // For the first arg (this) of a method call, use the in-place field
             // pointer if available so that mutations are visible to the caller.
             if (i == FuncArgsOffset && FirstArgFieldBasePtr && FirstArgFieldBaseStructTy) {
