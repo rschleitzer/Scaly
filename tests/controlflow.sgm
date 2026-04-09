@@ -82,7 +82,7 @@ prod<expect>24
 for i in 10 : { if i = 3 : break else set sum : sum + i }
 sum<expect>3
         <test id = break-in-while program = program><input>var x 0
-while x &#60; 100 : { set x : x + 1: if x = 5 : break }
+while x &#60; 100 : { set x : x + 1: guard x = 5 : break }
 x<expect>5
 
     <tests id = continue-statements title = "Continue Statements">

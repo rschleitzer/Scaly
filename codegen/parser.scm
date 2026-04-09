@@ -331,7 +331,11 @@ llvm::Expected<"(id syntax)"Syntax> Parser::parse"(id syntax)"() {
                     ", "
                     (if (or (equal? (type content) "keyword") (equal? (type content) "punctuation"))
                         "true"
-                        (string-firstchar-upcase (property content)))
+                        (if (and (equal? (type content) "syntax") (not (multiple? content)) (not (optional? content)) (is-recursive-ref? syntax content))
+                            ($ "std::make_unique<"(link content)"Syntax>(std::move("(string-firstchar-upcase (property content))"))")
+                            (if (equal? (type content) "syntax")
+                                ($ "std::move("(string-firstchar-upcase (property content))")")
+                                (string-firstchar-upcase (property content)))))
                 )))
 "};
 "

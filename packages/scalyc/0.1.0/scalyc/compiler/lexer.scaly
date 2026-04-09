@@ -70,19 +70,19 @@ define lexer
             set position: 0
             set previous_position: 0
             set token: Token.Empty(EmptyToken())
-            if current <> null
+            guard current <> null
                 skip_whitespace(true)
 
         }
 
         procedure read_character(this)
         {
-            if current = null
+            guard current = null
                 return
 
             set current: current + 1
             set position: position + 1
-            if current >= end
+            guard current >= end
                 set current: null
 
         }
@@ -99,13 +99,13 @@ define lexer
         {
             set previous_position: position
 
-            if current = null
+            guard current = null
                 return
 
             let c *current
 
             ; Identifier: starts with letter
-            if ((c >= 97) && (c <= 122)) || ((c >= 65) && (c <= 90))  ; a-z, A-Z
+            guard ((c >= 97) && (c <= 122)) || ((c >= 65) && (c <= 90))  ; a-z, A-Z
             {
                 set token: scan_identifier()
                 skip_whitespace(false)
@@ -113,7 +113,7 @@ define lexer
             }
 
             ; Number: starts with 1-9
-            if (c >= 49) && (c <= 57)  ; '1'-'9'
+            guard (c >= 49) && (c <= 57)  ; '1'-'9'
             {
                 set token: scan_integer_literal(current, 0)
                 skip_whitespace(false)
@@ -121,7 +121,7 @@ define lexer
             }
 
             ; Operators: + - * / = % & | ~ < >
-            if (c = 43) || (c = 45) || (c = 42) || (c = 47) || (c = 61) || (c = 37) || (c = 38) || (c = 124) || (c = 126) || (c = 60) || (c = 62)
+            guard (c = 43) || (c = 45) || (c = 42) || (c = 47) || (c = 61) || (c = 37) || (c = 38) || (c = 124) || (c = 126) || (c = 60) || (c = 62)
             {
                 set token: scan_operator()
                 skip_whitespace(false)
@@ -129,7 +129,7 @@ define lexer
             }
 
             ; Punctuation (no linefeed skip): } ) ] . ? ! $ # ^
-            if (c = 125) || (c = 41) || (c = 93) || (c = 46) || (c = 63) || (c = 33) || (c = 36) || (c = 35) || (c = 94)
+            guard (c = 125) || (c = 41) || (c = 93) || (c = 46) || (c = 63) || (c = 33) || (c = 36) || (c = 35) || (c = 94)
             {
                 set token: Token.Punctuation(PunctuationToken(c as u8))
                 read_character()
@@ -138,7 +138,7 @@ define lexer
             }
 
             ; Punctuation (with linefeed skip): { ( [ ,
-            if (c = 123) || (c = 40) || (c = 91) || (c = 44)
+            guard (c = 123) || (c = 40) || (c = 91) || (c = 44)
             {
                 set token: Token.Punctuation(PunctuationToken(c as u8))
                 read_character()
@@ -147,7 +147,7 @@ define lexer
             }
 
             ; Newline
-            if c = 10  ; '\n'
+            guard c = 10  ; '\n'
             {
                 set token: scan_line_feed()
                 skip_whitespace(false)
@@ -155,7 +155,7 @@ define lexer
             }
 
             ; Colon
-            if c = 58  ; ':'
+            guard c = 58  ; ':'
             {
                 read_character()
                 set token: Token.Colon(ColonToken())
@@ -164,7 +164,7 @@ define lexer
             }
 
             ; Numeric literal starting with 0
-            if c = 48  ; '0'
+            guard c = 48  ; '0'
             {
                 set token: scan_numeric_literal()
                 skip_whitespace(false)
@@ -172,7 +172,7 @@ define lexer
             }
 
             ; Attribute
-            if c = 64  ; '@'
+            guard c = 64  ; '@'
             {
                 read_character()
                 set token: scan_attribute()
@@ -181,7 +181,7 @@ define lexer
             }
 
             ; String literal
-            if c = 34  ; '"'
+            guard c = 34  ; '"'
             {
                 set token: scan_string_literal()
                 skip_whitespace(false)
@@ -189,7 +189,7 @@ define lexer
             }
 
             ; String identifier (freeform identifier)
-            if c = 39  ; '\''
+            guard c = 39  ; '\''
             {
                 set token: scan_string_identifier()
                 skip_whitespace(false)
@@ -197,7 +197,7 @@ define lexer
             }
 
             ; Fragment literal
-            if c = 96  ; '`'
+            guard c = 96  ; '`'
             {
                 set token: scan_fragment_literal()
                 skip_whitespace(false)
@@ -217,19 +217,19 @@ define lexer
             while true
             {
                 skip_whitespace(false)
-                if current = null
+                guard current = null
                     return Token.Colon(ColonToken())
 
                 let c *current
 
-                if c = 10  ; '\n'
+                guard c = 10  ; '\n'
                 {
                     read_character()
                     continue
                 }
 
                 ; Skip comments and continue collapsing linefeeds
-                if c = 59  ; ';'
+                guard c = 59  ; ';'
                 {
                     read_character()
                     if (current <> null) && (*current = 42)  ; '*'
@@ -253,9 +253,9 @@ define lexer
 
             while true
             {
-                if current = null
+                guard current = null
                 {
-                    if length = 0
+                    guard length = 0
                         return Token.Invalid(InvalidToken())
 
                     return Token.Identifier(IdentifierToken(String#(start, length)))
@@ -279,9 +279,9 @@ define lexer
 
             while true
             {
-                if current = null
+                guard current = null
                 {
-                    if length = 0
+                    guard length = 0
                         return Token.Invalid(InvalidToken())
 
                     return Token.Attribute(AttributeToken(String#(start, length)))
@@ -308,9 +308,9 @@ define lexer
                 read_character()
                 set length: length + 1
 
-                if current = null
+                guard current = null
                 {
-                    if length = 1
+                    guard length = 1
                         return Token.Invalid(InvalidToken())
 
                     return Token.Identifier(IdentifierToken(String#(start, length)))
@@ -335,41 +335,41 @@ define lexer
                 read_character()
                 set length: length + 1
 
-                if current = null
+                guard current = null
                     return Token.Invalid(InvalidToken())
 
                 let c *current
 
-                if c = 34  ; '"' - end of string
+                guard c = 34  ; '"' - end of string
                 {
                     read_character()
                     return Token.Literal(LiteralToken(Literal.String(StringLiteral(String#(start, length - 1)))))
                 }
 
-                if c = 92  ; '\\' - escape sequence
+                guard c = 92  ; '\\' - escape sequence
                 {
                     read_character()
                     set length: length + 1
-                    if current = null
+                    guard current = null
                         return Token.Invalid(InvalidToken())
 
                     let e *current
                     ; Valid escapes: " \ ' n r t 0 u
-                    if (e = 34) || (e = 92) || (e = 39) || (e = 110) || (e = 114) || (e = 116) || (e = 48)
+                    guard (e = 34) || (e = 92) || (e = 39) || (e = 110) || (e = 114) || (e = 116) || (e = 48)
                         continue
 
-                    if e = 117  ; 'u' - unicode escape \uXXXX
+                    guard e = 117  ; 'u' - unicode escape \uXXXX
                     {
                         var i 0
                         while i < 4
                         {
                             read_character()
                             set length: length + 1
-                            if current = null
+                            guard current = null
                                 return Token.Invalid(InvalidToken())
 
                             let h *current
-                            if ~(((h >= 48) && (h <= 57)) || ((h >= 97) && (h <= 102)) || ((h >= 65) && (h <= 70)))
+                            guard ~(((h >= 48) && (h <= 57)) || ((h >= 97) && (h <= 102)) || ((h >= 65) && (h <= 70)))
                                 return Token.Invalid(InvalidToken())
 
                             set i: i + 1
@@ -393,41 +393,41 @@ define lexer
                 read_character()
                 set length: length + 1
 
-                if current = null
+                guard current = null
                     return Token.Invalid(InvalidToken())
 
                 let c *current
 
-                if c = 39  ; '\'' - end of string identifier
+                guard c = 39  ; '\'' - end of string identifier
                 {
                     read_character()
                     return Token.Identifier(IdentifierToken(String#(start, length - 1)))
                 }
 
-                if c = 92  ; '\\' - escape sequence
+                guard c = 92  ; '\\' - escape sequence
                 {
                     read_character()
                     set length: length + 1
-                    if current = null
+                    guard current = null
                         return Token.Invalid(InvalidToken())
 
                     let e *current
                     ; Valid escapes: " \ ' n r t 0 u
-                    if (e = 34) || (e = 92) || (e = 39) || (e = 110) || (e = 114) || (e = 116) || (e = 48)
+                    guard (e = 34) || (e = 92) || (e = 39) || (e = 110) || (e = 114) || (e = 116) || (e = 48)
                         continue
 
-                    if e = 117  ; 'u' - unicode escape \uXXXX
+                    guard e = 117  ; 'u' - unicode escape \uXXXX
                     {
                         var i 0
                         while i < 4
                         {
                             read_character()
                             set length: length + 1
-                            if current = null
+                            guard current = null
                                 return Token.Invalid(InvalidToken())
 
                             let h *current
-                            if ~(((h >= 48) && (h <= 57)) || ((h >= 97) && (h <= 102)) || ((h >= 65) && (h <= 70)))
+                            guard ~(((h >= 48) && (h <= 57)) || ((h >= 97) && (h <= 102)) || ((h >= 65) && (h <= 70)))
                                 return Token.Invalid(InvalidToken())
 
                             set i: i + 1
@@ -450,27 +450,27 @@ define lexer
                 read_character()
                 set length: length + 1
 
-                if current = null
+                guard current = null
                     return Token.Invalid(InvalidToken())
 
                 let c *current
 
-                if c = 96  ; '`' - end of fragment
+                guard c = 96  ; '`' - end of fragment
                 {
                     read_character()
                     return Token.Literal(LiteralToken(Literal.Fragment(FragmentLiteral(String#(start, length - 1)))))
                 }
 
-                if c = 92  ; '\\' - escape sequence
+                guard c = 92  ; '\\' - escape sequence
                 {
                     read_character()
                     set length: length + 1
-                    if current = null
+                    guard current = null
                         return Token.Invalid(InvalidToken())
 
                     let e *current
                     ; Valid escapes: ` \ ' n r t 0
-                    if (e = 96) || (e = 92) || (e = 39) || (e = 110) || (e = 114) || (e = 116) || (e = 48)
+                    guard (e = 96) || (e = 92) || (e = 39) || (e = 110) || (e = 114) || (e = 116) || (e = 48)
                         continue
 
                     return Token.Invalid(InvalidToken())
@@ -486,24 +486,24 @@ define lexer
             read_character()
             set length: length + 1
 
-            if current = null
+            guard current = null
                 return Token.Literal(LiteralToken(Literal.Integer(IntegerLiteral(String#(start, length)))))
 
             let c *current
 
-            if (c >= 48) && (c <= 57)  ; '0'-'9'
+            guard (c >= 48) && (c <= 57)  ; '0'-'9'
                 return scan_integer_literal(start, length)
 
-            if c = 46  ; '.'
+            guard c = 46  ; '.'
                 return scan_fraction(start, length)
 
-            if (c = 69) || (c = 101)  ; 'E' or 'e'
+            guard (c = 69) || (c = 101)  ; 'E' or 'e'
                 return scan_exponent(start, length)
 
-            if c = 120  ; 'x'
+            guard c = 120  ; 'x'
                 return scan_hex_literal(start, length)
 
-            if c = 66  ; 'B'
+            guard c = 66  ; 'B'
                 return scan_boolean_literal()
 
             return Token.Literal(LiteralToken(Literal.Integer(IntegerLiteral(String#(start, length)))))
@@ -518,18 +518,18 @@ define lexer
                 read_character()
                 set length: length + 1
 
-                if current = null
+                guard current = null
                     return Token.Literal(LiteralToken(Literal.Integer(IntegerLiteral(String#(start, length)))))
 
                 let c *current
 
-                if (c >= 48) && (c <= 57)  ; '0'-'9'
+                guard (c >= 48) && (c <= 57)  ; '0'-'9'
                     continue
 
-                if c = 46  ; '.'
+                guard c = 46  ; '.'
                     return scan_fraction(start, length)
 
-                if (c = 69) || (c = 101)  ; 'E' or 'e'
+                guard (c = 69) || (c = 101)  ; 'E' or 'e'
                     return scan_exponent(start, length)
 
                 return Token.Literal(LiteralToken(Literal.Integer(IntegerLiteral(String#(start, length)))))
@@ -545,15 +545,15 @@ define lexer
                 read_character()
                 set length: length + 1
 
-                if current = null
+                guard current = null
                     return Token.Literal(LiteralToken(Literal.FloatingPoint(FloatingPointLiteral(String#(start, length)))))
 
                 let c *current
 
-                if (c >= 48) && (c <= 57)  ; '0'-'9'
+                guard (c >= 48) && (c <= 57)  ; '0'-'9'
                     continue
 
-                if (c = 69) || (c = 101)  ; 'E' or 'e'
+                guard (c = 69) || (c = 101)  ; 'E' or 'e'
                     return scan_exponent(start, length)
 
                 return Token.Literal(LiteralToken(Literal.FloatingPoint(FloatingPointLiteral(String#(start, length)))))
@@ -569,12 +569,12 @@ define lexer
                 read_character()
                 set length: length + 1
 
-                if current = null
+                guard current = null
                     return Token.Literal(LiteralToken(Literal.FloatingPoint(FloatingPointLiteral(String#(start, length)))))
 
                 let c *current
 
-                if (c >= 48) && (c <= 57)  ; '0'-'9'
+                guard (c >= 48) && (c <= 57)  ; '0'-'9'
                     continue
 
                 return Token.Literal(LiteralToken(Literal.FloatingPoint(FloatingPointLiteral(String#(start, length)))))
@@ -590,12 +590,12 @@ define lexer
                 read_character()
                 set length: length + 1
 
-                if current = null
+                guard current = null
                     return Token.Literal(LiteralToken(Literal.Hex(HexLiteral(String#(start, length)))))
 
                 let c *current
 
-                if ((c >= 48) && (c <= 57)) || ((c >= 65) && (c <= 70)) || ((c >= 97) && (c <= 102))
+                guard ((c >= 48) && (c <= 57)) || ((c >= 65) && (c <= 70)) || ((c >= 97) && (c <= 102))
                     continue
 
                 return Token.Literal(LiteralToken(Literal.Hex(HexLiteral(String#(start, length)))))
@@ -606,12 +606,12 @@ define lexer
         {
             read_character()
 
-            if current = null
+            guard current = null
                 return Token.Invalid(InvalidToken())
 
             let c *current
 
-            if (c <> 48) && (c <> 49)  ; not '0' and not '1'
+            guard (c <> 48) && (c <> 49)  ; not '0' and not '1'
                 return Token.Invalid(InvalidToken())
 
             read_character()
@@ -622,22 +622,22 @@ define lexer
         {
             while true
             {
-                if current = null
+                guard current = null
                     return
 
                 let c *current
 
                 ; Space, tab, carriage return
-                if (c = 32) || (c = 9) || (c = 13)
+                guard (c = 32) || (c = 9) || (c = 13)
                 {
                     read_character()
                     continue
                 }
 
                 ; Newline
-                if c = 10
+                guard c = 10
                 {
-                    if skip_line_feed
+                    guard skip_line_feed
                     {
                         read_character()
                         continue
@@ -646,20 +646,20 @@ define lexer
                 }
 
                 ; Line continuation: backslash followed by newline
-                if c = 92  ; '\'
+                guard c = 92  ; '\'
                 {
                     read_character()
-                    if current = null
+                    guard current = null
                         return
 
                     let n *current
-                    if n = 13  ; '\r'
+                    guard n = 13  ; '\r'
                     {
                         read_character()
                         read_character()
                         continue
                     }
-                    if n = 10  ; '\n'
+                    guard n = 10  ; '\n'
                     {
                         read_character()
                         continue
@@ -668,10 +668,10 @@ define lexer
                 }
 
                 ; Comment
-                if c = 59  ; ';'
+                guard c = 59  ; ';'
                 {
                     read_character()
-                    if current = null
+                    guard current = null
                         return
 
                     if *current <> 42  ; not '*'
@@ -695,10 +695,10 @@ define lexer
         {
             while true
             {
-                if current = null
+                guard current = null
                     return
 
-                if *current = 10  ; '\n'
+                guard *current = 10  ; '\n'
                 {
                     ; Don't consume the newline - leave it for scan_line_feed to generate ColonToken
                     return
@@ -711,18 +711,18 @@ define lexer
         {
             while true
             {
-                if current = null
+                guard current = null
                     return
 
                 let c *current
 
-                if c = 59  ; ';'
+                guard c = 59  ; ';'
                 {
                     read_character()
-                    if current = null
+                    guard current = null
                         return
 
-                    if *current = 42  ; '*' - nested comment
+                    guard *current = 42  ; '*' - nested comment
                     {
                         read_character()
                         handle_multi_line_comment()
@@ -730,13 +730,13 @@ define lexer
                     continue
                 }
 
-                if c = 42  ; '*'
+                guard c = 42  ; '*'
                 {
                     read_character()
-                    if current = null
+                    guard current = null
                         return
 
-                    if *current = 59  ; ';' - end of comment
+                    guard *current = 59  ; ';' - end of comment
                     {
                         read_character()
                         return
@@ -759,7 +759,7 @@ define lexer
             choose token
                 when ident: Identifier
                 {
-                    if ident.name.equals(keyword)
+                    guard ident.name.equals(keyword)
                     {
                         empty()
                         return true
@@ -837,7 +837,7 @@ define lexer
             choose token
                 when punct: Punctuation
                 {
-                    if punct.sign = c
+                    guard punct.sign = c
                     {
                         empty()
                         return true
@@ -886,7 +886,7 @@ define lexer
                 when e: Empty {}
                 else
                     return 1
-            if lexer.is_at_end() = false
+            guard lexer.is_at_end() = false
                 return 2
 
         }
@@ -898,7 +898,7 @@ define lexer
             choose lexer.token
                 when ident: Identifier
                 {
-                    if ident.name.equals("abc_123") = false
+                    guard ident.name.equals("abc_123") = false
                         return 3
 
                 }
@@ -916,7 +916,7 @@ define lexer
                     choose lit.value
                         when i: Integer
                         {
-                            if i.value.equals(String$("42")) = false
+                            guard i.value.equals(String$("42")) = false
                                 return 5
 
                         }
@@ -944,14 +944,26 @@ define lexer
             lexer.advance$()  ; 'a'
             lexer.advance$()  ; newline -> colon (comment skipped)
             choose lexer.token
+                when e: Empty
+                    return 90
+                when inv: Invalid
+                    return 91
                 when c: Colon {}
+                when ident: Identifier
+                    return 93
+                when attr: Attribute
+                    return 94
+                when punct: Punctuation
+                    return 95
+                when lit: Literal
+                    return 96
                 else
-                    return 9
+                    return 97
             lexer.advance$()  ; 'b'
             choose lexer.token
                 when ident: Identifier
                 {
-                    if ident.name.equals(String$("b")) = false
+                    guard ident.name.equals(String$("b")) = false
                         return 10
 
                 }
@@ -969,7 +981,7 @@ define lexer
                     choose lit.value
                         when s: String
                         {
-                            if s.value.equals(String$("hello")) = false
+                            guard s.value.equals(String$("hello")) = false
                                 return 12
 
                         }
@@ -987,7 +999,7 @@ define lexer
             choose lexer.token
                 when ident: Identifier
                 {
-                    if ident.name.equals(String$("my identifier")) = false
+                    guard ident.name.equals(String$("my identifier")) = false
                         return 15
 
                 }
@@ -1005,7 +1017,7 @@ define lexer
                     choose lit.value
                         when h: Hex
                         {
-                            if h.value.equals(String$("0xABcd")) = false
+                            guard h.value.equals(String$("0xABcd")) = false
                                 return 17
 
                         }
@@ -1026,7 +1038,7 @@ define lexer
                     choose lit.value
                         when b: Boolean
                         {
-                            if b.value = false
+                            guard b.value = false
                                 return 20
 
                         }
@@ -1047,7 +1059,7 @@ define lexer
                     choose lit.value
                         when fp: FloatingPoint
                         {
-                            if fp.value.equals(String$("3.14")) = false
+                            guard fp.value.equals(String$("3.14")) = false
                                 return 23
 
                         }
@@ -1065,7 +1077,7 @@ define lexer
             choose lexer.token
                 when ident: Identifier
                 {
-                    if ident.name.equals(String$("<>")) = false
+                    guard ident.name.equals(String$("<>")) = false
                         return 26
 
                 }
@@ -1080,7 +1092,7 @@ define lexer
             choose lexer.token
                 when attr: Attribute
                 {
-                    if attr.name.equals(String$("summary")) = false
+                    guard attr.name.equals(String$("summary")) = false
                         return 28
 
                 }
@@ -1095,7 +1107,7 @@ define lexer
             choose lexer.token
                 when ident: Identifier
                 {
-                    if ident.name.equals(String$("x")) = false
+                    guard ident.name.equals(String$("x")) = false
                         return 30
 
                 }

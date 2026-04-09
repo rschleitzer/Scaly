@@ -10,7 +10,7 @@ define HashMapBuilder[K, V]
     {
         set length: 0
         set slots: null
-        if vec.length > 0
+        guard vec.length > 0
         {
             reallocate(vec.length)
             var vector_iterator VectorIterator[KeyValuePair[K, V]](&vec)
@@ -26,7 +26,7 @@ define HashMapBuilder[K, V]
         let slots_page own_page.allocate_exclusive_page()
         let new_slots Vector[BuilderList[Slot[KeyValuePair[K, V]]]]^slots_page(hash_size)
 
-        if slots <> null
+        guard slots <> null
         {
             var vector_iterator VectorIterator[BuilderList[Slot[KeyValuePair[K, V]]]](slots)
             while let element vector_iterator.next()
@@ -48,7 +48,7 @@ define HashMapBuilder[K, V]
     function add(this: HashMapBuilder[K, V], key: K, value: V) returns bool
     {
         let hash_size hashing.get_prime(length + 1)
-        if slots = null || hash_size > slots.length
+        guard slots = null || hash_size > slots.length
             reallocate(length + 1)
 
         return add_internal(key, value)
@@ -62,7 +62,7 @@ define HashMapBuilder[K, V]
         var iterator slot_list.get_iterator()
         while let item iterator.next()
         {
-            if key.equals(item.value.key)
+            guard key.equals(item.value.key)
                 return false
 
         }
@@ -76,7 +76,7 @@ define HashMapBuilder[K, V]
 
     function contains(this: HashMapBuilder[K, V], key: K) returns bool
     {
-        if slots = null
+        guard slots = null
             return false
 
         let hash key.hash()
@@ -85,7 +85,7 @@ define HashMapBuilder[K, V]
         var iterator slot.get_iterator()
         while let item iterator.next()
         {
-            if key.equals(item.value.key)
+            guard key.equals(item.value.key)
                 return true
 
         }
@@ -95,14 +95,14 @@ define HashMapBuilder[K, V]
 
     function get(this: HashMapBuilder[K, V], key: K) returns ref[V]?
     {
-        if slots = null
+        guard slots = null
             return null
 
         let slot slots.get_ptr(key.hash() % slots.length)
         var iterator slot.get_iterator()
         while let item iterator.next()
         {
-            if key.equals(item.value.key)
+            guard key.equals(item.value.key)
                 return &item.value.value
 
         }

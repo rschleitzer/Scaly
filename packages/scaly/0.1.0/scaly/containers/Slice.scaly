@@ -15,7 +15,7 @@ define Slice[T](data: pointer[T], length: size_t)
     ; Get element at index (returns None if out of bounds)
     function get(this, index: size_t) returns ref[T]?
     {
-        if index >= length
+        guard index >= length
             return null
 
         data + index
@@ -24,7 +24,7 @@ define Slice[T](data: pointer[T], length: size_t)
     ; Indexed access
     operator [](index: size_t) returns ref[T]?
     {
-        if index >= length
+        guard index >= length
             return null
 
         data + index
@@ -39,13 +39,13 @@ define Slice[T](data: pointer[T], length: size_t)
     {
         var from start
         var to end
-        if from > length
+        guard from > length
             set from: length
 
-        if to > length
+        guard to > length
             set to: length
 
-        if from > to
+        guard from > to
             set from: to
 
         Slice[T](data + from, to - from)
@@ -62,10 +62,10 @@ define Slice[T](data: pointer[T], length: size_t)
     ; Equality (element-wise)
     function equals(this, other: Slice[T]) returns bool
     {
-        if length <> other.length
+        guard length <> other.length
             return false
 
-        if length = 0
+        guard length = 0
             return true
 
         memcmp(data as pointer[void], other.data as pointer[void], length * sizeof T) = 0
@@ -80,7 +80,7 @@ define Slice[T](data: pointer[T], length: size_t)
     ; Check if starts with prefix
     function starts_with(this, prefix: Slice[T]) returns bool
     {
-        if prefix.length > length
+        guard prefix.length > length
             return false
 
         subslice(0, prefix.length).equals(prefix)
@@ -89,7 +89,7 @@ define Slice[T](data: pointer[T], length: size_t)
     ; Check if ends with suffix
     function ends_with(this, suffix: Slice[T]) returns bool
     {
-        if suffix.length > length
+        guard suffix.length > length
             return false
 
         subslice(length - suffix.length, length).equals(suffix)
@@ -110,7 +110,7 @@ define SliceIterator[T](slice: Slice[T], position: size_t(0))
 
     function next(this) returns pointer[T]
     {
-        if position >= slice.length
+        guard position >= slice.length
             return null
 
         let result slice.data + position

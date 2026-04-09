@@ -179,27 +179,27 @@ define cli
     ; Returns 0 on success, non-zero on error
     function run#(opts: Options) returns int
     {
-        if opts.show_help
+        guard opts.show_help
         {
             print_usage()
             return 0
         }
 
-        if opts.has_error()
+        guard opts.has_error()
         {
             Console.println("Error: ")
             ; TODO: print error message
             return 1
         }
 
-        if opts.has_input() = false
+        guard opts.has_input() = false
         {
             Console.println("Error: No input file specified")
             print_usage()
             return 1
         }
 
-        if opts.verbose
+        guard opts.verbose
         {
             Console.println("Compiling: ")
             ; TODO: print input file
@@ -207,13 +207,13 @@ define cli
 
         ; Read the source file
         var source File.read_to_string$(opts.input_file)
-        if source.get_length() = 0
+        guard source.get_length() = 0
         {
             Console.println("Error: Could not read input file")
             return 1
         }
 
-        if opts.verbose
+        guard opts.verbose
             Console.println("Read source file successfully")
 
         ; ================================================================
@@ -222,7 +222,7 @@ define cli
 
         var p parser.Parser$(source)
 
-        if opts.lex_only
+        guard opts.lex_only
         {
             ; Just tokenize and print tokens
             Console.println("Tokens:")
@@ -249,10 +249,10 @@ define cli
                 set syntax: program
             }
 
-        if opts.verbose
+        guard opts.verbose
             Console.println("Parsing completed successfully")
 
-        if opts.parse_only
+        guard opts.parse_only
         {
             Console.println("Parse successful")
             return 0
@@ -267,10 +267,10 @@ define cli
 
         let model Modeler.build_program#(opts.input_file, program_name, syntax)
 
-        if opts.verbose
+        guard opts.verbose
             Console.println("Model built successfully")
 
-        if opts.model_only
+        guard opts.model_only
         {
             Console.println("Model built successfully")
             return 0
@@ -283,16 +283,16 @@ define cli
         var planner Planner.Planner$(opts.input_file)
         let plan planner.plan_program(model)
 
-        if plan = null
+        guard plan = null
         {
             Console.println("Planner error")
             return 4
         }
 
-        if opts.verbose
+        guard opts.verbose
             Console.println("Planning completed successfully")
 
-        if opts.plan_only
+        guard opts.plan_only
         {
             Console.println("Planning completed successfully")
             return 0
@@ -308,16 +308,16 @@ define cli
         var emitter Emitter.Emitter$(config)
         let emit_result emitter.emit(plan, program_name)
 
-        if emit_result = false
+        guard emit_result = false
         {
             Console.println("Emitter error")
             return 5
         }
 
-        if opts.verbose
+        guard opts.verbose
             Console.println("Code generation completed successfully")
 
-        if opts.emit_ir
+        guard opts.emit_ir
         {
             ; TODO: Write IR to file or stdout
             Console.println("LLVM IR generation completed")
@@ -339,10 +339,10 @@ define cli
         while i < file_path.get_length() as int
         {
             let c file_path.get(i as size_t)
-            if c = "/" as char
+            guard c = "/" as char
                 set start: i + 1
 
-            if c = "\\" as char
+            guard c = "\\" as char
                 set start: i + 1
 
             set i: i + 1
@@ -354,7 +354,7 @@ define cli
         while i >= start
         {
             let c file_path.get(i as size_t)
-            if c = "." as char
+            guard c = "." as char
             {
                 set end: i
                 ; break - just use assignment for now
@@ -364,7 +364,7 @@ define cli
         }
 
         ; Extract substring
-        if end <= start
+        guard end <= start
             return file_path
 
         file_path.substring(rp, start as size_t, (end - start) as size_t)
@@ -382,37 +382,37 @@ define cli
     {
         ; Test 1: Check Options initialization
         var opts Options$()
-        if opts.has_input()
+        guard opts.has_input()
             return -1
 
-        if opts.has_error()
+        guard opts.has_error()
             return -2
 
-        if opts.verbose
+        guard opts.verbose
             return -3
 
-        if opts.show_help
+        guard opts.show_help
             return -4
 
         ; Test 2: Test extract_program_name
         var path1 String$("/path/to/hello.scaly")
         var name1 cli.extract_program_name#(path1)
-        if name1.equals(String$("hello")) = false
+        guard name1.equals(String$("hello")) = false
             return -10
 
         var path2 String$("simple.scaly")
         var name2 cli.extract_program_name#(path2)
-        if name2.equals(String$("simple")) = false
+        guard name2.equals(String$("simple")) = false
             return -11
 
         ; Test 3: Test pipeline on a minimal program
         var result cli.test_pipeline#()
-        if result <> 0
+        guard result <> 0
             return result - 100
 
         ; Test 4: Test pipeline on hello.scaly from disk
         set result: cli.test_hello_scaly#()
-        if result <> 0
+        guard result <> 0
             return result - 200
 
         ; All tests passed
@@ -427,7 +427,7 @@ define cli
 
         ; Read the file
         var source File.read_to_string$(file_path)
-        if source.get_length() = 0
+        guard source.get_length() = 0
             return -1  ; Could not read file
 
         ; Stage 1: Parse
@@ -450,7 +450,7 @@ define cli
         ; Stage 3: Plan
         var planner Planner.Planner$(file_path)
         let plan planner.plan_program(model)
-        if plan = null
+        guard plan = null
             return -3  ; Planning failed
 
         ; Stage 4: Emit
@@ -458,7 +458,7 @@ define cli
         set config.emit_debug_info: false
         var emitter Emitter.Emitter$(config)
         let emit_result emitter.emit(plan, program_name)
-        if emit_result = false
+        guard emit_result = false
             return -4  ; Emission failed
 
         ; Successfully compiled hello.scaly!
@@ -492,7 +492,7 @@ define cli
         ; Stage 3: Plan
         var planner Planner.Planner$(file_name)
         let plan planner.plan_program(model)
-        if plan = null
+        guard plan = null
             return -3  ; Planning failed
 
         ; Stage 4: Emit (just verify it doesn't crash)
@@ -500,7 +500,7 @@ define cli
         set config.emit_debug_info: false
         var emitter Emitter.Emitter$(config)
         let emit_result emitter.emit(plan, program_name)
-        if emit_result = false
+        guard emit_result = false
             return -4  ; Emission failed
 
         ; All pipeline stages passed

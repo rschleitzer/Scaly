@@ -5,7 +5,7 @@ define HashSet[T]
 {
     init# (rp, hash_set_builder: HashSetBuilder[T])
     {
-        if hash_set_builder.length = 0
+        guard hash_set_builder.length = 0
         {
             set slots: null
             return
@@ -17,14 +17,14 @@ define HashSet[T]
         while i < length
         {
             let slot_ptr hash_set_builder.slots.get_ptr(i)
-            if slot_ptr <> null
+            guard slot_ptr <> null
             {
                 var array Array[T]$()
                 var list_iterator ListIterator[Slot[T]](slot_ptr.head)
                 while let item list_iterator.next()
                     array.add(item.value)
 
-                if array.length > 0
+                guard array.length > 0
                     slots.put(i, Vector[T]^rp(*array))
             }
 
@@ -34,13 +34,13 @@ define HashSet[T]
 
     function contains(this: HashSet[T], value: T) returns bool
     {
-        if slots = null
+        guard slots = null
             return false
 
         let hash value.hash()
         let slot_number hash % slots.length
         let slot_ptr slots.get_ptr(slot_number)
-        if slot_ptr = null
+        guard slot_ptr = null
             return false
 
         let slot *slot_ptr
@@ -49,9 +49,9 @@ define HashSet[T]
         while i < length
         {
             let item slot.get_ptr(i)
-            if item <> null
+            guard item <> null
             {
-                if value.equals(*item)
+                guard value.equals(*item)
                     return true
 
             }

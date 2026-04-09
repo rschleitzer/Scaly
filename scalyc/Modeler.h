@@ -81,6 +81,7 @@ private:
     llvm::Expected<Binding> handleCondition(const ConditionSyntax &Syntax);
 
     // Control flow handling
+    llvm::Expected<If> handleGuard(const GuardSyntax &Syntax);
     llvm::Expected<If> handleIf(const IfSyntax &Syntax);
     llvm::Expected<Match> handleMatch(const MatchSyntax &Syntax);
     llvm::Expected<Choose> handleChoose(const ChooseSyntax &Syntax);

@@ -128,3 +128,13 @@
     (not (node-list-empty?
         (node-list-filter (lambda (snl) (and (syntax? snl) (string=? "syntax" (gi (element-with-id (attribute-string "link" snl))))))
             (children node)))))
+
+;; Check if a content reference creates a recursive type:
+;; True when content links to an abstract syntax whose variant includes syntax-node.
+(define (is-recursive-ref? syntax-node content)
+    (let ((target (element-with-id (link content))))
+        (and (abstract? target)
+             (not (node-list-empty?
+                (node-list-filter
+                    (lambda (child) (string=? (link child) (id syntax-node)))
+                    (children target)))))))

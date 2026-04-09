@@ -230,10 +230,10 @@ define RegionInfo
         var i 0
         for n in named_region_names
         {
-            if n.equals(name)
+            guard n.equals(name)
             {
                 let val named_region_values.get(i)
-                if val <> null
+                guard val <> null
                     return val
 
             }
@@ -388,13 +388,13 @@ define Emitter
     ; Dispose of LLVM resources
     procedure dispose(this)
     {
-        if builder.handle <> null
+        guard builder.handle <> null
             LLVMDisposeBuilder(builder)
 
-        if llvm_module.handle <> null
+        guard llvm_module.handle <> null
             LLVMDisposeModule(llvm_module)
 
-        if context.handle <> null
+        guard context.handle <> null
             LLVMContextDispose(context)
 
     }
@@ -408,10 +408,10 @@ define Emitter
         var i 0
         for n in type_cache_names
         {
-            if n.equals(name)
+            guard n.equals(name)
             {
                 let t type_cache_types.get(i)
-                if t <> null
+                guard t <> null
                     return t
 
             }
@@ -435,10 +435,10 @@ define Emitter
         var i 0
         for n in struct_cache_names
         {
-            if n.equals(name)
+            guard n.equals(name)
             {
                 let t struct_cache_types.get(i)
-                if t <> null
+                guard t <> null
                     return t
 
             }
@@ -462,10 +462,10 @@ define Emitter
         var i 0
         for n in function_cache_names
         {
-            if n.equals(mangled_name)
+            guard n.equals(mangled_name)
             {
                 let f function_cache_funcs.get(i)
-                if f <> null
+                guard f <> null
                     return f
 
             }
@@ -489,10 +489,10 @@ define Emitter
         var i 0
         for n in local_var_names
         {
-            if n.equals(name)
+            guard n.equals(name)
             {
                 let v local_var_values.get(i)
-                if v <> null
+                guard v <> null
                     return v
 
             }
@@ -522,16 +522,16 @@ define Emitter
     {
         ; Check type cache first
         let cached lookup_type_cache(planned_type.name)
-        if cached.handle <> null
+        guard cached.handle <> null
             return cached
 
         ; Check intrinsic types
         let intr_type map_intrinsic_type(planned_type.name)
-        if intr_type.handle <> null
+        guard intr_type.handle <> null
             return intr_type
 
         ; Handle pointer types
-        if planned_type.name.equals(String$("pointer"))
+        guard planned_type.name.equals(String$("pointer"))
         {
             ; Use opaque pointer (ptr) for LLVM 15+
             let ptr_type LLVMPointerTypeInContext(context, 0)
@@ -540,7 +540,7 @@ define Emitter
         }
 
         ; Handle ref types (same as pointer at LLVM level)
-        if planned_type.name.equals(String$("ref"))
+        guard planned_type.name.equals(String$("ref"))
         {
             let ptr_type LLVMPointerTypeInContext(context, 0)
             cache_type(planned_type.mangled_name, ptr_type)
@@ -549,12 +549,12 @@ define Emitter
 
         ; Look up struct type
         let struct_type lookup_struct_cache(planned_type.name)
-        if struct_type.handle <> null
+        guard struct_type.handle <> null
             return struct_type
 
         ; Try mangled name
         let struct_type2 lookup_struct_cache(planned_type.mangled_name)
-        if struct_type2.handle <> null
+        guard struct_type2.handle <> null
             return struct_type2
 
         ; Create opaque struct as placeholder
@@ -570,10 +570,10 @@ define Emitter
         var i 0
         for n in intrinsic_type_names
         {
-            if n.equals(name)
+            guard n.equals(name)
             {
                 let info intrinsic_types.get(i)
-                if info <> null
+                guard info <> null
                     return info.llvm_type
 
             }
@@ -587,7 +587,7 @@ define Emitter
     {
         for n in intrinsic_type_names
         {
-            if n.equals(name)
+            guard n.equals(name)
                 return true
 
         }
@@ -603,7 +603,7 @@ define Emitter
     {
         ; Check cache first
         let cached lookup_struct_cache(struct.name)
-        if cached.handle <> null
+        guard cached.handle <> null
             return cached
 
         ; Create named struct
@@ -612,10 +612,10 @@ define Emitter
         cache_struct(struct.mangled_name, llvm_struct)
 
         ; If no properties, it's an empty struct
-        if struct.properties = null
+        guard struct.properties = null
             return llvm_struct
 
-        if struct.properties.length = 0
+        guard struct.properties.length = 0
             return llvm_struct
 
         ; Collect element types from properties
@@ -626,7 +626,7 @@ define Emitter
         while i < element_count
         {
             let prop_ptr struct.properties.get(i)
-            if prop_ptr <> null
+            guard prop_ptr <> null
             {
                 let prop prop_ptr.unwrap()
                 let prop_llvm_type map_type(prop.prop_type)
@@ -650,7 +650,7 @@ define Emitter
     {
         ; Check cache first
         let cached lookup_struct_cache(union_type.name)
-        if cached.handle <> null
+        guard cached.handle <> null
             return cached
 
         ; Create named struct for the union
@@ -665,7 +665,7 @@ define Emitter
         ; Data size is total size minus tag size (1 byte for i8 tag)
         ; Account for alignment padding
         var data_size union_type.size
-        if data_size > 0
+        guard data_size > 0
             set data_size: data_size - 1
 
         ; If no data, just use tag alone
@@ -699,35 +699,35 @@ define Emitter
     {
         ; Check cache first
         let cached lookup_function_cache(func.mangled_name)
-        if cached.handle <> null
+        guard cached.handle <> null
             return cached
 
         ; Determine return type
         var llvm_return_type LLVMVoidTypeInContext(context)
-        if func.return_type <> null
+        guard func.return_type <> null
             set llvm_return_type: map_type(func.return_type.unwrap())
 
         ; Build parameter types array
         var param_count: size_t 0
         var param_types_ptr: pointer[LLVMTypeRef] null as pointer[LLVMTypeRef]
 
-        if func.input <> null
+        guard func.input <> null
         {
             let input_ref func.input.unwrap()
             let input (*input_ref)
             set param_count: input.length
 
-            if param_count > 0
+            guard param_count > 0
             {
                 var param_types Vector[LLVMTypeRef]#(param_count)
                 var i: size_t 0
                 while i < param_count
                 {
                     let item_ptr input.get(i)
-                    if item_ptr <> null
+                    guard item_ptr <> null
                     {
                         let item (*item_ptr)
-                        if item.item_type <> null
+                        guard item.item_type <> null
                         {
                             let item_type item.item_type.unwrap()
                             let llvm_param_type map_type(item_type)
@@ -744,7 +744,7 @@ define Emitter
 
         ; Use unmangled "main" for linker compatibility (C entry point)
         var func_name func.mangled_name
-        if func.name.equals(String$("main"))
+        guard func.name.equals(String$("main"))
             set func_name: String$("main")
 
         let llvm_func LLVMAddFunction(llvm_module, func_name.c_data(), func_type)
@@ -766,7 +766,7 @@ define Emitter
     {
         ; Get the LLVM function (should already be declared)
         let llvm_func lookup_function_cache(func.mangled_name)
-        if llvm_func.handle = null
+        guard llvm_func.handle = null
             return false
 
         ; Skip extern functions - they have no body
@@ -796,7 +796,7 @@ define Emitter
                 LLVMPositionBuilderAtEnd(builder, entry_block)
 
                 ; Bind parameters as local variables
-                if func.input <> null
+                guard func.input <> null
                 {
                     let input_ref func.input.unwrap()
                     let input (*input_ref)
@@ -804,10 +804,10 @@ define Emitter
                     while i < input.length
                     {
                         let item_ptr input.get(i)
-                        if item_ptr <> null
+                        guard item_ptr <> null
                         {
                             let item (*item_ptr)
-                            if item.name <> null
+                            guard item.name <> null
                             {
                                 let param_name (*item.name.unwrap())
                                 let param_value LLVMGetParam(llvm_func, i as int)
@@ -823,7 +823,7 @@ define Emitter
 
                 ; Add return if not already terminated
                 let term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock(builder))
-                if term.handle = null
+                guard term.handle = null
                 {
                     ; Add appropriate return based on return type
                     if func.return_type <> null
@@ -892,7 +892,7 @@ define Emitter
             {
                 let llvm_type LLVMInt8TypeInContext(context)
                 ; Get first character
-                if c.value.get_length() > 0
+                guard c.value.get_length() > 0
                 {
                     let ch c.value.get(0)
                     return LLVMConstInt(llvm_type, ch as size_t, 0)
@@ -931,35 +931,35 @@ define Emitter
         set current_plan: plan
 
         ; Emit all structures
-        if plan.structures <> null
+        guard plan.structures <> null
         {
             for struct in plan.structures
                 emit_struct_type(struct)
         }
 
         ; Emit all unions
-        if plan.unions <> null
+        guard plan.unions <> null
         {
             for union_type in plan.unions
                 emit_union_type(union_type)
         }
 
         ; Emit function declarations first (for forward references)
-        if plan.functions <> null
+        guard plan.functions <> null
         {
             for func in plan.functions
                 emit_function_decl(func)
         }
 
         ; Emit function bodies
-        if plan.functions <> null
+        guard plan.functions <> null
         {
             for func in plan.functions
                 emit_function_body(func)
         }
 
         ; Emit global variables
-        if plan.globals <> null
+        guard plan.globals <> null
         {
             for global in plan.globals
             {
@@ -967,10 +967,10 @@ define Emitter
                 let gv LLVMAddGlobal(llvm_module, global_type, global.mangled_name.c_data())
 
                 ; Set initializer if present
-                if global.value <> null
+                guard global.value <> null
                 {
                     let init_value emit_operands(global.value)
-                    if init_value.handle <> null
+                    guard init_value.handle <> null
                         LLVMSetInitializer(gv, init_value)
                 }
 
@@ -980,14 +980,14 @@ define Emitter
         }
 
         ; Emit main wrapper for top-level statements if present
-        if plan.statements <> null
+        guard plan.statements <> null
         {
-            if plan.statements.length > 0
+            guard plan.statements.length > 0
             {
                 ; Create main function if not already present
                 let main_name String$("main")
                 let main_func LLVMGetNamedFunction(llvm_module, main_name.c_data())
-                if main_func.handle = null
+                guard main_func.handle = null
                 {
                     let i32_type LLVMInt32TypeInContext(context)
                     let main_type LLVMFunctionType(i32_type, null as pointer[LLVMTypeRef], 0, 0)
@@ -1004,7 +1004,7 @@ define Emitter
 
                     ; Return 0 if not terminated
                     let term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock(builder))
-                    if term.handle = null
+                    guard term.handle = null
                     {
                         let zero LLVMConstInt(i32_type, 0, 0)
                         LLVMBuildRet(builder, zero)
@@ -1054,15 +1054,15 @@ define Emitter
     ; Emit a sequence of operands (typically collapsed to single operand)
     function emit_operands(this, ops: ref[Vector[PlannedOperand]]?) returns LLVMValueRef
     {
-        if ops = null
+        guard ops = null
             return LLVMValueRef(null)
 
-        if ops.length = 0
+        guard ops.length = 0
             return LLVMValueRef(null)
 
         ; After collapseOperandSequence, we typically have a single collapsed operand
         let first ops.get(0)
-        if first = null
+        guard first = null
             return LLVMValueRef(null)
 
         emit_operand(first.unwrap())
@@ -1085,11 +1085,11 @@ define Emitter
             }
 
         ; Apply member access chain if present
-        if op.member_access <> null
+        guard op.member_access <> null
         {
             let chain_ref op.member_access.unwrap()
             let chain (*chain_ref)
-            if chain.length > 0
+            guard chain.length > 0
                 set value: emit_member_access_chain(value, chain, op.result_type)
 
         }
@@ -1103,15 +1103,15 @@ define Emitter
         var current_value base_value
 
         ; If base value is a pointer, we may need to load the struct
-        if LLVMGetTypeKind(LLVMTypeOf(current_value)) = LLVMTypeKind.Pointer()
+        guard LLVMGetTypeKind(LLVMTypeOf(current_value)) = LLVMTypeKind.Pointer()
         {
             ; Get the first member's parent type to know what to load
             let first chain.get(0)
-            if first <> null
+            guard first <> null
             {
                 let parent_type first.parent_type
                 let struct_type map_type(parent_type)
-                if struct_type.handle <> null
+                guard struct_type.handle <> null
                     set current_value: LLVMBuildLoad2(builder, struct_type, current_value, "load.struct")
 
             }
@@ -1122,7 +1122,7 @@ define Emitter
         while i < chain.length
         {
             let access_ptr chain.get(i)
-            if access_ptr <> null
+            guard access_ptr <> null
             {
                 let access access_ptr.unwrap()
 
@@ -1147,10 +1147,10 @@ define Emitter
                 else
                 {
                     ; If current value is still a pointer, load it first
-                    if LLVMGetTypeKind(LLVMTypeOf(current_value)) = LLVMTypeKind.Pointer()
+                    guard LLVMGetTypeKind(LLVMTypeOf(current_value)) = LLVMTypeKind.Pointer()
                     {
                         let struct_type map_type(access.parent_type)
-                        if struct_type.handle <> null
+                        guard struct_type.handle <> null
                             set current_value: LLVMBuildLoad2(builder, struct_type, current_value, "deref")
 
                     }
@@ -1267,7 +1267,7 @@ define Emitter
     function emit_variable(this, variable: PlannedVariable) returns LLVMValueRef
     {
         let var_ptr lookup_variable(variable.name)
-        if var_ptr.handle = null
+        guard var_ptr.handle = null
             return LLVMValueRef(null)
 
         if variable.is_mutable
@@ -1287,11 +1287,11 @@ define Emitter
     function emit_global_ref(this, global: PlannedGlobalRef) returns LLVMValueRef
     {
         let gv LLVMGetNamedGlobal(llvm_module, global.mangled_name.c_data())
-        if gv.handle = null
+        guard gv.handle = null
             return LLVMValueRef(null)
 
         ; Check if this is an array type (has array_size set)
-        if global.global_type.array_size.get_length() > 0
+        guard global.global_type.array_size.get_length() > 0
         {
             ; For arrays, create GEP to get pointer to first element
             let element_type map_type(global.global_type)
@@ -1320,7 +1320,7 @@ define Emitter
     function emit_call(this, call: PlannedCall) returns LLVMValueRef
     {
         ; Check if this is an intrinsic operator
-        if call.is_intrinsic
+        guard call.is_intrinsic
         {
             if call.is_operator
                 return emit_intrinsic_operator(call)
@@ -1330,25 +1330,25 @@ define Emitter
 
         ; Look up the function
         var func lookup_function_cache(call.mangled_name)
-        if func.handle = null
+        guard func.handle = null
         {
             ; Try to find it in the module
             set func: LLVMGetNamedFunction(llvm_module, call.mangled_name.c_data())
-            if func.handle = null
+            guard func.handle = null
                 return LLVMValueRef(null)
 
         }
 
         ; Build arguments
         ; For now, handle simple case without arguments
-        if call.args = null
+        guard call.args = null
         {
             let result_type map_type(call.result_type)
             let func_type LLVMFunctionType(result_type, null as pointer[LLVMTypeRef], 0, 0)
             return LLVMBuildCall2(builder, func_type, func, null as pointer[LLVMValueRef], 0, "call")
         }
 
-        if call.args.length = 0
+        guard call.args.length = 0
         {
             let result_type map_type(call.result_type)
             let func_type LLVMFunctionType(result_type, null as pointer[LLVMTypeRef], 0, 0)
@@ -1368,7 +1368,7 @@ define Emitter
         while i < arg_count
         {
             let arg_ptr call.args.get(i)
-            if arg_ptr <> null
+            guard arg_ptr <> null
             {
                 let arg_operand arg_ptr.unwrap()
                 let arg_value emit_operand(arg_operand)
@@ -1395,16 +1395,16 @@ define Emitter
     ; Emit an intrinsic operator call
     function emit_intrinsic_operator(this, call: PlannedCall) returns LLVMValueRef
     {
-        if call.args = null
+        guard call.args = null
             return LLVMValueRef(null)
 
         let arg_count call.args.length
 
         ; Unary operators
-        if arg_count = 1
+        guard arg_count = 1
         {
             let arg call.args.get(0)
-            if arg = null
+            guard arg = null
                 return LLVMValueRef(null)
 
             let operand emit_operand(arg.unwrap())
@@ -1412,14 +1412,14 @@ define Emitter
         }
 
         ; Binary operators
-        if arg_count = 2
+        guard arg_count = 2
         {
             let left_arg call.args.get(0)
             let right_arg call.args.get(1)
-            if left_arg = null
+            guard left_arg = null
                 return LLVMValueRef(null)
 
-            if right_arg = null
+            guard right_arg = null
                 return LLVMValueRef(null)
 
             let left emit_operand(left_arg.unwrap())
@@ -1437,32 +1437,32 @@ define Emitter
         let is_float is_floating_point_type(result_type)
 
         ; Negation
-        if op_name.equals(String$("-"))
+        guard op_name.equals(String$("-"))
         {
-            if is_float
+            guard is_float
                 return LLVMBuildFNeg(builder, operand, "fneg")
 
             return LLVMBuildNeg(builder, operand, "neg")
         }
 
         ; Unary plus (identity)
-        if op_name.equals(String$("+"))
+        guard op_name.equals(String$("+"))
             return operand
 
         ; Logical not
-        if op_name.equals(String$("!"))
+        guard op_name.equals(String$("!"))
             return LLVMBuildNot(builder, operand, "not")
 
         ; Bitwise not
-        if op_name.equals(String$("~"))
+        guard op_name.equals(String$("~"))
             return LLVMBuildNot(builder, operand, "bitnot")
 
         ; Dereference
-        if op_name.equals(String$("*"))
+        guard op_name.equals(String$("*"))
             return LLVMBuildLoad2(builder, ty, operand, "deref")
 
         ; Address-of (operand should already be a pointer)
-        if op_name.equals(String$("&"))
+        guard op_name.equals(String$("&"))
             return operand
 
         LLVMValueRef(null)
@@ -1476,137 +1476,137 @@ define Emitter
         let is_signed is_signed_type(result_type)
 
         ; Addition
-        if op_name.equals(String$("+"))
+        guard op_name.equals(String$("+"))
         {
-            if is_float
+            guard is_float
                 return LLVMBuildFAdd(builder, left, right, "fadd")
 
             return LLVMBuildAdd(builder, left, right, "add")
         }
 
         ; Subtraction
-        if op_name.equals(String$("-"))
+        guard op_name.equals(String$("-"))
         {
-            if is_float
+            guard is_float
                 return LLVMBuildFSub(builder, left, right, "fsub")
 
             return LLVMBuildSub(builder, left, right, "sub")
         }
 
         ; Multiplication
-        if op_name.equals(String$("*"))
+        guard op_name.equals(String$("*"))
         {
-            if is_float
+            guard is_float
                 return LLVMBuildFMul(builder, left, right, "fmul")
 
             return LLVMBuildMul(builder, left, right, "mul")
         }
 
         ; Division
-        if op_name.equals(String$("/"))
+        guard op_name.equals(String$("/"))
         {
-            if is_float
+            guard is_float
                 return LLVMBuildFDiv(builder, left, right, "fdiv")
 
-            if is_signed
+            guard is_signed
                 return LLVMBuildSDiv(builder, left, right, "sdiv")
 
             return LLVMBuildUDiv(builder, left, right, "udiv")
         }
 
         ; Modulo
-        if op_name.equals(String$("%"))
+        guard op_name.equals(String$("%"))
         {
-            if is_float
+            guard is_float
                 return LLVMBuildFRem(builder, left, right, "frem")
 
-            if is_signed
+            guard is_signed
                 return LLVMBuildSRem(builder, left, right, "srem")
 
             return LLVMBuildURem(builder, left, right, "urem")
         }
 
         ; Bitwise AND
-        if op_name.equals(String$("&"))
+        guard op_name.equals(String$("&"))
             return LLVMBuildAnd(builder, left, right, "and")
 
         ; Bitwise OR
-        if op_name.equals(String$("|"))
+        guard op_name.equals(String$("|"))
             return LLVMBuildOr(builder, left, right, "or")
 
         ; Bitwise XOR
-        if op_name.equals(String$("^"))
+        guard op_name.equals(String$("^"))
             return LLVMBuildXor(builder, left, right, "xor")
 
         ; Left shift
-        if op_name.equals(String$("<<"))
+        guard op_name.equals(String$("<<"))
             return LLVMBuildShl(builder, left, right, "shl")
 
         ; Right shift
-        if op_name.equals(String$(">>"))
+        guard op_name.equals(String$(">>"))
         {
-            if is_signed
+            guard is_signed
                 return LLVMBuildAShr(builder, left, right, "ashr")
 
             return LLVMBuildLShr(builder, left, right, "lshr")
         }
 
         ; Comparison operators
-        if op_name.equals(String$("="))
+        guard op_name.equals(String$("="))
         {
-            if is_float
+            guard is_float
                 return LLVMBuildFCmp(builder, LLVMRealPredicate.OEQ(), left, right, "eq")
 
             return LLVMBuildICmp(builder, LLVMIntPredicate.EQ(), left, right, "eq")
         }
 
-        if op_name.equals(String$("<>"))
+        guard op_name.equals(String$("<>"))
         {
-            if is_float
+            guard is_float
                 return LLVMBuildFCmp(builder, LLVMRealPredicate.ONE(), left, right, "ne")
 
             return LLVMBuildICmp(builder, LLVMIntPredicate.NE(), left, right, "ne")
         }
 
-        if op_name.equals(String$("<"))
+        guard op_name.equals(String$("<"))
         {
-            if is_float
+            guard is_float
                 return LLVMBuildFCmp(builder, LLVMRealPredicate.OLT(), left, right, "lt")
 
-            if is_signed
+            guard is_signed
                 return LLVMBuildICmp(builder, LLVMIntPredicate.SLT(), left, right, "lt")
 
             return LLVMBuildICmp(builder, LLVMIntPredicate.ULT(), left, right, "lt")
         }
 
-        if op_name.equals(String$("<="))
+        guard op_name.equals(String$("<="))
         {
-            if is_float
+            guard is_float
                 return LLVMBuildFCmp(builder, LLVMRealPredicate.OLE(), left, right, "le")
 
-            if is_signed
+            guard is_signed
                 return LLVMBuildICmp(builder, LLVMIntPredicate.SLE(), left, right, "le")
 
             return LLVMBuildICmp(builder, LLVMIntPredicate.ULE(), left, right, "le")
         }
 
-        if op_name.equals(String$(">"))
+        guard op_name.equals(String$(">"))
         {
-            if is_float
+            guard is_float
                 return LLVMBuildFCmp(builder, LLVMRealPredicate.OGT(), left, right, "gt")
 
-            if is_signed
+            guard is_signed
                 return LLVMBuildICmp(builder, LLVMIntPredicate.SGT(), left, right, "gt")
 
             return LLVMBuildICmp(builder, LLVMIntPredicate.UGT(), left, right, "gt")
         }
 
-        if op_name.equals(String$(">="))
+        guard op_name.equals(String$(">="))
         {
-            if is_float
+            guard is_float
                 return LLVMBuildFCmp(builder, LLVMRealPredicate.OGE(), left, right, "ge")
 
-            if is_signed
+            guard is_signed
                 return LLVMBuildICmp(builder, LLVMIntPredicate.SGE(), left, right, "ge")
 
             return LLVMBuildICmp(builder, LLVMIntPredicate.UGE(), left, right, "ge")
@@ -1622,27 +1622,27 @@ define Emitter
         let name call.name
 
         ; Handle Option::unwrap - extract payload from union
-        if name.equals(String$("unwrap"))
+        guard name.equals(String$("unwrap"))
         {
-            if call.args <> null
+            guard call.args <> null
             {
-                if call.args.length = 1
+                guard call.args.length = 1
                 {
                     let arg call.args.get(0)
-                    if arg <> null
+                    guard arg <> null
                     {
                         let option_value emit_operand(arg.unwrap())
                         let result_ty map_type(call.result_type)
 
-                        if result_ty.handle = null
+                        guard result_ty.handle = null
                             return LLVMValueRef(null)
 
                         ; Check if this is an NPO Option (pointer type)
                         ; For NPO, just load from the pointer
-                        if LLVMGetTypeKind(LLVMTypeOf(option_value)) = LLVMTypeKind.Pointer()
+                        guard LLVMGetTypeKind(LLVMTypeOf(option_value)) = LLVMTypeKind.Pointer()
                         {
                             ; Check if result is also a pointer (NPO case)
-                            if LLVMGetTypeKind(result_ty) = LLVMTypeKind.Pointer()
+                            guard LLVMGetTypeKind(result_ty) = LLVMTypeKind.Pointer()
                                 return LLVMBuildLoad2(builder, result_ty, option_value, "unwrap.npo")
 
                             ; Regular union case - option_value is pointer to union
@@ -1664,19 +1664,19 @@ define Emitter
         }
 
         ; Handle Option::unwrap_or - return value or default
-        if name.equals(String$("unwrap_or"))
+        guard name.equals(String$("unwrap_or"))
         {
-            if call.args <> null
+            guard call.args <> null
             {
-                if call.args.length = 2
+                guard call.args.length = 2
                 {
                     ; First arg is the Option, second is the default
                     let opt_arg call.args.get(0)
                     let def_arg call.args.get(1)
 
-                    if opt_arg <> null
+                    guard opt_arg <> null
                     {
-                        if def_arg <> null
+                        guard def_arg <> null
                         {
                             ; For now, just return the default value
                             ; Full implementation would check if option has value
@@ -1698,10 +1698,10 @@ define Emitter
     ; Check if type is floating point
     function is_floating_point_type(this, t: PlannedType) returns bool
     {
-        if t.name.equals(String$("float"))
+        guard t.name.equals(String$("float"))
             return true
 
-        if t.name.equals(String$("double"))
+        guard t.name.equals(String$("double"))
             return true
 
         false
@@ -1711,22 +1711,22 @@ define Emitter
     function is_signed_type(this, t: PlannedType) returns bool
     {
         ; Unsigned types start with 'u' or are size_t
-        if t.name.equals(String$("u8"))
+        guard t.name.equals(String$("u8"))
             return false
 
-        if t.name.equals(String$("u16"))
+        guard t.name.equals(String$("u16"))
             return false
 
-        if t.name.equals(String$("u32"))
+        guard t.name.equals(String$("u32"))
             return false
 
-        if t.name.equals(String$("u64"))
+        guard t.name.equals(String$("u64"))
             return false
 
-        if t.name.equals(String$("uint"))
+        guard t.name.equals(String$("uint"))
             return false
 
-        if t.name.equals(String$("size_t"))
+        guard t.name.equals(String$("size_t"))
             return false
 
         ; Everything else is signed by default
@@ -1740,29 +1740,29 @@ define Emitter
     ; Emit a tuple construction
     function emit_tuple(this, tuple: PlannedTuple) returns LLVMValueRef
     {
-        if tuple.components = null
+        guard tuple.components = null
             return LLVMValueRef(null)
 
-        if tuple.components.length = 0
+        guard tuple.components.length = 0
             return LLVMValueRef(null)
 
         ; Check if this is struct construction vs grouped expression
         ; If TupleType has a name and it's not just "Tuple", it's struct construction
         var is_struct_construction false
-        if tuple.tuple_type.name.data <> null
+        guard tuple.tuple_type.name.data <> null
         {
             ; Simple check: if name is not empty and not "Tuple"
-            if tuple.tuple_type.name.get_length() > 0
+            guard tuple.tuple_type.name.get_length() > 0
             {
                 set is_struct_construction: true
                 ; Exception: single component with no name isn't struct construction
                 ; (it's a grouped expression like (2 + 3))
-                if tuple.components.length = 1
+                guard tuple.components.length = 1
                 {
                     let first tuple.components.get(0)
-                    if first <> null
+                    guard first <> null
                     {
-                        if first.name = null
+                        guard first.name = null
                             set is_struct_construction: false
                     }
                 }
@@ -1770,14 +1770,14 @@ define Emitter
         }
 
         ; If single component with no name and not struct construction, just emit the value
-        if tuple.components.length = 1
+        guard tuple.components.length = 1
         {
-            if ~is_struct_construction
+            guard ~is_struct_construction
             {
                 let comp tuple.components.get(0)
-                if comp <> null
+                guard comp <> null
                 {
-                    if comp.name = null
+                    guard comp.name = null
                         return emit_operands(comp.value)
 
                 }
@@ -1795,7 +1795,7 @@ define Emitter
         while i < comp_count
         {
             let comp_ptr tuple.components.get(i)
-            if comp_ptr <> null
+            guard comp_ptr <> null
             {
                 let comp comp_ptr.unwrap()
                 let comp_value emit_operands(comp.value)
@@ -1809,7 +1809,7 @@ define Emitter
 
         ; Get or create struct type
         var struct_type lookup_struct_cache(tuple.tuple_type.mangled_name)
-        if struct_type.handle = null
+        guard struct_type.handle = null
         {
             ; Create anonymous struct type
             set struct_type: LLVMStructTypeInContext(context, comp_types.data, comp_count as u32, 0)
@@ -1823,7 +1823,7 @@ define Emitter
         while i < comp_count
         {
             let comp_value comp_values.get(i)
-            if comp_value <> null
+            guard comp_value <> null
             {
                 let field_ptr LLVMBuildStructGEP2(builder, struct_type, tuple_ptr, i as u32, "tuple.field")
                 LLVMBuildStore(builder, comp_value.unwrap(), field_ptr)
@@ -1837,7 +1837,7 @@ define Emitter
     ; Emit a matrix (array literal)
     function emit_matrix(this, matrix: PlannedMatrix) returns LLVMValueRef
     {
-        if matrix.operations = null
+        guard matrix.operations = null
             return LLVMValueRef(null)
 
         let ops_ref matrix.operations.unwrap()
@@ -1850,7 +1850,7 @@ define Emitter
         while row_idx < ops.length
         {
             let row_ptr ops.get(row_idx)
-            if row_ptr <> null
+            guard row_ptr <> null
             {
                 let row (*row_ptr)
                 set total_count: total_count + row.length
@@ -1858,7 +1858,7 @@ define Emitter
             set row_idx: row_idx + 1
         }
 
-        if total_count = 0
+        guard total_count = 0
             return LLVMValueRef(null)
 
         ; Emit all element values
@@ -1868,14 +1868,14 @@ define Emitter
         while row_idx < ops.length
         {
             let row_ptr ops.get(row_idx)
-            if row_ptr <> null
+            guard row_ptr <> null
             {
                 let row (*row_ptr)
                 var col_idx: size_t 0
                 while col_idx < row.length
                 {
                     let operand_ptr row.get(col_idx)
-                    if operand_ptr <> null
+                    guard operand_ptr <> null
                     {
                         let operand operand_ptr.unwrap()
                         let value emit_operand(operand)
@@ -1903,7 +1903,7 @@ define Emitter
         while elem_idx < total_count
         {
             let elem_value element_values.get(elem_idx)
-            if elem_value <> null
+            guard elem_value <> null
             {
                 ; Build GEP with indices [0, elem_idx]
                 var indices Vector[LLVMValueRef]#(2)
@@ -1931,7 +1931,7 @@ define Emitter
 
         var last_value LLVMValueRef(null)
 
-        if block.statements <> null
+        guard block.statements <> null
         {
             for stmt in block.statements
             {
@@ -1944,7 +1944,7 @@ define Emitter
                             set last_value: value
                         else
                         {
-                            if action.target.length = 0
+                            guard action.target.length = 0
                                 set last_value: value
                         }
                     }
@@ -1972,7 +1972,7 @@ define Emitter
     {
         ; Emit the condition
         let cond_value emit_operands(if_expr.condition)
-        if cond_value.handle = null
+        guard cond_value.handle = null
             return LLVMValueRef(null)
 
         ; Ensure we have a boolean (i1) for the branch
@@ -1981,7 +1981,7 @@ define Emitter
         let i1_type LLVMInt1TypeInContext(context)
 
         ; If not i1, convert to boolean
-        if LLVMGetTypeKind(cond_type) <> LLVMGetTypeKind(i1_type)
+        guard LLVMGetTypeKind(cond_type) <> LLVMGetTypeKind(i1_type)
         {
             ; Compare to 0
             let zero LLVMConstInt(cond_type, 0, 0)
@@ -1991,7 +1991,7 @@ define Emitter
         ; Create basic blocks
         let then_block create_block(String$("if.then"))
         var else_block LLVMBasicBlockRef(null)
-        if if_expr.alternative <> null
+        guard if_expr.alternative <> null
             set else_block: create_block(String$("if.else"))
         let merge_block create_block(String$("if.end"))
 
@@ -2015,7 +2015,7 @@ define Emitter
 
         ; Jump to merge block if not already terminated
         let then_term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock(builder))
-        if then_term.handle = null
+        guard then_term.handle = null
             LLVMBuildBr(builder, merge_block)
         let then_end_block LLVMGetInsertBlock(builder)
 
@@ -2023,7 +2023,7 @@ define Emitter
         var else_value LLVMValueRef(null)
         var else_end_block LLVMBasicBlockRef(null)
 
-        if else_block.handle <> null
+        guard else_block.handle <> null
         {
             LLVMPositionBuilderAtEnd(builder, else_block)
 
@@ -2035,7 +2035,7 @@ define Emitter
                 else { }
 
             let else_term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock(builder))
-            if else_term.handle = null
+            guard else_term.handle = null
                 LLVMBuildBr(builder, merge_block)
             set else_end_block: LLVMGetInsertBlock(builder)
         }
@@ -2044,13 +2044,13 @@ define Emitter
         LLVMPositionBuilderAtEnd(builder, merge_block)
 
         ; If both branches produce values of the same type, create a PHI node
-        if then_value.handle <> null
+        guard then_value.handle <> null
         {
-            if else_value.handle <> null
+            guard else_value.handle <> null
             {
-                if then_end_block.handle <> null
+                guard then_end_block.handle <> null
                 {
-                    if else_end_block.handle <> null
+                    guard else_end_block.handle <> null
                     {
                         let then_ty LLVMTypeOf(then_value)
                         let else_ty LLVMTypeOf(else_value)
@@ -2074,9 +2074,9 @@ define Emitter
         }
 
         ; Return the then value if only then branch has a value
-        if then_value.handle <> null
+        guard then_value.handle <> null
         {
-            if if_expr.alternative = null
+            guard if_expr.alternative = null
                 return then_value
 
         }
@@ -2090,7 +2090,7 @@ define Emitter
         ; Match is similar to if with multiple conditions
         ; Emit condition
         let cond_value emit_operands(match_expr.condition)
-        if cond_value.handle = null
+        guard cond_value.handle = null
             return LLVMValueRef(null)
 
         ; Create blocks
@@ -2106,19 +2106,19 @@ define Emitter
         let switch_inst LLVMBuildSwitch(builder, cond_value, default_block, branch_count)
 
         ; Process each branch
-        if match_expr.branches <> null
+        guard match_expr.branches <> null
         {
             for branch in match_expr.branches
             {
                 let case_block create_block(String$("match.case"))
 
                 ; Add cases to switch
-                if branch.cases <> null
+                guard branch.cases <> null
                 {
                     for case_cond in branch.cases
                     {
                         let case_value emit_operands(case_cond.condition)
-                        if case_value.handle <> null
+                        guard case_value.handle <> null
                             LLVMAddCase(switch_inst, case_value, case_block)
                     }
                 }
@@ -2133,7 +2133,7 @@ define Emitter
                     else { }
 
                 let case_term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock(builder))
-                if case_term.handle = null
+                guard case_term.handle = null
                     LLVMBuildBr(builder, merge_block)
             }
         }
@@ -2145,7 +2145,7 @@ define Emitter
                 LLVMPositionBuilderAtEnd(builder, default_block)
                 emit_statement(*stmt_ref)
                 let alt_term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock(builder))
-                if alt_term.handle = null
+                guard alt_term.handle = null
                     LLVMBuildBr(builder, merge_block)
             }
             else { }
@@ -2161,7 +2161,7 @@ define Emitter
     {
         ; Emit the condition (union value)
         let union_value emit_operands(choose_expr.condition)
-        if union_value.handle = null
+        guard union_value.handle = null
             return LLVMValueRef(null)
 
         ; Union layout: { i8 tag, [maxSize x i8] data }
@@ -2172,7 +2172,7 @@ define Emitter
         ; If not a pointer, store to get address
         let type_kind LLVMGetTypeKind(union_type)
         ; PointerTypeKind = 14 in LLVM
-        if type_kind <> 14
+        guard type_kind <> 14
         {
             set union_ptr: LLVMBuildAlloca(builder, union_type, "choose.union")
             LLVMBuildStore(builder, union_value, union_ptr)
@@ -2192,7 +2192,7 @@ define Emitter
         let switch_inst LLVMBuildSwitch(builder, tag, default_block, case_count)
 
         ; Process each when case
-        if choose_expr.cases <> null
+        guard choose_expr.cases <> null
         {
             for when_case in choose_expr.cases
             {
@@ -2203,7 +2203,7 @@ define Emitter
                 LLVMPositionBuilderAtEnd(builder, case_block)
 
                 ; Extract variant data and bind to variable
-                if when_case.name.length > 0
+                guard when_case.name.length > 0
                 {
                     let data_ptr LLVMBuildStructGEP2(builder, union_type, union_ptr, 1, "variant.c_data().ptr")
                     let var_ty map_type(when_case.variant_type)
@@ -2221,7 +2221,7 @@ define Emitter
                     else { }
 
                 let case_term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock(builder))
-                if case_term.handle = null
+                guard case_term.handle = null
                     LLVMBuildBr(builder, merge_block)
             }
         }
@@ -2235,7 +2235,7 @@ define Emitter
             }
             else { }
         let alt_term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock(builder))
-        if alt_term.handle = null
+        guard alt_term.handle = null
             LLVMBuildBr(builder, merge_block)
 
         ; Continue at merge block
@@ -2248,7 +2248,7 @@ define Emitter
     function emit_for(this, for_expr: PlannedFor) returns LLVMValueRef
     {
         ; Check if iterator-based or integer range loop
-        if for_expr.is_iterator_loop
+        guard for_expr.is_iterator_loop
             return emit_for_iterator(for_expr)
 
         emit_for_integer_range(for_expr)
@@ -2259,7 +2259,7 @@ define Emitter
     {
         ; Evaluate the range expression to get the end value
         let end_value emit_operands(for_expr.expr)
-        if end_value.handle = null
+        guard end_value.handle = null
             return LLVMValueRef(null)
 
         let index_type LLVMTypeOf(end_value)
@@ -2301,7 +2301,7 @@ define Emitter
 
         ; Jump to increment block if not terminated
         let body_term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock(builder))
-        if body_term.handle = null
+        guard body_term.handle = null
             LLVMBuildBr(builder, incr_block)
 
         ; Emit increment block: i++
@@ -2327,14 +2327,14 @@ define Emitter
     {
         ; Evaluate collection expression
         let collection emit_operands(for_expr.expr)
-        if collection.handle = null
+        guard collection.handle = null
             return LLVMValueRef(null)
 
         ; Get collection pointer (if not already pointer)
         var collection_ptr collection
         let coll_type LLVMTypeOf(collection)
         let type_kind LLVMGetTypeKind(coll_type)
-        if type_kind <> 14  ; Not pointer
+        guard type_kind <> 14  ; Not pointer
         {
             set collection_ptr: LLVMBuildAlloca(builder, coll_type, "coll.tmp")
             LLVMBuildStore(builder, collection, collection_ptr)
@@ -2342,7 +2342,7 @@ define Emitter
 
         ; Look up get_iterator function
         let get_iter_fn LLVMGetNamedFunction(llvm_module, for_expr.get_iterator_method.c_data())
-        if get_iter_fn.handle = null
+        guard get_iter_fn.handle = null
             return LLVMValueRef(null)
 
         ; Call get_iterator() on collection
@@ -2362,7 +2362,7 @@ define Emitter
 
         ; Look up next function
         let next_fn LLVMGetNamedFunction(llvm_module, for_expr.next_method.c_data())
-        if next_fn.handle = null
+        guard next_fn.handle = null
             return LLVMValueRef(null)
 
         ; Create basic blocks
@@ -2410,7 +2410,7 @@ define Emitter
         emit_action(for_expr.body)
 
         let body_term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock(builder))
-        if body_term.handle = null
+        guard body_term.handle = null
             LLVMBuildBr(builder, cond_block)
 
         ; Exit block
@@ -2439,7 +2439,7 @@ define Emitter
 
         ; Emit the condition binding's operation
         let cond_value emit_operands(while_expr.cond.operation)
-        if cond_value.handle = null
+        guard cond_value.handle = null
         {
             pop_loop()
             return LLVMValueRef(null)
@@ -2468,7 +2468,7 @@ define Emitter
         let cond_type LLVMTypeOf(cond_value)
         let i1_type LLVMInt1TypeInContext(context)
 
-        if LLVMGetTypeKind(cond_type) <> LLVMGetTypeKind(i1_type)
+        guard LLVMGetTypeKind(cond_type) <> LLVMGetTypeKind(i1_type)
         {
             let zero LLVMConstInt(cond_type, 0, 0)
             set bool_cond: LLVMBuildICmp(builder, LLVMIntPredicate.NE(), cond_value, zero, "while.tobool")
@@ -2483,7 +2483,7 @@ define Emitter
 
         ; Jump back to condition if not terminated
         let body_term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock(builder))
-        if body_term.handle = null
+        guard body_term.handle = null
             LLVMBuildBr(builder, cond_block)
 
         ; Pop loop context
@@ -2500,7 +2500,7 @@ define Emitter
     {
         ; Emit the binding's operation
         let result_value emit_operands(try_expr.cond.operation)
-        if result_value.handle = null
+        guard result_value.handle = null
             return LLVMValueRef(null)
 
         let result_type LLVMTypeOf(result_value)
@@ -2508,7 +2508,7 @@ define Emitter
 
         ; If not a struct (union), just return it (no error possible)
         ; StructTypeKind = 12
-        if type_kind <> 12
+        guard type_kind <> 12
         {
             choose try_expr.cond.binding_item.name
                 when name: Some
@@ -2569,9 +2569,9 @@ define Emitter
         LLVMPositionBuilderAtEnd(builder, err_block)
 
         ; Handle catches - pattern match on error variants
-        if try_expr.catches <> null
+        guard try_expr.catches <> null
         {
-            if try_expr.catches.length > 0
+            guard try_expr.catches.length > 0
             {
                 ; Extract error data from the union's data field
                 let err_data_ptr LLVMBuildStructGEP2(builder, result_type, result_ptr, 1, "err.data.ptr")
@@ -2595,7 +2595,7 @@ define Emitter
                         LLVMPositionBuilderAtEnd(builder, catch_block)
 
                         ; Bind error value if name present
-                        if catch_case.name.length > 0
+                        guard catch_case.name.length > 0
                         {
                             let err_ty map_type(catch_case.variant_type)
                             let err_value LLVMBuildLoad2(builder, err_ty, err_data_ptr, "err.val")
@@ -2612,7 +2612,7 @@ define Emitter
 
                         ; Jump to catch end if no terminator
                         let catch_term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock(builder))
-                        if catch_term.handle = null
+                        guard catch_term.handle = null
                             LLVMBuildBr(builder, catch_end_block)
                     }
 
@@ -2627,12 +2627,12 @@ define Emitter
                 {
                     ; Single catch - just bind and execute
                     let single_catch try_expr.catches.get(0)
-                    if single_catch <> null
+                    guard single_catch <> null
                     {
                         let catch_case single_catch.unwrap()
 
                         ; Bind error value if name present
-                        if catch_case.name.length > 0
+                        guard catch_case.name.length > 0
                         {
                             let err_ty map_type(catch_case.variant_type)
                             let err_value LLVMBuildLoad2(builder, err_ty, err_data_ptr, "err.val")
@@ -2660,7 +2660,7 @@ define Emitter
             else { }
 
         let err_term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock(builder))
-        if err_term.handle = null
+        guard err_term.handle = null
             LLVMBuildBr(builder, merge_block)
 
         ; Continue at merge block
@@ -2694,7 +2694,7 @@ define Emitter
     function emit_is(this, is_expr: PlannedIs) returns LLVMValueRef
     {
         ; Emit the value to test
-        if is_expr.value = null
+        guard is_expr.value = null
         {
             ; No value to test - return false
             let i1_type LLVMInt1TypeInContext(context)
@@ -2704,7 +2704,7 @@ define Emitter
         let union_value emit_operand(is_expr.value.unwrap())
 
         ; Handle "is null" for optional types
-        if is_expr.is_null_check
+        guard is_expr.is_null_check
         {
             ; For pointer types, compare to null
             let ptr_type LLVMPointerTypeInContext(context, 0)
@@ -2719,7 +2719,7 @@ define Emitter
 
         ; Get the union type from cache
         var union_llvm_type lookup_struct_cache(is_expr.union_name)
-        if union_llvm_type.handle = null
+        guard union_llvm_type.handle = null
         {
             ; Try with mangled name
             set union_llvm_type: lookup_struct_cache(is_expr.test_type.mangled_name)
@@ -2727,7 +2727,7 @@ define Emitter
 
         ; Store the union value to get a pointer
         var union_ptr union_value
-        if LLVMGetTypeKind(LLVMTypeOf(union_value)) <> LLVMTypeKind.Pointer()
+        guard LLVMGetTypeKind(LLVMTypeOf(union_value)) <> LLVMTypeKind.Pointer()
         {
             ; Need to store to alloca
             if union_llvm_type.handle <> null
@@ -2760,14 +2760,14 @@ define Emitter
     function emit_as(this, as_expr: PlannedAs) returns LLVMValueRef
     {
         ; Emit the value being cast
-        if as_expr.value = null
+        guard as_expr.value = null
             return LLVMValueRef(null)
 
         let src_value emit_operand(as_expr.value.unwrap())
         let src_type LLVMTypeOf(src_value)
         let dst_type map_type(as_expr.target_type)
 
-        if dst_type.handle = null
+        guard dst_type.handle = null
             return LLVMValueRef(null)
 
         ; Check type kinds
@@ -2780,34 +2780,34 @@ define Emitter
         let double_kind LLVMTypeKind.Double()
 
         ; Pointer to pointer: bitcast
-        if src_kind = ptr_kind
+        guard src_kind = ptr_kind
         {
-            if dst_kind = ptr_kind
+            guard dst_kind = ptr_kind
                 return LLVMBuildBitCast(builder, src_value, dst_type, "as.ptr")
 
             ; Pointer to integer: ptrtoint
-            if dst_kind = int_kind
+            guard dst_kind = int_kind
                 return LLVMBuildPtrToInt(builder, src_value, dst_type, "as.ptrtoint")
 
         }
 
         ; Integer cases
-        if src_kind = int_kind
+        guard src_kind = int_kind
         {
             ; Integer to pointer: inttoptr
-            if dst_kind = ptr_kind
+            guard dst_kind = ptr_kind
                 return LLVMBuildIntToPtr(builder, src_value, dst_type, "as.inttoptr")
 
             ; Integer to integer: may need trunc, zext, or sext
-            if dst_kind = int_kind
+            guard dst_kind = int_kind
             {
                 let src_bits LLVMGetIntTypeWidth(src_type)
                 let dst_bits LLVMGetIntTypeWidth(dst_type)
 
-                if src_bits > dst_bits
+                guard src_bits > dst_bits
                     return LLVMBuildTrunc(builder, src_value, dst_type, "as.trunc")
 
-                if src_bits < dst_bits
+                guard src_bits < dst_bits
                     return LLVMBuildZExt(builder, src_value, dst_type, "as.zext")
 
                 ; Same size - no-op
@@ -2815,24 +2815,24 @@ define Emitter
             }
 
             ; Integer to float: sitofp
-            if dst_kind = float_kind
+            guard dst_kind = float_kind
                 return LLVMBuildSIToFP(builder, src_value, dst_type, "as.sitofp")
 
-            if dst_kind = double_kind
+            guard dst_kind = double_kind
                 return LLVMBuildSIToFP(builder, src_value, dst_type, "as.sitofp")
 
         }
 
         ; Float to integer: fptosi
-        if src_kind = float_kind
+        guard src_kind = float_kind
         {
-            if dst_kind = int_kind
+            guard dst_kind = int_kind
                 return LLVMBuildFPToSI(builder, src_value, dst_type, "as.fptosi")
 
         }
-        if src_kind = double_kind
+        guard src_kind = double_kind
         {
-            if dst_kind = int_kind
+            guard dst_kind = int_kind
                 return LLVMBuildFPToSI(builder, src_value, dst_type, "as.fptosi")
 
         }
@@ -2847,21 +2847,21 @@ define Emitter
         ; Check for Option with NPO (Null Pointer Optimization)
         ; NPO applies when the union is Option and inner type is pointer/ref
         var is_option false
-        if vc.union_type.name.get_length() >= 6
+        guard vc.union_type.name.get_length() >= 6
         {
             ; Check if name starts with "Option"
             let name_ptr vc.union_type.name.c_data()
-            if (*name_ptr) = 79  ; 'O'
+            guard (*name_ptr) = 79  ; 'O'
             {
-                if (*(name_ptr + 1)) = 112  ; 'p'
+                guard (*(name_ptr + 1)) = 112  ; 'p'
                 {
-                    if (*(name_ptr + 2)) = 116  ; 't'
+                    guard (*(name_ptr + 2)) = 116  ; 't'
                     {
-                        if (*(name_ptr + 3)) = 105  ; 'i'
+                        guard (*(name_ptr + 3)) = 105  ; 'i'
                         {
-                            if (*(name_ptr + 4)) = 111  ; 'o'
+                            guard (*(name_ptr + 4)) = 111  ; 'o'
                             {
-                                if (*(name_ptr + 5)) = 110  ; 'n'
+                                guard (*(name_ptr + 5)) = 110  ; 'n'
                                     set is_option: true
 
                             }
@@ -2872,10 +2872,10 @@ define Emitter
         }
 
         ; For NPO Option types, handle specially
-        if is_option
+        guard is_option
         {
             ; Check if variant is None
-            if vc.variant_name.equals(String$("None"))
+            guard vc.variant_name.equals(String$("None"))
             {
                 ; None = null pointer
                 let ptr_type LLVMPointerTypeInContext(context, 0)
@@ -2883,15 +2883,15 @@ define Emitter
             }
 
             ; For Some, check if we have a value and the type uses NPO
-            if vc.variant_name.equals(String$("Some"))
+            guard vc.variant_name.equals(String$("Some"))
             {
-                if vc.value <> null
+                guard vc.value <> null
                 {
                     let value emit_operand(vc.value.unwrap())
                     let value_type LLVMTypeOf(value)
 
                     ; If the inner value is already a pointer, return it directly
-                    if LLVMGetTypeKind(value_type) = LLVMTypeKind.Pointer()
+                    guard LLVMGetTypeKind(value_type) = LLVMTypeKind.Pointer()
                         return value
 
                     ; Otherwise, allocate and store (still uses NPO representation)
@@ -2907,10 +2907,10 @@ define Emitter
 
         ; Look up the union type from cache
         var union_type lookup_struct_cache(vc.union_type.mangled_name)
-        if union_type.handle = null
+        guard union_type.handle = null
             set union_type: lookup_struct_cache(vc.union_type.name)
 
-        if union_type.handle = null
+        guard union_type.handle = null
         {
             ; Can't find union type - return null
             return LLVMValueRef(null)
@@ -2926,7 +2926,7 @@ define Emitter
         LLVMBuildStore(builder, tag_value, tag_ptr)
 
         ; Store the value (field 1) if present
-        if vc.value <> null
+        guard vc.value <> null
         {
             let value emit_operand(vc.value.unwrap())
             let data_ptr LLVMBuildStructGEP2(builder, union_type, union_ptr, 1, "variant.data.ptr")
@@ -2979,17 +2979,17 @@ define Emitter
     {
         ; Emit source operands
         let value emit_operands(action.source)
-        if value.handle = null
+        guard value.handle = null
             return LLVMValueRef(null)
 
         ; If there are target operands, this is an assignment
-        if action.target <> null
+        guard action.target <> null
         {
-            if action.target.length > 0
+            guard action.target.length > 0
             {
                 ; Get the target - should be a variable reference for simple assignment
                 let target_op action.target.get(0)
-                if target_op = null
+                guard target_op = null
                     return value
 
                 choose target_op.expr
@@ -2997,13 +2997,13 @@ define Emitter
                     {
                         ; Look up the variable's pointer
                         let var_ptr lookup_variable(variable.name)
-                        if var_ptr.handle = null
+                        guard var_ptr.handle = null
                             return LLVMValueRef(null)
 
                         ; Check for member access (e.g., this.x = value)
-                        if target_op.member_access <> null
+                        guard target_op.member_access <> null
                         {
-                            if target_op.member_access.length > 0
+                            guard target_op.member_access.length > 0
                             {
                                 ; GEP-based field assignment for member access chains
                                 return emit_member_assignment(var_ptr, variable, target_op.member_access, value)
@@ -3011,7 +3011,7 @@ define Emitter
                         }
 
                         ; Simple variable assignment
-                        if variable.is_mutable = false
+                        guard variable.is_mutable = false
                             return LLVMValueRef(null)  ; Cannot assign to immutable
 
                         ; Store the value to the variable
@@ -3020,18 +3020,18 @@ define Emitter
                     when call: Call
                     {
                         ; Handle dereference assignment like *ptr = value
-                        if call.name.equals(String$("*"))
+                        guard call.name.equals(String$("*"))
                         {
-                            if call.args <> null
+                            guard call.args <> null
                             {
-                                if call.args.length = 1
+                                guard call.args.length = 1
                                 {
                                     ; Emit the argument to get the pointer
                                     choose call.args.get(0)
                                         when arg: Some
                                         {
                                             let ptr emit_operand(*arg)
-                                            if ptr.handle <> null
+                                            guard ptr.handle <> null
                                             {
                                                 ; Store to the dereferenced pointer
                                                 LLVMBuildStore(builder, value, ptr)
@@ -3060,15 +3060,15 @@ define Emitter
         var current_type map_type(planned_var.variable_type)
 
         ; If variable is pointer[T], we need to load the pointer first
-        if planned_var.variable_type.name.equals(String$("pointer"))
+        guard planned_var.variable_type.name.equals(String$("pointer"))
         {
             let ptr_type LLVMPointerTypeInContext(context, 0)
             set current_ptr: LLVMBuildLoad2(builder, ptr_type, var_ptr, "ptr.load")
 
             ; Get the inner type for struct access
-            if planned_var.variable_type.generics <> null
+            guard planned_var.variable_type.generics <> null
             {
-                if planned_var.variable_type.generics.length > 0
+                guard planned_var.variable_type.generics.length > 0
                 {
                     choose planned_var.variable_type.generics.get(0)
                         when inner_type: Some
@@ -3099,12 +3099,12 @@ define Emitter
         var value LLVMValueRef(null)
 
         ; Emit initialization expression if present
-        if binding.operation <> null
+        guard binding.operation <> null
         {
-            if binding.operation.length > 0
+            guard binding.operation.length > 0
             {
                 set value: emit_operands(binding.operation)
-                if value.handle = null
+                guard value.handle = null
                     return false
 
             }
@@ -3158,9 +3158,9 @@ define Emitter
     {
         ; Evaluate return value first (before cleanup)
         var ret_val LLVMValueRef(null)
-        if ret.result <> null
+        guard ret.result <> null
         {
-            if ret.result.length > 0
+            guard ret.result.length > 0
                 set ret_val: emit_operands(ret.result)
 
         }
@@ -3169,12 +3169,12 @@ define Emitter
         emit_block_cleanups(0)
 
         ; Clean up local page before returning
-        if current_region.local_page.handle <> null
+        guard current_region.local_page.handle <> null
         {
             ; First try to call deallocate_extensions if the Page runtime is available
             let dealloc_name String$("_ZN4scaly6memory4Page22deallocate_extensionsE")
             let dealloc_fn LLVMGetNamedFunction(llvm_module, dealloc_name.c_data())
-            if dealloc_fn.handle <> null
+            guard dealloc_fn.handle <> null
             {
                 ; Call deallocate_extensions(local_page)
                 var dealloc_args Vector[LLVMValueRef]#(1)
@@ -3190,7 +3190,7 @@ define Emitter
             ; Free the local page itself
             let free_name String$("free")
             let free_fn LLVMGetNamedFunction(llvm_module, free_name.c_data())
-            if free_fn.handle <> null
+            guard free_fn.handle <> null
             {
                 var free_args Vector[LLVMValueRef]#(1)
                 free_args.put(0, current_region.local_page)
@@ -3223,7 +3223,7 @@ define Emitter
         ; Result layout: { i8 tag, [size x i8] data }
         ; Tag 0 = Ok, Tag 1+ = error variants
 
-        if current_function.handle = null
+        guard current_function.handle = null
             return false
 
         ; Get the return type - should be a Result type
@@ -3240,12 +3240,12 @@ define Emitter
         LLVMBuildStore(builder, tag_val, tag_ptr)
 
         ; Evaluate the thrown value and store in the data portion
-        if throw_stmt.result <> null
+        guard throw_stmt.result <> null
         {
-            if throw_stmt.result.length > 0
+            guard throw_stmt.result.length > 0
             {
                 let thrown_value emit_operands(throw_stmt.result)
-                if thrown_value.handle <> null
+                guard thrown_value.handle <> null
                 {
                     ; Get pointer to the data field (field 1)
                     let data_ptr LLVMBuildStructGEP2(builder, ret_ty, result_ptr, 1, "throw.c_data().ptr")
@@ -3267,12 +3267,12 @@ define Emitter
     ; Emit a break statement
     function emit_break(this, brk: PlannedBreak) returns bool
     {
-        if loop_stack.length = 0
+        guard loop_stack.length = 0
             return false  ; break outside of loop
 
         ; Get the innermost loop context
         let loop_ctx loop_stack.get(loop_stack.length - 1)
-        if loop_ctx = null
+        guard loop_ctx = null
             return false
 
         ; Emit block-scoped cleanups back to the loop's entry depth
@@ -3287,12 +3287,12 @@ define Emitter
     ; Emit a continue statement
     function emit_continue(this, cont: PlannedContinue) returns bool
     {
-        if loop_stack.length = 0
+        guard loop_stack.length = 0
             return false  ; continue outside of loop
 
         ; Get the innermost loop context
         let loop_ctx loop_stack.get(loop_stack.length - 1)
-        if loop_ctx = null
+        guard loop_ctx = null
             return false
 
         ; Emit block-scoped cleanups back to the loop's entry depth
@@ -3313,20 +3313,20 @@ define Emitter
     {
         ; Emit restore_watermark for each block that needs cleanup,
         ; from innermost to target_depth (not including target_depth)
-        if page_restore_watermark.handle = null
+        guard page_restore_watermark.handle = null
             return
 
         var i block_cleanup_stack.length
         while i > target_depth
         {
             let cleanup block_cleanup_stack.get(i - 1)
-            if cleanup <> null
+            guard cleanup <> null
             {
-                if cleanup.needs_cleanup
+                guard cleanup.needs_cleanup
                 {
-                    if cleanup.watermark.handle <> null
+                    guard cleanup.watermark.handle <> null
                     {
-                        if current_region.local_page.handle <> null
+                        guard current_region.local_page.handle <> null
                         {
                             ; Call restore_watermark(local_page, watermark)
                             emit_restore_watermark(cleanup.watermark)
@@ -3342,19 +3342,19 @@ define Emitter
     procedure push_block_cleanup(this, needs_cleanup: bool)
     {
         var watermark LLVMValueRef(null)
-        if needs_cleanup
+        guard needs_cleanup
         {
-            if current_region.local_page.handle <> null
+            guard current_region.local_page.handle <> null
             {
                 ; Save watermark: call Page.save_watermark(local_page)
                 let save_wm_name String$("_ZN4scaly6memory4Page14save_watermarkE")
                 let save_wm_fn LLVMGetNamedFunction(llvm_module, save_wm_name.c_data())
-                if save_wm_fn.handle <> null
+                guard save_wm_fn.handle <> null
                 {
                     ; BlockWatermark is a struct - get its type
                     let watermark_name String$("BlockWatermark")
                     var watermark_type lookup_struct_cache(watermark_name)
-                    if watermark_type.handle = null
+                    guard watermark_type.handle = null
                     {
                         ; Create an opaque watermark type (4 pointers = 32 bytes on 64-bit)
                         set watermark_type: LLVMStructCreateNamed(context, watermark_name.c_data())
@@ -3386,19 +3386,19 @@ define Emitter
     ; Pop a block cleanup context and optionally emit cleanup
     procedure pop_block_cleanup(this, emit_cleanup: bool)
     {
-        if block_cleanup_stack.length = 0
+        guard block_cleanup_stack.length = 0
             return
 
-        if emit_cleanup
+        guard emit_cleanup
         {
             let cleanup block_cleanup_stack.get(block_cleanup_stack.length - 1)
-            if cleanup <> null
+            guard cleanup <> null
             {
-                if cleanup.needs_cleanup
+                guard cleanup.needs_cleanup
                 {
-                    if cleanup.watermark.handle <> null
+                    guard cleanup.watermark.handle <> null
                     {
-                        if current_region.local_page.handle <> null
+                        guard current_region.local_page.handle <> null
                         {
                             ; Call restore_watermark
                             emit_restore_watermark(cleanup.watermark)
@@ -3409,7 +3409,7 @@ define Emitter
         }
 
         ; Remove from stack (shrink length)
-        if block_cleanup_stack.length > 0
+        guard block_cleanup_stack.length > 0
             set block_cleanup_stack.length: block_cleanup_stack.length - 1
     }
 
@@ -3418,7 +3418,7 @@ define Emitter
     {
         let restore_wm_name String$("_ZN4scaly6memory4Page17restore_watermarkE")
         let restore_wm_fn LLVMGetNamedFunction(llvm_module, restore_wm_name.c_data())
-        if restore_wm_fn.handle <> null
+        guard restore_wm_fn.handle <> null
         {
             ; Call restore_watermark(local_page, watermark)
             var restore_args Vector[LLVMValueRef]#(2)
@@ -3452,7 +3452,7 @@ define Emitter
     ; Pop a loop context from the stack
     procedure pop_loop(this)
     {
-        if loop_stack.length > 0
+        guard loop_stack.length > 0
             set loop_stack.length: loop_stack.length - 1
     }
 }
@@ -3465,15 +3465,15 @@ function test() returns int
 {
     ; Test EmitterConfig initialization
     let config EmitterConfig#()
-    if config.emit_debug_info = false
+    guard config.emit_debug_info = false
         return 1
 
-    if config.opt_level <> 0
+    guard config.opt_level <> 0
         return 2
 
     ; Test RegionInfo
     let region RegionInfo#()
-    if region.local_page.handle <> null
+    guard region.local_page.handle <> null
         return 3
 
     ; ========================================================================
@@ -3493,22 +3493,22 @@ function test() returns int
             ; Plan the program
             var planner Planner#(String$("test.scaly"))
             let plan planner.plan_program(program)
-            if plan = null
+            guard plan = null
                 return 101
 
             ; Emit the plan
             var emitter Emitter#()
             let emit_result emitter.emit(plan, String$("test_module"))
-            if emit_result = false
+            guard emit_result = false
                 return 102
 
             ; Verify module was created
-            if emitter.llvm_module.handle = null
+            guard emitter.llvm_module.handle = null
                 return 103
 
             ; Get module IR string to verify it's not empty
             let ir emitter.print_module_to_string()
-            if ir = null
+            guard ir = null
                 return 104
 
         }
@@ -3523,17 +3523,17 @@ function test() returns int
             let program build_program#(String$("test2.scaly"), String$("test2"), syntax)
             var planner Planner#(String$("test2.scaly"))
             let plan planner.plan_program(program)
-            if plan = null
+            guard plan = null
                 return 111
 
             var emitter Emitter#()
             let emit_result emitter.emit(plan, String$("test2_module"))
-            if emit_result = false
+            guard emit_result = false
                 return 112
 
             ; Verify the function was emitted
             let answer_fn LLVMGetNamedFunction(emitter.llvm_module, String$("_Z6answerv").c_data())
-            if answer_fn.handle = null
+            guard answer_fn.handle = null
                 return 113
 
         }
@@ -3548,12 +3548,12 @@ function test() returns int
             let program build_program#(String$("test3.scaly"), String$("test3"), syntax)
             var planner Planner#(String$("test3.scaly"))
             let plan planner.plan_program(program)
-            if plan = null
+            guard plan = null
                 return 121
 
             var emitter Emitter#()
             let emit_result emitter.emit(plan, String$("test3_module"))
-            if emit_result = false
+            guard emit_result = false
                 return 122
 
         }
@@ -3568,12 +3568,12 @@ function test() returns int
             let program build_program#(String$("test4.scaly"), String$("test4"), syntax)
             var planner Planner#(String$("test4.scaly"))
             let plan planner.plan_program(program)
-            if plan = null
+            guard plan = null
                 return 131
 
             var emitter Emitter#()
             let emit_result emitter.emit(plan, String$("test4_module"))
-            if emit_result = false
+            guard emit_result = false
                 return 132
 
         }
@@ -3588,12 +3588,12 @@ function test() returns int
             let program build_program#(String$("test5.scaly"), String$("test5"), syntax)
             var planner Planner#(String$("test5.scaly"))
             let plan planner.plan_program(program)
-            if plan = null
+            guard plan = null
                 return 141
 
             var emitter Emitter#()
             let emit_result emitter.emit(plan, String$("test5_module"))
-            if emit_result = false
+            guard emit_result = false
                 return 142
 
         }
@@ -3608,12 +3608,12 @@ function test() returns int
             let program build_program#(String$("test6.scaly"), String$("test6"), syntax)
             var planner Planner#(String$("test6.scaly"))
             let plan planner.plan_program(program)
-            if plan = null
+            guard plan = null
                 return 151
 
             var emitter Emitter#()
             let emit_result emitter.emit(plan, String$("test6_module"))
-            if emit_result = false
+            guard emit_result = false
                 return 152
 
         }
@@ -3628,17 +3628,17 @@ function test() returns int
             let program build_program#(String$("test7.scaly"), String$("test7"), syntax)
             var planner Planner#(String$("test7.scaly"))
             let plan planner.plan_program(program)
-            if plan = null
+            guard plan = null
                 return 161
 
             var emitter Emitter#()
             let emit_result emitter.emit(plan, String$("test7_module"))
-            if emit_result = false
+            guard emit_result = false
                 return 162
 
             ; Verify double function was emitted
             let double_fn LLVMGetNamedFunction(emitter.llvm_module, String$("_Z6doublei").c_data())
-            if double_fn.handle = null
+            guard double_fn.handle = null
                 return 163
 
         }
@@ -3653,12 +3653,12 @@ function test() returns int
             let program build_program#(String$("test8.scaly"), String$("test8"), syntax)
             var planner Planner#(String$("test8.scaly"))
             let plan planner.plan_program(program)
-            if plan = null
+            guard plan = null
                 return 171
 
             var emitter Emitter#()
             let emit_result emitter.emit(plan, String$("test8_module"))
-            if emit_result = false
+            guard emit_result = false
                 return 172
 
         }
@@ -3673,12 +3673,12 @@ function test() returns int
             let program build_program#(String$("test9.scaly"), String$("test9"), syntax)
             var planner Planner#(String$("test9.scaly"))
             let plan planner.plan_program(program)
-            if plan = null
+            guard plan = null
                 return 181
 
             var emitter Emitter#()
             let emit_result emitter.emit(plan, String$("test9_module"))
-            if emit_result = false
+            guard emit_result = false
                 return 182
 
         }
@@ -3693,17 +3693,17 @@ function test() returns int
             let program build_program#(String$("test10.scaly"), String$("test10"), syntax)
             var planner Planner#(String$("test10.scaly"))
             let plan planner.plan_program(program)
-            if plan = null
+            guard plan = null
                 return 191
 
             var emitter Emitter#()
             let emit_result emitter.emit(plan, String$("test10_module"))
-            if emit_result = false
+            guard emit_result = false
                 return 192
 
             ; Verify unwrap function was emitted
             let unwrap_fn LLVMGetNamedFunction(emitter.llvm_module, String$("_Z6unwrap6Option").c_data())
-            if unwrap_fn.handle = null
+            guard unwrap_fn.handle = null
                 return 193
 
         }
@@ -3718,12 +3718,12 @@ function test() returns int
             let program build_program#(String$("test11.scaly"), String$("test11"), syntax)
             var planner Planner#(String$("test11.scaly"))
             let plan planner.plan_program(program)
-            if plan = null
+            guard plan = null
                 return 201
 
             var emitter Emitter#()
             let emit_result emitter.emit(plan, String$("test11_module"))
-            if emit_result = false
+            guard emit_result = false
                 return 202
 
         }
@@ -3739,12 +3739,12 @@ function test() returns int
             let program build_program#(String$("test12.scaly"), String$("test12"), syntax)
             var planner Planner#(String$("test12.scaly"))
             let plan planner.plan_program(program)
-            if plan = null
+            guard plan = null
                 return 211
 
             var emitter Emitter#()
             let emit_result emitter.emit(plan, String$("test12_module"))
-            if emit_result = false
+            guard emit_result = false
                 return 212
 
         }

@@ -10,14 +10,14 @@ define HASH_PRIMES: size_t[] [
 
 function is_prime(candidate: size_t) returns bool
 {
-    if (candidate & 1) <> 0
+    guard (candidate & 1) <> 0
     {
         let limit sqrt(candidate as double) as size_t
         var divisor: size_t 3
         while divisor <= limit
         {
             set divisor: divisor + 2
-            if (candidate % divisor) = 0
+            guard (candidate % divisor) = 0
                 return false
 
         }
@@ -33,7 +33,7 @@ function get_prime(size: size_t) returns size_t
         var i: int 0
         while i < 30
         {
-            if *(hashing.HASH_PRIMES + i) >= size
+            guard *(hashing.HASH_PRIMES + i) >= size
                 return *(hashing.HASH_PRIMES + i)
 
             set i: i + 1
@@ -44,7 +44,7 @@ function get_prime(size: size_t) returns size_t
         var i size | 1
         while i < SIZE_MAX
         {
-            if is_prime(i)
+            guard is_prime(i)
                 return i
 
             set i: i + 2

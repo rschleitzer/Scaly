@@ -248,7 +248,7 @@ define Parser
                         (("keyword")
                             ($
 "
-        if ~lexer.parse_keyword#(String#(\""(id (element-with-id (link content)))"\"))"
+        guard ~lexer.parse_keyword#(String#(\""(id (element-with-id (link content)))"\"))"
                                 (if (equal? 1 (child-number content))
                                     "
             throw ParserError.Different(DifferentSyntax())
@@ -269,7 +269,7 @@ define Parser
                                 ;; Required punctuation
                                 ($
 "
-        if ~lexer.parse_punctuation#("(punct-const-name (value (element-with-id (link content))))")"
+        guard ~lexer.parse_punctuation#("(punct-const-name (value (element-with-id (link content))))")"
                                     (if (equal? 1 (child-number content))
                                         "
             throw ParserError.Different(DifferentSyntax())
@@ -291,7 +291,7 @@ define Parser
                                 ;; Required colon
                                 ($
 "
-        if ~lexer.parse_colon#()"
+        guard ~lexer.parse_colon#()"
                                     (if (equal? 1 (child-number content))
                                         "
             throw ParserError.Different(DifferentSyntax())
@@ -307,7 +307,7 @@ define Parser
                             ($
 "
         let " prop " lexer.parse_identifier#(keywords)
-        if " prop ".length() = 0"
+        guard " prop ".length() = 0"
                                 (if (equal? 1 (child-number content))
                                     "
             throw ParserError.Different(DifferentSyntax())
@@ -322,7 +322,7 @@ define Parser
                             ($
 "
         let " prop " lexer.parse_attribute#()
-        if " prop ".length() = 0"
+        guard " prop ".length() = 0"
                                 (if (equal? 1 (child-number content))
                                     "
             throw ParserError.Different(DifferentSyntax())
@@ -365,7 +365,7 @@ function test() returns int
             return 1
         when literal: Success
         {
-            if ~parser.is_at_end()
+            guard ~parser.is_at_end()
                 return 2
         }
 
@@ -376,7 +376,7 @@ function test() returns int
             return 3
         when name: Success
         {
-            if ~parser.is_at_end()
+            guard ~parser.is_at_end()
                 return 4
         }
 
@@ -387,7 +387,7 @@ function test() returns int
             return 5
         when func: Success
         {
-            if ~parser.is_at_end()
+            guard ~parser.is_at_end()
                 return 6
         }
 
@@ -398,7 +398,7 @@ function test() returns int
             return 7
         when def: Success
         {
-            if ~parser.is_at_end()
+            guard ~parser.is_at_end()
                 return 8
         }
 
@@ -409,7 +409,7 @@ function test() returns int
             return 9
         when def: Success
         {
-            if ~parser.is_at_end()
+            guard ~parser.is_at_end()
                 return 10
         }
 
@@ -420,7 +420,7 @@ function test() returns int
             return 11
         when def: Success
         {
-            if ~parser.is_at_end()
+            guard ~parser.is_at_end()
                 return 12
         }
 

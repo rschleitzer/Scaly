@@ -307,6 +307,14 @@ define LetSyntax
     binding: BindingSyntax
 )
 
+define GuardSyntax
+(
+    start: size_t
+    end: size_t
+    condition: ref[Vector[OperandSyntax]]?
+    statement: StatementSyntax
+)
+
 define StatementSyntax union (
     Empty: EmptySyntax
     Operation: OperationSyntax
@@ -314,6 +322,7 @@ define StatementSyntax union (
     Var: VarSyntax
     Mutable: MutableSyntax
     Set: SetSyntax
+    Guard: GuardSyntax
     Continue: ContinueSyntax
     Break: BreakSyntax
     Return: ReturnSyntax
@@ -405,7 +414,7 @@ define IfSyntax
     end: size_t
     condition: ref[Vector[OperandSyntax]]?
     consequent: ThenSyntax
-    alternative: ref[ElseSyntax]?
+    alternative: ElseSyntax
 )
 
 define ElementSyntax
@@ -461,6 +470,7 @@ define ExpressionSyntax union (
     Object: ObjectSyntax
     Vector: VectorSyntax
     Block: BlockSyntax
+    Guard: GuardSyntax
     If: IfSyntax
     Match: MatchSyntax
     Lambda: LambdaSyntax

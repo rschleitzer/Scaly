@@ -83,6 +83,7 @@ struct TrySyntax;
 struct ConditionSyntax;
 struct WhenSyntax;
 struct StatementSyntax;
+struct GuardSyntax;
 struct LetSyntax;
 struct VarSyntax;
 struct MutableSyntax;
@@ -368,8 +369,15 @@ struct LetSyntax {
     BindingSyntax binding;
 };
 
+struct GuardSyntax {
+    size_t Start;
+    size_t End;
+    std::vector<OperandSyntax>* condition;
+    std::unique_ptr<StatementSyntax> statement;
+};
+
 struct StatementSyntax {
-    std::variant<EmptySyntax, OperationSyntax, LetSyntax, VarSyntax, MutableSyntax, SetSyntax, ContinueSyntax, BreakSyntax, ReturnSyntax, ThrowSyntax> Value;
+    std::variant<EmptySyntax, OperationSyntax, LetSyntax, VarSyntax, MutableSyntax, SetSyntax, GuardSyntax, ContinueSyntax, BreakSyntax, ReturnSyntax, ThrowSyntax> Value;
 };
 
 struct WhenSyntax {
@@ -446,7 +454,7 @@ struct IfSyntax {
     size_t End;
     std::vector<OperandSyntax>* condition;
     ThenSyntax consequent;
-    ElseSyntax* alternative;
+    ElseSyntax alternative;
 };
 
 struct ElementSyntax {
@@ -491,7 +499,7 @@ struct LiteralSyntax {
 };
 
 struct ExpressionSyntax {
-    std::variant<LiteralSyntax, NameSyntax, ObjectSyntax, VectorSyntax, BlockSyntax, IfSyntax, MatchSyntax, LambdaSyntax, ForSyntax, WhileSyntax, ChooseSyntax, TrySyntax, RepeatSyntax, SizeOfSyntax, AlignOfSyntax, IsSyntax, AsSyntax, LifetimeSyntax> Value;
+    std::variant<LiteralSyntax, NameSyntax, ObjectSyntax, VectorSyntax, BlockSyntax, GuardSyntax, IfSyntax, MatchSyntax, LambdaSyntax, ForSyntax, WhileSyntax, ChooseSyntax, TrySyntax, RepeatSyntax, SizeOfSyntax, AlignOfSyntax, IsSyntax, AsSyntax, LifetimeSyntax> Value;
 };
 
 struct MemberAccessSyntax {

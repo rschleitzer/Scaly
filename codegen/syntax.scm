@@ -61,7 +61,9 @@ struct "(id syntax-node)"Syntax {
                                     ($ "std::vector<"(link content)"Syntax>*")
                                     (if (optional? content)
                                         ($ (link content)"Syntax*")
-                                        ($ (link content)"Syntax")))))
+                                        (if (is-recursive-ref? syntax-node content)
+                                            ($ "std::unique_ptr<"(link content)"Syntax>")
+                                            ($ (link content)"Syntax"))))))
                             (("identifier" "attribute")
                                 "llvm::StringRef")
                             (("literal") "Literal")
@@ -169,10 +171,14 @@ public:
             OS << \",\"; nl();
             key(\""(property content)"\"); dump(*N."(property content)");
         }")
-                                        ;; required syntax: value
-                                        ($ "
+                                        ;; required syntax: value or unique_ptr
+                                        (if (is-recursive-ref? syntax-node content)
+                                            ($ "
         OS << \",\"; nl();
-        key(\""(property content)"\"); dump(N."(property content)");"
+        key(\""(property content)"\"); dump(*N."(property content)");")
+                                            ($ "
+        OS << \",\"; nl();
+        key(\""(property content)"\"); dump(N."(property content)");")
                                         )))))
                             (("identifier" "attribute") ($
 "

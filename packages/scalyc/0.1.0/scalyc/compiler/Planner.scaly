@@ -177,18 +177,18 @@ define Planner
     {
         ; Remove the last scope
         ; TODO: proper pop() when Vector supports it
-        if scopes.length > 0
+        guard scopes.length > 0
             set scopes.length: scopes.length - 1
     }
 
     procedure bind_local(this, name: String, binding_type: PlannedType, is_mutable: bool, is_on_page: bool)
     {
-        if scopes.length > 0
+        guard scopes.length > 0
         {
             let scope scopes.get(scopes.length - 1)
-            if scope <> null
+            guard scope <> null
             {
-                if scope.bindings <> null
+                guard scope.bindings <> null
                     scope.bindings.add(name, LocalBinding(binding_type, is_mutable, is_on_page))
             }
         }
@@ -202,12 +202,12 @@ define Planner
         {
             set i: i - 1
             let scope scopes.get(i)
-            if scope <> null
+            guard scope <> null
             {
-                if scope.bindings <> null
+                guard scope.bindings <> null
                 {
                     let binding scope.bindings[name]
-                    if binding <> null
+                    guard binding <> null
                         return binding
 
                 }
@@ -235,42 +235,42 @@ define Planner
     function encode_type(this, t: PlannedType) returns String
     {
         ; Built-in types use single-letter codes (Itanium ABI)
-        if t.name.equals(String$("void"))
+        guard t.name.equals(String$("void"))
             return String$("v")
 
-        if t.name.equals(String$("bool"))
+        guard t.name.equals(String$("bool"))
             return String$("b")
 
-        if t.name.equals(String$("char"))
+        guard t.name.equals(String$("char"))
             return String$("c")
 
-        if t.name.equals(String$("int"))
+        guard t.name.equals(String$("int"))
             return String$("i")
 
-        if t.name.equals(String$("uint"))
+        guard t.name.equals(String$("uint"))
             return String$("j")
 
-        if t.name.equals(String$("long"))
+        guard t.name.equals(String$("long"))
             return String$("l")
 
-        if t.name.equals(String$("ulong"))
+        guard t.name.equals(String$("ulong"))
             return String$("m")
 
-        if t.name.equals(String$("float"))
+        guard t.name.equals(String$("float"))
             return String$("f")
 
-        if t.name.equals(String$("double"))
+        guard t.name.equals(String$("double"))
             return String$("d")
 
-        if t.name.equals(String$("size_t"))
+        guard t.name.equals(String$("size_t"))
             return String$("m")  ; size_t -> unsigned long
 
         ; Pointer types: pointer[T] -> P + encoded(T)
-        if t.name.equals(String$("pointer"))
+        guard t.name.equals(String$("pointer"))
         {
-            if t.generics <> null
+            guard t.generics <> null
             {
-                if t.generics.length > 0
+                guard t.generics.length > 0
                 {
                     choose t.generics.get(0)
                         when inner_ref: Some
@@ -285,11 +285,11 @@ define Planner
         }
 
         ; Ref types: ref[T] -> R + encoded(T)
-        if t.name.equals(String$("ref"))
+        guard t.name.equals(String$("ref"))
         {
-            if t.generics <> null
+            guard t.generics <> null
             {
-                if t.generics.length > 0
+                guard t.generics.length > 0
                 {
                     choose t.generics.get(0)
                         when inner_ref: Some
@@ -304,9 +304,9 @@ define Planner
         }
 
         ; Generic types: Vector[int] -> 6VectorIiE
-        if t.generics <> null
+        guard t.generics <> null
         {
-            if t.generics.length > 0
+            guard t.generics.length > 0
             {
                 ; Extract base name if Name contains instantiation suffix
                 let base_name strip_suffix#(t.name)
@@ -343,13 +343,13 @@ define Planner
         let result StringBuilder#()
         result.append(String$("_Z"))
 
-        if generic_args = null
+        guard generic_args = null
         {
             result.append(encode_name(name))
             return result.to_string#()
         }
 
-        if generic_args.length = 0
+        guard generic_args.length = 0
         {
             result.append(encode_name(name))
             return result.to_string#()
@@ -389,9 +389,9 @@ define Planner
         var has_explicit_params false
         for param in params
         {
-            if param.name <> null
+            guard param.name <> null
             {
-                if param.name.unwrap_or(String$("")).equals(String$("this"))
+                guard param.name.unwrap_or(String$("")).equals(String$("this"))
                     continue
 
             }
@@ -403,7 +403,7 @@ define Planner
                 }
         }
 
-        if has_explicit_params = false
+        guard has_explicit_params = false
             result.append(String$("v"))  ; void parameters
 
         result.to_string#()
@@ -417,10 +417,10 @@ define Planner
     ; e.g., "scaly.containers.String" -> "String"
     function strip_package_prefix#(rp, name: String) returns String
     {
-        if name.starts_with(String$("scaly."))
+        guard name.starts_with(String$("scaly."))
         {
             let last_dot name.last_index_of("." as char)
-            if last_dot > 0
+            guard last_dot > 0
                 return name.substring(rp, last_dot + 1, name.length)
 
         }
@@ -432,7 +432,7 @@ define Planner
     function strip_suffix#(rp, name: String) returns String
     {
         let dot name.index_of("." as char)
-        if dot > 0
+        guard dot > 0
             return name.substring(rp, 0, dot)
 
         name
@@ -453,7 +453,7 @@ define Planner
     function size_to_string(n: size_t) returns String
     {
         ; Simple implementation for small numbers
-        if n = 0
+        guard n = 0
             return String$("0")
 
         let result StringBuilder#()
@@ -473,7 +473,7 @@ define Planner
         {
             set i: i - 1
             let d digits.get(i)
-            if d <> null
+            guard d <> null
                 result.append(*d)
         }
 
@@ -541,7 +541,7 @@ define Planner
     {
         ; Try MangledName first (primary key for generics)
         let by_mangled instantiated_structures[planned_type.mangled_name]
-        if by_mangled <> null
+        guard by_mangled <> null
             return by_mangled
 
         ; Fall back to Name
@@ -569,7 +569,7 @@ define Planner
     {
         ; Try MangledName first (primary key for generics)
         let by_mangled instantiated_unions[planned_type.mangled_name]
-        if by_mangled <> null
+        guard by_mangled <> null
             return by_mangled
 
         ; Fall back to Name
@@ -596,13 +596,13 @@ define Planner
     ; This allows functions within a namespace to call each other
     function lookup_namespace_sibling_function(this, name: String, arg_count: int) returns ref[scaly.compiler.Model.Function]?
     {
-        if namespace_ctx.is_active() = false
+        guard namespace_ctx.is_active() = false
             return null
 
-        if namespace_ctx.namespace = null
+        guard namespace_ctx.namespace = null
             return null
 
-        if namespace_ctx.namespace.members = null
+        guard namespace_ctx.namespace.members = null
             return null
 
         ; Search namespace members for matching function
@@ -611,13 +611,13 @@ define Planner
             choose member
                 when func: Function
                 {
-                    if func.name.equals(name)
+                    guard func.name.equals(name)
                     {
                         ; Match by argument count (excluding 'this' for methods)
                         var input_count 0
-                        if func.input <> null
+                        guard func.input <> null
                             set input_count: func.input.length as int
-                        if input_count = arg_count
+                        guard input_count = arg_count
                             return func
 
                     }
@@ -633,22 +633,22 @@ define Planner
     ; Lookup a function in a sibling module (for module.function() calls)
     function lookup_module_function(this, module_name: String, func_name: String) returns ref[scaly.compiler.Model.Function]?
     {
-        if namespace_ctx.is_active() = false
+        guard namespace_ctx.is_active() = false
             return null
 
-        if namespace_ctx.modules = null
+        guard namespace_ctx.modules = null
             return null
 
         ; Find the module by name
         for mod_ptr in namespace_ctx.modules
         {
             let mod *mod_ptr  ; Dereference pointer to get Option[ref[Module]]
-            if mod <> null
+            guard mod <> null
             {
-                if mod.name.equals(module_name)
+                guard mod.name.equals(module_name)
                 {
                     ; Search module members for the function
-                    if mod.members <> null
+                    guard mod.members <> null
                     {
                         for member_ptr in mod.members
                         {
@@ -656,7 +656,7 @@ define Planner
                             choose member
                                 when func: Function
                                 {
-                                    if func.name.equals(func_name)
+                                    guard func.name.equals(func_name)
                                         return func
 
                                 }
@@ -699,7 +699,7 @@ define Planner
         let result StringBuilder#()
         result.append(base_name)
 
-        if args <> null
+        guard args <> null
         {
             for arg in args
             {
@@ -718,58 +718,58 @@ define Planner
     ; Check if a type is a primitive type
     function is_primitive_type(name: String) returns bool
     {
-        if name.equals(String$("void"))
+        guard name.equals(String$("void"))
             return true
 
-        if name.equals(String$("bool"))
+        guard name.equals(String$("bool"))
             return true
 
-        if name.equals(String$("char"))
+        guard name.equals(String$("char"))
             return true
 
-        if name.equals(String$("int"))
+        guard name.equals(String$("int"))
             return true
 
-        if name.equals(String$("uint"))
+        guard name.equals(String$("uint"))
             return true
 
-        if name.equals(String$("long"))
+        guard name.equals(String$("long"))
             return true
 
-        if name.equals(String$("ulong"))
+        guard name.equals(String$("ulong"))
             return true
 
-        if name.equals(String$("float"))
+        guard name.equals(String$("float"))
             return true
 
-        if name.equals(String$("double"))
+        guard name.equals(String$("double"))
             return true
 
-        if name.equals(String$("size_t"))
+        guard name.equals(String$("size_t"))
             return true
 
-        if name.equals(String$("i8"))
+        guard name.equals(String$("i8"))
             return true
 
-        if name.equals(String$("i16"))
+        guard name.equals(String$("i16"))
             return true
 
-        if name.equals(String$("i32"))
+        guard name.equals(String$("i32"))
             return true
 
-        if name.equals(String$("i64"))
+        guard name.equals(String$("i64"))
             return true
 
-        if name.equals(String$("u8"))
+        guard name.equals(String$("u8"))
             return true
 
-        if name.equals(String$("u16"))
+        guard name.equals(String$("u16"))
             return true
 
-        if name.equals(String$("u32"))
+        guard name.equals(String$("u32"))
             return true
 
-        if name.equals(String$("u64"))
+        guard name.equals(String$("u64"))
             return true
 
         false
@@ -778,9 +778,9 @@ define Planner
     ; Check if a type is a pointer type
     function is_pointer_type(t: PlannedType) returns bool
     {
-        if t.name.equals(String$("pointer"))
+        guard t.name.equals(String$("pointer"))
         {
-            if t.generics <> null
+            guard t.generics <> null
                 return t.generics.length > 0
 
         }
@@ -790,9 +790,9 @@ define Planner
     ; Check if a type is a ref type
     function is_ref_type(t: PlannedType) returns bool
     {
-        if t.name.equals(String$("ref"))
+        guard t.name.equals(String$("ref"))
         {
-            if t.generics <> null
+            guard t.generics <> null
                 return t.generics.length > 0
 
         }
@@ -808,11 +808,11 @@ define Planner
     ; Get inner type from pointer[T] or ref[T]
     function get_inner_type(t: PlannedType) returns ref[PlannedType]?
     {
-        if is_pointer_like_type(t)
+        guard is_pointer_like_type(t)
         {
-            if t.generics <> null
+            guard t.generics <> null
             {
-                if t.generics.length > 0
+                guard t.generics.length > 0
                     return t.generics.get(0)
 
             }
@@ -824,22 +824,22 @@ define Planner
     function types_equal(a: PlannedType, b: PlannedType) returns bool
     {
         ; Compare names first
-        if a.name.equals(b.name) = false
+        guard a.name.equals(b.name) = false
             return false
 
         ; Check generics
-        if a.generics = null
+        guard a.generics = null
         {
-            if b.generics = null
+            guard b.generics = null
                 return true
 
             return b.generics.length = 0
         }
 
-        if b.generics = null
+        guard b.generics = null
             return a.generics.length = 0
 
-        if a.generics.length <> b.generics.length
+        guard a.generics.length <> b.generics.length
             return false
 
         ; Compare each generic argument
@@ -847,10 +847,10 @@ define Planner
         for arg_a_ptr in a.generics
         {
             let arg_b_opt b.generics.get(i)
-            if arg_b_opt = null
+            guard arg_b_opt = null
                 return false
 
-            if types_equal(*arg_a_ptr, *arg_b_opt) = false
+            guard types_equal(*arg_a_ptr, *arg_b_opt) = false
                 return false
 
             set i: i + 1
@@ -866,24 +866,24 @@ define Planner
     function types_compatible(param_type: PlannedType, arg_type: PlannedType) returns bool
     {
         ; Exact match
-        if types_equal(param_type, arg_type)
+        guard types_equal(param_type, arg_type)
             return true
 
         ; NPO: Allow null (pointer[void]) to be assigned to Option types
         ; This handles: var x: Option[T] null  or  var x: ref[T]? null
         ; where null represents the None case (with NPO, it's just a null pointer)
-        if param_type.name.equals(String$("Option"))
+        guard param_type.name.equals(String$("Option"))
         {
-            if arg_type.name.equals(String$("pointer"))
+            guard arg_type.name.equals(String$("pointer"))
             {
-                if arg_type.generics <> null
+                guard arg_type.generics <> null
                 {
-                    if arg_type.generics.length > 0
+                    guard arg_type.generics.length > 0
                     {
                         choose arg_type.generics.get(0)
                             when inner_ref: Some
                             {
-                                if (*inner_ref).name.equals(String$("void"))
+                                guard (*inner_ref).name.equals(String$("void"))
                                     return true
 
                             }
@@ -891,40 +891,40 @@ define Planner
                 }
             }
             ; Also handle null type directly
-            if arg_type.name.equals(String$("null"))
+            guard arg_type.name.equals(String$("null"))
                 return true
 
         }
 
         ; Also check if param_type is an Option instantiation (e.g., "Option.ref.T")
-        if param_type.name.starts_with(String$("Option."))
+        guard param_type.name.starts_with(String$("Option."))
         {
-            if arg_type.name.equals(String$("pointer"))
+            guard arg_type.name.equals(String$("pointer"))
             {
-                if arg_type.generics <> null
+                guard arg_type.generics <> null
                 {
-                    if arg_type.generics.length > 0
+                    guard arg_type.generics.length > 0
                     {
                         choose arg_type.generics.get(0)
                             when inner_ref: Some
                             {
-                                if (*inner_ref).name.equals(String$("void"))
+                                guard (*inner_ref).name.equals(String$("void"))
                                     return true
 
                             }
                     }
                 }
             }
-            if arg_type.name.equals(String$("null"))
+            guard arg_type.name.equals(String$("null"))
                 return true
 
         }
 
         ; Integer compatibility: allow int to be used where size_t/u64/i64 etc. are expected
         ; This is common in C interop and array indexing
-        if is_integer_type(param_type.name)
+        guard is_integer_type(param_type.name)
         {
-            if is_integer_type(arg_type.name)
+            guard is_integer_type(arg_type.name)
                 return true
 
         }
@@ -935,43 +935,43 @@ define Planner
     ; Check if a type name represents an integer type
     function is_integer_type(name: String) returns bool
     {
-        if name.equals(String$("int"))
+        guard name.equals(String$("int"))
             return true
 
-        if name.equals(String$("uint"))
+        guard name.equals(String$("uint"))
             return true
 
-        if name.equals(String$("long"))
+        guard name.equals(String$("long"))
             return true
 
-        if name.equals(String$("ulong"))
+        guard name.equals(String$("ulong"))
             return true
 
-        if name.equals(String$("size_t"))
+        guard name.equals(String$("size_t"))
             return true
 
-        if name.equals(String$("i8"))
+        guard name.equals(String$("i8"))
             return true
 
-        if name.equals(String$("i16"))
+        guard name.equals(String$("i16"))
             return true
 
-        if name.equals(String$("i32"))
+        guard name.equals(String$("i32"))
             return true
 
-        if name.equals(String$("i64"))
+        guard name.equals(String$("i64"))
             return true
 
-        if name.equals(String$("u8"))
+        guard name.equals(String$("u8"))
             return true
 
-        if name.equals(String$("u16"))
+        guard name.equals(String$("u16"))
             return true
 
-        if name.equals(String$("u32"))
+        guard name.equals(String$("u32"))
             return true
 
-        if name.equals(String$("u64"))
+        guard name.equals(String$("u64"))
             return true
 
         false
@@ -985,7 +985,7 @@ define Planner
     ; e.g., ["scaly", "containers", "Vector"] -> "scaly.containers.Vector"
     function build_type_name(path: Vector[String]) returns String
     {
-        if path.length = 0
+        guard path.length = 0
             return String$("")
 
         let result StringBuilder#()
@@ -994,7 +994,7 @@ define Planner
         for component_ptr in path
         {
             let component *component_ptr
-            if first = false
+            guard first = false
                 result.append(String$("."))
             result.append(component)
             set first: false
@@ -1023,7 +1023,7 @@ define Planner
 
         ; Check for type parameter substitution
         let subst lookup_type_substitution(name)
-        if subst <> null
+        guard subst <> null
         {
             ; Return substituted type with original location
             set result.loc: t.span
@@ -1038,15 +1038,15 @@ define Planner
         set result.name: name
 
         ; Resolve generic arguments if present
-        if t.generics <> null
+        guard t.generics <> null
         {
-            if t.generics.length > 0
+            guard t.generics.length > 0
             {
                 set result.generics: Vector[PlannedType]#()
                 for arg in t.generics
                 {
                     let resolved_arg resolve_type(arg, instantiation_loc)
-                    if resolved_arg = null
+                    guard resolved_arg = null
                         return null  ; Error propagation
 
                     result.generics.put(result.generics.length, resolved_arg)
@@ -1055,11 +1055,11 @@ define Planner
         }
 
         ; Handle intrinsic pointer type
-        if name.equals(String$("pointer"))
+        guard name.equals(String$("pointer"))
         {
-            if result.generics <> null
+            guard result.generics <> null
             {
-                if result.generics.length = 1
+                guard result.generics.length = 1
                 {
                     ; pointer[T] - Itanium ABI uses P prefix
                     choose result.generics.get(0)
@@ -1078,11 +1078,11 @@ define Planner
         }
 
         ; Handle intrinsic ref type
-        if name.equals(String$("ref"))
+        guard name.equals(String$("ref"))
         {
-            if result.generics <> null
+            guard result.generics <> null
             {
-                if result.generics.length = 1
+                guard result.generics.length = 1
                 {
                     ; ref[T] - use R prefix
                     choose result.generics.get(0)
@@ -1102,25 +1102,25 @@ define Planner
 
         ; Check if this is a generic type that needs instantiation
         let concept_ref lookup_concept(name)
-        if concept_ref <> null
+        guard concept_ref <> null
         {
             let concept *concept_ref  ; Dereference outer ref to get ref[Concept]?
-            if concept <> null
+            guard concept <> null
             {
                 ; Check if concept has generic parameters
-                if concept.parameters <> null
+                guard concept.parameters <> null
                 {
-                    if concept.parameters.length > 0
+                    guard concept.parameters.length > 0
                     {
                         ; Need to instantiate the generic
-                        if result.generics = null
+                        guard result.generics = null
                             return null  ; Generic used without type arguments
 
-                        if result.generics.length = 0
+                        guard result.generics.length = 0
                             return null
 
                         ; Check arity
-                        if result.generics.length <> concept.parameters.length
+                        guard result.generics.length <> concept.parameters.length
                             return null  ; Wrong number of type arguments
 
                         ; Instantiate the generic
@@ -1158,17 +1158,17 @@ define Planner
     ; Returns null on error
     function instantiate_generic(this, generic: ref[Concept]?, args: ref[Vector[PlannedType]]?, instantiation_loc: Span) returns ref[PlannedType]?
     {
-        if generic = null
+        guard generic = null
             return null
 
-        if args = null
+        guard args = null
             return null
 
         ; Check arity matches
-        if generic.parameters = null
+        guard generic.parameters = null
             return null
 
-        if args.length <> generic.parameters.length
+        guard args.length <> generic.parameters.length
             return null
 
         ; Generate cache key (e.g., "Vector.int" or "HashMap.String.int")
@@ -1176,7 +1176,7 @@ define Planner
 
         ; Check cache for structures
         let cached_struct lookup_cached_structure(cache_key)
-        if cached_struct <> null
+        guard cached_struct <> null
         {
             let result PlannedType#(
                 instantiation_loc,
@@ -1193,7 +1193,7 @@ define Planner
 
         ; Check cache for unions
         let cached_union lookup_cached_union(cache_key)
-        if cached_union <> null
+        guard cached_union <> null
         {
             let result PlannedType#(
                 instantiation_loc,
@@ -1219,7 +1219,7 @@ define Planner
         {
             let param *param_ptr
             let arg args.get(i)
-            if arg <> null
+            guard arg <> null
                 add_type_substitution(param.name, *arg)
             set i: i + 1
         }
@@ -1531,7 +1531,7 @@ define Planner
         )
 
         ; Copy name if present
-        if it.name <> null
+        guard it.name <> null
             set result.name: it.name
 
         ; Resolve type if present
@@ -1539,16 +1539,16 @@ define Planner
             when typ: Some
             {
                 let resolved resolve_type(typ, it.span)
-                if resolved = null
+                guard resolved = null
                     return null
 
                 set result.item_type: resolved
             }
 
         ; Plan attributes
-        if it.attributes <> null
+        guard it.attributes <> null
         {
-            if it.attributes.length > 0
+            guard it.attributes.length > 0
             {
                 set result.attributes: Vector[PlannedAttribute]#()
                 for attr in it.attributes
@@ -1579,7 +1579,7 @@ define Planner
             when typ: Some
             {
                 let resolved_type resolve_type(typ, prop.span)
-                if resolved_type = null
+                guard resolved_type = null
                     return null
 
                 let result PlannedProperty#(
@@ -1598,16 +1598,16 @@ define Planner
                     when init_ops: Some
                     {
                         let planned_init plan_operands(init_ops)
-                        if planned_init = null
+                        guard planned_init = null
                             return null
 
                         set result.initializer: planned_init
                     }
 
                 ; Plan attributes
-                if prop.attributes <> null
+                guard prop.attributes <> null
                 {
-                    if prop.attributes.length > 0
+                    guard prop.attributes.length > 0
                     {
                         set result.attributes: Vector[PlannedAttribute]#()
                         for attr in prop.attributes
@@ -1650,16 +1650,16 @@ define Planner
             when typ: Some
             {
                 let resolved resolve_type(typ, v.span)
-                if resolved = null
+                guard resolved = null
                     return null
 
                 set result.var_type: resolved
             }
 
         ; Plan attributes
-        if v.attributes <> null
+        guard v.attributes <> null
         {
-            if v.attributes.length > 0
+            guard v.attributes.length > 0
             {
                 set result.attributes: Vector[PlannedAttribute]#()
                 for attr in v.attributes
@@ -1690,7 +1690,7 @@ define Planner
         for op in ops
         {
             let planned plan_operand(op)
-            if planned = null
+            guard planned = null
                 return null
 
             result.put(result.length, planned)
@@ -1705,7 +1705,7 @@ define Planner
     {
         ; Plan the expression
         let planned_expr plan_expression(op.expression)
-        if planned_expr = null
+        guard planned_expr = null
             return null
 
         ; Compute result type from the expression
@@ -1744,7 +1744,7 @@ define Planner
                 ; Check for boolean literals (true/false parsed as Type names)
                 let name build_type_name(t.name)
 
-                if name.equals(String$("true"))
+                guard name.equals(String$("true"))
                 {
                     let bool_const scaly.compiler.Model.Constant.Boolean(
                         scaly.compiler.Model.BooleanConstant(t.span, true)
@@ -1753,7 +1753,7 @@ define Planner
                     return result
                 }
 
-                if name.equals(String$("false"))
+                guard name.equals(String$("false"))
                 {
                     let bool_const scaly.compiler.Model.Constant.Boolean(
                         scaly.compiler.Model.BooleanConstant(t.span, false)
@@ -1763,7 +1763,7 @@ define Planner
                 }
 
                 ; null is handled as a special type, not a constant
-                if name.equals(String$("null"))
+                guard name.equals(String$("null"))
                 {
                     ; Create a null type (pointer[void])
                     let null_type PlannedType#(
@@ -1782,7 +1782,7 @@ define Planner
 
                 ; Check if it's a local variable reference
                 let local_bind lookup_local(name)
-                if local_bind <> null
+                guard local_bind <> null
                 {
                     let planned_var PlannedVariable#(
                         t.span,
@@ -1795,18 +1795,18 @@ define Planner
                 }
 
                 ; Check if it's a property of current structure
-                if structure_ctx.is_active()
+                guard structure_ctx.is_active()
                 {
-                    if structure_ctx.properties <> null
+                    guard structure_ctx.properties <> null
                     {
                         for prop in structure_ctx.properties
                         {
-                            if prop.name.equals(name)
+                            guard prop.name.equals(name)
                             {
                                 ; Found property - need to access via 'this'
                                 ; For now, return a variable reference to 'this' and handle in operand
                                 let this_bind lookup_local(String$("this"))
-                                if this_bind <> null
+                                guard this_bind <> null
                                 {
                                     let planned_var PlannedVariable#(
                                         t.span,
@@ -1824,7 +1824,7 @@ define Planner
 
                 ; Otherwise it's a type reference
                 let resolved resolve_type(t, t.span)
-                if resolved = null
+                guard resolved = null
                     return null
 
                 let result PlannedExpression.Type#(resolved)
@@ -1833,7 +1833,7 @@ define Planner
             when tup: Tuple
             {
                 let planned plan_tuple(tup)
-                if planned = null
+                guard planned = null
                     return null
 
                 let result PlannedExpression.Tuple#(planned)
@@ -1842,7 +1842,7 @@ define Planner
             when mat: Matrix
             {
                 let planned plan_matrix(mat)
-                if planned = null
+                guard planned = null
                     return null
 
                 let result PlannedExpression.Matrix#(planned)
@@ -1851,7 +1851,7 @@ define Planner
             when blk: Block
             {
                 let planned plan_block(blk)
-                if planned = null
+                guard planned = null
                     return null
 
                 let result PlannedExpression.Block#(planned)
@@ -1860,7 +1860,7 @@ define Planner
             when if_expr: If
             {
                 let planned plan_if(if_expr)
-                if planned = null
+                guard planned = null
                     return null
 
                 let result PlannedExpression.If#(planned)
@@ -1869,7 +1869,7 @@ define Planner
             when match_expr: Match
             {
                 let planned plan_match(match_expr)
-                if planned = null
+                guard planned = null
                     return null
 
                 let result PlannedExpression.Match#(planned)
@@ -1878,7 +1878,7 @@ define Planner
             when choose_expr: Choose
             {
                 let planned plan_choose(choose_expr)
-                if planned = null
+                guard planned = null
                     return null
 
                 let result PlannedExpression.Choose#(planned)
@@ -1887,7 +1887,7 @@ define Planner
             when for_expr: For
             {
                 let planned plan_for(for_expr)
-                if planned = null
+                guard planned = null
                     return null
 
                 let result PlannedExpression.For#(planned)
@@ -1896,7 +1896,7 @@ define Planner
             when while_expr: While
             {
                 let planned plan_while(while_expr)
-                if planned = null
+                guard planned = null
                     return null
 
                 let result PlannedExpression.While#(planned)
@@ -1905,7 +1905,7 @@ define Planner
             when try_expr: Try
             {
                 let planned plan_try(try_expr)
-                if planned = null
+                guard planned = null
                     return null
 
                 let result PlannedExpression.Try#(planned)
@@ -1914,7 +1914,7 @@ define Planner
             when sizeof_expr: SizeOf
             {
                 let resolved resolve_type(sizeof_expr.type, sizeof_expr.span)
-                if resolved = null
+                guard resolved = null
                     return null
 
                 ; TODO: Compute actual size
@@ -1937,7 +1937,7 @@ define Planner
     ; Infer the type of a planned expression
     function infer_expression_type(this, expr: ref[PlannedExpression]?) returns PlannedType
     {
-        if expr = null
+        guard expr = null
             return make_void_type()
 
         let e *expr  ; Dereference to get PlannedExpression
@@ -2014,9 +2014,9 @@ define Planner
             null        ; region_arg
         )
 
-        if tup.components <> null
+        guard tup.components <> null
         {
-            if tup.components.length > 0
+            guard tup.components.length > 0
             {
                 set result.components: Vector[PlannedComponent]#()
                 for comp in tup.components
@@ -2052,25 +2052,25 @@ define Planner
             make_void_type()    ; element_type (TODO: infer)
         )
 
-        if mat.operations <> null
+        guard mat.operations <> null
         {
-            if mat.operations.length > 0
+            guard mat.operations.length > 0
             {
                 set result.operations: Vector[Vector[PlannedOperand]]#()
                 for row in mat.operations
                 {
                     let planned_row plan_operands(row)
-                    if planned_row <> null
+                    guard planned_row <> null
                         result.operations.put(result.operations.length, planned_row)
                 }
 
                 ; Infer element type from first element
-                if result.operations.length > 0
+                guard result.operations.length > 0
                 {
                     choose result.operations.get(0)
                         when first_row_ref: Some
                         {
-                            if (*first_row_ref).length > 0
+                            guard (*first_row_ref).length > 0
                             {
                                 choose (*first_row_ref).get(0)
                                     when first_elem_ref: Some
@@ -2100,15 +2100,15 @@ define Planner
             false       ; needs_local_page_cleanup
         )
 
-        if blk.statements <> null
+        guard blk.statements <> null
         {
-            if blk.statements.length > 0
+            guard blk.statements.length > 0
             {
                 set result.statements: Vector[PlannedStatement]#()
                 for stmt in blk.statements
                 {
                     let planned plan_statement(stmt)
-                    if planned <> null
+                    guard planned <> null
                         result.statements.put(result.statements.length, planned)
                 }
             }
@@ -2171,10 +2171,10 @@ define Planner
     ; Helper to infer element type for a for-loop expression
     function infer_element_type_for(this, expr: ref[Vector[PlannedOperand]]?) returns PlannedType
     {
-        if expr = null
+        guard expr = null
             return make_int_type()
 
-        if expr.length = 0
+        guard expr.length = 0
             return make_int_type()
 
         choose expr.get(expr.length - 1)
@@ -2266,12 +2266,12 @@ define Planner
 
         ; Compute result type from source
         var result_type make_void_type()
-        if source <> null
+        guard source <> null
         {
-            if source.length > 0
+            guard source.length > 0
             {
                 let last source.get(source.length - 1)
-                if last <> null
+                guard last <> null
                     set result_type: last.result_type
             }
         }
@@ -2289,21 +2289,21 @@ define Planner
     {
         ; Plan the item
         let item plan_item(bind.item)
-        if item = null
+        guard item = null
             return null
 
         ; Plan the operation (initializer expression)
         let operation plan_operands(bind.operation)
 
         ; If item has no type, infer from operation
-        if item.item_type = null
+        guard item.item_type = null
         {
-            if operation <> null
+            guard operation <> null
             {
-                if operation.length > 0
+                guard operation.length > 0
                 {
                     let last operation.get(operation.length - 1)
-                    if last <> null
+                    guard last <> null
                         set item.item_type: last.result_type#
                 }
             }
@@ -2314,9 +2314,9 @@ define Planner
 
         ; Determine if this is on page
         var is_on_page false
-        if operation <> null
+        guard operation <> null
         {
-            if operation.length > 0
+            guard operation.length > 0
             {
                 choose operation.get(operation.length - 1)
                     when last: Some
@@ -2355,7 +2355,7 @@ define Planner
             when act: Action
             {
                 let planned plan_action(act)
-                if planned = null
+                guard planned = null
                     return null
 
                 let result PlannedStatement.Action#(planned)
@@ -2364,7 +2364,7 @@ define Planner
             when bind: Binding
             {
                 let planned plan_binding(bind)
-                if planned = null
+                guard planned = null
                     return null
 
                 let result PlannedStatement.Binding#(planned)
@@ -2403,7 +2403,7 @@ define Planner
     ; Returns null on error
     function plan_statements(this, stmts: Vector[scaly.compiler.Model.Statement]) returns ref[Vector[PlannedStatement]]?
     {
-        if stmts.length = 0
+        guard stmts.length = 0
             return null
 
         let result Vector[PlannedStatement]#()
@@ -2411,7 +2411,7 @@ define Planner
         for stmt in stmts
         {
             let planned plan_statement(stmt)
-            if planned = null
+            guard planned = null
                 return null
 
             result.put(result.length, planned)
@@ -2432,7 +2432,7 @@ define Planner
             when act: Action
             {
                 let planned plan_action(act)
-                if planned = null
+                guard planned = null
                     return null
 
                 let result PlannedImplementation.Action#(planned)
@@ -2487,12 +2487,12 @@ define Planner
 
         ; Plan input parameters first (needed for mangled name computation)
         let input Vector[PlannedItem]#()
-        if func.input <> null
+        guard func.input <> null
         {
             for param in func.input
             {
                 let planned plan_item(param)
-                if planned = null
+                guard planned = null
                 {
                     pop_scope()
                     set current_function_uses_local_lifetime: saved_uses_local_lifetime
@@ -2500,13 +2500,13 @@ define Planner
                 }
 
                 ; Handle 'this' parameter: if no explicit type, use Parent type
-                if planned.name <> null
+                guard planned.name <> null
                 {
-                    if planned.name.equals(String$("this"))
+                    guard planned.name.equals(String$("this"))
                     {
-                        if planned.item_type = null
+                        guard planned.item_type = null
                         {
-                            if parent <> null
+                            guard parent <> null
                                 set planned.item_type: parent
                         }
                     }
@@ -2529,7 +2529,7 @@ define Planner
         let early_mangled mangle_function(func.name, input, parent)
 
         ; Check if this function is currently being planned (recursive call prevention)
-        if (*functions_being_planned).contains(early_mangled)
+        guard (*functions_being_planned).contains(early_mangled)
         {
             ; Already being planned - return cached version if available
             let cached (*instantiated_functions).get(early_mangled)
@@ -2540,7 +2540,7 @@ define Planner
 
         ; Check cache - if this function was already planned, return cached version
         let cached (*instantiated_functions).get(early_mangled)
-        if cached <> null
+        guard cached <> null
         {
             pop_scope()
             set current_function_uses_local_lifetime: saved_uses_local_lifetime
@@ -2556,7 +2556,7 @@ define Planner
             when ret: Some
             {
                 set ret_type: resolve_type(ret, func.span)
-                if ret_type = null
+                guard ret_type = null
                 {
                     ; HashSetBuilder doesn't support remove - cache lookup handles reentry
                     pop_scope()
@@ -2571,7 +2571,7 @@ define Planner
             when thr: Some
             {
                 set thrown_type: resolve_type(thr, func.span)
-                if thrown_type = null
+                guard thrown_type = null
                 {
                     ; HashSetBuilder doesn't support remove - cache lookup handles reentry
                     pop_scope()
@@ -2582,7 +2582,7 @@ define Planner
 
         ; Plan implementation
         let impl plan_implementation(func.implementation)
-        if impl = null
+        guard impl = null
         {
             ; HashSetBuilder doesn't support remove - cache lookup handles reentry
             pop_scope()
@@ -2660,25 +2660,25 @@ define Planner
 
         ; Plan input parameters
         let input Vector[PlannedItem]#()
-        if op.input <> null
+        guard op.input <> null
         {
             for param in op.input
             {
                 let planned plan_item(param)
-                if planned = null
+                guard planned = null
                 {
                     pop_scope()
                     return null
                 }
 
                 ; Handle 'this' parameter
-                if planned.name <> null
+                guard planned.name <> null
                 {
-                    if planned.name.equals(String$("this"))
+                    guard planned.name.equals(String$("this"))
                     {
-                        if planned.item_type = null
+                        guard planned.item_type = null
                         {
-                            if parent <> null
+                            guard parent <> null
                                 set planned.item_type: parent
                         }
                     }
@@ -2711,7 +2711,7 @@ define Planner
 
         ; Plan implementation
         let impl plan_implementation(op.implementation)
-        if impl = null
+        guard impl = null
         {
             pop_scope()
             return null
@@ -2750,9 +2750,9 @@ define Planner
 
         ; For generic concepts, create a placeholder - don't fully plan
         ; Generic concepts will be planned when instantiated with concrete types
-        if conc.parameters <> null
+        guard conc.parameters <> null
         {
-            if conc.parameters.length > 0
+            guard conc.parameters.length > 0
             {
                 let placeholder PlannedStructure#(
                     conc.span,
@@ -2782,7 +2782,7 @@ define Planner
 
         ; Plan the definition based on its kind
         let def plan_definition(conc.definition, conc.name)
-        if def = null
+        guard def = null
             return null
 
         let result PlannedConcept#(
@@ -2805,7 +2805,7 @@ define Planner
             when struct: Structure
             {
                 let planned plan_structure(struct, name)
-                if planned = null
+                guard planned = null
                     return null
 
                 let result PlannedDefinition.Structure#(planned)
@@ -2814,7 +2814,7 @@ define Planner
             when union_def: Union
             {
                 let planned plan_union(union_def, name)
-                if planned = null
+                guard planned = null
                     return null
 
                 let result PlannedDefinition.Union#(planned)
@@ -2823,7 +2823,7 @@ define Planner
             when ns: Namespace
             {
                 let planned plan_namespace(ns, name)
-                if planned = null
+                guard planned = null
                     return null
 
                 let result PlannedDefinition.Namespace#(planned)
@@ -2832,7 +2832,7 @@ define Planner
             when global: Global
             {
                 let planned plan_global(global, name)
-                if planned = null
+                guard planned = null
                     return null
 
                 let result PlannedDefinition.Global#(planned)
@@ -2841,7 +2841,7 @@ define Planner
             when type_alias: Type
             {
                 let resolved resolve_type(type_alias, type_alias.span)
-                if resolved = null
+                guard resolved = null
                     return null
 
                 let result PlannedDefinition.Type#(resolved)
@@ -2892,7 +2892,7 @@ define Planner
 
         ; Plan properties
         var properties: ref[Vector[PlannedProperty]]? null
-        if struct.properties.length > 0
+        guard struct.properties.length > 0
         {
             let props Vector[PlannedProperty]#()
             set properties: props
@@ -2901,14 +2901,14 @@ define Planner
             for prop in struct.properties
             {
                 let planned plan_property(prop)
-                if planned <> null
+                guard planned <> null
                     props.put(props.length, planned)
             }
         }
 
         ; Plan methods (functions)
         var methods: ref[Vector[PlannedFunction]]? null
-        if struct.members.length > 0
+        guard struct.members.length > 0
         {
             for member in struct.members
             {
@@ -2916,9 +2916,9 @@ define Planner
                     when func: Function
                     {
                         let planned plan_function(func, struct_type)
-                        if planned <> null
+                        guard planned <> null
                         {
-                            if methods = null
+                            guard methods = null
                             {
                                 let meths Vector[PlannedFunction]#()
                                 set methods: meths
@@ -2941,7 +2941,7 @@ define Planner
 
         ; Plan operators
         var operators: ref[Vector[PlannedOperator]]? null
-        if struct.members.length > 0
+        guard struct.members.length > 0
         {
             for member in struct.members
             {
@@ -2949,9 +2949,9 @@ define Planner
                     when op: Operator
                     {
                         let planned plan_operator(op, struct_type)
-                        if planned <> null
+                        guard planned <> null
                         {
-                            if operators = null
+                            guard operators = null
                             {
                                 let ops Vector[PlannedOperator]#()
                                 set operators: ops
@@ -3017,7 +3017,7 @@ define Planner
 
         ; Plan variants
         var variants: ref[Vector[PlannedVariant]]? null
-        if union_def.variants.length > 0
+        guard union_def.variants.length > 0
         {
             let vars Vector[PlannedVariant]#()
             set variants: vars
@@ -3025,7 +3025,7 @@ define Planner
             for v in union_def.variants
             {
                 let planned plan_variant(v, tag)
-                if planned <> null
+                guard planned <> null
                 {
                     vars.put(vars.length, planned)
                     set tag: tag + 1
@@ -3035,7 +3035,7 @@ define Planner
 
         ; Plan methods
         var methods: ref[Vector[PlannedFunction]]? null
-        if union_def.members.length > 0
+        guard union_def.members.length > 0
         {
             for member in union_def.members
             {
@@ -3043,9 +3043,9 @@ define Planner
                     when func: Function
                     {
                         let planned plan_function(func, union_type)
-                        if planned <> null
+                        guard planned <> null
                         {
-                            if methods = null
+                            guard methods = null
                             {
                                 let meths Vector[PlannedFunction]#()
                                 set methods: meths
@@ -3064,7 +3064,7 @@ define Planner
 
         ; Plan operators
         var operators: ref[Vector[PlannedOperator]]? null
-        if union_def.members.length > 0
+        guard union_def.members.length > 0
         {
             for member in union_def.members
             {
@@ -3072,9 +3072,9 @@ define Planner
                     when op: Operator
                     {
                         let planned plan_operator(op, union_type)
-                        if planned <> null
+                        guard planned <> null
                         {
-                            if operators = null
+                            guard operators = null
                             {
                                 let ops Vector[PlannedOperator]#()
                                 set operators: ops
@@ -3142,7 +3142,7 @@ define Planner
         ; Store module references for sibling module.function() calls
         var modules: ref[Vector[PlannedModule]]? null
         var ns_modules: ref[Vector[ref[Module]]]? null
-        if ns.modules.length > 0
+        guard ns.modules.length > 0
         {
             let mods Vector[PlannedModule]#()
             let ns_mods Vector[ref[Module]]#()
@@ -3153,7 +3153,7 @@ define Planner
                 ; Store module reference for sibling lookup
                 ns_mods.put(ns_mods.length, mod)
                 let planned plan_module(mod)
-                if planned <> null
+                guard planned <> null
                     mods.put(mods.length, planned)
             }
             ; Update namespace context with module references
@@ -3162,7 +3162,7 @@ define Planner
 
         ; Plan functions with parent type for proper mangling
         var functions: ref[Vector[PlannedFunction]]? null
-        if ns.members.length > 0
+        guard ns.members.length > 0
         {
             for member in ns.members
             {
@@ -3173,7 +3173,7 @@ define Planner
                         choose planned
                             when p_ref: Some
                             {
-                                if functions = null
+                                guard functions = null
                                 {
                                     let funcs Vector[PlannedFunction]#()
                                     set functions: funcs
@@ -3197,7 +3197,7 @@ define Planner
 
         ; Plan operators with parent type for proper mangling
         var operators: ref[Vector[PlannedOperator]]? null
-        if ns.members.length > 0
+        guard ns.members.length > 0
         {
             for member in ns.members
             {
@@ -3205,9 +3205,9 @@ define Planner
                     when op: Operator
                     {
                         let planned plan_operator(op, &parent_type)
-                        if planned <> null
+                        guard planned <> null
                         {
-                            if operators = null
+                            guard operators = null
                             {
                                 let ops Vector[PlannedOperator]#()
                                 set operators: ops
@@ -3252,7 +3252,7 @@ define Planner
 
         ; Resolve global type
         let global_type resolve_type(global.type, global.span)
-        if global_type = null
+        guard global_type = null
             return null
 
         ; Plan value expression
@@ -3282,7 +3282,7 @@ define Planner
     {
         ; Save and update current file for error messages
         let old_file file
-        if mod.file.length > 0
+        guard mod.file.length > 0
             set file: mod.file
 
         let result PlannedModule#(
@@ -3295,22 +3295,22 @@ define Planner
         )
 
         ; Plan sub-modules first (so their concepts are available)
-        if mod.modules <> null
+        guard mod.modules <> null
         {
-            if mod.modules.length > 0
+            guard mod.modules.length > 0
             {
                 set result.modules: Vector[PlannedModule]#()
                 for sub_mod in mod.modules
                 {
                     let planned plan_module(sub_mod)
-                    if planned <> null
+                    guard planned <> null
                         result.modules.put(result.modules.length, planned)
                 }
             }
         }
 
         ; Plan members (Package, Concept, Function, Operator)
-        if mod.members <> null
+        guard mod.members <> null
         {
             for member in mod.members
             {
@@ -3323,7 +3323,7 @@ define Planner
                             choose plan_module(pkg_mod)
                                 when p_ref: Some
                                 {
-                                    if result.modules = null
+                                    guard result.modules = null
                                         set result.modules: Vector[PlannedModule]#()
                                     result.modules.put(result.modules.length, p_ref)
                                 }
@@ -3334,7 +3334,7 @@ define Planner
                         choose plan_concept(conc)
                             when p_ref: Some
                             {
-                                if result.concepts = null
+                                guard result.concepts = null
                                     set result.concepts: Vector[PlannedConcept]#()
                                 result.concepts.put(result.concepts.length, p_ref)
                             }
@@ -3345,7 +3345,7 @@ define Planner
                         choose plan_function(func, null_type_ptr)
                             when p_ref: Some
                             {
-                                if result.functions = null
+                                guard result.functions = null
                                     set result.functions: Vector[PlannedFunction]#()
                                 result.functions.put(result.functions.length, p_ref)
 
@@ -3359,7 +3359,7 @@ define Planner
                         choose plan_operator(op, null_type_ptr)
                             when p_ref: Some
                             {
-                                if result.operators = null
+                                guard result.operators = null
                                     set result.operators: Vector[PlannedOperator]#()
                                 result.operators.put(result.operators.length, p_ref)
                             }
@@ -3382,73 +3382,73 @@ define Planner
     function get_operator_precedence(op: String) returns int
     {
         ; Level 1 - lowest precedence: logical OR
-        if op.equals(String$("||"))
+        guard op.equals(String$("||"))
             return 1
 
         ; Level 2: logical AND
-        if op.equals(String$("&&"))
+        guard op.equals(String$("&&"))
             return 2
 
         ; Level 3: bitwise OR
-        if op.equals(String$("|"))
+        guard op.equals(String$("|"))
             return 3
 
         ; Level 4: bitwise XOR
-        if op.equals(String$("^"))
+        guard op.equals(String$("^"))
             return 4
 
         ; Level 5: bitwise AND
-        if op.equals(String$("&"))
+        guard op.equals(String$("&"))
             return 5
 
         ; Level 6: equality
-        if op.equals(String$("="))
+        guard op.equals(String$("="))
             return 6
 
-        if op.equals(String$("<>"))
+        guard op.equals(String$("<>"))
             return 6
 
         ; Level 7: relational
-        if op.equals(String$("<"))
+        guard op.equals(String$("<"))
             return 7
 
-        if op.equals(String$(">"))
+        guard op.equals(String$(">"))
             return 7
 
-        if op.equals(String$("<="))
+        guard op.equals(String$("<="))
             return 7
 
-        if op.equals(String$(">="))
+        guard op.equals(String$(">="))
             return 7
 
         ; Level 8: shift
-        if op.equals(String$("<<"))
+        guard op.equals(String$("<<"))
             return 8
 
-        if op.equals(String$(">>"))
+        guard op.equals(String$(">>"))
             return 8
 
         ; Level 9: additive
-        if op.equals(String$("+"))
+        guard op.equals(String$("+"))
             return 9
 
-        if op.equals(String$("-"))
+        guard op.equals(String$("-"))
             return 9
 
         ; Level 10 - highest precedence: multiplicative
-        if op.equals(String$("*"))
+        guard op.equals(String$("*"))
             return 10
 
-        if op.equals(String$("/"))
+        guard op.equals(String$("/"))
             return 10
 
-        if op.equals(String$("%"))
+        guard op.equals(String$("%"))
             return 10
 
-        if op.equals(String$("div"))
+        guard op.equals(String$("div"))
             return 10
 
-        if op.equals(String$("mod"))
+        guard op.equals(String$("mod"))
             return 10
 
         0  ; Unknown operator
@@ -3458,63 +3458,63 @@ define Planner
     ; Operators start with operator characters or are special prefix functions
     function is_operator_name(name: String) returns bool
     {
-        if name.length = 0
+        guard name.length = 0
             return false
 
         ; Check for known prefix functions that act like unary operators
-        if name.equals(String$("abs"))
+        guard name.equals(String$("abs"))
             return true
 
-        if name.equals(String$("not"))
+        guard name.equals(String$("not"))
             return true
 
         ; Get first character
         let first name.get(0)
 
         ; Check for operator characters
-        if first = "+" as char
+        guard first = "+" as char
             return true
 
-        if first = "-" as char
+        guard first = "-" as char
             return true
 
-        if first = "*" as char
+        guard first = "*" as char
             return true
 
-        if first = "/" as char
+        guard first = "/" as char
             return true
 
-        if first = "%" as char
+        guard first = "%" as char
             return true
 
-        if first = "=" as char
+        guard first = "=" as char
             return true
 
-        if first = "<" as char
+        guard first = "<" as char
             return true
 
-        if first = ">" as char
+        guard first = ">" as char
             return true
 
-        if first = "!" as char
+        guard first = "!" as char
             return true
 
-        if first = "&" as char
+        guard first = "&" as char
             return true
 
-        if first = "|" as char
+        guard first = "|" as char
             return true
 
-        if first = "^" as char
+        guard first = "^" as char
             return true
 
-        if first = "~" as char
+        guard first = "~" as char
             return true
 
-        if first = "[" as char
+        guard first = "[" as char
             return true
 
-        if first = "(" as char
+        guard first = "(" as char
             return true
 
         false
@@ -3531,24 +3531,24 @@ define Planner
     {
         ; Auto-dereference pointer[T] and ref[T] for method lookup
         var lookup_type struct_type
-        if is_pointer_like_type(struct_type)
+        guard is_pointer_like_type(struct_type)
         {
             let inner get_inner_type(struct_type)
-            if inner <> null
+            guard inner <> null
                 set lookup_type: *inner
         }
 
         ; Look up struct in the instantiation cache
         ; Try the Name first (handles simple names and generic instantiations)
         let by_name lookup_cached_structure(lookup_type.name)
-        if by_name <> null
+        guard by_name <> null
         {
             ; Search methods in by_name
-            if by_name.methods <> null
+            guard by_name.methods <> null
             {
                 for method in by_name.methods
                 {
-                    if method.name.equals(method_name)
+                    guard method.name.equals(method_name)
                     {
                         let result MethodMatch#(
                             method,
@@ -3572,13 +3572,13 @@ define Planner
 
         ; Try MangledName
         let by_mangled lookup_cached_structure(lookup_type.mangled_name)
-        if by_mangled <> null
+        guard by_mangled <> null
         {
-            if by_mangled.methods <> null
+            guard by_mangled.methods <> null
             {
                 for method in by_mangled.methods
                 {
-                    if method.name.equals(method_name)
+                    guard method.name.equals(method_name)
                     {
                         let result MethodMatch#(
                             method,
@@ -3603,13 +3603,13 @@ define Planner
         ; Try stripped name (e.g., "scaly.containers.String" -> "String")
         let stripped strip_package_prefix#(lookup_type.name)
         let by_stripped lookup_cached_structure(stripped)
-        if by_stripped <> null
+        guard by_stripped <> null
         {
-            if by_stripped.methods <> null
+            guard by_stripped.methods <> null
             {
                 for method in by_stripped.methods
                 {
-                    if method.name.equals(method_name)
+                    guard method.name.equals(method_name)
                     {
                         let result MethodMatch#(
                             method,
@@ -3632,17 +3632,17 @@ define Planner
         }
 
         ; Check if we're currently planning this structure (recursive methods)
-        if structure_ctx.is_active()
+        guard structure_ctx.is_active()
         {
-            if structure_ctx.name.equals(lookup_type.name)
+            guard structure_ctx.name.equals(lookup_type.name)
             {
-                if structure_ctx.structure <> null
+                guard structure_ctx.structure <> null
                 {
-                    if structure_ctx.structure.methods <> null
+                    guard structure_ctx.structure.methods <> null
                     {
                         for method in structure_ctx.structure.methods
                         {
-                            if method.name.equals(method_name)
+                            guard method.name.equals(method_name)
                             {
                                 let result MethodMatch#(
                                     method,
@@ -3676,29 +3676,29 @@ define Planner
     {
         ; Auto-dereference pointer[T] and ref[T] for method lookup
         var lookup_type struct_type
-        if is_pointer_like_type(struct_type)
+        guard is_pointer_like_type(struct_type)
         {
             let inner get_inner_type(struct_type)
-            if inner <> null
+            guard inner <> null
                 set lookup_type: *inner
         }
 
         ; Try by Name
         let by_name lookup_cached_structure(lookup_type.name)
-        if by_name <> null
+        guard by_name <> null
         {
             let found search_methods_with_args(by_name, method_name, arg_types)
-            if found <> null
+            guard found <> null
                 return found
 
         }
 
         ; Try by MangledName
         let by_mangled lookup_cached_structure(lookup_type.mangled_name)
-        if by_mangled <> null
+        guard by_mangled <> null
         {
             let found search_methods_with_args(by_mangled, method_name, arg_types)
-            if found <> null
+            guard found <> null
                 return found
 
         }
@@ -3706,23 +3706,23 @@ define Planner
         ; Try stripped name
         let stripped strip_package_prefix#(lookup_type.name)
         let by_stripped lookup_cached_structure(stripped)
-        if by_stripped <> null
+        guard by_stripped <> null
         {
             let found search_methods_with_args(by_stripped, method_name, arg_types)
-            if found <> null
+            guard found <> null
                 return found
 
         }
 
         ; Check current structure context
-        if structure_ctx.is_active()
+        guard structure_ctx.is_active()
         {
-            if structure_ctx.name.equals(lookup_type.name)
+            guard structure_ctx.name.equals(lookup_type.name)
             {
-                if structure_ctx.structure <> null
+                guard structure_ctx.structure <> null
                 {
                     let found search_methods_with_args(structure_ctx.structure, method_name, arg_types)
-                    if found <> null
+                    guard found <> null
                         return found
 
                 }
@@ -3735,27 +3735,27 @@ define Planner
     ; Helper: Search methods in a structure matching name and arg types
     function search_methods_with_args(this, struct_ref: ref[PlannedStructure]?, method_name: String, arg_types: ref[Vector[PlannedType]]?) returns ref[MethodMatch]?
     {
-        if struct_ref = null
+        guard struct_ref = null
             return null
 
-        if struct_ref.methods = null
+        guard struct_ref.methods = null
             return null
 
         for method in struct_ref.methods
         {
-            if method.name.equals(method_name) = false
+            guard method.name.equals(method_name) = false
                 continue
 
             ; Count non-this parameters
             var param_count 0
-            if method.input <> null
+            guard method.input <> null
             {
                 for param in method.input
                 {
                     choose param.name
                         when name_ref: Some
                         {
-                            if name_ref.equals(String$("this")) = false
+                            guard name_ref.equals(String$("this")) = false
                                 set param_count: param_count + 1
                         }
                         else
@@ -3765,17 +3765,17 @@ define Planner
 
             ; Check argument count
             var arg_count 0
-            if arg_types <> null
+            guard arg_types <> null
                 set arg_count: arg_types.length as int
 
-            if param_count <> arg_count
+            guard param_count <> arg_count
                 continue
 
             ; Check type compatibility
             var types_match true
-            if arg_types <> null
+            guard arg_types <> null
             {
-                if method.input <> null
+                guard method.input <> null
                 {
                     var arg_idx 0
                     for param in method.input
@@ -3785,11 +3785,11 @@ define Planner
                         choose param.name
                             when name_ref: Some
                             {
-                                if name_ref.equals(String$("this"))
+                                guard name_ref.equals(String$("this"))
                                     set is_this: true
                             }
 
-                        if is_this
+                        guard is_this
                             continue
 
                         choose arg_types.get(arg_idx)
@@ -3798,7 +3798,7 @@ define Planner
                                 choose param.item_type
                                     when param_type_ref: Some
                                     {
-                                        if types_compatible(*param_type_ref, *arg_type_ref) = false
+                                        guard types_compatible(*param_type_ref, *arg_type_ref) = false
                                             set types_match: false
                                     }
                             }
@@ -3808,7 +3808,7 @@ define Planner
                 }
             }
 
-            if types_match = false
+            guard types_match = false
                 continue
 
             ; Found matching method
@@ -3842,20 +3842,20 @@ define Planner
     {
         ; First check if left type has this operator defined
         let struct_ptr lookup_structure_by_type(left)
-        if struct_ptr <> null
+        guard struct_ptr <> null
         {
-            if struct_ptr.operators <> null
+            guard struct_ptr.operators <> null
             {
                 for op in struct_ptr.operators
                 {
-                    if op.name.equals(name) = false
+                    guard op.name.equals(name) = false
                         continue
 
                     ; Check parameter type matching
                     ; Instance operators have: first param is receiver (this), second is the operand
-                    if op.input <> null
+                    guard op.input <> null
                     {
-                        if op.input.length >= 2
+                        guard op.input.length >= 2
                         {
                             choose op.input.get(1)
                                 when second_param_ref: Some
@@ -3863,7 +3863,7 @@ define Planner
                                     choose (*second_param_ref).item_type
                                         when param_type_ref: Some
                                         {
-                                            if types_compatible(*param_type_ref, right) = false
+                                            guard types_compatible(*param_type_ref, right) = false
                                                 continue
 
                                         }
@@ -3890,18 +3890,18 @@ define Planner
 
         ; Check unions as well
         let union_ptr lookup_union_by_type(left)
-        if union_ptr <> null
+        guard union_ptr <> null
         {
-            if union_ptr.operators <> null
+            guard union_ptr.operators <> null
             {
                 for op in union_ptr.operators
                 {
-                    if op.name.equals(name) = false
+                    guard op.name.equals(name) = false
                         continue
 
-                    if op.input <> null
+                    guard op.input <> null
                     {
-                        if op.input.length >= 2
+                        guard op.input.length >= 2
                         {
                             choose op.input.get(1)
                                 when second_param_ref: Some
@@ -3909,7 +3909,7 @@ define Planner
                                     choose (*second_param_ref).item_type
                                         when param_type_ref: Some
                                         {
-                                            if types_compatible(*param_type_ref, right) = false
+                                            guard types_compatible(*param_type_ref, right) = false
                                                 continue
 
                                         }
@@ -3934,7 +3934,7 @@ define Planner
         }
 
         ; Fallback: check for intrinsic operators on primitive types
-        if is_intrinsic_binary_operator(name, left, right)
+        guard is_intrinsic_binary_operator(name, left, right)
         {
             let result_type compute_intrinsic_operator_result(name, left, right)
             let mangled compute_intrinsic_operator_mangled(name, left, right)
@@ -3955,63 +3955,63 @@ define Planner
     function is_intrinsic_binary_operator(name: String, left: PlannedType, right: PlannedType) returns bool
     {
         ; Arithmetic operators on numeric types
-        if name.equals(String$("+")) | name.equals(String$("-")) | name.equals(String$("*")) | name.equals(String$("/")) | name.equals(String$("%"))
+        guard name.equals(String$("+")) | name.equals(String$("-")) | name.equals(String$("*")) | name.equals(String$("/")) | name.equals(String$("%"))
         {
-            if is_integer_type(left.name) & is_integer_type(right.name)
+            guard is_integer_type(left.name) & is_integer_type(right.name)
                 return true
 
-            if left.name.equals(String$("float")) & right.name.equals(String$("float"))
+            guard left.name.equals(String$("float")) & right.name.equals(String$("float"))
                 return true
 
-            if left.name.equals(String$("double")) & right.name.equals(String$("double"))
+            guard left.name.equals(String$("double")) & right.name.equals(String$("double"))
                 return true
 
         }
 
         ; Comparison operators
-        if name.equals(String$("=")) | name.equals(String$("<>")) | name.equals(String$("<")) | name.equals(String$(">")) | name.equals(String$("<=")) | name.equals(String$(">="))
+        guard name.equals(String$("=")) | name.equals(String$("<>")) | name.equals(String$("<")) | name.equals(String$(">")) | name.equals(String$("<=")) | name.equals(String$(">="))
         {
-            if is_integer_type(left.name) & is_integer_type(right.name)
+            guard is_integer_type(left.name) & is_integer_type(right.name)
                 return true
 
-            if left.name.equals(String$("float")) & right.name.equals(String$("float"))
+            guard left.name.equals(String$("float")) & right.name.equals(String$("float"))
                 return true
 
-            if left.name.equals(String$("double")) & right.name.equals(String$("double"))
+            guard left.name.equals(String$("double")) & right.name.equals(String$("double"))
                 return true
 
-            if left.name.equals(String$("bool")) & right.name.equals(String$("bool"))
+            guard left.name.equals(String$("bool")) & right.name.equals(String$("bool"))
                 return true
 
-            if left.name.equals(String$("char")) & right.name.equals(String$("char"))
+            guard left.name.equals(String$("char")) & right.name.equals(String$("char"))
                 return true
 
             ; Pointer comparison
-            if is_pointer_type(left) & is_pointer_type(right)
+            guard is_pointer_type(left) & is_pointer_type(right)
                 return true
 
         }
 
         ; Bitwise operators on integers
-        if name.equals(String$("&")) | name.equals(String$("|")) | name.equals(String$("^")) | name.equals(String$("<<")) | name.equals(String$(">>"))
+        guard name.equals(String$("&")) | name.equals(String$("|")) | name.equals(String$("^")) | name.equals(String$("<<")) | name.equals(String$(">>"))
         {
-            if is_integer_type(left.name) & is_integer_type(right.name)
+            guard is_integer_type(left.name) & is_integer_type(right.name)
                 return true
 
         }
 
         ; Logical operators on bool
-        if name.equals(String$("&&")) | name.equals(String$("||"))
+        guard name.equals(String$("&&")) | name.equals(String$("||"))
         {
-            if left.name.equals(String$("bool")) & right.name.equals(String$("bool"))
+            guard left.name.equals(String$("bool")) & right.name.equals(String$("bool"))
                 return true
 
         }
 
         ; Pointer arithmetic: pointer + int, pointer - int
-        if name.equals(String$("+")) | name.equals(String$("-"))
+        guard name.equals(String$("+")) | name.equals(String$("-"))
         {
-            if is_pointer_type(left) & is_integer_type(right.name)
+            guard is_pointer_type(left) & is_integer_type(right.name)
                 return true
 
         }
@@ -4023,15 +4023,15 @@ define Planner
     function compute_intrinsic_operator_result(name: String, left: PlannedType, right: PlannedType) returns PlannedType
     {
         ; Comparison operators always return bool
-        if name.equals(String$("=")) | name.equals(String$("<>")) | name.equals(String$("<")) | name.equals(String$(">")) | name.equals(String$("<=")) | name.equals(String$(">="))
+        guard name.equals(String$("=")) | name.equals(String$("<>")) | name.equals(String$("<")) | name.equals(String$(">")) | name.equals(String$("<=")) | name.equals(String$(">="))
             return make_bool_type()
 
         ; Logical operators return bool
-        if name.equals(String$("&&")) | name.equals(String$("||"))
+        guard name.equals(String$("&&")) | name.equals(String$("||"))
             return make_bool_type()
 
         ; Pointer arithmetic returns pointer
-        if is_pointer_type(left) & is_integer_type(right.name)
+        guard is_pointer_type(left) & is_integer_type(right.name)
             return left
 
         ; Arithmetic/bitwise operators return left type
@@ -4069,7 +4069,7 @@ define Planner
     {
         ; Check if it's a type constructor (concept lookup)
         let conc lookup_concept(name)
-        if conc <> null
+        guard conc <> null
         {
             ; Type constructor - return the type
             let result PlannedType#(
@@ -4087,11 +4087,11 @@ define Planner
 
         ; Try namespace sibling function
         var arg_count 0
-        if arg_types <> null
+        guard arg_types <> null
             set arg_count: arg_types.length as int
 
         let sibling lookup_namespace_sibling_function(name, arg_count)
-        if sibling <> null
+        guard sibling <> null
         {
             choose sibling.returns_
                 when ret: Some
@@ -4103,7 +4103,7 @@ define Planner
 
         ; Try cached planned function
         let cached lookup_cached_function(encode_name(name))
-        if cached <> null
+        guard cached <> null
         {
             choose cached.return_type
                 when rt: Some
@@ -4122,20 +4122,20 @@ define Planner
     {
         ; First check if left type has this operator defined
         let struct_ptr lookup_structure_by_type(left)
-        if struct_ptr <> null
+        guard struct_ptr <> null
         {
-            if struct_ptr.operators <> null
+            guard struct_ptr.operators <> null
             {
                 for op in struct_ptr.operators
                 {
-                    if op.name.equals(name) = false
+                    guard op.name.equals(name) = false
                         continue
 
                     ; Check parameter type matching
                     ; Instance operators have: first param is receiver (this), second is operand
-                    if op.input <> null
+                    guard op.input <> null
                     {
-                        if op.input.length >= 2
+                        guard op.input.length >= 2
                         {
                             choose op.input.get(1)
                                 when second_param_ref: Some
@@ -4143,7 +4143,7 @@ define Planner
                                     choose (*second_param_ref).item_type
                                         when param_type_ref: Some
                                         {
-                                            if types_compatible(*param_type_ref, right) = false
+                                            guard types_compatible(*param_type_ref, right) = false
                                                 continue
 
                                         }
@@ -4163,18 +4163,18 @@ define Planner
 
         ; Check unions as well
         let union_ptr lookup_union_by_type(left)
-        if union_ptr <> null
+        guard union_ptr <> null
         {
-            if union_ptr.operators <> null
+            guard union_ptr.operators <> null
             {
                 for op in union_ptr.operators
                 {
-                    if op.name.equals(name) = false
+                    guard op.name.equals(name) = false
                         continue
 
-                    if op.input <> null
+                    guard op.input <> null
                     {
-                        if op.input.length >= 2
+                        guard op.input.length >= 2
                         {
                             choose op.input.get(1)
                                 when second_param_ref: Some
@@ -4182,7 +4182,7 @@ define Planner
                                     choose (*second_param_ref).item_type
                                         when param_type_ref: Some
                                         {
-                                            if types_compatible(*param_type_ref, right) = false
+                                            guard types_compatible(*param_type_ref, right) = false
                                                 continue
 
                                         }
@@ -4200,7 +4200,7 @@ define Planner
         }
 
         ; Fallback: check for intrinsic operators
-        if is_intrinsic_binary_operator(name, left, right)
+        guard is_intrinsic_binary_operator(name, left, right)
         {
             let result compute_intrinsic_operator_result(name, left, right)
             return result
@@ -4214,10 +4214,10 @@ define Planner
     function resolve_prefix_operator_call(this, name: String, loc: Span, operand: PlannedType) returns ref[PlannedType]?
     {
         ; Dereference operator: *ptr -> element type
-        if name.equals(String$("*"))
+        guard name.equals(String$("*"))
         {
             let element_type get_pointer_element_type(operand)
-            if element_type <> null
+            guard element_type <> null
                 return element_type
 
             ; Not a pointer - error
@@ -4225,7 +4225,7 @@ define Planner
         }
 
         ; Address-of operator: &val -> pointer[typeof(val)]
-        if name.equals(String$("&"))
+        guard name.equals(String$("&"))
         {
             let generics Vector[PlannedType]#()
             generics.put(0, operand)
@@ -4248,33 +4248,33 @@ define Planner
         }
 
         ; Negation: -x for numeric types
-        if name.equals(String$("-"))
+        guard name.equals(String$("-"))
         {
-            if is_numeric_type(operand.name)
+            guard is_numeric_type(operand.name)
                 return operand
 
         }
 
         ; Unary plus: +x for numeric types
-        if name.equals(String$("+"))
+        guard name.equals(String$("+"))
         {
-            if is_numeric_type(operand.name)
+            guard is_numeric_type(operand.name)
                 return operand
 
         }
 
         ; Bitwise not: ~x for integers
-        if name.equals(String$("~"))
+        guard name.equals(String$("~"))
         {
-            if is_integer_type(operand.name)
+            guard is_integer_type(operand.name)
                 return operand
 
         }
 
         ; Logical not: !x for bool
-        if name.equals(String$("!"))
+        guard name.equals(String$("!"))
         {
-            if operand.name.equals(String$("bool"))
+            guard operand.name.equals(String$("bool"))
                 return operand
 
         }
@@ -4285,19 +4285,19 @@ define Planner
     ; Helper: check if type is numeric (integer or float)
     function is_numeric_type(name: String) returns bool
     {
-        if is_integer_type(name)
+        guard is_integer_type(name)
             return true
 
-        if name.equals(String$("float"))
+        guard name.equals(String$("float"))
             return true
 
-        if name.equals(String$("double"))
+        guard name.equals(String$("double"))
             return true
 
-        if name.equals(String$("f32"))
+        guard name.equals(String$("f32"))
             return true
 
-        if name.equals(String$("f64"))
+        guard name.equals(String$("f64"))
             return true
 
         false
@@ -4313,25 +4313,25 @@ define Planner
     {
         ; Auto-dereference pointer types
         var lookup_type base
-        if is_pointer_like_type(base)
+        guard is_pointer_like_type(base)
         {
             let inner get_inner_type(base)
-            if inner <> null
+            guard inner <> null
                 set lookup_type: *inner
         }
 
         ; Look up the structure
         let struct_ptr lookup_structure_by_type(lookup_type)
-        if struct_ptr <> null
+        guard struct_ptr <> null
         {
             ; Search properties
-            if struct_ptr.properties <> null
+            guard struct_ptr.properties <> null
             {
                 var field_idx 0 as size_t
                 for prop_ref in struct_ptr.properties
                 {
                     let prop *prop_ref
-                    if prop.name.equals(member)
+                    guard prop.name.equals(member)
                     {
                         let result PlannedMemberAccess#(
                             member,
@@ -4348,23 +4348,23 @@ define Planner
             }
 
             ; Search zero-arg methods (property-like access)
-            if struct_ptr.methods <> null
+            guard struct_ptr.methods <> null
             {
                 for method in struct_ptr.methods
                 {
-                    if method.name.equals(member)
+                    guard method.name.equals(member)
                     {
                         ; Check if it's a zero-arg method (only 'this' param)
                         var param_count 0
                         var has_only_this true
-                        if method.input <> null
+                        guard method.input <> null
                         {
                             for param in method.input
                             {
                                 choose param.name
                                     when n_ref: Some
                                     {
-                                        if n_ref.equals(String$("this")) = false
+                                        guard n_ref.equals(String$("this")) = false
                                         {
                                             set has_only_this: false
                                             set param_count: param_count + 1
@@ -4379,7 +4379,7 @@ define Planner
                         }
 
                         ; Only treat as property-like if zero extra args
-                        if param_count = 0
+                        guard param_count = 0
                         {
                             var ret_type PlannedType make_void_type()
                             choose method.return_type
@@ -4403,15 +4403,15 @@ define Planner
 
         ; Check unions
         let union_ptr lookup_union_by_type(lookup_type)
-        if union_ptr <> null
+        guard union_ptr <> null
         {
             ; Search variants
-            if union_ptr.variants <> null
+            guard union_ptr.variants <> null
             {
                 for variant_ref in union_ptr.variants
                 {
                     let variant *variant_ref
-                    if variant.name.equals(member)
+                    guard variant.name.equals(member)
                     {
                         var variant_type_val PlannedType make_void_type()
                         choose variant.var_type
@@ -4441,10 +4441,10 @@ define Planner
     {
         let result Vector[PlannedMemberAccess]#()
 
-        if members = null
+        guard members = null
             return result
 
-        if members.length = 0
+        guard members.length = 0
             return result
 
         var current base_type
@@ -4452,7 +4452,7 @@ define Planner
         for i in members
         {
             let member_access resolve_member_access(current, *i, loc)
-            if member_access = null
+            guard member_access = null
                 return null
 
             result.put(result.length, member_access)
@@ -4470,10 +4470,10 @@ define Planner
     ; Handles: prefix operators, binary operators with precedence
     function resolve_operation_sequence(this, ops: pointer[Vector[PlannedOperand]], loc: Span) returns ref[PlannedType]?
     {
-        if ops.length = 0
+        guard ops.length = 0
             return make_void_type()
 
-        if ops.length = 1
+        guard ops.length = 1
         {
             choose ops.get(0)
                 when first_ref: Some
@@ -4488,9 +4488,9 @@ define Planner
                 choose first.expr
                     when type_expr: PlannedType
                     {
-                        if is_operator_name(type_expr.name)
+                        guard is_operator_name(type_expr.name)
                         {
-                            if ops.length > 1
+                            guard ops.length > 1
                             {
                                 ; First operand is prefix operator
                                 ; Resolve rest, then apply prefix operator
@@ -4505,7 +4505,7 @@ define Planner
                                 }
 
                                 let rest_result resolve_operation_sequence(rest_ops, loc)
-                                if rest_result <> null
+                                guard rest_result <> null
                                 {
                                     let prefix_result resolve_prefix_operator_call(type_expr.name, loc, *rest_result)
                                     return prefix_result
@@ -4533,17 +4533,17 @@ define Planner
                     choose current.expr
                         when type_expr: PlannedType
                         {
-                            if is_operator_name(type_expr.name)
+                            guard is_operator_name(type_expr.name)
                             {
                                 ; Need right operand
-                                if idx + 1 < ops.length
+                                guard idx + 1 < ops.length
                                 {
                                     choose ops.get(idx + 1)
                                         when right_ref: Some
                                         {
                                             let right (*right_ref).result_type
                                             let op_result resolve_operator_call(type_expr.name, current.loc, context, right)
-                                            if op_result <> null
+                                            guard op_result <> null
                                                 set context: *op_result
                                             set idx: idx + 2
                                             continue
@@ -4565,10 +4565,10 @@ define Planner
     ; Builds the call tree for binary operators
     function collapse_operand_sequence(this, ops: pointer[Vector[PlannedOperand]]) returns ref[PlannedOperand]?
     {
-        if ops.length = 0
+        guard ops.length = 0
             return null
 
-        if ops.length = 1
+        guard ops.length = 1
         {
             choose ops.get(0)
                 when first_ref: Some
@@ -4584,16 +4584,16 @@ define Planner
                 choose first.expr
                     when type_expr: PlannedType
                     {
-                        if is_operator_name(type_expr.name)
+                        guard is_operator_name(type_expr.name)
                         {
-                            if ops.length >= 2
+                            guard ops.length >= 2
                             {
                                 ; Prefix operator - apply to next operand
                                 choose ops.get(1)
                                     when operand_ref: Some
                                     {
                                         let operand_result resolve_prefix_operator_call(type_expr.name, first.loc, (*operand_ref).result_type)
-                                        if operand_result <> null
+                                        guard operand_result <> null
                                         {
                                             ; Create new PlannedOperand with prefix call result
                                             let result PlannedOperand#(
@@ -4604,7 +4604,7 @@ define Planner
                                             )
 
                                             ; If more operands remain, recursively collapse
-                                            if ops.length > 2
+                                            guard ops.length > 2
                                             {
                                                 let rest_ops Vector[PlannedOperand]#()
                                                 rest_ops.put(0, result)
@@ -4635,7 +4635,7 @@ define Planner
         var i 1 as size_t
         while i < ops.length
         {
-            if i mod 2 = 1  ; Operators are at odd indices
+            guard i mod 2 = 1  ; Operators are at odd indices
             {
                 choose ops.get(i)
                     when op_ref: Some
@@ -4644,9 +4644,9 @@ define Planner
                             when type_expr: PlannedType
                             {
                                 let prec get_operator_precedence(type_expr.name)
-                                if prec > 0
+                                guard prec > 0
                                 {
-                                    if prec <= min_prec
+                                    guard prec <= min_prec
                                     {
                                         set min_prec: prec
                                         set split_idx: i
@@ -4659,7 +4659,7 @@ define Planner
         }
 
         ; If we found a split point, build the call tree
-        if split_idx > 0
+        guard split_idx > 0
         {
             ; Collapse left part
             let left_ops Vector[PlannedOperand]#()
@@ -4672,7 +4672,7 @@ define Planner
                 set li: li + 1
             }
             let left collapse_operand_sequence(left_ops)
-            if left = null
+            guard left = null
                 return null
 
             ; Get operator
@@ -4698,12 +4698,12 @@ define Planner
                 set ri: ri + 1
             }
             let right collapse_operand_sequence(right_ops)
-            if right = null
+            guard right = null
                 return null
 
             ; Resolve the operator call type
             let result_type resolve_operator_call(op_name, op_loc, left.result_type, right.result_type)
-            if result_type = null
+            guard result_type = null
                 return null
 
             ; Build result operand (represents the binary call)
@@ -4734,7 +4734,7 @@ define Planner
     {
         ; Plan the main module
         let main_module plan_module(prog.module_)
-        if main_module = null
+        guard main_module = null
             return null
 
         ; Plan top-level statements
@@ -4763,45 +4763,45 @@ function test() returns int
 {
     ; Test size_to_string first (simpler, uses StringBuilder internally)
     let str4 Planner.size_to_string(4)
-    if str4.equals(String$("4")) = false
+    guard str4.equals(String$("4")) = false
         return 1
 
     ; Test encode_name (builds on size_to_string)
     let name String$("test")
     let encoded Planner.encode_name(name)
-    if encoded.equals(String$("4test")) = false
+    guard encoded.equals(String$("4test")) = false
         return 99
 
     ; Test strip_package_prefix
     let qualified String$("scaly.containers.String")
     let stripped Planner.strip_package_prefix#(qualified)
-    if stripped.equals(String$("String")) = false
+    guard stripped.equals(String$("String")) = false
         return 2
 
     ; Test strip_suffix
     let with_suffix String$("Vector.char")
     let base Planner.strip_suffix#(with_suffix)
-    if base.equals(String$("Vector")) = false
+    guard base.equals(String$("Vector")) = false
         return 3
 
     ; Test size_to_string
     let str42 Planner.size_to_string(42)
-    if str42.equals(String$("42")) = false
+    guard str42.equals(String$("42")) = false
         return 4
 
     ; Test is_primitive_type
-    if Planner.is_primitive_type(String$("int")) = false
+    guard Planner.is_primitive_type(String$("int")) = false
         return 5
 
-    if Planner.is_primitive_type(String$("bool")) = false
+    guard Planner.is_primitive_type(String$("bool")) = false
         return 6
 
-    if Planner.is_primitive_type(String$("Vector")) = true
+    guard Planner.is_primitive_type(String$("Vector")) = true
         return 7
 
     ; Test generate_cache_key
     let cache_key Planner.generate_cache_key(String$("Vector"), null)
-    if cache_key.equals(String$("Vector")) = false
+    guard cache_key.equals(String$("Vector")) = false
         return 8
 
     ; Test build_type_name
@@ -4810,24 +4810,24 @@ function test() returns int
     path.put(1, String$("containers"))
     path.put(2, String$("Vector"))
     let type_name Planner.build_type_name(path)
-    if type_name.equals(String$("scaly.containers.Vector")) = false
+    guard type_name.equals(String$("scaly.containers.Vector")) = false
         return 9
 
     ; Test make_int_type
     let int_type Planner.make_int_type()
-    if int_type.name.equals(String$("int")) = false
+    guard int_type.name.equals(String$("int")) = false
         return 10
 
-    if int_type.mangled_name.equals(String$("i")) = false
+    guard int_type.mangled_name.equals(String$("i")) = false
         return 11
 
     ; Test make_pointer_type
     let char_type Planner.make_char_type()
     let ptr_char Planner.make_pointer_type(char_type)
-    if ptr_char.name.equals(String$("pointer")) = false
+    guard ptr_char.name.equals(String$("pointer")) = false
         return 12
 
-    if ptr_char.mangled_name.equals(String$("Pc")) = false
+    guard ptr_char.mangled_name.equals(String$("Pc")) = false
         return 13
 
     ; Test infer_constant_type for integer
@@ -4835,7 +4835,7 @@ function test() returns int
         scaly.compiler.Model.IntegerConstant(Span(0, 0), 42)
     )
     let int_inferred Planner.infer_constant_type(int_const)
-    if int_inferred.name.equals(String$("int")) = false
+    guard int_inferred.name.equals(String$("int")) = false
         return 14
 
     ; Test infer_constant_type for boolean
@@ -4843,7 +4843,7 @@ function test() returns int
         scaly.compiler.Model.BooleanConstant(Span(0, 0), true)
     )
     let bool_inferred Planner.infer_constant_type(bool_const)
-    if bool_inferred.name.equals(String$("bool")) = false
+    guard bool_inferred.name.equals(String$("bool")) = false
         return 15
 
     ; ========================================================================
@@ -4858,74 +4858,74 @@ function test() returns int
     let prec_or Planner.get_operator_precedence(String$("||"))
 
     ; * should have highest precedence (10)
-    if prec_mul <> 10
+    guard prec_mul <> 10
         return 100
 
     ; + should have precedence 9
-    if prec_add <> 9
+    guard prec_add <> 9
         return 101
 
     ; = should have precedence 6
-    if prec_eq <> 6
+    guard prec_eq <> 6
         return 102
 
     ; && should have precedence 2
-    if prec_and <> 2
+    guard prec_and <> 2
         return 103
 
     ; || should have precedence 1 (lowest)
-    if prec_or <> 1
+    guard prec_or <> 1
         return 104
 
     ; Verify ordering: * > + > = > && > ||
-    if prec_mul <= prec_add
+    guard prec_mul <= prec_add
         return 105
 
-    if prec_add <= prec_eq
+    guard prec_add <= prec_eq
         return 106
 
-    if prec_eq <= prec_and
+    guard prec_eq <= prec_and
         return 107
 
-    if prec_and <= prec_or
+    guard prec_and <= prec_or
         return 108
 
     ; Test unknown operator returns 0
     let prec_unknown Planner.get_operator_precedence(String$("foo"))
-    if prec_unknown <> 0
+    guard prec_unknown <> 0
         return 109
 
     ; Test is_operator_name for operators
-    if Planner.is_operator_name(String$("+")) = false
+    guard Planner.is_operator_name(String$("+")) = false
         return 110
 
-    if Planner.is_operator_name(String$("-")) = false
+    guard Planner.is_operator_name(String$("-")) = false
         return 111
 
-    if Planner.is_operator_name(String$("*")) = false
+    guard Planner.is_operator_name(String$("*")) = false
         return 112
 
-    if Planner.is_operator_name(String$("=")) = false
+    guard Planner.is_operator_name(String$("=")) = false
         return 113
 
-    if Planner.is_operator_name(String$("<>")) = false
+    guard Planner.is_operator_name(String$("<>")) = false
         return 114
 
-    if Planner.is_operator_name(String$("&&")) = false
+    guard Planner.is_operator_name(String$("&&")) = false
         return 115
 
     ; Test is_operator_name for non-operators
-    if Planner.is_operator_name(String$("foo")) = true
+    guard Planner.is_operator_name(String$("foo")) = true
         return 116
 
-    if Planner.is_operator_name(String$("bar")) = true
+    guard Planner.is_operator_name(String$("bar")) = true
         return 117
 
-    if Planner.is_operator_name(String$("test")) = true
+    guard Planner.is_operator_name(String$("test")) = true
         return 118
 
     ; Test special prefix functions recognized as operators
-    if Planner.is_operator_name(String$("abs")) = false
+    guard Planner.is_operator_name(String$("abs")) = false
         return 119
 
     ; ========================================================================
@@ -4934,73 +4934,73 @@ function test() returns int
 
     ; Test is_intrinsic_binary_operator for arithmetic on integers
     let int_t Planner.make_int_type()
-    if Planner.is_intrinsic_binary_operator(String$("+"), int_t, int_t) = false
+    guard Planner.is_intrinsic_binary_operator(String$("+"), int_t, int_t) = false
         return 200
 
-    if Planner.is_intrinsic_binary_operator(String$("-"), int_t, int_t) = false
+    guard Planner.is_intrinsic_binary_operator(String$("-"), int_t, int_t) = false
         return 201
 
-    if Planner.is_intrinsic_binary_operator(String$("*"), int_t, int_t) = false
+    guard Planner.is_intrinsic_binary_operator(String$("*"), int_t, int_t) = false
         return 202
 
     ; Test is_intrinsic_binary_operator for comparison on integers
-    if Planner.is_intrinsic_binary_operator(String$("="), int_t, int_t) = false
+    guard Planner.is_intrinsic_binary_operator(String$("="), int_t, int_t) = false
         return 203
 
-    if Planner.is_intrinsic_binary_operator(String$("<>"), int_t, int_t) = false
+    guard Planner.is_intrinsic_binary_operator(String$("<>"), int_t, int_t) = false
         return 204
 
-    if Planner.is_intrinsic_binary_operator(String$("<"), int_t, int_t) = false
+    guard Planner.is_intrinsic_binary_operator(String$("<"), int_t, int_t) = false
         return 205
 
     ; Test is_intrinsic_binary_operator for logical on bools
     let bool_t Planner.make_bool_type()
-    if Planner.is_intrinsic_binary_operator(String$("&&"), bool_t, bool_t) = false
+    guard Planner.is_intrinsic_binary_operator(String$("&&"), bool_t, bool_t) = false
         return 206
 
-    if Planner.is_intrinsic_binary_operator(String$("||"), bool_t, bool_t) = false
+    guard Planner.is_intrinsic_binary_operator(String$("||"), bool_t, bool_t) = false
         return 207
 
     ; Test that non-intrinsic operations return false
-    if Planner.is_intrinsic_binary_operator(String$("+"), bool_t, bool_t) = true
+    guard Planner.is_intrinsic_binary_operator(String$("+"), bool_t, bool_t) = true
         return 208
 
-    if Planner.is_intrinsic_binary_operator(String$("&&"), int_t, int_t) = true
+    guard Planner.is_intrinsic_binary_operator(String$("&&"), int_t, int_t) = true
         return 209
 
     ; Test compute_intrinsic_operator_result
     ; Comparison operators return bool
     let cmp_result Planner.compute_intrinsic_operator_result(String$("="), int_t, int_t)
-    if cmp_result.name.equals(String$("bool")) = false
+    guard cmp_result.name.equals(String$("bool")) = false
         return 210
 
     let lt_result Planner.compute_intrinsic_operator_result(String$("<"), int_t, int_t)
-    if lt_result.name.equals(String$("bool")) = false
+    guard lt_result.name.equals(String$("bool")) = false
         return 211
 
     ; Logical operators return bool
     let and_result Planner.compute_intrinsic_operator_result(String$("&&"), bool_t, bool_t)
-    if and_result.name.equals(String$("bool")) = false
+    guard and_result.name.equals(String$("bool")) = false
         return 212
 
     ; Arithmetic operators return left type
     let add_result Planner.compute_intrinsic_operator_result(String$("+"), int_t, int_t)
-    if add_result.name.equals(String$("int")) = false
+    guard add_result.name.equals(String$("int")) = false
         return 213
 
     ; Test bitwise operators on integers
-    if Planner.is_intrinsic_binary_operator(String$("&"), int_t, int_t) = false
+    guard Planner.is_intrinsic_binary_operator(String$("&"), int_t, int_t) = false
         return 214
 
-    if Planner.is_intrinsic_binary_operator(String$("|"), int_t, int_t) = false
+    guard Planner.is_intrinsic_binary_operator(String$("|"), int_t, int_t) = false
         return 215
 
-    if Planner.is_intrinsic_binary_operator(String$("^"), int_t, int_t) = false
+    guard Planner.is_intrinsic_binary_operator(String$("^"), int_t, int_t) = false
         return 216
 
     ; Test compute_intrinsic_operator_mangled
     let mangled Planner.compute_intrinsic_operator_mangled(String$("+"), int_t, int_t)
-    if mangled.length = 0
+    guard mangled.length = 0
         return 217
 
     ; ========================================================================
@@ -5008,25 +5008,25 @@ function test() returns int
     ; ========================================================================
 
     ; Test is_numeric_type
-    if Planner.is_numeric_type(String$("int")) = false
+    guard Planner.is_numeric_type(String$("int")) = false
         return 300
 
-    if Planner.is_numeric_type(String$("float")) = false
+    guard Planner.is_numeric_type(String$("float")) = false
         return 301
 
-    if Planner.is_numeric_type(String$("double")) = false
+    guard Planner.is_numeric_type(String$("double")) = false
         return 302
 
-    if Planner.is_numeric_type(String$("i32")) = false
+    guard Planner.is_numeric_type(String$("i32")) = false
         return 303
 
-    if Planner.is_numeric_type(String$("f64")) = false
+    guard Planner.is_numeric_type(String$("f64")) = false
         return 304
 
-    if Planner.is_numeric_type(String$("bool")) = true
+    guard Planner.is_numeric_type(String$("bool")) = true
         return 305
 
-    if Planner.is_numeric_type(String$("char")) = true
+    guard Planner.is_numeric_type(String$("char")) = true
         return 306
 
     ; ========================================================================

@@ -119,6 +119,7 @@ private:
     llvm::Expected<WhenSyntax> parseWhen();
     llvm::Expected<std::vector<StatementSyntax>*> parseStatementList();
     llvm::Expected<StatementSyntax> parseStatement();
+    llvm::Expected<GuardSyntax> parseGuard();
     llvm::Expected<LetSyntax> parseLet();
     llvm::Expected<VarSyntax> parseVar();
     llvm::Expected<MutableSyntax> parseMutable();

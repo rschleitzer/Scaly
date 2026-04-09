@@ -64,6 +64,7 @@ void Parser::initKeywords() {
     Keywords.insert("extern");
     Keywords.insert("for");
     Keywords.insert("function");
+    Keywords.insert("guard");
     Keywords.insert("if");
     Keywords.insert("implement");
     Keywords.insert("in");
@@ -137,7 +138,7 @@ llvm::Expected<ProgramSyntax> Parser::parseProgram() {
 
     size_t End = Lex.position();
 
-    return ProgramSyntax{Start, End, File, Statements};
+    return ProgramSyntax{Start, End, std::move(File), std::move(Statements)};
 
 }
 
@@ -158,7 +159,7 @@ llvm::Expected<FileSyntax> Parser::parseFile() {
 
     size_t End = Lex.position();
 
-    return FileSyntax{Start, End, Declarations};
+    return FileSyntax{Start, End, std::move(Declarations)};
 
 }
 
@@ -296,7 +297,7 @@ llvm::Expected<PrivateSyntax> Parser::parsePrivate() {
 
     size_t End = Lex.position();
 
-    return PrivateSyntax{Start, End, Export_};
+    return PrivateSyntax{Start, End, std::move(Export_)};
 
 }
 
@@ -522,7 +523,7 @@ llvm::Expected<DefinitionSyntax> Parser::parseDefinition() {
 
     size_t End = Lex.position();
 
-    return DefinitionSyntax{Start, End, Name, Parameters, Attributes, Concept_};
+    return DefinitionSyntax{Start, End, Name, std::move(Parameters), std::move(Attributes), std::move(Concept_)};
 
 }
 
@@ -546,7 +547,7 @@ llvm::Expected<GenericParametersSyntax> Parser::parseGenericParameters() {
 
     size_t End = Lex.position();
 
-    return GenericParametersSyntax{Start, End, Parameters};
+    return GenericParametersSyntax{Start, End, std::move(Parameters)};
 
 }
 
@@ -595,7 +596,7 @@ llvm::Expected<GenericParameterSyntax> Parser::parseGenericParameter() {
 
     size_t End = Lex.position();
 
-    return GenericParameterSyntax{Start, End, Name, Attributes};
+    return GenericParameterSyntax{Start, End, Name, std::move(Attributes)};
 
 }
 
@@ -676,7 +677,7 @@ llvm::Expected<ClassSyntax> Parser::parseClass() {
 
     size_t End = Lex.position();
 
-    return ClassSyntax{Start, End, Structure, Body};
+    return ClassSyntax{Start, End, std::move(Structure), std::move(Body)};
 
 }
 
@@ -715,7 +716,7 @@ llvm::Expected<BodySyntax> Parser::parseBody() {
 
     size_t End = Lex.position();
 
-    return BodySyntax{Start, End, Uses, Members};
+    return BodySyntax{Start, End, std::move(Uses), std::move(Members)};
 
 }
 
@@ -754,7 +755,7 @@ llvm::Expected<NamespaceSyntax> Parser::parseNamespace() {
 
     size_t End = Lex.position();
 
-    return NamespaceSyntax{Start, End, Uses, Declarations};
+    return NamespaceSyntax{Start, End, std::move(Uses), std::move(Declarations)};
 
 }
 
@@ -794,7 +795,7 @@ llvm::Expected<UnionSyntax> Parser::parseUnion() {
 
     size_t End = Lex.position();
 
-    return UnionSyntax{Start, End, Variants, Body};
+    return UnionSyntax{Start, End, std::move(Variants), std::move(Body)};
 
 }
 
@@ -854,7 +855,7 @@ llvm::Expected<VariantSyntax> Parser::parseVariant() {
 
     size_t End = Lex.position();
 
-    return VariantSyntax{Start, End, Name, Attributes, Annotation};
+    return VariantSyntax{Start, End, Name, std::move(Attributes), std::move(Annotation)};
 
 }
 
@@ -880,7 +881,7 @@ llvm::Expected<ConstantSyntax> Parser::parseConstant() {
 
     size_t End = Lex.position();
 
-    return ConstantSyntax{Start, End, Type, Operation};
+    return ConstantSyntax{Start, End, std::move(Type), std::move(Operation)};
 
 }
 
@@ -931,7 +932,7 @@ llvm::Expected<DelegateSyntax> Parser::parseDelegate() {
 
     size_t End = Lex.position();
 
-    return DelegateSyntax{Start, End, Parameters, Attributes, Result, Error};
+    return DelegateSyntax{Start, End, std::move(Parameters), std::move(Attributes), std::move(Result), std::move(Error)};
 
 }
 
@@ -958,7 +959,7 @@ llvm::Expected<GenericArgumentsSyntax> Parser::parseGenericArguments() {
 
     size_t End = Lex.position();
 
-    return GenericArgumentsSyntax{Start, End, Generics};
+    return GenericArgumentsSyntax{Start, End, std::move(Generics)};
 
 }
 
@@ -995,7 +996,7 @@ llvm::Expected<GenericArgumentSyntax> Parser::parseGenericArgument() {
 
     size_t End = Lex.position();
 
-    return GenericArgumentSyntax{Start, End, Type};
+    return GenericArgumentSyntax{Start, End, std::move(Type)};
 
 }
 
@@ -1058,7 +1059,7 @@ llvm::Expected<ParametersSyntax> Parser::parseParameters() {
 
     size_t End = Lex.position();
 
-    return ParametersSyntax{Start, End, Items};
+    return ParametersSyntax{Start, End, std::move(Items)};
 
 }
 
@@ -1118,7 +1119,7 @@ llvm::Expected<ItemSyntax> Parser::parseItem() {
 
     size_t End = Lex.position();
 
-    return ItemSyntax{Start, End, Name, Annotation, Attributes};
+    return ItemSyntax{Start, End, Name, std::move(Annotation), std::move(Attributes)};
 
 }
 
@@ -1151,7 +1152,7 @@ llvm::Expected<ReturnsSyntax> Parser::parseReturns() {
 
     size_t End = Lex.position();
 
-    return ReturnsSyntax{Start, End, Type, Attributes};
+    return ReturnsSyntax{Start, End, std::move(Type), std::move(Attributes)};
 
 }
 
@@ -1184,7 +1185,7 @@ llvm::Expected<ThrowsSyntax> Parser::parseThrows() {
 
     size_t End = Lex.position();
 
-    return ThrowsSyntax{Start, End, Type, Attributes};
+    return ThrowsSyntax{Start, End, std::move(Type), std::move(Attributes)};
 
 }
 
@@ -1228,7 +1229,7 @@ llvm::Expected<UseSyntax> Parser::parseUse() {
 
     size_t End = Lex.position();
 
-    return UseSyntax{Start, End, Name};
+    return UseSyntax{Start, End, std::move(Name)};
 
 }
 
@@ -1293,7 +1294,7 @@ llvm::Expected<ImplementSyntax> Parser::parseImplement() {
 
     size_t End = Lex.position();
 
-    return ImplementSyntax{Start, End, Type, Attributes, Uses, Methods};
+    return ImplementSyntax{Start, End, std::move(Type), std::move(Attributes), std::move(Uses), std::move(Methods)};
 
 }
 
@@ -1365,7 +1366,7 @@ llvm::Expected<TraitSyntax> Parser::parseTrait() {
 
     size_t End = Lex.position();
 
-    return TraitSyntax{Start, End, Name, Extension, Attributes, Uses, Functions};
+    return TraitSyntax{Start, End, std::move(Name), std::move(Extension), std::move(Attributes), std::move(Uses), std::move(Functions)};
 
 }
 
@@ -1482,7 +1483,7 @@ llvm::Expected<InitSyntax> Parser::parseInit() {
 
     size_t End = Lex.position();
 
-    return InitSyntax{Start, End, Lifetime, Parameters, Action};
+    return InitSyntax{Start, End, std::move(Lifetime), std::move(Parameters), std::move(Action)};
 
 }
 
@@ -1507,7 +1508,7 @@ llvm::Expected<DeInitSyntax> Parser::parseDeInit() {
 
     size_t End = Lex.position();
 
-    return DeInitSyntax{Start, End, Action};
+    return DeInitSyntax{Start, End, std::move(Action)};
 
 }
 
@@ -1528,7 +1529,7 @@ llvm::Expected<FunctionSyntax> Parser::parseFunction() {
 
     size_t End = Lex.position();
 
-    return FunctionSyntax{Start, End, Target};
+    return FunctionSyntax{Start, End, std::move(Target)};
 
 }
 
@@ -1549,7 +1550,7 @@ llvm::Expected<ProcedureSyntax> Parser::parseProcedure() {
 
     size_t End = Lex.position();
 
-    return ProcedureSyntax{Start, End, Target};
+    return ProcedureSyntax{Start, End, std::move(Target)};
 
 }
 
@@ -1570,7 +1571,7 @@ llvm::Expected<OperatorSyntax> Parser::parseOperator() {
 
     size_t End = Lex.position();
 
-    return OperatorSyntax{Start, End, Target};
+    return OperatorSyntax{Start, End, std::move(Target)};
 
 }
 
@@ -1617,7 +1618,7 @@ llvm::Expected<NamedSyntax> Parser::parseNamed() {
 
     size_t End = Lex.position();
 
-    return NamedSyntax{Start, End, Name, Routine};
+    return NamedSyntax{Start, End, Name, std::move(Routine)};
 
 }
 
@@ -1696,7 +1697,7 @@ llvm::Expected<RoutineSyntax> Parser::parseRoutine() {
 
     size_t End = Lex.position();
 
-    return RoutineSyntax{Start, End, Generics, Lifetime, Parameters, Attributes, Returns_, Throws_, Implementation};
+    return RoutineSyntax{Start, End, std::move(Generics), std::move(Lifetime), std::move(Parameters), std::move(Attributes), std::move(Returns_), std::move(Throws_), std::move(Implementation)};
 
 }
 
@@ -1796,7 +1797,7 @@ llvm::Expected<ExtendsSyntax> Parser::parseExtends() {
 
     size_t End = Lex.position();
 
-    return ExtendsSyntax{Start, End, Extensions};
+    return ExtendsSyntax{Start, End, std::move(Extensions)};
 
 }
 
@@ -1833,7 +1834,7 @@ llvm::Expected<ExtendSyntax> Parser::parseExtend() {
 
     size_t End = Lex.position();
 
-    return ExtendSyntax{Start, End, Type};
+    return ExtendSyntax{Start, End, std::move(Type)};
 
 }
 
@@ -1872,7 +1873,7 @@ llvm::Expected<MacroSyntax> Parser::parseMacro() {
 
     size_t End = Lex.position();
 
-    return MacroSyntax{Start, End, Name, Model, Rule};
+    return MacroSyntax{Start, End, Name, std::move(Model), std::move(Rule)};
 
 }
 
@@ -1915,7 +1916,7 @@ llvm::Expected<AttributeSyntax> Parser::parseAttribute() {
 
     size_t End = Lex.position();
 
-    return AttributeSyntax{Start, End, Name, Model};
+    return AttributeSyntax{Start, End, Name, std::move(Model)};
 
 }
 
@@ -2029,7 +2030,7 @@ llvm::Expected<PackageSyntax> Parser::parsePackage() {
 
     size_t End = Lex.position();
 
-    return PackageSyntax{Start, End, Name, Version};
+    return PackageSyntax{Start, End, std::move(Name), std::move(Version)};
 
 }
 
@@ -2075,7 +2076,7 @@ llvm::Expected<InitializerSyntax> Parser::parseInitializer() {
 
     size_t End = Lex.position();
 
-    return InitializerSyntax{Start, End, Operands};
+    return InitializerSyntax{Start, End, std::move(Operands)};
 
 }
 
@@ -2122,7 +2123,7 @@ llvm::Expected<OperandSyntax> Parser::parseOperand() {
 
     size_t End = Lex.position();
 
-    return OperandSyntax{Start, End, Expression, Members};
+    return OperandSyntax{Start, End, std::move(Expression), std::move(Members)};
 
 }
 
@@ -2164,7 +2165,7 @@ llvm::Expected<MemberAccessSyntax> Parser::parseMemberAccess() {
 
     size_t End = Lex.position();
 
-    return MemberAccessSyntax{Start, End, Name};
+    return MemberAccessSyntax{Start, End, std::move(Name)};
 
 }
 
@@ -2204,6 +2205,14 @@ llvm::Expected<ExpressionSyntax> Parser::parseExpression() {
     }
     {
         auto Result = parseBlock();
+        if (Result)
+            return ExpressionSyntax{std::move(*Result)};
+        std::string ErrMsg = llvm::toString(Result.takeError());
+        if (ErrMsg != "different syntax" && FirstRealError.empty())
+            FirstRealError = std::move(ErrMsg);
+    }
+    {
+        auto Result = parseGuard();
         if (Result)
             return ExpressionSyntax{std::move(*Result)};
         std::string ErrMsg = llvm::toString(Result.takeError());
@@ -2357,7 +2366,7 @@ llvm::Expected<ObjectSyntax> Parser::parseObject() {
 
     size_t End = Lex.position();
 
-    return ObjectSyntax{Start, End, Components};
+    return ObjectSyntax{Start, End, std::move(Components)};
 
 }
 
@@ -2415,7 +2424,7 @@ llvm::Expected<ComponentSyntax> Parser::parseComponent() {
 
     size_t End = Lex.position();
 
-    return ComponentSyntax{Start, End, Operands, Attributes, Value};
+    return ComponentSyntax{Start, End, std::move(Operands), std::move(Attributes), std::move(Value)};
 
 }
 
@@ -2448,7 +2457,7 @@ llvm::Expected<ValueSyntax> Parser::parseValue() {
 
     size_t End = Lex.position();
 
-    return ValueSyntax{Start, End, Value, Attributes};
+    return ValueSyntax{Start, End, std::move(Value), std::move(Attributes)};
 
 }
 
@@ -2481,7 +2490,7 @@ llvm::Expected<VectorSyntax> Parser::parseVector() {
 
     size_t End = Lex.position();
 
-    return VectorSyntax{Start, End, Elements, Lifetime};
+    return VectorSyntax{Start, End, std::move(Elements), std::move(Lifetime)};
 
 }
 
@@ -2530,7 +2539,7 @@ llvm::Expected<ElementSyntax> Parser::parseElement() {
 
     size_t End = Lex.position();
 
-    return ElementSyntax{Start, End, Operation, Attributes};
+    return ElementSyntax{Start, End, std::move(Operation), std::move(Attributes)};
 
 }
 
@@ -2561,18 +2570,18 @@ llvm::Expected<IfSyntax> Parser::parseIf() {
     }
     auto Consequent = std::move(*ConsequentOrErr);
 
-    ElseSyntax* Alternative = nullptr;
-    {
-        auto ParseResult = parseElse();
-        if (ParseResult)
-            Alternative = new ElseSyntax(std::move(*ParseResult));
-        else
-            llvm::consumeError(ParseResult.takeError());
+    auto AlternativeOrErr = parseElse();
+    if (!AlternativeOrErr) {
+        std::string ErrMsg = llvm::toString(AlternativeOrErr.takeError());
+        if (ErrMsg != "different syntax")
+            return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        return invalid(Lex, Start, Lex.position(), "expected Else");
     }
+    auto Alternative = std::move(*AlternativeOrErr);
 
     size_t End = Lex.position();
 
-    return IfSyntax{Start, End, Condition, Consequent, Alternative};
+    return IfSyntax{Start, End, std::move(Condition), std::move(Consequent), std::move(Alternative)};
 
 }
 
@@ -2588,7 +2597,7 @@ llvm::Expected<ThenSyntax> Parser::parseThen() {
 
     size_t End = Lex.position();
 
-    return ThenSyntax{Start, End, Statement};
+    return ThenSyntax{Start, End, std::move(Statement)};
 
 }
 
@@ -2611,7 +2620,7 @@ llvm::Expected<ElseSyntax> Parser::parseElse() {
 
     size_t End = Lex.position();
 
-    return ElseSyntax{Start, End, Alternative};
+    return ElseSyntax{Start, End, std::move(Alternative)};
 
 }
 
@@ -2653,7 +2662,7 @@ llvm::Expected<MatchSyntax> Parser::parseMatch() {
 
     size_t End = Lex.position();
 
-    return MatchSyntax{Start, End, Scrutinee, Branches, Alternative};
+    return MatchSyntax{Start, End, std::move(Scrutinee), std::move(Branches), std::move(Alternative)};
 
 }
 
@@ -2700,7 +2709,7 @@ llvm::Expected<BranchSyntax> Parser::parseBranch() {
 
     size_t End = Lex.position();
 
-    return BranchSyntax{Start, End, Cases, Consequent};
+    return BranchSyntax{Start, End, std::move(Cases), std::move(Consequent)};
 
 }
 
@@ -2742,7 +2751,7 @@ llvm::Expected<CaseSyntax> Parser::parseCase() {
 
     size_t End = Lex.position();
 
-    return CaseSyntax{Start, End, Condition};
+    return CaseSyntax{Start, End, std::move(Condition)};
 
 }
 
@@ -2784,7 +2793,7 @@ llvm::Expected<WhileSyntax> Parser::parseWhile() {
 
     size_t End = Lex.position();
 
-    return WhileSyntax{Start, End, Condition, Name, Action};
+    return WhileSyntax{Start, End, std::move(Condition), std::move(Name), std::move(Action)};
 
 }
 
@@ -2829,7 +2838,7 @@ llvm::Expected<ChooseSyntax> Parser::parseChoose() {
 
     size_t End = Lex.position();
 
-    return ChooseSyntax{Start, End, Condition, Cases, Alternative};
+    return ChooseSyntax{Start, End, std::move(Condition), std::move(Cases), std::move(Alternative)};
 
 }
 
@@ -2874,7 +2883,7 @@ llvm::Expected<TrySyntax> Parser::parseTry() {
 
     size_t End = Lex.position();
 
-    return TrySyntax{Start, End, Condition, Cases, Dropper};
+    return TrySyntax{Start, End, std::move(Condition), std::move(Cases), std::move(Dropper)};
 
 }
 
@@ -2965,7 +2974,7 @@ llvm::Expected<WhenSyntax> Parser::parseWhen() {
 
     size_t End = Lex.position();
 
-    return WhenSyntax{Start, End, Name, Variant, Statement};
+    return WhenSyntax{Start, End, Name, std::move(Variant), std::move(Statement)};
 
 }
 
@@ -3041,6 +3050,14 @@ llvm::Expected<StatementSyntax> Parser::parseStatement() {
             FirstRealError = std::move(ErrMsg);
     }
     {
+        auto Result = parseGuard();
+        if (Result)
+            return StatementSyntax{std::move(*Result)};
+        std::string ErrMsg = llvm::toString(Result.takeError());
+        if (ErrMsg != "different syntax" && FirstRealError.empty())
+            FirstRealError = std::move(ErrMsg);
+    }
+    {
         auto Result = parseContinue();
         if (Result)
             return StatementSyntax{std::move(*Result)};
@@ -3078,6 +3095,39 @@ llvm::Expected<StatementSyntax> Parser::parseStatement() {
 
 }
 
+llvm::Expected<GuardSyntax> Parser::parseGuard() {
+    size_t Start = Lex.previousPosition();
+
+    if (!Lex.parseKeyword("guard"))
+        return different();
+
+    auto ConditionOrErr = parseOperandList();
+    if (!ConditionOrErr) {
+        std::string ErrMsg = llvm::toString(ConditionOrErr.takeError());
+        if (ErrMsg != "different syntax")
+            return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        return invalid(Lex, Start, Lex.position(), "expected Operand");
+    }
+    auto *Condition = *ConditionOrErr;
+
+    if (!Lex.parseColon())
+        return invalid(Lex, Start, Lex.position(), "expected colon or newline");
+
+    auto StatementOrErr = parseStatement();
+    if (!StatementOrErr) {
+        std::string ErrMsg = llvm::toString(StatementOrErr.takeError());
+        if (ErrMsg != "different syntax")
+            return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
+        return invalid(Lex, Start, Lex.position(), "expected Statement");
+    }
+    auto Statement = std::move(*StatementOrErr);
+
+    size_t End = Lex.position();
+
+    return GuardSyntax{Start, End, std::move(Condition), std::make_unique<StatementSyntax>(std::move(Statement))};
+
+}
+
 llvm::Expected<LetSyntax> Parser::parseLet() {
     size_t Start = Lex.previousPosition();
 
@@ -3095,7 +3145,7 @@ llvm::Expected<LetSyntax> Parser::parseLet() {
 
     size_t End = Lex.position();
 
-    return LetSyntax{Start, End, Binding};
+    return LetSyntax{Start, End, std::move(Binding)};
 
 }
 
@@ -3116,7 +3166,7 @@ llvm::Expected<VarSyntax> Parser::parseVar() {
 
     size_t End = Lex.position();
 
-    return VarSyntax{Start, End, Binding};
+    return VarSyntax{Start, End, std::move(Binding)};
 
 }
 
@@ -3137,7 +3187,7 @@ llvm::Expected<MutableSyntax> Parser::parseMutable() {
 
     size_t End = Lex.position();
 
-    return MutableSyntax{Start, End, Binding};
+    return MutableSyntax{Start, End, std::move(Binding)};
 
 }
 
@@ -3172,7 +3222,7 @@ llvm::Expected<BindingSyntax> Parser::parseBinding() {
 
     size_t End = Lex.position();
 
-    return BindingSyntax{Start, End, Name, Annotation, Operation};
+    return BindingSyntax{Start, End, Name, std::move(Annotation), std::move(Operation)};
 
 }
 
@@ -3193,7 +3243,7 @@ llvm::Expected<BindingAnnotationSyntax> Parser::parseBindingAnnotation() {
 
     size_t End = Lex.position();
 
-    return BindingAnnotationSyntax{Start, End, Spec};
+    return BindingAnnotationSyntax{Start, End, std::move(Spec)};
 
 }
 
@@ -3273,7 +3323,7 @@ llvm::Expected<ArraySyntax> Parser::parseArray() {
 
     size_t End = Lex.position();
 
-    return ArraySyntax{Start, End, Members};
+    return ArraySyntax{Start, End, std::move(Members)};
 
 }
 
@@ -3300,7 +3350,7 @@ llvm::Expected<StructureSyntax> Parser::parseStructure() {
 
     size_t End = Lex.position();
 
-    return StructureSyntax{Start, End, Parts};
+    return StructureSyntax{Start, End, std::move(Parts)};
 
 }
 
@@ -3366,7 +3416,7 @@ llvm::Expected<FieldSyntax> Parser::parseField() {
 
     size_t End = Lex.position();
 
-    return FieldSyntax{Start, End, Property};
+    return FieldSyntax{Start, End, std::move(Property)};
 
 }
 
@@ -3435,7 +3485,7 @@ llvm::Expected<PropertySyntax> Parser::parseProperty() {
 
     size_t End = Lex.position();
 
-    return PropertySyntax{Start, End, Name, Annotation, Initializer, Attributes};
+    return PropertySyntax{Start, End, Name, std::move(Annotation), std::move(Initializer), std::move(Attributes)};
 
 }
 
@@ -3456,7 +3506,7 @@ llvm::Expected<TypeAnnotationSyntax> Parser::parseTypeAnnotation() {
 
     size_t End = Lex.position();
 
-    return TypeAnnotationSyntax{Start, End, Type};
+    return TypeAnnotationSyntax{Start, End, std::move(Type)};
 
 }
 
@@ -3477,7 +3527,7 @@ llvm::Expected<ContinueSyntax> Parser::parseContinue() {
 
     size_t End = Lex.position();
 
-    return ContinueSyntax{Start, End, Name};
+    return ContinueSyntax{Start, End, std::move(Name)};
 
 }
 
@@ -3510,7 +3560,7 @@ llvm::Expected<BreakSyntax> Parser::parseBreak() {
 
     size_t End = Lex.position();
 
-    return BreakSyntax{Start, End, Name, Result};
+    return BreakSyntax{Start, End, std::move(Name), std::move(Result)};
 
 }
 
@@ -3555,7 +3605,7 @@ llvm::Expected<ReturnSyntax> Parser::parseReturn() {
 
     size_t End = Lex.position();
 
-    return ReturnSyntax{Start, End, Result};
+    return ReturnSyntax{Start, End, std::move(Result)};
 
 }
 
@@ -3579,7 +3629,7 @@ llvm::Expected<ThrowSyntax> Parser::parseThrow() {
 
     size_t End = Lex.position();
 
-    return ThrowSyntax{Start, End, Result};
+    return ThrowSyntax{Start, End, std::move(Result)};
 
 }
 
@@ -3612,7 +3662,7 @@ llvm::Expected<LambdaSyntax> Parser::parseLambda() {
 
     size_t End = Lex.position();
 
-    return LambdaSyntax{Start, End, Input, Block};
+    return LambdaSyntax{Start, End, std::move(Input), std::move(Block)};
 
 }
 
@@ -3675,7 +3725,7 @@ llvm::Expected<ForSyntax> Parser::parseFor() {
 
     size_t End = Lex.position();
 
-    return ForSyntax{Start, End, Variable, Annotation, Operation, Name, Action};
+    return ForSyntax{Start, End, Variable, std::move(Annotation), std::move(Operation), std::move(Name), std::move(Action)};
 
 }
 
@@ -3726,7 +3776,7 @@ llvm::Expected<RepeatSyntax> Parser::parseRepeat() {
 
     size_t End = Lex.position();
 
-    return RepeatSyntax{Start, End, Name, Action};
+    return RepeatSyntax{Start, End, std::move(Name), std::move(Action)};
 
 }
 
@@ -3793,7 +3843,7 @@ llvm::Expected<OperationSyntax> Parser::parseOperation() {
 
     size_t End = Lex.position();
 
-    return OperationSyntax{Start, End, Operands};
+    return OperationSyntax{Start, End, std::move(Operands)};
 
 }
 
@@ -3826,7 +3876,7 @@ llvm::Expected<SetSyntax> Parser::parseSet() {
 
     size_t End = Lex.position();
 
-    return SetSyntax{Start, End, Target, Source};
+    return SetSyntax{Start, End, std::move(Target), std::move(Source)};
 
 }
 
@@ -3865,7 +3915,7 @@ llvm::Expected<BlockSyntax> Parser::parseBlock() {
 
     size_t End = Lex.position();
 
-    return BlockSyntax{Start, End, Uses, Statements};
+    return BlockSyntax{Start, End, std::move(Uses), std::move(Statements)};
 
 }
 
@@ -3886,7 +3936,7 @@ llvm::Expected<SizeOfSyntax> Parser::parseSizeOf() {
 
     size_t End = Lex.position();
 
-    return SizeOfSyntax{Start, End, Type};
+    return SizeOfSyntax{Start, End, std::move(Type)};
 
 }
 
@@ -3907,7 +3957,7 @@ llvm::Expected<AlignOfSyntax> Parser::parseAlignOf() {
 
     size_t End = Lex.position();
 
-    return AlignOfSyntax{Start, End, Type};
+    return AlignOfSyntax{Start, End, std::move(Type)};
 
 }
 
@@ -3928,7 +3978,7 @@ llvm::Expected<IsSyntax> Parser::parseIs() {
 
     size_t End = Lex.position();
 
-    return IsSyntax{Start, End, Name};
+    return IsSyntax{Start, End, std::move(Name)};
 
 }
 
@@ -3949,7 +3999,7 @@ llvm::Expected<AsSyntax> Parser::parseAs() {
 
     size_t End = Lex.position();
 
-    return AsSyntax{Start, End, Type};
+    return AsSyntax{Start, End, std::move(Type)};
 
 }
 
@@ -4011,7 +4061,7 @@ llvm::Expected<TypeSyntax> Parser::parseType() {
 
     size_t End = Lex.position();
 
-    return TypeSyntax{Start, End, Name, Generics, Optional, Lifetime};
+    return TypeSyntax{Start, End, std::move(Name), std::move(Generics), std::move(Optional), std::move(Lifetime)};
 
 }
 
@@ -4037,7 +4087,7 @@ llvm::Expected<NameSyntax> Parser::parseName() {
 
     size_t End = Lex.position();
 
-    return NameSyntax{Start, End, Name, Extensions};
+    return NameSyntax{Start, End, Name, std::move(Extensions)};
 
 }
 

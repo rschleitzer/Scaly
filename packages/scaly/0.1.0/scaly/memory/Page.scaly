@@ -30,18 +30,18 @@ define Page
         let location_after_page this as size_t + PAGE_SIZE
         let capacity location_after_page - aligned_location
 
-        if capacity < size
+        guard capacity < size
         {
             ; We need to reserve the space for the page object
             let gross_size size + sizeof Page
-            if gross_size > PAGE_SIZE
+            guard gross_size > PAGE_SIZE
                 return allocate_oversized(gross_size)
 
-            if current_page <> null
+            guard current_page <> null
             {
                 let object current_page.allocate(size, align)
                 let page_of_allocated_object get(object)
-                if page_of_allocated_object <> current_page
+                guard page_of_allocated_object <> current_page
                     set current_page: page_of_allocated_object
 
                 return object
@@ -63,7 +63,7 @@ define Page
     {
         ; We allocate oversized objects directly.
         let address aligned_alloc(PAGE_SIZE,  (size + PAGE_SIZE - (1 as size_t)) & (~(PAGE_SIZE - (1 as size_t))))
-        if address = null
+        guard address = null
             exit(1)
 
         var page address as pointer[Page]
@@ -104,7 +104,7 @@ define Page
     procedure deallocate_extensions(this: Page)
     {
         ; Oversized pages cannot have extensions
-        if next_object = null
+        guard next_object = null
             return
 
         for exclusive_page in exclusive_pages
@@ -126,14 +126,14 @@ define Page
     {
         page.deallocate_extensions()
         free(page as pointer[void])
-        if exclusive_pages.remove(page) = false
+        guard exclusive_pages.remove(page) = false
             exit(2)
 
     }
 
     function save_watermark(this: Page) returns BlockWatermark
     {
-        if current_page <> null
+        guard current_page <> null
             return BlockWatermark(current_page, current_page.next_object, next_page, exclusive_pages.head)
 
         let this_page Page.get(next_object)

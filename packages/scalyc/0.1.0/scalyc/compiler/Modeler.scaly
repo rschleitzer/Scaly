@@ -209,7 +209,7 @@ function handle_literal(syntax: LiteralSyntax) returns Constant
 
 function handle_lifetime(syntax: ref[LifetimeSyntax]?) returns Lifetime
 {
-    if syntax = null
+    guard syntax = null
         return Lifetime.Unspecified(Unspecified())
 
     let lifetime_syntax (*syntax)
@@ -234,7 +234,7 @@ function handle_type#(syntax: TypeSyntax) returns ref[Type]?
 {
     ; Count extensions to determine path size
     var ext_count: size_t 0
-    if syntax.name.extensions <> null
+    guard syntax.name.extensions <> null
         set ext_count: (*syntax.name.extensions).length
 
     ; Create path with correct size
@@ -242,14 +242,14 @@ function handle_type#(syntax: TypeSyntax) returns ref[Type]?
     path.put(0, syntax.name.name)
 
     ; Add extensions
-    if syntax.name.extensions <> null
+    guard syntax.name.extensions <> null
     {
         let exts (*syntax.name.extensions)
         var i: size_t 0
         while i < exts.length
         {
             let ext_ptr exts.get(i)
-            if ext_ptr <> null
+            guard ext_ptr <> null
             {
                 let ext (*ext_ptr)
                 path.put(1 + i, ext.name)
@@ -259,10 +259,10 @@ function handle_type#(syntax: TypeSyntax) returns ref[Type]?
     }
 
     var generics: ref[Vector[Type]]? null
-    if syntax.generics <> null
+    guard syntax.generics <> null
     {
         let gen_args_syntax (*syntax.generics)
-        if gen_args_syntax.generics <> null
+        guard gen_args_syntax.generics <> null
         {
             let gen_syns (*gen_args_syntax.generics)
             var gen_types Vector[Type]#(gen_syns.length)
@@ -270,11 +270,11 @@ function handle_type#(syntax: TypeSyntax) returns ref[Type]?
             while gi < gen_syns.length
             {
                 let ga_ptr gen_syns.get(gi)
-                if ga_ptr <> null
+                guard ga_ptr <> null
                 {
                     let ga (*ga_ptr)
                     let inner_type handle_type#(ga.type)
-                    if inner_type <> null
+                    guard inner_type <> null
                         gen_types.put(gi, *inner_type)
 
                 }
@@ -304,18 +304,18 @@ function handle_binding_annotation#(annotation: BindingAnnotationSyntax) returns
 function handle_object#(syntax: ObjectSyntax) returns Tuple
 {
     var count: size_t 0
-    if syntax.components <> null
+    guard syntax.components <> null
         set count: (*syntax.components).length
 
     var components Vector[Component]#(count)
-    if syntax.components <> null
+    guard syntax.components <> null
     {
         let comps (*syntax.components)
         var i: size_t 0
         while i < comps.length
         {
             let comp_ptr comps.get(i)
-            if comp_ptr <> null
+            guard comp_ptr <> null
             {
                 let comp_syntax (*comp_ptr)
                 let component handle_component#(comp_syntax)
@@ -332,19 +332,19 @@ function handle_component#(syntax: ComponentSyntax) returns Component
     var name: ref[String]? null
     var operands handle_operands#(syntax.operands)
 
-    if syntax.value <> null
+    guard syntax.value <> null
     {
         let val_syntax (*syntax.value)
         set operands: handle_operands#(val_syntax.value)
 
         ; Extract name from operands if present
-        if syntax.operands <> null
+        guard syntax.operands <> null
         {
             let name_ops (*syntax.operands)
-            if name_ops.length > 0
+            guard name_ops.length > 0
             {
                 let name_op_ptr name_ops.get(0)
-                if name_op_ptr <> null
+                guard name_op_ptr <> null
                 {
                     let name_op (*name_op_ptr)
                     choose name_op.expression
@@ -371,18 +371,18 @@ function handle_component#(syntax: ComponentSyntax) returns Component
 function handle_vector#(syntax: VectorSyntax) returns Matrix
 {
     var count: size_t 0
-    if syntax.elements <> null
+    guard syntax.elements <> null
         set count: (*syntax.elements).length
 
     var operations Vector[Vector[Operand]]#(count)
-    if syntax.elements <> null
+    guard syntax.elements <> null
     {
         let elems (*syntax.elements)
         var i: size_t 0
         while i < elems.length
         {
             let elem_ptr elems.get(i)
-            if elem_ptr <> null
+            guard elem_ptr <> null
             {
                 let element (*elem_ptr)
                 let ops handle_operands#(element.operation)
@@ -418,20 +418,20 @@ function handle_expression#(syntax: ExpressionSyntax) returns Expression
             ; Convert NameSyntax to Type expression
             ; Count extensions to determine path size
             var ext_count: size_t 0
-            if name_syntax.extensions <> null
+            guard name_syntax.extensions <> null
                 set ext_count: (*name_syntax.extensions).length
 
             var path Vector[String]#(1 + ext_count)
             path.put(0, name_syntax.name)
 
-            if name_syntax.extensions <> null
+            guard name_syntax.extensions <> null
             {
                 let exts (*name_syntax.extensions)
                 var i: size_t 0
                 while i < exts.length
                 {
                     let ext_ptr exts.get(i)
-                    if ext_ptr <> null
+                    guard ext_ptr <> null
                     {
                         let ext (*ext_ptr)
                         path.put(1 + i, ext.name)
@@ -498,18 +498,18 @@ function handle_match#(syntax: MatchSyntax) returns Match
     let scrutinee handle_operands#(syntax.scrutinee)
 
     var branch_count: size_t 0
-    if syntax.branches <> null
+    guard syntax.branches <> null
         set branch_count: (*syntax.branches).length
 
     var branches Vector[Branch]#(branch_count)
-    if syntax.branches <> null
+    guard syntax.branches <> null
     {
         let brs (*syntax.branches)
         var i: size_t 0
         while i < brs.length
         {
             let br_ptr brs.get(i)
-            if br_ptr <> null
+            guard br_ptr <> null
             {
                 let branch_syntax (*br_ptr)
                 let branch handle_branch#(branch_syntax)
@@ -520,7 +520,7 @@ function handle_match#(syntax: MatchSyntax) returns Match
     }
 
     var alternative: ref[Statement]? null
-    if syntax.alternative <> null
+    guard syntax.alternative <> null
     {
         let else_syntax (*syntax.alternative)
         let alt_stmt handle_command#(else_syntax.alternative)
@@ -538,18 +538,18 @@ function handle_match#(syntax: MatchSyntax) returns Match
 function handle_branch#(syntax: BranchSyntax) returns Branch
 {
     var case_count: size_t 0
-    if syntax.cases <> null
+    guard syntax.cases <> null
         set case_count: (*syntax.cases).length
 
     var cases Vector[Case]#(case_count)
-    if syntax.cases <> null
+    guard syntax.cases <> null
     {
         let cs (*syntax.cases)
         var i: size_t 0
         while i < cs.length
         {
             let case_ptr cs.get(i)
-            if case_ptr <> null
+            guard case_ptr <> null
             {
                 let case_syntax (*case_ptr)
                 let case_ handle_case#(case_syntax)
@@ -574,18 +574,18 @@ function handle_choose#(syntax: ChooseSyntax) returns Choose
     let condition handle_operands#(syntax.condition)
 
     var case_count: size_t 0
-    if syntax.cases <> null
+    guard syntax.cases <> null
         set case_count: (*syntax.cases).length
 
     var cases Vector[When]#(case_count)
-    if syntax.cases <> null
+    guard syntax.cases <> null
     {
         let cs (*syntax.cases)
         var i: size_t 0
         while i < cs.length
         {
             let when_ptr cs.get(i)
-            if when_ptr <> null
+            guard when_ptr <> null
             {
                 let when_syntax (*when_ptr)
                 let when_ handle_when#(when_syntax)
@@ -596,7 +596,7 @@ function handle_choose#(syntax: ChooseSyntax) returns Choose
     }
 
     var alternative: ref[Statement]? null
-    if syntax.alternative <> null
+    guard syntax.alternative <> null
     {
         let else_syntax (*syntax.alternative)
         let alt_stmt handle_command#(else_syntax.alternative)
@@ -695,18 +695,18 @@ function handle_try#(syntax: TrySyntax) returns Try
     let cond handle_condition#(syntax.condition)
 
     var catch_count: size_t 0
-    if syntax.cases <> null
+    guard syntax.cases <> null
         set catch_count: (*syntax.cases).length
 
     var catches Vector[When]#(catch_count)
-    if syntax.cases <> null
+    guard syntax.cases <> null
     {
         let cs (*syntax.cases)
         var i: size_t 0
         while i < cs.length
         {
             let when_ptr cs.get(i)
-            if when_ptr <> null
+            guard when_ptr <> null
             {
                 let when_syntax (*when_ptr)
                 let when_ handle_when#(when_syntax)
@@ -717,7 +717,7 @@ function handle_try#(syntax: TrySyntax) returns Try
     }
 
     var dropper: ref[Statement]? null
-    if syntax.dropper <> null
+    guard syntax.dropper <> null
     {
         let else_syntax (*syntax.dropper)
         let drop_stmt handle_command#(else_syntax.alternative)
@@ -746,20 +746,20 @@ function handle_is#(syntax: IsSyntax) returns Is
 {
     ; Count extensions
     var ext_count: size_t 0
-    if syntax.name.extensions <> null
+    guard syntax.name.extensions <> null
         set ext_count: (*syntax.name.extensions).length
 
     var name Vector[String]#(1 + ext_count)
     name.put(0, syntax.name.name)
 
-    if syntax.name.extensions <> null
+    guard syntax.name.extensions <> null
     {
         let exts (*syntax.name.extensions)
         var i: size_t 0
         while i < exts.length
         {
             let ext_ptr exts.get(i)
-            if ext_ptr <> null
+            guard ext_ptr <> null
             {
                 let ext (*ext_ptr)
                 name.put(1 + i, ext.name)
@@ -779,7 +779,7 @@ function handle_operand#(syntax: OperandSyntax) returns Operand
     let expr handle_expression#(syntax.expression)
 
     var member_access: ref[Vector[String]]? null
-    if syntax.members <> null
+    guard syntax.members <> null
     {
         let members (*syntax.members)
         var path Vector[String]#(members.length)
@@ -787,7 +787,7 @@ function handle_operand#(syntax: OperandSyntax) returns Operand
         while i < members.length
         {
             let member_ptr members.get(i)
-            if member_ptr <> null
+            guard member_ptr <> null
             {
                 let member (*member_ptr)
                 path.put(i, member.name.name)
@@ -802,7 +802,7 @@ function handle_operand#(syntax: OperandSyntax) returns Operand
 
 function handle_operands#(syntax: ref[Vector[OperandSyntax]]?) returns Vector[Operand]
 {
-    if syntax = null
+    guard syntax = null
         return Vector[Operand]#(0)
 
     let syn (*syntax)
@@ -811,7 +811,7 @@ function handle_operands#(syntax: ref[Vector[OperandSyntax]]?) returns Vector[Op
     while i < syn.length
     {
         let op_ptr syn.get(i)
-        if op_ptr <> null
+        guard op_ptr <> null
         {
             let operand_syntax (*op_ptr)
             let operand handle_operand#(operand_syntax)
@@ -832,7 +832,7 @@ function handle_operation#(syntax: OperationSyntax) returns Vector[Operand]
 function handle_binding_item#(syntax: BindingSyntax) returns Item
 {
     var item_type: ref[Type]? null
-    if syntax.annotation <> null
+    guard syntax.annotation <> null
     {
         let annotation (*syntax.annotation)
         set item_type: handle_binding_annotation#(annotation)
@@ -920,7 +920,7 @@ function handle_statement#(syntax: StatementSyntax) returns Statement
 
 function handle_statements#(syntax: ref[Vector[StatementSyntax]]?) returns Vector[Statement]
 {
-    if syntax = null
+    guard syntax = null
         return Vector[Statement]#(0)
 
     let stmts (*syntax)
@@ -929,7 +929,7 @@ function handle_statements#(syntax: ref[Vector[StatementSyntax]]?) returns Vecto
     while i < stmts.length
     {
         let stmt_ptr stmts.get(i)
-        if stmt_ptr <> null
+        guard stmt_ptr <> null
         {
             let stmt_syntax (*stmt_ptr)
             let stmt handle_statement#(stmt_syntax)
@@ -947,7 +947,7 @@ function handle_statements#(syntax: ref[Vector[StatementSyntax]]?) returns Vecto
 function handle_item#(is_private: bool, syntax: ItemSyntax) returns Item
 {
     var item_type: ref[Type]? null
-    if syntax.annotation <> null
+    guard syntax.annotation <> null
     {
         let annotation (*syntax.annotation)
         set item_type: handle_type#(annotation.type)
@@ -967,7 +967,7 @@ function handle_property#(is_private: bool, syntax: PropertySyntax) returns Prop
     let prop_type handle_type#(syntax.annotation.type)
 
     var initializer: ref[Vector[Operand]]? null
-    if syntax.initializer <> null
+    guard syntax.initializer <> null
     {
         let init_syntax (*syntax.initializer)
         let ops handle_operands#(init_syntax.operands)
@@ -1022,20 +1022,20 @@ function handle_use#(syntax: UseSyntax) returns Use
 {
     ; Count extensions
     var ext_count: size_t 0
-    if syntax.name.extensions <> null
+    guard syntax.name.extensions <> null
         set ext_count: (*syntax.name.extensions).length
 
     var path Vector[String]#(1 + ext_count)
     path.put(0, syntax.name.name)
 
-    if syntax.name.extensions <> null
+    guard syntax.name.extensions <> null
     {
         let exts (*syntax.name.extensions)
         var i: size_t 0
         while i < exts.length
         {
             let ext_ptr exts.get(i)
-            if ext_ptr <> null
+            guard ext_ptr <> null
             {
                 let ext (*ext_ptr)
                 path.put(1 + i, ext.name)
@@ -1069,7 +1069,7 @@ function handle_parameter_set#(syntax: ParameterSetSyntax) returns Vector[Item]
     choose syntax
         when params: ParametersSyntax
         {
-            if params.items = null
+            guard params.items = null
                 return Vector[Item]#(0)
 
             let items (*params.items)
@@ -1078,7 +1078,7 @@ function handle_parameter_set#(syntax: ParameterSetSyntax) returns Vector[Item]
             while i < items.length
             {
                 let item_ptr items.get(i)
-                if item_ptr <> null
+                guard item_ptr <> null
                 {
                     let item_syn (*item_ptr)
                     let item handle_item#(false, item_syn)
@@ -1134,21 +1134,21 @@ function build_function#(start: size_t, end_pos: size_t, syntax: TargetSyntax, i
         when named: NamedSyntax
         {
             var input Vector[Item]#(0)
-            if named.routine.parameters <> null
+            guard named.routine.parameters <> null
             {
                 let params (*named.routine.parameters)
                 set input: handle_parameter_set#(params)
             }
 
             var return_type: ref[Type]? null
-            if named.routine.returns_ <> null
+            guard named.routine.returns_ <> null
             {
                 let returns_syntax (*named.routine.returns_)
                 set return_type: handle_type#(returns_syntax.type)
             }
 
             var throws_type: ref[Type]? null
-            if named.routine.throws_ <> null
+            guard named.routine.throws_ <> null
             {
                 let throws_syntax (*named.routine.throws_)
                 set throws_type: handle_type#(throws_syntax.type)
@@ -1193,21 +1193,21 @@ function handle_operator#(syntax: OperatorSyntax, is_private: bool) returns Oper
         when named: NamedSyntax
         {
             var input Vector[Item]#(0)
-            if named.routine.parameters <> null
+            guard named.routine.parameters <> null
             {
                 let params (*named.routine.parameters)
                 set input: handle_parameter_set#(params)
             }
 
             var return_type: ref[Type]? null
-            if named.routine.returns_ <> null
+            guard named.routine.returns_ <> null
             {
                 let returns_syntax (*named.routine.returns_)
                 set return_type: handle_type#(returns_syntax.type)
             }
 
             var throws_type: ref[Type]? null
-            if named.routine.throws_ <> null
+            guard named.routine.throws_ <> null
             {
                 let throws_syntax (*named.routine.throws_)
                 set throws_type: handle_type#(throws_syntax.type)
@@ -1229,21 +1229,21 @@ function handle_operator#(syntax: OperatorSyntax, is_private: bool) returns Oper
         {
             ; Handle index operator []
             var input Vector[Item]#(0)
-            if routine.parameters <> null
+            guard routine.parameters <> null
             {
                 let params (*routine.parameters)
                 set input: handle_parameter_set#(params)
             }
 
             var return_type: ref[Type]? null
-            if routine.returns_ <> null
+            guard routine.returns_ <> null
             {
                 let returns_syntax (*routine.returns_)
                 set return_type: handle_type#(returns_syntax.type)
             }
 
             var throws_type: ref[Type]? null
-            if routine.throws_ <> null
+            guard routine.throws_ <> null
             {
                 let throws_syntax (*routine.throws_)
                 set throws_type: handle_type#(throws_syntax.type)
@@ -1280,7 +1280,7 @@ function handle_operator#(syntax: OperatorSyntax, is_private: bool) returns Oper
 function handle_initializer#(syntax: InitSyntax, is_private: bool) returns Initializer
 {
     var input Vector[Item]#(0)
-    if syntax.parameters <> null
+    guard syntax.parameters <> null
     {
         let params (*syntax.parameters)
         set input: handle_parameter_set#(params)
@@ -1315,7 +1315,7 @@ function handle_deinitializer#(syntax: DeInitSyntax) returns ref[DeInitializer]?
 function handle_variant#(syntax: VariantSyntax) returns Variant
 {
     var variant_type: ref[Type]? null
-    if syntax.annotation <> null
+    guard syntax.annotation <> null
     {
         let annotation (*syntax.annotation)
         set variant_type: handle_type#(annotation.type)
@@ -1339,18 +1339,18 @@ function handle_class#(name: String, path: String, syntax: ClassSyntax, is_priva
 
     ; Handle parts (fields/properties)
     var property_count: size_t 0
-    if syntax.structure.parts <> null
+    guard syntax.structure.parts <> null
         set property_count: (*syntax.structure.parts).length
 
     var properties Vector[Property]#(property_count)
-    if syntax.structure.parts <> null
+    guard syntax.structure.parts <> null
     {
         let parts (*syntax.structure.parts)
         var i: size_t 0
         while i < parts.length
         {
             let part_ptr parts.get(i)
-            if part_ptr <> null
+            guard part_ptr <> null
             {
                 let part (*part_ptr)
                 choose part
@@ -1379,12 +1379,12 @@ function handle_class#(name: String, path: String, syntax: ClassSyntax, is_priva
     var members Vector[Member]#(0)
     var deinitializer: ref[DeInitializer]? null
 
-    if syntax.body <> null
+    guard syntax.body <> null
     {
         let body (*syntax.body)
 
         ; Handle uses
-        if body.uses <> null
+        guard body.uses <> null
         {
             let use_syns (*body.uses)
             set uses: Vector[Use]#(use_syns.length)
@@ -1392,7 +1392,7 @@ function handle_class#(name: String, path: String, syntax: ClassSyntax, is_priva
             while i < use_syns.length
             {
                 let use_ptr use_syns.get(i)
-                if use_ptr <> null
+                guard use_ptr <> null
                 {
                     let use_syntax (*use_ptr)
                     let use_ handle_use#(use_syntax)
@@ -1403,7 +1403,7 @@ function handle_class#(name: String, path: String, syntax: ClassSyntax, is_priva
         }
 
         ; Handle members (inits, deinit, and other members are all in body.members)
-        if body.members <> null
+        guard body.members <> null
         {
             let member_syns (*body.members)
             let total member_syns.length
@@ -1415,7 +1415,7 @@ function handle_class#(name: String, path: String, syntax: ClassSyntax, is_priva
             while i < total
             {
                 let member_ptr member_syns.get(i)
-                if member_ptr <> null
+                guard member_ptr <> null
                 {
                     let member_syntax (*member_ptr)
                     choose member_syntax
@@ -1498,7 +1498,7 @@ function handle_namespace#(name: String, path: String, syntax: NamespaceSyntax, 
     var modules Vector[Module]#(0)
     var members Vector[Member]#(0)
 
-    if syntax.declarations <> null
+    guard syntax.declarations <> null
     {
         let decl_syns (*syntax.declarations)
         set members: Vector[Member]#(decl_syns.length)
@@ -1506,7 +1506,7 @@ function handle_namespace#(name: String, path: String, syntax: NamespaceSyntax, 
         while i < decl_syns.length
         {
             let decl_ptr decl_syns.get(i)
-            if decl_ptr <> null
+            guard decl_ptr <> null
             {
                 let decl_syntax (*decl_ptr)
                 let member handle_declaration#(path, decl_syntax, &symbols_builder)
@@ -1595,18 +1595,18 @@ function handle_union#(name: String, path: String, syntax: UnionSyntax, is_priva
 
     ; Handle variants
     var variant_count: size_t 0
-    if syntax.variants <> null
+    guard syntax.variants <> null
         set variant_count: (*syntax.variants).length
 
     var variants Vector[Variant]#(variant_count)
-    if syntax.variants <> null
+    guard syntax.variants <> null
     {
         let var_syns (*syntax.variants)
         var i: size_t 0
         while i < var_syns.length
         {
             let var_ptr var_syns.get(i)
-            if var_ptr <> null
+            guard var_ptr <> null
             {
                 let var_syntax (*var_ptr)
                 let variant handle_variant#(var_syntax)
@@ -1619,10 +1619,10 @@ function handle_union#(name: String, path: String, syntax: UnionSyntax, is_priva
 
     ; Handle body
     var members Vector[Member]#(0)
-    if syntax.body <> null
+    guard syntax.body <> null
     {
         let body (*syntax.body)
-        if body.members <> null
+        guard body.members <> null
         {
             let member_syns (*body.members)
             set members: Vector[Member]#(member_syns.length)
@@ -1630,7 +1630,7 @@ function handle_union#(name: String, path: String, syntax: UnionSyntax, is_priva
             while i < member_syns.length
             {
                 let member_ptr member_syns.get(i)
-                if member_ptr <> null
+                guard member_ptr <> null
                 {
                     let member_syntax (*member_ptr)
                     let member handle_constituent#(path, member_syntax, &symbols_builder)
@@ -1663,10 +1663,10 @@ function handle_definition#(path: String, syntax: DefinitionSyntax, is_private: 
 
     ; Handle generic parameters
     var parameters Vector[GenericParameter]#(0)
-    if syntax.parameters <> null
+    guard syntax.parameters <> null
     {
         let params_syntax (*syntax.parameters)
-        if params_syntax.parameters <> null
+        guard params_syntax.parameters <> null
         {
             let param_vec (*params_syntax.parameters)
             set parameters: Vector[GenericParameter]#(param_vec.length)
@@ -1674,7 +1674,7 @@ function handle_definition#(path: String, syntax: DefinitionSyntax, is_private: 
             while i < param_vec.length
             {
                 let param_ptr param_vec.get(i)
-                if param_ptr <> null
+                guard param_ptr <> null
                 {
                     let param_syntax (*param_ptr)
                     let param handle_generic_parameter#(param_syntax)
@@ -1687,7 +1687,7 @@ function handle_definition#(path: String, syntax: DefinitionSyntax, is_private: 
 
     ; Handle attributes
     var attributes Vector[Attribute]#(0)
-    if syntax.attributes <> null
+    guard syntax.attributes <> null
     {
         let attr_vec (*syntax.attributes)
         set attributes: Vector[Attribute]#(attr_vec.length)
@@ -1695,7 +1695,7 @@ function handle_definition#(path: String, syntax: DefinitionSyntax, is_private: 
         while i < attr_vec.length
         {
             let attr_ptr attr_vec.get(i)
-            if attr_ptr <> null
+            guard attr_ptr <> null
             {
                 let attr_syntax (*attr_ptr)
                 let attr handle_attribute#(attr_syntax)
@@ -1758,7 +1758,7 @@ function build_module#(path: String, file_name: String, name: String, syntax: Fi
     var uses Vector[Use]#(0)
     var modules Vector[Module]#(0)
     var members Vector[Member]#(0)
-    if syntax.declarations <> null
+    guard syntax.declarations <> null
     {
         let decl_syns (*syntax.declarations)
         let total decl_syns.length
@@ -1770,7 +1770,7 @@ function build_module#(path: String, file_name: String, name: String, syntax: Fi
         while i < total
         {
             let decl_ptr decl_syns.get(i)
-            if decl_ptr <> null
+            guard decl_ptr <> null
             {
                 let decl_syntax (*decl_ptr)
                 choose decl_syntax
@@ -1841,22 +1841,22 @@ function test() returns int
         when syntax: Success
         {
             let program build_program#(String$("t1.scaly"), String$("t1"), syntax)
-            if program.statements.length <> 1
+            guard program.statements.length <> 1
                 return 201
 
             let stmt_ptr program.statements.get(0)
-            if stmt_ptr = null
+            guard stmt_ptr = null
                 return 202
 
             let stmt (*stmt_ptr)
             choose stmt
                 when action: Action
                 {
-                    if action.source.length <> 1
+                    guard action.source.length <> 1
                         return 203
 
                     let op_ptr action.source.get(0)
-                    if op_ptr = null
+                    guard op_ptr = null
                         return 204
 
                     let op (*op_ptr)
@@ -1865,7 +1865,7 @@ function test() returns int
                             choose const
                                 when b: Boolean
                                 {
-                                    if b.value = false
+                                    guard b.value = false
                                         return 205
 
                                 }
@@ -1886,11 +1886,11 @@ function test() returns int
         when syntax: Success
         {
             let program build_program#(String$("t2.scaly"), String$("t2"), syntax)
-            if program.statements.length <> 1
+            guard program.statements.length <> 1
                 return 211
 
             let stmt_ptr program.statements.get(0)
-            if stmt_ptr = null
+            guard stmt_ptr = null
                 return 212
 
             let stmt (*stmt_ptr)
@@ -1898,7 +1898,7 @@ function test() returns int
                 when action: Action
                 {
                     let op_ptr action.source.get(0)
-                    if op_ptr = null
+                    guard op_ptr = null
                         return 213
 
                     let op (*op_ptr)
@@ -1923,11 +1923,11 @@ function test() returns int
         when syntax: Success
         {
             let program build_program#(String$("t3.scaly"), String$("t3"), syntax)
-            if program.statements.length <> 1
+            guard program.statements.length <> 1
                 return 221
 
             let stmt_ptr program.statements.get(0)
-            if stmt_ptr = null
+            guard stmt_ptr = null
                 return 222
 
             let stmt (*stmt_ptr)
@@ -1935,7 +1935,7 @@ function test() returns int
                 when action: Action
                 {
                     let op_ptr action.source.get(0)
-                    if op_ptr = null
+                    guard op_ptr = null
                         return 223
 
                     let op (*op_ptr)
@@ -1960,24 +1960,24 @@ function test() returns int
         when syntax: Success
         {
             let program build_program#(String$("t4.scaly"), String$("t4"), syntax)
-            if program.statements.length <> 1
+            guard program.statements.length <> 1
                 return 231
 
             let stmt_ptr program.statements.get(0)
-            if stmt_ptr = null
+            guard stmt_ptr = null
                 return 232
 
             let stmt (*stmt_ptr)
             choose stmt
                 when binding: Binding
                 {
-                    if binding.binding_type.equals(String$("const")) = false
+                    guard binding.binding_type.equals(String$("const")) = false
                         return 233
 
-                    if binding.item.name = null
+                    guard binding.item.name = null
                         return 234
 
-                    if (*binding.item.name).equals(String$("x")) = false
+                    guard (*binding.item.name).equals(String$("x")) = false
                         return 235
 
                 }
@@ -1993,38 +1993,38 @@ function test() returns int
         when syntax: Success
         {
             let program build_program#(String$("t5.scaly"), String$("t5"), syntax)
-            if program.statements.length <> 1
+            guard program.statements.length <> 1
                 return 241
 
             let stmt_ptr program.statements.get(0)
-            if stmt_ptr = null
+            guard stmt_ptr = null
                 return 242
 
             let stmt (*stmt_ptr)
             choose stmt
                 when binding: Binding
                 {
-                    if binding.binding_type.equals(String$("var")) = false
+                    guard binding.binding_type.equals(String$("var")) = false
                         return 243
 
-                    if binding.item.name = null
+                    guard binding.item.name = null
                         return 244
 
-                    if (*binding.item.name).equals(String$("y")) = false
+                    guard (*binding.item.name).equals(String$("y")) = false
                         return 245
 
-                    if binding.item.type = null
+                    guard binding.item.type = null
                         return 246
 
                     let item_type (*binding.item.type)
-                    if item_type.name.length <> 1
+                    guard item_type.name.length <> 1
                         return 247
 
                     let type_name_ptr item_type.name.get(0)
-                    if type_name_ptr = null
+                    guard type_name_ptr = null
                         return 248
 
-                    if (*type_name_ptr).equals(String$("int")) = false
+                    guard (*type_name_ptr).equals(String$("int")) = false
                         return 249
 
                 }
@@ -2040,11 +2040,11 @@ function test() returns int
         when syntax: Success
         {
             let program build_program#(String$("t6.scaly"), String$("t6"), syntax)
-            if program.statements.length <> 1
+            guard program.statements.length <> 1
                 return 251
 
             let stmt_ptr program.statements.get(0)
-            if stmt_ptr = null
+            guard stmt_ptr = null
                 return 252
 
             let stmt (*stmt_ptr)
@@ -2052,21 +2052,21 @@ function test() returns int
                 when action: Action
                 {
                     let op_ptr action.source.get(0)
-                    if op_ptr = null
+                    guard op_ptr = null
                         return 253
 
                     let op (*op_ptr)
                     choose op.expression
                         when type_expr: Type
                         {
-                            if type_expr.name.length <> 1
+                            guard type_expr.name.length <> 1
                                 return 254
 
                             let name_ptr type_expr.name.get(0)
-                            if name_ptr = null
+                            guard name_ptr = null
                                 return 255
 
-                            if (*name_ptr).equals(String$("foo")) = false
+                            guard (*name_ptr).equals(String$("foo")) = false
                                 return 256
 
                         }
@@ -2085,11 +2085,11 @@ function test() returns int
         when syntax: Success
         {
             let program build_program#(String$("t7.scaly"), String$("t7"), syntax)
-            if program.statements.length <> 1
+            guard program.statements.length <> 1
                 return 261
 
             let stmt_ptr program.statements.get(0)
-            if stmt_ptr = null
+            guard stmt_ptr = null
                 return 262
 
             let stmt (*stmt_ptr)
@@ -2097,7 +2097,7 @@ function test() returns int
                 when action: Action
                 {
                     let op_ptr action.source.get(0)
-                    if op_ptr = null
+                    guard op_ptr = null
                         return 263
 
                     let op (*op_ptr)
@@ -2118,21 +2118,21 @@ function test() returns int
         when syntax: Success
         {
             let program build_program#(String$("t8.scaly"), String$("t8"), syntax)
-            if program.module_.members.length <> 1
+            guard program.module_.members.length <> 1
                 return 271
 
             let member_ptr program.module_.members.get(0)
-            if member_ptr = null
+            guard member_ptr = null
                 return 272
 
             let member (*member_ptr)
             choose member
                 when fn: Function
                 {
-                    if fn.name.equals(String$("answer")) = false
+                    guard fn.name.equals(String$("answer")) = false
                         return 273
 
-                    if fn.pure = false
+                    guard fn.pure = false
                         return 274
 
                 }
@@ -2148,21 +2148,21 @@ function test() returns int
         when syntax: Success
         {
             let program build_program#(String$("t9.scaly"), String$("t9"), syntax)
-            if program.module_.members.length <> 1
+            guard program.module_.members.length <> 1
                 return 281
 
             let member_ptr program.module_.members.get(0)
-            if member_ptr = null
+            guard member_ptr = null
                 return 282
 
             let member (*member_ptr)
             choose member
                 when fn: Function
                 {
-                    if fn.name.equals(String$("mutate")) = false
+                    guard fn.name.equals(String$("mutate")) = false
                         return 283
 
-                    if fn.pure = true
+                    guard fn.pure = true
                         return 284
 
                 }
@@ -2178,24 +2178,24 @@ function test() returns int
         when syntax: Success
         {
             let program build_program#(String$("t10.scaly"), String$("t10"), syntax)
-            if program.module_.members.length <> 1
+            guard program.module_.members.length <> 1
                 return 291
 
             let member_ptr program.module_.members.get(0)
-            if member_ptr = null
+            guard member_ptr = null
                 return 292
 
             let member (*member_ptr)
             choose member
                 when concept: Concept
                 {
-                    if concept.name.equals(String$("Point")) = false
+                    guard concept.name.equals(String$("Point")) = false
                         return 293
 
                     choose concept.definition
                         when struct: Structure
                         {
-                            if struct.properties.length <> 2
+                            guard struct.properties.length <> 2
                                 return 294
 
                         }
@@ -2214,24 +2214,24 @@ function test() returns int
         when syntax: Success
         {
             let program build_program#(String$("t11.scaly"), String$("t11"), syntax)
-            if program.module_.members.length <> 1
+            guard program.module_.members.length <> 1
                 return 298
 
             let member_ptr program.module_.members.get(0)
-            if member_ptr = null
+            guard member_ptr = null
                 return 299
 
             let member (*member_ptr)
             choose member
                 when concept: Concept
                 {
-                    if concept.name.equals(String$("Option")) = false
+                    guard concept.name.equals(String$("Option")) = false
                         return 300
 
                     choose concept.definition
                         when union_: Union
                         {
-                            if union_.variants.length <> 2
+                            guard union_.variants.length <> 2
                                 return 301
 
                         }
