@@ -829,6 +829,7 @@ static bool isIntegerType(llvm::StringRef Normalized) {
 
 bool Planner::needsImplicitReturnPage(const Function &Func) {
     if (Func.PageParameter) return false;  // already explicit
+    if (std::holds_alternative<ExternImpl>(Func.Impl)) return false;  // extern C functions don't use RBMM
     if (!Func.Returns) return false;
     std::string RetName;
     for (const auto &Part : Func.Returns->Name) {

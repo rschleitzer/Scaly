@@ -529,14 +529,13 @@ llvm::Expected<std::unique_ptr<llvm::Module>> Emitter::emit(const Plan &P,
         }
     }
 
-    // Generate stub bodies for C++ declarations that weren't emitted.
-    // This handles functions that the Planner skipped (e.g., cli.run, cli.test_pipeline)
-    // because their bodies reference unresolvable types, but which are still referenced
-    // by other emitted functions. Without stubs, the linker fails on undefined symbols.
+    // Generate stub bodies for declarations that weren't emitted.
+    // Covers: (1) Scaly functions (_Z...) skipped by the Planner,
+    //         (2) LLVM C API functions (LLVM...) not linked in AOT test context.
     for (auto &F : *Module) {
         if (F.isDeclaration() && !F.isIntrinsic()) {
             llvm::StringRef Name = F.getName();
-            if (!Name.starts_with("_Z"))
+            if (!Name.starts_with("_Z") && !Name.starts_with("LLVM"))
                 continue;
 
             auto *Entry = llvm::BasicBlock::Create(*Context, "stub", &F);
