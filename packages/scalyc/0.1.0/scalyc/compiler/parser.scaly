@@ -3677,7 +3677,7 @@ define Parser
 
         let end lexer.position
 
-        GuardSyntax(start, end, condition, statement)
+        GuardSyntax(start, end, condition, StatementSyntax#(statement))
     }
 
     function parse_let#(rp, this: Parser) returns LetSyntax throws ParserError

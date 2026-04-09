@@ -343,7 +343,9 @@ define Parser
                     ", "
                     (if (or (equal? (type content) "keyword") (equal? (type content) "punctuation"))
                         "true"
-                        (property content))
+                        (if (and (equal? (type content) "syntax") (not (multiple? content)) (not (optional? content)) (is-recursive-ref? syntax content))
+                            ($ (link content)"Syntax#("(property content)")")
+                            (property content)))
                 )))
                 ")
 "

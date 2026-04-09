@@ -312,7 +312,7 @@ define GuardSyntax
     start: size_t
     end: size_t
     condition: ref[Vector[OperandSyntax]]?
-    statement: StatementSyntax
+    statement: pointer[StatementSyntax]
 )
 
 define StatementSyntax union (
