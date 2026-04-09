@@ -12467,6 +12467,12 @@ llvm::Expected<PlannedModule> Planner::planModule(const Module &Mod) {
 
             // Try to load the concept using the full qualified name
             const Concept *Conc = lookupConcept(FullName);
+            // Also try the short name — the concept may already be cached from
+            // earlier namespace planning (e.g., planNamespace("compiler") registers
+            // all sub-module concepts before cli.scaly's use statements are processed)
+            if (!Conc) {
+                Conc = lookupConcept(ShortName);
+            }
             if (!Conc) {
                 // Try loading the package on demand
                 // For scalyc.compiler.Plan.PlannedItem:

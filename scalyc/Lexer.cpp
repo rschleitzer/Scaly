@@ -56,16 +56,33 @@ void Lexer::advance() {
         skipWhitespace(false);
         return;
 
+    // Punctuation: closing delimiters that skip newlines (decrement nesting)
+    case ')': case ']':
+        if (NestingLevel_ > 0) NestingLevel_--;
+        Token_ = PunctuationToken{*Current_};
+        readCharacter();
+        skipWhitespace(false);
+        return;
+
     // Punctuation (followed by no whitespace skip for newlines)
-    case '}': case ')': case ']': case '.':
+    case '}': case '.':
     case '?': case '!': case '$': case '#': case '^':
         Token_ = PunctuationToken{*Current_};
         readCharacter();
         skipWhitespace(false);
         return;
 
-    // Punctuation (followed by whitespace skip including newlines)
-    case '{': case '(': case '[': case ',':
+    // Punctuation: opening delimiters that skip newlines (increment nesting)
+    // Only ( and [ — not { (newlines in code blocks are statement separators)
+    case '(': case '[':
+        NestingLevel_++;
+        Token_ = PunctuationToken{*Current_};
+        readCharacter();
+        skipWhitespace(true);
+        return;
+
+    // Braces and comma (skip newlines but don't affect nesting level)
+    case '{': case ',':
         Token_ = PunctuationToken{*Current_};
         readCharacter();
         skipWhitespace(true);
@@ -495,7 +512,7 @@ void Lexer::skipWhitespace(bool SkipLineFeed) {
             continue;
 
         case '\n':
-            if (SkipLineFeed) {
+            if (SkipLineFeed || NestingLevel_ > 0) {
                 readCharacter();
                 continue;
             }

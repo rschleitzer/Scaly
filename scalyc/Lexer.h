@@ -83,6 +83,7 @@ private:
     Token Token_;
     size_t Position_ = 0;
     size_t PreviousPosition_ = 0;
+    int NestingLevel_ = 0;
 
     void readCharacter();
     void skipWhitespace(bool SkipLineFeed);
