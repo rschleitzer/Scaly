@@ -9482,6 +9482,7 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                             PlannedVariable ThisVar;
                             ThisVar.Loc = Op.Loc;
                             ThisVar.Name = "this";
+                            ThisVar.IsMutable = true;
                             // Look up the current structure to get its type info
                             auto StructIt = InstantiatedStructures.find(CurrentStructureName);
                             if (StructIt != InstantiatedStructures.end()) {
