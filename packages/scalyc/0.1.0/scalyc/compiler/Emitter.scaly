@@ -145,6 +145,8 @@ use scaly.scalyc.parser.ParserError
 use scaly.compiler.Modeler.build_program
 use scaly.compiler.Planner.Planner
 
+define Emitter
+{
 ; ============================================================================
 ; Intrinsic Type Info
 ; ============================================================================
@@ -3750,5 +3752,6 @@ function test() returns int
         }
 
     0
+}
 }
 

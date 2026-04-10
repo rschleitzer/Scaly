@@ -62,6 +62,8 @@ use scalyc.compiler.Plan.MethodMatch
 use scalyc.compiler.Plan.OperatorMatch
 use scalyc.compiler.Plan.Plan
 
+define Planner
+{
 ; ============================================================================
 ; LocalBinding - Information about a local variable
 ; ============================================================================
@@ -5053,5 +5055,6 @@ function test() returns int
     ; Phase 5: Operation Sequence (resolve_operation_sequence, collapse_operand_sequence)
 
     0
+}
 }
 

@@ -33,6 +33,8 @@ use scaly.containers.List
 use scaly.containers.HashSet
 use scaly.containers.HashSetBuilder
 
+define parser
+{
 ; Parser error types
 define DifferentSyntax()
 define InvalidSyntax(start: size_t, end: size_t, message: String)
@@ -427,6 +429,7 @@ function test() returns int
         }
 
     0
+}
 }
 
 "
