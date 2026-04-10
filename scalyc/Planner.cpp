@@ -12215,6 +12215,20 @@ llvm::Expected<PlannedNamespace> Planner::planNamespace(const Namespace &NS,
         Result.Modules.push_back(std::move(*PlannedSubMod));
     }
 
+    // Save Concepts entries that namespace members will overwrite.
+    // Namespace-scoped concepts (e.g., lexer.Literal) must not shadow outer
+    // concepts (e.g., Syntax.Literal) after the namespace exits, because other
+    // modules (e.g., Modeler) rely on the outer concept for type resolution.
+    std::vector<std::pair<std::string, const Concept*>> SavedConcepts;
+    for (const auto &Member : NS.Members) {
+        if (auto *Conc = std::get_if<Concept>(&Member)) {
+            auto It = Concepts.find(Conc->Name);
+            if (It != Concepts.end() && It->second != Conc) {
+                SavedConcepts.emplace_back(Conc->Name, It->second);
+            }
+        }
+    }
+
     // Plan members (Functions and Operators come from Members variant)
     for (const auto &Member : NS.Members) {
         if (auto *Func = std::get_if<Function>(&Member)) {
@@ -12237,6 +12251,7 @@ llvm::Expected<PlannedNamespace> Planner::planNamespace(const Namespace &NS,
         } else if (auto *Op = std::get_if<Operator>(&Member)) {
             auto PlannedOp = planOperator(*Op, &ParentType);
             if (!PlannedOp) {
+                for (const auto &[N, OldC] : SavedConcepts) { Concepts[N] = OldC; }
                 ModuleStack.pop_back();
                 CurrentNamespaceName = OldNamespaceName;
                 CurrentNamespace = OldNamespace;
@@ -12250,6 +12265,7 @@ llvm::Expected<PlannedNamespace> Planner::planNamespace(const Namespace &NS,
 
             auto PlannedConc = planConcept(*Conc);
             if (!PlannedConc) {
+                for (const auto &[N, OldC] : SavedConcepts) { Concepts[N] = OldC; }
                 ModuleStack.pop_back();
                 CurrentNamespaceName = OldNamespaceName;
                 CurrentNamespace = OldNamespace;
@@ -12258,6 +12274,12 @@ llvm::Expected<PlannedNamespace> Planner::planNamespace(const Namespace &NS,
             }
             Result.Concepts.push_back(std::move(*PlannedConc));
         }
+    }
+
+    // Restore overwritten Concepts entries so namespace-local concepts do not
+    // shadow outer concepts after the namespace exits.
+    for (const auto &[N, OldC] : SavedConcepts) {
+        Concepts[N] = OldC;
     }
 
     ModuleStack.pop_back();
