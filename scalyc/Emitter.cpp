@@ -407,6 +407,14 @@ llvm::Expected<std::unique_ptr<llvm::Module>> Emitter::emit(const Plan &P,
 
     // Initialize RBMM runtime declarations (after cache clear so they persist)
     initRBMM();
+    // Provide working implementations for RBMM functions in AOT mode.
+    // In JIT mode, emitRBMMStubs() is called separately after the JIT wrapper.
+    // Without this, the stub loop at the end would give allocate_page() a
+    // null-returning body, causing any function that allocates a local page
+    // (e.g., a non-# function calling a # procedure) to segfault at cleanup.
+    if (P.Structures.find("Page") == P.Structures.end()) {
+        emitRBMMStubs();
+    }
 
     // Phase 1: Emit all type declarations (forward declarations for structs)
     for (const auto &[name, Struct] : P.Structures) {
@@ -2216,18 +2224,58 @@ llvm::Error Emitter::emitReturn(const PlannedReturn &Return) {
         if (RetVal) {
             // For struct returns, store the value to the sret pointer
             if (RetVal->getType()->isStructTy()) {
-                Builder->CreateStore(RetVal, SRetArg);
+                llvm::Type *SRetTy = CurrentFunction->getParamStructRetType(0);
+                bool StoredAsResult = false;
+                if (CurrentFunctionCanThrow && SRetTy && SRetTy->isStructTy()) {
+                    auto *SRetSTy = llvm::cast<llvm::StructType>(SRetTy);
+                    if (SRetSTy->getNumElements() == 2 && SRetSTy->getElementType(0)->isIntegerTy(8)) {
+                        // Result struct: tag=0 (Success), struct value goes into payload (field 1)
+                        llvm::Type *I8Ty = llvm::Type::getInt8Ty(*Context);
+                        llvm::Value *TagPtr = Builder->CreateStructGEP(SRetSTy, SRetArg, 0, "sret.tag");
+                        Builder->CreateStore(llvm::ConstantInt::get(I8Ty, 0), TagPtr);
+                        llvm::Value *DataPtr = Builder->CreateStructGEP(SRetSTy, SRetArg, 1, "sret.data");
+                        llvm::Value *DataCast = Builder->CreateBitCast(
+                            DataPtr, llvm::PointerType::getUnqual(RetVal->getType()), "sret.data.cast");
+                        Builder->CreateStore(RetVal, DataCast);
+                        StoredAsResult = true;
+                    }
+                }
+                if (!StoredAsResult)
+                    Builder->CreateStore(RetVal, SRetArg);
             } else {
-                // If returning a pointer or scalar that should populate a struct,
-                // we need to handle it properly. For PageListIterator(head), the
-                // value is a pointer that should be stored as the first field.
                 llvm::Type *SRetTy = CurrentFunction->getParamStructRetType(0);
                 if (SRetTy && SRetTy->isStructTy()) {
-                    llvm::Value *FieldPtr = Builder->CreateStructGEP(
-                        SRetTy, SRetArg, 0, "sret.field");
-                    Builder->CreateStore(RetVal, FieldPtr);
+                    auto *SRetSTy = llvm::cast<llvm::StructType>(SRetTy);
+                    // For throwing functions, sret holds a Result{i8 tag, [N x i8] data}.
+                    // A scalar/pointer return means Success: set tag=0 and store value in data.
+                    if (CurrentFunctionCanThrow && SRetSTy->getNumElements() == 2 &&
+                        SRetSTy->getElementType(0)->isIntegerTy(8)) {
+                        llvm::Type *I8Ty = llvm::Type::getInt8Ty(*Context);
+                        llvm::Value *TagPtr = Builder->CreateStructGEP(SRetSTy, SRetArg, 0, "sret.tag");
+                        Builder->CreateStore(llvm::ConstantInt::get(I8Ty, 0), TagPtr);
+                        llvm::Value *DataPtr = Builder->CreateStructGEP(SRetSTy, SRetArg, 1, "sret.data");
+                        llvm::Value *DataCast = Builder->CreateBitCast(
+                            DataPtr, llvm::PointerType::getUnqual(RetVal->getType()), "sret.data.cast");
+                        Builder->CreateStore(RetVal, DataCast);
+                    } else {
+                        // Non-throwing sret: store scalar to field 0 (e.g., iterator handle)
+                        llvm::Value *FieldPtr = Builder->CreateStructGEP(
+                            SRetSTy, SRetArg, 0, "sret.field");
+                        Builder->CreateStore(RetVal, FieldPtr);
+                    }
                 } else {
                     Builder->CreateStore(RetVal, SRetArg);
+                }
+            }
+        } else if (CurrentFunctionCanThrow) {
+            // Void return in a throwing function: set tag=0 (Success)
+            llvm::Type *SRetTy = CurrentFunction->getParamStructRetType(0);
+            if (SRetTy && SRetTy->isStructTy()) {
+                auto *SRetSTy = llvm::cast<llvm::StructType>(SRetTy);
+                if (SRetSTy->getNumElements() == 2 && SRetSTy->getElementType(0)->isIntegerTy(8)) {
+                    llvm::Type *I8Ty = llvm::Type::getInt8Ty(*Context);
+                    llvm::Value *TagPtr = Builder->CreateStructGEP(SRetSTy, SRetArg, 0, "sret.tag");
+                    Builder->CreateStore(llvm::ConstantInt::get(I8Ty, 0), TagPtr);
                 }
             }
         }
@@ -2514,18 +2562,31 @@ llvm::Expected<llvm::Value*> Emitter::emitOperand(const PlannedOperand &Op) {
     llvm::Value *Value = nullptr;
     bool KeepOriginalPointer = false;  // Track if we should keep the original pointer for procedure calls
 
-    // Check if we're calling a procedure on a mutable variable - if so, we need
-    // to keep the original pointer instead of loading the value
+    // Check if we're calling a method on a mutable variable whose alloca holds the
+    // struct directly (not a pointer). In that case, pass the alloca pointer itself
+    // so that mutations to fields (e.g. lexer.advance#()) are visible to the caller.
+    // This applies to procedures AND functions — Scaly functions can call mutating
+    // procedures on fields even though the function itself is declared non-mutating.
     if (Op.MemberAccess && !Op.MemberAccess->empty()) {
         const auto &FirstAccess = (*Op.MemberAccess)[0];
-        if (FirstAccess.IsProcedure && FirstAccess.IsZeroArgMethodCall) {
+        if (FirstAccess.IsZeroArgMethodCall) {
             if (auto *Var = std::get_if<PlannedVariable>(&Op.Expr)) {
                 if (Var->IsMutable) {
-                    // For procedures on mutable variables, get the pointer directly
                     llvm::Value *VarPtr = lookupVariable(Var->Name);
                     if (VarPtr) {
-                        Value = VarPtr;
-                        KeepOriginalPointer = true;
+                        if (auto *AI = llvm::dyn_cast<llvm::AllocaInst>(VarPtr)) {
+                            if (AI->getAllocatedType()->isStructTy()) {
+                                // Alloca holds the struct itself — pass alloca ptr directly
+                                // so mutations through method calls propagate back.
+                                Value = VarPtr;
+                                KeepOriginalPointer = true;
+                            }
+                        }
+                        if (!KeepOriginalPointer && FirstAccess.IsProcedure) {
+                            // Fallback for procedure calls on pointer-holding allocas
+                            Value = VarPtr;
+                            KeepOriginalPointer = true;
+                        }
                     }
                 }
             }
@@ -2624,18 +2685,42 @@ llvm::Expected<llvm::Value*> Emitter::emitOperand(const PlannedOperand &Op) {
                     // For by-ref 'this', we need to pass a pointer
                     llvm::Value *ThisArg = Value;
 
+                    // Determine if function has a page parameter (rp) as first arg
+                    bool HasPageParam = ImplicitRpFunctions.count(std::string(MethodFunc->getName())) > 0;
+                    unsigned ThisArgIdx = HasPageParam ? 1 : 0;
+
                     // Check if function expects a pointer for this
-                    if (MethodFunc->arg_size() > 0) {
-                        llvm::Type *ExpectedThisType = MethodFunc->getArg(0)->getType();
+                    if (MethodFunc->arg_size() > ThisArgIdx) {
+                        llvm::Type *ExpectedThisType = MethodFunc->getArg(ThisArgIdx)->getType();
                         if (ExpectedThisType->isPointerTy() && !Value->getType()->isPointerTy()) {
-                            // Need to store to temp alloca and pass pointer
-                            llvm::AllocaInst *TempAlloca = createEntryBlockAlloca(Value->getType(), "this.tmp");
-                            Builder->CreateStore(Value, TempAlloca);
-                            ThisArg = TempAlloca;
+                            // Use GEP for in-place field mutation when source info is available.
+                            // This ensures mutations to the field (e.g. lexer.advance#()) modify
+                            // the actual struct in memory rather than a temporary copy.
+                            if (LastFieldBasePtr && LastFieldBaseStructTy &&
+                                llvm::isa<llvm::StructType>(LastFieldBaseStructTy)) {
+                                ThisArg = Builder->CreateStructGEP(
+                                    llvm::cast<llvm::StructType>(LastFieldBaseStructTy),
+                                    LastFieldBasePtr, LastFieldIndex, "field.addr");
+                            } else if (SourcePtr) {
+                                // Direct method call on the base object — SourcePtr is the actual
+                                // heap pointer (e.g. parser.is_at_end() where parser is heap-alloc'd)
+                                ThisArg = SourcePtr;
+                            } else {
+                                llvm::AllocaInst *TempAlloca = createEntryBlockAlloca(Value->getType(), "this.tmp");
+                                Builder->CreateStore(Value, TempAlloca);
+                                ThisArg = TempAlloca;
+                            }
                         }
                     }
 
-                    Value = Builder->CreateCall(MethodFunc, {ThisArg}, Access.Name + ".result");
+                    if (HasPageParam) {
+                        llvm::Value *Rp = CurrentRegion.ReturnPage ? CurrentRegion.ReturnPage : CurrentRegion.LocalPage;
+                        if (!Rp) Rp = getOrCreateLocalPage();
+                        if (!Rp) Rp = llvm::ConstantPointerNull::get(llvm::PointerType::get(*Context, 0));
+                        Value = Builder->CreateCall(MethodFunc, {Rp, ThisArg}, Access.Name + ".result");
+                    } else {
+                        Value = Builder->CreateCall(MethodFunc, {ThisArg}, Access.Name + ".result");
+                    }
                     SourcePtr = nullptr;
                     SourceStructTy = nullptr;
                     continue;
@@ -2965,15 +3050,17 @@ llvm::Expected<llvm::Value*> Emitter::emitCall(const PlannedCall &Call) {
                             }
                         }
                     }
-                    // Check if argument is a mutable variable of struct type (not pointer type)
-                    // Pass the original alloca pointer so mutations are visible to caller
-                    // But NOT for heap-allocated objects ($/#/^ allocations) stored as pointers —
-                    // those need to be loaded first since the alloca holds a pointer, not the struct
+                    // Check if argument is a mutable variable whose alloca holds the struct
+                    // directly (not a pointer). Pass the alloca pointer directly so mutations
+                    // inside the callee are visible to the caller.
+                    // We check IsHeapAlloc (alloca element type is pointer) rather than
+                    // VariableType.isPointer(), because $-allocated structs have VariableType
+                    // = pointer[T] but the alloca holds the struct value, not a pointer.
                     else if (auto *Var = std::get_if<PlannedVariable>(&Arg.Expr)) {
-                        if (Var->IsMutable && !Var->VariableType.isPointer()) {
+                        if (Var->IsMutable) {
                             llvm::Value *VarPtr = lookupVariable(Var->Name);
                             if (VarPtr && VarPtr->getType()->isPointerTy()) {
-                                // Check if the alloca holds a pointer (heap allocation) vs struct value
+                                // Check if the alloca holds a pointer (true heap ptr) vs struct value
                                 bool IsHeapAlloc = false;
                                 if (auto *AI = llvm::dyn_cast<llvm::AllocaInst>(VarPtr)) {
                                     IsHeapAlloc = AI->getAllocatedType()->isPointerTy();
