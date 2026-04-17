@@ -1,0 +1,43 @@
+; AOT Test: Function (not procedure) calling lexer.advance#() via sibling
+; Models parse_literal_token# calling lexer.advance#() inside a choose
+; Expected: 42
+
+define Lexer
+(
+    current: pointer[char]
+)
+{
+    procedure advance#(rp, this)
+        set current: null
+
+    function is_at_end(this) returns bool
+        current = null
+}
+
+define Parser
+(
+    lexer: Lexer
+)
+{
+    ; Function (pure), not procedure — mirrors parse_literal_token#
+    function scan_token(this) returns bool
+        lexer.is_at_end()
+
+    ; Function that calls lexer.advance#() — mirrors parse_literal_token# structure
+    function do_advance#(rp, this) returns bool
+    {
+        lexer.advance#()
+        lexer.is_at_end()
+    }
+
+    function is_at_end(this) returns bool
+        lexer.is_at_end()
+}
+
+var dummy_char: char "X"
+var p Parser$(Lexer(&dummy_char))
+let result p.do_advance#()
+if result
+    print("42")
+else
+    print("WRONG")

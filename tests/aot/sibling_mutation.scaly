@@ -1,0 +1,33 @@
+; AOT Test: Sibling method calls propagate mutations
+; Expected: 42
+
+define Tracker
+(
+    value: int
+    steps: int
+)
+{
+    procedure increment(this)
+    {
+        set value: value + 1
+        set steps: steps + 1
+    }
+
+    procedure run_sibling(this)
+        increment()
+
+    function get_value(this) returns int
+        value
+
+    function get_steps(this) returns int
+        steps
+}
+
+var t Tracker(41, 0)
+t.run_sibling()
+let v t.get_value()
+let s t.get_steps()
+if v = 42 && s = 1
+    print("42")
+else
+    print("WRONG")

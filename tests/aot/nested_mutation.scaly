@@ -1,0 +1,30 @@
+; AOT Test: Procedure mutation on nested struct field with page param
+; Tests calling a procedure with # on a field of a passed-by-pointer struct
+; Expected: 42
+
+define Inner(value: int)
+{
+    procedure set_42#(rp, this)
+    {
+        set value: 42
+    }
+
+    function get_value(this) returns int
+        value
+}
+
+define Outer(inner: Inner)
+{
+    function do_set(this) returns int
+    {
+        inner.set_42#()
+        inner.get_value()
+    }
+}
+
+var o Outer(Inner(0))
+let result o.do_set()
+if result = 42
+    print("42")
+else
+    print("WRONG")

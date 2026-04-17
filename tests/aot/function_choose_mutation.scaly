@@ -1,0 +1,47 @@
+; AOT Test: Function calling advance#() inside a choose when branch
+; Models parse_literal_token#'s exact pattern with choose -> when empty -> advance
+; Expected: 42
+
+define Lexer
+(
+    current: pointer[char]
+    token_kind: int
+)
+{
+    procedure advance#(rp, this)
+    {
+        set current: null
+        set token_kind: 1
+    }
+
+    function is_at_end(this) returns bool
+        current = null
+
+    function token_is_zero(this) returns bool
+        token_kind = 0
+}
+
+define Parser
+(
+    lexer: Lexer
+)
+{
+    function do_advance#(rp, this) returns bool
+    {
+        guard lexer.token_is_zero()
+            lexer.advance#()
+
+        lexer.is_at_end()
+    }
+
+    function is_at_end(this) returns bool
+        lexer.is_at_end()
+}
+
+var dummy_char: char "X"
+var p Parser$(Lexer(&dummy_char, 0))
+let result p.do_advance#()
+if result
+    print("42")
+else
+    print("WRONG")

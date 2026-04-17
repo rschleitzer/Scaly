@@ -1,0 +1,37 @@
+; AOT Test: Sibling call mutating nested struct field in heap-allocated struct
+; Expected: 42
+
+define Inner
+(
+    value: int
+)
+{
+    procedure set_value(this, v: int)
+        set value: v
+
+    function get_value(this) returns int
+        value
+}
+
+define Outer
+(
+    inner: Inner
+)
+{
+    procedure update_inner(this)
+        inner.set_value(42)
+
+    procedure run_sibling(this)
+        update_inner()
+
+    function get_inner_value(this) returns int
+        inner.get_value()
+}
+
+var o Outer$(Inner(0))
+o.run_sibling()
+let v o.get_inner_value()
+if v = 42
+    print("42")
+else
+    print("WRONG")

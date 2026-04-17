@@ -1,0 +1,39 @@
+; AOT Test: Simulates lexer.advance#() mutation through parser method chain
+; Models: Parser.parse_literal# -> parse_literal_token#(rp) -> lexer.advance#(rp)
+; Expected: 42
+
+define Lexer
+(
+    current: pointer[char]
+)
+{
+    procedure advance#(rp, this)
+        set current: null
+
+    function is_done(this) returns bool
+        current = null
+}
+
+define Parser
+(
+    lexer: Lexer
+)
+{
+    procedure do_scan#(rp, this)
+        advance_lexer#()
+
+    procedure advance_lexer#(rp, this)
+        lexer.advance#()
+
+    function is_at_end(this) returns bool
+        lexer.is_done()
+}
+
+var dummy_char: char "X"
+var p Parser$(Lexer(&dummy_char))
+p.do_scan#()
+let done p.is_at_end()
+if done
+    print("42")
+else
+    print("WRONG")
