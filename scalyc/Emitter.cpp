@@ -2651,30 +2651,41 @@ llvm::Expected<llvm::Value*> Emitter::emitOperand(const PlannedOperand &Op) {
             if (Access.IsZeroArgMethodCall) {
                 // Look up the method and call it with current value as 'this'
                 std::string MethodName = Access.ParentType.Name + "." + Access.Name;
-                std::string MangledMethodName = "_Z" + std::to_string(Access.ParentType.Name.size()) +
-                                                Access.ParentType.Name + std::to_string(Access.Name.size()) +
-                                                Access.Name + "E";
+                // Itanium ABI nested mangling: _ZN<ParentLen><Parent><NameLen><Name>Ev
+                // (v = void args, since zero-arg methods have only implicit 'this')
+                // Strip "_Z" prefix from parent MangledName if present (it's a standalone
+                // type mangling; here we need just the encoded form to embed inside N..E).
+                std::string ParentEncoded;
+                if (!Access.ParentType.MangledName.empty()) {
+                    ParentEncoded = Access.ParentType.MangledName;
+                    if (ParentEncoded.rfind("_Z", 0) == 0) {
+                        ParentEncoded = ParentEncoded.substr(2);
+                    }
+                } else {
+                    ParentEncoded = std::to_string(Access.ParentType.Name.size()) + Access.ParentType.Name;
+                }
+                std::string NameEncoded = std::to_string(Access.Name.size()) + Access.Name;
+                std::string MangledMethodName = "_ZN" + ParentEncoded + NameEncoded + "Ev";
+                // Page-taking variant: _ZN...E + "PN4scaly6memory4PageE" (for function# methods)
+                std::string MangledWithPage = "_ZN" + ParentEncoded + NameEncoded + "E" +
+                                               "PN4scaly6memory4PageE";
 
                 llvm::Function *MethodFunc = nullptr;
-                // Try to find in current module first
+                // Try exact mangled name in current module
                 if (Module) {
                     MethodFunc = Module->getFunction(MangledMethodName);
+                    if (!MethodFunc) {
+                        MethodFunc = Module->getFunction(MangledWithPage);
+                    }
                 }
                 // Try function cache if not in module
                 if (!MethodFunc) {
                     if (auto It = FunctionCache.find(MangledMethodName); It != FunctionCache.end()) {
                         MethodFunc = It->second;
                     }
-                }
-                // Try to find by readable name
-                if (!MethodFunc && Module) {
-                    for (auto &F : *Module) {
-                        if (F.getName().contains(Access.Name)) {
-                            // Check if this function takes the right type as first arg
-                            if (F.arg_size() >= 1) {
-                                MethodFunc = &F;
-                                break;
-                            }
+                    if (!MethodFunc) {
+                        if (auto It = FunctionCache.find(MangledWithPage); It != FunctionCache.end()) {
+                            MethodFunc = It->second;
                         }
                     }
                 }
