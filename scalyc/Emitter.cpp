@@ -3499,9 +3499,20 @@ llvm::Expected<llvm::Value*> Emitter::emitCall(const PlannedCall &Call) {
             llvm::Type *ParamTy = FuncTy->getParamType(i - FuncArgsOffset + FirstUserArg);
 
             if (ParamTy->isPointerTy() && ArgVal->getType()->isStructTy()) {
-                auto *Alloca = createEntryBlockAlloca(ArgVal->getType(), "sret.arg.tmp");
-                Builder->CreateStore(ArgVal, Alloca);
-                CallArgs.push_back(Alloca);
+                // For the first arg (this) of a method call on a struct field,
+                // pass a pointer to the field in place so mutations are visible
+                // to the caller (matches the non-sret call path).
+                if (i == FuncArgsOffset && FirstArgFieldBasePtr && FirstArgFieldBaseStructTy) {
+                    auto *FieldPtr = Builder->CreateStructGEP(
+                        FirstArgFieldBaseStructTy, FirstArgFieldBasePtr,
+                        FirstArgFieldIndex, "field.inplace");
+                    CallArgs.push_back(FieldPtr);
+                    FirstArgFieldBasePtr = nullptr;
+                } else {
+                    auto *Alloca = createEntryBlockAlloca(ArgVal->getType(), "sret.arg.tmp");
+                    Builder->CreateStore(ArgVal, Alloca);
+                    CallArgs.push_back(Alloca);
+                }
             } else if (!ParamTy->isPointerTy() && ArgVal->getType()->isPointerTy()) {
                 // Load value from alloca when param expects value type (e.g., i64)
                 CallArgs.push_back(Builder->CreateLoad(ParamTy, ArgVal, "arg.load"));
