@@ -3352,6 +3352,19 @@ define Parser
         guard ~lexer.parse_keyword#(String#("try"))
             throw ParserError.Different(DifferentSyntax())
 
+        let lifetime_start lexer.position
+        var lifetime: ref[LifetimeSyntax]? null
+        choose parse_lifetime#()
+            when err: Error
+            {
+                choose err
+                    when d: Different {}
+                    when i: Invalid
+                        throw ParserError.Invalid(i)
+            }
+            when success: Success
+                set lifetime: success
+
         let condition_start lexer.position
         var condition: ConditionSyntax
         choose parse_condition#()
@@ -3397,7 +3410,7 @@ define Parser
 
         let end lexer.position
 
-        TrySyntax(start, end, condition, cases, dropper)
+        TrySyntax(start, end, lifetime, condition, cases, dropper)
     }
 
     function parse_condition#(rp, this: Parser) returns ConditionSyntax throws ParserError

@@ -327,6 +327,7 @@ struct PlannedWhile {
 
 struct PlannedTry {
     Span Loc;
+    Lifetime Life;
     PlannedBinding Cond;
     std::vector<PlannedWhen> Catches;
     std::shared_ptr<PlannedStatement> Alternative;

@@ -347,6 +347,7 @@ define TrySyntax
 (
     start: size_t
     end: size_t
+    lifetime: ref[LifetimeSyntax]?
     condition: ConditionSyntax
     cases: ref[Vector[WhenSyntax]]?
     dropper: ref[ElseSyntax]?

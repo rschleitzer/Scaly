@@ -11102,6 +11102,7 @@ llvm::Expected<PlannedWhile> Planner::planWhile(const While &WhileExpr) {
 llvm::Expected<PlannedTry> Planner::planTry(const Try &TryExpr) {
     PlannedTry Result;
     Result.Loc = TryExpr.Loc;
+    Result.Life = TryExpr.Life;
 
     pushScope();
 

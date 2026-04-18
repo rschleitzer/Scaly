@@ -276,6 +276,7 @@ struct While {
 
 struct Try {
     Span Loc;
+    Lifetime Life;
     Binding Cond;
     std::vector<When> Catches;
     std::shared_ptr<Statement> Alternative;

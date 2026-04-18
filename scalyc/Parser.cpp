@@ -2848,6 +2848,15 @@ llvm::Expected<TrySyntax> Parser::parseTry() {
     if (!Lex.parseKeyword("try"))
         return different();
 
+    LifetimeSyntax* Lifetime = nullptr;
+    {
+        auto ParseResult = parseLifetime();
+        if (ParseResult)
+            Lifetime = new LifetimeSyntax(std::move(*ParseResult));
+        else
+            llvm::consumeError(ParseResult.takeError());
+    }
+
     auto ConditionOrErr = parseCondition();
     if (!ConditionOrErr) {
         std::string ErrMsg = llvm::toString(ConditionOrErr.takeError());
@@ -2883,7 +2892,7 @@ llvm::Expected<TrySyntax> Parser::parseTry() {
 
     size_t End = Lex.position();
 
-    return TrySyntax{Start, End, std::move(Condition), std::move(Cases), std::move(Dropper)};
+    return TrySyntax{Start, End, std::move(Lifetime), std::move(Condition), std::move(Cases), std::move(Dropper)};
 
 }
 

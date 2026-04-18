@@ -396,6 +396,7 @@
 
 <syntax id = Try
     <content link = try
+    <content link = Lifetime                       optional property = lifetime
     <content link = Condition                               property = condition
     <content colon
     <content link = When                  multiple optional property = cases

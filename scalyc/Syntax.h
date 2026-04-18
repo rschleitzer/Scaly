@@ -395,6 +395,7 @@ struct ConditionSyntax {
 struct TrySyntax {
     size_t Start;
     size_t End;
+    LifetimeSyntax* lifetime;
     ConditionSyntax condition;
     std::vector<WhenSyntax>* cases;
     ElseSyntax* dropper;

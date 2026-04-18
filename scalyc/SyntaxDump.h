@@ -531,6 +531,10 @@ public:
         OS << "{"; nl(); Indent++;
         key("node"); OS << "\"Try\","; nl();
         dumpSpan(N.Start, N.End);
+        if (N.lifetime) {
+            OS << ","; nl();
+            key("lifetime"); dump(*N.lifetime);
+        }
         OS << ","; nl();
         key("condition"); dump(N.condition);
         if (N.cases) {

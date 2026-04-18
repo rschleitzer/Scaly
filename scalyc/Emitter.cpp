@@ -5169,15 +5169,39 @@ llvm::Expected<llvm::Value*> Emitter::emitTry(const PlannedTry &Try) {
     }
 
     // Install a try-scope exception page so that throwing calls inside the
-    // condition allocate their errors on a page this try owns, rather than
-    // leaking onto the enclosing function's ep. The page is freed at the
-    // merge block below. If a catch re-throws, control leaves before merge
-    // and the page is leaked — acceptable for now, can be tightened via
-    // BlockCleanupStack later.
+    // condition allocate their errors on a page this try owns. Lifetime:
+    //   $ (default, LocalLifetime or Unspecified): allocate a fresh Page via
+    //     Page.allocate_page() and free it at the merge block below.
+    //   ^name (ReferenceLifetime): reuse the named region's page — errors
+    //     outlive the try so the catch can hand them further up without
+    //     copying. No free at merge.
+    //   # (CallLifetime): allocate on the caller's return page — error
+    //     survives the function return. Falls back to fresh page if no rp.
+    //   ! (ThrownLifetime): reuse the enclosing function's own ep.
     llvm::Value *PrevExceptionPage = CurrentRegion.ExceptionPage;
     llvm::Value *TryScopeEp = nullptr;
-    if (PageAllocatePage && !PageAllocatePage->isDeclaration()) {
+    bool OwnTryScopeEp = false;  // true when we must free at merge block
+
+    if (std::holds_alternative<ReferenceLifetime>(Try.Life)) {
+        const auto &RefLife = std::get<ReferenceLifetime>(Try.Life);
+        auto It = CurrentRegion.NamedRegions.find(RefLife.Location);
+        if (It != CurrentRegion.NamedRegions.end()) {
+            TryScopeEp = It->second;
+        }
+    } else if (std::holds_alternative<ThrownLifetime>(Try.Life)) {
+        TryScopeEp = PrevExceptionPage;  // share with enclosing function's ep
+    } else if (std::holds_alternative<CallLifetime>(Try.Life)) {
+        TryScopeEp = CurrentRegion.ReturnPage;
+    }
+
+    if (!TryScopeEp && PageAllocatePage && !PageAllocatePage->isDeclaration()) {
+        // Default $ behavior, or any unresolved lifetime: fresh page, freed
+        // at the end of the try.
         TryScopeEp = Builder->CreateCall(PageAllocatePage, {}, "try.ep");
+        OwnTryScopeEp = true;
+    }
+
+    if (TryScopeEp) {
         CurrentRegion.ExceptionPage = TryScopeEp;
     }
 
@@ -5414,9 +5438,10 @@ llvm::Expected<llvm::Value*> Emitter::emitTry(const PlannedTry &Try) {
         }
     }
 
-    // Release the try-scope exception page. Any error object allocated on it
-    // has been consumed by a catch or is irrelevant on the Ok path.
-    if (TryScopeEp) {
+    // Release the try-scope exception page only if we allocated it ourselves
+    // (default $ lifetime). For ^name/#/! lifetimes, the page is borrowed
+    // from a longer-lived owner and must not be freed here.
+    if (TryScopeEp && OwnTryScopeEp) {
         if (PageDeallocateExtensions && !PageDeallocateExtensions->isDeclaration()) {
             Builder->CreateCall(PageDeallocateExtensions, {TryScopeEp});
         }

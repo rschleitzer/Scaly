@@ -989,6 +989,8 @@ llvm::Expected<While> Modeler::handleWhile(const WhileSyntax &Syntax) {
 }
 
 llvm::Expected<Try> Modeler::handleTry(const TrySyntax &Syntax) {
+    Lifetime Life = handleLifetime(Syntax.lifetime);
+
     auto Cond = handleCondition(Syntax.condition);
     if (!Cond)
         return Cond.takeError();
@@ -1013,6 +1015,7 @@ llvm::Expected<Try> Modeler::handleTry(const TrySyntax &Syntax) {
 
     return Try{
         Span{Syntax.Start, Syntax.End},
+        std::move(Life),
         std::move(*Cond),
         std::move(Catches),
         std::move(Alt)
