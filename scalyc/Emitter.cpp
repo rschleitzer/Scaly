@@ -1051,15 +1051,15 @@ llvm::Function *Emitter::emitFunctionDecl(const PlannedFunction &Func) {
 
     // If function throws, wrap return type in a Result union: { i8 tag, data }
     // tag=0 means success (value), tag=1 means error
+    // Errors are passed by pointer (allocated on the exception page by the
+    // thrower) — data only needs to hold either the value inline or a pointer
+    // to the error. No inline copy of the error struct.
     if (Func.Throws) {
         llvm::Type *ValueTy = ReturnLLVMType ? ReturnLLVMType : llvm::Type::getVoidTy(*Context);
-        llvm::Type *ErrorTy = mapType(*Func.Throws);
 
-        // Data is a byte array large enough for either value or error
-        // (union semantics - same memory can hold either type)
         uint64_t ValueSize = ValueTy->isVoidTy() ? 0 : Module->getDataLayout().getTypeAllocSize(ValueTy);
-        uint64_t ErrorSize = Module->getDataLayout().getTypeAllocSize(ErrorTy);
-        uint64_t DataSize = std::max(ValueSize, ErrorSize);
+        uint64_t PtrSize = Module->getDataLayout().getPointerSize();
+        uint64_t DataSize = std::max(ValueSize, PtrSize);
         if (DataSize == 0) DataSize = 1;  // Minimum size for empty unions
 
         llvm::Type *I8Ty = llvm::Type::getInt8Ty(*Context);
@@ -2469,51 +2469,43 @@ llvm::Error Emitter::emitThrow(const PlannedThrow &Throw) {
     llvm::Value *TagPtr = Builder->CreateStructGEP(ResultTy, ResultPtr, 0, "throw.tag.ptr");
     Builder->CreateStore(llvm::ConstantInt::get(I8Ty, 1), TagPtr);
 
-    // Evaluate the thrown value and store in the data portion
+    // Evaluate the thrown value. In the new model, errors always travel as
+    // pointers to objects allocated on the exception page. The Result struct's
+    // data field holds only that pointer, never an inline error struct.
     if (!Throw.Result.empty()) {
         auto ValueOrErr = emitOperands(Throw.Result);
         if (!ValueOrErr)
             return ValueOrErr.takeError();
 
         llvm::Value *ThrownValue = *ValueOrErr;
+        llvm::Type *ThrownTy = ThrownValue->getType();
 
-        // Get pointer to the data field (field 1)
         llvm::Value *DataPtr = Builder->CreateStructGEP(ResultTy, ResultPtr, 1, "throw.data.ptr");
 
-        // Check if thrown value is a pointer to a struct (from ! lifetime allocation)
-        // If so, copy the struct into the union data, not the pointer
-        llvm::Type *ThrownTy = ThrownValue->getType();
+        llvm::Value *ErrorPtr = nullptr;
         if (ThrownTy->isPointerTy()) {
-            // Load the struct from the pointer and store it
-            // We need to determine the struct type - check the Result union's data size
-            // For now, load as the struct type that fits in the data portion
-            llvm::Type *DataFieldTy = ResultTy->getStructElementType(1);
-            if (DataFieldTy->isArrayTy()) {
-                // Data is [N x i8] - we have N bytes available
-                // Copy from the pointer source to the data destination
-                auto *I64Ty = llvm::Type::getInt64Ty(*Context);
-                size_t DataSize = DataFieldTy->getArrayNumElements();
-                Builder->CreateMemCpy(DataPtr, llvm::MaybeAlign(1),
-                                      ThrownValue, llvm::MaybeAlign(1),
-                                      llvm::ConstantInt::get(I64Ty, DataSize));
-            } else {
-                // Fallback: store the pointer directly
-                llvm::Value *DataCast = Builder->CreateBitCast(
-                    DataPtr,
-                    llvm::PointerType::getUnqual(ThrownTy),
-                    "throw.data.cast"
-                );
-                Builder->CreateStore(ThrownValue, DataCast);
-            }
+            // Already a pointer (e.g. from `!` or `#` lifetime allocation).
+            ErrorPtr = ThrownValue;
         } else {
-            // Non-pointer value: store directly
-            llvm::Value *DataCast = Builder->CreateBitCast(
-                DataPtr,
-                llvm::PointerType::getUnqual(ThrownTy),
-                "throw.data.cast"
-            );
-            Builder->CreateStore(ThrownValue, DataCast);
+            // By-value thrown: allocate on the exception page and store.
+            llvm::Value *EPage = CurrentRegion.ExceptionPage;
+            if (EPage && PageAllocate) {
+                auto *I64Ty = llvm::Type::getInt64Ty(*Context);
+                uint64_t Sz = Module->getDataLayout().getTypeAllocSize(ThrownTy);
+                uint64_t Al = Module->getDataLayout().getPrefTypeAlign(ThrownTy).value();
+                llvm::Value *Size = llvm::ConstantInt::get(I64Ty, Sz);
+                llvm::Value *Align = llvm::ConstantInt::get(I64Ty, Al ? Al : 1);
+                ErrorPtr = Builder->CreateCall(PageAllocate, {EPage, Size, Align}, "throw.err.ptr");
+                Builder->CreateStore(ThrownValue, ErrorPtr);
+            } else {
+                // No exception page available — fall back to entry-block alloca.
+                // This leaks the error to the stack frame but keeps us compiling.
+                ErrorPtr = createEntryBlockAlloca(ThrownTy, "throw.err.fallback");
+                Builder->CreateStore(ThrownValue, ErrorPtr);
+            }
         }
+
+        Builder->CreateStore(ErrorPtr, DataPtr);
     }
 
     // Emit block-scoped cleanups for all pending blocks
@@ -4397,16 +4389,25 @@ llvm::Expected<llvm::Value*> Emitter::emitChoose(const PlannedChoose &Choose) {
             llvm::Value *DataPtr = Builder->CreateStructGEP(
                 UnionType, UnionPtr, 1, "variant.data.ptr");
 
-            // Cast to the variant's type and load
             llvm::Type *VarTy = mapType(When.VariantType);
-            llvm::Value *DataCast = Builder->CreateBitCast(
-                DataPtr,
-                llvm::PointerType::getUnqual(VarTy),
-                "variant.data.cast"
-            );
-            // Use align 1 because the data area is at offset 1 (after the i8 tag)
-            // in the union struct, so it may not be naturally aligned
-            auto *VarLoad = Builder->CreateAlignedLoad(VarTy, DataCast, llvm::Align(1), "variant.val");
+            llvm::Value *VarLoad;
+
+            // For throwing-call results, error variants (tag != 0) are stored
+            // as pointers into the exception page. Ok (tag 0) stays inline.
+            if (IsThrowingCall && When.VariantIndex != 0) {
+                llvm::Type *PtrTy = llvm::PointerType::get(*Context, 0);
+                llvm::Value *ObjPtr = Builder->CreateLoad(PtrTy, DataPtr, "err.obj.ptr");
+                VarLoad = Builder->CreateLoad(VarTy, ObjPtr, "variant.val");
+            } else {
+                llvm::Value *DataCast = Builder->CreateBitCast(
+                    DataPtr,
+                    llvm::PointerType::getUnqual(VarTy),
+                    "variant.data.cast"
+                );
+                // Use align 1 because the data area is at offset 1 (after the i8 tag)
+                // in the union struct, so it may not be naturally aligned
+                VarLoad = Builder->CreateAlignedLoad(VarTy, DataCast, llvm::Align(1), "variant.val");
+            }
 
             // Bind the value to the variable name
             LocalVariables[When.Name] = VarLoad;
@@ -5285,22 +5286,19 @@ llvm::Expected<llvm::Value*> Emitter::emitTry(const PlannedTry &Try) {
 
                 Builder->SetInsertPoint(CatchBlock);
 
-                // Extract error data from union and bind to catch variable
-                // Union layout: { i8 tag, [N x i8] data }
+                // Extract error from union: data field holds a pointer to
+                // the error object on the exception page. Load the pointer,
+                // then load the variant value through it.
                 if (!Catch.Name.empty()) {
                     llvm::Value *DataPtr = Builder->CreateStructGEP(
                         ResultType, ResultPtr, 1, "err.data.ptr");
 
-                    // Cast to the variant's type and load
-                    llvm::Type *VarTy = mapType(Catch.VariantType);
-                    llvm::Value *DataCast = Builder->CreateBitCast(
-                        DataPtr,
-                        llvm::PointerType::getUnqual(VarTy),
-                        "err.data.cast"
-                    );
-                    llvm::Value *ErrValue = Builder->CreateLoad(VarTy, DataCast, "err.val");
+                    llvm::Type *PtrTy = llvm::PointerType::get(*Context, 0);
+                    llvm::Value *ErrObjPtr = Builder->CreateLoad(PtrTy, DataPtr, "err.obj.ptr");
 
-                    // Bind the error value to the catch variable name
+                    llvm::Type *VarTy = mapType(Catch.VariantType);
+                    llvm::Value *ErrValue = Builder->CreateLoad(VarTy, ErrObjPtr, "err.val");
+
                     LocalVariables[Catch.Name] = ErrValue;
                 }
 
