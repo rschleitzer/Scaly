@@ -898,6 +898,17 @@ bool Planner::typesCompatible(const PlannedType &ParamType, const PlannedType &A
             (ParamType.Generics[0].Name == "i8" && ArgType.Generics[0].Name == "char")) {
             return true;
         }
+        // pointer[u8] <-> pointer[char]/pointer[const_char]/pointer[i8]
+        // u8 and char are the same width; String uses pointer[u8] internally but
+        // init# signatures declare pointer[const_char].
+        if (ParamType.Generics[0].Name == "u8" || ArgType.Generics[0].Name == "u8") {
+            const auto &Other = (ParamType.Generics[0].Name == "u8")
+                ? ArgType.Generics[0].Name
+                : ParamType.Generics[0].Name;
+            if (Other == "char" || Other == "const_char" || Other == "i8" || Other == "u8") {
+                return true;
+            }
+        }
     }
 
     // Allow any pointer[T] to be passed where pointer[void] is expected
