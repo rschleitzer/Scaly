@@ -3504,17 +3504,11 @@ llvm::Expected<llvm::Value*> Emitter::emitCall(const PlannedCall &Call) {
             FirstUserArg = 2;
         }
 
-        // Check if this is a throwing function - allocate exception page if needed
+        // Check if this is a throwing function - forward the exception page
         bool IsThrowingFunction = ThrowingFunctions.count(Call.MangledName) > 0;
         llvm::Value *CalleeExceptionPage = nullptr;
         if (IsThrowingFunction) {
-            // Allocate an exception page for the called function to use for error allocation
-            // Only allocate if Page.allocate_page is available; otherwise pass null
-            if (PageAllocatePage && !PageAllocatePage->isDeclaration()) {
-                CalleeExceptionPage = Builder->CreateCall(PageAllocatePage, {}, "exception_page");
-            } else {
-                CalleeExceptionPage = llvm::ConstantPointerNull::get(llvm::PointerType::get(*Context, 0));
-            }
+            CalleeExceptionPage = getCalleeExceptionPage();
             CallArgs.push_back(CalleeExceptionPage);
             FirstUserArg++;
         }
@@ -3581,15 +3575,7 @@ llvm::Expected<llvm::Value*> Emitter::emitCall(const PlannedCall &Call) {
             CallArgs.push_back(FuncPageArg);
         }
         if (IsThrowingFunction) {
-            // Allocate exception page and pass as argument
-            // Only allocate if Page.allocate_page is available; otherwise pass null
-            llvm::Value *CalleeExceptionPage;
-            if (PageAllocatePage && !PageAllocatePage->isDeclaration()) {
-                CalleeExceptionPage = Builder->CreateCall(PageAllocatePage, {}, "exception_page");
-            } else {
-                CalleeExceptionPage = llvm::ConstantPointerNull::get(llvm::PointerType::get(*Context, 0));
-            }
-            CallArgs.push_back(CalleeExceptionPage);
+            CallArgs.push_back(getCalleeExceptionPage());
         }
         if (CallArgs.empty()) {
             return Builder->CreateCall(Func, Args);
@@ -3635,12 +3621,7 @@ llvm::Expected<llvm::Value*> Emitter::emitCall(const PlannedCall &Call) {
     // Prepend exception page if this is a throwing function
     llvm::Value *CalleeExceptionPage = nullptr;
     if (IsThrowingFunction) {
-        // Only allocate if Page.allocate_page is available; otherwise pass null
-        if (PageAllocatePage && !PageAllocatePage->isDeclaration()) {
-            CalleeExceptionPage = Builder->CreateCall(PageAllocatePage, {}, "exception_page");
-        } else {
-            CalleeExceptionPage = llvm::ConstantPointerNull::get(llvm::PointerType::get(*Context, 0));
-        }
+        CalleeExceptionPage = getCalleeExceptionPage();
         AdjustedArgs.push_back(CalleeExceptionPage);
     }
 
@@ -5187,7 +5168,25 @@ llvm::Expected<llvm::Value*> Emitter::emitTry(const PlannedTry &Try) {
         );
     }
 
+    // Install a try-scope exception page so that throwing calls inside the
+    // condition allocate their errors on a page this try owns, rather than
+    // leaking onto the enclosing function's ep. The page is freed at the
+    // merge block below. If a catch re-throws, control leaves before merge
+    // and the page is leaked — acceptable for now, can be tightened via
+    // BlockCleanupStack later.
+    llvm::Value *PrevExceptionPage = CurrentRegion.ExceptionPage;
+    llvm::Value *TryScopeEp = nullptr;
+    if (PageAllocatePage && !PageAllocatePage->isDeclaration()) {
+        TryScopeEp = Builder->CreateCall(PageAllocatePage, {}, "try.ep");
+        CurrentRegion.ExceptionPage = TryScopeEp;
+    }
+
     auto CondValueOrErr = emitOperands(Try.Cond.Operation);
+
+    // Restore the previous ep — catches run in the enclosing scope, so any
+    // re-throws from within a catch body target the outer ep, not the try's.
+    CurrentRegion.ExceptionPage = PrevExceptionPage;
+
     if (!CondValueOrErr)
         return CondValueOrErr.takeError();
 
@@ -5393,7 +5392,9 @@ llvm::Expected<llvm::Value*> Emitter::emitTry(const PlannedTry &Try) {
         LocalVariables.erase(BindingName);
     }
 
-    // Create PHI node if branches produce values
+    // Create PHI node if branches produce values. Must come before any other
+    // instruction in the merge block to satisfy LLVM's PHI-grouping rule.
+    llvm::Value *MergedValue = nullptr;
     if (!IncomingValues.empty()) {
         llvm::Type *ValueType = IncomingValues[0].first->getType();
         bool AllSameType = true;
@@ -5409,11 +5410,22 @@ llvm::Expected<llvm::Value*> Emitter::emitTry(const PlannedTry &Try) {
             for (const auto &[Val, Block] : IncomingValues) {
                 PHI->addIncoming(Val, Block);
             }
-            return PHI;
+            MergedValue = PHI;
         }
     }
 
-    return nullptr;
+    // Release the try-scope exception page. Any error object allocated on it
+    // has been consumed by a catch or is irrelevant on the Ok path.
+    if (TryScopeEp) {
+        if (PageDeallocateExtensions && !PageDeallocateExtensions->isDeclaration()) {
+            Builder->CreateCall(PageDeallocateExtensions, {TryScopeEp});
+        }
+        if (auto *FreeFn = Module->getFunction("free")) {
+            Builder->CreateCall(FreeFn, {TryScopeEp});
+        }
+    }
+
+    return MergedValue;
 }
 
 llvm::Expected<llvm::Value*> Emitter::emitSizeOf(const PlannedSizeOf &SizeOf) {
@@ -6280,6 +6292,27 @@ llvm::Value *Emitter::allocate(llvm::Type *Ty, Lifetime Life, llvm::StringRef Na
     // The result is void*, but we need the correct pointer type for LLVM
     // In opaque pointer mode (LLVM 15+), all pointers are ptr, so no cast needed
     return RawPtr;
+}
+
+llvm::Value *Emitter::getCalleeExceptionPage() {
+    // Prefer the current region's exception page: set by the current
+    // function's ep parameter, or overridden by an enclosing try scope.
+    // In both cases the callee's errors should land on that page and
+    // propagate by pointer to whoever owns the page.
+    if (CurrentRegion.ExceptionPage) {
+        return CurrentRegion.ExceptionPage;
+    }
+
+    // Fallback: we're in a non-throwing function calling a throwing one
+    // outside any try. The callee still needs somewhere to allocate its
+    // error object; allocate a one-off page so the emitted IR is valid.
+    // The callee will terminate the program via exit(1) if it actually
+    // throws (since the caller has no way to catch), so the leak here is
+    // bounded to the crash path.
+    if (PageAllocatePage && !PageAllocatePage->isDeclaration()) {
+        return Builder->CreateCall(PageAllocatePage, {}, "exception_page.fallback");
+    }
+    return llvm::ConstantPointerNull::get(llvm::PointerType::get(*Context, 0));
 }
 
 llvm::Value *Emitter::getRegionPage(Lifetime Life) {

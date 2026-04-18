@@ -306,6 +306,13 @@ private:
     // Get pointer to region page for a lifetime
     llvm::Value *getRegionPage(Lifetime Life);
 
+    // Resolve the exception page to pass when calling a throwing function.
+    // Prefers the current region's ExceptionPage (set by the current function's
+    // ep parameter or by an enclosing try scope). Falls back to a fresh
+    // per-call allocation if no exception page is in scope (e.g., a
+    // non-throwing function calling a throwing one outside any try).
+    llvm::Value *getCalleeExceptionPage();
+
     // ========================================================================
     // Intrinsic Operations
     // ========================================================================
