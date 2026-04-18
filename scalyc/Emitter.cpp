@@ -1350,19 +1350,53 @@ llvm::Error Emitter::emitFunctionBody(const PlannedFunction &Func,
         if (LLVMFunc->getReturnType()->isVoidTy()) {
             // Check if this is an sret function - need to store return value
             if (SretPtr && ReturnValue) {
-                if (ReturnValue->getType()->isStructTy()) {
-                    Builder->CreateStore(ReturnValue, SretPtr);
-                } else if (ReturnValue->getType()->isPointerTy()) {
-                    // Pointer to struct being returned via sret - load and copy
-                    llvm::Type *SRetTy = LLVMFunc->getParamStructRetType(0);
-                    if (SRetTy) {
-                        llvm::Value *Loaded = Builder->CreateLoad(SRetTy, ReturnValue, "sret.load");
-                        Builder->CreateStore(Loaded, SretPtr);
+                llvm::Type *SRetTy = LLVMFunc->getParamStructRetType(0);
+                // For throwing functions, sret holds Result{i8 tag, [N x i8] data};
+                // implicit return is Success (tag=0) with value in data (field 1).
+                bool StoredAsResult = false;
+                if (CurrentFunctionCanThrow && SRetTy && SRetTy->isStructTy()) {
+                    auto *SRetSTy = llvm::cast<llvm::StructType>(SRetTy);
+                    if (SRetSTy->getNumElements() == 2 && SRetSTy->getElementType(0)->isIntegerTy(8)) {
+                        llvm::Type *I8Ty = llvm::Type::getInt8Ty(*Context);
+                        llvm::Value *TagPtr = Builder->CreateStructGEP(SRetSTy, SretPtr, 0, "sret.tag");
+                        Builder->CreateStore(llvm::ConstantInt::get(I8Ty, 0), TagPtr);
+                        llvm::Value *DataPtr = Builder->CreateStructGEP(SRetSTy, SretPtr, 1, "sret.data");
+                        llvm::Value *RetStructVal = ReturnValue;
+                        if (ReturnValue->getType()->isPointerTy()) {
+                            llvm::Type *ValTy = SRetSTy->getElementType(1);
+                            // data field is [N x i8]; we need the struct type the
+                            // function nominally returns. Use element type if it's
+                            // a struct; otherwise fall through to the scalar path.
+                            if (ValTy->isStructTy()) {
+                                RetStructVal = Builder->CreateLoad(ValTy, ReturnValue, "ret.load");
+                            }
+                        }
+                        if (RetStructVal->getType()->isStructTy()) {
+                            llvm::Value *DataCast = Builder->CreateBitCast(
+                                DataPtr, llvm::PointerType::getUnqual(RetStructVal->getType()), "sret.data.cast");
+                            Builder->CreateStore(RetStructVal, DataCast);
+                        } else {
+                            llvm::Value *DataCast = Builder->CreateBitCast(
+                                DataPtr, llvm::PointerType::getUnqual(RetStructVal->getType()), "sret.data.cast");
+                            Builder->CreateStore(RetStructVal, DataCast);
+                        }
+                        StoredAsResult = true;
+                    }
+                }
+                if (!StoredAsResult) {
+                    if (ReturnValue->getType()->isStructTy()) {
+                        Builder->CreateStore(ReturnValue, SretPtr);
+                    } else if (ReturnValue->getType()->isPointerTy()) {
+                        // Pointer to struct being returned via sret - load and copy
+                        if (SRetTy) {
+                            llvm::Value *Loaded = Builder->CreateLoad(SRetTy, ReturnValue, "sret.load");
+                            Builder->CreateStore(Loaded, SretPtr);
+                        } else {
+                            Builder->CreateStore(ReturnValue, SretPtr);
+                        }
                     } else {
                         Builder->CreateStore(ReturnValue, SretPtr);
                     }
-                } else {
-                    Builder->CreateStore(ReturnValue, SretPtr);
                 }
             }
             Builder->CreateRetVoid();
