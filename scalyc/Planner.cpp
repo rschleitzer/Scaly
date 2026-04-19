@@ -12196,6 +12196,22 @@ llvm::Expected<PlannedNamespace> Planner::planNamespace(const Namespace &NS,
         }
     }
 
+    // Pre-pass: collect every sub-module's top-level Function members into
+    // the PseudoModule BEFORE planning bodies. Without this, a method in
+    // an earlier-declared sibling module cannot resolve an unqualified call
+    // to a function defined in a later-declared sibling — they all share a
+    // namespace but the ModuleStack-based lookup only sees ancestors, not
+    // yet-unplanned siblings. The pre-pass makes all siblings visible to
+    // each other regardless of declaration order; Concepts/Modules/Uses
+    // still stay scoped to their owning sub-module.
+    for (const auto &SubMod : NS.Modules) {
+        for (const auto &Member : SubMod.Members) {
+            if (std::holds_alternative<Function>(Member)) {
+                PseudoModule.Members.push_back(Member);
+            }
+        }
+    }
+
     // Push pseudo-module for cross-module resolution
     ModuleStack.push_back(&PseudoModule);
 
