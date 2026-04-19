@@ -9,6 +9,7 @@
 use scaly.containers.String
 use scaly.containers.StringBuilder
 use scaly.containers.Vector
+use scaly.containers.KeyValuePair
 
 use scalyc.compiler.Model.Program
 use scalyc.compiler.Model.Span
@@ -951,6 +952,92 @@ define Planner
     ; freshTypeVar) touches Plan-global state, but the "occurs check"
     ; and compatible-integer predicate are pure and can be ported now.
     ; ========================================================================
+
+    ; substitution_lookup: linear scan for a type-var id in a substitution.
+    ; The `Substitution` type in Planner.cpp is a map<uint64_t, PlannedType>.
+    ; In Scaly we represent it as Vector[KeyValuePair[size_t, PlannedType]]
+    ; because primitive size_t lacks a `.hash()` method — HashMap requires
+    ; `key.hash()` / `key.equals()` which are only defined on String today.
+    ; At the scale of substitutions during a single function body (a few
+    ; dozen entries at most) O(n) lookup is fine.
+    function substitution_lookup(
+        subst: Vector[KeyValuePair[size_t, PlannedType]],
+        id: size_t
+    ) returns ref[PlannedType]?
+    {
+        var i: size_t 0
+        while i < subst.length
+        {
+            let kvp_ptr subst.get_ptr(i)
+            guard kvp_ptr <> null
+            {
+                guard kvp_ptr.key = id
+                    return &kvp_ptr.value
+            }
+            set i: i + 1
+        }
+        null
+    }
+
+    ; apply_substitution: replace every type variable in `t` with its binding
+    ; in `subst`, recursing to handle chains (T0 -> T1 -> int). Concrete
+    ; types get rebuilt with substituted generic arguments; everything
+    ; else (loc / life / origin / mangled_name / array_size / variable) is
+    ; preserved from the input. Returns the input unchanged when subst is
+    ; null (i.e. empty substitution).
+    function apply_substitution#(
+        rp,
+        t: PlannedType,
+        subst: ref[Vector[KeyValuePair[size_t, PlannedType]]]?
+    ) returns PlannedType
+    {
+        guard t.variable <> null
+        {
+            guard subst <> null
+            {
+                let s (*subst)
+                let tv (*t.variable)
+                let found Planner.substitution_lookup(s, tv.id)
+                guard found <> null
+                {
+                    let found_ty (*found)
+                    return Planner.apply_substitution#(found_ty, subst)
+                }
+            }
+            ; Unresolved variable — return as-is.
+            return t
+        }
+
+        guard t.generics <> null
+        {
+            let gens (*t.generics)
+            var new_gens Vector[PlannedType]^rp(gens.length)
+            var i: size_t 0
+            while i < gens.length
+            {
+                let g_ptr gens.get(i)
+                guard g_ptr <> null
+                {
+                    let g (*g_ptr)
+                    let sub_g Planner.apply_substitution#(g, subst)
+                    new_gens.put(i, sub_g)
+                }
+                set i: i + 1
+            }
+            return PlannedType(
+                t.loc,
+                t.name,
+                t.mangled_name,
+                &new_gens,
+                t.life,
+                t.origin,
+                t.array_size,
+                t.variable
+            )
+        }
+
+        t
+    }
 
     ; occurs_in: does a type variable with the given id appear anywhere in
     ; `t` (or its recursive generic arguments)? The occurs check prevents
@@ -2203,6 +2290,59 @@ define Planner
         )
         guard Planner.needs_implicit_return_page(foo_ret_func) = false
             return 100
+
+        ; apply_substitution - null substitution leaves type unchanged.
+        let sub_int Planner.apply_substitution$(int_ty, null)
+        guard sub_int.name.equals("int") = false
+            return 101
+
+        ; apply_substitution - unbound variable stays as-is.
+        var empty_sub Vector[KeyValuePair[size_t, PlannedType]]$(0)
+        let sub_var Planner.apply_substitution$(var_ty, &empty_sub)
+        guard sub_var.variable = null
+            return 102
+
+        ; apply_substitution - bound variable gets replaced.
+        var sub1 Vector[KeyValuePair[size_t, PlannedType]]$(1)
+        sub1.put(0, KeyValuePair[size_t, PlannedType](7, int_ty))
+        let sub_hit Planner.apply_substitution$(var_ty, &sub1)
+        guard sub_hit.name.equals("int") = false
+            return 103
+
+        ; apply_substitution - substitutes inside generic arguments.
+        let sub_vec Planner.apply_substitution$(vec_of_t_ty, &sub1)
+        guard sub_vec.name.equals("Vector") = false
+            return 104
+        guard sub_vec.generics = null
+            return 105
+        let sub_vec_gens (*sub_vec.generics)
+        guard sub_vec_gens.length <> 1
+            return 106
+        let sub_vec_g0 sub_vec_gens.get(0)
+        guard sub_vec_g0 = null
+            return 107
+        let sub_vec_g0v (*sub_vec_g0)
+        guard sub_vec_g0v.name.equals("int") = false
+            return 108
+
+        ; apply_substitution - follows chains T7 -> T8 -> int.
+        let tv8 TypeVariable(8, String$("U"))
+        let var_ty8 PlannedType(
+            Span(0, 0),
+            String$("U"),
+            String$(""),
+            null,
+            Lifetime.Unspecified(Unspecified()),
+            null,
+            String$(""),
+            &tv8
+        )
+        var sub_chain Vector[KeyValuePair[size_t, PlannedType]]$(2)
+        sub_chain.put(0, KeyValuePair[size_t, PlannedType](7, var_ty8))
+        sub_chain.put(1, KeyValuePair[size_t, PlannedType](8, int_ty))
+        let sub_chained Planner.apply_substitution$(var_ty, &sub_chain)
+        guard sub_chained.name.equals("int") = false
+            return 109
 
         0
     }
