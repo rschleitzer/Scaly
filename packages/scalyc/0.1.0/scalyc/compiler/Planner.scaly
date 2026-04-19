@@ -507,6 +507,139 @@ define Planner
             false
         }
 
+        ; ================================================================
+        ; Method / initializer / property lookup on user types.
+        ; ================================================================
+
+        ; collect_methods_in: linear scan of a members Vector, appending
+        ; every Function whose name matches. Shared by lookup_methods
+        ; across Structure and Union variants.
+        function collect_methods_in(
+            this: Planner,
+            members: Vector[Member],
+            method_name: String,
+            acc: Array[Function]
+        )
+        {
+            var i: size_t 0
+            while i < members.length
+            {
+                let m_ptr members.get(i)
+                guard m_ptr <> null
+                {
+                    let mem (*m_ptr)
+                    choose mem
+                        when f: Function
+                        {
+                            guard f.name.equals(method_name)
+                                acc.add(f)
+                            0
+                        }
+                        else
+                            0
+                }
+                set i: i + 1
+            }
+        }
+
+        function lookup_methods#(
+            rp,
+            this: Planner,
+            struct_name: String,
+            method_name: String
+        ) returns Vector[Function]
+        {
+            var matches Array[Function]$()
+            let concept_ref this.lookup_concept(struct_name)
+            guard concept_ref = null
+                return Vector[Function]^rp(matches)
+
+            let c (*concept_ref)
+            choose c.definition
+                when s: Structure
+                {
+                    this.collect_methods_in(s.members, method_name, matches)
+                    0
+                }
+                when u: scalyc.compiler.Model.Union
+                {
+                    this.collect_methods_in(u.members, method_name, matches)
+                    0
+                }
+                else
+                    0
+
+            Vector[Function]^rp(matches)
+        }
+
+        ; lookup_property: find a struct field by name. Returns a
+        ; reference into the Structure's properties Vector — valid as
+        ; long as the underlying Concept is live in the registry.
+        function lookup_property(
+            this: Planner,
+            struct_name: String,
+            property_name: String
+        ) returns ref[Property]?
+        {
+            let concept_ref this.lookup_concept(struct_name)
+            guard concept_ref = null
+                return null
+
+            let c (*concept_ref)
+            choose c.definition
+                when s: Structure
+                {
+                    var i: size_t 0
+                    while i < s.properties.length
+                    {
+                        let p_ptr s.properties.get(i)
+                        guard p_ptr <> null
+                        {
+                            guard p_ptr.name.equals(property_name)
+                                return p_ptr
+                        }
+                        set i: i + 1
+                    }
+                    null
+                }
+                else
+                    null
+        }
+
+        ; lookup_variant: find a union variant by name and return its tag.
+        ; Returns -1 if the concept is missing or not a Union, or if the
+        ; variant name is not present.
+        function lookup_variant_tag(
+            this: Planner,
+            union_name: String,
+            variant_name: String
+        ) returns int
+        {
+            let concept_ref this.lookup_concept(union_name)
+            guard concept_ref = null
+                return -1
+
+            let c (*concept_ref)
+            choose c.definition
+                when u: scalyc.compiler.Model.Union
+                {
+                    var i: size_t 0
+                    while i < u.variants.length
+                    {
+                        let v_ptr u.variants.get(i)
+                        guard v_ptr <> null
+                        {
+                            guard v_ptr.name.equals(variant_name)
+                                return i as int
+                        }
+                        set i: i + 1
+                    }
+                    -1
+                }
+                else
+                    -1
+        }
+
         ; fresh_type_var: allocate a new type variable as a PlannedType
         ; wrapper with `variable` populated. Equivalent to Planner.cpp's
         ; freshTypeVar. `debug_name` is stored on the TypeVariable for
