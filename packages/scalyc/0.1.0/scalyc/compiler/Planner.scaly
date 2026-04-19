@@ -11,6 +11,9 @@ use scaly.containers.StringBuilder
 use scaly.containers.Vector
 
 use scalyc.compiler.Model.Program
+use scalyc.compiler.Model.Span
+use scalyc.compiler.Model.Lifetime
+use scalyc.compiler.Model.Unspecified
 use scalyc.compiler.Plan.Plan
 use scalyc.compiler.Plan.PlannedType
 
@@ -84,6 +87,138 @@ define Planner
         result.to_string#()
     }
 
+    ; strip_package_prefix: "scaly.containers.String" -> "String".
+    ; Matches stripPackagePrefix in Planner.cpp: only strips when the full
+    ; name begins with "scaly.". Anything else (e.g. "scalyc.compiler.Foo")
+    ; is returned unchanged so user types keep their qualified identity.
+    function strip_package_prefix#(rp, name: String) returns String
+    {
+        guard name.starts_with("scaly.") = false
+            return String^rp(name)
+
+        let last_dot name.last_index_of("." as u8)
+        guard last_dot < 0
+            return String^rp(name)
+
+        let start (last_dot as size_t) + 1
+        let len name.get_length() - start
+        name.substring(rp, start, len)
+    }
+
+    ; encode_type: Itanium ABI type code.
+    ;
+    ; Recurses for pointer[T], ref[T] and generic instantiations. The
+    ; optimized "use pre-computed mangled_name" shortcut from the C++
+    ; implementation is deliberately omitted here — every PlannedType we
+    ; construct from scratch will end up with an empty mangled_name, and
+    ; the shortcut only saves work in a later pass we do not implement yet.
+    function encode_type#(rp, type_value: PlannedType) returns String
+    {
+        ; Built-in primitive types.
+        guard type_value.name.equals("void")
+            return String^rp("v")
+        guard type_value.name.equals("bool")
+            return String^rp("b")
+        guard type_value.name.equals("char")
+            return String^rp("c")
+        guard type_value.name.equals("int")
+            return String^rp("i")
+        guard type_value.name.equals("uint")
+            return String^rp("j")
+        guard type_value.name.equals("long")
+            return String^rp("l")
+        guard type_value.name.equals("ulong")
+            return String^rp("m")
+        guard type_value.name.equals("float")
+            return String^rp("f")
+        guard type_value.name.equals("double")
+            return String^rp("d")
+        guard type_value.name.equals("size")
+            return String^rp("m")
+        guard type_value.name.equals("size_t")
+            return String^rp("m")
+
+        ; pointer[T] -> "P" + encode_type(T)
+        guard type_value.name.equals("pointer")
+        {
+            guard type_value.generics <> null
+            {
+                let gens (*type_value.generics)
+                guard gens.length = 1
+                {
+                    let arg_ptr gens.get(0)
+                    guard arg_ptr <> null
+                    {
+                        let arg (*arg_ptr)
+                        let inner Planner.encode_type#(arg)
+                        var sb StringBuilder$()
+                        sb.append("P" as char)
+                        sb.append(inner)
+                        return sb.to_string^rp()
+                    }
+                }
+            }
+        }
+
+        ; ref[T] -> "R" + encode_type(T)   (non-owning reference)
+        guard type_value.name.equals("ref")
+        {
+            guard type_value.generics <> null
+            {
+                let gens (*type_value.generics)
+                guard gens.length = 1
+                {
+                    let arg_ptr gens.get(0)
+                    guard arg_ptr <> null
+                    {
+                        let arg (*arg_ptr)
+                        let inner Planner.encode_type#(arg)
+                        var sb StringBuilder$()
+                        sb.append("R" as char)
+                        sb.append(inner)
+                        return sb.to_string^rp()
+                    }
+                }
+            }
+        }
+
+        ; Generic instantiation: Name + "I" + args + "E".
+        ; Strip any "Base.arg" instantiation suffix so we encode the template name.
+        guard type_value.generics <> null
+        {
+            let gens (*type_value.generics)
+            guard gens.length > 0
+            {
+                let dot_pos type_value.name.index_of("." as u8)
+                var base_name: String type_value.name
+                guard dot_pos >= 0
+                    set base_name: type_value.name.substring(rp, 0, dot_pos as size_t)
+
+                var sb StringBuilder$()
+                sb.append(Planner.encode_name(base_name))
+                sb.append("I" as char)
+                var i: size_t 0
+                while i < gens.length
+                {
+                    let arg_ptr gens.get(i)
+                    guard arg_ptr <> null
+                    {
+                        let arg (*arg_ptr)
+                        let enc Planner.encode_type#(arg)
+                        sb.append(enc)
+                    }
+                    set i: i + 1
+                }
+                sb.append("E" as char)
+                return sb.to_string^rp()
+            }
+        }
+
+        ; User-defined type: length-prefixed, with "scaly.*" stripped.
+        let normalized Planner.strip_package_prefix#(type_value.name)
+        Planner.encode_name(normalized)
+    }
+
     ; size_to_string: decimal representation of a size_t.
     ; Classic divide-by-10 with digit buffer and reversal.
     function size_to_string(n: size_t) returns String
@@ -144,6 +279,74 @@ define Planner
         let encoded2 Planner.encode_name(String$(""))
         guard encoded2.equals(String$("0")) = false
             return 5
+
+        ; strip_package_prefix - only strips when it starts with "scaly."
+        let stripped Planner.strip_package_prefix$(String$("scaly.containers.String"))
+        guard stripped.equals(String$("String")) = false
+            return 6
+
+        let unstripped Planner.strip_package_prefix$(String$("scalyc.compiler.Planner"))
+        guard unstripped.equals(String$("scalyc.compiler.Planner")) = false
+            return 7
+
+        ; encode_type - built-in primitive codes.
+        let int_ty PlannedType(
+            Span(0, 0),
+            String$("int"),
+            String$(""),
+            null,
+            Lifetime.Unspecified(Unspecified()),
+            null,
+            String$(""),
+            null
+        )
+        let enc_int Planner.encode_type$(int_ty)
+        guard enc_int.equals(String$("i")) = false
+            return 8
+
+        let bool_ty PlannedType(
+            Span(0, 0),
+            String$("bool"),
+            String$(""),
+            null,
+            Lifetime.Unspecified(Unspecified()),
+            null,
+            String$(""),
+            null
+        )
+        let enc_bool Planner.encode_type$(bool_ty)
+        guard enc_bool.equals(String$("b")) = false
+            return 9
+
+        ; encode_type - user-defined falls through to encode_name.
+        let foo_ty PlannedType(
+            Span(0, 0),
+            String$("Foo"),
+            String$(""),
+            null,
+            Lifetime.Unspecified(Unspecified()),
+            null,
+            String$(""),
+            null
+        )
+        let enc_foo Planner.encode_type$(foo_ty)
+        guard enc_foo.equals(String$("3Foo")) = false
+            return 10
+
+        ; encode_type - "scaly.containers.String" -> "6String" (prefix stripped).
+        let sstr_ty PlannedType(
+            Span(0, 0),
+            String$("scaly.containers.String"),
+            String$(""),
+            null,
+            Lifetime.Unspecified(Unspecified()),
+            null,
+            String$(""),
+            null
+        )
+        let enc_sstr Planner.encode_type$(sstr_ty)
+        guard enc_sstr.equals(String$("6String")) = false
+            return 11
 
         0
     }
