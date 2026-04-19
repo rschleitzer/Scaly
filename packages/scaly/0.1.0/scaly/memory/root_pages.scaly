@@ -1,0 +1,281 @@
+; StackBucket (strict LIFO) and HeapBucket (bitmap-managed) page allocators.
+;
+; StackBucket: root pages — function-local and try-scope pages the Emitter
+;   allocates at entry and releases on exit. Push is a pointer bump; pop is
+;   a pointer decrement. Strict LIFO — a release that doesn't match the top
+;   of stack is a bug (e.g. a missed cleanup path) and is fatal.
+;
+; HeapBucket: extension pages (when a root page overflows) and exclusive
+;   pages (HashMap rehash etc.). Each bucket has a 64-bit bitmap tracking
+;   which of its 63 usable pages are free.
+;
+; Each bucket is a BUCKET_SIZE-aligned region of BUCKET_PAGES pages. Page 0
+; holds the bucket header; pages 1..BUCKET_PAGES-1 are usable.
+;
+; The three mutable state pointers + trace counters live in a C shim
+; (scalyc/page_runtime.cpp) because Scaly has no mutable module-level
+; globals yet. The shim also owns fprintf-style diagnostic output.
+;
+; Guard semantics: `guard X ACTION` runs ACTION when X is true, then falls
+; through. It's an early-exit when the condition holds.
+;
+; These functions must never trigger the Emitter's getOrCreateLocalPage
+; (i.e. they must not have `$` allocations, `for-in` loops, or calls that
+; take a caller-page parameter) — otherwise we'd recurse back into
+; scaly_alloc_root_page during its own emission and deadlock at runtime.
+
+define BUCKET_PAGES  size_t 64
+define BUCKET_SIZE   size_t 0x40000        ; PAGE_SIZE * BUCKET_PAGES
+define BUCKET_MASK   size_t 0x3FFFF         ; BUCKET_SIZE - 1
+define BITMAP_ALL_FREE u64 0x7FFFFFFFFFFFFFFF  ; bits 0..62 set (page 0 is header)
+
+; Bucket headers sit at offset 0 of each bucket.
+define StackBucketHeader
+(
+    prev: pointer[StackBucketHeader]
+    next: pointer[StackBucketHeader]
+)
+
+define HeapBucketHeader
+(
+    prev: pointer[HeapBucketHeader]
+    next: pointer[HeapBucketHeader]
+    bitmap: u64
+)
+
+; Process-global state, held in a C static via scaly_rt_state(). Scaly sees
+; only the three pointer fields; the C shim's struct has additional trailing
+; state (trace counters) which we don't declare here because Scaly doesn't
+; yet support fixed-size array fields in structs. All access to those
+; counters goes through the trace helpers below via pointer arithmetic.
+define ScalyRuntimeState
+(
+    stack_head: pointer[StackBucketHeader]
+    stack_top:  pointer[Page]
+    heap_head:  pointer[HeapBucketHeader]
+)
+
+function scaly_rt_state() returns pointer[ScalyRuntimeState] extern
+procedure scaly_rt_abort_lifo(release: pointer[void], top: pointer[void]) extern
+procedure scaly_rt_register_trace() extern
+
+; --------------------------------------------------------------------------
+; Address helpers
+; --------------------------------------------------------------------------
+
+function stack_bucket_of(p: pointer[Page]) returns pointer[StackBucketHeader]
+    (p as size_t & ~BUCKET_MASK) as pointer[StackBucketHeader]
+
+function heap_bucket_of(p: pointer[Page]) returns pointer[HeapBucketHeader]
+    (p as size_t & ~BUCKET_MASK) as pointer[HeapBucketHeader]
+
+function first_usable_page(bucket: pointer[void]) returns pointer[Page]
+    (bucket as size_t + PAGE_SIZE) as pointer[Page]
+
+function last_usable_page(bucket: pointer[void]) returns pointer[Page]
+    (bucket as size_t + (BUCKET_PAGES - (1 as size_t)) * PAGE_SIZE) as pointer[Page]
+
+; --------------------------------------------------------------------------
+; reset_page — fresh-page initialization: bump pointer sits just past the
+; Page header, all chain/list pointers are null.
+; --------------------------------------------------------------------------
+
+procedure reset_page(p: pointer[Page])
+{
+    set p.next_object: (p as size_t + sizeof Page) as pointer[void]
+    set p.current_page: null
+    set p.next_page: null
+    set p.exclusive_pages: PageList()
+}
+
+; --------------------------------------------------------------------------
+; Bucket creation
+; --------------------------------------------------------------------------
+
+function create_stack_bucket(prev: pointer[StackBucketHeader]) returns pointer[StackBucketHeader]
+{
+    let mem aligned_alloc(BUCKET_SIZE as i64, BUCKET_SIZE as i64)
+    guard mem = null
+        exit(101)
+
+    let sb mem as pointer[StackBucketHeader]
+    set sb.prev: prev
+    set sb.next: null
+    guard prev <> null
+        set prev.next: sb
+
+    sb
+}
+
+function create_heap_bucket() returns pointer[HeapBucketHeader]
+{
+    let mem aligned_alloc(BUCKET_SIZE as i64, BUCKET_SIZE as i64)
+    guard mem = null
+        exit(102)
+
+    let hb mem as pointer[HeapBucketHeader]
+    set hb.prev: null
+    set hb.next: null
+    set hb.bitmap: BITMAP_ALL_FREE
+    hb
+}
+
+; --------------------------------------------------------------------------
+; Count trailing zeros in a u64 (for the HeapBucket bitmap scan). De Bruijn
+; multiplication — no branches, 11 ops. Caller must ensure x != 0.
+; --------------------------------------------------------------------------
+
+define DEBRUIJN_MAGIC u64 0x03F79D71B4CB0A89
+
+define DEBRUIJN_TABLE: i32[] [
+    0, 1, 48, 2, 57, 49, 28, 3,
+    61, 58, 50, 42, 38, 29, 17, 4,
+    62, 55, 59, 36, 53, 51, 43, 22,
+    45, 39, 33, 30, 24, 18, 12, 5,
+    63, 47, 56, 27, 60, 41, 37, 16,
+    54, 35, 52, 21, 44, 32, 23, 11,
+    46, 26, 40, 15, 34, 20, 31, 10,
+    25, 14, 19, 9, 13, 8, 7, 6,
+]
+
+function ctz_u64(x: u64) returns i32
+{
+    let isolated x & (0 - x)                  ; x & (-x) isolates lowest bit
+    let idx (isolated * DEBRUIJN_MAGIC) >> 58
+    *(DEBRUIJN_TABLE + idx)
+}
+
+; --------------------------------------------------------------------------
+; StackBucket: root pages
+; --------------------------------------------------------------------------
+
+function scaly_alloc_root_page() returns pointer[Page]
+{
+    let state scaly_rt_state()
+
+    guard state.stack_top = null
+    {
+        ; First-ever push: lazily create the first bucket if needed, then
+        ; return its first usable slot.
+        guard state.stack_head = null
+            set state.stack_head: create_stack_bucket(null as pointer[StackBucketHeader])
+
+        let p first_usable_page(state.stack_head as pointer[void])
+        set state.stack_top: p
+        reset_page(p)
+        return p
+    }
+
+    ; Regular push: bump to the next page in the current bucket.
+    let bucket stack_bucket_of(state.stack_top)
+    let next_addr (state.stack_top as size_t + PAGE_SIZE) as pointer[Page]
+
+    guard next_addr > last_usable_page(bucket as pointer[void])
+    {
+        ; Current bucket exhausted — walk to an existing next bucket or
+        ; create one.
+        guard bucket.next = null
+            set bucket.next: create_stack_bucket(bucket)
+
+        let fresh first_usable_page(bucket.next as pointer[void])
+        set state.stack_top: fresh
+        reset_page(fresh)
+        return fresh
+    }
+
+    set state.stack_top: next_addr
+    reset_page(next_addr)
+    next_addr
+}
+
+procedure scaly_release_root_page(p: pointer[Page])
+{
+    let state scaly_rt_state()
+
+    ; Strict LIFO: the release must pop the current top. A mismatch means
+    ; some exit path skipped its release — a real bug.
+    guard p <> state.stack_top
+        scaly_rt_abort_lifo(p as pointer[void], state.stack_top as pointer[void])
+
+    let bucket stack_bucket_of(p)
+    let first first_usable_page(bucket as pointer[void])
+
+    guard p <> first
+    {
+        set state.stack_top: (p as size_t - PAGE_SIZE) as pointer[Page]
+        return
+    }
+
+    ; Popped the bucket's first page — unwind to the previous bucket's last
+    ; usable slot, or clear the stack entirely if this was the first bucket.
+    guard bucket.prev = null
+    {
+        set state.stack_top: null
+        return
+    }
+
+    set state.stack_top: last_usable_page(bucket.prev as pointer[void])
+}
+
+; --------------------------------------------------------------------------
+; HeapBucket: extension and exclusive pages
+; --------------------------------------------------------------------------
+
+function scaly_alloc_page() returns pointer[Page]
+{
+    let state scaly_rt_state()
+
+    guard state.heap_head = null
+        set state.heap_head: create_heap_bucket()
+
+    let b state.heap_head
+    ; Invariant: b.bitmap != 0 (we unlink full buckets below).
+    let slot ctz_u64(b.bitmap)
+    set b.bitmap: b.bitmap & ~((1 as u64) << slot)
+
+    let page_addr (b as size_t) + ((slot + 1) as size_t) * PAGE_SIZE
+    let page page_addr as pointer[Page]
+    reset_page(page)
+
+    guard b.bitmap = 0
+    {
+        ; Bucket is now full — unlink from the free list.
+        set state.heap_head: b.next
+        guard state.heap_head <> null
+            set state.heap_head.prev: null
+
+        set b.next: null
+        set b.prev: null
+    }
+
+    page
+}
+
+procedure scaly_release_page(p: pointer[Page])
+{
+    ; Oversized pages (allocated directly via aligned_alloc in Page.scaly's
+    ; allocate_oversized) carry next_object == null. They go back via free.
+    guard p.next_object = null
+    {
+        free(p as pointer[void])
+        return
+    }
+
+    let state scaly_rt_state()
+    let b heap_bucket_of(p)
+    let slot (((p as size_t) - (b as size_t)) / PAGE_SIZE) - (1 as size_t)
+
+    let was_full b.bitmap = 0
+    set b.bitmap: b.bitmap | ((1 as u64) << slot)
+
+    guard was_full
+    {
+        ; Bucket had been full; rejoin the free list at the head.
+        set b.next: state.heap_head
+        set b.prev: null
+        guard state.heap_head <> null
+            set state.heap_head.prev: b
+
+        set state.heap_head: b
+    }
+}

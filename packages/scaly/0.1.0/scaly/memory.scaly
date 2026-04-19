@@ -5,6 +5,7 @@ define memory
     module PageList
     module PageListIterator
     module BlockWatermark
+    module root_pages
     module Page
 
     function test_page_allocate() returns int

@@ -295,26 +295,28 @@ void Emitter::declareRuntimeFunctions() {
         FunctionCache["exit"] = ExitFunc;
     }
 
-    // scaly_alloc_root_page() / scaly_release_root_page(ptr) — direct
-    // bindings to the C page runtime. StackBucket push/pop for the
-    // function-local and try-scope root pages that the Emitter allocates.
+    // scaly_alloc_root_page() / scaly_release_root_page(ptr) — StackBucket
+    // push/pop emitted at every function entry/exit. Defined in Scaly in
+    // scaly/memory/root_pages.scaly; Itanium-mangled to the symbols below.
     auto *AllocRootTy = llvm::FunctionType::get(PtrTy, {}, false);
-    if (auto It = FunctionCache.find("scaly_alloc_root_page"); It != FunctionCache.end()) {
+    const char *AllocRootSym = "_Z21scaly_alloc_root_pagev";
+    if (auto It = FunctionCache.find(AllocRootSym); It != FunctionCache.end()) {
         PageAllocateRootPage = It->second;
     } else if (!PageAllocateRootPage) {
         PageAllocateRootPage = llvm::Function::Create(
             AllocRootTy, llvm::GlobalValue::ExternalLinkage,
-            "scaly_alloc_root_page", *Module);
-        FunctionCache["scaly_alloc_root_page"] = PageAllocateRootPage;
+            AllocRootSym, *Module);
+        FunctionCache[AllocRootSym] = PageAllocateRootPage;
     }
     auto *ReleaseRootTy = llvm::FunctionType::get(VoidTy, {PtrTy}, false);
-    if (auto It = FunctionCache.find("scaly_release_root_page"); It != FunctionCache.end()) {
+    const char *ReleaseRootSym = "_Z23scaly_release_root_pageP4Page";
+    if (auto It = FunctionCache.find(ReleaseRootSym); It != FunctionCache.end()) {
         PageReleaseRootPage = It->second;
     } else if (!PageReleaseRootPage) {
         PageReleaseRootPage = llvm::Function::Create(
             ReleaseRootTy, llvm::GlobalValue::ExternalLinkage,
-            "scaly_release_root_page", *Module);
-        FunctionCache["scaly_release_root_page"] = PageReleaseRootPage;
+            ReleaseRootSym, *Module);
+        FunctionCache[ReleaseRootSym] = PageReleaseRootPage;
     }
 
     // scaly_trace_root_push(name) / scaly_trace_root_pop(name) — diagnostic
@@ -427,6 +429,30 @@ void Emitter::emitRBMMStubs() {
     if (PageRestoreWatermark && PageRestoreWatermark->isDeclaration()) {
         auto *Entry = llvm::BasicBlock::Create(*Context, "entry", PageRestoreWatermark);
         llvm::IRBuilder<> B(Entry);
+        B.CreateRetVoid();
+    }
+
+    // --- scaly_alloc_root_page / scaly_release_root_page ---
+    // The stdlib's root-page allocator is itself in Scaly
+    // (scaly/memory/root_pages.scaly). When Page is not in the Plan (the
+    // small JIT pipeline tests), those Scaly-mangled symbols have no
+    // body either, so we stub them here with a direct aligned_alloc/free
+    // pair. Matches the Page::allocate_page stub above.
+    if (PageAllocateRootPage && PageAllocateRootPage->isDeclaration()) {
+        auto *Entry = llvm::BasicBlock::Create(*Context, "entry", PageAllocateRootPage);
+        llvm::IRBuilder<> B(Entry);
+        llvm::Value *Mem = B.CreateCall(AlignedAlloc, {PageSize, PageSize}, "page");
+        B.CreateMemSet(Mem, B.getInt8(0), llvm::ConstantExpr::getSizeOf(PageType), llvm::MaybeAlign(8));
+        llvm::Value *NextObj = B.CreateGEP(PageType, Mem, B.getInt64(1), "next_obj");
+        B.CreateStore(NextObj, B.CreateStructGEP(PageType, Mem, 0));
+        B.CreateRet(Mem);
+    }
+    if (PageReleaseRootPage && PageReleaseRootPage->isDeclaration()) {
+        auto *Entry = llvm::BasicBlock::Create(*Context, "entry", PageReleaseRootPage);
+        llvm::IRBuilder<> B(Entry);
+        if (Free) {
+            B.CreateCall(Free, {PageReleaseRootPage->getArg(0)});
+        }
         B.CreateRetVoid();
     }
 }
@@ -6648,6 +6674,13 @@ llvm::Expected<uint64_t> Emitter::jitExecuteRaw(const Plan &P, llvm::Type *Expec
     bool PageInPlan = P.Structures.find("Page") != P.Structures.end();
     if (!PageInPlan) {
         initRBMM();
+        // Also declare scaly_alloc_root_page / scaly_release_root_page so
+        // their FunctionCache entries and the PageAllocateRootPage /
+        // PageReleaseRootPage fields are populated BEFORE any Plan
+        // function bodies are emitted — otherwise emitFunctionBody skips
+        // the root-page push/pop for lack of a Function object to call,
+        // and the later emitRBMMStubs body is never referenced.
+        declareRuntimeFunctions();
     }
 
     // Emit type declarations
@@ -6702,8 +6735,8 @@ llvm::Expected<uint64_t> Emitter::jitExecuteRaw(const Plan &P, llvm::Type *Expec
         declareRuntimeFunctions();
 
         PageAllocatePage = FunctionCache["_ZN4Page13allocate_pageEv"];
-        PageAllocateRootPage = FunctionCache["scaly_alloc_root_page"];
-        PageReleaseRootPage = FunctionCache["scaly_release_root_page"];
+        PageAllocateRootPage = FunctionCache["_Z21scaly_alloc_root_pagev"];
+        PageReleaseRootPage = FunctionCache["_Z23scaly_release_root_pageP4Page"];
         TraceRootPush = FunctionCache["scaly_trace_root_push"];
         TraceRootPop = FunctionCache["scaly_trace_root_pop"];
         PageAllocate = FunctionCache["_ZN4Page8allocateEmm"];  // size_t = unsigned long (m)
@@ -7076,8 +7109,8 @@ llvm::Error Emitter::jitExecuteVoid(const Plan &P, llvm::StringRef MangledFuncti
     if (PageInPlan) {
         declareRuntimeFunctions();
         PageAllocatePage = FunctionCache["_ZN4Page13allocate_pageEv"];
-        PageAllocateRootPage = FunctionCache["scaly_alloc_root_page"];
-        PageReleaseRootPage = FunctionCache["scaly_release_root_page"];
+        PageAllocateRootPage = FunctionCache["_Z21scaly_alloc_root_pagev"];
+        PageReleaseRootPage = FunctionCache["_Z23scaly_release_root_pageP4Page"];
         TraceRootPush = FunctionCache["scaly_trace_root_push"];
         TraceRootPop = FunctionCache["scaly_trace_root_pop"];
         PageAllocate = FunctionCache["_ZN4Page8allocateEmm"];  // size_t = unsigned long (m)
@@ -7360,8 +7393,8 @@ llvm::Expected<int64_t> Emitter::jitExecuteIntFunction(const Plan &P, llvm::Stri
     if (PageInPlan) {
         declareRuntimeFunctions();
         PageAllocatePage = FunctionCache["_ZN4Page13allocate_pageEv"];
-        PageAllocateRootPage = FunctionCache["scaly_alloc_root_page"];
-        PageReleaseRootPage = FunctionCache["scaly_release_root_page"];
+        PageAllocateRootPage = FunctionCache["_Z21scaly_alloc_root_pagev"];
+        PageReleaseRootPage = FunctionCache["_Z23scaly_release_root_pageP4Page"];
         TraceRootPush = FunctionCache["scaly_trace_root_push"];
         TraceRootPop = FunctionCache["scaly_trace_root_pop"];
         PageAllocate = FunctionCache["_ZN4Page8allocateEmm"];  // size_t = unsigned long (m)
@@ -7697,8 +7730,8 @@ void Emitter::dumpIR(const Plan &P) {
     if (PageInPlan) {
         declareRuntimeFunctions();
         PageAllocatePage = FunctionCache["_ZN4Page13allocate_pageEv"];
-        PageAllocateRootPage = FunctionCache["scaly_alloc_root_page"];
-        PageReleaseRootPage = FunctionCache["scaly_release_root_page"];
+        PageAllocateRootPage = FunctionCache["_Z21scaly_alloc_root_pagev"];
+        PageReleaseRootPage = FunctionCache["_Z23scaly_release_root_pageP4Page"];
         TraceRootPush = FunctionCache["scaly_trace_root_push"];
         TraceRootPop = FunctionCache["scaly_trace_root_pop"];
         PageAllocate = FunctionCache["_ZN4Page8allocateEmm"];

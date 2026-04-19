@@ -1,23 +1,23 @@
-// Page allocator runtime.
+// State + I/O shim for the Scaly-implemented page allocator.
 //
-// Two bucket types live in statically-decided address spaces, differentiated
-// only by the calling API — never by a runtime tag.
+// The allocator itself lives in packages/scaly/0.1.0/scaly/memory/
+// root_pages.scaly (StackBucket/HeapBucket logic + SCALY_TRACE_ROOT
+// diagnostic counters). This shim exists because:
 //
-//   StackBucket: strict LIFO. Allocated only for "root" pages — i.e., pages
-//     pushed at function entry and at `try` entry. Release is a pointer
-//     decrement; no bitmap state to maintain.
+//   1. Scaly has no mutable module-level globals yet, so the three state
+//      pointers + trace array live in a C static.
+//   2. Scaly has no format-string / stderr-print facility, so the
+//      diagnostic dump and the LIFO-violation abort are done in C.
+//   3. Scaly has no function-pointer-to-atexit syntax, so the atexit
+//      registration also stays here.
 //
-//   HeapBucket:  bitmap-managed. Allocated for "extension" pages (when a
-//     root page overflows) and "exclusive" pages (HashMap rehash etc.).
-//     Release clears a bit; bucket rejoins the free list if it was full.
+// The shim exposes three entry points. Everything else — bucket walks,
+// bitmap scans, trace counting — is Scaly code.
 //
-// Each bucket is a BUCKET_SIZE-aligned memory region of BUCKET_PAGES pages.
-// Page 0 holds the bucket's header struct; pages 1..BUCKET_PAGES-1 are
-// usable. Given any page address, the bucket's base is just `addr & ~MASK`.
-//
-// Global state: three pointers. Single-threaded for now; thread-local is
-// the obvious next step.
+// Layout of ScalyRuntimeState mirrors the Scaly-side struct exactly. If
+// either side changes, update both.
 
+#include <cstddef>
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
@@ -25,116 +25,30 @@
 
 namespace {
 
-constexpr size_t PAGE_SIZE = 0x1000;
-constexpr size_t BUCKET_PAGES = 64;
-constexpr size_t BUCKET_SIZE = PAGE_SIZE * BUCKET_PAGES;
-constexpr uintptr_t BUCKET_MASK = BUCKET_SIZE - 1;
+constexpr int64_t TRACE_MAX = 8192;
 
-// All pages usable except page 0 (header). Bits 0..62 map to pages 1..63.
-// Bit set = page free.
-constexpr uint64_t BITMAP_ALL_FREE = (1ULL << (BUCKET_PAGES - 1)) - 1;
-
-struct Page {
-    void* next_object;
-    Page* current_page;
-    Page* next_page;
-    struct { void* head; } exclusive_pages;
-};
-
-struct StackBucket {
-    StackBucket* prev;
-    StackBucket* next;
-    // rest of page 0 unused
-};
-
-struct HeapBucket {
-    HeapBucket* prev;
-    HeapBucket* next;
-    uint64_t bitmap;  // bit i = page (i+1) is free
-    // rest of page 0 unused
-};
-
-// Global allocator state.
-StackBucket* g_stack_head = nullptr;
-Page*        g_stack_top  = nullptr;  // most recently allocated root page
-HeapBucket*  g_heap_head  = nullptr;  // head of buckets with free pages
-
-void reset_page(Page* p) {
-    p->next_object = reinterpret_cast<void*>(p + 1);
-    p->current_page = nullptr;
-    p->next_page = nullptr;
-    p->exclusive_pages.head = nullptr;
-}
-
-void* aligned_bucket_alloc() {
-    void* mem = nullptr;
-#if defined(_WIN32)
-    mem = _aligned_malloc(BUCKET_SIZE, BUCKET_SIZE);
-#else
-    if (posix_memalign(&mem, BUCKET_SIZE, BUCKET_SIZE) != 0) mem = nullptr;
-#endif
-    if (!mem) {
-        fprintf(stderr, "scaly page runtime: out of memory allocating bucket\n");
-        abort();
-    }
-    return mem;
-}
-
-StackBucket* create_stack_bucket(StackBucket* prev) {
-    void* mem = aligned_bucket_alloc();
-    auto* sb = static_cast<StackBucket*>(mem);
-    sb->prev = prev;
-    sb->next = nullptr;
-    if (prev) prev->next = sb;
-    return sb;
-}
-
-HeapBucket* create_heap_bucket() {
-    void* mem = aligned_bucket_alloc();
-    auto* hb = static_cast<HeapBucket*>(mem);
-    hb->prev = nullptr;
-    hb->next = nullptr;
-    hb->bitmap = BITMAP_ALL_FREE;
-    return hb;
-}
-
-inline StackBucket* stack_bucket_of(const Page* p) {
-    return reinterpret_cast<StackBucket*>(reinterpret_cast<uintptr_t>(p) & ~BUCKET_MASK);
-}
-
-inline HeapBucket* heap_bucket_of(const Page* p) {
-    return reinterpret_cast<HeapBucket*>(reinterpret_cast<uintptr_t>(p) & ~BUCKET_MASK);
-}
-
-inline Page* first_usable_page(const void* bucket_base) {
-    return reinterpret_cast<Page*>(reinterpret_cast<uintptr_t>(bucket_base) + PAGE_SIZE);
-}
-
-inline Page* last_usable_page(const void* bucket_base) {
-    return reinterpret_cast<Page*>(reinterpret_cast<uintptr_t>(bucket_base) + (BUCKET_PAGES - 1) * PAGE_SIZE);
-}
-
-// Diagnostic push/pop tracing, gated on $SCALY_TRACE_ROOT. Used to find
-// functions whose exit paths don't pair with their entry alloc.
-//
-// Kept free of libc++ types so page_runtime.cpp continues to link with a
-// plain `clang` invocation (the AOT test runner does not use clang++).
 struct TraceEntry {
-    const char* name;   // interned by strdup; we never free these
-    int64_t push_count;
-    int64_t pop_count;
+    const char* name;
+    int64_t     push_count;
+    int64_t     pop_count;
 };
 
-constexpr size_t TRACE_MAX = 8192;
-TraceEntry g_trace_entries[TRACE_MAX];
-size_t     g_trace_count   = 0;
-bool       g_trace_inited  = false;
-bool       g_trace_enabled = false;
+struct ScalyRuntimeState {
+    void*        stack_head;
+    void*        stack_top;
+    void*        heap_head;
+    int64_t      trace_enabled;
+    int64_t      trace_atexit_registered;
+    int64_t      trace_count;
+    TraceEntry   trace_entries[TRACE_MAX];
+};
 
-void trace_atexit_dump() {
+ScalyRuntimeState g_state{};
+
+void trace_atexit_dump_cb() {
     bool any = false;
-    for (size_t i = 0; i < g_trace_count; i++) {
-        TraceEntry& e = g_trace_entries[i];
+    for (int64_t i = 0; i < g_state.trace_count; i++) {
+        const TraceEntry& e = g_state.trace_entries[i];
         if (e.push_count != e.pop_count) {
             fprintf(stderr,
                 "scaly_trace_root: UNBALANCED %s push=%lld pop=%lld leak=%lld\n",
@@ -150,144 +64,65 @@ void trace_atexit_dump() {
     }
 }
 
-void trace_init_once() {
-    if (g_trace_inited) return;
-    g_trace_inited = true;
-    if (getenv("SCALY_TRACE_ROOT")) {
-        g_trace_enabled = true;
-        atexit(trace_atexit_dump);
+}  // namespace
+
+extern "C" {
+
+ScalyRuntimeState* scaly_rt_state() {
+    return &g_state;
+}
+
+// Called by the Scaly trace layer on first push/pop. Reads $SCALY_TRACE_ROOT
+// and arms the atexit dump exactly once per process.
+void scaly_rt_register_trace() {
+    if (g_state.trace_atexit_registered) return;
+    g_state.trace_atexit_registered = 1;
+    if (std::getenv("SCALY_TRACE_ROOT")) {
+        g_state.trace_enabled = 1;
+        std::atexit(trace_atexit_dump_cb);
     }
 }
 
-TraceEntry* trace_find_or_add(const char* name) {
+// Called by scaly_release_root_page when LIFO invariant is violated.
+// Prints the mismatch and aborts. Must stay in C because the Scaly
+// allocator cannot call into anything that might itself need a root page.
+void scaly_rt_abort_lifo(const void* release, const void* top) {
+    fprintf(stderr,
+        "scaly_release_root_page: LIFO violation — release=%p top=%p\n",
+        release, top);
+    abort();
+}
+
+// Diagnostic push/pop counters, emitted by the Emitter at every root-page
+// push/pop site. Each entry is keyed by the emitting function's name; the
+// atexit dump reports any name whose push and pop counts don't balance.
+// Linear lookup keeps the hot path allocation-free at the cost of O(N)
+// per update — acceptable for a diagnostic that is off by default.
+
+static TraceEntry* trace_find_or_add(const char* name) {
     if (!name) name = "<null>";
-    for (size_t i = 0; i < g_trace_count; i++) {
-        if (strcmp(g_trace_entries[i].name, name) == 0)
-            return &g_trace_entries[i];
+    for (int64_t i = 0; i < g_state.trace_count; i++) {
+        if (strcmp(g_state.trace_entries[i].name, name) == 0)
+            return &g_state.trace_entries[i];
     }
-    if (g_trace_count >= TRACE_MAX) return nullptr;
-    TraceEntry& e = g_trace_entries[g_trace_count++];
+    if (g_state.trace_count >= TRACE_MAX) return nullptr;
+    TraceEntry& e = g_state.trace_entries[g_state.trace_count++];
     e.name = strdup(name);
     e.push_count = 0;
     e.pop_count = 0;
     return &e;
 }
 
-}  // anonymous namespace
-
-extern "C" {
-
 void scaly_trace_root_push(const char* name) {
-    trace_init_once();
-    if (!g_trace_enabled) return;
+    scaly_rt_register_trace();
+    if (!g_state.trace_enabled) return;
     if (TraceEntry* e = trace_find_or_add(name)) e->push_count++;
 }
 
 void scaly_trace_root_pop(const char* name) {
-    trace_init_once();
-    if (!g_trace_enabled) return;
+    scaly_rt_register_trace();
+    if (!g_state.trace_enabled) return;
     if (TraceEntry* e = trace_find_or_add(name)) e->pop_count++;
-}
-
-
-// -- StackBucket (root pages) ------------------------------------------------
-
-Page* scaly_alloc_root_page() {
-    if (!g_stack_top) {
-        if (!g_stack_head) g_stack_head = create_stack_bucket(nullptr);
-        g_stack_top = first_usable_page(g_stack_head);
-        reset_page(g_stack_top);
-        return g_stack_top;
-    }
-
-    StackBucket* bucket = stack_bucket_of(g_stack_top);
-    Page* next = reinterpret_cast<Page*>(reinterpret_cast<uintptr_t>(g_stack_top) + PAGE_SIZE);
-
-    if (next <= last_usable_page(bucket)) {
-        g_stack_top = next;
-    } else {
-        if (!bucket->next) bucket->next = create_stack_bucket(bucket);
-        g_stack_top = first_usable_page(bucket->next);
-    }
-    reset_page(g_stack_top);
-    return g_stack_top;
-}
-
-void scaly_release_root_page(Page* p) {
-    // Strict LIFO: a release must always pop the current top of stack. If
-    // not, some exit path is skipping its release — a real bug that would
-    // leak slots and, given recursion, eventually corrupt the bucket.
-    if (p != g_stack_top) {
-        fprintf(stderr,
-            "scaly_release_root_page: LIFO violation — "
-            "release=%p top=%p\n",
-            (void*)p, (void*)g_stack_top);
-        abort();
-    }
-    StackBucket* bucket = stack_bucket_of(p);
-    Page* first = first_usable_page(bucket);
-
-    if (p == first) {
-        // Popped the bucket's first page; unwind to previous bucket (if any)
-        if (!bucket->prev) {
-            g_stack_top = nullptr;
-        } else {
-            g_stack_top = last_usable_page(bucket->prev);
-        }
-    } else {
-        g_stack_top = reinterpret_cast<Page*>(reinterpret_cast<uintptr_t>(p) - PAGE_SIZE);
-    }
-}
-
-// -- HeapBucket (extension and exclusive pages) ------------------------------
-
-Page* scaly_alloc_page() {
-    if (!g_heap_head) {
-        g_heap_head = create_heap_bucket();
-    }
-
-    HeapBucket* b = g_heap_head;
-    // g_heap_head always has bitmap != 0 (we remove full buckets below).
-    int slot = __builtin_ctzll(b->bitmap);   // 0..62
-    b->bitmap &= ~(1ULL << slot);
-
-    Page* page = reinterpret_cast<Page*>(
-        reinterpret_cast<uintptr_t>(b) + (slot + 1) * PAGE_SIZE);
-    reset_page(page);
-
-    if (b->bitmap == 0) {
-        // Bucket is now full; unlink from free-list.
-        g_heap_head = b->next;
-        if (g_heap_head) g_heap_head->prev = nullptr;
-        b->next = nullptr;
-        b->prev = nullptr;
-    }
-
-    return page;
-}
-
-void scaly_release_page(Page* p) {
-    // Oversized pages (allocated directly via aligned_alloc in Page.scaly's
-    // allocate_oversized) carry next_object == null. They go back via free().
-    if (p->next_object == nullptr) {
-        free(p);
-        return;
-    }
-
-    HeapBucket* b = heap_bucket_of(p);
-    int slot = static_cast<int>(
-        (reinterpret_cast<uintptr_t>(p) - reinterpret_cast<uintptr_t>(b)) / PAGE_SIZE) - 1;
-
-    bool was_full = (b->bitmap == 0);
-    b->bitmap |= (1ULL << slot);
-
-    if (was_full) {
-        // Rejoin the free-list at the head.
-        b->next = g_heap_head;
-        b->prev = nullptr;
-        if (g_heap_head) g_heap_head->prev = b;
-        g_heap_head = b;
-    }
 }
 
 }  // extern "C"
