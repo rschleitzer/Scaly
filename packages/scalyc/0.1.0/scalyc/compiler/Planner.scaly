@@ -2875,6 +2875,60 @@ define Planner
             let total_size Planner.compute_struct_size(&props_holder)
             let total_align Planner.compute_struct_alignment(&props_holder)
 
+            ; Plan methods, operators, initializers, deinitializer.
+            var planned_methods Array[PlannedFunction]$()
+            var planned_operators Array[PlannedOperator]$()
+            var planned_initializers Array[PlannedInitializer]$()
+            var deinit_ref: ref[PlannedDeInitializer]? null
+
+            var mi: size_t 0
+            while mi < s.members.length
+            {
+                let m_ptr s.members.get(mi)
+                guard m_ptr <> null
+                {
+                    let mem (*m_ptr)
+                    choose mem
+                        when f: Function
+                        {
+                            planned_methods.add(this.plan_function#(f))
+                            0
+                        }
+                        when o: Operator
+                        {
+                            planned_operators.add(this.plan_operator#(o))
+                            0
+                        }
+                        else
+                            0
+                }
+                set mi: mi + 1
+            }
+
+            var ii: size_t 0
+            while ii < s.initializers.length
+            {
+                let ii_ptr s.initializers.get(ii)
+                guard ii_ptr <> null
+                {
+                    let ini (*ii_ptr)
+                    planned_initializers.add(this.plan_initializer#(ini))
+                }
+                set ii: ii + 1
+            }
+
+            guard s.deinitializer <> null
+            {
+                let di (*s.deinitializer)
+                var dei_holder Vector[PlannedDeInitializer]^rp(1)
+                dei_holder.put(0, this.plan_deinitializer#(di))
+                set deinit_ref: dei_holder.get(0)
+            }
+
+            var methods_holder Vector[PlannedFunction]^rp(planned_methods)
+            var ops_holder Vector[PlannedOperator]^rp(planned_operators)
+            var inits_holder Vector[PlannedInitializer]^rp(planned_initializers)
+
             let result PlannedStructure(
                 s.span,
                 s.private_,
@@ -2882,10 +2936,10 @@ define Planner
                 String^rp(name),
                 String^rp(""),
                 &props_holder,
-                null,
-                null,
-                null,
-                null,
+                &inits_holder,
+                deinit_ref,
+                &methods_holder,
+                &ops_holder,
                 total_size,
                 total_align,
                 null
