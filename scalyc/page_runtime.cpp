@@ -114,9 +114,80 @@ inline Page* last_usable_page(const void* bucket_base) {
     return reinterpret_cast<Page*>(reinterpret_cast<uintptr_t>(bucket_base) + (BUCKET_PAGES - 1) * PAGE_SIZE);
 }
 
+// Diagnostic push/pop tracing, gated on $SCALY_TRACE_ROOT. Used to find
+// functions whose exit paths don't pair with their entry alloc.
+//
+// Kept free of libc++ types so page_runtime.cpp continues to link with a
+// plain `clang` invocation (the AOT test runner does not use clang++).
+struct TraceEntry {
+    const char* name;   // interned by strdup; we never free these
+    int64_t push_count;
+    int64_t pop_count;
+};
+
+constexpr size_t TRACE_MAX = 8192;
+TraceEntry g_trace_entries[TRACE_MAX];
+size_t     g_trace_count   = 0;
+bool       g_trace_inited  = false;
+bool       g_trace_enabled = false;
+
+void trace_atexit_dump() {
+    bool any = false;
+    for (size_t i = 0; i < g_trace_count; i++) {
+        TraceEntry& e = g_trace_entries[i];
+        if (e.push_count != e.pop_count) {
+            fprintf(stderr,
+                "scaly_trace_root: UNBALANCED %s push=%lld pop=%lld leak=%lld\n",
+                e.name,
+                (long long)e.push_count,
+                (long long)e.pop_count,
+                (long long)(e.push_count - e.pop_count));
+            any = true;
+        }
+    }
+    if (!any) {
+        fprintf(stderr, "scaly_trace_root: all root-page push/pop balanced\n");
+    }
+}
+
+void trace_init_once() {
+    if (g_trace_inited) return;
+    g_trace_inited = true;
+    if (getenv("SCALY_TRACE_ROOT")) {
+        g_trace_enabled = true;
+        atexit(trace_atexit_dump);
+    }
+}
+
+TraceEntry* trace_find_or_add(const char* name) {
+    if (!name) name = "<null>";
+    for (size_t i = 0; i < g_trace_count; i++) {
+        if (strcmp(g_trace_entries[i].name, name) == 0)
+            return &g_trace_entries[i];
+    }
+    if (g_trace_count >= TRACE_MAX) return nullptr;
+    TraceEntry& e = g_trace_entries[g_trace_count++];
+    e.name = strdup(name);
+    e.push_count = 0;
+    e.pop_count = 0;
+    return &e;
+}
+
 }  // anonymous namespace
 
 extern "C" {
+
+void scaly_trace_root_push(const char* name) {
+    trace_init_once();
+    if (!g_trace_enabled) return;
+    if (TraceEntry* e = trace_find_or_add(name)) e->push_count++;
+}
+
+void scaly_trace_root_pop(const char* name) {
+    trace_init_once();
+    if (!g_trace_enabled) return;
+    if (TraceEntry* e = trace_find_or_add(name)) e->pop_count++;
+}
 
 // -- StackBucket (root pages) ------------------------------------------------
 

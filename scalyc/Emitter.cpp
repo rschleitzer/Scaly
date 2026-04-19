@@ -315,6 +315,36 @@ void Emitter::declareRuntimeFunctions() {
             "scaly_release_root_page", *Module);
         FunctionCache["scaly_release_root_page"] = PageReleaseRootPage;
     }
+
+    // scaly_trace_root_push(name) / scaly_trace_root_pop(name) — diagnostic
+    // hooks used by emitRootTrace to tag each StackBucket push/pop with the
+    // emitting function's name. The runtime no-ops unless SCALY_TRACE_ROOT
+    // is set in the environment at process start.
+    auto *TraceTy = llvm::FunctionType::get(VoidTy, {PtrTy}, false);
+    if (auto It = FunctionCache.find("scaly_trace_root_push"); It != FunctionCache.end()) {
+        TraceRootPush = It->second;
+    } else if (!TraceRootPush) {
+        TraceRootPush = llvm::Function::Create(
+            TraceTy, llvm::GlobalValue::ExternalLinkage,
+            "scaly_trace_root_push", *Module);
+        FunctionCache["scaly_trace_root_push"] = TraceRootPush;
+    }
+    if (auto It = FunctionCache.find("scaly_trace_root_pop"); It != FunctionCache.end()) {
+        TraceRootPop = It->second;
+    } else if (!TraceRootPop) {
+        TraceRootPop = llvm::Function::Create(
+            TraceTy, llvm::GlobalValue::ExternalLinkage,
+            "scaly_trace_root_pop", *Module);
+        FunctionCache["scaly_trace_root_pop"] = TraceRootPop;
+    }
+}
+
+void Emitter::emitRootTrace(bool IsPop) {
+    llvm::Function *TraceFn = IsPop ? TraceRootPop : TraceRootPush;
+    if (!TraceFn || !CurrentFunction) return;
+    llvm::StringRef Name = CurrentFunction->getName();
+    llvm::Value *NameStr = Builder->CreateGlobalStringPtr(Name, "trace.name");
+    Builder->CreateCall(TraceFn, {NameStr});
 }
 
 // Emit minimal RBMM function bodies for JIT mode.
@@ -1323,6 +1353,7 @@ llvm::Error Emitter::emitFunctionBody(const PlannedFunction &Func,
 
     if (NeedsLocalPage && PageAllocateRootPage) {
         CurrentRegion.LocalPage = Builder->CreateCall(PageAllocateRootPage, {}, "local_page");
+        emitRootTrace(/*IsPop=*/false);
     } else {
         CurrentRegion.LocalPage = nullptr;  // Will use stack allocation as fallback
     }
@@ -1363,6 +1394,7 @@ llvm::Error Emitter::emitFunctionBody(const PlannedFunction &Func,
             Builder->SetInsertPoint(SkipCleanupBlock);
             // Return the root page to the StackBucket.
             if (PageReleaseRootPage) {
+                emitRootTrace(/*IsPop=*/true);
                 Builder->CreateCall(PageReleaseRootPage, {CurrentRegion.LocalPage});
             }
         }
@@ -1625,6 +1657,7 @@ llvm::Error Emitter::emitInitializerBody(const PlannedStructure &Struct,
     // Allocate local page if the initializer body has $ allocations
     if (Init.NeedsLocalPage && PageAllocateRootPage) {
         CurrentRegion.LocalPage = Builder->CreateCall(PageAllocateRootPage, {}, "local_page");
+        emitRootTrace(/*IsPop=*/false);
     }
 
     // Bind additional parameters
@@ -1666,6 +1699,7 @@ llvm::Error Emitter::emitInitializerBody(const PlannedStructure &Struct,
 
             Builder->SetInsertPoint(ContinueBlock);
             if (PageReleaseRootPage) {
+                emitRootTrace(/*IsPop=*/true);
                 Builder->CreateCall(PageReleaseRootPage, {CurrentRegion.LocalPage});
             }
         }
@@ -2270,6 +2304,7 @@ llvm::Error Emitter::emitReturn(const PlannedReturn &Return) {
 
         Builder->SetInsertPoint(ContinueBlock);
         if (PageReleaseRootPage) {
+            emitRootTrace(/*IsPop=*/true);
             Builder->CreateCall(PageReleaseRootPage, {CurrentRegion.LocalPage});
         }
     }
@@ -2543,6 +2578,7 @@ llvm::Error Emitter::emitThrow(const PlannedThrow &Throw) {
         if (PageDeallocateExtensions && !PageDeallocateExtensions->isDeclaration()) {
             Builder->CreateCall(PageDeallocateExtensions, {CurrentRegion.LocalPage});
         }
+        emitRootTrace(/*IsPop=*/true);
         Builder->CreateCall(PageReleaseRootPage, {CurrentRegion.LocalPage});
     }
 
@@ -6224,6 +6260,11 @@ llvm::Value *Emitter::getOrCreateLocalPage() {
             TmpBuilder.SetInsertPoint(&CurrentFunction->getEntryBlock());
     }
     CurrentRegion.LocalPage = TmpBuilder.CreateCall(PageAllocateRootPage, {}, "local_page.ondemand");
+    if (TraceRootPush) {
+        llvm::StringRef Name = CurrentFunction->getName();
+        llvm::Value *NameStr = TmpBuilder.CreateGlobalStringPtr(Name, "trace.name");
+        TmpBuilder.CreateCall(TraceRootPush, {NameStr});
+    }
     return CurrentRegion.LocalPage;
 }
 
@@ -6577,6 +6618,8 @@ llvm::Expected<uint64_t> Emitter::jitExecuteRaw(const Plan &P, llvm::Type *Expec
         PageAllocatePage = FunctionCache["_ZN4Page13allocate_pageEv"];
         PageAllocateRootPage = FunctionCache["scaly_alloc_root_page"];
         PageReleaseRootPage = FunctionCache["scaly_release_root_page"];
+        TraceRootPush = FunctionCache["scaly_trace_root_push"];
+        TraceRootPop = FunctionCache["scaly_trace_root_pop"];
         PageAllocate = FunctionCache["_ZN4Page8allocateEmm"];  // size_t = unsigned long (m)
         PageDeallocateExtensions = FunctionCache["_ZN4Page21deallocate_extensionsEv"];
         // Also set up PageType from StructCache (using mangled name)
@@ -6735,6 +6778,7 @@ llvm::Expected<uint64_t> Emitter::jitExecuteRaw(const Plan &P, llvm::Type *Expec
         }
         if (CurrentRegion.LocalPage && PageReleaseRootPage) {
             if (PageDeallocateExtensions) Builder->CreateCall(PageDeallocateExtensions, {CurrentRegion.LocalPage});
+            emitRootTrace(/*IsPop=*/true);
             Builder->CreateCall(PageReleaseRootPage, {CurrentRegion.LocalPage});
             CurrentRegion.LocalPage = nullptr;
         }
@@ -6742,6 +6786,7 @@ llvm::Expected<uint64_t> Emitter::jitExecuteRaw(const Plan &P, llvm::Type *Expec
     } else {
         if (CurrentRegion.LocalPage && PageReleaseRootPage) {
             if (PageDeallocateExtensions) Builder->CreateCall(PageDeallocateExtensions, {CurrentRegion.LocalPage});
+            emitRootTrace(/*IsPop=*/true);
             Builder->CreateCall(PageReleaseRootPage, {CurrentRegion.LocalPage});
             CurrentRegion.LocalPage = nullptr;
         }
@@ -6859,6 +6904,8 @@ llvm::Error Emitter::jitExecuteVoid(const Plan &P, llvm::StringRef MangledFuncti
     PageAllocatePage = nullptr;
     PageAllocateRootPage = nullptr;
     PageReleaseRootPage = nullptr;
+    TraceRootPush = nullptr;
+    TraceRootPop = nullptr;
     PageAllocate = nullptr;
     PageDeallocateExtensions = nullptr;
     PageType = nullptr;
@@ -6945,6 +6992,8 @@ llvm::Error Emitter::jitExecuteVoid(const Plan &P, llvm::StringRef MangledFuncti
         PageAllocatePage = FunctionCache["_ZN4Page13allocate_pageEv"];
         PageAllocateRootPage = FunctionCache["scaly_alloc_root_page"];
         PageReleaseRootPage = FunctionCache["scaly_release_root_page"];
+        TraceRootPush = FunctionCache["scaly_trace_root_push"];
+        TraceRootPop = FunctionCache["scaly_trace_root_pop"];
         PageAllocate = FunctionCache["_ZN4Page8allocateEmm"];  // size_t = unsigned long (m)
         PageDeallocateExtensions = FunctionCache["_ZN4Page21deallocate_extensionsEv"];
         if (auto It = StructCache.find("_Z4Page"); It != StructCache.end()) {
@@ -7120,6 +7169,8 @@ llvm::Expected<int64_t> Emitter::jitExecuteIntFunction(const Plan &P, llvm::Stri
     PageAllocatePage = nullptr;
     PageAllocateRootPage = nullptr;
     PageReleaseRootPage = nullptr;
+    TraceRootPush = nullptr;
+    TraceRootPop = nullptr;
     PageAllocate = nullptr;
     PageDeallocateExtensions = nullptr;
     PageType = nullptr;
@@ -7225,6 +7276,8 @@ llvm::Expected<int64_t> Emitter::jitExecuteIntFunction(const Plan &P, llvm::Stri
         PageAllocatePage = FunctionCache["_ZN4Page13allocate_pageEv"];
         PageAllocateRootPage = FunctionCache["scaly_alloc_root_page"];
         PageReleaseRootPage = FunctionCache["scaly_release_root_page"];
+        TraceRootPush = FunctionCache["scaly_trace_root_push"];
+        TraceRootPop = FunctionCache["scaly_trace_root_pop"];
         PageAllocate = FunctionCache["_ZN4Page8allocateEmm"];  // size_t = unsigned long (m)
         PageDeallocateExtensions = FunctionCache["_ZN4Page21deallocate_extensionsEv"];
         if (auto It = StructCache.find("_Z4Page"); It != StructCache.end()) {
@@ -7494,6 +7547,8 @@ void Emitter::dumpIR(const Plan &P) {
     PageAllocatePage = nullptr;
     PageAllocateRootPage = nullptr;
     PageReleaseRootPage = nullptr;
+    TraceRootPush = nullptr;
+    TraceRootPop = nullptr;
     PageAllocate = nullptr;
     PageDeallocateExtensions = nullptr;
     PageType = nullptr;
@@ -7558,6 +7613,8 @@ void Emitter::dumpIR(const Plan &P) {
         PageAllocatePage = FunctionCache["_ZN4Page13allocate_pageEv"];
         PageAllocateRootPage = FunctionCache["scaly_alloc_root_page"];
         PageReleaseRootPage = FunctionCache["scaly_release_root_page"];
+        TraceRootPush = FunctionCache["scaly_trace_root_push"];
+        TraceRootPop = FunctionCache["scaly_trace_root_pop"];
         PageAllocate = FunctionCache["_ZN4Page8allocateEmm"];
         PageDeallocateExtensions = FunctionCache["_ZN4Page21deallocate_extensionsEv"];
         if (auto It = StructCache.find("_Z4Page"); It != StructCache.end()) {

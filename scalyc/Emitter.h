@@ -138,6 +138,8 @@ private:
     llvm::Function *PageAllocatePage = nullptr;   // Page.allocate_page()     — HeapBucket
     llvm::Function *PageAllocateRootPage = nullptr;  // scaly_alloc_root_page — StackBucket
     llvm::Function *PageReleaseRootPage = nullptr;   // scaly_release_root_page — StackBucket pop
+    llvm::Function *TraceRootPush = nullptr;  // scaly_trace_root_push(name)
+    llvm::Function *TraceRootPop  = nullptr;  // scaly_trace_root_pop(name)
     llvm::Function *PageDeallocateExtensions = nullptr;  // Page.deallocate_extensions(page)
     llvm::Function *PageSaveWatermark = nullptr;  // Page.save_watermark(page) -> BlockWatermark
     llvm::Function *PageRestoreWatermark = nullptr;  // Page.restore_watermark(page, watermark)
@@ -361,6 +363,10 @@ private:
     // This ensures allocas don't grow the stack inside loops
     llvm::AllocaInst *createEntryBlockAlloca(llvm::Type *Ty, llvm::StringRef Name = "");
     llvm::Value *getOrCreateLocalPage();
+
+    // Emit a call to scaly_trace_root_push/pop with the current function's
+    // name. No-op unless the trace functions are declared in this module.
+    void emitRootTrace(bool IsPop);
 
     // Create a basic block in current function
     llvm::BasicBlock *createBlock(llvm::StringRef Name);
