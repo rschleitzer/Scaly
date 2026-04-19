@@ -1225,6 +1225,73 @@ define Planner
             null
         }
 
+        ; generate_page_get_this: synthesize a `Page.get(this)` call,
+        ; returned as a PlannedOperand whose result_type is
+        ; `pointer[Page]`. Used when lowering a `^this` lifetime
+        ; annotation — the emitter needs the page that currently owns
+        ; `this` to allocate a sibling value.
+        ;
+        ; `this` must be a local in the current scope; the unreachable
+        ; fallback returns a void placeholder so the type checker still
+        ; threads a value through.
+        function generate_page_get_this#(rp, this: Planner, loc: Span) returns PlannedOperand
+        {
+            let this_ty_ref this.lookup_local(String$("this"))
+            guard this_ty_ref = null
+            {
+                let void_ty Planner.make_void_type#()
+                return PlannedOperand(
+                    loc,
+                    PlannedExpression.Type(void_ty),
+                    null,
+                    void_ty
+                )
+            }
+
+            let this_ty (*this_ty_ref)
+
+            ; Build the result type: pointer[Page].
+            let page_ty PlannedType(
+                loc,
+                String^rp("Page"),
+                String^rp(""),
+                null,
+                Lifetime.Unspecified(Unspecified()),
+                null,
+                String^rp(""),
+                null
+            )
+            let result_type Planner.make_pointer_type#(page_ty)
+
+            ; Plan the `this` variable operand to pass as the argument.
+            let this_var PlannedVariable(loc, String^rp("this"), this_ty, false)
+            let this_operand PlannedOperand(
+                loc,
+                PlannedExpression.Variable(this_var),
+                null,
+                this_ty
+            )
+
+            var args_vec Vector[PlannedOperand]^rp(1)
+            args_vec.put(0, this_operand)
+
+            ; Mangle as a call to Page.get(pointer[void]).
+            let call this.make_planned_call#(
+                loc,
+                String^rp("get"),
+                String^rp("_ZN4scaly6memory4Page3getEPv"),
+                result_type,
+                args_vec
+            )
+
+            PlannedOperand(
+                loc,
+                PlannedExpression.Call(call),
+                null,
+                result_type
+            )
+        }
+
         ; ================================================================
         ; resolve_member_access: walk a chain of member names against
         ; `base_type`, producing a PlannedMemberAccess for each hop.
