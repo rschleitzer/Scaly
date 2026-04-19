@@ -16,6 +16,7 @@ use scalyc.compiler.Model.Lifetime
 use scalyc.compiler.Model.Unspecified
 use scalyc.compiler.Plan.Plan
 use scalyc.compiler.Plan.PlannedType
+use scalyc.compiler.Plan.PlannedItem
 
 ; libc extern for loud-failing stubs.
 function exit(code: int) extern
@@ -267,6 +268,83 @@ define Planner
         sb.to_string^rp()
     }
 
+    ; mangle_function: Itanium symbol for a function / method.
+    ;
+    ;   free function   -> _Z + encode_name + params
+    ;   method          -> _Z + "N" + encode_type(parent) + encode_name + "E" + params
+    ;
+    ; A 'this' parameter (implicit receiver) is skipped in the mangled
+    ; name — Itanium treats it as implicit. If has_page_param is set the
+    ; implicit page parameter (`pointer[Page]`) is encoded first; this is
+    ; how "function foo#" lowers on the ABI side.
+    function mangle_function#(
+        rp,
+        name: String,
+        params: ref[Vector[PlannedItem]]?,
+        parent: ref[PlannedType]?,
+        has_page_param: bool
+    ) returns String
+    {
+        var sb StringBuilder$()
+        sb.append("_Z")
+
+        guard parent <> null
+        {
+            let p (*parent)
+            sb.append("N")
+            sb.append(Planner.encode_type#(p))
+            sb.append(Planner.encode_name(name))
+            sb.append("E")
+        }
+        guard parent = null
+            sb.append(Planner.encode_name(name))
+
+        var has_explicit_params: bool false
+
+        ; Implicit page parameter for `function foo#(…)` lowerings.
+        ; Hard-coded mangling matches scaly::memory::Page in the C++ impl.
+        guard has_page_param
+        {
+            sb.append("PN4scaly6memory4PageE")
+            set has_explicit_params: true
+        }
+
+        guard params <> null
+        {
+            let ps (*params)
+            var i: size_t 0
+            while i < ps.length
+            {
+                let param_ptr ps.get(i)
+                guard param_ptr <> null
+                {
+                    let param (*param_ptr)
+                    var is_this: bool false
+                    guard param.name <> null
+                    {
+                        let pname (*param.name)
+                        set is_this: pname.equals("this")
+                    }
+                    guard is_this = false
+                    {
+                        guard param.item_type <> null
+                        {
+                            let pty (*param.item_type)
+                            sb.append(Planner.encode_type#(pty))
+                            set has_explicit_params: true
+                        }
+                    }
+                }
+                set i: i + 1
+            }
+        }
+
+        guard has_explicit_params = false
+            sb.append("v")
+
+        sb.to_string^rp()
+    }
+
     ; size_to_string: decimal representation of a size_t.
     ; Classic divide-by-10 with digit buffer and reversal.
     function size_to_string(n: size_t) returns String
@@ -416,6 +494,37 @@ define Planner
         let mangled_vec Planner.mangle_structure$(String$("Vector"), &gens_vec)
         guard mangled_vec.equals(String$("_Z6VectorIiE")) = false
             return 15
+
+        ; mangle_function - free, no params -> _Z3foov.
+        let mf_free Planner.mangle_function$(String$("foo"), null, null, false)
+        guard mf_free.equals(String$("_Z3foov")) = false
+            return 16
+
+        ; mangle_function - method on Foo, no params -> _ZN3Foo3fooEv.
+        let mf_method Planner.mangle_function$(String$("foo"), null, &foo_ty, false)
+        guard mf_method.equals(String$("_ZN3Foo3fooEv")) = false
+            return 17
+
+        ; mangle_function - 'this' is implicit; drops out of the name.
+        let this_name String$("this")
+        var this_only Vector[PlannedItem]$(1)
+        this_only.put(0, PlannedItem(Span(0, 0), false, &this_name, &foo_ty, null))
+        let mf_this Planner.mangle_function$(String$("bar"), &this_only, &foo_ty, false)
+        guard mf_this.equals(String$("_ZN3Foo3barEv")) = false
+            return 18
+
+        ; mangle_function with implicit page param.
+        let mf_page Planner.mangle_function$(String$("foo"), null, null, true)
+        guard mf_page.equals(String$("_Z3fooPN4scaly6memory4PageE")) = false
+            return 19
+
+        ; mangle_function - free with int param -> _Z3fooi.
+        let x_name String$("x")
+        var one_int Vector[PlannedItem]$(1)
+        one_int.put(0, PlannedItem(Span(0, 0), false, &x_name, &int_ty, null))
+        let mf_i Planner.mangle_function$(String$("foo"), &one_int, null, false)
+        guard mf_i.equals(String$("_Z3fooi")) = false
+            return 20
 
         0
     }
