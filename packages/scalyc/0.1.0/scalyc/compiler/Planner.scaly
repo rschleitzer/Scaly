@@ -53,7 +53,13 @@ use scalyc.compiler.Plan.PlannedContinue
 use scalyc.compiler.Plan.PlannedThrow
 use scalyc.compiler.Plan.PlannedStatement
 use scalyc.compiler.Plan.PlannedBlock
+use scalyc.compiler.Plan.PlannedExternImpl
+use scalyc.compiler.Plan.PlannedInstructionImpl
+use scalyc.compiler.Plan.PlannedIntrinsicImpl
+use scalyc.compiler.Plan.PlannedImplementation
+use scalyc.compiler.Plan.PlannedFunction
 use scalyc.compiler.Model.Binding
+use scalyc.compiler.Model.Instruction
 use scalyc.compiler.Model.Action
 use scalyc.compiler.Model.Return
 use scalyc.compiler.Model.Break
@@ -725,6 +731,105 @@ define Planner
                 initializer_ref,
                 null,
                 0
+            )
+        }
+
+        ; plan_implementation: Implementation variant → PlannedImplementation.
+        ; Extern/Instruction/Intrinsic are trivially tagged wrappers;
+        ; Action delegates to plan_action which in turn plans its source
+        ; and target operand lists.
+        function plan_implementation#(rp, this: Planner, impl: Implementation) returns PlannedImplementation
+        {
+            choose impl
+                when a: Action
+                    PlannedImplementation.Action(this.plan_action#(a))
+                when e: Extern
+                    PlannedImplementation.Extern(PlannedExternImpl(e.span))
+                when i: Instruction
+                    PlannedImplementation.Instruction(PlannedInstructionImpl(i.span))
+                when n: Intrinsic
+                    PlannedImplementation.Intrinsic(PlannedIntrinsicImpl(n.span))
+        }
+
+        ; ================================================================
+        ; plan_function: Model.Function → Plan.PlannedFunction.
+        ;
+        ; Opens a new scope, registers each parameter as a local, plans
+        ; the return/throws types, and plans the implementation. The
+        ; following fields are left at defaults until later phases:
+        ;   - mangled_name                (set by struct/concept resolver)
+        ;   - page_parameter              (computed from lifetime)
+        ;   - origin                      (populated during instantiation)
+        ;   - needs_local_page            (set by $-allocation tracker)
+        ;   - can_throw, scheme           (post-solver)
+        ; ================================================================
+        function plan_function#(rp, this: Planner, f: Function) returns PlannedFunction
+        {
+            this.push_scope()
+
+            let planned_input this.plan_items#(f.input)
+
+            var i: size_t 0
+            while i < planned_input.length
+            {
+                let item_ptr planned_input.get(i)
+                guard item_ptr <> null
+                {
+                    let item (*item_ptr)
+                    guard item.name <> null
+                    {
+                        guard item.item_type <> null
+                        {
+                            let n (*item.name)
+                            let t (*item.item_type)
+                            this.define_local(n, t, false, false)
+                        }
+                    }
+                }
+                set i: i + 1
+            }
+
+            var return_type: ref[PlannedType]? null
+            guard f.returns_ <> null
+            {
+                let rt (*f.returns_)
+                let planned_rt this.plan_type#(rt)
+                var rt_holder Vector[PlannedType]^rp(1)
+                rt_holder.put(0, planned_rt)
+                set return_type: rt_holder.get(0)
+            }
+
+            var throws_type: ref[PlannedType]? null
+            guard f.throws_ <> null
+            {
+                let tt (*f.throws_)
+                let planned_tt this.plan_type#(tt)
+                var tt_holder Vector[PlannedType]^rp(1)
+                tt_holder.put(0, planned_tt)
+                set throws_type: tt_holder.get(0)
+            }
+
+            let planned_impl this.plan_implementation#(f.implementation)
+
+            this.pop_scope()
+
+            var input_holder Vector[PlannedItem]^rp(planned_input)
+            PlannedFunction(
+                f.span,
+                f.private_,
+                f.pure,
+                f.name,
+                String^rp(""),
+                null,
+                &input_holder,
+                return_type,
+                throws_type,
+                f.lifetime,
+                planned_impl,
+                null,
+                false,
+                false,
+                null
             )
         }
 
@@ -4867,6 +4972,38 @@ define Planner
             return 273
         guard pl_variant.var_type = null
             return 274
+
+        ; plan_function - extern "foo(x: int) returns int".
+        var x_params Vector[Item]$(1)
+        x_params.put(0, Item(
+            Span(0, 0),
+            false,
+            &(String$("x")),
+            &int_type,
+            Vector[Attribute]$(0)
+        ))
+        let model_fn Function(
+            Span(0, 0),
+            false,
+            true,
+            String$("foo"),
+            x_params,
+            &int_type,
+            null,
+            Lifetime.Unspecified(Unspecified()),
+            Implementation.Extern(Extern(Span(0, 0)))
+        )
+        let pl_fn p3.plan_function$(model_fn)
+        guard pl_fn.name.equals(String$("foo")) = false
+            return 275
+        guard pl_fn.input = null
+            return 276
+        guard (*pl_fn.input).length <> 1
+            return 277
+        guard pl_fn.return_type = null
+            return 278
+        guard (*pl_fn.return_type).name.equals("int") = false
+            return 279
 
         0
     }
