@@ -3200,14 +3200,44 @@ define Planner
             let u_size Planner.compute_union_size(&vs_holder)
             let u_align Planner.compute_struct_alignment(null)
 
+            ; Plan methods and operators declared on the union.
+            var planned_methods Array[PlannedFunction]$()
+            var planned_operators Array[PlannedOperator]$()
+            var mi: size_t 0
+            while mi < u.members.length
+            {
+                let m_ptr u.members.get(mi)
+                guard m_ptr <> null
+                {
+                    let mem (*m_ptr)
+                    choose mem
+                        when f: Function
+                        {
+                            planned_methods.add(this.plan_function#(f))
+                            0
+                        }
+                        when o: Operator
+                        {
+                            planned_operators.add(this.plan_operator#(o))
+                            0
+                        }
+                        else
+                            0
+                }
+                set mi: mi + 1
+            }
+
+            var methods_holder Vector[PlannedFunction]^rp(planned_methods)
+            var ops_holder Vector[PlannedOperator]^rp(planned_operators)
+
             let result scalyc.compiler.Plan.PlannedUnion(
                 u.span,
                 u.private_,
                 String^rp(name),
                 String^rp(""),
                 &vs_holder,
-                null,
-                null,
+                &methods_holder,
+                &ops_holder,
                 u_size,
                 u_align,
                 null
