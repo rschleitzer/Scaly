@@ -513,12 +513,21 @@ struct Package {
     std::shared_ptr<Module> Root;  // The loaded package module
 };
 
-// Member can be a package, concept, operator, or function
+// Module-level mutable variable (written as `mutable NAME: T init`)
+struct ModuleVariable {
+    Span Loc;
+    std::string Name;
+    Type VarType;
+    std::vector<Operand> Initializer;
+};
+
+// Member can be a package, concept, operator, function, or module variable
 using Member = std::variant<
     Package,
     Concept,
     Operator,
-    Function
+    Function,
+    ModuleVariable
 >;
 
 // Nameable represents symbols in a symbol table
@@ -529,7 +538,8 @@ struct Nameable {
         Operator,
         std::vector<Function>,  // Function overloads
         Property,
-        Variant
+        Variant,
+        ModuleVariable
     > Value;
 };
 

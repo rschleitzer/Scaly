@@ -274,6 +274,14 @@ llvm::Expected<DeclarationSyntax> Parser::parseDeclaration() {
         if (ErrMsg != "different syntax" && FirstRealError.empty())
             FirstRealError = std::move(ErrMsg);
     }
+    {
+        auto Result = parseMutable();
+        if (Result)
+            return DeclarationSyntax{std::move(*Result)};
+        std::string ErrMsg = llvm::toString(Result.takeError());
+        if (ErrMsg != "different syntax" && FirstRealError.empty())
+            FirstRealError = std::move(ErrMsg);
+    }
     if (!FirstRealError.empty())
         return llvm::make_error<llvm::StringError>(FirstRealError, llvm::inconvertibleErrorCode());
     return different();

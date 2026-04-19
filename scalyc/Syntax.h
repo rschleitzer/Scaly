@@ -818,7 +818,7 @@ struct PrivateSyntax {
 };
 
 struct DeclarationSyntax {
-    std::variant<EmptySyntax, PackageSyntax, UseSyntax, PrivateSyntax, DefinitionSyntax, FunctionSyntax, ProcedureSyntax, OperatorSyntax, TraitSyntax, MacroSyntax, ModuleSyntax> Value;
+    std::variant<EmptySyntax, PackageSyntax, UseSyntax, PrivateSyntax, DefinitionSyntax, FunctionSyntax, ProcedureSyntax, OperatorSyntax, TraitSyntax, MacroSyntax, ModuleSyntax, MutableSyntax> Value;
 };
 
 struct FileSyntax {

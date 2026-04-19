@@ -43,21 +43,116 @@ define HeapBucketHeader
     bitmap: u64
 )
 
-; Process-global state, held in a C static via scaly_rt_state(). Scaly sees
-; only the three pointer fields; the C shim's struct has additional trailing
-; state (trace counters) which we don't declare here because Scaly doesn't
-; yet support fixed-size array fields in structs. All access to those
-; counters goes through the trace helpers below via pointer arithmetic.
-define ScalyRuntimeState
+; Process-global allocator state — Scaly-owned mutable module globals.
+; stack_head: head of the StackBucket chain (doubly-linked, for unwinding).
+; stack_top: current top-of-stack root page.
+; heap_head: head of the HeapBucket free list (buckets with at least one
+;            free page). Full buckets are unlinked and re-added on free.
+mutable stack_head: pointer[StackBucketHeader] null
+mutable stack_top:  pointer[Page] null
+mutable heap_head:  pointer[HeapBucketHeader] null
+
+; Trace-diagnostic state — off by default, armed by SCALY_TRACE_ROOT on
+; the first root-page push or pop. All state is Scaly-owned; the shim
+; only provides stderr primitives and two push/pop trampolines that
+; forward to the Scaly-mangled implementations below.
+mutable trace_enabled:           i64 0
+mutable trace_atexit_registered: i64 0
+mutable trace_count:             i64 0
+mutable trace_entries:           pointer[TraceEntry] null
+
+define TRACE_MAX size_t 8192
+
+define TraceEntry
 (
-    stack_head: pointer[StackBucketHeader]
-    stack_top:  pointer[Page]
-    heap_head:  pointer[HeapBucketHeader]
+    name: pointer[const_char]
+    push_count: i64
+    pop_count: i64
 )
 
-function scaly_rt_state() returns pointer[ScalyRuntimeState] extern
-procedure scaly_rt_abort_lifo(release: pointer[void], top: pointer[void]) extern
-procedure scaly_rt_register_trace() extern
+function getenv(name: pointer[const_char]) returns pointer[const_char] extern
+procedure atexit(cb: pointer[void]) returns int extern
+function strdup(s: pointer[const_char]) returns pointer[char] extern
+
+; Scratch buffer for integer/pointer formatting. 32 bytes is enough for
+; any i64 decimal (max 20 chars) or pointer hex (18 chars). Lazily
+; allocated on the first formatted write; reused from then on. Safe
+; because the diagnostic dump runs single-threaded at atexit.
+mutable fmt_scratch: pointer[char] null
+
+function scaly_fmt_scratch_ptr() returns pointer[char]
+{
+    guard fmt_scratch = null
+        set fmt_scratch: aligned_alloc(1, 32) as pointer[char]
+    fmt_scratch
+}
+
+; Byte-level stderr output via libc write(2, ...). No format strings:
+; Scaly composes every diagnostic message by writing bytes.
+
+procedure scaly_eputs(s: pointer[const_char])
+{
+    write(2 as int, s as pointer[void], strlen(s))
+}
+
+procedure scaly_eputnl()
+{
+    write(2 as int, "\n" as pointer[void], 1 as size_t)
+}
+
+procedure scaly_eputi(n: i64)
+{
+    let buf scaly_fmt_scratch_ptr()
+    var pos 31 as i64
+    var val n
+    var negative false
+    guard val < 0
+    {
+        set negative: true
+        set val: 0 - val
+    }
+    guard val <> 0
+    {
+        set pos: pos - 1
+        set *(buf + pos): 48 as char
+    }
+    while val > 0
+    {
+        set pos: pos - 1
+        let digit val - (val / 10) * 10
+        set *(buf + pos): (digit + 48) as char
+        set val: val / 10
+    }
+    guard negative
+    {
+        set pos: pos - 1
+        set *(buf + pos): 45 as char
+    }
+    let len 31 - pos
+    write(2 as int, (buf + pos) as pointer[void], len as size_t)
+}
+
+define HEX_DIGITS: char[] [
+    48, 49, 50, 51, 52, 53, 54, 55,
+    56, 57, 97, 98, 99, 100, 101, 102,
+]
+
+procedure scaly_eputp(p: pointer[void])
+{
+    let buf scaly_fmt_scratch_ptr()
+    set *(buf + 0): 48 as char
+    set *(buf + 1): 120 as char
+    var val p as u64
+    var i 17 as i64
+    while i >= 2 as i64
+    {
+        let nibble (val & (15 as u64)) as i64
+        set *(buf + i): *(HEX_DIGITS + nibble)
+        set val: val >> (4 as u64)
+        set i: i - 1
+    }
+    write(2 as int, buf as pointer[void], 18 as size_t)
+}
 
 ; --------------------------------------------------------------------------
 ; Address helpers
@@ -151,24 +246,22 @@ function ctz_u64(x: u64) returns i32
 
 function scaly_alloc_root_page() returns pointer[Page]
 {
-    let state scaly_rt_state()
-
-    guard state.stack_top = null
+    guard stack_top = null
     {
         ; First-ever push: lazily create the first bucket if needed, then
         ; return its first usable slot.
-        guard state.stack_head = null
-            set state.stack_head: create_stack_bucket(null as pointer[StackBucketHeader])
+        guard stack_head = null
+            set stack_head: create_stack_bucket(null as pointer[StackBucketHeader])
 
-        let p first_usable_page(state.stack_head as pointer[void])
-        set state.stack_top: p
+        let p first_usable_page(stack_head as pointer[void])
+        set stack_top: p
         reset_page(p)
         return p
     }
 
     ; Regular push: bump to the next page in the current bucket.
-    let bucket stack_bucket_of(state.stack_top)
-    let next_addr (state.stack_top as size_t + PAGE_SIZE) as pointer[Page]
+    let bucket stack_bucket_of(stack_top)
+    let next_addr (stack_top as size_t + PAGE_SIZE) as pointer[Page]
 
     guard next_addr > last_usable_page(bucket as pointer[void])
     {
@@ -178,31 +271,36 @@ function scaly_alloc_root_page() returns pointer[Page]
             set bucket.next: create_stack_bucket(bucket)
 
         let fresh first_usable_page(bucket.next as pointer[void])
-        set state.stack_top: fresh
+        set stack_top: fresh
         reset_page(fresh)
         return fresh
     }
 
-    set state.stack_top: next_addr
+    set stack_top: next_addr
     reset_page(next_addr)
     next_addr
 }
 
 procedure scaly_release_root_page(p: pointer[Page])
 {
-    let state scaly_rt_state()
-
     ; Strict LIFO: the release must pop the current top. A mismatch means
     ; some exit path skipped its release — a real bug.
-    guard p <> state.stack_top
-        scaly_rt_abort_lifo(p as pointer[void], state.stack_top as pointer[void])
+    guard p <> stack_top
+    {
+        scaly_eputs("scaly_release_root_page: LIFO violation — release=")
+        scaly_eputp(p as pointer[void])
+        scaly_eputs(" top=")
+        scaly_eputp(stack_top as pointer[void])
+        scaly_eputnl()
+        abort()
+    }
 
     let bucket stack_bucket_of(p)
     let first first_usable_page(bucket as pointer[void])
 
     guard p <> first
     {
-        set state.stack_top: (p as size_t - PAGE_SIZE) as pointer[Page]
+        set stack_top: (p as size_t - PAGE_SIZE) as pointer[Page]
         return
     }
 
@@ -210,11 +308,11 @@ procedure scaly_release_root_page(p: pointer[Page])
     ; usable slot, or clear the stack entirely if this was the first bucket.
     guard bucket.prev = null
     {
-        set state.stack_top: null
+        set stack_top: null
         return
     }
 
-    set state.stack_top: last_usable_page(bucket.prev as pointer[void])
+    set stack_top: last_usable_page(bucket.prev as pointer[void])
 }
 
 ; --------------------------------------------------------------------------
@@ -223,12 +321,10 @@ procedure scaly_release_root_page(p: pointer[Page])
 
 function scaly_alloc_page() returns pointer[Page]
 {
-    let state scaly_rt_state()
+    guard heap_head = null
+        set heap_head: create_heap_bucket()
 
-    guard state.heap_head = null
-        set state.heap_head: create_heap_bucket()
-
-    let b state.heap_head
+    let b heap_head
     ; Invariant: b.bitmap != 0 (we unlink full buckets below).
     let slot ctz_u64(b.bitmap)
     set b.bitmap: b.bitmap & ~((1 as u64) << slot)
@@ -240,9 +336,9 @@ function scaly_alloc_page() returns pointer[Page]
     guard b.bitmap = 0
     {
         ; Bucket is now full — unlink from the free list.
-        set state.heap_head: b.next
-        guard state.heap_head <> null
-            set state.heap_head.prev: null
+        set heap_head: b.next
+        guard heap_head <> null
+            set heap_head.prev: null
 
         set b.next: null
         set b.prev: null
@@ -261,7 +357,6 @@ procedure scaly_release_page(p: pointer[Page])
         return
     }
 
-    let state scaly_rt_state()
     let b heap_bucket_of(p)
     let slot (((p as size_t) - (b as size_t)) / PAGE_SIZE) - (1 as size_t)
 
@@ -271,11 +366,107 @@ procedure scaly_release_page(p: pointer[Page])
     guard was_full
     {
         ; Bucket had been full; rejoin the free list at the head.
-        set b.next: state.heap_head
+        set b.next: heap_head
         set b.prev: null
-        guard state.heap_head <> null
-            set state.heap_head.prev: b
+        guard heap_head <> null
+            set heap_head.prev: b
 
-        set state.heap_head: b
+        set heap_head: b
     }
+}
+
+; --------------------------------------------------------------------------
+; SCALY_TRACE_ROOT diagnostic: per-function push/pop counters. Off by
+; default; armed on the first push/pop if $SCALY_TRACE_ROOT is set at
+; that moment. The atexit dump reports any function whose push/pop
+; counts don't balance (indicating a missed release path).
+; --------------------------------------------------------------------------
+
+procedure scaly_trace_dump()
+{
+    var i 0 as i64
+    var any false
+    while i < trace_count
+    {
+        let e trace_entries + i
+        guard (*e).push_count = (*e).pop_count
+        {
+            scaly_eputs("scaly_trace_root: UNBALANCED ")
+            scaly_eputs((*e).name)
+            scaly_eputs(" push=")
+            scaly_eputi((*e).push_count)
+            scaly_eputs(" pop=")
+            scaly_eputi((*e).pop_count)
+            scaly_eputs(" leak=")
+            scaly_eputi((*e).push_count - (*e).pop_count)
+            scaly_eputnl()
+            set any: true
+        }
+        set i: i + 1
+    }
+    guard any
+        return
+    scaly_eputs("scaly_trace_root: all root-page push/pop balanced")
+    scaly_eputnl()
+}
+
+procedure scaly_rt_register_trace()
+{
+    ; Already armed — nothing to do.
+    guard trace_atexit_registered <> 0
+        return
+    set trace_atexit_registered: 1
+    ; Env var not set — leave trace disabled.
+    guard getenv("SCALY_TRACE_ROOT") = null
+        return
+    set trace_enabled: 1
+    ; Lazy-allocate the trace table. Scaly can't express a fixed-size
+    ; array at module-global scope, so we heap-allocate on first arm.
+    let bytes TRACE_MAX * (sizeof TraceEntry)
+    set trace_entries: aligned_alloc(8, bytes as i64) as pointer[TraceEntry]
+    atexit(&scaly_trace_dump)
+}
+
+function scaly_trace_find_or_add(name: pointer[const_char]) returns pointer[TraceEntry]
+{
+    var i 0 as i64
+    while i < trace_count
+    {
+        let e trace_entries + i
+        guard strcmp((*e).name, name) = 0
+            return e
+        set i: i + 1
+    }
+    ; Table full — give up rather than corrupting.
+    guard trace_count >= TRACE_MAX as i64
+        return null as pointer[TraceEntry]
+    let new_entry trace_entries + trace_count
+    ; strdup is required because JIT modules (which own the source of
+    ; each `name` via CreateGlobalStringPtr) are disposed between test
+    ; runs; without interning, later strcmps would walk freed memory.
+    set (*new_entry).name: strdup(name) as pointer[const_char]
+    set (*new_entry).push_count: 0
+    set (*new_entry).pop_count: 0
+    set trace_count: trace_count + 1
+    new_entry
+}
+
+procedure scaly_trace_push(name: pointer[const_char])
+{
+    scaly_rt_register_trace()
+    guard trace_enabled = 0
+        return
+    let e scaly_trace_find_or_add(name)
+    guard e <> null
+        set (*e).push_count: (*e).push_count + 1
+}
+
+procedure scaly_trace_pop(name: pointer[const_char])
+{
+    scaly_rt_register_trace()
+    guard trace_enabled = 0
+        return
+    let e scaly_trace_find_or_add(name)
+    guard e <> null
+        set (*e).pop_count: (*e).pop_count + 1
 }

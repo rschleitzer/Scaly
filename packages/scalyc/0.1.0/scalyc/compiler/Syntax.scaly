@@ -884,6 +884,7 @@ define DeclarationSyntax union (
     Trait: TraitSyntax
     Macro: MacroSyntax
     Module: ModuleSyntax
+    Mutable: MutableSyntax
 )
 
 define FileSyntax

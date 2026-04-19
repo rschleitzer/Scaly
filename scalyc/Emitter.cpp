@@ -319,26 +319,29 @@ void Emitter::declareRuntimeFunctions() {
         FunctionCache[ReleaseRootSym] = PageReleaseRootPage;
     }
 
-    // scaly_trace_root_push(name) / scaly_trace_root_pop(name) — diagnostic
-    // hooks used by emitRootTrace to tag each StackBucket push/pop with the
-    // emitting function's name. The runtime no-ops unless SCALY_TRACE_ROOT
-    // is set in the environment at process start.
+    // scaly_trace_push(name) / scaly_trace_pop(name) — diagnostic hooks
+    // used by emitRootTrace to tag each StackBucket push/pop with the
+    // emitting function's name. Implementations live in Scaly under
+    // their Itanium-mangled symbols; the runtime no-ops unless
+    // SCALY_TRACE_ROOT is set at process start.
     auto *TraceTy = llvm::FunctionType::get(VoidTy, {PtrTy}, false);
-    if (auto It = FunctionCache.find("scaly_trace_root_push"); It != FunctionCache.end()) {
+    const char *TracePushSym = "_Z16scaly_trace_pushP10const_char";
+    const char *TracePopSym  = "_Z15scaly_trace_popP10const_char";
+    if (auto It = FunctionCache.find(TracePushSym); It != FunctionCache.end()) {
         TraceRootPush = It->second;
     } else if (!TraceRootPush) {
         TraceRootPush = llvm::Function::Create(
             TraceTy, llvm::GlobalValue::ExternalLinkage,
-            "scaly_trace_root_push", *Module);
-        FunctionCache["scaly_trace_root_push"] = TraceRootPush;
+            TracePushSym, *Module);
+        FunctionCache[TracePushSym] = TraceRootPush;
     }
-    if (auto It = FunctionCache.find("scaly_trace_root_pop"); It != FunctionCache.end()) {
+    if (auto It = FunctionCache.find(TracePopSym); It != FunctionCache.end()) {
         TraceRootPop = It->second;
     } else if (!TraceRootPop) {
         TraceRootPop = llvm::Function::Create(
             TraceTy, llvm::GlobalValue::ExternalLinkage,
-            "scaly_trace_root_pop", *Module);
-        FunctionCache["scaly_trace_root_pop"] = TraceRootPop;
+            TracePopSym, *Module);
+        FunctionCache[TracePopSym] = TraceRootPop;
     }
 }
 
@@ -453,6 +456,20 @@ void Emitter::emitRBMMStubs() {
         if (Free) {
             B.CreateCall(Free, {PageReleaseRootPage->getArg(0)});
         }
+        B.CreateRetVoid();
+    }
+
+    // scaly_trace_push / scaly_trace_pop — same situation. In the JIT
+    // pipeline tests the Scaly trace counters never get compiled in, so
+    // emit empty bodies here to satisfy link-time references.
+    if (TraceRootPush && TraceRootPush->isDeclaration()) {
+        auto *Entry = llvm::BasicBlock::Create(*Context, "entry", TraceRootPush);
+        llvm::IRBuilder<> B(Entry);
+        B.CreateRetVoid();
+    }
+    if (TraceRootPop && TraceRootPop->isDeclaration()) {
+        auto *Entry = llvm::BasicBlock::Create(*Context, "entry", TraceRootPop);
+        llvm::IRBuilder<> B(Entry);
         B.CreateRetVoid();
     }
 }
@@ -1020,6 +1037,24 @@ llvm::StructType *Emitter::emitUnionType(const PlannedUnion &Union) {
 // ============================================================================
 
 llvm::GlobalVariable *Emitter::emitGlobal(const PlannedGlobal &Global) {
+    // Module-level mutable variable: emit a non-const GlobalVariable of the
+    // declared type with zero/null initializer. Load/store at access sites
+    // is the Emitter's responsibility (see operand resolution below).
+    if (Global.Mutable) {
+        llvm::Type *VarTy = mapType(Global.GlobalType);
+        if (!VarTy) return nullptr;
+        llvm::Constant *Init = llvm::Constant::getNullValue(VarTy);
+        auto *GV = new llvm::GlobalVariable(
+            *Module,
+            VarTy,
+            false,  // isConstant = false — this is a mutable global
+            llvm::GlobalValue::ExternalLinkage,
+            Init,
+            Global.MangledName
+        );
+        return GV;
+    }
+
     // Get the element type from the global's type
     // For array types like size_t[], we need to look at the generic argument
     llvm::Type *ElemTy = nullptr;
@@ -2103,6 +2138,23 @@ llvm::Expected<llvm::Value*> Emitter::emitAction(const PlannedAction &Action) {
                     Builder->CreateStore(Value, CurrentPtr);
                 }
             }
+        } else if (auto *GRef = std::get_if<PlannedGlobalRef>(&TargetOp.Expr)) {
+            // Module-level mutable variable as store target: store the value
+            // directly into the GlobalVariable. No load indirection — the
+            // planAction path cleared LoadValue so we treat GRef as an address.
+            auto *GV = Module->getNamedGlobal(GRef->MangledName);
+            if (!GV) {
+                return llvm::make_error<llvm::StringError>(
+                    "Undefined mutable global in assignment: " + GRef->Name,
+                    llvm::inconvertibleErrorCode()
+                );
+            }
+            // If Value is a pointer but the target is a scalar, load first.
+            llvm::Type *TargetTy = GV->getValueType();
+            if (Value->getType()->isPointerTy() && !TargetTy->isPointerTy()) {
+                Value = Builder->CreateLoad(TargetTy, Value, "store.val");
+            }
+            Builder->CreateStore(Value, GV);
         } else if (auto *Call = std::get_if<PlannedCall>(&TargetOp.Expr)) {
             // Handle direct dereference assignment like *ptr = value (no parentheses)
             if (Call->Name == "*" && Call->Args && Call->Args->size() == 1) {
@@ -2998,8 +3050,23 @@ llvm::Expected<llvm::Value*> Emitter::emitExpression(const PlannedExpression &Ex
                 // Immutable binding stored as value directly
                 return VarPtr;
             }
+        } else if constexpr (std::is_same_v<T, PlannedFunctionRef>) {
+            // Function-as-value: emit the llvm::Function pointer. Declare
+            // an external signature-less stub if the function isn't in this
+            // module yet — LLVM's opaque pointers make the exact signature
+            // optional at the callsite, and the linker will bind the real
+            // definition by symbol name.
+            llvm::Function *Fn = Module->getFunction(E.MangledName);
+            if (!Fn) {
+                auto *FTy = llvm::FunctionType::get(
+                    llvm::Type::getVoidTy(*Context), false);
+                Fn = llvm::Function::Create(
+                    FTy, llvm::GlobalValue::ExternalLinkage,
+                    E.MangledName, *Module);
+            }
+            return Fn;
         } else if constexpr (std::is_same_v<T, PlannedGlobalRef>) {
-            // Global constant reference - look up in module and return pointer to first element
+            // Global constant reference - look up in module.
             // Use getNamedGlobal instead of getGlobalVariable (the latter doesn't
             // work for PrivateLinkage globals in LLVM 18)
             auto *GV = Module->getNamedGlobal(E.MangledName);
@@ -3009,7 +3076,18 @@ llvm::Expected<llvm::Value*> Emitter::emitExpression(const PlannedExpression &Ex
                     llvm::inconvertibleErrorCode()
                 );
             }
-            // Get pointer to first element of the array
+            // Mutable module variables: read their current value (load).
+            if (E.LoadValue) {
+                llvm::Type *VarTy = mapType(E.GlobalType);
+                if (!VarTy) VarTy = GV->getValueType();
+                return Builder->CreateLoad(VarTy, GV, E.Name + ".load");
+            }
+            // For non-array globals (scalar mutable variables used as store
+            // targets, or their address being taken), return the GV directly.
+            if (!GV->getValueType()->isArrayTy()) {
+                return GV;
+            }
+            // Default (const array): pointer to first element.
             llvm::Value *Indices[] = {
                 llvm::ConstantInt::get(llvm::Type::getInt64Ty(*Context), 0),
                 llvm::ConstantInt::get(llvm::Type::getInt64Ty(*Context), 0)
@@ -6737,8 +6815,8 @@ llvm::Expected<uint64_t> Emitter::jitExecuteRaw(const Plan &P, llvm::Type *Expec
         PageAllocatePage = FunctionCache["_ZN4Page13allocate_pageEv"];
         PageAllocateRootPage = FunctionCache["_Z21scaly_alloc_root_pagev"];
         PageReleaseRootPage = FunctionCache["_Z23scaly_release_root_pageP4Page"];
-        TraceRootPush = FunctionCache["scaly_trace_root_push"];
-        TraceRootPop = FunctionCache["scaly_trace_root_pop"];
+        TraceRootPush = FunctionCache["_Z16scaly_trace_pushP10const_char"];
+        TraceRootPop = FunctionCache["_Z15scaly_trace_popP10const_char"];
         PageAllocate = FunctionCache["_ZN4Page8allocateEmm"];  // size_t = unsigned long (m)
         PageDeallocateExtensions = FunctionCache["_ZN4Page21deallocate_extensionsEv"];
         // Also set up PageType from StructCache (using mangled name)
@@ -7111,8 +7189,8 @@ llvm::Error Emitter::jitExecuteVoid(const Plan &P, llvm::StringRef MangledFuncti
         PageAllocatePage = FunctionCache["_ZN4Page13allocate_pageEv"];
         PageAllocateRootPage = FunctionCache["_Z21scaly_alloc_root_pagev"];
         PageReleaseRootPage = FunctionCache["_Z23scaly_release_root_pageP4Page"];
-        TraceRootPush = FunctionCache["scaly_trace_root_push"];
-        TraceRootPop = FunctionCache["scaly_trace_root_pop"];
+        TraceRootPush = FunctionCache["_Z16scaly_trace_pushP10const_char"];
+        TraceRootPop = FunctionCache["_Z15scaly_trace_popP10const_char"];
         PageAllocate = FunctionCache["_ZN4Page8allocateEmm"];  // size_t = unsigned long (m)
         PageDeallocateExtensions = FunctionCache["_ZN4Page21deallocate_extensionsEv"];
         if (auto It = StructCache.find("_Z4Page"); It != StructCache.end()) {
@@ -7395,8 +7473,8 @@ llvm::Expected<int64_t> Emitter::jitExecuteIntFunction(const Plan &P, llvm::Stri
         PageAllocatePage = FunctionCache["_ZN4Page13allocate_pageEv"];
         PageAllocateRootPage = FunctionCache["_Z21scaly_alloc_root_pagev"];
         PageReleaseRootPage = FunctionCache["_Z23scaly_release_root_pageP4Page"];
-        TraceRootPush = FunctionCache["scaly_trace_root_push"];
-        TraceRootPop = FunctionCache["scaly_trace_root_pop"];
+        TraceRootPush = FunctionCache["_Z16scaly_trace_pushP10const_char"];
+        TraceRootPop = FunctionCache["_Z15scaly_trace_popP10const_char"];
         PageAllocate = FunctionCache["_ZN4Page8allocateEmm"];  // size_t = unsigned long (m)
         PageDeallocateExtensions = FunctionCache["_ZN4Page21deallocate_extensionsEv"];
         if (auto It = StructCache.find("_Z4Page"); It != StructCache.end()) {
@@ -7732,8 +7810,8 @@ void Emitter::dumpIR(const Plan &P) {
         PageAllocatePage = FunctionCache["_ZN4Page13allocate_pageEv"];
         PageAllocateRootPage = FunctionCache["_Z21scaly_alloc_root_pagev"];
         PageReleaseRootPage = FunctionCache["_Z23scaly_release_root_pageP4Page"];
-        TraceRootPush = FunctionCache["scaly_trace_root_push"];
-        TraceRootPop = FunctionCache["scaly_trace_root_pop"];
+        TraceRootPush = FunctionCache["_Z16scaly_trace_pushP10const_char"];
+        TraceRootPop = FunctionCache["_Z15scaly_trace_popP10const_char"];
         PageAllocate = FunctionCache["_ZN4Page8allocateEmm"];
         PageDeallocateExtensions = FunctionCache["_ZN4Page21deallocate_extensionsEv"];
         if (auto It = StructCache.find("_Z4Page"); It != StructCache.end()) {

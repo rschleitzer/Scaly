@@ -337,6 +337,16 @@ define Parser
             }
             when node: Success
                 return DeclarationSyntax.Module(node)
+        choose parse_mutable#()
+            when err: Error
+            {
+                choose err
+                    when i: Invalid
+                        throw ParserError.Invalid(i)
+                    when d: Different {}
+            }
+            when node: Success
+                return DeclarationSyntax.Mutable(node)
         throw ParserError.Different(DifferentSyntax())
     }
 

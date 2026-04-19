@@ -21,6 +21,7 @@
     <content link = Trait
     <content link = Macro
     <content link = Module
+    <content link = Mutable
 
 <syntax id = Private
     <content link = private

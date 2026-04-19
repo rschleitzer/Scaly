@@ -2176,6 +2176,39 @@ llvm::Expected<Module> Modeler::buildModule(llvm::StringRef Path,
                     } else {
                         Err = Mod.takeError();
                     }
+                } else if constexpr (std::is_same_v<ST, MutableSyntax>) {
+                    // Module-level mutable variable: `mutable NAME: T initializer`
+                    if (!S.binding.annotation) {
+                        Err = llvm::make_error<llvm::StringError>(
+                            "module-level mutable requires a type annotation",
+                            llvm::inconvertibleErrorCode());
+                    } else {
+                        auto TypeRef = handleBindingAnnotation(*S.binding.annotation);
+                        if (!TypeRef) {
+                            Err = TypeRef.takeError();
+                        } else {
+                            std::vector<Operand> Init;
+                            if (S.binding.operation) {
+                                auto Ops = handleOperands(S.binding.operation);
+                                if (!Ops) {
+                                    Err = Ops.takeError();
+                                } else {
+                                    Init = std::move(*Ops);
+                                }
+                            }
+                            if (!Err) {
+                                ModuleVariable MV{
+                                    Span{S.Start, S.End},
+                                    std::string(S.binding.name),
+                                    std::move(**TypeRef),
+                                    std::move(Init)
+                                };
+                                Symbols[MV.Name] = std::make_shared<Nameable>(
+                                    Nameable{MV});
+                                Members.push_back(std::move(MV));
+                            }
+                        }
+                    }
                 }
             }, D.Value);
         }

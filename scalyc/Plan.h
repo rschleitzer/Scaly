@@ -433,6 +433,19 @@ struct PlannedGlobalRef {
     std::string Name;           // The global name
     std::string MangledName;    // The mangled name for lookup
     PlannedType GlobalType;     // The type of the global
+    // When true, emit a CreateLoad of the global's value. When false
+    // (legacy behavior for const arrays), emit the address-of the global.
+    bool LoadValue = false;
+};
+
+// A reference to a function by name, used as a first-class value. Emits
+// as the llvm::Function pointer — lets Scaly pass a function to extern
+// C APIs like atexit(). Produced when the Planner sees a bare function
+// name in a value position (e.g., `atexit(&my_cb)` or `atexit(my_cb)`).
+struct PlannedFunctionRef {
+    Span Loc;
+    std::string Name;           // The function name as written in source
+    std::string MangledName;    // Itanium-mangled symbol for lookup
 };
 
 using PlannedExpression = std::variant<
@@ -440,6 +453,7 @@ using PlannedExpression = std::variant<
     PlannedType,
     PlannedVariable,
     PlannedGlobalRef,
+    PlannedFunctionRef,
     PlannedCall,
     PlannedTuple,
     PlannedMatrix,
@@ -559,6 +573,10 @@ struct PlannedGlobal {
     std::string MangledName;
     PlannedType GlobalType;
     std::vector<PlannedOperand> Value;
+    // When true, emit as a mutable llvm::GlobalVariable and do not inline
+    // the value at access sites — references become loads, `set` becomes
+    // a store. Used for module-level `mutable NAME: T init` declarations.
+    bool Mutable = false;
 };
 
 // Deferred instantiation info for lazy generic method planning

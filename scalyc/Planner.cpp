@@ -5225,6 +5225,30 @@ llvm::Expected<PlannedType> Planner::inferExpressionType(const PlannedExpression
             // Variable reference - return the variable's type
             return E.VariableType;
         }
+        else if constexpr (std::is_same_v<T, PlannedGlobalRef>) {
+            // A GlobalRef with LoadValue=true represents the loaded value of
+            // a mutable global, whose type is GlobalType. LoadValue=false is
+            // the legacy const-array form, whose "value" is a pointer into
+            // the array — but member access on mutable globals is the common
+            // case, so we return GlobalType unconditionally and let the
+            // Emitter side branch on LoadValue for the actual IR.
+            return E.GlobalType;
+        }
+        else if constexpr (std::is_same_v<T, PlannedFunctionRef>) {
+            // Function-as-value: type it as pointer[void] so it flows
+            // through extern-C callsites (e.g., atexit) without further
+            // checks. The Emitter maps it to the llvm::Function pointer.
+            PlannedType PVoid;
+            PVoid.Loc = E.Loc;
+            PVoid.Name = "pointer";
+            PlannedType VoidTy;
+            VoidTy.Loc = E.Loc;
+            VoidTy.Name = "void";
+            VoidTy.MangledName = "v";
+            PVoid.Generics.push_back(VoidTy);
+            PVoid.MangledName = "Pv";
+            return PVoid;
+        }
         else if constexpr (std::is_same_v<T, PlannedTuple>) {
             // Return the pre-computed tuple type
             // For single anonymous components (grouping parens), this is the operation type
@@ -6617,6 +6641,24 @@ llvm::Expected<PlannedOperand> Planner::planOperand(const Operand &Op) {
                     MemberType.Life = UnspecifiedLifetime{};
                     ImplicitMemberAccess.push_back(MemberType);
                 }
+            } else if (ModuleVariables.count(TypeExpr->Name[0]) > 0) {
+                // First element is a module-level mutable variable — treat
+                // like a local variable: single-element Type + implicit
+                // member access for the remaining path.
+                Type SingleType;
+                SingleType.Loc = TypeExpr->Loc;
+                SingleType.Name = {TypeExpr->Name[0]};
+                SingleType.Generics = nullptr;
+                SingleType.Life = TypeExpr->Life;
+                ModifiedExpr = std::make_unique<Expression>(SingleType);
+                for (size_t i = 1; i < TypeExpr->Name.size(); ++i) {
+                    Type MemberType;
+                    MemberType.Loc = TypeExpr->Loc;
+                    MemberType.Name = {TypeExpr->Name[i]};
+                    MemberType.Generics = nullptr;
+                    MemberType.Life = UnspecifiedLifetime{};
+                    ImplicitMemberAccess.push_back(MemberType);
+                }
             }
 
             // Check for qualified global constant access (e.g., hashing.HASH_PRIMES)
@@ -6716,6 +6758,21 @@ llvm::Expected<PlannedOperand> Planner::planOperand(const Operand &Op) {
                 }
             }
             if (GlobalIt != PlannedGlobals.end()) {
+                // Mutable module variables must NOT inline the initializer —
+                // each read is a load from the GlobalVariable.
+                if (GlobalIt->second.Mutable) {
+                    PlannedGlobalRef GRef;
+                    GRef.Loc = Op.Loc;
+                    GRef.Name = GlobalIt->second.Name;
+                    GRef.MangledName = GlobalIt->second.MangledName;
+                    GRef.GlobalType = GlobalIt->second.GlobalType;
+                    GRef.LoadValue = true;
+                    PlannedOperand ResultOp;
+                    ResultOp.Loc = Op.Loc;
+                    ResultOp.Expr = std::move(GRef);
+                    ResultOp.ResultType = GlobalIt->second.GlobalType;
+                    return ResultOp;
+                }
                 // Check if this is a scalar constant or an array constant
                 // Scalar constants (like PAGE_SIZE int 0x1000) have a single constant value
                 // Array constants (like PRIMES: int[] [2, 3, 5, 7, 11]) have a Matrix value
@@ -9790,6 +9847,20 @@ llvm::Expected<PlannedExpression> Planner::planExpression(const Expression &Expr
                 return PlannedExpression(Var);
             }
 
+            // Check if it's a module-level mutable variable — emit as a
+            // LoadValue GlobalRef so reads produce the current stored value.
+            // Member access on the result auto-derefs pointer-typed globals.
+            auto MVIt = ModuleVariables.find(Name);
+            if (MVIt != ModuleVariables.end()) {
+                PlannedGlobalRef GRef;
+                GRef.Loc = E->Loc;
+                GRef.Name = MVIt->second.Name;
+                GRef.MangledName = MVIt->second.MangledName;
+                GRef.GlobalType = MVIt->second.GlobalType;
+                GRef.LoadValue = true;
+                return PlannedExpression(GRef);
+            }
+
             // Check if it's a structure property access (when inside a method via 'this')
             if (CurrentStructureProperties) {
                 auto ThisType = lookupLocal("this");
@@ -9833,6 +9904,37 @@ llvm::Expected<PlannedExpression> Planner::planExpression(const Expression &Expr
                             return PlannedOp->Expr;
                         }
                     }
+                }
+            }
+        }
+
+        // Check if this is a bare function name used as a value (e.g.,
+        // `atexit(&my_cb)` or `atexit(my_cb)`). Resolve to the function's
+        // mangled symbol so the Emitter can emit a ptr-to-function value.
+        if (E->Name.size() == 1) {
+            const std::string &FName = E->Name[0];
+            auto FnIt = Functions.find(FName);
+            if (FnIt != Functions.end() && !FnIt->second.empty()) {
+                const Function *F = FnIt->second.front();
+                // Only handle zero-argument, non-generic, non-method functions
+                // for now — enough for atexit-style callbacks.
+                bool IsSimple = F->Input.empty() ||
+                    (F->Input.size() == 1 && F->Input[0].Name &&
+                     *F->Input[0].Name == "this");
+                if (IsSimple) {
+                    PlannedFunctionRef FRef;
+                    FRef.Loc = E->Loc;
+                    FRef.Name = FName;
+                    // extern functions use their C-linkage name (no mangling);
+                    // Scaly-defined functions use the Itanium-mangled name.
+                    bool IsExtern = std::holds_alternative<ExternImpl>(F->Impl);
+                    if (IsExtern) {
+                        FRef.MangledName = FName;
+                    } else {
+                        std::vector<PlannedItem> NoParams;
+                        FRef.MangledName = mangleFunction(FName, NoParams, nullptr, false);
+                    }
+                    return PlannedExpression(FRef);
                 }
             }
         }
@@ -10399,6 +10501,18 @@ llvm::Expected<PlannedAction> Planner::planAction(const Action &Act) {
     auto PlannedTarget = planOperands(Act.Target);
     if (!PlannedTarget) {
         return PlannedTarget.takeError();
+    }
+
+    // If the target is a mutable module variable, the name was planned as a
+    // LoadValue GlobalRef (it's the read form). For a store target, we want
+    // the raw GlobalVariable pointer, so clear the load flag — the Emitter
+    // will use the GV address as the CreateStore target.
+    for (auto &Op : *PlannedTarget) {
+        if (auto *GRef = std::get_if<PlannedGlobalRef>(&Op.Expr)) {
+            if (GRef->LoadValue) {
+                GRef->LoadValue = false;
+            }
+        }
     }
 
     // Collapse target operand sequence to create PlannedCall structures for operators
@@ -12302,6 +12416,8 @@ llvm::Expected<PlannedNamespace> Planner::planNamespace(const Namespace &NS,
             }
             Result.Concepts.push_back(std::move(*PlannedConc));
         }
+        // Note: ModuleVariable is not in StructMember's variant — namespace-
+        // scope mutable declarations aren't supported. Use file-scope `mutable`.
     }
 
     // Restore overwritten Concepts entries so namespace-local concepts do not
@@ -12704,6 +12820,40 @@ llvm::Expected<PlannedModule> Planner::planModule(const Module &Mod) {
         Result.Modules.push_back(std::move(*PlannedSubMod));
     }
 
+    // First pass: register module-level mutable variables so that functions
+    // planned below can resolve references to them via PlannedGlobals lookup.
+    for (const auto &Member : Mod.Members) {
+        if (auto *MV = std::get_if<ModuleVariable>(&Member)) {
+            PlannedGlobal PG;
+            PG.Loc = MV->Loc;
+            PG.Name = MV->Name;
+            PG.MangledName = MV->Name;
+            auto Resolved = resolveType(MV->VarType, MV->Loc);
+            if (!Resolved) {
+                File = OldFile;
+                ModuleStack.pop_back();
+                return Resolved.takeError();
+            }
+            PG.GlobalType = *Resolved;
+            if (!MV->Initializer.empty()) {
+                std::vector<PlannedOperand> PlannedVals;
+                for (const auto &Op : MV->Initializer) {
+                    auto PO = planOperand(Op);
+                    if (!PO) {
+                        File = OldFile;
+                        ModuleStack.pop_back();
+                        return PO.takeError();
+                    }
+                    PlannedVals.push_back(std::move(*PO));
+                }
+                PG.Value = std::move(PlannedVals);
+            }
+            PG.Mutable = true;
+            PlannedGlobals[MV->Name] = PG;
+            ModuleVariables[MV->Name] = PG;
+        }
+    }
+
     // Plan members (Module.Members is vector<Member> where Member is variant)
     for (const auto &Member : Mod.Members) {
         if (auto *Pkg = std::get_if<Package>(&Member)) {
@@ -12744,6 +12894,8 @@ llvm::Expected<PlannedModule> Planner::planModule(const Module &Mod) {
 
             // Register in symbol table
             Functions[Func->Name].push_back(Func);
+        } else if (std::holds_alternative<ModuleVariable>(Member)) {
+            // Already registered in the pre-pass above — no further work.
         } else if (auto *Op = std::get_if<Operator>(&Member)) {
             auto PlannedOp = planOperator(*Op, nullptr);
             if (!PlannedOp) {

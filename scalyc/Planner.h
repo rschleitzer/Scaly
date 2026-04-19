@@ -91,6 +91,11 @@ private:
     // Global constants cache - for constant lookup during expression planning
     std::map<std::string, PlannedGlobal> PlannedGlobals;
 
+    // Module-level mutable variables (subset of PlannedGlobals where
+    // Mutable=true). Separate lookup lets name/set resolution fast-path
+    // to "emit load/store from global" without scanning every global.
+    std::map<std::string, PlannedGlobal> ModuleVariables;
+
     // Current generic substitution context
     std::map<std::string, PlannedType> TypeSubstitutions;
 
