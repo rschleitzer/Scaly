@@ -491,11 +491,35 @@ define Planner
         function plan_type#(rp, this: Planner, t: Type) returns PlannedType
         {
             let base Planner.resolve_type_base#(t)
-            guard type_substitutions.length = 0
-                return base
 
-            var sub_vec Vector[KeyValuePair[String, PlannedType]]^rp(type_substitutions)
-            Planner.apply_name_substitution#(base, &sub_vec)
+            var after_subst: PlannedType base
+            guard type_substitutions.length > 0
+            {
+                var sub_vec Vector[KeyValuePair[String, PlannedType]]^rp(type_substitutions)
+                set after_subst: Planner.apply_name_substitution#(base, &sub_vec)
+            }
+
+            ; If resolve_type_base already computed a mangled name (intrinsic
+            ; pointer[T] / ref[T] cases), keep it.
+            guard after_subst.mangled_name.get_length() = 0
+                return after_subst
+
+            ; Otherwise consult the concept table: a registered user type
+            ; mangles as "_Z"-length-prefix-with-optional-generic-block.
+            guard this.has_concept(after_subst.name) = false
+                return after_subst
+
+            let mangled Planner.mangle_structure#(after_subst.name, after_subst.generics)
+            PlannedType(
+                after_subst.loc,
+                after_subst.name,
+                mangled,
+                after_subst.generics,
+                after_subst.life,
+                after_subst.origin,
+                after_subst.array_size,
+                after_subst.variable
+            )
         }
 
         ; ================================================================
