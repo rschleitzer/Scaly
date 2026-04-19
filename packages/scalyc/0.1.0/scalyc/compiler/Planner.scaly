@@ -1165,6 +1165,184 @@ define Planner
         t
     }
 
+    ; is_option_vs_void_pointer: does `left` name an Option family type
+    ; while `right` is `pointer[void]`? Used by unify to treat the null
+    ; literal as the None constructor of any Option type.
+    function is_option_vs_void_pointer(left: PlannedType, right: PlannedType) returns bool
+    {
+        var is_option: bool false
+        guard left.name.equals("Option")
+            set is_option: true
+        guard left.name.starts_with("Option.")
+            set is_option: true
+
+        guard is_option = false
+            return false
+
+        guard right.name.equals("pointer") = false
+            return false
+
+        guard right.generics = null
+            return false
+
+        let rg (*right.generics)
+        guard rg.length = 0
+            return false
+
+        let g0 rg.get(0)
+        guard g0 = null
+            return false
+
+        (*g0).name.equals("void")
+    }
+
+    ; unify: produce the most-general substitution that makes `left` and
+    ; `right` structurally equal. Returns null on any failure (occurs
+    ; check, name mismatch, arity mismatch). The error channel intentionally
+    ; drops the specific reason for now — adding a proper Result/Expected
+    ; type is a separate refactor.
+    ;
+    ; Special cases preserved from Planner.cpp:
+    ;   - same variable id                       → empty subst
+    ;   - variable vs T (or vice versa)          → bind (with occurs check)
+    ;   - void vs anything                       → empty subst
+    ;   - compatible integer families            → empty subst
+    ;   - Option family vs pointer[void]         → empty subst
+    ;   - concrete names equal, arities equal    → recurse on generics
+    function unify#(
+        rp,
+        left: PlannedType,
+        right: PlannedType
+    ) returns ref[Vector[KeyValuePair[size_t, PlannedType]]]?
+    {
+        let left_embed left.variable
+        let right_embed right.variable
+
+        ; Case 1: both point to the same variable id.
+        guard left_embed <> null
+        {
+            guard right_embed <> null
+            {
+                let lv (*left_embed)
+                let rv (*right_embed)
+                guard lv.id = rv.id
+                {
+                    var empty Vector[KeyValuePair[size_t, PlannedType]]^rp(0)
+                    return &empty
+                }
+            }
+        }
+
+        ; Case 2: left is a type variable — bind it to right.
+        guard left_embed <> null
+        {
+            let lv (*left_embed)
+            guard Planner.occurs_in(lv.id, right)
+                return null
+            var s Vector[KeyValuePair[size_t, PlannedType]]^rp(1)
+            s.put(0, KeyValuePair[size_t, PlannedType](lv.id, right))
+            return &s
+        }
+
+        ; Case 3: right is a type variable (left is concrete) — bind it to left.
+        guard right_embed <> null
+        {
+            let rv (*right_embed)
+            guard Planner.occurs_in(rv.id, left)
+                return null
+            var s Vector[KeyValuePair[size_t, PlannedType]]^rp(1)
+            s.put(0, KeyValuePair[size_t, PlannedType](rv.id, left))
+            return &s
+        }
+
+        ; Case 4: both concrete.
+
+        ; `void` unifies with anything (null literal compatibility).
+        guard left.name.equals("void")
+        {
+            var empty Vector[KeyValuePair[size_t, PlannedType]]^rp(0)
+            return &empty
+        }
+        guard right.name.equals("void")
+        {
+            var empty Vector[KeyValuePair[size_t, PlannedType]]^rp(0)
+            return &empty
+        }
+
+        ; Any pair of integer families unify trivially (the Emitter
+        ; inserts the cast).
+        guard Planner.are_compatible_integer_types(left.name, right.name)
+        {
+            var empty Vector[KeyValuePair[size_t, PlannedType]]^rp(0)
+            return &empty
+        }
+
+        ; null literal (pointer[void]) as the None of any Option type.
+        guard Planner.is_option_vs_void_pointer(left, right)
+        {
+            var empty Vector[KeyValuePair[size_t, PlannedType]]^rp(0)
+            return &empty
+        }
+        guard Planner.is_option_vs_void_pointer(right, left)
+        {
+            var empty Vector[KeyValuePair[size_t, PlannedType]]^rp(0)
+            return &empty
+        }
+
+        ; Names must match.
+        guard left.name.equals(right.name) = false
+            return null
+
+        ; Arities must match.
+        var l_len: size_t 0
+        var r_len: size_t 0
+        guard left.generics <> null
+        {
+            let lg (*left.generics)
+            set l_len: lg.length
+        }
+        guard right.generics <> null
+        {
+            let rg (*right.generics)
+            set r_len: rg.length
+        }
+        guard l_len <> r_len
+            return null
+
+        ; Unify generic args pairwise, composing substitutions.
+        var result Vector[KeyValuePair[size_t, PlannedType]]^rp(0)
+        guard left.generics <> null
+        {
+            guard right.generics <> null
+            {
+                let lg (*left.generics)
+                let rg (*right.generics)
+                var i: size_t 0
+                while i < l_len
+                {
+                    let lg_ptr lg.get(i)
+                    let rg_ptr rg.get(i)
+                    guard lg_ptr <> null
+                    {
+                        guard rg_ptr <> null
+                        {
+                            let lgv (*lg_ptr)
+                            let rgv (*rg_ptr)
+                            let sub Planner.unify#(lgv, rgv)
+                            guard sub = null
+                                return null
+
+                            set result: Planner.compose_substitutions#(result, (*sub))
+                        }
+                    }
+                    set i: i + 1
+                }
+            }
+        }
+
+        &result
+    }
+
     ; compose_substitutions: S2 ∘ S1 — apply S1 first, then S2.
     ; Equivalent to the C++ `composeSubstitutions`:
     ;   Result = S2 ⊎ { (id, apply(T, S2)) | (id, T) ∈ S1 }
@@ -2611,6 +2789,88 @@ define Planner
             return 129
         guard *bi1 <> 4
             return 130
+
+        ; unify - identical concrete types → empty substitution.
+        let u1 Planner.unify$(int_ty, int_ty)
+        guard u1 = null
+            return 131
+        guard (*u1).length <> 0
+            return 132
+
+        ; unify - incompatible primitives → null.
+        guard Planner.unify$(int_ty, bool_ty) <> null
+            return 133
+
+        ; unify - left variable, right concrete → binds.
+        let u2 Planner.unify$(var_ty, int_ty)
+        guard u2 = null
+            return 134
+        guard (*u2).length <> 1
+            return 135
+        let u2_lookup Planner.substitution_lookup((*u2), 7)
+        guard u2_lookup = null
+            return 136
+        guard (*u2_lookup).name.equals("int") = false
+            return 137
+
+        ; unify - right variable, left concrete → also binds.
+        let u3 Planner.unify$(int_ty, var_ty)
+        guard u3 = null
+            return 138
+        guard (*u3).length <> 1
+            return 139
+
+        ; unify - same variable → empty.
+        let u4 Planner.unify$(var_ty, var_ty)
+        guard u4 = null
+            return 140
+        guard (*u4).length <> 0
+            return 141
+
+        ; unify - void unifies with anything.
+        guard Planner.unify$(void_ty, int_ty) = null
+            return 142
+
+        ; unify - integer compatibility (u64 vs int).
+        let i64_try Planner.unify$(int_ty, u32_ty)
+        guard i64_try = null
+            return 143
+
+        ; unify - Option[T] vs pointer[void] → empty.
+        guard Planner.unify$(option_ty, ptr_void_ty) = null
+            return 144
+
+        ; unify - recurse on generics: Vector[T7] vs Vector[int] → [(7, int)].
+        let u_vec Planner.unify$(vec_of_t_ty, vec_ty)
+        guard u_vec = null
+            return 145
+        guard (*u_vec).length <> 1
+            return 146
+        let u_vec_lookup Planner.substitution_lookup((*u_vec), 7)
+        guard u_vec_lookup = null
+            return 147
+        guard (*u_vec_lookup).name.equals("int") = false
+            return 148
+
+        ; unify - occurs check: T7 vs Vector[T7] → null.
+        guard Planner.unify$(var_ty, vec_of_t_ty) <> null
+            return 149
+
+        ; unify - name mismatch with matching arity → null.
+        var list_gens Vector[PlannedType]$(1)
+        list_gens.put(0, int_ty)
+        let list_int_ty PlannedType(
+            Span(0, 0),
+            String$("List"),
+            String$(""),
+            &list_gens,
+            Lifetime.Unspecified(Unspecified()),
+            null,
+            String$(""),
+            null
+        )
+        guard Planner.unify$(vec_ty, list_int_ty) <> null
+            return 150
 
         0
     }
