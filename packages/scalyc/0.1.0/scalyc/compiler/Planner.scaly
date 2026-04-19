@@ -501,7 +501,7 @@ define Planner
 
             ; If resolve_type_base already computed a mangled name (intrinsic
             ; pointer[T] / ref[T] cases), keep it.
-            guard after_subst.mangled_name.get_length() = 0
+            guard after_subst.mangled_name.get_length() > 0
                 return after_subst
 
             ; Otherwise consult the concept table: a registered user type
