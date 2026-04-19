@@ -339,6 +339,25 @@ define Planner
             Planner.apply_substitution#(t, &sol_vec)
         }
 
+        ; ================================================================
+        ; plan_type: Model.Type → PlannedType using the active generic
+        ; substitutions. Pulls together resolve_type_base (Model → Plan
+        ; skeleton) and apply_name_substitution (T → int, etc.).
+        ;
+        ; Does NOT yet consult the concept table to fill in the
+        ; mangled_name for user-defined types — that remains a follow-up
+        ; once the concept registry is wired into the Planner struct.
+        ; ================================================================
+        function plan_type#(rp, this: Planner, t: Type) returns PlannedType
+        {
+            let base Planner.resolve_type_base#(t)
+            guard type_substitutions.length = 0
+                return base
+
+            var sub_vec Vector[KeyValuePair[String, PlannedType]]^rp(type_substitutions)
+            Planner.apply_name_substitution#(base, &sub_vec)
+        }
+
         ; plan_program - top-level entry point (stub).
         ; Abort loudly if anything tries to actually plan a Program through
         ; this port before Stage 2+ fills in the real logic.
@@ -4205,6 +4224,46 @@ define Planner
         p.add_equality_constraint(fv3, bool_ty, Span(0, 0))
         guard p.solve_and_apply$()
             return 235
+
+        ; ====================================================================
+        ; plan_type on the Planner instance.
+        ; ====================================================================
+
+        ; A clean Planner — no active substitutions — resolves "int" plainly.
+        var p2 Planner.Planner$(String$("test2.scaly"))
+        let pt_int p2.plan_type$(int_type)
+        guard pt_int.name.equals("int") = false
+            return 236
+
+        ; With T → int substitution active, Vector[T] becomes Vector[int].
+        p2.define_type_substitution(String$("T"), int_ty)
+        var vec_t_path Vector[String]$(1)
+        vec_t_path.put(0, String$("Vector"))
+        var vec_t_generics Vector[Type]$(1)
+        var t_path Vector[String]$(1)
+        t_path.put(0, String$("T"))
+        vec_t_generics.put(0, Type(
+            Span(0, 0),
+            t_path,
+            null,
+            Lifetime.Unspecified(Unspecified())
+        ))
+        let vec_t_model Type(
+            Span(0, 0),
+            vec_t_path,
+            &vec_t_generics,
+            Lifetime.Unspecified(Unspecified())
+        )
+        let pt_vec_t p2.plan_type$(vec_t_model)
+        guard pt_vec_t.name.equals("Vector") = false
+            return 237
+        guard pt_vec_t.generics = null
+            return 238
+        let pt_vec_t_g0 (*pt_vec_t.generics).get(0)
+        guard pt_vec_t_g0 = null
+            return 239
+        guard (*pt_vec_t_g0).name.equals("int") = false
+            return 240
 
         0
     }
