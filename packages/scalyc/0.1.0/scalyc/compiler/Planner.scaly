@@ -606,6 +606,39 @@ define Planner
                     null
         }
 
+        ; get_property_index: position of a named property in the struct.
+        ; Returns -1 if the type isn't a struct or the property is missing.
+        function get_property_index(
+            this: Planner,
+            struct_name: String,
+            property_name: String
+        ) returns int
+        {
+            let concept_ref this.lookup_concept(struct_name)
+            guard concept_ref = null
+                return -1
+
+            let c (*concept_ref)
+            choose c.definition
+                when s: Structure
+                {
+                    var i: size_t 0
+                    while i < s.properties.length
+                    {
+                        let p_ptr s.properties.get(i)
+                        guard p_ptr <> null
+                        {
+                            guard p_ptr.name.equals(property_name)
+                                return i as int
+                        }
+                        set i: i + 1
+                    }
+                    -1
+                }
+                else
+                    -1
+        }
+
         ; lookup_variant: find a union variant by name and return its tag.
         ; Returns -1 if the concept is missing or not a Union, or if the
         ; variant name is not present.
@@ -638,6 +671,111 @@ define Planner
                 }
                 else
                     -1
+        }
+
+        ; ================================================================
+        ; resolve_member_access: walk a chain of member names against
+        ; `base_type`, producing a PlannedMemberAccess for each hop.
+        ;
+        ; At each step:
+        ;   - if the name is a property, record the planned PropertyType
+        ;     and continue the chain from that type;
+        ;   - else if the name is a method, record the planned return
+        ;     type and continue from that type;
+        ;   - else record a placeholder with void result (caller will
+        ;     surface this as an error when emission is attempted).
+        ;
+        ; The produced access chain feeds `PlannedOperand.member_access`.
+        ; ================================================================
+        function resolve_member_access#(
+            rp,
+            this: Planner,
+            base_type: PlannedType,
+            members: Vector[String]
+        ) returns Vector[PlannedMemberAccess]
+        {
+            var result Array[PlannedMemberAccess]$()
+            var current: PlannedType base_type
+
+            var i: size_t 0
+            while i < members.length
+            {
+                let m_ptr members.get(i)
+                guard m_ptr <> null
+                {
+                    let m (*m_ptr)
+
+                    var matched: bool false
+
+                    ; Property lookup.
+                    let prop_ref this.lookup_property(current.name, m)
+                    guard prop_ref <> null
+                    {
+                        set matched: true
+                        let prop (*prop_ref)
+                        var prop_type: PlannedType this.fresh_type_var#(String$(""))
+                        guard prop.type <> null
+                        {
+                            let t (*prop.type)
+                            set prop_type: this.plan_type#(t)
+                        }
+                        let idx this.get_property_index(current.name, m)
+                        result.add(PlannedMemberAccess(
+                            m, idx as size_t, false, false, current, prop_type
+                        ))
+                        set current: prop_type
+                    }
+
+                    ; Method lookup as fallback.
+                    guard matched = false
+                    {
+                        let methods this.lookup_methods#(current.name, m)
+                        guard methods.length > 0
+                        {
+                            set matched: true
+                            let first_ptr methods.get(0)
+                            guard first_ptr <> null
+                            {
+                                let f (*first_ptr)
+                                var return_ty: PlannedType this.fresh_type_var#(String$(""))
+                                guard f.returns_ <> null
+                                {
+                                    let rt (*f.returns_)
+                                    set return_ty: this.plan_type#(rt)
+                                }
+                                result.add(PlannedMemberAccess(
+                                    m, 0, true, false, current, return_ty
+                                ))
+                                set current: return_ty
+                            }
+                        }
+                    }
+
+                    ; Union-variant lookup for the remaining case
+                    ; (e.g. `opt.Some` as a variant construction).
+                    guard matched = false
+                    {
+                        let tag this.lookup_variant_tag(current.name, m)
+                        guard tag >= 0
+                        {
+                            set matched: true
+                            result.add(PlannedMemberAccess(
+                                m, tag as size_t, false, true, current,
+                                Planner.make_void_type#()
+                            ))
+                        }
+                    }
+
+                    ; Unresolved — record placeholder with void result.
+                    guard matched = false
+                        result.add(PlannedMemberAccess(
+                            m, 0, false, false, current, Planner.make_void_type#()
+                        ))
+                }
+                set i: i + 1
+            }
+
+            Vector[PlannedMemberAccess]^rp(result)
         }
 
         ; fresh_type_var: allocate a new type variable as a PlannedType
