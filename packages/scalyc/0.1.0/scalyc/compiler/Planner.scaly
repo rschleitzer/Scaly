@@ -2982,11 +2982,14 @@ define Planner
             this.pop_scope()
 
             var input_holder Vector[PlannedItem]^rp(planned_input)
+            let mangled Planner.mangle_function#(
+                String$("init"), &input_holder, null, false
+            )
             PlannedInitializer(
                 ini.span,
                 ini.private_,
                 null,
-                String^rp(""),
+                mangled,
                 &input_holder,
                 planned_impl
             )
