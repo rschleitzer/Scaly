@@ -1168,6 +1168,77 @@ define Planner
         t
     }
 
+    ; free_type_vars_with_dups: depth-first collection of every type-var
+    ; id reachable through the generics tree. May contain duplicates —
+    ; the public free_type_vars wrapper dedupes.
+    function free_type_vars_with_dups#(rp, t: PlannedType) returns Vector[size_t]
+    {
+        var acc Array[size_t]$()
+        guard t.variable <> null
+        {
+            let tv (*t.variable)
+            acc.add(tv.id)
+        }
+        guard t.generics <> null
+        {
+            let gens (*t.generics)
+            var i: size_t 0
+            while i < gens.length
+            {
+                let g_ptr gens.get(i)
+                guard g_ptr <> null
+                {
+                    let g (*g_ptr)
+                    let sub Planner.free_type_vars_with_dups#(g)
+                    var j: size_t 0
+                    while j < sub.length
+                    {
+                        let id_ptr sub.get(j)
+                        guard id_ptr <> null
+                            acc.add(*id_ptr)
+
+                        set j: j + 1
+                    }
+                }
+                set i: i + 1
+            }
+        }
+        Vector[size_t]^rp(acc)
+    }
+
+    ; free_type_vars: distinct type-var ids in `t`, in first-seen order.
+    ; Used for generalization (promoting a type to a type scheme).
+    function free_type_vars#(rp, t: PlannedType) returns Vector[size_t]
+    {
+        let with_dups Planner.free_type_vars_with_dups#(t)
+        var acc Array[size_t]$()
+        var i: size_t 0
+        while i < with_dups.length
+        {
+            let id_ptr with_dups.get(i)
+            guard id_ptr <> null
+            {
+                let id *id_ptr
+                var found: bool false
+                var j: size_t 0
+                while j < acc.length
+                {
+                    let existing acc.get(j)
+                    guard existing <> null
+                    {
+                        guard *existing = id
+                            set found: true
+                    }
+                    set j: j + 1
+                }
+                guard found = false
+                    acc.add(id)
+            }
+            set i: i + 1
+        }
+        Vector[size_t]^rp(acc)
+    }
+
     ; is_option_vs_void_pointer: does `left` name an Option family type
     ; while `right` is `pointer[void]`? Used by unify to treat the null
     ; literal as the None constructor of any Option type.
@@ -2965,6 +3036,44 @@ define Planner
         ))
         guard Planner.solve_constraints$(&conflict) <> null
             return 158
+
+        ; free_type_vars - concrete type yields empty list.
+        let fv_int Planner.free_type_vars$(int_ty)
+        guard fv_int.length <> 0
+            return 159
+
+        ; free_type_vars - standalone variable yields [id].
+        let fv_var Planner.free_type_vars$(var_ty)
+        guard fv_var.length <> 1
+            return 160
+        let fv_var_0 fv_var.get(0)
+        guard fv_var_0 = null
+            return 161
+        guard *fv_var_0 <> 7
+            return 162
+
+        ; free_type_vars - Vector[T7] yields [7].
+        let fv_vec Planner.free_type_vars$(vec_of_t_ty)
+        guard fv_vec.length <> 1
+            return 163
+
+        ; free_type_vars - dedupes repeated variables inside nested generics.
+        var two_t Vector[PlannedType]$(2)
+        two_t.put(0, var_ty)
+        two_t.put(1, var_ty)
+        let pair_of_t_ty PlannedType(
+            Span(0, 0),
+            String$("Pair"),
+            String$(""),
+            &two_t,
+            Lifetime.Unspecified(Unspecified()),
+            null,
+            String$(""),
+            null
+        )
+        let fv_pair Planner.free_type_vars$(pair_of_t_ty)
+        guard fv_pair.length <> 1
+            return 164
 
         0
     }
