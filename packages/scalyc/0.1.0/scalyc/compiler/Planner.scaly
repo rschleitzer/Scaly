@@ -28,6 +28,7 @@ use scaly.containers.Array
 use scalyc.compiler.Plan.Plan
 use scalyc.compiler.Plan.PlannedType
 use scalyc.compiler.Plan.PlannedItem
+use scalyc.compiler.Plan.TypeVariable
 use scalyc.compiler.Plan.PlannedOperand
 use scalyc.compiler.Plan.PlannedExpression
 use scalyc.compiler.Plan.PlannedTuple
@@ -935,6 +936,52 @@ define Planner
     function align_offset(offset: size_t, align: size_t) returns size_t
     {
         (offset + align - 1) & (~(align - 1))
+    }
+
+    ; ========================================================================
+    ; Constraint-solver helpers.
+    ; The main Hindley-Milner machinery (unify, solveConstraints,
+    ; freshTypeVar) touches Plan-global state, but the "occurs check"
+    ; and compatible-integer predicate are pure and can be ported now.
+    ; ========================================================================
+
+    ; occurs_in: does a type variable with the given id appear anywhere in
+    ; `t` (or its recursive generic arguments)? The occurs check prevents
+    ; the unifier from constructing infinite types like T ~ List[T].
+    function occurs_in(var_id: size_t, t: PlannedType) returns bool
+    {
+        guard t.variable <> null
+        {
+            let tv (*t.variable)
+            guard tv.id = var_id
+                return true
+        }
+        guard t.generics <> null
+        {
+            let gens (*t.generics)
+            var i: size_t 0
+            while i < gens.length
+            {
+                let g_ptr gens.get(i)
+                guard g_ptr <> null
+                {
+                    let g (*g_ptr)
+                    guard Planner.occurs_in(var_id, g)
+                        return true
+                }
+                set i: i + 1
+            }
+        }
+        false
+    }
+
+    ; are_compatible_integer_types: trivial wrapper around is_integer_type.
+    ; Kept as a named predicate so call sites read like their C++ counterparts.
+    function are_compatible_integer_types(left: String, right: String) returns bool
+    {
+        guard Planner.is_integer_type(left) = false
+            return false
+        Planner.is_integer_type(right)
     }
 
     ; ========================================================================
@@ -1905,6 +1952,49 @@ define Planner
             return 84
         guard Planner.align_offset(16, 8) <> 16
             return 85
+
+        ; occurs_in - a var id not present in a concrete type.
+        guard Planner.occurs_in(7, int_ty)
+            return 86
+
+        ; occurs_in - direct hit on the top-level variable.
+        let tv7 TypeVariable(7, String$("T"))
+        let var_ty PlannedType(
+            Span(0, 0),
+            String$("T"),
+            String$(""),
+            null,
+            Lifetime.Unspecified(Unspecified()),
+            null,
+            String$(""),
+            &tv7
+        )
+        guard Planner.occurs_in(7, var_ty) = false
+            return 87
+
+        ; occurs_in - hidden inside a generic argument.
+        var vec_with_var Vector[PlannedType]$(1)
+        vec_with_var.put(0, var_ty)
+        let vec_of_t_ty PlannedType(
+            Span(0, 0),
+            String$("Vector"),
+            String$(""),
+            &vec_with_var,
+            Lifetime.Unspecified(Unspecified()),
+            null,
+            String$(""),
+            null
+        )
+        guard Planner.occurs_in(7, vec_of_t_ty) = false
+            return 88
+        guard Planner.occurs_in(99, vec_of_t_ty)
+            return 89
+
+        ; are_compatible_integer_types - both integer -> true, one not -> false.
+        guard Planner.are_compatible_integer_types(String$("int"), String$("u64")) = false
+            return 90
+        guard Planner.are_compatible_integer_types(String$("int"), String$("bool"))
+            return 91
 
         0
     }
