@@ -189,6 +189,7 @@ void scaly_trace_root_pop(const char* name) {
     if (TraceEntry* e = trace_find_or_add(name)) e->pop_count++;
 }
 
+
 // -- StackBucket (root pages) ------------------------------------------------
 
 Page* scaly_alloc_root_page() {
@@ -213,15 +214,15 @@ Page* scaly_alloc_root_page() {
 }
 
 void scaly_release_root_page(Page* p) {
-    // Strict LIFO is the intended invariant. A few emitter paths in the
-    // Scaly stdlib still produce exit flows whose cleanup doesn't match a
-    // preceding push (tracked in issue queue). Tolerate the mismatch here
-    // by skipping the decrement: the orphaned slot remains inside its
-    // bucket (backing memory is still valid) and is reclaimed wholesale
-    // when the bucket is freed at process exit. This preserves
-    // correctness at the cost of not recycling the slot.
+    // Strict LIFO: a release must always pop the current top of stack. If
+    // not, some exit path is skipping its release — a real bug that would
+    // leak slots and, given recursion, eventually corrupt the bucket.
     if (p != g_stack_top) {
-        return;
+        fprintf(stderr,
+            "scaly_release_root_page: LIFO violation — "
+            "release=%p top=%p\n",
+            (void*)p, (void*)g_stack_top);
+        abort();
     }
     StackBucket* bucket = stack_bucket_of(p);
     Page* first = first_usable_page(bucket);

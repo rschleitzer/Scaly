@@ -368,6 +368,11 @@ private:
     // name. No-op unless the trace functions are declared in this module.
     void emitRootTrace(bool IsPop);
 
+    // Walk the current function's ret instructions and splice in the
+    // standard Deallocate/Release cleanup for any ret emitted before the
+    // on-demand local page existed. Invoked from getOrCreateLocalPage.
+    void patchPriorReturnsForLocalPage(llvm::Value *LocalPage);
+
     // Create a basic block in current function
     llvm::BasicBlock *createBlock(llvm::StringRef Name);
 

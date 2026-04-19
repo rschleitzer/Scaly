@@ -13,6 +13,7 @@
 #include "llvm/TargetParser/Host.h"
 #include "llvm/ExecutionEngine/Orc/ThreadSafeModule.h"
 #include "llvm/ExecutionEngine/Orc/ExecutionUtils.h"
+#include "llvm/Transforms/Utils/BasicBlockUtils.h"
 #include <cstring>
 #include <set>
 
@@ -6265,7 +6266,78 @@ llvm::Value *Emitter::getOrCreateLocalPage() {
         llvm::Value *NameStr = TmpBuilder.CreateGlobalStringPtr(Name, "trace.name");
         TmpBuilder.CreateCall(TraceRootPush, {NameStr});
     }
+    // Any ret instructions emitted before this point were produced with
+    // CurrentRegion.LocalPage == null, so their cleanup was skipped. Patch
+    // each with the standard Deallocate/Release pair so the StackBucket
+    // invariant is preserved on every exit path.
+    patchPriorReturnsForLocalPage(CurrentRegion.LocalPage);
     return CurrentRegion.LocalPage;
+}
+
+void Emitter::patchPriorReturnsForLocalPage(llvm::Value *LocalPage) {
+    if (!PageReleaseRootPage || !PageType) return;
+    auto *I64Ty = llvm::Type::getInt64Ty(*Context);
+    auto *PtrTy = llvm::PointerType::getUnqual(*Context);
+    llvm::Value *TraceName = nullptr;
+
+    // Collect first so we don't iterate over a block list we're mutating.
+    llvm::SmallVector<llvm::ReturnInst *, 4> Rets;
+    for (auto &BB : *CurrentFunction) {
+        if (auto *R = llvm::dyn_cast_or_null<llvm::ReturnInst>(BB.getTerminator())) {
+            Rets.push_back(R);
+        }
+    }
+
+    for (auto *Ret : Rets) {
+        // Skip rets that already have their release (emitted by emitReturn
+        // while LocalPage was set). We detect this by scanning the prior few
+        // instructions for a call to PageReleaseRootPage.
+        bool AlreadyReleased = false;
+        unsigned Scan = 0;
+        for (auto *I = Ret->getPrevNode(); I && Scan < 8; I = I->getPrevNode(), ++Scan) {
+            if (auto *Call = llvm::dyn_cast<llvm::CallInst>(I)) {
+                if (Call->getCalledFunction() == PageReleaseRootPage) {
+                    AlreadyReleased = true;
+                    break;
+                }
+            }
+        }
+        if (AlreadyReleased) continue;
+
+        // Mirror the emitReturn cleanup: only call deallocate_extensions if
+        // the page's bump pointer has moved (avoids recursion into
+        // deallocate_extensions on a fresh page).
+        llvm::IRBuilder<> B(Ret);
+        llvm::Value *NextObjPtr = B.CreateStructGEP(PageType, LocalPage, 0, "patch.next_object_ptr");
+        llvm::Value *NextObj = B.CreateLoad(PtrTy, NextObjPtr, "patch.next_object");
+        llvm::Value *PagePlus1 = B.CreateGEP(PageType, LocalPage,
+            llvm::ConstantInt::get(I64Ty, 1), "patch.page_plus_1");
+        llvm::Value *WasUsed = B.CreateICmpNE(NextObj, PagePlus1, "patch.page_was_used");
+
+        llvm::Instruction *ThenTerm = llvm::SplitBlockAndInsertIfThen(
+            WasUsed, Ret, /*Unreachable=*/false);
+        {
+            llvm::IRBuilder<> ThenB(ThenTerm);
+            if (PageDeallocateExtensions) {
+                ThenB.CreateCall(PageDeallocateExtensions, {LocalPage});
+            }
+        }
+
+        // After the if-then reconverges, insert the unconditional release
+        // right before the ret.
+        llvm::IRBuilder<> PreRet(Ret);
+        if (TraceRootPop) {
+            if (!TraceName) {
+                // Create the name string once in the entry block so every
+                // patched ret can reuse it.
+                llvm::IRBuilder<> EntryB(&CurrentFunction->getEntryBlock(),
+                                         CurrentFunction->getEntryBlock().getFirstInsertionPt());
+                TraceName = EntryB.CreateGlobalStringPtr(CurrentFunction->getName(), "trace.name");
+            }
+            PreRet.CreateCall(TraceRootPop, {TraceName});
+        }
+        PreRet.CreateCall(PageReleaseRootPage, {LocalPage});
+    }
 }
 
 llvm::BasicBlock *Emitter::createBlock(llvm::StringRef Name) {
@@ -6485,6 +6557,7 @@ llvm::Error Emitter::emitMainWrapper(const Plan &P) {
     CurrentFunction = MainFunc;
     CurrentBlock = EntryBB;
     LocalVariables.clear();
+    CurrentRegion = RegionInfo{};
 
     // Emit top-level statements
     llvm::Value *LastValue = nullptr;
@@ -6515,6 +6588,19 @@ llvm::Error Emitter::emitMainWrapper(const Plan &P) {
     // Unlike functions, program top-level statements are executed for side effects
     // Use explicit "return N" in top-level code to return a specific exit code
     (void)LastValue;  // Intentionally unused for programs
+
+    // If top-level statements allocated a local page on-demand, release it
+    // before exiting main. Without this the StackBucket push from the first
+    // $ allocation in the program is never matched by a pop.
+    if (CurrentRegion.LocalPage && PageReleaseRootPage) {
+        if (PageDeallocateExtensions && !PageDeallocateExtensions->isDeclaration()) {
+            Builder->CreateCall(PageDeallocateExtensions, {CurrentRegion.LocalPage});
+        }
+        emitRootTrace(/*IsPop=*/true);
+        Builder->CreateCall(PageReleaseRootPage, {CurrentRegion.LocalPage});
+        CurrentRegion.LocalPage = nullptr;
+    }
+
     Builder->CreateRet(llvm::ConstantInt::get(Int32Ty, 0));
 
     return llvm::Error::success();
