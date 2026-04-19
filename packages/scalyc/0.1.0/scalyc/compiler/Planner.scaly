@@ -1576,12 +1576,16 @@ define Planner
         ; ================================================================
 
         ; plan_if: plans the condition (a Vector[Operand]), the consequent
-        ; statement, and optionally the alternative. `prop` (binding-in-
-        ; condition) is not yet planned — that requires a variant-capture
-        ; story we don't have yet.
+        ; statement, and optionally the alternative. Emits a constraint
+        ; that the condition's collapsed type must be bool.
+        ; `prop` (binding-in-condition) is not yet planned — that
+        ; requires a variant-capture story we don't have yet.
         function plan_if#(rp, this: Planner, f: If) returns PlannedIf
         {
-            let planned_cond this.plan_operands#(f.condition)
+            let planned_cond_flat this.plan_operands#(f.condition)
+            let planned_cond_collapsed this.collapse_operand_sequence#(planned_cond_flat)
+            let bool_ty Planner.make_bool_type#()
+            this.add_equality_constraint(bool_ty, planned_cond_collapsed.result_type, f.span)
 
             let planned_consequent this.plan_statement#(f.consequent)
             var consequent_holder Vector[PlannedStatement]^rp(1)
@@ -1597,7 +1601,8 @@ define Planner
                 set alternative_ref: alt_holder.get(0)
             }
 
-            var cond_holder Vector[PlannedOperand]^rp(planned_cond)
+            var cond_holder Vector[PlannedOperand]^rp(1)
+            cond_holder.put(0, planned_cond_collapsed)
             PlannedIf(
                 f.span,
                 &cond_holder,
