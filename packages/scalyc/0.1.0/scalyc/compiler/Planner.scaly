@@ -219,6 +219,18 @@ define Planner
         Planner.encode_name(normalized)
     }
 
+    ; mangle_type: "_Z" + encode_type(T). The "_Z" prefix marks this as a
+    ; (fake) C++-compatible Itanium symbol so external tools like c++filt
+    ; can demangle our names for humans.
+    function mangle_type#(rp, type_value: PlannedType) returns String
+    {
+        let encoded Planner.encode_type#(type_value)
+        var sb StringBuilder$()
+        sb.append("_Z")
+        sb.append(encoded)
+        sb.to_string^rp()
+    }
+
     ; size_to_string: decimal representation of a size_t.
     ; Classic divide-by-10 with digit buffer and reversal.
     function size_to_string(n: size_t) returns String
@@ -347,6 +359,15 @@ define Planner
         let enc_sstr Planner.encode_type$(sstr_ty)
         guard enc_sstr.equals(String$("6String")) = false
             return 11
+
+        ; mangle_type - "_Z" prefix + encoded type.
+        let mangled_int Planner.mangle_type$(int_ty)
+        guard mangled_int.equals(String$("_Zi")) = false
+            return 12
+
+        let mangled_foo Planner.mangle_type$(foo_ty)
+        guard mangled_foo.equals(String$("_Z3Foo")) = false
+            return 13
 
         0
     }
