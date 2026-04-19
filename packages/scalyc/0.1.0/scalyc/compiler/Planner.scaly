@@ -278,6 +278,10 @@ define Planner
             set instantiated_globals: Array[PlannedGlobal]^page()
             set model_functions: Array[KeyValuePair[String, Function]]^page()
             set model_operators: Array[KeyValuePair[String, Operator]]^page()
+
+            ; Seed the function registry with C-runtime externs so name
+            ; lookups for aligned_alloc/free/exit succeed from day one.
+            this.register_runtime_functions()
         }
 
         ; ================================================================
