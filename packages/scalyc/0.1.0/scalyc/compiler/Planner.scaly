@@ -674,6 +674,188 @@ define Planner
         }
 
         ; ================================================================
+        ; resolve_function_call: return the result type of calling
+        ; `name` with the given argument types. Simplified overload
+        ; resolution — we pick the first registered Function whose name
+        ; matches and whose (plan_type'd) parameter types are pairwise
+        ; `types_compatible` with the arguments. 'this' parameters are
+        ; implicitly skipped.
+        ;
+        ; Returns null when no overload matches; callers fall back to a
+        ; fresh type variable so the constraint solver can recover.
+        ; ================================================================
+        function resolve_function_call#(
+            rp,
+            this: Planner,
+            name: String,
+            arg_types: Vector[PlannedType]
+        ) returns ref[PlannedType]?
+        {
+            let candidates this.lookup_functions#(name)
+            guard candidates.length = 0
+                return null
+
+            var i: size_t 0
+            while i < candidates.length
+            {
+                let f_ptr candidates.get(i)
+                guard f_ptr <> null
+                {
+                    let f (*f_ptr)
+
+                    ; Skip 'this' param when the first input is named "this".
+                    var param_start: size_t 0
+                    guard f.input.length > 0
+                    {
+                        let first_ptr f.input.get(0)
+                        guard first_ptr <> null
+                        {
+                            guard first_ptr.name <> null
+                            {
+                                let fname (*first_ptr.name)
+                                guard fname.equals(String$("this"))
+                                    set param_start: 1
+                            }
+                        }
+                    }
+
+                    let expected_arity f.input.length - param_start
+                    guard expected_arity = arg_types.length
+                    {
+                        ; Check each param type is compatible with arg.
+                        var compatible: bool true
+                        var j: size_t 0
+                        while j < arg_types.length
+                        {
+                            let p_ptr f.input.get(j + param_start)
+                            let a_ptr arg_types.get(j)
+                            guard p_ptr <> null
+                            {
+                                guard a_ptr <> null
+                                {
+                                    guard p_ptr.type <> null
+                                    {
+                                        let p_type (*p_ptr.type)
+                                        let planned_p this.plan_type#(p_type)
+                                        let arg (*a_ptr)
+                                        guard Planner.types_compatible(planned_p, arg) = false
+                                            set compatible: false
+                                    }
+                                }
+                            }
+                            set j: j + 1
+                        }
+
+                        guard compatible
+                        {
+                            var holder Vector[PlannedType]^rp(1)
+                            guard f.returns_ <> null
+                            {
+                                let rt (*f.returns_)
+                                holder.put(0, this.plan_type#(rt))
+                            }
+                            guard f.returns_ = null
+                                holder.put(0, Planner.make_void_type#())
+
+                            return holder.get(0)
+                        }
+                    }
+                }
+                set i: i + 1
+            }
+
+            null
+        }
+
+        ; resolve_operator_call: same idea as resolve_function_call but
+        ; keyed on the operator symbol registry.
+        function resolve_operator_call#(
+            rp,
+            this: Planner,
+            name: String,
+            left: PlannedType,
+            right: PlannedType
+        ) returns ref[PlannedType]?
+        {
+            let candidates this.lookup_operators#(name)
+            guard candidates.length = 0
+                return null
+
+            ; Build an arg-type pair from left/right.
+            var arg_types Vector[PlannedType]^rp(2)
+            arg_types.put(0, left)
+            arg_types.put(1, right)
+
+            var i: size_t 0
+            while i < candidates.length
+            {
+                let o_ptr candidates.get(i)
+                guard o_ptr <> null
+                {
+                    let o (*o_ptr)
+
+                    var param_start: size_t 0
+                    guard o.input.length > 0
+                    {
+                        let first_ptr o.input.get(0)
+                        guard first_ptr <> null
+                        {
+                            guard first_ptr.name <> null
+                            {
+                                let fname (*first_ptr.name)
+                                guard fname.equals(String$("this"))
+                                    set param_start: 1
+                            }
+                        }
+                    }
+
+                    let expected_arity o.input.length - param_start
+                    guard expected_arity = arg_types.length
+                    {
+                        var compatible: bool true
+                        var j: size_t 0
+                        while j < arg_types.length
+                        {
+                            let p_ptr o.input.get(j + param_start)
+                            let a_ptr arg_types.get(j)
+                            guard p_ptr <> null
+                            {
+                                guard a_ptr <> null
+                                {
+                                    guard p_ptr.type <> null
+                                    {
+                                        let p_type (*p_ptr.type)
+                                        let planned_p this.plan_type#(p_type)
+                                        let arg (*a_ptr)
+                                        guard Planner.types_compatible(planned_p, arg) = false
+                                            set compatible: false
+                                    }
+                                }
+                            }
+                            set j: j + 1
+                        }
+
+                        guard compatible
+                        {
+                            var holder Vector[PlannedType]^rp(1)
+                            guard o.returns_ <> null
+                            {
+                                let rt (*o.returns_)
+                                holder.put(0, this.plan_type#(rt))
+                            }
+                            guard o.returns_ = null
+                                holder.put(0, Planner.make_void_type#())
+                            return holder.get(0)
+                        }
+                    }
+                }
+                set i: i + 1
+            }
+
+            null
+        }
+
+        ; ================================================================
         ; resolve_member_access: walk a chain of member names against
         ; `base_type`, producing a PlannedMemberAccess for each hop.
         ;
