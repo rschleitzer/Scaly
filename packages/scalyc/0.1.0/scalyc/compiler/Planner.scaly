@@ -2917,12 +2917,21 @@ define Planner
             this.pop_scope()
 
             var input_holder Vector[PlannedItem]^rp(planned_input)
+
+            ; Compute the Itanium mangled name. For a free function this
+            ; is `_Z<name-len><name><params>`; for methods the caller
+            ; (plan_structure/plan_union) would need to supply a parent
+            ; type — not tracked through this entry point yet.
+            let mangled Planner.mangle_function#(
+                f.name, &input_holder, null, false
+            )
+
             let result PlannedFunction(
                 f.span,
                 f.private_,
                 f.pure,
                 f.name,
-                String^rp(""),
+                mangled,
                 null,
                 &input_holder,
                 return_type,
