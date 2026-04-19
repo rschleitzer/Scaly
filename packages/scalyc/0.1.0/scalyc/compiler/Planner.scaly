@@ -45,6 +45,8 @@ use scalyc.compiler.Plan.TypeConstraint
 use scalyc.compiler.Plan.EqualityConstraint
 use scalyc.compiler.Plan.InstanceConstraint
 use scalyc.compiler.Plan.TypeScheme
+use scalyc.compiler.Plan.PlannedBinding
+use scalyc.compiler.Model.Binding
 use scalyc.compiler.Plan.PlannedOperand
 use scalyc.compiler.Plan.PlannedExpression
 use scalyc.compiler.Plan.PlannedTuple
@@ -503,6 +505,59 @@ define Planner
                 set i: i + 1
             }
             result
+        }
+
+        ; ================================================================
+        ; plan_binding: Model.Binding → Plan.PlannedBinding.
+        ;
+        ; Responsibilities:
+        ;   1. Plan the initializer operands (by calling plan_operands).
+        ;   2. Plan the binding's annotated item, which yields the
+        ;      PlannedItem with an optional PlannedType.
+        ;   3. Register the binding in the current scope so later uses
+        ;      resolve by name.
+        ;
+        ; The C++ version also does `collapseOperandSequence` + skip-leading-`=`
+        ; + stack-array-type detection. Those are deferred until we port
+        ; the operator-resolution machinery.
+        ; ================================================================
+        function plan_binding#(rp, this: Planner, b: Binding) returns PlannedBinding
+        {
+            let planned_ops this.plan_operands#(b.operation)
+            let planned_item this.plan_item#(b.item)
+
+            ; Use the annotated type if present; fall back to a fresh
+            ; type variable so the constraint solver can fill it in later.
+            var binding_type: PlannedType this.fresh_type_var#(String$(""))
+            guard planned_item.item_type <> null
+                set binding_type: (*planned_item.item_type)
+
+            ; If the initializer produced exactly one operand, require
+            ; its type to match the binding's type.
+            guard planned_ops.length = 1
+            {
+                let init_op_ptr planned_ops.get(0)
+                guard init_op_ptr <> null
+                {
+                    let init_op (*init_op_ptr)
+                    this.add_equality_constraint(binding_type, init_op.result_type, b.span)
+                }
+            }
+
+            ; Register the local in the current scope.
+            guard planned_item.name <> null
+            {
+                let n (*planned_item.name)
+                this.define_local(n, binding_type, b.binding_type.equals("var"), false)
+            }
+
+            var ops_holder Vector[PlannedOperand]^rp(planned_ops)
+            PlannedBinding(
+                b.span,
+                b.binding_type,
+                planned_item,
+                &ops_holder
+            )
         }
 
         ; plan_program - top-level entry point (stub).
@@ -4497,6 +4552,44 @@ define Planner
             return 254
         guard (*po_batch_1).result_type.name.equals("bool") = false
             return 255
+
+        ; plan_binding - `let x: int = 42`:
+        ;   - produces PlannedBinding with PlannedItem.name = "x"
+        ;   - registers x in the current scope
+        var p3 Planner.Planner$(String$("test3.scaly"))
+        p3.push_scope()
+        var init_ops Vector[Operand]$(1)
+        init_ops.put(0, op_42)
+        let model_bind Binding(
+            Span(0, 0),
+            String$("let"),
+            Item(
+                Span(0, 0),
+                false,
+                &(String$("x")),
+                &int_type,
+                Vector[Attribute]$(0)
+            ),
+            init_ops
+        )
+        let pb p3.plan_binding$(model_bind)
+        guard pb.binding_type.equals("let") = false
+            return 256
+        guard pb.binding_item.name = null
+            return 257
+        guard (*pb.binding_item.name).equals(String$("x")) = false
+            return 258
+
+        ; After plan_binding, x should be a local in p3's scope.
+        let plocal_x p3.lookup_local(String$("x"))
+        guard plocal_x = null
+            return 259
+        guard (*plocal_x).name.equals("int") = false
+            return 260
+
+        ; The equality constraint binding_type = init_type should be solvable.
+        guard p3.solve_and_apply$() = false
+            return 261
 
         0
     }
