@@ -1258,6 +1258,96 @@ define Planner
         Vector[size_t]^rp(acc)
     }
 
+    ; resolve_type_base: convert a Model.Type into a PlannedType skeleton.
+    ;
+    ; Handles everything the non-stateful part of Planner.cpp's
+    ; `resolveType` does:
+    ;   - joins the dotted name (["scaly","containers","String"] -> "scaly.containers.String")
+    ;   - recursively resolves generic arguments
+    ;   - sets the Itanium mangled_name for the intrinsic pointer[T] / ref[T]
+    ;     forms ("P…" / "R…")
+    ;
+    ; Deliberately skipped:
+    ;   - TypeSubstitutions lookup (requires Planner state)
+    ;   - Concepts table lookup for user-defined types' mangled_name
+    ;     (leaves mangled_name empty for non-intrinsic names; the caller
+    ;     fills that in once the Concepts table is available)
+    function resolve_type_base#(rp, t: Type) returns PlannedType
+    {
+        let joined Planner.join_dotted_name#(t.name)
+
+        var resolved_gens: ref[Vector[PlannedType]]? null
+        guard t.generics <> null
+        {
+            let gens (*t.generics)
+            var result Vector[PlannedType]^rp(gens.length)
+            var i: size_t 0
+            while i < gens.length
+            {
+                let g_ptr gens.get(i)
+                guard g_ptr <> null
+                {
+                    let g (*g_ptr)
+                    let sub Planner.resolve_type_base#(g)
+                    result.put(i, sub)
+                }
+                set i: i + 1
+            }
+            set resolved_gens: &result
+        }
+
+        var mangled String^rp("")
+        guard joined.equals("pointer")
+        {
+            guard resolved_gens <> null
+            {
+                let rg (*resolved_gens)
+                guard rg.length = 1
+                {
+                    let inner_ptr rg.get(0)
+                    guard inner_ptr <> null
+                    {
+                        let inner (*inner_ptr)
+                        var sb StringBuilder$()
+                        sb.append("P")
+                        sb.append(inner.mangled_name)
+                        set mangled: sb.to_string^rp()
+                    }
+                }
+            }
+        }
+        guard joined.equals("ref")
+        {
+            guard resolved_gens <> null
+            {
+                let rg (*resolved_gens)
+                guard rg.length = 1
+                {
+                    let inner_ptr rg.get(0)
+                    guard inner_ptr <> null
+                    {
+                        let inner (*inner_ptr)
+                        var sb StringBuilder$()
+                        sb.append("R")
+                        sb.append(inner.mangled_name)
+                        set mangled: sb.to_string^rp()
+                    }
+                }
+            }
+        }
+
+        PlannedType(
+            t.span,
+            joined,
+            mangled,
+            resolved_gens,
+            t.lifetime,
+            null,
+            String^rp(""),
+            null
+        )
+    }
+
     ; lookup_local_in_scope: linear scan of one scope's bindings by name.
     ; Returned reference points into the scope's KeyValuePair storage.
     function lookup_local_in_scope(
@@ -3414,6 +3504,65 @@ define Planner
             return 183
         guard (*resolved).is_mutable = false
             return 184
+
+        ; resolve_type_base - simple path.
+        var int_name_vec Vector[String]$(1)
+        int_name_vec.put(0, String$("int"))
+        let int_type Type(
+            Span(0, 0),
+            int_name_vec,
+            null,
+            Lifetime.Unspecified(Unspecified())
+        )
+        let rt_int Planner.resolve_type_base$(int_type)
+        guard rt_int.name.equals("int") = false
+            return 185
+        guard rt_int.generics <> null
+            return 186
+
+        ; resolve_type_base - dotted name.
+        var str_name_vec Vector[String]$(3)
+        str_name_vec.put(0, String$("scaly"))
+        str_name_vec.put(1, String$("containers"))
+        str_name_vec.put(2, String$("String"))
+        let str_type Type(
+            Span(0, 0),
+            str_name_vec,
+            null,
+            Lifetime.Unspecified(Unspecified())
+        )
+        let rt_str Planner.resolve_type_base$(str_type)
+        guard rt_str.name.equals("scaly.containers.String") = false
+            return 187
+
+        ; resolve_type_base - pointer[int] gets "P" mangled prefix.
+        var ptr_name_vec Vector[String]$(1)
+        ptr_name_vec.put(0, String$("pointer"))
+        var ptr_inner_gens Vector[Type]$(1)
+        ptr_inner_gens.put(0, int_type)
+        let ptr_type Type(
+            Span(0, 0),
+            ptr_name_vec,
+            &ptr_inner_gens,
+            Lifetime.Unspecified(Unspecified())
+        )
+        let rt_ptr Planner.resolve_type_base$(ptr_type)
+        guard rt_ptr.name.equals("pointer") = false
+            return 188
+        guard rt_ptr.generics = null
+            return 189
+        let rt_ptr_gens (*rt_ptr.generics)
+        guard rt_ptr_gens.length <> 1
+            return 190
+        let rt_ptr_inner rt_ptr_gens.get(0)
+        guard rt_ptr_inner = null
+            return 191
+        guard (*rt_ptr_inner).name.equals("int") = false
+            return 192
+        ; Inner primitive has no mangled_name set here (set by caller after
+        ; concept-table lookup), so outer just becomes "P" + "".
+        guard rt_ptr.mangled_name.equals("P") = false
+            return 193
 
         0
     }
