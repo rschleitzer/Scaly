@@ -102,11 +102,146 @@ define Planner
     define Planner
     (
         file: String
+
+        ; Scope stack — stored as one flat Array of bindings with a
+        ; parallel Array of scope boundaries (indices where each scope
+        ; begins). This avoids the Array-of-Array memory-model problem
+        ; where a nested Array would lose its `Page.get(this)` anchor
+        ; after being copied into the outer Array's exclusive page.
+        ;
+        ; push_scope    → boundaries.add(bindings.length)
+        ; pop_scope     → bindings.length = last boundary, drop boundary
+        ; define_local  → bindings.add(...)
+        ; lookup_local  → reverse linear scan of bindings
+        scope_bindings: Array[KeyValuePair[String, LocalBinding]]
+        scope_boundaries: Array[size_t]
+
+        ; Generic parameter substitutions active while planning a
+        ; specific struct/function instantiation. Name-keyed
+        ; (e.g. "T" → PlannedType for int).
+        type_substitutions: Array[KeyValuePair[String, PlannedType]]
+
+        ; Fresh type-variable id counter for the Hindley-Milner
+        ; constraint solver; see fresh_type_var below.
+        next_type_var_id: size_t
     )
     {
-        init#(filename: String)
+        init#(page, filename: String)
         {
-            set file: String#(filename)
+            set file: String^page(filename)
+            set scope_bindings: Array[KeyValuePair[String, LocalBinding]]^page()
+            set scope_boundaries: Array[size_t]^page()
+            set type_substitutions: Array[KeyValuePair[String, PlannedType]]^page()
+            set next_type_var_id: 0
+        }
+
+        ; ================================================================
+        ; Scope management (mirrors Planner::pushScope etc. in C++).
+        ; ================================================================
+
+        function push_scope(this: Planner)
+        {
+            scope_boundaries.add(scope_bindings.length)
+        }
+
+        function pop_scope(this: Planner)
+        {
+            guard scope_boundaries.length = 0
+                return
+
+            let last_idx scope_boundaries.length - 1
+            let boundary_ptr scope_boundaries.get(last_idx)
+            guard boundary_ptr <> null
+                set scope_bindings.length: *boundary_ptr
+
+            set scope_boundaries.length: last_idx
+        }
+
+        function define_local(
+            this: Planner,
+            name: String,
+            t: PlannedType,
+            is_mutable: bool,
+            is_on_page: bool
+        )
+        {
+            scope_bindings.add(
+                KeyValuePair[String, LocalBinding](
+                    name,
+                    LocalBinding(t, is_mutable, is_on_page)
+                )
+            )
+        }
+
+        ; lookup_local_binding: innermost-first reverse scan. Returns
+        ; null if no binding with this name is live in any current scope.
+        function lookup_local_binding(this: Planner, name: String) returns ref[LocalBinding]?
+        {
+            guard scope_bindings.length = 0
+                return null
+
+            var i scope_bindings.length
+            while i > 0
+            {
+                set i: i - 1
+                let kvp_ptr scope_bindings.get(i)
+                guard kvp_ptr <> null
+                {
+                    guard kvp_ptr.key.equals(name)
+                        return &kvp_ptr.value
+                }
+            }
+            null
+        }
+
+        function lookup_local(this: Planner, name: String) returns ref[PlannedType]?
+        {
+            let binding this.lookup_local_binding(name)
+            guard binding = null
+                return null
+
+            &binding.binding_type
+        }
+
+        ; ================================================================
+        ; Generic type-parameter substitutions.
+        ; ================================================================
+
+        function define_type_substitution(this: Planner, name: String, t: PlannedType)
+        {
+            type_substitutions.add(KeyValuePair[String, PlannedType](name, t))
+        }
+
+        function clear_type_substitutions(this: Planner)
+        {
+            set type_substitutions.length: 0
+        }
+
+        function lookup_type_substitution(this: Planner, name: String) returns ref[PlannedType]?
+        {
+            var i: size_t 0
+            while i < type_substitutions.length
+            {
+                let kvp_ptr type_substitutions.get(i)
+                guard kvp_ptr <> null
+                {
+                    guard kvp_ptr.key.equals(name)
+                        return &kvp_ptr.value
+                }
+                set i: i + 1
+            }
+            null
+        }
+
+        ; ================================================================
+        ; Fresh type variables for HM inference.
+        ; ================================================================
+
+        function fresh_type_var_id(this: Planner) returns size_t
+        {
+            let id next_type_var_id
+            set next_type_var_id: id + 1
+            id
         }
 
         ; plan_program - top-level entry point (stub).
@@ -3862,6 +3997,85 @@ define Planner
             return 211
         guard (*inst_var.variable).id <> 100
             return 212
+
+        ; ====================================================================
+        ; Planner-instance (scope stack) tests. Exercises the struct surgery
+        ; added in this session — `Planner.Planner$(...)` constructor, plus
+        ; push_scope / define_local / lookup_local / pop_scope sequencing.
+        ; ====================================================================
+
+        var p Planner.Planner$(String$("test.scaly"))
+
+        ; Empty stack → no local named "x".
+        guard p.lookup_local(String$("x")) <> null
+            return 213
+
+        ; Push a scope, define "x" = int, lookup → hits.
+        p.push_scope()
+        p.define_local(String$("x"), int_ty, false, false)
+        let px1 p.lookup_local(String$("x"))
+        guard px1 = null
+            return 214
+        guard (*px1).name.equals("int") = false
+            return 215
+
+        ; Push inner scope, shadow "x" with bool.
+        p.push_scope()
+        p.define_local(String$("x"), bool_ty, true, false)
+        let px2 p.lookup_local(String$("x"))
+        guard px2 = null
+            return 216
+        guard (*px2).name.equals("bool") = false
+            return 217
+
+        ; Lookup binding flags on inner "x".
+        let pxb2 p.lookup_local_binding(String$("x"))
+        guard pxb2 = null
+            return 218
+        guard (*pxb2).is_mutable = false
+            return 219
+
+        ; Pop inner scope, outer "x" reappears.
+        p.pop_scope()
+        let px3 p.lookup_local(String$("x"))
+        guard px3 = null
+            return 220
+        guard (*px3).name.equals("int") = false
+            return 221
+
+        ; Pop outer scope, no locals remain.
+        p.pop_scope()
+        guard p.lookup_local(String$("x")) <> null
+            return 222
+
+        ; ====================================================================
+        ; Type-substitution tests.
+        ; ====================================================================
+
+        guard p.lookup_type_substitution(String$("T")) <> null
+            return 223
+
+        p.define_type_substitution(String$("T"), int_ty)
+        let ps_t p.lookup_type_substitution(String$("T"))
+        guard ps_t = null
+            return 224
+        guard (*ps_t).name.equals("int") = false
+            return 225
+
+        p.clear_type_substitutions()
+        guard p.lookup_type_substitution(String$("T")) <> null
+            return 226
+
+        ; ====================================================================
+        ; Fresh type-variable id counter.
+        ; ====================================================================
+
+        guard p.fresh_type_var_id() <> 0
+            return 227
+        guard p.fresh_type_var_id() <> 1
+            return 228
+        guard p.fresh_type_var_id() <> 2
+            return 229
 
         0
     }
