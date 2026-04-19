@@ -1465,13 +1465,14 @@ llvm::Expected<Function> Modeler::buildFunction(size_t Start, size_t End,
 
             Lifetime Life = handleLifetime(T.routine.lifetime);
 
+            llvm::Error ImplErr = llvm::Error::success();
             Implementation Impl = std::visit([&](const auto &I) -> Implementation {
                 using IT = std::decay_t<decltype(I)>;
                 if constexpr (std::is_same_v<IT, ActionSyntax>) {
                     auto Act = handleAction(I);
                     if (Act)
                         return std::move(*Act);
-                    llvm::consumeError(Act.takeError());
+                    ImplErr = Act.takeError();
                     return Action{{}, {}};
                 } else if constexpr (std::is_same_v<IT, ExternSyntax>) {
                     return ExternImpl{Span{I.Start, I.End}};
@@ -1482,6 +1483,8 @@ llvm::Expected<Function> Modeler::buildFunction(size_t Start, size_t End,
                 }
                 return Action{{}, {}};
             }, T.routine.implementation.Value);
+            if (ImplErr)
+                return std::move(ImplErr);
 
             return Function{
                 Span{Start, End},
@@ -1540,13 +1543,14 @@ llvm::Expected<Operator> Modeler::handleOperator(const OperatorSyntax &Syntax,
                 Throws = std::move(*TT);
             }
 
+            llvm::Error ImplErr = llvm::Error::success();
             Implementation Impl = std::visit([&](const auto &I) -> Implementation {
                 using IT = std::decay_t<decltype(I)>;
                 if constexpr (std::is_same_v<IT, ActionSyntax>) {
                     auto Act = handleAction(I);
                     if (Act)
                         return std::move(*Act);
-                    llvm::consumeError(Act.takeError());
+                    ImplErr = Act.takeError();
                     return Action{{}, {}};
                 } else if constexpr (std::is_same_v<IT, ExternSyntax>) {
                     return ExternImpl{Span{I.Start, I.End}};
@@ -1557,6 +1561,8 @@ llvm::Expected<Operator> Modeler::handleOperator(const OperatorSyntax &Syntax,
                 }
                 return Action{{}, {}};
             }, T.implementation.Value);
+            if (ImplErr)
+                return std::move(ImplErr);
 
             return Operator{
                 Span{Syntax.Start, Syntax.End},
@@ -1599,13 +1605,14 @@ llvm::Expected<Operator> Modeler::handleOperator(const OperatorSyntax &Syntax,
                 Throws = std::move(*TT);
             }
 
+            llvm::Error ImplErr = llvm::Error::success();
             Implementation Impl = std::visit([&](const auto &I) -> Implementation {
                 using IT = std::decay_t<decltype(I)>;
                 if constexpr (std::is_same_v<IT, ActionSyntax>) {
                     auto Act = handleAction(I);
                     if (Act)
                         return std::move(*Act);
-                    llvm::consumeError(Act.takeError());
+                    ImplErr = Act.takeError();
                     return Action{{}, {}};
                 } else if constexpr (std::is_same_v<IT, ExternSyntax>) {
                     return ExternImpl{Span{I.Start, I.End}};
@@ -1616,6 +1623,8 @@ llvm::Expected<Operator> Modeler::handleOperator(const OperatorSyntax &Syntax,
                 }
                 return Action{{}, {}};
             }, T.routine.implementation.Value);
+            if (ImplErr)
+                return std::move(ImplErr);
 
             return Operator{
                 Span{Syntax.Start, Syntax.End},
@@ -1852,8 +1861,11 @@ llvm::Expected<Namespace> Modeler::handleNamespace(llvm::StringRef Name,
         llvm::sys::path::append(NamespacePath, Name);
     }
 
+    llvm::Error Err = llvm::Error::success();
     if (Syntax.declarations) {
         for (const auto &D : *Syntax.declarations) {
+            if (Err)
+                break;
             std::visit([&](const auto &S) {
                 using ST = std::decay_t<decltype(S)>;
                 if constexpr (std::is_same_v<ST, EmptySyntax>) {
@@ -1863,64 +1875,52 @@ llvm::Expected<Namespace> Modeler::handleNamespace(llvm::StringRef Name,
                         using ET = std::decay_t<decltype(E)>;
                         if constexpr (std::is_same_v<ET, DefinitionSyntax>) {
                             auto Def = handleDefinition(NamespacePath.str(), E, true);
-                            if (Def) {
-                                Members.push_back(std::move(*Def));
-                            }
+                            if (Def) Members.push_back(std::move(*Def));
+                            else Err = Def.takeError();
                         } else if constexpr (std::is_same_v<ET, FunctionSyntax>) {
                             auto Func = buildFunction(E.Start, E.End, E.target, true, true);
-                            if (Func) {
-                                Members.push_back(std::move(*Func));
-                            }
+                            if (Func) Members.push_back(std::move(*Func));
+                            else Err = Func.takeError();
                         } else if constexpr (std::is_same_v<ET, ProcedureSyntax>) {
                             auto Func = buildFunction(E.Start, E.End, E.target, true, false);
-                            if (Func) {
-                                Members.push_back(std::move(*Func));
-                            }
+                            if (Func) Members.push_back(std::move(*Func));
+                            else Err = Func.takeError();
                         } else if constexpr (std::is_same_v<ET, OperatorSyntax>) {
                             auto Op = handleOperator(E, true);
-                            if (Op) {
-                                Members.push_back(std::move(*Op));
-                            }
-                                } else if constexpr (std::is_same_v<ET, ModuleSyntax>) {
+                            if (Op) Members.push_back(std::move(*Op));
+                            else Err = Op.takeError();
+                        } else if constexpr (std::is_same_v<ET, ModuleSyntax>) {
                             auto Mod = handleModule(NamespacePath.str(), E, true);
-                            if (Mod) {
-                                Modules.push_back(std::move(*Mod));
-                            } else {
-                                llvm::consumeError(Mod.takeError());
-                            }
+                            if (Mod) Modules.push_back(std::move(*Mod));
+                            else Err = Mod.takeError();
                         }
                     }, S.export_.Value);
                 } else if constexpr (std::is_same_v<ST, DefinitionSyntax>) {
                     auto Def = handleDefinition(NamespacePath.str(), S, false);
-                    if (Def) {
-                        Members.push_back(std::move(*Def));
-                    }
+                    if (Def) Members.push_back(std::move(*Def));
+                    else Err = Def.takeError();
                 } else if constexpr (std::is_same_v<ST, FunctionSyntax>) {
                     auto Func = buildFunction(S.Start, S.End, S.target, false, true);
-                    if (Func) {
-                        Members.push_back(std::move(*Func));
-                    }
+                    if (Func) Members.push_back(std::move(*Func));
+                    else Err = Func.takeError();
                 } else if constexpr (std::is_same_v<ST, ProcedureSyntax>) {
                     auto Func = buildFunction(S.Start, S.End, S.target, false, false);
-                    if (Func) {
-                        Members.push_back(std::move(*Func));
-                    }
+                    if (Func) Members.push_back(std::move(*Func));
+                    else Err = Func.takeError();
                 } else if constexpr (std::is_same_v<ST, OperatorSyntax>) {
                     auto Op = handleOperator(S, false);
-                    if (Op) {
-                        Members.push_back(std::move(*Op));
-                    }
+                    if (Op) Members.push_back(std::move(*Op));
+                    else Err = Op.takeError();
                 } else if constexpr (std::is_same_v<ST, ModuleSyntax>) {
                     auto Mod = handleModule(NamespacePath.str(), S, false);
-                    if (Mod) {
-                        Modules.push_back(std::move(*Mod));
-                    } else {
-                        llvm::consumeError(Mod.takeError());
-                    }
+                    if (Mod) Modules.push_back(std::move(*Mod));
+                    else Err = Mod.takeError();
                 }
             }, D.Value);
         }
     }
+    if (Err)
+        return std::move(Err);
 
     return Namespace{
         Span{Syntax.Start, Syntax.End},
@@ -1950,57 +1950,49 @@ llvm::Expected<Modeler::BodyResult> Modeler::handleBody(
         }
     }
 
+    llvm::Error Err = llvm::Error::success();
     if (Syntax.members) {
         for (const auto &M : *Syntax.members) {
+            if (Err)
+                break;
             std::visit([&](const auto &C) {
                 using CT = std::decay_t<decltype(C)>;
                 if constexpr (std::is_same_v<CT, EmptySyntax>) {
                     // Skip empty members (blank lines)
                 } else if constexpr (std::is_same_v<CT, InitSyntax>) {
                     auto Init = handleInitializer(C, false);
-                    if (Init) {
-                        Result.Initializers.push_back(std::move(*Init));
-                    }
+                    if (Init) Result.Initializers.push_back(std::move(*Init));
+                    else Err = Init.takeError();
                 } else if constexpr (std::is_same_v<CT, DeInitSyntax>) {
                     auto DeInit = handleDeInitializer(C);
-                    if (DeInit) {
-                        Result.Deinitializer = std::move(*DeInit);
-                    }
+                    if (DeInit) Result.Deinitializer = std::move(*DeInit);
+                    else Err = DeInit.takeError();
                 } else if constexpr (std::is_same_v<CT, DefinitionSyntax>) {
                     auto Def = handleDefinition(Path, C, false);
-                    if (Def) {
-                        Result.Members.push_back(std::move(*Def));
-                    }
+                    if (Def) Result.Members.push_back(std::move(*Def));
+                    else Err = Def.takeError();
                 } else if constexpr (std::is_same_v<CT, FunctionSyntax>) {
                     auto Func = buildFunction(C.Start, C.End, C.target, false, true);
-                    if (Func) {
-                        Result.Members.push_back(std::move(*Func));
-                    } else {
-                        llvm::consumeError(Func.takeError());
-                    }
+                    if (Func) Result.Members.push_back(std::move(*Func));
+                    else Err = Func.takeError();
                 } else if constexpr (std::is_same_v<CT, ProcedureSyntax>) {
                     auto Func = buildFunction(C.Start, C.End, C.target, false, false);
-                    if (Func) {
-                        Result.Members.push_back(std::move(*Func));
-                    } else {
-                        llvm::consumeError(Func.takeError());
-                    }
+                    if (Func) Result.Members.push_back(std::move(*Func));
+                    else Err = Func.takeError();
                 } else if constexpr (std::is_same_v<CT, OperatorSyntax>) {
                     auto Op = handleOperator(C, false);
-                    if (Op) {
-                        Result.Members.push_back(std::move(*Op));
-                    }
+                    if (Op) Result.Members.push_back(std::move(*Op));
+                    else Err = Op.takeError();
                 } else if constexpr (std::is_same_v<CT, ModuleSyntax>) {
                     auto Mod = handleModule(SubPath.str(), C, false);
-                    if (Mod) {
-                        Result.Modules.push_back(std::move(*Mod));
-                    } else {
-                        llvm::consumeError(Mod.takeError());
-                    }
+                    if (Mod) Result.Modules.push_back(std::move(*Mod));
+                    else Err = Mod.takeError();
                 }
             }, M.Value);
         }
     }
+    if (Err)
+        return std::move(Err);
 
     return Result;
 }
