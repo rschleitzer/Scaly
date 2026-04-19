@@ -51,6 +51,24 @@ use scalyc.compiler.Plan.PlannedComponent
 ; libc extern for loud-failing stubs.
 function exit(code: int) extern
 
+; ============================================================================
+; Scope / binding machinery.
+;
+; Defined at module scope so callers outside `define Planner` can construct
+; them (scope state will eventually live inside the Planner struct; for now
+; every scope-aware helper takes the stack as an explicit parameter).
+; ============================================================================
+
+; One local variable's entry. is_on_page tracks RBMM lifetime — true for
+; values allocated with $, #, or ^name so the code generator can emit
+; appropriate page-cleanup hooks.
+define LocalBinding
+(
+    binding_type: scalyc.compiler.Plan.PlannedType
+    is_mutable: bool
+    is_on_page: bool
+)
+
 ; stderr write for a short diagnostic before exit.
 procedure scaly_eputs(s: pointer[const_char]) extern
 
@@ -1238,6 +1256,54 @@ define Planner
             set i: i + 1
         }
         Vector[size_t]^rp(acc)
+    }
+
+    ; lookup_local_in_scope: linear scan of one scope's bindings by name.
+    ; Returned reference points into the scope's KeyValuePair storage.
+    function lookup_local_in_scope(
+        scope: Vector[KeyValuePair[String, LocalBinding]],
+        name: String
+    ) returns ref[LocalBinding]?
+    {
+        var i: size_t 0
+        while i < scope.length
+        {
+            let kvp_ptr scope.get_ptr(i)
+            guard kvp_ptr <> null
+            {
+                guard kvp_ptr.key.equals(name)
+                    return &kvp_ptr.value
+            }
+            set i: i + 1
+        }
+        null
+    }
+
+    ; lookup_local_in_stack: searches innermost (top of the stack) to
+    ; outermost — matches the reverse iteration in Planner.cpp's
+    ; lookupLocal. A name shadowed in a newer scope hides the older
+    ; binding.
+    function lookup_local_in_stack(
+        scopes: Vector[Vector[KeyValuePair[String, LocalBinding]]],
+        name: String
+    ) returns ref[LocalBinding]?
+    {
+        guard scopes.length = 0
+            return null
+
+        var i scopes.length
+        while i > 0
+        {
+            set i: i - 1
+            let scope_ptr scopes.get_ptr(i)
+            guard scope_ptr <> null
+            {
+                let found Planner.lookup_local_in_scope(*scope_ptr, name)
+                guard found <> null
+                    return found
+            }
+        }
+        null
     }
 
     ; is_on_page_lifetime: everything except `Unspecified` is a page-backed
@@ -3318,6 +3384,36 @@ define Planner
         ; decode_utf8_to_code_point - "AB" (trailing byte) -> -1.
         guard Planner.decode_utf8_to_code_point(String$("AB")) <> -1
             return 179
+
+        ; lookup_local_in_scope - hit, miss.
+        let lb_x LocalBinding(int_ty, false, false)
+        let lb_y LocalBinding(bool_ty, true, true)
+        var scope1 Vector[KeyValuePair[String, LocalBinding]]$(2)
+        scope1.put(0, KeyValuePair[String, LocalBinding](String$("x"), lb_x))
+        scope1.put(1, KeyValuePair[String, LocalBinding](String$("y"), lb_y))
+        let hit_x Planner.lookup_local_in_scope(scope1, String$("x"))
+        guard hit_x = null
+            return 180
+        guard (*hit_x).is_mutable
+            return 181
+        guard Planner.lookup_local_in_scope(scope1, String$("z")) <> null
+            return 182
+
+        ; lookup_local_in_stack - innermost shadows outer.
+        let lb_x_outer LocalBinding(int_ty, false, false)
+        let lb_x_inner LocalBinding(bool_ty, true, false)
+        var outer_scope Vector[KeyValuePair[String, LocalBinding]]$(1)
+        outer_scope.put(0, KeyValuePair[String, LocalBinding](String$("x"), lb_x_outer))
+        var inner_scope Vector[KeyValuePair[String, LocalBinding]]$(1)
+        inner_scope.put(0, KeyValuePair[String, LocalBinding](String$("x"), lb_x_inner))
+        var stack Vector[Vector[KeyValuePair[String, LocalBinding]]]$(2)
+        stack.put(0, outer_scope)
+        stack.put(1, inner_scope)
+        let resolved Planner.lookup_local_in_stack(stack, String$("x"))
+        guard resolved = null
+            return 183
+        guard (*resolved).is_mutable = false
+            return 184
 
         0
     }
