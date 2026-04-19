@@ -909,6 +909,53 @@ define Planner
             null
         }
 
+        ; mangle_binary_operator: convenience wrapper that constructs
+        ; the PlannedItem list mangle_operator expects from two
+        ; PlannedType arguments. Holder Vectors keep both types alive
+        ; on rp so their refs are stable for the Item construction.
+        function mangle_binary_operator#(
+            rp,
+            this: Planner,
+            op_name: String,
+            left: PlannedType,
+            right: PlannedType
+        ) returns String
+        {
+            var left_holder Vector[PlannedType]^rp(1)
+            left_holder.put(0, left)
+            var right_holder Vector[PlannedType]^rp(1)
+            right_holder.put(0, right)
+
+            var items Vector[PlannedItem]^rp(2)
+            items.put(0, PlannedItem(
+                Span(0, 0), false, null, left_holder.get(0), null
+            ))
+            items.put(1, PlannedItem(
+                Span(0, 0), false, null, right_holder.get(0), null
+            ))
+
+            Planner.mangle_operator#(op_name, &items, null)
+        }
+
+        ; mangle_unary_operator: same idea for prefix/unary operators.
+        function mangle_unary_operator#(
+            rp,
+            this: Planner,
+            op_name: String,
+            operand: PlannedType
+        ) returns String
+        {
+            var holder Vector[PlannedType]^rp(1)
+            holder.put(0, operand)
+
+            var items Vector[PlannedItem]^rp(1)
+            items.put(0, PlannedItem(
+                Span(0, 0), false, null, holder.get(0), null
+            ))
+
+            Planner.mangle_operator#(op_name, &items, null)
+        }
+
         ; make_planned_call: assemble a PlannedCall for a resolved call
         ; site. Callers provide the mangled symbol, result type, and
         ; planned argument list; flags default to the common
@@ -1021,7 +1068,7 @@ define Planner
                         let call this.make_planned_call#(
                             result.loc,
                             op_name,
-                            String^rp(""),
+                            this.mangle_binary_operator#(op_name, result.result_type, rhs.result_type),
                             combined_type,
                             two_args
                         )
