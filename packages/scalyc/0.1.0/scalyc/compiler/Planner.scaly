@@ -575,6 +575,89 @@ define Planner
         String^rp(base)
     }
 
+    ; is_integer_type: is a normalized type name one of the integer family?
+    ; Called post-normalization so both "int" and "i64" answer true.
+    function is_integer_type(normalized: String) returns bool
+    {
+        guard normalized.equals("i64")
+            return true
+        guard normalized.equals("i32")
+            return true
+        guard normalized.equals("i16")
+            return true
+        guard normalized.equals("i8")
+            return true
+        guard normalized.equals("u64")
+            return true
+        guard normalized.equals("u32")
+            return true
+        guard normalized.equals("u16")
+            return true
+        guard normalized.equals("u8")
+            return true
+        guard normalized.equals("size_t")
+            return true
+        guard normalized.equals("int")
+            return true
+        guard normalized.equals("uint")
+            return true
+        guard normalized.equals("char")
+            return true
+        false
+    }
+
+    ; is_char_like_cross_compatible: decide whether two pointer-inner types
+    ; can freely substitute for each other. Mirrors the unwieldy pointer
+    ; rules in Planner.cpp's typesCompatible exactly — in particular the
+    ; one-way (param=const_char, arg=char) rule; the reverse is rejected
+    ; because you must not silently assign immutable data to mutable storage.
+    function is_char_like_cross_compatible(param_inner: String, arg_inner: String) returns bool
+    {
+        guard param_inner.equals("const_char")
+        {
+            guard arg_inner.equals("i8")
+                return true
+            guard arg_inner.equals("char")
+                return true
+        }
+        guard param_inner.equals("i8")
+        {
+            guard arg_inner.equals("const_char")
+                return true
+            guard arg_inner.equals("char")
+                return true
+        }
+        guard param_inner.equals("char")
+        {
+            guard arg_inner.equals("i8")
+                return true
+        }
+
+        ; u8 is ABI-identical to the 1-byte char family.
+        guard param_inner.equals("u8")
+        {
+            guard arg_inner.equals("char")
+                return true
+            guard arg_inner.equals("const_char")
+                return true
+            guard arg_inner.equals("i8")
+                return true
+            guard arg_inner.equals("u8")
+                return true
+        }
+        guard arg_inner.equals("u8")
+        {
+            guard param_inner.equals("char")
+                return true
+            guard param_inner.equals("const_char")
+                return true
+            guard param_inner.equals("i8")
+                return true
+        }
+
+        false
+    }
+
     ; types_equal: structural equality after alias normalisation.
     ; Recurses pairwise through the generics list; mismatched arities
     ; are unequal. Null/empty generics are treated uniformly as arity 0.
@@ -630,6 +713,132 @@ define Planner
             }
         }
         true
+    }
+
+    ; types_compatible: decide whether an argument of ArgType can be passed
+    ; to a parameter of ParamType without an explicit cast. Order of rules
+    ; matches Planner.cpp — earlier rules short-circuit, later rules remain
+    ; authoritative for their specific cases (pointer-to-void, Option-null).
+    function types_compatible(param_type: PlannedType, arg_type: PlannedType) returns bool
+    {
+        ; Rule 1: exact equality (post-normalisation).
+        guard Planner.types_equal(param_type, arg_type)
+            return true
+
+        ; Rule 2: any integer type is compatible with any other. The Emitter
+        ; inserts the appropriate zext/sext/trunc at the call site.
+        let norm_p Planner.normalize_type_name$(param_type.name)
+        let norm_a Planner.normalize_type_name$(arg_type.name)
+        guard Planner.is_integer_type(norm_p)
+        {
+            guard Planner.is_integer_type(norm_a)
+                return true
+        }
+
+        ; Rule 3: arg is pointer[T], param is T — implicit deref. Handles
+        ; passing `this` (a pointer) to a function expecting the value type.
+        guard arg_type.name.equals("pointer")
+        {
+            guard arg_type.generics <> null
+            {
+                let ag (*arg_type.generics)
+                guard ag.length > 0
+                {
+                    let inner_ptr ag.get(0)
+                    guard inner_ptr <> null
+                    {
+                        let inner (*inner_ptr)
+                        guard Planner.types_equal(param_type, inner)
+                            return true
+                    }
+                }
+            }
+        }
+
+        ; Rule 4: ref[T] implicitly derefs to T.
+        guard arg_type.name.equals("ref")
+        {
+            guard arg_type.generics <> null
+            {
+                let ag (*arg_type.generics)
+                guard ag.length > 0
+                {
+                    let inner_ptr ag.get(0)
+                    guard inner_ptr <> null
+                    {
+                        let inner (*inner_ptr)
+                        guard Planner.types_equal(param_type, inner)
+                            return true
+                    }
+                }
+            }
+        }
+
+        ; Rules 5 & 6 both require both sides to be pointer[T] with a generic arg.
+        guard param_type.name.equals("pointer")
+        {
+            guard arg_type.name.equals("pointer")
+            {
+                guard param_type.generics <> null
+                {
+                    let pg (*param_type.generics)
+                    guard pg.length > 0
+                    {
+                        let p0_ptr pg.get(0)
+                        guard p0_ptr <> null
+                        {
+                            let p0 (*p0_ptr)
+
+                            ; Rule 6: any pointer[T] coerces to pointer[void].
+                            guard p0.name.equals("void")
+                                return true
+
+                            ; Rule 5: char-family pointer cross-compatibility.
+                            guard arg_type.generics <> null
+                            {
+                                let ag (*arg_type.generics)
+                                guard ag.length > 0
+                                {
+                                    let a0_ptr ag.get(0)
+                                    guard a0_ptr <> null
+                                    {
+                                        let a0 (*a0_ptr)
+                                        guard Planner.is_char_like_cross_compatible(p0.name, a0.name)
+                                            return true
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        ; Rules 7 & 8: null (typed as pointer[void]) is the None for Option types.
+        guard arg_type.name.equals("pointer")
+        {
+            guard arg_type.generics <> null
+            {
+                let ag (*arg_type.generics)
+                guard ag.length > 0
+                {
+                    let a0_ptr ag.get(0)
+                    guard a0_ptr <> null
+                    {
+                        let a0 (*a0_ptr)
+                        guard a0.name.equals("void")
+                        {
+                            guard param_type.name.equals("Option")
+                                return true
+                            guard param_type.name.starts_with("Option.")
+                                return true
+                        }
+                    }
+                }
+            }
+        }
+
+        false
     }
 
     ; size_to_string: decimal representation of a size_t.
@@ -942,6 +1151,139 @@ define Planner
         )
         guard Planner.types_equal(vec_ty, vec_bool_ty)
             return 38
+
+        ; is_integer_type - a couple of positive and negative cases.
+        guard Planner.is_integer_type(String$("i64")) = false
+            return 39
+        guard Planner.is_integer_type(String$("bool"))
+            return 40
+
+        ; types_compatible - exact equality.
+        guard Planner.types_compatible(int_ty, int_ty) = false
+            return 41
+
+        ; types_compatible - integer coercion (int <-> i64 is already equal,
+        ;                                      so pair a distinct integer family).
+        let u32_ty PlannedType(
+            Span(0, 0),
+            String$("u32"),
+            String$(""),
+            null,
+            Lifetime.Unspecified(Unspecified()),
+            null,
+            String$(""),
+            null
+        )
+        guard Planner.types_compatible(int_ty, u32_ty) = false
+            return 42
+
+        ; types_compatible - non-integer mismatch is rejected.
+        guard Planner.types_compatible(int_ty, bool_ty)
+            return 43
+
+        ; types_compatible - pointer[int] arg can pass where int expected (implicit deref).
+        var ptr_int_gens Vector[PlannedType]$(1)
+        ptr_int_gens.put(0, int_ty)
+        let ptr_int_ty PlannedType(
+            Span(0, 0),
+            String$("pointer"),
+            String$(""),
+            &ptr_int_gens,
+            Lifetime.Unspecified(Unspecified()),
+            null,
+            String$(""),
+            null
+        )
+        guard Planner.types_compatible(int_ty, ptr_int_ty) = false
+            return 44
+
+        ; types_compatible - pointer[void] accepts any pointer.
+        let void_ty PlannedType(
+            Span(0, 0),
+            String$("void"),
+            String$(""),
+            null,
+            Lifetime.Unspecified(Unspecified()),
+            null,
+            String$(""),
+            null
+        )
+        var ptr_void_gens Vector[PlannedType]$(1)
+        ptr_void_gens.put(0, void_ty)
+        let ptr_void_ty PlannedType(
+            Span(0, 0),
+            String$("pointer"),
+            String$(""),
+            &ptr_void_gens,
+            Lifetime.Unspecified(Unspecified()),
+            null,
+            String$(""),
+            null
+        )
+        guard Planner.types_compatible(ptr_void_ty, ptr_int_ty) = false
+            return 45
+
+        ; types_compatible - pointer[const_char] <- pointer[i8] (Rule 5).
+        let const_char_ty PlannedType(
+            Span(0, 0),
+            String$("const_char"),
+            String$(""),
+            null,
+            Lifetime.Unspecified(Unspecified()),
+            null,
+            String$(""),
+            null
+        )
+        let i8_ty PlannedType(
+            Span(0, 0),
+            String$("i8"),
+            String$(""),
+            null,
+            Lifetime.Unspecified(Unspecified()),
+            null,
+            String$(""),
+            null
+        )
+        var ptr_cc_gens Vector[PlannedType]$(1)
+        ptr_cc_gens.put(0, const_char_ty)
+        let ptr_cc_ty PlannedType(
+            Span(0, 0),
+            String$("pointer"),
+            String$(""),
+            &ptr_cc_gens,
+            Lifetime.Unspecified(Unspecified()),
+            null,
+            String$(""),
+            null
+        )
+        var ptr_i8_gens Vector[PlannedType]$(1)
+        ptr_i8_gens.put(0, i8_ty)
+        let ptr_i8_ty PlannedType(
+            Span(0, 0),
+            String$("pointer"),
+            String$(""),
+            &ptr_i8_gens,
+            Lifetime.Unspecified(Unspecified()),
+            null,
+            String$(""),
+            null
+        )
+        guard Planner.types_compatible(ptr_cc_ty, ptr_i8_ty) = false
+            return 46
+
+        ; types_compatible - Option accepts null (pointer[void]).
+        let option_ty PlannedType(
+            Span(0, 0),
+            String$("Option"),
+            String$(""),
+            null,
+            Lifetime.Unspecified(Unspecified()),
+            null,
+            String$(""),
+            null
+        )
+        guard Planner.types_compatible(option_ty, ptr_void_ty) = false
+            return 47
 
         0
     }
