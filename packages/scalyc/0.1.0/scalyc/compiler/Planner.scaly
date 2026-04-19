@@ -1357,15 +1357,12 @@ define Planner
         }
 
         ; ================================================================
-        ; plan_operand: dispatch by Expression variant. Extended to cover
-        ; every Expression variant — ones that can't yet be fully
-        ; resolved (because they need the concept table or operator
-        ; machinery) still produce a PlannedOperand with a placeholder
-        ; result_type, so a partial program can at least be walked.
+        ; plan_operand: dispatch by Expression variant, then wrap with
+        ; any member-access chain declared on the operand.
         ; ================================================================
         function plan_operand#(rp, this: Planner, op: scalyc.compiler.Model.Operand) returns PlannedOperand
         {
-            choose op.expression
+            let base choose op.expression
                 when c: Constant
                     this.plan_constant_operand#(c, op.span)
                 when ty: Type
@@ -1435,6 +1432,21 @@ define Planner
                     let pt this.plan_new#(nw)
                     PlannedOperand(op.span, PlannedExpression.Tuple(pt), null, pt.tuple_type)
                 }
+
+            guard op.member_access = null
+                return base
+
+            let members (*op.member_access)
+            let access_chain this.resolve_member_access#(base.result_type, members)
+            var access_holder Vector[PlannedMemberAccess]^rp(access_chain)
+            var final_type: PlannedType base.result_type
+            guard access_chain.length > 0
+            {
+                let last_ptr access_chain.get(access_chain.length - 1)
+                guard last_ptr <> null
+                    set final_type: (*last_ptr).result_type
+            }
+            PlannedOperand(base.loc, base.expr, &access_holder, final_type)
         }
 
         ; plan_operands: batch plan_operand over a Vector.
