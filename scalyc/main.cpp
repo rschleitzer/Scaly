@@ -210,14 +210,15 @@ static int parseFile(StringRef Filename) {
         });
         return 1;
     }
-    if (!Parser.isAtEnd()) {
-        errs() << "scalyc: " << Filename << ": parse incomplete\n";
-        return 1;
-    }
-
+    bool Incomplete = !Parser.isAtEnd();
     scaly::SyntaxDumper Dumper(outs());
     Dumper.dump(*Result);
     outs() << "\n";
+    if (Incomplete) {
+        errs() << "scalyc: " << Filename
+               << ": parse incomplete (parse stopped before EOF)\n";
+        return 1;
+    }
     return 0;
 }
 
