@@ -959,6 +959,35 @@ define Planner
             Vector[KeyValuePair[String, PlannedType]]^rp(result)
         }
 
+        ; instantiate_generic_function: monomorphise a generic function
+        ; (one whose parameter types reference type-parameter names like
+        ; T / K / V) against a substitution mapping those names to
+        ; concrete types. The resulting PlannedFunction has each use of
+        ; T replaced with its concrete binding, and is recorded in the
+        ; instantiation cache via plan_function.
+        function instantiate_generic_function#(
+            rp,
+            this: Planner,
+            f: Function,
+            args: Vector[KeyValuePair[String, PlannedType]]
+        ) returns PlannedFunction
+        {
+            let saved_len type_substitutions.length
+
+            var i: size_t 0
+            while i < args.length
+            {
+                let kv_ptr args.get(i)
+                guard kv_ptr <> null
+                    this.define_type_substitution(kv_ptr.key, kv_ptr.value)
+                set i: i + 1
+            }
+
+            let result this.plan_function#(f)
+            set type_substitutions.length: saved_len
+            result
+        }
+
         ; ================================================================
         ; instantiate_generic: monomorphise a generic Concept against a
         ; concrete type-argument list. Binds each GenericParameter name
