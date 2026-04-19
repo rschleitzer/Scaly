@@ -239,6 +239,15 @@ define Planner
         ; Model.Concept that owns it. Populated by register_concept; used
         ; by lookup_concept during type resolution and method dispatch.
         concepts: Array[KeyValuePair[String, Concept]]
+
+        ; Instantiation caches. Every PlannedStructure / PlannedUnion /
+        ; PlannedFunction / PlannedGlobal a call into the planner
+        ; produces is appended here so the final Plan can carry the
+        ; complete list for emission.
+        instantiated_structures: Array[PlannedStructure]
+        instantiated_unions: Array[scalyc.compiler.Plan.PlannedUnion]
+        instantiated_functions: Array[PlannedFunction]
+        instantiated_globals: Array[PlannedGlobal]
     )
     {
         init#(page, filename: String)
@@ -251,6 +260,10 @@ define Planner
             set constraints: Array[TypeConstraint]^page()
             set solution: Array[KeyValuePair[size_t, PlannedType]]^page()
             set concepts: Array[KeyValuePair[String, Concept]]^page()
+            set instantiated_structures: Array[PlannedStructure]^page()
+            set instantiated_unions: Array[scalyc.compiler.Plan.PlannedUnion]^page()
+            set instantiated_functions: Array[PlannedFunction]^page()
+            set instantiated_globals: Array[PlannedGlobal]^page()
         }
 
         ; ================================================================
@@ -390,6 +403,29 @@ define Planner
         function has_concept(this: Planner, name: String) returns bool
         {
             this.lookup_concept(name) <> null
+        }
+
+        ; Instantiation-cache recording helpers. Called as each planned
+        ; aggregate is produced so the final Plan lists everything the
+        ; emitter needs to lower.
+        function record_structure(this: Planner, s: PlannedStructure)
+        {
+            instantiated_structures.add(s)
+        }
+
+        function record_union(this: Planner, u: scalyc.compiler.Plan.PlannedUnion)
+        {
+            instantiated_unions.add(u)
+        }
+
+        function record_function(this: Planner, f: PlannedFunction)
+        {
+            instantiated_functions.add(f)
+        }
+
+        function record_global(this: Planner, g: PlannedGlobal)
+        {
+            instantiated_globals.add(g)
         }
 
         ; fresh_type_var: allocate a new type variable as a PlannedType
@@ -1359,7 +1395,7 @@ define Planner
             this.pop_scope()
 
             var input_holder Vector[PlannedItem]^rp(planned_input)
-            PlannedFunction(
+            let result PlannedFunction(
                 f.span,
                 f.private_,
                 f.pure,
@@ -1376,6 +1412,8 @@ define Planner
                 false,
                 null
             )
+            this.record_function(result)
+            result
         }
 
         ; plan_initializer: Model.Initializer → Plan.PlannedInitializer.
@@ -1563,7 +1601,7 @@ define Planner
             let total_size Planner.compute_struct_size(&props_holder)
             let total_align Planner.compute_struct_alignment(&props_holder)
 
-            PlannedStructure(
+            let result PlannedStructure(
                 s.span,
                 s.private_,
                 false,
@@ -1578,6 +1616,8 @@ define Planner
                 total_align,
                 null
             )
+            this.record_structure(result)
+            result
         }
 
         ; plan_global: Model.Global → Plan.PlannedGlobal.
@@ -1588,13 +1628,15 @@ define Planner
             let planned_type this.plan_type#(g.type)
             let planned_value this.plan_operands#(g.value)
             var value_holder Vector[PlannedOperand]^rp(planned_value)
-            PlannedGlobal(
+            let result PlannedGlobal(
                 g.span,
                 String^rp(name),
                 String^rp(""),
                 planned_type,
                 &value_holder
             )
+            this.record_global(result)
+            result
         }
 
         ; plan_namespace: Model.Namespace → Plan.PlannedNamespace.
@@ -1818,7 +1860,7 @@ define Planner
             let u_size Planner.compute_union_size(&vs_holder)
             let u_align Planner.compute_struct_alignment(null)
 
-            scalyc.compiler.Plan.PlannedUnion(
+            let result scalyc.compiler.Plan.PlannedUnion(
                 u.span,
                 u.private_,
                 String^rp(name),
@@ -1830,6 +1872,8 @@ define Planner
                 u_align,
                 null
             )
+            this.record_union(result)
+            result
         }
 
         ; plan_program: top-level entry point.
@@ -1849,16 +1893,21 @@ define Planner
             let planned_stmts this.plan_statements#(prog.statements)
 
             var stmts_holder Vector[PlannedStatement]^rp(planned_stmts)
+            var structs_holder Vector[PlannedStructure]^rp(instantiated_structures)
+            var unions_holder Vector[scalyc.compiler.Plan.PlannedUnion]^rp(instantiated_unions)
+            var funcs_holder Vector[PlannedFunction]^rp(instantiated_functions)
+            var globals_holder Vector[PlannedGlobal]^rp(instantiated_globals)
+            var constraints_holder Vector[TypeConstraint]^rp(constraints)
 
             Plan#(
                 planned_main,
                 &stmts_holder,
-                null,
-                null,
-                null,
-                null,
+                &structs_holder,
+                &unions_holder,
+                &funcs_holder,
+                &globals_holder,
                 next_type_var_id,
-                null
+                &constraints_holder
             )
         }
     }
