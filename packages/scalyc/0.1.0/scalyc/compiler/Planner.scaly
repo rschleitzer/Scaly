@@ -248,6 +248,16 @@ define Planner
         instantiated_unions: Array[scalyc.compiler.Plan.PlannedUnion]
         instantiated_functions: Array[PlannedFunction]
         instantiated_globals: Array[PlannedGlobal]
+
+        ; Free-function registry. Entries are appended for every
+        ; top-level Function encountered during the concept-registration
+        ; pass. A single name can appear multiple times for overloads —
+        ; lookup_functions returns all matches.
+        model_functions: Array[KeyValuePair[String, Function]]
+
+        ; Operator registry (same shape as model_functions; separate
+        ; keyspace because an operator is identified by its symbol).
+        model_operators: Array[KeyValuePair[String, Operator]]
     )
     {
         init#(page, filename: String)
@@ -264,6 +274,8 @@ define Planner
             set instantiated_unions: Array[scalyc.compiler.Plan.PlannedUnion]^page()
             set instantiated_functions: Array[PlannedFunction]^page()
             set instantiated_globals: Array[PlannedGlobal]^page()
+            set model_functions: Array[KeyValuePair[String, Function]]^page()
+            set model_operators: Array[KeyValuePair[String, Operator]]^page()
         }
 
         ; ================================================================
@@ -426,6 +438,73 @@ define Planner
         function record_global(this: Planner, g: PlannedGlobal)
         {
             instantiated_globals.add(g)
+        }
+
+        ; ================================================================
+        ; Model-function and operator registries.
+        ; ================================================================
+
+        function register_function(this: Planner, f: Function)
+        {
+            model_functions.add(KeyValuePair[String, Function](f.name, f))
+        }
+
+        function register_operator(this: Planner, o: Operator)
+        {
+            model_operators.add(KeyValuePair[String, Operator](o.name, o))
+        }
+
+        ; lookup_functions: return every Function in the registry whose
+        ; name matches. Overloads are preserved — the caller picks by
+        ; argument-type compatibility.
+        function lookup_functions#(rp, this: Planner, name: String) returns Vector[Function]
+        {
+            var matches Array[Function]$()
+            var i: size_t 0
+            while i < model_functions.length
+            {
+                let kvp_ptr model_functions.get(i)
+                guard kvp_ptr <> null
+                {
+                    guard kvp_ptr.key.equals(name)
+                        matches.add(kvp_ptr.value)
+                }
+                set i: i + 1
+            }
+            Vector[Function]^rp(matches)
+        }
+
+        function lookup_operators#(rp, this: Planner, name: String) returns Vector[Operator]
+        {
+            var matches Array[Operator]$()
+            var i: size_t 0
+            while i < model_operators.length
+            {
+                let kvp_ptr model_operators.get(i)
+                guard kvp_ptr <> null
+                {
+                    guard kvp_ptr.key.equals(name)
+                        matches.add(kvp_ptr.value)
+                }
+                set i: i + 1
+            }
+            Vector[Operator]^rp(matches)
+        }
+
+        function is_function(this: Planner, name: String) returns bool
+        {
+            var i: size_t 0
+            while i < model_functions.length
+            {
+                let kvp_ptr model_functions.get(i)
+                guard kvp_ptr <> null
+                {
+                    guard kvp_ptr.key.equals(name)
+                        return true
+                }
+                set i: i + 1
+            }
+            false
         }
 
         ; fresh_type_var: allocate a new type variable as a PlannedType
@@ -1694,8 +1773,10 @@ define Planner
         }
 
         ; register_module_concepts: walk a Model.Module's members and
-        ; register every Concept in the concept table. Done as a first
-        ; pass so forward references (A referencing B below) work.
+        ; register every Concept, Function and Operator in the relevant
+        ; registry. Done as a first pass so forward references work
+        ; (A referencing B below, or main() calling helper() declared
+        ; later in the file).
         function register_module_concepts(this: Planner, m: Module)
         {
             var i: size_t 0
@@ -1709,6 +1790,16 @@ define Planner
                         when c: Concept
                         {
                             this.register_concept(c)
+                            0
+                        }
+                        when f: Function
+                        {
+                            this.register_function(f)
+                            0
+                        }
+                        when o: Operator
+                        {
+                            this.register_operator(o)
                             0
                         }
                         else
