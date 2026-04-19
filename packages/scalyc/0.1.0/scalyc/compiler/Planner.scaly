@@ -1882,7 +1882,8 @@ define Planner
         ; ================================================================
         function plan_binding#(rp, this: Planner, b: Binding) returns PlannedBinding
         {
-            let planned_ops this.plan_operands#(b.operation)
+            let planned_ops_flat this.plan_operands#(b.operation)
+            let collapsed this.collapse_operand_sequence#(planned_ops_flat)
             let planned_item this.plan_item#(b.item)
 
             ; Use the annotated type if present; fall back to a fresh
@@ -1891,17 +1892,10 @@ define Planner
             guard planned_item.item_type <> null
                 set binding_type: (*planned_item.item_type)
 
-            ; If the initializer produced exactly one operand, require
-            ; its type to match the binding's type.
-            guard planned_ops.length = 1
-            {
-                let init_op_ptr planned_ops.get(0)
-                guard init_op_ptr <> null
-                {
-                    let init_op (*init_op_ptr)
-                    this.add_equality_constraint(binding_type, init_op.result_type, b.span)
-                }
-            }
+            ; Emit an equality constraint between the declared binding
+            ; type and the collapsed initializer's result type. Solvable
+            ; cases either confirm the annotation or fix the fresh var.
+            this.add_equality_constraint(binding_type, collapsed.result_type, b.span)
 
             ; Register the local in the current scope.
             guard planned_item.name <> null
@@ -1910,7 +1904,8 @@ define Planner
                 this.define_local(n, binding_type, b.binding_type.equals("var"), false)
             }
 
-            var ops_holder Vector[PlannedOperand]^rp(planned_ops)
+            var ops_holder Vector[PlannedOperand]^rp(1)
+            ops_holder.put(0, collapsed)
             PlannedBinding(
                 b.span,
                 b.binding_type,
@@ -1931,22 +1926,28 @@ define Planner
 
         function plan_action#(rp, this: Planner, a: Action) returns PlannedAction
         {
-            let planned_source this.plan_operands#(a.source)
-            let planned_target this.plan_operands#(a.target)
+            let planned_source_flat this.plan_operands#(a.source)
+            let planned_source_collapsed this.collapse_operand_sequence#(planned_source_flat)
 
-            var result_type: PlannedType Planner.make_void_type#()
-            guard planned_source.length = 1
+            let planned_target_flat this.plan_operands#(a.target)
+            let planned_target_collapsed this.collapse_operand_sequence#(planned_target_flat)
+
+            let result_type planned_source_collapsed.result_type
+
+            var source_holder Vector[PlannedOperand]^rp(1)
+            source_holder.put(0, planned_source_collapsed)
+
+            var target_holder: ref[Vector[PlannedOperand]]? null
+            guard a.target.length > 0
             {
-                let op_ptr planned_source.get(0)
-                guard op_ptr <> null
-                    set result_type: (*op_ptr).result_type
+                var target_vec Vector[PlannedOperand]^rp(1)
+                target_vec.put(0, planned_target_collapsed)
+                set target_holder: &target_vec
             }
 
-            var source_holder Vector[PlannedOperand]^rp(planned_source)
-            var target_holder Vector[PlannedOperand]^rp(planned_target)
             PlannedAction(
                 &source_holder,
-                &target_holder,
+                target_holder,
                 result_type
             )
         }
