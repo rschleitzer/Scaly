@@ -60,6 +60,8 @@ use scalyc.compiler.Plan.PlannedImplementation
 use scalyc.compiler.Plan.PlannedFunction
 use scalyc.compiler.Model.Binding
 use scalyc.compiler.Model.Instruction
+use scalyc.compiler.Model.Structure
+use scalyc.compiler.Plan.PlannedStructure
 use scalyc.compiler.Model.Action
 use scalyc.compiler.Model.Return
 use scalyc.compiler.Model.Break
@@ -857,6 +859,94 @@ define Planner
                 var_type,
                 null,
                 tag
+            )
+        }
+
+        ; ================================================================
+        ; plan_structure: Model.Structure → Plan.PlannedStructure.
+        ;
+        ; Scope of this port:
+        ;   - plans every property (plan_property)
+        ;   - computes size / alignment via compute_struct_size +
+        ;     compute_struct_alignment (which both read the simplified
+        ;     "size == alignment per primitive" model)
+        ;
+        ; Skipped (TODO for later passes):
+        ;   - initializers, deinitializer, methods, operators — every
+        ;     members slot stays null for now
+        ;   - mangled_name — the containing concept resolver will fill it
+        ; ================================================================
+        function plan_structure#(rp, this: Planner, s: Structure, name: String) returns PlannedStructure
+        {
+            var planned_props Array[PlannedProperty]$()
+            var i: size_t 0
+            while i < s.properties.length
+            {
+                let p_ptr s.properties.get(i)
+                guard p_ptr <> null
+                {
+                    let p (*p_ptr)
+                    planned_props.add(this.plan_property#(p))
+                }
+                set i: i + 1
+            }
+
+            var props_holder Vector[PlannedProperty]^rp(planned_props)
+            let total_size Planner.compute_struct_size(&props_holder)
+            let total_align Planner.compute_struct_alignment(&props_holder)
+
+            PlannedStructure(
+                s.span,
+                s.private_,
+                false,
+                String^rp(name),
+                String^rp(""),
+                &props_holder,
+                null,
+                null,
+                null,
+                null,
+                total_size,
+                total_align,
+                null
+            )
+        }
+
+        ; plan_union: Model.Union → Plan.PlannedUnion.
+        ; Similar scope to plan_structure: plans variants and computes
+        ; size/alignment; skips methods/operators for now.
+        function plan_union#(rp, this: Planner, u: scalyc.compiler.Model.Union, name: String) returns scalyc.compiler.Plan.PlannedUnion
+        {
+            var planned_vs Array[PlannedVariant]$()
+            var tag: int 0
+            var i: size_t 0
+            while i < u.variants.length
+            {
+                let v_ptr u.variants.get(i)
+                guard v_ptr <> null
+                {
+                    let v (*v_ptr)
+                    planned_vs.add(this.plan_variant#(v, tag))
+                    set tag: tag + 1
+                }
+                set i: i + 1
+            }
+
+            var vs_holder Vector[PlannedVariant]^rp(planned_vs)
+            let u_size Planner.compute_union_size(&vs_holder)
+            let u_align Planner.compute_struct_alignment(null)
+
+            scalyc.compiler.Plan.PlannedUnion(
+                u.span,
+                u.private_,
+                String^rp(name),
+                String^rp(""),
+                &vs_holder,
+                null,
+                null,
+                u_size,
+                u_align,
+                null
             )
         }
 
