@@ -142,11 +142,13 @@ Page* scaly_alloc_root_page() {
 }
 
 void scaly_release_root_page(Page* p) {
-    // Strict LIFO is the invariant but a few emitter paths in scaly.test()
-    // still miss a cleanup; until every path is audited, tolerate out-of-
-    // order releases by skipping the decrement. The orphaned slot stays
-    // inside its bucket (backing memory remains valid) and will be freed
-    // wholesale when the bucket is freed at process exit.
+    // Strict LIFO is the intended invariant. A few emitter paths in the
+    // Scaly stdlib still produce exit flows whose cleanup doesn't match a
+    // preceding push (tracked in issue queue). Tolerate the mismatch here
+    // by skipping the decrement: the orphaned slot remains inside its
+    // bucket (backing memory is still valid) and is reclaimed wholesale
+    // when the bucket is freed at process exit. This preserves
+    // correctness at the cost of not recycling the slot.
     if (p != g_stack_top) {
         return;
     }
