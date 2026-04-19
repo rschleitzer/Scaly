@@ -70,6 +70,14 @@ use scalyc.compiler.Plan.PlannedStructure
 use scalyc.compiler.Plan.PlannedInitializer
 use scalyc.compiler.Plan.PlannedDeInitializer
 use scalyc.compiler.Plan.PlannedOperator
+use scalyc.compiler.Plan.PlannedNamespace
+use scalyc.compiler.Plan.PlannedConcept
+use scalyc.compiler.Plan.PlannedDefinition
+use scalyc.compiler.Plan.PlannedGlobal
+use scalyc.compiler.Model.Namespace
+use scalyc.compiler.Model.Concept
+use scalyc.compiler.Model.Global
+use scalyc.compiler.Model.Member
 use scalyc.compiler.Model.Action
 use scalyc.compiler.Model.Return
 use scalyc.compiler.Model.Break
@@ -1041,6 +1049,112 @@ define Planner
                 null,
                 total_size,
                 total_align,
+                null
+            )
+        }
+
+        ; plan_global: Model.Global → Plan.PlannedGlobal.
+        ; The `name` comes from the enclosing Concept — Global itself has
+        ; no name field.
+        function plan_global#(rp, this: Planner, g: Global, name: String) returns PlannedGlobal
+        {
+            let planned_type this.plan_type#(g.type)
+            let planned_value this.plan_operands#(g.value)
+            var value_holder Vector[PlannedOperand]^rp(planned_value)
+            PlannedGlobal(
+                g.span,
+                String^rp(name),
+                String^rp(""),
+                planned_type,
+                &value_holder
+            )
+        }
+
+        ; plan_namespace: Model.Namespace → Plan.PlannedNamespace.
+        ; Dispatches each Member to the appropriate plan_* method and
+        ; collects the results into the per-kind vectors the planned
+        ; representation expects.
+        function plan_namespace#(rp, this: Planner, ns: Namespace, name: String) returns PlannedNamespace
+        {
+            var functions Array[PlannedFunction]$()
+            var operators Array[PlannedOperator]$()
+            var concepts Array[PlannedConcept]$()
+
+            var i: size_t 0
+            while i < ns.members.length
+            {
+                let m_ptr ns.members.get(i)
+                guard m_ptr <> null
+                {
+                    let m (*m_ptr)
+                    choose m
+                        when f: Function
+                        {
+                            functions.add(this.plan_function#(f))
+                            0
+                        }
+                        when o: Operator
+                        {
+                            operators.add(this.plan_operator#(o))
+                            0
+                        }
+                        when c: Concept
+                        {
+                            concepts.add(this.plan_concept#(c))
+                            0
+                        }
+                        else
+                            0
+                }
+                set i: i + 1
+            }
+
+            var funcs_holder Vector[PlannedFunction]^rp(functions)
+            var ops_holder Vector[PlannedOperator]^rp(operators)
+            var concs_holder Vector[PlannedConcept]^rp(concepts)
+
+            PlannedNamespace(
+                ns.span,
+                String^rp(name),
+                String^rp(""),
+                null,
+                &funcs_holder,
+                &ops_holder,
+                &concs_holder
+            )
+        }
+
+        ; plan_concept: wrap a Model.Concept (definition + generics) into
+        ; PlannedConcept. Generic parameters are not instantiated here —
+        ; that's the job of the separate instantiate-generic pass (TODO).
+        ; For now we just drop the parameters on the floor and plan the
+        ; underlying definition as-is.
+        ;
+        ; Intrinsic concepts (built-in types) are represented by a Type
+        ; variant carrying a void placeholder until a proper Intrinsic
+        ; variant is added to PlannedDefinition.
+        function plan_concept#(rp, this: Planner, c: Concept) returns PlannedConcept
+        {
+            let pl_def choose c.definition
+                when s: Structure
+                    PlannedDefinition.Structure(this.plan_structure#(s, c.name))
+                when u: scalyc.compiler.Model.Union
+                    PlannedDefinition.Union(this.plan_union#(u, c.name))
+                when ns: Namespace
+                    PlannedDefinition.Namespace(this.plan_namespace#(ns, c.name))
+                when g: Global
+                    PlannedDefinition.Global(this.plan_global#(g, c.name))
+                when t: Type
+                    PlannedDefinition.Type(this.plan_type#(t))
+                when intr: Intrinsic
+                    PlannedDefinition.Type(Planner.make_void_type#())
+
+            PlannedConcept(
+                c.span,
+                c.name,
+                String^rp(""),
+                null,
+                pl_def,
                 null
             )
         }
