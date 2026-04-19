@@ -1038,9 +1038,12 @@ define Planner
             }
             var result: PlannedOperand (*first_ptr)
 
-            ; Function-call detection: first operand is a Type (name
-            ; reference), second is a Tuple (arg list). Collapse those
-            ; into a single Call operand, then fold the rest.
+            ; Call detection: first operand followed by a Tuple. Two
+            ; shapes accepted:
+            ;   - free function: first operand's expr is a Type (name
+            ;     reference);
+            ;   - method call: first operand has a member_access chain
+            ;     whose last hop is_method=true (from resolve_member_access).
             guard ops.length >= 2
             {
                 let second_ptr ops.get(1)
@@ -1062,6 +1065,36 @@ define Planner
                         }
                         else
                             0
+
+                    guard is_call = false
+                    {
+                        guard result.member_access <> null
+                        {
+                            let ma (*result.member_access)
+                            guard ma.length > 0
+                            {
+                                let last_ptr ma.get(ma.length - 1)
+                                guard last_ptr <> null
+                                {
+                                    let last_ma (*last_ptr)
+                                    guard last_ma.is_method
+                                    {
+                                        var tuple_second: bool false
+                                        choose second.expr
+                                            when tp: PlannedTuple
+                                                set tuple_second: true
+                                            else
+                                                0
+                                        guard tuple_second
+                                        {
+                                            set is_call: true
+                                            set fn_name: last_ma.name
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
 
                     guard is_call
                     {
