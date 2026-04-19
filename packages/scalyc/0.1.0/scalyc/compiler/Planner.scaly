@@ -1627,16 +1627,56 @@ define Planner
             )
         }
 
+        ; register_module_concepts: walk a Model.Module's members and
+        ; register every Concept in the concept table. Done as a first
+        ; pass so forward references (A referencing B below) work.
+        function register_module_concepts(this: Planner, m: Module)
+        {
+            var i: size_t 0
+            while i < m.members.length
+            {
+                let m_ptr m.members.get(i)
+                guard m_ptr <> null
+                {
+                    let mem (*m_ptr)
+                    choose mem
+                        when c: Concept
+                        {
+                            this.register_concept(c)
+                            0
+                        }
+                        else
+                            0
+                }
+                set i: i + 1
+            }
+
+            var mi: size_t 0
+            while mi < m.modules.length
+            {
+                let sub_ptr m.modules.get(mi)
+                guard sub_ptr <> null
+                {
+                    let sub (*sub_ptr)
+                    this.register_module_concepts(sub)
+                }
+                set mi: mi + 1
+            }
+        }
+
         ; plan_module: Model.Module → Plan.PlannedModule.
         ;
-        ; Recursively plans sub-modules, then iterates members and routes
-        ; each to the appropriate plan_* method. Same Member-dispatch shape
-        ; as plan_namespace — Package variants are dropped for now.
+        ; Two-pass: first register every concept reachable through this
+        ; module's tree, then plan sub-modules and members. This makes
+        ; forward references resolve — `struct A { b: B }` works even
+        ; when B is defined later in the same module.
         function plan_module#(rp, this: Planner, m: Module) returns PlannedModule
         {
+            this.register_module_concepts(m)
+
             var functions Array[PlannedFunction]$()
             var operators Array[PlannedOperator]$()
-            var concepts Array[PlannedConcept]$()
+            var pl_concepts Array[PlannedConcept]$()
             var sub_modules Array[PlannedModule]$()
 
             var mi: size_t 0
@@ -1671,7 +1711,7 @@ define Planner
                         }
                         when c: Concept
                         {
-                            concepts.add(this.plan_concept#(c))
+                            pl_concepts.add(this.plan_concept#(c))
                             0
                         }
                         else
@@ -1681,7 +1721,7 @@ define Planner
             }
 
             var mods_holder Vector[PlannedModule]^rp(sub_modules)
-            var concs_holder Vector[PlannedConcept]^rp(concepts)
+            var concs_holder Vector[PlannedConcept]^rp(pl_concepts)
             var funcs_holder Vector[PlannedFunction]^rp(functions)
             var ops_holder Vector[PlannedOperator]^rp(operators)
 
