@@ -850,6 +850,115 @@ define Planner
                     -1
         }
 
+        ; match_type_pattern: walk `pattern` and `actual` in parallel,
+        ; collecting generic-parameter → concrete-type bindings.
+        ; Recursion handles nested generics (e.g. matching `Vector[T]`
+        ; against `Vector[int]` yields `T -> int`).
+        ;
+        ; Runs purely — returns a fresh Vector each call rather than
+        ; mutating a caller-supplied accumulator, because passing a
+        ; mutable Array as a parameter doesn't propagate in Scaly's
+        ; value-semantics model.
+        function match_type_pattern#(
+            rp,
+            this: Planner,
+            pattern: PlannedType,
+            actual: PlannedType
+        ) returns Vector[KeyValuePair[String, PlannedType]]
+        {
+            var result Array[KeyValuePair[String, PlannedType]]$()
+
+            guard Planner.is_generic_type_param_name(pattern.name)
+            {
+                result.add(KeyValuePair[String, PlannedType](pattern.name, actual))
+                return Vector[KeyValuePair[String, PlannedType]]^rp(result)
+            }
+
+            guard pattern.generics <> null
+            {
+                guard actual.generics <> null
+                {
+                    let pg (*pattern.generics)
+                    let ag (*actual.generics)
+                    guard pg.length = ag.length
+                    {
+                        var i: size_t 0
+                        while i < pg.length
+                        {
+                            let pp_ptr pg.get(i)
+                            let ap_ptr ag.get(i)
+                            guard pp_ptr <> null
+                            {
+                                guard ap_ptr <> null
+                                {
+                                    let inner this.match_type_pattern#(
+                                        (*pp_ptr), (*ap_ptr)
+                                    )
+                                    var j: size_t 0
+                                    while j < inner.length
+                                    {
+                                        let kv_ptr inner.get(j)
+                                        guard kv_ptr <> null
+                                            result.add((*kv_ptr))
+                                        set j: j + 1
+                                    }
+                                }
+                            }
+                            set i: i + 1
+                        }
+                    }
+                }
+            }
+
+            Vector[KeyValuePair[String, PlannedType]]^rp(result)
+        }
+
+        ; infer_type_arguments: given a function's parameter types
+        ; (possibly containing generic parameters like T, K) and the
+        ; actual argument types at a call site, infer the concrete type
+        ; assignments. Returns a flat Vector of name→type pairs; may
+        ; contain duplicates for a generic parameter inferred from
+        ; multiple positions (all should agree — agreement is checked
+        ; downstream during substitution).
+        function infer_type_arguments#(
+            rp,
+            this: Planner,
+            param_types: Vector[PlannedType],
+            arg_types: Vector[PlannedType]
+        ) returns Vector[KeyValuePair[String, PlannedType]]
+        {
+            var result Array[KeyValuePair[String, PlannedType]]$()
+            guard param_types.length = arg_types.length
+                return Vector[KeyValuePair[String, PlannedType]]^rp(result)
+
+            var i: size_t 0
+            while i < param_types.length
+            {
+                let p_ptr param_types.get(i)
+                let a_ptr arg_types.get(i)
+                guard p_ptr <> null
+                {
+                    guard a_ptr <> null
+                    {
+                        let matches this.match_type_pattern#(
+                            (*p_ptr), (*a_ptr)
+                        )
+                        var j: size_t 0
+                        while j < matches.length
+                        {
+                            let kv_ptr matches.get(j)
+                            guard kv_ptr <> null
+                                result.add((*kv_ptr))
+                            set j: j + 1
+                        }
+                    }
+                }
+                set i: i + 1
+            }
+
+            Vector[KeyValuePair[String, PlannedType]]^rp(result)
+        }
+
         ; ================================================================
         ; instantiate_generic: monomorphise a generic Concept against a
         ; concrete type-argument list. Binds each GenericParameter name
