@@ -345,6 +345,141 @@ define Planner
         sb.to_string^rp()
     }
 
+    ; operator_code: map a Scaly operator name to its Itanium ABI two-letter
+    ; code. Unknown operators fall back to the `v0` vendor extension,
+    ; followed by the length-prefixed operator identifier.
+    function operator_code#(rp, name: String) returns String
+    {
+        guard name.equals("+")
+            return String^rp("pl")
+        guard name.equals("-")
+            return String^rp("mi")
+        guard name.equals("*")
+            return String^rp("ml")
+        guard name.equals("/")
+            return String^rp("dv")
+        guard name.equals("%")
+            return String^rp("rm")
+        guard name.equals("==")
+            return String^rp("eq")
+        guard name.equals("!=")
+            return String^rp("ne")
+        guard name.equals("<")
+            return String^rp("lt")
+        guard name.equals(">")
+            return String^rp("gt")
+        guard name.equals("<=")
+            return String^rp("le")
+        guard name.equals(">=")
+            return String^rp("ge")
+        guard name.equals("&&")
+            return String^rp("aa")
+        guard name.equals("||")
+            return String^rp("oo")
+        guard name.equals("!")
+            return String^rp("nt")
+        guard name.equals("&")
+            return String^rp("an")
+        guard name.equals("|")
+            return String^rp("or")
+        guard name.equals("^")
+            return String^rp("eo")
+        guard name.equals("~")
+            return String^rp("co")
+        guard name.equals("<<")
+            return String^rp("ls")
+        guard name.equals(">>")
+            return String^rp("rs")
+        guard name.equals("[]")
+            return String^rp("ix")
+        guard name.equals("()")
+            return String^rp("cl")
+
+        ; Vendor extension for operators without a dedicated code.
+        var sb StringBuilder$()
+        sb.append("v0")
+        sb.append(Planner.encode_name(name))
+        sb.to_string^rp()
+    }
+
+    ; mangle_operator: Itanium ABI symbol for an operator definition.
+    ; Mirrors mangle_function but substitutes the two-letter op code for
+    ; the operator name and skips an explicit 'this' parameter when the
+    ; operator is declared as a member.
+    function mangle_operator#(
+        rp,
+        name: String,
+        params: ref[Vector[PlannedItem]]?,
+        parent: ref[PlannedType]?
+    ) returns String
+    {
+        let op_code Planner.operator_code#(name)
+        var sb StringBuilder$()
+        sb.append("_Z")
+
+        guard parent <> null
+        {
+            let p (*parent)
+            sb.append("N")
+            sb.append(Planner.encode_type#(p))
+            sb.append(op_code)
+            sb.append("E")
+        }
+        guard parent = null
+            sb.append(op_code)
+
+        ; Skip 'this' on member operators (param[0] with name "this").
+        var start_idx: size_t 0
+        guard parent <> null
+        {
+            guard params <> null
+            {
+                let ps (*params)
+                guard ps.length > 0
+                {
+                    let first_ptr ps.get(0)
+                    guard first_ptr <> null
+                    {
+                        let first (*first_ptr)
+                        guard first.name <> null
+                        {
+                            let pname (*first.name)
+                            guard pname.equals("this")
+                                set start_idx: 1
+                        }
+                    }
+                }
+            }
+        }
+
+        var has_params: bool false
+        guard params <> null
+        {
+            let ps (*params)
+            var i: size_t start_idx
+            while i < ps.length
+            {
+                let param_ptr ps.get(i)
+                guard param_ptr <> null
+                {
+                    let param (*param_ptr)
+                    guard param.item_type <> null
+                    {
+                        let pty (*param.item_type)
+                        sb.append(Planner.encode_type#(pty))
+                        set has_params: true
+                    }
+                }
+                set i: i + 1
+            }
+        }
+
+        guard has_params = false
+            sb.append("v")
+
+        sb.to_string^rp()
+    }
+
     ; size_to_string: decimal representation of a size_t.
     ; Classic divide-by-10 with digit buffer and reversal.
     function size_to_string(n: size_t) returns String
@@ -525,6 +660,37 @@ define Planner
         let mf_i Planner.mangle_function$(String$("foo"), &one_int, null, false)
         guard mf_i.equals(String$("_Z3fooi")) = false
             return 20
+
+        ; operator_code - a few known codes plus vendor extension.
+        let op_plus Planner.operator_code$(String$("+"))
+        guard op_plus.equals(String$("pl")) = false
+            return 21
+
+        let op_index Planner.operator_code$(String$("[]"))
+        guard op_index.equals(String$("ix")) = false
+            return 22
+
+        let op_vendor Planner.operator_code$(String$("??"))
+        guard op_vendor.equals(String$("v02??")) = false
+            return 23
+
+        ; mangle_operator - free + with int param -> _Zpli.
+        let mop_plus Planner.mangle_operator$(String$("+"), &one_int, null)
+        guard mop_plus.equals(String$("_Zpli")) = false
+            return 24
+
+        ; mangle_operator - member + on Foo with (this, int) -> _ZN3FooplEi.
+        var this_int Vector[PlannedItem]$(2)
+        this_int.put(0, PlannedItem(Span(0, 0), false, &this_name, &foo_ty, null))
+        this_int.put(1, PlannedItem(Span(0, 0), false, &x_name, &int_ty, null))
+        let mop_member Planner.mangle_operator$(String$("+"), &this_int, &foo_ty)
+        guard mop_member.equals(String$("_ZN3FooplEi")) = false
+            return 25
+
+        ; mangle_operator - member with only 'this' -> _ZN3FooneEv (the 'this' skip).
+        let mop_this Planner.mangle_operator$(String$("!="), &this_only, &foo_ty)
+        guard mop_this.equals(String$("_ZN3FooneEv")) = false
+            return 26
 
         0
     }
