@@ -39,6 +39,9 @@ use scalyc.compiler.Plan.PlannedItem
 use scalyc.compiler.Plan.TypeVariable
 use scalyc.compiler.Plan.PlannedProperty
 use scalyc.compiler.Plan.PlannedVariant
+use scalyc.compiler.Plan.TypeConstraint
+use scalyc.compiler.Plan.EqualityConstraint
+use scalyc.compiler.Plan.InstanceConstraint
 use scalyc.compiler.Plan.PlannedOperand
 use scalyc.compiler.Plan.PlannedExpression
 use scalyc.compiler.Plan.PlannedTuple
@@ -1341,6 +1344,50 @@ define Planner
         }
 
         &result
+    }
+
+    ; solve_constraints: classical HM solver. Walk the constraint list
+    ; in order, applying the current solution to each constraint's sides,
+    ; unifying them, and composing the new substitution into the solution.
+    ; Instance (trait) constraints are skipped — matches the TODO in
+    ; Planner.cpp. Returns null on any unification failure.
+    function solve_constraints#(
+        rp,
+        constraints: ref[Vector[TypeConstraint]]?
+    ) returns ref[Vector[KeyValuePair[size_t, PlannedType]]]?
+    {
+        var solution Vector[KeyValuePair[size_t, PlannedType]]^rp(0)
+
+        guard constraints = null
+            return &solution
+
+        let cs (*constraints)
+        var i: size_t 0
+        while i < cs.length
+        {
+            let c_ptr cs.get(i)
+            guard c_ptr <> null
+            {
+                let c (*c_ptr)
+                let new_solution choose c
+                    when eq: EqualityConstraint
+                    {
+                        let left_applied Planner.apply_substitution#(eq.left, &solution)
+                        let right_applied Planner.apply_substitution#(eq.right, &solution)
+                        let sub Planner.unify#(left_applied, right_applied)
+                        guard sub = null
+                            return null
+
+                        Planner.compose_substitutions#(solution, (*sub))
+                    }
+                    when inst: InstanceConstraint
+                        solution
+                set solution: new_solution
+            }
+            set i: i + 1
+        }
+
+        &solution
     }
 
     ; compose_substitutions: S2 ∘ S1 — apply S1 first, then S2.
@@ -2871,6 +2918,53 @@ define Planner
         )
         guard Planner.unify$(vec_ty, list_int_ty) <> null
             return 150
+
+        ; solve_constraints - null list → empty substitution.
+        let sc_null Planner.solve_constraints$(null)
+        guard sc_null = null
+            return 151
+        guard (*sc_null).length <> 0
+            return 152
+
+        ; solve_constraints - single T7 = int → binds T7 to int.
+        var one_eq Vector[TypeConstraint]$(1)
+        one_eq.put(0, TypeConstraint.Equality(
+            EqualityConstraint(var_ty, int_ty, Span(0, 0), String$(""))
+        ))
+        let sc_one Planner.solve_constraints$(&one_eq)
+        guard sc_one = null
+            return 153
+        let sc_one_lookup Planner.substitution_lookup((*sc_one), 7)
+        guard sc_one_lookup = null
+            return 154
+        guard (*sc_one_lookup).name.equals("int") = false
+            return 155
+
+        ; solve_constraints - chain T7 = T8, T8 = int → T7 resolves to int.
+        var chain Vector[TypeConstraint]$(2)
+        chain.put(0, TypeConstraint.Equality(
+            EqualityConstraint(var_ty, var_ty8, Span(0, 0), String$(""))
+        ))
+        chain.put(1, TypeConstraint.Equality(
+            EqualityConstraint(var_ty8, int_ty, Span(0, 0), String$(""))
+        ))
+        let sc_chain Planner.solve_constraints$(&chain)
+        guard sc_chain = null
+            return 156
+        let sc_chain_t7 Planner.apply_substitution$(var_ty, sc_chain)
+        guard sc_chain_t7.name.equals("int") = false
+            return 157
+
+        ; solve_constraints - conflicting: T7 = int, T7 = bool → null.
+        var conflict Vector[TypeConstraint]$(2)
+        conflict.put(0, TypeConstraint.Equality(
+            EqualityConstraint(var_ty, int_ty, Span(0, 0), String$(""))
+        ))
+        conflict.put(1, TypeConstraint.Equality(
+            EqualityConstraint(var_ty, bool_ty, Span(0, 0), String$(""))
+        ))
+        guard Planner.solve_constraints$(&conflict) <> null
+            return 158
 
         0
     }
