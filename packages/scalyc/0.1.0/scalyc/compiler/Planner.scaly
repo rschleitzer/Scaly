@@ -63,7 +63,13 @@ use scalyc.compiler.Plan.PlannedFunction
 use scalyc.compiler.Model.Binding
 use scalyc.compiler.Model.Instruction
 use scalyc.compiler.Model.Structure
+use scalyc.compiler.Model.Initializer
+use scalyc.compiler.Model.DeInitializer
+use scalyc.compiler.Model.Operator
 use scalyc.compiler.Plan.PlannedStructure
+use scalyc.compiler.Plan.PlannedInitializer
+use scalyc.compiler.Plan.PlannedDeInitializer
+use scalyc.compiler.Plan.PlannedOperator
 use scalyc.compiler.Model.Action
 use scalyc.compiler.Model.Return
 use scalyc.compiler.Model.Break
@@ -833,6 +839,131 @@ define Planner
                 null,
                 false,
                 false,
+                null
+            )
+        }
+
+        ; plan_initializer: Model.Initializer → Plan.PlannedInitializer.
+        ; An initializer is like a function without name / returns_ / throws_ /
+        ; lifetime. Parameters open a new scope, implementation is planned,
+        ; scope closed.
+        function plan_initializer#(rp, this: Planner, ini: Initializer) returns PlannedInitializer
+        {
+            this.push_scope()
+
+            let planned_input this.plan_items#(ini.input)
+
+            var i: size_t 0
+            while i < planned_input.length
+            {
+                let item_ptr planned_input.get(i)
+                guard item_ptr <> null
+                {
+                    let item (*item_ptr)
+                    guard item.name <> null
+                    {
+                        guard item.item_type <> null
+                        {
+                            let n (*item.name)
+                            let t (*item.item_type)
+                            this.define_local(n, t, false, false)
+                        }
+                    }
+                }
+                set i: i + 1
+            }
+
+            let planned_impl this.plan_implementation#(ini.implementation)
+
+            this.pop_scope()
+
+            var input_holder Vector[PlannedItem]^rp(planned_input)
+            PlannedInitializer(
+                ini.span,
+                ini.private_,
+                null,
+                String^rp(""),
+                &input_holder,
+                planned_impl
+            )
+        }
+
+        ; plan_deinitializer: Model.DeInitializer → Plan.PlannedDeInitializer.
+        ; Even simpler than plan_initializer — no parameters.
+        function plan_deinitializer#(rp, this: Planner, dei: DeInitializer) returns PlannedDeInitializer
+        {
+            let planned_impl this.plan_implementation#(dei.implementation)
+            PlannedDeInitializer(
+                dei.span,
+                String^rp(""),
+                planned_impl
+            )
+        }
+
+        ; plan_operator: Model.Operator → Plan.PlannedOperator.
+        ; Structurally identical to plan_function modulo the two missing
+        ; fields (no `pure`, no `lifetime`).
+        function plan_operator#(rp, this: Planner, op: Operator) returns PlannedOperator
+        {
+            this.push_scope()
+
+            let planned_input this.plan_items#(op.input)
+
+            var i: size_t 0
+            while i < planned_input.length
+            {
+                let item_ptr planned_input.get(i)
+                guard item_ptr <> null
+                {
+                    let item (*item_ptr)
+                    guard item.name <> null
+                    {
+                        guard item.item_type <> null
+                        {
+                            let n (*item.name)
+                            let t (*item.item_type)
+                            this.define_local(n, t, false, false)
+                        }
+                    }
+                }
+                set i: i + 1
+            }
+
+            var return_type: ref[PlannedType]? null
+            guard op.returns_ <> null
+            {
+                let rt (*op.returns_)
+                let planned_rt this.plan_type#(rt)
+                var rt_holder Vector[PlannedType]^rp(1)
+                rt_holder.put(0, planned_rt)
+                set return_type: rt_holder.get(0)
+            }
+
+            var throws_type: ref[PlannedType]? null
+            guard op.throws_ <> null
+            {
+                let tt (*op.throws_)
+                let planned_tt this.plan_type#(tt)
+                var tt_holder Vector[PlannedType]^rp(1)
+                tt_holder.put(0, planned_tt)
+                set throws_type: tt_holder.get(0)
+            }
+
+            let planned_impl this.plan_implementation#(op.implementation)
+
+            this.pop_scope()
+
+            var input_holder Vector[PlannedItem]^rp(planned_input)
+            PlannedOperator(
+                op.span,
+                op.private_,
+                op.name,
+                String^rp(""),
+                &input_holder,
+                return_type,
+                throws_type,
+                planned_impl,
+                null,
                 null
             )
         }
@@ -5119,6 +5250,54 @@ define Planner
             return 281
         guard pl_struct.alignment <> 1
             return 282
+
+        ; plan_initializer - Initializer with one parameter.
+        let model_init Initializer(
+            Span(0, 0),
+            false,
+            x_params,
+            Implementation.Intrinsic(Intrinsic(Span(0, 0)))
+        )
+        let pl_init p3.plan_initializer$(model_init)
+        guard pl_init.input = null
+            return 283
+        guard (*pl_init.input).length <> 1
+            return 284
+
+        ; plan_operator - operator + with (this, int) parameters.
+        var plus_params Vector[Item]$(2)
+        plus_params.put(0, Item(
+            Span(0, 0),
+            false,
+            &(String$("this")),
+            null,
+            Vector[Attribute]$(0)
+        ))
+        plus_params.put(1, Item(
+            Span(0, 0),
+            false,
+            &(String$("other")),
+            &int_type,
+            Vector[Attribute]$(0)
+        ))
+        let model_op Operator(
+            Span(0, 0),
+            false,
+            String$("+"),
+            plus_params,
+            &int_type,
+            null,
+            Implementation.Intrinsic(Intrinsic(Span(0, 0)))
+        )
+        let pl_op p3.plan_operator$(model_op)
+        guard pl_op.name.equals(String$("+")) = false
+            return 285
+        guard pl_op.input = null
+            return 286
+        guard (*pl_op.input).length <> 2
+            return 287
+        guard pl_op.return_type = null
+            return 288
 
         0
     }
