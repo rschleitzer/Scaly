@@ -358,6 +358,48 @@ define Planner
             Planner.apply_name_substitution#(base, &sub_vec)
         }
 
+        ; ================================================================
+        ; plan_item: Model.Item → PlannedItem.
+        ;
+        ; Handles the optional name and type annotation. Attributes are
+        ; dropped for now — the PlannedItem carries `null` in that slot
+        ; until attribute planning is ported.
+        ;
+        ; Returns-by-value copies the PlannedItem to the caller; the refs
+        ; inside (name, item_type) point into single-element holder Vectors
+        ; allocated on this function's rp, so they survive the caller's
+        ; use of the returned PlannedItem.
+        ; ================================================================
+        function plan_item#(rp, this: Planner, i: Item) returns PlannedItem
+        {
+            var planned_name: ref[String]? null
+            guard i.name <> null
+            {
+                let n (*i.name)
+                var name_holder Vector[String]^rp(1)
+                name_holder.put(0, String^rp(n))
+                set planned_name: name_holder.get(0)
+            }
+
+            var planned_type: ref[PlannedType]? null
+            guard i.type <> null
+            {
+                let model_type (*i.type)
+                let planned this.plan_type#(model_type)
+                var type_holder Vector[PlannedType]^rp(1)
+                type_holder.put(0, planned)
+                set planned_type: type_holder.get(0)
+            }
+
+            PlannedItem(
+                i.span,
+                i.private_,
+                planned_name,
+                planned_type,
+                null
+            )
+        }
+
         ; plan_program - top-level entry point (stub).
         ; Abort loudly if anything tries to actually plan a Program through
         ; this port before Stage 2+ fills in the real logic.
@@ -4264,6 +4306,44 @@ define Planner
             return 239
         guard (*pt_vec_t_g0).name.equals("int") = false
             return 240
+
+        ; ====================================================================
+        ; plan_item: Model.Item (name + optional type) → PlannedItem.
+        ; ====================================================================
+
+        ; Item { name: "x", type: int } → PlannedItem with planned int type.
+        let model_item Item(
+            Span(0, 0),
+            false,
+            &(String$("x")),
+            &int_type,
+            Vector[Attribute]$(0)
+        )
+        let pl_item p2.plan_item$(model_item)
+        guard pl_item.name = null
+            return 241
+        guard (*pl_item.name).equals(String$("x")) = false
+            return 242
+        guard pl_item.item_type = null
+            return 243
+        guard (*pl_item.item_type).name.equals("int") = false
+            return 244
+
+        ; Item { name: null, type: null } → PlannedItem with nulls propagated.
+        let bare_item Item(
+            Span(0, 0),
+            true,
+            null,
+            null,
+            Vector[Attribute]$(0)
+        )
+        let pl_bare p2.plan_item$(bare_item)
+        guard pl_bare.name <> null
+            return 245
+        guard pl_bare.item_type <> null
+            return 246
+        guard pl_bare.is_private = false
+            return 247
 
         0
     }
