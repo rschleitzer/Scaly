@@ -1267,13 +1267,34 @@ define Planner
             )
         }
 
-        ; plan_program - top-level entry point (stub).
-        ; Abort loudly if anything tries to actually plan a Program through
-        ; this port before Stage 2+ fills in the real logic.
-        function plan_program(this, prog: ref[Program]) returns ref[Plan]?
+        ; plan_program: top-level entry point.
+        ;
+        ; Walks the Model.Program:
+        ;   - plan the main Module (recursively plans sub-modules and
+        ;     members)
+        ;   - plan top-level statements (executed before main())
+        ;
+        ; Instantiation caches (structures / unions / functions / globals)
+        ; are left null — the per-kind planned data lives inside the
+        ; PlannedModule tree for now. The separate caches come online
+        ; once the instantiate-generic pass is ported.
+        function plan_program#(rp, this: Planner, prog: Program) returns ref[Plan]?
         {
-            Planner.not_implemented("Planner.plan_program")
-            null
+            let planned_main this.plan_module#(prog.module_)
+            let planned_stmts this.plan_statements#(prog.statements)
+
+            var stmts_holder Vector[PlannedStatement]^rp(planned_stmts)
+
+            Plan#(
+                planned_main,
+                &stmts_holder,
+                null,
+                null,
+                null,
+                null,
+                next_type_var_id,
+                null
+            )
         }
     }
 
