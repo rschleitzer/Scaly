@@ -3588,11 +3588,37 @@ define Planner
             var methods_holder Vector[PlannedFunction]^rp(planned_methods)
             var ops_holder Vector[PlannedOperator]^rp(planned_operators)
 
+            ; Compute mangled_name using current generic substitutions
+            ; (same pattern as plan_structure).
+            var u_gens_arr Array[PlannedType]$()
+            let u_concept_ref this.lookup_concept(name)
+            guard u_concept_ref <> null
+            {
+                let u_concept (*u_concept_ref)
+                var pi: size_t 0
+                while pi < u_concept.parameters.length
+                {
+                    let p_ptr u_concept.parameters.get(pi)
+                    guard p_ptr <> null
+                    {
+                        let ts_ref this.lookup_type_substitution(p_ptr.name)
+                        guard ts_ref <> null
+                            u_gens_arr.add((*ts_ref))
+                    }
+                    set pi: pi + 1
+                }
+            }
+            var u_gens_holder Vector[PlannedType]^rp(u_gens_arr)
+            var u_gens_ref: ref[Vector[PlannedType]]? null
+            guard u_gens_holder.length > 0
+                set u_gens_ref: &u_gens_holder
+            let u_mangled Planner.mangle_structure#(name, u_gens_ref)
+
             let result scalyc.compiler.Plan.PlannedUnion(
                 u.span,
                 u.private_,
                 String^rp(name),
-                String^rp(""),
+                u_mangled,
                 &vs_holder,
                 &methods_holder,
                 &ops_holder,
