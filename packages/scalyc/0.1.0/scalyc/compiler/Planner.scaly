@@ -3021,11 +3021,57 @@ define Planner
             )
         }
 
+        ; register_concept_recursive: register `c` and, if its Definition
+        ; is a Namespace, recurse into the namespace's members so inner
+        ; Concepts / Functions / Operators are all visible by
+        ; unqualified name during later planning.
+        function register_concept_recursive(this: Planner, c: Concept)
+        {
+            this.register_concept(c)
+            choose c.definition
+                when ns: Namespace
+                {
+                    var i: size_t 0
+                    while i < ns.members.length
+                    {
+                        let m_ptr ns.members.get(i)
+                        guard m_ptr <> null
+                        {
+                            let mem (*m_ptr)
+                            choose mem
+                                when inner: Concept
+                                {
+                                    this.register_concept_recursive(inner)
+                                    0
+                                }
+                                when f: Function
+                                {
+                                    this.register_function(f)
+                                    0
+                                }
+                                when o: Operator
+                                {
+                                    this.register_operator(o)
+                                    0
+                                }
+                                else
+                                    0
+                        }
+                        set i: i + 1
+                    }
+                    0
+                }
+                else
+                    0
+        }
+
         ; register_module_concepts: walk a Model.Module's members and
         ; register every Concept, Function and Operator in the relevant
         ; registry. Done as a first pass so forward references work
         ; (A referencing B below, or main() calling helper() declared
-        ; later in the file).
+        ; later in the file). Recurses into sub-modules and into
+        ; namespace-shaped concepts so deeply nested definitions are
+        ; reachable by their short name.
         function register_module_concepts(this: Planner, m: Module)
         {
             var i: size_t 0
@@ -3038,7 +3084,7 @@ define Planner
                     choose mem
                         when c: Concept
                         {
-                            this.register_concept(c)
+                            this.register_concept_recursive(c)
                             0
                         }
                         when f: Function
