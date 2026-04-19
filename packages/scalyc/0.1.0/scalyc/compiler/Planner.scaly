@@ -10,6 +10,8 @@ use scaly.containers.String
 use scaly.containers.StringBuilder
 use scaly.containers.Vector
 use scaly.containers.KeyValuePair
+use scaly.containers.HashMap
+use scaly.containers.HashMapBuilder
 
 use scalyc.compiler.Model.Program
 use scalyc.compiler.Model.Span
@@ -5094,6 +5096,29 @@ define Planner
             return 278
         guard (*pl_fn.return_type).name.equals("int") = false
             return 279
+
+        ; plan_structure - empty Structure: size 0, alignment 1.
+        var empty_kvps Vector[KeyValuePair[String, scalyc.compiler.Model.Nameable]]$(0)
+        var empty_builder HashMapBuilder[String, scalyc.compiler.Model.Nameable]$(empty_kvps)
+        var empty_symbols HashMap[String, scalyc.compiler.Model.Nameable]$(empty_builder)
+        let empty_struct Structure(
+            Span(0, 0),
+            false,
+            Vector[Property]$(0),
+            Vector[scalyc.compiler.Model.Module]$(0),
+            Vector[scalyc.compiler.Model.Use]$(0),
+            Vector[scalyc.compiler.Model.Initializer]$(0),
+            null,
+            Vector[scalyc.compiler.Model.Member]$(0),
+            empty_symbols
+        )
+        let pl_struct p3.plan_structure$(empty_struct, String$("Foo"))
+        guard pl_struct.name.equals(String$("Foo")) = false
+            return 280
+        guard pl_struct.size <> 0
+            return 281
+        guard pl_struct.alignment <> 1
+            return 282
 
         0
     }
