@@ -606,6 +606,68 @@ define Planner
                     null
         }
 
+        ; find_initializer: locate an Initializer on a Struct-shaped
+        ; concept whose parameter types are pairwise compatible with
+        ; `arg_types`. Returns null when no match. Deliberately linear —
+        ; matching against the first compatible overload.
+        function find_initializer#(
+            rp,
+            this: Planner,
+            struct_name: String,
+            arg_types: Vector[PlannedType]
+        ) returns ref[Initializer]?
+        {
+            let concept_ref this.lookup_concept(struct_name)
+            guard concept_ref = null
+                return null
+
+            let c (*concept_ref)
+            choose c.definition
+                when s: Structure
+                {
+                    var i: size_t 0
+                    while i < s.initializers.length
+                    {
+                        let init_ptr s.initializers.get(i)
+                        guard init_ptr <> null
+                        {
+                            let ini (*init_ptr)
+                            guard ini.input.length = arg_types.length
+                            {
+                                var matches: bool true
+                                var j: size_t 0
+                                while j < arg_types.length
+                                {
+                                    let p_ptr ini.input.get(j)
+                                    let a_ptr arg_types.get(j)
+                                    guard p_ptr <> null
+                                    {
+                                        guard a_ptr <> null
+                                        {
+                                            guard p_ptr.type <> null
+                                            {
+                                                let pt (*p_ptr.type)
+                                                let planned_pt this.plan_type#(pt)
+                                                let arg (*a_ptr)
+                                                guard Planner.types_compatible(planned_pt, arg) = false
+                                                    set matches: false
+                                            }
+                                        }
+                                    }
+                                    set j: j + 1
+                                }
+                                guard matches
+                                    return init_ptr
+                            }
+                        }
+                        set i: i + 1
+                    }
+                    null
+                }
+                else
+                    null
+        }
+
         ; get_property_index: position of a named property in the struct.
         ; Returns -1 if the type isn't a struct or the property is missing.
         function get_property_index(
