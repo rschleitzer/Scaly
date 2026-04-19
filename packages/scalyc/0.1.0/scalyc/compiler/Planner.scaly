@@ -1038,6 +1038,73 @@ define Planner
             }
             var result: PlannedOperand (*first_ptr)
 
+            ; Function-call detection: first operand is a Type (name
+            ; reference), second is a Tuple (arg list). Collapse those
+            ; into a single Call operand, then fold the rest.
+            guard ops.length >= 2
+            {
+                let second_ptr ops.get(1)
+                guard second_ptr <> null
+                {
+                    let second (*second_ptr)
+                    var is_call: bool false
+                    var fn_name: String String^rp("")
+                    choose result.expr
+                        when t: PlannedType
+                        {
+                            set fn_name: t.name
+                            choose second.expr
+                                when tp: PlannedTuple
+                                    set is_call: true
+                                else
+                                    0
+                            0
+                        }
+                        else
+                            0
+
+                    guard is_call
+                    {
+                        let arg_types this.extract_arg_types#(second)
+                        let rt_ref this.resolve_function_call#(fn_name, arg_types)
+                        var rt: PlannedType this.fresh_type_var#(String$(""))
+                        guard rt_ref <> null
+                            set rt: (*rt_ref)
+
+                        var call_args Vector[PlannedOperand]^rp(1)
+                        call_args.put(0, second)
+                        let call this.make_planned_call#(
+                            result.loc, fn_name, String^rp(""), rt, call_args
+                        )
+                        set result: PlannedOperand(
+                            result.loc,
+                            PlannedExpression.Call(call),
+                            null,
+                            rt
+                        )
+
+                        ; Splice the remaining ops into a fresh vector
+                        ; and recurse.
+                        guard ops.length > 2
+                        {
+                            var remaining Array[PlannedOperand]$()
+                            remaining.add(result)
+                            var r: size_t 2
+                            while r < ops.length
+                            {
+                                let p_ptr ops.get(r)
+                                guard p_ptr <> null
+                                    remaining.add((*p_ptr))
+                                set r: r + 1
+                            }
+                            var remaining_vec Vector[PlannedOperand]^rp(remaining)
+                            return this.collapse_operand_sequence#(remaining_vec)
+                        }
+                        return result
+                    }
+                }
+            }
+
             var i: size_t 1
             while i + 1 < ops.length
             {
