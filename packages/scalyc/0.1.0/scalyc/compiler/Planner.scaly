@@ -480,6 +480,158 @@ define Planner
         sb.to_string^rp()
     }
 
+    ; ========================================================================
+    ; Type utilities.
+    ; Used by the expression/statement planner for type checks and readable
+    ; diagnostics. Ported from the "Type Utilities" section of Planner.cpp.
+    ; ========================================================================
+
+    ; get_readable_name: human-facing representation, e.g. "Vector[int]".
+    function get_readable_name#(rp, type_value: PlannedType) returns String
+    {
+        guard type_value.generics <> null
+        {
+            let gens (*type_value.generics)
+            guard gens.length > 0
+            {
+                var sb StringBuilder$()
+                sb.append(type_value.name)
+                sb.append("[")
+                var i: size_t 0
+                while i < gens.length
+                {
+                    guard i > 0
+                        sb.append(", ")
+
+                    let g_ptr gens.get(i)
+                    guard g_ptr <> null
+                    {
+                        let g (*g_ptr)
+                        let inner Planner.get_readable_name#(g)
+                        sb.append(inner)
+                    }
+                    set i: i + 1
+                }
+                sb.append("]")
+                return sb.to_string^rp()
+            }
+        }
+        String^rp(type_value.name)
+    }
+
+    ; normalize_type_name: canonicalise builtin aliases.
+    ; "scaly.*" packages collapse to their last component so "scaly.containers.String"
+    ; compares equal to "String", matching Planner.cpp's normalizeTypeName. Integer
+    ; aliases fold onto their sized form so int/size_t/char compare structurally.
+    function normalize_type_name#(rp, name: String) returns String
+    {
+        var base: String name
+        guard name.starts_with("scaly.")
+        {
+            let last_dot name.last_index_of("." as u8)
+            guard last_dot >= 0
+            {
+                let start (last_dot as size_t) + 1
+                let len name.get_length() - start
+                set base: name.substring(rp, start, len)
+            }
+        }
+
+        guard base.equals("int")
+            return String^rp("i64")
+        guard base.equals("i64")
+            return String^rp("i64")
+        guard base.equals("i32")
+            return String^rp("i32")
+        guard base.equals("i16")
+            return String^rp("i16")
+        guard base.equals("i8")
+            return String^rp("i8")
+        guard base.equals("size_t")
+            return String^rp("u64")
+        guard base.equals("size")
+            return String^rp("u64")
+        guard base.equals("u64")
+            return String^rp("u64")
+        guard base.equals("usize")
+            return String^rp("u64")
+        guard base.equals("u32")
+            return String^rp("u32")
+        guard base.equals("u16")
+            return String^rp("u16")
+        guard base.equals("u8")
+            return String^rp("u8")
+        guard base.equals("char")
+            return String^rp("u8")
+        guard base.equals("double")
+            return String^rp("f64")
+        guard base.equals("f64")
+            return String^rp("f64")
+        guard base.equals("float")
+            return String^rp("f32")
+        guard base.equals("f32")
+            return String^rp("f32")
+
+        String^rp(base)
+    }
+
+    ; types_equal: structural equality after alias normalisation.
+    ; Recurses pairwise through the generics list; mismatched arities
+    ; are unequal. Null/empty generics are treated uniformly as arity 0.
+    function types_equal(a: PlannedType, b: PlannedType) returns bool
+    {
+        let norm_a Planner.normalize_type_name$(a.name)
+        let norm_b Planner.normalize_type_name$(b.name)
+        guard norm_a.equals(norm_b) = false
+            return false
+
+        var a_len: size_t 0
+        var b_len: size_t 0
+        guard a.generics <> null
+        {
+            let ag (*a.generics)
+            set a_len: ag.length
+        }
+        guard b.generics <> null
+        {
+            let bg (*b.generics)
+            set b_len: bg.length
+        }
+
+        guard a_len <> b_len
+            return false
+
+        guard a_len = 0
+            return true
+
+        guard a.generics <> null
+        {
+            guard b.generics <> null
+            {
+                let ag (*a.generics)
+                let bg (*b.generics)
+                var i: size_t 0
+                while i < a_len
+                {
+                    let a_ptr ag.get(i)
+                    let b_ptr bg.get(i)
+                    guard a_ptr <> null
+                    {
+                        guard b_ptr <> null
+                        {
+                            let av (*a_ptr)
+                            let bv (*b_ptr)
+                            guard Planner.types_equal(av, bv) = false
+                                return false
+                        }
+                    }
+                    set i: i + 1
+                }
+            }
+        }
+        true
+    }
+
     ; size_to_string: decimal representation of a size_t.
     ; Classic divide-by-10 with digit buffer and reversal.
     function size_to_string(n: size_t) returns String
@@ -691,6 +843,105 @@ define Planner
         let mop_this Planner.mangle_operator$(String$("!="), &this_only, &foo_ty)
         guard mop_this.equals(String$("_ZN3FooneEv")) = false
             return 26
+
+        ; get_readable_name - plain type, no generics.
+        let rn_int Planner.get_readable_name$(int_ty)
+        guard rn_int.equals(String$("int")) = false
+            return 27
+
+        ; get_readable_name - generic: Vector[int] -> "Vector[int]".
+        var vec_gens Vector[PlannedType]$(1)
+        vec_gens.put(0, int_ty)
+        let vec_ty PlannedType(
+            Span(0, 0),
+            String$("Vector"),
+            String$(""),
+            &vec_gens,
+            Lifetime.Unspecified(Unspecified()),
+            null,
+            String$(""),
+            null
+        )
+        let rn_vec Planner.get_readable_name$(vec_ty)
+        guard rn_vec.equals(String$("Vector[int]")) = false
+            return 28
+
+        ; normalize_type_name - builtin aliases collapse.
+        let nm_int Planner.normalize_type_name$(String$("int"))
+        guard nm_int.equals(String$("i64")) = false
+            return 29
+
+        let nm_size Planner.normalize_type_name$(String$("size_t"))
+        guard nm_size.equals(String$("u64")) = false
+            return 30
+
+        let nm_char Planner.normalize_type_name$(String$("char"))
+        guard nm_char.equals(String$("u8")) = false
+            return 31
+
+        ; normalize_type_name - "scaly.containers.String" -> "String".
+        let nm_sstr Planner.normalize_type_name$(String$("scaly.containers.String"))
+        guard nm_sstr.equals(String$("String")) = false
+            return 32
+
+        ; normalize_type_name - user types pass through.
+        let nm_user Planner.normalize_type_name$(String$("scalyc.compiler.Planner"))
+        guard nm_user.equals(String$("scalyc.compiler.Planner")) = false
+            return 33
+
+        ; types_equal - identical primitives.
+        guard Planner.types_equal(int_ty, int_ty) = false
+            return 34
+
+        ; types_equal - int == i64 via normalization.
+        let i64_ty PlannedType(
+            Span(0, 0),
+            String$("i64"),
+            String$(""),
+            null,
+            Lifetime.Unspecified(Unspecified()),
+            null,
+            String$(""),
+            null
+        )
+        guard Planner.types_equal(int_ty, i64_ty) = false
+            return 35
+
+        ; types_equal - different primitives.
+        guard Planner.types_equal(int_ty, bool_ty)
+            return 36
+
+        ; types_equal - structurally equal generics.
+        var vec_gens2 Vector[PlannedType]$(1)
+        vec_gens2.put(0, int_ty)
+        let vec_ty2 PlannedType(
+            Span(0, 0),
+            String$("Vector"),
+            String$(""),
+            &vec_gens2,
+            Lifetime.Unspecified(Unspecified()),
+            null,
+            String$(""),
+            null
+        )
+        guard Planner.types_equal(vec_ty, vec_ty2) = false
+            return 37
+
+        ; types_equal - same outer name, different generic arg.
+        var vec_gens_b Vector[PlannedType]$(1)
+        vec_gens_b.put(0, bool_ty)
+        let vec_bool_ty PlannedType(
+            Span(0, 0),
+            String$("Vector"),
+            String$(""),
+            &vec_gens_b,
+            Lifetime.Unspecified(Unspecified()),
+            null,
+            String$(""),
+            null
+        )
+        guard Planner.types_equal(vec_ty, vec_bool_ty)
+            return 38
 
         0
     }
