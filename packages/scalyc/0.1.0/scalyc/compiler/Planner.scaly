@@ -42,6 +42,7 @@ use scalyc.compiler.Plan.PlannedVariant
 use scalyc.compiler.Plan.TypeConstraint
 use scalyc.compiler.Plan.EqualityConstraint
 use scalyc.compiler.Plan.InstanceConstraint
+use scalyc.compiler.Plan.TypeScheme
 use scalyc.compiler.Plan.PlannedOperand
 use scalyc.compiler.Plan.PlannedExpression
 use scalyc.compiler.Plan.PlannedTuple
@@ -1237,6 +1238,62 @@ define Planner
             set i: i + 1
         }
         Vector[size_t]^rp(acc)
+    }
+
+    ; id_list_contains: linear scan for a size_t id in a Vector[size_t].
+    function id_list_contains(ids: Vector[size_t], needle: size_t) returns bool
+    {
+        var i: size_t 0
+        while i < ids.length
+        {
+            let p ids.get(i)
+            guard p <> null
+            {
+                guard *p = needle
+                    return true
+            }
+            set i: i + 1
+        }
+        false
+    }
+
+    ; generalize: promote a type to a type scheme by universally
+    ; quantifying every free var that is NOT already free in the
+    ; surrounding type environment. This is the operation behind
+    ; `let`-polymorphism (ML / Haskell).
+    function generalize#(
+        rp,
+        t: PlannedType,
+        free_in_env: Vector[size_t]
+    ) returns TypeScheme
+    {
+        let all_free Planner.free_type_vars#(t)
+        var quantified_arr Array[TypeVariable]$()
+        var i: size_t 0
+        while i < all_free.length
+        {
+            let id_ptr all_free.get(i)
+            guard id_ptr <> null
+            {
+                let id *id_ptr
+                guard Planner.id_list_contains(free_in_env, id) = false
+                    quantified_arr.add(TypeVariable(id, String^rp("")))
+            }
+            set i: i + 1
+        }
+
+        var quantified Vector[TypeVariable]^rp(quantified_arr)
+        let scheme_t PlannedType#(
+            t.loc,
+            t.name,
+            t.mangled_name,
+            t.generics,
+            t.life,
+            t.origin,
+            t.array_size,
+            t.variable
+        )
+        TypeScheme(&quantified, scheme_t)
     }
 
     ; is_option_vs_void_pointer: does `left` name an Option family type
@@ -3074,6 +3131,46 @@ define Planner
         let fv_pair Planner.free_type_vars$(pair_of_t_ty)
         guard fv_pair.length <> 1
             return 164
+
+        ; id_list_contains - basic sanity checks.
+        var ids_37 Vector[size_t]$(2)
+        ids_37.put(0, 3)
+        ids_37.put(1, 7)
+        guard Planner.id_list_contains(ids_37, 3) = false
+            return 165
+        guard Planner.id_list_contains(ids_37, 5)
+            return 166
+
+        ; generalize - concrete type has no quantified vars.
+        var empty_env Vector[size_t]$(0)
+        let sch_int Planner.generalize$(int_ty, empty_env)
+        guard sch_int.quantified = null
+            return 167
+        let sch_int_q (*sch_int.quantified)
+        guard sch_int_q.length <> 0
+            return 168
+
+        ; generalize - standalone type variable is quantified when not in env.
+        let sch_var Planner.generalize$(var_ty, empty_env)
+        guard sch_var.quantified = null
+            return 169
+        let sch_var_q (*sch_var.quantified)
+        guard sch_var_q.length <> 1
+            return 170
+        let sch_var_tv sch_var_q.get(0)
+        guard sch_var_tv = null
+            return 171
+        guard (*sch_var_tv).id <> 7
+            return 172
+
+        ; generalize - variable present in env is NOT quantified.
+        var env_with_7 Vector[size_t]$(1)
+        env_with_7.put(0, 7)
+        let sch_in_env Planner.generalize$(var_ty, env_with_7)
+        guard sch_in_env.quantified = null
+            return 173
+        guard (*sch_in_env.quantified).length <> 0
+            return 174
 
         0
     }
