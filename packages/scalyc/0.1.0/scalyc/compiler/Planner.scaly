@@ -857,6 +857,87 @@ define Planner
     }
 
     ; ========================================================================
+    ; Struct-layout arithmetic.
+    ; ========================================================================
+
+    ; is_primitive_type_name: matches the set the C++ Planner treats as not
+    ; requiring an implicit return-page parameter. Used both for layout
+    ; decisions and for the needs_implicit_return_page check.
+    function is_primitive_type_name(name: String) returns bool
+    {
+        guard name.equals("void")
+            return true
+        guard name.equals("bool")
+            return true
+        guard name.equals("int")
+            return true
+        guard name.equals("uint")
+            return true
+        guard name.equals("char")
+            return true
+        guard name.equals("i8")
+            return true
+        guard name.equals("i16")
+            return true
+        guard name.equals("i32")
+            return true
+        guard name.equals("i64")
+            return true
+        guard name.equals("u8")
+            return true
+        guard name.equals("u16")
+            return true
+        guard name.equals("u32")
+            return true
+        guard name.equals("u64")
+            return true
+        guard name.equals("f32")
+            return true
+        guard name.equals("f64")
+            return true
+        guard name.equals("float")
+            return true
+        guard name.equals("double")
+            return true
+        guard name.equals("size_t")
+            return true
+        guard name.equals("size")
+            return true
+        guard name.equals("pointer")
+            return true
+        guard name.equals("ref")
+            return true
+        false
+    }
+
+    ; get_primitive_alignment: bytes of alignment required by a primitive.
+    ; Mirrors the simplified model in Planner.cpp's computeStructLayout —
+    ; size is always equal to alignment here (no padding for subword
+    ; fields), which is good enough for Phase-2 layout decisions. Unknown
+    ; or non-primitive types default to 8-byte alignment.
+    function get_primitive_alignment(type_name: String) returns size_t
+    {
+        guard type_name.equals("bool")
+            return 1
+        guard type_name.equals("char")
+            return 1
+        guard type_name.equals("int")
+            return 4
+        guard type_name.equals("uint")
+            return 4
+        guard type_name.equals("float")
+            return 4
+        8
+    }
+
+    ; align_offset: round `offset` up to the next multiple of `align`.
+    ; `align` must be a power of two (standard struct-layout precondition).
+    function align_offset(offset: size_t, align: size_t) returns size_t
+    {
+        (offset + align - 1) & (~(align - 1))
+    }
+
+    ; ========================================================================
     ; Operator identification.
     ; ========================================================================
 
@@ -1798,6 +1879,32 @@ define Planner
         let t1v (*t1)
         guard t1v.name.equals("bool") = false
             return 75
+
+        ; is_primitive_type_name - representative cases.
+        guard Planner.is_primitive_type_name(String$("int")) = false
+            return 76
+        guard Planner.is_primitive_type_name(String$("pointer")) = false
+            return 77
+        guard Planner.is_primitive_type_name(String$("Foo"))
+            return 78
+
+        ; get_primitive_alignment - bool/char -> 1, int-family -> 4, default 8.
+        guard Planner.get_primitive_alignment(String$("bool")) <> 1
+            return 79
+        guard Planner.get_primitive_alignment(String$("int")) <> 4
+            return 80
+        guard Planner.get_primitive_alignment(String$("String")) <> 8
+            return 81
+
+        ; align_offset - round up to nearest power-of-two multiple.
+        guard Planner.align_offset(0, 8) <> 0
+            return 82
+        guard Planner.align_offset(1, 8) <> 8
+            return 83
+        guard Planner.align_offset(9, 4) <> 12
+            return 84
+        guard Planner.align_offset(16, 8) <> 16
+            return 85
 
         0
     }
