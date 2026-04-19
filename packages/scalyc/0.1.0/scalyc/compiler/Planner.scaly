@@ -1254,11 +1254,42 @@ define Planner
             )
         }
 
-        ; plan_type_operand: wrap a Model.Type used as an operand
-        ; (e.g. in `foo as int`) as a PlannedOperand whose expr is the
-        ; planned type.
+        ; plan_type_operand: a Model.Type used as an operand can mean
+        ; different things depending on whether the name resolves to:
+        ;   - a local variable in scope → PlannedVariable with its type
+        ;   - a top-level function name → keep as Type, result is a
+        ;     function reference (return-type filled in later during
+        ;     call resolution)
+        ;   - an actual type name → PlannedExpression.Type with the
+        ;     planned type
         function plan_type_operand#(rp, this: Planner, t: Type, loc: Span) returns PlannedOperand
         {
+            ; Single-name references are candidates for local-variable
+            ; resolution. Dotted names always go to plan_type.
+            guard t.name.length = 1
+            {
+                let n_ptr t.name.get(0)
+                guard n_ptr <> null
+                {
+                    let name (*n_ptr)
+
+                    ; Local variable lookup.
+                    let local this.lookup_local(name)
+                    guard local <> null
+                    {
+                        let ty (*local)
+                        return PlannedOperand(
+                            loc,
+                            PlannedExpression.Variable(PlannedVariable(
+                                loc, name, ty, false
+                            )),
+                            null,
+                            ty
+                        )
+                    }
+                }
+            }
+
             let pt this.plan_type#(t)
             PlannedOperand(
                 loc,
