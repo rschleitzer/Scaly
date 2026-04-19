@@ -112,6 +112,8 @@ use scalyc.compiler.Plan.PlannedCall
 use scalyc.compiler.Plan.PlannedVariable
 use scalyc.compiler.Plan.PlannedGlobalRef
 use scalyc.compiler.Plan.PlannedVariantConstruction
+use scalyc.compiler.Plan.MethodMatch
+use scalyc.compiler.Plan.OperatorMatch
 use scalyc.compiler.Model.Action
 use scalyc.compiler.Model.Return
 use scalyc.compiler.Model.Break
@@ -1223,6 +1225,138 @@ define Planner
             }
 
             null
+        }
+
+        ; mangle_method: build `_ZN<parent>methodEparam*` without the
+        ; PlannedItem ceremony that mangle_function requires. Just takes
+        ; a parent PlannedType and a Vector of param PlannedTypes.
+        function mangle_method#(
+            rp,
+            this: Planner,
+            method_name: String,
+            parent: PlannedType,
+            params: Vector[PlannedType]
+        ) returns String
+        {
+            var sb StringBuilder$()
+            sb.append("_ZN")
+            sb.append(Planner.encode_type#(parent))
+            sb.append(Planner.encode_name(method_name))
+            sb.append("E")
+
+            guard params.length = 0
+            {
+                sb.append("v")
+                return sb.to_string^rp()
+            }
+
+            var i: size_t 0
+            while i < params.length
+            {
+                let p_ptr params.get(i)
+                guard p_ptr <> null
+                {
+                    let p (*p_ptr)
+                    sb.append(Planner.encode_type#(p))
+                }
+                set i: i + 1
+            }
+
+            sb.to_string^rp()
+        }
+
+        ; lookup_method: more-detailed method lookup that returns a
+        ; MethodMatch with mangled name, return type, and parameter
+        ; types pre-computed. The `method` field of MethodMatch points
+        ; at a PlannedFunction — we leave it null for now; wiring it up
+        ; requires caching planned methods per struct, which we don't
+        ; do yet.
+        function lookup_method#(
+            rp,
+            this: Planner,
+            struct_type: PlannedType,
+            method_name: String
+        ) returns ref[MethodMatch]?
+        {
+            let candidates this.lookup_methods#(struct_type.name, method_name)
+            guard candidates.length = 0
+                return null
+
+            ; Take the first match. Overload resolution by arg types
+            ; happens in resolve_function_call / resolve_operator_call;
+            ; this simpler lookup picks-by-name only.
+            let f_ptr candidates.get(0)
+            guard f_ptr = null
+                return null
+            let f (*f_ptr)
+
+            var return_type: PlannedType Planner.make_void_type#()
+            guard f.returns_ <> null
+            {
+                let rt (*f.returns_)
+                set return_type: this.plan_type#(rt)
+            }
+
+            ; Skip leading 'this' in the parameter list.
+            var param_start: size_t 0
+            guard f.input.length > 0
+            {
+                let first_ptr f.input.get(0)
+                guard first_ptr <> null
+                {
+                    guard first_ptr.name <> null
+                    {
+                        let fname (*first_ptr.name)
+                        guard fname.equals(String$("this"))
+                            set param_start: 1
+                    }
+                }
+            }
+
+            ; Collect planned parameter types (excluding this).
+            var params_arr Array[PlannedType]$()
+            var i: size_t param_start
+            while i < f.input.length
+            {
+                let p_ptr f.input.get(i)
+                guard p_ptr <> null
+                {
+                    guard p_ptr.type <> null
+                    {
+                        let pt (*p_ptr.type)
+                        params_arr.add(this.plan_type#(pt))
+                    }
+                }
+                set i: i + 1
+            }
+            var params_holder Vector[PlannedType]^rp(params_arr)
+
+            let mangled this.mangle_method#(method_name, struct_type, params_holder)
+
+            ; Throws type (optional).
+            var can_throw: bool false
+            var throws_ref: ref[PlannedType]? null
+            guard f.throws_ <> null
+            {
+                let tt (*f.throws_)
+                set can_throw: true
+                var th_holder Vector[PlannedType]^rp(1)
+                th_holder.put(0, this.plan_type#(tt))
+                set throws_ref: th_holder.get(0)
+            }
+
+            var match_holder Vector[MethodMatch]^rp(1)
+            match_holder.put(0, MethodMatch(
+                null,
+                mangled,
+                return_type,
+                &params_holder,
+                false,
+                can_throw,
+                throws_ref,
+                false
+            ))
+            match_holder.get(0)
         }
 
         ; generate_page_get_this: synthesize a `Page.get(this)` call,
