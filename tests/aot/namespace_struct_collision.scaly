@@ -1,0 +1,28 @@
+; AOT Test: Namespace and struct with same name
+; Expected: 42
+; Exercises var x NS.X$(arg) where NS is a namespace containing a struct X.
+; This is the cli.scaly `Planner.Planner$(...)` pattern.
+
+define Foo
+{
+    define Foo
+    (
+        value: int
+    )
+    {
+        init(v: int)
+        {
+            set value: v
+        }
+
+        function get(this: Foo) returns int
+            value
+    }
+}
+
+var f Foo.Foo$(42)
+let result f.get()
+if result = 42
+    print("42")
+else
+    print("WRONG")

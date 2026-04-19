@@ -5447,6 +5447,41 @@ const Concept* Planner::lookupConcept(llvm::StringRef Name) {
         return CacheIt->second;
     }
 
+    // 1-dotted. Handle namespace-qualified names like "Foo.Foo" by walking
+    // through Namespace members. E.g., "Planner.Planner" = the inner
+    // Planner struct defined inside the outer Planner namespace.
+    if (auto DotPos = Name.find('.'); DotPos != llvm::StringRef::npos) {
+        llvm::StringRef Head = Name.take_front(DotPos);
+        llvm::StringRef Rest = Name.drop_front(DotPos + 1);
+        const Concept *Outer = lookupConcept(Head);
+        while (Outer && !Rest.empty()) {
+            const Namespace *NS = std::get_if<Namespace>(&Outer->Def);
+            if (!NS) break;
+            llvm::StringRef Next;
+            if (auto Dot2 = Rest.find('.'); Dot2 != llvm::StringRef::npos) {
+                Next = Rest.take_front(Dot2);
+                Rest = Rest.drop_front(Dot2 + 1);
+            } else {
+                Next = Rest;
+                Rest = {};
+            }
+            const Concept *Found = nullptr;
+            for (const auto &Member : NS->Members) {
+                if (auto *MC = std::get_if<Concept>(&Member)) {
+                    if (MC->Name == Next) {
+                        Found = MC;
+                        break;
+                    }
+                }
+            }
+            Outer = Found;
+        }
+        if (Outer) {
+            Concepts[Name.str()] = Outer;
+            return Outer;
+        }
+    }
+
     // 1a. If we're inside a namespace (define block), search sibling modules
     // These are stored in CurrentNamespaceModules during planNamespace
     // This allows scaly.test() to find io when calling io.test()
