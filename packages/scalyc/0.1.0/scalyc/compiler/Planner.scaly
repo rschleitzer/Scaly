@@ -400,6 +400,47 @@ define Planner
             )
         }
 
+        ; plan_items: batch version of plan_item over a Vector[Item].
+        ; Pre-allocates the result Vector at the correct size so we can
+        ; use `put(i, ...)` instead of Array.add + copy.
+        function plan_items#(rp, this: Planner, items: Vector[Item]) returns Vector[PlannedItem]
+        {
+            var result Vector[PlannedItem]^rp(items.length)
+            var i: size_t 0
+            while i < items.length
+            {
+                let item_ptr items.get(i)
+                guard item_ptr <> null
+                {
+                    let item (*item_ptr)
+                    let pl this.plan_item#(item)
+                    result.put(i, pl)
+                }
+                set i: i + 1
+            }
+            result
+        }
+
+        ; plan_constant_operand: wrap a Constant literal as a PlannedOperand
+        ; with its inferred type populated. The result_type is whatever
+        ; infer_constant_type says at pre-solver time (e.g. IntegerConstant
+        ; → "int", StringConstant → pointer[i8]).
+        function plan_constant_operand#(
+            rp,
+            this: Planner,
+            c: Constant,
+            loc: Span
+        ) returns PlannedOperand
+        {
+            let ty Planner.infer_constant_type#(c)
+            PlannedOperand(
+                loc,
+                PlannedExpression.Constant(scalyc.compiler.Plan.PlannedConstant(c)),
+                null,
+                ty
+            )
+        }
+
         ; plan_program - top-level entry point (stub).
         ; Abort loudly if anything tries to actually plan a Program through
         ; this port before Stage 2+ fills in the real logic.
@@ -4344,6 +4385,27 @@ define Planner
             return 246
         guard pl_bare.is_private = false
             return 247
+
+        ; plan_items: batch over a two-Item Vector.
+        var model_items Vector[Item]$(2)
+        model_items.put(0, model_item)
+        model_items.put(1, bare_item)
+        let pl_items p2.plan_items$(model_items)
+        guard pl_items.length <> 2
+            return 248
+        let pi0 pl_items.get(0)
+        guard pi0 = null
+            return 249
+        guard (*pi0).item_type = null
+            return 250
+
+        ; plan_constant_operand: literal 42 → PlannedOperand with result_type = int.
+        let plan_c42 p2.plan_constant_operand$(
+            Constant.Integer(IntegerConstant(Span(0, 0), 42)),
+            Span(0, 0)
+        )
+        guard plan_c42.result_type.name.equals("int") = false
+            return 251
 
         0
     }
