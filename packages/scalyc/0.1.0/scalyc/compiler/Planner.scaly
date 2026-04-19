@@ -23,6 +23,13 @@ use scalyc.compiler.Model.StringConstant
 use scalyc.compiler.Model.CharacterConstant
 use scalyc.compiler.Model.FragmentConstant
 use scalyc.compiler.Model.NullConstant
+use scalyc.compiler.Model.Function
+use scalyc.compiler.Model.Implementation
+use scalyc.compiler.Model.Extern
+use scalyc.compiler.Model.Intrinsic
+use scalyc.compiler.Model.Type
+use scalyc.compiler.Model.Item
+use scalyc.compiler.Model.Attribute
 use scaly.containers.Array
 
 use scalyc.compiler.Plan.Plan
@@ -1035,6 +1042,91 @@ define Planner
     }
 
     ; ========================================================================
+    ; Function-signature helpers.
+    ; ========================================================================
+
+    ; join_dotted_name: "scaly" / "containers" / "String" -> "scaly.containers.String".
+    ; Matches the Planner.cpp logic that collapses a Type.Name Vector into
+    ; one canonical dotted identifier for primitive/generic-param checks.
+    function join_dotted_name#(rp, parts: Vector[String]) returns String
+    {
+        var sb StringBuilder$()
+        var i: size_t 0
+        while i < parts.length
+        {
+            guard i > 0
+                sb.append(".")
+
+            let p_ptr parts.get(i)
+            guard p_ptr <> null
+                sb.append((*p_ptr))
+
+            set i: i + 1
+        }
+        sb.to_string^rp()
+    }
+
+    ; is_extern_impl: detect the Extern variant of Implementation without
+    ; leaking a bare choose into the caller's control flow.
+    function is_extern_impl(impl: Implementation) returns bool
+    {
+        choose impl
+            when e: Extern
+                true
+            else
+                false
+    }
+
+    ; is_generic_type_param_name: single ASCII uppercase letter — how the
+    ; grammar encodes a type parameter like `T`, `K`, `V`. Such names
+    ; don't get an implicit return page because the instantiator picks
+    ; the real type later.
+    function is_generic_type_param_name(name: String) returns bool
+    {
+        guard name.get_length() = 1
+        {
+            let c name.get(0)
+            guard c >= (65 as u8)
+            {
+                guard c <= (90 as u8)
+                    return true
+            }
+        }
+        false
+    }
+
+    ; needs_implicit_return_page: does a function whose return type is
+    ; known-non-primitive need an implicit page parameter so the caller
+    ; can allocate the returned struct?
+    ;
+    ; Matches Planner.cpp exactly except for the leading `PageParameter`
+    ; check — Scaly's Model.Function does not (yet) record whether a
+    ; function was declared with `#`; treat every function uniformly for
+    ; now. Extern functions bail early because they don't participate in
+    ; RBMM.
+    function needs_implicit_return_page(func: Function) returns bool
+    {
+        guard Planner.is_extern_impl(func.implementation)
+            return false
+
+        guard func.returns_ = null
+            return false
+
+        let ret_type (*func.returns_)
+        guard ret_type.name.length = 0
+            return false
+
+        let joined Planner.join_dotted_name$(ret_type.name)
+        guard Planner.is_primitive_type_name(joined)
+            return false
+
+        guard Planner.is_generic_type_param_name(joined)
+            return false
+
+        true
+    }
+
+    ; ========================================================================
     ; Argument-list helpers.
     ; ========================================================================
 
@@ -1995,6 +2087,122 @@ define Planner
             return 90
         guard Planner.are_compatible_integer_types(String$("int"), String$("bool"))
             return 91
+
+        ; join_dotted_name - joins a Vector[String] with dots.
+        var parts Vector[String]$(3)
+        parts.put(0, String$("scaly"))
+        parts.put(1, String$("containers"))
+        parts.put(2, String$("String"))
+        let joined Planner.join_dotted_name$(parts)
+        guard joined.equals(String$("scaly.containers.String")) = false
+            return 92
+
+        ; is_generic_type_param_name - single uppercase letter.
+        guard Planner.is_generic_type_param_name(String$("T")) = false
+            return 93
+        guard Planner.is_generic_type_param_name(String$("Foo"))
+            return 94
+        guard Planner.is_generic_type_param_name(String$("t"))
+            return 95
+
+        ; needs_implicit_return_page - extern returns false regardless.
+        let extern_func Function(
+            Span(0, 0),
+            false,
+            false,
+            String$("foo"),
+            Vector[Item]$(0),
+            null,
+            null,
+            Lifetime.Unspecified(Unspecified()),
+            Implementation.Extern(Extern(Span(0, 0)))
+        )
+        guard Planner.needs_implicit_return_page(extern_func)
+            return 96
+
+        ; needs_implicit_return_page - void return (null) -> false.
+        let void_func Function(
+            Span(0, 0),
+            false,
+            false,
+            String$("bar"),
+            Vector[Item]$(0),
+            null,
+            null,
+            Lifetime.Unspecified(Unspecified()),
+            Implementation.Intrinsic(Intrinsic(Span(0, 0)))
+        )
+        guard Planner.needs_implicit_return_page(void_func)
+            return 97
+
+        ; needs_implicit_return_page - returns primitive "int" -> false.
+        var int_return_parts Vector[String]$(1)
+        int_return_parts.put(0, String$("int"))
+        let int_return_ty Type(
+            Span(0, 0),
+            int_return_parts,
+            null,
+            Lifetime.Unspecified(Unspecified())
+        )
+        let int_ret_func Function(
+            Span(0, 0),
+            false,
+            false,
+            String$("baz"),
+            Vector[Item]$(0),
+            &int_return_ty,
+            null,
+            Lifetime.Unspecified(Unspecified()),
+            Implementation.Intrinsic(Intrinsic(Span(0, 0)))
+        )
+        guard Planner.needs_implicit_return_page(int_ret_func)
+            return 98
+
+        ; needs_implicit_return_page - returns generic param "T" -> false.
+        var t_return_parts Vector[String]$(1)
+        t_return_parts.put(0, String$("T"))
+        let t_return_ty Type(
+            Span(0, 0),
+            t_return_parts,
+            null,
+            Lifetime.Unspecified(Unspecified())
+        )
+        let t_ret_func Function(
+            Span(0, 0),
+            false,
+            false,
+            String$("qux"),
+            Vector[Item]$(0),
+            &t_return_ty,
+            null,
+            Lifetime.Unspecified(Unspecified()),
+            Implementation.Intrinsic(Intrinsic(Span(0, 0)))
+        )
+        guard Planner.needs_implicit_return_page(t_ret_func)
+            return 99
+
+        ; needs_implicit_return_page - returns "Foo" (user type) -> true.
+        var foo_return_parts Vector[String]$(1)
+        foo_return_parts.put(0, String$("Foo"))
+        let foo_return_ty Type(
+            Span(0, 0),
+            foo_return_parts,
+            null,
+            Lifetime.Unspecified(Unspecified())
+        )
+        let foo_ret_func Function(
+            Span(0, 0),
+            false,
+            false,
+            String$("make_foo"),
+            Vector[Item]$(0),
+            &foo_return_ty,
+            null,
+            Lifetime.Unspecified(Unspecified()),
+            Implementation.Intrinsic(Intrinsic(Span(0, 0)))
+        )
+        guard Planner.needs_implicit_return_page(foo_ret_func) = false
+            return 100
 
         0
     }
