@@ -767,6 +767,136 @@ define Planner
             null
         }
 
+        ; make_planned_call: assemble a PlannedCall for a resolved call
+        ; site. Callers provide the mangled symbol, result type, and
+        ; planned argument list; flags default to the common
+        ; "non-intrinsic, non-operator, non-throwing, no-page" case.
+        function make_planned_call#(
+            rp,
+            this: Planner,
+            loc: Span,
+            name: String,
+            mangled_name: String,
+            result_type: PlannedType,
+            args: Vector[PlannedOperand]
+        ) returns PlannedCall
+        {
+            var args_holder Vector[PlannedOperand]^rp(args)
+            PlannedCall(
+                loc,
+                name,
+                mangled_name,
+                false,
+                false,
+                false,
+                false,
+                &args_holder,
+                result_type,
+                Lifetime.Unspecified(Unspecified())
+            )
+        }
+
+        ; collapse_operand_sequence: fold a flat operand list of the
+        ; shape [lhs, op, rhs, op, rhs, ...] into a single PlannedOperand
+        ; representing the combined expression. LEFT-ASSOCIATIVE — this
+        ; drops operator precedence; a full precedence-climbing version
+        ; is a later refactor. Empty and single-element inputs pass
+        ; through unchanged.
+        function collapse_operand_sequence#(
+            rp,
+            this: Planner,
+            ops: Vector[PlannedOperand]
+        ) returns PlannedOperand
+        {
+            guard ops.length = 0
+            {
+                let void_ty Planner.make_void_type#()
+                return PlannedOperand(
+                    Span(0, 0),
+                    PlannedExpression.Type(void_ty),
+                    null,
+                    void_ty
+                )
+            }
+            guard ops.length = 1
+            {
+                let only_ptr ops.get(0)
+                guard only_ptr = null
+                {
+                    let void_ty Planner.make_void_type#()
+                    return PlannedOperand(
+                        Span(0, 0),
+                        PlannedExpression.Type(void_ty),
+                        null,
+                        void_ty
+                    )
+                }
+                return (*only_ptr)
+            }
+
+            let first_ptr ops.get(0)
+            guard first_ptr = null
+            {
+                let void_ty Planner.make_void_type#()
+                return PlannedOperand(
+                    Span(0, 0),
+                    PlannedExpression.Type(void_ty),
+                    null,
+                    void_ty
+                )
+            }
+            var result: PlannedOperand (*first_ptr)
+
+            var i: size_t 1
+            while i + 1 < ops.length
+            {
+                let op_ptr ops.get(i)
+                let rhs_ptr ops.get(i + 1)
+                guard op_ptr <> null
+                {
+                    guard rhs_ptr <> null
+                    {
+                        let op (*op_ptr)
+                        let rhs (*rhs_ptr)
+
+                        ; Extract operator name from the op operand.
+                        let op_name choose op.expr
+                            when ty: PlannedType
+                                ty.name
+                            else
+                                String^rp("")
+
+                        let resolved this.resolve_operator_call#(
+                            op_name, result.result_type, rhs.result_type
+                        )
+                        var combined_type: PlannedType this.fresh_type_var#(String$(""))
+                        guard resolved <> null
+                            set combined_type: (*resolved)
+
+                        var two_args Vector[PlannedOperand]^rp(2)
+                        two_args.put(0, result)
+                        two_args.put(1, rhs)
+                        let call this.make_planned_call#(
+                            result.loc,
+                            op_name,
+                            String^rp(""),
+                            combined_type,
+                            two_args
+                        )
+                        set result: PlannedOperand(
+                            result.loc,
+                            PlannedExpression.Call(call),
+                            null,
+                            combined_type
+                        )
+                    }
+                }
+                set i: i + 2
+            }
+
+            result
+        }
+
         ; resolve_prefix_operator_call: for unary prefix operators like
         ; `-x` or `!flag`. Returns the result type of the matching
         ; operator overload or null if none applies.
