@@ -23,9 +23,15 @@ use scalyc.compiler.Model.StringConstant
 use scalyc.compiler.Model.CharacterConstant
 use scalyc.compiler.Model.FragmentConstant
 use scalyc.compiler.Model.NullConstant
+use scaly.containers.Array
+
 use scalyc.compiler.Plan.Plan
 use scalyc.compiler.Plan.PlannedType
 use scalyc.compiler.Plan.PlannedItem
+use scalyc.compiler.Plan.PlannedOperand
+use scalyc.compiler.Plan.PlannedExpression
+use scalyc.compiler.Plan.PlannedTuple
+use scalyc.compiler.Plan.PlannedComponent
 
 ; libc extern for loud-failing stubs.
 function exit(code: int) extern
@@ -901,6 +907,60 @@ define Planner
     }
 
     ; ========================================================================
+    ; Argument-list helpers.
+    ; ========================================================================
+
+    ; Collect the result_type of every operand inside a tuple-shaped operand.
+    ; Split out so extract_arg_types can dispatch via a simple choose without
+    ; a nested side-effecting match expression.
+    function extract_tuple_arg_types#(rp, tuple_val: PlannedTuple) returns Vector[PlannedType]
+    {
+        var temp Array[PlannedType]$()
+        guard tuple_val.components <> null
+        {
+            let comps (*tuple_val.components)
+            var i: size_t 0
+            while i < comps.length
+            {
+                let c_ptr comps.get(i)
+                guard c_ptr <> null
+                {
+                    let c (*c_ptr)
+                    guard c.value <> null
+                    {
+                        let vals (*c.value)
+                        var j: size_t 0
+                        while j < vals.length
+                        {
+                            let v_ptr vals.get(j)
+                            guard v_ptr <> null
+                            {
+                                let v (*v_ptr)
+                                temp.add(v.result_type)
+                            }
+                            set j: j + 1
+                        }
+                    }
+                }
+                set i: i + 1
+            }
+        }
+        Vector[PlannedType]^rp(temp)
+    }
+
+    ; extract_arg_types: flatten a function-call argument list (modelled as a
+    ; tuple of components) into a plain Vector of argument result types.
+    ; Non-tuple operands yield an empty Vector, matching C++ semantics.
+    function extract_arg_types#(rp, args_op: PlannedOperand) returns Vector[PlannedType]
+    {
+        choose args_op.expr
+            when t: PlannedTuple
+                Planner.extract_tuple_arg_types#(t)
+            else
+                Vector[PlannedType]^rp(0)
+    }
+
+    ; ========================================================================
     ; Constant type inference.
     ; ========================================================================
 
@@ -1677,6 +1737,67 @@ define Planner
             return 68
         guard t_null.mangled_name.equals("Pv") = false
             return 69
+
+        ; extract_arg_types - non-tuple operand yields empty Vector.
+        let plain_op PlannedOperand(
+            Span(0, 0),
+            PlannedExpression.Type(int_ty),
+            null,
+            int_ty
+        )
+        let empty_types Planner.extract_arg_types$(plain_op)
+        guard empty_types.length <> 0
+            return 70
+
+        ; extract_arg_types - tuple of two components (int, bool) yields [int, bool].
+        let int_op PlannedOperand(
+            Span(0, 0),
+            PlannedExpression.Type(int_ty),
+            null,
+            int_ty
+        )
+        let bool_op PlannedOperand(
+            Span(0, 0),
+            PlannedExpression.Type(bool_ty),
+            null,
+            bool_ty
+        )
+        var v1 Vector[PlannedOperand]$(1)
+        v1.put(0, int_op)
+        var v2 Vector[PlannedOperand]$(1)
+        v2.put(0, bool_op)
+        var comps Vector[PlannedComponent]$(2)
+        comps.put(0, PlannedComponent(Span(0, 0), null, &v1, null))
+        comps.put(1, PlannedComponent(Span(0, 0), null, &v2, null))
+        let tpl PlannedTuple(
+            Span(0, 0),
+            &comps,
+            int_ty,
+            false,
+            Lifetime.Unspecified(Unspecified()),
+            null
+        )
+        let tuple_op PlannedOperand(
+            Span(0, 0),
+            PlannedExpression.Tuple(tpl),
+            null,
+            int_ty
+        )
+        let two_types Planner.extract_arg_types$(tuple_op)
+        guard two_types.length <> 2
+            return 71
+        let t0 two_types.get(0)
+        guard t0 = null
+            return 72
+        let t0v (*t0)
+        guard t0v.name.equals("int") = false
+            return 73
+        let t1 two_types.get(1)
+        guard t1 = null
+            return 74
+        let t1v (*t1)
+        guard t1v.name.equals("bool") = false
+            return 75
 
         0
     }
