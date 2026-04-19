@@ -61,6 +61,8 @@ use scalyc.compiler.Model.Continue
 use scalyc.compiler.Model.Throw
 use scalyc.compiler.Model.Statement
 use scalyc.compiler.Model.Block
+use scalyc.compiler.Model.Property
+use scalyc.compiler.Model.Variant
 use scalyc.compiler.Plan.PlannedOperand
 use scalyc.compiler.Plan.PlannedExpression
 use scalyc.compiler.Plan.PlannedTuple
@@ -686,6 +688,71 @@ define Planner
 
             var stmts_holder Vector[PlannedStatement]^rp(planned_stmts)
             PlannedBlock(b.span, &stmts_holder, false)
+        }
+
+        ; ================================================================
+        ; plan_property: Model.Property → Plan.PlannedProperty.
+        ;
+        ; `mangled_name` is left empty here — the planner enclosing the
+        ; struct sets it once the struct's own mangled name is known.
+        ; `offset` is 0 until compute_property_offsets runs as part of
+        ; the enclosing struct's layout pass.
+        ; ================================================================
+        function plan_property#(rp, this: Planner, p: Property) returns PlannedProperty
+        {
+            var prop_type: PlannedType this.fresh_type_var#(String$(""))
+            guard p.type <> null
+            {
+                let t (*p.type)
+                set prop_type: this.plan_type#(t)
+            }
+
+            var initializer_ref: ref[Vector[PlannedOperand]]? null
+            guard p.initializer <> null
+            {
+                let init_ops (*p.initializer)
+                let planned_init this.plan_operands#(init_ops)
+                var init_holder Vector[PlannedOperand]^rp(planned_init)
+                set initializer_ref: &init_holder
+            }
+
+            PlannedProperty(
+                p.span,
+                p.private_,
+                p.name,
+                String^rp(""),
+                prop_type,
+                initializer_ref,
+                null,
+                0
+            )
+        }
+
+        ; plan_variant: Model.Variant → Plan.PlannedVariant.
+        ; The tag is assigned by the caller (variants need sequential tags
+        ; within the union; we can't see sibling variants from here).
+        ; `mangled_name` is left empty for the same reason as
+        ; plan_property.
+        function plan_variant#(rp, this: Planner, v: Variant, tag: int) returns PlannedVariant
+        {
+            var var_type: ref[PlannedType]? null
+            guard v.type <> null
+            {
+                let t (*v.type)
+                let planned this.plan_type#(t)
+                var holder Vector[PlannedType]^rp(1)
+                holder.put(0, planned)
+                set var_type: holder.get(0)
+            }
+
+            PlannedVariant(
+                v.span,
+                v.name,
+                String^rp(""),
+                var_type,
+                null,
+                tag
+            )
         }
 
         ; plan_program - top-level entry point (stub).
@@ -4768,6 +4835,38 @@ define Planner
             return 267
         guard (*pl_block.statements).length <> 1
             return 268
+
+        ; plan_property - Property { name: "x", type: int, no initializer }.
+        let model_prop Property(
+            Span(0, 0),
+            false,
+            String$("x"),
+            &int_type,
+            null,
+            Vector[Attribute]$(0)
+        )
+        let pl_prop p3.plan_property$(model_prop)
+        guard pl_prop.name.equals(String$("x")) = false
+            return 269
+        guard pl_prop.prop_type.name.equals("int") = false
+            return 270
+        guard pl_prop.offset <> 0
+            return 271
+
+        ; plan_variant - Variant { name: "Some", type: int, tag=1 }.
+        let model_variant Variant(
+            Span(0, 0),
+            String$("Some"),
+            &int_type,
+            Vector[Attribute]$(0)
+        )
+        let pl_variant p3.plan_variant$(model_variant, 1)
+        guard pl_variant.name.equals(String$("Some")) = false
+            return 272
+        guard pl_variant.tag <> 1
+            return 273
+        guard pl_variant.var_type = null
+            return 274
 
         0
     }
