@@ -37,6 +37,8 @@ use scalyc.compiler.Plan.Plan
 use scalyc.compiler.Plan.PlannedType
 use scalyc.compiler.Plan.PlannedItem
 use scalyc.compiler.Plan.TypeVariable
+use scalyc.compiler.Plan.PlannedProperty
+use scalyc.compiler.Plan.PlannedVariant
 use scalyc.compiler.Plan.PlannedOperand
 use scalyc.compiler.Plan.PlannedExpression
 use scalyc.compiler.Plan.PlannedTuple
@@ -944,6 +946,130 @@ define Planner
     function align_offset(offset: size_t, align: size_t) returns size_t
     {
         (offset + align - 1) & (~(align - 1))
+    }
+
+    ; compute_struct_alignment: the maximum alignment demanded by any
+    ; property in `props`, with a floor of 1 (empty struct).
+    function compute_struct_alignment(props: ref[Vector[PlannedProperty]]?) returns size_t
+    {
+        guard props = null
+            return 1
+
+        let ps (*props)
+        var max_align: size_t 1
+        var i: size_t 0
+        while i < ps.length
+        {
+            let p_ptr ps.get(i)
+            guard p_ptr <> null
+            {
+                let p (*p_ptr)
+                let align Planner.get_primitive_alignment(p.prop_type.name)
+                guard align > max_align
+                    set max_align: align
+            }
+            set i: i + 1
+        }
+        max_align
+    }
+
+    ; compute_struct_size: total byte size needed for a struct with these
+    ; properties, assuming size == alignment per field (the simplified
+    ; model from Planner.cpp). The final size is rounded up to the
+    ; struct's own alignment.
+    function compute_struct_size(props: ref[Vector[PlannedProperty]]?) returns size_t
+    {
+        guard props = null
+            return 0
+
+        let ps (*props)
+        var offset: size_t 0
+        var max_align: size_t 1
+        var i: size_t 0
+        while i < ps.length
+        {
+            let p_ptr ps.get(i)
+            guard p_ptr <> null
+            {
+                let p (*p_ptr)
+                let align Planner.get_primitive_alignment(p.prop_type.name)
+                set offset: Planner.align_offset(offset, align)
+                set offset: offset + align
+                guard align > max_align
+                    set max_align: align
+            }
+            set i: i + 1
+        }
+        Planner.align_offset(offset, max_align)
+    }
+
+    ; compute_property_offsets: per-property byte offsets in struct order.
+    ; Split out as a separate pass (rather than mutating PlannedProperty in
+    ; place) because Scaly's Vector stores by value and we don't yet have
+    ; a clean mutation pattern for nested struct fields.
+    function compute_property_offsets#(rp, props: ref[Vector[PlannedProperty]]?) returns Vector[size_t]
+    {
+        guard props = null
+            return Vector[size_t]^rp(0)
+
+        let ps (*props)
+        var result Vector[size_t]^rp(ps.length)
+        var offset: size_t 0
+        var i: size_t 0
+        while i < ps.length
+        {
+            let p_ptr ps.get(i)
+            guard p_ptr <> null
+            {
+                let p (*p_ptr)
+                let align Planner.get_primitive_alignment(p.prop_type.name)
+                set offset: Planner.align_offset(offset, align)
+                result.put(i, offset)
+                set offset: offset + align
+            }
+            set i: i + 1
+        }
+        result
+    }
+
+    ; compute_union_size: max-variant-size plus a 1-byte (or 4-byte for
+    ; very large unions) tag, aligned to the widest variant's alignment.
+    ; Ignores variants with no payload type; a tag-only variant contributes
+    ; nothing to the size calculation beyond the tag itself.
+    function compute_union_size(variants: ref[Vector[PlannedVariant]]?) returns size_t
+    {
+        guard variants = null
+            return 0
+
+        let vs (*variants)
+        var max_size: size_t 0
+        var max_align: size_t 1
+        var i: size_t 0
+        while i < vs.length
+        {
+            let v_ptr vs.get(i)
+            guard v_ptr <> null
+            {
+                let v (*v_ptr)
+                guard v.var_type <> null
+                {
+                    let vt (*v.var_type)
+                    let align Planner.get_primitive_alignment(vt.name)
+                    guard align > max_size
+                        set max_size: align
+                    guard align > max_align
+                        set max_align: align
+                }
+            }
+            set i: i + 1
+        }
+
+        ; Tag: 1 byte for ≤256 variants, 4 bytes beyond.
+        var tag_size: size_t 1
+        guard vs.length > 256
+            set tag_size: 4
+
+        Planner.align_offset(max_size + tag_size, max_align)
     }
 
     ; ========================================================================
@@ -2426,6 +2552,65 @@ define Planner
         let dup7v (*dup7)
         guard dup7v.name.equals("int") = false
             return 116
+
+        ; compute_struct_size / compute_struct_alignment - empty and simple.
+        guard Planner.compute_struct_size(null) <> 0
+            return 117
+        guard Planner.compute_struct_alignment(null) <> 1
+            return 118
+
+        ; Struct with two int properties: offsets 0, 4; size 8; align 4.
+        var two_ints Vector[PlannedProperty]$(2)
+        two_ints.put(0, PlannedProperty(
+            Span(0, 0), false, String$("x"), String$(""),
+            int_ty, null, null, 0
+        ))
+        two_ints.put(1, PlannedProperty(
+            Span(0, 0), false, String$("y"), String$(""),
+            int_ty, null, null, 0
+        ))
+        guard Planner.compute_struct_size(&two_ints) <> 8
+            return 119
+        guard Planner.compute_struct_alignment(&two_ints) <> 4
+            return 120
+
+        let offsets Planner.compute_property_offsets$(&two_ints)
+        guard offsets.length <> 2
+            return 121
+        let o0 offsets.get(0)
+        guard o0 = null
+            return 122
+        guard *o0 <> 0
+            return 123
+        let o1 offsets.get(1)
+        guard o1 = null
+            return 124
+        guard *o1 <> 4
+            return 125
+
+        ; Mixed struct: bool then int — padding puts int at offset 4.
+        var bool_then_int Vector[PlannedProperty]$(2)
+        bool_then_int.put(0, PlannedProperty(
+            Span(0, 0), false, String$("flag"), String$(""),
+            bool_ty, null, null, 0
+        ))
+        bool_then_int.put(1, PlannedProperty(
+            Span(0, 0), false, String$("count"), String$(""),
+            int_ty, null, null, 0
+        ))
+        guard Planner.compute_struct_size(&bool_then_int) <> 8
+            return 126
+        let bi_offsets Planner.compute_property_offsets$(&bool_then_int)
+        let bi0 bi_offsets.get(0)
+        guard bi0 = null
+            return 127
+        guard *bi0 <> 0
+            return 128
+        let bi1 bi_offsets.get(1)
+        guard bi1 = null
+            return 129
+        guard *bi1 <> 4
+            return 130
 
         0
     }
