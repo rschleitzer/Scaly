@@ -3213,12 +3213,40 @@ define Planner
             var ops_holder Vector[PlannedOperator]^rp(planned_operators)
             var inits_holder Vector[PlannedInitializer]^rp(planned_initializers)
 
+            ; Mangled name uses the concept's generic parameters (if any)
+            ; mapped through the active type_substitutions. This picks up
+            ; bindings set by instantiate_generic so Vector[int] gets
+            ; `_Z6VectorIiE` instead of `_Z6Vector`.
+            var gens_arr Array[PlannedType]$()
+            let c_for_gens_ref this.lookup_concept(name)
+            guard c_for_gens_ref <> null
+            {
+                let c_for_gens (*c_for_gens_ref)
+                var pi: size_t 0
+                while pi < c_for_gens.parameters.length
+                {
+                    let p_ptr c_for_gens.parameters.get(pi)
+                    guard p_ptr <> null
+                    {
+                        let ts_ref this.lookup_type_substitution(p_ptr.name)
+                        guard ts_ref <> null
+                            gens_arr.add((*ts_ref))
+                    }
+                    set pi: pi + 1
+                }
+            }
+            var gens_holder Vector[PlannedType]^rp(gens_arr)
+            var gens_ref: ref[Vector[PlannedType]]? null
+            guard gens_holder.length > 0
+                set gens_ref: &gens_holder
+            let mangled Planner.mangle_structure#(name, gens_ref)
+
             let result PlannedStructure(
                 s.span,
                 s.private_,
                 false,
                 String^rp(name),
-                String^rp(""),
+                mangled,
                 &props_holder,
                 &inits_holder,
                 deinit_ref,
