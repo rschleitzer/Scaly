@@ -231,6 +231,42 @@ define Planner
         sb.to_string^rp()
     }
 
+    ; mangle_structure: "_Z" + name-with-length-prefix + optional "I...E" generic block.
+    ; Used for symbol-mangling concrete struct / union / trait definitions.
+    function mangle_structure#(rp, name: String, generic_args: ref[Vector[PlannedType]]?) returns String
+    {
+        guard generic_args <> null
+        {
+            let args (*generic_args)
+            guard args.length > 0
+            {
+                var sb StringBuilder$()
+                sb.append("_Z")
+                sb.append(Planner.encode_name(name))
+                sb.append("I")
+                var i: size_t 0
+                while i < args.length
+                {
+                    let arg_ptr args.get(i)
+                    guard arg_ptr <> null
+                    {
+                        let arg (*arg_ptr)
+                        let enc Planner.encode_type#(arg)
+                        sb.append(enc)
+                    }
+                    set i: i + 1
+                }
+                sb.append("E")
+                return sb.to_string^rp()
+            }
+        }
+
+        var sb StringBuilder$()
+        sb.append("_Z")
+        sb.append(Planner.encode_name(name))
+        sb.to_string^rp()
+    }
+
     ; size_to_string: decimal representation of a size_t.
     ; Classic divide-by-10 with digit buffer and reversal.
     function size_to_string(n: size_t) returns String
@@ -368,6 +404,18 @@ define Planner
         let mangled_foo Planner.mangle_type$(foo_ty)
         guard mangled_foo.equals(String$("_Z3Foo")) = false
             return 13
+
+        ; mangle_structure - no generics falls back to encode_name.
+        let mangled_s Planner.mangle_structure$(String$("String"), null)
+        guard mangled_s.equals(String$("_Z6String")) = false
+            return 14
+
+        ; mangle_structure with one int generic arg: Vector[int] -> _Z6VectorIiE.
+        var gens_vec Vector[PlannedType]$(1)
+        gens_vec.put(0, int_ty)
+        let mangled_vec Planner.mangle_structure$(String$("Vector"), &gens_vec)
+        guard mangled_vec.equals(String$("_Z6VectorIiE")) = false
+            return 15
 
         0
     }
