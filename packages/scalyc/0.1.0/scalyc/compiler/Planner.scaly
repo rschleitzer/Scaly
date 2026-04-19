@@ -3058,11 +3058,12 @@ define Planner
             this.pop_scope()
 
             var input_holder Vector[PlannedItem]^rp(planned_input)
+            let mangled Planner.mangle_operator#(op.name, &input_holder, null)
             PlannedOperator(
                 op.span,
                 op.private_,
                 op.name,
-                String^rp(""),
+                mangled,
                 &input_holder,
                 return_type,
                 throws_type,
