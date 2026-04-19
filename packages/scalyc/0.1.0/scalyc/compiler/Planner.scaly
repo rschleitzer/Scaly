@@ -1688,6 +1688,67 @@ define Planner
         false
     }
 
+    ; instantiate: dual of generalize. Replace every universally quantified
+    ; variable in a TypeScheme with a freshly generated type variable so
+    ; the scheme can be used polymorphically at a single call site.
+    ;
+    ; The C++ Planner gets fresh ids from the owning Plan's counter. Here
+    ; we take `next_id_start` as a parameter and allocate sequential ids
+    ; from there; the caller is responsible for advancing its counter by
+    ; `scheme.quantified.length`.
+    function instantiate#(
+        rp,
+        scheme: TypeScheme,
+        next_id_start: size_t
+    ) returns PlannedType
+    {
+        guard scheme.scheme_type = null
+            return Planner.make_void_type#()
+
+        let ty (*scheme.scheme_type)
+
+        guard scheme.quantified = null
+            return ty
+
+        let quants (*scheme.quantified)
+        guard quants.length = 0
+            return ty
+
+        ; Allocate stable storage for the fresh TypeVariables so their
+        ; addresses can be embedded in the substitution-target PlannedTypes.
+        var fresh_vars Vector[TypeVariable]^rp(quants.length)
+        var subst_arr Array[KeyValuePair[size_t, PlannedType]]$()
+        var i: size_t 0
+        while i < quants.length
+        {
+            let q_ptr quants.get(i)
+            guard q_ptr <> null
+            {
+                let q (*q_ptr)
+                fresh_vars.put(i, TypeVariable(next_id_start + i, String^rp("")))
+                let fresh_ptr fresh_vars.get(i)
+                guard fresh_ptr <> null
+                {
+                    let new_var_ty PlannedType(
+                        Span(0, 0),
+                        String^rp(""),
+                        String^rp(""),
+                        null,
+                        Lifetime.Unspecified(Unspecified()),
+                        null,
+                        String^rp(""),
+                        fresh_ptr
+                    )
+                    subst_arr.add(KeyValuePair[size_t, PlannedType](q.id, new_var_ty))
+                }
+            }
+            set i: i + 1
+        }
+
+        var subst Vector[KeyValuePair[size_t, PlannedType]]^rp(subst_arr)
+        Planner.apply_substitution#(ty, &subst)
+    }
+
     ; generalize: promote a type to a type scheme by universally
     ; quantifying every free var that is NOT already free in the
     ; surrounding type environment. This is the operation behind
@@ -3789,6 +3850,18 @@ define Planner
         let mk_ptr_int_gens (*mk_ptr_int.generics)
         guard mk_ptr_int_gens.length <> 1
             return 209
+
+        ; instantiate - no quantified vars: return scheme type unchanged.
+        let inst_int Planner.instantiate$(sch_int, 100)
+        guard inst_int.name.equals("int") = false
+            return 210
+
+        ; instantiate - scheme with quantified T7 gets fresh id 100.
+        let inst_var Planner.instantiate$(sch_var, 100)
+        guard inst_var.variable = null
+            return 211
+        guard (*inst_var.variable).id <> 100
+            return 212
 
         0
     }
