@@ -1039,6 +1039,51 @@ define Planner
         t
     }
 
+    ; compose_substitutions: S2 ∘ S1 — apply S1 first, then S2.
+    ; Equivalent to the C++ `composeSubstitutions`:
+    ;   Result = S2 ⊎ { (id, apply(T, S2)) | (id, T) ∈ S1 }
+    ; with S1's entries winning on duplicate ids (since the C++ map
+    ; assignment overwrites). We implement the dedup by first emitting
+    ; every S1 entry with its S2-applied value, then appending only the
+    ; S2 entries whose id did not already appear in S1.
+    function compose_substitutions#(
+        rp,
+        s1: Vector[KeyValuePair[size_t, PlannedType]],
+        s2: Vector[KeyValuePair[size_t, PlannedType]]
+    ) returns Vector[KeyValuePair[size_t, PlannedType]]
+    {
+        var temp Array[KeyValuePair[size_t, PlannedType]]$()
+
+        var i: size_t 0
+        while i < s1.length
+        {
+            let ptr s1.get(i)
+            guard ptr <> null
+            {
+                let kvp (*ptr)
+                let applied Planner.apply_substitution#(kvp.value, &s2)
+                temp.add(KeyValuePair[size_t, PlannedType](kvp.key, applied))
+            }
+            set i: i + 1
+        }
+
+        var j: size_t 0
+        while j < s2.length
+        {
+            let ptr s2.get(j)
+            guard ptr <> null
+            {
+                let kvp (*ptr)
+                let already Planner.substitution_lookup(s1, kvp.key)
+                guard already = null
+                    temp.add(kvp)
+            }
+            set j: j + 1
+        }
+
+        Vector[KeyValuePair[size_t, PlannedType]]^rp(temp)
+    }
+
     ; occurs_in: does a type variable with the given id appear anywhere in
     ; `t` (or its recursive generic arguments)? The occurs check prevents
     ; the unifier from constructing infinite types like T ~ List[T].
@@ -2343,6 +2388,44 @@ define Planner
         let sub_chained Planner.apply_substitution$(var_ty, &sub_chain)
         guard sub_chained.name.equals("int") = false
             return 109
+
+        ; compose_substitutions - S2 ∘ S1: S1={T7 -> T8}, S2={T8 -> int}
+        ; Expected: T7 -> int (applied), T8 -> int (carried over from S2).
+        var s1_vec Vector[KeyValuePair[size_t, PlannedType]]$(1)
+        s1_vec.put(0, KeyValuePair[size_t, PlannedType](7, var_ty8))
+        var s2_vec Vector[KeyValuePair[size_t, PlannedType]]$(1)
+        s2_vec.put(0, KeyValuePair[size_t, PlannedType](8, int_ty))
+        let composed Planner.compose_substitutions$(s1_vec, s2_vec)
+        guard composed.length <> 2
+            return 110
+
+        ; Look up T7 in the composed substitution - should be int.
+        let comp7 Planner.substitution_lookup(composed, 7)
+        guard comp7 = null
+            return 111
+        let comp7v (*comp7)
+        guard comp7v.name.equals("int") = false
+            return 112
+
+        ; T8 should still be present.
+        let comp8 Planner.substitution_lookup(composed, 8)
+        guard comp8 = null
+            return 113
+
+        ; compose with duplicate key: S1 wins.
+        var s1_dup Vector[KeyValuePair[size_t, PlannedType]]$(1)
+        s1_dup.put(0, KeyValuePair[size_t, PlannedType](7, int_ty))
+        var s2_dup Vector[KeyValuePair[size_t, PlannedType]]$(1)
+        s2_dup.put(0, KeyValuePair[size_t, PlannedType](7, bool_ty))
+        let dup_comp Planner.compose_substitutions$(s1_dup, s2_dup)
+        guard dup_comp.length <> 1
+            return 114
+        let dup7 Planner.substitution_lookup(dup_comp, 7)
+        guard dup7 = null
+            return 115
+        let dup7v (*dup7)
+        guard dup7v.name.equals("int") = false
+            return 116
 
         0
     }
