@@ -31,6 +31,8 @@ use scalyc.compiler.Model.Intrinsic
 use scalyc.compiler.Model.Type
 use scalyc.compiler.Model.Item
 use scalyc.compiler.Model.Attribute
+use scalyc.compiler.Model.Operand
+use scalyc.compiler.Model.Expression
 use scaly.containers.Array
 
 use scalyc.compiler.Plan.Plan
@@ -89,6 +91,32 @@ define Planner
         scaly_eputs("\n")
         exit(111)
         0
+    }
+
+    ; Typed unreachable shim for functions that return PlannedOperand.
+    ; The exit() in not_implemented terminates the process, so the dummy
+    ; PlannedOperand below is never observed — it exists only so Scaly's
+    ; type checker accepts the call site.
+    function not_implemented_operand(method_name: pointer[const_char]) returns PlannedOperand
+    {
+        Planner.not_implemented(method_name)
+        PlannedOperand(
+            Span(0, 0),
+            PlannedExpression.Constant(scalyc.compiler.Plan.PlannedConstant(
+                Constant.Null(NullConstant(Span(0, 0)))
+            )),
+            null,
+            PlannedType(
+                Span(0, 0),
+                String$("void"),
+                String$("v"),
+                null,
+                Lifetime.Unspecified(Unspecified()),
+                null,
+                String$(""),
+                null
+            )
+        )
     }
 
     ; ========================================================================
@@ -439,6 +467,42 @@ define Planner
                 null,
                 ty
             )
+        }
+
+        ; plan_operand: dispatch by Expression variant. Currently the only
+        ; supported case is Constant — every other variant delegates to
+        ; not_implemented_operand which aborts with exit(111) so partial
+        ; ports can never silently return a nonsense operand.
+        function plan_operand#(rp, this: Planner, op: scalyc.compiler.Model.Operand) returns PlannedOperand
+        {
+            choose op.expression
+                when c: Constant
+                    this.plan_constant_operand#(c, op.span)
+                else
+                    Planner.not_implemented_operand("Planner.plan_operand (non-Constant)")
+        }
+
+        ; plan_operands: batch plan_operand over a Vector.
+        function plan_operands#(
+            rp,
+            this: Planner,
+            ops: Vector[scalyc.compiler.Model.Operand]
+        ) returns Vector[PlannedOperand]
+        {
+            var result Vector[PlannedOperand]^rp(ops.length)
+            var i: size_t 0
+            while i < ops.length
+            {
+                let op_ptr ops.get(i)
+                guard op_ptr <> null
+                {
+                    let op (*op_ptr)
+                    let pl this.plan_operand#(op)
+                    result.put(i, pl)
+                }
+                set i: i + 1
+            }
+            result
         }
 
         ; plan_program - top-level entry point (stub).
@@ -4406,6 +4470,33 @@ define Planner
         )
         guard plan_c42.result_type.name.equals("int") = false
             return 251
+
+        ; plan_operand / plan_operands over Constant-only operands.
+        let op_42 Operand(
+            Span(0, 0),
+            Expression.Constant(Constant.Integer(IntegerConstant(Span(0, 0), 42))),
+            null
+        )
+        let po_42 p2.plan_operand$(op_42)
+        guard po_42.result_type.name.equals("int") = false
+            return 252
+
+        let op_true Operand(
+            Span(0, 0),
+            Expression.Constant(Constant.Boolean(BooleanConstant(Span(0, 0), true))),
+            null
+        )
+        var model_ops Vector[Operand]$(2)
+        model_ops.put(0, op_42)
+        model_ops.put(1, op_true)
+        let po_batch p2.plan_operands$(model_ops)
+        guard po_batch.length <> 2
+            return 253
+        let po_batch_1 po_batch.get(1)
+        guard po_batch_1 = null
+            return 254
+        guard (*po_batch_1).result_type.name.equals("bool") = false
+            return 255
 
         0
     }
