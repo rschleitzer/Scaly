@@ -124,6 +124,12 @@ define Planner
         ; Fresh type-variable id counter for the Hindley-Milner
         ; constraint solver; see fresh_type_var below.
         next_type_var_id: size_t
+
+        ; Pending constraints (grow as the planner encounters equalities
+        ; it can't resolve yet) and the accumulated solution from the
+        ; most recent solve_and_apply call.
+        constraints: Array[TypeConstraint]
+        solution: Array[KeyValuePair[size_t, PlannedType]]
     )
     {
         init#(page, filename: String)
@@ -133,6 +139,8 @@ define Planner
             set scope_boundaries: Array[size_t]^page()
             set type_substitutions: Array[KeyValuePair[String, PlannedType]]^page()
             set next_type_var_id: 0
+            set constraints: Array[TypeConstraint]^page()
+            set solution: Array[KeyValuePair[size_t, PlannedType]]^page()
         }
 
         ; ================================================================
@@ -242,6 +250,93 @@ define Planner
             let id next_type_var_id
             set next_type_var_id: id + 1
             id
+        }
+
+        ; fresh_type_var: allocate a new type variable as a PlannedType
+        ; wrapper with `variable` populated. Equivalent to Planner.cpp's
+        ; freshTypeVar. `debug_name` is stored on the TypeVariable for
+        ; error messages ("expected T, got int").
+        function fresh_type_var#(rp, this: Planner, debug_name: String) returns PlannedType
+        {
+            let id this.fresh_type_var_id()
+            ; Allocate the TypeVariable in a one-element Vector on rp so
+            ; its address outlives this function.
+            var holder Vector[TypeVariable]^rp(1)
+            holder.put(0, TypeVariable(id, String^rp(debug_name)))
+            let tv_ref holder.get(0)
+            PlannedType(
+                Span(0, 0),
+                String^rp(debug_name),
+                String^rp(""),
+                null,
+                Lifetime.Unspecified(Unspecified()),
+                null,
+                String^rp(""),
+                tv_ref
+            )
+        }
+
+        ; ================================================================
+        ; Constraint management.
+        ; ================================================================
+
+        function add_equality_constraint(
+            this: Planner,
+            left: PlannedType,
+            right: PlannedType,
+            loc: Span
+        )
+        {
+            constraints.add(TypeConstraint.Equality(
+                EqualityConstraint(left, right, loc, String$(file))
+            ))
+        }
+
+        ; solve_and_apply: drain the constraint queue, unify everything,
+        ; stash the result in `solution`. Returns true on success, false
+        ; if any constraint failed to unify. Constraints are cleared on
+        ; success so subsequent add_equality_constraint / solve cycles
+        ; start fresh.
+        function solve_and_apply#(rp, this: Planner) returns bool
+        {
+            guard constraints.length = 0
+                return true
+
+            ; Run the stateless solver.
+            var cs_vec Vector[TypeConstraint]^rp(constraints)
+            let result Planner.solve_constraints#(&cs_vec)
+            guard result = null
+                return false
+
+            ; Snapshot the substitution into the Planner's persistent
+            ; `solution` array, overwriting any previous solution.
+            set solution.length: 0
+            let result_v (*result)
+            var i: size_t 0
+            while i < result_v.length
+            {
+                let kvp_ptr result_v.get(i)
+                guard kvp_ptr <> null
+                    solution.add(*kvp_ptr)
+
+                set i: i + 1
+            }
+
+            ; Constraints are consumed.
+            set constraints.length: 0
+            true
+        }
+
+        ; apply_current_substitution: rewrite `t` using the current
+        ; `solution`. Convenience wrapper around apply_substitution so
+        ; callers don't have to marshal the Array-as-Vector themselves.
+        function apply_current_substitution#(rp, this: Planner, t: PlannedType) returns PlannedType
+        {
+            guard solution.length = 0
+                return t
+
+            var sol_vec Vector[KeyValuePair[size_t, PlannedType]]^rp(solution)
+            Planner.apply_substitution#(t, &sol_vec)
         }
 
         ; plan_program - top-level entry point (stub).
@@ -4076,6 +4171,40 @@ define Planner
             return 228
         guard p.fresh_type_var_id() <> 2
             return 229
+
+        ; ====================================================================
+        ; fresh_type_var + constraint-solver methods on the Planner instance.
+        ; ====================================================================
+
+        let fv1 p.fresh_type_var$(String$("T"))
+        guard fv1.variable = null
+            return 230
+        guard (*fv1.variable).id <> 3
+            return 231
+
+        ; Add a solvable constraint: fv1 = int, solve → success.
+        p.add_equality_constraint(fv1, int_ty, Span(0, 0))
+        guard p.solve_and_apply$() = false
+            return 232
+
+        ; Applying the current substitution to fv1 should now yield int.
+        let rewritten p.apply_current_substitution$(fv1)
+        guard rewritten.name.equals("int") = false
+            return 233
+
+        ; Constraints are cleared after a successful solve — adding an
+        ; unrelated constraint and solving again should still succeed.
+        let fv2 p.fresh_type_var$(String$("U"))
+        p.add_equality_constraint(fv2, bool_ty, Span(0, 0))
+        guard p.solve_and_apply$() = false
+            return 234
+
+        ; Add a conflicting pair: fv3 = int, fv3 = bool. Expect failure.
+        let fv3 p.fresh_type_var$(String$("V"))
+        p.add_equality_constraint(fv3, int_ty, Span(0, 0))
+        p.add_equality_constraint(fv3, bool_ty, Span(0, 0))
+        guard p.solve_and_apply$()
+            return 235
 
         0
     }
