@@ -46,7 +46,21 @@ use scalyc.compiler.Plan.EqualityConstraint
 use scalyc.compiler.Plan.InstanceConstraint
 use scalyc.compiler.Plan.TypeScheme
 use scalyc.compiler.Plan.PlannedBinding
+use scalyc.compiler.Plan.PlannedAction
+use scalyc.compiler.Plan.PlannedReturn
+use scalyc.compiler.Plan.PlannedBreak
+use scalyc.compiler.Plan.PlannedContinue
+use scalyc.compiler.Plan.PlannedThrow
+use scalyc.compiler.Plan.PlannedStatement
+use scalyc.compiler.Plan.PlannedBlock
 use scalyc.compiler.Model.Binding
+use scalyc.compiler.Model.Action
+use scalyc.compiler.Model.Return
+use scalyc.compiler.Model.Break
+use scalyc.compiler.Model.Continue
+use scalyc.compiler.Model.Throw
+use scalyc.compiler.Model.Statement
+use scalyc.compiler.Model.Block
 use scalyc.compiler.Plan.PlannedOperand
 use scalyc.compiler.Plan.PlannedExpression
 use scalyc.compiler.Plan.PlannedTuple
@@ -558,6 +572,120 @@ define Planner
                 planned_item,
                 &ops_holder
             )
+        }
+
+        ; ================================================================
+        ; plan_action / plan_return / plan_break / plan_throw.
+        ;
+        ; These wrap a Vector[Operand] into the appropriate Planned*
+        ; variant. The operator-sequence collapsing and implicit-return-
+        ; type inference from Planner.cpp is deferred until the operator
+        ; resolver is ported; for now result_type falls back to the
+        ; single-operand case or void.
+        ; ================================================================
+
+        function plan_action#(rp, this: Planner, a: Action) returns PlannedAction
+        {
+            let planned_source this.plan_operands#(a.source)
+            let planned_target this.plan_operands#(a.target)
+
+            var result_type: PlannedType Planner.make_void_type#()
+            guard planned_source.length = 1
+            {
+                let op_ptr planned_source.get(0)
+                guard op_ptr <> null
+                    set result_type: (*op_ptr).result_type
+            }
+
+            var source_holder Vector[PlannedOperand]^rp(planned_source)
+            var target_holder Vector[PlannedOperand]^rp(planned_target)
+            PlannedAction(
+                &source_holder,
+                &target_holder,
+                result_type
+            )
+        }
+
+        function plan_return#(rp, this: Planner, r: Return) returns PlannedReturn
+        {
+            let planned this.plan_operands#(r.result)
+            var holder Vector[PlannedOperand]^rp(planned)
+            PlannedReturn(r.span, &holder)
+        }
+
+        function plan_break#(rp, this: Planner, b: Break) returns PlannedBreak
+        {
+            let planned this.plan_operands#(b.result)
+            var holder Vector[PlannedOperand]^rp(planned)
+            PlannedBreak(b.span, &holder)
+        }
+
+        function plan_throw#(rp, this: Planner, t: Throw) returns PlannedThrow
+        {
+            let planned this.plan_operands#(t.result)
+            var holder Vector[PlannedOperand]^rp(planned)
+            PlannedThrow(t.span, &holder)
+        }
+
+        ; ================================================================
+        ; plan_statement: Model.Statement → Plan.PlannedStatement.
+        ; Dispatches over the Statement union and delegates to the
+        ; variant-specific plan_* method. `Continue` is trivial — just
+        ; carries the location.
+        ; ================================================================
+        function plan_statement#(rp, this: Planner, s: Statement) returns PlannedStatement
+        {
+            choose s
+                when a: Action
+                    PlannedStatement.Action(this.plan_action#(a))
+                when b: Binding
+                    PlannedStatement.Binding(this.plan_binding#(b))
+                when br: Break
+                    PlannedStatement.Break(this.plan_break#(br))
+                when c: Continue
+                    PlannedStatement.Continue(PlannedContinue(c.span))
+                when r: Return
+                    PlannedStatement.Return(this.plan_return#(r))
+                when t: Throw
+                    PlannedStatement.Throw(this.plan_throw#(t))
+        }
+
+        ; plan_statements: batch plan_statement over a Model.Block's statements.
+        function plan_statements#(
+            rp,
+            this: Planner,
+            stmts: Vector[Statement]
+        ) returns Vector[PlannedStatement]
+        {
+            var result Vector[PlannedStatement]^rp(stmts.length)
+            var i: size_t 0
+            while i < stmts.length
+            {
+                let s_ptr stmts.get(i)
+                guard s_ptr <> null
+                {
+                    let s (*s_ptr)
+                    let pl this.plan_statement#(s)
+                    result.put(i, pl)
+                }
+                set i: i + 1
+            }
+            result
+        }
+
+        ; ================================================================
+        ; plan_block: push a fresh scope, plan every statement, pop.
+        ; Mirrors Planner.cpp's planBlock. The needs_local_page_cleanup
+        ; flag stays false until we port the $ allocation tracking.
+        ; ================================================================
+        function plan_block#(rp, this: Planner, b: Block) returns PlannedBlock
+        {
+            this.push_scope()
+            let planned_stmts this.plan_statements#(b.statements)
+            this.pop_scope()
+
+            var stmts_holder Vector[PlannedStatement]^rp(planned_stmts)
+            PlannedBlock(b.span, &stmts_holder, false)
         }
 
         ; plan_program - top-level entry point (stub).
@@ -4590,6 +4718,56 @@ define Planner
         ; The equality constraint binding_type = init_type should be solvable.
         guard p3.solve_and_apply$() = false
             return 261
+
+        ; ====================================================================
+        ; Statement dispatch: plan_action, plan_return, plan_statement.
+        ; ====================================================================
+
+        ; An Action: source = [42], target = [] → PlannedAction with result_type int.
+        let model_action Action(init_ops, Vector[Operand]$(0))
+        let pl_act p3.plan_action$(model_action)
+        guard pl_act.result_type.name.equals("int") = false
+            return 262
+
+        ; A Return with one operand.
+        let model_return Return(Span(0, 0), init_ops)
+        let pl_ret p3.plan_return$(model_return)
+        guard pl_ret.result = null
+            return 263
+        guard (*pl_ret.result).length <> 1
+            return 264
+
+        ; plan_statement over the Action above.
+        let stmt_action Statement.Action(model_action)
+        let pl_stmt p3.plan_statement$(stmt_action)
+        let stmt_is_action choose pl_stmt
+            when a: PlannedAction
+                true
+            else
+                false
+        guard stmt_is_action = false
+            return 265
+
+        ; plan_statement over a Continue.
+        let stmt_continue Statement.Continue(Continue(Span(0, 0)))
+        let pl_cont p3.plan_statement$(stmt_continue)
+        let stmt_is_continue choose pl_cont
+            when c: PlannedContinue
+                true
+            else
+                false
+        guard stmt_is_continue = false
+            return 266
+
+        ; plan_block: a block with one Action statement.
+        var stmts_vec Vector[Statement]$(1)
+        stmts_vec.put(0, stmt_action)
+        let model_block Block(Span(0, 0), stmts_vec)
+        let pl_block p3.plan_block$(model_block)
+        guard pl_block.statements = null
+            return 267
+        guard (*pl_block.statements).length <> 1
+            return 268
 
         0
     }
