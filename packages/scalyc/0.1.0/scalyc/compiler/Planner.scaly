@@ -14,6 +14,15 @@ use scalyc.compiler.Model.Program
 use scalyc.compiler.Model.Span
 use scalyc.compiler.Model.Lifetime
 use scalyc.compiler.Model.Unspecified
+use scalyc.compiler.Model.Constant
+use scalyc.compiler.Model.BooleanConstant
+use scalyc.compiler.Model.IntegerConstant
+use scalyc.compiler.Model.HexConstant
+use scalyc.compiler.Model.FloatingPointConstant
+use scalyc.compiler.Model.StringConstant
+use scalyc.compiler.Model.CharacterConstant
+use scalyc.compiler.Model.FragmentConstant
+use scalyc.compiler.Model.NullConstant
 use scalyc.compiler.Plan.Plan
 use scalyc.compiler.Plan.PlannedType
 use scalyc.compiler.Plan.PlannedItem
@@ -891,6 +900,137 @@ define Planner
         false
     }
 
+    ; ========================================================================
+    ; Constant type inference.
+    ; ========================================================================
+
+    ; Helper: build a pointer[i8]-typed PlannedType — the representation of
+    ; C-style string literals. Shared by StringConstant and FragmentConstant.
+    function make_cstring_type#(rp, sp: Span) returns PlannedType
+    {
+        var gens Vector[PlannedType]^rp(1)
+        let i8_ty PlannedType(
+            sp,
+            String^rp("i8"),
+            String^rp("a"),
+            null,
+            Lifetime.Unspecified(Unspecified()),
+            null,
+            String^rp(""),
+            null
+        )
+        gens.put(0, i8_ty)
+        PlannedType(
+            sp,
+            String^rp("pointer"),
+            String^rp("Pa"),
+            &gens,
+            Lifetime.Unspecified(Unspecified()),
+            null,
+            String^rp(""),
+            null
+        )
+    }
+
+    ; Helper: pointer[void] for the null literal. The constraint solver is
+    ; expected to unify this with whatever pointer-like type is required
+    ; at the use-site.
+    function make_null_type#(rp, sp: Span) returns PlannedType
+    {
+        var gens Vector[PlannedType]^rp(1)
+        let void_ty PlannedType(
+            sp,
+            String^rp("void"),
+            String^rp("v"),
+            null,
+            Lifetime.Unspecified(Unspecified()),
+            null,
+            String^rp(""),
+            null
+        )
+        gens.put(0, void_ty)
+        PlannedType(
+            sp,
+            String^rp("pointer"),
+            String^rp("Pv"),
+            &gens,
+            Lifetime.Unspecified(Unspecified()),
+            null,
+            String^rp(""),
+            null
+        )
+    }
+
+    ; infer_constant_type: map a Constant variant to the PlannedType assigned
+    ; to that literal before the constraint solver runs. Primitive families
+    ; carry the Itanium one-letter codes directly; string/fragment/null
+    ; delegate to the helpers above.
+    function infer_constant_type#(rp, c: Constant) returns PlannedType
+    {
+        choose c
+            when b: BooleanConstant
+                PlannedType(
+                    b.span,
+                    String^rp("bool"),
+                    String^rp("b"),
+                    null,
+                    Lifetime.Unspecified(Unspecified()),
+                    null,
+                    String^rp(""),
+                    null
+                )
+            when i: IntegerConstant
+                PlannedType(
+                    i.span,
+                    String^rp("int"),
+                    String^rp("i"),
+                    null,
+                    Lifetime.Unspecified(Unspecified()),
+                    null,
+                    String^rp(""),
+                    null
+                )
+            when h: HexConstant
+                PlannedType(
+                    h.span,
+                    String^rp("u64"),
+                    String^rp("u64"),
+                    null,
+                    Lifetime.Unspecified(Unspecified()),
+                    null,
+                    String^rp(""),
+                    null
+                )
+            when f: FloatingPointConstant
+                PlannedType(
+                    f.span,
+                    String^rp("f64"),
+                    String^rp("f64"),
+                    null,
+                    Lifetime.Unspecified(Unspecified()),
+                    null,
+                    String^rp(""),
+                    null
+                )
+            when ch: CharacterConstant
+                PlannedType(
+                    ch.span,
+                    String^rp("char"),
+                    String^rp("c"),
+                    null,
+                    Lifetime.Unspecified(Unspecified()),
+                    null,
+                    String^rp(""),
+                    null
+                )
+            when s: StringConstant
+                Planner.make_cstring_type#(s.span)
+            when fr: FragmentConstant
+                Planner.make_cstring_type#(fr.span)
+            when n: NullConstant
+                Planner.make_null_type#(n.span)
+    }
+
     ; get_pointer_element_type: return the element type T for pointer[T],
     ; ref[T], Option[pointer[T]], or Option[ref[T]]. Everything else
     ; yields null.
@@ -1499,6 +1639,44 @@ define Planner
         let pe_opt_v (*pe_opt)
         guard pe_opt_v.name.equals("int") = false
             return 60
+
+        ; infer_constant_type - booleans yield "bool".
+        let c_bool Constant.Boolean(BooleanConstant(Span(0, 0), true))
+        let t_bool Planner.infer_constant_type$(c_bool)
+        guard t_bool.name.equals("bool") = false
+            return 61
+
+        ; infer_constant_type - integer literal is "int" (pre-solver).
+        let c_int Constant.Integer(IntegerConstant(Span(0, 0), 42))
+        let t_int Planner.infer_constant_type$(c_int)
+        guard t_int.name.equals("int") = false
+            return 62
+        guard t_int.mangled_name.equals("i") = false
+            return 63
+
+        ; infer_constant_type - hex literal is u64.
+        let c_hex Constant.Hex(HexConstant(Span(0, 0), 255))
+        let t_hex Planner.infer_constant_type$(c_hex)
+        guard t_hex.name.equals("u64") = false
+            return 64
+
+        ; infer_constant_type - string literal is pointer[i8] (Itanium "Pa").
+        let c_str Constant.String(StringConstant(Span(0, 0), String$("hi")))
+        let t_str Planner.infer_constant_type$(c_str)
+        guard t_str.name.equals("pointer") = false
+            return 65
+        guard t_str.mangled_name.equals("Pa") = false
+            return 66
+        guard t_str.generics = null
+            return 67
+
+        ; infer_constant_type - null literal is pointer[void].
+        let c_null Constant.Null(NullConstant(Span(0, 0)))
+        let t_null Planner.infer_constant_type$(c_null)
+        guard t_null.name.equals("pointer") = false
+            return 68
+        guard t_null.mangled_name.equals("Pv") = false
+            return 69
 
         0
     }
