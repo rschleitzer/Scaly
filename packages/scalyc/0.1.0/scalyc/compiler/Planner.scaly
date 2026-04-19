@@ -2835,7 +2835,43 @@ define Planner
                 set i: i + 1
             }
 
-            var props_holder Vector[PlannedProperty]^rp(planned_props)
+            ; First-pass layout on properties with offset=0 to obtain the
+            ; per-property offsets.
+            var props_initial Vector[PlannedProperty]^rp(planned_props)
+            let offsets Planner.compute_property_offsets#(&props_initial)
+
+            ; Re-emit each PlannedProperty with the computed offset
+            ; written back. (PlannedProperty is stored by value in the
+            ; Vector; in-place mutation would require reaching through
+            ; the heap, so a copy-with-new-offset is cleaner.)
+            var props_with_offsets Array[PlannedProperty]$()
+            var j: size_t 0
+            while j < planned_props.length
+            {
+                let p_ptr planned_props.get(j)
+                let o_ptr offsets.get(j)
+                guard p_ptr <> null
+                {
+                    guard o_ptr <> null
+                    {
+                        let p (*p_ptr)
+                        let offset *o_ptr
+                        props_with_offsets.add(PlannedProperty(
+                            p.loc,
+                            p.is_private,
+                            p.name,
+                            p.mangled_name,
+                            p.prop_type,
+                            p.initializer,
+                            p.attributes,
+                            offset
+                        ))
+                    }
+                }
+                set j: j + 1
+            }
+
+            var props_holder Vector[PlannedProperty]^rp(props_with_offsets)
             let total_size Planner.compute_struct_size(&props_holder)
             let total_align Planner.compute_struct_alignment(&props_holder)
 
