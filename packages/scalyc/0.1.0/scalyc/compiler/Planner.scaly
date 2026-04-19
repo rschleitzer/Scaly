@@ -736,6 +736,86 @@ define Planner
         }
 
         ; ================================================================
+        ; instantiate_generic: monomorphise a generic Concept against a
+        ; concrete type-argument list. Binds each GenericParameter name
+        ; to its corresponding argument in `type_substitutions`, plans
+        ; the concept's definition so the struct-layout cache gets the
+        ; instantiated version, then restores the substitution stack.
+        ;
+        ; Returns the resulting PlannedType with `generics` populated
+        ; and `mangled_name` set via mangle_structure. Missing concepts
+        ; fall back to a fresh type variable — keeps the planner
+        ; productive on incomplete programs.
+        ; ================================================================
+        function instantiate_generic#(
+            rp,
+            this: Planner,
+            concept_name: String,
+            args: Vector[PlannedType],
+            loc: Span
+        ) returns PlannedType
+        {
+            let concept_ref this.lookup_concept(concept_name)
+            guard concept_ref = null
+                return this.fresh_type_var#(concept_name)
+
+            let c (*concept_ref)
+            let saved_subst_len type_substitutions.length
+
+            ; Bind each generic parameter name to its concrete argument.
+            var i: size_t 0
+            while i < c.parameters.length
+            {
+                guard i < args.length
+                {
+                    let p_ptr c.parameters.get(i)
+                    let a_ptr args.get(i)
+                    guard p_ptr <> null
+                    {
+                        guard a_ptr <> null
+                            this.define_type_substitution(p_ptr.name, (*a_ptr))
+                    }
+                }
+                set i: i + 1
+            }
+
+            ; Plan the underlying definition so the cache records the
+            ; instantiated struct/union. The returned planned value is
+            ; unused here — we rebuild the PlannedType shell below with
+            ; the correct generics/mangled_name.
+            choose c.definition
+                when s: Structure
+                {
+                    let pl this.plan_structure#(s, concept_name)
+                    0
+                }
+                when u: scalyc.compiler.Model.Union
+                {
+                    let pl this.plan_union#(u, concept_name)
+                    0
+                }
+                else
+                    0
+
+            ; Pop substitutions back to what the caller had.
+            set type_substitutions.length: saved_subst_len
+
+            ; Assemble the resulting PlannedType.
+            var args_holder Vector[PlannedType]^rp(args)
+            let mangled Planner.mangle_structure#(concept_name, &args_holder)
+            PlannedType(
+                loc,
+                String^rp(concept_name),
+                mangled,
+                &args_holder,
+                Lifetime.Unspecified(Unspecified()),
+                null,
+                String^rp(""),
+                null
+            )
+        }
+
+        ; ================================================================
         ; resolve_function_call: return the result type of calling
         ; `name` with the given argument types. Simplified overload
         ; resolution — we pick the first registered Function whose name
