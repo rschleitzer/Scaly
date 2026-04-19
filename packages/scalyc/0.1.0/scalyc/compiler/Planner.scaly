@@ -1240,6 +1240,133 @@ define Planner
         Vector[size_t]^rp(acc)
     }
 
+    ; is_on_page_lifetime: everything except `Unspecified` is a page-backed
+    ; allocation in Scaly's RBMM (local / caller / named / thrown all live
+    ; on a page). Matches the static helper in Planner.cpp.
+    function is_on_page_lifetime(life: Lifetime) returns bool
+    {
+        choose life
+            when u: Unspecified
+                false
+            else
+                true
+    }
+
+    ; decode_utf8_to_code_point: decode exactly one UTF-8 code point from
+    ; `s`. Returns -1 for empty input, malformed sequences, overlong
+    ; encodings, surrogates/out-of-range, or any trailing bytes past the
+    ; first character. Matches the static helper in Planner.cpp.
+    function decode_utf8_to_code_point(s: String) returns int
+    {
+        let len s.get_length()
+        guard len = 0
+            return -1
+
+        let buf s.get_buffer()
+        let b0 *buf
+
+        var code_point: int -1
+        var char_len: size_t 0
+
+        ; ASCII: 0xxxxxxx
+        guard (b0 & (0x80 as u8)) = (0 as u8)
+        {
+            set code_point: b0 as int
+            set char_len: 1
+        }
+
+        ; 2-byte: 110xxxxx 10xxxxxx
+        guard char_len = 0
+        {
+            guard (b0 & (0xE0 as u8)) = (0xC0 as u8)
+            {
+                guard len >= 2
+                {
+                    let b1 *(buf + 1)
+                    guard (b1 & (0xC0 as u8)) = (0x80 as u8)
+                    {
+                        let cp (((b0 & (0x1F as u8)) as int) << 6) | ((b1 & (0x3F as u8)) as int)
+                        guard cp >= 0x80
+                        {
+                            set code_point: cp
+                            set char_len: 2
+                        }
+                    }
+                }
+            }
+        }
+
+        ; 3-byte: 1110xxxx 10xxxxxx 10xxxxxx
+        guard char_len = 0
+        {
+            guard (b0 & (0xF0 as u8)) = (0xE0 as u8)
+            {
+                guard len >= 3
+                {
+                    let b1 *(buf + 1)
+                    let b2 *(buf + 2)
+                    guard (b1 & (0xC0 as u8)) = (0x80 as u8)
+                    {
+                        guard (b2 & (0xC0 as u8)) = (0x80 as u8)
+                        {
+                            let cp (((b0 & (0x0F as u8)) as int) << 12)
+                                | (((b1 & (0x3F as u8)) as int) << 6)
+                                | ((b2 & (0x3F as u8)) as int)
+                            guard cp >= 0x800
+                            {
+                                set code_point: cp
+                                set char_len: 3
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        ; 4-byte: 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
+        guard char_len = 0
+        {
+            guard (b0 & (0xF8 as u8)) = (0xF0 as u8)
+            {
+                guard len >= 4
+                {
+                    let b1 *(buf + 1)
+                    let b2 *(buf + 2)
+                    let b3 *(buf + 3)
+                    guard (b1 & (0xC0 as u8)) = (0x80 as u8)
+                    {
+                        guard (b2 & (0xC0 as u8)) = (0x80 as u8)
+                        {
+                            guard (b3 & (0xC0 as u8)) = (0x80 as u8)
+                            {
+                                let cp (((b0 & (0x07 as u8)) as int) << 18)
+                                    | (((b1 & (0x3F as u8)) as int) << 12)
+                                    | (((b2 & (0x3F as u8)) as int) << 6)
+                                    | ((b3 & (0x3F as u8)) as int)
+                                guard cp >= 0x10000
+                                {
+                                    guard cp <= 0x10FFFF
+                                    {
+                                        set code_point: cp
+                                        set char_len: 4
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        guard char_len = 0
+            return -1
+
+        guard char_len <> len
+            return -1
+
+        code_point
+    }
+
     ; id_list_contains: linear scan for a size_t id in a Vector[size_t].
     function id_list_contains(ids: Vector[size_t], needle: size_t) returns bool
     {
@@ -3171,6 +3298,26 @@ define Planner
             return 173
         guard (*sch_in_env.quantified).length <> 0
             return 174
+
+        ; is_on_page_lifetime - Unspecified is the only "on-stack" lifetime.
+        guard Planner.is_on_page_lifetime(Lifetime.Unspecified(Unspecified()))
+            return 175
+        guard Planner.is_on_page_lifetime(Lifetime.Local(
+            scalyc.compiler.Model.Local(Span(0, 0))
+        )) = false
+            return 176
+
+        ; decode_utf8_to_code_point - ASCII "A" -> 65.
+        guard Planner.decode_utf8_to_code_point(String$("A")) <> 65
+            return 177
+
+        ; decode_utf8_to_code_point - empty string -> -1.
+        guard Planner.decode_utf8_to_code_point(String$("")) <> -1
+            return 178
+
+        ; decode_utf8_to_code_point - "AB" (trailing byte) -> -1.
+        guard Planner.decode_utf8_to_code_point(String$("AB")) <> -1
+            return 179
 
         0
     }
