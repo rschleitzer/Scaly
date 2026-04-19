@@ -234,6 +234,11 @@ define Planner
         ; most recent solve_and_apply call.
         constraints: Array[TypeConstraint]
         solution: Array[KeyValuePair[size_t, PlannedType]]
+
+        ; Concept registry — maps a readable name (e.g. "Vector") to the
+        ; Model.Concept that owns it. Populated by register_concept; used
+        ; by lookup_concept during type resolution and method dispatch.
+        concepts: Array[KeyValuePair[String, Concept]]
     )
     {
         init#(page, filename: String)
@@ -245,6 +250,7 @@ define Planner
             set next_type_var_id: 0
             set constraints: Array[TypeConstraint]^page()
             set solution: Array[KeyValuePair[size_t, PlannedType]]^page()
+            set concepts: Array[KeyValuePair[String, Concept]]^page()
         }
 
         ; ================================================================
@@ -354,6 +360,36 @@ define Planner
             let id next_type_var_id
             set next_type_var_id: id + 1
             id
+        }
+
+        ; ================================================================
+        ; Concept registry.
+        ; ================================================================
+
+        function register_concept(this: Planner, c: Concept)
+        {
+            concepts.add(KeyValuePair[String, Concept](c.name, c))
+        }
+
+        function lookup_concept(this: Planner, name: String) returns ref[Concept]?
+        {
+            var i: size_t 0
+            while i < concepts.length
+            {
+                let kvp_ptr concepts.get(i)
+                guard kvp_ptr <> null
+                {
+                    guard kvp_ptr.key.equals(name)
+                        return &kvp_ptr.value
+                }
+                set i: i + 1
+            }
+            null
+        }
+
+        function has_concept(this: Planner, name: String) returns bool
+        {
+            this.lookup_concept(name) <> null
         }
 
         ; fresh_type_var: allocate a new type variable as a PlannedType
