@@ -510,6 +510,115 @@ define Planner
         }
 
         ; ================================================================
+        ; register_runtime_functions: synthesize Function entries for the
+        ; C runtime functions the RBMM lowering needs (aligned_alloc,
+        ; free, exit, …). Matches Planner.cpp's static table.
+        ;
+        ; Idempotent — call as many times as desired; the registry is
+        ; appended to, and duplicates are tolerated by lookup_functions
+        ; (it walks every entry anyway).
+        ;
+        ; Parameter items and return types are built with Type.name
+        ; Vectors so resolve_type_base recognises them correctly.
+        ; ================================================================
+        function register_runtime_functions(this: Planner)
+        {
+            ; Helper-lambda pattern: a local function that builds a
+            ; Type with a single-segment name like "size_t" or "int".
+            ; We can't actually define a nested function here, so inline
+            ; each registration below.
+
+            ; aligned_alloc(alignment: size_t, size: size_t) -> pointer[void]
+            var aa_size_path Vector[String]$(1)
+            aa_size_path.put(0, String$("size_t"))
+            let aa_size_type Type(
+                Span(0, 0), aa_size_path, null,
+                Lifetime.Unspecified(Unspecified())
+            )
+            var aa_void_path Vector[String]$(1)
+            aa_void_path.put(0, String$("void"))
+            let aa_void_type Type(
+                Span(0, 0), aa_void_path, null,
+                Lifetime.Unspecified(Unspecified())
+            )
+            var aa_ptr_gens Vector[Type]$(1)
+            aa_ptr_gens.put(0, aa_void_type)
+            var aa_ptr_path Vector[String]$(1)
+            aa_ptr_path.put(0, String$("pointer"))
+            let aa_ptr_void Type(
+                Span(0, 0), aa_ptr_path, &aa_ptr_gens,
+                Lifetime.Unspecified(Unspecified())
+            )
+            var aa_inputs Vector[Item]$(2)
+            aa_inputs.put(0, Item(
+                Span(0, 0), false,
+                &(String$("alignment")),
+                &aa_size_type,
+                Vector[Attribute]$(0)
+            ))
+            aa_inputs.put(1, Item(
+                Span(0, 0), false,
+                &(String$("size")),
+                &aa_size_type,
+                Vector[Attribute]$(0)
+            ))
+            let aligned_alloc_fn Function(
+                Span(0, 0), false, false,
+                String$("aligned_alloc"),
+                aa_inputs,
+                &aa_ptr_void,
+                null,
+                Lifetime.Unspecified(Unspecified()),
+                Implementation.Extern(Extern(Span(0, 0)))
+            )
+            this.register_function(aligned_alloc_fn)
+
+            ; free(ptr: pointer[void])
+            var free_inputs Vector[Item]$(1)
+            free_inputs.put(0, Item(
+                Span(0, 0), false,
+                &(String$("ptr")),
+                &aa_ptr_void,
+                Vector[Attribute]$(0)
+            ))
+            let free_fn Function(
+                Span(0, 0), false, false,
+                String$("free"),
+                free_inputs,
+                null,
+                null,
+                Lifetime.Unspecified(Unspecified()),
+                Implementation.Extern(Extern(Span(0, 0)))
+            )
+            this.register_function(free_fn)
+
+            ; exit(code: int)
+            var int_path Vector[String]$(1)
+            int_path.put(0, String$("int"))
+            let int_type Type(
+                Span(0, 0), int_path, null,
+                Lifetime.Unspecified(Unspecified())
+            )
+            var exit_inputs Vector[Item]$(1)
+            exit_inputs.put(0, Item(
+                Span(0, 0), false,
+                &(String$("code")),
+                &int_type,
+                Vector[Attribute]$(0)
+            ))
+            let exit_fn Function(
+                Span(0, 0), false, false,
+                String$("exit"),
+                exit_inputs,
+                null,
+                null,
+                Lifetime.Unspecified(Unspecified()),
+                Implementation.Extern(Extern(Span(0, 0)))
+            )
+            this.register_function(exit_fn)
+        }
+
+        ; ================================================================
         ; Method / initializer / property lookup on user types.
         ; ================================================================
 
