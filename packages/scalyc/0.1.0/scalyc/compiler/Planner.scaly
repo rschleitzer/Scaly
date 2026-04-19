@@ -1613,13 +1613,28 @@ define Planner
         }
 
         ; plan_while: Binding condition + Action body. The binding opens
-        ; a short-lived scope for the loop variable.
+        ; a short-lived scope for the loop variable. Emits a constraint
+        ; that the planned binding's type is bool (the solver promotes
+        ; `while let maybe_x = ...` through Option's None sentinel, so
+        ; this is a reasonable approximation today).
         function plan_while#(rp, this: Planner, w: While) returns PlannedWhile
         {
             this.push_scope()
             let planned_cond this.plan_binding#(w.condition)
             let planned_body this.plan_action#(w.action)
             this.pop_scope()
+
+            ; Constrain the binding's declared type to bool for a plain
+            ; `while cond` form. `while let x = ...` binds a variant
+            ; payload and doesn't fit this simple rule — not yet
+            ; distinguished here.
+            let bool_ty Planner.make_bool_type#()
+            guard planned_cond.binding_item.item_type <> null
+            {
+                let bt (*planned_cond.binding_item.item_type)
+                this.add_equality_constraint(bool_ty, bt, w.span)
+            }
+
             PlannedWhile(w.span, planned_cond, planned_body)
         }
 
@@ -2101,8 +2116,12 @@ define Planner
 
         function plan_return#(rp, this: Planner, r: Return) returns PlannedReturn
         {
-            let planned this.plan_operands#(r.result)
-            var holder Vector[PlannedOperand]^rp(planned)
+            let planned_flat this.plan_operands#(r.result)
+            let planned_collapsed this.collapse_operand_sequence#(planned_flat)
+
+            var holder Vector[PlannedOperand]^rp(1)
+            guard planned_flat.length > 0
+                holder.put(0, planned_collapsed)
             PlannedReturn(r.span, &holder)
         }
 
