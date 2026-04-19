@@ -841,6 +841,104 @@ define Planner
         false
     }
 
+    ; ========================================================================
+    ; Operator identification.
+    ; ========================================================================
+
+    ; is_operator_name: does this identifier look like an operator definition?
+    ; Mirrors Planner.cpp — the one "name-shaped" exception is `abs`, which
+    ; the grammar exposes as a unary prefix operator despite being spelled
+    ; alphabetically. Everything else keys off the first byte.
+    function is_operator_name(name: String) returns bool
+    {
+        guard name.get_length() = 0
+            return false
+
+        guard name.equals("abs")
+            return true
+
+        let first name.get(0)
+        guard first = ("+" as u8)
+            return true
+        guard first = ("-" as u8)
+            return true
+        guard first = ("*" as u8)
+            return true
+        guard first = ("/" as u8)
+            return true
+        guard first = ("%" as u8)
+            return true
+        guard first = ("=" as u8)
+            return true
+        guard first = ("<" as u8)
+            return true
+        guard first = (">" as u8)
+            return true
+        guard first = ("!" as u8)
+            return true
+        guard first = ("&" as u8)
+            return true
+        guard first = ("|" as u8)
+            return true
+        guard first = ("^" as u8)
+            return true
+        guard first = ("~" as u8)
+            return true
+        guard first = ("[" as u8)
+            return true
+        guard first = ("(" as u8)
+            return true
+        false
+    }
+
+    ; get_operator_precedence: higher wins. Returns 0 for unknown operators
+    ; so the caller can distinguish "unbound" from explicit parenthesisation.
+    ; Scaly uses `=` / `<>` (equal / not-equal) instead of C's `==` / `!=`.
+    function get_operator_precedence(op: String) returns int
+    {
+        guard op.equals("||")
+            return 1
+        guard op.equals("&&")
+            return 2
+        guard op.equals("|")
+            return 3
+        guard op.equals("^")
+            return 4
+        guard op.equals("&")
+            return 5
+        guard op.equals("=")
+            return 6
+        guard op.equals("<>")
+            return 6
+        guard op.equals("<")
+            return 7
+        guard op.equals(">")
+            return 7
+        guard op.equals("<=")
+            return 7
+        guard op.equals(">=")
+            return 7
+        guard op.equals("<<")
+            return 8
+        guard op.equals(">>")
+            return 8
+        guard op.equals("+")
+            return 9
+        guard op.equals("-")
+            return 9
+        guard op.equals("*")
+            return 10
+        guard op.equals("/")
+            return 10
+        guard op.equals("%")
+            return 10
+        guard op.equals("div")
+            return 10
+        guard op.equals("mod")
+            return 10
+        0
+    }
+
     ; size_to_string: decimal representation of a size_t.
     ; Classic divide-by-10 with digit buffer and reversal.
     function size_to_string(n: size_t) returns String
@@ -1284,6 +1382,26 @@ define Planner
         )
         guard Planner.types_compatible(option_ty, ptr_void_ty) = false
             return 47
+
+        ; is_operator_name - operator chars and 'abs' are operators.
+        guard Planner.is_operator_name(String$("+")) = false
+            return 48
+        guard Planner.is_operator_name(String$("abs")) = false
+            return 49
+        guard Planner.is_operator_name(String$("foo"))
+            return 50
+        guard Planner.is_operator_name(String$(""))
+            return 51
+
+        ; get_operator_precedence - canonical ranks plus the 'unknown' zero.
+        guard Planner.get_operator_precedence(String$("||")) <> 1
+            return 52
+        guard Planner.get_operator_precedence(String$("*")) <> 10
+            return 53
+        guard Planner.get_operator_precedence(String$("<>")) <> 6
+            return 54
+        guard Planner.get_operator_precedence(String$("???")) <> 0
+            return 55
 
         0
     }
