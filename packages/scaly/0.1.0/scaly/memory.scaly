@@ -14,7 +14,7 @@ define memory
             return -1
 
         page.deallocate_extensions()
-        free(page as pointer[void])
+        scaly_release_page(page)
         0
     }
 
@@ -33,7 +33,7 @@ define memory
             return -4
 
         page.deallocate_extensions()
-        free(page as pointer[void])
+        scaly_release_page(page)
         0
     }
 
@@ -59,7 +59,7 @@ define memory
             return -8
 
         page.deallocate_extensions()
-        free(page as pointer[void])
+        scaly_release_page(page)
         0
     }
 
@@ -75,7 +75,7 @@ define memory
             return -10
 
         page.deallocate_extensions()
-        free(page as pointer[void])
+        scaly_release_page(page)
         0
     }
 

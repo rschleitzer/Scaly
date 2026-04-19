@@ -414,6 +414,7 @@ static bool runAotTest(llvm::StringRef TestPath) {
     std::vector<llvm::StringRef> LinkArgs = {
         *ClangPath,
         ObjPath,
+        PAGE_RUNTIME_CPP_PATH,
         "-o",
         ExePath
     };

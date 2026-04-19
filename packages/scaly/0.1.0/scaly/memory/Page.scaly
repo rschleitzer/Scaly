@@ -10,9 +10,14 @@ define Page
 {
     function allocate_page() returns pointer[Page]
     {
-        var page aligned_alloc(PAGE_SIZE, PAGE_SIZE) as pointer[Page]
-        page.reset()
-        return page
+        ; Extension and exclusive pages come from the HeapBucket.
+        return scaly_alloc_page()
+    }
+
+    function allocate_root_page() returns pointer[Page]
+    {
+        ; Function-local and try-scope pages come from the StackBucket.
+        return scaly_alloc_root_page()
     }
 
     function reset(this: Page)
@@ -110,14 +115,14 @@ define Page
         for exclusive_page in exclusive_pages
         {
             exclusive_page.deallocate_extensions()
-            free(exclusive_page as pointer[void])
+            scaly_release_page(exclusive_page)
         }
 
         var page next_page
         while page <> null
         {
             let next_page page.next_page
-            free(page as pointer[void])
+            scaly_release_page(page)
             set page: next_page
         }
     }
@@ -125,7 +130,7 @@ define Page
     function deallocate_exclusive_page(this: Page, page: pointer[Page])
     {
         page.deallocate_extensions()
-        free(page as pointer[void])
+        scaly_release_page(page)
         guard exclusive_pages.remove(page) = false
             exit(2)
 
@@ -148,7 +153,7 @@ define Page
             let node exclusive_pages.head
             let page node.page
             page.deallocate_extensions()
-            free(page as pointer[void])
+            scaly_release_page(page)
             set exclusive_pages.head: node.next
         }
 
@@ -170,7 +175,7 @@ define Page
         {
             let page_to_free next_page
             set next_page: page_to_free.next_page
-            free(page_to_free as pointer[void])
+            scaly_release_page(page_to_free)
         }
     }
 }

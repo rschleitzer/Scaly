@@ -28,6 +28,12 @@ endif()
 message(STATUS "LLVM shared library: ${LLVM_SHARED_LIB}")
 add_definitions(-DLLVM_SHARED_LIB_PATH="${LLVM_SHARED_LIB}")
 
+# Path to page runtime source so AOT tests can link it with each compiled
+# object. The runtime defines the scaly_alloc/release_[root_]page symbols
+# that Page.scaly calls.
+set(PAGE_RUNTIME_CPP "${CMAKE_CURRENT_SOURCE_DIR}/page_runtime.cpp")
+add_definitions(-DPAGE_RUNTIME_CPP_PATH="${PAGE_RUNTIME_CPP}")
+
 # Source files
 set(SOURCES
     main.cpp
@@ -50,6 +56,7 @@ set(SOURCES
     EmitterTests.cpp
     ModuleTests.h
     ModuleTests.cpp
+    page_runtime.cpp
     # Generated test files
     ExpressionTests.h
     ExpressionTests.cpp

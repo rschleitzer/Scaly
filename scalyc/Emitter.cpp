@@ -206,7 +206,7 @@ void Emitter::initRBMM() {
     // They will be emitted when the extern function declarations are processed
 
     // Declare Page_allocate_page() -> ptr
-    // This is the static function that allocates a new page
+    // This is the static function that allocates a new page (HeapBucket)
     auto *AllocatePageTy = llvm::FunctionType::get(PtrTy, {}, false);
     PageAllocatePage = llvm::Function::Create(
         AllocatePageTy, llvm::GlobalValue::ExternalLinkage,
@@ -292,6 +292,28 @@ void Emitter::declareRuntimeFunctions() {
             ExitTy, llvm::GlobalValue::ExternalLinkage,
             "exit", *Module);
         FunctionCache["exit"] = ExitFunc;
+    }
+
+    // scaly_alloc_root_page() / scaly_release_root_page(ptr) — direct
+    // bindings to the C page runtime. StackBucket push/pop for the
+    // function-local and try-scope root pages that the Emitter allocates.
+    auto *AllocRootTy = llvm::FunctionType::get(PtrTy, {}, false);
+    if (auto It = FunctionCache.find("scaly_alloc_root_page"); It != FunctionCache.end()) {
+        PageAllocateRootPage = It->second;
+    } else if (!PageAllocateRootPage) {
+        PageAllocateRootPage = llvm::Function::Create(
+            AllocRootTy, llvm::GlobalValue::ExternalLinkage,
+            "scaly_alloc_root_page", *Module);
+        FunctionCache["scaly_alloc_root_page"] = PageAllocateRootPage;
+    }
+    auto *ReleaseRootTy = llvm::FunctionType::get(VoidTy, {PtrTy}, false);
+    if (auto It = FunctionCache.find("scaly_release_root_page"); It != FunctionCache.end()) {
+        PageReleaseRootPage = It->second;
+    } else if (!PageReleaseRootPage) {
+        PageReleaseRootPage = llvm::Function::Create(
+            ReleaseRootTy, llvm::GlobalValue::ExternalLinkage,
+            "scaly_release_root_page", *Module);
+        FunctionCache["scaly_release_root_page"] = PageReleaseRootPage;
     }
 }
 
@@ -407,6 +429,10 @@ llvm::Expected<std::unique_ptr<llvm::Module>> Emitter::emit(const Plan &P,
 
     // Initialize RBMM runtime declarations (after cache clear so they persist)
     initRBMM();
+    // Declare libc + page-runtime extern bindings (aligned_alloc, free, exit,
+    // scaly_alloc_root_page, scaly_release_root_page). Needed in AOT as well
+    // as JIT so Emitter::PageAllocateRootPage / PageReleaseRootPage are set.
+    declareRuntimeFunctions();
     // Provide working implementations for RBMM functions in AOT mode.
     // In JIT mode, emitRBMMStubs() is called separately after the JIT wrapper.
     // Without this, the stub loop at the end would give allocate_page() a
@@ -1295,8 +1321,8 @@ llvm::Error Emitter::emitFunctionBody(const PlannedFunction &Func,
         NeedsLocalPage = true;
     }
 
-    if (NeedsLocalPage && PageAllocatePage) {
-        CurrentRegion.LocalPage = Builder->CreateCall(PageAllocatePage, {}, "local_page");
+    if (NeedsLocalPage && PageAllocateRootPage) {
+        CurrentRegion.LocalPage = Builder->CreateCall(PageAllocateRootPage, {}, "local_page");
     } else {
         CurrentRegion.LocalPage = nullptr;  // Will use stack allocation as fallback
     }
@@ -1335,9 +1361,9 @@ llvm::Error Emitter::emitFunctionBody(const PlannedFunction &Func,
             Builder->CreateBr(SkipCleanupBlock);
 
             Builder->SetInsertPoint(SkipCleanupBlock);
-            // Always free the local page (even if no extensions)
-            if (auto *FreeFn = Module->getFunction("free")) {
-                Builder->CreateCall(FreeFn, {CurrentRegion.LocalPage});
+            // Return the root page to the StackBucket.
+            if (PageReleaseRootPage) {
+                Builder->CreateCall(PageReleaseRootPage, {CurrentRegion.LocalPage});
             }
         }
     };
@@ -1597,8 +1623,8 @@ llvm::Error Emitter::emitInitializerBody(const PlannedStructure &Struct,
     }
 
     // Allocate local page if the initializer body has $ allocations
-    if (Init.NeedsLocalPage && PageAllocatePage) {
-        CurrentRegion.LocalPage = Builder->CreateCall(PageAllocatePage, {}, "local_page");
+    if (Init.NeedsLocalPage && PageAllocateRootPage) {
+        CurrentRegion.LocalPage = Builder->CreateCall(PageAllocateRootPage, {}, "local_page");
     }
 
     // Bind additional parameters
@@ -1639,8 +1665,8 @@ llvm::Error Emitter::emitInitializerBody(const PlannedStructure &Struct,
             Builder->CreateBr(ContinueBlock);
 
             Builder->SetInsertPoint(ContinueBlock);
-            if (auto *FreeFn = Module->getFunction("free")) {
-                Builder->CreateCall(FreeFn, {CurrentRegion.LocalPage});
+            if (PageReleaseRootPage) {
+                Builder->CreateCall(PageReleaseRootPage, {CurrentRegion.LocalPage});
             }
         }
     }
@@ -2243,9 +2269,8 @@ llvm::Error Emitter::emitReturn(const PlannedReturn &Return) {
         Builder->CreateBr(ContinueBlock);
 
         Builder->SetInsertPoint(ContinueBlock);
-        // Always free the local page (even if no extensions)
-        if (auto *FreeFn = Module->getFunction("free")) {
-            Builder->CreateCall(FreeFn, {CurrentRegion.LocalPage});
+        if (PageReleaseRootPage) {
+            Builder->CreateCall(PageReleaseRootPage, {CurrentRegion.LocalPage});
         }
     }
 
@@ -2510,6 +2535,16 @@ llvm::Error Emitter::emitThrow(const PlannedThrow &Throw) {
 
     // Emit block-scoped cleanups for all pending blocks
     emitBlockCleanups(0);
+
+    // Release the function's local_page, just like emitReturn does. Without
+    // this, throwing out of a function would leak its root page and break
+    // StackBucket LIFO invariants.
+    if (CurrentRegion.LocalPage && PageReleaseRootPage) {
+        if (PageDeallocateExtensions && !PageDeallocateExtensions->isDeclaration()) {
+            Builder->CreateCall(PageDeallocateExtensions, {CurrentRegion.LocalPage});
+        }
+        Builder->CreateCall(PageReleaseRootPage, {CurrentRegion.LocalPage});
+    }
 
     // Return (void for sret, value for direct return)
     if (CurrentFunction->hasParamAttribute(0, llvm::Attribute::StructRet)) {
@@ -5195,8 +5230,10 @@ llvm::Expected<llvm::Value*> Emitter::emitTry(const PlannedTry &Try) {
     }
 
     if (!TryScopeEp && PageAllocatePage && !PageAllocatePage->isDeclaration()) {
-        // Default $ behavior, or any unresolved lifetime: fresh page, freed
-        // at the end of the try.
+        // Default $ behavior, or any unresolved lifetime: fresh page from
+        // the HeapBucket, released at the end of the try. Not StackBucket,
+        // because an early-return from inside the try body would orphan
+        // the page and violate LIFO.
         TryScopeEp = Builder->CreateCall(PageAllocatePage, {}, "try.ep");
         OwnTryScopeEp = true;
     }
@@ -5445,8 +5482,9 @@ llvm::Expected<llvm::Value*> Emitter::emitTry(const PlannedTry &Try) {
         if (PageDeallocateExtensions && !PageDeallocateExtensions->isDeclaration()) {
             Builder->CreateCall(PageDeallocateExtensions, {TryScopeEp});
         }
-        if (auto *FreeFn = Module->getFunction("free")) {
-            Builder->CreateCall(FreeFn, {TryScopeEp});
+        // Try-scope ep is HeapBucket-allocated; release goes there.
+        if (auto *Release = Module->getFunction("scaly_release_page")) {
+            Builder->CreateCall(Release, {TryScopeEp});
         }
     }
 
@@ -6175,7 +6213,7 @@ llvm::AllocaInst *Emitter::createEntryBlockAlloca(llvm::Type *Ty, llvm::StringRe
 
 llvm::Value *Emitter::getOrCreateLocalPage() {
     if (CurrentRegion.LocalPage) return CurrentRegion.LocalPage;
-    if (!PageAllocatePage) return nullptr;
+    if (!PageAllocateRootPage) return nullptr;
     // Insert the call in the entry block so it dominates all uses
     llvm::IRBuilder<> TmpBuilder(&CurrentFunction->getEntryBlock(),
                                   CurrentFunction->getEntryBlock().begin());
@@ -6185,7 +6223,7 @@ llvm::Value *Emitter::getOrCreateLocalPage() {
         else
             TmpBuilder.SetInsertPoint(&CurrentFunction->getEntryBlock());
     }
-    CurrentRegion.LocalPage = TmpBuilder.CreateCall(PageAllocatePage, {}, "local_page.ondemand");
+    CurrentRegion.LocalPage = TmpBuilder.CreateCall(PageAllocateRootPage, {}, "local_page.ondemand");
     return CurrentRegion.LocalPage;
 }
 
@@ -6334,6 +6372,10 @@ llvm::Value *Emitter::getCalleeExceptionPage() {
     // The callee will terminate the program via exit(1) if it actually
     // throws (since the caller has no way to catch), so the leak here is
     // bounded to the crash path.
+    // Fallback pages must NOT come from the StackBucket — they are leaked
+    // by design (callee terminates via exit(1) on a throw it can't bubble
+    // out), so a StackBucket slot would break LIFO invariants for the real
+    // root pages that come later.
     if (PageAllocatePage && !PageAllocatePage->isDeclaration()) {
         return Builder->CreateCall(PageAllocatePage, {}, "exception_page.fallback");
     }
@@ -6533,6 +6575,8 @@ llvm::Expected<uint64_t> Emitter::jitExecuteRaw(const Plan &P, llvm::Type *Expec
         declareRuntimeFunctions();
 
         PageAllocatePage = FunctionCache["_ZN4Page13allocate_pageEv"];
+        PageAllocateRootPage = FunctionCache["scaly_alloc_root_page"];
+        PageReleaseRootPage = FunctionCache["scaly_release_root_page"];
         PageAllocate = FunctionCache["_ZN4Page8allocateEmm"];  // size_t = unsigned long (m)
         PageDeallocateExtensions = FunctionCache["_ZN4Page21deallocate_extensionsEv"];
         // Also set up PageType from StructCache (using mangled name)
@@ -6689,8 +6733,18 @@ llvm::Expected<uint64_t> Emitter::jitExecuteRaw(const Plan &P, llvm::Type *Expec
         } else if (LastValue->getType()->isPointerTy()) {
             LastValue = Builder->CreatePtrToInt(LastValue, I64Ty);
         }
+        if (CurrentRegion.LocalPage && PageReleaseRootPage) {
+            if (PageDeallocateExtensions) Builder->CreateCall(PageDeallocateExtensions, {CurrentRegion.LocalPage});
+            Builder->CreateCall(PageReleaseRootPage, {CurrentRegion.LocalPage});
+            CurrentRegion.LocalPage = nullptr;
+        }
         Builder->CreateRet(LastValue);
     } else {
+        if (CurrentRegion.LocalPage && PageReleaseRootPage) {
+            if (PageDeallocateExtensions) Builder->CreateCall(PageDeallocateExtensions, {CurrentRegion.LocalPage});
+            Builder->CreateCall(PageReleaseRootPage, {CurrentRegion.LocalPage});
+            CurrentRegion.LocalPage = nullptr;
+        }
         // Return default value (0)
         Builder->CreateRet(llvm::ConstantInt::get(I64Ty, 0));
     }
@@ -6803,6 +6857,8 @@ llvm::Error Emitter::jitExecuteVoid(const Plan &P, llvm::StringRef MangledFuncti
     Free = nullptr;
     ExitFunc = nullptr;
     PageAllocatePage = nullptr;
+    PageAllocateRootPage = nullptr;
+    PageReleaseRootPage = nullptr;
     PageAllocate = nullptr;
     PageDeallocateExtensions = nullptr;
     PageType = nullptr;
@@ -6887,6 +6943,8 @@ llvm::Error Emitter::jitExecuteVoid(const Plan &P, llvm::StringRef MangledFuncti
     if (PageInPlan) {
         declareRuntimeFunctions();
         PageAllocatePage = FunctionCache["_ZN4Page13allocate_pageEv"];
+        PageAllocateRootPage = FunctionCache["scaly_alloc_root_page"];
+        PageReleaseRootPage = FunctionCache["scaly_release_root_page"];
         PageAllocate = FunctionCache["_ZN4Page8allocateEmm"];  // size_t = unsigned long (m)
         PageDeallocateExtensions = FunctionCache["_ZN4Page21deallocate_extensionsEv"];
         if (auto It = StructCache.find("_Z4Page"); It != StructCache.end()) {
@@ -7060,6 +7118,8 @@ llvm::Expected<int64_t> Emitter::jitExecuteIntFunction(const Plan &P, llvm::Stri
     Free = nullptr;
     ExitFunc = nullptr;
     PageAllocatePage = nullptr;
+    PageAllocateRootPage = nullptr;
+    PageReleaseRootPage = nullptr;
     PageAllocate = nullptr;
     PageDeallocateExtensions = nullptr;
     PageType = nullptr;
@@ -7163,6 +7223,8 @@ llvm::Expected<int64_t> Emitter::jitExecuteIntFunction(const Plan &P, llvm::Stri
     if (PageInPlan) {
         declareRuntimeFunctions();
         PageAllocatePage = FunctionCache["_ZN4Page13allocate_pageEv"];
+        PageAllocateRootPage = FunctionCache["scaly_alloc_root_page"];
+        PageReleaseRootPage = FunctionCache["scaly_release_root_page"];
         PageAllocate = FunctionCache["_ZN4Page8allocateEmm"];  // size_t = unsigned long (m)
         PageDeallocateExtensions = FunctionCache["_ZN4Page21deallocate_extensionsEv"];
         if (auto It = StructCache.find("_Z4Page"); It != StructCache.end()) {
@@ -7430,6 +7492,8 @@ void Emitter::dumpIR(const Plan &P) {
     Free = nullptr;
     ExitFunc = nullptr;
     PageAllocatePage = nullptr;
+    PageAllocateRootPage = nullptr;
+    PageReleaseRootPage = nullptr;
     PageAllocate = nullptr;
     PageDeallocateExtensions = nullptr;
     PageType = nullptr;
@@ -7492,6 +7556,8 @@ void Emitter::dumpIR(const Plan &P) {
     if (PageInPlan) {
         declareRuntimeFunctions();
         PageAllocatePage = FunctionCache["_ZN4Page13allocate_pageEv"];
+        PageAllocateRootPage = FunctionCache["scaly_alloc_root_page"];
+        PageReleaseRootPage = FunctionCache["scaly_release_root_page"];
         PageAllocate = FunctionCache["_ZN4Page8allocateEmm"];
         PageDeallocateExtensions = FunctionCache["_ZN4Page21deallocate_extensionsEv"];
         if (auto It = StructCache.find("_Z4Page"); It != StructCache.end()) {

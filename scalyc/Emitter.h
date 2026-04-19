@@ -135,7 +135,9 @@ private:
     llvm::StructType *PageType = nullptr;
     llvm::StructType *BlockWatermarkType = nullptr;  // BlockWatermark struct type
     llvm::Function *PageAllocate = nullptr;       // Page.allocate(page, size, align)
-    llvm::Function *PageAllocatePage = nullptr;   // Page.allocate_page()
+    llvm::Function *PageAllocatePage = nullptr;   // Page.allocate_page()     — HeapBucket
+    llvm::Function *PageAllocateRootPage = nullptr;  // scaly_alloc_root_page — StackBucket
+    llvm::Function *PageReleaseRootPage = nullptr;   // scaly_release_root_page — StackBucket pop
     llvm::Function *PageDeallocateExtensions = nullptr;  // Page.deallocate_extensions(page)
     llvm::Function *PageSaveWatermark = nullptr;  // Page.save_watermark(page) -> BlockWatermark
     llvm::Function *PageRestoreWatermark = nullptr;  // Page.restore_watermark(page, watermark)

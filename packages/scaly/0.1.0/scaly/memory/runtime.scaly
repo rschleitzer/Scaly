@@ -38,3 +38,10 @@ function basename(path: pointer[char]) returns pointer[char] extern
 ; String comparison (string.h)
 function strcmp(s1: pointer[const_char], s2: pointer[const_char]) returns int extern
 function memcmp(s1: pointer[void], s2: pointer[void], n: size_t) returns i32 extern
+
+; Page allocator runtime — defined in scalyc/page_runtime.cpp
+; Two allocation paths: root (StackBucket, strict LIFO) vs regular (HeapBucket).
+function scaly_alloc_root_page() returns pointer[Page] extern
+function scaly_release_root_page(page: pointer[Page]) extern
+function scaly_alloc_page() returns pointer[Page] extern
+function scaly_release_page(page: pointer[Page]) extern
