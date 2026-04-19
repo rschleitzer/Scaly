@@ -1343,6 +1343,69 @@ define Planner
         t
     }
 
+    ; ========================================================================
+    ; Primitive-type factories.
+    ;
+    ; The C++ Planner implicitly knows the Itanium one-letter codes for
+    ; every built-in type. Until we have a Concepts table populated with
+    ; pre-registered primitives, callers that need to synthesize a
+    ; primitive PlannedType (e.g. for `return type of null = pointer[void]`)
+    ; go through these factories so the codes stay consistent everywhere.
+    ; ========================================================================
+
+    function make_primitive_type#(rp, name: pointer[const_char], mangled: pointer[const_char]) returns PlannedType
+    {
+        PlannedType(
+            Span(0, 0),
+            String^rp(name),
+            String^rp(mangled),
+            null,
+            Lifetime.Unspecified(Unspecified()),
+            null,
+            String^rp(""),
+            null
+        )
+    }
+
+    function make_void_type#(rp) returns PlannedType
+        Planner.make_primitive_type#("void", "v")
+
+    function make_bool_type#(rp) returns PlannedType
+        Planner.make_primitive_type#("bool", "b")
+
+    function make_int_type#(rp) returns PlannedType
+        Planner.make_primitive_type#("int", "i")
+
+    function make_char_type#(rp) returns PlannedType
+        Planner.make_primitive_type#("char", "c")
+
+    function make_size_type#(rp) returns PlannedType
+        Planner.make_primitive_type#("size_t", "m")
+
+    function make_double_type#(rp) returns PlannedType
+        Planner.make_primitive_type#("double", "d")
+
+    ; make_pointer_type: wrap `inner` as pointer[inner], with Itanium "P..."
+    ; mangled name. `inner.mangled_name` must be populated.
+    function make_pointer_type#(rp, inner: PlannedType) returns PlannedType
+    {
+        var gens Vector[PlannedType]^rp(1)
+        gens.put(0, inner)
+        var sb StringBuilder$()
+        sb.append("P")
+        sb.append(inner.mangled_name)
+        PlannedType(
+            Span(0, 0),
+            String^rp("pointer"),
+            sb.to_string^rp(),
+            &gens,
+            Lifetime.Unspecified(Unspecified()),
+            null,
+            String^rp(""),
+            null
+        )
+    }
+
     ; resolve_type_base: convert a Model.Type into a PlannedType skeleton.
     ;
     ; Handles everything the non-stateful part of Planner.cpp's
@@ -3703,6 +3766,29 @@ define Planner
         let no_subst Planner.apply_name_substitution$(vec_t_ns_ty, null)
         guard no_subst.name.equals("Vector") = false
             return 202
+
+        ; Primitive factories set the Itanium one-letter codes.
+        let mk_int Planner.make_int_type$()
+        guard mk_int.name.equals("int") = false
+            return 203
+        guard mk_int.mangled_name.equals("i") = false
+            return 204
+
+        let mk_void Planner.make_void_type$()
+        guard mk_void.mangled_name.equals("v") = false
+            return 205
+
+        ; make_pointer_type wraps "P" + inner.mangled_name.
+        let mk_ptr_int Planner.make_pointer_type$(mk_int)
+        guard mk_ptr_int.name.equals("pointer") = false
+            return 206
+        guard mk_ptr_int.mangled_name.equals("Pi") = false
+            return 207
+        guard mk_ptr_int.generics = null
+            return 208
+        let mk_ptr_int_gens (*mk_ptr_int.generics)
+        guard mk_ptr_int_gens.length <> 1
+            return 209
 
         0
     }
