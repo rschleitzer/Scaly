@@ -891,6 +891,70 @@ define Planner
         false
     }
 
+    ; get_pointer_element_type: return the element type T for pointer[T],
+    ; ref[T], Option[pointer[T]], or Option[ref[T]]. Everything else
+    ; yields null.
+    ;
+    ; Planner.cpp also has a "flattened" Option.ref.X fast path to cope
+    ; with how monomorphisation mangles nested generics into the name.
+    ; That path is a fragile heuristic; leaving it out until we actually
+    ; hit a case that needs it.
+    function get_pointer_element_type(ptr_type: PlannedType) returns ref[PlannedType]?
+    {
+        guard ptr_type.name.equals("pointer")
+        {
+            guard ptr_type.generics <> null
+            {
+                let gens (*ptr_type.generics)
+                guard gens.length > 0
+                    return gens.get(0)
+            }
+        }
+        guard ptr_type.name.equals("ref")
+        {
+            guard ptr_type.generics <> null
+            {
+                let gens (*ptr_type.generics)
+                guard gens.length > 0
+                    return gens.get(0)
+            }
+        }
+        guard ptr_type.name.equals("Option")
+        {
+            guard ptr_type.generics <> null
+            {
+                let gens (*ptr_type.generics)
+                guard gens.length > 0
+                {
+                    let inner_ptr gens.get(0)
+                    guard inner_ptr <> null
+                    {
+                        let inner (*inner_ptr)
+                        guard inner.name.equals("pointer")
+                        {
+                            guard inner.generics <> null
+                            {
+                                let ig (*inner.generics)
+                                guard ig.length > 0
+                                    return ig.get(0)
+                            }
+                        }
+                        guard inner.name.equals("ref")
+                        {
+                            guard inner.generics <> null
+                            {
+                                let ig (*inner.generics)
+                                guard ig.length > 0
+                                    return ig.get(0)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        null
+    }
+
     ; get_operator_precedence: higher wins. Returns 0 for unknown operators
     ; so the caller can distinguish "unbound" from explicit parenthesisation.
     ; Scaly uses `=` / `<>` (equal / not-equal) instead of C's `==` / `!=`.
@@ -1402,6 +1466,39 @@ define Planner
             return 54
         guard Planner.get_operator_precedence(String$("???")) <> 0
             return 55
+
+        ; get_pointer_element_type - pointer[int] -> int.
+        let pe_int Planner.get_pointer_element_type(ptr_int_ty)
+        guard pe_int = null
+            return 56
+        let pe_int_v (*pe_int)
+        guard pe_int_v.name.equals("int") = false
+            return 57
+
+        ; get_pointer_element_type - non-pointer returns null.
+        let pe_none Planner.get_pointer_element_type(int_ty)
+        guard pe_none <> null
+            return 58
+
+        ; get_pointer_element_type - Option[pointer[int]] -> int.
+        var opt_gens Vector[PlannedType]$(1)
+        opt_gens.put(0, ptr_int_ty)
+        let opt_ptr_int_ty PlannedType(
+            Span(0, 0),
+            String$("Option"),
+            String$(""),
+            &opt_gens,
+            Lifetime.Unspecified(Unspecified()),
+            null,
+            String$(""),
+            null
+        )
+        let pe_opt Planner.get_pointer_element_type(opt_ptr_int_ty)
+        guard pe_opt = null
+            return 59
+        let pe_opt_v (*pe_opt)
+        guard pe_opt_v.name.equals("int") = false
+            return 60
 
         0
     }
