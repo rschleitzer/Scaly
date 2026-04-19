@@ -1258,6 +1258,91 @@ define Planner
         Vector[size_t]^rp(acc)
     }
 
+    ; name_substitution_lookup: linear scan by String key. Distinct from
+    ; substitution_lookup (which keys on size_t type-var ids).
+    function name_substitution_lookup(
+        subst: Vector[KeyValuePair[String, PlannedType]],
+        name: String
+    ) returns ref[PlannedType]?
+    {
+        var i: size_t 0
+        while i < subst.length
+        {
+            let kvp_ptr subst.get_ptr(i)
+            guard kvp_ptr <> null
+            {
+                guard kvp_ptr.key.equals(name)
+                    return &kvp_ptr.value
+            }
+            set i: i + 1
+        }
+        null
+    }
+
+    ; apply_name_substitution: substitute type-parameter names (e.g. "T",
+    ; "K") with concrete types. Used by generic instantiation — the C++
+    ; `TypeSubstitutions` is a name-keyed map populated before resolving
+    ; each method in an instantiated struct.
+    ;
+    ; Preserves the caller's `loc` on the substituted type so error
+    ; messages point at the use-site, matching Planner.cpp.
+    function apply_name_substitution#(
+        rp,
+        t: PlannedType,
+        subst: ref[Vector[KeyValuePair[String, PlannedType]]]?
+    ) returns PlannedType
+    {
+        guard subst <> null
+        {
+            let s (*subst)
+            let hit Planner.name_substitution_lookup(s, t.name)
+            guard hit <> null
+            {
+                let replacement (*hit)
+                return PlannedType(
+                    t.loc,
+                    replacement.name,
+                    replacement.mangled_name,
+                    replacement.generics,
+                    replacement.life,
+                    replacement.origin,
+                    replacement.array_size,
+                    replacement.variable
+                )
+            }
+        }
+
+        guard t.generics <> null
+        {
+            let gens (*t.generics)
+            var new_gens Vector[PlannedType]^rp(gens.length)
+            var i: size_t 0
+            while i < gens.length
+            {
+                let g_ptr gens.get(i)
+                guard g_ptr <> null
+                {
+                    let g (*g_ptr)
+                    let new_g Planner.apply_name_substitution#(g, subst)
+                    new_gens.put(i, new_g)
+                }
+                set i: i + 1
+            }
+            return PlannedType(
+                t.loc,
+                t.name,
+                t.mangled_name,
+                &new_gens,
+                t.life,
+                t.origin,
+                t.array_size,
+                t.variable
+            )
+        }
+
+        t
+    }
+
     ; resolve_type_base: convert a Model.Type into a PlannedType skeleton.
     ;
     ; Handles everything the non-stateful part of Planner.cpp's
@@ -3563,6 +3648,61 @@ define Planner
         ; concept-table lookup), so outer just becomes "P" + "".
         guard rt_ptr.mangled_name.equals("P") = false
             return 193
+
+        ; name_substitution_lookup - hit/miss.
+        var t_subst Vector[KeyValuePair[String, PlannedType]]$(1)
+        t_subst.put(0, KeyValuePair[String, PlannedType](String$("T"), int_ty))
+        let hit_t Planner.name_substitution_lookup(t_subst, String$("T"))
+        guard hit_t = null
+            return 194
+        guard (*hit_t).name.equals("int") = false
+            return 195
+        guard Planner.name_substitution_lookup(t_subst, String$("K")) <> null
+            return 196
+
+        ; apply_name_substitution - standalone "T" replaced by int.
+        let t_ty PlannedType(
+            Span(0, 0),
+            String$("T"),
+            String$(""),
+            null,
+            Lifetime.Unspecified(Unspecified()),
+            null,
+            String$(""),
+            null
+        )
+        let subst_t Planner.apply_name_substitution$(t_ty, &t_subst)
+        guard subst_t.name.equals("int") = false
+            return 197
+
+        ; apply_name_substitution - Vector[T] → Vector[int].
+        var vec_t_gens_ns Vector[PlannedType]$(1)
+        vec_t_gens_ns.put(0, t_ty)
+        let vec_t_ns_ty PlannedType(
+            Span(0, 0),
+            String$("Vector"),
+            String$(""),
+            &vec_t_gens_ns,
+            Lifetime.Unspecified(Unspecified()),
+            null,
+            String$(""),
+            null
+        )
+        let subst_vec Planner.apply_name_substitution$(vec_t_ns_ty, &t_subst)
+        guard subst_vec.name.equals("Vector") = false
+            return 198
+        guard subst_vec.generics = null
+            return 199
+        let subst_vec_g0 (*subst_vec.generics).get(0)
+        guard subst_vec_g0 = null
+            return 200
+        guard (*subst_vec_g0).name.equals("int") = false
+            return 201
+
+        ; apply_name_substitution - null substitution, no change.
+        let no_subst Planner.apply_name_substitution$(vec_t_ns_ty, null)
+        guard no_subst.name.equals("Vector") = false
+            return 202
 
         0
     }
