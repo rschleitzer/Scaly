@@ -106,15 +106,22 @@ struct PlannedType {
 
     // Helper: unwrap Option[T], ref[T], and pointer[T] to get the underlying type
     // Used for method lookup where we need to auto-deref through all wrappers
+    //
+    // NOTE: `Result = Result.Generics[0]` is a self-assignment hazard — the
+    // RHS lives inside Result's own storage, so the default operator= destroys
+    // the source before copying. Using a temporary detaches the inner type
+    // before Result is reassigned.
     PlannedType getInnerTypeForMethodLookup() const {
         PlannedType Result = *this;
         // Unwrap Option[T] -> T
         if (Result.Name == "Option" && !Result.Generics.empty()) {
-            Result = Result.Generics[0];
+            PlannedType Inner = Result.Generics[0];
+            Result = std::move(Inner);
         }
         // Unwrap pointer[T] or ref[T] -> T
         if ((Result.Name == "pointer" || Result.Name == "ref") && !Result.Generics.empty()) {
-            Result = Result.Generics[0];
+            PlannedType Inner = Result.Generics[0];
+            Result = std::move(Inner);
         }
         return Result;
     }

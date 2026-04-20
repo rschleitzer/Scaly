@@ -4505,9 +4505,19 @@ llvm::Expected<PlannedType> Planner::resolveMemberAccess(
 
     for (const auto& MemberName : Members) {
         // Auto-unwrap optional types: Option[T] -> T
+        //
+        // Use a temporary to detach the inner type. `UnwrappedType =
+        // UnwrappedType.Generics[0]` is a self-assignment hazard: the RHS
+        // lives inside UnwrappedType's own Generics vector, so the default
+        // operator= destroys the source storage before the copy completes,
+        // leaving inner Names empty while preserving the outer Generics
+        // size. Symptom was `kvp_ptr.key.equals(name)` failing with
+        // `cannot access member 'equals' on type ` because K / V bound to
+        // empty-named types after the Option unwrap corrupted them.
         PlannedType UnwrappedType = Current;
         if (UnwrappedType.Name == "Option" && !UnwrappedType.Generics.empty()) {
-            UnwrappedType = UnwrappedType.Generics[0];
+            PlannedType Inner = UnwrappedType.Generics[0];
+            UnwrappedType = std::move(Inner);
         }
 
         // Handle pointer types by dereferencing to inner type (auto-deref)
@@ -4656,15 +4666,31 @@ llvm::Expected<PlannedType> Planner::resolveMemberAccess(
 
         // Check if it's a structure with properties
         if (auto* Struct = std::get_if<Structure>(&Conc->Def)) {
+            // Install generic-parameter substitutions so a property
+            // typed `K` on `KeyValuePair[String, V]` resolves to
+            // `String` (the concrete arg) instead of the bare name
+            // `K`. Mirrors resolveMemberAccessChain's handling; the
+            // absence of this substitution caused the empty-type
+            // error when chaining `kvp_ptr.key.equals(...)` where
+            // key's resolved type ended up as an unregistered `K`.
+            std::map<std::string, PlannedType> OldSubst = TypeSubstitutions;
+            if (!Conc->Parameters.empty() && !LookupType.Generics.empty()) {
+                for (size_t I = 0; I < Conc->Parameters.size() && I < LookupType.Generics.size(); ++I) {
+                    TypeSubstitutions[Conc->Parameters[I].Name] = LookupType.Generics[I];
+                }
+            }
+
             bool Found = false;
             for (const auto& Prop : Struct->Properties) {
                 if (Prop.Name == MemberName) {
                     if (!Prop.PropType) {
+                        TypeSubstitutions = OldSubst;
                         return makePlannerNotImplementedError(File, Loc,
                             "property without type");
                     }
                     auto Resolved = resolveType(*Prop.PropType, Loc);
                     if (!Resolved) {
+                        TypeSubstitutions = OldSubst;
                         return Resolved.takeError();
                     }
                     Current = std::move(*Resolved);
@@ -4672,6 +4698,7 @@ llvm::Expected<PlannedType> Planner::resolveMemberAccess(
                     break;
                 }
             }
+            TypeSubstitutions = OldSubst;
             if (Found) continue;
 
             // Check methods - for zero-argument methods (only 'this'), auto-call and return result type
@@ -4685,14 +4712,14 @@ llvm::Expected<PlannedType> Planner::resolveMemberAccess(
                         if (isZeroArg && Func->Returns) {
                             // Auto-call the method and return its return type
                             // Set up type substitutions if this is a generic type
-                            std::map<std::string, PlannedType> OldSubst = TypeSubstitutions;
+                            std::map<std::string, PlannedType> OldSubstMethod = TypeSubstitutions;
                             if (!Conc->Parameters.empty() && !LookupType.Generics.empty()) {
                                 for (size_t I = 0; I < Conc->Parameters.size() && I < LookupType.Generics.size(); ++I) {
                                     TypeSubstitutions[Conc->Parameters[I].Name] = LookupType.Generics[I];
                                 }
                             }
                             auto Resolved = resolveType(*Func->Returns, Loc);
-                            TypeSubstitutions = OldSubst;
+                            TypeSubstitutions = OldSubstMethod;
                             if (Resolved) {
                                 Current = std::move(*Resolved);
                                 Found = true;
@@ -4757,9 +4784,19 @@ llvm::Expected<std::vector<PlannedMemberAccess>> Planner::resolveMemberAccessCha
 
     for (const auto& MemberName : Members) {
         // Auto-unwrap optional types: Option[T] -> T
+        //
+        // Use a temporary to detach the inner type. `UnwrappedType =
+        // UnwrappedType.Generics[0]` is a self-assignment hazard: the RHS
+        // lives inside UnwrappedType's own Generics vector, so the default
+        // operator= destroys the source storage before the copy completes,
+        // leaving inner Names empty while preserving the outer Generics
+        // size. Symptom was `kvp_ptr.key.equals(name)` failing with
+        // `cannot access member 'equals' on type ` because K / V bound to
+        // empty-named types after the Option unwrap corrupted them.
         PlannedType UnwrappedType = Current;
         if (UnwrappedType.Name == "Option" && !UnwrappedType.Generics.empty()) {
-            UnwrappedType = UnwrappedType.Generics[0];
+            PlannedType Inner = UnwrappedType.Generics[0];
+            UnwrappedType = std::move(Inner);
         }
 
         // Handle pointer types by dereferencing to inner type (auto-deref)
