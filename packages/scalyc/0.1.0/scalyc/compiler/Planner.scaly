@@ -1397,13 +1397,83 @@ define Planner
                             rt
                         )
 
+                        ; Chained method calls: a.b().c().d(). The parser
+                        ; attaches the NEXT method's member_access to the
+                        ; current tuple operand. After the first call is
+                        ; built, inspect the consumed tuple for a pending
+                        ; method name, resolve against result.result_type,
+                        ; and fold in another call if a following Tuple
+                        ; supplies args. Repeat until the chain breaks.
+                        var prev_tuple: PlannedOperand second
+                        var next_idx: size_t 2
+                        var keep_chaining: bool true
+                        while keep_chaining
+                        {
+                            set keep_chaining: false
+                            guard prev_tuple.member_access <> null
+                            {
+                                let prev_ma (*prev_tuple.member_access)
+                                guard prev_ma.length > 0
+                                {
+                                    let last_ptr prev_ma.get(prev_ma.length - 1)
+                                    guard last_ptr <> null
+                                    {
+                                        let method_name (*last_ptr).name
+                                        guard next_idx < ops.length
+                                        {
+                                            let next_args_ptr ops.get(next_idx)
+                                            guard next_args_ptr <> null
+                                            {
+                                                let next_args (*next_args_ptr)
+                                                var is_tuple: bool false
+                                                choose next_args.expr
+                                                    when tp: PlannedTuple
+                                                        set is_tuple: true
+                                                    else
+                                                        0
+                                                guard is_tuple
+                                                {
+                                                    let match_ref this.lookup_method#(
+                                                        result.result_type, method_name
+                                                    )
+                                                    guard match_ref <> null
+                                                    {
+                                                        let m (*match_ref)
+                                                        var new_args Vector[PlannedOperand]^rp(2)
+                                                        new_args.put(0, result)
+                                                        new_args.put(1, next_args)
+                                                        let chained this.make_planned_call#(
+                                                            next_args.loc,
+                                                            method_name,
+                                                            m.mangled_name,
+                                                            m.return_type,
+                                                            new_args
+                                                        )
+                                                        set result: PlannedOperand(
+                                                            next_args.loc,
+                                                            PlannedExpression.Call(chained),
+                                                            null,
+                                                            m.return_type
+                                                        )
+                                                        set prev_tuple: next_args
+                                                        set next_idx: next_idx + 1
+                                                        set keep_chaining: true
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
                         ; Splice the remaining ops into a fresh vector
                         ; and recurse.
-                        guard ops.length > 2
+                        guard next_idx < ops.length
                         {
                             var remaining Array[PlannedOperand]$()
                             remaining.add(result)
-                            var r: size_t 2
+                            var r: size_t next_idx
                             while r < ops.length
                             {
                                 let p_ptr ops.get(r)
