@@ -2044,8 +2044,36 @@ llvm::Expected<llvm::Value*> Emitter::emitAction(const PlannedAction &Action) {
                     );
                 }
 
-                // Store the value to the variable
-                Builder->CreateStore(Value, VarPtr);
+                // Layout-mismatch case: the alloca was created as a pointer
+                // slot (because the original initializer was a heap-allocated
+                // pointer[T]), but the new value is a struct value of T.
+                // Storing the struct value bitwise into the pointer slot
+                // would make the variable hold the struct's first field
+                // instead of a pointer to a T — later member accesses would
+                // treat that field as `this` and crash.
+                // Fix: allocate a T on the local page, copy the value there,
+                // and store the new pointer into the alloca.
+                if (auto *Alloca = llvm::dyn_cast<llvm::AllocaInst>(VarPtr)) {
+                    llvm::Type *AllocTy = Alloca->getAllocatedType();
+                    llvm::Type *ValTy = Value->getType();
+                    if (AllocTy->isPointerTy() && ValTy->isStructTy() &&
+                        PageAllocate && CurrentRegion.LocalPage) {
+                        llvm::Type *I64Ty = llvm::Type::getInt64Ty(*Context);
+                        llvm::Value *Size = llvm::ConstantInt::get(I64Ty, getTypeSize(ValTy));
+                        llvm::Value *Align = llvm::ConstantInt::get(I64Ty, getTypeAlignment(ValTy));
+                        llvm::Value *HeapPtr = Builder->CreateCall(
+                            PageAllocate,
+                            {CurrentRegion.LocalPage, Size, Align},
+                            "set.heap");
+                        Builder->CreateStore(Value, HeapPtr);
+                        Builder->CreateStore(HeapPtr, VarPtr);
+                    } else {
+                        Builder->CreateStore(Value, VarPtr);
+                    }
+                } else {
+                    // Store the value to the variable
+                    Builder->CreateStore(Value, VarPtr);
+                }
             }
         } else if (auto *Tuple = std::get_if<PlannedTuple>(&TargetOp.Expr)) {
             // Handle dereferenced pointer assignment like (*ptr).field = value
@@ -6210,9 +6238,28 @@ llvm::Expected<llvm::Value*> Emitter::emitTuple(const PlannedTuple &Tuple) {
         TuplePtr = createEntryBlockAlloca(TupleTy, "tuple");
     }
 
+    unsigned NumStructFields = TupleTy->getNumElements();
+
+    // Short-circuit: if there's exactly one component whose type is the
+    // full multi-field tuple type (e.g. `(*v)` unwrapping a Vector),
+    // store it whole instead of splitting it across fields. Without this
+    // the loop below stores the multi-field struct into field 0's slot
+    // — overflowing into subsequent fields — and the "remaining fields"
+    // loop then overwrites those fields with null, corrupting the struct.
+    // Restricted to NumStructFields > 1 because for single-field wrappers
+    // like String = {ptr} the original per-field store is correct and
+    // some call sites legitimately pass a ptr-typed component that
+    // happens to equal TupleTy.
+    if (ComponentValues.size() == 1 &&
+        NumStructFields > 1 &&
+        ComponentValues[0]->getType() == TupleTy) {
+        Builder->CreateStore(ComponentValues[0], TuplePtr);
+        if (Tuple.IsRegionAlloc) return TuplePtr;
+        return Builder->CreateLoad(TupleTy, TuplePtr, "tuple.val");
+    }
+
     // Store provided component values
     // Skip if tuple type has no elements (empty struct like Unspecified)
-    unsigned NumStructFields = TupleTy->getNumElements();
     for (size_t i = 0; i < ComponentValues.size() && i < NumStructFields; ++i) {
         llvm::Value *FieldPtr = Builder->CreateStructGEP(TupleTy, TuplePtr, i, "tuple.field");
         llvm::Value *Val = ComponentValues[i];
