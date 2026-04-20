@@ -3412,6 +3412,27 @@ define Planner
         {
             this.push_scope()
 
+            ; For generic functions with no explicit instantiation,
+            ; seed each type parameter with a fresh type variable so
+            ; plan_type can resolve `T` etc. to something unifiable.
+            let saved_subst_len type_substitutions.length
+            var gi: size_t 0
+            while gi < f.parameters.length
+            {
+                let gp_ptr f.parameters.get(gi)
+                guard gp_ptr <> null
+                {
+                    let gp (*gp_ptr)
+                    let existing this.lookup_type_substitution(gp.name)
+                    guard existing = null
+                    {
+                        let fresh this.fresh_type_var#(gp.name)
+                        this.define_type_substitution(gp.name, fresh)
+                    }
+                }
+                set gi: gi + 1
+            }
+
             let planned_input this.plan_items#(f.input)
 
             var i: size_t 0
@@ -3457,14 +3478,20 @@ define Planner
             let planned_impl this.plan_implementation#(f.implementation)
 
             this.pop_scope()
+            set type_substitutions.length: saved_subst_len
 
             var input_holder Vector[PlannedItem]^rp(planned_input)
 
             ; Compute the Itanium mangled name. For a free function this
             ; is `_Z<name-len><name><params>`; for methods (parent
-            ; non-null) it's `_ZN<parent><name>E<params>`.
+            ; non-null) it's `_ZN<parent><name>E<params>`. function#
+            ; sites prepend an implicit page parameter in the signature.
+            var has_page: bool false
+            guard f.page_parameter <> null
+                set has_page: true
+
             let mangled Planner.mangle_function#(
-                f.name, &input_holder, parent, false
+                f.name, &input_holder, parent, has_page
             )
 
             let result PlannedFunction(
@@ -3523,13 +3550,32 @@ define Planner
             this.pop_scope()
 
             var input_holder Vector[PlannedItem]^rp(planned_input)
+
+            ; init#(page, ...) requires the mangled symbol to carry a
+            ; leading size_t "page" parameter so LLVM signatures match
+            ; what emit-site call resolution expects.
+            var has_page: bool false
+            guard ini.page_parameter <> null
+                set has_page: true
+
             let mangled Planner.mangle_function#(
-                String$("init"), &input_holder, null, false
+                String$("init"), &input_holder, null, has_page
             )
+
+            ; Clone the page_parameter name into rp so the resulting
+            ; PlannedInitializer owns a stable reference.
+            var page_ref: ref[String]? null
+            guard ini.page_parameter <> null
+            {
+                var holder Vector[String]^rp(1)
+                holder.put(0, String^rp((*ini.page_parameter)))
+                set page_ref: holder.get(0)
+            }
+
             PlannedInitializer(
                 ini.span,
                 ini.private_,
-                null,
+                page_ref,
                 mangled,
                 &input_holder,
                 planned_impl
