@@ -3734,6 +3734,46 @@ define Planner
         {
             let planned_ty this.plan_type#(n.type)
             let planned_args this.plan_tuple#(n.arguments)
+
+            ; Verify the target type has a matching initializer. A New
+            ; with no matching init is a hard error — record it so the
+            ; emitter doesn't silently produce an empty struct value.
+            var arg_types_arr Array[PlannedType]$()
+            guard planned_args.components <> null
+            {
+                let comps (*planned_args.components)
+                var ci: size_t 0
+                while ci < comps.length
+                {
+                    let c_ptr comps.get(ci)
+                    guard c_ptr <> null
+                    {
+                        let c (*c_ptr)
+                        guard c.value <> null
+                        {
+                            let vops (*c.value)
+                            guard vops.length > 0
+                            {
+                                let last_ptr vops.get(vops.length - 1)
+                                guard last_ptr <> null
+                                    arg_types_arr.add((*last_ptr).result_type)
+                            }
+                        }
+                    }
+                    set ci: ci + 1
+                }
+            }
+            var arg_types_vec Vector[PlannedType]^rp(arg_types_arr)
+            let init_ref this.find_initializer#(planned_ty.name, arg_types_vec)
+            guard init_ref = null
+            {
+                var sb StringBuilder$()
+                sb.append("no matching initializer for `new ")
+                sb.append(planned_ty.name)
+                sb.append("`")
+                this.add_error(sb.to_string^rp())
+            }
+
             PlannedTuple(
                 n.span,
                 planned_args.components,
