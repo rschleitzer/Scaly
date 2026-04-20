@@ -1,10 +1,18 @@
 ; Planner.scaly - Generic resolution, type inference, and name mangling.
 ; Transforms Model (generics) into Plan (concrete types, mangled names).
 ;
-; Ported afresh from scalyc/Planner.cpp (13293 LOC, 96 methods).
-; Stage 1 scope: skeleton + core helpers. Heavy planning methods are stubs
-; that abort loudly on first call — no silent "return null/0/empty Plan"
-; lies while the port is incomplete.
+; Ported afresh from scalyc/Planner.cpp (~13K LOC, ~97 methods).
+; Covers the full planning pipeline — plan_program → plan_module →
+; plan_namespace/plan_concept → plan_structure/plan_union/plan_global
+; /plan_function/plan_operator/plan_initializer/plan_deinitializer —
+; HM type inference (unify, solve_constraints, apply_substitution),
+; Itanium ABI name mangling, overload resolution with generic
+; inference, member-access + method-chain resolution, iterator
+; protocol, and branch-result unification.
+;
+; The only paths that abort via not_implemented are the package
+; loader's parse+model steps, which need Scaly-side access to the
+; Parser and Modeler as callable modules.
 
 use scaly.containers.String
 use scaly.containers.StringBuilder
