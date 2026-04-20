@@ -267,6 +267,25 @@ define PlannedWhile
     body: PlannedAction
 )
 
+; Post-test do-while loop (body runs at least once, then re-runs while cond true)
+define PlannedRepeat
+(
+    loc: Span
+    body: PlannedAction
+)
+
+; Lambda: anonymous function with a mangled synthetic name.
+; Closure capture is deferred — captures is an empty vector for now.
+define PlannedLambda
+(
+    loc: Span
+    mangled_name: String
+    input: ref[Vector[PlannedItem]]?
+    body: PlannedAction
+    return_type: PlannedType
+    captures: ref[Vector[String]]?
+)
+
 define PlannedTry
 (
     loc: Span
@@ -393,6 +412,8 @@ define PlannedExpression union
     Choose: PlannedChoose
     For: PlannedFor
     While: PlannedWhile
+    Repeat: PlannedRepeat
+    Lambda: PlannedLambda
     Try: PlannedTry
     SizeOf: PlannedSizeOf
     AlignOf: PlannedAlignOf

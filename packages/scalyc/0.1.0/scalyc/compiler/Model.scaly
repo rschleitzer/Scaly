@@ -202,6 +202,21 @@ define New
     arguments: Tuple
 )
 
+; Lambda expression — anonymous function literal
+define Lambda
+(
+    span: Span
+    input: Vector[Item]
+    body: Action
+)
+
+; Repeat — do-while loop (body runs at least once)
+define Repeat
+(
+    span: Span
+    action: Action
+)
+
 ; Expression union
 define Expression union (
     Constant: Constant
@@ -220,6 +235,8 @@ define Expression union (
     Is: Is
     As: As
     New: New
+    Lambda: Lambda
+    Repeat: Repeat
 )
 
 ; Operand wraps expression with optional member access

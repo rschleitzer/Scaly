@@ -286,6 +286,9 @@ define Planner
         ; inspect errors.length > 0 to detect problems without
         ; plumbing Result[T, E] through every helper.
         errors: Array[String]
+
+        ; Monotonic counter for synthesizing unique lambda names.
+        next_lambda_id: size_t
     )
     {
         init#(page, filename: String)
@@ -308,6 +311,7 @@ define Planner
             set loaded_packages: Array[KeyValuePair[String, Module]]^page()
             set loaded_module_paths: Array[KeyValuePair[String, Module]]^page()
             set errors: Array[String]^page()
+            set next_lambda_id: 0
 
             ; Seed the function registry with C-runtime externs so name
             ; lookups for aligned_alloc/free/exit succeed from day one.
@@ -2790,6 +2794,83 @@ define Planner
             )
         }
 
+        ; plan_lambda: anonymous function literal. Opens a fresh scope,
+        ; seeds each parameter with a fresh type variable (lambdas omit
+        ; parameter type annotations), plans the body Action, and
+        ; synthesizes a unique mangled name. Closure capture is deferred
+        ; — the captures vector stays empty for now.
+        function plan_lambda#(rp, this: Planner, lam: Lambda) returns PlannedLambda
+        {
+            this.push_scope()
+
+            var planned_items Vector[PlannedItem]^rp(lam.input.length)
+            var i: size_t 0
+            while i < lam.input.length
+            {
+                let it_ptr lam.input.get(i)
+                guard it_ptr <> null
+                {
+                    let it (*it_ptr)
+                    let pi this.plan_item#(it)
+                    planned_items.put(i, pi)
+
+                    var param_type: PlannedType Planner.make_void_type#()
+                    guard pi.item_type <> null
+                        set param_type: (*pi.item_type)
+                    guard pi.item_type = null
+                    {
+                        ; Lambda parameters omit type annotations; give
+                        ; each a fresh type variable that the solver
+                        ; later unifies against the call site.
+                        var pname: String String$("")
+                        guard it.name <> null
+                            set pname: (*it.name)
+                        set param_type: this.fresh_type_var#(pname)
+                    }
+
+                    guard it.name <> null
+                    {
+                        let n (*it.name)
+                        this.define_local(n, param_type, false, false)
+                    }
+                }
+                set i: i + 1
+            }
+
+            let planned_body this.plan_action#(lam.body)
+            this.pop_scope()
+
+            let lam_id next_lambda_id
+            set next_lambda_id: lam_id + 1
+            var name_sb StringBuilder^rp()
+            name_sb.append("_ZN6lambda")
+            name_sb.append(Planner.size_to_string(lam_id))
+            name_sb.append("Ev")
+            let mangled name_sb.to_string^rp()
+
+            var items_holder Vector[PlannedItem]^rp(planned_items)
+
+            PlannedLambda(
+                lam.span,
+                mangled,
+                &items_holder,
+                planned_body,
+                planned_body.result_type,
+                null
+            )
+        }
+
+        ; plan_repeat: do-while body runs at least once; the terminating
+        ; condition lives inside the body action via `break` or an
+        ; embedded if. Nothing else to constrain at this level.
+        function plan_repeat#(rp, this: Planner, r: Repeat) returns PlannedRepeat
+        {
+            this.push_scope()
+            let planned_body this.plan_action#(r.action)
+            this.pop_scope()
+            PlannedRepeat(r.span, planned_body)
+        }
+
         ; plan_while: Binding condition + Action body. The binding opens
         ; a short-lived scope for the loop variable. Emits a constraint
         ; that the planned binding's type is bool (the solver promotes
@@ -3276,6 +3357,16 @@ define Planner
                 {
                     let pt this.plan_new#(nw)
                     PlannedOperand(op.span, PlannedExpression.Tuple(pt), null, pt.tuple_type)
+                }
+                when lam: Lambda
+                {
+                    let pl this.plan_lambda#(lam)
+                    PlannedOperand(op.span, PlannedExpression.Lambda(pl), null, pl.return_type)
+                }
+                when rep: Repeat
+                {
+                    let pr this.plan_repeat#(rep)
+                    PlannedOperand(op.span, PlannedExpression.Repeat(pr), null, Planner.make_void_type#())
                 }
 
             guard op.member_access = null

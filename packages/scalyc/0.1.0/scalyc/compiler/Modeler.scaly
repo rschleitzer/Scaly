@@ -477,6 +477,10 @@ function handle_expression#(syntax: ExpressionSyntax) returns Expression
             Expression.Is(handle_is#(is_syntax))
         when as_syntax: AsSyntax
             Expression.As(handle_as#(as_syntax))
+        when lam_syntax: LambdaSyntax
+            Expression.Lambda(handle_lambda#(lam_syntax))
+        when rep_syntax: RepeatSyntax
+            Expression.Repeat(handle_repeat#(rep_syntax))
         else
             Expression.Constant(Constant.Integer(IntegerConstant(Span(0, 0), 0)))
 }
@@ -496,6 +500,58 @@ function handle_as#(syntax: AsSyntax) returns scaly.compiler.Model.As
     scaly.compiler.Model.As(
         Span(syntax.start, syntax.end),
         target_ty
+    )
+}
+
+; Lambda: each input operand should be a simple name; we build an Item
+; per operand with no type annotation (type inferred from context).
+function handle_lambda#(syntax: LambdaSyntax) returns Lambda
+{
+    var input Vector[Item]#(0)
+    guard syntax.input <> null
+    {
+        let ops (*syntax.input)
+        set input: Vector[Item]#(ops.length)
+        var i: size_t 0
+        while i < ops.length
+        {
+            let op_ptr ops.get(i)
+            guard op_ptr <> null
+            {
+                let op (*op_ptr)
+                var param_name: String$ String$("")
+                choose op.expression
+                    when name_syn: NameSyntax
+                        set param_name: String$(name_syn.name)
+                    else
+                        set param_name: String$("")
+                input.put(i, Item(
+                    Span(op.start, op.end),
+                    false,
+                    String$(param_name),
+                    null,
+                    Vector[Attribute]#(0)
+                ))
+            }
+            set i: i + 1
+        }
+    }
+
+    let body handle_action#(syntax.block)
+
+    Lambda(
+        Span(syntax.start, syntax.end),
+        input,
+        body
+    )
+}
+
+function handle_repeat#(syntax: RepeatSyntax) returns Repeat
+{
+    let body handle_action#(syntax.action)
+    Repeat(
+        Span(syntax.start, syntax.end),
+        body
     )
 }
 
