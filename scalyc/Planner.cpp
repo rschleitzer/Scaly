@@ -2659,6 +2659,22 @@ std::optional<Planner::InitializerMatch> Planner::findInitializer(
                     std::vector<std::map<std::string, LocalBinding>> OldScopes;
                     std::swap(Scopes, OldScopes);
 
+                    // Populate MutableStruct.Properties from OrigStruct before planning
+                    // the initializer body. Without this, field references inside init#
+                    // (e.g. `data` in String's init#) fail to resolve as structure
+                    // properties and the overload resolution for calls like
+                    // memcpy(data, ...) produces "no matching overload" errors.
+                    if (MutableStruct.Properties.empty() && !OrigStruct.Properties.empty()) {
+                        for (const auto &Prop : OrigStruct.Properties) {
+                            auto PP = planProperty(Prop);
+                            if (PP) {
+                                MutableStruct.Properties.push_back(std::move(*PP));
+                            } else {
+                                llvm::consumeError(PP.takeError());
+                            }
+                        }
+                    }
+
                     // Create parent type for initializer planning
                     PlannedType ParentType = StructType;
 
@@ -3080,8 +3096,30 @@ std::optional<Planner::OperatorMatch> Planner::findOperator(
         }
     }
 
+    // Pointer-like comparison: types that lower to a single pointer in LLVM.
+    // Covers pointer[T], ref[T], Option[pointer[T]], Option[ref[T]], and the
+    // instantiated-name variants Option.ref.* / Option.pointer.*. With NPO
+    // these are all represented as a plain pointer (null = None), so a direct
+    // icmp against null is correct.
+    auto IsPointerLike = [](const PlannedType &T) {
+        if (T.Name == "pointer" && !T.Generics.empty()) return true;
+        if (T.Name == "ref" && !T.Generics.empty()) return true;
+        if (T.Name == "Option" && !T.Generics.empty()) {
+            const auto &Inner = T.Generics[0];
+            if ((Inner.Name == "pointer" || Inner.Name == "ref") &&
+                !Inner.Generics.empty())
+                return true;
+        }
+        if (T.Name.size() >= 10 && T.Name.substr(0, 10) == "Option.ref")
+            return true;
+        if (T.Name.size() >= 14 && T.Name.substr(0, 14) == "Option.pointer")
+            return true;
+        return false;
+    };
+
     // Pointer comparison: pointer[T] op pointer[T] returns bool
-    if (IsPointerType && Right.Name == "pointer") {
+    if ((IsPointerType || IsPointerLike(Left)) &&
+        (Right.Name == "pointer" || IsPointerLike(Right))) {
         std::string OpName = Name.str();
         if (OpName == "=" || OpName == "==" || OpName == "<>" || OpName == "!=" ||
             OpName == "<" || OpName == ">" || OpName == "<=" || OpName == ">=") {

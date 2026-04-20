@@ -6146,10 +6146,20 @@ llvm::Expected<llvm::Value*> Emitter::emitTuple(const PlannedTuple &Tuple) {
     // Get the struct type - either from pre-emitted type, TupleType lookup, or create anonymous
     llvm::StructType *TupleTy = PreEmittedStructTy;
     if (!TupleTy && !Tuple.TupleType.Name.empty() && Tuple.TupleType.Name != "Tuple") {
-        // Named struct type - look it up in cache
+        // Named struct type - look it up in cache.
+        // StructCache keys use the _Z-prefixed mangled name (set by
+        // emitStructType), so try the bare MangledName, then the raw
+        // Name, then the _Z-prefixed form. Without the _Z fallback,
+        // tuples for types like PlannedType whose MangledName is
+        // "11PlannedType" miss the cache and fall through to an
+        // anonymous struct with ptr fields — which mismatches the
+        // callee's expected layout with inline String fields.
         auto It = StructCache.find(Tuple.TupleType.MangledName);
         if (It == StructCache.end()) {
             It = StructCache.find(Tuple.TupleType.Name);
+        }
+        if (It == StructCache.end()) {
+            It = StructCache.find("_Z" + Tuple.TupleType.MangledName);
         }
         if (It != StructCache.end()) {
             TupleTy = It->second;
