@@ -4652,9 +4652,13 @@ define Planner
             ; Compute the Itanium mangled name. For a free function this
             ; is `_Z<name-len><name><params>`; for methods (parent
             ; non-null) it's `_ZN<parent><name>E<params>`. function#
-            ; sites prepend an implicit page parameter in the signature.
+            ; sites prepend an implicit page parameter; functions that
+            ; return a user-defined type also need the caller's page to
+            ; allocate the result (needs_implicit_return_page).
             var has_page: bool false
             guard f.page_parameter <> null
+                set has_page: true
+            guard Planner.needs_implicit_return_page(f)
                 set has_page: true
 
             let mangled Planner.mangle_function#(
