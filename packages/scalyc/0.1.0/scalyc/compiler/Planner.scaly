@@ -2898,36 +2898,119 @@ define Planner
         }
 
         ; plan_for: loop variable bound to each element of `expression`.
-        ; The iterator-method fields are left empty — resolving them needs
-        ; the concept table (to find get_iterator/next on the collection
-        ; type).
+        ; Two shapes are supported, matching the C++ Planner:
+        ;   1. Integer range: `for i in N` — element type == N's type.
+        ;   2. Iterator protocol: `for x in collection` — resolve
+        ;      `get_iterator` on the collection type, then `next` on the
+        ;      iterator type; the element type is what `next` returns.
+        ; Option[T] and ref/pointer wrappers on the collection type are
+        ; peeled before the dispatch.
         function plan_for#(rp, this: Planner, f: For) returns PlannedFor
         {
             this.push_scope()
             let planned_expr this.plan_operands#(f.expression)
             let collapsed_expr this.collapse_operand_sequence#(planned_expr)
 
-            ; Register the loop variable as a local of fresh type.
-            let loop_var_type this.fresh_type_var#(String$(""))
-            this.define_local(f.identifier, loop_var_type, false, false)
+            var coll_type: PlannedType collapsed_expr.result_type
 
-            ; Common-case constraint: `for x in Vec[T]` binds x to T.
-            ; When the iterable's type has at least one generic, assume
-            ; the first generic is the element type. Iterators with a
-            ; custom `get_iterator` signature aren't resolved here —
-            ; that's deferred until the iterator protocol is ported.
-            guard collapsed_expr.result_type.generics <> null
+            ; Auto-unwrap Option[T] → T on the collection side.
+            guard coll_type.name.equals(String$("Option"))
             {
-                let gens (*collapsed_expr.result_type.generics)
-                guard gens.length > 0
+                guard coll_type.generics <> null
                 {
-                    let first_ptr gens.get(0)
-                    guard first_ptr <> null
-                        this.add_equality_constraint(
-                            loop_var_type, (*first_ptr), f.span
-                        )
+                    let gens (*coll_type.generics)
+                    guard gens.length > 0
+                    {
+                        let g_ptr gens.get(0)
+                        guard g_ptr <> null
+                            set coll_type: (*g_ptr)
+                    }
                 }
             }
+
+            ; Peel ref[T] / pointer[T] to reach the underlying struct.
+            var iter_type: PlannedType coll_type
+            guard iter_type.name.equals(String$("ref"))
+                or iter_type.name.equals(String$("pointer"))
+            {
+                guard iter_type.generics <> null
+                {
+                    let gens (*iter_type.generics)
+                    guard gens.length > 0
+                    {
+                        let g_ptr gens.get(0)
+                        guard g_ptr <> null
+                            set iter_type: (*g_ptr)
+                    }
+                }
+            }
+
+            var is_integer: bool false
+            guard iter_type.name.equals(String$("int"))
+                or iter_type.name.equals(String$("int8"))
+                or iter_type.name.equals(String$("int16"))
+                or iter_type.name.equals(String$("int32"))
+                or iter_type.name.equals(String$("int64"))
+                or iter_type.name.equals(String$("size_t"))
+                or iter_type.name.equals(String$("uint8"))
+                or iter_type.name.equals(String$("uint16"))
+                or iter_type.name.equals(String$("uint32"))
+                or iter_type.name.equals(String$("uint64"))
+                set is_integer: true
+
+            var is_iterator_loop: bool false
+            var iterator_type: PlannedType Planner.make_void_type#()
+            var element_type: PlannedType Planner.make_void_type#()
+            var get_iter_name: String String^rp("")
+            var next_name: String String^rp("")
+
+            guard is_integer
+            {
+                set element_type: iter_type
+            }
+            guard is_integer = false
+            {
+                let get_iter_match this.lookup_method#(iter_type, String$("get_iterator"))
+                guard get_iter_match <> null
+                {
+                    let gm (*get_iter_match)
+                    set is_iterator_loop: true
+                    set iterator_type: gm.return_type
+                    set get_iter_name: gm.mangled_name
+
+                    let next_match this.lookup_method#(iterator_type, String$("next"))
+                    guard next_match <> null
+                    {
+                        let nm (*next_match)
+                        set next_name: nm.mangled_name
+                        set element_type: nm.return_type
+                    }
+                }
+                guard get_iter_match = null
+                {
+                    ; No get_iterator: fall back to the iterable's first
+                    ; generic (what Vec[T] / List[T] would yield), or
+                    ; the iter_type itself if no generics.
+                    var fell_back: bool false
+                    guard iter_type.generics <> null
+                    {
+                        let gens (*iter_type.generics)
+                        guard gens.length > 0
+                        {
+                            let g_ptr gens.get(0)
+                            guard g_ptr <> null
+                            {
+                                set element_type: (*g_ptr)
+                                set fell_back: true
+                            }
+                        }
+                    }
+                    guard fell_back = false
+                        set element_type: iter_type
+                }
+            }
+
+            this.define_local(f.identifier, element_type, false, false)
 
             let planned_body this.plan_action#(f.action)
             this.pop_scope()
@@ -2938,12 +3021,12 @@ define Planner
                 f.identifier,
                 &expr_holder,
                 planned_body,
-                false,
-                Planner.make_void_type#(),
-                Planner.make_void_type#(),
-                loop_var_type,
-                String^rp(""),
-                String^rp("")
+                is_iterator_loop,
+                coll_type,
+                iterator_type,
+                element_type,
+                get_iter_name,
+                next_name
             )
         }
 
