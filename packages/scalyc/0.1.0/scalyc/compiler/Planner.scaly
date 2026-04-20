@@ -1892,48 +1892,117 @@ define Planner
             }
 
             var i: size_t 1
-            while i + 1 < ops.length
+            while i < ops.length
             {
                 let op_ptr ops.get(i)
-                let rhs_ptr ops.get(i + 1)
-                guard op_ptr <> null
+                guard op_ptr = null
                 {
-                    guard rhs_ptr <> null
+                    set i: i + 1
+                    continue
+                }
+                let op (*op_ptr)
+
+                ; Postfix `is Type` — stitch the accumulated result in as
+                ; the value operand, recompute the variant tag from the
+                ; value's union type, and advance by 1.
+                var handled_unary: bool false
+                choose op.expr
+                    when pis: PlannedIs
                     {
-                        let op (*op_ptr)
-                        let rhs (*rhs_ptr)
+                        var value_holder Vector[PlannedOperand]^rp(1)
+                        value_holder.put(0, result)
 
-                        ; Extract operator name from the op operand.
-                        let op_name choose op.expr
-                            when ty: PlannedType
-                                ty.name
-                            else
-                                String^rp("")
+                        var new_tag: size_t pis.variant_tag
+                        guard pis.is_null_check = false
+                        {
+                            let tag this.lookup_variant_tag(
+                                result.result_type.name, pis.test_type.name
+                            )
+                            guard tag >= 0
+                                set new_tag: tag as size_t
+                        }
 
-                        let resolved this.resolve_operator_call#(
-                            op_name, result.result_type, rhs.result_type
-                        )
-                        var combined_type: PlannedType this.fresh_type_var#(String$(""))
-                        guard resolved <> null
-                            set combined_type: (*resolved)
-
-                        var two_args Vector[PlannedOperand]^rp(2)
-                        two_args.put(0, result)
-                        two_args.put(1, rhs)
-                        let call this.make_planned_call#(
-                            result.loc,
-                            op_name,
-                            this.mangle_binary_operator#(op_name, result.result_type, rhs.result_type),
-                            combined_type,
-                            two_args
+                        let stitched PlannedIs(
+                            pis.loc,
+                            pis.test_type,
+                            new_tag,
+                            result.result_type.name,
+                            value_holder.get(0),
+                            pis.is_null_check
                         )
                         set result: PlannedOperand(
-                            result.loc,
-                            PlannedExpression.Call(call),
+                            op.loc,
+                            PlannedExpression.Is(stitched),
                             null,
-                            combined_type
+                            Planner.make_bool_type#()
                         )
+                        set handled_unary: true
                     }
+                    when pas: PlannedAs
+                    {
+                        var value_holder Vector[PlannedOperand]^rp(1)
+                        value_holder.put(0, result)
+                        let stitched PlannedAs(
+                            pas.loc,
+                            pas.target_type,
+                            value_holder.get(0)
+                        )
+                        set result: PlannedOperand(
+                            op.loc,
+                            PlannedExpression.As(stitched),
+                            null,
+                            pas.target_type
+                        )
+                        set handled_unary: true
+                    }
+                    else
+                        0
+
+                guard handled_unary
+                {
+                    set i: i + 1
+                    continue
+                }
+
+                ; Binary operator: op followed by rhs.
+                guard i + 1 < ops.length
+                    break
+
+                let rhs_ptr ops.get(i + 1)
+                guard rhs_ptr <> null
+                {
+                    let rhs (*rhs_ptr)
+
+                    ; Extract operator name from the op operand.
+                    let op_name choose op.expr
+                        when ty: PlannedType
+                            ty.name
+                        else
+                            String^rp("")
+
+                    let resolved this.resolve_operator_call#(
+                        op_name, result.result_type, rhs.result_type
+                    )
+                    var combined_type: PlannedType this.fresh_type_var#(String$(""))
+                    guard resolved <> null
+                        set combined_type: (*resolved)
+
+                    var two_args Vector[PlannedOperand]^rp(2)
+                    two_args.put(0, result)
+                    two_args.put(1, rhs)
+                    let call this.make_planned_call#(
+                        result.loc,
+                        op_name,
+                        this.mangle_binary_operator#(op_name, result.result_type, rhs.result_type),
+                        combined_type,
+                        two_args
+                    )
+                    set result: PlannedOperand(
+                        result.loc,
+                        PlannedExpression.Call(call),
+                        null,
+                        combined_type
+                    )
                 }
                 set i: i + 2
             }
