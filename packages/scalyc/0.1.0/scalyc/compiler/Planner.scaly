@@ -4907,10 +4907,12 @@ define Planner
                 set var_type: holder.get(0)
             }
 
+            let mangled Planner.encode_name(v.name)
+
             PlannedVariant(
                 v.span,
                 v.name,
-                String^rp(""),
+                mangled,
                 var_type,
                 null,
                 tag
