@@ -3601,6 +3601,25 @@ define Planner
         {
             this.push_scope()
 
+            ; Seed generic type parameters with fresh type variables.
+            let saved_subst_len type_substitutions.length
+            var gi: size_t 0
+            while gi < op.parameters.length
+            {
+                let gp_ptr op.parameters.get(gi)
+                guard gp_ptr <> null
+                {
+                    let gp (*gp_ptr)
+                    let existing this.lookup_type_substitution(gp.name)
+                    guard existing = null
+                    {
+                        let fresh this.fresh_type_var#(gp.name)
+                        this.define_type_substitution(gp.name, fresh)
+                    }
+                }
+                set gi: gi + 1
+            }
+
             let planned_input this.plan_items#(op.input)
 
             var i: size_t 0
@@ -3646,6 +3665,7 @@ define Planner
             let planned_impl this.plan_implementation#(op.implementation)
 
             this.pop_scope()
+            set type_substitutions.length: saved_subst_len
 
             var input_holder Vector[PlannedItem]^rp(planned_input)
             let mangled Planner.mangle_operator#(op.name, &input_holder, null)
