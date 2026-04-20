@@ -2474,10 +2474,38 @@ define Planner
         ; that's wired up we leave the resolved fields at sentinel values.
         function plan_is#(rp, this: Planner, i: Is) returns PlannedIs
         {
+            ; `x is null` — single-segment "null" name. Skip type
+            ; resolution; the emitter compares the pointer to zero.
+            guard i.name.length = 1
+            {
+                let first_ptr i.name.get(0)
+                guard first_ptr <> null
+                {
+                    guard (*first_ptr).equals(String$("null"))
+                        return PlannedIs(
+                            i.span,
+                            Planner.make_void_type#(),
+                            0,
+                            String^rp(""),
+                            null,
+                            true
+                        )
+                }
+            }
+
+            ; Resolve the dotted path as a Type so nested variant names
+            ; like Option.Some pick up the full planned type. The
+            ; variant_tag itself is filled in by the call site that
+            ; pairs a PlannedIs with its value operand (needs the
+            ; operand's union type, which plan_is doesn't see).
+            let ty_path Vector[String]^rp(i.name)
+            let ty Type(i.span, ty_path, null, Lifetime.Unspecified(Unspecified()))
+            let test_type this.plan_type#(ty)
             let union_name Planner.join_dotted_name#(i.name)
+
             PlannedIs(
                 i.span,
-                Planner.make_void_type#(),
+                test_type,
                 0,
                 union_name,
                 null,
