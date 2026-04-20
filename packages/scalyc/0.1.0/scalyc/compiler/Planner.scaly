@@ -2684,6 +2684,15 @@ define Planner
             )
         }
 
+        ; plan_as: `x as TargetType` — explicit cast. Resolves the
+        ; target type; the value operand is stitched in at the use site
+        ; (typically during collapse, like PlannedIs).
+        function plan_as#(rp, this: Planner, a: scaly.compiler.Model.As) returns PlannedAs
+        {
+            let target this.plan_type#(a.target_type)
+            PlannedAs(a.span, target, null)
+        }
+
         ; plan_type_operand: a Model.Type used as an operand can mean
         ; different things depending on whether the name resolves to:
         ;   - a local variable in scope → PlannedVariable with its type
@@ -3231,6 +3240,16 @@ define Planner
                 {
                     let pi this.plan_is#(isx)
                     PlannedOperand(op.span, PlannedExpression.Is(pi), null, Planner.make_bool_type#())
+                }
+                when asx: scaly.compiler.Model.As
+                {
+                    let pa this.plan_as#(asx)
+                    PlannedOperand(
+                        op.span,
+                        PlannedExpression.As(pa),
+                        null,
+                        pa.target_type
+                    )
                 }
                 when nw: New
                 {

@@ -191,6 +191,9 @@ define Try
 define SizeOf(span: Span, type: Type)
 define Is(span: Span, name: Vector[String])
 
+; `value as Type` — explicit cast expression.
+define As(span: Span, target_type: Type)
+
 define New
 (
     span: Span
@@ -213,6 +216,7 @@ define Expression union (
     Try: Try
     SizeOf: SizeOf
     Is: Is
+    As: As
     New: New
 )
 

@@ -471,8 +471,28 @@ function handle_expression#(syntax: ExpressionSyntax) returns Expression
             Expression.SizeOf(handle_sizeof#(sizeof_syntax))
         when is_syntax: IsSyntax
             Expression.Is(handle_is#(is_syntax))
+        when as_syntax: AsSyntax
+            Expression.As(handle_as#(as_syntax))
         else
             Expression.Constant(Constant.Integer(IntegerConstant(Span(0, 0), 0)))
+}
+
+function handle_as#(syntax: AsSyntax) returns scaly.compiler.Model.As
+{
+    let target handle_type#(syntax.type)
+    var target_ty: Type Type(
+        Span(syntax.start, syntax.end),
+        Vector[String]#(0),
+        null,
+        Lifetime.Unspecified(Unspecified())
+    )
+    guard target <> null
+        set target_ty: (*target)
+
+    scaly.compiler.Model.As(
+        Span(syntax.start, syntax.end),
+        target_ty
+    )
 }
 
 ; ============================================================================
