@@ -3768,7 +3768,21 @@ define Planner
                 when bk: Block
                 {
                     let pb this.plan_block#(bk)
-                    PlannedOperand(op.span, PlannedExpression.Block(pb), null, Planner.make_void_type#())
+                    ; Block-as-expression takes its type from the last
+                    ; statement (typically an Action whose source is the
+                    ; trailing expression). Empty blocks remain void.
+                    var block_type: PlannedType Planner.make_void_type#()
+                    guard pb.statements <> null
+                    {
+                        let stmts (*pb.statements)
+                        guard stmts.length > 0
+                        {
+                            let last_ptr stmts.get(stmts.length - 1)
+                            guard last_ptr <> null
+                                set block_type: Planner.statement_result_type((*last_ptr))
+                        }
+                    }
+                    PlannedOperand(op.span, PlannedExpression.Block(pb), null, block_type)
                 }
                 when ife: If
                 {
