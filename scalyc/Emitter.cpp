@@ -881,6 +881,16 @@ llvm::Type *Emitter::mapType(const PlannedType &Type) {
                 }
             }
         }
+        if (StructIt == CurrentPlan->Structures.end()) {
+            // Reverse case: Type.Name is package-qualified (e.g.
+            // "scalyc.compiler.Model.Union") but the struct is registered
+            // under its simple name ("Union"). Strip the dotted prefix.
+            size_t LastDot = Type.Name.rfind('.');
+            if (LastDot != std::string::npos) {
+                std::string Simple = Type.Name.substr(LastDot + 1);
+                StructIt = CurrentPlan->Structures.find(Simple);
+            }
+        }
         if (StructIt != CurrentPlan->Structures.end()) {
             auto *StructTy = emitStructType(StructIt->second);
             return StructTy;
@@ -901,6 +911,15 @@ llvm::Type *Emitter::mapType(const PlannedType &Type) {
                     UnionIt = CurrentPlan->Unions.find(Key);
                     break;
                 }
+            }
+        }
+        if (UnionIt == CurrentPlan->Unions.end()) {
+            // Reverse case: Type.Name is package-qualified; try the simple
+            // last segment against the union registry.
+            size_t LastDot = Type.Name.rfind('.');
+            if (LastDot != std::string::npos) {
+                std::string Simple = Type.Name.substr(LastDot + 1);
+                UnionIt = CurrentPlan->Unions.find(Simple);
             }
         }
         if (UnionIt != CurrentPlan->Unions.end()) {
