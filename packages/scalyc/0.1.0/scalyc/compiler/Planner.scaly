@@ -211,9 +211,10 @@ define Planner
     ; ========================================================================
     ; Planner - the per-compilation-unit state.
     ;
-    ; Mirrors the private fields of scalyc/Planner.h. Stage 1 carries only
-    ; the filename; later stages grow the struct to hold concept tables,
-    ; instantiation caches, scope stack, module stack, and so on.
+    ; Mirrors the private fields of scalyc/Planner.h: scope stack, type
+    ; substitutions, HM constraints + solution, concept registry,
+    ; instantiation caches, function/operator registries, package
+    ; search paths, loaded-package cache, and error accumulator.
     ; ========================================================================
 
     define Planner
