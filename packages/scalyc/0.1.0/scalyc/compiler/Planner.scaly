@@ -4665,6 +4665,33 @@ define Planner
             guard throws_type <> null
                 set can_throw: true
 
+            ; needs_local_page: true iff the Action body contains any $
+            ; allocation (Lifetime.Local on some operand's type). Used
+            ; by the Emitter to emit page-cleanup on function exit.
+            var needs_local_page: bool false
+            choose planned_impl
+                when ia: PlannedAction
+                {
+                    guard ia.source <> null
+                    {
+                        let src (*ia.source)
+                        var i: size_t 0
+                        while i < src.length
+                        {
+                            let op_ptr src.get(i)
+                            guard op_ptr <> null
+                            {
+                                guard Planner.operand_has_local_lifetime((*op_ptr))
+                                    set needs_local_page: true
+                            }
+                            set i: i + 1
+                        }
+                    }
+                    0
+                }
+                else
+                    0
+
             let result PlannedFunction(
                 f.span,
                 f.private_,
@@ -4678,7 +4705,7 @@ define Planner
                 f.lifetime,
                 planned_impl,
                 null,
-                false,
+                needs_local_page,
                 can_throw,
                 null
             )
