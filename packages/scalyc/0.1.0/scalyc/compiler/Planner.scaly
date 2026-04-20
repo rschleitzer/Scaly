@@ -3787,17 +3787,56 @@ define Planner
                 when ife: If
                 {
                     let pi this.plan_if#(ife)
-                    PlannedOperand(op.span, PlannedExpression.If(pi), null, Planner.make_void_type#())
+                    ; Result type is the consequent's — branch unification
+                    ; already equated it with the alternative via the
+                    ; solver.
+                    var if_type: PlannedType Planner.make_void_type#()
+                    guard pi.consequent <> null
+                    {
+                        let cons (*pi.consequent)
+                        set if_type: Planner.statement_result_type(cons)
+                    }
+                    PlannedOperand(op.span, PlannedExpression.If(pi), null, if_type)
                 }
                 when mt: Match
                 {
                     let pm this.plan_match#(mt)
-                    PlannedOperand(op.span, PlannedExpression.Match(pm), null, Planner.make_void_type#())
+                    var match_type: PlannedType Planner.make_void_type#()
+                    guard pm.branches <> null
+                    {
+                        let brs (*pm.branches)
+                        guard brs.length > 0
+                        {
+                            let first_br_ptr brs.get(0)
+                            guard first_br_ptr <> null
+                                set match_type: Planner.statement_result_type(
+                                    (*first_br_ptr).consequent
+                                )
+                        }
+                    }
+                    PlannedOperand(op.span, PlannedExpression.Match(pm), null, match_type)
                 }
                 when ch: Choose
                 {
                     let pc this.plan_choose#(ch)
-                    PlannedOperand(op.span, PlannedExpression.Choose(pc), null, Planner.make_void_type#())
+                    var choose_type: PlannedType Planner.make_void_type#()
+                    guard pc.cases <> null
+                    {
+                        let cases (*pc.cases)
+                        guard cases.length > 0
+                        {
+                            let first_ptr cases.get(0)
+                            guard first_ptr <> null
+                            {
+                                let first_case (*first_ptr)
+                                guard first_case.consequent <> null
+                                    set choose_type: Planner.statement_result_type(
+                                        (*first_case.consequent)
+                                    )
+                            }
+                        }
+                    }
+                    PlannedOperand(op.span, PlannedExpression.Choose(pc), null, choose_type)
                 }
                 when fr: For
                 {
