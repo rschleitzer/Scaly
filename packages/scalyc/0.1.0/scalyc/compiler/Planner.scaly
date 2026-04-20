@@ -4183,9 +4183,9 @@ define Planner
         ;   3. Register the binding in the current scope so later uses
         ;      resolve by name.
         ;
-        ; The C++ version also does `collapseOperandSequence` + skip-leading-`=`
-        ; + stack-array-type detection. Those are deferred until we port
-        ; the operator-resolution machinery.
+        ; plan_binding now collapses the operation sequence. Stack-array
+        ; type detection (`[T, N]` at binding site) and skip-leading-`=`
+        ; folding are deferred.
         ; ================================================================
         function plan_binding#(rp, this: Planner, b: Binding) returns PlannedBinding
         {
@@ -4224,11 +4224,11 @@ define Planner
         ; ================================================================
         ; plan_action / plan_return / plan_break / plan_throw.
         ;
-        ; These wrap a Vector[Operand] into the appropriate Planned*
-        ; variant. The operator-sequence collapsing and implicit-return-
-        ; type inference from Planner.cpp is deferred until the operator
-        ; resolver is ported; for now result_type falls back to the
-        ; single-operand case or void.
+        ; Each wraps a Vector[Operand] into the appropriate Planned*
+        ; variant. plan_action collapses its source + target operand
+        ; sequences via collapse_operand_sequence (which folds binary
+        ; ops, method chains, is/as, and prefix ops); result_type takes
+        ; the collapsed source's type.
         ; ================================================================
 
         function plan_action#(rp, this: Planner, a: Action) returns PlannedAction
