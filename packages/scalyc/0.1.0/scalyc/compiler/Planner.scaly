@@ -160,9 +160,6 @@ define LocalBinding
     is_on_page: bool
 )
 
-; stderr write for a short diagnostic before exit.
-procedure scaly_eputs(s: pointer[const_char]) extern
-
 define Planner
 {
     ; ========================================================================
@@ -7264,9 +7261,7 @@ define Planner
                     {
                         guard (b2 & (0xC0 as u8)) = (0x80 as u8)
                         {
-                            let cp (((b0 & (0x0F as u8)) as int) << 12)
-                                | (((b1 & (0x3F as u8)) as int) << 6)
-                                | ((b2 & (0x3F as u8)) as int)
+                            let cp (((b0 & (0x0F as u8)) as int) << 12) | (((b1 & (0x3F as u8)) as int) << 6) | ((b2 & (0x3F as u8)) as int)
                             guard cp >= 0x800
                             {
                                 set code_point: cp
@@ -7294,10 +7289,7 @@ define Planner
                         {
                             guard (b3 & (0xC0 as u8)) = (0x80 as u8)
                             {
-                                let cp (((b0 & (0x07 as u8)) as int) << 18)
-                                    | (((b1 & (0x3F as u8)) as int) << 12)
-                                    | (((b2 & (0x3F as u8)) as int) << 6)
-                                    | ((b3 & (0x3F as u8)) as int)
+                                let cp (((b0 & (0x07 as u8)) as int) << 18) | (((b1 & (0x3F as u8)) as int) << 12) | (((b2 & (0x3F as u8)) as int) << 6) | ((b3 & (0x3F as u8)) as int)
                                 guard cp >= 0x10000
                                 {
                                     guard cp <= 0x10FFFF
