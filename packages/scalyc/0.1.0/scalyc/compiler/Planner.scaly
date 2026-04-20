@@ -3780,6 +3780,54 @@ define Planner
                     }
                     0
                 }
+                when s: Structure
+                {
+                    ; Nested concepts inside a struct's members block
+                    ; register under their own name. This lets
+                    ; `struct Outer { struct Inner { ... } }` resolve
+                    ; `Inner` by its short name.
+                    var i: size_t 0
+                    while i < s.members.length
+                    {
+                        let m_ptr s.members.get(i)
+                        guard m_ptr <> null
+                        {
+                            let mem (*m_ptr)
+                            choose mem
+                                when inner: Concept
+                                {
+                                    this.register_concept_recursive(inner)
+                                    0
+                                }
+                                else
+                                    0
+                        }
+                        set i: i + 1
+                    }
+                    0
+                }
+                when u: scalyc.compiler.Model.Union
+                {
+                    var i: size_t 0
+                    while i < u.members.length
+                    {
+                        let m_ptr u.members.get(i)
+                        guard m_ptr <> null
+                        {
+                            let mem (*m_ptr)
+                            choose mem
+                                when inner: Concept
+                                {
+                                    this.register_concept_recursive(inner)
+                                    0
+                                }
+                                else
+                                    0
+                        }
+                        set i: i + 1
+                    }
+                    0
+                }
                 else
                     0
         }
