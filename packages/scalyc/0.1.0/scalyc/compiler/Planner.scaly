@@ -4355,7 +4355,12 @@ define Planner
         ; An initializer is like a function without name / returns_ / throws_ /
         ; lifetime. Parameters open a new scope, implementation is planned,
         ; scope closed.
-        function plan_initializer#(rp, this: Planner, ini: Initializer) returns PlannedInitializer
+        function plan_initializer#(
+            rp,
+            this: Planner,
+            ini: Initializer,
+            parent: ref[PlannedType]?
+        ) returns PlannedInitializer
         {
             this.push_scope()
 
@@ -4389,13 +4394,15 @@ define Planner
 
             ; init#(page, ...) requires the mangled symbol to carry a
             ; leading size_t "page" parameter so LLVM signatures match
-            ; what emit-site call resolution expects.
+            ; what emit-site call resolution expects. When parent is
+            ; non-null the initializer mangles as a method of that type
+            ; (Itanium `_ZN<parent>initE<params>`).
             var has_page: bool false
             guard ini.page_parameter <> null
                 set has_page: true
 
             let mangled Planner.mangle_function#(
-                String$("init"), &input_holder, null, has_page
+                String$("init"), &input_holder, parent, has_page
             )
 
             ; Clone the page_parameter name into rp so the resulting
@@ -4687,7 +4694,7 @@ define Planner
                 guard ii_ptr <> null
                 {
                     let ini (*ii_ptr)
-                    planned_initializers.add(this.plan_initializer#(ini))
+                    planned_initializers.add(this.plan_initializer#(ini, parent_ref))
                 }
                 set ii: ii + 1
             }
@@ -9374,7 +9381,7 @@ define Planner
             x_params,
             Implementation.Intrinsic(Intrinsic(Span(0, 0)))
         )
-        let pl_init p3.plan_initializer$(model_init)
+        let pl_init p3.plan_initializer$(model_init, null)
         guard pl_init.input = null
             return 283
         guard (*pl_init.input).length <> 1
