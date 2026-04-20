@@ -1554,6 +1554,55 @@ define Planner
             }
             var result: PlannedOperand (*first_ptr)
 
+            ; Prefix operator: first operand is a Type whose name is an
+            ; operator (`-x`, `!flag`, `*ptr`, etc.). Recurse on the
+            ; rest, resolve against the rest's result type, and wrap in
+            ; a single PlannedCall. The whole sequence is consumed.
+            choose result.expr
+                when ty: PlannedType
+                {
+                    guard Planner.is_operator_name(ty.name)
+                    {
+                        let prefix_name ty.name
+                        var rest_arr Array[PlannedOperand]$()
+                        var r: size_t 1
+                        while r < ops.length
+                        {
+                            let p_ptr ops.get(r)
+                            guard p_ptr <> null
+                                rest_arr.add((*p_ptr))
+                            set r: r + 1
+                        }
+                        var rest_vec Vector[PlannedOperand]^rp(rest_arr)
+                        let rest_result this.collapse_operand_sequence#(rest_vec)
+
+                        let rt_ref this.resolve_prefix_operator_call#(
+                            prefix_name, rest_result.result_type
+                        )
+                        var rt: PlannedType this.fresh_type_var#(String$(""))
+                        guard rt_ref <> null
+                            set rt: (*rt_ref)
+
+                        let mangled this.mangle_unary_operator#(
+                            prefix_name, rest_result.result_type
+                        )
+                        var args_v Vector[PlannedOperand]^rp(1)
+                        args_v.put(0, rest_result)
+                        let call this.make_planned_call#(
+                            result.loc, prefix_name, mangled, rt, args_v
+                        )
+                        return PlannedOperand(
+                            result.loc,
+                            PlannedExpression.Call(call),
+                            null,
+                            rt
+                        )
+                    }
+                    0
+                }
+                else
+                    0
+
             ; Call detection: first operand followed by a Tuple. Two
             ; shapes accepted:
             ;   - free function: first operand's expr is a Type (name
