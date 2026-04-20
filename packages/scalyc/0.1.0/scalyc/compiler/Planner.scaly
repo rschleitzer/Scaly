@@ -6303,14 +6303,20 @@ define Planner
 
     ; extract_arg_types: flatten a function-call argument list (modelled as a
     ; tuple of components) into a plain Vector of argument result types.
-    ; Non-tuple operands yield an empty Vector, matching C++ semantics.
+    ; A non-tuple operand falls back to its own result_type as a single arg —
+    ; the parser may elide the tuple around a single-argument call like
+    ; `f(x)` where `x` is already a complete operand.
     function extract_arg_types#(rp, args_op: PlannedOperand) returns Vector[PlannedType]
     {
         choose args_op.expr
             when t: PlannedTuple
                 Planner.extract_tuple_arg_types#(t)
             else
-                Vector[PlannedType]^rp(0)
+            {
+                var single Vector[PlannedType]^rp(1)
+                single.put(0, args_op.result_type)
+                single
+            }
     }
 
     ; ========================================================================
