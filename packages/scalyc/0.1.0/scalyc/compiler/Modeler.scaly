@@ -1159,12 +1159,83 @@ function build_function#(start: size_t, end_pos: size_t, syntax: TargetSyntax, i
             let life handle_lifetime(named.routine.lifetime)
             let impl handle_implementation#(named.routine.implementation)
 
+            ; Detect function# (Lifetime=Call). The first parameter
+            ; of a Call-lifetime function is the implicit page
+            ; parameter — the Planner / Emitter treat it specially and
+            ; the user-visible arity excludes it.
+            var page_param: ref[String]? null
+            var final_input: Vector[Item] input
+            var is_call_life: bool false
+            choose life
+                when c: Call
+                    set is_call_life: true
+                else
+                    0
+            guard is_call_life
+            {
+                guard input.length > 0
+                {
+                    let first_ptr input.get(0)
+                    guard first_ptr <> null
+                    {
+                        guard first_ptr.name <> null
+                        {
+                            var holder Vector[String]#(1)
+                            holder.put(0, String#((*first_ptr.name)))
+                            set page_param: holder.get(0)
+                        }
+                    }
+                    var rest Vector[Item]#(input.length - 1)
+                    var k: size_t 1
+                    while k < input.length
+                    {
+                        let ip input.get(k)
+                        guard ip <> null
+                            rest.put(k - 1, (*ip))
+                        set k: k + 1
+                    }
+                    set final_input: rest
+                }
+            }
+
+            ; Extract generic parameter names from syntax.generics if
+            ; present. Each GenericArgument's TypeSyntax is a bare
+            ; name — we pull it out and build a GenericParameter.
+            var gen_params Vector[GenericParameter]#(0)
+            guard named.routine.generics <> null
+            {
+                let g_syn (*named.routine.generics)
+                guard g_syn.generics <> null
+                {
+                    let g_list (*g_syn.generics)
+                    var gp_arr Vector[GenericParameter]#(g_list.length)
+                    var gi: size_t 0
+                    while gi < g_list.length
+                    {
+                        let ga_ptr g_list.get(gi)
+                        guard ga_ptr <> null
+                        {
+                            let ga (*ga_ptr)
+                            gp_arr.put(gi, GenericParameter(
+                                Span(ga.start, ga.end),
+                                ga.type.name.name,
+                                Vector[Attribute]#(0)
+                            ))
+                        }
+                        set gi: gi + 1
+                    }
+                    set gen_params: gp_arr
+                }
+            }
+
             Function(
                 Span(start, end_pos),
                 is_private,
                 pure,
                 named.name,
-                input,
+                gen_params,
+                page_param,
+                final_input,
                 return_type,
                 throws_type,
                 life,
@@ -1177,6 +1248,8 @@ function build_function#(start: size_t, end_pos: size_t, syntax: TargetSyntax, i
                 is_private,
                 pure,
                 "",
+                Vector[GenericParameter]#(0),
+                null,
                 Vector[Item]#(0),
                 null,
                 null,
@@ -1217,10 +1290,39 @@ function handle_operator#(syntax: OperatorSyntax, is_private: bool) returns Oper
 
             let impl handle_implementation#(named.routine.implementation)
 
+            ; Extract generic parameters from named.routine.generics.
+            var op_gen_params Vector[GenericParameter]#(0)
+            guard named.routine.generics <> null
+            {
+                let g_syn (*named.routine.generics)
+                guard g_syn.generics <> null
+                {
+                    let g_list (*g_syn.generics)
+                    var gp_arr Vector[GenericParameter]#(g_list.length)
+                    var gi: size_t 0
+                    while gi < g_list.length
+                    {
+                        let ga_ptr g_list.get(gi)
+                        guard ga_ptr <> null
+                        {
+                            let ga (*ga_ptr)
+                            gp_arr.put(gi, GenericParameter(
+                                Span(ga.start, ga.end),
+                                ga.type.name.name,
+                                Vector[Attribute]#(0)
+                            ))
+                        }
+                        set gi: gi + 1
+                    }
+                    set op_gen_params: gp_arr
+                }
+            }
+
             Operator(
                 Span(syntax.start, syntax.end),
                 is_private,
                 named.name,
+                op_gen_params,
                 input,
                 return_type,
                 throws_type,
@@ -1257,6 +1359,7 @@ function handle_operator#(syntax: OperatorSyntax, is_private: bool) returns Oper
                 Span(syntax.start, syntax.end),
                 is_private,
                 "[]",
+                Vector[GenericParameter]#(0),
                 input,
                 return_type,
                 throws_type,
@@ -1268,6 +1371,7 @@ function handle_operator#(syntax: OperatorSyntax, is_private: bool) returns Oper
                 Span(syntax.start, syntax.end),
                 is_private,
                 "",
+                Vector[GenericParameter]#(0),
                 Vector[Item]#(0),
                 null,
                 null,
@@ -1288,13 +1392,57 @@ function handle_initializer#(syntax: InitSyntax, is_private: bool) returns Initi
         set input: handle_parameter_set#(params)
     }
 
+    ; Detect init# (Lifetime=Call) and peel off the implicit page
+    ; parameter. It's always the first parameter and its name is
+    ; recorded in page_parameter; subsequent parameters form the
+    ; user-visible input list.
+    var page_param: ref[String]? null
+    var final_input: Vector[Item] input
+    guard syntax.lifetime <> null
+    {
+        let lt_syn (*syntax.lifetime)
+        var is_call_life: bool false
+        choose lt_syn
+            when cs: CallSyntax
+                set is_call_life: true
+            else
+                0
+        guard is_call_life
+        {
+            guard input.length > 0
+            {
+                let first_ptr input.get(0)
+                guard first_ptr <> null
+                {
+                    guard first_ptr.name <> null
+                    {
+                        var holder Vector[String]#(1)
+                        holder.put(0, String#((*first_ptr.name)))
+                        set page_param: holder.get(0)
+                    }
+                }
+                var rest Vector[Item]#(input.length - 1)
+                var k: size_t 1
+                while k < input.length
+                {
+                    let ip input.get(k)
+                    guard ip <> null
+                        rest.put(k - 1, (*ip))
+                    set k: k + 1
+                }
+                set final_input: rest
+            }
+        }
+    }
+
     let act handle_action#(syntax.action)
     let impl Implementation.Action(act)
 
     Initializer(
         Span(syntax.start, syntax.end),
         is_private,
-        input,
+        page_param,
+        final_input,
         impl
     )
 }

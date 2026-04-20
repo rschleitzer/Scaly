@@ -125,6 +125,7 @@ use scalyc.compiler.Model.Statement
 use scalyc.compiler.Model.Block
 use scalyc.compiler.Model.Property
 use scalyc.compiler.Model.Variant
+use scalyc.compiler.Model.GenericParameter
 use scalyc.compiler.Plan.PlannedOperand
 use scalyc.compiler.Plan.PlannedExpression
 use scalyc.compiler.Plan.PlannedTuple
@@ -810,6 +811,8 @@ define Planner
             let aligned_alloc_fn Function(
                 Span(0, 0), false, false,
                 String$("aligned_alloc"),
+                Vector[GenericParameter]$(0),
+                null,
                 aa_inputs,
                 &aa_ptr_void,
                 null,
@@ -829,6 +832,8 @@ define Planner
             let free_fn Function(
                 Span(0, 0), false, false,
                 String$("free"),
+                Vector[GenericParameter]$(0),
+                null,
                 free_inputs,
                 null,
                 null,
@@ -854,6 +859,8 @@ define Planner
             let exit_fn Function(
                 Span(0, 0), false, false,
                 String$("exit"),
+                Vector[GenericParameter]$(0),
+                null,
                 exit_inputs,
                 null,
                 null,
@@ -7387,6 +7394,8 @@ define Planner
             false,
             false,
             String$("foo"),
+            Vector[GenericParameter]$(0),
+            null,
             Vector[Item]$(0),
             null,
             null,
@@ -7402,6 +7411,8 @@ define Planner
             false,
             false,
             String$("bar"),
+            Vector[GenericParameter]$(0),
+            null,
             Vector[Item]$(0),
             null,
             null,
@@ -7425,6 +7436,8 @@ define Planner
             false,
             false,
             String$("baz"),
+            Vector[GenericParameter]$(0),
+            null,
             Vector[Item]$(0),
             &int_return_ty,
             null,
@@ -7448,6 +7461,8 @@ define Planner
             false,
             false,
             String$("qux"),
+            Vector[GenericParameter]$(0),
+            null,
             Vector[Item]$(0),
             &t_return_ty,
             null,
@@ -7471,6 +7486,8 @@ define Planner
             false,
             false,
             String$("make_foo"),
+            Vector[GenericParameter]$(0),
+            null,
             Vector[Item]$(0),
             &foo_return_ty,
             null,
@@ -8409,13 +8426,15 @@ define Planner
             false,
             true,
             String$("foo"),
+            Vector[GenericParameter]$(0),
+            null,
             x_params,
             &int_type,
             null,
             Lifetime.Unspecified(Unspecified()),
             Implementation.Extern(Extern(Span(0, 0)))
         )
-        let pl_fn p3.plan_function$(model_fn)
+        let pl_fn p3.plan_function$(model_fn, null)
         guard pl_fn.name.equals(String$("foo")) = false
             return 275
         guard pl_fn.input = null
@@ -8454,6 +8473,7 @@ define Planner
         let model_init Initializer(
             Span(0, 0),
             false,
+            null,
             x_params,
             Implementation.Intrinsic(Intrinsic(Span(0, 0)))
         )
@@ -8483,6 +8503,7 @@ define Planner
             Span(0, 0),
             false,
             String$("+"),
+            Vector[GenericParameter]$(0),
             plus_params,
             &int_type,
             null,

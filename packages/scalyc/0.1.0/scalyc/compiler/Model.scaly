@@ -243,6 +243,8 @@ define Function
     private_: bool
     pure: bool
     name: String
+    parameters: Vector[GenericParameter]
+    page_parameter: String?
     input: Vector[Item]
     returns_: Type?
     throws_: Type?
@@ -271,6 +273,7 @@ define Initializer
 (
     span: Span
     private_: bool
+    page_parameter: String?
     input: Vector[Item]
     implementation: Implementation
 )
@@ -283,6 +286,7 @@ define Operator
     span: Span
     private_: bool
     name: String
+    parameters: Vector[GenericParameter]
     input: Vector[Item]
     returns_: Type?
     throws_: Type?
