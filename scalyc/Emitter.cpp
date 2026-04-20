@@ -4688,7 +4688,17 @@ llvm::Expected<llvm::Value*> Emitter::emitChoose(const PlannedChoose &Choose) {
                     ResultAlloca = createEntryBlockAlloca(CaseValue->getType(), "choose.result");
                     ResultType = CaseValue->getType();
                 }
-                Builder->CreateStore(CaseValue, ResultAlloca);
+                // Branch-type reconciliation: if ResultAlloca expects a
+                // struct but the branch produced a pointer to that struct
+                // (e.g. a `^rp(...)` heap-alloc vs a by-value branch),
+                // load the struct first. Without this, storing the 8-byte
+                // pointer into the struct-sized slot leaves the upper
+                // bytes undefined and downstream consumers read garbage.
+                llvm::Value *StoreVal = CaseValue;
+                if (ResultType->isStructTy() && CaseValue->getType()->isPointerTy()) {
+                    StoreVal = Builder->CreateLoad(ResultType, CaseValue, "choose.branch.load");
+                }
+                Builder->CreateStore(StoreVal, ResultAlloca);
             }
         }
 
@@ -4737,7 +4747,12 @@ llvm::Expected<llvm::Value*> Emitter::emitChoose(const PlannedChoose &Choose) {
                 ResultAlloca = createEntryBlockAlloca(ElseValue->getType(), "choose.result");
                 ResultType = ElseValue->getType();
             }
-            Builder->CreateStore(ElseValue, ResultAlloca);
+            // Same pointer-vs-struct reconciliation as the when branches.
+            llvm::Value *StoreVal = ElseValue;
+            if (ResultType->isStructTy() && ElseValue->getType()->isPointerTy()) {
+                StoreVal = Builder->CreateLoad(ResultType, ElseValue, "choose.branch.load");
+            }
+            Builder->CreateStore(StoreVal, ResultAlloca);
         }
     } else if (ResultAlloca && !ElseValue) {
         // If when clauses produce values but no else was given, store undef for the default path
