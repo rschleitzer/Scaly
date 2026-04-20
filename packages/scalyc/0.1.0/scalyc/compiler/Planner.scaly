@@ -296,6 +296,15 @@ define Planner
         ; plumbing Result[T, E] through every helper.
         errors: Array[String]
 
+        ; Sibling programs: Model.Programs belonging to the same
+        ; compilation unit but loaded from separate source files.
+        ; Mirrors Planner.cpp's SiblingPrograms — main.scaly may
+        ; reference cli.scaly, which references compiler.scaly;
+        ; once each has been parsed+modelled the result is stashed
+        ; here so concepts/functions/operators from every sibling
+        ; populate the same registries as the primary program.
+        sibling_programs: Array[Program]
+
         ; Monotonic counter for synthesizing unique lambda names.
         next_lambda_id: size_t
     )
@@ -320,6 +329,7 @@ define Planner
             set loaded_packages: Array[KeyValuePair[String, Module]]^page()
             set loaded_module_paths: Array[KeyValuePair[String, Module]]^page()
             set errors: Array[String]^page()
+            set sibling_programs: Array[Program]^page()
             set next_lambda_id: 0
 
             ; Seed the function registry with C-runtime externs so name
@@ -538,6 +548,39 @@ define Planner
         function add_package_search_path(this: Planner, path: String)
         {
             search_paths.add(path)
+        }
+
+        ; add_sibling_program: register another Program (typically
+        ; built from a peer source file) whose top-level concepts,
+        ; functions and operators should be visible during planning
+        ; of the primary program. The sibling is stashed here and
+        ; later surfaced by register_sibling_programs right before
+        ; the main-module registration pass.
+        function add_sibling_program(this: Planner, prog: Program)
+        {
+            sibling_programs.add(prog)
+        }
+
+        ; register_sibling_programs: walk every stashed sibling
+        ; Program and populate the shared registries (concepts,
+        ; model_functions, model_operators) from each one. The same
+        ; register_module_concepts helper is reused so nested
+        ; namespaces, sub-modules, and struct-internal concepts are
+        ; all flattened into the flat maps that lookup_concept /
+        ; lookup_functions / lookup_operators consult.
+        function register_sibling_programs(this: Planner)
+        {
+            var i: size_t 0
+            while i < sibling_programs.length
+            {
+                let prog_ptr sibling_programs.get(i)
+                guard prog_ptr <> null
+                {
+                    let prog (*prog_ptr)
+                    this.register_module_concepts(prog.module_)
+                }
+                set i: i + 1
+            }
         }
 
         ; Record a diagnostic. Callers don't need to format the message
@@ -5580,6 +5623,13 @@ define Planner
         ; once the instantiate-generic pass is ported.
         function plan_program#(rp, this: Planner, prog: Program) returns ref[Plan]?
         {
+            ; Seed the concept/function/operator registries with
+            ; every sibling program's top-level definitions first.
+            ; This way plan_module's lookups see cross-file
+            ; references (main.scaly -> cli.scaly etc.) before it
+            ; starts planning the primary module's members.
+            this.register_sibling_programs()
+
             let planned_main this.plan_module#(prog.module_)
             let planned_stmts this.plan_statements#(prog.statements)
 
