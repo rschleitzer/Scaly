@@ -3247,6 +3247,50 @@ define Planner
                 set alternative_ref: alt_holder.get(0)
             }
 
+            ; Unify each when-arm's consequent result type (plus the
+            ; optional alternative) so choose-as-expression has a single
+            ; type. Voids are skipped — statement-only arms contribute
+            ; no constraint.
+            guard cases_arr.length > 0
+            {
+                var first_ty: PlannedType Planner.make_void_type#()
+                var have_first: bool false
+                var wi: size_t 0
+                while wi < cases_arr.length
+                {
+                    let w_ptr cases_arr.get(wi)
+                    guard w_ptr <> null
+                    {
+                        let pw (*w_ptr)
+                        guard pw.consequent <> null
+                        {
+                            let cons_ref (*pw.consequent)
+                            let arm_ty Planner.statement_result_type(cons_ref)
+                            guard arm_ty.name.equals(String$("void")) = false
+                            {
+                                guard have_first = false
+                                {
+                                    set first_ty: arm_ty
+                                    set have_first: true
+                                }
+                                guard have_first
+                                    this.add_equality_constraint(
+                                        first_ty, arm_ty, pw.loc
+                                    )
+                            }
+                        }
+                    }
+                    set wi: wi + 1
+                }
+                guard alternative_ref <> null and have_first
+                {
+                    let alt (*alternative_ref)
+                    let alt_ty Planner.statement_result_type(alt)
+                    guard alt_ty.name.equals(String$("void")) = false
+                        this.add_equality_constraint(first_ty, alt_ty, c.span)
+                }
+            }
+
             var cond_holder Vector[PlannedOperand]^rp(planned_cond)
             var cases_holder Vector[PlannedWhen]^rp(cases_arr)
             PlannedChoose(c.span, &cond_holder, &cases_holder, alternative_ref)
