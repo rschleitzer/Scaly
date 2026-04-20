@@ -3114,6 +3114,24 @@ define Planner
             this.push_scope()
             let planned_bind this.plan_binding#(t.binding)
 
+            ; The exception union for catches is the result type of the
+            ; binding's last (call) operand — the call's throws_ flows
+            ; back into the operand's result_type at resolve time (C++
+            ; reference: planTry uses Operation[0].ResultType). When the
+            ; binding has no operands we fall back to void so plan_when
+            ; uses fresh type vars.
+            var exc_union_type: PlannedType Planner.make_void_type#()
+            guard planned_bind.operation <> null
+            {
+                let ops (*planned_bind.operation)
+                guard ops.length > 0
+                {
+                    let last_ptr ops.get(ops.length - 1)
+                    guard last_ptr <> null
+                        set exc_union_type: (*last_ptr).result_type
+                }
+            }
+
             var catches_arr Array[PlannedWhen]$()
             var ci: size_t 0
             while ci < t.catches.length
@@ -3122,10 +3140,7 @@ define Planner
                 guard w_ptr <> null
                 {
                     let w (*w_ptr)
-                    ; plan_try catches don't carry an enclosing union
-                    ; type — the exception machinery is separate. Pass
-                    ; void so plan_when falls back to fresh type vars.
-                    catches_arr.add(this.plan_when#(w, Planner.make_void_type#()))
+                    catches_arr.add(this.plan_when#(w, exc_union_type))
                 }
                 set ci: ci + 1
             }
