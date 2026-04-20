@@ -4440,7 +4440,12 @@ define Planner
         ; plan_operator: Model.Operator → Plan.PlannedOperator.
         ; Structurally identical to plan_function modulo the two missing
         ; fields (no `pure`, no `lifetime`).
-        function plan_operator#(rp, this: Planner, op: Operator) returns PlannedOperator
+        function plan_operator#(
+            rp,
+            this: Planner,
+            op: Operator,
+            parent: ref[PlannedType]?
+        ) returns PlannedOperator
         {
             this.push_scope()
 
@@ -4511,7 +4516,7 @@ define Planner
             set type_substitutions.length: saved_subst_len
 
             var input_holder Vector[PlannedItem]^rp(planned_input)
-            let mangled Planner.mangle_operator#(op.name, &input_holder, null)
+            let mangled Planner.mangle_operator#(op.name, &input_holder, parent)
             PlannedOperator(
                 op.span,
                 op.private_,
@@ -4678,7 +4683,7 @@ define Planner
                         }
                         when o: Operator
                         {
-                            planned_operators.add(this.plan_operator#(o))
+                            planned_operators.add(this.plan_operator#(o, parent_ref))
                             0
                         }
                         else
@@ -4774,7 +4779,7 @@ define Planner
                         }
                         when o: Operator
                         {
-                            operators.add(this.plan_operator#(o))
+                            operators.add(this.plan_operator#(o, null))
                             0
                         }
                         when c: Concept
@@ -4988,7 +4993,7 @@ define Planner
                         }
                         when o: Operator
                         {
-                            operators.add(this.plan_operator#(o))
+                            operators.add(this.plan_operator#(o, null))
                             0
                         }
                         when c: Concept
@@ -5133,7 +5138,7 @@ define Planner
                         }
                         when o: Operator
                         {
-                            planned_operators.add(this.plan_operator#(o))
+                            planned_operators.add(this.plan_operator#(o, u_parent_ref))
                             0
                         }
                         else
@@ -9413,7 +9418,7 @@ define Planner
             null,
             Implementation.Intrinsic(Intrinsic(Span(0, 0)))
         )
-        let pl_op p3.plan_operator$(model_op)
+        let pl_op p3.plan_operator$(model_op, null)
         guard pl_op.name.equals(String$("+")) = false
             return 285
         guard pl_op.input = null
