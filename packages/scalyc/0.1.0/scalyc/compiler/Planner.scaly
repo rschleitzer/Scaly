@@ -456,6 +456,41 @@ define Planner
             instantiated_unions.add(u)
         }
 
+        ; Lookups against the instantiation caches, keyed by mangled
+        ; name. Used by instantiate_generic to avoid re-planning an
+        ; already-instantiated concept.
+        function has_instantiated_structure(this: Planner, mangled: String) returns bool
+        {
+            var i: size_t 0
+            while i < instantiated_structures.length
+            {
+                let s_ptr instantiated_structures.get(i)
+                guard s_ptr <> null
+                {
+                    guard s_ptr.mangled_name.equals(mangled)
+                        return true
+                }
+                set i: i + 1
+            }
+            false
+        }
+
+        function has_instantiated_union(this: Planner, mangled: String) returns bool
+        {
+            var i: size_t 0
+            while i < instantiated_unions.length
+            {
+                let u_ptr instantiated_unions.get(i)
+                guard u_ptr <> null
+                {
+                    guard u_ptr.mangled_name.equals(mangled)
+                        return true
+                }
+                set i: i + 1
+            }
+            false
+        }
+
         function record_function(this: Planner, f: PlannedFunction)
         {
             instantiated_functions.add(f)
@@ -1197,49 +1232,65 @@ define Planner
                 return this.fresh_type_var#(concept_name)
 
             let c (*concept_ref)
-            let saved_subst_len type_substitutions.length
 
-            ; Bind each generic parameter name to its concrete argument.
-            var i: size_t 0
-            while i < c.parameters.length
-            {
-                guard i < args.length
-                {
-                    let p_ptr c.parameters.get(i)
-                    let a_ptr args.get(i)
-                    guard p_ptr <> null
-                    {
-                        guard a_ptr <> null
-                            this.define_type_substitution(p_ptr.name, (*a_ptr))
-                    }
-                }
-                set i: i + 1
-            }
-
-            ; Plan the underlying definition so the cache records the
-            ; instantiated struct/union. The returned planned value is
-            ; unused here — we rebuild the PlannedType shell below with
-            ; the correct generics/mangled_name.
-            choose c.definition
-                when s: Structure
-                {
-                    let pl this.plan_structure#(s, concept_name)
-                    0
-                }
-                when u: scalyc.compiler.Model.Union
-                {
-                    let pl this.plan_union#(u, concept_name)
-                    0
-                }
-                else
-                    0
-
-            ; Pop substitutions back to what the caller had.
-            set type_substitutions.length: saved_subst_len
-
-            ; Assemble the resulting PlannedType.
+            ; Compute the mangled name upfront so we can short-circuit
+            ; repeat instantiations (e.g. Vector[int] used from two
+            ; sites). Without this, each call would re-plan the
+            ; definition and re-append to instantiated_{structures,
+            ; unions}.
             var args_holder Vector[PlannedType]^rp(args)
             let mangled Planner.mangle_structure#(concept_name, &args_holder)
+
+            var already_cached: bool false
+            guard this.has_instantiated_structure(mangled)
+                set already_cached: true
+            guard already_cached = false
+                guard this.has_instantiated_union(mangled)
+                    set already_cached: true
+
+            guard already_cached = false
+            {
+                let saved_subst_len type_substitutions.length
+
+                ; Bind each generic parameter name to its concrete argument.
+                var i: size_t 0
+                while i < c.parameters.length
+                {
+                    guard i < args.length
+                    {
+                        let p_ptr c.parameters.get(i)
+                        let a_ptr args.get(i)
+                        guard p_ptr <> null
+                        {
+                            guard a_ptr <> null
+                                this.define_type_substitution(p_ptr.name, (*a_ptr))
+                        }
+                    }
+                    set i: i + 1
+                }
+
+                ; Plan the underlying definition so the cache records
+                ; the instantiated struct/union. The returned planned
+                ; value is unused — we rebuild the PlannedType shell
+                ; below with the correct generics/mangled_name.
+                choose c.definition
+                    when s: Structure
+                    {
+                        let pl this.plan_structure#(s, concept_name)
+                        0
+                    }
+                    when u: scalyc.compiler.Model.Union
+                    {
+                        let pl this.plan_union#(u, concept_name)
+                        0
+                    }
+                    else
+                        0
+
+                ; Pop substitutions back to what the caller had.
+                set type_substitutions.length: saved_subst_len
+            }
+
             PlannedType(
                 loc,
                 String^rp(concept_name),
