@@ -2969,7 +2969,9 @@ llvm::Expected<llvm::Value*> Emitter::emitOperand(const PlannedOperand &Op) {
                 llvm::raw_string_ostream OS(TypeStr);
                 ValTy->print(OS);
                 return llvm::make_error<llvm::StringError>(
-                    "Cannot apply member access '" + Access.Name + "' to non-aggregate type",
+                    "Cannot apply member access '" + Access.Name +
+                        "' to non-aggregate type (" + OS.str() +
+                        ", parent=" + Access.ParentType.Name + ")",
                     llvm::inconvertibleErrorCode()
                 );
             }
