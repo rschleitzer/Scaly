@@ -282,10 +282,10 @@ define Planner
         ; once a package is found and parsed.
         loaded_packages: Array[KeyValuePair[String, Module]]
 
-        ; Intra-package module cache keyed by full file path. Entries
-        ; may be inserted before loading completes (as a guard against
-        ; circular module loads); a present-but-null slot means "load
-        ; already attempted and failed / in progress".
+        ; Intra-package module cache keyed by full file path.
+        ; Pre-populated by the outer driver via
+        ; register_loaded_module; load_intra_package_module#
+        ; consults it on demand.
         loaded_module_paths: Array[KeyValuePair[String, Module]]
 
         ; Collected diagnostic messages. Planner paths that can't
@@ -537,12 +537,19 @@ define Planner
         ; ================================================================
         ; Package search paths + on-demand module loading.
         ;
-        ; The full parse+model step needed to realise a Module from a
-        ; .scaly file isn't wired in from the Scaly Planner yet — that
-        ; requires Scaly-side access to Parser and Modeler. For now
-        ; these methods resolve paths, probe the filesystem, and serve
-        ; the cache; the "found a candidate file, now parse it" branch
-        ; funnels through not_implemented.
+        ; The Scaly Planner cannot yet drive the Scaly Parser +
+        ; Modeler from its own body (would require threading a
+        ; Parser instance or reifying a free-function parse entry
+        ; point). Instead we take the pre-parsed-cache approach:
+        ; an outer driver (cli.scaly, test harness) parses and
+        ; models the required packages / sibling modules, then
+        ; hands the resulting Module roots to the Planner via
+        ; register_loaded_package / register_loaded_module. The
+        ; load_* helpers are pure cache lookups.
+        ;
+        ; build_package_search_paths# / build_package_file_path#
+        ; stay for callers that need to locate candidate files
+        ; before parsing them.
         ; ================================================================
 
         function add_package_search_path(this: Planner, path: String)
@@ -672,54 +679,51 @@ define Planner
             Path.join^rp(step2, file_part)
         }
 
-        ; load_package_on_demand: look up a package by name, probing the
-        ; search paths until a matching .scaly file turns up. The cache
-        ; short-circuits repeat calls. When a file is found but we have
-        ; no Scaly-side parser/modeler to build the Module, the path
-        ; dies loudly via not_implemented so the gap is visible.
+        ; register_loaded_package: pre-populate the package cache.
+        ; Callers (cli.scaly, test harnesses) parse a package source
+        ; file externally, build a Model.Module for it, then hand
+        ; the root Module here keyed by package name.
+        ;
+        ; This is the pre-parsed-cache wiring: the Scaly Planner
+        ; can't drive the Scaly Parser + Modeler from its own body
+        ; yet, so the orchestration of "find the .scaly file, parse
+        ; it, model it" happens one level up. The Planner just asks
+        ; "do you have package X for me?" via load_package_on_demand#.
+        function register_loaded_package(this: Planner, name: String, mod: Module)
+        {
+            loaded_packages.add(KeyValuePair[String, Module](name, mod))
+        }
+
+        ; register_loaded_module: pre-populate the intra-package
+        ; module cache keyed by full file path. Same contract as
+        ; register_loaded_package — parsing + modelling happens
+        ; outside the Planner; the Planner consults this cache when
+        ; a `use` statement references a peer module file.
+        function register_loaded_module(this: Planner, path: String, mod: Module)
+        {
+            loaded_module_paths.add(KeyValuePair[String, Module](path, mod))
+        }
+
+        ; load_package_on_demand: cache-only lookup of a package by
+        ; name. Returns the pre-registered root Module if one is
+        ; cached, otherwise null. Pre-registration happens via
+        ; register_loaded_package. The filesystem probing helpers
+        ; (build_package_search_paths#, build_package_file_path#)
+        ; are retained for callers that want to discover candidate
+        ; files before parsing them externally.
         function load_package_on_demand#(
             rp,
             this: Planner,
             name: String
         ) returns ref[Module]?
         {
-            ; Cache hit.
-            let cached this.lookup_loaded_package(name)
-            guard cached <> null
-                return cached
-
-            let paths this.build_package_search_paths#()
-            let version String^rp("0.1.0")
-
-            var i: size_t 0
-            while i < paths.length
-            {
-                let base_ptr paths.get(i)
-                guard base_ptr <> null
-                {
-                    let base (*base_ptr)
-                    let pkg_path this.build_package_file_path#(
-                        base, name, version
-                    )
-                    guard File.exists(pkg_path)
-                    {
-                        ; We found a candidate package file but parse+
-                        ; model is not yet ported into the Scaly Planner.
-                        ; Fail loudly rather than pretend the package
-                        ; doesn't exist.
-                        Planner.not_implemented("load_package_on_demand: parse+model")
-                    }
-                }
-                set i: i + 1
-            }
-
-            null
+            this.lookup_loaded_package(name)
         }
 
-        ; load_intra_package_module: load a sibling module file (e.g.
-        ; "BasePath/ModuleName.scaly") for an already-mounted package.
-        ; Same cache-then-probe shape; same not_implemented gate on the
-        ; parse+model step.
+        ; load_intra_package_module: cache-only lookup of a peer
+        ; module inside an already-mounted package, keyed by the
+        ; full file path ("BasePath/ModuleName.scaly"). Callers
+        ; pre-populate via register_loaded_module.
         function load_intra_package_module#(
             rp,
             this: Planner,
@@ -733,15 +737,7 @@ define Planner
             let file_part name_sb.to_string^rp()
             let mod_path Path.join^rp(base_path, file_part)
 
-            let cached this.lookup_loaded_module_path(mod_path)
-            guard cached <> null
-                return cached
-
-            guard File.exists(mod_path)
-                return null
-
-            Planner.not_implemented("load_intra_package_module: parse+model")
-            null
+            this.lookup_loaded_module_path(mod_path)
         }
 
         ; ================================================================
