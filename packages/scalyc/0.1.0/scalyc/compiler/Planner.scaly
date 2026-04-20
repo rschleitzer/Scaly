@@ -4286,6 +4286,10 @@ define Planner
                 f.name, &input_holder, parent, has_page
             )
 
+            var can_throw: bool false
+            guard throws_type <> null
+                set can_throw: true
+
             let result PlannedFunction(
                 f.span,
                 f.private_,
@@ -4300,7 +4304,7 @@ define Planner
                 planned_impl,
                 null,
                 false,
-                false,
+                can_throw,
                 null
             )
             this.record_function(result)
