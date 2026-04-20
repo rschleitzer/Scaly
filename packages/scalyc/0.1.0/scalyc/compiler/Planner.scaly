@@ -1130,6 +1130,49 @@ define Planner
                     -1
         }
 
+        ; lookup_variant_type: fetch the payload PlannedType for a named
+        ; variant. Returns null when the concept isn't a union, the
+        ; variant doesn't exist, or the variant has no payload (tag-only
+        ; variants like Option.None).
+        function lookup_variant_type#(
+            rp,
+            this: Planner,
+            union_name: String,
+            variant_name: String
+        ) returns ref[PlannedType]?
+        {
+            let concept_ref this.lookup_concept(union_name)
+            guard concept_ref = null
+                return null
+
+            let c (*concept_ref)
+            choose c.definition
+                when u: scalyc.compiler.Model.Union
+                {
+                    var i: size_t 0
+                    while i < u.variants.length
+                    {
+                        let v_ptr u.variants.get(i)
+                        guard v_ptr <> null
+                        {
+                            guard v_ptr.name.equals(variant_name)
+                            {
+                                guard v_ptr.type = null
+                                    return null
+                                let vt (*v_ptr.type)
+                                var holder Vector[PlannedType]^rp(1)
+                                holder.put(0, this.plan_type#(vt))
+                                return holder.get(0)
+                            }
+                        }
+                        set i: i + 1
+                    }
+                    null
+                }
+                else
+                    null
+        }
+
         ; match_type_pattern: walk `pattern` and `actual` in parallel,
         ; collecting generic-parameter → concrete-type bindings.
         ; Recursion handles nested generics (e.g. matching `Vector[T]`
@@ -2817,7 +2860,10 @@ define Planner
                 guard w_ptr <> null
                 {
                     let w (*w_ptr)
-                    catches_arr.add(this.plan_when#(w))
+                    ; plan_try catches don't carry an enclosing union
+                    ; type — the exception machinery is separate. Pass
+                    ; void so plan_when falls back to fresh type vars.
+                    catches_arr.add(this.plan_when#(w, Planner.make_void_type#()))
                 }
                 set ci: ci + 1
             }
@@ -2837,14 +2883,44 @@ define Planner
             PlannedTry(t.span, planned_bind, &catches_holder, alternative_ref)
         }
 
-        ; plan_when: one pattern arm of choose/try. The variant_type /
-        ; variant_index fields require concept lookup; stubbed until the
-        ; concept table is wired.
-        function plan_when#(rp, this: Planner, w: When) returns PlannedWhen
+        ; plan_when: one pattern arm of choose/try. When `union_type` is
+        ; non-null and names a registered union concept, the variant's
+        ; payload type and tag index are resolved so the Emitter can
+        ; extract the payload and compare tags correctly. When union_type
+        ; is void (the fallback from plan_try with no exception type),
+        ; the arm still plans but variant_type stays void and tag stays 0.
+        function plan_when#(
+            rp,
+            this: Planner,
+            w: When,
+            union_type: PlannedType
+        ) returns PlannedWhen
         {
             this.push_scope()
-            ; Register the pattern-bound name with a fresh type variable.
-            let binding_ty this.fresh_type_var#(String$(""))
+
+            ; Resolve the variant's payload type and tag against the
+            ; enclosing union. Fall back to a fresh type variable when
+            ; the union isn't resolvable (e.g. when called from plan_try
+            ; before exception types land).
+            var binding_ty: PlannedType this.fresh_type_var#(String$(""))
+            var variant_type: PlannedType Planner.make_void_type#()
+            var variant_tag: size_t 0
+
+            guard union_type.name.equals("void") = false
+            {
+                let payload_ref this.lookup_variant_type#(
+                    union_type.name, w.name
+                )
+                guard payload_ref <> null
+                {
+                    set binding_ty: (*payload_ref)
+                    set variant_type: (*payload_ref)
+                }
+                let tag this.lookup_variant_tag(union_type.name, w.name)
+                guard tag >= 0
+                    set variant_tag: tag as size_t
+            }
+
             this.define_local(w.name, binding_ty, false, false)
 
             let planned_cons this.plan_statement#(w.consequent)
@@ -2855,8 +2931,8 @@ define Planner
             PlannedWhen(
                 w.span,
                 w.name,
-                Planner.make_void_type#(),
-                0,
+                variant_type,
+                variant_tag,
                 cons_holder.get(0)
             )
         }
@@ -2865,6 +2941,11 @@ define Planner
         function plan_choose#(rp, this: Planner, c: Choose) returns PlannedChoose
         {
             let planned_cond this.plan_operands#(c.condition)
+            ; Fold the choose condition down to a single value to
+            ; recover its type — that's the union each `when` pattern
+            ; selects a variant of.
+            let collapsed_cond this.collapse_operand_sequence#(planned_cond)
+            let union_type collapsed_cond.result_type
 
             var cases_arr Array[PlannedWhen]$()
             var i: size_t 0
@@ -2874,7 +2955,7 @@ define Planner
                 guard w_ptr <> null
                 {
                     let w (*w_ptr)
-                    cases_arr.add(this.plan_when#(w))
+                    cases_arr.add(this.plan_when#(w, union_type))
                 }
                 set i: i + 1
             }
