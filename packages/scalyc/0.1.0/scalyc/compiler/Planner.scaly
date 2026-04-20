@@ -5171,10 +5171,11 @@ define Planner
             var ops_holder Vector[PlannedOperator]^rp(operators)
             var concs_holder Vector[PlannedConcept]^rp(concepts)
 
+            let ns_mangled Planner.encode_name(name)
             PlannedNamespace(
                 ns.span,
                 String^rp(name),
-                String^rp(""),
+                ns_mangled,
                 null,
                 &funcs_holder,
                 &ops_holder,
