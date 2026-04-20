@@ -9372,6 +9372,35 @@ define Planner
         guard pl_op.return_type = null
             return 288
 
+        ; ====================================================================
+        ; Lambda: `\: 42` — no params, body is an Action returning 42.
+        ; ====================================================================
+        var p4 Planner.Planner$(String$("test_lambda.scaly"))
+        let lam_body Action(init_ops, Vector[Operand]$(0))
+        let model_lam Lambda(
+            Span(0, 0),
+            Vector[Item]$(0),
+            lam_body
+        )
+        let pl_lam p4.plan_lambda$(model_lam)
+        guard pl_lam.mangled_name.equals(String$("_ZN6lambda0Ev")) = false
+            return 289
+        guard pl_lam.return_type.name.equals(String$("int")) = false
+            return 290
+
+        ; A second lambda bumps the counter to 1.
+        let pl_lam2 p4.plan_lambda$(model_lam)
+        guard pl_lam2.mangled_name.equals(String$("_ZN6lambda1Ev")) = false
+            return 291
+
+        ; ====================================================================
+        ; Repeat: a do-while whose body is the same trivial Action.
+        ; ====================================================================
+        let model_rep Repeat(Span(0, 0), lam_body)
+        let pl_rep p4.plan_repeat$(model_rep)
+        guard pl_rep.body.result_type.name.equals(String$("int")) = false
+            return 292
+
         0
     }
 }
