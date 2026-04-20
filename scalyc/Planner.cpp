@@ -3726,6 +3726,16 @@ std::optional<PlannedType> Planner::getPointerElementType(const PlannedType &Ptr
         return std::nullopt;
     }
 
+    // Fallback: `*` on `Option[T]` where T is a plain value type (not
+    // already handled by the pointer/ref special cases above). In Scaly
+    // `*opt` is the Some-unwrap, so the element type is T regardless of
+    // what T is. Placed last so the NPO-specific Option[pointer[T]] /
+    // Option[ref[T]] branches (which collapse two wrappers into one) win
+    // whenever they apply.
+    if (PtrType.Name == "Option" && !PtrType.Generics.empty()) {
+        return PtrType.Generics[0];
+    }
+
     return std::nullopt;
 }
 

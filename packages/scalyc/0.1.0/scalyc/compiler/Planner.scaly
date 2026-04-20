@@ -1954,7 +1954,7 @@ define Planner
 
                     guard is_call
                     {
-                        let arg_types this.extract_arg_types#(second)
+                        let arg_types Planner.extract_arg_types#(second)
                         let rt_ref this.resolve_function_call#(fn_name, arg_types)
                         var rt: PlannedType this.fresh_type_var#(String$(""))
                         guard rt_ref <> null
@@ -3860,18 +3860,22 @@ define Planner
                     guard br_ptr <> null
                     {
                         let br (*br_ptr)
-                        let br_ty Planner.statement_result_type(br.consequent)
-                        guard br_ty.name.equals(String$("void")) = false
+                        guard br.consequent <> null
                         {
-                            guard have_first = false
+                            let cons (*br.consequent)
+                            let br_ty Planner.statement_result_type(cons)
+                            guard br_ty.name.equals(String$("void")) = false
                             {
-                                set first_ty: br_ty
-                                set have_first: true
+                                guard have_first = false
+                                {
+                                    set first_ty: br_ty
+                                    set have_first: true
+                                }
+                                guard have_first
+                                    this.add_equality_constraint(
+                                        first_ty, br_ty, br.loc
+                                    )
                             }
-                            guard have_first
-                                this.add_equality_constraint(
-                                    first_ty, br_ty, br.loc
-                                )
                         }
                     }
                     set bi: bi + 1
@@ -4084,9 +4088,13 @@ define Planner
                         {
                             let first_br_ptr brs.get(0)
                             guard first_br_ptr <> null
-                                set match_type: Planner.statement_result_type(
-                                    (*first_br_ptr).consequent
-                                )
+                            {
+                                let first_br (*first_br_ptr)
+                                guard first_br.consequent <> null
+                                    set match_type: Planner.statement_result_type(
+                                        (*first_br.consequent)
+                                    )
+                            }
                         }
                     }
                     PlannedOperand(op.span, PlannedExpression.Match(pm), null, match_type)
