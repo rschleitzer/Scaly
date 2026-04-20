@@ -2662,7 +2662,9 @@ define Planner
                     }
 
                     ; Union-variant lookup for the remaining case
-                    ; (e.g. `opt.Some` as a variant construction).
+                    ; (e.g. `opt.Some` as a variant construction). The
+                    ; result type of a variant access is the owning union
+                    ; itself — construction stays within the same type.
                     guard matched = false
                     {
                         let tag this.lookup_variant_tag(current.name, m)
@@ -2671,7 +2673,7 @@ define Planner
                             set matched: true
                             result.add(PlannedMemberAccess(
                                 m, tag as size_t, false, true, current,
-                                Planner.make_void_type#()
+                                current
                             ))
                         }
                     }
