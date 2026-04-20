@@ -1840,6 +1840,14 @@ function handle_export#(path: String, syntax: ExportSyntax, is_private: bool, sy
             (*symbols_builder).add(fn.name, Nameable.Functions(fns))
             Member.Function(fn)
         }
+        when proc: ProcedureSyntax
+        {
+            let proc_fn build_function#(proc.start, proc.end, proc.target, is_private, false)
+            var fns Vector[Function]#(1)
+            fns.put(0, proc_fn)
+            (*symbols_builder).add(proc_fn.name, Nameable.Functions(fns))
+            Member.Function(proc_fn)
+        }
         when op: OperatorSyntax
         {
             let operator_ handle_operator#(op, is_private)
