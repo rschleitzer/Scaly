@@ -4526,11 +4526,13 @@ define Planner
                 set initializer_ref: &init_holder
             }
 
+            let mangled Planner.encode_name(p.name)
+
             PlannedProperty(
                 p.span,
                 p.private_,
                 p.name,
-                String^rp(""),
+                mangled,
                 prop_type,
                 initializer_ref,
                 null,
