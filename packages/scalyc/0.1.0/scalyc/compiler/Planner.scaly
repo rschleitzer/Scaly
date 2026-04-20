@@ -3035,17 +3035,10 @@ define Planner
         ; Control-flow planners.
         ; ================================================================
 
-        ; plan_if: plans the condition (a Vector[Operand]), the consequent
-        ; statement, and optionally the alternative. Emits a constraint
-        ; that the condition's collapsed type must be bool.
-        ; `prop` (binding-in-condition) is not yet planned — that
-        ; requires a variant-capture story we don't have yet.
         ; statement_result_type: extract the PlannedType produced by a
         ; statement used as an expression. Covers the Action case (the
         ; common `if cond x else y` shape); non-value statements
-        ; (Return/Throw/Break/Continue/Binding) return void. Block-bodied
-        ; statements with trailing expressions are handled once
-        ; PlannedBlock carries a result type — a separate gap.
+        ; (Return/Throw/Break/Continue/Binding) return void.
         function statement_result_type(s: PlannedStatement) returns PlannedType
         {
             choose s
@@ -3055,6 +3048,10 @@ define Planner
                     Planner.make_void_type#()
         }
 
+        ; plan_if: plans the condition (a Vector[Operand]), the consequent
+        ; statement, and optionally the alternative. Emits a bool
+        ; constraint on the condition and (when an alternative exists)
+        ; unifies the two branches' result types.
         function plan_if#(rp, this: Planner, f: If) returns PlannedIf
         {
             let planned_cond_flat this.plan_operands#(f.condition)
