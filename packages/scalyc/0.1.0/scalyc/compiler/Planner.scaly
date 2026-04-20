@@ -1069,12 +1069,81 @@ define Planner
         }
 
         ; ================================================================
+        ; check_function_match: test a single Function candidate against
+        ; argument types. Returns a ref to the return type if it matches,
+        ; null otherwise. `exact_only` selects types_equal (true) vs
+        ; types_compatible (false) for parameter/argument comparison.
+        ; 'this' parameters are skipped implicitly.
+        ; ================================================================
+        function check_function_match#(
+            rp,
+            this: Planner,
+            f: Function,
+            arg_types: Vector[PlannedType],
+            exact_only: bool
+        ) returns ref[PlannedType]?
+        {
+            var param_start: size_t 0
+            guard f.input.length > 0
+            {
+                let first_ptr f.input.get(0)
+                guard first_ptr <> null
+                {
+                    guard first_ptr.name <> null
+                    {
+                        let fname (*first_ptr.name)
+                        guard fname.equals(String$("this"))
+                            set param_start: 1
+                    }
+                }
+            }
+
+            let expected_arity f.input.length - param_start
+            guard expected_arity <> arg_types.length
+                return null
+
+            var j: size_t 0
+            while j < arg_types.length
+            {
+                let p_ptr f.input.get(j + param_start)
+                let a_ptr arg_types.get(j)
+                guard p_ptr = null
+                    return null
+                guard a_ptr = null
+                    return null
+                guard p_ptr.type <> null
+                {
+                    let p_type (*p_ptr.type)
+                    let planned_p this.plan_type#(p_type)
+                    let arg (*a_ptr)
+                    var ok: bool false
+                    guard exact_only
+                        set ok: Planner.types_equal(planned_p, arg)
+                    guard exact_only = false
+                        set ok: Planner.types_compatible(planned_p, arg)
+                    guard ok = false
+                        return null
+                }
+                set j: j + 1
+            }
+
+            var holder Vector[PlannedType]^rp(1)
+            guard f.returns_ <> null
+            {
+                let rt (*f.returns_)
+                holder.put(0, this.plan_type#(rt))
+            }
+            guard f.returns_ = null
+                holder.put(0, Planner.make_void_type#())
+
+            holder.get(0)
+        }
+
+        ; ================================================================
         ; resolve_function_call: return the result type of calling
-        ; `name` with the given argument types. Simplified overload
-        ; resolution — we pick the first registered Function whose name
-        ; matches and whose (plan_type'd) parameter types are pairwise
-        ; `types_compatible` with the arguments. 'this' parameters are
-        ; implicitly skipped.
+        ; `name` with the given argument types. Two-pass overload
+        ; resolution: exact matches first, then compatible (widened).
+        ; 'this' parameters are implicitly skipped.
         ;
         ; Returns null when no overload matches; callers fall back to a
         ; fresh type variable so the constraint solver can recover.
@@ -1090,6 +1159,7 @@ define Planner
             guard candidates.length = 0
                 return null
 
+            ; Pass 1: exact matches (types_equal).
             var i: size_t 0
             while i < candidates.length
             {
@@ -1097,66 +1167,26 @@ define Planner
                 guard f_ptr <> null
                 {
                     let f (*f_ptr)
-
-                    ; Skip 'this' param when the first input is named "this".
-                    var param_start: size_t 0
-                    guard f.input.length > 0
-                    {
-                        let first_ptr f.input.get(0)
-                        guard first_ptr <> null
-                        {
-                            guard first_ptr.name <> null
-                            {
-                                let fname (*first_ptr.name)
-                                guard fname.equals(String$("this"))
-                                    set param_start: 1
-                            }
-                        }
-                    }
-
-                    let expected_arity f.input.length - param_start
-                    guard expected_arity = arg_types.length
-                    {
-                        ; Check each param type is compatible with arg.
-                        var compatible: bool true
-                        var j: size_t 0
-                        while j < arg_types.length
-                        {
-                            let p_ptr f.input.get(j + param_start)
-                            let a_ptr arg_types.get(j)
-                            guard p_ptr <> null
-                            {
-                                guard a_ptr <> null
-                                {
-                                    guard p_ptr.type <> null
-                                    {
-                                        let p_type (*p_ptr.type)
-                                        let planned_p this.plan_type#(p_type)
-                                        let arg (*a_ptr)
-                                        guard Planner.types_compatible(planned_p, arg) = false
-                                            set compatible: false
-                                    }
-                                }
-                            }
-                            set j: j + 1
-                        }
-
-                        guard compatible
-                        {
-                            var holder Vector[PlannedType]^rp(1)
-                            guard f.returns_ <> null
-                            {
-                                let rt (*f.returns_)
-                                holder.put(0, this.plan_type#(rt))
-                            }
-                            guard f.returns_ = null
-                                holder.put(0, Planner.make_void_type#())
-
-                            return holder.get(0)
-                        }
-                    }
+                    let rt this.check_function_match#(f, arg_types, true)
+                    guard rt <> null
+                        return rt
                 }
                 set i: i + 1
+            }
+
+            ; Pass 2: compatible matches (types_compatible, allows widening).
+            var k: size_t 0
+            while k < candidates.length
+            {
+                let f_ptr candidates.get(k)
+                guard f_ptr <> null
+                {
+                    let f (*f_ptr)
+                    let rt this.check_function_match#(f, arg_types, false)
+                    guard rt <> null
+                        return rt
+                }
+                set k: k + 1
             }
 
             null
@@ -1439,9 +1469,73 @@ define Planner
             result
         }
 
+        ; check_operator_match: test a single Operator candidate against
+        ; argument types. Same shape as check_function_match.
+        function check_operator_match#(
+            rp,
+            this: Planner,
+            o: Operator,
+            arg_types: Vector[PlannedType],
+            exact_only: bool
+        ) returns ref[PlannedType]?
+        {
+            var param_start: size_t 0
+            guard o.input.length > 0
+            {
+                let first_ptr o.input.get(0)
+                guard first_ptr <> null
+                {
+                    guard first_ptr.name <> null
+                    {
+                        let fname (*first_ptr.name)
+                        guard fname.equals(String$("this"))
+                            set param_start: 1
+                    }
+                }
+            }
+
+            let expected_arity o.input.length - param_start
+            guard expected_arity <> arg_types.length
+                return null
+
+            var j: size_t 0
+            while j < arg_types.length
+            {
+                let p_ptr o.input.get(j + param_start)
+                let a_ptr arg_types.get(j)
+                guard p_ptr = null
+                    return null
+                guard a_ptr = null
+                    return null
+                guard p_ptr.type <> null
+                {
+                    let p_type (*p_ptr.type)
+                    let planned_p this.plan_type#(p_type)
+                    let arg (*a_ptr)
+                    var ok: bool false
+                    guard exact_only
+                        set ok: Planner.types_equal(planned_p, arg)
+                    guard exact_only = false
+                        set ok: Planner.types_compatible(planned_p, arg)
+                    guard ok = false
+                        return null
+                }
+                set j: j + 1
+            }
+
+            var holder Vector[PlannedType]^rp(1)
+            guard o.returns_ <> null
+            {
+                let rt (*o.returns_)
+                holder.put(0, this.plan_type#(rt))
+            }
+            guard o.returns_ = null
+                holder.put(0, Planner.make_void_type#())
+            holder.get(0)
+        }
+
         ; resolve_prefix_operator_call: for unary prefix operators like
-        ; `-x` or `!flag`. Returns the result type of the matching
-        ; operator overload or null if none applies.
+        ; `-x` or `!flag`. Two-pass: exact matches first, then compatible.
         function resolve_prefix_operator_call#(
             rp,
             this: Planner,
@@ -1453,6 +1547,10 @@ define Planner
             guard candidates.length = 0
                 return null
 
+            var arg_types Vector[PlannedType]^rp(1)
+            arg_types.put(0, operand)
+
+            ; Pass 1: exact.
             var i: size_t 0
             while i < candidates.length
             {
@@ -1460,38 +1558,32 @@ define Planner
                 guard o_ptr <> null
                 {
                     let o (*o_ptr)
-                    guard o.input.length = 1
-                    {
-                        let p_ptr o.input.get(0)
-                        guard p_ptr <> null
-                        {
-                            guard p_ptr.type <> null
-                            {
-                                let p_type (*p_ptr.type)
-                                let planned_p this.plan_type#(p_type)
-                                guard Planner.types_compatible(planned_p, operand)
-                                {
-                                    var holder Vector[PlannedType]^rp(1)
-                                    guard o.returns_ <> null
-                                    {
-                                        let rt (*o.returns_)
-                                        holder.put(0, this.plan_type#(rt))
-                                    }
-                                    guard o.returns_ = null
-                                        holder.put(0, Planner.make_void_type#())
-                                    return holder.get(0)
-                                }
-                            }
-                        }
-                    }
+                    let rt this.check_operator_match#(o, arg_types, true)
+                    guard rt <> null
+                        return rt
                 }
                 set i: i + 1
+            }
+
+            ; Pass 2: compatible (widened).
+            var k: size_t 0
+            while k < candidates.length
+            {
+                let o_ptr candidates.get(k)
+                guard o_ptr <> null
+                {
+                    let o (*o_ptr)
+                    let rt this.check_operator_match#(o, arg_types, false)
+                    guard rt <> null
+                        return rt
+                }
+                set k: k + 1
             }
             null
         }
 
-        ; resolve_operator_call: same idea as resolve_function_call but
-        ; keyed on the operator symbol registry.
+        ; resolve_operator_call: two-pass overload resolution for binary
+        ; operators keyed on the operator symbol registry.
         function resolve_operator_call#(
             rp,
             this: Planner,
@@ -1504,11 +1596,11 @@ define Planner
             guard candidates.length = 0
                 return null
 
-            ; Build an arg-type pair from left/right.
             var arg_types Vector[PlannedType]^rp(2)
             arg_types.put(0, left)
             arg_types.put(1, right)
 
+            ; Pass 1: exact.
             var i: size_t 0
             while i < candidates.length
             {
@@ -1516,63 +1608,26 @@ define Planner
                 guard o_ptr <> null
                 {
                     let o (*o_ptr)
-
-                    var param_start: size_t 0
-                    guard o.input.length > 0
-                    {
-                        let first_ptr o.input.get(0)
-                        guard first_ptr <> null
-                        {
-                            guard first_ptr.name <> null
-                            {
-                                let fname (*first_ptr.name)
-                                guard fname.equals(String$("this"))
-                                    set param_start: 1
-                            }
-                        }
-                    }
-
-                    let expected_arity o.input.length - param_start
-                    guard expected_arity = arg_types.length
-                    {
-                        var compatible: bool true
-                        var j: size_t 0
-                        while j < arg_types.length
-                        {
-                            let p_ptr o.input.get(j + param_start)
-                            let a_ptr arg_types.get(j)
-                            guard p_ptr <> null
-                            {
-                                guard a_ptr <> null
-                                {
-                                    guard p_ptr.type <> null
-                                    {
-                                        let p_type (*p_ptr.type)
-                                        let planned_p this.plan_type#(p_type)
-                                        let arg (*a_ptr)
-                                        guard Planner.types_compatible(planned_p, arg) = false
-                                            set compatible: false
-                                    }
-                                }
-                            }
-                            set j: j + 1
-                        }
-
-                        guard compatible
-                        {
-                            var holder Vector[PlannedType]^rp(1)
-                            guard o.returns_ <> null
-                            {
-                                let rt (*o.returns_)
-                                holder.put(0, this.plan_type#(rt))
-                            }
-                            guard o.returns_ = null
-                                holder.put(0, Planner.make_void_type#())
-                            return holder.get(0)
-                        }
-                    }
+                    let rt this.check_operator_match#(o, arg_types, true)
+                    guard rt <> null
+                        return rt
                 }
                 set i: i + 1
+            }
+
+            ; Pass 2: compatible (widened).
+            var k: size_t 0
+            while k < candidates.length
+            {
+                let o_ptr candidates.get(k)
+                guard o_ptr <> null
+                {
+                    let o (*o_ptr)
+                    let rt this.check_operator_match#(o, arg_types, false)
+                    guard rt <> null
+                        return rt
+                }
+                set k: k + 1
             }
 
             null
