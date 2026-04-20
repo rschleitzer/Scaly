@@ -5256,7 +5256,7 @@ define Planner
 
             var vs_holder Vector[PlannedVariant]^rp(planned_vs)
             let u_size Planner.compute_union_size(&vs_holder)
-            let u_align Planner.compute_struct_alignment(null)
+            let u_align Planner.compute_union_alignment(&vs_holder)
 
             ; Build the union's own PlannedType + mangled_name upfront
             ; so method planning can mangle methods with this as parent.
@@ -6352,6 +6352,36 @@ define Planner
             set tag_size: 4
 
         Planner.align_offset(max_size + tag_size, max_align)
+    }
+
+    ; compute_union_alignment: max alignment across all variant payload
+    ; types; tag-only variants contribute the 1-byte tag alignment.
+    function compute_union_alignment(variants: ref[Vector[PlannedVariant]]?) returns size_t
+    {
+        guard variants = null
+            return 1
+
+        let vs (*variants)
+        var max_align: size_t 1
+        var i: size_t 0
+        while i < vs.length
+        {
+            let v_ptr vs.get(i)
+            guard v_ptr <> null
+            {
+                let v (*v_ptr)
+                guard v.var_type <> null
+                {
+                    let vt (*v.var_type)
+                    let align Planner.get_primitive_alignment(vt.name)
+                    guard align > max_align
+                        set max_align: align
+                }
+            }
+            set i: i + 1
+        }
+
+        max_align
     }
 
     ; ========================================================================
