@@ -2921,15 +2921,55 @@ define Planner
             let planned_body this.plan_action#(w.action)
             this.pop_scope()
 
-            ; Constrain the binding's declared type to bool for a plain
-            ; `while cond` form. `while let x = ...` binds a variant
-            ; payload and doesn't fit this simple rule — not yet
-            ; distinguished here.
+            ; Two shapes reach this point:
+            ;   `while cond`          — binding has no name; we constrain
+            ;                           its declared type to bool.
+            ;   `while let x = opt`   — binding has a name; x takes the
+            ;                           Option's Some payload. If the
+            ;                           operation's result type is
+            ;                           Option[T] we constrain x to T, so
+            ;                           the solver sees the unwrapped
+            ;                           type.
             let bool_ty Planner.make_bool_type#()
-            guard planned_cond.binding_item.item_type <> null
+            guard planned_cond.binding_item.name = null
             {
-                let bt (*planned_cond.binding_item.item_type)
-                this.add_equality_constraint(bool_ty, bt, w.span)
+                ; Plain `while cond` — bool constraint applies if the
+                ; binding's item_type is explicit.
+                guard planned_cond.binding_item.item_type <> null
+                {
+                    let bt (*planned_cond.binding_item.item_type)
+                    this.add_equality_constraint(bool_ty, bt, w.span)
+                }
+            }
+            guard planned_cond.binding_item.name <> null
+                and planned_cond.binding_item.item_type <> null
+                and planned_cond.operation <> null
+            {
+                let ops (*planned_cond.operation)
+                guard ops.length > 0
+                {
+                    let last_ptr ops.get(ops.length - 1)
+                    guard last_ptr <> null
+                    {
+                        let op_ty (*last_ptr).result_type
+                        guard op_ty.name.equals(String$("Option"))
+                            and op_ty.generics <> null
+                        {
+                            let gens (*op_ty.generics)
+                            guard gens.length > 0
+                            {
+                                let payload_ptr gens.get(0)
+                                guard payload_ptr <> null
+                                {
+                                    let bt (*planned_cond.binding_item.item_type)
+                                    this.add_equality_constraint(
+                                        bt, (*payload_ptr), w.span
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
             }
 
             PlannedWhile(w.span, planned_cond, planned_body)
