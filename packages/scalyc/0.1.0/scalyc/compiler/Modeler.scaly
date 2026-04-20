@@ -1718,11 +1718,17 @@ function handle_constituent#(path: String, syntax: MemberSyntax, symbols_builder
         when func: FunctionSyntax
         {
             let fn build_function#(func.start, func.end, func.target, false, true)
+            var fns Vector[Function]#(1)
+            fns.put(0, fn)
+            (*symbols_builder).add(fn.name, Nameable.Functions(fns))
             Member.Function(fn)
         }
         when proc: ProcedureSyntax
         {
             let proc_fn build_function#(proc.start, proc.end, proc.target, false, false)
+            var fns Vector[Function]#(1)
+            fns.put(0, proc_fn)
+            (*symbols_builder).add(proc_fn.name, Nameable.Functions(fns))
             Member.Function(proc_fn)
         }
         when op: OperatorSyntax
@@ -1792,11 +1798,17 @@ function handle_declaration#(path: String, syntax: DeclarationSyntax, symbols_bu
         when func: FunctionSyntax
         {
             let fn build_function#(func.start, func.end, func.target, false, true)
+            var fns Vector[Function]#(1)
+            fns.put(0, fn)
+            (*symbols_builder).add(fn.name, Nameable.Functions(fns))
             Member.Function(fn)
         }
         when proc: ProcedureSyntax
         {
             let proc_fn build_function#(proc.start, proc.end, proc.target, false, false)
+            var fns Vector[Function]#(1)
+            fns.put(0, proc_fn)
+            (*symbols_builder).add(proc_fn.name, Nameable.Functions(fns))
             Member.Function(proc_fn)
         }
         when op: OperatorSyntax
@@ -1823,6 +1835,9 @@ function handle_export#(path: String, syntax: ExportSyntax, is_private: bool, sy
         when func: FunctionSyntax
         {
             let fn build_function#(func.start, func.end, func.target, is_private, true)
+            var fns Vector[Function]#(1)
+            fns.put(0, fn)
+            (*symbols_builder).add(fn.name, Nameable.Functions(fns))
             Member.Function(fn)
         }
         when op: OperatorSyntax
