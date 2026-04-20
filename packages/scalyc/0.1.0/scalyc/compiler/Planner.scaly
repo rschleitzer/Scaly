@@ -4788,12 +4788,22 @@ define Planner
 
         ; plan_deinitializer: Model.DeInitializer → Plan.PlannedDeInitializer.
         ; Even simpler than plan_initializer — no parameters.
-        function plan_deinitializer#(rp, this: Planner, dei: DeInitializer) returns PlannedDeInitializer
+        function plan_deinitializer#(
+            rp,
+            this: Planner,
+            dei: DeInitializer,
+            parent: ref[PlannedType]?
+        ) returns PlannedDeInitializer
         {
             let planned_impl this.plan_implementation#(dei.implementation)
+            ; Mangle as a method of `parent` named "deinit" (Itanium
+            ; `_ZN<parent>6deinitEv`); bare deinit for a free context.
+            let mangled Planner.mangle_function#(
+                String$("deinit"), null, parent, false
+            )
             PlannedDeInitializer(
                 dei.span,
-                String^rp(""),
+                mangled,
                 planned_impl
             )
         }
@@ -5071,7 +5081,7 @@ define Planner
             {
                 let di (*s.deinitializer)
                 var dei_holder Vector[PlannedDeInitializer]^rp(1)
-                dei_holder.put(0, this.plan_deinitializer#(di))
+                dei_holder.put(0, this.plan_deinitializer#(di, parent_ref))
                 set deinit_ref: dei_holder.get(0)
             }
 
