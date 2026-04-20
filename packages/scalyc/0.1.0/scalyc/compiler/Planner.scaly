@@ -5410,10 +5410,18 @@ define Planner
                 when intr: Intrinsic
                     PlannedDefinition.Type(Planner.make_void_type#())
 
+            ; Generic concepts get a simple length-prefixed name; fully
+            ; instantiated concepts get the full `_Z<name-len><name>`.
+            var mangled: String String$("")
+            guard c.parameters.length > 0
+                set mangled: Planner.encode_name(c.name)
+            guard c.parameters.length = 0
+                set mangled: Planner.mangle_structure#(c.name, null)
+
             PlannedConcept(
                 c.span,
                 c.name,
-                String^rp(""),
+                mangled,
                 null,
                 pl_def,
                 null
