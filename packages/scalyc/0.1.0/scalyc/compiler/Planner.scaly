@@ -2633,10 +2633,29 @@ define Planner
         {
             this.push_scope()
             let planned_expr this.plan_operands#(f.expression)
+            let collapsed_expr this.collapse_operand_sequence#(planned_expr)
 
             ; Register the loop variable as a local of fresh type.
             let loop_var_type this.fresh_type_var#(String$(""))
             this.define_local(f.identifier, loop_var_type, false, false)
+
+            ; Common-case constraint: `for x in Vec[T]` binds x to T.
+            ; When the iterable's type has at least one generic, assume
+            ; the first generic is the element type. Iterators with a
+            ; custom `get_iterator` signature aren't resolved here —
+            ; that's deferred until the iterator protocol is ported.
+            guard collapsed_expr.result_type.generics <> null
+            {
+                let gens (*collapsed_expr.result_type.generics)
+                guard gens.length > 0
+                {
+                    let first_ptr gens.get(0)
+                    guard first_ptr <> null
+                        this.add_equality_constraint(
+                            loop_var_type, (*first_ptr), f.span
+                        )
+                }
+            }
 
             let planned_body this.plan_action#(f.action)
             this.pop_scope()
