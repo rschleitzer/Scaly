@@ -519,6 +519,11 @@ private:
     // Resolve a name that could be a variable or type
     llvm::Expected<PlannedType> resolveNameOrVariable(const Type &T);
 
+    // Look up {size, alignment} for a property/variant type. Returns {0,0}
+    // if unknown — in which case the containing struct/union also returns
+    // Size=0 and the Emitter falls back to LLVM DataLayout.
+    std::pair<size_t, size_t> getPropSizeAndAlign(const PlannedType &T);
+
     // Compute struct layout (size, alignment, field offsets)
     void computeStructLayout(PlannedStructure &Struct);
 

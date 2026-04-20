@@ -946,26 +946,102 @@ bool Planner::typesCompatible(const PlannedType &ParamType, const PlannedType &A
     return false;
 }
 
+// Returns {size, align} for a type if computable from existing caches, {0, 0}
+// otherwise. Unknown propagates up: a struct whose Size ends up 0 makes
+// emitSizeOf fall back to LLVM DataLayout, which is always correct.
+std::pair<size_t, size_t> Planner::getPropSizeAndAlign(const PlannedType &T) {
+    const std::string &N = T.Name;
+
+    // Primitives
+    if (N == "bool" || N == "i1") return {1, 1};
+    if (N == "i8" || N == "u8" || N == "char" || N == "const_char") return {1, 1};
+    if (N == "i16" || N == "u16") return {2, 2};
+    if (N == "i32" || N == "u32" || N == "float" || N == "f32") return {4, 4};
+    if (N == "i64" || N == "u64" || N == "int" || N == "uint" ||
+        N == "long" || N == "ulong" || N == "size" || N == "size_t" ||
+        N == "double" || N == "f64" || N == "ptr") return {8, 8};
+
+    // Pointer / reference types — always pointer-sized.
+    if (N == "pointer" || N == "ref") return {8, 8};
+
+    // Option NPO: Option[ref[T]] / Option[pointer[T]] is represented as a
+    // single nullable pointer. Also covers flattened names like "Option.ref.X"
+    // and "Option.pointer.X" that the Planner uses internally.
+    if (N == "Option" && !T.Generics.empty()) {
+        const std::string &Inner = T.Generics[0].Name;
+        if (Inner == "ref" || Inner == "pointer") return {8, 8};
+    }
+    if (N.size() >= 10 && N.substr(0, 10) == "Option.ref") return {8, 8};
+    if (N.size() >= 14 && N.substr(0, 14) == "Option.pointer") return {8, 8};
+
+    // Option[struct T] — tagged {i8, [sizeof(T) x i8]}, aligned to alignof(T).
+    if (N == "Option" && !T.Generics.empty()) {
+        auto [InnerSize, InnerAlign] = getPropSizeAndAlign(T.Generics[0]);
+        if (InnerSize == 0) return {0, 0};
+        size_t Raw = 1 + InnerSize;
+        size_t A = InnerAlign > 1 ? InnerAlign : 1;
+        size_t Sized = (Raw + A - 1) & ~(A - 1);
+        return {Sized, A};
+    }
+
+    // Look up user-defined struct/union by MangledName or Name. Cached keys
+    // vary: plainConcept uses base Name; planInstantiated uses the full
+    // mangled name (e.g. "_Z12KeyValuePairIm11PlannedTypeE").
+    auto TryStruct = [&](const std::string &Key) -> std::pair<size_t, size_t> {
+        auto It = InstantiatedStructures.find(Key);
+        if (It != InstantiatedStructures.end() && It->second.Size != 0) {
+            return {It->second.Size, It->second.Alignment};
+        }
+        return {0, 0};
+    };
+    auto TryUnion = [&](const std::string &Key) -> std::pair<size_t, size_t> {
+        auto It = InstantiatedUnions.find(Key);
+        if (It != InstantiatedUnions.end() && It->second.Size != 0) {
+            return {It->second.Size, It->second.Alignment};
+        }
+        return {0, 0};
+    };
+
+    // Try several lookup keys: the raw mangled name, the mangled name with
+    // "_Z" stripped, and the base Name.
+    const std::string &Mang = T.MangledName;
+    if (!Mang.empty()) {
+        if (auto R = TryStruct(Mang); R.first) return R;
+        if (Mang.size() > 2 && Mang.substr(0, 2) == "_Z") {
+            if (auto R = TryStruct(Mang.substr(2)); R.first) return R;
+        } else {
+            if (auto R = TryStruct("_Z" + Mang); R.first) return R;
+        }
+        if (auto R = TryUnion(Mang); R.first) return R;
+        if (Mang.size() > 2 && Mang.substr(0, 2) == "_Z") {
+            if (auto R = TryUnion(Mang.substr(2)); R.first) return R;
+        } else {
+            if (auto R = TryUnion("_Z" + Mang); R.first) return R;
+        }
+    }
+    if (auto R = TryStruct(N); R.first) return R;
+    if (auto R = TryUnion(N); R.first) return R;
+
+    return {0, 0};  // Unknown — Emitter will fall back to LLVM DataLayout.
+}
+
 void Planner::computeStructLayout(PlannedStructure &Struct) {
     size_t Offset = 0;
     size_t MaxAlign = 1;
+    bool AnyUnknown = false;
 
     for (auto &Prop : Struct.Properties) {
-        // Get alignment for this property type
-        size_t Align = 8;  // Default alignment
-        if (Prop.PropType.Name == "bool" || Prop.PropType.Name == "char") {
-            Align = 1;
-        } else if (Prop.PropType.Name == "int" || Prop.PropType.Name == "uint" ||
-                   Prop.PropType.Name == "float") {
-            Align = 4;
+        auto [Size, Align] = getPropSizeAndAlign(Prop.PropType);
+        if (Size == 0 || Align == 0) {
+            AnyUnknown = true;
+            // Still advance using 8/8 guess to keep Offset sensible for
+            // downstream; the final Size will be zeroed out anyway.
+            Size = 8; Align = 8;
         }
 
         // Align offset
         Offset = (Offset + Align - 1) & ~(Align - 1);
         Prop.Offset = Offset;
-
-        // Advance by size
-        size_t Size = Align;  // Simplified: size == alignment for primitives
         Offset += Size;
 
         if (Align > MaxAlign) {
@@ -973,26 +1049,27 @@ void Planner::computeStructLayout(PlannedStructure &Struct) {
         }
     }
 
-    // Final struct alignment
-    Struct.Size = (Offset + MaxAlign - 1) & ~(MaxAlign - 1);
-    Struct.Alignment = MaxAlign;
+    if (AnyUnknown) {
+        // Propagate "unknown" so emitSizeOf falls back to LLVM DataLayout.
+        Struct.Size = 0;
+        Struct.Alignment = 0;
+    } else {
+        Struct.Size = (Offset + MaxAlign - 1) & ~(MaxAlign - 1);
+        Struct.Alignment = MaxAlign;
+    }
 }
 
 void Planner::computeUnionLayout(PlannedUnion &Union) {
     size_t MaxSize = 0;
     size_t MaxAlign = 1;
+    bool AnyUnknown = false;
 
     for (const auto &Var : Union.Variants) {
         if (Var.VarType) {
-            // Get size/alignment for variant type
-            size_t Size = 8;   // Default
-            size_t Align = 8;
-
-            if (Var.VarType->Name == "bool" || Var.VarType->Name == "char") {
-                Size = 1; Align = 1;
-            } else if (Var.VarType->Name == "int" || Var.VarType->Name == "uint" ||
-                       Var.VarType->Name == "float") {
-                Size = 4; Align = 4;
+            auto [Size, Align] = getPropSizeAndAlign(*Var.VarType);
+            if (Size == 0 || Align == 0) {
+                AnyUnknown = true;
+                Size = 8; Align = 8;
             }
 
             if (Size > MaxSize) MaxSize = Size;
@@ -1000,12 +1077,16 @@ void Planner::computeUnionLayout(PlannedUnion &Union) {
         }
     }
 
-    // Add space for tag (typically 4 bytes, but could be 1 for small unions)
+    // Add space for tag (typically 1 byte for few-variant unions, 4 for larger)
     size_t TagSize = Union.Variants.size() <= 256 ? 1 : 4;
 
-    // Union size = max variant + tag, aligned
-    Union.Size = ((MaxSize + TagSize) + MaxAlign - 1) & ~(MaxAlign - 1);
-    Union.Alignment = MaxAlign;
+    if (AnyUnknown) {
+        Union.Size = 0;
+        Union.Alignment = 0;
+    } else {
+        Union.Size = ((MaxSize + TagSize) + MaxAlign - 1) & ~(MaxAlign - 1);
+        Union.Alignment = MaxAlign;
+    }
 }
 
 // ============================================================================

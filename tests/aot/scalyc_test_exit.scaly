@@ -1,0 +1,4 @@
+package scaly 0.1.0
+package scalyc 0.1.0
+function exit(code: int) extern
+exit(scalyc.test())
