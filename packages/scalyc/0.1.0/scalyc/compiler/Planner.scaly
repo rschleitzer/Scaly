@@ -277,6 +277,14 @@ define Planner
         ; circular module loads); a present-but-null slot means "load
         ; already attempted and failed / in progress".
         loaded_module_paths: Array[KeyValuePair[String, Module]]
+
+        ; Collected diagnostic messages. Planner paths that can't
+        ; resolve a name / method / type push descriptive strings
+        ; here instead of (or in addition to) falling back to a
+        ; fresh type variable. The caller (cli.scaly, tests) can
+        ; inspect errors.length > 0 to detect problems without
+        ; plumbing Result[T, E] through every helper.
+        errors: Array[String]
     )
     {
         init#(page, filename: String)
@@ -298,6 +306,7 @@ define Planner
             set search_paths: Array[String]^page()
             set loaded_packages: Array[KeyValuePair[String, Module]]^page()
             set loaded_module_paths: Array[KeyValuePair[String, Module]]^page()
+            set errors: Array[String]^page()
 
             ; Seed the function registry with C-runtime externs so name
             ; lookups for aligned_alloc/free/exit succeed from day one.
@@ -515,6 +524,19 @@ define Planner
         function add_package_search_path(this: Planner, path: String)
         {
             search_paths.add(path)
+        }
+
+        ; Record a diagnostic. Callers don't need to format the message
+        ; further — just describe what failed ("function not found: foo",
+        ; "no matching initializer for Bar(int, String)", etc.).
+        function add_error(this: Planner, message: String)
+        {
+            errors.add(message)
+        }
+
+        function has_errors(this: Planner) returns bool
+        {
+            errors.length > 0
         }
 
         ; Look up a previously loaded package in the cache.
@@ -1392,7 +1414,13 @@ define Planner
         {
             let candidates this.lookup_functions#(name)
             guard candidates.length = 0
+            {
+                var sb StringBuilder$()
+                sb.append("function not found: ")
+                sb.append(name)
+                this.add_error(sb.to_string^rp())
                 return null
+            }
 
             ; Pass 1: exact matches (types_equal).
             var i: size_t 0
@@ -1424,6 +1452,10 @@ define Planner
                 set k: k + 1
             }
 
+            var sb StringBuilder$()
+            sb.append("no matching overload for function: ")
+            sb.append(name)
+            this.add_error(sb.to_string^rp())
             null
         }
 
