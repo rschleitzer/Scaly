@@ -2241,6 +2241,89 @@ define Planner
                 set k: k + 1
             }
 
+            ; Pass 3: generic operator. Plan parameter types, infer
+            ; generic bindings against arg_types, seed type_substitutions
+            ; and plan the operator's declared return type under those
+            ; bindings.
+            var g: size_t 0
+            while g < candidates.length
+            {
+                let o_ptr candidates.get(g)
+                guard o_ptr <> null
+                {
+                    let o (*o_ptr)
+                    guard o.parameters.length > 0
+                    {
+                        var param_start2: size_t 0
+                        guard o.input.length > 0
+                        {
+                            let fi0 o.input.get(0)
+                            guard fi0 <> null
+                            {
+                                guard fi0.name <> null
+                                {
+                                    let fname (*fi0.name)
+                                    guard fname.equals(String$("this"))
+                                        set param_start2: 1
+                                }
+                            }
+                        }
+
+                        let expected_arity o.input.length - param_start2
+                        guard expected_arity = arg_types.length
+                        {
+                            var param_types_arr Array[PlannedType]$()
+                            var pi: size_t param_start2
+                            while pi < o.input.length
+                            {
+                                let p_ptr o.input.get(pi)
+                                guard p_ptr <> null
+                                {
+                                    guard p_ptr.type <> null
+                                    {
+                                        let pt (*p_ptr.type)
+                                        param_types_arr.add(this.plan_type#(pt))
+                                    }
+                                }
+                                set pi: pi + 1
+                            }
+                            var param_types_vec Vector[PlannedType]^rp(param_types_arr)
+
+                            let bindings this.infer_type_arguments#(
+                                param_types_vec, arg_types
+                            )
+                            guard bindings.length >= o.parameters.length
+                            {
+                                let saved_len type_substitutions.length
+                                var bi: size_t 0
+                                while bi < bindings.length
+                                {
+                                    let kv_ptr bindings.get(bi)
+                                    guard kv_ptr <> null
+                                        this.define_type_substitution(
+                                            kv_ptr.key, kv_ptr.value
+                                        )
+                                    set bi: bi + 1
+                                }
+
+                                var holder Vector[PlannedType]^rp(1)
+                                guard o.returns_ <> null
+                                {
+                                    let rt_model (*o.returns_)
+                                    holder.put(0, this.plan_type#(rt_model))
+                                }
+                                guard o.returns_ = null
+                                    holder.put(0, Planner.make_void_type#())
+
+                                set type_substitutions.length: saved_len
+                                return holder.get(0)
+                            }
+                        }
+                    }
+                }
+                set g: g + 1
+            }
+
             null
         }
 
