@@ -305,6 +305,16 @@ define Planner
         ; populate the same registries as the primary program.
         sibling_programs: Array[Program]
 
+        ; Currently-active namespace context. Pushed when
+        ; plan_namespace enters a `define cli { … }`-style block,
+        ; popped on exit. Used by mangle_function to prefix
+        ; namespace-scoped functions with the namespace name
+        ; (Itanium `_ZN3cli4mainE…` shape) and by
+        ; is_namespace_sibling_function to detect unqualified
+        ; calls to peer functions of the enclosing namespace.
+        current_namespace: ref[Namespace]?
+        current_namespace_name: ref[String]?
+
         ; Monotonic counter for synthesizing unique lambda names.
         next_lambda_id: size_t
     )
@@ -330,6 +340,8 @@ define Planner
             set loaded_module_paths: Array[KeyValuePair[String, Module]]^page()
             set errors: Array[String]^page()
             set sibling_programs: Array[Program]^page()
+            set current_namespace: null
+            set current_namespace_name: null
             set next_lambda_id: 0
 
             ; Seed the function registry with C-runtime externs so name
@@ -5189,8 +5201,42 @@ define Planner
         ; Dispatches each Member to the appropriate plan_* method and
         ; collects the results into the per-kind vectors the planned
         ; representation expects.
+        ;
+        ; Pushes the namespace onto the current-namespace context so
+        ; nested plan_function / plan_operator calls pick up the
+        ; namespace as their mangling parent (Itanium
+        ; `_ZN<NSName><FnName>E…`) and so is_namespace_sibling_function
+        ; can resolve unqualified intra-namespace calls. The old
+        ; context is restored before returning, giving nested
+        ; namespaces correct save/restore semantics.
         function plan_namespace#(rp, this: Planner, ns: Namespace, name: String) returns PlannedNamespace
         {
+            ; Build the parent PlannedType that tags every Function /
+            ; Operator inside this namespace for mangling. Name alone
+            ; drives the Itanium segment; encode_type length-prefixes
+            ; it to emit `_ZN<NSName><FnName>E…`.
+            let ns_mangled Planner.encode_name(name)
+            var parent_holder Vector[PlannedType]^rp(1)
+            parent_holder.put(0, PlannedType(
+                ns.span,
+                String^rp(name),
+                ns_mangled,
+                null,
+                Lifetime.Unspecified(Unspecified()),
+                null,
+                String^rp(""),
+                null
+            ))
+            let parent_ref parent_holder.get(0)
+
+            ; Save outer context and activate this namespace.
+            let old_ns this.current_namespace
+            let old_ns_name this.current_namespace_name
+            set current_namespace: &ns
+            var name_box Vector[String]^rp(1)
+            name_box.put(0, name)
+            set current_namespace_name: name_box.get(0)
+
             var functions Array[PlannedFunction]$()
             var operators Array[PlannedOperator]$()
             var concepts Array[PlannedConcept]$()
@@ -5205,12 +5251,12 @@ define Planner
                     choose m
                         when f: Function
                         {
-                            functions.add(this.plan_function#(f, null))
+                            functions.add(this.plan_function#(f, parent_ref))
                             0
                         }
                         when o: Operator
                         {
-                            operators.add(this.plan_operator#(o, null))
+                            operators.add(this.plan_operator#(o, parent_ref))
                             0
                         }
                         when c: Concept
@@ -5224,11 +5270,14 @@ define Planner
                 set i: i + 1
             }
 
+            ; Restore outer namespace context.
+            set current_namespace: old_ns
+            set current_namespace_name: old_ns_name
+
             var funcs_holder Vector[PlannedFunction]^rp(functions)
             var ops_holder Vector[PlannedOperator]^rp(operators)
             var concs_holder Vector[PlannedConcept]^rp(concepts)
 
-            let ns_mangled Planner.encode_name(name)
             PlannedNamespace(
                 ns.span,
                 String^rp(name),
@@ -5238,6 +5287,40 @@ define Planner
                 &ops_holder,
                 &concs_holder
             )
+        }
+
+        ; is_namespace_sibling_function: true iff `name` refers to a
+        ; Function defined directly in the currently-active
+        ; namespace's members list. Used to decide whether an
+        ; unqualified call inside a namespace body should route to
+        ; the namespace-scoped peer or fall back to the global
+        ; registry. Returns false whenever no namespace is active.
+        function is_namespace_sibling_function(this: Planner, name: String) returns bool
+        {
+            guard current_namespace <> null
+                return false
+
+            let ns (*current_namespace)
+            var i: size_t 0
+            while i < ns.members.length
+            {
+                let m_ptr ns.members.get(i)
+                guard m_ptr <> null
+                {
+                    let mem (*m_ptr)
+                    choose mem
+                        when f: Function
+                        {
+                            guard f.name.equals(name)
+                                return true
+                            0
+                        }
+                        else
+                            0
+                }
+                set i: i + 1
+            }
+            false
         }
 
         ; register_concept_recursive: register `c` and, if its Definition
