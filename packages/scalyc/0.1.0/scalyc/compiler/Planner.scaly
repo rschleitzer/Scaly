@@ -5106,10 +5106,11 @@ define Planner
             let planned_type this.plan_type#(g.type)
             let planned_value this.plan_operands#(g.value)
             var value_holder Vector[PlannedOperand]^rp(planned_value)
+            let mangled Planner.encode_name(name)
             let result PlannedGlobal(
                 g.span,
                 String^rp(name),
-                String^rp(""),
+                mangled,
                 planned_type,
                 &value_holder
             )
