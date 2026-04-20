@@ -471,6 +471,8 @@ function handle_expression#(syntax: ExpressionSyntax) returns Expression
             Expression.SizeOf(handle_sizeof#(sizeof_syntax))
         when alignof_syntax: AlignOfSyntax
             Expression.AlignOf(handle_alignof#(alignof_syntax))
+        when guard_syntax: GuardSyntax
+            Expression.If(handle_guard#(guard_syntax))
         when is_syntax: IsSyntax
             Expression.Is(handle_is#(is_syntax))
         when as_syntax: AsSyntax
@@ -770,6 +772,22 @@ function handle_alignof#(syntax: AlignOfSyntax) returns scaly.compiler.Model.Ali
 {
     let aligned_type handle_type#(syntax.type)
     scaly.compiler.Model.AlignOf(Span(syntax.start, syntax.end), *aligned_type)
+}
+
+; guard is desugared to an If with no alternative — the shared emitter
+; path treats `guard cond { body }` and `if cond { body }` identically.
+function handle_guard#(syntax: GuardSyntax) returns If
+{
+    let condition handle_operands#(syntax.condition)
+    let cons_stmt handle_command#(*syntax.statement)
+
+    If(
+        Span(syntax.start, syntax.end),
+        condition,
+        null,
+        cons_stmt,
+        null
+    )
 }
 
 function handle_is#(syntax: IsSyntax) returns Is
