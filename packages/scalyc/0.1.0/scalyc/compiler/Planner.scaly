@@ -973,6 +973,49 @@ define Planner
         ; concept whose parameter types are pairwise compatible with
         ; `arg_types`. Returns null when no match. Deliberately linear —
         ; matching against the first compatible overload.
+        ; check_initializer_match: returns the Initializer pointer if
+        ; its input matches arg_types (after skipping any implicit
+        ; page parameter, which is already excluded from input by the
+        ; Modeler). `exact_only` selects types_equal vs types_compatible.
+        function check_initializer_match#(
+            rp,
+            this: Planner,
+            ini: Initializer,
+            arg_types: Vector[PlannedType],
+            exact_only: bool
+        ) returns bool
+        {
+            guard ini.input.length <> arg_types.length
+                return false
+
+            var j: size_t 0
+            while j < arg_types.length
+            {
+                let p_ptr ini.input.get(j)
+                let a_ptr arg_types.get(j)
+                guard p_ptr = null
+                    return false
+                guard a_ptr = null
+                    return false
+                guard p_ptr.type <> null
+                {
+                    let pt (*p_ptr.type)
+                    let planned_pt this.plan_type#(pt)
+                    let arg (*a_ptr)
+                    var ok: bool false
+                    guard exact_only
+                        set ok: Planner.types_equal(planned_pt, arg)
+                    guard exact_only = false
+                        set ok: Planner.types_compatible(planned_pt, arg)
+                    guard ok = false
+                        return false
+                }
+                set j: j + 1
+            }
+
+            true
+        }
+
         function find_initializer#(
             rp,
             this: Planner,
@@ -988,6 +1031,7 @@ define Planner
             choose c.definition
                 when s: Structure
                 {
+                    ; Pass 1: exact match.
                     var i: size_t 0
                     while i < s.initializers.length
                     {
@@ -995,35 +1039,23 @@ define Planner
                         guard init_ptr <> null
                         {
                             let ini (*init_ptr)
-                            guard ini.input.length = arg_types.length
-                            {
-                                var matches: bool true
-                                var j: size_t 0
-                                while j < arg_types.length
-                                {
-                                    let p_ptr ini.input.get(j)
-                                    let a_ptr arg_types.get(j)
-                                    guard p_ptr <> null
-                                    {
-                                        guard a_ptr <> null
-                                        {
-                                            guard p_ptr.type <> null
-                                            {
-                                                let pt (*p_ptr.type)
-                                                let planned_pt this.plan_type#(pt)
-                                                let arg (*a_ptr)
-                                                guard Planner.types_compatible(planned_pt, arg) = false
-                                                    set matches: false
-                                            }
-                                        }
-                                    }
-                                    set j: j + 1
-                                }
-                                guard matches
-                                    return init_ptr
-                            }
+                            guard this.check_initializer_match#(ini, arg_types, true)
+                                return init_ptr
                         }
                         set i: i + 1
+                    }
+                    ; Pass 2: compatible match.
+                    var k: size_t 0
+                    while k < s.initializers.length
+                    {
+                        let init_ptr s.initializers.get(k)
+                        guard init_ptr <> null
+                        {
+                            let ini (*init_ptr)
+                            guard this.check_initializer_match#(ini, arg_types, false)
+                                return init_ptr
+                        }
+                        set k: k + 1
                     }
                     null
                 }
