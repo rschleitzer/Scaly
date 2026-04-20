@@ -2113,7 +2113,8 @@ define Planner
             this: Planner,
             method_name: String,
             parent: PlannedType,
-            params: Vector[PlannedType]
+            params: Vector[PlannedType],
+            has_page_param: bool
         ) returns String
         {
             var sb StringBuilder$()
@@ -2122,9 +2123,19 @@ define Planner
             sb.append(Planner.encode_name(method_name))
             sb.append("E")
 
+            ; Implicit page parameter for `function foo#(...)` methods —
+            ; matches mangle_function's handling of has_page_param.
+            var has_explicit: bool false
+            guard has_page_param
+            {
+                sb.append("PN4scaly6memory4PageE")
+                set has_explicit: true
+            }
+
             guard params.length = 0
             {
-                sb.append("v")
+                guard has_explicit = false
+                    sb.append("v")
                 return sb.to_string^rp()
             }
 
@@ -2209,7 +2220,10 @@ define Planner
             }
             var params_holder Vector[PlannedType]^rp(params_arr)
 
-            let mangled this.mangle_method#(method_name, struct_type, params_holder)
+            var has_page: bool false
+            guard f.page_parameter <> null
+                set has_page: true
+            let mangled this.mangle_method#(method_name, struct_type, params_holder, has_page)
 
             ; Throws type (optional).
             var can_throw: bool false
