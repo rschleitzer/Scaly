@@ -2693,6 +2693,17 @@ define Planner
             PlannedAs(a.span, target, null)
         }
 
+        ; plan_alignof: alignof(Type) → size_t. Mirrors plan_sizeof.
+        function plan_alignof#(
+            rp,
+            this: Planner,
+            a: scaly.compiler.Model.AlignOf
+        ) returns PlannedAlignOf
+        {
+            let planned this.plan_type#(a.type)
+            PlannedAlignOf(a.span, planned, 0)
+        }
+
         ; plan_type_operand: a Model.Type used as an operand can mean
         ; different things depending on whether the name resolves to:
         ;   - a local variable in scope → PlannedVariable with its type
@@ -3232,6 +3243,16 @@ define Planner
                     PlannedOperand(
                         op.span,
                         PlannedExpression.SizeOf(ps),
+                        null,
+                        Planner.make_size_type#()
+                    )
+                }
+                when ao: scaly.compiler.Model.AlignOf
+                {
+                    let pa this.plan_alignof#(ao)
+                    PlannedOperand(
+                        op.span,
+                        PlannedExpression.AlignOf(pa),
                         null,
                         Planner.make_size_type#()
                     )

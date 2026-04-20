@@ -469,6 +469,8 @@ function handle_expression#(syntax: ExpressionSyntax) returns Expression
             Expression.Try(handle_try#(try_syntax))
         when sizeof_syntax: SizeOfSyntax
             Expression.SizeOf(handle_sizeof#(sizeof_syntax))
+        when alignof_syntax: AlignOfSyntax
+            Expression.AlignOf(handle_alignof#(alignof_syntax))
         when is_syntax: IsSyntax
             Expression.Is(handle_is#(is_syntax))
         when as_syntax: AsSyntax
@@ -762,6 +764,12 @@ function handle_sizeof#(syntax: SizeOfSyntax) returns SizeOf
 {
     let sized_type handle_type#(syntax.type)
     SizeOf(Span(syntax.start, syntax.end), *sized_type)
+}
+
+function handle_alignof#(syntax: AlignOfSyntax) returns scaly.compiler.Model.AlignOf
+{
+    let aligned_type handle_type#(syntax.type)
+    scaly.compiler.Model.AlignOf(Span(syntax.start, syntax.end), *aligned_type)
 }
 
 function handle_is#(syntax: IsSyntax) returns Is

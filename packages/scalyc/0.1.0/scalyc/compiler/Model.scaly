@@ -189,6 +189,7 @@ define Try
 
 ; Type operations
 define SizeOf(span: Span, type: Type)
+define AlignOf(span: Span, type: Type)
 define Is(span: Span, name: Vector[String])
 
 ; `value as Type` — explicit cast expression.
@@ -215,6 +216,7 @@ define Expression union (
     While: While
     Try: Try
     SizeOf: SizeOf
+    AlignOf: AlignOf
     Is: Is
     As: As
     New: New
