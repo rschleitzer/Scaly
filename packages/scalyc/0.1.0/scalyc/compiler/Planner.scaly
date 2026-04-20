@@ -1538,6 +1538,76 @@ define Planner
                 set k: k + 1
             }
 
+            ; Pass 3: generic overload. For candidates declaring type
+            ; parameters, plan the declared parameter types and run
+            ; pattern inference against the argument types. On a
+            ; successful inference, instantiate the generic and return
+            ; the instantiated function's return type.
+            var g: size_t 0
+            while g < candidates.length
+            {
+                let f_ptr candidates.get(g)
+                guard f_ptr <> null
+                {
+                    let f (*f_ptr)
+                    guard f.parameters.length > 0
+                    {
+                        var param_start2: size_t 0
+                        guard f.input.length > 0
+                        {
+                            let fi0 f.input.get(0)
+                            guard fi0 <> null
+                            {
+                                guard fi0.name <> null
+                                {
+                                    let fname (*fi0.name)
+                                    guard fname.equals(String$("this"))
+                                        set param_start2: 1
+                                }
+                            }
+                        }
+
+                        let expected_arity f.input.length - param_start2
+                        guard expected_arity = arg_types.length
+                        {
+                            var param_types_arr Array[PlannedType]$()
+                            var pi: size_t param_start2
+                            while pi < f.input.length
+                            {
+                                let p_ptr f.input.get(pi)
+                                guard p_ptr <> null
+                                {
+                                    guard p_ptr.type <> null
+                                    {
+                                        let pt (*p_ptr.type)
+                                        param_types_arr.add(this.plan_type#(pt))
+                                    }
+                                }
+                                set pi: pi + 1
+                            }
+                            var param_types_vec Vector[PlannedType]^rp(param_types_arr)
+
+                            let bindings this.infer_type_arguments#(
+                                param_types_vec, arg_types
+                            )
+                            guard bindings.length >= f.parameters.length
+                            {
+                                let inst this.instantiate_generic_function#(f, bindings)
+                                guard inst.return_type <> null
+                                    return inst.return_type
+                                guard inst.return_type = null
+                                {
+                                    var v_holder Vector[PlannedType]^rp(1)
+                                    v_holder.put(0, Planner.make_void_type#())
+                                    return v_holder.get(0)
+                                }
+                            }
+                        }
+                    }
+                }
+                set g: g + 1
+            }
+
             var sb StringBuilder$()
             sb.append("no matching overload for function: ")
             sb.append(name)
