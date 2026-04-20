@@ -3097,8 +3097,11 @@ define Planner
         ; plan_lambda: anonymous function literal. Opens a fresh scope,
         ; seeds each parameter with a fresh type variable (lambdas omit
         ; parameter type annotations), plans the body Action, and
-        ; synthesizes a unique mangled name. Closure capture is deferred
-        ; — the captures vector stays empty for now.
+        ; synthesizes a unique mangled name. Captures are the set of
+        ; variable names referenced in the body that aren't lambda
+        ; parameters — a best-effort over-approximation (inner bindings
+        ; may leak in) that the emitter can intersect with the real
+        ; outer scope.
         ; collect_free_names: walk a PlannedOperand's expression tree
         ; and accumulate the names of every PlannedVariable reference
         ; encountered. Recurses into Call args, Tuple components, and
@@ -4562,13 +4565,14 @@ define Planner
         ; plan_function: Model.Function → Plan.PlannedFunction.
         ;
         ; Opens a new scope, registers each parameter as a local, plans
-        ; the return/throws types, and plans the implementation. The
-        ; following fields are left at defaults until later phases:
-        ;   - mangled_name                (set by struct/concept resolver)
-        ;   - page_parameter              (computed from lifetime)
-        ;   - origin                      (populated during instantiation)
-        ;   - needs_local_page            (set by $-allocation tracker)
-        ;   - can_throw, scheme           (post-solver)
+        ; the return/throws types, and plans the implementation.
+        ; Computes:
+        ;   - mangled_name (Itanium ABI via mangle_function)
+        ;   - can_throw (set iff throws_type is present)
+        ;   - needs_local_page (scan body for Local-lifetime ops)
+        ;   - has_page (page parameter present or implicit return alloc)
+        ; `origin` (instantiation source) and `scheme` (post-solver
+        ; type scheme) remain null for now.
         ; ================================================================
         function plan_function#(
             rp,
