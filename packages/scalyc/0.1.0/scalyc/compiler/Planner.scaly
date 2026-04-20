@@ -2313,9 +2313,17 @@ define Planner
 
                     ; Unresolved — record placeholder with void result.
                     guard matched = false
+                    {
+                        var sb StringBuilder$()
+                        sb.append("member '")
+                        sb.append(m)
+                        sb.append("' not found in type ")
+                        sb.append(current.name)
+                        this.add_error(sb.to_string^rp())
                         result.add(PlannedMemberAccess(
                             m, 0, false, false, current, Planner.make_void_type#()
                         ))
+                    }
                 }
                 set i: i + 1
             }
