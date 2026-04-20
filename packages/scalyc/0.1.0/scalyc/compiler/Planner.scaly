@@ -2762,6 +2762,21 @@ define Planner
         ; that the condition's collapsed type must be bool.
         ; `prop` (binding-in-condition) is not yet planned — that
         ; requires a variant-capture story we don't have yet.
+        ; statement_result_type: extract the PlannedType produced by a
+        ; statement used as an expression. Covers the Action case (the
+        ; common `if cond x else y` shape); non-value statements
+        ; (Return/Throw/Break/Continue/Binding) return void. Block-bodied
+        ; statements with trailing expressions are handled once
+        ; PlannedBlock carries a result type — a separate gap.
+        function statement_result_type(s: PlannedStatement) returns PlannedType
+        {
+            choose s
+                when a: PlannedAction
+                    a.result_type
+                else
+                    Planner.make_void_type#()
+        }
+
         function plan_if#(rp, this: Planner, f: If) returns PlannedIf
         {
             let planned_cond_flat this.plan_operands#(f.condition)
@@ -2781,6 +2796,15 @@ define Planner
                 var alt_holder Vector[PlannedStatement]^rp(1)
                 alt_holder.put(0, planned_alt)
                 set alternative_ref: alt_holder.get(0)
+
+                ; Unify the consequent and alternative result types so an
+                ; `if` used as an expression has a single type. Skips
+                ; voids (pure statements contribute no constraint).
+                let cons_ty Planner.statement_result_type(planned_consequent)
+                let alt_ty Planner.statement_result_type(planned_alt)
+                guard cons_ty.name.equals(String$("void")) = false
+                    and alt_ty.name.equals(String$("void")) = false
+                    this.add_equality_constraint(cons_ty, alt_ty, f.span)
             }
 
             var cond_holder Vector[PlannedOperand]^rp(1)
@@ -3249,6 +3273,46 @@ define Planner
                 var alt_holder Vector[PlannedStatement]^rp(1)
                 alt_holder.put(0, planned_alt)
                 set alternative_ref: alt_holder.get(0)
+            }
+
+            ; Unify all branch consequent result types (and the
+            ; alternative when present) so the match-as-expression has
+            ; a single type. Voids are skipped — pure-statement
+            ; branches contribute no constraint.
+            guard branches_arr.length > 0
+            {
+                var first_ty: PlannedType Planner.make_void_type#()
+                var have_first: bool false
+                var bi: size_t 0
+                while bi < branches_arr.length
+                {
+                    let br_ptr branches_arr.get(bi)
+                    guard br_ptr <> null
+                    {
+                        let br (*br_ptr)
+                        let br_ty Planner.statement_result_type(br.consequent)
+                        guard br_ty.name.equals(String$("void")) = false
+                        {
+                            guard have_first = false
+                            {
+                                set first_ty: br_ty
+                                set have_first: true
+                            }
+                            guard have_first
+                                this.add_equality_constraint(
+                                    first_ty, br_ty, br.loc
+                                )
+                        }
+                    }
+                    set bi: bi + 1
+                }
+                guard alternative_ref <> null and have_first
+                {
+                    let alt (*alternative_ref)
+                    let alt_ty Planner.statement_result_type(alt)
+                    guard alt_ty.name.equals(String$("void")) = false
+                        this.add_equality_constraint(first_ty, alt_ty, m.span)
+                }
             }
 
             var cond_holder Vector[PlannedOperand]^rp(planned_cond)
