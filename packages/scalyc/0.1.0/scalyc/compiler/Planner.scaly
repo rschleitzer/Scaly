@@ -4439,16 +4439,11 @@ define Planner
         ; ================================================================
         ; plan_structure: Model.Structure → Plan.PlannedStructure.
         ;
-        ; Scope of this port:
-        ;   - plans every property (plan_property)
-        ;   - computes size / alignment via compute_struct_size +
-        ;     compute_struct_alignment (which both read the simplified
-        ;     "size == alignment per primitive" model)
-        ;
-        ; Skipped (TODO for later passes):
-        ;   - initializers, deinitializer, methods, operators — every
-        ;     members slot stays null for now
-        ;   - mangled_name — the containing concept resolver will fill it
+        ; Plans every property, computes struct size/alignment (simple
+        ; "size == alignment per primitive" model), then plans all
+        ; members: methods (Function), operators, initializers, and the
+        ; deinitializer. mangled_name is built via mangle_structure so
+        ; method/operator mangling can reference the parent.
         ; ================================================================
         function plan_structure#(rp, this: Planner, s: Structure, name: String) returns PlannedStructure
         {
