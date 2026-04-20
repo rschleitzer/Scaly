@@ -2449,8 +2449,16 @@ llvm::Error Emitter::emitReturn(const PlannedReturn &Return) {
                         llvm::Value *DataCast = Builder->CreateBitCast(
                             DataPtr, llvm::PointerType::getUnqual(RetVal->getType()), "sret.data.cast");
                         Builder->CreateStore(RetVal, DataCast);
+                    } else if (RetVal->getType()->isPointerTy()) {
+                        // RetVal is a ptr to the heap-allocated aggregate (e.g., returning
+                        // String#("0") hands back a ptr pointing at the initialized struct
+                        // on rp). Load the whole struct and store it into sret. Mirrors the
+                        // same path in emitFunctionBody for implicit returns.
+                        llvm::Value *Loaded = Builder->CreateLoad(SRetSTy, RetVal, "sret.load");
+                        Builder->CreateStore(Loaded, SRetArg);
                     } else {
-                        // Non-throwing sret: store scalar to field 0 (e.g., iterator handle)
+                        // Non-throwing sret: store scalar to field 0 (e.g., iterator handle
+                        // where the single pointer field IS the returned value).
                         llvm::Value *FieldPtr = Builder->CreateStructGEP(
                             SRetSTy, SRetArg, 0, "sret.field");
                         Builder->CreateStore(RetVal, FieldPtr);
