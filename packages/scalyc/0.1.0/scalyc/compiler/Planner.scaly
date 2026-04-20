@@ -3851,7 +3851,20 @@ define Planner
                 when tr: Try
                 {
                     let pt this.plan_try#(tr)
-                    PlannedOperand(op.span, PlannedExpression.Try(pt), null, Planner.make_void_type#())
+                    ; Try-as-expression takes the happy-path value's
+                    ; type — that's the binding's operation result.
+                    var try_type: PlannedType Planner.make_void_type#()
+                    guard pt.cond.operation <> null
+                    {
+                        let ops (*pt.cond.operation)
+                        guard ops.length > 0
+                        {
+                            let last_ptr ops.get(ops.length - 1)
+                            guard last_ptr <> null
+                                set try_type: (*last_ptr).result_type
+                        }
+                    }
+                    PlannedOperand(op.span, PlannedExpression.Try(pt), null, try_type)
                 }
                 when so: SizeOf
                 {
