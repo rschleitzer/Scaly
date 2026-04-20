@@ -4057,17 +4057,39 @@ llvm::Expected<llvm::Value*> Emitter::emitIntrinsicUnaryOp(
         return Builder->CreateNot(Operand, "bitnot");
     }
     if (OpName == "*") {
-        // Dereference: load value from pointer
-        // Operand is the pointer, ResultType is the element type
-        if (!Operand->getType()->isPointerTy()) {
-            return llvm::make_error<llvm::StringError>(
-                "Dereference operator '*' requires a pointer operand, got: " +
-                    std::to_string(Operand->getType()->getTypeID()),
-                llvm::inconvertibleErrorCode()
-            );
+        // Dereference: pointer -> loaded value, or Some-unwrap on
+        // Option[T] (value type) -> payload extracted as T.
+        if (Operand->getType()->isPointerTy()) {
+            // Standard pointer deref: load the pointed-to value.
+            auto *Result = Builder->CreateLoad(Ty, Operand, "deref");
+            return Result;
         }
-        auto *Result = Builder->CreateLoad(Ty, Operand, "deref");
-        return Result;
+        if (Operand->getType()->isStructTy()) {
+            // Aggregate operand — treat as Option[T] Some-unwrap. The
+            // Scaly representation is `{ i8 tag, [sizeof(T) x i8] payload }`,
+            // so field 1 holds the payload bytes. Spill to a stack slot,
+            // GEP to the payload, and load as the target type. The caller
+            // is responsible for the None check via a prior `<> null`
+            // guard — we don't trap on a None tag here because the
+            // scalyc source is structured to make that unreachable.
+            auto *ST = llvm::cast<llvm::StructType>(Operand->getType());
+            llvm::Value *Slot = Builder->CreateAlloca(ST, nullptr, "opt_slot");
+            Builder->CreateStore(Operand, Slot);
+            llvm::Value *PayloadPtr = Builder->CreateStructGEP(
+                ST, Slot, 1, "payload");
+            auto *Result = Builder->CreateLoad(Ty, PayloadPtr, "unwrap");
+            return Result;
+        }
+        std::string TypeStr;
+        llvm::raw_string_ostream OS(TypeStr);
+        Operand->getType()->print(OS);
+        return llvm::make_error<llvm::StringError>(
+            "Dereference operator '*' requires a pointer or Option[T] "
+            "operand, got: " +
+                std::to_string(Operand->getType()->getTypeID()) +
+                " (" + OS.str() + ")",
+            llvm::inconvertibleErrorCode()
+        );
     }
     if (OpName == "&") {
         // Address-of: the operand should already be a pointer (from alloca)
