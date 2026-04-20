@@ -467,6 +467,170 @@ define Planner
         }
 
         ; ================================================================
+        ; Package search paths + on-demand module loading.
+        ;
+        ; The full parse+model step needed to realise a Module from a
+        ; .scaly file isn't wired in from the Scaly Planner yet — that
+        ; requires Scaly-side access to Parser and Modeler. For now
+        ; these methods resolve paths, probe the filesystem, and serve
+        ; the cache; the "found a candidate file, now parse it" branch
+        ; funnels through not_implemented.
+        ; ================================================================
+
+        function add_package_search_path(this: Planner, path: String)
+        {
+            search_paths.add(path)
+        }
+
+        ; Look up a previously loaded package in the cache.
+        function lookup_loaded_package(this: Planner, name: String) returns ref[Module]?
+        {
+            var i: size_t 0
+            while i < loaded_packages.length
+            {
+                let kvp_ptr loaded_packages.get(i)
+                guard kvp_ptr <> null
+                {
+                    guard kvp_ptr.key.equals(name)
+                        return &kvp_ptr.value
+                }
+                set i: i + 1
+            }
+            null
+        }
+
+        ; Look up a previously loaded intra-package module by its full
+        ; file path.
+        function lookup_loaded_module_path(this: Planner, path: String) returns ref[Module]?
+        {
+            var i: size_t 0
+            while i < loaded_module_paths.length
+            {
+                let kvp_ptr loaded_module_paths.get(i)
+                guard kvp_ptr <> null
+                {
+                    guard kvp_ptr.key.equals(path)
+                        return &kvp_ptr.value
+                }
+                set i: i + 1
+            }
+            null
+        }
+
+        ; Build the list of directories to probe for a named package.
+        ; Mirrors Planner.cpp's loadPackageOnDemand search list: cwd's
+        ; packages/, then any user-provided -I paths. Walking the
+        ; source file's parent chain is omitted here — the call sites
+        ; that need it can push additional entries via
+        ; add_package_search_path.
+        function build_package_search_paths#(rp, this: Planner) returns Vector[String]
+        {
+            var paths Array[String]$()
+            paths.add(String^rp("packages"))
+
+            var i: size_t 0
+            while i < search_paths.length
+            {
+                let p_ptr search_paths.get(i)
+                guard p_ptr <> null
+                    paths.add((*p_ptr))
+                set i: i + 1
+            }
+
+            Vector[String]^rp(paths)
+        }
+
+        ; Compose "base/<name>/<version>/<name>.scaly" using Path.join#.
+        function build_package_file_path#(
+            rp,
+            this: Planner,
+            base: String,
+            name: String,
+            version: String
+        ) returns String
+        {
+            let step1 Path.join^rp(base, name)
+            let step2 Path.join^rp(step1, version)
+            var file_sb StringBuilder^rp()
+            file_sb.append(name)
+            file_sb.append(".scaly")
+            let file_part file_sb.to_string^rp()
+            Path.join^rp(step2, file_part)
+        }
+
+        ; load_package_on_demand: look up a package by name, probing the
+        ; search paths until a matching .scaly file turns up. The cache
+        ; short-circuits repeat calls. When a file is found but we have
+        ; no Scaly-side parser/modeler to build the Module, the path
+        ; dies loudly via not_implemented so the gap is visible.
+        function load_package_on_demand#(
+            rp,
+            this: Planner,
+            name: String
+        ) returns ref[Module]?
+        {
+            ; Cache hit.
+            let cached this.lookup_loaded_package(name)
+            guard cached <> null
+                return cached
+
+            let paths this.build_package_search_paths#()
+            let version String^rp("0.1.0")
+
+            var i: size_t 0
+            while i < paths.length
+            {
+                let base_ptr paths.get(i)
+                guard base_ptr <> null
+                {
+                    let base (*base_ptr)
+                    let pkg_path this.build_package_file_path#(
+                        base, name, version
+                    )
+                    guard File.exists(pkg_path)
+                    {
+                        ; We found a candidate package file but parse+
+                        ; model is not yet ported into the Scaly Planner.
+                        ; Fail loudly rather than pretend the package
+                        ; doesn't exist.
+                        Planner.not_implemented("load_package_on_demand: parse+model")
+                    }
+                }
+                set i: i + 1
+            }
+
+            null
+        }
+
+        ; load_intra_package_module: load a sibling module file (e.g.
+        ; "BasePath/ModuleName.scaly") for an already-mounted package.
+        ; Same cache-then-probe shape; same not_implemented gate on the
+        ; parse+model step.
+        function load_intra_package_module#(
+            rp,
+            this: Planner,
+            base_path: String,
+            module_name: String
+        ) returns ref[Module]?
+        {
+            var name_sb StringBuilder^rp()
+            name_sb.append(module_name)
+            name_sb.append(".scaly")
+            let file_part name_sb.to_string^rp()
+            let mod_path Path.join^rp(base_path, file_part)
+
+            let cached this.lookup_loaded_module_path(mod_path)
+            guard cached <> null
+                return cached
+
+            guard File.exists(mod_path)
+                return null
+
+            Planner.not_implemented("load_intra_package_module: parse+model")
+            null
+        }
+
+        ; ================================================================
         ; Model-function and operator registries.
         ; ================================================================
 
