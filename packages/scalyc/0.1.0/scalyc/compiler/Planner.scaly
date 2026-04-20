@@ -3102,6 +3102,71 @@ define Planner
         ; parameter type annotations), plans the body Action, and
         ; synthesizes a unique mangled name. Closure capture is deferred
         ; — the captures vector stays empty for now.
+        ; collect_free_names: walk a PlannedOperand's expression tree
+        ; and accumulate the names of every PlannedVariable reference
+        ; encountered. Recurses into Call args, Tuple components, and
+        ; If/Match/Block/Choose sub-statements. Used by plan_lambda's
+        ; capture-discovery pass — captures are this set minus any
+        ; lambda-local names (params + inner bindings).
+        function collect_free_names(
+            this: Planner,
+            op: PlannedOperand,
+            acc: Array[String]
+        )
+        {
+            choose op.expr
+                when v: PlannedVariable
+                    acc.add(v.name)
+                when call: PlannedCall
+                {
+                    guard call.args <> null
+                    {
+                        let args (*call.args)
+                        var i: size_t 0
+                        while i < args.length
+                        {
+                            let a_ptr args.get(i)
+                            guard a_ptr <> null
+                                this.collect_free_names((*a_ptr), acc)
+                            set i: i + 1
+                        }
+                    }
+                    0
+                }
+                when tup: PlannedTuple
+                {
+                    guard tup.components <> null
+                    {
+                        let comps (*tup.components)
+                        var i: size_t 0
+                        while i < comps.length
+                        {
+                            let c_ptr comps.get(i)
+                            guard c_ptr <> null
+                            {
+                                let c (*c_ptr)
+                                guard c.value <> null
+                                {
+                                    let vops (*c.value)
+                                    var j: size_t 0
+                                    while j < vops.length
+                                    {
+                                        let v_ptr vops.get(j)
+                                        guard v_ptr <> null
+                                            this.collect_free_names((*v_ptr), acc)
+                                        set j: j + 1
+                                    }
+                                }
+                            }
+                            set i: i + 1
+                        }
+                    }
+                    0
+                }
+                else
+                    0
+        }
+
         function plan_lambda#(rp, this: Planner, lam: Lambda) returns PlannedLambda
         {
             this.push_scope()
@@ -3141,6 +3206,69 @@ define Planner
             }
 
             let planned_body this.plan_action#(lam.body)
+
+            ; Capture discovery: walk the body operands collecting all
+            ; variable-name references, then filter out names that match
+            ; one of the lambda's own parameters. The remainder is the
+            ; captures set (best-effort: inner bindings declared inside
+            ; the body can leak in, but it's a safe over-approximation
+            ; that the emitter can intersect with the real scope).
+            var free_names Array[String]$()
+            guard planned_body.source <> null
+            {
+                let src (*planned_body.source)
+                var si: size_t 0
+                while si < src.length
+                {
+                    let s_ptr src.get(si)
+                    guard s_ptr <> null
+                        this.collect_free_names((*s_ptr), free_names)
+                    set si: si + 1
+                }
+            }
+
+            var captures_arr Array[String]$()
+            var fi: size_t 0
+            while fi < free_names.length
+            {
+                let nm_ptr free_names.get(fi)
+                guard nm_ptr <> null
+                {
+                    let nm (*nm_ptr)
+                    var is_param: bool false
+                    var pj: size_t 0
+                    while pj < lam.input.length
+                    {
+                        let p_ptr lam.input.get(pj)
+                        guard p_ptr <> null
+                        {
+                            guard p_ptr.name <> null
+                            {
+                                let pn (*p_ptr.name)
+                                guard pn.equals(nm)
+                                    set is_param: true
+                            }
+                        }
+                        set pj: pj + 1
+                    }
+                    var already: bool false
+                    var di: size_t 0
+                    while di < captures_arr.length
+                    {
+                        let d_ptr captures_arr.get(di)
+                        guard d_ptr <> null
+                        {
+                            guard (*d_ptr).equals(nm)
+                                set already: true
+                        }
+                        set di: di + 1
+                    }
+                    guard is_param = false and already = false
+                        captures_arr.add(String^rp(nm))
+                }
+                set fi: fi + 1
+            }
+
             this.pop_scope()
 
             let lam_id next_lambda_id
@@ -3152,6 +3280,10 @@ define Planner
             let mangled name_sb.to_string^rp()
 
             var items_holder Vector[PlannedItem]^rp(planned_items)
+            var captures_holder Vector[String]^rp(captures_arr)
+            var captures_ref: ref[Vector[String]]? null
+            guard captures_holder.length > 0
+                set captures_ref: &captures_holder
 
             PlannedLambda(
                 lam.span,
@@ -3159,7 +3291,7 @@ define Planner
                 &items_holder,
                 planned_body,
                 planned_body.result_type,
-                null
+                captures_ref
             )
         }
 
