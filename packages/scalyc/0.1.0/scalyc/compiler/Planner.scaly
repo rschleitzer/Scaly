@@ -1061,6 +1061,49 @@ define Planner
                         }
                         set k: k + 1
                     }
+
+                    ; Pass 3: generic inference. For each initializer,
+                    ; plan the parameter types, infer generic bindings
+                    ; against arg_types, and accept if the concept's
+                    ; parameters are fully bound.
+                    guard c.parameters.length > 0
+                    {
+                        var g: size_t 0
+                        while g < s.initializers.length
+                        {
+                            let init_ptr s.initializers.get(g)
+                            guard init_ptr <> null
+                            {
+                                let ini (*init_ptr)
+                                guard ini.input.length = arg_types.length
+                                {
+                                    var param_types_arr Array[PlannedType]$()
+                                    var pi: size_t 0
+                                    while pi < ini.input.length
+                                    {
+                                        let p_ptr ini.input.get(pi)
+                                        guard p_ptr <> null
+                                        {
+                                            guard p_ptr.type <> null
+                                            {
+                                                let pt (*p_ptr.type)
+                                                param_types_arr.add(this.plan_type#(pt))
+                                            }
+                                        }
+                                        set pi: pi + 1
+                                    }
+                                    var param_types_vec Vector[PlannedType]^rp(param_types_arr)
+                                    let bindings this.infer_type_arguments#(
+                                        param_types_vec, arg_types
+                                    )
+                                    guard bindings.length >= c.parameters.length
+                                        return init_ptr
+                                }
+                            }
+                            set g: g + 1
+                        }
+                    }
+
                     null
                 }
                 else
