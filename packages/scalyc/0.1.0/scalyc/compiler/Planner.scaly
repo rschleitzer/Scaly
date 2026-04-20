@@ -2922,9 +2922,10 @@ define Planner
             PlannedSizeOf(s.span, sized, size)
         }
 
-        ; plan_is: Is(name) is a runtime variant-tag test. The union name
-        ; and variant_tag can only be resolved by the concept table; until
-        ; that's wired up we leave the resolved fields at sentinel values.
+        ; plan_is: Is(name) is a runtime variant-tag test. At this site
+        ; we resolve the test type and (best-effort) the union_name; the
+        ; `variant_tag` and `value` fields get stitched in at the
+        ; operand-sequence collapse site, which has the value operand.
         function plan_is#(rp, this: Planner, i: Is) returns PlannedIs
         {
             ; `x is null` — single-segment "null" name. Skip type
