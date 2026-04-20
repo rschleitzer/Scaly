@@ -1202,7 +1202,7 @@ define Planner
                 set i: i + 1
             }
 
-            let result this.plan_function#(f)
+            let result this.plan_function#(f, null)
             set type_substitutions.length: saved_len
             result
         }
@@ -3356,7 +3356,12 @@ define Planner
         ;   - needs_local_page            (set by $-allocation tracker)
         ;   - can_throw, scheme           (post-solver)
         ; ================================================================
-        function plan_function#(rp, this: Planner, f: Function) returns PlannedFunction
+        function plan_function#(
+            rp,
+            this: Planner,
+            f: Function,
+            parent: ref[PlannedType]?
+        ) returns PlannedFunction
         {
             this.push_scope()
 
@@ -3409,11 +3414,10 @@ define Planner
             var input_holder Vector[PlannedItem]^rp(planned_input)
 
             ; Compute the Itanium mangled name. For a free function this
-            ; is `_Z<name-len><name><params>`; for methods the caller
-            ; (plan_structure/plan_union) would need to supply a parent
-            ; type — not tracked through this entry point yet.
+            ; is `_Z<name-len><name><params>`; for methods (parent
+            ; non-null) it's `_ZN<parent><name>E<params>`.
             let mangled Planner.mangle_function#(
-                f.name, &input_holder, null, false
+                f.name, &input_holder, parent, false
             )
 
             let result PlannedFunction(
@@ -3662,6 +3666,46 @@ define Planner
             let total_size Planner.compute_struct_size(&props_holder)
             let total_align Planner.compute_struct_alignment(&props_holder)
 
+            ; Build the struct's own PlannedType (name + resolved
+            ; generics) before planning methods so method mangling
+            ; can encode the parent.
+            var gens_arr Array[PlannedType]$()
+            let c_for_gens_ref this.lookup_concept(name)
+            guard c_for_gens_ref <> null
+            {
+                let c_for_gens (*c_for_gens_ref)
+                var pi: size_t 0
+                while pi < c_for_gens.parameters.length
+                {
+                    let p_ptr c_for_gens.parameters.get(pi)
+                    guard p_ptr <> null
+                    {
+                        let ts_ref this.lookup_type_substitution(p_ptr.name)
+                        guard ts_ref <> null
+                            gens_arr.add((*ts_ref))
+                    }
+                    set pi: pi + 1
+                }
+            }
+            var gens_holder Vector[PlannedType]^rp(gens_arr)
+            var gens_ref: ref[Vector[PlannedType]]? null
+            guard gens_holder.length > 0
+                set gens_ref: &gens_holder
+            let mangled Planner.mangle_structure#(name, gens_ref)
+
+            var parent_holder Vector[PlannedType]^rp(1)
+            parent_holder.put(0, PlannedType(
+                s.span,
+                String^rp(name),
+                mangled,
+                gens_ref,
+                Lifetime.Unspecified(Unspecified()),
+                null,
+                String^rp(""),
+                null
+            ))
+            let parent_ref parent_holder.get(0)
+
             ; Plan methods, operators, initializers, deinitializer.
             var planned_methods Array[PlannedFunction]$()
             var planned_operators Array[PlannedOperator]$()
@@ -3678,7 +3722,7 @@ define Planner
                     choose mem
                         when f: Function
                         {
-                            planned_methods.add(this.plan_function#(f))
+                            planned_methods.add(this.plan_function#(f, parent_ref))
                             0
                         }
                         when o: Operator
@@ -3715,34 +3759,6 @@ define Planner
             var methods_holder Vector[PlannedFunction]^rp(planned_methods)
             var ops_holder Vector[PlannedOperator]^rp(planned_operators)
             var inits_holder Vector[PlannedInitializer]^rp(planned_initializers)
-
-            ; Mangled name uses the concept's generic parameters (if any)
-            ; mapped through the active type_substitutions. This picks up
-            ; bindings set by instantiate_generic so Vector[int] gets
-            ; `_Z6VectorIiE` instead of `_Z6Vector`.
-            var gens_arr Array[PlannedType]$()
-            let c_for_gens_ref this.lookup_concept(name)
-            guard c_for_gens_ref <> null
-            {
-                let c_for_gens (*c_for_gens_ref)
-                var pi: size_t 0
-                while pi < c_for_gens.parameters.length
-                {
-                    let p_ptr c_for_gens.parameters.get(pi)
-                    guard p_ptr <> null
-                    {
-                        let ts_ref this.lookup_type_substitution(p_ptr.name)
-                        guard ts_ref <> null
-                            gens_arr.add((*ts_ref))
-                    }
-                    set pi: pi + 1
-                }
-            }
-            var gens_holder Vector[PlannedType]^rp(gens_arr)
-            var gens_ref: ref[Vector[PlannedType]]? null
-            guard gens_holder.length > 0
-                set gens_ref: &gens_holder
-            let mangled Planner.mangle_structure#(name, gens_ref)
 
             let result PlannedStructure(
                 s.span,
@@ -3802,7 +3818,7 @@ define Planner
                     choose m
                         when f: Function
                         {
-                            functions.add(this.plan_function#(f))
+                            functions.add(this.plan_function#(f, null))
                             0
                         }
                         when o: Operator
@@ -4016,7 +4032,7 @@ define Planner
                     choose mem
                         when f: Function
                         {
-                            functions.add(this.plan_function#(f))
+                            functions.add(this.plan_function#(f, null))
                             0
                         }
                         when o: Operator
@@ -4109,38 +4125,8 @@ define Planner
             let u_size Planner.compute_union_size(&vs_holder)
             let u_align Planner.compute_struct_alignment(null)
 
-            ; Plan methods and operators declared on the union.
-            var planned_methods Array[PlannedFunction]$()
-            var planned_operators Array[PlannedOperator]$()
-            var mi: size_t 0
-            while mi < u.members.length
-            {
-                let m_ptr u.members.get(mi)
-                guard m_ptr <> null
-                {
-                    let mem (*m_ptr)
-                    choose mem
-                        when f: Function
-                        {
-                            planned_methods.add(this.plan_function#(f))
-                            0
-                        }
-                        when o: Operator
-                        {
-                            planned_operators.add(this.plan_operator#(o))
-                            0
-                        }
-                        else
-                            0
-                }
-                set mi: mi + 1
-            }
-
-            var methods_holder Vector[PlannedFunction]^rp(planned_methods)
-            var ops_holder Vector[PlannedOperator]^rp(planned_operators)
-
-            ; Compute mangled_name using current generic substitutions
-            ; (same pattern as plan_structure).
+            ; Build the union's own PlannedType + mangled_name upfront
+            ; so method planning can mangle methods with this as parent.
             var u_gens_arr Array[PlannedType]$()
             let u_concept_ref this.lookup_concept(name)
             guard u_concept_ref <> null
@@ -4164,6 +4150,49 @@ define Planner
             guard u_gens_holder.length > 0
                 set u_gens_ref: &u_gens_holder
             let u_mangled Planner.mangle_structure#(name, u_gens_ref)
+
+            var u_parent_holder Vector[PlannedType]^rp(1)
+            u_parent_holder.put(0, PlannedType(
+                u.span,
+                String^rp(name),
+                u_mangled,
+                u_gens_ref,
+                Lifetime.Unspecified(Unspecified()),
+                null,
+                String^rp(""),
+                null
+            ))
+            let u_parent_ref u_parent_holder.get(0)
+
+            ; Plan methods and operators declared on the union.
+            var planned_methods Array[PlannedFunction]$()
+            var planned_operators Array[PlannedOperator]$()
+            var mi: size_t 0
+            while mi < u.members.length
+            {
+                let m_ptr u.members.get(mi)
+                guard m_ptr <> null
+                {
+                    let mem (*m_ptr)
+                    choose mem
+                        when f: Function
+                        {
+                            planned_methods.add(this.plan_function#(f, u_parent_ref))
+                            0
+                        }
+                        when o: Operator
+                        {
+                            planned_operators.add(this.plan_operator#(o))
+                            0
+                        }
+                        else
+                            0
+                }
+                set mi: mi + 1
+            }
+
+            var methods_holder Vector[PlannedFunction]^rp(planned_methods)
+            var ops_holder Vector[PlannedOperator]^rp(planned_operators)
 
             let result scalyc.compiler.Plan.PlannedUnion(
                 u.span,
