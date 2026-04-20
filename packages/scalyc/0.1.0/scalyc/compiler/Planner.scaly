@@ -8184,12 +8184,12 @@ define Planner
 
         let result StringBuilder#()
         var value n
-        var digits Vector[char]$()
+        var digits Array[char]$()
 
         while value > 0
         {
             let digit ((value % 10) as char) + 48 as char
-            digits.put(digits.length, digit)
+            digits.add(digit)
             set value: value / 10
         }
 
