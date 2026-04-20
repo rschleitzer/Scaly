@@ -7925,11 +7925,7 @@ define Planner
             when t: PlannedTuple
                 Planner.extract_tuple_arg_types#(t)
             else
-            {
-                var single Vector[PlannedType]^rp(1)
-                single.put(0, args_op.result_type)
-                single
-            }
+                Vector[PlannedType](null as pointer[PlannedType], 0 as size_t)
     }
 
     ; ========================================================================

@@ -3101,18 +3101,18 @@ std::optional<Planner::OperatorMatch> Planner::findOperator(
     // instantiated-name variants Option.ref.* / Option.pointer.*. With NPO
     // these are all represented as a plain pointer (null = None), so a direct
     // icmp against null is correct.
+    //
+    // Also covers Option[T] for a struct T. Those don't use NPO — they're
+    // laid out as `{ i8 tag, [N x i8] payload }` — but `opt = null` still has
+    // a sensible meaning (tag == 0 == None). The emitter handles the tag
+    // check; here we just need to accept the comparison so findOperator
+    // doesn't silently drop it, which would leave the guard with a stray
+    // `null` operand that collapses to `br i1 false`.
     auto IsPointerLike = [](const PlannedType &T) {
         if (T.Name == "pointer" && !T.Generics.empty()) return true;
         if (T.Name == "ref" && !T.Generics.empty()) return true;
-        if (T.Name == "Option" && !T.Generics.empty()) {
-            const auto &Inner = T.Generics[0];
-            if ((Inner.Name == "pointer" || Inner.Name == "ref") &&
-                !Inner.Generics.empty())
-                return true;
-        }
-        if (T.Name.size() >= 10 && T.Name.substr(0, 10) == "Option.ref")
-            return true;
-        if (T.Name.size() >= 14 && T.Name.substr(0, 14) == "Option.pointer")
+        if (T.Name == "Option" && !T.Generics.empty()) return true;
+        if (T.Name.size() >= 7 && T.Name.substr(0, 7) == "Option.")
             return true;
         return false;
     };

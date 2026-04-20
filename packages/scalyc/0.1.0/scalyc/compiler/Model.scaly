@@ -267,10 +267,10 @@ define Function
     pure: bool
     name: String
     parameters: Vector[GenericParameter]
-    page_parameter: String?
+    page_parameter: ref[String]?
     input: Vector[Item]
-    returns_: Type?
-    throws_: Type?
+    returns_: ref[Type]?
+    throws_: ref[Type]?
     lifetime: Lifetime
     implementation: Implementation
 )
@@ -296,7 +296,7 @@ define Initializer
 (
     span: Span
     private_: bool
-    page_parameter: String?
+    page_parameter: ref[String]?
     input: Vector[Item]
     implementation: Implementation
 )
@@ -311,8 +311,8 @@ define Operator
     name: String
     parameters: Vector[GenericParameter]
     input: Vector[Item]
-    returns_: Type?
-    throws_: Type?
+    returns_: ref[Type]?
+    throws_: ref[Type]?
     implementation: Implementation
 )
 

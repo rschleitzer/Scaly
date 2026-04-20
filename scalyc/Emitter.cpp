@@ -3908,6 +3908,28 @@ llvm::Expected<llvm::Value*> Emitter::emitIntrinsicOp(
     llvm::StringRef OpName, llvm::Value *Left, llvm::Value *Right,
     const PlannedType &ResultType) {
 
+    // Option[T] = null / <> null where T is a struct (non-NPO Option):
+    // the Option is laid out as `{ i8 tag, [N x i8] payload }` and tag 0
+    // means None. A null-pointer on either side is compared against the
+    // tag. findOperator accepts this shape; without this path the
+    // `icmp struct, ptr` below would be malformed.
+    if ((OpName == "=" || OpName == "<>") &&
+        (Left->getType()->isStructTy() || Right->getType()->isStructTy())) {
+        llvm::Value *StructVal = Left->getType()->isStructTy() ? Left : Right;
+        llvm::Value *OtherVal = Left->getType()->isStructTy() ? Right : Left;
+        if (OtherVal->getType()->isPointerTy() &&
+            llvm::isa<llvm::ConstantPointerNull>(OtherVal) &&
+            llvm::cast<llvm::StructType>(StructVal->getType())->getNumElements() >= 1 &&
+            llvm::cast<llvm::StructType>(StructVal->getType())
+                ->getElementType(0)->isIntegerTy(8)) {
+            llvm::Value *Tag = Builder->CreateExtractValue(StructVal, 0, "opt.tag");
+            llvm::Value *Zero = llvm::ConstantInt::get(Tag->getType(), 0);
+            if (OpName == "=")
+                return Builder->CreateICmpEQ(Tag, Zero, "opt.is_none");
+            return Builder->CreateICmpNE(Tag, Zero, "opt.is_some");
+        }
+    }
+
     llvm::Type *Ty = mapType(ResultType);
     bool IsFloat = Ty->isFloatingPointTy();
     bool IsSigned = true;  // Default to signed for now
@@ -6285,7 +6307,15 @@ llvm::Expected<llvm::Value*> Emitter::emitTuple(const PlannedTuple &Tuple) {
         if (Val->getType()->isPointerTy()) {
             llvm::Type *FieldTy = TupleTy->getElementType(i);
             if (FieldTy->isStructTy() && !FieldTy->isOpaquePointerTy()) {
-                Val = Builder->CreateLoad(FieldTy, Val, "field.load");
+                // A null pointer passed for an Option/struct field must not
+                // become `load FieldTy, ptr null` — that dereferences NULL at
+                // runtime. Emit a zeroinitializer for the struct instead,
+                // which is the correct shape for an empty Option/None.
+                if (llvm::isa<llvm::ConstantPointerNull>(Val)) {
+                    Val = llvm::Constant::getNullValue(FieldTy);
+                } else {
+                    Val = Builder->CreateLoad(FieldTy, Val, "field.load");
+                }
             }
         }
         Builder->CreateStore(Val, FieldPtr);
