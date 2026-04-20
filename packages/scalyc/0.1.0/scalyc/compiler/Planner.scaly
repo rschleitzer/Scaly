@@ -2753,6 +2753,10 @@ define Planner
         function plan_match#(rp, this: Planner, m: Match) returns PlannedMatch
         {
             let planned_cond this.plan_operands#(m.condition)
+            ; Fold the match condition so its result_type is
+            ; comparable against each case's collapsed condition type.
+            let collapsed_cond this.collapse_operand_sequence#(planned_cond)
+            let cond_type collapsed_cond.result_type
 
             var branches_arr Array[PlannedBranch]$()
             var i: size_t 0
@@ -2762,7 +2766,37 @@ define Planner
                 guard b_ptr <> null
                 {
                     let b (*b_ptr)
-                    branches_arr.add(this.plan_branch#(b))
+                    let planned_branch this.plan_branch#(b)
+
+                    ; Each case's condition must be the same type as the
+                    ; match condition. Emit an equality constraint so
+                    ; the HM solver rejects mismatches.
+                    guard planned_branch.cases <> null
+                    {
+                        let cases (*planned_branch.cases)
+                        var ci: size_t 0
+                        while ci < cases.length
+                        {
+                            let case_ptr cases.get(ci)
+                            guard case_ptr <> null
+                            {
+                                let case_cond (*case_ptr)
+                                guard case_cond.condition <> null
+                                {
+                                    let cond_list (*case_cond.condition)
+                                    let collapsed_case this.collapse_operand_sequence#(cond_list)
+                                    this.add_equality_constraint(
+                                        cond_type,
+                                        collapsed_case.result_type,
+                                        case_cond.loc
+                                    )
+                                }
+                            }
+                            set ci: ci + 1
+                        }
+                    }
+
+                    branches_arr.add(planned_branch)
                 }
                 set i: i + 1
             }
