@@ -2788,11 +2788,8 @@ define Planner
         ; ================================================================
         ; plan_type: Model.Type → PlannedType using the active generic
         ; substitutions. Pulls together resolve_type_base (Model → Plan
-        ; skeleton) and apply_name_substitution (T → int, etc.).
-        ;
-        ; Does NOT yet consult the concept table to fill in the
-        ; mangled_name for user-defined types — that remains a follow-up
-        ; once the concept registry is wired into the Planner struct.
+        ; skeleton), apply_name_substitution (T → int, etc.), and the
+        ; concept registry to fill in mangled_name for registered types.
         ; ================================================================
         function plan_type#(rp, this: Planner, t: Type) returns PlannedType
         {
@@ -4332,8 +4329,10 @@ define Planner
 
         ; ================================================================
         ; plan_block: push a fresh scope, plan every statement, pop.
-        ; Mirrors Planner.cpp's planBlock. The needs_local_page_cleanup
-        ; flag stays false until we port the $ allocation tracking.
+        ; After planning, scan the planned statements for any operand
+        ; carrying a Local lifetime — that's the signal that a `$`
+        ; allocation happened in this block and the emitter must emit
+        ; page-cleanup on exit.
         ; ================================================================
         function plan_block#(rp, this: Planner, b: Block) returns PlannedBlock
         {
@@ -4341,8 +4340,167 @@ define Planner
             let planned_stmts this.plan_statements#(b.statements)
             this.pop_scope()
 
+            var has_local: bool false
+            var si: size_t 0
+            while si < planned_stmts.length
+            {
+                let s_ptr planned_stmts.get(si)
+                guard s_ptr <> null
+                {
+                    guard Planner.statement_has_local_lifetime((*s_ptr))
+                        set has_local: true
+                }
+                set si: si + 1
+            }
+
             var stmts_holder Vector[PlannedStatement]^rp(planned_stmts)
-            PlannedBlock(b.span, &stmts_holder, false)
+            PlannedBlock(b.span, &stmts_holder, has_local)
+        }
+
+        ; has_local_lifetime: true iff `t` is a $-allocation marker
+        ; (Lifetime.Local). Value types with Unspecified lifetime stay
+        ; stack-resident and don't need page cleanup.
+        function has_local_lifetime(t: PlannedType) returns bool
+        {
+            choose t.life
+                when l: Local
+                    true
+                else
+                    false
+        }
+
+        ; operand_has_local_lifetime: true iff the operand's own type or
+        ; any of its planned call args / tuple components carries a
+        ; Local lifetime. Does not descend into nested blocks — those
+        ; own their own needs_local_page_cleanup flag.
+        function operand_has_local_lifetime(op: PlannedOperand) returns bool
+        {
+            guard Planner.has_local_lifetime(op.result_type)
+                return true
+
+            choose op.expr
+                when call: PlannedCall
+                {
+                    guard call.args <> null
+                    {
+                        let args (*call.args)
+                        var i: size_t 0
+                        while i < args.length
+                        {
+                            let a_ptr args.get(i)
+                            guard a_ptr <> null
+                            {
+                                guard Planner.operand_has_local_lifetime((*a_ptr))
+                                    return true
+                            }
+                            set i: i + 1
+                        }
+                    }
+                    false
+                }
+                when tup: PlannedTuple
+                {
+                    guard Planner.has_local_lifetime(tup.tuple_type)
+                        return true
+                    guard tup.components <> null
+                    {
+                        let comps (*tup.components)
+                        var i: size_t 0
+                        while i < comps.length
+                        {
+                            let c_ptr comps.get(i)
+                            guard c_ptr <> null
+                            {
+                                let c (*c_ptr)
+                                guard c.value <> null
+                                {
+                                    let vops (*c.value)
+                                    var j: size_t 0
+                                    while j < vops.length
+                                    {
+                                        let v_ptr vops.get(j)
+                                        guard v_ptr <> null
+                                        {
+                                            guard Planner.operand_has_local_lifetime((*v_ptr))
+                                                return true
+                                        }
+                                        set j: j + 1
+                                    }
+                                }
+                            }
+                            set i: i + 1
+                        }
+                    }
+                    false
+                }
+                else
+                    false
+        }
+
+        ; statement_has_local_lifetime: scan the operands inside a
+        ; PlannedStatement for any Local-lifetime marker.
+        function statement_has_local_lifetime(s: PlannedStatement) returns bool
+        {
+            choose s
+                when a: PlannedAction
+                {
+                    guard a.source <> null
+                    {
+                        let src (*a.source)
+                        var i: size_t 0
+                        while i < src.length
+                        {
+                            let op_ptr src.get(i)
+                            guard op_ptr <> null
+                            {
+                                guard Planner.operand_has_local_lifetime((*op_ptr))
+                                    return true
+                            }
+                            set i: i + 1
+                        }
+                    }
+                    false
+                }
+                when b: PlannedBinding
+                {
+                    guard b.operation <> null
+                    {
+                        let ops (*b.operation)
+                        var i: size_t 0
+                        while i < ops.length
+                        {
+                            let op_ptr ops.get(i)
+                            guard op_ptr <> null
+                            {
+                                guard Planner.operand_has_local_lifetime((*op_ptr))
+                                    return true
+                            }
+                            set i: i + 1
+                        }
+                    }
+                    false
+                }
+                when r: PlannedReturn
+                {
+                    guard r.result <> null
+                    {
+                        let ops (*r.result)
+                        var i: size_t 0
+                        while i < ops.length
+                        {
+                            let op_ptr ops.get(i)
+                            guard op_ptr <> null
+                            {
+                                guard Planner.operand_has_local_lifetime((*op_ptr))
+                                    return true
+                            }
+                            set i: i + 1
+                        }
+                    }
+                    false
+                }
+                else
+                    false
         }
 
         ; ================================================================
