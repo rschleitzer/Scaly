@@ -3338,16 +3338,42 @@ llvm::Expected<llvm::Value*> Emitter::emitCall(const PlannedCall &Call) {
                 llvm::Type *ParamTy = FuncTy->getParamType(i + ParamOffset);
                 if (ParamTy->isPointerTy()) {
                     // Check if argument is a dereference call directly
-                    if (auto *DerefCall = std::get_if<PlannedCall>(&Arg.Expr)) {
-                        if (DerefCall->Name == "*" && DerefCall->Args &&
-                            DerefCall->Args->size() == 1) {
+                    if (auto *InnerCall = std::get_if<PlannedCall>(&Arg.Expr)) {
+                        if (InnerCall->Name == "*" && InnerCall->Args &&
+                            InnerCall->Args->size() == 1) {
                             // This is *ptr and function expects pointer
                             // Emit the pointer argument directly
-                            auto PtrVal = emitOperand((*DerefCall->Args)[0]);
+                            auto PtrVal = emitOperand((*InnerCall->Args)[0]);
                             if (!PtrVal)
                                 return PtrVal.takeError();
                             Args.push_back(*PtrVal);
                             PassedPointerDirectly = true;
+                        }
+                        // Extern LLVM out-pointer: `&var` where var is mutable.
+                        // Pass the variable's alloca directly so the callee's
+                        // write propagates. Without this, `&var` emits a temp
+                        // copy alloca and the extern's write lands on the
+                        // throwaway (broken for LLVMGetTargetFromTriple, etc.).
+                        else if (InnerCall->Name == "&" &&
+                                 InnerCall->Args && InnerCall->Args->size() == 1 &&
+                                 Func && Func->getName().starts_with("LLVM")) {
+                            const auto &InnerArg = (*InnerCall->Args)[0];
+                            bool InnerHasMA =
+                                InnerArg.MemberAccess && !InnerArg.MemberAccess->empty();
+                            if (!InnerHasMA) {
+                                if (auto *InnerVar =
+                                        std::get_if<PlannedVariable>(&InnerArg.Expr)) {
+                                    if (InnerVar->IsMutable) {
+                                        if (llvm::Value *VarPtr =
+                                                lookupVariable(InnerVar->Name)) {
+                                            if (VarPtr->getType()->isPointerTy()) {
+                                                Args.push_back(VarPtr);
+                                                PassedPointerDirectly = true;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                     // Check if argument is a tuple wrapping a dereference: (*ptr)
@@ -3375,8 +3401,13 @@ llvm::Expected<llvm::Value*> Emitter::emitCall(const PlannedCall &Call) {
                     // We check IsHeapAlloc (alloca element type is pointer) rather than
                     // VariableType.isPointer(), because $-allocated structs have VariableType
                     // = pointer[T] but the alloca holds the struct value, not a pointer.
+                    // Skip this shortcut for extern LLVM C API calls — those use the C ABI
+                    // and need the handle value extracted from the wrapper struct, not a
+                    // pointer to stack storage. The wrapper-extract path below handles it.
                     else if (auto *Var = std::get_if<PlannedVariable>(&Arg.Expr)) {
-                        if (Var->IsMutable) {
+                        bool IsLLVMExternCall =
+                            Func && Func->getName().starts_with("LLVM");
+                        if (Var->IsMutable && !IsLLVMExternCall) {
                             llvm::Value *VarPtr = lookupVariable(Var->Name);
                             if (VarPtr && VarPtr->getType()->isPointerTy()) {
                                 // Check if the alloca holds a pointer (true heap ptr) vs struct value
@@ -3555,10 +3586,13 @@ llvm::Expected<llvm::Value*> Emitter::emitCall(const PlannedCall &Call) {
                 // For value types, load from the payload area
                 return Builder->CreateAlignedLoad(ResultTy, PayloadPtr, llvm::Align(1), "unwrap.value");
             } else {
-                // NPO Option - Args[0] is a pointer to the Option storage location
-                // For Option[ref[T]], the storage contains a pointer (T*), so Args[0] is T**
-                // We need to load from it to get T*
-                return Builder->CreateLoad(ResultTy, OptionValue, "unwrap.npo");
+                // NPO Option: Option[ref[T]] / Option[pointer[T]] is represented
+                // as the raw pointer itself (null = None, non-null = Some). Args[0]
+                // is already the unwrapped T* — just return it. The earlier version
+                // issued a CreateLoad treating Args[0] as T**, which read garbage
+                // from the pointee (Vector.get returns the ptr directly, and `let`
+                // immutable bindings don't box it).
+                return OptionValue;
             }
         }
 
