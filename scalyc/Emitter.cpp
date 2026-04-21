@@ -2866,12 +2866,27 @@ llvm::Expected<llvm::Value*> Emitter::emitOperand(const PlannedOperand &Op) {
                 BaseType = GlobalRef->GlobalType;
             }
 
-            // If we have a base type and it's a pointer, get the element type
+            // If we have a base type and it's a pointer, get the element type.
+            // pointer[T], ref[T], and Option[pointer[T]] / Option[ref[T]] (NPO)
+            // all lower to `ptr` — in these cases Value IS the target pointer
+            // and we must load the pointed-to struct (single deref), not treat
+            // Value as a pointer-to-pointer slot (double deref).
+            const PlannedType *InnerTypePtr = nullptr;
+            if (BaseType.Name == "pointer" || BaseType.Name == "ref") {
+                if (!BaseType.Generics.empty())
+                    InnerTypePtr = &BaseType.Generics[0];
+            } else if (BaseType.Name == "Option" && !BaseType.Generics.empty()) {
+                const PlannedType &Inner = BaseType.Generics[0];
+                if ((Inner.Name == "pointer" || Inner.Name == "ref") &&
+                    !Inner.Generics.empty()) {
+                    InnerTypePtr = &Inner.Generics[0];
+                }
+            }
+
             if (!BaseType.Name.empty()) {
-                if (BaseType.Name == "pointer" && !BaseType.Generics.empty()) {
-                    // Load the pointed-to struct
-                    auto &InnerType = BaseType.Generics[0];
-                    llvm::Type *StructTy = mapType(InnerType);
+                if (InnerTypePtr) {
+                    // Single deref: load the pointed-to struct
+                    llvm::Type *StructTy = mapType(*InnerTypePtr);
                     SourcePtr = Value;
                     SourceStructTy = StructTy;
                     Value = Builder->CreateLoad(StructTy, Value, "load.struct");
@@ -6151,7 +6166,27 @@ llvm::Expected<llvm::Value*> Emitter::emitTuple(const PlannedTuple &Tuple) {
         // We only do this for single-component tuples if the struct/union has exactly 1 property,
         // to distinguish from grouped expressions like (*p) where the TupleType might be set
         // to the result type but it's not actually struct construction.
-        if (!IsStructConstruction && Tuple.Components.size() == 1 && CurrentPlan) {
+        //
+        // Additional guard: if the single component's final operand already has
+        // a result type matching TupleType (e.g. `(String$("x"))` where the
+        // inner expression's result is already a String), the parens are
+        // grouping — not a construction — so skip. Without this, emitTuple
+        // would stash the inner String's pointer into field 0 of a fresh
+        // String, producing a String whose data points at another String struct
+        // instead of at packed length+bytes.
+        bool InnerMatchesTuple = false;
+        if (Tuple.Components.size() == 1 && !Tuple.Components[0].Value.empty()) {
+            const PlannedType &InnerTy =
+                Tuple.Components[0].Value.back().ResultType;
+            if (!InnerTy.Name.empty() &&
+                (InnerTy.Name == Tuple.TupleType.Name ||
+                 (!InnerTy.MangledName.empty() &&
+                  InnerTy.MangledName == Tuple.TupleType.MangledName))) {
+                InnerMatchesTuple = true;
+            }
+        }
+        if (!IsStructConstruction && !InnerMatchesTuple &&
+            Tuple.Components.size() == 1 && CurrentPlan) {
             // Check if it's a struct in the plan with exactly 1 property
             auto StructIt = CurrentPlan->Structures.find(Tuple.TupleType.Name);
             if (StructIt != CurrentPlan->Structures.end() &&
