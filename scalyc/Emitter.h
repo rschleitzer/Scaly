@@ -329,7 +329,8 @@ private:
     llvm::Expected<llvm::Value*> emitIntrinsicOp(llvm::StringRef OpName,
                                                   llvm::Value *Left,
                                                   llvm::Value *Right,
-                                                  const PlannedType &ResultType);
+                                                  const PlannedType &ResultType,
+                                                  const PlannedType *LeftOperandType = nullptr);
 
     // Emit intrinsic unary operator (-, !, ~)
     llvm::Expected<llvm::Value*> emitIntrinsicUnaryOp(llvm::StringRef OpName,

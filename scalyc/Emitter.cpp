@@ -3418,8 +3418,15 @@ llvm::Expected<llvm::Value*> Emitter::emitCall(const PlannedCall &Call) {
     // Handle intrinsic operators
     if (Call.IsIntrinsic && Call.IsOperator) {
         if (Args.size() == 2) {
-            // Binary operator
-            return emitIntrinsicOp(Call.Name, Args[0], Args[1], Call.ResultType);
+            // Binary operator — for comparisons the ResultType is bool, which
+            // doesn't carry signedness info for the operands. Pass the left
+            // operand's Scaly type so emitIntrinsicOp can pick signed vs
+            // unsigned comparison predicates correctly.
+            const PlannedType *LeftOpTy = nullptr;
+            if (Call.Args && Call.Args->size() >= 1) {
+                LeftOpTy = &(*Call.Args)[0].ResultType;
+            }
+            return emitIntrinsicOp(Call.Name, Args[0], Args[1], Call.ResultType, LeftOpTy);
         } else if (Args.size() == 1) {
             // Unary operator - but handle address-of specially
             if (Call.Name == "&") {
@@ -3936,7 +3943,7 @@ llvm::Expected<llvm::Value*> Emitter::emitCall(const PlannedCall &Call) {
 
 llvm::Expected<llvm::Value*> Emitter::emitIntrinsicOp(
     llvm::StringRef OpName, llvm::Value *Left, llvm::Value *Right,
-    const PlannedType &ResultType) {
+    const PlannedType &ResultType, const PlannedType *LeftOperandType) {
 
     // Option[T] = null / <> null where T is a struct (non-NPO Option):
     // the Option is laid out as `{ i8 tag, [N x i8] payload }` and tag 0
@@ -3964,11 +3971,17 @@ llvm::Expected<llvm::Value*> Emitter::emitIntrinsicOp(
     bool IsFloat = Ty->isFloatingPointTy();
     bool IsSigned = true;  // Default to signed for now
 
+    // For comparisons the ResultType is bool, so signedness must come from
+    // the operand type. For arithmetic the ResultType equals the operand
+    // type, so either source works; prefer the operand type when we have it.
+    const PlannedType &SignednessType =
+        LeftOperandType ? *LeftOperandType : ResultType;
+
     // Check if dealing with unsigned types
-    if (ResultType.Name.find('u') == 0 ||  // u8, u16, u32, u64
-        ResultType.Name == "size_t" || ResultType.Name == "size" ||
-        ResultType.Name == "usize" || ResultType.Name == "bool" ||
-        ResultType.Name == "char") {
+    if (SignednessType.Name.find('u') == 0 ||  // u8, u16, u32, u64
+        SignednessType.Name == "size_t" || SignednessType.Name == "size" ||
+        SignednessType.Name == "usize" || SignednessType.Name == "bool" ||
+        SignednessType.Name == "char") {
         IsSigned = false;
     }
 
