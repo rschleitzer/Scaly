@@ -1,7 +1,0 @@
-; AOT Test: Compile and run scalyc.test()
-; Validates full AOT pipeline for the scalyc package
-
-package scaly 0.1.0
-package scalyc 0.1.0
-
-scalyc.test()

@@ -715,16 +715,25 @@ llvm::Error Emitter::emitObjectFile(const Plan &P,
         );
     }
 
-    // Create target machine
+    // Create target machine. Use -O0 (CodeGenOptLevel::None) unless the
+    // caller opted in to optimization via Config.OptLevel: running the
+    // LLVM optimizer on scalyc's ~130K-line module adds ~35s per build
+    // vs a few seconds unoptimized, which dominates the dev test cycle.
     llvm::TargetOptions Options;
     auto RM = std::optional<llvm::Reloc::Model>(llvm::Reloc::PIC_);
+    llvm::CodeGenOptLevel OptLvl = llvm::CodeGenOptLevel::None;
+    if (Config.OptLevel >= 3) OptLvl = llvm::CodeGenOptLevel::Aggressive;
+    else if (Config.OptLevel == 2) OptLvl = llvm::CodeGenOptLevel::Default;
+    else if (Config.OptLevel == 1) OptLvl = llvm::CodeGenOptLevel::Less;
     auto TheTargetMachine = std::unique_ptr<llvm::TargetMachine>(
         Target->createTargetMachine(
             TargetTriple,
             "generic",  // CPU
             "",         // Features
             Options,
-            RM
+            RM,
+            std::nullopt,
+            OptLvl
         )
     );
 
@@ -7154,8 +7163,20 @@ llvm::Expected<uint64_t> Emitter::jitExecuteRaw(const Plan &P, llvm::Type *Expec
         );
     }
 
-    // Create LLJIT instance
-    auto JITOrErr = llvm::orc::LLJITBuilder().create();
+    // Create LLJIT instance. Force -O0 codegen unless the caller opted
+    // into optimization — LLJITBuilder's default is -O2, which adds
+    // ~30s to the scalyc.test() JIT on a 130K-line module.
+    auto JTMBOrErr = llvm::orc::JITTargetMachineBuilder::detectHost();
+    if (!JTMBOrErr)
+        return JTMBOrErr.takeError();
+    llvm::CodeGenOptLevel JITOptLvl = llvm::CodeGenOptLevel::None;
+    if (Config.OptLevel >= 3) JITOptLvl = llvm::CodeGenOptLevel::Aggressive;
+    else if (Config.OptLevel == 2) JITOptLvl = llvm::CodeGenOptLevel::Default;
+    else if (Config.OptLevel == 1) JITOptLvl = llvm::CodeGenOptLevel::Less;
+    JTMBOrErr->setCodeGenOptLevel(JITOptLvl);
+    auto JITOrErr = llvm::orc::LLJITBuilder()
+                        .setJITTargetMachineBuilder(std::move(*JTMBOrErr))
+                        .create();
     if (!JITOrErr)
         return JITOrErr.takeError();
 
@@ -7460,8 +7481,20 @@ llvm::Error Emitter::jitExecuteVoid(const Plan &P, llvm::StringRef MangledFuncti
         );
     }
 
-    // Create LLJIT instance
-    auto JITOrErr = llvm::orc::LLJITBuilder().create();
+    // Create LLJIT instance. Force -O0 codegen unless the caller opted
+    // into optimization — LLJITBuilder's default is -O2, which adds
+    // ~30s to the scalyc.test() JIT on a 130K-line module.
+    auto JTMBOrErr = llvm::orc::JITTargetMachineBuilder::detectHost();
+    if (!JTMBOrErr)
+        return JTMBOrErr.takeError();
+    llvm::CodeGenOptLevel JITOptLvl = llvm::CodeGenOptLevel::None;
+    if (Config.OptLevel >= 3) JITOptLvl = llvm::CodeGenOptLevel::Aggressive;
+    else if (Config.OptLevel == 2) JITOptLvl = llvm::CodeGenOptLevel::Default;
+    else if (Config.OptLevel == 1) JITOptLvl = llvm::CodeGenOptLevel::Less;
+    JTMBOrErr->setCodeGenOptLevel(JITOptLvl);
+    auto JITOrErr = llvm::orc::LLJITBuilder()
+                        .setJITTargetMachineBuilder(std::move(*JTMBOrErr))
+                        .create();
     if (!JITOrErr)
         return JITOrErr.takeError();
 
@@ -7832,8 +7865,20 @@ llvm::Expected<int64_t> Emitter::jitExecuteIntFunction(const Plan &P, llvm::Stri
         );
     }
 
-    // Create LLJIT instance
-    auto JITOrErr = llvm::orc::LLJITBuilder().create();
+    // Create LLJIT instance. Force -O0 codegen unless the caller opted
+    // into optimization — LLJITBuilder's default is -O2, which adds
+    // ~30s to the scalyc.test() JIT on a 130K-line module.
+    auto JTMBOrErr = llvm::orc::JITTargetMachineBuilder::detectHost();
+    if (!JTMBOrErr)
+        return JTMBOrErr.takeError();
+    llvm::CodeGenOptLevel JITOptLvl = llvm::CodeGenOptLevel::None;
+    if (Config.OptLevel >= 3) JITOptLvl = llvm::CodeGenOptLevel::Aggressive;
+    else if (Config.OptLevel == 2) JITOptLvl = llvm::CodeGenOptLevel::Default;
+    else if (Config.OptLevel == 1) JITOptLvl = llvm::CodeGenOptLevel::Less;
+    JTMBOrErr->setCodeGenOptLevel(JITOptLvl);
+    auto JITOrErr = llvm::orc::LLJITBuilder()
+                        .setJITTargetMachineBuilder(std::move(*JTMBOrErr))
+                        .create();
     if (!JITOrErr)
         return JITOrErr.takeError();
 

@@ -11,6 +11,7 @@
 #include "llvm/IR/Module.h"
 #include "llvm/Support/Error.h"
 #include "llvm/ExecutionEngine/Orc/LLJIT.h"
+#include "llvm/ExecutionEngine/Orc/JITTargetMachineBuilder.h"
 #include <map>
 #include <memory>
 #include <set>
