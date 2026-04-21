@@ -32,6 +32,9 @@ function unlink(path: pointer[const_char]) returns int extern
 function rmdir(path: pointer[const_char]) returns int extern
 function mkdir(path: pointer[const_char], mode: int) returns int extern
 
+; Subprocess spawn (stdlib.h) - runs command via /bin/sh
+function system(command: pointer[const_char]) returns int extern
+
 ; Path functions (libgen.h)
 function dirname(path: pointer[char]) returns pointer[char] extern
 function basename(path: pointer[char]) returns pointer[char] extern

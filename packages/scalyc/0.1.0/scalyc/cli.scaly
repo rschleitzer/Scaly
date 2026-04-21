@@ -4,9 +4,12 @@
 
 ; Standard library imports
 use scaly.containers.String
+use scaly.containers.StringBuilder
 use scaly.containers.Vector
 use scaly.io.File
 use scaly.io.Console
+use scaly.memory.runtime.system
+use scaly.memory.runtime.unlink
 
 ; Compiler module imports
 use scalyc.compiler.Modeler
@@ -319,13 +322,51 @@ define cli
 
         guard opts.emit_ir
         {
-            ; TODO: Write IR to file or stdout
-            Console.println("LLVM IR generation completed")
+            guard opts.output_file.get_length() = 0
+            {
+                Console.println("Error: -S requires -o <file>")
+                return 6
+            }
+            let ir_ok emitter.write_module_to_file(opts.output_file)
+            guard ir_ok = false
+            {
+                Console.println("Error: Could not write IR file")
+                return 6
+            }
             return 0
         }
 
-        ; TODO: Full compilation (link to executable)
-        Console.println("Compilation completed successfully")
+        guard opts.output_file.get_length() = 0
+        {
+            Console.println("Error: -o <file> required for linking")
+            return 7
+        }
+
+        ; Emit object file to fixed temp path, link with clang, then unlink temp.
+        var tmp_obj String#("/tmp/scalyc_out.o")
+        let obj_ok emitter.write_object_to_file(tmp_obj)
+        guard obj_ok = false
+        {
+            Console.println("Error: Could not write object file")
+            return 8
+        }
+
+        var cmd_builder StringBuilder#()
+        cmd_builder.append("clang ")
+        cmd_builder.append(tmp_obj)
+        cmd_builder.append(" -o ")
+        cmd_builder.append(opts.output_file)
+        let cmd_str cmd_builder.to_string#()
+        let link_rc system(cmd_str.c_data())
+
+        let unlink_rc unlink(tmp_obj.c_data())
+
+        guard link_rc = 0
+        {
+            Console.println("Error: Linker failed")
+            return 9
+        }
+
         0
     }
 

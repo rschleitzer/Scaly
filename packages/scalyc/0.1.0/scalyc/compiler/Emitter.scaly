@@ -58,6 +58,8 @@ use scaly.compiler.LLVM.LLVMBuilderRef
 use scaly.compiler.LLVM.LLVMTypeRef
 use scaly.compiler.LLVM.LLVMValueRef
 use scaly.compiler.LLVM.LLVMBasicBlockRef
+use scaly.compiler.LLVM.LLVMTargetRef
+use scaly.compiler.LLVM.LLVMTargetMachineRef
 use scaly.compiler.LLVM.LLVMIntPredicate
 use scaly.compiler.LLVM.LLVMRealPredicate
 use scaly.compiler.LLVM.LLVMTypeKind
@@ -110,8 +112,23 @@ use scaly.compiler.LLVM.LLVMConstStringInContext
 use scaly.compiler.LLVM.LLVMContextCreate
 use scaly.compiler.LLVM.LLVMContextDispose
 use scaly.compiler.LLVM.LLVMCreateBuilderInContext
+use scaly.compiler.LLVM.LLVMCreateTargetMachine
 use scaly.compiler.LLVM.LLVMDisposeBuilder
 use scaly.compiler.LLVM.LLVMDisposeModule
+use scaly.compiler.LLVM.LLVMDisposeTargetMachine
+use scaly.compiler.LLVM.LLVMGetDefaultTargetTriple
+use scaly.compiler.LLVM.LLVMGetTargetFromTriple
+use scaly.compiler.LLVM.LLVMInitializeAArch64AsmPrinter
+use scaly.compiler.LLVM.LLVMInitializeAArch64Target
+use scaly.compiler.LLVM.LLVMInitializeAArch64TargetInfo
+use scaly.compiler.LLVM.LLVMInitializeAArch64TargetMC
+use scaly.compiler.LLVM.LLVMInitializeX86AsmPrinter
+use scaly.compiler.LLVM.LLVMInitializeX86Target
+use scaly.compiler.LLVM.LLVMInitializeX86TargetInfo
+use scaly.compiler.LLVM.LLVMInitializeX86TargetMC
+use scaly.compiler.LLVM.LLVMSetDataLayout
+use scaly.compiler.LLVM.LLVMSetTarget
+use scaly.compiler.LLVM.LLVMTargetMachineEmitToFile
 use scaly.compiler.LLVM.LLVMDoubleTypeInContext
 use scaly.compiler.LLVM.LLVMFloatTypeInContext
 use scaly.compiler.LLVM.LLVMFunctionType
@@ -1040,6 +1057,48 @@ define Emitter
     {
         let result LLVMWriteBitcodeToFile(llvm_module, filename.c_data())
         result = 0
+    }
+
+    ; Write native object file via host target machine.
+    ; LLVMObjectFile codegen type = 1. Reloc=PIC(2), OptLevel=None(0).
+    function write_object_to_file(this, filename: String) returns bool
+    {
+        ; Initialize both AArch64 and X86 backends so stage-1 runs on arm64
+        ; macOS and x86_64 Linux. LLVMInitializeNativeTarget is a static-inline
+        ; helper in llvm-c/Target.h (not a real symbol), so we call the
+        ; per-target symbols directly.
+        LLVMInitializeAArch64TargetInfo()
+        LLVMInitializeAArch64Target()
+        LLVMInitializeAArch64TargetMC()
+        LLVMInitializeAArch64AsmPrinter()
+        LLVMInitializeX86TargetInfo()
+        LLVMInitializeX86Target()
+        LLVMInitializeX86TargetMC()
+        LLVMInitializeX86AsmPrinter()
+
+        let triple LLVMGetDefaultTargetTriple()
+        guard triple <> null
+            return false
+
+        LLVMSetTarget(llvm_module, triple as pointer[const_char])
+
+        var target LLVMTargetRef(null)
+        let lookup_err LLVMGetTargetFromTriple(triple as pointer[const_char], &target, null as pointer[pointer[char]])
+        guard lookup_err = 0
+            return false
+
+        let tm LLVMCreateTargetMachine(target, triple as pointer[const_char],
+            "generic" as pointer[const_char],
+            "" as pointer[const_char],
+            0, 2, 0)
+        guard tm.handle <> null
+            return false
+
+        let emit_err LLVMTargetMachineEmitToFile(tm, llvm_module, filename.c_data(), 1,
+            null as pointer[pointer[char]])
+        LLVMDisposeTargetMachine(tm)
+
+        emit_err = 0
     }
 
     ; Verify module

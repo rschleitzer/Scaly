@@ -413,17 +413,20 @@ function LLVMIsNull(val: LLVMValueRef) returns int extern
 ; Target Functions
 ; ============================================================================
 
-; Initialize targets (call before using target machine)
-procedure LLVMInitializeAllTargetInfos() extern
-procedure LLVMInitializeAllTargets() extern
-procedure LLVMInitializeAllTargetMCs() extern
-procedure LLVMInitializeAllAsmParsers() extern
-procedure LLVMInitializeAllAsmPrinters() extern
-
-; Native target initialization
-procedure LLVMInitializeNativeTarget() extern
-procedure LLVMInitializeNativeAsmParser() extern
-procedure LLVMInitializeNativeAsmPrinter() extern
+; Per-target initializers (the real exported symbols).
+; The convenience wrappers LLVMInitializeNativeTarget /
+; LLVMInitializeAllTargets are static-inline in llvm-c/Target.h — not
+; real runtime symbols, so the JIT can't resolve them. Call per-target
+; initializers directly. If libLLVM was built without a given target,
+; linking the extern symbol fails at link time on that host.
+procedure LLVMInitializeAArch64TargetInfo() extern
+procedure LLVMInitializeAArch64Target() extern
+procedure LLVMInitializeAArch64TargetMC() extern
+procedure LLVMInitializeAArch64AsmPrinter() extern
+procedure LLVMInitializeX86TargetInfo() extern
+procedure LLVMInitializeX86Target() extern
+procedure LLVMInitializeX86TargetMC() extern
+procedure LLVMInitializeX86AsmPrinter() extern
 
 ; Get default target triple for the host
 function LLVMGetDefaultTargetTriple() returns pointer[char] extern
