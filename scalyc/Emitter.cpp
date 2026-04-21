@@ -6165,7 +6165,7 @@ llvm::Expected<llvm::Value*> Emitter::emitTuple(const PlannedTuple &Tuple) {
     // - Actual struct construction like Container(value) where TupleType is "Container"
     bool IsStructConstruction = false;
     llvm::StructType *PreEmittedStructTy = nullptr;
-    if (!Tuple.TupleType.Name.empty() && Tuple.TupleType.Name != "Tuple") {
+    if (!Tuple.TupleType.Name.empty()) {
         // Check if it's already in the StructCache (from previous emission)
         if (auto It = StructCache.find(Tuple.TupleType.MangledName); It != StructCache.end()) {
             IsStructConstruction = true;
@@ -6273,7 +6273,7 @@ llvm::Expected<llvm::Value*> Emitter::emitTuple(const PlannedTuple &Tuple) {
 
     // Get the struct type - either from pre-emitted type, TupleType lookup, or create anonymous
     llvm::StructType *TupleTy = PreEmittedStructTy;
-    if (!TupleTy && !Tuple.TupleType.Name.empty() && Tuple.TupleType.Name != "Tuple") {
+    if (!TupleTy && !Tuple.TupleType.Name.empty()) {
         // Named struct type - look it up in cache.
         // StructCache keys use the _Z-prefixed mangled name (set by
         // emitStructType), so try the bare MangledName, then the raw
