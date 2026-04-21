@@ -69,8 +69,8 @@ define Item
 (
     span: Span
     private_: bool
-    name: String?
-    type: Type?
+    name: ref[String]?
+    type: ref[Type]?
     attributes: Vector[Attribute]
 )
 
@@ -103,7 +103,7 @@ define Type
 (
     span: Span
     name: Vector[String]
-    generics: Vector[Type]?
+    generics: ref[Vector[Type]]?
     lifetime: Lifetime
 )
 
@@ -113,8 +113,8 @@ define Property
     span: Span
     private_: bool
     name: String
-    type: Type?
-    initializer: Vector[Operand]?
+    type: ref[Type]?
+    initializer: ref[Vector[Operand]]?
     attributes: Vector[Attribute]
 )
 
@@ -335,7 +335,7 @@ define Variant
 (
     span: Span
     name: String
-    type: Type?
+    type: ref[Type]?
     attributes: Vector[Attribute]
 )
 

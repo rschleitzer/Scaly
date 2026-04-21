@@ -525,10 +525,12 @@ function handle_lambda#(syntax: LambdaSyntax) returns Lambda
                         set param_name: String$(name_syn.name)
                     else
                         set param_name: String$("")
+                var name_holder Vector[String]#(1)
+                name_holder.put(0, String#(param_name))
                 input.put(i, Item(
                     Span(op.start, op.end),
                     false,
-                    String$(param_name),
+                    name_holder.get(0),
                     null,
                     Vector[Attribute]#(0)
                 ))
@@ -942,10 +944,12 @@ function handle_binding_item#(syntax: BindingSyntax) returns Item
         set item_type: handle_binding_annotation#(annotation)
     }
 
+    var name_holder Vector[String]#(1)
+    name_holder.put(0, String#(syntax.name))
     Item(
         Span(syntax.start, syntax.end),
         false,
-        String$(syntax.name),
+        name_holder.get(0),
         item_type,
         Vector[Attribute]#(0)
     )
@@ -1057,10 +1061,12 @@ function handle_item#(is_private: bool, syntax: ItemSyntax) returns Item
         set item_type: handle_type#(annotation.type)
     }
 
+    var name_holder Vector[String]#(1)
+    name_holder.put(0, String#(syntax.name))
     Item(
         Span(syntax.start, syntax.end),
         is_private,
-        String$(syntax.name),
+        name_holder.get(0),
         item_type,
         Vector[Attribute]#(0)
     )
