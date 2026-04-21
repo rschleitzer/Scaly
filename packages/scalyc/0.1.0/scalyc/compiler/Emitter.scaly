@@ -1077,21 +1077,21 @@ define Emitter
         LLVMInitializeX86AsmPrinter()
 
         let triple LLVMGetDefaultTargetTriple()
-        guard triple <> null
+        guard triple = null
             return false
 
         LLVMSetTarget(llvm_module, triple as pointer[const_char])
 
         var target LLVMTargetRef(null)
         let lookup_err LLVMGetTargetFromTriple(triple as pointer[const_char], &target, null as pointer[pointer[char]])
-        guard lookup_err = 0
+        guard lookup_err <> 0
             return false
 
         let tm LLVMCreateTargetMachine(target, triple as pointer[const_char],
             "generic" as pointer[const_char],
             "" as pointer[const_char],
             0, 2, 0)
-        guard tm.handle <> null
+        guard tm.handle = null
             return false
 
         let emit_err LLVMTargetMachineEmitToFile(tm, llvm_module, filename.c_data(), 1,
