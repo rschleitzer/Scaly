@@ -361,7 +361,7 @@ define cli
 
         let unlink_rc unlink(tmp_obj.c_data())
 
-        guard link_rc = 0
+        guard link_rc <> 0
         {
             Console.println("Error: Linker failed")
             return 9
