@@ -3,7 +3,6 @@ define scaly
     module memory
     module containers
     module io
-    module llvm
 
     ; Test entry point that calls all module tests
     function test() returns int
@@ -19,10 +18,6 @@ define scaly
         set result: io.test()
         guard result <> 0
             return result - 300
-
-        set result: llvm.test()
-        guard result <> 0
-            return result - 400
 
         0
     }
