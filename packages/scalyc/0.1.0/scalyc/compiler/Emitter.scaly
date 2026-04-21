@@ -263,8 +263,8 @@ define RegionInfo
 
     procedure add_named_region(this, name: String, value: LLVMValueRef)
     {
-        named_region_names.put(named_region_names.length, name)
-        named_region_values.put(named_region_values.length, value)
+        named_region_names.add(name)
+        named_region_values.add(value)
     }
 }
 
@@ -400,8 +400,8 @@ define Emitter
 
     procedure register_intrinsic_type(this, name: String, llvm_type: LLVMTypeRef, size: size_t, alignment: size_t, is_signed: bool)
     {
-        intrinsic_type_names.put(intrinsic_type_names.length, name)
-        intrinsic_types.put(intrinsic_types.length, IntrinsicTypeInfo(llvm_type, size, alignment, is_signed))
+        intrinsic_type_names.add(name)
+        intrinsic_types.add(IntrinsicTypeInfo(llvm_type, size, alignment, is_signed))
     }
 
     ; Dispose of LLVM resources
@@ -441,8 +441,8 @@ define Emitter
 
     procedure cache_type(this, name: String, llvm_type: LLVMTypeRef)
     {
-        type_cache_names.put(type_cache_names.length, name)
-        type_cache_types.put(type_cache_types.length, llvm_type)
+        type_cache_names.add(name)
+        type_cache_types.add(llvm_type)
     }
 
     ; ========================================================================
@@ -468,8 +468,8 @@ define Emitter
 
     procedure cache_struct(this, name: String, llvm_type: LLVMTypeRef)
     {
-        struct_cache_names.put(struct_cache_names.length, name)
-        struct_cache_types.put(struct_cache_types.length, llvm_type)
+        struct_cache_names.add(name)
+        struct_cache_types.add(llvm_type)
     }
 
     ; ========================================================================
@@ -495,8 +495,8 @@ define Emitter
 
     procedure cache_function(this, mangled_name: String, llvm_func: LLVMValueRef)
     {
-        function_cache_names.put(function_cache_names.length, mangled_name)
-        function_cache_funcs.put(function_cache_funcs.length, llvm_func)
+        function_cache_names.add(mangled_name)
+        function_cache_funcs.add(llvm_func)
     }
 
     ; ========================================================================
@@ -522,8 +522,8 @@ define Emitter
 
     procedure define_variable(this, name: String, value: LLVMValueRef)
     {
-        local_var_names.put(local_var_names.length, name)
-        local_var_values.put(local_var_values.length, value)
+        local_var_names.add(name)
+        local_var_values.add(value)
     }
 
     procedure clear_local_variables(this)
@@ -1137,13 +1137,9 @@ define Emitter
         ; Emit the expression
         choose op.expr
             when c: Constant
-            {
                 set value: emit_constant(c, op.result_type)
-            }
             else
-            {
                 set value: emit_expression(op.expr)
-            }
 
         ; Apply member access chain if present
         guard op.member_access <> null
@@ -3441,7 +3437,7 @@ define Emitter
             }
         }
         let ctx BlockCleanupContext(watermark, needs_cleanup)
-        block_cleanup_stack.put(block_cleanup_stack.length, ctx)
+        block_cleanup_stack.add(ctx)
     }
 
     ; Pop a block cleanup context and optionally emit cleanup
@@ -3507,7 +3503,7 @@ define Emitter
     procedure push_loop(this, exit_block: LLVMBasicBlockRef, continue_block: LLVMBasicBlockRef)
     {
         let ctx LoopContext(exit_block, continue_block, block_cleanup_stack.length)
-        loop_stack.put(loop_stack.length, ctx)
+        loop_stack.add(ctx)
     }
 
     ; Pop a loop context from the stack
