@@ -6796,7 +6796,13 @@ llvm::Value *Emitter::getCalleeExceptionPage() {
     // by design (callee terminates via exit(1) on a throw it can't bubble
     // out), so a StackBucket slot would break LIFO invariants for the real
     // root pages that come later.
-    if (PageAllocatePage && !PageAllocatePage->isDeclaration()) {
+    //
+    // Don't gate on !isDeclaration() — when iterating P.Structures alphabetically
+    // in Phase 3, "cli" methods emit before "Page" methods, so PageAllocatePage
+    // is still a declaration while cli.run#'s body is emitted. The body *will* be
+    // in the module by the time this call executes (AOT linking / JIT body-emit
+    // completes before execution), so calling a declaration here is fine.
+    if (PageAllocatePage) {
         return Builder->CreateCall(PageAllocatePage, {}, "exception_page.fallback");
     }
     return llvm::ConstantPointerNull::get(llvm::PointerType::get(*Context, 0));
