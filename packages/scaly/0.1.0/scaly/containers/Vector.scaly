@@ -137,6 +137,23 @@ define Vector[T]
         true
     }
 
+    ; Append by reallocating on this Vector's own page. Reallocates every
+    ; time — O(n) per call, O(n^2) for n adds — but the cache sites that
+    ; use this append once per registered item and never hit the inner loop
+    ; again. For perf-sensitive paths, preallocate via init#(rp, len).
+    function add(this: Vector[T], item: T)
+    {
+        let own_page Page.get(this as pointer[void])
+        let new_len length + 1
+        let new_data own_page.allocate(new_len * sizeof T, alignof T) as pointer[T]
+        guard length > 0
+            memcpy(new_data, data, length * sizeof T)
+
+        set *(new_data + length): item
+        set data: new_data
+        set length: new_len
+    }
+
     operator [](i: size_t) returns ref[T]?
     {
         guard i >= length
