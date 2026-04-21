@@ -33,7 +33,7 @@ define Constant union (
 define Component
 (
     span: Span
-    name: String?
+    name: ref[String]?
     value: Vector[Operand]
     attributes: Vector[Attribute]
 )
@@ -123,9 +123,9 @@ define If
 (
     span: Span
     condition: Vector[Operand]
-    property: Property?
+    property: ref[Property]?
     consequent: Statement
-    alternative: Statement?
+    alternative: ref[Statement]?
 )
 
 ; Pattern matching
@@ -143,7 +143,7 @@ define Match
     span: Span
     condition: Vector[Operand]
     branches: Vector[Branch]
-    alternative: Statement?
+    alternative: ref[Statement]?
 )
 
 define When
@@ -159,7 +159,7 @@ define Choose
     span: Span
     condition: Vector[Operand]
     cases: Vector[When]
-    alternative: Statement?
+    alternative: ref[Statement]?
 )
 
 ; Loops
@@ -184,7 +184,7 @@ define Try
     span: Span
     binding: Binding
     catches: Vector[When]
-    alternative: Statement?
+    alternative: ref[Statement]?
 )
 
 ; Type operations
@@ -244,7 +244,7 @@ define Operand
 (
     span: Span
     expression: Expression
-    member_access: Vector[String]?
+    member_access: ref[Vector[String]]?
 )
 
 ; Implementation variants
@@ -325,7 +325,7 @@ define Structure
     modules: Vector[Module]
     uses: Vector[Use]
     initializers: Vector[Initializer]
-    deinitializer: DeInitializer?
+    deinitializer: ref[DeInitializer]?
     members: Vector[Member]
     symbols: HashMap[String, Nameable]
 )
