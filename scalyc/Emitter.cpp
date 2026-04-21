@@ -3292,9 +3292,15 @@ llvm::Expected<llvm::Value*> Emitter::emitCall(const PlannedCall &Call) {
 
             // Check if this argument is a dereference call (*ptr) and the
             // function expects a pointer - if so, pass the pointer directly
-            // instead of loading the struct and creating a copy
+            // instead of loading the struct and creating a copy.
+            // Skip the shortcut when Arg has its own MemberAccess chain
+            // (e.g. `(*ptr).field`) — otherwise the chain would be silently
+            // dropped. The normal emit path below handles member access, and
+            // the existing sret/non-sret adjustment paths at lines ~3775 and
+            // ~3902 coerce the resulting struct to a pointer as needed.
             bool PassedPointerDirectly = false;
-            if (FuncTy && i + ParamOffset < FuncTy->getNumParams()) {
+            bool ArgHasMemberAccess = Arg.MemberAccess && !Arg.MemberAccess->empty();
+            if (FuncTy && i + ParamOffset < FuncTy->getNumParams() && !ArgHasMemberAccess) {
                 llvm::Type *ParamTy = FuncTy->getParamType(i + ParamOffset);
                 if (ParamTy->isPointerTy()) {
                     // Check if argument is a dereference call directly
