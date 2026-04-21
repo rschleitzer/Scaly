@@ -6,14 +6,20 @@ define lexer
 {
     ; Literal types
     define StringLiteral(value: String)
+    define CharacterLiteral(value: String)
     define FragmentLiteral(value: String)
     define IntegerLiteral(value: String)
     define BooleanLiteral(value: bool)
     define FloatingPointLiteral(value: String)
     define HexLiteral(value: String)
 
+    ; NOTE: Variant order must match Syntax.scaly's Literal union because
+    ; LiteralSyntax stores this union by value; tag values are compared
+    ; across modules. The parser extracts lexer's Literal from LiteralToken
+    ; and stores it into Syntax.LiteralSyntax.literal.
     define Literal union (
         String: StringLiteral,
+        Character: CharacterLiteral,
         Fragment: FragmentLiteral,
         Integer: IntegerLiteral,
         Boolean: BooleanLiteral,
