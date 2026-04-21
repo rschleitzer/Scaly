@@ -1220,8 +1220,26 @@ llvm::Function *Emitter::emitFunctionDecl(const PlannedFunction &Func) {
         ReturnLLVMType = ResultTy;
     }
 
-    // Use sret for non-primitive types (structs, unions)
-    if (ReturnLLVMType && (ReturnLLVMType->isStructTy() || ReturnLLVMType->isArrayTy())) {
+    // Use sret for non-primitive types (structs, unions), EXCEPT extern C
+    // functions whose return is a single-pointer-field struct (e.g. the
+    // LLVMXxxRef handle types). On AArch64 and x86_64 the ABI returns such
+    // 1-field-ptr aggregates in a scalar register (x0 / rax), matching the
+    // C ABI for `typedef struct Opaque* Ref`. If we mark the function sret
+    // the callee ignores the sret slot and writes its pointer into x0/rax;
+    // the caller then loads garbage from the sret slot and later frees it
+    // as if it were a handle, aborting in malloc_zone.
+    bool IsExternImpl = std::holds_alternative<PlannedExternImpl>(Func.Impl);
+    bool ReturnIsSinglePtrStruct = false;
+    if (ReturnLLVMType && ReturnLLVMType->isStructTy()) {
+        auto *STy = llvm::cast<llvm::StructType>(ReturnLLVMType);
+        if (STy->getNumElements() == 1 && STy->getElementType(0)->isPointerTy()) {
+            ReturnIsSinglePtrStruct = true;
+        }
+    }
+    bool UseScalarExternReturn = IsExternImpl && ReturnIsSinglePtrStruct;
+
+    if (ReturnLLVMType && (ReturnLLVMType->isStructTy() || ReturnLLVMType->isArrayTy()) &&
+        !UseScalarExternReturn) {
         UseSret = true;
         ParamTypes.push_back(llvm::PointerType::get(*Context, 0));
     }
