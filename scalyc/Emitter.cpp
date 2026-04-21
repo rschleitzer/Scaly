@@ -6227,6 +6227,26 @@ llvm::Expected<llvm::Value*> Emitter::emitTuple(const PlannedTuple &Tuple) {
             IsStructConstruction = true;
             PreEmittedStructTy = It->second;
         }
+        // Fallback for fully qualified names like "scalyc.compiler.Plan.PlannedConstant":
+        // try the last-segment short name with its Itanium-style mangling
+        // ("_Z15PlannedConstant"). The Planner writes dotted names into
+        // TupleType from namespace-qualified references, but the struct
+        // cache is keyed by the bare struct name's mangling.
+        if (!IsStructConstruction) {
+            size_t DotPos = Tuple.TupleType.Name.find_last_of('.');
+            if (DotPos != std::string::npos && DotPos + 1 < Tuple.TupleType.Name.size()) {
+                std::string ShortName = Tuple.TupleType.Name.substr(DotPos + 1);
+                std::string ShortMangled =
+                    "_Z" + std::to_string(ShortName.size()) + ShortName;
+                if (auto It = StructCache.find(ShortMangled); It != StructCache.end()) {
+                    IsStructConstruction = true;
+                    PreEmittedStructTy = It->second;
+                } else if (auto It = StructCache.find(ShortName); It != StructCache.end()) {
+                    IsStructConstruction = true;
+                    PreEmittedStructTy = It->second;
+                }
+            }
+        }
         // For single-component tuples that aren't in StructCache, check the Plan.
         // This handles inline struct definitions like `define Container(value: Option)`.
         // We only do this for single-component tuples if the struct/union has exactly 1 property,
