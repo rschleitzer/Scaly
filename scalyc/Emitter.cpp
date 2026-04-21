@@ -637,13 +637,14 @@ llvm::Expected<std::unique_ptr<llvm::Module>> Emitter::emit(const Plan &P,
         }
     }
 
-    // Generate stub bodies for declarations that weren't emitted.
-    // Covers: (1) Scaly functions (_Z...) skipped by the Planner,
-    //         (2) LLVM C API functions (LLVM...) not linked in AOT test context.
+    // Generate stub bodies for Scaly functions (_Z...) skipped by the Planner.
+    // LLVM C API declarations are left for the linker (AOT: -lLLVM-18) or the
+    // JIT's process-symbol generator (which sees libLLVM via
+    // DynamicLibrary::LoadLibraryPermanently at Emitter construction) to bind.
     for (auto &F : *Module) {
         if (F.isDeclaration() && !F.isIntrinsic()) {
             llvm::StringRef Name = F.getName();
-            if (!Name.starts_with("_Z") && !Name.starts_with("LLVM"))
+            if (!Name.starts_with("_Z"))
                 continue;
 
             auto *Entry = llvm::BasicBlock::Create(*Context, "stub", &F);
