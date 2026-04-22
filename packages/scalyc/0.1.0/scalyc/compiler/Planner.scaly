@@ -1524,7 +1524,7 @@ define Planner
             f: Function,
             arg_types: Vector[PlannedType],
             exact_only: bool
-        ) returns ref[PlannedType]?
+        ) returns ref[MethodMatch]?
         {
             var param_start: size_t 0
             guard f.input.length > 0
@@ -1545,6 +1545,7 @@ define Planner
             guard expected_arity <> arg_types.length
                 return null
 
+            var planned_params_arr Array[PlannedType]$()
             var j: size_t 0
             while j < arg_types.length
             {
@@ -1566,27 +1567,60 @@ define Planner
                         set ok: Planner.types_compatible(planned_p, arg)
                     guard ok = false
                         return null
+                    planned_params_arr.add(planned_p)
                 }
                 set j: j + 1
             }
+            var params_holder Vector[PlannedType]^rp(planned_params_arr)
 
-            var holder Vector[PlannedType]^rp(1)
+            var return_type: PlannedType Planner.make_void_type#()
             guard f.returns_ <> null
             {
                 let rt (*f.returns_)
-                holder.put(0, this.plan_type#(rt))
+                set return_type: this.plan_type#(rt)
             }
-            guard f.returns_ = null
-                holder.put(0, Planner.make_void_type#())
 
-            holder.get(0)
+            var has_page: bool false
+            guard f.page_parameter <> null
+                set has_page: true
+            guard Planner.needs_implicit_return_page(f)
+                set has_page: true
+
+            let mangled Planner.mangle_free_function_from_types#(
+                f.name, params_holder, has_page
+            )
+
+            var can_throw: bool false
+            var throws_ref: ref[PlannedType]? null
+            guard f.throws_ <> null
+            {
+                let tt (*f.throws_)
+                set can_throw: true
+                var th_holder Vector[PlannedType]^rp(1)
+                th_holder.put(0, this.plan_type#(tt))
+                set throws_ref: th_holder.get(0)
+            }
+
+            var match_holder Vector[MethodMatch]^rp(1)
+            match_holder.put(0, MethodMatch(
+                null,
+                mangled,
+                return_type,
+                &params_holder,
+                has_page,
+                can_throw,
+                throws_ref,
+                false
+            ))
+            match_holder.get(0)
         }
 
         ; ================================================================
-        ; resolve_function_call: return the result type of calling
-        ; `name` with the given argument types. Two-pass overload
-        ; resolution: exact matches first, then compatible (widened).
-        ; 'this' parameters are implicitly skipped.
+        ; resolve_function_call: return a MethodMatch describing the
+        ; chosen overload of `name` for the given argument types. Two-pass
+        ; overload resolution: exact matches first, then compatible
+        ; (widened), then generic instantiation. 'this' parameters are
+        ; implicitly skipped.
         ;
         ; Returns null when no overload matches; callers fall back to a
         ; fresh type variable so the constraint solver can recover.
@@ -1596,7 +1630,7 @@ define Planner
             this: Planner,
             name: String,
             arg_types: Vector[PlannedType]
-        ) returns ref[PlannedType]?
+        ) returns ref[MethodMatch]?
         {
             let candidates this.lookup_functions#(name)
             guard candidates.length = 0
@@ -1616,9 +1650,9 @@ define Planner
                 guard f_ptr <> null
                 {
                     let f (*f_ptr)
-                    let rt this.check_function_match#(f, arg_types, true)
-                    guard rt <> null
-                        return rt
+                    let m this.check_function_match#(f, arg_types, true)
+                    guard m <> null
+                        return m
                 }
                 set i: i + 1
             }
@@ -1631,9 +1665,9 @@ define Planner
                 guard f_ptr <> null
                 {
                     let f (*f_ptr)
-                    let rt this.check_function_match#(f, arg_types, false)
-                    guard rt <> null
-                        return rt
+                    let m this.check_function_match#(f, arg_types, false)
+                    guard m <> null
+                        return m
                 }
                 set k: k + 1
             }
@@ -1641,8 +1675,8 @@ define Planner
             ; Pass 3: generic overload. For candidates declaring type
             ; parameters, plan the declared parameter types and run
             ; pattern inference against the argument types. On a
-            ; successful inference, instantiate the generic and return
-            ; the instantiated function's return type.
+            ; successful inference, instantiate the generic and build a
+            ; MethodMatch from the instantiated PlannedFunction.
             var g: size_t 0
             while g < candidates.length
             {
@@ -1693,14 +1727,22 @@ define Planner
                             guard bindings.length >= f.parameters.length
                             {
                                 let inst this.instantiate_generic_function#(f, bindings)
+                                var inst_return: PlannedType Planner.make_void_type#()
                                 guard inst.return_type <> null
-                                    return inst.return_type
-                                guard inst.return_type = null
-                                {
-                                    var v_holder Vector[PlannedType]^rp(1)
-                                    v_holder.put(0, Planner.make_void_type#())
-                                    return v_holder.get(0)
-                                }
+                                    set inst_return: (*inst.return_type)
+
+                                var match_holder Vector[MethodMatch]^rp(1)
+                                match_holder.put(0, MethodMatch(
+                                    null,
+                                    inst.mangled_name,
+                                    inst_return,
+                                    &param_types_vec,
+                                    inst.page_parameter <> null,
+                                    inst.can_throw,
+                                    inst.throws_type,
+                                    false
+                                ))
+                                return match_holder.get(0)
                             }
                         }
                     }
@@ -1952,15 +1994,49 @@ define Planner
                     guard is_call
                     {
                         let arg_types Planner.extract_arg_types#(second)
-                        let rt_ref this.resolve_function_call#(fn_name, arg_types)
+                        let match_ref this.resolve_function_call#(fn_name, arg_types)
                         var rt: PlannedType this.fresh_type_var#(String$(""))
-                        guard rt_ref <> null
-                            set rt: (*rt_ref)
+                        var mangled: String String^rp("")
+                        guard match_ref <> null
+                        {
+                            let m (*match_ref)
+                            set rt: m.return_type
+                            set mangled: m.mangled_name
+                        }
 
-                        var call_args Vector[PlannedOperand]^rp(1)
-                        call_args.put(0, second)
+                        ; Flatten the tuple argument into a list of
+                        ; individual PlannedOperand values so the emitter
+                        ; can treat each call argument separately. An
+                        ; empty `()` produces an empty list.
+                        var args_arr Array[PlannedOperand]$()
+                        choose second.expr
+                            when tp: PlannedTuple
+                            {
+                                guard tp.components <> null
+                                {
+                                    let comps (*tp.components)
+                                    var ci: size_t 0
+                                    while ci < comps.length
+                                    {
+                                        let c_ptr comps.get(ci)
+                                        guard c_ptr <> null
+                                        {
+                                            let c (*c_ptr)
+                                            guard c.value <> null
+                                            {
+                                                let v (*c.value)
+                                                args_arr.add(this.collapse_operand_sequence#(v))
+                                            }
+                                        }
+                                        set ci: ci + 1
+                                    }
+                                }
+                            }
+                            else
+                                args_arr.add(second)
+                        var call_args Vector[PlannedOperand]^rp(args_arr)
                         let call this.make_planned_call#(
-                            result.loc, fn_name, String^rp(""), rt, call_args
+                            result.loc, fn_name, mangled, rt, call_args
                         )
                         set result: PlannedOperand(
                             result.loc,
@@ -6006,6 +6082,47 @@ define Planner
         }
 
         guard has_explicit_params = false
+            sb.append("v")
+
+        sb.to_string^rp()
+    }
+
+    ; mangle_free_function_from_types: build a free-function Itanium
+    ; symbol directly from PlannedTypes, skipping the PlannedItem
+    ; ceremony mangle_function requires. Shape matches mangle_function
+    ; with parent=null.
+    function mangle_free_function_from_types#(
+        rp,
+        name: String,
+        params: Vector[PlannedType],
+        has_page_param: bool
+    ) returns String
+    {
+        var sb StringBuilder$()
+        sb.append("_Z")
+        sb.append(Planner.encode_name(name))
+
+        var has_explicit: bool false
+        guard has_page_param
+        {
+            sb.append("PN4scaly6memory4PageE")
+            set has_explicit: true
+        }
+
+        var i: size_t 0
+        while i < params.length
+        {
+            let p_ptr params.get(i)
+            guard p_ptr <> null
+            {
+                let p (*p_ptr)
+                sb.append(Planner.encode_type#(p))
+                set has_explicit: true
+            }
+            set i: i + 1
+        }
+
+        guard has_explicit = false
             sb.append("v")
 
         sb.to_string^rp()
