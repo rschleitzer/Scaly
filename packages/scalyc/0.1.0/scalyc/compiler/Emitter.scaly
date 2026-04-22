@@ -3168,44 +3168,43 @@ define Emitter
         }
 
         ; Create alloca for the binding
-        choose binding.binding_item.name
-            when name: Some
+        guard binding.binding_item.name <> null
+        {
+            let name_ref binding.binding_item.name
+            let name (*name_ref)
+            if value.handle <> null
             {
-                if value.handle <> null
-                {
-                    ; Get the type from the value
-                    let ty LLVMTypeOf(value)
+                ; Get the type from the value
+                let ty LLVMTypeOf(value)
 
-                    if binding.binding_type.equals(String$("var"))
-                    {
-                        ; Mutable binding: allocate on stack
-                        let alloca LLVMBuildAlloca(builder, ty, name.c_data())
-                        LLVMBuildStore(builder, value, alloca)
-                        define_variable(name, alloca)
-                    }
-                    else
-                    {
-                        ; Immutable binding: just use the value directly
-                        define_variable(name, value)
-                    }
+                if binding.binding_type.equals(String$("var"))
+                {
+                    ; Mutable binding: allocate on stack
+                    let alloca LLVMBuildAlloca(builder, ty, name.c_data())
+                    LLVMBuildStore(builder, value, alloca)
+                    define_variable(name, alloca)
                 }
                 else
                 {
-                    ; No initialization - check for type annotation
-                    choose binding.binding_item.item_type
-                        when item_type: Some
-                        {
-                            let ty map_type(*item_type)
-                            let alloca LLVMBuildAlloca(builder, ty, name.c_data())
-                            define_variable(name, alloca)
-                        }
-                        else
-                        {
-                            return false  ; No init and no type annotation
-                        }
+                    ; Immutable binding: just use the value directly
+                    define_variable(name, value)
                 }
             }
-            else { }
+            else
+            {
+                ; No initialization - check for type annotation
+                guard binding.binding_item.item_type <> null
+                {
+                    let item_type_ref binding.binding_item.item_type
+                    let item_type (*item_type_ref)
+                    let ty map_type(item_type)
+                    let alloca LLVMBuildAlloca(builder, ty, name.c_data())
+                    define_variable(name, alloca)
+                }
+                guard binding.binding_item.item_type = null
+                    return false  ; No init and no type annotation
+            }
+        }
 
         true
     }
