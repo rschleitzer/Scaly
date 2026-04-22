@@ -1,6 +1,7 @@
 package scaly 0.1.0
 
 use scaly.containers.String
+use scaly.containers.HashSet
 
 define lexer
 {
@@ -777,7 +778,8 @@ define lexer
         }
 
         ; Parser helper: parse identifier, returns empty string if not found
-        procedure parse_identifier#(page, this) returns String
+        ; or if the identifier is a keyword (matches C++ parseName behaviour).
+        procedure parse_identifier#(page, this, keywords: HashSet[String]) returns String
         {
             choose token
                 when e: Empty
@@ -788,6 +790,9 @@ define lexer
                 when ident: Identifier
                 {
                     let name String^page(ident.name.get_buffer(), ident.name.length)
+                    guard keywords.contains(name)
+                        return String^page("", 0)
+
                     empty()
                     return name
                 }

@@ -766,7 +766,7 @@ function handle_condition#(syntax: ConditionSyntax) returns Binding
             let operands handle_operands#(op.operands)
             Binding(
                 Span(op.start, op.end),
-                "const",
+                String#("const"),
                 Item(Span(op.start, op.end), false, null, null, Vector[Attribute]#(0)),
                 operands
             )
@@ -777,13 +777,13 @@ function handle_condition#(syntax: ConditionSyntax) returns Binding
             let operation handle_operands#(let_syntax.binding.operation)
             Binding(
                 Span(let_syntax.start, let_syntax.end),
-                "const",
+                String#("const"),
                 item,
                 operation
             )
         }
         else
-            Binding(Span(0, 0), "const", Item(Span(0, 0), false, null, null, Vector[Attribute]#(0)), Vector[Operand]#(0))
+            Binding(Span(0, 0), String#("const"), Item(Span(0, 0), false, null, null, Vector[Attribute]#(0)), Vector[Operand]#(0))
 }
 
 function handle_try#(syntax: TrySyntax) returns Try
@@ -981,7 +981,7 @@ function handle_command#(syntax: StatementSyntax) returns Statement
             let operation handle_operands#(let_syntax.binding.operation)
             Statement.Binding(Binding(
                 Span(let_syntax.start, let_syntax.end),
-                "const",
+                String#("const"),
                 item,
                 operation
             ))
@@ -992,7 +992,7 @@ function handle_command#(syntax: StatementSyntax) returns Statement
             let operation handle_operands#(var_syntax.binding.operation)
             Statement.Binding(Binding(
                 Span(var_syntax.start, var_syntax.end),
-                "var",
+                String#("var"),
                 item,
                 operation
             ))
@@ -1003,7 +1003,7 @@ function handle_command#(syntax: StatementSyntax) returns Statement
             let operation handle_operands#(mut_syntax.binding.operation)
             Statement.Binding(Binding(
                 Span(mut_syntax.start, mut_syntax.end),
-                "mutable",
+                String#("mutable"),
                 item,
                 operation
             ))
