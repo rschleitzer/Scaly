@@ -194,7 +194,19 @@ function handle_literal(syntax: LiteralSyntax) returns Constant
         when frag: FragmentLiteral
             Constant.Fragment(FragmentConstant(loc, frag.value))
         when int_lit: IntegerLiteral
-            Constant.Integer(IntegerConstant(loc, 0))
+        {
+            var value: size_t 0
+            let buf int_lit.value.get_buffer()
+            let len int_lit.value.get_length()
+            var i: size_t 0
+            while i < len
+            {
+                let byte *(buf + i)
+                set value: value * (10 as size_t) + ((byte - (48 as u8)) as size_t)
+                set i: i + (1 as size_t)
+            }
+            Constant.Integer(IntegerConstant(loc, value))
+        }
         when bool_lit: BooleanLiteral
             Constant.Boolean(BooleanConstant(loc, bool_lit.value))
         when float_lit: FloatingPointLiteral
