@@ -6313,7 +6313,7 @@ llvm::Expected<llvm::Value*> Emitter::emitTuple(const PlannedTuple &Tuple) {
         }
     }
 
-    if (Tuple.Components.size() == 1 && !Tuple.Components[0].Name && !IsStructConstruction) {
+    if (Tuple.Components.size() == 1 && !Tuple.Components[0].Name && !IsStructConstruction && !Tuple.IsRegionAlloc) {
         // Grouped expression like (2 + 3) - evaluate the inner value
         if (!Tuple.Components[0].Value.empty()) {
             return emitOperand(Tuple.Components[0].Value.back());

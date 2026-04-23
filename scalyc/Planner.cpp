@@ -9047,6 +9047,100 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                             continue;
                         }
                 }
+
+                // Union constructor with lifetime: Union#(value), Union$(value), Union^name(value)
+                // e.g., Statement#(alt_stmt) — heap-allocate a Statement on caller's page.
+                // Without a variant selector (Statement.A), this wraps the existing
+                // single argument in a fresh union slot. The emitTuple short-circuit
+                // at "single component + multi-field + type match" handles the copy.
+                if (Conc && std::holds_alternative<scaly::Union>(Conc->Def) &&
+                    std::holds_alternative<Tuple>(NextOp.Expr)) {
+                    Operand ArgsOp = NextOp;
+                    ArgsOp.MemberAccess = nullptr;
+                    auto PlannedArgs = planOperand(ArgsOp);
+                    if (!PlannedArgs) {
+                        return PlannedArgs.takeError();
+                    }
+
+                    auto ResolvedType = resolveType(*TypeExpr, Op.Loc);
+                    if (!ResolvedType) {
+                        return ResolvedType.takeError();
+                    }
+                    PlannedType UnionType = std::move(*ResolvedType);
+
+                    bool IsRegionAlloc =
+                        !std::holds_alternative<UnspecifiedLifetime>(TypeExpr->Life);
+
+                    if (std::holds_alternative<LocalLifetime>(TypeExpr->Life) ||
+                        std::holds_alternative<CallLifetime>(TypeExpr->Life)) {
+                        CurrentFunctionUsesLocalLifetime = true;
+                        if (!ScopeInfoStack.empty()) {
+                            ScopeInfoStack.back().HasLocalAllocations = true;
+                        }
+                    }
+
+                    PlannedOperand RegionArg;
+                    if (auto* RefLife = std::get_if<ReferenceLifetime>(&TypeExpr->Life)) {
+                        if (RefLife->Location == "this") {
+                            auto PageGetResult = generatePageGetThis(RefLife->Loc);
+                            if (!PageGetResult) {
+                                return PageGetResult.takeError();
+                            }
+                            RegionArg = std::move(*PageGetResult);
+                        } else {
+                            auto RegionBinding = lookupLocalBinding(RefLife->Location);
+                            if (!RegionBinding) {
+                                return makeUndefinedSymbolError(File, RefLife->Loc, RefLife->Location);
+                            }
+                            auto isPageType = [](const std::string &Name) {
+                                return Name == "Page" || Name == "scaly.memory.Page";
+                            };
+                            bool isPagePointer = RegionBinding->Type.Name == "pointer" &&
+                                                 !RegionBinding->Type.Generics.empty() &&
+                                                 isPageType(RegionBinding->Type.Generics[0].Name);
+                            if (!isPagePointer) {
+                                return makeStackLifetimeError(File, RefLife->Loc, RefLife->Location);
+                            }
+                            RegionArg.Loc = RefLife->Loc;
+                            RegionArg.ResultType = RegionBinding->Type;
+                            RegionArg.Expr = PlannedVariable{RefLife->Loc, RefLife->Location, RegionBinding->Type, RegionBinding->IsMutable};
+                        }
+                    }
+
+                    PlannedType ResultType = UnionType;
+                    if (IsRegionAlloc) {
+                        ResultType.Name = "pointer";
+                        ResultType.MangledName = "P" + UnionType.MangledName;
+                        ResultType.Generics = {UnionType};
+                    }
+
+                    if (auto* TupleExpr = std::get_if<PlannedTuple>(&PlannedArgs->Expr)) {
+                        TupleExpr->TupleType = UnionType;
+                        TupleExpr->IsRegionAlloc = IsRegionAlloc;
+                        TupleExpr->Life = TypeExpr->Life;
+                        if (std::holds_alternative<ReferenceLifetime>(TypeExpr->Life)) {
+                            TupleExpr->RegionArg = std::make_shared<PlannedOperand>(std::move(RegionArg));
+                        }
+                    }
+                    PlannedArgs->ResultType = ResultType;
+
+                    if (NextOp.MemberAccess && !NextOp.MemberAccess->empty()) {
+                        auto MemberChain = resolveMemberAccessChain(
+                            UnionType, *NextOp.MemberAccess, NextOp.Loc);
+                        if (!MemberChain) {
+                            return MemberChain.takeError();
+                        }
+                        PlannedArgs->MemberAccess = std::make_shared<std::vector<PlannedMemberAccess>>(
+                            std::move(*MemberChain));
+                        if (!PlannedArgs->MemberAccess->empty()) {
+                            PlannedArgs->ResultType = PlannedArgs->MemberAccess->back().ResultType;
+                        }
+                    }
+
+                    Result.push_back(std::move(*PlannedArgs));
+                    i++;
+                    continue;
+                }
             }
         }
 
