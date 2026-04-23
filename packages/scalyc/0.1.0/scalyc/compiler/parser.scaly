@@ -1003,7 +1003,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set annotation: success
+                set annotation: TypeAnnotationSyntax#(success.start, success.end, success.type)
 
         lexer.parse_punctuation#(ParserConstants.CHAR_COMMA())
 
@@ -1287,7 +1287,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set annotation: success
+                set annotation: TypeAnnotationSyntax#(success.start, success.end, success.type)
 
         lexer.parse_punctuation#(ParserConstants.CHAR_COMMA())
 
@@ -3802,7 +3802,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set annotation: success
+                set annotation: BindingAnnotationSyntax#(success.start, success.end, success.spec)
 
         let operation_start lexer.position
         var operation: ref[Vector[OperandSyntax]]? null
@@ -4339,7 +4339,7 @@ define Parser
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set annotation: success
+                set annotation: TypeAnnotationSyntax#(success.start, success.end, success.type)
 
         guard ~lexer.parse_keyword#(String#("in"))
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#("expected 'in'")))
