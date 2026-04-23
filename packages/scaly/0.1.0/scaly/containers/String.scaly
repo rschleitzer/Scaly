@@ -26,8 +26,11 @@ define String (data: pointer[u8](null))
 
         set *(length_array + counter): rest as u8
         let overall_length counter + (1 as size_t) + length
-        set data: page.allocate(overall_length, 1) as pointer[u8]
+        ; Over-allocate by 1 byte so c_data() is safely null-terminated for
+        ; C APIs. Keeps the logical content length unchanged.
+        set data: page.allocate(overall_length + (1 as size_t), 1) as pointer[u8]
         memcpy(data, length_array, counter + (1 as size_t))
+        set *(data + overall_length): (0 as u8)
     }
 
     init#(page, other: pointer[const_char], length: size_t)
@@ -51,9 +54,10 @@ define String (data: pointer[u8](null))
 
         set *(length_array + counter): rest as u8
         let overall_length counter + (1 as size_t) + length
-        set data: page.allocate(overall_length, 1) as pointer[u8]
+        set data: page.allocate(overall_length + (1 as size_t), 1) as pointer[u8]
         memcpy(data, length_array, counter + (1 as size_t))
         memcpy((data + counter + (1 as size_t)) as pointer[void], other, length)
+        set *(data + overall_length): (0 as u8)
     }
 
     init#(page, other: Vector[char])
@@ -72,10 +76,11 @@ define String (data: pointer[u8](null))
 
         set *(length_array + counter): rest as u8
         let overall_length counter + (1 as size_t) + other.length
-        set data: page.allocate(overall_length, 1) as pointer[u8]
+        set data: page.allocate(overall_length + (1 as size_t), 1) as pointer[u8]
         memcpy(data, length_array, counter + (1 as size_t))
         guard other.length > 0
             memcpy((data + counter + (1 as size_t)) as pointer[void], other.data, other.length)
+        set *(data + overall_length): (0 as u8)
 
     }
 
@@ -101,9 +106,10 @@ define String (data: pointer[u8](null))
 
         set *(length_array + counter): rest as u8
         let overall_length counter + (1 as size_t) + length
-        set data: page.allocate(overall_length, 1) as pointer[u8]
+        set data: page.allocate(overall_length + (1 as size_t), 1) as pointer[u8]
         memcpy(data, length_array, counter + (1 as size_t))
         memcpy((data + counter + (1 as size_t)) as pointer[void], c_string, length)
+        set *(data + overall_length): (0 as u8)
     }
 
     init#(page, other: String)
@@ -134,15 +140,17 @@ define String (data: pointer[u8](null))
             set index: index + (1 as size_t)
         }
         var overall_length index + (1 as size_t) + length
-        set data: page.allocate(overall_length, 1) as pointer[u8]
+        set data: page.allocate(overall_length + (1 as size_t), 1) as pointer[u8]
         memcpy(data, other.data, overall_length)
+        set *(data + overall_length): (0 as u8)
     }
 
     init#(page, character: u8)
     {
-        set data: page.allocate(2, 1) as pointer[u8]
+        set data: page.allocate(3, 1) as pointer[u8]
         set *data: 1
         set *(data + 1): character
+        set *(data + 2): (0 as u8)
     }
 
     function get_buffer(this: String) returns pointer[u8]
