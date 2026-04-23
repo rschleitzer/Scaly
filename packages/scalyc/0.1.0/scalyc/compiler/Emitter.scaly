@@ -1048,14 +1048,19 @@ define Emitter
     ; Write module IR to file
     function write_module_to_file(this, filename: String) returns bool
     {
-        let result LLVMPrintModuleToFile(llvm_module, filename.c_data(), null as pointer[pointer[char]])
+        ; filename.c_data() returns a pointer into the String's varint-prefixed
+        ; buffer — NOT null-terminated. The C API reads past the end. Use
+        ; to_c_string# to get a proper null-terminated copy allocated on rp.
+        let c_name filename.to_c_string#()
+        let result LLVMPrintModuleToFile(llvm_module, c_name, null as pointer[pointer[char]])
         result = 0
     }
 
     ; Write bitcode to file
     function write_bitcode_to_file(this, filename: String) returns bool
     {
-        let result LLVMWriteBitcodeToFile(llvm_module, filename.c_data())
+        let c_name filename.to_c_string#()
+        let result LLVMWriteBitcodeToFile(llvm_module, c_name)
         result = 0
     }
 
@@ -2062,13 +2067,13 @@ define Emitter
         LLVMPositionBuilderAtEnd(builder, then_block)
         var then_value LLVMValueRef(null)
 
-        choose if_expr.consequent
-            when stmt_ref: Some
-            {
-                ; Use emit_statement which handles all statement types
-                set then_value: emit_statement(*stmt_ref)
-            }
-            else { }
+        ; session 25 pattern: choose ref[T]? when x: Some yields a garbage
+        ; binding under NPO; use explicit null-guard + deref instead.
+        guard if_expr.consequent <> null
+        {
+            let cons_ref if_expr.consequent
+            set then_value: emit_statement(*cons_ref)
+        }
 
         ; Jump to merge block if not already terminated
         let then_term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock(builder))
@@ -2084,12 +2089,11 @@ define Emitter
         {
             LLVMPositionBuilderAtEnd(builder, else_block)
 
-            choose if_expr.alternative
-                when stmt_ref: Some
-                {
-                    set else_value: emit_statement(*stmt_ref)
-                }
-                else { }
+            guard if_expr.alternative <> null
+            {
+                let alt_ref if_expr.alternative
+                set else_value: emit_statement(*alt_ref)
+            }
 
             let else_term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock(builder))
             guard else_term.handle = null
