@@ -2037,15 +2037,16 @@ define Emitter
         guard cond_value.handle = null
             return LLVMValueRef(null)
 
-        ; Ensure we have a boolean (i1) for the branch
+        ; Ensure we have a boolean (i1) for the branch. LLVMGetTypeKind
+        ; returns IntegerTypeKind for i1, i32, i64, etc.; a kind-only check
+        ; would miss i32/i64 conds and emit `br i32 %x, ...`. Compare the
+        ; integer bit-width instead.
         var bool_cond cond_value
         let cond_type LLVMTypeOf(cond_value)
-        let i1_type LLVMInt1TypeInContext(context)
 
-        ; If not i1, convert to boolean
-        guard LLVMGetTypeKind(cond_type) <> LLVMGetTypeKind(i1_type)
+        ; If not i1, convert to boolean via icmp ne 0
+        guard LLVMGetIntTypeWidth(cond_type) <> 1
         {
-            ; Compare to 0
             let zero LLVMConstInt(cond_type, 0, 0)
             set bool_cond: LLVMBuildICmp(builder, LLVMIntPredicate.NE(), cond_value, zero, "if.tobool")
         }
@@ -2072,7 +2073,16 @@ define Emitter
         guard if_expr.consequent <> null
         {
             let cons_ref if_expr.consequent
-            set then_value: emit_statement(*cons_ref)
+            ; For Action-variant consequents, emit_action returns the
+            ; LLVMValueRef produced by the block's last expression so the
+            ; if-as-expression can propagate it through a PHI. For
+            ; terminating statements (return/throw/break/continue) the
+            ; value stays null and the PHI is skipped.
+            choose (*cons_ref)
+                when action: Action
+                    set then_value: emit_action(action)
+                else
+                    emit_statement(*cons_ref)
         }
 
         ; Jump to merge block if not already terminated
@@ -2092,7 +2102,11 @@ define Emitter
             guard if_expr.alternative <> null
             {
                 let alt_ref if_expr.alternative
-                set else_value: emit_statement(*alt_ref)
+                choose (*alt_ref)
+                    when action: Action
+                        set else_value: emit_action(action)
+                    else
+                        emit_statement(*alt_ref)
             }
 
             let else_term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock(builder))
