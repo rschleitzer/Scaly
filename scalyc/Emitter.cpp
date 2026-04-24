@@ -3095,9 +3095,22 @@ llvm::Expected<llvm::Value*> Emitter::emitOperand(const PlannedOperand &Op) {
                 LastFieldBasePtr = SourcePtr;
                 LastFieldBaseStructTy = SourceStructTy;
                 LastFieldIndex = Access.FieldIndex;
-                // Advance SourcePtr for chained field access
+                // Advance SourcePtr + SourceStructTy so chained accesses (a.b.c)
+                // record the correct base for the LAST field. Without advancing
+                // SourcePtr, a subsequent access keeps the outer struct's base
+                // but records the inner field's index, producing a miscomputed
+                // GEP at the call site (offset-of-inner-field applied to the
+                // outer base).
                 auto *FieldTy = llvm::cast<llvm::StructType>(SourceStructTy)->getElementType(Access.FieldIndex);
-                SourceStructTy = FieldTy->isStructTy() ? FieldTy : nullptr;
+                if (FieldTy->isStructTy()) {
+                    SourcePtr = Builder->CreateStructGEP(
+                        SourceStructTy, SourcePtr, Access.FieldIndex,
+                        Access.Name + ".gep");
+                    SourceStructTy = FieldTy;
+                } else {
+                    SourcePtr = nullptr;
+                    SourceStructTy = nullptr;
+                }
             } else {
                 LastFieldBasePtr = nullptr;
             }
