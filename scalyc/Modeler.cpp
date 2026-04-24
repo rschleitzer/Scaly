@@ -564,43 +564,49 @@ llvm::Expected<std::vector<Statement>> Modeler::handleStatements(
         if (std::holds_alternative<EmptySyntax>(S.Value))
             continue;
 
-        // If this is an OperationSyntax whose operand list contains more than
-        // one statement-like expression, split it into multiple Actions. The
-        // parser collapses body-level `choose X when ...` sequences into one
-        // Operation because parseWhen consumes the trailing newline that
-        // would otherwise terminate the outer operand list.
+        // If this is an OperationSyntax whose operand list contains one or more
+        // statement-like expressions with trailing operands, split it into
+        // multiple Actions. The parser collapses body-level `choose X when ...`
+        // sequences into one Operation because parseWhen consumes the trailing
+        // newline that would otherwise terminate the outer operand list.
+        // Statement-like operands (choose/if/match/while/for/try/guard/repeat/
+        // block) always close their own statement; anything after them is a
+        // separate body-level statement.
         if (auto *Op = std::get_if<OperationSyntax>(&S.Value)) {
             if (Op->operands && Op->operands->size() > 1) {
                 size_t StmtLikeCount = 0;
                 for (const auto &O : *Op->operands) {
                     if (isStatementLikeExpr(O.expression)) ++StmtLikeCount;
                 }
-                if (StmtLikeCount > 1) {
-                    // Split into groups of operand indices: each statement-like
-                    // operand starts a new group; prefix operands attach to the
-                    // next group.
+                if (StmtLikeCount > 0) {
+                    // Each statement-like operand closes its group. Prefix
+                    // operands (like Type/Name preceding it) attach to the
+                    // group that contains the next statement-like operand, or
+                    // to a trailing tail group.
                     const auto &Ops = *Op->operands;
                     std::vector<std::vector<size_t>> Groups;
                     std::vector<size_t> Current;
                     for (size_t I = 0; I < Ops.size(); ++I) {
-                        if (isStatementLikeExpr(Ops[I].expression) && !Current.empty()) {
+                        Current.push_back(I);
+                        if (isStatementLikeExpr(Ops[I].expression)) {
                             Groups.push_back(std::move(Current));
                             Current.clear();
                         }
-                        Current.push_back(I);
                     }
                     if (!Current.empty()) Groups.push_back(std::move(Current));
 
-                    for (auto &Grp : Groups) {
-                        std::vector<Operand> GroupOps;
-                        for (size_t Idx : Grp) {
-                            auto Modelled = handleOperand(Ops[Idx]);
-                            if (!Modelled) return Modelled.takeError();
-                            GroupOps.push_back(std::move(*Modelled));
+                    if (Groups.size() > 1) {
+                        for (auto &Grp : Groups) {
+                            std::vector<Operand> GroupOps;
+                            for (size_t Idx : Grp) {
+                                auto Modelled = handleOperand(Ops[Idx]);
+                                if (!Modelled) return Modelled.takeError();
+                                GroupOps.push_back(std::move(*Modelled));
+                            }
+                            Result.push_back(Action{std::move(GroupOps), {}});
                         }
-                        Result.push_back(Action{std::move(GroupOps), {}});
+                        continue;
                     }
-                    continue;
                 }
             }
         }
