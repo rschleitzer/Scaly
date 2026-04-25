@@ -4058,11 +4058,41 @@ define Planner
                 set i: i + 1
             }
 
+            ; Single anonymous component = grouping parens. Lift the
+            ; component's collapsed result_type into tuple_type so callers
+            ; that consume the tuple as a value (resolve_member_access on
+            ; `(*p).field`, ...) see the inner expression's type instead of
+            ; `void`. Mirrors Planner.cpp:10497-10501. Multi-component
+            ; tuples and named components keep tuple_type=void to avoid
+            ; disturbing the struct-construction and function-argument
+            ; paths.
+            var tuple_ty: PlannedType Planner.make_void_type#()
+            guard comps_arr.length = 1
+            {
+                let only_ptr_initial comps_arr.get(0)
+                guard only_ptr_initial <> null
+                {
+                    let only_initial (*only_ptr_initial)
+                    guard only_initial.name = null
+                    {
+                        guard only_initial.value <> null
+                        {
+                            let vals_initial (*only_initial.value)
+                            guard vals_initial.length > 0
+                            {
+                                let collapsed this.collapse_operand_sequence#(vals_initial)
+                                set tuple_ty: collapsed.result_type
+                            }
+                        }
+                    }
+                }
+            }
+
             var comps_holder Vector[PlannedComponent]^rp(comps_arr)
             PlannedTuple(
                 t.span,
                 &comps_holder,
-                Planner.make_void_type#(),
+                tuple_ty,
                 false,
                 Lifetime.Unspecified(Unspecified()),
                 null
