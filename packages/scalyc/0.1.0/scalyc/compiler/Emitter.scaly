@@ -1498,6 +1498,18 @@ define Emitter
     ; Emit an intrinsic unary operator
     function emit_intrinsic_unary_op(this, op_name: String, operand: LLVMValueRef, result_type: PlannedType) returns LLVMValueRef
     {
+        ; Session 34 ABI workaround: stage-0 alloca's a ptr-typed slot
+        ; aliased to the caller's storage when binding a single-ptr-field
+        ; struct param to a local. Reconstruct via .handle extract so
+        ; subsequent uses of `op` see a real LLVMValueRef.
+        var op LLVMValueRef(operand.handle)
+
+        ; Bail out cleanly if the upstream operand emitter returned a null
+        ; handle — better to emit a degraded ret void in the caller than
+        ; let LLVMBuildNeg crash dereferencing operand->getType().
+        guard op.handle = null
+            return LLVMValueRef(null)
+
         let ty map_type(result_type)
         let is_float is_floating_point_type(result_type)
 
@@ -1505,30 +1517,30 @@ define Emitter
         guard op_name.equals(String$("-"))
         {
             guard is_float
-                return LLVMBuildFNeg(builder, operand, "fneg")
+                return LLVMBuildFNeg(builder, op, "fneg")
 
-            return LLVMBuildNeg(builder, operand, "neg")
+            return LLVMBuildNeg(builder, op, "neg")
         }
 
         ; Unary plus (identity)
         guard op_name.equals(String$("+"))
-            return operand
+            return op
 
         ; Logical not
         guard op_name.equals(String$("!"))
-            return LLVMBuildNot(builder, operand, "not")
+            return LLVMBuildNot(builder, op, "not")
 
         ; Bitwise not
         guard op_name.equals(String$("~"))
-            return LLVMBuildNot(builder, operand, "bitnot")
+            return LLVMBuildNot(builder, op, "bitnot")
 
         ; Dereference
         guard op_name.equals(String$("*"))
-            return LLVMBuildLoad2(builder, ty, operand, "deref")
+            return LLVMBuildLoad2(builder, ty, op, "deref")
 
         ; Address-of (operand should already be a pointer)
         guard op_name.equals(String$("&"))
-            return operand
+            return op
 
         LLVMValueRef(null)
     }
@@ -1536,6 +1548,14 @@ define Emitter
     ; Emit an intrinsic binary operator
     function emit_intrinsic_binary_op(this, op_name: String, left: LLVMValueRef, right: LLVMValueRef, result_type: PlannedType) returns LLVMValueRef
     {
+        ; Session 34 ABI workaround for both LLVMValueRef params.
+        var l LLVMValueRef(left.handle)
+        var r LLVMValueRef(right.handle)
+        guard l.handle = null
+            return LLVMValueRef(null)
+        guard r.handle = null
+            return LLVMValueRef(null)
+
         let ty map_type(result_type)
         let is_float is_floating_point_type(result_type)
         let is_signed is_signed_type(result_type)
@@ -1544,137 +1564,137 @@ define Emitter
         guard op_name.equals(String$("+"))
         {
             guard is_float
-                return LLVMBuildFAdd(builder, left, right, "fadd")
+                return LLVMBuildFAdd(builder, l, r, "fadd")
 
-            return LLVMBuildAdd(builder, left, right, "add")
+            return LLVMBuildAdd(builder, l, r, "add")
         }
 
         ; Subtraction
         guard op_name.equals(String$("-"))
         {
             guard is_float
-                return LLVMBuildFSub(builder, left, right, "fsub")
+                return LLVMBuildFSub(builder, l, r, "fsub")
 
-            return LLVMBuildSub(builder, left, right, "sub")
+            return LLVMBuildSub(builder, l, r, "sub")
         }
 
         ; Multiplication
         guard op_name.equals(String$("*"))
         {
             guard is_float
-                return LLVMBuildFMul(builder, left, right, "fmul")
+                return LLVMBuildFMul(builder, l, r, "fmul")
 
-            return LLVMBuildMul(builder, left, right, "mul")
+            return LLVMBuildMul(builder, l, r, "mul")
         }
 
         ; Division
         guard op_name.equals(String$("/"))
         {
             guard is_float
-                return LLVMBuildFDiv(builder, left, right, "fdiv")
+                return LLVMBuildFDiv(builder, l, r, "fdiv")
 
             guard is_signed
-                return LLVMBuildSDiv(builder, left, right, "sdiv")
+                return LLVMBuildSDiv(builder, l, r, "sdiv")
 
-            return LLVMBuildUDiv(builder, left, right, "udiv")
+            return LLVMBuildUDiv(builder, l, r, "udiv")
         }
 
         ; Modulo
         guard op_name.equals(String$("%"))
         {
             guard is_float
-                return LLVMBuildFRem(builder, left, right, "frem")
+                return LLVMBuildFRem(builder, l, r, "frem")
 
             guard is_signed
-                return LLVMBuildSRem(builder, left, right, "srem")
+                return LLVMBuildSRem(builder, l, r, "srem")
 
-            return LLVMBuildURem(builder, left, right, "urem")
+            return LLVMBuildURem(builder, l, r, "urem")
         }
 
         ; Bitwise AND
         guard op_name.equals(String$("&"))
-            return LLVMBuildAnd(builder, left, right, "and")
+            return LLVMBuildAnd(builder, l, r, "and")
 
         ; Bitwise OR
         guard op_name.equals(String$("|"))
-            return LLVMBuildOr(builder, left, right, "or")
+            return LLVMBuildOr(builder, l, r, "or")
 
         ; Bitwise XOR
         guard op_name.equals(String$("^"))
-            return LLVMBuildXor(builder, left, right, "xor")
+            return LLVMBuildXor(builder, l, r, "xor")
 
         ; Left shift
         guard op_name.equals(String$("<<"))
-            return LLVMBuildShl(builder, left, right, "shl")
+            return LLVMBuildShl(builder, l, r, "shl")
 
         ; Right shift
         guard op_name.equals(String$(">>"))
         {
             guard is_signed
-                return LLVMBuildAShr(builder, left, right, "ashr")
+                return LLVMBuildAShr(builder, l, r, "ashr")
 
-            return LLVMBuildLShr(builder, left, right, "lshr")
+            return LLVMBuildLShr(builder, l, r, "lshr")
         }
 
         ; Comparison operators
         guard op_name.equals(String$("="))
         {
             guard is_float
-                return LLVMBuildFCmp(builder, LLVMRealPredicate.OEQ(), left, right, "eq")
+                return LLVMBuildFCmp(builder, LLVMRealPredicate.OEQ(), l, r, "eq")
 
-            return LLVMBuildICmp(builder, LLVMIntPredicate.EQ(), left, right, "eq")
+            return LLVMBuildICmp(builder, LLVMIntPredicate.EQ(), l, r, "eq")
         }
 
         guard op_name.equals(String$("<>"))
         {
             guard is_float
-                return LLVMBuildFCmp(builder, LLVMRealPredicate.ONE(), left, right, "ne")
+                return LLVMBuildFCmp(builder, LLVMRealPredicate.ONE(), l, r, "ne")
 
-            return LLVMBuildICmp(builder, LLVMIntPredicate.NE(), left, right, "ne")
+            return LLVMBuildICmp(builder, LLVMIntPredicate.NE(), l, r, "ne")
         }
 
         guard op_name.equals(String$("<"))
         {
             guard is_float
-                return LLVMBuildFCmp(builder, LLVMRealPredicate.OLT(), left, right, "lt")
+                return LLVMBuildFCmp(builder, LLVMRealPredicate.OLT(), l, r, "lt")
 
             guard is_signed
-                return LLVMBuildICmp(builder, LLVMIntPredicate.SLT(), left, right, "lt")
+                return LLVMBuildICmp(builder, LLVMIntPredicate.SLT(), l, r, "lt")
 
-            return LLVMBuildICmp(builder, LLVMIntPredicate.ULT(), left, right, "lt")
+            return LLVMBuildICmp(builder, LLVMIntPredicate.ULT(), l, r, "lt")
         }
 
         guard op_name.equals(String$("<="))
         {
             guard is_float
-                return LLVMBuildFCmp(builder, LLVMRealPredicate.OLE(), left, right, "le")
+                return LLVMBuildFCmp(builder, LLVMRealPredicate.OLE(), l, r, "le")
 
             guard is_signed
-                return LLVMBuildICmp(builder, LLVMIntPredicate.SLE(), left, right, "le")
+                return LLVMBuildICmp(builder, LLVMIntPredicate.SLE(), l, r, "le")
 
-            return LLVMBuildICmp(builder, LLVMIntPredicate.ULE(), left, right, "le")
+            return LLVMBuildICmp(builder, LLVMIntPredicate.ULE(), l, r, "le")
         }
 
         guard op_name.equals(String$(">"))
         {
             guard is_float
-                return LLVMBuildFCmp(builder, LLVMRealPredicate.OGT(), left, right, "gt")
+                return LLVMBuildFCmp(builder, LLVMRealPredicate.OGT(), l, r, "gt")
 
             guard is_signed
-                return LLVMBuildICmp(builder, LLVMIntPredicate.SGT(), left, right, "gt")
+                return LLVMBuildICmp(builder, LLVMIntPredicate.SGT(), l, r, "gt")
 
-            return LLVMBuildICmp(builder, LLVMIntPredicate.UGT(), left, right, "gt")
+            return LLVMBuildICmp(builder, LLVMIntPredicate.UGT(), l, r, "gt")
         }
 
         guard op_name.equals(String$(">="))
         {
             guard is_float
-                return LLVMBuildFCmp(builder, LLVMRealPredicate.OGE(), left, right, "ge")
+                return LLVMBuildFCmp(builder, LLVMRealPredicate.OGE(), l, r, "ge")
 
             guard is_signed
-                return LLVMBuildICmp(builder, LLVMIntPredicate.SGE(), left, right, "ge")
+                return LLVMBuildICmp(builder, LLVMIntPredicate.SGE(), l, r, "ge")
 
-            return LLVMBuildICmp(builder, LLVMIntPredicate.UGE(), left, right, "ge")
+            return LLVMBuildICmp(builder, LLVMIntPredicate.UGE(), l, r, "ge")
         }
 
         LLVMValueRef(null)

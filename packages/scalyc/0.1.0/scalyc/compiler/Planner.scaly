@@ -1914,17 +1914,57 @@ define Planner
                         let rt_ref this.resolve_prefix_operator_call#(
                             prefix_name, rest_result.result_type
                         )
-                        var rt: PlannedType this.fresh_type_var#(String$(""))
+                        ; For built-in primitive prefix ops the operator
+                        ; isn't in the registry — derive the result type
+                        ; from the operator. Mirrors Planner.cpp:4138-4157.
+                        var rt: PlannedType rest_result.result_type
                         guard rt_ref <> null
                             set rt: (*rt_ref)
+                        guard rt_ref = null
+                        {
+                            guard prefix_name.equals(String$("!"))
+                                set rt: Planner.make_bool_type#()
+                            guard prefix_name.equals(String$("not"))
+                                set rt: Planner.make_bool_type#()
+                            guard prefix_name.equals(String$("*"))
+                            {
+                                ; Dereference: result is the pointer's
+                                ; element type (first generic parameter).
+                                guard rest_result.result_type.generics <> null
+                                {
+                                    let gens (*rest_result.result_type.generics)
+                                    guard gens.length > 0
+                                    {
+                                        let g_ptr gens.get(0)
+                                        guard g_ptr <> null
+                                            set rt: (*g_ptr)
+                                    }
+                                }
+                            }
+                        }
 
                         let mangled this.mangle_unary_operator#(
                             prefix_name, rest_result.result_type
                         )
                         var args_v Vector[PlannedOperand]^rp(1)
                         args_v.put(0, rest_result)
-                        let call this.make_planned_call#(
-                            result.loc, prefix_name, mangled, rt, args_v
+                        ; Mirrors Planner.cpp:4131-4132 — prefix operators on
+                        ; primitive types are intrinsic (is_intrinsic=true,
+                        ; is_operator=true). emit_call dispatches to
+                        ; emit_intrinsic_operator instead of looking up a
+                        ; non-existent library function.
+                        var args_holder_p Vector[PlannedOperand]^rp(args_v)
+                        let call PlannedCall(
+                            result.loc,
+                            prefix_name,
+                            mangled,
+                            true,
+                            true,
+                            false,
+                            false,
+                            &args_holder_p,
+                            rt,
+                            Lifetime.Unspecified(Unspecified())
                         )
                         return PlannedOperand(
                             result.loc,
@@ -2216,7 +2256,10 @@ define Planner
                 }
 
                 ; Binary operator: op followed by rhs.
-                guard i + 1 < ops.length
+                ; guard runs the break when the condition is TRUE (Scaly
+                ; semantics, NOT Swift-inverted). Bail out when no rhs is
+                ; available.
+                guard i + 1 >= ops.length
                     break
 
                 let rhs_ptr ops.get(i + 1)
@@ -2241,12 +2284,20 @@ define Planner
                     var two_args Vector[PlannedOperand]^rp(2)
                     two_args.put(0, result)
                     two_args.put(1, rhs)
-                    let call this.make_planned_call#(
+                    var two_args_holder Vector[PlannedOperand]^rp(two_args)
+                    ; Mirrors Planner.cpp:4378-4379 — built-in binary
+                    ; operators on primitive types are intrinsic.
+                    let call PlannedCall(
                         result.loc,
                         op_name,
                         this.mangle_binary_operator#(op_name, result.result_type, rhs.result_type),
+                        true,
+                        true,
+                        false,
+                        false,
+                        &two_args_holder,
                         combined_type,
-                        two_args
+                        Lifetime.Unspecified(Unspecified())
                     )
                     set result: PlannedOperand(
                         result.loc,
