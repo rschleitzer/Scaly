@@ -1586,9 +1586,14 @@ define Planner
             guard Planner.needs_implicit_return_page(f)
                 set has_page: true
 
-            let mangled Planner.mangle_free_function_from_types#(
-                f.name, params_holder, has_page
-            )
+            ; Extern C functions use their unmangled name so the linker
+            ; finds them in libc / system libraries. Mirrors
+            ; Planner.cpp:9714-9716.
+            var mangled: String String^rp(f.name)
+            guard Planner.is_extern_impl(f.implementation) = false
+                set mangled: Planner.mangle_free_function_from_types#(
+                    f.name, params_holder, has_page
+                )
 
             var can_throw: bool false
             var throws_ref: ref[PlannedType]? null
@@ -3140,17 +3145,17 @@ define Planner
                     let name (*n_ptr)
 
                     ; Local variable lookup.
-                    let local this.lookup_local(name)
+                    let local this.lookup_local_binding(name)
                     guard local <> null
                     {
-                        let ty (*local)
+                        let lb (*local)
                         return PlannedOperand(
                             loc,
                             PlannedExpression.Variable(PlannedVariable(
-                                loc, name, ty, false
+                                loc, name, lb.binding_type, lb.is_mutable
                             )),
                             null,
-                            ty
+                            lb.binding_type
                         )
                     }
                 }
@@ -4332,9 +4337,11 @@ define Planner
             let collapsed this.collapse_operand_sequence#(planned_ops_flat)
             let planned_item this.plan_item#(b.item)
 
-            ; Use the annotated type if present; fall back to a fresh
-            ; type variable so the constraint solver can fill it in later.
-            var binding_type: PlannedType this.fresh_type_var#(String$(""))
+            ; Use the annotated type if present; otherwise infer from the
+            ; initializer's result type so emit_variable can map_type the
+            ; binding without waiting for constraint resolution. Mirrors
+            ; Planner.cpp:10950-10974.
+            var binding_type: PlannedType collapsed.result_type
             guard planned_item.item_type <> null
                 set binding_type: (*planned_item.item_type)
 
