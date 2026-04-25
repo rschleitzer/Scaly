@@ -1162,7 +1162,10 @@ define Emitter
     ; Emit member access chain (e.g., person.address.city)
     function emit_member_access_chain(this, base_value: LLVMValueRef, chain: Vector[PlannedMemberAccess], result_type: PlannedType) returns LLVMValueRef
     {
-        var current_value base_value
+        ; Force struct-typed alloca via .handle extract + reconstruct.
+        ; `var current_value base_value` would alloca a ptr-typed slot
+        ; aliased to the caller's storage, breaking later extern LLVM calls.
+        var current_value LLVMValueRef(base_value.handle)
 
         ; If base value is a pointer, we may need to load the struct
         guard LLVMGetTypeKind(LLVMTypeOf(current_value)) = LLVMTypeKind.Pointer()
