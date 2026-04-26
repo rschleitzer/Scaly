@@ -8175,19 +8175,49 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                     if (UnionIt == InstantiatedUnions.end() && !CurrentNamespaceName.empty()) {
                         UnionIt = InstantiatedUnions.find(CurrentNamespaceName + "::" + UnionName);
                     }
-                    if (UnionIt != InstantiatedUnions.end()) {
-                        const PlannedUnion& Union = UnionIt->second;
 
-                        // Find the variant
+                    // Lazy fallback: if Union hasn't been planned yet, look up the
+                    // sibling Concept directly and derive the variant tag from the
+                    // AST `Variants` vector index. Required for cross-arm references
+                    // before sibling planning runs (e.g., Modeler.scaly's first
+                    // `Definition.Structure(...)` arm before Definition is planned).
+                    const scaly::Union* DirectUnion = nullptr;
+                    std::string DirectMangledName;
+                    if (UnionIt == InstantiatedUnions.end()) {
+                        const Concept* SibConc = lookupConcept(UnionName);
+                        if (SibConc) {
+                            if (auto* U = std::get_if<scaly::Union>(&SibConc->Def)) {
+                                DirectUnion = U;
+                                DirectMangledName = mangleStructure(SibConc->Name, {});
+                            }
+                        }
+                    }
+
+                    if (UnionIt != InstantiatedUnions.end() || DirectUnion) {
                         const PlannedVariant* FoundVariant = nullptr;
-                        for (const auto& Var : Union.Variants) {
-                            if (Var.Name == VariantName) {
-                                FoundVariant = &Var;
-                                break;
+                        std::string ResolvedMangledName;
+                        int DirectTag = -1;
+
+                        if (UnionIt != InstantiatedUnions.end()) {
+                            const PlannedUnion& Union = UnionIt->second;
+                            ResolvedMangledName = Union.MangledName;
+                            for (const auto& Var : Union.Variants) {
+                                if (Var.Name == VariantName) {
+                                    FoundVariant = &Var;
+                                    break;
+                                }
+                            }
+                        } else {
+                            ResolvedMangledName = DirectMangledName;
+                            for (size_t vi = 0; vi < DirectUnion->Variants.size(); ++vi) {
+                                if (DirectUnion->Variants[vi].Name == VariantName) {
+                                    DirectTag = static_cast<int>(vi);
+                                    break;
+                                }
                             }
                         }
 
-                        if (FoundVariant) {
+                        if (FoundVariant || DirectTag >= 0) {
                             // Plan the tuple argument
                             Operand ArgsOp = NextOp;
                             ArgsOp.MemberAccess = nullptr;
@@ -8210,14 +8240,14 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                             PlannedType UnionType;
                             UnionType.Loc = Op.Loc;
                             UnionType.Name = UnionName;
-                            UnionType.MangledName = Union.MangledName;
+                            UnionType.MangledName = ResolvedMangledName;
 
                             // Create the variant construction
                             PlannedVariantConstruction VarConstruct;
                             VarConstruct.Loc = Op.Loc;
                             VarConstruct.UnionType = UnionType;
                             VarConstruct.VariantName = VariantName;
-                            VarConstruct.VariantTag = FoundVariant->Tag;
+                            VarConstruct.VariantTag = FoundVariant ? FoundVariant->Tag : DirectTag;
                             VarConstruct.Value = ArgValue;
 
                             PlannedOperand ResultOp;
