@@ -3209,6 +3209,60 @@ define Planner
                             lb.binding_type
                         )
                     }
+
+                    ; Implicit property access: when `name` matches a
+                    ; field on T and `this: pointer[T]` is in scope,
+                    ; rewrite as Variable("this") + member_access [name].
+                    ; Mirrors Planner.cpp:7055-7097. Strings used in the
+                    ; returned operand must live on rp, not the local
+                    ; page — otherwise their data is freed when the
+                    ; function returns.
+                    let this_ref this.lookup_local(String#("this"))
+                    guard this_ref <> null
+                    {
+                        let this_ty (*this_ref)
+                        guard this_ty.name.equals(String$("pointer"))
+                        {
+                            guard this_ty.generics <> null
+                            {
+                                let gens (*this_ty.generics)
+                                guard gens.length > 0
+                                {
+                                    let inner_ptr gens.get(0)
+                                    guard inner_ptr <> null
+                                    {
+                                        let inner (*inner_ptr)
+                                        let prop_ref this.lookup_property(inner.name, name)
+                                        guard prop_ref <> null
+                                        {
+                                            let prop (*prop_ref)
+                                            var prop_type: PlannedType this.fresh_type_var#(String#(""))
+                                            guard prop.type <> null
+                                            {
+                                                let pt2 (*prop.type)
+                                                set prop_type: this.plan_type#(pt2)
+                                            }
+                                            let idx this.get_property_index(inner.name, name)
+                                            var ma_arr Array[PlannedMemberAccess]^rp()
+                                            ma_arr.add(PlannedMemberAccess(
+                                                name, idx as size_t, false, false,
+                                                inner, prop_type
+                                            ))
+                                            var ma_holder Vector[PlannedMemberAccess]^rp(ma_arr)
+                                            return PlannedOperand(
+                                                loc,
+                                                PlannedExpression.Variable(PlannedVariable(
+                                                    loc, String#("this"), this_ty, false
+                                                )),
+                                                &ma_holder,
+                                                prop_type
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
 
