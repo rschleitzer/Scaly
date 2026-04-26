@@ -4881,7 +4881,16 @@ define Planner
                         {
                             let n (*item.name)
                             let t (*item.item_type)
-                            this.define_local(n, t, false, false)
+                            ; For 'this', the local-scope binding should be
+                            ; pointer[T] (struct-by-pointer ABI), so field
+                            ; access auto-derefs. Mirrors Planner.cpp:11781-11790.
+                            guard n.equals(String$("this"))
+                            {
+                                let ptr_t Planner.make_pointer_type#(t)
+                                this.define_local(n, ptr_t, false, false)
+                            }
+                            guard n.equals(String$("this")) = false
+                                this.define_local(n, t, false, false)
                         }
                     }
                 }

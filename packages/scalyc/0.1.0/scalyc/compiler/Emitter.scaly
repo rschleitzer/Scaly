@@ -750,7 +750,20 @@ define Emitter
                         {
                             let item_type item.item_type.unwrap()
                             let llvm_param_type map_type(item_type)
-                            param_types.put(i, llvm_param_type)
+                            ; Pass struct/array types by pointer (borrowed),
+                            ; primitives by value. Mirrors Emitter.cpp:1257-1268.
+                            let kind LLVMGetTypeKind(llvm_param_type)
+                            var pass_by_ptr: bool false
+                            guard kind = LLVMTypeKind.Struct()
+                                set pass_by_ptr: true
+                            guard kind = LLVMTypeKind.Array()
+                                set pass_by_ptr: true
+                            guard pass_by_ptr
+                            {
+                                param_types.put(i, LLVMPointerTypeInContext(context, 0))
+                            }
+                            guard pass_by_ptr = false
+                                param_types.put(i, llvm_param_type)
                         }
                     }
                     set i: i + 1
