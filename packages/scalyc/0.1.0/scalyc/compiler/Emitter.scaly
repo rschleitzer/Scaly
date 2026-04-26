@@ -2327,12 +2327,13 @@ define Emitter
                 }
 
                 ; Emit consequent
-                choose when_case.consequent
-                    when stmt_ref: Some
-                    {
-                        emit_statement(*stmt_ref)
-                    }
-                    else { }
+                ; choose ref[T]? when x: Some yields a stale binding (session 25/28).
+                ; Use guard + deref instead.
+                guard when_case.consequent <> null
+                {
+                    let r when_case.consequent
+                    emit_statement(*r)
+                }
 
                 let case_term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock(builder))
                 guard case_term.handle = null
@@ -2342,12 +2343,11 @@ define Emitter
 
         ; Emit alternative (else)
         LLVMPositionBuilderAtEnd(builder, default_block)
-        choose choose_expr.alternative
-            when stmt_ref: Some
-            {
-                emit_statement(*stmt_ref)
-            }
-            else { }
+        guard choose_expr.alternative <> null
+        {
+            let r choose_expr.alternative
+            emit_statement(*r)
+        }
         let alt_term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock(builder))
         guard alt_term.handle = null
             LLVMBuildBr(builder, merge_block)
