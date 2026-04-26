@@ -4835,6 +4835,39 @@ define Planner
 
             let planned_input this.plan_items#(f.input)
 
+            ; Patch `this` parameter to carry the enclosing type. The Modeler
+            ; produces an Item with no explicit type for `this`, so plan_item#
+            ; returns a PlannedItem with item_type=null. Without this patch,
+            ; emit_function_decl skips `this` (no item_type → no LLVMTypeRef
+            ; pushed) and LLVMGetParam later crashes on a null Argument type.
+            ; Mirrors Planner.cpp:11765-11778.
+            guard parent <> null
+            {
+                var ti: size_t 0
+                while ti < planned_input.length
+                {
+                    let item_ptr planned_input.get(ti)
+                    guard item_ptr <> null
+                    {
+                        let item (*item_ptr)
+                        guard item.name <> null and item.item_type = null
+                        {
+                            let n (*item.name)
+                            guard n.equals(String$("this"))
+                            {
+                                let p (*parent)
+                                var type_holder Vector[PlannedType]^rp(1)
+                                type_holder.put(0, p)
+                                var patched item
+                                set patched.item_type: type_holder.get(0)
+                                planned_input.put(ti, patched)
+                            }
+                        }
+                    }
+                    set ti: ti + 1
+                }
+            }
+
             var i: size_t 0
             while i < planned_input.length
             {
