@@ -3582,29 +3582,35 @@ define Planner
                 }
             }
             guard planned_cond.binding_item.name <> null
-                and planned_cond.binding_item.item_type <> null
-                and planned_cond.operation <> null
             {
-                let ops (*planned_cond.operation)
-                guard ops.length > 0
+                guard planned_cond.binding_item.item_type <> null
                 {
-                    let last_ptr ops.get(ops.length - 1)
-                    guard last_ptr <> null
+                    guard planned_cond.operation <> null
                     {
-                        let op_ty (*last_ptr).result_type
-                        guard op_ty.name.equals(String$("Option"))
-                            and op_ty.generics <> null
+                        let ops (*planned_cond.operation)
+                        guard ops.length > 0
                         {
-                            let gens (*op_ty.generics)
-                            guard gens.length > 0
+                            let last_ptr ops.get(ops.length - 1)
+                            guard last_ptr <> null
                             {
-                                let payload_ptr gens.get(0)
-                                guard payload_ptr <> null
+                                let op_ty (*last_ptr).result_type
+                                guard op_ty.name.equals(String$("Option"))
                                 {
-                                    let bt (*planned_cond.binding_item.item_type)
-                                    this.add_equality_constraint(
-                                        bt, (*payload_ptr), w.span
-                                    )
+                                    guard op_ty.generics <> null
+                                    {
+                                        let gens (*op_ty.generics)
+                                        guard gens.length > 0
+                                        {
+                                            let payload_ptr gens.get(0)
+                                            guard payload_ptr <> null
+                                            {
+                                                let bt (*planned_cond.binding_item.item_type)
+                                                this.add_equality_constraint(
+                                                    bt, (*payload_ptr), w.span
+                                                )
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
