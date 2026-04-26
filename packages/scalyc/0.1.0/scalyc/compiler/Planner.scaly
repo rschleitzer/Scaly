@@ -4082,6 +4082,12 @@ define Planner
         ; ================================================================
 
         ; plan_component: Model.Component → PlannedComponent.
+        ; Mirrors Planner.cpp:10499-10512 — each component's operand
+        ; sequence is collapsed so prefix ops like `*p` and method-call
+        ; arguments resolve against the collapsed result rather than the
+        ; raw operand sequence. emit_tuple's grouping shortcut emits
+        ; comp.value[0], so without this collapse `(*p).field` would
+        ; emit only the leading `Type("*")` operand and produce null.
         function plan_component#(rp, this: Planner, c: Component) returns PlannedComponent
         {
             let planned_value this.plan_operands#(c.value)
@@ -4093,7 +4099,40 @@ define Planner
                 holder.put(0, String^rp(n))
                 set name_ref: holder.get(0)
             }
+            ; Collapse only when the operand sequence starts with a
+            ; prefix operator (`*p`, `-x`, `!flag`, ...). emit_tuple's
+            ; grouping shortcut emits comp.value[0], so without this
+            ; collapse `(*p).field` would emit only the leading
+            ; `Type("*")` operand and produce null. Other shapes are
+            ; left untouched — running them through
+            ; collapse_operand_sequence# adds String allocations that
+            ; surface a latent dangling-String bug in
+            ; resolve_function_call when stage-1 self-compiles.
+            var should_collapse: bool false
+            guard planned_value.length > 1
+            {
+                let f0_ptr planned_value.get(0)
+                guard f0_ptr <> null
+                {
+                    let f0 (*f0_ptr)
+                    choose f0.expr
+                        when ty: PlannedType
+                        {
+                            guard Planner.is_operator_name(ty.name)
+                                set should_collapse: true
+                        }
+                        else
+                            0
+                }
+            }
             var value_holder Vector[PlannedOperand]^rp(planned_value)
+            guard should_collapse
+            {
+                let collapsed this.collapse_operand_sequence#(planned_value)
+                var collapsed_arr Array[PlannedOperand]^rp()
+                collapsed_arr.add(collapsed)
+                set value_holder: Vector[PlannedOperand]^rp(collapsed_arr)
+            }
             PlannedComponent(c.span, name_ref, &value_holder, null)
         }
 

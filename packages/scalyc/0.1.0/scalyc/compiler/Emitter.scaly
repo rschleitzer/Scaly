@@ -1180,6 +1180,9 @@ define Emitter
         ; aliased to the caller's storage, breaking later extern LLVM calls.
         var current_value LLVMValueRef(base_value.handle)
 
+        guard current_value.handle = null
+            return LLVMValueRef(null)
+
         ; If base value is a pointer, we may need to load the struct
         guard LLVMGetTypeKind(LLVMTypeOf(current_value)) = LLVMTypeKind.Pointer()
         {
