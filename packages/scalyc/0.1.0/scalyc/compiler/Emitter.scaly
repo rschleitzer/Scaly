@@ -3166,42 +3166,82 @@ define Emitter
     ; Helper for member field assignment
     function emit_member_assignment(this, var_ptr: LLVMValueRef, planned_var: PlannedVariable, members: ref[Vector[PlannedMemberAccess]]?, value: LLVMValueRef) returns LLVMValueRef
     {
-        ; Get the struct type from the variable type
-        var current_ptr var_ptr
-        var current_type map_type(planned_var.variable_type)
+        ; Force struct-typed alloca via .handle reconstruction (session 34
+        ; ABI workaround: stage-0 alloca's a ptr-typed slot aliasing
+        ; caller's storage when binding a single-ptr-field struct param).
+        var current_ptr LLVMValueRef(var_ptr.handle)
+        var stored_value LLVMValueRef(value.handle)
 
-        ; If variable is pointer[T], we need to load the pointer first
-        guard planned_var.variable_type.name.equals(String$("pointer"))
+        ; Determine the struct type for GEP. For `this` (pointer[T]) we
+        ; want T's struct type directly. For non-pointer locals we use
+        ; the variable type. Stage-0 has an ABI bug passing PlannedType
+        ; by-value as a struct-field arg — copy fields into locals first.
+        let var_ty planned_var.variable_type
+        let var_ty_name var_ty.name
+        let is_pointer var_ty_name.equals(String$("pointer"))
+        let is_this planned_var.name.equals(String$("this"))
+
+        var current_type LLVMTypeRef(null)
+        guard is_pointer = false
+            set current_type: map_type(var_ty)
+        guard is_pointer
         {
-            let ptr_type LLVMPointerTypeInContext(context, 0)
-            set current_ptr: LLVMBuildLoad2(builder, ptr_type, var_ptr, "ptr.load")
-
-            ; Get the inner type for struct access
-            guard planned_var.variable_type.generics <> null
+            ; Pointer-typed local: load the pointer first (unless this).
+            guard is_this = false
             {
-                guard planned_var.variable_type.generics.length > 0
+                let ptr_type LLVMPointerTypeInContext(context, 0)
+                set current_ptr: LLVMValueRef(LLVMBuildLoad2(builder, ptr_type, current_ptr, "ptr.load").handle)
+            }
+            ; Inner generic = struct type for GEP.
+            guard var_ty.generics <> null
+            {
+                let gens (*var_ty.generics)
+                guard gens.length > 0
                 {
-                    choose planned_var.variable_type.generics.get(0)
-                        when inner_type: Some
-                        {
-                            set current_type: map_type(*inner_type)
-                        }
-                        else { }
+                    let inner_opt gens.get(0)
+                    guard inner_opt <> null
+                    {
+                        let inner (*inner_opt)
+                        set current_type: map_type(inner)
+                    }
                 }
             }
         }
 
-        ; Navigate through member access chain
-        for member in members
+        ; Navigate through member access chain. `members` is
+        ; ref[Vector[...]]? — unwrap and deref to the Vector first.
+        ; Skip the trailing map_type(member.result_type) on the LAST
+        ; hop — current_type is only used to set up the next GEP, so
+        ; the last iteration's update is wasted, and stage-0 has an
+        ; ABI bug passing PlannedType-by-value as a struct-field arg.
+        guard members <> null
         {
-            let field_ptr LLVMBuildStructGEP2(builder, current_type, current_ptr, member.field_index as int, member.name.c_data())
-            set current_ptr: field_ptr
-            set current_type: map_type(member.result_type)
+            let chain_ref members
+            let chain (*chain_ref)
+            let n chain.length
+            var i: size_t 0
+            while i < n
+            {
+                let member_ptr chain.get(i)
+                guard member_ptr <> null
+                {
+                    let member member_ptr.unwrap()
+                    let field_ptr LLVMBuildStructGEP2(builder, current_type, current_ptr, member.field_index as int, member.name.c_data())
+                    set current_ptr: LLVMValueRef(field_ptr.handle)
+                    let next i + 1
+                    guard next < n
+                    {
+                        let rt member.result_type
+                        set current_type: map_type(rt)
+                    }
+                }
+                set i: i + 1
+            }
         }
 
         ; Store the value to the final field
-        LLVMBuildStore(builder, value, current_ptr)
-        value
+        LLVMBuildStore(builder, stored_value, current_ptr)
+        stored_value
     }
 
     ; Emit a binding (let/var declaration)
