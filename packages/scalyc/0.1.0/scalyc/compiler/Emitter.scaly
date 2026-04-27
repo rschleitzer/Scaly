@@ -775,11 +775,11 @@ define Emitter
         let func_type LLVMFunctionType(llvm_return_type, param_types_ptr, param_count as int, 0)
 
         ; Use unmangled "main" for linker compatibility (C entry point)
-        var func_name func.mangled_name
+        var func_cstr func.mangled_name.c_data()
         guard func.name.equals(String$("main"))
-            set func_name: String$("main")
+            set func_cstr: "main"
 
-        let llvm_func LLVMAddFunction(llvm_module, func_name.c_data(), func_type)
+        let llvm_func LLVMAddFunction(llvm_module, func_cstr, func_type)
 
         ; Set linkage
         if func.is_private
