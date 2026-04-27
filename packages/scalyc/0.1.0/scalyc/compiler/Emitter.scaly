@@ -74,6 +74,7 @@ use scaly.compiler.LLVM.LLVMAppendBasicBlockInContext
 use scaly.compiler.LLVM.LLVMBuildAShr
 use scaly.compiler.LLVM.LLVMBuildAdd
 use scaly.compiler.LLVM.LLVMBuildAlloca
+use scaly.compiler.LLVM.LLVMBuildGlobalStringPtr
 use scaly.compiler.LLVM.LLVMBuildAnd
 use scaly.compiler.LLVM.LLVMBuildBitCast
 use scaly.compiler.LLVM.LLVMBuildBr
@@ -918,7 +919,10 @@ define Emitter
             }
             when s: String
             {
-                return LLVMConstStringInContext(context, s.value.c_data(), s.value.length as int, 0)
+                ; Emit as a private global [N x i8] and return a ptr
+                ; (CreateGlobalStringPtr). Inlined [N x i8] would mismatch
+                ; ptr-typed parameters at call sites.
+                return LLVMBuildGlobalStringPtr(builder, s.value.c_data(), ".str")
             }
             when c: Character
             {

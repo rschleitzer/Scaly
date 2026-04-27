@@ -342,6 +342,7 @@ function LLVMBuildFCmp(builder: LLVMBuilderRef, op: int, lhs: LLVMValueRef, rhs:
 ; ============================================================================
 
 function LLVMBuildAlloca(builder: LLVMBuilderRef, type: LLVMTypeRef, name: pointer[const_char]) returns LLVMValueRef extern
+function LLVMBuildGlobalStringPtr(builder: LLVMBuilderRef, str: pointer[const_char], name: pointer[const_char]) returns LLVMValueRef extern
 function LLVMBuildArrayAlloca(builder: LLVMBuilderRef, type: LLVMTypeRef, val: LLVMValueRef, name: pointer[const_char]) returns LLVMValueRef extern
 function LLVMBuildLoad2(builder: LLVMBuilderRef, type: LLVMTypeRef, ptr: LLVMValueRef, name: pointer[const_char]) returns LLVMValueRef extern
 function LLVMBuildStore(builder: LLVMBuilderRef, val: LLVMValueRef, ptr: LLVMValueRef) returns LLVMValueRef extern
