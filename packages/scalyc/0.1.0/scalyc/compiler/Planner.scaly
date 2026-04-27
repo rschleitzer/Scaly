@@ -5044,9 +5044,15 @@ define Planner
             guard Planner.needs_implicit_return_page(f)
                 set has_page: true
 
-            let mangled Planner.mangle_function#(
-                f.name, &input_holder, parent, has_page
-            )
+            ; Extern C functions keep their unmangled name so LLVM can
+            ; resolve them against libc / system libraries. Mirrors
+            ; Planner.cpp:11806-11808's IsExtern ? Func.Name : mangle.
+            var mangled_holder Vector[String]^rp(1)
+            guard Planner.is_extern_impl(f.implementation)
+                mangled_holder.put(0, String#(f.name))
+            guard Planner.is_extern_impl(f.implementation) = false
+                mangled_holder.put(0, Planner.mangle_function#(f.name, &input_holder, parent, has_page))
+            let mangled (*mangled_holder.get(0))
 
             var can_throw: bool false
             guard throws_type <> null
