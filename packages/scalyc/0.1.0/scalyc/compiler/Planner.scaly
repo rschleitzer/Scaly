@@ -3195,6 +3195,26 @@ define Planner
                 {
                     let name (*n_ptr)
 
+                    ; Bare null/true/false at expression position parse as
+                    ; Type names; rewrite them as Constant operands so the
+                    ; emitter sees the right shape. Mirrors
+                    ; Planner.cpp:10148-10160.
+                    guard name.equals(String$("null"))
+                    {
+                        let c Constant.Null(NullConstant(loc))
+                        return this.plan_constant_operand#(c, loc)
+                    }
+                    guard name.equals(String$("true"))
+                    {
+                        let c Constant.Boolean(BooleanConstant(loc, true))
+                        return this.plan_constant_operand#(c, loc)
+                    }
+                    guard name.equals(String$("false"))
+                    {
+                        let c Constant.Boolean(BooleanConstant(loc, false))
+                        return this.plan_constant_operand#(c, loc)
+                    }
+
                     ; Local variable lookup.
                     let local this.lookup_local_binding(name)
                     guard local <> null
@@ -4111,15 +4131,18 @@ define Planner
                 holder.put(0, String^rp(n))
                 set name_ref: holder.get(0)
             }
-            ; Collapse only when the operand sequence starts with a
-            ; prefix operator (`*p`, `-x`, `!flag`, ...). emit_tuple's
-            ; grouping shortcut emits comp.value[0], so without this
-            ; collapse `(*p).field` would emit only the leading
-            ; `Type("*")` operand and produce null. Other shapes are
-            ; left untouched — running them through
-            ; collapse_operand_sequence# adds String allocations that
-            ; surface a latent dangling-String bug in
-            ; resolve_function_call when stage-1 self-compiles.
+            ; Collapse when the operand sequence either starts with a
+            ; prefix operator (`*p`, `-x`, `!flag`, ...) or contains a
+            ; postfix `as`/`is` operand (`x as T`, `y is V`). emit_tuple's
+            ; grouping shortcut emits comp.value[0]; without collapse,
+            ; `(*p).field` would emit only the leading `Type("*")`
+            ; operand and `f(x as T)` would surface as two args to f
+            ; (`extract_tuple_arg_types` reads each operand's
+            ; result_type), failing arity match. Other shapes are left
+            ; untouched — running them through collapse_operand_sequence#
+            ; adds String allocations that surface a latent
+            ; dangling-String bug in resolve_function_call when stage-1
+            ; self-compiles.
             var should_collapse: bool false
             guard planned_value.length > 1
             {
@@ -4135,6 +4158,26 @@ define Planner
                         }
                         else
                             0
+                }
+                guard should_collapse = false
+                {
+                    var k: size_t 1
+                    while k < planned_value.length
+                    {
+                        let op_ptr planned_value.get(k)
+                        guard op_ptr <> null
+                        {
+                            let op (*op_ptr)
+                            choose op.expr
+                                when a: PlannedAs
+                                    set should_collapse: true
+                                when i: PlannedIs
+                                    set should_collapse: true
+                                else
+                                    0
+                        }
+                        set k: k + 1
+                    }
                 }
             }
             var value_holder Vector[PlannedOperand]^rp(planned_value)
