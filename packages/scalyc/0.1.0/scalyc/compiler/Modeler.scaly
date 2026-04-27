@@ -99,6 +99,7 @@ use scaly.compiler.Syntax.GenericArgumentsSyntax
 use scaly.compiler.Syntax.ExpressionSyntax
 use scaly.compiler.Syntax.OperandSyntax
 use scaly.compiler.Syntax.StatementSyntax
+use scaly.compiler.Syntax.EmptySyntax
 use scaly.compiler.Syntax.OperationSyntax
 use scaly.compiler.Syntax.LetSyntax
 use scaly.compiler.Syntax.VarSyntax
@@ -1044,16 +1045,44 @@ function handle_statements#(syntax: ref[Vector[StatementSyntax]]?) returns Vecto
         return Vector[Statement]#(0)
 
     let stmts (*syntax)
-    var result Vector[Statement]#(stmts.length)
+
+    ; Count non-Empty statements. EmptySyntax is a blank-line marker the
+    ; parser emits between real statements; it carries no value, and
+    ; admitting it as a trailing void Action would clobber the block's
+    ; last-value tracking. Mirrors Modeler.cpp:564-565.
+    var keep: size_t 0
+    var c: size_t 0
+    while c < stmts.length
+    {
+        let p stmts.get(c)
+        guard p <> null
+        {
+            let s (*p)
+            choose s
+                when e: EmptySyntax {}
+                else
+                    set keep: keep + 1
+        }
+        set c: c + 1
+    }
+
+    var result Vector[Statement]#(keep)
     var i: size_t 0
+    var w: size_t 0
     while i < stmts.length
     {
         let stmt_ptr stmts.get(i)
         guard stmt_ptr <> null
         {
             let stmt_syntax (*stmt_ptr)
-            let stmt handle_statement#(stmt_syntax)
-            result.put(i, stmt)
+            choose stmt_syntax
+                when e: EmptySyntax {}
+                else
+                {
+                    let stmt handle_statement#(stmt_syntax)
+                    result.put(w, stmt)
+                    set w: w + 1
+                }
         }
         set i: i + 1
     }

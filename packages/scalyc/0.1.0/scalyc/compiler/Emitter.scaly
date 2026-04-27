@@ -2882,6 +2882,9 @@ define Emitter
             return LLVMValueRef(null)
 
         let src_value emit_operand(as_expr.value.unwrap())
+        guard src_value.handle = null
+            return LLVMValueRef(null)
+
         let src_type LLVMTypeOf(src_value)
         let dst_type map_type(as_expr.target_type)
 
