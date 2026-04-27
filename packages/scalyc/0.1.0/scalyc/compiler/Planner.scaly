@@ -3928,12 +3928,15 @@ define Planner
                     }
                     set wi: wi + 1
                 }
-                guard alternative_ref <> null and have_first
+                guard alternative_ref <> null
                 {
-                    let alt (*alternative_ref)
-                    let alt_ty Planner.statement_result_type(alt)
-                    guard alt_ty.name.equals(String$("void")) = false
-                        this.add_equality_constraint(first_ty, alt_ty, c.span)
+                    guard have_first
+                    {
+                        let alt (*alternative_ref)
+                        let alt_ty Planner.statement_result_type(alt)
+                        guard alt_ty.name.equals(String$("void")) = false
+                            this.add_equality_constraint(first_ty, alt_ty, c.span)
+                    }
                 }
             }
 
@@ -4069,12 +4072,15 @@ define Planner
                     }
                     set bi: bi + 1
                 }
-                guard alternative_ref <> null and have_first
+                guard alternative_ref <> null
                 {
-                    let alt (*alternative_ref)
-                    let alt_ty Planner.statement_result_type(alt)
-                    guard alt_ty.name.equals(String$("void")) = false
-                        this.add_equality_constraint(first_ty, alt_ty, m.span)
+                    guard have_first
+                    {
+                        let alt (*alternative_ref)
+                        let alt_ty Planner.statement_result_type(alt)
+                        guard alt_ty.name.equals(String$("void")) = false
+                            this.add_equality_constraint(first_ty, alt_ty, m.span)
+                    }
                 }
             }
 
@@ -4949,17 +4955,20 @@ define Planner
                     guard item_ptr <> null
                     {
                         let item (*item_ptr)
-                        guard item.name <> null and item.item_type = null
+                        guard item.name <> null
                         {
-                            let n (*item.name)
-                            guard n.equals(String$("this"))
+                            guard item.item_type = null
                             {
-                                let p (*parent)
-                                var type_holder Vector[PlannedType]^rp(1)
-                                type_holder.put(0, p)
-                                var patched item
-                                set patched.item_type: type_holder.get(0)
-                                planned_input.put(ti, patched)
+                                let n (*item.name)
+                                guard n.equals(String$("this"))
+                                {
+                                    let p (*parent)
+                                    var type_holder Vector[PlannedType]^rp(1)
+                                    type_holder.put(0, p)
+                                    var patched item
+                                    set patched.item_type: type_holder.get(0)
+                                    planned_input.put(ti, patched)
+                                }
                             }
                         }
                     }
