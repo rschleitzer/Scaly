@@ -284,6 +284,7 @@ define cli
         ; ================================================================
 
         var planner Planner.Planner$(opts.input_file)
+        cli.register_packages(&planner, &model)
         let plan planner.plan_program(model)
 
         guard plan = null
@@ -372,6 +373,24 @@ define cli
 
     ; Extract program name from file path
     ; e.g., "/path/to/hello.scaly" -> "hello"
+    ; Pre-register packages from the model into the planner's cache so
+    ; load_package_on_demand# can resolve them. Mirrors stage-0's resolved-
+    ; package wiring. We hand off Module by reference; the helper exists in
+    ; procedure form so each `register` call is at function-statement
+    ; granularity (avoids the same in-place Vector[Module].add codegen
+    ; pitfall worked around in Modeler.scaly).
+    procedure register_packages(planner: ref[Planner.Planner], model: ref[Program])
+    {
+        var i: size_t 0
+        while i < model.packages.length
+        {
+            let pkg_ptr model.packages.get(i)
+            guard pkg_ptr <> null
+                planner.register_loaded_package(pkg_ptr.name, *pkg_ptr)
+            set i: i + 1
+        }
+    }
+
     function extract_program_name#(file_path: String) returns String
     {
         ; Find last '/' or '\'

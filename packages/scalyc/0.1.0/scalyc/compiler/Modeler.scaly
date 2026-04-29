@@ -2087,6 +2087,50 @@ procedure handle_module_decl#(path: String, mod_syntax: ModuleSyntax, is_private
     modules.add(loaded)
 }
 
+; Format a VersionSyntax payload as "<majorMinor>.<patch>". The lexer
+; already formatted majorMinor as "0.1" (FloatingPoint) or "0" (Integer).
+function format_version#(rp, version_ref: ref[VersionSyntax]) returns String
+{
+    let v (*version_ref)
+    var sb StringBuilder$()
+    choose v.majorMinor
+        when fp: FloatingPoint
+            sb.append(fp.value)
+        when i: Integer
+            sb.append(i.value)
+        else
+            sb.append("0.1")
+    sb.append("." as char)
+    choose v.patch
+        when i: Integer
+            sb.append(i.value)
+        else
+            sb.append("0")
+    sb.to_string^rp()
+}
+
+; Try `<base>/<name>/<version>/<name>.scaly`. Returns true and writes the
+; loaded module to `out` on success; false otherwise. Out parameter avoids
+; constructing an "empty" Module that the caller would have to filter.
+procedure handle_package_decl#(pkg_syntax: PackageSyntax, packages: ref[Vector[Module]])
+{
+    let pkg_name pkg_syntax.name.name
+    var version_str String$("0.1.0")
+    guard pkg_syntax.version <> null
+        set version_str: format_version$(pkg_syntax.version.unwrap())
+
+    ; Search path: ./packages/<name>/<version>/
+    var sb StringBuilder$()
+    sb.append("packages/")
+    sb.append(pkg_name)
+    sb.append("/" as char)
+    sb.append(version_str)
+    let pkg_path sb.to_string#()
+
+    let loaded build_referenced_module#(pkg_path, pkg_name, false)
+    packages.add(loaded)
+}
+
 ; Load and model a sibling module file at <path>/<name>.scaly. Returns an
 ; empty Module on any failure (file missing, parse error, etc.) so callers
 ; can continue without crashing.
@@ -2205,8 +2249,28 @@ function build_module#(path: String, file_name: String, name: String, syntax: Fi
 
 function build_program#(file_name: String, program_name: String, syntax: ProgramSyntax) returns Program
 {
-    ; Handle packages
     var packages Vector[Module]#(0)
+    guard syntax.file.declarations <> null
+    {
+        let decl_syns (*syntax.file.declarations)
+        var i: size_t 0
+        while i < decl_syns.length
+        {
+            let decl_ptr decl_syns.get(i)
+            guard decl_ptr <> null
+            {
+                let decl_syntax (*decl_ptr)
+                choose decl_syntax
+                    when pkg_syntax: PackageSyntax
+                        handle_package_decl#(pkg_syntax, &packages)
+                    else
+                    {
+                        ; not a package
+                    }
+            }
+            set i: i + 1
+        }
+    }
 
     ; Build main module — base path is the directory containing the source
     ; file, so sibling `module foo` decls resolve to <dir>/foo.scaly (mirrors
