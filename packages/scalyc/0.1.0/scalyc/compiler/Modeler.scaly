@@ -4,9 +4,12 @@
 package scaly 0.1.0
 
 use scaly.containers.String
+use scaly.containers.StringBuilder
 use scaly.containers.Vector
 use scaly.containers.HashMap
 use scaly.containers.HashMapBuilder
+use scaly.io.File
+use scaly.io.Path
 use scaly.scalyc.parser.Parser
 use scaly.scalyc.parser.ParserError
 
@@ -176,6 +179,8 @@ use scaly.compiler.Syntax.ConstituentSyntax
 use scaly.compiler.Syntax.ModuleSyntax
 use scaly.compiler.Syntax.FileSyntax
 use scaly.compiler.Syntax.ProgramSyntax
+use scaly.compiler.Syntax.PackageSyntax
+use scaly.compiler.Syntax.VersionSyntax
 use scaly.compiler.Syntax.ExtensionSyntax
 
 define Modeler
@@ -2072,6 +2077,72 @@ function handle_definition#(path: String, syntax: DefinitionSyntax, is_private: 
 ; Module building
 ; ============================================================================
 
+; Append a child module loaded from <path>/<name>.scaly to `modules`. The
+; helper exists in procedure form so the choose-arm in build_module# is a
+; single call (works around a stage-0 codegen issue where in-place
+; Vector[Module].add inside a choose-arm corrupts the caller's frame).
+procedure handle_module_decl#(path: String, mod_syntax: ModuleSyntax, is_private: bool, modules: ref[Vector[Module]])
+{
+    let loaded build_referenced_module#(path, mod_syntax.name, is_private)
+    modules.add(loaded)
+}
+
+; Load and model a sibling module file at <path>/<name>.scaly. Returns an
+; empty Module on any failure (file missing, parse error, etc.) so callers
+; can continue without crashing.
+function build_referenced_module#(path: String, name: String, is_private: bool) returns Module
+{
+    ; Compute file path: <path>/<name>.scaly
+    var sb StringBuilder$()
+    guard path.get_length() > 0
+    {
+        sb.append(path)
+        sb.append("/" as char)
+    }
+    sb.append(name)
+    sb.append(".scaly")
+    let file_path sb.to_string#()
+
+    ; Empty stub for failure cases (still has a valid name so lookups don't crash).
+    var empty_symbols HashMapBuilder[String, Nameable]$()
+    let empty_module Module(
+        is_private,
+        file_path,
+        name,
+        Vector[Module]#(0),
+        Vector[Use]#(0),
+        Vector[Member]#(0),
+        HashMap[String, Nameable]#(empty_symbols)
+    )
+
+    guard File.exists(file_path) = false
+        return empty_module
+
+    var contents File.read_to_string$(file_path)
+    guard contents.get_length() = 0
+        return empty_module
+
+    var p Parser$(contents)
+    var syntax: ProgramSyntax
+    choose p.parse_program#()
+        when err: Error
+            return empty_module
+        when prog: Success
+            set syntax: prog
+
+    ; Sub-path for nested modules: <path>/<name>
+    var sub_sb StringBuilder$()
+    guard path.get_length() > 0
+    {
+        sub_sb.append(path)
+        sub_sb.append("/" as char)
+    }
+    sub_sb.append(name)
+    let sub_path sub_sb.to_string#()
+
+    build_module#(sub_path, file_path, name, syntax.file, is_private)
+}
+
 function build_module#(path: String, file_name: String, name: String, syntax: FileSyntax, is_private: bool) returns Module
 {
     var symbols_builder HashMapBuilder[String, Nameable]$()
@@ -2102,6 +2173,8 @@ function build_module#(path: String, file_name: String, name: String, syntax: Fi
                         uses.put(use_idx, use_)
                         set use_idx: use_idx + 1
                     }
+                    when mod_syntax: ModuleSyntax
+                        handle_module_decl#(path, mod_syntax, is_private, &modules)
                     else
                     {
                         let member handle_declaration#(path, decl_syntax, &symbols_builder)
@@ -2135,8 +2208,10 @@ function build_program#(file_name: String, program_name: String, syntax: Program
     ; Handle packages
     var packages Vector[Module]#(0)
 
-    ; Build main module
-    let path String$("")
+    ; Build main module — base path is the directory containing the source
+    ; file, so sibling `module foo` decls resolve to <dir>/foo.scaly (mirrors
+    ; stage-0 Modeler::buildProgram).
+    let path Path.get_directory_name$(file_name)
     let main_module build_module#(path, file_name, program_name, syntax.file, false)
 
     ; Handle top-level statements
