@@ -3169,18 +3169,20 @@ define Emitter
                             {
                                 guard call.args.length = 1
                                 {
-                                    ; Emit the argument to get the pointer
-                                    choose call.args.get(0)
-                                        when arg: Some
+                                    ; Emit the argument to get the pointer.
+                                    ; Session-25 pattern: `choose ... when Some` on a
+                                    ; ref[T]? deref produces null/garbage under NPO; use
+                                    ; guard <> null + .unwrap() instead.
+                                    let arg_opt call.args.get(0)
+                                    guard arg_opt <> null
+                                    {
+                                        let ptr emit_operand(arg_opt.unwrap())
+                                        guard ptr.handle <> null
                                         {
-                                            let ptr emit_operand(*arg)
-                                            guard ptr.handle <> null
-                                            {
-                                                ; Store to the dereferenced pointer
-                                                LLVMBuildStore(builder, value, ptr)
-                                            }
+                                            ; Store to the dereferenced pointer
+                                            LLVMBuildStore(builder, value, ptr)
                                         }
-                                        else { }
+                                    }
                                 }
                             }
                         }
