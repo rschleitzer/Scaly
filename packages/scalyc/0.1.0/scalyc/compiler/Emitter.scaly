@@ -1851,17 +1851,28 @@ define Emitter
         guard tuple.components.length = 0
             return LLVMValueRef(null)
 
-        ; Check if this is struct construction vs grouped expression
-        ; If TupleType has a name and it's not just "Tuple", it's struct construction
+        ; Check if this is struct construction vs grouped expression.
+        ; Mirrors Emitter.cpp::emitTuple's StructCache-first heuristic
+        ; (line 6232+): a registered struct/union in the cache means
+        ; construction, regardless of single-anonymous-component shape.
         var is_struct_construction false
-        guard tuple.tuple_type.name.data <> null
+        guard tuple.tuple_type.name.get_length() > 0
         {
-            ; Simple check: if name is not empty and not "Tuple"
-            guard tuple.tuple_type.name.get_length() > 0
+            ; First check struct cache by mangled name and by readable name.
+            let cached_by_mangled lookup_struct_cache(tuple.tuple_type.mangled_name)
+            guard cached_by_mangled.handle <> null
+                set is_struct_construction: true
+            guard is_struct_construction = false
+            {
+                let cached_by_name lookup_struct_cache(tuple.tuple_type.name)
+                guard cached_by_name.handle <> null
+                    set is_struct_construction: true
+            }
+            ; Fallback: if not cached but name is non-empty and not "Tuple",
+            ; use the single-anonymous-component heuristic for grouping.
+            guard is_struct_construction = false
             {
                 set is_struct_construction: true
-                ; Exception: single component with no name isn't struct construction
-                ; (it's a grouped expression like (2 + 3))
                 guard tuple.components.length = 1
                 {
                     let first tuple.components.get(0)
@@ -1897,6 +1908,7 @@ define Emitter
         var comp_types Vector[LLVMTypeRef]#(comp_count)
 
         var i: size_t 0
+        var any_null: bool false
         while i < comp_count
         {
             let comp_ptr tuple.components.get(i)
@@ -1906,12 +1918,19 @@ define Emitter
                 let comp_value emit_operands(comp.value)
                 comp_values.put(i, comp_value)
 
-                let comp_type LLVMTypeOf(comp_value)
-                comp_types.put(i, comp_type)
+                guard comp_value.handle = null
+                    set any_null: true
+
+                guard comp_value.handle <> null
+                {
+                    let comp_type LLVMTypeOf(comp_value)
+                    comp_types.put(i, comp_type)
+                }
             }
             set i: i + 1
         }
-
+        guard any_null
+            return LLVMValueRef(null)
         ; Get or create struct type
         var struct_type lookup_struct_cache(tuple.tuple_type.mangled_name)
         guard struct_type.handle = null
@@ -1923,15 +1942,18 @@ define Emitter
         ; Allocate on stack (for non-region allocations)
         let tuple_ptr LLVMBuildAlloca(builder, struct_type, "tuple")
 
-        ; Store component values into struct fields
+        ; Store component values into struct fields. Use (*ref) instead
+        ; of .unwrap() — the intrinsic Option.unwrap on `ref[LLVMValueRef]?`
+        ; segfaults in stage-1 when the inner type is a struct.
         set i: 0
         while i < comp_count
         {
-            let comp_value comp_values.get(i)
-            guard comp_value <> null
+            let cv_ref comp_values.get(i)
+            guard cv_ref <> null
             {
+                let cv (*cv_ref)
                 let field_ptr LLVMBuildStructGEP2(builder, struct_type, tuple_ptr, i as u32, "tuple.field")
-                LLVMBuildStore(builder, comp_value.unwrap(), field_ptr)
+                LLVMBuildStore(builder, cv, field_ptr)
             }
             set i: i + 1
         }

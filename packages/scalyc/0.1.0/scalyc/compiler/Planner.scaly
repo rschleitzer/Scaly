@@ -2038,6 +2038,258 @@ define Planner
 
                     guard is_call
                     {
+                        ; Struct/Union value construction. When fn_name
+                        ; resolves to a registered Concept, treat
+                        ; Type(args) as construction rather than a free
+                        ; function call. Mirrors Planner.cpp:8810+
+                        ; (struct) and 9086+ (union variant).
+                        var is_struct_ctor: bool false
+                        var is_variant_ctor: bool false
+                        var ctor_struct_type: PlannedType Planner.make_void_type#()
+                        var ctor_union_type: PlannedType Planner.make_void_type#()
+                        var ctor_variant_name: String String^rp("")
+                        var ctor_variant_tag: size_t 0
+
+                        ; Skip struct/union ctor reshape when the type has
+                        ; a non-Unspecified lifetime ($, #, ^ in source).
+                        ; Stage-1 only handles stack ctors today; heap ctor
+                        ; would need scaly_page_alloc + RBMM wiring.
+                        var lt_is_unspec: bool false
+                        choose result.expr
+                            when t0: PlannedType
+                            {
+                                choose t0.life
+                                    when u: Unspecified
+                                        set lt_is_unspec: true
+                                    else
+                                        0
+                            }
+                            else
+                                0
+
+                        guard lt_is_unspec
+                        {
+                            let conc_ref this.lookup_concept(fn_name)
+                            guard conc_ref <> null
+                            {
+                                let conc (*conc_ref)
+                                choose conc.definition
+                                    when s: Structure
+                                    {
+                                        set is_struct_ctor: true
+                                        choose result.expr
+                                            when t: PlannedType
+                                                set ctor_struct_type: t
+                                            else
+                                                0
+                                    }
+                                    else
+                                        0
+                            }
+                        }
+
+                        ; Dotted union variant: Union.Variant(args). Split
+                        ; on last '.', look up the prefix as a Union, the
+                        ; suffix as a variant.
+                        guard is_struct_ctor = false
+                        {
+                            let dot_idx fn_name.last_index_of(46 as u8)
+                            guard dot_idx > 0
+                            {
+                                let dot_pos dot_idx as size_t
+                                let prefix fn_name.substring(rp, 0, dot_pos)
+                                let suffix fn_name.substring(
+                                    rp,
+                                    dot_pos + 1,
+                                    fn_name.get_length() - dot_pos - 1
+                                )
+                                let union_ref this.lookup_concept(prefix)
+                                guard union_ref <> null
+                                {
+                                    let uconc (*union_ref)
+                                    var is_union_def: bool false
+                                    choose uconc.definition
+                                        when u: scalyc.compiler.Model.Union
+                                            set is_union_def: true
+                                        else
+                                            0
+                                    guard is_union_def
+                                    {
+                                        let tag this.lookup_variant_tag(prefix, suffix)
+                                        guard tag >= 0
+                                        {
+                                            set is_variant_ctor: true
+                                            set ctor_union_type: PlannedType(
+                                                result.loc,
+                                                prefix,
+                                                Planner.mangle_structure#(prefix, null),
+                                                null,
+                                                Lifetime.Unspecified(Unspecified()),
+                                                null,
+                                                String^rp(""),
+                                                null
+                                            )
+                                            set ctor_variant_name: suffix
+                                            set ctor_variant_tag: tag as size_t
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        guard is_struct_ctor
+                        {
+                            ; Reshape the tuple to set tuple_type to the
+                            ; struct type. Stack allocation only for now
+                            ; (Lifetime.Unspecified — heap $/#/^ deferred).
+                            var components_holder: ref[Vector[PlannedComponent]]? null
+                            ; Collapse each component's operand sequence so
+                            ; nested struct/union ctors and other multi-
+                            ; operand expressions become a single planned
+                            ; operand. emit_operands only walks the first
+                            ; operand of a component value, so without
+                            ; collapsing, `Parser(Lexer(7))` would drop the
+                            ; inner Tuple and emit only the bare `Type(Lexer)`
+                            ; operand — SEGV at LLVMTypeOf on null.
+                            choose second.expr
+                                when tp: PlannedTuple
+                                {
+                                    guard tp.components <> null
+                                    {
+                                        let comps_in (*tp.components)
+                                        var new_comps Array[PlannedComponent]$()
+                                        var ci: size_t 0
+                                        while ci < comps_in.length
+                                        {
+                                            let cp comps_in.get(ci)
+                                            guard cp <> null
+                                            {
+                                                let cc (*cp)
+                                                var nc_value: ref[Vector[PlannedOperand]]? cc.value
+                                                guard cc.value <> null
+                                                {
+                                                    let vals (*cc.value)
+                                                    guard vals.length > 1
+                                                    {
+                                                        let collapsed this.collapse_operand_sequence#(vals)
+                                                        var one_arr Array[PlannedOperand]^rp()
+                                                        one_arr.add(collapsed)
+                                                        var one_vec Vector[PlannedOperand]^rp(one_arr)
+                                                        set nc_value: &one_vec
+                                                    }
+                                                }
+                                                new_comps.add(PlannedComponent(
+                                                    cc.loc, cc.name, nc_value, cc.attributes
+                                                ))
+                                            }
+                                            set ci: ci + 1
+                                        }
+                                        var new_comps_holder Vector[PlannedComponent]^rp(new_comps)
+                                        set components_holder: &new_comps_holder
+                                    }
+                                }
+                                else
+                                    0
+                            ; Force stack allocation with Unspecified
+                            ; lifetime; heap $/#/^ ctor support is deferred
+                            ; (would need scaly_page_alloc + RBMM wiring).
+                            let reshaped PlannedTuple(
+                                second.loc,
+                                components_holder,
+                                ctor_struct_type,
+                                false,
+                                Lifetime.Unspecified(Unspecified()),
+                                null
+                            )
+                            set result: PlannedOperand(
+                                second.loc,
+                                PlannedExpression.Tuple(reshaped),
+                                second.member_access,
+                                ctor_struct_type
+                            )
+                            guard ops.length > 2
+                            {
+                                var remaining Array[PlannedOperand]$()
+                                remaining.add(result)
+                                var rr: size_t 2
+                                while rr < ops.length
+                                {
+                                    let p_ptr ops.get(rr)
+                                    guard p_ptr <> null
+                                        remaining.add((*p_ptr))
+                                    set rr: rr + 1
+                                }
+                                var remaining_vec Vector[PlannedOperand]^rp(remaining)
+                                return this.collapse_operand_sequence#(remaining_vec)
+                            }
+                            return result
+                        }
+
+                        guard is_variant_ctor
+                        {
+                            ; Build a PlannedVariantConstruction. The
+                            ; tuple's first component carries the payload
+                            ; for variants like Some(int); empty `()`
+                            ; produces a payload-less variant.
+                            var payload_holder: ref[PlannedOperand]? null
+                            choose second.expr
+                                when tp: PlannedTuple
+                                {
+                                    guard tp.components <> null
+                                    {
+                                        let comps (*tp.components)
+                                        guard comps.length > 0
+                                        {
+                                            let c_ptr comps.get(0)
+                                            guard c_ptr <> null
+                                            {
+                                                let c (*c_ptr)
+                                                guard c.value <> null
+                                                {
+                                                    let v (*c.value)
+                                                    let collapsed this.collapse_operand_sequence#(v)
+                                                    var v_holder Vector[PlannedOperand]^rp(1)
+                                                    v_holder.put(0, collapsed)
+                                                    set payload_holder: v_holder.get(0)
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                                else
+                                    0
+
+                            let vc PlannedVariantConstruction(
+                                second.loc,
+                                ctor_union_type,
+                                ctor_variant_name,
+                                ctor_variant_tag,
+                                payload_holder
+                            )
+                            set result: PlannedOperand(
+                                second.loc,
+                                PlannedExpression.VariantConstruction(vc),
+                                null,
+                                ctor_union_type
+                            )
+                            guard ops.length > 2
+                            {
+                                var remaining Array[PlannedOperand]$()
+                                remaining.add(result)
+                                var rr: size_t 2
+                                while rr < ops.length
+                                {
+                                    let p_ptr ops.get(rr)
+                                    guard p_ptr <> null
+                                        remaining.add((*p_ptr))
+                                    set rr: rr + 1
+                                }
+                                var remaining_vec Vector[PlannedOperand]^rp(remaining)
+                                return this.collapse_operand_sequence#(remaining_vec)
+                            }
+                            return result
+                        }
+
                         let arg_types Planner.extract_arg_types#(second)
                         let match_ref this.resolve_function_call#(fn_name, arg_types)
                         var rt: PlannedType this.fresh_type_var#(String$(""))
@@ -3281,6 +3533,99 @@ define Planner
                                     }
                                 }
                             }
+                        }
+                    }
+                }
+            }
+
+            ; Multi-element name: if the first segment is a local binding,
+            ; treat the rest as a member-access chain. Mirrors
+            ; Planner.cpp:6805-6826. Skip when the chain contains any
+            ; method hop — stage-1's call resolution doesn't yet wire
+            ; instance method dispatch, and forcing this path would
+            ; surface emit_call SEGVs on the receiver.
+            guard t.name.length > 1
+            {
+                let first_ptr t.name.get(0)
+                guard first_ptr <> null
+                {
+                    let first_name (*first_ptr)
+                    let local this.lookup_local_binding(first_name)
+                    guard local <> null
+                    {
+                        let lb (*local)
+                        var rest_arr Array[String]$()
+                        var k: size_t 1
+                        while k < t.name.length
+                        {
+                            let seg_ptr t.name.get(k)
+                            guard seg_ptr <> null
+                                rest_arr.add((*seg_ptr))
+                            set k: k + 1
+                        }
+                        var rest_vec Vector[String]^rp(rest_arr)
+                        ; Auto-deref pointer[T] / ref[T]: use the inner
+                        ; generic as the base for member resolution.
+                        var base_for_chain lb.binding_type
+                        guard lb.binding_type.name.equals(String$("pointer"))
+                        {
+                            guard lb.binding_type.generics <> null
+                            {
+                                let g (*lb.binding_type.generics)
+                                guard g.length > 0
+                                {
+                                    let ip g.get(0)
+                                    guard ip <> null
+                                        set base_for_chain: (*ip)
+                                }
+                            }
+                        }
+                        guard lb.binding_type.name.equals(String$("ref"))
+                        {
+                            guard lb.binding_type.generics <> null
+                            {
+                                let g (*lb.binding_type.generics)
+                                guard g.length > 0
+                                {
+                                    let ip g.get(0)
+                                    guard ip <> null
+                                        set base_for_chain: (*ip)
+                                }
+                            }
+                        }
+                        let access_chain this.resolve_member_access#(
+                            base_for_chain, rest_vec
+                        )
+                        var has_method: bool false
+                        var ci: size_t 0
+                        while ci < access_chain.length
+                        {
+                            let mp access_chain.get(ci)
+                            guard mp <> null
+                            {
+                                guard (*mp).is_method
+                                    set has_method: true
+                            }
+                            set ci: ci + 1
+                        }
+                        guard has_method = false
+                        {
+                            var access_holder Vector[PlannedMemberAccess]^rp(access_chain)
+                            var final_type lb.binding_type
+                            guard access_chain.length > 0
+                            {
+                                let last_ptr access_chain.get(access_chain.length - 1)
+                                guard last_ptr <> null
+                                    set final_type: (*last_ptr).result_type
+                            }
+                            return PlannedOperand(
+                                loc,
+                                PlannedExpression.Variable(PlannedVariable(
+                                    loc, first_name, lb.binding_type, lb.is_mutable
+                                )),
+                                &access_holder,
+                                final_type
+                            )
                         }
                     }
                 }
