@@ -4210,24 +4210,35 @@ define Planner
             this.push_scope()
 
             ; Resolve the variant's payload type and tag against the
-            ; enclosing union. Fall back to a fresh type variable when
-            ; the union isn't resolvable (e.g. when called from plan_try
-            ; before exception types land).
+            ; enclosing union. `w.name` is the binding identifier
+            ; (e.g. `s` in `when s: Some`); the variant *type* name
+            ; lives in `w.variant` (last segment for dotted paths).
+            ; Fall back to a fresh type variable when the union isn't
+            ; resolvable (e.g. when called from plan_try before
+            ; exception types land).
             var binding_ty: PlannedType this.fresh_type_var#(String$(""))
             var variant_type: PlannedType Planner.make_void_type#()
             var variant_tag: size_t 0
 
+            var variant_name: String String^rp("")
+            guard w.variant.length > 0
+            {
+                let last_ptr w.variant.get(w.variant.length - 1)
+                guard last_ptr <> null
+                    set variant_name: (*last_ptr)
+            }
+
             guard union_type.name.equals("void") = false
             {
                 let payload_ref this.lookup_variant_type#(
-                    union_type.name, w.name
+                    union_type.name, variant_name
                 )
                 guard payload_ref <> null
                 {
                     set binding_ty: (*payload_ref)
                     set variant_type: (*payload_ref)
                 }
-                let tag this.lookup_variant_tag(union_type.name, w.name)
+                let tag this.lookup_variant_tag(union_type.name, variant_name)
                 guard tag >= 0
                     set variant_tag: tag as size_t
             }

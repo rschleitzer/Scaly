@@ -715,9 +715,11 @@ function handle_choose#(syntax: ChooseSyntax) returns Choose
 
 function handle_when#(syntax: WhenSyntax) returns When
 {
-    ; Variant is now just a simple identifier (String)
+    ; syntax.variant is a NameSyntax — extract the .name String for
+    ; the variant_path (single element for unqualified; later: walk
+    ; extensions for dotted paths).
     var variant_path Vector[String]#(1)
-    variant_path.put(0, syntax.variant)
+    variant_path.put(0, syntax.variant.name)
 
     let stmt handle_command#(syntax.statement)
     When(

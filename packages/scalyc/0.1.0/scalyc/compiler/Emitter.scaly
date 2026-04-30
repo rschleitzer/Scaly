@@ -2304,15 +2304,36 @@ define Emitter
         guard union_value.handle = null
             return LLVMValueRef(null)
 
-        ; Union layout: { i8 tag, [maxSize x i8] data }
-        ; Store union if not already a pointer
-        var union_ptr union_value
-        var union_type LLVMTypeOf(union_value)
+        ; The union struct type for GEP must come from the condition's
+        ; PlannedType, NOT LLVMTypeOf(union_value) — the latter yields
+        ; opaque `ptr` whenever the union arrived as a by-pointer
+        ; parameter (which produces invalid IR like
+        ; `getelementptr inbounds ptr, ptr %0, ...` and crashes the
+        ; AOT IRTranslator on -o).
+        var union_type LLVMTypeRef(null)
+        guard choose_expr.condition <> null
+        {
+            let cond_vec (*choose_expr.condition)
+            guard cond_vec.length > 0
+            {
+                let last_op_ptr cond_vec.get(cond_vec.length - 1)
+                guard last_op_ptr <> null
+                {
+                    let cond_op (*last_op_ptr)
+                    set union_type: map_type(cond_op.result_type)
+                }
+            }
+        }
+        guard union_type.handle = null
+            set union_type: LLVMTypeOf(union_value)
 
-        ; If not a pointer, store to get address
-        let type_kind LLVMGetTypeKind(union_type)
-        ; PointerTypeKind = 14 in LLVM
-        guard type_kind <> 14
+        ; Union layout: { i8 tag, [maxSize x i8] data }
+        ; Store union if not already a pointer. LLVMTypeKind.Pointer
+        ; is 12 (LLVMTypeKind.Metadata is 14 — the magic-number comment
+        ; that previously read "14 in LLVM" was wrong, see LLVM.scaly).
+        var union_ptr union_value
+        let value_kind LLVMGetTypeKind(LLVMTypeOf(union_value))
+        guard value_kind <> 12
         {
             set union_ptr: LLVMBuildAlloca(builder, union_type, "choose.union")
             LLVMBuildStore(builder, union_value, union_ptr)
@@ -2330,6 +2351,16 @@ define Emitter
         ; Create switch instruction
         let case_count choose_expr.cases.length as int
         let switch_inst LLVMBuildSwitch(builder, tag, default_block, case_count)
+
+        ; PHI strategy for choose-as-expression: collect every branch
+        ; that produced an LLVMValueRef along with the block it ended
+        ; in, then assemble a PHI at merge_block. A choose used as a
+        ; statement (no Action consequents) yields an empty count and
+        ; we return null so the caller emits no return.
+        let max_count choose_expr.cases.length + 1
+        var phi_values Vector[LLVMValueRef]#(max_count)
+        var phi_blocks Vector[LLVMBasicBlockRef]#(max_count)
+        var phi_count: size_t 0
 
         ; Process each when case
         guard choose_expr.cases <> null
@@ -2352,34 +2383,82 @@ define Emitter
                     define_variable(when_case.name, var_value)
                 }
 
-                ; Emit consequent
-                ; choose ref[T]? when x: Some yields a stale binding (session 25/28).
-                ; Use guard + deref instead.
+                ; Emit consequent. If it's an Action, capture the
+                ; result value for the eventual PHI. choose ref[T]?
+                ; when x: Some yields a stale binding (session 25/28);
+                ; use guard + deref.
+                var case_value LLVMValueRef(null)
                 guard when_case.consequent <> null
                 {
                     let r when_case.consequent
-                    emit_statement(*r)
+                    choose (*r)
+                        when action: Action
+                            set case_value: emit_action(action)
+                        else
+                            emit_statement(*r)
                 }
 
                 let case_term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock(builder))
                 guard case_term.handle = null
+                {
+                    guard case_value.handle <> null
+                    {
+                        phi_values.put(phi_count, case_value)
+                        phi_blocks.put(phi_count, LLVMGetInsertBlock(builder))
+                        set phi_count: phi_count + 1
+                    }
                     LLVMBuildBr(builder, merge_block)
+                }
             }
         }
 
         ; Emit alternative (else)
         LLVMPositionBuilderAtEnd(builder, default_block)
+        var alt_value LLVMValueRef(null)
         guard choose_expr.alternative <> null
         {
             let r choose_expr.alternative
-            emit_statement(*r)
+            choose (*r)
+                when action: Action
+                    set alt_value: emit_action(action)
+                else
+                    emit_statement(*r)
         }
         let alt_term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock(builder))
         guard alt_term.handle = null
+        {
+            guard alt_value.handle <> null
+            {
+                phi_values.put(phi_count, alt_value)
+                phi_blocks.put(phi_count, LLVMGetInsertBlock(builder))
+                set phi_count: phi_count + 1
+            }
             LLVMBuildBr(builder, merge_block)
+        }
 
         ; Continue at merge block
         LLVMPositionBuilderAtEnd(builder, merge_block)
+
+        ; Build PHI when at least one branch produced a value. Type
+        ; is taken from the first incoming value; mismatched-type
+        ; branches would produce invalid IR, but the same constraint
+        ; applies to every if-as-expression site already shipping.
+        guard phi_count > 0
+        {
+            let first_ptr phi_values.get(0)
+            guard first_ptr <> null
+            {
+                ; Bind the deref'd value to a local var first — passing
+                ; (*first_ptr) directly to LLVMTypeOf miscompiles under
+                ; stage-0 (same family as session 34's struct-by-ptr ABI
+                ; quirk for single-ptr-field handles).
+                let first_val (*first_ptr)
+                let phi_ty LLVMTypeOf(first_val)
+                let phi LLVMBuildPhi(builder, phi_ty, "choose.value")
+                LLVMAddIncoming(phi, phi_values.data, phi_blocks.data, phi_count as int)
+                return phi
+            }
+        }
 
         LLVMValueRef(null)
     }
