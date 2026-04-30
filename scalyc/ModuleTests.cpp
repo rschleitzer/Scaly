@@ -411,9 +411,15 @@ static bool runAotTest(llvm::StringRef TestPath) {
         return false;
     }
 
+    // AOT tests that pull in `package scalyc` reference LLVM-C symbols
+    // via the self-hosted compiler's LLVM bindings. Pass the runtime
+    // libLLVM shared object so the linker resolves them. Harmless when
+    // the test doesn't reference any of those symbols.
+    llvm::StringRef LLVMSharedLib(LLVM_SHARED_LIB_PATH);
     std::vector<llvm::StringRef> LinkArgs = {
         *ClangPath,
         ObjPath,
+        LLVMSharedLib,
         "-o",
         ExePath
     };
