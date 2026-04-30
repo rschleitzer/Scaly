@@ -1768,6 +1768,27 @@ define Emitter
             }
         }
 
+        ; Integer width promotion. When both operands are integers but
+        ; widths differ (e.g. defaulted-i32 literal `0` vs i64 strlen
+        ; result), zero-extend the narrower side to match the wider.
+        ; Mirrors C++ Emitter.cpp:4089-4102. Required for valid icmp/
+        ; arithmetic on cross-width integer pairs.
+        guard l_kind = LLVMTypeKind.Integer()
+        {
+            guard r_kind = LLVMTypeKind.Integer()
+            {
+                let l_width LLVMGetIntTypeWidth(LLVMTypeOf(l))
+                let r_width LLVMGetIntTypeWidth(LLVMTypeOf(r))
+                guard l_width <> r_width
+                {
+                    guard l_width > r_width
+                        set r: LLVMBuildZExt(builder, r, LLVMTypeOf(l), "zext")
+                    guard l_width < r_width
+                        set l: LLVMBuildZExt(builder, l, LLVMTypeOf(r), "zext")
+                }
+            }
+        }
+
         ; Addition
         guard op_name.equals(String$("+"))
         {
