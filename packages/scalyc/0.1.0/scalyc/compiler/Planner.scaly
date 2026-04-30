@@ -2015,48 +2015,58 @@ define Planner
                     let second (*second_ptr)
                     var is_call: bool false
                     var fn_name: String String^rp("")
-                    choose result.expr
-                        when t: PlannedType
-                        {
-                            set fn_name: t.name
-                            choose second.expr
-                                when tp: PlannedTuple
-                                    set is_call: true
-                                else
-                                    0
-                            0
-                        }
-                        else
-                            0
 
-                    guard is_call = false
+                    ; Method-call branch FIRST: a PlannedType operand
+                    ; carrying a method member_access (e.g. `cli.main`,
+                    ; where `cli` resolves to a namespace concept and
+                    ; `main` is the trailing method) must dispatch on
+                    ; the method name, not the namespace name. Without
+                    ; this, the next branch grabs `t.name` ("cli") and
+                    ; resolve_function_call hunts for a function called
+                    ; "cli" which doesn't exist, leaving the call un-
+                    ; emitted and the body collapsing to ret void.
+                    guard result.member_access <> null
                     {
-                        guard result.member_access <> null
+                        let ma (*result.member_access)
+                        guard ma.length > 0
                         {
-                            let ma (*result.member_access)
-                            guard ma.length > 0
+                            let last_ptr ma.get(ma.length - 1)
+                            guard last_ptr <> null
                             {
-                                let last_ptr ma.get(ma.length - 1)
-                                guard last_ptr <> null
+                                let last_ma (*last_ptr)
+                                guard last_ma.is_method
                                 {
-                                    let last_ma (*last_ptr)
-                                    guard last_ma.is_method
+                                    var tuple_second: bool false
+                                    choose second.expr
+                                        when tp: PlannedTuple
+                                            set tuple_second: true
+                                        else
+                                            0
+                                    guard tuple_second
                                     {
-                                        var tuple_second: bool false
-                                        choose second.expr
-                                            when tp: PlannedTuple
-                                                set tuple_second: true
-                                            else
-                                                0
-                                        guard tuple_second
-                                        {
-                                            set is_call: true
-                                            set fn_name: last_ma.name
-                                        }
+                                        set is_call: true
+                                        set fn_name: last_ma.name
                                     }
                                 }
                             }
                         }
+                    }
+
+                    guard is_call = false
+                    {
+                        choose result.expr
+                            when t: PlannedType
+                            {
+                                set fn_name: t.name
+                                choose second.expr
+                                    when tp: PlannedTuple
+                                        set is_call: true
+                                    else
+                                        0
+                                0
+                            }
+                            else
+                                0
                     }
 
                     guard is_call
@@ -2314,7 +2324,96 @@ define Planner
                         }
 
                         let arg_types Planner.extract_arg_types#(second)
-                        let match_ref this.resolve_function_call#(fn_name, arg_types)
+                        var match_ref this.resolve_function_call#(fn_name, arg_types)
+
+                        ; Namespaced call fallback: `cli.main(args)` arrives
+                        ; with fn_name="cli.main"; the function is registered
+                        ; in model_functions under its short name "main"
+                        ; (register_concept_recursive flattens namespace
+                        ; members). Retry with the suffix when the prefix
+                        ; resolves to a Namespace concept; if so, override
+                        ; the MethodMatch's mangled_name to the proper
+                        ; `_ZN<prefix><name>E<args>` so the call links to
+                        ; the namespaced function (model_functions stores
+                        ; Model.Functions without parent context, so
+                        ; check_function_match's mangle_free_function path
+                        ; otherwise produces the bare `_Z<name>` which
+                        ; collides with the program's own `main`).
+                        var ns_mangled: String String^rp("")
+                        var has_ns_mangled: bool false
+                        guard match_ref = null
+                        {
+                            let dot_idx fn_name.last_index_of(46 as u8)
+                            guard dot_idx > 0
+                            {
+                                let dot_pos dot_idx as size_t
+                                let prefix fn_name.substring(rp, 0, dot_pos)
+                                let suffix fn_name.substring(
+                                    rp,
+                                    dot_pos + 1,
+                                    fn_name.get_length() - dot_pos - 1
+                                )
+                                let ns_ref this.lookup_concept(prefix)
+                                guard ns_ref <> null
+                                {
+                                    let nsc (*ns_ref)
+                                    var is_ns: bool false
+                                    choose nsc.definition
+                                        when n: Namespace
+                                            set is_ns: true
+                                        else
+                                            0
+                                    guard is_ns
+                                    {
+                                        set match_ref: this.resolve_function_call#(suffix, arg_types)
+                                        guard match_ref <> null
+                                        {
+                                            ; Build PlannedType for the
+                                            ; namespace as a parent and
+                                            ; rebuild the mangled name.
+                                            var ns_parent_holder Vector[PlannedType]^rp(1)
+                                            ns_parent_holder.put(0, PlannedType(
+                                                result.loc,
+                                                String^rp(prefix),
+                                                Planner.encode_name(prefix),
+                                                null,
+                                                Lifetime.Unspecified(Unspecified()),
+                                                null,
+                                                String^rp(""),
+                                                null
+                                            ))
+                                            let ns_parent_ref ns_parent_holder.get(0)
+
+                                            var items_arr Array[PlannedItem]$()
+                                            var ai: size_t 0
+                                            while ai < arg_types.length
+                                            {
+                                                let at_ptr arg_types.get(ai)
+                                                guard at_ptr <> null
+                                                {
+                                                    var ity_holder Vector[PlannedType]^rp(1)
+                                                    ity_holder.put(0, (*at_ptr))
+                                                    items_arr.add(PlannedItem(
+                                                        result.loc,
+                                                        false,
+                                                        null,
+                                                        ity_holder.get(0),
+                                                        null
+                                                    ))
+                                                }
+                                                set ai: ai + 1
+                                            }
+                                            var items_holder Vector[PlannedItem]^rp(items_arr)
+                                            set ns_mangled: Planner.mangle_function#(
+                                                suffix, &items_holder, ns_parent_ref, false
+                                            )
+                                            set has_ns_mangled: true
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
                         var rt: PlannedType this.fresh_type_var#(String$(""))
                         var mangled: String String^rp("")
                         guard match_ref <> null
@@ -2323,6 +2422,8 @@ define Planner
                             set rt: m.return_type
                             set mangled: m.mangled_name
                         }
+                        guard has_ns_mangled
+                            set mangled: ns_mangled
 
                         ; Flatten the tuple argument into a list of
                         ; individual PlannedOperand values so the emitter

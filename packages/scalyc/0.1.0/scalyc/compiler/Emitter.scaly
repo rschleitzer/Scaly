@@ -778,10 +778,20 @@ define Emitter
 
         let func_type LLVMFunctionType(llvm_return_type, param_types_ptr, param_count as int, 0)
 
-        ; Use unmangled "main" for linker compatibility (C entry point)
+        ; Use unmangled "main" for linker compatibility (C entry point) —
+        ; but ONLY when this is a free function. Namespaced
+        ; `define cli { function main(...) }` mangles to
+        ; `_ZN3cli4mainE...` and must keep its mangled name; collapsing
+        ; it to "main" silently collides with the program's real
+        ; `main()` and LLVM auto-renames one of them to `main.1`,
+        ; defeating bootstrap (cli.main and the entry point both
+        ; resolve to the wrong symbol).
         var func_cstr func.mangled_name.c_data()
         guard func.name.equals(String$("main"))
-            set func_cstr: "main"
+        {
+            guard func.mangled_name.starts_with("_ZN") = false
+                set func_cstr: "main"
+        }
 
         let llvm_func LLVMAddFunction(llvm_module, func_cstr, func_type)
 
