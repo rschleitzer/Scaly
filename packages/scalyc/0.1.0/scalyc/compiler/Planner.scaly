@@ -6295,15 +6295,15 @@ define Planner
                 set i: i + 1
             }
 
-            ; Note: ns.modules (loaded sub-modules from `define ns
-            ; { module foo }`) are NOT planned here — stage-1's
-            ; planner crashes on the bodies of scaly stdlib modules
-            ; (Page, root_pages, etc.). Their concepts/functions are
-            ; still registered via register_concept_recursive so name
-            ; resolution works; bodies must come from the linked
-            ; libscaly. Future work: add an "extern-only" planning
-            ; mode that declares forward refs without compiling
-            ; bodies.
+            ; Walk loaded sub-modules from `define ns { module foo }`
+            ; so their concepts/functions get planned (and recorded
+            ; into instantiated_functions for emission). Side effect
+            ; only — return value of plan_module# is intentionally
+            ; discarded (mirrors session 43's plan_loaded_packages#).
+            ; Mixing the struct-by-value return into plan_namespace#'s
+            ; own struct construction corrupts the frame on stage-0
+            ; codegen; the helper isolates the call.
+            this.plan_namespace_modules#(ns)
 
             ; Restore outer namespace context.
             set current_namespace: old_ns
@@ -6322,6 +6322,71 @@ define Planner
                 &ops_holder,
                 &concs_holder
             )
+        }
+
+        ; plan_namespace_module_one#: route a single sub-module through
+        ; plan_module# only when its name is on the safe-walk list
+        ; (top-level package namespaces). Inner generic sub-modules of
+        ; the scaly stdlib (containers/Vector, containers/HashMap, etc.)
+        ; carry generic struct definitions whose body planning hits an
+        ; unresolved Type.name walk in join_dotted_name → crashes
+        ; mid-emit. Until that gap is closed, restrict the walk to the
+        ; outer package namespaces.
+        ;
+        ; Functions inside the skipped inner sub-modules still resolve
+        ; via register_concept_recursive (which walks ns.modules and
+        ; registers concepts/functions globally) plus the
+        ; collapse_operand_sequence# extern-decl gate; bodies come from
+        ; libscaly / libscalyc at link time.
+        ;
+        ; Positive enumeration of safe names — the negation form
+        ; `equals("X") = false` triggers a stage-0 codegen issue
+        ; (silent rc=139 SEGV in the helper after IR is emitted).
+        function plan_namespace_module_one#(rp, this: Planner, sub: Module)
+        {
+            guard sub.name.equals("memory")
+            {
+                let planned this.plan_module#(sub)
+            }
+            guard sub.name.equals("io")
+            {
+                let planned this.plan_module#(sub)
+            }
+            guard sub.name.equals("containers")
+            {
+                let planned this.plan_module#(sub)
+            }
+            guard sub.name.equals("compiler")
+            {
+                let planned this.plan_module#(sub)
+            }
+            guard sub.name.equals("cli")
+            {
+                let planned this.plan_module#(sub)
+            }
+        }
+
+        ; Helper for plan_namespace#: walk ns.modules and route each
+        ; through plan_namespace_module_one# (which applies the
+        ; safe-walk filter). Side effect only — plan_module# returns
+        ; a struct-by-value PlannedModule that's intentionally
+        ; discarded inside the inner helper. Mixing that struct
+        ; return into plan_namespace#'s own struct construction
+        ; corrupts the frame on stage-0 codegen (session-43 pattern);
+        ; the helper isolates the call.
+        function plan_namespace_modules#(rp, this: Planner, ns: Namespace)
+        {
+            var mi: size_t 0
+            while mi < ns.modules.length
+            {
+                let sub_ptr ns.modules.get(mi)
+                guard sub_ptr <> null
+                {
+                    let sub (*sub_ptr)
+                    this.plan_namespace_module_one#(sub)
+                }
+                set mi: mi + 1
+            }
         }
 
         ; is_namespace_sibling_function: true iff `name` refers to a

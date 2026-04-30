@@ -1255,8 +1255,22 @@ define Emitter
 
                     }
 
-                    ; Use extractvalue for struct field access
-                    set current_value: LLVMBuildExtractValue(builder, current_value, access.field_index as u32, access.name.c_data())
+                    ; Defensive: extractvalue requires a non-null
+                    ; aggregate with a real type. If the chain step
+                    ; produced null (no map_type, missing parent), bail
+                    ; out instead of crashing inside
+                    ; LLVMBuildExtractValue → setName.
+                    guard current_value.handle <> null
+                        return LLVMValueRef(null)
+
+                    ; Use extractvalue for struct field access. Name
+                    ; uses to_c_string# (null-terminated heap copy)
+                    ; instead of c_data() — c_data() points into the
+                    ; varint-prefixed buffer and has no null terminator
+                    ; (load-bearing rule: any C API expecting a
+                    ; null-terminated string needs to_c_string#).
+                    let name_cstr access.name.to_c_string#()
+                    set current_value: LLVMBuildExtractValue(builder, current_value, access.field_index as u32, name_cstr)
                 }
             }
             set i: i + 1
@@ -3766,7 +3780,7 @@ function test() returns int
         when syntax: Success
         {
             ; Model the parsed program
-            let program build_program#(String$("test.scaly"), String$("test"), syntax)
+            let program build_program#(String$("test.scaly"), String$("test"), syntax, true)
 
             ; Plan the program
             var planner Planner#(String$("test.scaly"))
@@ -3798,7 +3812,7 @@ function test() returns int
             return 110
         when syntax: Success
         {
-            let program build_program#(String$("test2.scaly"), String$("test2"), syntax)
+            let program build_program#(String$("test2.scaly"), String$("test2"), syntax, true)
             var planner Planner#(String$("test2.scaly"))
             let plan planner.plan_program(program)
             guard plan = null
@@ -3823,7 +3837,7 @@ function test() returns int
             return 120
         when syntax: Success
         {
-            let program build_program#(String$("test3.scaly"), String$("test3"), syntax)
+            let program build_program#(String$("test3.scaly"), String$("test3"), syntax, true)
             var planner Planner#(String$("test3.scaly"))
             let plan planner.plan_program(program)
             guard plan = null
@@ -3843,7 +3857,7 @@ function test() returns int
             return 130
         when syntax: Success
         {
-            let program build_program#(String$("test4.scaly"), String$("test4"), syntax)
+            let program build_program#(String$("test4.scaly"), String$("test4"), syntax, true)
             var planner Planner#(String$("test4.scaly"))
             let plan planner.plan_program(program)
             guard plan = null
@@ -3863,7 +3877,7 @@ function test() returns int
             return 140
         when syntax: Success
         {
-            let program build_program#(String$("test5.scaly"), String$("test5"), syntax)
+            let program build_program#(String$("test5.scaly"), String$("test5"), syntax, true)
             var planner Planner#(String$("test5.scaly"))
             let plan planner.plan_program(program)
             guard plan = null
@@ -3883,7 +3897,7 @@ function test() returns int
             return 150
         when syntax: Success
         {
-            let program build_program#(String$("test6.scaly"), String$("test6"), syntax)
+            let program build_program#(String$("test6.scaly"), String$("test6"), syntax, true)
             var planner Planner#(String$("test6.scaly"))
             let plan planner.plan_program(program)
             guard plan = null
@@ -3903,7 +3917,7 @@ function test() returns int
             return 160
         when syntax: Success
         {
-            let program build_program#(String$("test7.scaly"), String$("test7"), syntax)
+            let program build_program#(String$("test7.scaly"), String$("test7"), syntax, true)
             var planner Planner#(String$("test7.scaly"))
             let plan planner.plan_program(program)
             guard plan = null
@@ -3928,7 +3942,7 @@ function test() returns int
             return 170
         when syntax: Success
         {
-            let program build_program#(String$("test8.scaly"), String$("test8"), syntax)
+            let program build_program#(String$("test8.scaly"), String$("test8"), syntax, true)
             var planner Planner#(String$("test8.scaly"))
             let plan planner.plan_program(program)
             guard plan = null
@@ -3948,7 +3962,7 @@ function test() returns int
             return 180
         when syntax: Success
         {
-            let program build_program#(String$("test9.scaly"), String$("test9"), syntax)
+            let program build_program#(String$("test9.scaly"), String$("test9"), syntax, true)
             var planner Planner#(String$("test9.scaly"))
             let plan planner.plan_program(program)
             guard plan = null
@@ -3968,7 +3982,7 @@ function test() returns int
             return 190
         when syntax: Success
         {
-            let program build_program#(String$("test10.scaly"), String$("test10"), syntax)
+            let program build_program#(String$("test10.scaly"), String$("test10"), syntax, true)
             var planner Planner#(String$("test10.scaly"))
             let plan planner.plan_program(program)
             guard plan = null
@@ -3993,7 +4007,7 @@ function test() returns int
             return 200
         when syntax: Success
         {
-            let program build_program#(String$("test11.scaly"), String$("test11"), syntax)
+            let program build_program#(String$("test11.scaly"), String$("test11"), syntax, true)
             var planner Planner#(String$("test11.scaly"))
             let plan planner.plan_program(program)
             guard plan = null
@@ -4014,7 +4028,7 @@ function test() returns int
             return 210
         when syntax: Success
         {
-            let program build_program#(String$("test12.scaly"), String$("test12"), syntax)
+            let program build_program#(String$("test12.scaly"), String$("test12"), syntax, true)
             var planner Planner#(String$("test12.scaly"))
             let plan planner.plan_program(program)
             guard plan = null
