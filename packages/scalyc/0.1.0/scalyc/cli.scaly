@@ -355,6 +355,20 @@ define cli
         var cmd_builder StringBuilder#()
         cmd_builder.append("clang ")
         cmd_builder.append(tmp_obj)
+        ; Append the scaly stdlib static archive. Static-archive
+        ; semantics mean unused .o entries are not pulled in, so
+        ; tests that reference no scaly stdlib symbols are
+        ; unaffected. Tests that DO reference scaly.test /
+        ; memory.test / etc. resolve those symbols at link time
+        ; once the dotted-call gate emits a real call instruction.
+        ;
+        ; libscalyc.a is intentionally NOT linked here: scalyc.o's
+        ; transitive LLVM-C references would force every binary
+        ; that reaches scalyc.o (e.g. stage-1's own self-build) to
+        ; also link libLLVM, which is platform-specific. Stage-1
+        ; self-build is performed via a manual clang invocation
+        ; that adds libscalyc.a + -lLLVM directly.
+        cmd_builder.append(" /tmp/libscaly.a")
         cmd_builder.append(" -o ")
         cmd_builder.append(opts.output_file)
         let cmd_str cmd_builder.to_string#()

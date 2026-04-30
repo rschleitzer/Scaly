@@ -878,8 +878,10 @@ define Emitter
                             LLVMBuildRet(builder, result)
                         else
                         {
-                            ; Return void if no value
-                            LLVMBuildRetVoid(builder)
+                            ; result missing but return type is non-void;
+                            ; emit zero of the return type so IR stays valid.
+                            let llvm_rt map_type(func.return_type.unwrap())
+                            LLVMBuildRet(builder, LLVMConstNull(llvm_rt))
                         }
                     }
                     else

@@ -312,6 +312,16 @@ define Planner
         current_namespace: ref[Namespace]?
         current_namespace_name: ref[String]?
 
+        ; Last-segment names of every `use a.b.c` clause in the
+        ; program's main module. Consulted by the dotted-call
+        ; namespace override to decide whether a `prefix.suffix(...)`
+        ; call should emit a real extern declaration even when
+        ; planning is happening inside a loaded-package namespace
+        ; body. Mirrors stage-0's Use-alias check at
+        ; Planner.cpp:7752-7789. Populated once at plan_program#
+        ; entry, stays empty until then.
+        program_use_aliases: Array[String]
+
         ; Monotonic counter for synthesizing unique lambda names.
         next_lambda_id: size_t
     )
@@ -339,6 +349,7 @@ define Planner
             set sibling_programs: Array[Program]^page()
             set current_namespace: null
             set current_namespace_name: null
+            set program_use_aliases: Array[String]^page()
             set next_lambda_id: 0
 
             ; Seed the function registry with C-runtime externs so name
@@ -538,6 +549,26 @@ define Planner
             instantiated_functions.add(f)
         }
 
+        ; Has a function with this mangled name already been recorded in
+        ; instantiated_functions? Used by the dotted-call namespace
+        ; override to avoid re-declaring an extern stub for a function
+        ; that was already planned (or already extern-declared).
+        function has_recorded_function(this: Planner, mangled: String) returns bool
+        {
+            var i: size_t 0
+            while i < instantiated_functions.length
+            {
+                let f_ptr instantiated_functions.get(i)
+                guard f_ptr <> null
+                {
+                    guard f_ptr.mangled_name.equals(mangled)
+                        return true
+                }
+                set i: i + 1
+            }
+            false
+        }
+
         function record_global(this: Planner, g: PlannedGlobal)
         {
             instantiated_globals.add(g)
@@ -575,6 +606,53 @@ define Planner
         function add_sibling_program(this: Planner, prog: Program)
         {
             sibling_programs.add(prog)
+        }
+
+        ; record_program_uses: walk the program's main module Use
+        ; clauses and store each clause's last path segment in
+        ; program_use_aliases. Called once from plan_program# before
+        ; plan_module# runs. The resulting alias list lets the
+        ; dotted-call extern-decl gate fire for `prefix.suffix(...)`
+        ; calls even when planning a loaded-package namespace body,
+        ; provided the prefix names a Use-imported alias of the main
+        ; program. Mirrors stage-0's Use-alias filter at
+        ; Planner.cpp:7752-7789.
+        function record_program_uses(this: Planner, prog: Program)
+        {
+            let uses prog.module_.uses
+            var i: size_t 0
+            while i < uses.length
+            {
+                let u_ptr uses.get(i)
+                guard u_ptr <> null
+                {
+                    let path u_ptr.path
+                    guard path.length > 0
+                    {
+                        let last_ptr path.get(path.length - 1)
+                        guard last_ptr <> null
+                            program_use_aliases.add((*last_ptr))
+                    }
+                }
+                set i: i + 1
+            }
+        }
+
+        ; is_program_use_alias: linear scan of program_use_aliases.
+        function is_program_use_alias(this: Planner, name: String) returns bool
+        {
+            var i: size_t 0
+            while i < program_use_aliases.length
+            {
+                let a_ptr program_use_aliases.get(i)
+                guard a_ptr <> null
+                {
+                    guard a_ptr.equals(name)
+                        return true
+                }
+                set i: i + 1
+            }
+            false
         }
 
         ; plan_loaded_packages: extracted helper so plan_program's
@@ -2412,6 +2490,101 @@ define Planner
                                                 suffix, &items_holder, ns_parent_ref, false
                                             )
                                             set has_ns_mangled: true
+
+                                            ; Declare the namespaced
+                                            ; function as extern in the
+                                            ; instantiation cache so the
+                                            ; Emitter generates an LLVM
+                                            ; declaration that emit_call
+                                            ; can resolve via
+                                            ; LLVMGetNamedFunction. The
+                                            ; function's body comes from
+                                            ; the linked package binary
+                                            ; (libscalyc / libscaly) at
+                                            ; link time. plan_namespace#
+                                            ; itself doesn't recurse
+                                            ; into ns.modules — calling
+                                            ; plan_module# on stdlib
+                                            ; modules crashes stage-1
+                                            ; on body-level features it
+                                            ; doesn't yet support, but
+                                            ; an extern declaration
+                                            ; needs only types we've
+                                            ; already resolved here.
+                                            ;
+                                            ; Skip the declaration when
+                                            ; we're inside a loaded
+                                            ; package's namespace body
+                                            ; (current_namespace is set)
+                                            ; UNLESS the prefix matches
+                                            ; a Use-imported alias of
+                                            ; the program's main module.
+                                            ; Without the gate, externs
+                                            ; emitted from e.g.
+                                            ; scaly.test()'s body for
+                                            ; memory.test/containers.test/
+                                            ; io.test break AOT tests
+                                            ; that don't link libscaly.
+                                            ; The Use-alias carve-out
+                                            ; lets explicitly imported
+                                            ; namespaces (e.g.
+                                            ; main.scaly's
+                                            ; `use scalyc.cli` -> "cli")
+                                            ; emit real call
+                                            ; instructions; the linker
+                                            ; resolves them against the
+                                            ; package binary at link
+                                            ; time. Mirrors stage-0's
+                                            ; check at
+                                            ; Planner.cpp:7752-7789.
+                                            ; Gate now relies solely on
+                                            ; the program's Use aliases.
+                                            ; Previously this also opened
+                                            ; on `current_namespace = null`
+                                            ; to handle top-level call
+                                            ; sites in the main program;
+                                            ; that was load-bearing only
+                                            ; while libscaly wasn't linked
+                                            ; into the AOT pipeline. Now
+                                            ; that cli.run links libscaly
+                                            ; unconditionally, the
+                                            ; current_namespace clause is
+                                            ; no longer required: any
+                                            ; legitimate top-level call
+                                            ; into a loaded package goes
+                                            ; through a Use-imported
+                                            ; alias. main.scaly's
+                                            ; `use scalyc.cli` puts "cli"
+                                            ; in program_use_aliases, so
+                                            ; `cli.main(...)` still opens
+                                            ; the gate.
+                                            guard this.is_program_use_alias(prefix)
+                                            guard this.has_recorded_function(ns_mangled) = false
+                                            {
+                                                let mm (*match_ref)
+                                                var rt_holder Vector[PlannedType]^rp(1)
+                                                rt_holder.put(0, mm.return_type)
+                                                let extern_impl PlannedImplementation.Extern(
+                                                    PlannedExternImpl(result.loc)
+                                                )
+                                                this.record_function(PlannedFunction(
+                                                    result.loc,
+                                                    false,
+                                                    false,
+                                                    suffix,
+                                                    ns_mangled,
+                                                    null,
+                                                    &items_holder,
+                                                    rt_holder.get(0),
+                                                    mm.throws_type,
+                                                    Lifetime.Unspecified(Unspecified()),
+                                                    extern_impl,
+                                                    null,
+                                                    false,
+                                                    mm.can_throw,
+                                                    null
+                                                ))
+                                            }
                                         }
                                     }
                                 }
@@ -6580,6 +6753,11 @@ define Planner
         ; once the instantiate-generic pass is ported.
         function plan_program#(rp, this: Planner, prog: Program) returns ref[Plan]?
         {
+            ; Stash the program's main-module Use aliases up front
+            ; so the dotted-call extern-decl gate can consult them
+            ; while planning loaded-package namespace bodies.
+            this.record_program_uses(prog)
+
             ; Seed the concept/function/operator registries with
             ; every sibling program's top-level definitions first.
             ; This way plan_module's lookups see cross-file
@@ -6587,13 +6765,20 @@ define Planner
             ; starts planning the primary module's members.
             this.register_sibling_programs()
 
-            ; Plan every loaded package's top-level modules so their
-            ; functions/concepts/operators land in instantiated_functions
-            ; and get both declared and emitted by the Emitter pass.
-            ; Without this, calls into package symbols resolve at the
-            ; Planner but emit_call returns null because the LLVM
-            ; module never receives a declaration.
-            this.plan_loaded_packages#()
+            ; plan_loaded_packages# is intentionally NOT called here.
+            ; If invoked, it walks each loaded package and records every
+            ; top-level Function via plan_function# -> instantiated_functions
+            ; -> Emitter emits the function body. For functions whose
+            ; bodies stage-1 cannot fully plan (every dotted call inside
+            ; the body collapses to nothing because the gate / lookup
+            ; doesn't fire), this produces ret-stub definitions that
+            ; collide with the real bodies in libscaly.a / libscalyc.a
+            ; at link time ("duplicate symbol _ZN5scaly4testEv").
+            ; Skipping the walk lets the dotted-call extern-decl gate
+            ; emit declarations only, with libscaly/libscalyc providing
+            ; the bodies at link time. Functions still resolve at
+            ; planning time via register_module_concepts (called by
+            ; cli.run::register_packages).
 
             let planned_main this.plan_module#(prog.module_)
             let planned_stmts this.plan_statements#(prog.statements)
