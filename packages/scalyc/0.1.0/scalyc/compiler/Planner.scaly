@@ -2466,24 +2466,64 @@ define Planner
                                             ))
                                             let ns_parent_ref ns_parent_holder.get(0)
 
+                                            ; Build items from the matched
+                                            ; function's declared parameter
+                                            ; types (not arg_types). Stage-0
+                                            ; mangles using the declared
+                                            ; param types — e.g. Console.println's
+                                            ; signature is
+                                            ; `(text: pointer[const_char])`,
+                                            ; so the mangled name is
+                                            ; `_ZN7Console7printlnEP10const_char`.
+                                            ; Using arg_types instead would
+                                            ; produce `_ZN7Console7printlnEP2i8`
+                                            ; (string-literal type) which
+                                            ; doesn't match libscaly's symbol.
                                             var items_arr Array[PlannedItem]$()
-                                            var ai: size_t 0
-                                            while ai < arg_types.length
+                                            let mm_for_params (*match_ref)
+                                            let param_types_ref mm_for_params.parameter_types
+                                            guard param_types_ref <> null
                                             {
-                                                let at_ptr arg_types.get(ai)
-                                                guard at_ptr <> null
+                                                let pts (*param_types_ref)
+                                                var ai: size_t 0
+                                                while ai < pts.length
                                                 {
-                                                    var ity_holder Vector[PlannedType]^rp(1)
-                                                    ity_holder.put(0, (*at_ptr))
-                                                    items_arr.add(PlannedItem(
-                                                        result.loc,
-                                                        false,
-                                                        null,
-                                                        ity_holder.get(0),
-                                                        null
-                                                    ))
+                                                    let pt_ptr pts.get(ai)
+                                                    guard pt_ptr <> null
+                                                    {
+                                                        var ity_holder Vector[PlannedType]^rp(1)
+                                                        ity_holder.put(0, (*pt_ptr))
+                                                        items_arr.add(PlannedItem(
+                                                            result.loc,
+                                                            false,
+                                                            null,
+                                                            ity_holder.get(0),
+                                                            null
+                                                        ))
+                                                    }
+                                                    set ai: ai + 1
                                                 }
-                                                set ai: ai + 1
+                                            }
+                                            guard param_types_ref = null
+                                            {
+                                                var ai: size_t 0
+                                                while ai < arg_types.length
+                                                {
+                                                    let at_ptr arg_types.get(ai)
+                                                    guard at_ptr <> null
+                                                    {
+                                                        var ity_holder Vector[PlannedType]^rp(1)
+                                                        ity_holder.put(0, (*at_ptr))
+                                                        items_arr.add(PlannedItem(
+                                                            result.loc,
+                                                            false,
+                                                            null,
+                                                            ity_holder.get(0),
+                                                            null
+                                                        ))
+                                                    }
+                                                    set ai: ai + 1
+                                                }
                                             }
                                             var items_holder Vector[PlannedItem]^rp(items_arr)
                                             set ns_mangled: Planner.mangle_function#(
@@ -6761,6 +6801,31 @@ define Planner
         ; when B is defined later in the same module.
         function plan_module#(rp, this: Planner, m: Module) returns PlannedModule
         {
+            ; Propagate this module's Use clauses into program_use_aliases
+            ; so the dotted-call extern-decl gate fires for prefixes
+            ; imported from sub-modules (e.g. cli.scaly's `use scaly.io.Console`
+            ; → "Console") in addition to the main program's own uses.
+            ; Without this, calls like `Console.println(...)` inside cli.run
+            ; resolve at planning time but never reach the gate, so no
+            ; extern declaration is emitted and emit_call returns null
+            ; → empty function bodies.
+            var uu: size_t 0
+            while uu < m.uses.length
+            {
+                let u_ptr m.uses.get(uu)
+                guard u_ptr <> null
+                {
+                    let path u_ptr.path
+                    guard path.length > 0
+                    {
+                        let last_ptr path.get(path.length - 1)
+                        guard last_ptr <> null
+                            program_use_aliases.add((*last_ptr))
+                    }
+                }
+                set uu: uu + 1
+            }
+
             this.register_module_concepts(m)
 
             var functions Array[PlannedFunction]$()
