@@ -244,6 +244,10 @@ function LLVMAppendBasicBlockInContext(context: LLVMContextRef, func: LLVMValueR
 ; Get the terminator instruction of a basic block
 function LLVMGetBasicBlockTerminator(block: LLVMBasicBlockRef) returns LLVMValueRef extern
 
+; Walk the basic blocks of a function
+function LLVMGetFirstBasicBlock(func: LLVMValueRef) returns LLVMBasicBlockRef extern
+function LLVMGetNextBasicBlock(block: LLVMBasicBlockRef) returns LLVMBasicBlockRef extern
+
 ; ============================================================================
 ; Constant Functions
 ; ============================================================================

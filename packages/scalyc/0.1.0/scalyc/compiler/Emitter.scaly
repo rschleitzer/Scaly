@@ -71,6 +71,9 @@ use scaly.compiler.LLVM.LLVMAddFunction
 use scaly.compiler.LLVM.LLVMAddIncoming
 use scaly.compiler.LLVM.LLVMBuildPhi
 use scaly.compiler.LLVM.LLVMAppendBasicBlockInContext
+use scaly.compiler.LLVM.LLVMGetFirstBasicBlock
+use scaly.compiler.LLVM.LLVMGetNextBasicBlock
+use scaly.compiler.LLVM.LLVMBuildUnreachable
 use scaly.compiler.LLVM.LLVMBuildAShr
 use scaly.compiler.LLVM.LLVMBuildAdd
 use scaly.compiler.LLVM.LLVMBuildAlloca
@@ -605,6 +608,51 @@ define Emitter
         LLVMTypeRef(null)
     }
 
+    ; Direct intrinsic-name → LLVM type lookup that doesn't touch the
+    ; intrinsic_type_names Vector. Used at sites where the Vector-based
+    ; lookup is unreliable (it stores `String$(...)` values from
+    ; init_intrinsic_types whose `data` dangles once init returns).
+    ; Returns null when the name isn't a known intrinsic — callers
+    ; should fall back to map_type for struct/pointer/ref handling.
+    function map_intrinsic_type_by_name(this, name: String) returns LLVMTypeRef
+    {
+        guard name.equals("void")
+            return LLVMVoidTypeInContext(context)
+        guard name.equals("bool")
+            return LLVMInt1TypeInContext(context)
+        guard name.equals("char")
+            return LLVMInt8TypeInContext(context)
+        guard name.equals("const_char")
+            return LLVMInt8TypeInContext(context)
+        guard name.equals("i8")
+            return LLVMInt8TypeInContext(context)
+        guard name.equals("u8")
+            return LLVMInt8TypeInContext(context)
+        guard name.equals("i16")
+            return LLVMInt16TypeInContext(context)
+        guard name.equals("u16")
+            return LLVMInt16TypeInContext(context)
+        guard name.equals("i32")
+            return LLVMInt32TypeInContext(context)
+        guard name.equals("u32")
+            return LLVMInt32TypeInContext(context)
+        guard name.equals("int")
+            return LLVMInt32TypeInContext(context)
+        guard name.equals("uint")
+            return LLVMInt32TypeInContext(context)
+        guard name.equals("i64")
+            return LLVMInt64TypeInContext(context)
+        guard name.equals("u64")
+            return LLVMInt64TypeInContext(context)
+        guard name.equals("size_t")
+            return LLVMInt64TypeInContext(context)
+        guard name.equals("float")
+            return LLVMFloatTypeInContext(context)
+        guard name.equals("double")
+            return LLVMDoubleTypeInContext(context)
+        LLVMTypeRef(null)
+    }
+
     ; Check if a type name is an intrinsic type
     function is_intrinsic_type(this, name: String) returns bool
     {
@@ -867,27 +915,47 @@ define Emitter
                 ; Emit the action (function body)
                 let result emit_action(action)
 
-                ; Add return if not already terminated
+                ; Add return if not already terminated. Choose RetVoid
+                ; vs Ret-zero by querying the LLVM function's actual
+                ; return type — `func.return_type` (Plan-side) can be
+                ; null for functions whose Plan return type is missing
+                ; even when emit_function_decl gave the LLVM signature
+                ; a non-void result, which would otherwise produce
+                ; `ret void` in a `ptr`-returning function.
                 let term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock(builder))
                 guard term.handle = null
                 {
-                    ; Add appropriate return based on return type
-                    if func.return_type <> null
+                    let func_ty LLVMGlobalGetValueType(llvm_func)
+                    let llvm_rt LLVMGetReturnType(func_ty)
+                    let void_ty LLVMVoidTypeInContext(context)
+                    if LLVMGetTypeKind(llvm_rt) = LLVMGetTypeKind(void_ty)
+                        LLVMBuildRetVoid(builder)
+                    else
                     {
                         if result.handle <> null
                             LLVMBuildRet(builder, result)
                         else
-                        {
-                            ; result missing but return type is non-void;
-                            ; emit zero of the return type so IR stays valid.
-                            let llvm_rt map_type(func.return_type.unwrap())
                             LLVMBuildRet(builder, LLVMConstNull(llvm_rt))
-                        }
                     }
-                    else
+                }
+
+                ; Seal any basic block that lacks a terminator. This
+                ; happens when sub-emitters bail early on an unsupported
+                ; operand (e.g. emit_while returning null with the
+                ; builder mid-cond-block leaves while.body / while.exit
+                ; empty). LLVM IR requires every block to end in a
+                ; terminator; without sealing, llc rejects the .ll and
+                ; the IRTranslator SEGVs in -o mode.
+                var bb LLVMGetFirstBasicBlock(llvm_func)
+                while bb.handle <> null
+                {
+                    let bb_term LLVMGetBasicBlockTerminator(bb)
+                    guard bb_term.handle = null
                     {
-                        LLVMBuildRetVoid(builder)
+                        LLVMPositionBuilderAtEnd(builder, bb)
+                        LLVMBuildUnreachable(builder)
                     }
+                    set bb: LLVMGetNextBasicBlock(bb)
                 }
 
                 ; Clear local variables for next function
@@ -1009,12 +1077,25 @@ define Emitter
                 emit_function_body(func)
         }
 
-        ; Emit global variables
+        ; Emit global variables.
+        ;
+        ; Globals declared as `define NAME: int VALUE` carry a planned
+        ; `int`/`u8`/`size_t` type. The general map_type path runs an
+        ; intrinsic-name lookup against `intrinsic_type_names`, but the
+        ; Strings in that Vector are constructed via `String$(...)` in
+        ; init_intrinsic_types — they dangle after init returns and
+        ; mis-match here, falling through to opaque-ptr fallback. That
+        ; produces invalid IR like `@"NAME" = constant ptr 9`. Use the
+        ; cstring-literal direct lookup first, then map_type for
+        ; struct/pointer/ref globals (e.g. extern function ptr globals).
         guard plan.globals <> null
         {
             for global in plan.globals
             {
-                let global_type map_type(global.global_type)
+                var global_type map_intrinsic_type_by_name(global.global_type.name)
+                guard global_type.handle = null
+                    set global_type: map_type(global.global_type)
+
                 let gv LLVMAddGlobal(llvm_module, global_type, global.mangled_name.c_data())
 
                 ; Set initializer if present
@@ -3533,14 +3614,23 @@ define Emitter
             }
         }
 
-        ; Create the return instruction
-        if ret_val.handle <> null
-        {
-            LLVMBuildRet(builder, ret_val)
-        }
+        ; Create the return instruction. Querying the function's
+        ; actual LLVM return type guards against the case where
+        ; ret_val is null (sub-emit fell through) but the function's
+        ; signature is non-void — e.g. `return some_unplanned_call()`
+        ; in `function f() returns pointer[Page]` would otherwise
+        ; emit `ret void` and produce IR rejected by llc / IRTranslator.
+        let func_ty LLVMGlobalGetValueType(current_function)
+        let llvm_rt LLVMGetReturnType(func_ty)
+        let void_ty LLVMVoidTypeInContext(context)
+        if LLVMGetTypeKind(llvm_rt) = LLVMGetTypeKind(void_ty)
+            LLVMBuildRetVoid(builder)
         else
         {
-            LLVMBuildRetVoid(builder)
+            if ret_val.handle <> null
+                LLVMBuildRet(builder, ret_val)
+            else
+                LLVMBuildRet(builder, LLVMConstNull(llvm_rt))
         }
 
         true
