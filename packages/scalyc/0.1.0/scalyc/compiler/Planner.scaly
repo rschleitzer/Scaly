@@ -2326,19 +2326,23 @@ define Planner
                         let arg_types Planner.extract_arg_types#(second)
                         var match_ref this.resolve_function_call#(fn_name, arg_types)
 
-                        ; Namespaced call fallback: `cli.main(args)` arrives
+                        ; Dotted call fallback: `cli.main(args)` arrives
                         ; with fn_name="cli.main"; the function is registered
                         ; in model_functions under its short name "main"
                         ; (register_concept_recursive flattens namespace
-                        ; members). Retry with the suffix when the prefix
-                        ; resolves to a Namespace concept; if so, override
-                        ; the MethodMatch's mangled_name to the proper
+                        ; members; register_module_concepts recurses into
+                        ; sub-modules with register_function). Retry with
+                        ; the suffix; if the prefix resolves to a Namespace
+                        ; concept, also override mangled_name to
                         ; `_ZN<prefix><name>E<args>` so the call links to
-                        ; the namespaced function (model_functions stores
-                        ; Model.Functions without parent context, so
+                        ; the namespaced function (otherwise
                         ; check_function_match's mangle_free_function path
-                        ; otherwise produces the bare `_Z<name>` which
-                        ; collides with the program's own `main`).
+                        ; produces the bare `_Z<name>` and collides with
+                        ; the program's own free function of the same
+                        ; name). Plain modules don't add a namespace
+                        ; segment to the mangled name, so the suffix-only
+                        ; resolve already returns the right MethodMatch
+                        ; for `compiler.test()` etc.
                         var ns_mangled: String String^rp("")
                         var has_ns_mangled: bool false
                         guard match_ref = null
@@ -2353,20 +2357,20 @@ define Planner
                                     dot_pos + 1,
                                     fn_name.get_length() - dot_pos - 1
                                 )
-                                let ns_ref this.lookup_concept(prefix)
-                                guard ns_ref <> null
+                                set match_ref: this.resolve_function_call#(suffix, arg_types)
+                                guard match_ref <> null
                                 {
-                                    let nsc (*ns_ref)
-                                    var is_ns: bool false
-                                    choose nsc.definition
-                                        when n: Namespace
-                                            set is_ns: true
-                                        else
-                                            0
-                                    guard is_ns
+                                    let ns_ref this.lookup_concept(prefix)
+                                    guard ns_ref <> null
                                     {
-                                        set match_ref: this.resolve_function_call#(suffix, arg_types)
-                                        guard match_ref <> null
+                                        let nsc (*ns_ref)
+                                        var is_ns: bool false
+                                        choose nsc.definition
+                                            when n: Namespace
+                                                set is_ns: true
+                                            else
+                                                0
+                                        guard is_ns
                                         {
                                             ; Build PlannedType for the
                                             ; namespace as a parent and
