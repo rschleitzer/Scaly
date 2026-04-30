@@ -1697,6 +1697,62 @@ define Emitter
         let is_float is_floating_point_type(result_type)
         let is_signed is_signed_type(result_type)
 
+        ; Pointer arithmetic: pointer + int, pointer - int → GEP. The
+        ; result_type is `pointer[T]` for these; element type for the
+        ; GEP is map_type of the first generic, falling back to i8 when
+        ; the result type isn't recognizably a pointer (gives a byte
+        ; offset, matching the C++ Emitter at emitIntrinsicOp:4063+).
+        let l_kind LLVMGetTypeKind(LLVMTypeOf(l))
+        let r_kind LLVMGetTypeKind(LLVMTypeOf(r))
+        guard l_kind = LLVMTypeKind.Pointer()
+        {
+            guard r_kind = LLVMTypeKind.Integer()
+            {
+                guard op_name.equals(String$("+"))
+                {
+                    var elem_ty LLVMInt8TypeInContext(context)
+                    guard result_type.name.equals(String$("pointer"))
+                    {
+                        guard result_type.generics <> null
+                        {
+                            let gens (*result_type.generics)
+                            guard gens.length > 0
+                            {
+                                let inner_ptr gens.get(0)
+                                guard inner_ptr <> null
+                                    set elem_ty: map_type(*inner_ptr)
+                            }
+                        }
+                    }
+                    var indices Vector[LLVMValueRef]#(1)
+                    indices.put(0, r)
+                    return LLVMBuildInBoundsGEP2(builder, elem_ty, l, indices.data, 1, "ptr.add")
+                }
+
+                guard op_name.equals(String$("-"))
+                {
+                    var elem_ty LLVMInt8TypeInContext(context)
+                    guard result_type.name.equals(String$("pointer"))
+                    {
+                        guard result_type.generics <> null
+                        {
+                            let gens (*result_type.generics)
+                            guard gens.length > 0
+                            {
+                                let inner_ptr gens.get(0)
+                                guard inner_ptr <> null
+                                    set elem_ty: map_type(*inner_ptr)
+                            }
+                        }
+                    }
+                    let neg_offset LLVMBuildNeg(builder, r, "neg")
+                    var indices Vector[LLVMValueRef]#(1)
+                    indices.put(0, neg_offset)
+                    return LLVMBuildInBoundsGEP2(builder, elem_ty, l, indices.data, 1, "ptr.sub")
+                }
+            }
+        }
+
         ; Addition
         guard op_name.equals(String$("+"))
         {
