@@ -300,7 +300,9 @@ function handle_type#(syntax: TypeSyntax) returns ref[Type]?
                 }
                 set gi: gi + 1
             }
-            set generics: &gen_types
+            var gens_holder Vector[Vector[Type]]^rp(1)
+            gens_holder.put(0, gen_types)
+            set generics: gens_holder.get(0)
         }
     }
 
@@ -933,7 +935,9 @@ function handle_operand#(syntax: OperandSyntax) returns Operand
             }
             set i: i + 1
         }
-        set member_access: &path
+        var path_holder Vector[Vector[String]]^rp(1)
+        path_holder.put(0, path)
+        set member_access: path_holder.get(0)
     }
 
     Operand(Span(syntax.start, syntax.end), expr, member_access)
@@ -1142,7 +1146,9 @@ function handle_property#(is_private: bool, syntax: PropertySyntax) returns Prop
     {
         let init_syntax (*syntax.initializer)
         let ops handle_operands#(init_syntax.operands)
-        set initializer: &ops
+        var holder Vector[Vector[Operand]]^rp(1)
+        holder.put(0, ops)
+        set initializer: holder.get(0)
     }
 
     Property(

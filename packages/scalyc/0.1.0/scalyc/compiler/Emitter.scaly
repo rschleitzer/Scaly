@@ -1486,6 +1486,13 @@ define Emitter
             {
                 let arg_operand arg_ptr.unwrap()
                 let arg_value emit_operand(arg_operand)
+                ; Guard against arg emission returning a null handle
+                ; (e.g. an unsupported cast or unresolved sub-expression).
+                ; Calling LLVMTypeOf on a null Value* crashes; bail out
+                ; cleanly so the s48 fallback in emit_function_body emits
+                ; a degraded `ret <zero>` rather than corrupt IR.
+                guard arg_value.handle = null
+                    return LLVMValueRef(null)
                 args_array.put(i, arg_value)
 
                 ; Get parameter type from the emitted value
@@ -2339,6 +2346,10 @@ define Emitter
         ; parameter (which produces invalid IR like
         ; `getelementptr inbounds ptr, ptr %0, ...` and crashes the
         ; AOT IRTranslator on -o).
+        ; A method's `this` parameter binds as pointer[T] (see
+        ; plan_function# at ~line 5697), so the condition's result_type
+        ; carries the pointer wrapper. Peel pointer[T] / ref[T] one
+        ; level so map_type resolves the underlying union struct.
         var union_type LLVMTypeRef(null)
         guard choose_expr.condition <> null
         {
@@ -2349,7 +2360,34 @@ define Emitter
                 guard last_op_ptr <> null
                 {
                     let cond_op (*last_op_ptr)
-                    set union_type: map_type(cond_op.result_type)
+                    var rt cond_op.result_type
+                    guard rt.name.equals(String$("pointer"))
+                    {
+                        guard rt.generics <> null
+                        {
+                            let gens (*rt.generics)
+                            guard gens.length > 0
+                            {
+                                let inner_ptr gens.get(0)
+                                guard inner_ptr <> null
+                                    set rt: (*inner_ptr)
+                            }
+                        }
+                    }
+                    guard rt.name.equals(String$("ref"))
+                    {
+                        guard rt.generics <> null
+                        {
+                            let gens (*rt.generics)
+                            guard gens.length > 0
+                            {
+                                let inner_ptr gens.get(0)
+                                guard inner_ptr <> null
+                                    set rt: (*inner_ptr)
+                            }
+                        }
+                    }
+                    set union_type: map_type(rt)
                 }
             }
         }

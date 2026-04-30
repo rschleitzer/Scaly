@@ -1012,16 +1012,16 @@ define Parser
             when success: Success
                 set attributes: success
 
+        ; parse_typeannotation# may consume a newline as the LF-as-colon
+        ; substitute, then fail to find a Type and throw Invalid (e.g. for
+        ; payload-less union variants like Option's `None`). Mirror stage-0
+        ; Parser.cpp:851-858 which consumes the error unconditionally — both
+        ; Different and Invalid leave `annotation` as null and the lexer
+        ; positioned at the next real token.
         let annotation_start lexer.position
         var annotation: ref[TypeAnnotationSyntax]? null
         choose parse_typeannotation#()
-            when err: Error
-            {
-                choose err
-                    when d: Different {}
-                    when i: Invalid
-                        throw ParserError.Invalid(i)
-            }
+            when err: Error {}
             when success: Success
                 set annotation: TypeAnnotationSyntax#(success.start, success.end, success.type)
 

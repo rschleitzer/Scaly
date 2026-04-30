@@ -6364,6 +6364,142 @@ define Planner
             {
                 let planned this.plan_module#(sub)
             }
+            guard sub.name.equals("Vector")
+            {
+                let planned this.plan_module#(sub)
+            }
+            guard sub.name.equals("HashMap")
+            {
+                let planned this.plan_module#(sub)
+            }
+            guard sub.name.equals("Array")
+            {
+                let planned this.plan_module#(sub)
+            }
+            guard sub.name.equals("BuilderList")
+            {
+                let planned this.plan_module#(sub)
+            }
+            guard sub.name.equals("BuilderListIterator")
+            {
+                let planned this.plan_module#(sub)
+            }
+            guard sub.name.equals("HashMapBuilder")
+            {
+                let planned this.plan_module#(sub)
+            }
+            guard sub.name.equals("HashSet")
+            {
+                let planned this.plan_module#(sub)
+            }
+            guard sub.name.equals("HashSetBuilder")
+            {
+                let planned this.plan_module#(sub)
+            }
+            guard sub.name.equals("KeyValuePair")
+            {
+                let planned this.plan_module#(sub)
+            }
+            guard sub.name.equals("List")
+            {
+                let planned this.plan_module#(sub)
+            }
+            guard sub.name.equals("ListIterator")
+            {
+                let planned this.plan_module#(sub)
+            }
+            guard sub.name.equals("Node")
+            {
+                let planned this.plan_module#(sub)
+            }
+            guard sub.name.equals("Slot")
+            {
+                let planned this.plan_module#(sub)
+            }
+            guard sub.name.equals("Slice")
+            {
+                let planned this.plan_module#(sub)
+            }
+            guard sub.name.equals("Option")
+            {
+                let planned this.plan_module#(sub)
+            }
+            guard sub.name.equals("Result")
+            {
+                let planned this.plan_module#(sub)
+            }
+            guard sub.name.equals("StringIterator")
+            {
+                let planned this.plan_module#(sub)
+            }
+            guard sub.name.equals("StringBuilder")
+            {
+                let planned this.plan_module#(sub)
+            }
+            guard sub.name.equals("String")
+            {
+                let planned this.plan_module#(sub)
+            }
+            guard sub.name.equals("Page")
+            {
+                let planned this.plan_module#(sub)
+            }
+            guard sub.name.equals("PageList")
+            {
+                let planned this.plan_module#(sub)
+            }
+            guard sub.name.equals("PageNode")
+            {
+                let planned this.plan_module#(sub)
+            }
+            guard sub.name.equals("PageListIterator")
+            {
+                let planned this.plan_module#(sub)
+            }
+            guard sub.name.equals("BlockWatermark")
+            {
+                let planned this.plan_module#(sub)
+            }
+            guard sub.name.equals("runtime")
+            {
+                let planned this.plan_module#(sub)
+            }
+            guard sub.name.equals("Console")
+            {
+                let planned this.plan_module#(sub)
+            }
+            guard sub.name.equals("File")
+            {
+                let planned this.plan_module#(sub)
+            }
+            guard sub.name.equals("Directory")
+            {
+                let planned this.plan_module#(sub)
+            }
+            guard sub.name.equals("Path")
+            {
+                let planned this.plan_module#(sub)
+            }
+            guard sub.name.equals("FileError")
+            {
+                let planned this.plan_module#(sub)
+            }
+            guard sub.name.equals("Model")
+            {
+                let planned this.plan_module#(sub)
+            }
+            guard sub.name.equals("Plan")
+            {
+                let planned this.plan_module#(sub)
+            }
+            guard sub.name.equals("LLVM")
+            {
+                let planned this.plan_module#(sub)
+            }
+            guard sub.name.equals("Syntax")
+            {
+                let planned this.plan_module#(sub)
+            }
         }
 
         ; Helper for plan_namespace#: walk ns.modules and route each
