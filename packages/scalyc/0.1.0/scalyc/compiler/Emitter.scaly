@@ -933,7 +933,22 @@ define Emitter
                     else
                     {
                         if result.handle <> null
-                            LLVMBuildRet(builder, result)
+                        {
+                            ; Struct-by-value return: when the function's
+                            ; LLVM return type is a struct but `result`
+                            ; is a pointer (e.g. emit_tuple yields the
+                            ; alloca, which is downstream-correct for
+                            ; stores but not for `ret %struct`), load
+                            ; the struct first. llc otherwise rejects
+                            ; "value doesn't match function result type".
+                            var ret_val result
+                            guard LLVMGetTypeKind(llvm_rt) = LLVMTypeKind.Struct()
+                            {
+                                guard LLVMGetTypeKind(LLVMTypeOf(result)) = LLVMTypeKind.Pointer()
+                                    set ret_val: LLVMBuildLoad2(builder, llvm_rt, result, "ret.load")
+                            }
+                            LLVMBuildRet(builder, ret_val)
+                        }
                         else
                             LLVMBuildRet(builder, LLVMConstNull(llvm_rt))
                     }
@@ -3684,7 +3699,19 @@ define Emitter
         else
         {
             if ret_val.handle <> null
-                LLVMBuildRet(builder, ret_val)
+            {
+                ; Struct-by-value return: load the struct value when
+                ; ret_val is an alloca pointer but the function's LLVM
+                ; return type is a struct. See emit_function_body for
+                ; rationale.
+                var final_val ret_val
+                guard LLVMGetTypeKind(llvm_rt) = LLVMTypeKind.Struct()
+                {
+                    guard LLVMGetTypeKind(LLVMTypeOf(ret_val)) = LLVMTypeKind.Pointer()
+                        set final_val: LLVMBuildLoad2(builder, llvm_rt, ret_val, "ret.load")
+                }
+                LLVMBuildRet(builder, final_val)
+            }
             else
                 LLVMBuildRet(builder, LLVMConstNull(llvm_rt))
         }
