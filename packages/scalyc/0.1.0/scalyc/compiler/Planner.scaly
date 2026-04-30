@@ -577,6 +577,29 @@ define Planner
             sibling_programs.add(prog)
         }
 
+        ; plan_loaded_packages: extracted helper so plan_program's
+        ; body stays small and a discarded plan_module# return value
+        ; doesn't sit in plan_program's struct-by-value chain. The
+        ; returned PlannedModule is dropped here intentionally —
+        ; what we care about is the side effect of plan_function#
+        ; calling record_function on every package-defined Function,
+        ; which lands in instantiated_functions and is then emitted
+        ; by the Emitter as both declaration and definition.
+        function plan_loaded_packages#(rp, this: Planner)
+        {
+            var pi: size_t 0
+            while pi < loaded_packages.length
+            {
+                let pk_ptr loaded_packages.get(pi)
+                guard pk_ptr <> null
+                {
+                    let pk_mod (*pk_ptr).value
+                    let planned this.plan_module#(pk_mod)
+                }
+                set pi: pi + 1
+            }
+        }
+
         ; register_sibling_programs: walk every stashed sibling
         ; Program and populate the shared registries (concepts,
         ; model_functions, model_operators) from each one. The same
@@ -6421,6 +6444,14 @@ define Planner
             ; references (main.scaly -> cli.scaly etc.) before it
             ; starts planning the primary module's members.
             this.register_sibling_programs()
+
+            ; Plan every loaded package's top-level modules so their
+            ; functions/concepts/operators land in instantiated_functions
+            ; and get both declared and emitted by the Emitter pass.
+            ; Without this, calls into package symbols resolve at the
+            ; Planner but emit_call returns null because the LLVM
+            ; module never receives a declaration.
+            this.plan_loaded_packages#()
 
             let planned_main this.plan_module#(prog.module_)
             let planned_stmts this.plan_statements#(prog.statements)

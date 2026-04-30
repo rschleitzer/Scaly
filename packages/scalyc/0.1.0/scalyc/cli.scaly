@@ -386,7 +386,10 @@ define cli
         {
             let pkg_ptr model.packages.get(i)
             guard pkg_ptr <> null
+            {
                 planner.register_loaded_package(pkg_ptr.name, *pkg_ptr)
+                planner.register_module_concepts(*pkg_ptr)
+            }
             set i: i + 1
         }
     }
