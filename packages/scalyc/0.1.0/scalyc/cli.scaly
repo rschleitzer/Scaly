@@ -43,6 +43,9 @@ define Options
     plan_only: bool         ; --plan: just run planner
     show_help: bool
     error_message: String
+    library_paths: Vector[String]   ; -L<path> entries (no leading -L)
+    libraries: Vector[String]       ; -l<name> entries (no leading -l)
+    extra_objects: Vector[String]   ; positional .a / .o paths
 )
 {
     init()
@@ -58,6 +61,9 @@ define Options
         set plan_only: false
         set show_help: false
         set error_message: String()
+        set library_paths: Vector[String]()
+        set libraries: Vector[String]()
+        set extra_objects: Vector[String]()
     }
 
     function has_error(this) returns bool
@@ -135,6 +141,17 @@ define cli
                         set opts.error_message: String#("-o requires a filename")
                     }
                 }
+                else if arg.starts_with(String$("-L")) & arg.get_length() > 2
+                {
+                    ; Library search path: -L<path> (prefix-form, like clang).
+                    ; Forwarded verbatim to the clang link command.
+                    opts.library_paths.add(String#(arg_ptr + 2))
+                }
+                else if arg.starts_with(String$("-l")) & arg.get_length() > 2
+                {
+                    ; Library name: -l<name> (prefix-form, like clang).
+                    opts.libraries.add(String#(arg_ptr + 2))
+                }
                 else
                 {
                     ; Unknown option
@@ -144,8 +161,13 @@ define cli
             }
             else
             {
-                ; Input file
-                if opts.has_input()
+                ; Treat positional .a / .o args as extra link inputs so
+                ; stage-1 self-build can pass libscalyc.a directly.
+                if arg.ends_with(String$(".a")) | arg.ends_with(String$(".o"))
+                {
+                    opts.extra_objects.add(String#(arg_ptr))
+                }
+                else if opts.has_input()
                 {
                     set opts.error_message: String#("Multiple input files not yet supported")
                 }
@@ -172,6 +194,9 @@ define cli
         Console.println("  -o <file>      Output file")
         Console.println("  -S             Emit LLVM IR")
         Console.println("  -c             Compile only (no link)")
+        Console.println("  -L<path>       Add library search path")
+        Console.println("  -l<name>       Link library by name")
+        Console.println("  <file>.a/.o    Positional link inputs")
         Console.println("  --lex          Lex input and print tokens")
         Console.println("  --parse        Parse input and validate syntax")
         Console.println("  --model        Build semantic model")
@@ -361,14 +386,50 @@ define cli
         ; unaffected. Tests that DO reference scaly.test /
         ; memory.test / etc. resolve those symbols at link time
         ; once the dotted-call gate emits a real call instruction.
-        ;
-        ; libscalyc.a is intentionally NOT linked here: scalyc.o's
-        ; transitive LLVM-C references would force every binary
-        ; that reaches scalyc.o (e.g. stage-1's own self-build) to
-        ; also link libLLVM, which is platform-specific. Stage-1
-        ; self-build is performed via a manual clang invocation
-        ; that adds libscalyc.a + -lLLVM directly.
         cmd_builder.append(" /tmp/libscaly.a")
+
+        ; Forward extra positional .a / .o inputs from the user
+        ; (e.g. /tmp/libscalyc.a for stage-1 self-build). Required
+        ; before -l flags so static-archive resolution sees the
+        ; archives' references first.
+        var ei: size_t 0
+        while ei < opts.extra_objects.length
+        {
+            let e_ptr opts.extra_objects.get(ei)
+            guard e_ptr <> null
+            {
+                cmd_builder.append(" ")
+                cmd_builder.append((*e_ptr))
+            }
+            set ei: ei + 1
+        }
+
+        ; Forward -L<path> entries.
+        var li: size_t 0
+        while li < opts.library_paths.length
+        {
+            let l_ptr opts.library_paths.get(li)
+            guard l_ptr <> null
+            {
+                cmd_builder.append(" -L")
+                cmd_builder.append((*l_ptr))
+            }
+            set li: li + 1
+        }
+
+        ; Forward -l<name> entries.
+        var bi: size_t 0
+        while bi < opts.libraries.length
+        {
+            let b_ptr opts.libraries.get(bi)
+            guard b_ptr <> null
+            {
+                cmd_builder.append(" -l")
+                cmd_builder.append((*b_ptr))
+            }
+            set bi: bi + 1
+        }
+
         cmd_builder.append(" -o ")
         cmd_builder.append(opts.output_file)
         let cmd_str cmd_builder.to_string#()
