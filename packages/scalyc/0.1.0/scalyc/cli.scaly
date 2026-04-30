@@ -42,6 +42,7 @@ define Options
     model_only: bool        ; --model: just build model
     plan_only: bool         ; --plan: just run planner
     show_help: bool
+    no_prelude: bool        ; --no-prelude: skip auto-loading prelude
     error_message: String
     library_paths: Vector[String]   ; -L<path> entries (no leading -L)
     libraries: Vector[String]       ; -l<name> entries (no leading -l)
@@ -60,6 +61,7 @@ define Options
         set model_only: false
         set plan_only: false
         set show_help: false
+        set no_prelude: false
         set error_message: String()
         set library_paths: Vector[String]()
         set libraries: Vector[String]()
@@ -126,6 +128,10 @@ define cli
                 else if arg.equals(String$("--plan"))
                 {
                     set opts.plan_only: true
+                }
+                else if arg.equals(String$("--no-prelude"))
+                {
+                    set opts.no_prelude: true
                 }
                 else if arg.equals(String$("-o"))
                 {
@@ -201,6 +207,7 @@ define cli
         Console.println("  --parse        Parse input and validate syntax")
         Console.println("  --model        Build semantic model")
         Console.println("  --plan         Run planner (type resolution)")
+        Console.println("  --no-prelude   Skip auto-loading prelude module")
     }
 
     ; Run the compiler with parsed options
@@ -293,7 +300,7 @@ define cli
         ; Extract program name from filename (strip path and extension)
         var program_name cli.extract_program_name#(opts.input_file)
 
-        let model Modeler.build_program#(opts.input_file, program_name, syntax)
+        let model Modeler.build_program#(opts.input_file, program_name, syntax, opts.no_prelude = false)
 
         guard opts.verbose
             Console.println("Model built successfully")
@@ -358,6 +365,24 @@ define cli
             {
                 Console.println("Error: Could not write IR file")
                 return 6
+            }
+            return 0
+        }
+
+        ; -c: compile only (write object file, no link). Mirrors stage-0
+        ; main.cpp's CompileOnly branch.
+        guard opts.compile_only
+        {
+            guard opts.output_file.get_length() = 0
+            {
+                Console.println("Error: -c requires -o <file>")
+                return 6
+            }
+            let obj_ok emitter.write_object_to_file(opts.output_file)
+            guard obj_ok = false
+            {
+                Console.println("Error: Could not write object file")
+                return 8
             }
             return 0
         }
@@ -583,7 +608,7 @@ define cli
 
         ; Stage 2: Build model
         var program_name String$("hello")
-        let model Modeler.build_program#(file_path, program_name, syntax)
+        let model Modeler.build_program#(file_path, program_name, syntax, true)
 
         ; Stage 3: Plan
         var planner Planner.Planner$(file_path)
@@ -625,7 +650,7 @@ define cli
         ; Stage 2: Build model
         var file_name String$("test.scaly")
         var program_name String$("test")
-        let model Modeler.build_program#(file_name, program_name, syntax)
+        let model Modeler.build_program#(file_name, program_name, syntax, true)
 
         ; Stage 3: Plan
         var planner Planner.Planner$(file_name)

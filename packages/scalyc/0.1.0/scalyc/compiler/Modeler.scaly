@@ -435,6 +435,19 @@ function handle_expression#(syntax: ExpressionSyntax) returns Expression
             Expression.Constant(handle_literal(lit))
         when name_syntax: NameSyntax
         {
+            ; Bare `true` / `false` identifiers (no extensions) map to
+            ; Boolean constants. Mirrors stage-0 Modeler treatment: the
+            ; lexer doesn't tokenize them as BooleanLiteral, so we
+            ; recognise the name here.
+            guard name_syntax.extensions = null
+            {
+                let loc Span(name_syntax.start, name_syntax.end)
+                guard name_syntax.name.equals(String$("true"))
+                    return Expression.Constant(Constant.Boolean(BooleanConstant(loc, true)))
+                guard name_syntax.name.equals(String$("false"))
+                    return Expression.Constant(Constant.Boolean(BooleanConstant(loc, false)))
+            }
+
             ; Convert NameSyntax to Type expression
             ; Count extensions to determine path size
             var ext_count: size_t 0
@@ -1822,9 +1835,18 @@ function handle_namespace#(name: String, path: String, syntax: NamespaceSyntax, 
     var modules Vector[Module]#(0)
     var members Vector[Member]#(0)
 
-    ; `define <ns> { module foo }` resolves to <enclosing-dir>/foo.scaly:
-    ; build_module# already drilled into "<dir>/<file>" before invoking
-    ; the namespace handler, so `path` is the correct sibling directory.
+    ; `define <ns> { module foo }` resolves to <path>/<ns>/foo.scaly so
+    ; sub-modules live under a directory matching the namespace name
+    ; (e.g. packages/scaly/0.1.0/scaly.scaly's `define scaly { module
+    ; memory }` resolves to packages/scaly/0.1.0/scaly/memory.scaly).
+    ; Skip the append when path's last component already equals name —
+    ; happens when build_module# loaded a file whose define matches its
+    ; own filename. Mirrors stage-0 Modeler.cpp:1864-1868.
+    let last_seg Path.get_file_name$(path)
+    var ns_path: String path
+    guard last_seg.equals(name) = false
+        set ns_path: Path.join$(path, name)
+
     guard syntax.declarations <> null
     {
         let decl_syns (*syntax.declarations)
@@ -1839,10 +1861,10 @@ function handle_namespace#(name: String, path: String, syntax: NamespaceSyntax, 
                 let decl_syntax (*decl_ptr)
                 choose decl_syntax
                     when mod_syntax: ModuleSyntax
-                        handle_module_decl#(path, mod_syntax, is_private, &modules)
+                        handle_module_decl#(ns_path, mod_syntax, is_private, &modules)
                     else
                     {
-                        let member handle_declaration#(path, decl_syntax, &symbols_builder)
+                        let member handle_declaration#(ns_path, decl_syntax, &symbols_builder)
                         members.put(member_idx, member)
                         set member_idx: member_idx + 1
                     }
@@ -2272,7 +2294,7 @@ function build_module#(path: String, file_name: String, name: String, syntax: Fi
 ; Program building
 ; ============================================================================
 
-function build_program#(file_name: String, program_name: String, syntax: ProgramSyntax) returns Program
+function build_program#(file_name: String, program_name: String, syntax: ProgramSyntax, enable_prelude: bool) returns Program
 {
     var packages Vector[Module]#(0)
     guard syntax.file.declarations <> null
@@ -2301,7 +2323,46 @@ function build_program#(file_name: String, program_name: String, syntax: Program
     ; file, so sibling `module foo` decls resolve to <dir>/foo.scaly (mirrors
     ; stage-0 Modeler::buildProgram).
     let path Path.get_directory_name$(file_name)
-    let main_module build_module#(path, file_name, program_name, syntax.file, false)
+    let initial_module build_module#(path, file_name, program_name, syntax.file, false)
+
+    ; Load prelude.scaly and add it as a sub-module of the main module so
+    ; user code can call print / println / puts without explicit
+    ; declarations. Stage-0 instead inserts prelude members directly into
+    ; the main module's Members list; we attach as a sub-module so the
+    ; Planner / Emitter walk it via plan_module#'s modules recursion and
+    ; the existing Modeler tests that count main_module.members.length
+    ; stay valid. Skipped when enable_prelude=false (--no-prelude) so libs
+    ; built via -c don't carry duplicate prelude bodies.
+    var main_module: Module initial_module
+    guard enable_prelude
+    {
+        let prelude_path String$("packages/scaly/0.1.0/scaly")
+        let prelude_module build_referenced_module#(prelude_path, String$("prelude"), false)
+
+        guard prelude_module.members.length > 0
+        {
+            let init_mods_len initial_module.modules.length
+            var combined_modules Vector[Module]#(init_mods_len + 1)
+            var mi: size_t 0
+            while mi < init_mods_len
+            {
+                let mp initial_module.modules.get(mi)
+                guard mp <> null
+                    combined_modules.put(mi, *mp)
+                set mi: mi + 1
+            }
+            combined_modules.put(init_mods_len, prelude_module)
+            set main_module: Module(
+                initial_module.private_,
+                initial_module.file,
+                initial_module.name,
+                combined_modules,
+                initial_module.uses,
+                initial_module.members,
+                initial_module.symbols
+            )
+        }
+    }
 
     ; Handle top-level statements
     let statements handle_statements#(syntax.statements)
@@ -2326,7 +2387,7 @@ function test() returns int
             return 200
         when syntax: Success
         {
-            let program build_program#(String$("t1.scaly"), String$("t1"), syntax)
+            let program build_program#(String$("t1.scaly"), String$("t1"), syntax, true)
             guard program.statements.length <> 1
                 return 201
 
@@ -2371,7 +2432,7 @@ function test() returns int
             return 210
         when syntax: Success
         {
-            let program build_program#(String$("t2.scaly"), String$("t2"), syntax)
+            let program build_program#(String$("t2.scaly"), String$("t2"), syntax, true)
             guard program.statements.length <> 1
                 return 211
 
@@ -2408,7 +2469,7 @@ function test() returns int
             return 220
         when syntax: Success
         {
-            let program build_program#(String$("t3.scaly"), String$("t3"), syntax)
+            let program build_program#(String$("t3.scaly"), String$("t3"), syntax, true)
             guard program.statements.length <> 1
                 return 221
 
@@ -2445,7 +2506,7 @@ function test() returns int
             return 230
         when syntax: Success
         {
-            let program build_program#(String$("t4.scaly"), String$("t4"), syntax)
+            let program build_program#(String$("t4.scaly"), String$("t4"), syntax, true)
             guard program.statements.length <> 1
                 return 231
 
@@ -2478,7 +2539,7 @@ function test() returns int
             return 240
         when syntax: Success
         {
-            let program build_program#(String$("t5.scaly"), String$("t5"), syntax)
+            let program build_program#(String$("t5.scaly"), String$("t5"), syntax, true)
             guard program.statements.length <> 1
                 return 241
 
@@ -2525,7 +2586,7 @@ function test() returns int
             return 250
         when syntax: Success
         {
-            let program build_program#(String$("t6.scaly"), String$("t6"), syntax)
+            let program build_program#(String$("t6.scaly"), String$("t6"), syntax, true)
             guard program.statements.length <> 1
                 return 251
 
@@ -2570,7 +2631,7 @@ function test() returns int
             return 260
         when syntax: Success
         {
-            let program build_program#(String$("t7.scaly"), String$("t7"), syntax)
+            let program build_program#(String$("t7.scaly"), String$("t7"), syntax, true)
             guard program.statements.length <> 1
                 return 261
 
@@ -2603,7 +2664,7 @@ function test() returns int
             return 270
         when syntax: Success
         {
-            let program build_program#(String$("t8.scaly"), String$("t8"), syntax)
+            let program build_program#(String$("t8.scaly"), String$("t8"), syntax, true)
             guard program.module_.members.length <> 1
                 return 271
 
@@ -2633,7 +2694,7 @@ function test() returns int
             return 280
         when syntax: Success
         {
-            let program build_program#(String$("t9.scaly"), String$("t9"), syntax)
+            let program build_program#(String$("t9.scaly"), String$("t9"), syntax, true)
             guard program.module_.members.length <> 1
                 return 281
 
@@ -2663,7 +2724,7 @@ function test() returns int
             return 290
         when syntax: Success
         {
-            let program build_program#(String$("t10.scaly"), String$("t10"), syntax)
+            let program build_program#(String$("t10.scaly"), String$("t10"), syntax, true)
             guard program.module_.members.length <> 1
                 return 291
 
@@ -2699,7 +2760,7 @@ function test() returns int
             return 297
         when syntax: Success
         {
-            let program build_program#(String$("t11.scaly"), String$("t11"), syntax)
+            let program build_program#(String$("t11.scaly"), String$("t11"), syntax, true)
             guard program.module_.members.length <> 1
                 return 298
 
