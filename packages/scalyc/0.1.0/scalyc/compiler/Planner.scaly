@@ -6122,6 +6122,16 @@ define Planner
                 set i: i + 1
             }
 
+            ; Note: ns.modules (loaded sub-modules from `define ns
+            ; { module foo }`) are NOT planned here — stage-1's
+            ; planner crashes on the bodies of scaly stdlib modules
+            ; (Page, root_pages, etc.). Their concepts/functions are
+            ; still registered via register_concept_recursive so name
+            ; resolution works; bodies must come from the linked
+            ; libscaly. Future work: add an "extern-only" planning
+            ; mode that declares forward refs without compiling
+            ; bodies.
+
             ; Restore outer namespace context.
             set current_namespace: old_ns
             set current_namespace_name: old_ns_name
@@ -6212,6 +6222,22 @@ define Planner
                                     0
                         }
                         set i: i + 1
+                    }
+
+                    ; Sub-modules of a namespace (`define ns { module foo }`)
+                    ; flatten just like top-level `module foo` decls so
+                    ; nested function names resolve under the namespace
+                    ; via short-name fallback in collapse_operand_sequence#.
+                    var mi: size_t 0
+                    while mi < ns.modules.length
+                    {
+                        let sub_ptr ns.modules.get(mi)
+                        guard sub_ptr <> null
+                        {
+                            let sub (*sub_ptr)
+                            this.register_module_concepts(sub)
+                        }
+                        set mi: mi + 1
                     }
                     0
                 }

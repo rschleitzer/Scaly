@@ -1787,9 +1787,21 @@ function handle_constituent#(path: String, syntax: MemberSyntax, symbols_builder
         }
         when op: OperatorSyntax
         {
-            let operator_ handle_operator#(op, false)
-            (*symbols_builder).add(operator_.name, Nameable.Operator(operator_))
-            Member.Operator(operator_)
+            ; Stage-1 cannot yet build a Nameable.Operator union variant for
+            ; "[]"-shaped operators (parsed via the Routine target arm) —
+            ; pre-existing codegen bug. Drop those entirely so scaly stdlib
+            ; modules with operator [] can at least be loaded for name
+            ; resolution. A real fix needs stage-0 to handle by-value union
+            ; variant construction of an Operator carrying a literal name.
+            choose op.target
+                when r: RoutineSyntax
+                    Member.Package(Vector[Module]#(0))
+                else
+                {
+                    let operator_ handle_operator#(op, false)
+                    (*symbols_builder).add(operator_.name, Nameable.Operator(operator_))
+                    Member.Operator(operator_)
+                }
         }
         when mod: ModuleSyntax
         {
@@ -1810,19 +1822,30 @@ function handle_namespace#(name: String, path: String, syntax: NamespaceSyntax, 
     var modules Vector[Module]#(0)
     var members Vector[Member]#(0)
 
+    ; `define <ns> { module foo }` resolves to <enclosing-dir>/foo.scaly:
+    ; build_module# already drilled into "<dir>/<file>" before invoking
+    ; the namespace handler, so `path` is the correct sibling directory.
     guard syntax.declarations <> null
     {
         let decl_syns (*syntax.declarations)
         set members: Vector[Member]#(decl_syns.length)
         var i: size_t 0
+        var member_idx: size_t 0
         while i < decl_syns.length
         {
             let decl_ptr decl_syns.get(i)
             guard decl_ptr <> null
             {
                 let decl_syntax (*decl_ptr)
-                let member handle_declaration#(path, decl_syntax, &symbols_builder)
-                members.put(i, member)
+                choose decl_syntax
+                    when mod_syntax: ModuleSyntax
+                        handle_module_decl#(path, mod_syntax, is_private, &modules)
+                    else
+                    {
+                        let member handle_declaration#(path, decl_syntax, &symbols_builder)
+                        members.put(member_idx, member)
+                        set member_idx: member_idx + 1
+                    }
             }
             set i: i + 1
         }
