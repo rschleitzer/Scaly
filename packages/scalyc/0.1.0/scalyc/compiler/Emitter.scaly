@@ -577,11 +577,14 @@ define Emitter
         guard struct_type2.handle <> null
             return struct_type2
 
-        ; Create opaque struct as placeholder
-        let opaque LLVMStructCreateNamed(context, planned_type.mangled_name.c_data())
-        cache_struct(planned_type.name, opaque)
-        cache_struct(planned_type.mangled_name, opaque)
-        opaque
+        ; Fallback: opaque pointer (LLVM 15+ everything-is-ptr) instead
+        ; of an opaque named struct. The named-opaque path reaches AOT
+        ; codegen as `%0 = type opaque` and IRTranslator SEGVs on any
+        ; load/GEP into it. A plain ptr is always sized and well-typed
+        ; under opaque-pointer semantics. Functional correctness still
+        ; depends on the concept being properly planned upstream — this
+        ; just keeps the IR valid so the rest of the module compiles.
+        LLVMPointerTypeInContext(context, 0)
     }
 
     ; Map intrinsic type name to LLVM type
