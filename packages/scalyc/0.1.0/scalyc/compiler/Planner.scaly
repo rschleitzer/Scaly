@@ -2834,6 +2834,28 @@ define Planner
                     guard resolved <> null
                         set combined_type: (*resolved)
 
+                    ; Pointer arithmetic fallback: pointer[T] +/- integer
+                    ; resolves to pointer[T]. resolve_operator_call# only
+                    ; sees registered operators, so primitive ptr-arith
+                    ; falls through with a fresh type var — emit_intrinsic
+                    ; _binary_op then has no element type to derive and the
+                    ; GEP fallback uses i8 (byte stride). Mirrors
+                    ; Planner.cpp:3135-3155 (findOperator's IsPointerType +
+                    ; IsIntegerType branch) — result type = LHS pointer type.
+                    guard resolved = null
+                    {
+                        guard result.result_type.name.equals(String$("pointer"))
+                        {
+                            guard Planner.is_integer_type(rhs.result_type.name)
+                            {
+                                guard op_name.equals(String$("+"))
+                                    set combined_type: result.result_type
+                                guard op_name.equals(String$("-"))
+                                    set combined_type: result.result_type
+                            }
+                        }
+                    }
+
                     var two_args Vector[PlannedOperand]^rp(2)
                     two_args.put(0, result)
                     two_args.put(1, rhs)
