@@ -778,21 +778,40 @@ define Emitter
         guard func.return_type <> null
             set llvm_return_type: map_type(func.return_type.unwrap())
 
-        ; Build parameter types array
-        var param_count: size_t 0
-        var param_types_ptr: pointer[LLVMTypeRef] null as pointer[LLVMTypeRef]
+        ; Page parameter (function#) prepends an implicit `ptr` arg
+        ; before user-declared params. Mirrors Emitter.cpp:1247-1250.
+        var has_page_param: bool false
+        guard func.page_parameter <> null
+            set has_page_param: true
 
+        ; Build parameter types array
+        var input_count: size_t 0
         guard func.input <> null
         {
             let input_ref func.input.unwrap()
             let input (*input_ref)
-            set param_count: input.length
+            set input_count: input.length
+        }
 
-            guard param_count > 0
+        var page_offset: size_t 0
+        guard has_page_param
+            set page_offset: 1
+
+        let param_count input_count + page_offset
+        var param_types_ptr: pointer[LLVMTypeRef] null as pointer[LLVMTypeRef]
+
+        guard param_count > 0
+        {
+            var param_types Vector[LLVMTypeRef]#(param_count)
+            guard has_page_param
+                param_types.put(0, LLVMPointerTypeInContext(context, 0))
+
+            guard func.input <> null
             {
-                var param_types Vector[LLVMTypeRef]#(param_count)
+                let input_ref func.input.unwrap()
+                let input (*input_ref)
                 var i: size_t 0
-                while i < param_count
+                while i < input_count
                 {
                     let item_ptr input.get(i)
                     guard item_ptr <> null
@@ -812,16 +831,16 @@ define Emitter
                                 set pass_by_ptr: true
                             guard pass_by_ptr
                             {
-                                param_types.put(i, LLVMPointerTypeInContext(context, 0))
+                                param_types.put(i + page_offset, LLVMPointerTypeInContext(context, 0))
                             }
                             guard pass_by_ptr = false
-                                param_types.put(i, llvm_param_type)
+                                param_types.put(i + page_offset, llvm_param_type)
                         }
                     }
                     set i: i + 1
                 }
-                set param_types_ptr: param_types.data
             }
+            set param_types_ptr: param_types.data
         }
 
         let func_type LLVMFunctionType(llvm_return_type, param_types_ptr, param_count as int, 0)
@@ -889,7 +908,20 @@ define Emitter
                 let entry_block LLVMAppendBasicBlockInContext(context, llvm_func, entry_name.c_data())
                 LLVMPositionBuilderAtEnd(builder, entry_block)
 
-                ; Bind parameters as local variables
+                ; Page parameter (function#) is prepended at LLVM-arg
+                ; index 0; user params start at index 1. Mirror
+                ; emit_function_decl's prepend ordering.
+                var page_offset: size_t 0
+                guard func.page_parameter <> null
+                {
+                    set page_offset: 1
+                    let page_name (*func.page_parameter.unwrap())
+                    let page_value LLVMGetParam(llvm_func, 0)
+                    define_variable(page_name, page_value)
+                }
+
+                ; Bind user parameters as local variables, offset by
+                ; the page-param slot when present.
                 guard func.input <> null
                 {
                     let input_ref func.input.unwrap()
@@ -904,7 +936,7 @@ define Emitter
                             guard item.name <> null
                             {
                                 let param_name (*item.name.unwrap())
-                                let param_value LLVMGetParam(llvm_func, i as int)
+                                let param_value LLVMGetParam(llvm_func, (i + page_offset) as int)
                                 define_variable(param_name, param_value)
                             }
                         }
