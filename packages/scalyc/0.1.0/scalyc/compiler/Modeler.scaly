@@ -1334,10 +1334,12 @@ function build_function#(start: size_t, end_pos: size_t, syntax: TargetSyntax, i
             let life handle_lifetime(named.routine.lifetime)
             let impl handle_implementation#(named.routine.implementation)
 
-            ; Detect function# (Lifetime=Call). The first parameter
-            ; of a Call-lifetime function is the implicit page
-            ; parameter — the Planner / Emitter treat it specially and
-            ; the user-visible arity excludes it.
+            ; Detect function# (Lifetime=Call). Two cases (mirror
+            ; Modeler.cpp:1445-1454):
+            ;   1. function#(page, params...) — first param has name
+            ;      but no type → it's the explicit page parameter; peel off.
+            ;   2. function#(param: Type, ...) — first param has a type →
+            ;      use implicit "rp" as page name; leave input alone.
             var page_param: ref[String]? null
             var final_input: Vector[Item] input
             var is_call_life: bool false
@@ -1348,7 +1350,20 @@ function build_function#(start: size_t, end_pos: size_t, syntax: TargetSyntax, i
                     0
             guard is_call_life
             {
+                var first_has_name_no_type: bool false
                 guard input.length > 0
+                {
+                    let first_ptr input.get(0)
+                    guard first_ptr <> null
+                    {
+                        guard first_ptr.name <> null
+                        {
+                            guard first_ptr.type = null
+                                set first_has_name_no_type: true
+                        }
+                    }
+                }
+                guard first_has_name_no_type
                 {
                     let first_ptr input.get(0)
                     guard first_ptr <> null
@@ -1370,6 +1385,12 @@ function build_function#(start: size_t, end_pos: size_t, syntax: TargetSyntax, i
                         set k: k + 1
                     }
                     set final_input: rest
+                }
+                guard first_has_name_no_type = false
+                {
+                    var holder Vector[String]#(1)
+                    holder.put(0, String#("rp"))
+                    set page_param: holder.get(0)
                 }
             }
 
