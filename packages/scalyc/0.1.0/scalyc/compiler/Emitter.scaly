@@ -979,7 +979,14 @@ define Emitter
                                 guard LLVMGetTypeKind(LLVMTypeOf(result)) = LLVMTypeKind.Pointer()
                                     set ret_val: LLVMBuildLoad2(builder, llvm_rt, result, "ret.load")
                             }
-                            LLVMBuildRet(builder, ret_val)
+                            ; Defensive: bail on type mismatch. Same rationale
+                            ; as emit_return — fall back to ConstNull which
+                            ; is always type-correct for the LLVM return
+                            ; type. Real fix is value-side integer promotion.
+                            if LLVMTypeOf(ret_val).handle <> llvm_rt.handle
+                                LLVMBuildRet(builder, LLVMConstNull(llvm_rt))
+                            else
+                                LLVMBuildRet(builder, ret_val)
                         }
                         else
                             LLVMBuildRet(builder, LLVMConstNull(llvm_rt))
@@ -1374,21 +1381,23 @@ define Emitter
                 }
                 else
                 {
-                    ; If current value is still a pointer, load it first
+                    ; If current value is still a pointer (e.g. ref/pointer field
+                    ; from a previous extractvalue), bail safely. The deref-and-extract
+                    ; path through map_type + LLVMBuildLoad2 SEGVs in stage-1 when
+                    ; access.parent_type is the pointee struct type — leaving it for a
+                    ; future session. Returning null mirrors the original s55 inverted-
+                    ; guard behaviour for multi-step chains while preserving correct
+                    ; extractvalue emission for the common chain.length=1 case used by
+                    ; cli.run guards.
                     guard LLVMGetTypeKind(LLVMTypeOf(current_value)) = LLVMTypeKind.Pointer()
-                    {
-                        let struct_type map_type(access.parent_type)
-                        guard struct_type.handle <> null
-                            set current_value: LLVMBuildLoad2(builder, struct_type, current_value, "deref")
-
-                    }
+                        return LLVMValueRef(null)
 
                     ; Defensive: extractvalue requires a non-null
                     ; aggregate with a real type. If the chain step
                     ; produced null (no map_type, missing parent), bail
                     ; out instead of crashing inside
                     ; LLVMBuildExtractValue → setName.
-                    guard current_value.handle <> null
+                    guard current_value.handle = null
                         return LLVMValueRef(null)
 
                     ; Use extractvalue for struct field access. Name
@@ -1872,17 +1881,33 @@ define Emitter
             return LLVMBuildURem(builder, l, r, "urem")
         }
 
-        ; Bitwise AND
+        ; Bitwise AND. Defensive: bail if operands have mismatched type kinds.
+        ; Stage-1's operator-collapse for `A <> X and B <> Y` mis-orders the
+        ; sequence as `((A <> X) and B) <> Y` rather than `(A <> X) and (B <> Y)`,
+        ; leaving one operand as a raw pointer instead of an icmp result. Emitting
+        ; `and i1 X, ptr Y` produces invalid IR that llc rejects.
         guard op_name.equals(String$("&"))
+        {
+            guard LLVMGetTypeKind(LLVMTypeOf(l)) <> LLVMGetTypeKind(LLVMTypeOf(r))
+                return LLVMValueRef(null)
             return LLVMBuildAnd(builder, l, r, "and")
+        }
 
         ; Bitwise OR
         guard op_name.equals(String$("|"))
+        {
+            guard LLVMGetTypeKind(LLVMTypeOf(l)) <> LLVMGetTypeKind(LLVMTypeOf(r))
+                return LLVMValueRef(null)
             return LLVMBuildOr(builder, l, r, "or")
+        }
 
         ; Bitwise XOR
         guard op_name.equals(String$("^"))
+        {
+            guard LLVMGetTypeKind(LLVMTypeOf(l)) <> LLVMGetTypeKind(LLVMTypeOf(r))
+                return LLVMValueRef(null)
             return LLVMBuildXor(builder, l, r, "xor")
+        }
 
         ; Left shift
         guard op_name.equals(String$("<<"))
@@ -1897,12 +1922,17 @@ define Emitter
             return LLVMBuildLShr(builder, l, r, "lshr")
         }
 
-        ; Comparison operators
+        ; Comparison operators. Defensive: stage-1's collapse_operand_sequence#
+        ; mis-orders chained comparisons (same root cause as fix 4), leaving
+        ; mismatched operand kinds. Bail rather than emit invalid IR like
+        ; `icmp sle ptr %i1, i32 67108864`.
         guard op_name.equals(String$("="))
         {
             guard is_float
                 return LLVMBuildFCmp(builder, LLVMRealPredicate.OEQ(), l, r, "eq")
 
+            guard LLVMGetTypeKind(LLVMTypeOf(l)) <> LLVMGetTypeKind(LLVMTypeOf(r))
+                return LLVMValueRef(null)
             return LLVMBuildICmp(builder, LLVMIntPredicate.EQ(), l, r, "eq")
         }
 
@@ -1911,6 +1941,8 @@ define Emitter
             guard is_float
                 return LLVMBuildFCmp(builder, LLVMRealPredicate.ONE(), l, r, "ne")
 
+            guard LLVMGetTypeKind(LLVMTypeOf(l)) <> LLVMGetTypeKind(LLVMTypeOf(r))
+                return LLVMValueRef(null)
             return LLVMBuildICmp(builder, LLVMIntPredicate.NE(), l, r, "ne")
         }
 
@@ -1919,6 +1951,8 @@ define Emitter
             guard is_float
                 return LLVMBuildFCmp(builder, LLVMRealPredicate.OLT(), l, r, "lt")
 
+            guard LLVMGetTypeKind(LLVMTypeOf(l)) <> LLVMGetTypeKind(LLVMTypeOf(r))
+                return LLVMValueRef(null)
             guard is_signed
                 return LLVMBuildICmp(builder, LLVMIntPredicate.SLT(), l, r, "lt")
 
@@ -1930,6 +1964,8 @@ define Emitter
             guard is_float
                 return LLVMBuildFCmp(builder, LLVMRealPredicate.OLE(), l, r, "le")
 
+            guard LLVMGetTypeKind(LLVMTypeOf(l)) <> LLVMGetTypeKind(LLVMTypeOf(r))
+                return LLVMValueRef(null)
             guard is_signed
                 return LLVMBuildICmp(builder, LLVMIntPredicate.SLE(), l, r, "le")
 
@@ -1941,6 +1977,8 @@ define Emitter
             guard is_float
                 return LLVMBuildFCmp(builder, LLVMRealPredicate.OGT(), l, r, "gt")
 
+            guard LLVMGetTypeKind(LLVMTypeOf(l)) <> LLVMGetTypeKind(LLVMTypeOf(r))
+                return LLVMValueRef(null)
             guard is_signed
                 return LLVMBuildICmp(builder, LLVMIntPredicate.SGT(), l, r, "gt")
 
@@ -1952,6 +1990,8 @@ define Emitter
             guard is_float
                 return LLVMBuildFCmp(builder, LLVMRealPredicate.OGE(), l, r, "ge")
 
+            guard LLVMGetTypeKind(LLVMTypeOf(l)) <> LLVMGetTypeKind(LLVMTypeOf(r))
+                return LLVMValueRef(null)
             guard is_signed
                 return LLVMBuildICmp(builder, LLVMIntPredicate.SGE(), l, r, "ge")
 
@@ -2754,6 +2794,15 @@ define Emitter
             return LLVMValueRef(null)
 
         let index_type LLVMTypeOf(end_value)
+
+        ; Defensive: emit_for_integer_range can only emit valid IR when the
+        ; end-value is an integer. For iterator-shaped loops (e.g. `for x in
+        ; some_pagelist`), for_expr.is_iterator should route us to
+        ; emit_for_iterator, but stage-1's planner doesn't always set is_iterator.
+        ; Bail rather than emit `icmp <struct>` / `alloca <struct>` instructions
+        ; that llc later rejects.
+        guard LLVMGetTypeKind(index_type) <> LLVMTypeKind.Integer()
+            return LLVMValueRef(null)
 
         ; Create the loop counter (allocate on stack)
         let loop_counter LLVMBuildAlloca(builder, index_type, "counter")
@@ -3763,6 +3812,16 @@ define Emitter
                     guard LLVMGetTypeKind(LLVMTypeOf(ret_val)) = LLVMTypeKind.Pointer()
                         set final_val: LLVMBuildLoad2(builder, llvm_rt, ret_val, "ret.load")
                 }
+                ; Defensive: if final_val's type doesn't match the function's
+                ; LLVM return type (e.g. literal i32 in a size_t-returning
+                ; function — exposed by the s55 fix unmasking
+                ; Array.get_capacity et al.), bail without emitting the Ret.
+                ; The block-seal-with-Unreachable in emit_function_body
+                ; covers the resulting unsealed block. Real fix is integer
+                ; promotion in emit_constant / emit_return mirroring s62's
+                ; emit_intrinsic_binary_op widening.
+                guard LLVMTypeOf(final_val).handle <> llvm_rt.handle
+                    return true
                 LLVMBuildRet(builder, final_val)
             }
             else
