@@ -1523,8 +1523,24 @@ define Emitter
 
         if variable.is_mutable
         {
-            ; Mutable binding stored as pointer - load the value
-            let ty map_type(variable.variable_type)
+            ; Mutable binding stored as pointer — load the value.
+            ; For primitive types (int/size_t/i32/u8/etc.), prefer
+            ; map_intrinsic_type_by_name over map_type. The Vector-
+            ; keyed map_intrinsic_type sees `String$()`-allocated
+            ; intrinsic_type_names entries whose `data` field
+            ; dangles once init_intrinsic_types' page gets reused;
+            ; once that happens `name.equals(...)` mis-fires and
+            ; map_type falls through to the LLVMPointerTypeInContext
+            ; fallback (line 590), so emit_variable issues
+            ; `load ptr, ptr %i, align 8` against an `alloca i32`
+            ; slot — observed in containers.test_array / test_list
+            ; under stage-1 self-build. The by_name lookup is a
+            ; stable hard-coded primitive table; for non-primitives
+            ; it returns null and we fall back to map_type to keep
+            ; struct / pointer / ref handling intact.
+            var ty map_intrinsic_type_by_name(variable.variable_type.name)
+            guard ty.handle = null
+                set ty: map_type(variable.variable_type)
             return LLVMBuildLoad2(builder, ty, var_ptr, variable.name.c_data())
         }
         else
@@ -1908,11 +1924,14 @@ define Emitter
 
         ; Comparison operators. Defensive: bail when LHS/RHS type kinds
         ; mismatch. The s68 precedence fix solved chained-comparison
-        ; mis-ordering, but a separate latent bug — `var i: int 1`
-        ; typed as ptr at load-time in containers.test_array — still
-        ; produces `icmp sle ptr %i, i32 N`. Until the int/ptr type
-        ; tracking is fixed (separate session), guarding the icmp
-        ; emit-site keeps llc clean.
+        ; mis-ordering, and the s71 emit_variable fix solved the
+        ; `var i: int 1` ptr-load case in containers.test_array. But
+        ; ANOTHER latent bug — pointer-arith deref `*(data + index)`
+        ; emits as `load ptr, ptr %data` (skipping the GEP) — leaves
+        ; `byte = null` comparing i8 to ptr null in
+        ; containers.String.as_slice. Until pointer-arith deref is
+        ; fixed (separate session), guarding the icmp emit-site keeps
+        ; llc clean.
         guard op_name.equals(String$("="))
         {
             guard is_float
