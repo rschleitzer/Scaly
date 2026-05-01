@@ -256,6 +256,12 @@ function LLVMGetNextBasicBlock(block: LLVMBasicBlockRef) returns LLVMBasicBlockR
 function LLVMConstInt(int_type: LLVMTypeRef, value: size_t, sign_extend: int) returns LLVMValueRef extern
 function LLVMConstIntOfString(int_type: LLVMTypeRef, text: pointer[const_char], radix: int) returns LLVMValueRef extern
 
+; Sizeof / alignof — return an i64 constant computed from the module's
+; default DataLayout. Used by the s80 ctor emitter to compute Page::allocate
+; size/alignment without binding the full TargetData API.
+function LLVMSizeOf(type: LLVMTypeRef) returns LLVMValueRef extern
+function LLVMAlignOf(type: LLVMTypeRef) returns LLVMValueRef extern
+
 ; Floating point constants
 function LLVMConstReal(real_type: LLVMTypeRef, value: double) returns LLVMValueRef extern
 

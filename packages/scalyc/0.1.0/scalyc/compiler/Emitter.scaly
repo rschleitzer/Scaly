@@ -1593,6 +1593,196 @@ define Emitter
     ; Call Emission
     ; ========================================================================
 
+    ; s80: Emit an Itanium C1 constructor call. The PlannedCall's
+    ; mangled_name carries "C1E" (set by Planner.mangle_function# when
+    ; name=="init" and parent != null). Emits the stage-0 reference
+    ; sequence (Emitter.cpp:3618+):
+    ;   %t = call ptr @_ZN4Page8allocateEmm(<page>, sizeof, alignof)
+    ;   call void @<mangled>(<t>, <page>, ...args)
+    ;   ; result is %t
+    ; For Lifetime.Unspecified the alloc is a stack alloca instead of a
+    ; Page::allocate call. The page is read from the function's `rp`
+    ; local var (function# callers); non-# callers get a lazy root-page
+    ; alloc — same fallback as emit_call's existing requires_page_param
+    ; path.
+    function emit_constructor_call(this, call: PlannedCall) returns LLVMValueRef
+    {
+        let struct_ty map_type(call.result_type)
+        guard struct_ty.handle = null
+            return LLVMValueRef(null)
+
+        ; Decide allocation strategy based on call.life. Lifetime.Reference
+        ; (^name) reads the page from the named local variable.
+        var is_region_alloc: bool false
+        var ref_name: String String$("")
+        var has_ref_name: bool false
+        choose call.life
+            when l: Lifetime.Local
+                set is_region_alloc: true
+            when c: Lifetime.Call
+                set is_region_alloc: true
+            when r: Lifetime.Reference
+            {
+                set is_region_alloc: true
+                set has_ref_name: true
+                set ref_name: r.location
+            }
+            else
+                0
+
+        ; Resolve the page argument.
+        var page_arg: LLVMValueRef LLVMValueRef(null)
+        guard is_region_alloc
+        {
+            guard has_ref_name
+            {
+                ; ^name: page is the named local variable.
+                let nv lookup_variable(ref_name)
+                guard nv.handle <> null
+                    set page_arg: nv
+            }
+            guard has_ref_name = false
+            {
+                let rp_val lookup_variable(String$("rp"))
+                guard rp_val.handle <> null
+                    set page_arg: rp_val
+                guard page_arg.handle = null
+                {
+                    ; Lazy root-page alloc, same as emit_call's fallback.
+                    var alloc_fn lookup_function_cache(String$("_Z21scaly_alloc_root_pagev"))
+                    guard alloc_fn.handle = null
+                        set alloc_fn: LLVMGetNamedFunction(llvm_module, "_Z21scaly_alloc_root_pagev")
+                    guard alloc_fn.handle = null
+                    {
+                        let ret_ty LLVMPointerTypeInContext(context, 0)
+                        let alloc_ty LLVMFunctionType(ret_ty, null as pointer[LLVMTypeRef], 0, 0)
+                        set alloc_fn: LLVMAddFunction(llvm_module, "_Z21scaly_alloc_root_pagev", alloc_ty)
+                        LLVMSetLinkage(alloc_fn, LLVMLinkage.External())
+                        cache_function(String$("_Z21scaly_alloc_root_pagev"), alloc_fn)
+                    }
+                    let alloc_ret_ty LLVMPointerTypeInContext(context, 0)
+                    let alloc_func_ty LLVMFunctionType(alloc_ret_ty, null as pointer[LLVMTypeRef], 0, 0)
+                    set page_arg: LLVMBuildCall2(builder, alloc_func_ty, alloc_fn, null as pointer[LLVMValueRef], 0, "local_page")
+                }
+            }
+            guard page_arg.handle = null
+                return LLVMValueRef(null)
+        }
+
+        ; Allocate the struct.
+        var struct_ptr: LLVMValueRef LLVMValueRef(null)
+        guard is_region_alloc
+        {
+            ; Page::allocate(page, sizeof, alignof). LLVMSizeOf / LLVMAlignOf
+            ; emit i64 constants computed from the module's default DataLayout.
+            var alloc_func lookup_function_cache(String$("_ZN4Page8allocateEmm"))
+            guard alloc_func.handle = null
+                set alloc_func: LLVMGetNamedFunction(llvm_module, "_ZN4Page8allocateEmm")
+            guard alloc_func.handle = null
+            {
+                var alloc_param_types_d Vector[LLVMTypeRef]#(3)
+                alloc_param_types_d.put(0, LLVMPointerTypeInContext(context, 0))
+                alloc_param_types_d.put(1, LLVMInt64TypeInContext(context))
+                alloc_param_types_d.put(2, LLVMInt64TypeInContext(context))
+                let alloc_ret_ty LLVMPointerTypeInContext(context, 0)
+                let alloc_decl_ty LLVMFunctionType(alloc_ret_ty, alloc_param_types_d.data, 3, 0)
+                set alloc_func: LLVMAddFunction(llvm_module, "_ZN4Page8allocateEmm", alloc_decl_ty)
+                LLVMSetLinkage(alloc_func, LLVMLinkage.External())
+                cache_function(String$("_ZN4Page8allocateEmm"), alloc_func)
+            }
+            let size_const LLVMSizeOf(struct_ty)
+            let align_const LLVMAlignOf(struct_ty)
+            var alloc_args Vector[LLVMValueRef]#(3)
+            alloc_args.put(0, page_arg)
+            alloc_args.put(1, size_const)
+            alloc_args.put(2, align_const)
+            var alloc_param_types_c Vector[LLVMTypeRef]#(3)
+            alloc_param_types_c.put(0, LLVMPointerTypeInContext(context, 0))
+            alloc_param_types_c.put(1, LLVMInt64TypeInContext(context))
+            alloc_param_types_c.put(2, LLVMInt64TypeInContext(context))
+            let alloc_ret_ty2 LLVMPointerTypeInContext(context, 0)
+            let alloc_call_ty LLVMFunctionType(alloc_ret_ty2, alloc_param_types_c.data, 3, 0)
+            set struct_ptr: LLVMBuildCall2(builder, alloc_call_ty, alloc_func, alloc_args.data, 3, "struct.region")
+        }
+        guard is_region_alloc = false
+            set struct_ptr: LLVMBuildAlloca(builder, struct_ty, "struct.init")
+
+        ; Compute user arg count.
+        var user_arg_count: size_t 0
+        guard call.args <> null
+        {
+            let argv (*call.args)
+            set user_arg_count: argv.length
+        }
+
+        ; Total ctor arg count: this + (page if requires_page_param) + user_args.
+        var total_ctor_args: size_t 1
+        guard call.requires_page_param
+            set total_ctor_args: 2
+        set total_ctor_args: total_ctor_args + user_arg_count
+
+        ; Build args + param types as we emit. Start with `this`.
+        var ctor_args Vector[LLVMValueRef]#(total_ctor_args)
+        var ctor_param_types Vector[LLVMTypeRef]#(total_ctor_args)
+        ctor_args.put(0, struct_ptr)
+        ctor_param_types.put(0, LLVMPointerTypeInContext(context, 0))
+        var slot: size_t 1
+        guard call.requires_page_param
+        {
+            ctor_args.put(1, page_arg)
+            ctor_param_types.put(1, LLVMPointerTypeInContext(context, 0))
+            set slot: 2
+        }
+
+        ; Emit each user arg, applying the same struct→ptr coercion that
+        ; emit_call uses (callees declare struct params as `ptr`).
+        guard call.args <> null
+        {
+            let argv (*call.args)
+            var ai: size_t 0
+            while ai < argv.length
+            {
+                let aptr argv.get(ai)
+                guard aptr <> null
+                {
+                    var arg_value emit_operand((*aptr))
+                    guard arg_value.handle = null
+                        return LLVMValueRef(null)
+                    let arg_kind LLVMGetTypeKind(LLVMTypeOf(arg_value))
+                    guard arg_kind = LLVMTypeKind.Struct()
+                    {
+                        let arg_alloca LLVMBuildAlloca(builder, LLVMTypeOf(arg_value), "arg.tmp")
+                        LLVMBuildStore(builder, arg_value, arg_alloca)
+                        set arg_value: arg_alloca
+                    }
+                    ctor_args.put(slot, arg_value)
+                    ctor_param_types.put(slot, LLVMTypeOf(arg_value))
+                    set slot: slot + 1
+                }
+                set ai: ai + 1
+            }
+        }
+
+        ; Look up or declare the ctor function.
+        var ctor_fn lookup_function_cache(call.mangled_name)
+        guard ctor_fn.handle = null
+            set ctor_fn: LLVMGetNamedFunction(llvm_module, call.mangled_name.c_data())
+        guard ctor_fn.handle = null
+        {
+            let void_ty LLVMVoidTypeInContext(context)
+            let decl_ty LLVMFunctionType(void_ty, ctor_param_types.data, total_ctor_args as u32, 0)
+            set ctor_fn: LLVMAddFunction(llvm_module, call.mangled_name.c_data(), decl_ty)
+            LLVMSetLinkage(ctor_fn, LLVMLinkage.External())
+            cache_function(call.mangled_name, ctor_fn)
+        }
+
+        let void_ty2 LLVMVoidTypeInContext(context)
+        let ctor_call_ty LLVMFunctionType(void_ty2, ctor_param_types.data, total_ctor_args as u32, 0)
+        LLVMBuildCall2(builder, ctor_call_ty, ctor_fn, ctor_args.data, total_ctor_args as u32, "")
+
+        struct_ptr
+    }
+
     ; Emit a function/operator call
     function emit_call(this, call: PlannedCall) returns LLVMValueRef
     {
@@ -1604,6 +1794,15 @@ define Emitter
             else
                 return emit_intrinsic_function(call)
         }
+
+        ; s80: Itanium C1 constructor calls — mangled name contains "C1E"
+        ; between the class encoding and parameter encoding. Allocate the
+        ; struct (heap or stack based on call.life), pass struct ptr as
+        ; first arg, page as second (if requires_page_param), then user
+        ; args. Return struct ptr (the ctor itself returns void). Mirrors
+        ; stage-0 Emitter.cpp:3308+ IsInitializerCall handling.
+        guard call.mangled_name.contains(String$("C1E"))
+            return emit_constructor_call(call)
 
         ; Look up the function
         var func lookup_function_cache(call.mangled_name)

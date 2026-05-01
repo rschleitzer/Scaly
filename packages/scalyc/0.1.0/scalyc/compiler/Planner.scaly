@@ -2468,6 +2468,18 @@ define Planner
                             ; Reshape the tuple to set tuple_type to the
                             ; struct type. Stack allocation only for now
                             ; (Lifetime.Unspecified — heap $/#/^ deferred).
+                            ; s80: ctor-call diversion (find_initializer# +
+                            ; PlannedCall with C1 mangling) was attempted
+                            ; here and reverted. Issue: stage-1's emitter
+                            ; doesn't emit init# bodies, so calling Data^p(v)
+                            ; or Options#() etc. for in-package structs
+                            ; produced unresolved symbol link errors. The
+                            ; mangler change (mangle_function# emits C1 for
+                            ; init+parent) and the emit_constructor_call
+                            ; helper landed but are dormant until s81 adds
+                            ; init# body emission. With body emission, this
+                            ; reshape can be replaced by the ctor-call path
+                            ; for ALL struct ctors uniformly.
                             var components_holder: ref[Vector[PlannedComponent]]? null
                             ; Collapse each component's operand sequence so
                             ; nested struct/union ctors and other multi-
@@ -7834,7 +7846,15 @@ define Planner
             let p (*parent)
             sb.append("N")
             sb.append(Planner.encode_type#(p))
-            sb.append(Planner.encode_name(name))
+            ; Itanium ABI: methods named "init" on a struct are constructors;
+            ; emit C1 (complete-object ctor) instead of "<len>init". Mirrors
+            ; stage-0 Planner.cpp:12100-12103. Required so constructor call-
+            ; sites and the def-site (plan_initializer) agree on the symbol
+            ; (`_ZN<T>C1E<args>`) which libscaly.a exports from stage-0.
+            guard name.equals(String$("init"))
+                sb.append("C1")
+            guard name.equals(String$("init")) = false
+                sb.append(Planner.encode_name(name))
             sb.append("E")
         }
         guard parent = null
