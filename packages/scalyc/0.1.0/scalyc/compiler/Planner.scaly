@@ -2381,42 +2381,37 @@ define Planner
                         var ctor_variant_name: String String^rp("")
                         var ctor_variant_tag: size_t 0
 
-                        ; Skip struct/union ctor reshape when the type has
-                        ; a non-Unspecified lifetime ($, #, ^ in source).
-                        ; Stage-1 only handles stack ctors today; heap ctor
-                        ; would need scaly_page_alloc + RBMM wiring.
-                        var lt_is_unspec: bool false
-                        choose result.expr
-                            when t0: PlannedType
-                            {
-                                choose t0.life
-                                    when u: Unspecified
-                                        set lt_is_unspec: true
-                                    else
-                                        0
-                            }
-                            else
-                                0
-
-                        guard lt_is_unspec
+                        ; Resolve struct construction regardless of lifetime.
+                        ; The reshape below force-sets Lifetime.Unspecified on
+                        ; the result PlannedTuple so stage-1 stack-alloca's the
+                        ; struct (heap $/#/^ ctor support is deferred — would
+                        ; need scaly_page_alloc + RBMM wiring). Without lifting
+                        ; this guard, every `T$(args)` / `T#(args)` for a
+                        ; registered struct (e.g. `Options#()`,
+                        ; `String$(arg_ptr)`, `Vector[T]#(0)`) silently dropped:
+                        ; lookup_concept finds the Structure but the gate stays
+                        ; shut, the call falls through to resolve_function_call
+                        ; which returns null, mangled_name stays empty, and
+                        ; emit_call returns null — taking the binding and any
+                        ; downstream reference (e.g. `arg.starts_with(...)`)
+                        ; with it. parse_args body went from full option-
+                        ; parsing to a bare `let arg_ptr; set i: i+1`.
+                        let conc_ref this.lookup_concept(fn_name)
+                        guard conc_ref <> null
                         {
-                            let conc_ref this.lookup_concept(fn_name)
-                            guard conc_ref <> null
-                            {
-                                let conc (*conc_ref)
-                                choose conc.definition
-                                    when s: Structure
-                                    {
-                                        set is_struct_ctor: true
-                                        choose result.expr
-                                            when t: PlannedType
-                                                set ctor_struct_type: t
-                                            else
-                                                0
-                                    }
-                                    else
-                                        0
-                            }
+                            let conc (*conc_ref)
+                            choose conc.definition
+                                when s: Structure
+                                {
+                                    set is_struct_ctor: true
+                                    choose result.expr
+                                        when t: PlannedType
+                                            set ctor_struct_type: t
+                                        else
+                                            0
+                                }
+                                else
+                                    0
                         }
 
                         ; Dotted union variant: Union.Variant(args). Split

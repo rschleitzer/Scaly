@@ -2204,6 +2204,36 @@ define Emitter
     ; Emit a tuple construction
     function emit_tuple(this, tuple: PlannedTuple) returns LLVMValueRef
     {
+        ; Zero-arg struct ctor (e.g. `Options#()`, `Vector[int]#(0)` after the
+        ; planner collapses an integer literal away in some paths). Look up
+        ; the struct in the cache; if found, alloca and zero-init. Without
+        ; this, every empty-paren ctor returns null and the binding drops.
+        ; tuple.components null vs length=0 both happen depending on the
+        ; planner path that built the reshape.
+        guard tuple.tuple_type.name.get_length() > 0
+        {
+            var no_comps: bool false
+            guard tuple.components = null
+                set no_comps: true
+            guard no_comps = false
+            {
+                guard tuple.components.length = 0
+                    set no_comps: true
+            }
+            guard no_comps
+            {
+                var struct_type lookup_struct_cache(tuple.tuple_type.mangled_name)
+                guard struct_type.handle = null
+                    set struct_type: lookup_struct_cache(tuple.tuple_type.name)
+                guard struct_type.handle <> null
+                {
+                    let tuple_ptr LLVMBuildAlloca(builder, struct_type, "tuple")
+                    LLVMBuildStore(builder, LLVMConstNull(struct_type), tuple_ptr)
+                    return tuple_ptr
+                }
+            }
+        }
+
         guard tuple.components = null
             return LLVMValueRef(null)
 
