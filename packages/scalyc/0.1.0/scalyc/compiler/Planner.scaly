@@ -2619,6 +2619,94 @@ define Planner
                         let arg_types Planner.extract_arg_types#(second)
                         var match_ref this.resolve_function_call#(fn_name, arg_types)
 
+                        ; First-hop method dispatch (s75): when fn_name
+                        ; is a dotted name `arg.starts_with` and `arg`
+                        ; resolves to a local binding (not a Concept),
+                        ; treat the call as a method on the receiver.
+                        ; Without this, free-function lookup on the full
+                        ; dotted name fails, the dotted-namespace
+                        ; fallback below skips because `arg` isn't a
+                        ; Concept, and the call drops with mangled="".
+                        ; The receiver is prepended to the args list
+                        ; below when is_method_dispatch is true.
+                        ; Mirrors stage-0 Planner.cpp:7920-7940 method-
+                        ; on-local-variable resolution.
+                        var is_method_dispatch: bool false
+                        var receiver_op: PlannedOperand result
+                        guard match_ref = null
+                        {
+                            let dot_idx fn_name.last_index_of(46 as u8)
+                            guard dot_idx > 0
+                            {
+                                let dot_pos dot_idx as size_t
+                                let prefix fn_name.substring(rp, 0, dot_pos)
+                                let suffix fn_name.substring(
+                                    rp,
+                                    dot_pos + 1,
+                                    fn_name.get_length() - dot_pos - 1
+                                )
+                                let local_ref this.lookup_local_binding(prefix)
+                                guard local_ref <> null
+                                {
+                                    let local (*local_ref)
+                                    ; Skip generic types — lookup_method# /
+                                    ; mangle_method# don't include generic
+                                    ; parameters in the mangled name today,
+                                    ; so dispatch on a `Vector[int]` or
+                                    ; `Option[T]` would emit a non-generic
+                                    ; mangled name that doesn't match the
+                                    ; instantiated body. Defer that to s76.
+                                    var skip_dispatch: bool false
+                                    guard local.binding_type.generics <> null
+                                        set skip_dispatch: true
+                                    guard skip_dispatch = false
+                                    {
+                                    let mm_ref this.lookup_method#(local.binding_type, suffix)
+                                    guard mm_ref <> null
+                                    {
+                                        let mm (*mm_ref)
+                                        ; Build receiver as Variable(prefix).
+                                        let recv PlannedOperand(
+                                            result.loc,
+                                            PlannedExpression.Variable(PlannedVariable(
+                                                result.loc,
+                                                prefix,
+                                                local.binding_type,
+                                                local.is_mutable
+                                            )),
+                                            null,
+                                            local.binding_type
+                                        )
+                                        set receiver_op: recv
+                                        set is_method_dispatch: true
+
+                                        ; Method extern decl recording is
+                                        ; deferred — for callees defined in
+                                        ; the same compilation unit (Options
+                                        ; methods declared in cli.scaly),
+                                        ; emit_function_decl already emitted
+                                        ; the LLVM declaration via the regular
+                                        ; plan path, so emit_call's
+                                        ; LLVMGetNamedFunction succeeds. For
+                                        ; callees in a separately-compiled
+                                        ; package (String methods in
+                                        ; libscaly), record_function with the
+                                        ; mm.mangled_name produces a SEGV in
+                                        ; emit during args processing — root
+                                        ; cause TBD (s76 territory). Without
+                                        ; recording, those calls drop with
+                                        ; null at emit time. Acceptable for
+                                        ; this stage: parse_args's option-
+                                        ; chain stays dropped, but cli.run's
+                                        ; opts.has_input/has_error guards
+                                        ; emit cleanly.
+                                        set match_ref: mm_ref
+                                    }
+                                    }
+                                }
+                            }
+                        }
+
                         ; Dotted call fallback: `cli.main(args)` arrives
                         ; with fn_name="cli.main"; the function is registered
                         ; in model_functions under its short name "main"
@@ -2891,8 +2979,14 @@ define Planner
                         ; Flatten the tuple argument into a list of
                         ; individual PlannedOperand values so the emitter
                         ; can treat each call argument separately. An
-                        ; empty `()` produces an empty list.
+                        ; empty `()` produces an empty list. When the
+                        ; call is a method dispatch on a local-variable
+                        ; receiver (s75), prepend the receiver as
+                        ; argument 0; the callee declared `this` as the
+                        ; first param.
                         var args_arr Array[PlannedOperand]$()
+                        guard is_method_dispatch
+                            args_arr.add(receiver_op)
                         choose second.expr
                             when tp: PlannedTuple
                             {

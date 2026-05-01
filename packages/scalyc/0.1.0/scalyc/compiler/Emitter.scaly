@@ -3407,7 +3407,14 @@ define Emitter
             return LLVMValueRef(null)
 
         let src_type LLVMTypeOf(src_value)
-        let dst_type map_type(as_expr.target_type)
+        ; Prefer the by-name primitive lookup (s71 class). map_type's
+        ; Vector cache is unstable when its String entries dangle —
+        ; for size_t / int / u8 etc. that produces ptr instead of the
+        ; correct integer type, and emit_as then emits inttoptr where
+        ; zext / trunc was expected.
+        var dst_type map_intrinsic_type_by_name(as_expr.target_type.name)
+        guard dst_type.handle = null
+            set dst_type: map_type(as_expr.target_type)
 
         guard dst_type.handle = null
             return LLVMValueRef(null)
