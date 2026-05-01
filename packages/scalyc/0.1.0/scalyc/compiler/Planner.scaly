@@ -1977,6 +1977,164 @@ define Planner
                 return (*only_ptr)
             }
 
+            ; Pre-pass: merge lifetime-marker operands into the
+            ; preceding Type operand. The Modeler emits a stand-alone
+            ; `Type with empty name and non-Unspecified life` for the
+            ; LifetimeSyntax variant the parser produces between
+            ; `cli.parse_args` and `(args)` in `cli.parse_args#(args)`.
+            ; Without this, ops = [Type, LifetimeMarker, Tuple] and
+            ; the call-detection branch below sees a Constant/empty
+            ; operand between the Type and the Tuple, missing the
+            ; call. Mirrors stage-0 Planner.cpp:7378-7387.
+            var has_life_marker: bool false
+            var lim_idx: size_t 0
+            while lim_idx < ops.length
+            {
+                let lim_ptr ops.get(lim_idx)
+                guard lim_ptr <> null
+                {
+                    let lim_op (*lim_ptr)
+                    choose lim_op.expr
+                        when ty: PlannedType
+                        {
+                            guard ty.name.get_length() = 0
+                            {
+                                ; A PlannedType with empty name is
+                                ; the lifetime marker.
+                                choose ty.life
+                                    when u: Unspecified
+                                        0
+                                    else
+                                        set has_life_marker: true
+                            }
+                            0
+                        }
+                        else
+                            0
+                }
+                set lim_idx: lim_idx + 1
+            }
+
+            guard has_life_marker
+            {
+                ; Build a fresh ops Vector that drops the markers and
+                ; merges each one's lifetime into the preceding
+                ; PlannedType operand (if any). Look ahead from each
+                ; current op: if it is a Type AND the next op is a
+                ; lifetime marker, append the merged Type and skip
+                ; both. Otherwise append unmodified.
+                var merged_arr Array[PlannedOperand]$()
+                var mi: size_t 0
+                while mi < ops.length
+                {
+                    let mp_ptr ops.get(mi)
+                    guard mp_ptr = null
+                    {
+                        set mi: mi + 1
+                        continue
+                    }
+                    let mp_op (*mp_ptr)
+
+                    ; If THIS op is a marker (no prior Type to merge
+                    ; into), drop it.
+                    var is_marker: bool false
+                    choose mp_op.expr
+                        when ty: PlannedType
+                        {
+                            guard ty.name.get_length() = 0
+                            {
+                                choose ty.life
+                                    when u: Unspecified
+                                        0
+                                    else
+                                        set is_marker: true
+                            }
+                            0
+                        }
+                        else
+                            0
+                    guard is_marker
+                    {
+                        set mi: mi + 1
+                        continue
+                    }
+
+                    ; Look ahead: if the next op is a marker AND
+                    ; current op is a Type, merge the lifetime in
+                    ; before appending and advance past both.
+                    var did_merge: bool false
+                    guard mi + 1 < ops.length
+                    {
+                        let next_ptr ops.get(mi + 1)
+                        guard next_ptr <> null
+                        {
+                            let next_op (*next_ptr)
+                            var next_is_marker: bool false
+                            var marker_life: Lifetime Lifetime.Unspecified(Unspecified())
+                            choose next_op.expr
+                                when ty2: PlannedType
+                                {
+                                    guard ty2.name.get_length() = 0
+                                    {
+                                        choose ty2.life
+                                            when u: Unspecified
+                                                0
+                                            else
+                                            {
+                                                set next_is_marker: true
+                                                set marker_life: ty2.life
+                                            }
+                                    }
+                                    0
+                                }
+                                else
+                                    0
+
+                            guard next_is_marker
+                            {
+                                choose mp_op.expr
+                                    when prev_ty: PlannedType
+                                    {
+                                        let new_ty PlannedType(
+                                            prev_ty.loc,
+                                            prev_ty.name,
+                                            prev_ty.mangled_name,
+                                            prev_ty.generics,
+                                            marker_life,
+                                            prev_ty.origin,
+                                            prev_ty.array_size,
+                                            prev_ty.variable
+                                        )
+                                        let new_op PlannedOperand(
+                                            mp_op.loc,
+                                            PlannedExpression.Type(new_ty),
+                                            mp_op.member_access,
+                                            new_ty
+                                        )
+                                        merged_arr.add(new_op)
+                                        set did_merge: true
+                                        0
+                                    }
+                                    else
+                                        0
+                            }
+                        }
+                    }
+
+                    guard did_merge
+                    {
+                        ; Advance past current Type AND the marker.
+                        set mi: mi + 2
+                        continue
+                    }
+
+                    merged_arr.add(mp_op)
+                    set mi: mi + 1
+                }
+                var merged_vec Vector[PlannedOperand]^rp(merged_arr)
+                return this.collapse_operand_sequence#(merged_vec)
+            }
+
             let first_ptr ops.get(0)
             guard first_ptr = null
             {
@@ -2588,8 +2746,19 @@ define Planner
                                                 }
                                             }
                                             var items_holder Vector[PlannedItem]^rp(items_arr)
+                                            ; Honor the matched function's
+                                            ; page-param flag in the mangled
+                                            ; name. parse_args# in cli.scaly
+                                            ; has has_page=true so the symbol
+                                            ; needs `PN4scaly6memory4PageE`
+                                            ; after the function name; without
+                                            ; this stage-1 produced
+                                            ; `_ZN3cli10parse_argsEiPPc` which
+                                            ; doesn't match libscalyc's real
+                                            ; `_ZN3cli10parse_argsEPN4scaly6memory4PageEiPPc`.
+                                            let mm_pp (*match_ref)
                                             set ns_mangled: Planner.mangle_function#(
-                                                suffix, &items_holder, ns_parent_ref, false
+                                                suffix, &items_holder, ns_parent_ref, mm_pp.requires_page_param
                                             )
                                             set has_ns_mangled: true
 
@@ -2660,7 +2829,27 @@ define Planner
                                             ; in program_use_aliases, so
                                             ; `cli.main(...)` still opens
                                             ; the gate.
+                                            ; Also opens the gate when the
+                                            ; prefix matches the currently-
+                                            ; active namespace (sibling call
+                                            ; like cli.parse_args# from
+                                            ; inside cli.main). Mirrors
+                                            ; stage-0's flatten-current-
+                                            ; namespace pre-pass at
+                                            ; Planner.cpp:7313-7327.
+                                            var prefix_is_current_ns: bool false
+                                            guard current_namespace_name <> null
+                                            {
+                                                let cnsn (*current_namespace_name)
+                                                guard cnsn.equals(prefix)
+                                                    set prefix_is_current_ns: true
+                                            }
+                                            var gate_open: bool false
                                             guard this.is_program_use_alias(prefix)
+                                                set gate_open: true
+                                            guard prefix_is_current_ns
+                                                set gate_open: true
+                                            guard gate_open
                                             guard this.has_recorded_function(ns_mangled) = false
                                             {
                                                 let mm (*match_ref)
@@ -2735,8 +2924,30 @@ define Planner
                             else
                                 args_arr.add(second)
                         var call_args Vector[PlannedOperand]^rp(args_arr)
-                        let call this.make_planned_call#(
-                            result.loc, fn_name, mangled, rt, call_args
+                        ; Propagate the matched function's page-param
+                        ; requirement to the PlannedCall so emit_call
+                        ; prepends the rp arg. Required for in-namespace
+                        ; sibling calls to `function#` callees (e.g.
+                        ; cli.main → cli.parse_args#).
+                        var call_requires_page: bool false
+                        guard match_ref <> null
+                        {
+                            let mm_for_pp (*match_ref)
+                            guard mm_for_pp.requires_page_param
+                                set call_requires_page: true
+                        }
+                        var call_args_holder Vector[PlannedOperand]^rp(call_args)
+                        let call PlannedCall(
+                            result.loc,
+                            fn_name,
+                            mangled,
+                            false,
+                            false,
+                            false,
+                            call_requires_page,
+                            &call_args_holder,
+                            rt,
+                            Lifetime.Unspecified(Unspecified())
                         )
                         set result: PlannedOperand(
                             result.loc,

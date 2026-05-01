@@ -1622,23 +1622,74 @@ define Emitter
             return LLVMBuildCall2(builder, func_type, func, null as pointer[LLVMValueRef], 0, "call")
         }
 
-        ; Emit arguments and create proper call
-        let arg_count call.args.length
-        let result_type map_type(call.result_type)
+        ; Emit arguments and create proper call.
+        ; When call.requires_page_param is set, prepend an rp arg in
+        ; slot 0. Source: caller's `rp` local var if it has a page
+        ; parameter (function# caller), else lazily call
+        ; `_Z21scaly_alloc_root_pagev`. Mirrors stage-0's
+        ; getOrCreateLocalPage fallback at Emitter.cpp:6657-6681.
+        var page_offset: size_t 0
+        var page_arg: LLVMValueRef LLVMValueRef(null)
+        guard call.requires_page_param
+        {
+            set page_offset: 1
+            ; First, try the caller's own rp.
+            let rp_val lookup_variable(String$("rp"))
+            guard rp_val.handle <> null
+                set page_arg: rp_val
+            guard page_arg.handle = null
+            {
+                ; Non-# caller: allocate a root page on demand. Get
+                ; or declare the runtime symbol; emit a call. The
+                ; release pair is omitted in stage-1 — leaks one
+                ; page per non-# caller but keeps the IR linkable.
+                var alloc_fn lookup_function_cache(String$("_Z21scaly_alloc_root_pagev"))
+                guard alloc_fn.handle = null
+                    set alloc_fn: LLVMGetNamedFunction(llvm_module, "_Z21scaly_alloc_root_pagev")
+                guard alloc_fn.handle = null
+                {
+                    let ret_ty LLVMPointerTypeInContext(context, 0)
+                    let alloc_ty LLVMFunctionType(ret_ty, null as pointer[LLVMTypeRef], 0, 0)
+                    set alloc_fn: LLVMAddFunction(llvm_module, "_Z21scaly_alloc_root_pagev", alloc_ty)
+                    LLVMSetLinkage(alloc_fn, LLVMLinkage.External())
+                    cache_function(String$("_Z21scaly_alloc_root_pagev"), alloc_fn)
+                }
+                let alloc_ret_ty LLVMPointerTypeInContext(context, 0)
+                let alloc_func_ty LLVMFunctionType(alloc_ret_ty, null as pointer[LLVMTypeRef], 0, 0)
+                set page_arg: LLVMBuildCall2(builder, alloc_func_ty, alloc_fn, null as pointer[LLVMValueRef], 0, "local_page")
+            }
+        }
+
+        let user_arg_count call.args.length
+        let total_arg_count user_arg_count + page_offset
+        ; Result type — prefer the by-name primitive lookup over
+        ; map_type's Vector cache, since the Vector cache is
+        ; unreliable when its entry pages get reused (s71 class).
+        ; Fall back to map_type for non-primitive (struct/pointer)
+        ; result types.
+        var result_type map_intrinsic_type_by_name(call.result_type.name)
+        guard result_type.handle = null
+            set result_type: map_type(call.result_type)
 
         ; Build args vector - allocate with page
-        var args_array Vector[LLVMValueRef]#(arg_count)
-        var param_types Vector[LLVMTypeRef]#(arg_count)
+        var args_array Vector[LLVMValueRef]#(total_arg_count)
+        var param_types Vector[LLVMTypeRef]#(total_arg_count)
 
-        ; Emit each argument
+        guard page_offset = 1
+        {
+            args_array.put(0, page_arg)
+            param_types.put(0, LLVMPointerTypeInContext(context, 0))
+        }
+
+        ; Emit each user argument
         var i: size_t 0
-        while i < arg_count
+        while i < user_arg_count
         {
             let arg_ptr call.args.get(i)
             guard arg_ptr <> null
             {
                 let arg_operand arg_ptr.unwrap()
-                let arg_value emit_operand(arg_operand)
+                var arg_value emit_operand(arg_operand)
                 ; Guard against arg emission returning a null handle
                 ; (e.g. an unsupported cast or unresolved sub-expression).
                 ; Calling LLVMTypeOf on a null Value* crashes; bail out
@@ -1646,20 +1697,42 @@ define Emitter
                 ; a degraded `ret <zero>` rather than corrupt IR.
                 guard arg_value.handle = null
                     return LLVMValueRef(null)
-                args_array.put(i, arg_value)
+
+                ; Struct args: emit_function_decl declares struct
+                ; params as `ptr` (line ~832), but emit_operand
+                ; produces the struct value. Without this, the
+                ; callee receives the struct in registers but
+                ; treats the slot as a pointer and SEGVs on the
+                ; first deref. Alloca + store + pass-pointer
+                ; mirrors stage-0's `init.arg.tmp` shim
+                ; (Emitter.cpp:3741-3744).
+                let arg_kind LLVMGetTypeKind(LLVMTypeOf(arg_value))
+                guard arg_kind = LLVMTypeKind.Struct()
+                {
+                    let arg_alloca LLVMBuildAlloca(builder, LLVMTypeOf(arg_value), "arg.tmp")
+                    LLVMBuildStore(builder, arg_value, arg_alloca)
+                    set arg_value: arg_alloca
+                }
+
+                args_array.put(i + page_offset, arg_value)
 
                 ; Get parameter type from the emitted value
                 let arg_type LLVMTypeOf(arg_value)
-                param_types.put(i, arg_type)
+                param_types.put(i + page_offset, arg_type)
             }
             set i: i + 1
         }
 
         ; Create function type with parameter types
-        let func_type LLVMFunctionType(result_type, param_types.data, arg_count as u32, 0)
+        let func_type LLVMFunctionType(result_type, param_types.data, total_arg_count as u32, 0)
 
-        ; Build the call with arguments
-        LLVMBuildCall2(builder, func_type, func, args_array.data, arg_count as u32, "call")
+        ; Build the call with arguments. LLVM rejects naming the
+        ; result of a void-returning call (`%foo = call void ...`),
+        ; so use the empty name for those calls.
+        var call_name "call"
+        guard LLVMGetTypeKind(result_type) = LLVMTypeKind.Void()
+            set call_name: ""
+        LLVMBuildCall2(builder, func_type, func, args_array.data, total_arg_count as u32, call_name)
     }
 
     ; ========================================================================

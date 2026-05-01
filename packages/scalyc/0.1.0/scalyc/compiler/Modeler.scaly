@@ -514,6 +514,28 @@ function handle_expression#(syntax: ExpressionSyntax) returns Expression
             Expression.Lambda(handle_lambda#(lam_syntax))
         when rep_syntax: RepeatSyntax
             Expression.Repeat(handle_repeat#(rep_syntax))
+        when life_syntax: LifetimeSyntax
+        {
+            ; Lifetime operand (`#`/`$`/`^name` written next to a
+            ; preceding NameSyntax — e.g. `cli.parse_args#`). Stage-1's
+            ; parser emits this as its own ExpressionSyntax variant,
+            ; not baked into the preceding TypeSyntax. Mirror stage-0's
+            ; `Type with empty Name and non-Unspecified Life` marker
+            ; (Planner.cpp:7378-7387) so the Planner's call-detection
+            ; pre-pass can recognise the pattern and strip the
+            ; lifetime operand. handle_lifetime decodes the variant
+            ; into a Model.Lifetime.
+            var life_holder Vector[LifetimeSyntax]#(1)
+            life_holder.put(0, life_syntax)
+            let life_ref life_holder.get(0)
+            let model_life handle_lifetime(life_ref)
+            Expression.Type(Type(
+                Span(0, 0),
+                Vector[String]#(0),
+                null,
+                model_life
+            ))
+        }
         else
             Expression.Constant(Constant.Integer(IntegerConstant(Span(0, 0), 0)))
 }
