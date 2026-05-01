@@ -2681,25 +2681,41 @@ define Planner
                                         set is_method_dispatch: true
 
                                         ; Method extern decl recording is
-                                        ; deferred — for callees defined in
-                                        ; the same compilation unit (Options
+                                        ; deferred. For callees defined in the
+                                        ; same compilation unit (Options
                                         ; methods declared in cli.scaly),
-                                        ; emit_function_decl already emitted
-                                        ; the LLVM declaration via the regular
+                                        ; emit_function_decl already emits the
+                                        ; LLVM declaration via the regular
                                         ; plan path, so emit_call's
                                         ; LLVMGetNamedFunction succeeds. For
                                         ; callees in a separately-compiled
                                         ; package (String methods in
                                         ; libscaly), record_function with the
                                         ; mm.mangled_name produces a SEGV in
-                                        ; emit during args processing — root
-                                        ; cause TBD (s76 territory). Without
-                                        ; recording, those calls drop with
-                                        ; null at emit time. Acceptable for
-                                        ; this stage: parse_args's option-
-                                        ; chain stays dropped, but cli.run's
-                                        ; opts.has_input/has_error guards
-                                        ; emit cleanly.
+                                        ; emit_call's args loop on
+                                        ; LLVMTypeOf(arg_value) when the
+                                        ; receiver is a struct-typed function
+                                        ; param: emit_variable returns the
+                                        ; LLVMGetParam SSA value directly
+                                        ; (immutable case); LLVMTypeOf on it
+                                        ; via the var-bound arg_value through
+                                        ; stage-0's struct-by-ptr ABI
+                                        ; misinterprets the alloca address as
+                                        ; the handle (s34-class). Lazy LLVM
+                                        ; declaration via LLVMAddFunction
+                                        ; (also tested) doesn't help because
+                                        ; the args loop crashes at the same
+                                        ; site before LLVMBuildCall2 runs.
+                                        ; Forcing is_mutable=true on the
+                                        ; receiver to route through
+                                        ; LLVMBuildLoad2 swaps the SEGV from
+                                        ; LLVMTypeOf to LLVMBuildLoad2 with a
+                                        ; pointer that's near 0x13. Defer to
+                                        ; s77 — needs deeper investigation of
+                                        ; how stage-0 lays out Scaly-internal
+                                        ; LLVMValueRef return slots when the
+                                        ; caller binds them via `var` to a
+                                        ; struct-typed local.
                                         set match_ref: mm_ref
                                     }
                                     }
