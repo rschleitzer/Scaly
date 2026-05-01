@@ -3406,6 +3406,12 @@ define Planner
             var has_page: bool false
             guard f.page_parameter <> null
                 set has_page: true
+            ; Implicit return-page: a function whose return type is a
+            ; user-defined struct/union gets an `_rp` page parameter
+            ; injected at planFunction time (Planner.cpp:11697). Mirror
+            ; that here so the mangled name matches the emitted function.
+            guard Planner.needs_implicit_return_page(f)
+                set has_page: true
             let mangled this.mangle_method#(method_name, struct_type, params_holder, has_page)
 
             ; Throws type (optional).
@@ -4495,9 +4501,17 @@ define Planner
             }
 
             ; Peel ref[T] / pointer[T] to reach the underlying struct.
+            ; Stage-1 multi-line `or` chains in a guard condition do not
+            ; short-circuit correctly (the LF continuation surfaces `set`
+            ; as a top-level statement). Mirror the C++ Planner using
+            ; per-name guards.
             var iter_type: PlannedType coll_type
+            var is_pointer_like: bool false
             guard iter_type.name.equals(String$("ref"))
-                or iter_type.name.equals(String$("pointer"))
+                set is_pointer_like: true
+            guard iter_type.name.equals(String$("pointer"))
+                set is_pointer_like: true
+            guard is_pointer_like
             {
                 guard iter_type.generics <> null
                 {
@@ -4511,17 +4525,30 @@ define Planner
                 }
             }
 
+            ; Stage-1 multi-line `or` chains do not short-circuit (LF
+            ; continuation surfaces `set` as a top-level statement, which
+            ; runs unconditionally). Use per-name guards so each one
+            ; matches its own primitive name.
             var is_integer: bool false
             guard iter_type.name.equals(String$("int"))
-                or iter_type.name.equals(String$("int8"))
-                or iter_type.name.equals(String$("int16"))
-                or iter_type.name.equals(String$("int32"))
-                or iter_type.name.equals(String$("int64"))
-                or iter_type.name.equals(String$("size_t"))
-                or iter_type.name.equals(String$("uint8"))
-                or iter_type.name.equals(String$("uint16"))
-                or iter_type.name.equals(String$("uint32"))
-                or iter_type.name.equals(String$("uint64"))
+                set is_integer: true
+            guard iter_type.name.equals(String$("int8"))
+                set is_integer: true
+            guard iter_type.name.equals(String$("int16"))
+                set is_integer: true
+            guard iter_type.name.equals(String$("int32"))
+                set is_integer: true
+            guard iter_type.name.equals(String$("int64"))
+                set is_integer: true
+            guard iter_type.name.equals(String$("size_t"))
+                set is_integer: true
+            guard iter_type.name.equals(String$("uint8"))
+                set is_integer: true
+            guard iter_type.name.equals(String$("uint16"))
+                set is_integer: true
+            guard iter_type.name.equals(String$("uint32"))
+                set is_integer: true
+            guard iter_type.name.equals(String$("uint64"))
                 set is_integer: true
 
             var is_iterator_loop: bool false

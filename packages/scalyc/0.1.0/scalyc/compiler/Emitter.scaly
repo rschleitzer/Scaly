@@ -2800,15 +2800,6 @@ define Emitter
 
         let index_type LLVMTypeOf(end_value)
 
-        ; Defensive: emit_for_integer_range can only emit valid IR when the
-        ; end-value is an integer. For iterator-shaped loops (e.g. `for x in
-        ; some_pagelist`), for_expr.is_iterator should route us to
-        ; emit_for_iterator, but stage-1's planner doesn't always set is_iterator.
-        ; Bail rather than emit `icmp <struct>` / `alloca <struct>` instructions
-        ; that llc later rejects.
-        guard LLVMGetTypeKind(index_type) <> LLVMTypeKind.Integer()
-            return LLVMValueRef(null)
-
         ; Create the loop counter (allocate on stack)
         let loop_counter LLVMBuildAlloca(builder, index_type, "counter")
 
