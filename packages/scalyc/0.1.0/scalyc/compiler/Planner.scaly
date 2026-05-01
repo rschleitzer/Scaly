@@ -2465,21 +2465,109 @@ define Planner
 
                         guard is_struct_ctor
                         {
+                            ; s81: ctor-call diversion. When find_initializer#
+                            ; matches an init# overload (page_parameter set),
+                            ; build a PlannedCall with C1 mangling and divert
+                            ; to emit_constructor_call (Page::allocate + ctor
+                            ; call). Without this, every T$/T#/T^ goes
+                            ; through the stack-alloc reshape below, which
+                            ; only works for "data class" structs without
+                            ; custom init# logic. Heavy users like String,
+                            ; Vector, StringBuilder rely on init# for proper
+                            ; internal state (varint length, etc.). The
+                            ; init# bodies are emitted by the synthesized
+                            ; PlannedFunction wrapper in plan_initializer#.
+                            let ctor_arg_types Planner.extract_arg_types#(second)
+                            let init_match this.find_initializer#(fn_name, ctor_arg_types)
+                            guard init_match <> null
+                            {
+                                let ini_match (*init_match)
+                                guard ini_match.page_parameter <> null
+                                {
+                                    let init_input_items this.plan_items#(ini_match.input)
+                                    var init_input_holder Vector[PlannedItem]^rp(init_input_items)
+
+                                    var parent_holder Vector[PlannedType]^rp(1)
+                                    parent_holder.put(0, ctor_struct_type)
+                                    let parent_ref parent_holder.get(0)
+
+                                    let c1_mangled Planner.mangle_function#(
+                                        String$("init"), &init_input_holder, parent_ref, true
+                                    )
+
+                                    var ctor_call_args Array[PlannedOperand]$()
+                                    choose second.expr
+                                        when tp_args: PlannedTuple
+                                        {
+                                            guard tp_args.components <> null
+                                            {
+                                                let comps_args (*tp_args.components)
+                                                var ai: size_t 0
+                                                while ai < comps_args.length
+                                                {
+                                                    let cap_ptr comps_args.get(ai)
+                                                    guard cap_ptr <> null
+                                                    {
+                                                        let cap (*cap_ptr)
+                                                        guard cap.value <> null
+                                                        {
+                                                            let cvals (*cap.value)
+                                                            let collapsed_arg this.collapse_operand_sequence#(cvals)
+                                                            ctor_call_args.add(collapsed_arg)
+                                                        }
+                                                    }
+                                                    set ai: ai + 1
+                                                }
+                                            }
+                                        }
+                                        else
+                                            0
+                                    var ctor_args_vec Vector[PlannedOperand]^rp(ctor_call_args)
+
+                                    let ctor_call PlannedCall(
+                                        second.loc,
+                                        String^rp("init"),
+                                        c1_mangled,
+                                        false,
+                                        false,
+                                        false,
+                                        true,
+                                        &ctor_args_vec,
+                                        ctor_struct_type,
+                                        ctor_struct_type.life
+                                    )
+                                    set result: PlannedOperand(
+                                        second.loc,
+                                        PlannedExpression.Call(ctor_call),
+                                        second.member_access,
+                                        ctor_struct_type
+                                    )
+                                    guard ops.length > 2
+                                    {
+                                        var remaining_c Array[PlannedOperand]$()
+                                        remaining_c.add(result)
+                                        var rrc: size_t 2
+                                        while rrc < ops.length
+                                        {
+                                            let prc_ptr ops.get(rrc)
+                                            guard prc_ptr <> null
+                                                remaining_c.add((*prc_ptr))
+                                            set rrc: rrc + 1
+                                        }
+                                        var remaining_cv Vector[PlannedOperand]^rp(remaining_c)
+                                        return this.collapse_operand_sequence#(remaining_cv)
+                                    }
+                                    return result
+                                }
+                            }
+
                             ; Reshape the tuple to set tuple_type to the
                             ; struct type. Stack allocation only for now
                             ; (Lifetime.Unspecified — heap $/#/^ deferred).
-                            ; s80: ctor-call diversion (find_initializer# +
-                            ; PlannedCall with C1 mangling) was attempted
-                            ; here and reverted. Issue: stage-1's emitter
-                            ; doesn't emit init# bodies, so calling Data^p(v)
-                            ; or Options#() etc. for in-package structs
-                            ; produced unresolved symbol link errors. The
-                            ; mangler change (mangle_function# emits C1 for
-                            ; init+parent) and the emit_constructor_call
-                            ; helper landed but are dormant until s81 adds
-                            ; init# body emission. With body emission, this
-                            ; reshape can be replaced by the ctor-call path
-                            ; for ALL struct ctors uniformly.
+                            ; Falls through here when find_initializer#
+                            ; didn't match (data classes without init#) or
+                            ; when init has no page_parameter (stack-only
+                            ; init, currently unused).
                             var components_holder: ref[Vector[PlannedComponent]]? null
                             ; Collapse each component's operand sequence so
                             ; nested struct/union ctors and other multi-
@@ -6405,6 +6493,14 @@ define Planner
         ; An initializer is like a function without name / returns_ / throws_ /
         ; lifetime. Parameters open a new scope, implementation is planned,
         ; scope closed.
+        ;
+        ; s81: also synthesizes a PlannedFunction wrapper for the init
+        ; body and records it in instantiated_functions so emit_function_decl
+        ; / emit_function_body produce the C1 ctor body. The wrapper's
+        ; LLVM signature is [this: parent, page (if init#), ...user_args]
+        ; — page_parameter on the wrapper is left null to avoid the
+        ; emit_function_decl page-prepend; the page slot is just a
+        ; regular input item.
         function plan_initializer#(
             rp,
             this: Planner,
@@ -6415,6 +6511,25 @@ define Planner
             this.push_scope()
 
             let planned_input this.plan_items#(ini.input)
+
+            ; s81: define `page` as `pointer[scaly.memory.Page]` so
+            ; bare `page.allocate(...)` in the init body resolves.
+            ; Mirrors Planner.cpp:12048-12061.
+            guard ini.page_parameter <> null
+            {
+                let page_struct_ty PlannedType(
+                    ini.span,
+                    String^rp("scaly.memory.Page"),
+                    String^rp("N4scaly6memory4PageE"),
+                    null,
+                    Lifetime.Unspecified(Unspecified()),
+                    null,
+                    String^rp(""),
+                    null
+                )
+                let page_ptr_ty Planner.make_pointer_type#(page_struct_ty)
+                this.define_local((*ini.page_parameter), page_ptr_ty, false, false)
+            }
 
             var i: size_t 0
             while i < planned_input.length
@@ -6434,6 +6549,17 @@ define Planner
                     }
                 }
                 set i: i + 1
+            }
+
+            ; s81: define `this` as `pointer[parent]` so bare-field
+            ; access in the init body (`set data: ...`) is rewritten
+            ; via the implicit-property-access path at Planner.scaly
+            ; line ~4347. Mirrors Planner.cpp:12082-12088.
+            guard parent <> null
+            {
+                let p (*parent)
+                let this_ptr_ty Planner.make_pointer_type#(p)
+                this.define_local(String$("this"), this_ptr_ty, false, false)
             }
 
             let planned_impl this.plan_implementation#(ini.implementation)
@@ -6465,7 +6591,7 @@ define Planner
                 set page_ref: holder.get(0)
             }
 
-            PlannedInitializer(
+            let result_ini PlannedInitializer(
                 ini.span,
                 ini.private_,
                 page_ref,
@@ -6473,6 +6599,95 @@ define Planner
                 &input_holder,
                 planned_impl
             )
+
+            ; s81: synthesize a PlannedFunction body wrapper and record
+            ; it so emit_function_decl/body produce the C1 ctor body.
+            ; Skip when impl is Extern/Intrinsic (no body to emit) or
+            ; when parent is null (free-floating init# isn't a thing).
+            choose planned_impl
+                when ia: PlannedAction
+                {
+                    guard parent <> null
+                    {
+                        let p (*parent)
+                        var synth_items Array[PlannedItem]$()
+
+                        var this_name_holder Vector[String]^rp(1)
+                        this_name_holder.put(0, String^rp("this"))
+                        var this_ty_holder Vector[PlannedType]^rp(1)
+                        this_ty_holder.put(0, p)
+                        synth_items.add(PlannedItem(
+                            ini.span,
+                            false,
+                            this_name_holder.get(0),
+                            this_ty_holder.get(0),
+                            null
+                        ))
+
+                        guard ini.page_parameter <> null
+                        {
+                            let page_struct_ty PlannedType(
+                                ini.span,
+                                String^rp("scaly.memory.Page"),
+                                String^rp("N4scaly6memory4PageE"),
+                                null,
+                                Lifetime.Unspecified(Unspecified()),
+                                null,
+                                String^rp(""),
+                                null
+                            )
+                            let page_ptr_ty Planner.make_pointer_type#(page_struct_ty)
+                            var page_ty_holder Vector[PlannedType]^rp(1)
+                            page_ty_holder.put(0, page_ptr_ty)
+
+                            var page_name_holder Vector[String]^rp(1)
+                            page_name_holder.put(0, String^rp((*ini.page_parameter)))
+
+                            synth_items.add(PlannedItem(
+                                ini.span,
+                                false,
+                                page_name_holder.get(0),
+                                page_ty_holder.get(0),
+                                null
+                            ))
+                        }
+
+                        var ui: size_t 0
+                        while ui < planned_input.length
+                        {
+                            let pi_ptr planned_input.get(ui)
+                            guard pi_ptr <> null
+                                synth_items.add((*pi_ptr))
+                            set ui: ui + 1
+                        }
+
+                        var synth_input_holder Vector[PlannedItem]^rp(synth_items)
+
+                        let synth_fn PlannedFunction(
+                            ini.span,
+                            ini.private_,
+                            false,
+                            String^rp("init"),
+                            mangled,
+                            null,
+                            &synth_input_holder,
+                            null,
+                            null,
+                            Lifetime.Unspecified(Unspecified()),
+                            planned_impl,
+                            null,
+                            false,
+                            false,
+                            null
+                        )
+                        this.record_function(synth_fn)
+                    }
+                    0
+                }
+                else
+                    0
+
+            result_ini
         }
 
         ; plan_deinitializer: Model.DeInitializer → Plan.PlannedDeInitializer.
