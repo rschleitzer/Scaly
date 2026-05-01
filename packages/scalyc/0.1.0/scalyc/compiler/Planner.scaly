@@ -2006,7 +2006,69 @@ define Planner
                         {
                             let p_ptr ops.get(r)
                             guard p_ptr <> null
-                                rest_arr.add((*p_ptr))
+                            {
+                                let p_op (*p_ptr)
+                                ; If a prefix operator is followed by a
+                                ; single-component anonymous Tuple (a
+                                ; grouping `(...)`), expand the Tuple's
+                                ; interior operands so the inner sequence
+                                ; collapses (e.g. `*(data + index)` →
+                                ; `*` applied to the collapsed
+                                ; `data + index` PlannedCall). Without
+                                ; this, emit_tuple's grouping shortcut
+                                ; emits only `data` and the GEP for
+                                ; pointer-arith deref vanishes. Mirrors
+                                ; stage-0 Planner.cpp:4178-4181 where the
+                                ; Tuple is consumed as-is because its
+                                ; interior was already collapsed during
+                                ; planTuple (Planner.cpp:10507).
+                                var expanded: bool false
+                                guard r = 1
+                                {
+                                    guard ops.length = 2
+                                    {
+                                        choose p_op.expr
+                                            when tup: PlannedTuple
+                                            {
+                                                guard tup.components <> null
+                                                {
+                                                    let comps (*tup.components)
+                                                    guard comps.length = 1
+                                                    {
+                                                        let c0_ptr comps.get(0)
+                                                        guard c0_ptr <> null
+                                                        {
+                                                            let c0 (*c0_ptr)
+                                                            guard c0.name = null
+                                                            {
+                                                                guard c0.value <> null
+                                                                {
+                                                                    let inner (*c0.value)
+                                                                    guard inner.length > 0
+                                                                    {
+                                                                        var ii: size_t 0
+                                                                        while ii < inner.length
+                                                                        {
+                                                                            let ip_ptr inner.get(ii)
+                                                                            guard ip_ptr <> null
+                                                                                rest_arr.add((*ip_ptr))
+                                                                            set ii: ii + 1
+                                                                        }
+                                                                        set expanded: true
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                            else
+                                                0
+                                    }
+                                }
+                                guard expanded = false
+                                    rest_arr.add(p_op)
+                            }
                             set r: r + 1
                         }
                         var rest_vec Vector[PlannedOperand]^rp(rest_arr)

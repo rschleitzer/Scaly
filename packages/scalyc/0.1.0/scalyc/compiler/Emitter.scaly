@@ -1923,15 +1923,14 @@ define Emitter
         }
 
         ; Comparison operators. Defensive: bail when LHS/RHS type kinds
-        ; mismatch. The s68 precedence fix solved chained-comparison
-        ; mis-ordering, and the s71 emit_variable fix solved the
-        ; `var i: int 1` ptr-load case in containers.test_array. But
-        ; ANOTHER latent bug — pointer-arith deref `*(data + index)`
-        ; emits as `load ptr, ptr %data` (skipping the GEP) — leaves
-        ; `byte = null` comparing i8 to ptr null in
-        ; containers.String.as_slice. Until pointer-arith deref is
-        ; fixed (separate session), guarding the icmp emit-site keeps
-        ; llc clean.
+        ; mismatch. The s72 prefix-tuple-expansion fix unblocked
+        ; pointer-arith deref's GEP emission, but binary ops INSIDE a
+        ; grouping component (e.g. `(byte & 0x80) = 0`) are still left
+        ; as a raw operand sequence by plan_component# — emit_tuple's
+        ; grouping shortcut emits only the first operand, leaving the
+        ; rhs dangling as a `ptr null` constant. Until plan_component#
+        ; collapses binary-op components (separate session), guarding
+        ; the icmp emit-site keeps llc clean.
         guard op_name.equals(String$("="))
         {
             guard is_float
