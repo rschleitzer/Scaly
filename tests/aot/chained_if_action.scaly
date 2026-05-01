@@ -1,0 +1,48 @@
+; AOT Test: nested chained if-else-if with Or condition (s82 reproducer)
+; Expected: yes
+define Opts(flag1: bool, flag2: bool, flag3: bool)
+
+function outer(b: bool) returns bool
+    b
+
+function f1(x: int) returns bool
+    x = 1
+
+function f2(x: int) returns bool
+    x = 2
+
+function f3(x: int) returns bool
+    x = 3
+
+function run() returns bool
+{
+    var opts Opts(false, false, false)
+    let x 1
+
+    if outer(true)
+    {
+        if f1(x) | f2(x)
+        {
+            set opts.flag1: true
+        }
+        else if f3(x)
+        {
+            set opts.flag2: true
+        }
+        else
+        {
+            set opts.flag3: true
+        }
+    }
+    else
+    {
+        set opts.flag2: true
+    }
+
+    opts.flag1
+}
+
+if run()
+    print("yes")
+else
+    print("no")

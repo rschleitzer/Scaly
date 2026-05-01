@@ -2438,6 +2438,18 @@ define Emitter
                 {
                     let tuple_ptr LLVMBuildAlloca(builder, struct_type, "tuple")
                     LLVMBuildStore(builder, LLVMConstNull(struct_type), tuple_ptr)
+                    ; Same load as the per-field-store branch below: when not
+                    ; region-allocated, emit_binding needs the loaded struct
+                    ; value so it alloca's a struct-typed slot for `var opts
+                    ; Options#()` instead of a ptr-typed slot. Without this,
+                    ; subsequent `set opts.field: ...` GEPs corrupt the
+                    ; pointer instead of writing struct fields. Today the
+                    ; planner never sets is_region_alloc, so this fires for
+                    ; both Options() and Options#() — matches stage-0 which
+                    ; treats both as stack-allocated for empty-arg data
+                    ; classes (no init#).
+                    guard tuple.is_region_alloc = false
+                        return LLVMBuildLoad2(builder, struct_type, tuple_ptr, "tuple.val")
                     return tuple_ptr
                 }
             }
@@ -2555,6 +2567,16 @@ define Emitter
             }
             set i: i + 1
         }
+
+        ; Mirror stage-0 (Emitter.cpp:6493-6499): for non-region-alloc
+        ; (stack), load the struct value before returning. emit_binding
+        ; calls LLVMTypeOf on this result; without the load it sees
+        ; ptr and alloca's a ptr-typed slot for `var opts Opts(...)`,
+        ; making subsequent `set opts.field: ...` GEPs corrupt the
+        ; pointer instead of writing struct fields. Region-alloc
+        ; ($/#/^) keeps returning the heap pointer.
+        guard tuple.is_region_alloc = false
+            return LLVMBuildLoad2(builder, struct_type, tuple_ptr, "tuple.val")
 
         tuple_ptr
     }

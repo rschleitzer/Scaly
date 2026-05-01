@@ -3386,6 +3386,7 @@ define Planner
 
                 let rhs_ptr ops.get(i + 1)
                 var consumed_rest: bool false
+                var rhs_call_consumed: bool false
                 guard rhs_ptr <> null
                 {
                     var rhs: PlannedOperand (*rhs_ptr)
@@ -3396,6 +3397,51 @@ define Planner
                             ty.name
                         else
                             String^rp("")
+
+                    ; If rhs is a non-operator Type immediately followed by
+                    ; a Tuple, treat it as an ungrouped call (`A | f()` →
+                    ; rhs = Call(f), not Type(f)). Stage-0's planOperands
+                    ; pre-processes this in scalyc/Planner.cpp:7359+ before
+                    ; collapseOperandSequence runs; stage-1's plan_operands
+                    ; is a flat per-operand pass, so we fold here. Without
+                    ; this, `f1() | f2()` builds Call(|, [Call(f1),
+                    ; Type(f2)]) and drops the trailing `()`, then the
+                    ; entire `if cond { ... }` collapses because emit_call
+                    ; on Type(f2) returns null and the binary call is
+                    ; rejected upstream — observed in cli.parse_args's
+                    ; chained-if branches.
+                    guard i + 2 < ops.length
+                    {
+                        choose rhs.expr
+                            when rty: PlannedType
+                            {
+                                guard Planner.is_operator_name(rty.name) = false
+                                {
+                                    let after_ptr ops.get(i + 2)
+                                    guard after_ptr <> null
+                                    {
+                                        let after_op (*after_ptr)
+                                        var is_tuple_after: bool false
+                                        choose after_op.expr
+                                            when tp_after: PlannedTuple
+                                                set is_tuple_after: true
+                                            else
+                                                0
+                                        guard is_tuple_after
+                                        {
+                                            var sub_arr Array[PlannedOperand]$()
+                                            sub_arr.add(rhs)
+                                            sub_arr.add(after_op)
+                                            var sub_vec Vector[PlannedOperand]^rp(sub_arr)
+                                            set rhs: this.collapse_operand_sequence#(sub_vec)
+                                            set rhs_call_consumed: true
+                                        }
+                                    }
+                                }
+                            }
+                            else
+                                0
+                    }
 
                     ; Precedence look-ahead. If ops[i+2] is an operator with
                     ; HIGHER precedence than op_name, recursively collapse
@@ -3502,6 +3548,11 @@ define Planner
                 }
                 guard consumed_rest
                     break
+                guard rhs_call_consumed
+                {
+                    set i: i + 3
+                    continue
+                }
                 set i: i + 2
             }
 
