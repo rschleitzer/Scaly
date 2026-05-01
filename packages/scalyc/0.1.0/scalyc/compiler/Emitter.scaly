@@ -1881,33 +1881,17 @@ define Emitter
             return LLVMBuildURem(builder, l, r, "urem")
         }
 
-        ; Bitwise AND. Defensive: bail if operands have mismatched type kinds.
-        ; Stage-1's operator-collapse for `A <> X and B <> Y` mis-orders the
-        ; sequence as `((A <> X) and B) <> Y` rather than `(A <> X) and (B <> Y)`,
-        ; leaving one operand as a raw pointer instead of an icmp result. Emitting
-        ; `and i1 X, ptr Y` produces invalid IR that llc rejects.
+        ; Bitwise AND
         guard op_name.equals(String$("&"))
-        {
-            guard LLVMGetTypeKind(LLVMTypeOf(l)) <> LLVMGetTypeKind(LLVMTypeOf(r))
-                return LLVMValueRef(null)
             return LLVMBuildAnd(builder, l, r, "and")
-        }
 
         ; Bitwise OR
         guard op_name.equals(String$("|"))
-        {
-            guard LLVMGetTypeKind(LLVMTypeOf(l)) <> LLVMGetTypeKind(LLVMTypeOf(r))
-                return LLVMValueRef(null)
             return LLVMBuildOr(builder, l, r, "or")
-        }
 
         ; Bitwise XOR
         guard op_name.equals(String$("^"))
-        {
-            guard LLVMGetTypeKind(LLVMTypeOf(l)) <> LLVMGetTypeKind(LLVMTypeOf(r))
-                return LLVMValueRef(null)
             return LLVMBuildXor(builder, l, r, "xor")
-        }
 
         ; Left shift
         guard op_name.equals(String$("<<"))
@@ -1922,10 +1906,13 @@ define Emitter
             return LLVMBuildLShr(builder, l, r, "lshr")
         }
 
-        ; Comparison operators. Defensive: stage-1's collapse_operand_sequence#
-        ; mis-orders chained comparisons (same root cause as fix 4), leaving
-        ; mismatched operand kinds. Bail rather than emit invalid IR like
-        ; `icmp sle ptr %i1, i32 67108864`.
+        ; Comparison operators. Defensive: bail when LHS/RHS type kinds
+        ; mismatch. The s68 precedence fix solved chained-comparison
+        ; mis-ordering, but a separate latent bug — `var i: int 1`
+        ; typed as ptr at load-time in containers.test_array — still
+        ; produces `icmp sle ptr %i, i32 N`. Until the int/ptr type
+        ; tracking is fixed (separate session), guarding the icmp
+        ; emit-site keeps llc clean.
         guard op_name.equals(String$("="))
         {
             guard is_float

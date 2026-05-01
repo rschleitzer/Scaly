@@ -2856,9 +2856,10 @@ define Planner
                     break
 
                 let rhs_ptr ops.get(i + 1)
+                var consumed_rest: bool false
                 guard rhs_ptr <> null
                 {
-                    let rhs (*rhs_ptr)
+                    var rhs: PlannedOperand (*rhs_ptr)
 
                     ; Extract operator name from the op operand.
                     let op_name choose op.expr
@@ -2866,6 +2867,55 @@ define Planner
                             ty.name
                         else
                             String^rp("")
+
+                    ; Precedence look-ahead. If ops[i+2] is an operator with
+                    ; HIGHER precedence than op_name, recursively collapse
+                    ; [rhs, ops[i+2], ops[i+3], ...] first so the binary
+                    ; call uses the precedence-correct right side. Without
+                    ; this, the left-associative fold turns
+                    ; `A <> X & B <> Y` into `((A <> X) & B) <> Y` rather
+                    ; than `(A <> X) & (B <> Y)`. Mirrors
+                    ; Planner.cpp:4298-4322. Sets consumed_rest so the outer
+                    ; loop breaks after this iteration since the entire
+                    ; right side has been folded into rhs.
+                    let current_prec Planner.get_operator_precedence(op_name)
+                    guard current_prec > 0
+                    {
+                        guard i + 2 < ops.length
+                        {
+                            let next_op_ptr ops.get(i + 2)
+                            guard next_op_ptr <> null
+                            {
+                                let next_op (*next_op_ptr)
+                                choose next_op.expr
+                                    when nty: PlannedType
+                                    {
+                                        guard Planner.is_operator_name(nty.name)
+                                        {
+                                            let next_prec Planner.get_operator_precedence(nty.name)
+                                            guard next_prec > current_prec
+                                            {
+                                                var right_arr Array[PlannedOperand]$()
+                                                right_arr.add(rhs)
+                                                var rr: size_t i + 2
+                                                while rr < ops.length
+                                                {
+                                                    let p_ptr ops.get(rr)
+                                                    guard p_ptr <> null
+                                                        right_arr.add((*p_ptr))
+                                                    set rr: rr + 1
+                                                }
+                                                var right_vec Vector[PlannedOperand]^rp(right_arr)
+                                                set rhs: this.collapse_operand_sequence#(right_vec)
+                                                set consumed_rest: true
+                                            }
+                                        }
+                                    }
+                                    else
+                                        0
+                            }
+                        }
+                    }
 
                     let resolved this.resolve_operator_call#(
                         op_name, result.result_type, rhs.result_type
@@ -2921,6 +2971,8 @@ define Planner
                         combined_type
                     )
                 }
+                guard consumed_rest
+                    break
                 set i: i + 2
             }
 
@@ -9193,6 +9245,55 @@ define Planner
         guard first = ("(" as u8)
             return true
         false
+    }
+
+    ; get_operator_precedence: higher = binds tighter. Mirrors
+    ; Planner.cpp:1418-1431 exactly. Used by collapse_operand_sequence#
+    ; to climb precedence so `A <> X & B <> Y` collapses as
+    ; `(A <> X) & (B <> Y)` rather than `((A <> X) & B) <> Y`.
+    function get_operator_precedence(name: String) returns int
+    {
+        guard name.equals("||")
+            return 1
+        guard name.equals("&&")
+            return 2
+        guard name.equals("|")
+            return 3
+        guard name.equals("^")
+            return 4
+        guard name.equals("&")
+            return 5
+        guard name.equals("=")
+            return 6
+        guard name.equals("<>")
+            return 6
+        guard name.equals("<")
+            return 7
+        guard name.equals(">")
+            return 7
+        guard name.equals("<=")
+            return 7
+        guard name.equals(">=")
+            return 7
+        guard name.equals("<<")
+            return 8
+        guard name.equals(">>")
+            return 8
+        guard name.equals("+")
+            return 9
+        guard name.equals("-")
+            return 9
+        guard name.equals("*")
+            return 10
+        guard name.equals("/")
+            return 10
+        guard name.equals("%")
+            return 10
+        guard name.equals("div")
+            return 10
+        guard name.equals("mod")
+            return 10
+        0
     }
 
     ; ========================================================================
