@@ -2680,39 +2680,76 @@ define Planner
                                         set receiver_op: recv
                                         set is_method_dispatch: true
 
-                                        ; Method extern decl recording is
-                                        ; deferred. For callees defined in the
-                                        ; same compilation unit (Options
-                                        ; methods declared in cli.scaly),
-                                        ; emit_function_decl already emits the
-                                        ; LLVM declaration via the regular
-                                        ; plan path, so emit_call's
-                                        ; LLVMGetNamedFunction succeeds. For
-                                        ; callees in a separately-compiled
-                                        ; package (String methods in
-                                        ; libscaly), record_function with the
-                                        ; mm.mangled_name produces a SEGV in
-                                        ; emit_call's args loop on
-                                        ; LLVMTypeOf(arg_value) when the
-                                        ; receiver is a struct-typed function
-                                        ; param: the s34/s76 ABI alias. s77
-                                        ; tried bypassing LLVMTypeOf via
-                                        ; map_type/lookup_struct_cache for
-                                        ; the receiver but the resulting IR
-                                        ; still verify-fails with "Call
-                                        ; parameter type does not match
-                                        ; function signature!" — likely the
-                                        ; non-receiver args still hit the
-                                        ; alias problem when arg_value is a
-                                        ; loaded struct value rebound via
-                                        ; `var arg_value`. Defer to s78+:
-                                        ; needs either a stage-0 emitBinding
-                                        ; fix that detects sret-call returns
-                                        ; into a `var X` slot and copies
-                                        ; field-by-field, OR a planner-side
-                                        ; helper that emits LLVMValueRef
-                                        ; reconstruction at every arg site
-                                        ; (more invasive).
+                                        ; s78: record an extern PlannedFunction
+                                        ; for the dispatched method so
+                                        ; emit_function_decl emits an LLVM
+                                        ; declare and emit_call's
+                                        ; LLVMGetNamedFunction resolves it.
+                                        ; Same-package methods (Options.*) are
+                                        ; declared via the regular plan path;
+                                        ; cross-package methods (String.*,
+                                        ; Vector.*) need this. Skipped when
+                                        ; already recorded (mirrors the
+                                        ; dotted-namespace dedup at line ~2949).
+                                        guard this.has_recorded_function(mm.mangled_name) = false
+                                        {
+                                            var items_arr Array[PlannedItem]$()
+                                            var this_type_holder Vector[PlannedType]^rp(1)
+                                            this_type_holder.put(0, local.binding_type)
+                                            items_arr.add(PlannedItem(
+                                                result.loc,
+                                                false,
+                                                null,
+                                                this_type_holder.get(0),
+                                                null
+                                            ))
+                                            guard mm.parameter_types <> null
+                                            {
+                                                let pt_vec_ref mm.parameter_types
+                                                let pt_vec (*pt_vec_ref)
+                                                var ai: size_t 0
+                                                while ai < pt_vec.length
+                                                {
+                                                    let p_ptr pt_vec.get(ai)
+                                                    guard p_ptr <> null
+                                                    {
+                                                        var pty_holder Vector[PlannedType]^rp(1)
+                                                        pty_holder.put(0, (*p_ptr))
+                                                        items_arr.add(PlannedItem(
+                                                            result.loc,
+                                                            false,
+                                                            null,
+                                                            pty_holder.get(0),
+                                                            null
+                                                        ))
+                                                    }
+                                                    set ai: ai + 1
+                                                }
+                                            }
+                                            var items_holder Vector[PlannedItem]^rp(items_arr)
+                                            var rt_holder Vector[PlannedType]^rp(1)
+                                            rt_holder.put(0, mm.return_type)
+                                            let extern_impl PlannedImplementation.Extern(
+                                                PlannedExternImpl(result.loc)
+                                            )
+                                            this.record_function(PlannedFunction(
+                                                result.loc,
+                                                false,
+                                                false,
+                                                suffix,
+                                                mm.mangled_name,
+                                                null,
+                                                &items_holder,
+                                                rt_holder.get(0),
+                                                mm.throws_type,
+                                                Lifetime.Unspecified(Unspecified()),
+                                                extern_impl,
+                                                null,
+                                                false,
+                                                mm.can_throw,
+                                                null
+                                            ))
+                                        }
                                         set match_ref: mm_ref
                                     }
                                     }
@@ -2954,13 +2991,30 @@ define Planner
                                                 let extern_impl PlannedImplementation.Extern(
                                                     PlannedExternImpl(result.loc)
                                                 )
+                                                ; s78: propagate page_parameter when the
+                                                ; matched function has has_page=true.
+                                                ; Without this, function# callees recorded
+                                                ; via the dotted fallback get null
+                                                ; page_parameter, so emit_function_decl
+                                                ; emits a 1-param signature for what
+                                                ; should be 2-param (Page* + user param).
+                                                ; A later call that goes through the body
+                                                ; uses LLVMGetParam(func, 1) on a 1-param
+                                                ; function and gets a bogus pointer.
+                                                var pp_ref: ref[String]? null
+                                                guard mm.requires_page_param
+                                                {
+                                                    var pp_h Vector[String]^rp(1)
+                                                    pp_h.put(0, String^rp("rp"))
+                                                    set pp_ref: pp_h.get(0)
+                                                }
                                                 this.record_function(PlannedFunction(
                                                     result.loc,
                                                     false,
                                                     false,
                                                     suffix,
                                                     ns_mangled,
-                                                    null,
+                                                    pp_ref,
                                                     &items_holder,
                                                     rt_holder.get(0),
                                                     mm.throws_type,
