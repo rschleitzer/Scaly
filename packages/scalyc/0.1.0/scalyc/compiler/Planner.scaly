@@ -2695,27 +2695,24 @@ define Planner
                                         ; emit_call's args loop on
                                         ; LLVMTypeOf(arg_value) when the
                                         ; receiver is a struct-typed function
-                                        ; param: emit_variable returns the
-                                        ; LLVMGetParam SSA value directly
-                                        ; (immutable case); LLVMTypeOf on it
-                                        ; via the var-bound arg_value through
-                                        ; stage-0's struct-by-ptr ABI
-                                        ; misinterprets the alloca address as
-                                        ; the handle (s34-class). Lazy LLVM
-                                        ; declaration via LLVMAddFunction
-                                        ; (also tested) doesn't help because
-                                        ; the args loop crashes at the same
-                                        ; site before LLVMBuildCall2 runs.
-                                        ; Forcing is_mutable=true on the
-                                        ; receiver to route through
-                                        ; LLVMBuildLoad2 swaps the SEGV from
-                                        ; LLVMTypeOf to LLVMBuildLoad2 with a
-                                        ; pointer that's near 0x13. Defer to
-                                        ; s77 — needs deeper investigation of
-                                        ; how stage-0 lays out Scaly-internal
-                                        ; LLVMValueRef return slots when the
-                                        ; caller binds them via `var` to a
-                                        ; struct-typed local.
+                                        ; param: the s34/s76 ABI alias. s77
+                                        ; tried bypassing LLVMTypeOf via
+                                        ; map_type/lookup_struct_cache for
+                                        ; the receiver but the resulting IR
+                                        ; still verify-fails with "Call
+                                        ; parameter type does not match
+                                        ; function signature!" — likely the
+                                        ; non-receiver args still hit the
+                                        ; alias problem when arg_value is a
+                                        ; loaded struct value rebound via
+                                        ; `var arg_value`. Defer to s78+:
+                                        ; needs either a stage-0 emitBinding
+                                        ; fix that detects sret-call returns
+                                        ; into a `var X` slot and copies
+                                        ; field-by-field, OR a planner-side
+                                        ; helper that emits LLVMValueRef
+                                        ; reconstruction at every arg site
+                                        ; (more invasive).
                                         set match_ref: mm_ref
                                     }
                                     }

@@ -900,6 +900,16 @@ define Emitter
             }
             when action: Action
             {
+                ; Skip re-emitting if this function already has a body
+                ; (from a duplicate entry in plan.functions). Without
+                ; this, a second emit_function_body call appends a
+                ; new entry block into a fully-built function and
+                ; produces "Call parameter type does not match
+                ; function signature!" verify failures because the
+                ; duplicate block references stale SSA values.
+                let existing_bb LLVMGetFirstBasicBlock(llvm_func)
+                guard existing_bb.handle <> null
+                    return true
                 ; Emit the function body
                 set current_function: llvm_func
 
