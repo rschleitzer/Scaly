@@ -1558,7 +1558,29 @@ define Emitter
             var ty map_intrinsic_type_by_name(variable.variable_type.name)
             guard ty.handle = null
                 set ty: map_type(variable.variable_type)
-            return LLVMBuildLoad2(builder, ty, var_ptr, variable.name.c_data())
+            ; s87: when the alloca's allocated type is `ptr` but the
+            ; mapped variable type is a struct, the binding stored a
+            ; heap pointer from a region-allocated ctor (Options#(),
+            ; T$(), T^name(...)). Loading the struct from an 8-byte
+            ; ptr slot would read past the alloca and pick up stack
+            ; garbage. Mirror stage-0 (Emitter.cpp:3155-3161): load
+            ; as ptr to retrieve the heap pointer. Downstream
+            ; consumers (emit_return, member access chain) already
+            ; handle ptr-to-struct via load/auto-deref. Scaly's
+            ; `guard cond STMT` runs STMT when cond is TRUE, so each
+            ; guard below short-circuits to the regular load when
+            ; the alloca-of-ptr / mapped-struct condition isn't met.
+            guard LLVMGetTypeKind(ty) <> LLVMTypeKind.Struct()
+                return LLVMBuildLoad2(builder, ty, var_ptr, variable.name.c_data())
+            let is_alloca LLVMIsAAllocaInst(var_ptr)
+            guard is_alloca.handle = null
+                return LLVMBuildLoad2(builder, ty, var_ptr, variable.name.c_data())
+            let alloc_ty LLVMGetAllocatedType(var_ptr)
+            guard alloc_ty.handle = null
+                return LLVMBuildLoad2(builder, ty, var_ptr, variable.name.c_data())
+            guard LLVMGetTypeKind(alloc_ty) <> LLVMTypeKind.Pointer()
+                return LLVMBuildLoad2(builder, ty, var_ptr, variable.name.c_data())
+            return LLVMBuildLoad2(builder, alloc_ty, var_ptr, variable.name.c_data())
         }
         else
         {
@@ -4102,6 +4124,35 @@ define Emitter
                     {
                         let inner (*inner_opt)
                         set current_type: map_type(inner)
+                    }
+                }
+            }
+        }
+
+        ; s87: when var_ptr is an alloca-of-ptr (region-allocated ctor
+        ; result like Options#()), the alloca holds the heap pointer
+        ; rather than the struct itself. GEPing into the alloca treats
+        ; an 8-byte ptr slot as the struct base and overflows on every
+        ; field offset. Load the heap pointer first, then GEP into the
+        ; heap struct. Mirrors emit_variable's struct/ptr-alloca fix.
+        guard is_pointer = false
+        {
+            guard current_type.handle <> null
+            {
+                guard LLVMGetTypeKind(current_type) = LLVMTypeKind.Struct()
+                {
+                    let is_alloca LLVMIsAAllocaInst(current_ptr)
+                    guard is_alloca.handle <> null
+                    {
+                        let alloc_ty LLVMGetAllocatedType(current_ptr)
+                        guard alloc_ty.handle <> null
+                        {
+                            guard LLVMGetTypeKind(alloc_ty) = LLVMTypeKind.Pointer()
+                            {
+                                let ptr_type LLVMPointerTypeInContext(context, 0)
+                                set current_ptr: LLVMValueRef(LLVMBuildLoad2(builder, ptr_type, current_ptr, "ptr.load").handle)
+                            }
+                        }
                     }
                 }
             }

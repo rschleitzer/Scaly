@@ -420,6 +420,14 @@ function LLVMTypeOf(val: LLVMValueRef) returns LLVMTypeRef extern
 ; Check if value is null
 function LLVMIsNull(val: LLVMValueRef) returns int extern
 
+; Alloca instruction inspection. LLVMIsAAllocaInst returns the value if it
+; is an alloca instruction, null otherwise. LLVMGetAllocatedType returns
+; the type that the alloca instruction allocates (e.g., for `alloca i32`
+; this returns i32). Required to distinguish ptr-typed alloca slots that
+; hold a heap pointer from struct-typed alloca slots that hold a value.
+function LLVMIsAAllocaInst(val: LLVMValueRef) returns LLVMValueRef extern
+function LLVMGetAllocatedType(alloca: LLVMValueRef) returns LLVMTypeRef extern
+
 ; ============================================================================
 ; Target Functions
 ; ============================================================================

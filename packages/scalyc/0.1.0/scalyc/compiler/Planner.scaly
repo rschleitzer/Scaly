@@ -4813,37 +4813,27 @@ define Planner
                                             }
                                             var all_vec Vector[String]^rp(all_arr)
                                             let chain2 this.resolve_member_access#(inner2, all_vec)
-                                            var has_method2: bool false
-                                            var ci2: size_t 0
-                                            while ci2 < chain2.length
+                                            ; s87: skip removed (was `var has_method2 / while /
+                                            ; guard has_method2 = false` wrapper preserved through
+                                            ; s83-s86). With s87's emit_variable struct/ptr-alloca
+                                            ; fix and s86's heap-copy in MemberAssignment, the
+                                            ; method-on-chain dispatch now works at runtime.
+                                            var holder2 Vector[PlannedMemberAccess]^rp(chain2)
+                                            var ft2 inner2
+                                            guard chain2.length > 0
                                             {
-                                                let mp2 chain2.get(ci2)
-                                                guard mp2 <> null
-                                                {
-                                                    guard (*mp2).is_method
-                                                        set has_method2: true
-                                                }
-                                                set ci2: ci2 + 1
+                                                let lp2 chain2.get(chain2.length - 1)
+                                                guard lp2 <> null
+                                                    set ft2: (*lp2).result_type
                                             }
-                                            guard has_method2 = false
-                                            {
-                                                var holder2 Vector[PlannedMemberAccess]^rp(chain2)
-                                                var ft2 inner2
-                                                guard chain2.length > 0
-                                                {
-                                                    let lp2 chain2.get(chain2.length - 1)
-                                                    guard lp2 <> null
-                                                        set ft2: (*lp2).result_type
-                                                }
-                                                return PlannedOperand(
-                                                    loc,
-                                                    PlannedExpression.Variable(PlannedVariable(
-                                                        loc, String#("this"), this_ty2, false
-                                                    )),
-                                                    &holder2,
-                                                    ft2
-                                                )
-                                            }
+                                            return PlannedOperand(
+                                                loc,
+                                                PlannedExpression.Variable(PlannedVariable(
+                                                    loc, String#("this"), this_ty2, false
+                                                )),
+                                                &holder2,
+                                                ft2
+                                            )
                                         }
                                     }
                                 }
