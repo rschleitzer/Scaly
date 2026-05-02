@@ -2482,8 +2482,20 @@ define Planner
                             guard init_match <> null
                             {
                                 let ini_match (*init_match)
-                                guard ini_match.page_parameter <> null
+                                ; s84: the page_parameter guard was load-bearing
+                                ; under s81 because the `requires_page_param=true`
+                                ; field below was hard-coded — without page on the
+                                ; init, emit_constructor_call would still pass an
+                                ; extra page arg, mismatching the C1 ABI.
+                                ; Now we propagate `init# vs init` into
+                                ; `requires_page_param`, enabling `Options#()`
+                                ; (where Options has only `init()` (no #)) to
+                                ; route through emit_constructor_call: heap-
+                                ; allocate via Page::allocate, call C1 with
+                                ; `this` only. Mirrors stage-0's
+                                ; cli.test() IR for `var opts Options$()`.
                                 {
+                                    let has_page_param ini_match.page_parameter <> null
                                     let init_input_items this.plan_items#(ini_match.input)
                                     var init_input_holder Vector[PlannedItem]^rp(init_input_items)
 
@@ -2492,7 +2504,7 @@ define Planner
                                     let parent_ref parent_holder.get(0)
 
                                     let c1_mangled Planner.mangle_function#(
-                                        String$("init"), &init_input_holder, parent_ref, true
+                                        String$("init"), &init_input_holder, parent_ref, has_page_param
                                     )
 
                                     var ctor_call_args Array[PlannedOperand]$()
@@ -2531,7 +2543,7 @@ define Planner
                                         false,
                                         false,
                                         false,
-                                        true,
+                                        has_page_param,
                                         &ctor_args_vec,
                                         ctor_struct_type,
                                         ctor_struct_type.life
