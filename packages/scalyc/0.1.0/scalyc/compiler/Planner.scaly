@@ -2857,6 +2857,141 @@ define Planner
                             }
                         }
 
+                        ; Method-on-chain dispatch (s83): when the first
+                        ; operand has a member_access chain whose last hop
+                        ; is_method=true, the call is an instance method on
+                        ; the chain's truncated receiver. Truncate the chain
+                        ; (drop the method hop), use last_acc.parent_type as
+                        ; the receiver type, and look up the method.
+                        ; Mirrors stage-0 Planner.cpp:4534-4607. Required
+                        ; for `inner.get_value()` and `input_file.get_length()`
+                        ; in method bodies (after the implicit-this
+                        ; multi-segment fallback in plan_type_operand# returns
+                        ; a chain ending in a method hop).
+                        guard match_ref = null
+                        {
+                            guard result.member_access <> null
+                            {
+                                let ma_outer (*result.member_access)
+                                guard ma_outer.length > 0
+                                {
+                                    let last_p ma_outer.get(ma_outer.length - 1)
+                                    guard last_p <> null
+                                    {
+                                        let last_acc (*last_p)
+                                        guard last_acc.is_method
+                                        {
+                                            let recv_type last_acc.parent_type
+                                            let mm_ref this.lookup_method#(recv_type, last_acc.name)
+                                            guard mm_ref <> null
+                                            {
+                                                let mm3 (*mm_ref)
+                                                ; Build truncated chain (drop last hop).
+                                                var trunc_arr Array[PlannedMemberAccess]$()
+                                                var ti: size_t 0
+                                                while ti + 1 < ma_outer.length
+                                                {
+                                                    let mp ma_outer.get(ti)
+                                                    guard mp <> null
+                                                        trunc_arr.add((*mp))
+                                                    set ti: ti + 1
+                                                }
+                                                if trunc_arr.length > 0
+                                                {
+                                                    var trunc_holder Vector[PlannedMemberAccess]^rp(trunc_arr)
+                                                    set receiver_op: PlannedOperand(
+                                                        result.loc,
+                                                        result.expr,
+                                                        &trunc_holder,
+                                                        recv_type
+                                                    )
+                                                }
+                                                else
+                                                {
+                                                    set receiver_op: PlannedOperand(
+                                                        result.loc,
+                                                        result.expr,
+                                                        null,
+                                                        recv_type
+                                                    )
+                                                }
+
+                                                ; Record extern PlannedFunction so
+                                                ; emit_function_decl emits an LLVM
+                                                ; declare and emit_call resolves it
+                                                ; via LLVMGetNamedFunction. Mirrors
+                                                ; the s78 record at the s75 site
+                                                ; (line ~2794). Skipped if already
+                                                ; recorded.
+                                                guard this.has_recorded_function(mm3.mangled_name) = false
+                                                {
+                                                    var items_arr2 Array[PlannedItem]$()
+                                                    var this_type_holder2 Vector[PlannedType]^rp(1)
+                                                    this_type_holder2.put(0, recv_type)
+                                                    items_arr2.add(PlannedItem(
+                                                        result.loc,
+                                                        false,
+                                                        null,
+                                                        this_type_holder2.get(0),
+                                                        null
+                                                    ))
+                                                    guard mm3.parameter_types <> null
+                                                    {
+                                                        let pt_vec_ref2 mm3.parameter_types
+                                                        let pt_vec2 (*pt_vec_ref2)
+                                                        var ai2: size_t 0
+                                                        while ai2 < pt_vec2.length
+                                                        {
+                                                            let p_ptr2 pt_vec2.get(ai2)
+                                                            guard p_ptr2 <> null
+                                                            {
+                                                                var pty_holder2 Vector[PlannedType]^rp(1)
+                                                                pty_holder2.put(0, (*p_ptr2))
+                                                                items_arr2.add(PlannedItem(
+                                                                    result.loc,
+                                                                    false,
+                                                                    null,
+                                                                    pty_holder2.get(0),
+                                                                    null
+                                                                ))
+                                                            }
+                                                            set ai2: ai2 + 1
+                                                        }
+                                                    }
+                                                    var items_holder2 Vector[PlannedItem]^rp(items_arr2)
+                                                    var rt_holder2 Vector[PlannedType]^rp(1)
+                                                    rt_holder2.put(0, mm3.return_type)
+                                                    let extern_impl2 PlannedImplementation.Extern(
+                                                        PlannedExternImpl(result.loc)
+                                                    )
+                                                    this.record_function(PlannedFunction(
+                                                        result.loc,
+                                                        false,
+                                                        false,
+                                                        last_acc.name,
+                                                        mm3.mangled_name,
+                                                        null,
+                                                        &items_holder2,
+                                                        rt_holder2.get(0),
+                                                        mm3.throws_type,
+                                                        Lifetime.Unspecified(Unspecified()),
+                                                        extern_impl2,
+                                                        null,
+                                                        false,
+                                                        mm3.can_throw,
+                                                        null
+                                                    ))
+                                                }
+
+                                                set match_ref: mm_ref
+                                                set is_method_dispatch: true
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
                         ; Dotted call fallback: `cli.main(args)` arrives
                         ; with fn_name="cli.main"; the function is registered
                         ; in model_functions under its short name "main"
@@ -4627,6 +4762,80 @@ define Planner
                                 &access_holder,
                                 final_type
                             )
+                        }
+                    }
+
+                    ; Implicit-this multi-segment fallback: when first_name
+                    ; matches a property of T (where this: pointer[T]),
+                    ; build a chain starting from `this` with all segments
+                    ; resolved against T. Mirrors Planner.cpp:7055-7097 +
+                    ; chain-building from 6805-6826. Skip when the chain
+                    ; contains any method hop — same constraint as the
+                    ; local-binding branch above.
+                    let this_ref2 this.lookup_local(String#("this"))
+                    guard this_ref2 <> null
+                    {
+                        let this_ty2 (*this_ref2)
+                        guard this_ty2.name.equals(String$("pointer"))
+                        {
+                            guard this_ty2.generics <> null
+                            {
+                                let gens2 (*this_ty2.generics)
+                                guard gens2.length > 0
+                                {
+                                    let inner_ptr2 gens2.get(0)
+                                    guard inner_ptr2 <> null
+                                    {
+                                        let inner2 (*inner_ptr2)
+                                        let prop_ref2 this.lookup_property(inner2.name, first_name)
+                                        guard prop_ref2 <> null
+                                        {
+                                            var all_arr Array[String]$()
+                                            var k2: size_t 0
+                                            while k2 < t.name.length
+                                            {
+                                                let sp t.name.get(k2)
+                                                guard sp <> null
+                                                    all_arr.add((*sp))
+                                                set k2: k2 + 1
+                                            }
+                                            var all_vec Vector[String]^rp(all_arr)
+                                            let chain2 this.resolve_member_access#(inner2, all_vec)
+                                            var has_method2: bool false
+                                            var ci2: size_t 0
+                                            while ci2 < chain2.length
+                                            {
+                                                let mp2 chain2.get(ci2)
+                                                guard mp2 <> null
+                                                {
+                                                    guard (*mp2).is_method
+                                                        set has_method2: true
+                                                }
+                                                set ci2: ci2 + 1
+                                            }
+                                            guard has_method2 = false
+                                            {
+                                                var holder2 Vector[PlannedMemberAccess]^rp(chain2)
+                                                var ft2 inner2
+                                                guard chain2.length > 0
+                                                {
+                                                    let lp2 chain2.get(chain2.length - 1)
+                                                    guard lp2 <> null
+                                                        set ft2: (*lp2).result_type
+                                                }
+                                                return PlannedOperand(
+                                                    loc,
+                                                    PlannedExpression.Variable(PlannedVariable(
+                                                        loc, String#("this"), this_ty2, false
+                                                    )),
+                                                    &holder2,
+                                                    ft2
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 }

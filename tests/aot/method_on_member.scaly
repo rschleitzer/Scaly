@@ -1,0 +1,26 @@
+; AOT test (s83): chained member access on `this` (no method hop).
+; Mirrors the bug pattern in Options.has_input where stage-1's planner
+; failed to resolve `member.subfield` against an implicit-this context.
+; Expected: yes
+define Inner(value: int)
+
+define Outer(inner: Inner)
+{
+    function get_value_direct(this) returns int
+        inner.value
+
+    function compare_member(this) returns bool
+        inner.value > 0
+}
+
+function run() returns int
+{
+    var o Outer(Inner(5))
+    o.get_value_direct()
+}
+
+let x run()
+if x = 5
+    print("yes")
+else
+    print("no")

@@ -4008,6 +4008,31 @@ define Emitter
                 }
                 set i: i + 1
             }
+
+            ; Mirrors stage-0 Emitter.cpp:2062-2064: when stored_value is a
+            ; pointer but the final field is a struct, load the struct value
+            ; from the pointer first. Without this, init# results (heap ptrs)
+            ; assigned to struct fields stomp the field's first 8 bytes
+            ; instead of writing the struct value.
+            guard n > 0
+            {
+                let last_ptr chain.get(n - 1)
+                guard last_ptr <> null
+                {
+                    let last_member last_ptr.unwrap()
+                    let last_rt last_member.result_type
+                    let field_type map_type(last_rt)
+                    guard field_type.handle <> null
+                    {
+                        let value_kind LLVMGetTypeKind(LLVMTypeOf(stored_value))
+                        let field_kind LLVMGetTypeKind(field_type)
+                        guard value_kind = LLVMTypeKind.Pointer() & field_kind = LLVMTypeKind.Struct()
+                        {
+                            set stored_value: LLVMValueRef(LLVMBuildLoad2(builder, field_type, stored_value, "field.load").handle)
+                        }
+                    }
+                }
+            }
         }
 
         ; Store the value to the final field
