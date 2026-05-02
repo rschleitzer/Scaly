@@ -574,6 +574,28 @@ define Planner
             instantiated_globals.add(g)
         }
 
+        ; lookup_global: locate a previously planned PlannedGlobal by name.
+        ; Used by plan_type_operand#'s constant-folding path so a bare
+        ; identifier like F_OK / SEEK_END resolves to its define value
+        ; instead of falling through to PlannedExpression.Type (which
+        ; emit_call drops as an arg, silently dropping the whole
+        ; statement). Mirrors Planner.cpp:6950-6995.
+        function lookup_global(this: Planner, name: String) returns ref[PlannedGlobal]?
+        {
+            var i: size_t 0
+            while i < instantiated_globals.length
+            {
+                let g_ptr instantiated_globals.get(i)
+                guard g_ptr <> null
+                {
+                    guard g_ptr.name.equals(name)
+                        return g_ptr
+                }
+                set i: i + 1
+            }
+            null
+        }
+
         ; ================================================================
         ; Package search paths + on-demand module loading.
         ;
@@ -4091,13 +4113,23 @@ define Planner
                 set throws_ref: th_holder.get(0)
             }
 
+            ; s88: propagate has_page (set when the resolved method takes
+            ; an explicit `page` param OR when it returns a struct/union
+            ; that triggers the implicit-return-page injection) into the
+            ; MethodMatch's requires_page_param. collapse_operand_sequence#
+            ; reads this field on the resolved match and threads it onto
+            ; the PlannedCall so emit_call prepends `rp` as arg0. Without
+            ; it, every call to a `function#` method (e.g. String.to_c_string#,
+            ; File.read_to_string#) emits only the explicit args and the
+            ; callee reads garbage in the rp slot — observed as the empty
+            ; cli.run "Could not read input file" path before s88.
             var match_holder Vector[MethodMatch]^rp(1)
             match_holder.put(0, MethodMatch(
                 null,
                 mangled,
                 return_type,
                 &params_holder,
-                false,
+                has_page,
                 can_throw,
                 throws_ref,
                 false
@@ -4627,6 +4659,67 @@ define Planner
                             )),
                             null,
                             lb.binding_type
+                        )
+                    }
+
+                    ; s88: sibling-global constant-fold. `define X: int K`
+                    ; references like F_OK / SEEK_END must resolve to
+                    ; their value or every caller silently drops the
+                    ; whole statement (plan_type_operand# returning
+                    ; PlannedExpression.Type → emit_call ignores it →
+                    ; trailing `f(.., NAME) = K` becomes a no-op so the
+                    ; function body emits only the default return).
+                    ; Mirrors Planner.cpp:6950-6995. Single scalar
+                    ; PlannedConstant inlines directly; non-constant or
+                    ; multi-operand value falls back to PlannedGlobalRef.
+                    let g_ref this.lookup_global(name)
+                    guard g_ref <> null
+                    {
+                        let g (*g_ref)
+                        guard g.value <> null
+                        {
+                            let val_vec (*g.value)
+                            guard val_vec.length = 1
+                            {
+                                let v_ptr val_vec.get(0)
+                                guard v_ptr <> null
+                                {
+                                    let v (*v_ptr)
+                                    choose v.expr
+                                        when c: scalyc.compiler.Plan.PlannedConstant
+                                            return PlannedOperand(
+                                                loc,
+                                                PlannedExpression.Constant(c),
+                                                null,
+                                                g.global_type
+                                            )
+                                        else
+                                        {
+                                            return PlannedOperand(
+                                                loc,
+                                                PlannedExpression.GlobalRef(PlannedGlobalRef(
+                                                    loc,
+                                                    g.name,
+                                                    g.mangled_name,
+                                                    g.global_type
+                                                )),
+                                                null,
+                                                g.global_type
+                                            )
+                                        }
+                                }
+                            }
+                        }
+                        return PlannedOperand(
+                            loc,
+                            PlannedExpression.GlobalRef(PlannedGlobalRef(
+                                loc,
+                                g.name,
+                                g.mangled_name,
+                                g.global_type
+                            )),
+                            null,
+                            g.global_type
                         )
                     }
 
