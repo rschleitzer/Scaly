@@ -1347,8 +1347,15 @@ define Emitter
         guard current_value.handle = null
             return LLVMValueRef(null)
 
+        ; Defensive: LLVMTypeOf can return null when current_value.handle
+        ; is non-null but isn't a real LLVMValue (stale/invalid pointer).
+        ; Bail out cleanly instead of dereferencing null in LLVMGetTypeKind.
+        let cv_type LLVMTypeOf(current_value)
+        guard cv_type.handle = null
+            return LLVMValueRef(null)
+
         ; If base value is a pointer, we may need to load the struct
-        guard LLVMGetTypeKind(LLVMTypeOf(current_value)) = LLVMTypeKind.Pointer()
+        guard LLVMGetTypeKind(cv_type) = LLVMTypeKind.Pointer()
         {
             ; Get the first member's parent type to know what to load
             let first chain.get(0)
