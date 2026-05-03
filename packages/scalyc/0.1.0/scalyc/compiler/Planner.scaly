@@ -2750,7 +2750,53 @@ define Planner
                             return result
                         }
 
-                        let arg_types Planner.extract_arg_types#(second)
+                        ; s90: collapse each tuple component's operand
+                        ; sequence before reading result_type so binary
+                        ; operators in args (e.g. `f(a, x = y)`) yield
+                        ; one type per component, matching the function
+                        ; arity. Mirrors stage-0's planTuple at
+                        ; Planner.cpp:10506-10511 (which always collapses).
+                        ; Stage-1's plan_component# only collapses on
+                        ; specific shapes; the tuple-arg path slipped
+                        ; through. Without collapse here, an arg-list
+                        ; component with a bool-comparison operand sees
+                        ; `extract_arg_types#` flatten 3 operands into 3
+                        ; arg types, resolve_function_call# arity-mismatches,
+                        ; match_ref stays null, mangled="", emit_call drops
+                        ; the call, and the entire `let X = f(...)` binding
+                        ; plus any `guard X = ...` follower silently
+                        ; vanish from the IR.
+                        var arg_types_arr_s90 Array[PlannedType]$()
+                        choose second.expr
+                            when tp_s90: PlannedTuple
+                            {
+                                guard tp_s90.components <> null
+                                {
+                                    let comps_s90 (*tp_s90.components)
+                                    var ai_s90: size_t 0
+                                    while ai_s90 < comps_s90.length
+                                    {
+                                        let cp_s90 comps_s90.get(ai_s90)
+                                        guard cp_s90 <> null
+                                        {
+                                            let c_s90 (*cp_s90)
+                                            guard c_s90.value <> null
+                                            {
+                                                let v_s90 (*c_s90.value)
+                                                guard v_s90.length > 0
+                                                {
+                                                    let collapsed_s90 this.collapse_operand_sequence#(v_s90)
+                                                    arg_types_arr_s90.add(collapsed_s90.result_type)
+                                                }
+                                            }
+                                        }
+                                        set ai_s90: ai_s90 + 1
+                                    }
+                                }
+                            }
+                            else
+                                arg_types_arr_s90.add(second.result_type)
+                        let arg_types Vector[PlannedType]^rp(arg_types_arr_s90)
                         var match_ref this.resolve_function_call#(fn_name, arg_types)
 
                         ; First-hop method dispatch (s75): when fn_name
@@ -3688,6 +3734,32 @@ define Planner
                                     set combined_type: result.result_type
                             }
                         }
+
+                        ; s90: built-in comparison operators on primitive
+                        ; types return bool. Without this, the fresh type
+                        ; var from above leaks into upstream arg_types,
+                        ; resolve_function_call# then arity-matches but
+                        ; type-mismatches against the formal `bool` parameter
+                        ; (fresh-name "" vs "bool"), match_ref stays null,
+                        ; mangled="", and `let X f(a, p = q)` silently drops.
+                        ; Mirrors Planner.cpp's findOperator returning bool
+                        ; for primitive comparison.
+                        guard op_name.equals(String$("="))
+                            set combined_type: Planner.make_bool_type#()
+                        guard op_name.equals(String$("<>"))
+                            set combined_type: Planner.make_bool_type#()
+                        guard op_name.equals(String$("<"))
+                            set combined_type: Planner.make_bool_type#()
+                        guard op_name.equals(String$(">"))
+                            set combined_type: Planner.make_bool_type#()
+                        guard op_name.equals(String$("<="))
+                            set combined_type: Planner.make_bool_type#()
+                        guard op_name.equals(String$(">="))
+                            set combined_type: Planner.make_bool_type#()
+                        guard op_name.equals(String$("&&"))
+                            set combined_type: Planner.make_bool_type#()
+                        guard op_name.equals(String$("||"))
+                            set combined_type: Planner.make_bool_type#()
                     }
 
                     var two_args Vector[PlannedOperand]^rp(2)
@@ -5855,6 +5927,27 @@ define Planner
                                     set should_collapse: true
                                 when i: PlannedIs
                                     set should_collapse: true
+                                when ty: PlannedType
+                                {
+                                    ; s90: binary operator at k>=1 (e.g.
+                                    ; `x = y`, `a + b`, `p <> null`) means
+                                    ; the operand sequence must collapse to
+                                    ; a single PlannedCall. Without this,
+                                    ; tuple components carrying a binary
+                                    ; comparison as a function arg leave
+                                    ; planned_value as a 3-operand sequence,
+                                    ; emit_tuple's per-component arg path
+                                    ; only sees the first operand, the call
+                                    ; arity-mismatches, returns null, and
+                                    ; the entire `let X = f(...arg-with-cmp...)`
+                                    ; binding plus its `guard X = false`
+                                    ; follower silently drop. Mirrors stage-
+                                    ; 0's planTuple at Planner.cpp:10506-10511
+                                    ; (unconditional collapse on every
+                                    ; component value).
+                                    guard Planner.is_operator_name(ty.name)
+                                        set should_collapse: true
+                                }
                                 else
                                     0
                         }
