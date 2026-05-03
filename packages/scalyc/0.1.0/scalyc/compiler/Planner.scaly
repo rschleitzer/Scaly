@@ -2297,6 +2297,20 @@ define Planner
                                     }
                                 }
                             }
+                            ; s96: address-of — wrap operand in pointer[T].
+                            ; Mirrors stage-0 Planner.cpp:3877 (resolvePrefix
+                            ; OperatorCall: Name=="pointer", Generics=[Operand],
+                            ; MangledName="P"+Operand.MangledName). Without
+                            ; this, `&x` falls through to rt=operand_type,
+                            ; meaning callers see the bare T and downstream
+                            ; resolve_function_call# arity-checks against
+                            ; ref[T] / pointer[T] params using the wrong
+                            ; argument type — fails, drops the call.
+                            ; types_compatible (s96 part 2) extends the
+                            ; rule set so pointer[T] flows into ref[T] /
+                            ; pointer[T] params.
+                            guard prefix_name.equals(String$("&"))
+                                set rt: Planner.make_pointer_type#(rest_result.result_type)
                         }
 
                         let mangled this.mangle_unary_operator#(
@@ -4508,10 +4522,65 @@ define Planner
                 set after_subst: Planner.apply_name_substitution#(base, &sub_vec)
             }
 
-            ; If resolve_type_base already computed a mangled name (intrinsic
-            ; pointer[T] / ref[T] cases), keep it.
+            ; s96: Recursively canonicalize inner generics for ref[T] /
+            ; pointer[T]. resolve_type_base# only recurses via itself
+            ; (no Planner state, no has_concept access), so an inner
+            ; type written as `Planner.Planner` (joined dotted name)
+            ; stays in that form even when stage-1's concept registry
+            ; has it under the canonical short name `Planner`. Without
+            ; this, `ref[Planner.Planner]` mangles its inner as
+            ; `15Planner.Planner` while a same-source-but-canonicalized
+            ; `Planner` argument would mangle as `7Planner` — types_equal
+            ; on the inner names returns false, types_compatible
+            ; (s96 part 2) bails, the call is dropped. Mirrors stage-0
+            ; Planner.cpp's resolveType which calls itself recursively
+            ; on generic args (via resolveType, not the static helper).
             guard after_subst.mangled_name.get_length() > 0
+            {
+                guard t.generics <> null
+                {
+                    let model_gens (*t.generics)
+                    guard model_gens.length > 0
+                    {
+                        var canon_gens Vector[PlannedType]^rp(model_gens.length)
+                        var gi: size_t 0
+                        while gi < model_gens.length
+                        {
+                            let g_ptr model_gens.get(gi)
+                            guard g_ptr <> null
+                            {
+                                let g (*g_ptr)
+                                let canon_inner this.plan_type#(g)
+                                canon_gens.put(gi, canon_inner)
+                            }
+                            set gi: gi + 1
+                        }
+                        ; Rebuild outer mangled name with canonicalized inner.
+                        var sb StringBuilder$()
+                        guard after_subst.name.equals("pointer")
+                            sb.append("P")
+                        guard after_subst.name.equals("ref")
+                            sb.append("R")
+                        let inner0_ptr canon_gens.get(0)
+                        guard inner0_ptr <> null
+                        {
+                            let inner0 (*inner0_ptr)
+                            sb.append(inner0.mangled_name)
+                        }
+                        return PlannedType(
+                            after_subst.loc,
+                            after_subst.name,
+                            sb.to_string^rp(),
+                            &canon_gens,
+                            after_subst.life,
+                            after_subst.origin,
+                            after_subst.array_size,
+                            after_subst.variable
+                        )
+                    }
+                }
                 return after_subst
+            }
 
             ; Otherwise consult the concept table: a registered user type
             ; mangles as "_Z"-length-prefix-with-optional-generic-block.
@@ -9317,6 +9386,79 @@ define Planner
                         let inner (*inner_ptr)
                         guard Planner.types_equal(param_type, inner)
                             return true
+                    }
+                }
+            }
+        }
+
+        ; s96: pointer[T] is compatible with ref[T] (and vice versa). Both
+        ; lower to `ptr` in LLVM, and `&local` produces pointer[T] while
+        ; ref params expect ref[T]. Stage-0's typesCompatible doesn't have
+        ; this rule (it falls through and works only via the qualified-
+        ; call name-only fallback at Planner.cpp:7912 for namespace.fn
+        ; sites); extending the rule here lets free-function `f(&x)` for
+        ; `f(p: ref[T])` work too. Symmetric: pointer[T] passed to ref[T]
+        ; param, OR ref[T] passed to pointer[T] param.
+        guard param_type.name.equals("ref")
+        {
+            guard arg_type.name.equals("pointer")
+            {
+                guard param_type.generics <> null
+                {
+                    let pg (*param_type.generics)
+                    guard pg.length > 0
+                    {
+                        let p0_ptr pg.get(0)
+                        guard p0_ptr <> null
+                        {
+                            let p0 (*p0_ptr)
+                            guard arg_type.generics <> null
+                            {
+                                let ag (*arg_type.generics)
+                                guard ag.length > 0
+                                {
+                                    let a0_ptr ag.get(0)
+                                    guard a0_ptr <> null
+                                    {
+                                        let a0 (*a0_ptr)
+                                        guard Planner.types_equal(p0, a0)
+                                            return true
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        guard param_type.name.equals("pointer")
+        {
+            guard arg_type.name.equals("ref")
+            {
+                guard param_type.generics <> null
+                {
+                    let pg (*param_type.generics)
+                    guard pg.length > 0
+                    {
+                        let p0_ptr pg.get(0)
+                        guard p0_ptr <> null
+                        {
+                            let p0 (*p0_ptr)
+                            guard arg_type.generics <> null
+                            {
+                                let ag (*arg_type.generics)
+                                guard ag.length > 0
+                                {
+                                    let a0_ptr ag.get(0)
+                                    guard a0_ptr <> null
+                                    {
+                                        let a0 (*a0_ptr)
+                                        guard Planner.types_equal(p0, a0)
+                                            return true
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
