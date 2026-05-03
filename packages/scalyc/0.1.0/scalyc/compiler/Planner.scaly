@@ -4502,13 +4502,38 @@ define Planner
 
             ; Otherwise consult the concept table: a registered user type
             ; mangles as "_Z"-length-prefix-with-optional-generic-block.
-            guard this.has_concept(after_subst.name) = false
+            ;
+            ; Dotted-name canonicalization: when the joined name (e.g.
+            ; "parser.ProgramSyntax") doesn't resolve, try the last
+            ; segment alone ("ProgramSyntax"). This makes a parameter
+            ; type written as `parser.ProgramSyntax` (qualified by use
+            ; alias) match a function declaring `syntax: ProgramSyntax`
+            ; (unqualified). Mirrors stage-0 Planner.cpp:5619-5648
+            ; (lookupConcept dotted) and 6263-6311 (resolveType module
+            ; stack fallback).
+            var canonical_name: String String^rp(after_subst.name)
+            guard this.has_concept(canonical_name) = false
+            {
+                let last_dot canonical_name.last_index_of("." as u8)
+                guard last_dot >= 0
+                {
+                    let start (last_dot as size_t) + 1
+                    let total canonical_name.get_length()
+                    guard total > start
+                    {
+                        let suffix canonical_name.substring(rp, start, total - start)
+                        guard this.has_concept(suffix)
+                            set canonical_name: suffix
+                    }
+                }
+            }
+            guard this.has_concept(canonical_name) = false
                 return after_subst
 
-            let mangled Planner.mangle_structure#(after_subst.name, after_subst.generics)
+            let mangled Planner.mangle_structure#(canonical_name, after_subst.generics)
             PlannedType(
                 after_subst.loc,
-                after_subst.name,
+                canonical_name,
                 mangled,
                 after_subst.generics,
                 after_subst.life,
@@ -7460,6 +7485,224 @@ define Planner
             result
         }
 
+        ; plan_structure_layout#: register a Structure's layout (properties,
+        ; offsets, size, alignment) into instantiated_structures WITHOUT
+        ; planning its methods, operators, initializers, or deinitializer.
+        ;
+        ; Used by register_struct_layouts# to import cross-module struct
+        ; layouts so map_type / emit_struct_type / emit_member_assignment
+        ; have a real struct type available, even when the module's
+        ; function bodies aren't planned in the current compilation unit.
+        ; Skipping methods avoids the planner-side crashes (null this in
+        ; check_function_match → String::get_buffer) that would otherwise
+        ; happen when walking generic/cross-module method bodies.
+        function plan_structure_layout#(rp, this: Planner, s: Structure, name: String) returns PlannedStructure
+        {
+            var planned_props Array[PlannedProperty]$()
+            var i: size_t 0
+            while i < s.properties.length
+            {
+                let p_ptr s.properties.get(i)
+                guard p_ptr <> null
+                {
+                    let p (*p_ptr)
+                    planned_props.add(this.plan_property#(p))
+                }
+                set i: i + 1
+            }
+
+            var props_initial Vector[PlannedProperty]^rp(planned_props)
+            let offsets Planner.compute_property_offsets#(&props_initial)
+
+            var props_with_offsets Array[PlannedProperty]$()
+            var j: size_t 0
+            while j < planned_props.length
+            {
+                let p_ptr planned_props.get(j)
+                let o_ptr offsets.get(j)
+                guard p_ptr <> null
+                {
+                    guard o_ptr <> null
+                    {
+                        let p (*p_ptr)
+                        let offset *o_ptr
+                        props_with_offsets.add(PlannedProperty(
+                            p.loc,
+                            p.is_private,
+                            p.name,
+                            p.mangled_name,
+                            p.prop_type,
+                            p.initializer,
+                            p.attributes,
+                            offset
+                        ))
+                    }
+                }
+                set j: j + 1
+            }
+
+            var props_holder Vector[PlannedProperty]^rp(props_with_offsets)
+            let total_size Planner.compute_struct_size(&props_holder)
+            let total_align Planner.compute_struct_alignment(&props_holder)
+            let mangled Planner.mangle_structure#(name, null)
+
+            ; Build the parent type (struct's own PlannedType) so
+            ; plan_initializer can encode the parent in the
+            ; mangled C1/C2 names.
+            var gens_holder Vector[PlannedType]^rp(0)
+            var parent_holder Vector[PlannedType]^rp(1)
+            parent_holder.put(0, PlannedType(
+                s.span,
+                String^rp(name),
+                mangled,
+                null,
+                Lifetime.Unspecified(Unspecified()),
+                null,
+                String^rp(""),
+                null
+            ))
+            let parent_ref parent_holder.get(0)
+
+            ; Plan only initializers (constructor bodies). Method
+            ; bodies and operators are skipped — those frequently
+            ; reference cross-module/generic types that the planner
+            ; can't resolve outside their normal walk and would crash
+            ; mid-emit. Initializers are simpler (just `set field: ...`
+            ; over the struct's own fields) and safe to walk here.
+            var planned_initializers Array[PlannedInitializer]$()
+            var ii: size_t 0
+            while ii < s.initializers.length
+            {
+                let ii_ptr s.initializers.get(ii)
+                guard ii_ptr <> null
+                {
+                    let ini (*ii_ptr)
+                    planned_initializers.add(this.plan_initializer#(ini, parent_ref))
+                }
+                set ii: ii + 1
+            }
+
+            var methods_holder Vector[PlannedFunction]^rp(0)
+            var ops_holder Vector[PlannedOperator]^rp(0)
+            var inits_holder Vector[PlannedInitializer]^rp(planned_initializers)
+
+            let result PlannedStructure(
+                s.span,
+                s.private_,
+                false,
+                String^rp(name),
+                mangled,
+                &props_holder,
+                &inits_holder,
+                null,
+                &methods_holder,
+                &ops_holder,
+                total_size,
+                total_align,
+                null
+            )
+            this.record_structure(result)
+            result
+        }
+
+        ; register_struct_layouts_in_module#: walk a module's tree and
+        ; register layout-only PlannedStructures for every Concept whose
+        ; definition is a Structure. Skips the Concept if its name is
+        ; already in instantiated_structures (avoids duplicate entries
+        ; when the same module is also walked by the full planner).
+        function register_struct_layouts_in_module#(rp, this: Planner, m: Module)
+        {
+            var i: size_t 0
+            while i < m.members.length
+            {
+                let m_ptr m.members.get(i)
+                guard m_ptr <> null
+                {
+                    let mem (*m_ptr)
+                    choose mem
+                        when c: Concept
+                        {
+                            this.register_struct_layouts_in_concept#(c)
+                            0
+                        }
+                        else
+                            0
+                }
+                set i: i + 1
+            }
+
+            var mi: size_t 0
+            while mi < m.modules.length
+            {
+                let sub_ptr m.modules.get(mi)
+                guard sub_ptr <> null
+                {
+                    let sub (*sub_ptr)
+                    this.register_struct_layouts_in_module#(sub)
+                }
+                set mi: mi + 1
+            }
+        }
+
+        ; register_struct_layouts_in_concept#: if the concept's
+        ; definition is a Structure, register its layout. If it's a
+        ; Namespace, recurse into namespace members and modules.
+        function register_struct_layouts_in_concept#(rp, this: Planner, c: Concept)
+        {
+            ; Only handle parameterless concepts here — generic
+            ; structures get planned per-instantiation by the existing
+            ; lookup_concept path in plan_type#.
+            guard c.parameters.length > 0
+                return
+
+            ; Skip if already recorded.
+            let m_check Planner.mangle_structure#(c.name, null)
+            guard this.has_instantiated_structure(m_check)
+                return
+
+            choose c.definition
+                when s: Structure
+                {
+                    let pl this.plan_structure_layout#(s, c.name)
+                    0
+                }
+                when ns: Namespace
+                {
+                    var i: size_t 0
+                    while i < ns.members.length
+                    {
+                        let m_ptr ns.members.get(i)
+                        guard m_ptr <> null
+                        {
+                            let mem (*m_ptr)
+                            choose mem
+                                when inner: Concept
+                                {
+                                    this.register_struct_layouts_in_concept#(inner)
+                                    0
+                                }
+                                else
+                                    0
+                        }
+                        set i: i + 1
+                    }
+                    var mi: size_t 0
+                    while mi < ns.modules.length
+                    {
+                        let sub_ptr ns.modules.get(mi)
+                        guard sub_ptr <> null
+                        {
+                            let sub (*sub_ptr)
+                            this.register_struct_layouts_in_module#(sub)
+                        }
+                        set mi: mi + 1
+                    }
+                    0
+                }
+                else
+                    0
+        }
+
         ; plan_global: Model.Global → Plan.PlannedGlobal.
         ; The `name` comes from the enclosing Concept — Global itself has
         ; no name field.
@@ -7758,6 +8001,16 @@ define Planner
             {
                 let planned this.plan_module#(sub)
             }
+
+            ; Layout-only fallback: even when this sub-module isn't on
+            ; the safe-walk list (or when it was walked but its struct
+            ; was already cached), register layouts for any concrete
+            ; (parameterless) Structures it defines. has_instantiated_structure
+            ; in register_struct_layouts_in_concept# guards against
+            ; duplicate entries. This makes cross-module struct types
+            ; (e.g. EmitterConfig referenced from cli.scaly) map_type-
+            ; resolvable without walking the module's method bodies.
+            this.register_struct_layouts_in_module#(sub)
         }
 
         ; Helper for plan_namespace#: walk ns.modules and route each

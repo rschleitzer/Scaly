@@ -618,8 +618,7 @@ define Parser
             {
                 choose err
                     when d: Different {}
-                    when i: Invalid
-                        throw ParserError.Invalid(i)
+                    when i: Invalid {}
             }
             when success: Success
                 set parameters: GenericParametersSyntax#(success.start, success.end, success.parameters)
@@ -825,8 +824,7 @@ define Parser
             {
                 choose err
                     when d: Different {}
-                    when i: Invalid
-                        throw ParserError.Invalid(i)
+                    when i: Invalid {}
             }
             when success: Success
                 set body: BodySyntax#(success.start, success.end, success.uses, success.members)
@@ -956,8 +954,7 @@ define Parser
             {
                 choose err
                     when d: Different {}
-                    when i: Invalid
-                        throw ParserError.Invalid(i)
+                    when i: Invalid {}
             }
             when success: Success
                 set body: BodySyntax#(success.start, success.end, success.uses, success.members)
@@ -1012,16 +1009,15 @@ define Parser
             when success: Success
                 set attributes: success
 
-        ; parse_typeannotation# may consume a newline as the LF-as-colon
-        ; substitute, then fail to find a Type and throw Invalid (e.g. for
-        ; payload-less union variants like Option's `None`). Mirror stage-0
-        ; Parser.cpp:851-858 which consumes the error unconditionally — both
-        ; Different and Invalid leave `annotation` as null and the lexer
-        ; positioned at the next real token.
         let annotation_start lexer.position
         var annotation: ref[TypeAnnotationSyntax]? null
         choose parse_typeannotation#()
-            when err: Error {}
+            when err: Error
+            {
+                choose err
+                    when d: Different {}
+                    when i: Invalid {}
+            }
             when success: Success
                 set annotation: TypeAnnotationSyntax#(success.start, success.end, success.type)
 
@@ -1078,8 +1074,7 @@ define Parser
             {
                 choose err
                     when d: Different {}
-                    when i: Invalid
-                        throw ParserError.Invalid(i)
+                    when i: Invalid {}
             }
             when success: Success
                 set parameters: ParameterSetSyntax#(success)
@@ -1104,8 +1099,7 @@ define Parser
             {
                 choose err
                     when d: Different {}
-                    when i: Invalid
-                        throw ParserError.Invalid(i)
+                    when i: Invalid {}
             }
             when success: Success
                 set result: ReturnsSyntax#(success.start, success.end, success.type, success.attributes)
@@ -1117,8 +1111,7 @@ define Parser
             {
                 choose err
                     when d: Different {}
-                    when i: Invalid
-                        throw ParserError.Invalid(i)
+                    when i: Invalid {}
             }
             when success: Success
                 set error: ThrowsSyntax#(success.start, success.end, success.type, success.attributes)
@@ -1303,8 +1296,7 @@ define Parser
             {
                 choose err
                     when d: Different {}
-                    when i: Invalid
-                        throw ParserError.Invalid(i)
+                    when i: Invalid {}
             }
             when success: Success
                 set annotation: TypeAnnotationSyntax#(success.start, success.end, success.type)
@@ -1562,8 +1554,7 @@ define Parser
             {
                 choose err
                     when d: Different {}
-                    when i: Invalid
-                        throw ParserError.Invalid(i)
+                    when i: Invalid {}
             }
             when success: Success
                 set extension: ExtendsSyntax#(success.start, success.end, success.extensions)
@@ -1715,8 +1706,7 @@ define Parser
             {
                 choose err
                     when d: Different {}
-                    when i: Invalid
-                        throw ParserError.Invalid(i)
+                    when i: Invalid {}
             }
             when success: Success
                 set lifetime: LifetimeSyntax#(success)
@@ -1728,8 +1718,7 @@ define Parser
             {
                 choose err
                     when d: Different {}
-                    when i: Invalid
-                        throw ParserError.Invalid(i)
+                    when i: Invalid {}
             }
             when success: Success
                 set parameters: ParameterSetSyntax#(success)
@@ -1928,8 +1917,7 @@ define Parser
             {
                 choose err
                     when d: Different {}
-                    when i: Invalid
-                        throw ParserError.Invalid(i)
+                    when i: Invalid {}
             }
             when success: Success
                 set generics: GenericArgumentsSyntax#(success.start, success.end, success.generics)
@@ -1941,8 +1929,7 @@ define Parser
             {
                 choose err
                     when d: Different {}
-                    when i: Invalid
-                        throw ParserError.Invalid(i)
+                    when i: Invalid {}
             }
             when success: Success
                 set lifetime: LifetimeSyntax#(success)
@@ -1954,8 +1941,7 @@ define Parser
             {
                 choose err
                     when d: Different {}
-                    when i: Invalid
-                        throw ParserError.Invalid(i)
+                    when i: Invalid {}
             }
             when success: Success
                 set parameters: ParameterSetSyntax#(success)
@@ -1980,8 +1966,7 @@ define Parser
             {
                 choose err
                     when d: Different {}
-                    when i: Invalid
-                        throw ParserError.Invalid(i)
+                    when i: Invalid {}
             }
             when success: Success
                 set returns_: ReturnsSyntax#(success.start, success.end, success.type, success.attributes)
@@ -1995,8 +1980,7 @@ define Parser
             {
                 choose err
                     when d: Different {}
-                    when i: Invalid
-                        throw ParserError.Invalid(i)
+                    when i: Invalid {}
             }
             when success: Success
                 set throws_: ThrowsSyntax#(success.start, success.end, success.type, success.attributes)
@@ -2379,8 +2363,7 @@ define Parser
             {
                 choose err
                     when d: Different {}
-                    when i: Invalid
-                        throw ParserError.Invalid(i)
+                    when i: Invalid {}
             }
             when success: Success
                 set version: VersionSyntax#(success.start, success.end, success.majorMinor, success.patch)
@@ -2846,8 +2829,7 @@ define Parser
             {
                 choose err
                     when d: Different {}
-                    when i: Invalid
-                        throw ParserError.Invalid(i)
+                    when i: Invalid {}
             }
             when success: Success
                 set value: ValueSyntax#(success.start, success.end, success.value, success.attributes)
@@ -2929,8 +2911,7 @@ define Parser
             {
                 choose err
                     when d: Different {}
-                    when i: Invalid
-                        throw ParserError.Invalid(i)
+                    when i: Invalid {}
             }
             when success: Success
                 set lifetime: LifetimeSyntax#(success)
@@ -3145,8 +3126,7 @@ define Parser
             {
                 choose err
                     when d: Different {}
-                    when i: Invalid
-                        throw ParserError.Invalid(i)
+                    when i: Invalid {}
             }
             when success: Success
                 set alternative: ElseSyntax#(success.start, success.end, success.alternative)
@@ -3295,8 +3275,7 @@ define Parser
             {
                 choose err
                     when d: Different {}
-                    when i: Invalid
-                        throw ParserError.Invalid(i)
+                    when i: Invalid {}
             }
             when success: Success
                 set name: LabelSyntax#(success.start, success.end, success.name)
@@ -3364,8 +3343,7 @@ define Parser
             {
                 choose err
                     when d: Different {}
-                    when i: Invalid
-                        throw ParserError.Invalid(i)
+                    when i: Invalid {}
             }
             when success: Success
                 set alternative: ElseSyntax#(success.start, success.end, success.alternative)
@@ -3389,8 +3367,7 @@ define Parser
             {
                 choose err
                     when d: Different {}
-                    when i: Invalid
-                        throw ParserError.Invalid(i)
+                    when i: Invalid {}
             }
             when success: Success
                 set lifetime: LifetimeSyntax#(success)
@@ -3432,8 +3409,7 @@ define Parser
             {
                 choose err
                     when d: Different {}
-                    when i: Invalid
-                        throw ParserError.Invalid(i)
+                    when i: Invalid {}
             }
             when success: Success
                 set dropper: ElseSyntax#(success.start, success.end, success.alternative)
@@ -3818,8 +3794,7 @@ define Parser
             {
                 choose err
                     when d: Different {}
-                    when i: Invalid
-                        throw ParserError.Invalid(i)
+                    when i: Invalid {}
             }
             when success: Success
                 set annotation: BindingAnnotationSyntax#(success.start, success.end, success.spec)
@@ -4111,8 +4086,7 @@ define Parser
             {
                 choose err
                     when d: Different {}
-                    when i: Invalid
-                        throw ParserError.Invalid(i)
+                    when i: Invalid {}
             }
             when success: Success
                 set initializer: InitializerSyntax#(success.start, success.end, success.operands)
@@ -4179,8 +4153,7 @@ define Parser
             {
                 choose err
                     when d: Different {}
-                    when i: Invalid
-                        throw ParserError.Invalid(i)
+                    when i: Invalid {}
             }
             when success: Success
                 set name: LoopSyntax#(success.start, success.end, success.name)
@@ -4204,8 +4177,7 @@ define Parser
             {
                 choose err
                     when d: Different {}
-                    when i: Invalid
-                        throw ParserError.Invalid(i)
+                    when i: Invalid {}
             }
             when success: Success
                 set name: LoopSyntax#(success.start, success.end, success.name)
@@ -4355,8 +4327,7 @@ define Parser
             {
                 choose err
                     when d: Different {}
-                    when i: Invalid
-                        throw ParserError.Invalid(i)
+                    when i: Invalid {}
             }
             when success: Success
                 set annotation: TypeAnnotationSyntax#(success.start, success.end, success.type)
@@ -4388,8 +4359,7 @@ define Parser
             {
                 choose err
                     when d: Different {}
-                    when i: Invalid
-                        throw ParserError.Invalid(i)
+                    when i: Invalid {}
             }
             when success: Success
                 set name: LabelSyntax#(success.start, success.end, success.name)
@@ -4443,8 +4413,7 @@ define Parser
             {
                 choose err
                     when d: Different {}
-                    when i: Invalid
-                        throw ParserError.Invalid(i)
+                    when i: Invalid {}
             }
             when success: Success
                 set name: LabelSyntax#(success.start, success.end, success.name)
@@ -4775,8 +4744,7 @@ define Parser
             {
                 choose err
                     when d: Different {}
-                    when i: Invalid
-                        throw ParserError.Invalid(i)
+                    when i: Invalid {}
             }
             when success: Success
                 set generics: GenericArgumentsSyntax#(success.start, success.end, success.generics)
@@ -4788,8 +4756,7 @@ define Parser
             {
                 choose err
                     when d: Different {}
-                    when i: Invalid
-                        throw ParserError.Invalid(i)
+                    when i: Invalid {}
             }
             when success: Success
                 set optional: OptionalSyntax#(success.start, success.end)
@@ -4801,8 +4768,7 @@ define Parser
             {
                 choose err
                     when d: Different {}
-                    when i: Invalid
-                        throw ParserError.Invalid(i)
+                    when i: Invalid {}
             }
             when success: Success
                 set lifetime: LifetimeSyntax#(success)

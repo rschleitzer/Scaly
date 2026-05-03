@@ -219,8 +219,12 @@ define Parser
             {
                 choose err
                     when d: Different {}
-                    when i: Invalid
-                        throw ParserError.Invalid(i)
+                    when i: Invalid"
+                                    (if (multiple? content)
+"
+                        throw ParserError.Invalid(i)"
+" {}")
+"
             }
             when success: Success
                 set " prop ": "
