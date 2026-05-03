@@ -27,6 +27,7 @@ define LLVMPassManagerRef(handle: pointer[void])
 define LLVMMemoryBufferRef(handle: pointer[void])
 define LLVMDIBuilderRef(handle: pointer[void])
 define LLVMMetadataRef(handle: pointer[void])
+define LLVMAttributeRef(handle: pointer[void])
 
 ; ============================================================================
 ; LLVM Enums
@@ -233,6 +234,15 @@ procedure LLVMSetLinkage(global: LLVMValueRef, linkage: int) extern
 
 ; Set calling convention
 procedure LLVMSetFunctionCallConv(func: LLVMValueRef, cc: int) extern
+
+; Attribute API (s89). LLVMAttributeIndex: 0 = return, ~0 (LLVMAttributeFunctionIndex) = function, 1+ = nth param.
+function LLVMGetEnumAttributeKindForName(name: pointer[const_char], len: size_t) returns u32 extern
+function LLVMCreateTypeAttribute(context: LLVMContextRef, kind_id: u32, type_ref: LLVMTypeRef) returns LLVMAttributeRef extern
+function LLVMCreateEnumAttribute(context: LLVMContextRef, kind_id: u32, val: u64) returns LLVMAttributeRef extern
+procedure LLVMAddAttributeAtIndex(func: LLVMValueRef, idx: u32, attr: LLVMAttributeRef) extern
+function LLVMGetEnumAttributeAtIndex(func: LLVMValueRef, idx: u32, kind_id: u32) returns LLVMAttributeRef extern
+function LLVMGetTypeAttributeValue(attr: LLVMAttributeRef) returns LLVMTypeRef extern
+procedure LLVMAddCallSiteAttribute(call: LLVMValueRef, idx: u32, attr: LLVMAttributeRef) extern
 
 ; ============================================================================
 ; Basic Block Functions
