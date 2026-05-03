@@ -6386,8 +6386,19 @@ define Planner
                 this.define_local(n, binding_type, b.binding_type.equals("var"), false)
             }
 
-            var ops_holder Vector[PlannedOperand]^rp(1)
-            ops_holder.put(0, collapsed)
+            ; s93: only include the collapsed operand when there's an
+            ; actual initializer. For typed-no-init `var X: T`, an empty
+            ; b.operation produces a void-type placeholder from
+            ; collapse_operand_sequence#; passing it through made
+            ; emit_binding's `length > 0` gate true and emit_operands
+            ; return null on the placeholder, which then bailed out
+            ; without allocating the binding's slot. Skipping the put
+            ; lets emit_binding fall through to the type-only alloca
+            ; path. Mirrors stage-0 Planner.cpp:10947 where empty
+            ; ValueOps produce a null `Init` field on the Binding.
+            var ops_holder Vector[PlannedOperand]^rp(0)
+            guard b.operation.length > 0
+                ops_holder.add(collapsed)
             PlannedBinding(
                 b.span,
                 b.binding_type,
