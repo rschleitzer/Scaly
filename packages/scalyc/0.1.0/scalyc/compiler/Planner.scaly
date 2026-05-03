@@ -477,16 +477,29 @@ define Planner
 
         function lookup_concept(this: Planner, name: String) returns ref[Concept]?
         {
-            var i: size_t 0
-            while i < concepts.length
+            ; Scan backward so the most-recently-registered concept wins.
+            ; `define Planner { struct Planner ( ... ) ... }` registers
+            ; the outer Namespace concept first, then the inner Structure
+            ; concept under the same name. Stage-0 uses a std::map keyed
+            ; by name where the second insert overwrites the first; stage-1
+            ; uses a Vector and previously linear-scanned forward, returning
+            ; the OUTER Namespace and breaking find_initializer# /
+            ; lookup_property / lookup_method# / is_struct_ctor — which
+            ; all `choose c.definition when s: Structure ...` and fall
+            ; through to else when handed a Namespace concept. Reverse
+            ; scan = stage-0-faithful last-write-wins. (s95)
+            guard concepts.length = 0
+                return null
+            var i: size_t concepts.length
+            while i > 0
             {
+                set i: i - 1
                 let kvp_ptr concepts.get(i)
                 guard kvp_ptr <> null
                 {
                     guard kvp_ptr.key.equals(name)
                         return &kvp_ptr.value
                 }
-                set i: i + 1
             }
             null
         }
