@@ -5739,7 +5739,13 @@ define Planner
                 }
             }
 
-            var cond_holder Vector[PlannedOperand]^rp(planned_cond)
+            ; Store the COLLAPSED single operand, not the flat list.
+            ; emit_operands only emits the first operand (assuming
+            ; callers have already collapsed); storing the flat
+            ; `[get_color, ()]` would emit only `get_color` and miss
+            ; the call. plan_if has this same shape (~line 5096).
+            var cond_holder Vector[PlannedOperand]^rp(1)
+            cond_holder.put(0, collapsed_cond)
             var cases_holder Vector[PlannedWhen]^rp(cases_arr)
             PlannedChoose(c.span, &cond_holder, &cases_holder, alternative_ref)
         }
