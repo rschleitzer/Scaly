@@ -212,6 +212,7 @@ function LLVMGetElementType(type: LLVMTypeRef) returns LLVMTypeRef extern
 function LLVMGetReturnType(func_type: LLVMTypeRef) returns LLVMTypeRef extern
 function LLVMCountStructElementTypes(struct_type: LLVMTypeRef) returns int extern
 function LLVMGetStructElementTypes(struct_type: LLVMTypeRef, dest: pointer[LLVMTypeRef]) extern
+function LLVMStructGetTypeAtIndex(struct_type: LLVMTypeRef, index: int) returns LLVMTypeRef extern
 
 ; ============================================================================
 ; Function Functions

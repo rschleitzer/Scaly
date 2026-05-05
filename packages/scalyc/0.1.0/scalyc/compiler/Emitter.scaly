@@ -1357,7 +1357,20 @@ define Emitter
             }
             when i: Integer
             {
-                let llvm_type LLVMInt32TypeInContext(context)
+                ; s105: use result_type's width when known; default to
+                ; i32 only when no type info is available. Mirrors
+                ; stage-0 emitConstant (Emitter.cpp:4297-4300) which
+                ; defaults to i64 for unknown-typed integer literals.
+                ; The Scaly default is i32 to match the existing AOT
+                ; corpus, but typed contexts (size_t param, struct
+                ; field) need the literal in the right width or stores
+                ; truncate (i32 stored into a size_t field reads
+                ; garbage in the high bytes).
+                var llvm_type map_intrinsic_type_by_name(result_type.name)
+                guard llvm_type.handle = null
+                    set llvm_type: LLVMInt32TypeInContext(context)
+                guard LLVMGetTypeKind(llvm_type) <> LLVMTypeKind.Integer()
+                    set llvm_type: LLVMInt32TypeInContext(context)
                 return LLVMConstInt(llvm_type, i.value as size_t, 1)
             }
             when h: Hex
@@ -2528,7 +2541,37 @@ define Emitter
             guard arg = null
                 return LLVMValueRef(null)
 
-            let operand emit_operand(arg.unwrap())
+            let arg_op arg.unwrap()
+
+            ; s105: `&var` on a mutable struct variable returns the
+            ; alloca pointer directly (bypasses emit_variable's load).
+            ; Without this, `var x T(); let p &x; (*p).f = 1` mutates
+            ; a snapshot in `addr.tmp`, not x. Mirrors stage-0
+            ; emitOperand's KeepOriginalPointer + &-shortcut path.
+            guard call.name.equals(String$("&"))
+            {
+                guard arg_op.member_access = null
+                {
+                    choose arg_op.expr
+                        when v: Variable
+                        {
+                            guard v.is_mutable
+                            {
+                                let var_ptr lookup_variable(v.name)
+                                guard var_ptr.handle <> null
+                                {
+                                    let val_ty LLVMTypeOf(var_ptr)
+                                    guard LLVMGetTypeKind(val_ty) = LLVMTypeKind.Pointer()
+                                        return var_ptr
+                                }
+                            }
+                        }
+                        else
+                            0
+                }
+            }
+
+            let operand emit_operand(arg_op)
             return emit_intrinsic_unary_op(call.name, operand, call.result_type)
         }
 
@@ -2653,7 +2696,13 @@ define Emitter
                             {
                                 let inner_ptr gens.get(0)
                                 guard inner_ptr <> null
-                                    set elem_ty: map_type(*inner_ptr)
+                                {
+                                    ; s105: pointer[void] uses byte stride.
+                                    ; map_type(void) returns LLVMVoidType
+                                    ; which GEP rejects; fall back to i8.
+                                    guard (*inner_ptr).name.equals(String$("void")) = false
+                                        set elem_ty: map_type(*inner_ptr)
+                                }
                             }
                         }
                     }
@@ -3162,13 +3211,36 @@ define Emitter
         ; Store component values into struct fields. Use (*ref) instead
         ; of .unwrap() — the intrinsic Option.unwrap on `ref[LLVMValueRef]?`
         ; segfaults in stage-1 when the inner type is a struct.
+        ; s105: when the field's declared type is wider than the
+        ; component value's type (e.g. literal `0` as i32 stored into a
+        ; size_t field), zext/sext the component before storing.
+        ; Without this, `Page(buf, 0)` writes i32 0 into a 64-bit slot,
+        ; leaving the high 4 bytes of `offset` as stack garbage that
+        ; subsequent `&` arithmetic dereferences into a SIGSEGV.
         set i: 0
         while i < comp_count
         {
             let cv_ref comp_values.get(i)
             guard cv_ref <> null
             {
-                let cv (*cv_ref)
+                var cv (*cv_ref)
+                let field_ty LLVMStructGetTypeAtIndex(struct_type, i as int)
+                guard field_ty.handle <> null
+                {
+                    let cv_ty LLVMTypeOf(cv)
+                    guard LLVMGetTypeKind(cv_ty) = LLVMTypeKind.Integer()
+                    {
+                        guard LLVMGetTypeKind(field_ty) = LLVMTypeKind.Integer()
+                        {
+                            let cv_w LLVMGetIntTypeWidth(cv_ty)
+                            let f_w LLVMGetIntTypeWidth(field_ty)
+                            guard cv_w < f_w
+                                set cv: LLVMBuildSExt(builder, cv, field_ty, "tuple.sext")
+                            guard cv_w > f_w
+                                set cv: LLVMBuildTrunc(builder, cv, field_ty, "tuple.trunc")
+                        }
+                    }
+                }
                 let field_ptr LLVMBuildStructGEP2(builder, struct_type, tuple_ptr, i as u32, "tuple.field")
                 LLVMBuildStore(builder, cv, field_ptr)
             }
