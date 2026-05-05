@@ -2158,15 +2158,184 @@ define Planner
                 return (*only_ptr)
             }
 
+            ; s107: pre-pass — combine `Type + Matrix` into a generic
+            ; Type with concrete generic args. The Modeler emits
+            ; `Box[int](42)` as three operands [Type(Box), Matrix([int]),
+            ; Tuple((42))] because NameSyntax has no generics field
+            ; (parser puts the bracket part as a separate VectorSyntax
+            ; → Matrix in the operand list). Without this merger,
+            ; the struct-ctor branch below sees `Box` (no generics) and
+            ; can't instantiate Box[int]. Mirrors stage-0
+            ; Planner.cpp:7170-7247.
+            ;
+            ; Restricted to the common simple shape: Type with no
+            ; existing generics + Matrix where each row is a single
+            ; Type operand. Nested generics like Box[Box[int]] need
+            ; the recursive extractor stage-0 has — leave that for a
+            ; later port.
+            var has_gen_combo: bool false
+            var gci: size_t 0
+            while gci + 1 < ops.length
+            {
+                let cur_ptr ops.get(gci)
+                let nxt_ptr ops.get(gci + 1)
+                guard cur_ptr <> null
+                {
+                    guard nxt_ptr <> null
+                    {
+                        let cur_op (*cur_ptr)
+                        let nxt_op (*nxt_ptr)
+                        var cur_is_bare_type: bool false
+                        choose cur_op.expr
+                            when ct: PlannedType
+                            {
+                                guard ct.name.get_length() > 0
+                                    guard ct.generics = null
+                                        set cur_is_bare_type: true
+                            }
+                            else
+                                0
+                        guard cur_is_bare_type
+                        {
+                            choose nxt_op.expr
+                                when nm: scalyc.compiler.Plan.PlannedMatrix
+                                    set has_gen_combo: true
+                                else
+                                    0
+                        }
+                    }
+                }
+                set gci: gci + 1
+            }
+
+            guard has_gen_combo
+            {
+                var merged_arr2 Array[PlannedOperand]$()
+                var ci2: size_t 0
+                while ci2 < ops.length
+                {
+                    let cp_ptr ops.get(ci2)
+                    guard cp_ptr = null
+                    {
+                        set ci2: ci2 + 1
+                        continue
+                    }
+                    let cp_op (*cp_ptr)
+
+                    ; Try to merge with the next operand if it's a Matrix.
+                    var did_merge2: bool false
+                    guard ci2 + 1 < ops.length
+                    {
+                        let np_ptr ops.get(ci2 + 1)
+                        guard np_ptr <> null
+                        {
+                            let np_op (*np_ptr)
+                            choose cp_op.expr
+                                when ct2: PlannedType
+                                {
+                                    guard ct2.name.get_length() > 0
+                                    {
+                                        guard ct2.generics = null
+                                        {
+                                            choose np_op.expr
+                                                when nm2: scalyc.compiler.Plan.PlannedMatrix
+                                                {
+                                                    ; Extract one Type from each row using the
+                                                    ; recursive helper so nested generics like
+                                                    ; Box[Box[int]] (row.length==2: [Type, Matrix])
+                                                    ; resolve correctly. Mirrors stage-0
+                                                    ; Planner.cpp:7180-7214 (extractTypeFromRow).
+                                                    var ok_extract: bool true
+                                                    var gens_arr Array[Type]$()
+                                                    guard nm2.operations <> null
+                                                    {
+                                                        let rows (*nm2.operations)
+                                                        var ri: size_t 0
+                                                        while ri < rows.length
+                                                        {
+                                                            let row_ptr rows.get(ri)
+                                                            guard row_ptr <> null
+                                                            {
+                                                                let row (*row_ptr)
+                                                                let extracted Planner.extract_row_to_type#(row)
+                                                                guard extracted = null
+                                                                    set ok_extract: false
+                                                                guard extracted <> null
+                                                                    gens_arr.add((*extracted))
+                                                            }
+                                                            set ri: ri + 1
+                                                        }
+                                                    }
+                                                    guard ok_extract
+                                                    {
+                                                        guard gens_arr.length > 0
+                                                        {
+                                                            var name_path Vector[String]^rp(1)
+                                                            name_path.put(0, ct2.name)
+                                                            var model_gens Vector[Type]^rp(gens_arr)
+                                                            ; Use the Matrix's lifetime when set —
+                                                            ; `Vector[T]^rp` parses [T]^rp as a Matrix
+                                                            ; carrying the lifetime, not the bare Type
+                                                            ; that precedes it. Mirrors stage-0
+                                                            ; Planner.cpp:7235-7237.
+                                                            var final_life: Lifetime ct2.life
+                                                            choose nm2.life
+                                                                when u: Unspecified
+                                                                    0
+                                                                else
+                                                                    set final_life: nm2.life
+                                                            let merged_type this.plan_type#(Type(
+                                                                ct2.loc,
+                                                                name_path,
+                                                                &model_gens,
+                                                                final_life
+                                                            ))
+                                                            let merged_op PlannedOperand(
+                                                                cp_op.loc,
+                                                                PlannedExpression.Type(merged_type),
+                                                                np_op.member_access,
+                                                                merged_type
+                                                            )
+                                                            merged_arr2.add(merged_op)
+                                                            set did_merge2: true
+                                                        }
+                                                    }
+                                                    0
+                                                }
+                                                else
+                                                    0
+                                        }
+                                    }
+                                    0
+                                }
+                                else
+                                    0
+                        }
+                    }
+
+                    guard did_merge2
+                    {
+                        set ci2: ci2 + 2
+                        continue
+                    }
+
+                    merged_arr2.add(cp_op)
+                    set ci2: ci2 + 1
+                }
+                var merged_vec2 Vector[PlannedOperand]^rp(merged_arr2)
+                return this.collapse_operand_sequence#(merged_vec2)
+            }
+
             ; Pre-pass: merge lifetime-marker operands into the
-            ; preceding Type operand. The Modeler emits a stand-alone
-            ; `Type with empty name and non-Unspecified life` for the
-            ; LifetimeSyntax variant the parser produces between
-            ; `cli.parse_args` and `(args)` in `cli.parse_args#(args)`.
-            ; Without this, ops = [Type, LifetimeMarker, Tuple] and
-            ; the call-detection branch below sees a Constant/empty
-            ; operand between the Type and the Tuple, missing the
-            ; call. Mirrors stage-0 Planner.cpp:7378-7387.
+            ; preceding Type operand. Runs AFTER the s107 generic
+            ; merger so that `Vector[String]^rp(1)` (parsed as
+            ; [Type(Vector), Matrix([String]), Marker(^rp), Tuple])
+            ; first becomes [Type(Vector,[String]), Marker, Tuple]
+            ; and then [Type(Vector,[String], life=Reference("rp")),
+            ; Tuple]. With the original ordering (lifetime first),
+            ; the marker would be dropped because the previous op is
+            ; a Matrix, not a Type — silently losing the lifetime.
+            ; Mirrors stage-0 Planner.cpp:7378-7387.
             var has_life_marker: bool false
             var lim_idx: size_t 0
             while lim_idx < ops.length
@@ -2314,191 +2483,6 @@ define Planner
                 }
                 var merged_vec Vector[PlannedOperand]^rp(merged_arr)
                 return this.collapse_operand_sequence#(merged_vec)
-            }
-
-            ; s107: pre-pass — combine `Type + Matrix` into a generic
-            ; Type with concrete generic args. The Modeler emits
-            ; `Box[int](42)` as three operands [Type(Box), Matrix([int]),
-            ; Tuple((42))] because NameSyntax has no generics field
-            ; (parser puts the bracket part as a separate VectorSyntax
-            ; → Matrix in the operand list). Without this merger,
-            ; the struct-ctor branch below sees `Box` (no generics) and
-            ; can't instantiate Box[int]. Mirrors stage-0
-            ; Planner.cpp:7170-7247.
-            ;
-            ; Restricted to the common simple shape: Type with no
-            ; existing generics + Matrix where each row is a single
-            ; Type operand. Nested generics like Box[Box[int]] need
-            ; the recursive extractor stage-0 has — leave that for a
-            ; later port.
-            var has_gen_combo: bool false
-            var gci: size_t 0
-            while gci + 1 < ops.length
-            {
-                let cur_ptr ops.get(gci)
-                let nxt_ptr ops.get(gci + 1)
-                guard cur_ptr <> null
-                {
-                    guard nxt_ptr <> null
-                    {
-                        let cur_op (*cur_ptr)
-                        let nxt_op (*nxt_ptr)
-                        var cur_is_bare_type: bool false
-                        choose cur_op.expr
-                            when ct: PlannedType
-                            {
-                                guard ct.name.get_length() > 0
-                                    guard ct.generics = null
-                                        set cur_is_bare_type: true
-                            }
-                            else
-                                0
-                        guard cur_is_bare_type
-                        {
-                            choose nxt_op.expr
-                                when nm: scalyc.compiler.Plan.PlannedMatrix
-                                    set has_gen_combo: true
-                                else
-                                    0
-                        }
-                    }
-                }
-                set gci: gci + 1
-            }
-
-            guard has_gen_combo
-            {
-                var merged_arr2 Array[PlannedOperand]$()
-                var ci2: size_t 0
-                while ci2 < ops.length
-                {
-                    let cp_ptr ops.get(ci2)
-                    guard cp_ptr = null
-                    {
-                        set ci2: ci2 + 1
-                        continue
-                    }
-                    let cp_op (*cp_ptr)
-
-                    ; Try to merge with the next operand if it's a Matrix.
-                    var did_merge2: bool false
-                    guard ci2 + 1 < ops.length
-                    {
-                        let np_ptr ops.get(ci2 + 1)
-                        guard np_ptr <> null
-                        {
-                            let np_op (*np_ptr)
-                            choose cp_op.expr
-                                when ct2: PlannedType
-                                {
-                                    guard ct2.name.get_length() > 0
-                                    {
-                                        guard ct2.generics = null
-                                        {
-                                            choose np_op.expr
-                                                when nm2: scalyc.compiler.Plan.PlannedMatrix
-                                                {
-                                                    ; Extract one Type from each row.
-                                                    var ok_extract: bool true
-                                                    var gens_arr Array[PlannedType]$()
-                                                    guard nm2.operations <> null
-                                                    {
-                                                        let rows (*nm2.operations)
-                                                        var ri: size_t 0
-                                                        while ri < rows.length
-                                                        {
-                                                            let row_ptr rows.get(ri)
-                                                            guard row_ptr <> null
-                                                            {
-                                                                let row (*row_ptr)
-                                                                guard row.length = 1
-                                                                {
-                                                                    let cell_ptr row.get(0)
-                                                                    guard cell_ptr <> null
-                                                                    {
-                                                                        let cell_op (*cell_ptr)
-                                                                        choose cell_op.expr
-                                                                            when et: PlannedType
-                                                                                gens_arr.add(et)
-                                                                            else
-                                                                                set ok_extract: false
-                                                                    }
-                                                                }
-                                                                guard row.length <> 1
-                                                                    set ok_extract: false
-                                                            }
-                                                            set ri: ri + 1
-                                                        }
-                                                    }
-                                                    guard ok_extract
-                                                    {
-                                                        guard gens_arr.length > 0
-                                                        {
-                                                            var gens_holder Vector[PlannedType]^rp(gens_arr)
-                                                            ; Resolve via plan_type# so the
-                                                            ; concept lookup + instantiate_generic#
-                                                            ; path fires for the merged type.
-                                                            var name_path Vector[String]^rp(1)
-                                                            name_path.put(0, ct2.name)
-                                                            var model_gens Vector[Type]^rp(gens_arr.length)
-                                                            var gi: size_t 0
-                                                            while gi < gens_holder.length
-                                                            {
-                                                                let pt_ptr gens_holder.get(gi)
-                                                                guard pt_ptr <> null
-                                                                {
-                                                                    let pt (*pt_ptr)
-                                                                    var inner_path Vector[String]^rp(1)
-                                                                    inner_path.put(0, pt.name)
-                                                                    model_gens.put(gi, Type(
-                                                                        pt.loc,
-                                                                        inner_path,
-                                                                        null,
-                                                                        pt.life
-                                                                    ))
-                                                                }
-                                                                set gi: gi + 1
-                                                            }
-                                                            let merged_type this.plan_type#(Type(
-                                                                ct2.loc,
-                                                                name_path,
-                                                                &model_gens,
-                                                                ct2.life
-                                                            ))
-                                                            let merged_op PlannedOperand(
-                                                                cp_op.loc,
-                                                                PlannedExpression.Type(merged_type),
-                                                                np_op.member_access,
-                                                                merged_type
-                                                            )
-                                                            merged_arr2.add(merged_op)
-                                                            set did_merge2: true
-                                                        }
-                                                    }
-                                                    0
-                                                }
-                                                else
-                                                    0
-                                        }
-                                    }
-                                    0
-                                }
-                                else
-                                    0
-                        }
-                    }
-
-                    guard did_merge2
-                    {
-                        set ci2: ci2 + 2
-                        continue
-                    }
-
-                    merged_arr2.add(cp_op)
-                    set ci2: ci2 + 1
-                }
-                var merged_vec2 Vector[PlannedOperand]^rp(merged_arr2)
-                return this.collapse_operand_sequence#(merged_vec2)
             }
 
             let first_ptr ops.get(0)
@@ -6818,7 +6802,8 @@ define Planner
             scalyc.compiler.Plan.PlannedMatrix(
                 m.span,
                 &rows_holder,
-                Planner.make_void_type#()
+                Planner.make_void_type#(),
+                m.life
             )
         }
 
@@ -10803,6 +10788,148 @@ define Planner
             String^rp(""),
             null
         )
+    }
+
+    ; extract_row_to_type#: convert one row of a parsed VectorSyntax /
+    ; Matrix into a Model.Type, recursively handling nested generics.
+    ; Mirrors stage-0 Planner.cpp:7180-7214 (extractTypeFromRow lambda).
+    ;
+    ; row.length == 1: cell must be a PlannedType — wrap it as Model.Type.
+    ; row.length >= 2: first cell is bare PlannedType (no generics) AND
+    ;   second cell is PlannedMatrix → recurse into each nested row,
+    ;   build Model.Type with generics filled in.
+    ; Otherwise: return null (caller treats this as extraction failure).
+    function extract_row_to_type#(rp, row: Vector[PlannedOperand]) returns ref[Type]?
+    {
+        guard row.length = 0
+            return null
+
+        ; Nested generic pattern: [Type, Matrix, ...]. Check before the
+        ; single-cell branch since row.length>=2 with bare-Type first +
+        ; Matrix second is the signature for `Box[int]` / `Pair[A,B]` /
+        ; etc. inside an outer generic argument list.
+        guard row.length >= 2
+        {
+            let cell0_ptr row.get(0)
+            guard cell0_ptr <> null
+            {
+                let cell0 (*cell0_ptr)
+                choose cell0.expr
+                    when name_type: PlannedType
+                    {
+                        guard name_type.name.get_length() > 0
+                        {
+                            guard name_type.generics = null
+                            {
+                                let cell1_ptr row.get(1)
+                                guard cell1_ptr <> null
+                                {
+                                    let cell1 (*cell1_ptr)
+                                    choose cell1.expr
+                                        when nested_matrix: scalyc.compiler.Plan.PlannedMatrix
+                                        {
+                                            var nested_gens Array[Type]$()
+                                            var ok: bool true
+                                            guard nested_matrix.operations <> null
+                                            {
+                                                let nested_rows (*nested_matrix.operations)
+                                                var nri: size_t 0
+                                                while nri < nested_rows.length
+                                                {
+                                                    let nrow_ptr nested_rows.get(nri)
+                                                    guard nrow_ptr <> null
+                                                    {
+                                                        let nrow (*nrow_ptr)
+                                                        let inner_t Planner.extract_row_to_type#(nrow)
+                                                        guard inner_t = null
+                                                            set ok: false
+                                                        guard inner_t <> null
+                                                            nested_gens.add((*inner_t))
+                                                    }
+                                                    set nri: nri + 1
+                                                }
+                                            }
+                                            guard ok
+                                            {
+                                                guard nested_gens.length > 0
+                                                {
+                                                    var name_path Vector[String]^rp(1)
+                                                    name_path.put(0, name_type.name)
+                                                    var gens_vec Vector[Type]^rp(nested_gens)
+                                                    var holder Vector[Type]^rp(1)
+                                                    holder.put(0, Type(
+                                                        name_type.loc,
+                                                        name_path,
+                                                        &gens_vec,
+                                                        name_type.life
+                                                    ))
+                                                    return holder.get(0)
+                                                }
+                                            }
+                                        }
+                                        else
+                                            0
+                                }
+                            }
+                        }
+                    }
+                    else
+                        0
+            }
+        }
+
+        ; Single-cell row: PlannedType → Model.Type. Convert any
+        ; existing generics by recursing through plan_type#'s inverse:
+        ; build Type(name=[pt.name], generics=...) preserving lifetime.
+        guard row.length = 1
+        {
+            let cell_ptr row.get(0)
+            guard cell_ptr <> null
+            {
+                let cell (*cell_ptr)
+                choose cell.expr
+                    when et: PlannedType
+                    {
+                        var name_path Vector[String]^rp(1)
+                        name_path.put(0, et.name)
+                        var maybe_gens: ref[Vector[Type]]? null
+                        guard et.generics <> null
+                        {
+                            let pgens (*et.generics)
+                            guard pgens.length > 0
+                            {
+                                var conv Vector[Type]^rp(pgens.length)
+                                var i: size_t 0
+                                while i < pgens.length
+                                {
+                                    let pt_ptr pgens.get(i)
+                                    guard pt_ptr <> null
+                                    {
+                                        let pt (*pt_ptr)
+                                        var ip Vector[String]^rp(1)
+                                        ip.put(0, pt.name)
+                                        conv.put(i, Type(pt.loc, ip, null, pt.life))
+                                    }
+                                    set i: i + 1
+                                }
+                                set maybe_gens: &conv
+                            }
+                        }
+                        var holder Vector[Type]^rp(1)
+                        holder.put(0, Type(
+                            et.loc,
+                            name_path,
+                            maybe_gens,
+                            et.life
+                        ))
+                        return holder.get(0)
+                    }
+                    else
+                        return null
+            }
+        }
+
+        null
     }
 
     ; resolve_type_base: convert a Model.Type into a PlannedType skeleton.

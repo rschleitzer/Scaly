@@ -39,7 +39,7 @@ define Component
 )
 
 define Tuple(span: Span, components: Vector[Component])
-define Matrix(span: Span, operations: Vector[Vector[Operand]])
+define Matrix(span: Span, operations: Vector[Vector[Operand]], life: Lifetime)
 define Block(span: Span, statements: Vector[Statement])
 
 ; Lifetime variants

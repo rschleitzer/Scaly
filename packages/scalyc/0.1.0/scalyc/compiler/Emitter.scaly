@@ -885,14 +885,28 @@ define Emitter
     ; Emit LLVM struct type for a PlannedStructure
     function emit_struct_type(this, struct: PlannedStructure) returns LLVMTypeRef
     {
-        ; Check cache first
+        ; Check cache first — prefer mangled_name since two instances
+        ; of a generic structure (Box[int] vs Box[Box[int]]) share the
+        ; same `name` but have distinct mangled names. Without this,
+        ; the second specialisation's emit hits the first one's cache
+        ; entry and emit_struct_type returns the wrong LLVMType.
+        let cached_m lookup_struct_cache(struct.mangled_name)
+        guard cached_m.handle <> null
+            return cached_m
         let cached lookup_struct_cache(struct.name)
         guard cached.handle <> null
-            return cached
+        {
+            ; Reuse only when the cached entry's name and mangled_name
+            ; coincide — i.e. a non-generic struct. For generics, the
+            ; mangled name disambiguates.
+            guard struct.name.equals(struct.mangled_name)
+                return cached
+        }
 
         ; Create named struct
         let llvm_struct LLVMStructCreateNamed(context, struct.mangled_name.c_data())
-        cache_struct(struct.name, llvm_struct)
+        guard struct.name.equals(struct.mangled_name)
+            cache_struct(struct.name, llvm_struct)
         cache_struct(struct.mangled_name, llvm_struct)
 
         ; Empty struct (null or zero properties): set an empty body

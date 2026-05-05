@@ -375,6 +375,7 @@ define PlannedMatrix
     loc: Span
     operations: ref[Vector[Vector[PlannedOperand]]]?
     element_type: PlannedType
+    life: Lifetime
 )
 
 ; ============================================================================

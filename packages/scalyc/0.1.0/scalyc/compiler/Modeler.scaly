@@ -413,7 +413,8 @@ function handle_vector#(syntax: VectorSyntax) returns Matrix
             set i: i + 1
         }
     }
-    Matrix(Span(syntax.start, syntax.end), operations)
+    let life handle_lifetime(syntax.lifetime)
+    Matrix(Span(syntax.start, syntax.end), operations, life)
 }
 
 ; ============================================================================
