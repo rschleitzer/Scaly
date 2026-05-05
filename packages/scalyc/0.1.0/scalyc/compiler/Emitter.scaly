@@ -630,6 +630,121 @@ define Emitter
         LLVMStructTypeInContext(context, fields.data, 1, 0)
     }
 
+    ; s99: Synthesize a literal LLVM struct type from a generic
+    ; PlannedStructure's properties. Used by emit_member_assignment
+    ; load-through when the inner concrete type (e.g. Vector[String])
+    ; isn't materialized in struct_cache. Walks current_plan.structures
+    ; for an entry matching `name`, maps each property type, and builds
+    ; a literal struct via LLVMStructTypeInContext.
+    ;
+    ; Type variables in the generic (e.g. `pointer[T]`) map to ptr,
+    ; concrete primitives map normally. Returns null if no Structure
+    ; matches or it has no properties.
+    function synthesize_literal_struct(this, name: String) returns LLVMTypeRef
+    {
+        ; First try plan.structures (works for parameterless user types).
+        guard current_plan <> null
+        {
+            let plan_ref current_plan
+            let plan (*plan_ref)
+            guard plan.structures <> null
+            {
+                let structures (*plan.structures)
+                var i: size_t 0
+                while i < structures.length
+                {
+                    let struct_ptr structures.get(i)
+                    guard struct_ptr <> null
+                    {
+                        let struct (*struct_ptr)
+                        guard struct.name.equals(name)
+                        {
+                            guard struct.properties <> null
+                            {
+                                let props (*struct.properties)
+                                guard props.length > 0
+                                {
+                                    var element_types Vector[LLVMTypeRef]#(props.length)
+                                    var pi: size_t 0
+                                    while pi < props.length
+                                    {
+                                        let prop_ptr props.get(pi)
+                                        guard prop_ptr <> null
+                                        {
+                                            let prop (*prop_ptr)
+                                            let prop_ty map_type(prop.prop_type)
+                                            element_types.put(pi, prop_ty)
+                                        }
+                                        set pi: pi + 1
+                                    }
+                                    return LLVMStructTypeInContext(context, element_types.data, props.length as int, 0)
+                                }
+                            }
+                        }
+                    }
+                    set i: i + 1
+                }
+            }
+        }
+        ; Fallback: hardcoded layouts for stdlib generic containers
+        ; (stage-1 doesn't fully instantiate generics, so Vector[T] etc.
+        ; aren't in plan.structures). The layouts below match the
+        ; canonical struct definitions in packages/scaly/0.1.0/scaly/
+        ; containers/. Length, capacity, and counts are i64 (size_t);
+        ; data, page, and slot pointers are ptr (opaque). All entries
+        ; reflect actual stdlib field ORDER.
+        let i64_ty LLVMInt64TypeInContext(context)
+        let ptr_ty LLVMPointerTypeInContext(context, 0)
+        guard name.equals("Vector")
+        {
+            ; Vector[T]: { length: size_t, data: pointer[T] }
+            var fields Vector[LLVMTypeRef]#(2)
+            fields.put(0, i64_ty)
+            fields.put(1, ptr_ty)
+            return LLVMStructTypeInContext(context, fields.data, 2, 0)
+        }
+        guard name.equals("HashMap")
+        {
+            ; HashMap[K,V]: { length, slots: ptr, capacity, page }
+            var fields Vector[LLVMTypeRef]#(4)
+            fields.put(0, i64_ty)
+            fields.put(1, ptr_ty)
+            fields.put(2, i64_ty)
+            fields.put(3, ptr_ty)
+            return LLVMStructTypeInContext(context, fields.data, 4, 0)
+        }
+        guard name.equals("HashSet")
+        {
+            ; HashSet[T]: { length, slots: ptr, capacity, page }
+            var fields Vector[LLVMTypeRef]#(4)
+            fields.put(0, i64_ty)
+            fields.put(1, ptr_ty)
+            fields.put(2, i64_ty)
+            fields.put(3, ptr_ty)
+            return LLVMStructTypeInContext(context, fields.data, 4, 0)
+        }
+        guard name.equals("Array")
+        {
+            ; Array[T]: { length, data: ptr, capacity, page }
+            var fields Vector[LLVMTypeRef]#(4)
+            fields.put(0, i64_ty)
+            fields.put(1, ptr_ty)
+            fields.put(2, i64_ty)
+            fields.put(3, ptr_ty)
+            return LLVMStructTypeInContext(context, fields.data, 4, 0)
+        }
+        guard name.equals("List")
+        {
+            ; List[T]: { head: ptr, tail: ptr, length }
+            var fields Vector[LLVMTypeRef]#(3)
+            fields.put(0, ptr_ty)
+            fields.put(1, ptr_ty)
+            fields.put(2, i64_ty)
+            return LLVMStructTypeInContext(context, fields.data, 3, 0)
+        }
+        LLVMTypeRef(null)
+    }
+
     ; s89: Cached sret kind id (lazily looked up). 0 = uninitialized.
     function sret_kind_id(this) returns u32
     {
@@ -3273,6 +3388,7 @@ define Emitter
         ; carries the pointer wrapper. Peel pointer[T] / ref[T] one
         ; level so map_type resolves the underlying union struct.
         var union_type LLVMTypeRef(null)
+        var is_npo: bool false
         guard choose_expr.condition <> null
         {
             let cond_vec (*choose_expr.condition)
@@ -3309,6 +3425,52 @@ define Emitter
                             }
                         }
                     }
+                    ; s99: NPO Option detection. Option[ref[T]] /
+                    ; Option[pointer[T]] is represented as a single
+                    ; nullable pointer (null=None, non-null=Some).
+                    ; Stage-1's planner collapses `T?` into ref/pointer
+                    ; directly without an Option wrapper, so detect via
+                    ; the original (pre-unwrap) result_type name plus
+                    ; case-name shape (Some/None). The tagged-union IR
+                    ; path otherwise produces `getelementptr ptr, ptr,
+                    ; i32 0, i32 0` which llc/IRTranslator rejects.
+                    guard cond_op.result_type.name.equals(String$("ref"))
+                        set is_npo: true
+                    guard cond_op.result_type.name.equals(String$("pointer"))
+                        set is_npo: true
+                    guard cond_op.result_type.name.equals(String$("Option"))
+                        set is_npo: true
+                    ; Confirm via case-name: NPO Option chooses always
+                    ; have Some (variant 0) and possibly None (variant 1).
+                    ; Without this confirmation, choose-on-pointer-to-
+                    ; union (e.g. `choose this` where this: pointer[U])
+                    ; would incorrectly enter the NPO path.
+                    guard is_npo
+                    {
+                        var has_some: bool false
+                        guard choose_expr.cases <> null
+                        {
+                            let cases (*choose_expr.cases)
+                            var ci: size_t 0
+                            while ci < cases.length
+                            {
+                                let c_ptr cases.get(ci)
+                                guard c_ptr <> null
+                                {
+                                    let c (*c_ptr)
+                                    ; Variant index 0 with name implies Some.
+                                    guard c.variant_index = 0
+                                    {
+                                        guard c.name.length > 0
+                                            set has_some: true
+                                    }
+                                }
+                                set ci: ci + 1
+                            }
+                        }
+                        guard has_some = false
+                            set is_npo: false
+                    }
                     set union_type: map_type(rt)
                 }
             }
@@ -3322,16 +3484,34 @@ define Emitter
         ; that previously read "14 in LLVM" was wrong, see LLVM.scaly).
         var union_ptr union_value
         let value_kind LLVMGetTypeKind(LLVMTypeOf(union_value))
-        guard value_kind <> 12
+        guard is_npo = false
         {
-            set union_ptr: LLVMBuildAlloca(builder, union_type, "choose.union")
-            LLVMBuildStore(builder, union_value, union_ptr)
+            guard value_kind <> 12
+            {
+                set union_ptr: LLVMBuildAlloca(builder, union_type, "choose.union")
+                LLVMBuildStore(builder, union_value, union_ptr)
+            }
         }
 
-        ; Load the tag (first field, i8)
+        ; Load the tag. For tagged unions, GEP into the union for the
+        ; first field (i8). For NPO Option, derive the tag from a null
+        ; check: tag=1 when null (None has variant_index=1), tag=0
+        ; when non-null (Some has variant_index=0).
         let i8_ty LLVMInt8TypeInContext(context)
-        let tag_ptr LLVMBuildStructGEP2(builder, union_type, union_ptr, 0, "tag.ptr")
-        let tag LLVMBuildLoad2(builder, i8_ty, tag_ptr, "tag")
+        var tag LLVMValueRef(null)
+        guard is_npo = false
+        {
+            let tag_ptr LLVMBuildStructGEP2(builder, union_type, union_ptr, 0, "tag.ptr")
+            set tag: LLVMBuildLoad2(builder, i8_ty, tag_ptr, "tag")
+        }
+        guard is_npo
+        {
+            ; icmp eq ptr null returns i1; zext to i8 to match tagged path.
+            let ptr_ty LLVMPointerTypeInContext(context, 0)
+            let null_const LLVMConstPointerNull(ptr_ty)
+            let is_null LLVMBuildICmp(builder, LLVMIntPredicate.EQ(), union_value, null_const, "is.none")
+            set tag: LLVMBuildZExt(builder, is_null, i8_ty, "tag.npo")
+        }
 
         ; Create blocks
         let merge_block create_block(String$("choose.end"))
@@ -3402,14 +3582,22 @@ define Emitter
 
                 LLVMPositionBuilderAtEnd(builder, case_block)
 
-                ; Extract variant data and bind to variable
+                ; Extract variant data and bind to variable. For NPO
+                ; Option, the Some payload IS the non-null pointer; bind
+                ; the variable to union_value directly. For tagged unions,
+                ; GEP into the data field and load the variant value.
                 guard when_case.name.length > 0
                 {
-                    let data_ptr LLVMBuildStructGEP2(builder, union_type, union_ptr, 1, "variant.c_data().ptr")
-                    let var_ty map_type(when_case.variant_type)
-                    let var_ptr LLVMBuildBitCast(builder, data_ptr, LLVMPointerTypeInContext(context, 0), "variant.c_data().cast")
-                    let var_value LLVMBuildLoad2(builder, var_ty, var_ptr, "variant.val")
-                    define_variable(when_case.name, var_value)
+                    guard is_npo
+                        define_variable(when_case.name, union_value)
+                    guard is_npo = false
+                    {
+                        let data_ptr LLVMBuildStructGEP2(builder, union_type, union_ptr, 1, "variant.c_data().ptr")
+                        let var_ty map_type(when_case.variant_type)
+                        let var_ptr LLVMBuildBitCast(builder, data_ptr, LLVMPointerTypeInContext(context, 0), "variant.c_data().cast")
+                        let var_value LLVMBuildLoad2(builder, var_ty, var_ptr, "variant.val")
+                        define_variable(when_case.name, var_value)
+                    }
                 }
 
                 ; Emit consequent. If it's an Action, capture the
@@ -4579,7 +4767,73 @@ define Emitter
                     guard next < n
                     {
                         let rt member.result_type
-                        set current_type: map_type(rt)
+                        let mapped map_type(rt)
+                        set current_type: mapped
+                        ; s99: when the field is pointer-like (ref[T]?,
+                        ; ref[T], pointer[T], Option[ref[T]], etc.), load
+                        ; through the field address and switch
+                        ; current_type to the inner struct type so the
+                        ; next StructGEP uses the right element type.
+                        ; Mirrors stage-0 Emitter.cpp:2044-2055.
+                        guard mapped.handle <> null
+                        {
+                            guard LLVMGetTypeKind(mapped) = LLVMTypeKind.Pointer()
+                            {
+                                var inner_rt rt
+                                guard inner_rt.name.equals(String$("Option"))
+                                {
+                                    guard inner_rt.generics <> null
+                                    {
+                                        let gens (*inner_rt.generics)
+                                        guard gens.length > 0
+                                        {
+                                            let g0 gens.get(0)
+                                            guard g0 <> null
+                                                set inner_rt: (*g0)
+                                        }
+                                    }
+                                }
+                                guard inner_rt.name.equals(String$("ref"))
+                                {
+                                    guard inner_rt.generics <> null
+                                    {
+                                        let gens (*inner_rt.generics)
+                                        guard gens.length > 0
+                                        {
+                                            let g0 gens.get(0)
+                                            guard g0 <> null
+                                                set inner_rt: (*g0)
+                                        }
+                                    }
+                                }
+                                guard inner_rt.name.equals(String$("pointer"))
+                                {
+                                    guard inner_rt.generics <> null
+                                    {
+                                        let gens (*inner_rt.generics)
+                                        guard gens.length > 0
+                                        {
+                                            let g0 gens.get(0)
+                                            guard g0 <> null
+                                                set inner_rt: (*g0)
+                                        }
+                                    }
+                                }
+                                var inner_struct LLVMTypeRef(map_type(inner_rt).handle)
+                                guard LLVMGetTypeKind(inner_struct) <> LLVMTypeKind.Struct()
+                                    set inner_struct: synthesize_literal_struct(inner_rt.name)
+                                guard inner_struct.handle <> null
+                                {
+                                    guard LLVMGetTypeKind(inner_struct) = LLVMTypeKind.Struct()
+                                    {
+                                        let ptr_type LLVMPointerTypeInContext(context, 0)
+                                        let loaded LLVMBuildLoad2(builder, ptr_type, current_ptr, "field.deref")
+                                        set current_ptr: LLVMValueRef(loaded.handle)
+                                        set current_type: inner_struct
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
                 set i: i + 1

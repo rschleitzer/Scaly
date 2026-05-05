@@ -8112,6 +8112,10 @@ define Planner
             {
                 let planned this.plan_module#(sub)
             }
+            guard sub.name.equals("Emitter")
+            {
+                let planned this.plan_module#(sub)
+            }
 
             ; Layout-only fallback: even when this sub-module isn't on
             ; the safe-walk list (or when it was walked but its struct
