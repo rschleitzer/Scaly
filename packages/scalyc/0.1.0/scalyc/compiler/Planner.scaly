@@ -1144,7 +1144,33 @@ define Planner
         ) returns Vector[Function]
         {
             var matches Array[Function]$()
-            let concept_ref this.lookup_concept(struct_name)
+            ; s106: when struct_name is namespaced under "scaly." or
+            ; "scalyc.", retry with the bare type name if the qualified
+            ; name doesn't match. Mirrors Planner.cpp:1447-1453.
+            ; Without this, init#'s implicit `page` parameter (typed
+            ; pointer[scaly.memory.Page]) never resolves
+            ; `page.allocate(...)` against the user's `define Page`, and
+            ; the entire `set X: page.allocate(...)` action is dropped.
+            var concept_ref this.lookup_concept(struct_name)
+            guard concept_ref = null
+            {
+                var should_strip: bool false
+                guard struct_name.starts_with("scaly.")
+                    set should_strip: true
+                guard struct_name.starts_with("scalyc.")
+                    set should_strip: true
+                guard should_strip
+                {
+                    let last_dot struct_name.last_index_of("." as u8)
+                    guard last_dot >= 0
+                    {
+                        let start (last_dot as size_t) + 1
+                        let len struct_name.get_length() - start
+                        let bare struct_name.substring(rp, start, len)
+                        set concept_ref: this.lookup_concept(bare)
+                    }
+                }
+            }
             guard concept_ref = null
                 return Vector[Function]^rp(matches)
 
@@ -2983,9 +3009,23 @@ define Planner
                                     ; `Option[T]` would emit a non-generic
                                     ; mangled name that doesn't match the
                                     ; instantiated body. Defer that to s76.
+                                    ; s106: pointer[T] / ref[T] are themselves
+                                    ; generic but always auto-deref before
+                                    ; method lookup, so don't skip them — let
+                                    ; lookup_method#'s auto-deref pick the
+                                    ; method off the inner type. Without this,
+                                    ; init#'s implicit `page: pointer[…Page]`
+                                    ; would have its `page.allocate(…)` call
+                                    ; silently dropped.
                                     var skip_dispatch: bool false
                                     guard local.binding_type.generics <> null
+                                    {
                                         set skip_dispatch: true
+                                        guard local.binding_type.name.equals(String$("pointer"))
+                                            set skip_dispatch: false
+                                        guard local.binding_type.name.equals(String$("ref"))
+                                            set skip_dispatch: false
+                                    }
                                     guard skip_dispatch = false
                                     {
                                     let mm_ref this.lookup_method#(local.binding_type, suffix)
@@ -4349,7 +4389,39 @@ define Planner
             method_name: String
         ) returns ref[MethodMatch]?
         {
-            let candidates this.lookup_methods#(struct_type.name, method_name)
+            ; s106: auto-deref pointer[T] / ref[T] before lookup. Mirrors
+            ; getInnerTypeIfPointerLike at Planner.cpp:1441. Without this,
+            ; method dispatch on a pointer-typed local (e.g. init#'s
+            ; implicit `page: pointer[scaly.memory.Page]`) silently fails
+            ; because lookup walks the outer "pointer" name.
+            var lookup_st: PlannedType struct_type
+            guard struct_type.name.equals(String$("pointer"))
+            {
+                guard struct_type.generics <> null
+                {
+                    let gens (*struct_type.generics)
+                    guard gens.length > 0
+                    {
+                        let inner_ptr gens.get(0)
+                        guard inner_ptr <> null
+                            set lookup_st: (*inner_ptr)
+                    }
+                }
+            }
+            guard struct_type.name.equals(String$("ref"))
+            {
+                guard struct_type.generics <> null
+                {
+                    let gens (*struct_type.generics)
+                    guard gens.length > 0
+                    {
+                        let inner_ptr gens.get(0)
+                        guard inner_ptr <> null
+                            set lookup_st: (*inner_ptr)
+                    }
+                }
+            }
+            let candidates this.lookup_methods#(lookup_st.name, method_name)
             guard candidates.length = 0
                 return null
 
@@ -4452,7 +4524,11 @@ define Planner
             ; that here so the mangled name matches the emitted function.
             guard Planner.needs_implicit_return_page(f)
                 set has_page: true
-            let mangled this.mangle_method#(method_name, struct_type, params_holder, has_page)
+            ; s106: mangle against the auto-derefed receiver type.
+            ; struct_type may be pointer[Foo] / ref[Foo]; the Itanium
+            ; method symbol uses the bare receiver Foo so it matches
+            ; the body emitted under planStructure(Foo).
+            let mangled this.mangle_method#(method_name, lookup_st, params_holder, has_page)
 
             ; Throws type (optional).
             var can_throw: bool false
@@ -4591,8 +4667,42 @@ define Planner
 
                     var matched: bool false
 
+                    ; s106: auto-deref pointer[T] / ref[T] for member lookup.
+                    ; Mirrors stage-0's getInnerTypeIfPointerLike at
+                    ; Planner.cpp:1441. Without this, a pointer-typed local
+                    ; (e.g. init#'s implicit `page: pointer[scaly.memory.Page]`)
+                    ; never finds methods because lookup walks the outer
+                    ; "pointer" name.
+                    var lookup_type: PlannedType current
+                    guard current.name.equals(String$("pointer"))
+                    {
+                        guard current.generics <> null
+                        {
+                            let gens (*current.generics)
+                            guard gens.length > 0
+                            {
+                                let inner_ptr gens.get(0)
+                                guard inner_ptr <> null
+                                    set lookup_type: (*inner_ptr)
+                            }
+                        }
+                    }
+                    guard current.name.equals(String$("ref"))
+                    {
+                        guard current.generics <> null
+                        {
+                            let gens (*current.generics)
+                            guard gens.length > 0
+                            {
+                                let inner_ptr gens.get(0)
+                                guard inner_ptr <> null
+                                    set lookup_type: (*inner_ptr)
+                            }
+                        }
+                    }
+
                     ; Property lookup.
-                    let prop_ref this.lookup_property(current.name, m)
+                    let prop_ref this.lookup_property(lookup_type.name, m)
                     guard prop_ref <> null
                     {
                         set matched: true
@@ -4603,7 +4713,7 @@ define Planner
                             let t (*prop.type)
                             set prop_type: this.plan_type#(t)
                         }
-                        let idx this.get_property_index(current.name, m)
+                        let idx this.get_property_index(lookup_type.name, m)
                         result.add(PlannedMemberAccess(
                             m, idx as size_t, false, false, current, prop_type
                         ))
@@ -4613,7 +4723,7 @@ define Planner
                     ; Method lookup as fallback.
                     guard matched = false
                     {
-                        let methods this.lookup_methods#(current.name, m)
+                        let methods this.lookup_methods#(lookup_type.name, m)
                         guard methods.length > 0
                         {
                             set matched: true
@@ -4641,7 +4751,7 @@ define Planner
                     ; itself — construction stays within the same type.
                     guard matched = false
                     {
-                        let tag this.lookup_variant_tag(current.name, m)
+                        let tag this.lookup_variant_tag(lookup_type.name, m)
                         guard tag >= 0
                         {
                             set matched: true
@@ -4663,7 +4773,7 @@ define Planner
                     {
                         guard m.equals(String$("value"))
                         {
-                            let conc_ref_for_value this.lookup_concept(current.name)
+                            let conc_ref_for_value this.lookup_concept(lookup_type.name)
                             guard conc_ref_for_value <> null
                             {
                                 let conc_for_value (*conc_ref_for_value)
@@ -5101,6 +5211,10 @@ define Planner
         }
 
         ; plan_alignof: alignof(Type) → size_t. Mirrors plan_sizeof.
+        ; s106: take the alignment from get_primitive_alignment instead
+        ; of hardcoding 0. Without this, every `alignof T` lowers to a
+        ; literal 0 — observed first as init_lifetime's
+        ; `page.allocate(sizeof int, alignof int)` passing align=0.
         function plan_alignof#(
             rp,
             this: Planner,
@@ -5108,7 +5222,8 @@ define Planner
         ) returns PlannedAlignOf
         {
             let planned this.plan_type#(a.type)
-            PlannedAlignOf(a.span, planned, 0)
+            let align Planner.get_primitive_alignment(planned.name)
+            PlannedAlignOf(a.span, planned, align)
         }
 
         ; plan_type_operand: a Model.Type used as an operand can mean
