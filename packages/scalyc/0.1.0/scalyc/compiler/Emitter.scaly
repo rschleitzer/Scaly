@@ -3578,8 +3578,34 @@ define Emitter
                         set is_npo: true
                     guard cond_op.result_type.name.equals(String$("pointer"))
                         set is_npo: true
+                    ; s103: Option is NPO only when its inner type is a
+                    ; pointer or ref. Option[int] / Option[Struct] use
+                    ; the tagged-union layout { i8 tag, [N x i8] data };
+                    ; flagging them as NPO produces `icmp eq ptr null`
+                    ; against the union pointer (always 0 for non-null),
+                    ; folds the choose to the else branch, and drops
+                    ; the Some-arm result. Mirrors stage-0
+                    ; Planner.cpp:970-976 (NPO detection only on
+                    ; Option[ref|pointer]).
                     guard cond_op.result_type.name.equals(String$("Option"))
-                        set is_npo: true
+                    {
+                        guard cond_op.result_type.generics <> null
+                        {
+                            let opt_gens (*cond_op.result_type.generics)
+                            guard opt_gens.length > 0
+                            {
+                                let inner_g_ptr opt_gens.get(0)
+                                guard inner_g_ptr <> null
+                                {
+                                    let inner_g (*inner_g_ptr)
+                                    guard inner_g.name.equals(String$("ref"))
+                                        set is_npo: true
+                                    guard inner_g.name.equals(String$("pointer"))
+                                        set is_npo: true
+                                }
+                            }
+                        }
+                    }
                     ; Confirm via case-name: NPO Option chooses always
                     ; have Some (variant 0) and possibly None (variant 1).
                     ; Without this confirmation, choose-on-pointer-to-
@@ -4492,6 +4518,34 @@ define Emitter
                     }
                 }
             }
+        }
+
+        ; s103: NPO only applies to Option[ref/pointer]. Option[int]
+        ; / Option[Struct] use the tagged-union layout (general path
+        ; below). Without this gate, `Option.Some(7)` allocates a
+        ; bare i32 and the choose receiver's GEP into a fake `{i8,
+        ; [N x i8]}` reads garbage as the tag.
+        guard is_option
+        {
+            var inner_is_ptr_like: bool false
+            guard vc.union_type.generics <> null
+            {
+                let opt_gens (*vc.union_type.generics)
+                guard opt_gens.length > 0
+                {
+                    let inner_g_ptr opt_gens.get(0)
+                    guard inner_g_ptr <> null
+                    {
+                        let inner_g (*inner_g_ptr)
+                        guard inner_g.name.equals(String$("ref"))
+                            set inner_is_ptr_like: true
+                        guard inner_g.name.equals(String$("pointer"))
+                            set inner_is_ptr_like: true
+                    }
+                }
+            }
+            guard inner_is_ptr_like = false
+                set is_option: false
         }
 
         ; For NPO Option types, handle specially

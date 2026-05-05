@@ -4652,6 +4652,61 @@ define Planner
                         }
                     }
 
+                    ; s103: Union `.value` accessor — extracts the
+                    ; payload of the union's first non-unit variant.
+                    ; Mirrors stage-0 Planner.cpp:5198-5226. The result
+                    ; type is the variant's payload type. is_union_value
+                    ; is set so emit_member_access_chain takes the
+                    ; alloca + GEP-to-data + bitcast + load path
+                    ; instead of a plain extractvalue at field_index.
+                    guard matched = false
+                    {
+                        guard m.equals(String$("value"))
+                        {
+                            let conc_ref_for_value this.lookup_concept(current.name)
+                            guard conc_ref_for_value <> null
+                            {
+                                let conc_for_value (*conc_ref_for_value)
+                                choose conc_for_value.definition
+                                    when uv: scalyc.compiler.Model.Union
+                                    {
+                                        var found_payload: bool false
+                                        var payload_type: PlannedType Planner.make_void_type#()
+                                        var vi: size_t 0
+                                        while vi < uv.variants.length
+                                        {
+                                            guard found_payload = false
+                                            {
+                                                let v_ptr uv.variants.get(vi)
+                                                guard v_ptr <> null
+                                                {
+                                                    let var_def (*v_ptr)
+                                                    guard var_def.type <> null
+                                                    {
+                                                        let vt (*var_def.type)
+                                                        set payload_type: this.plan_type#(vt)
+                                                        set found_payload: true
+                                                    }
+                                                }
+                                            }
+                                            set vi: vi + 1
+                                        }
+                                        guard found_payload
+                                        {
+                                            set matched: true
+                                            result.add(PlannedMemberAccess(
+                                                m, 1, false, true, current,
+                                                payload_type
+                                            ))
+                                            set current: payload_type
+                                        }
+                                    }
+                                    else
+                                        0
+                            }
+                        }
+                    }
+
                     ; Unresolved — record placeholder with void result.
                     guard matched = false
                     {
