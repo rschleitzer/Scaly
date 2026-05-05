@@ -780,12 +780,22 @@ define Emitter
         cache_struct(struct.name, llvm_struct)
         cache_struct(struct.mangled_name, llvm_struct)
 
-        ; If no properties, it's an empty struct
+        ; Empty struct (null or zero properties): set an empty body
+        ; so the type is sized (`type {}`) rather than left opaque.
+        ; Stage-0 emitStructType calls setBody unconditionally; stage-1
+        ; must do the same or downstream GEPs into Unspecified-style
+        ; types fail -c IR codegen (opaque type GEP rejected by
+        ; IRTranslator).
         guard struct.properties = null
+        {
+            LLVMStructSetBody(llvm_struct, null as pointer[LLVMTypeRef], 0, 0)
             return llvm_struct
-
+        }
         guard struct.properties.length = 0
+        {
+            LLVMStructSetBody(llvm_struct, null as pointer[LLVMTypeRef], 0, 0)
             return llvm_struct
+        }
 
         ; Collect element types from properties
         let element_count struct.properties.length
@@ -2863,6 +2873,22 @@ define Emitter
 
         ; Allocate on stack (for non-region allocations)
         let tuple_ptr LLVMBuildAlloca(builder, struct_type, "tuple")
+
+        ; Empty struct (zero element types): skip the per-field GEP loop
+        ; entirely — `LLVMBuildStructGEP2(t, p, 0)` on an empty struct
+        ; emits `i32 0, i32 0` which is invalid GEP indices (no field 0)
+        ; and llc/IRTranslator rejects it. The alloca alone suffices
+        ; for a zero-size value. Surfaces with `Lifetime.Unspecified(
+        ; Unspecified())` when stage-1's planner doesn't recognize the
+        ; outer call as variant construction and treats it as a
+        ; single-component tuple over the empty inner struct.
+        let elem_count LLVMCountStructElementTypes(struct_type)
+        guard elem_count = 0
+        {
+            guard tuple.is_region_alloc = false
+                return LLVMBuildLoad2(builder, struct_type, tuple_ptr, "tuple.val")
+            return tuple_ptr
+        }
 
         ; Store component values into struct fields. Use (*ref) instead
         ; of .unwrap() — the intrinsic Option.unwrap on `ref[LLVMValueRef]?`
