@@ -1761,9 +1761,95 @@ define Planner
             ; Planner.cpp:9714-9716.
             var mangled: String String^rp(f.name)
             guard Planner.is_extern_impl(f.implementation) = false
-                set mangled: Planner.mangle_free_function_from_types#(
-                    f.name, params_holder, has_page
-                )
+            {
+                ; s101: Namespace sibling call. When the call is being
+                ; planned inside a namespace's body and `f` is a member
+                ; of that namespace, mangle with the namespace prefix
+                ; (e.g. `_ZN6helper5greetEv`) instead of the free-function
+                ; encoding (`_Z5greetv`). Mirrors stage-0 Planner.cpp:
+                ; 9653-9665 (sibling detection) + 9788-9793 (mangling).
+                ; Without this, sibling calls from inside `define helper
+                ; { function greet() ... function test() greet() }` link
+                ; against a non-existent `_Z5greetv` symbol, the call
+                ; falls through to lookup-fail in emit_call, returns
+                ; null, and stage-1 silently drops the entire body.
+                var is_namespace_sibling: bool false
+                guard current_namespace <> null
+                {
+                    guard current_namespace_name <> null
+                    {
+                        let ns (*current_namespace)
+                        var mi: size_t 0
+                        while mi < ns.members.length
+                        {
+                            let m_ptr ns.members.get(mi)
+                            guard m_ptr <> null
+                            {
+                                let mem (*m_ptr)
+                                choose mem
+                                    when nf: Function
+                                    {
+                                        guard nf.name.equals(f.name)
+                                        {
+                                            guard nf.input.length = f.input.length
+                                                set is_namespace_sibling: true
+                                        }
+                                    }
+                                    else
+                                        0
+                            }
+                            set mi: mi + 1
+                        }
+                    }
+                }
+
+                guard is_namespace_sibling = false
+                    set mangled: Planner.mangle_free_function_from_types#(
+                        f.name, params_holder, has_page
+                    )
+
+                guard is_namespace_sibling
+                {
+                    ; Build a PlannedType for the namespace and items
+                    ; for params, then call mangle_function# with parent.
+                    let cnsn (*current_namespace_name)
+                    var ns_parent_holder Vector[PlannedType]^rp(1)
+                    ns_parent_holder.put(0, PlannedType(
+                        Span(0, 0),
+                        String^rp(cnsn),
+                        Planner.encode_name(cnsn),
+                        null,
+                        Lifetime.Unspecified(Unspecified()),
+                        null,
+                        String^rp(""),
+                        null
+                    ))
+                    let ns_parent_ref ns_parent_holder.get(0)
+                    var items_arr Array[PlannedItem]$()
+                    var pi2: size_t 0
+                    while pi2 < params_holder.length
+                    {
+                        let p_ptr2 params_holder.get(pi2)
+                        guard p_ptr2 <> null
+                        {
+                            var ity_holder Vector[PlannedType]^rp(1)
+                            ity_holder.put(0, (*p_ptr2))
+                            items_arr.add(PlannedItem(
+                                Span(0, 0),
+                                false,
+                                null,
+                                ity_holder.get(0),
+                                null
+                            ))
+                        }
+                        set pi2: pi2 + 1
+                    }
+                    var items_holder Vector[PlannedItem]^rp(items_arr)
+                    set mangled: Planner.mangle_function#(
+                        f.name, &items_holder, ns_parent_ref, has_page
+                    )
+                }
+            }
 
             var can_throw: bool false
             var throws_ref: ref[PlannedType]? null
@@ -3821,6 +3907,44 @@ define Planner
                             set combined_type: Planner.make_bool_type#()
                         guard op_name.equals(String$("||"))
                             set combined_type: Planner.make_bool_type#()
+
+                        ; s101: built-in arithmetic / bitwise operators on
+                        ; primitive integer types return the left operand's
+                        ; type. Without this, `n - 1` (and any int op)
+                        ; resolves to a fresh type var (empty name) — which
+                        ; then leaks into resolve_function_call#'s arg_types,
+                        ; arity matches but type comparison fails against
+                        ; the formal `int` parameter, match_ref stays null,
+                        ; mangled="", and the entire surrounding call
+                        ; silently drops. Mirrors stage-0 Planner.cpp:
+                        ; findOperator's primitive arithmetic passthrough
+                        ; at lines 3073-3112.
+                        guard Planner.is_integer_type(result.result_type.name)
+                        {
+                            guard Planner.is_integer_type(rhs.result_type.name)
+                            {
+                                guard op_name.equals(String$("+"))
+                                    set combined_type: result.result_type
+                                guard op_name.equals(String$("-"))
+                                    set combined_type: result.result_type
+                                guard op_name.equals(String$("*"))
+                                    set combined_type: result.result_type
+                                guard op_name.equals(String$("/"))
+                                    set combined_type: result.result_type
+                                guard op_name.equals(String$("%"))
+                                    set combined_type: result.result_type
+                                guard op_name.equals(String$("&"))
+                                    set combined_type: result.result_type
+                                guard op_name.equals(String$("|"))
+                                    set combined_type: result.result_type
+                                guard op_name.equals(String$("^"))
+                                    set combined_type: result.result_type
+                                guard op_name.equals(String$("<<"))
+                                    set combined_type: result.result_type
+                                guard op_name.equals(String$(">>"))
+                                    set combined_type: result.result_type
+                            }
+                        }
                     }
 
                     var two_args Vector[PlannedOperand]^rp(2)
