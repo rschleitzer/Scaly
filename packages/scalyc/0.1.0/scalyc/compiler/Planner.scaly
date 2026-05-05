@@ -9940,12 +9940,26 @@ define Planner
             return 1
         guard type_name.equals("char")
             return 1
-        guard type_name.equals("int")
+        guard type_name.equals("i8")
+            return 1
+        guard type_name.equals("u8")
+            return 1
+        guard type_name.equals("i16")
+            return 2
+        guard type_name.equals("u16")
+            return 2
+        guard type_name.equals("i32")
             return 4
-        guard type_name.equals("uint")
+        guard type_name.equals("u32")
             return 4
         guard type_name.equals("float")
             return 4
+        guard type_name.equals("f32")
+            return 4
+        ; s103: int/uint are 8 bytes (i64) to match stage-0
+        ; (Planner.cpp:960). Stage-1 previously returned 4 here,
+        ; making sizeof(int) = 4 vs stage-0's 8 — sizeof_ops AOT
+        ; test compared 4 = 8 → false → printed WRONG.
         8
     }
 
@@ -12203,10 +12217,12 @@ define Planner
         guard Planner.is_primitive_type_name(String$("Foo"))
             return 78
 
-        ; get_primitive_alignment - bool/char -> 1, int-family -> 4, default 8.
+        ; get_primitive_alignment - bool/char -> 1, int -> 8 (i64),
+        ; default 8. Matches stage-0 (Planner.cpp:960) for sizeof
+        ; consistency.
         guard Planner.get_primitive_alignment(String$("bool")) <> 1
             return 79
-        guard Planner.get_primitive_alignment(String$("int")) <> 4
+        guard Planner.get_primitive_alignment(String$("int")) <> 8
             return 80
         guard Planner.get_primitive_alignment(String$("String")) <> 8
             return 81
@@ -12487,7 +12503,8 @@ define Planner
         guard Planner.compute_struct_alignment(null) <> 1
             return 118
 
-        ; Struct with two int properties: offsets 0, 4; size 8; align 4.
+        ; Struct with two int properties: offsets 0, 8; size 16; align 8
+        ; (int is 8 bytes per s103).
         var two_ints Vector[PlannedProperty]$(2)
         two_ints.put(0, PlannedProperty(
             Span(0, 0), false, String$("x"), String$(""),
@@ -12497,9 +12514,9 @@ define Planner
             Span(0, 0), false, String$("y"), String$(""),
             int_ty, null, null, 0
         ))
-        guard Planner.compute_struct_size(&two_ints) <> 8
+        guard Planner.compute_struct_size(&two_ints) <> 16
             return 119
-        guard Planner.compute_struct_alignment(&two_ints) <> 4
+        guard Planner.compute_struct_alignment(&two_ints) <> 8
             return 120
 
         let offsets Planner.compute_property_offsets$(&two_ints)
@@ -12513,10 +12530,11 @@ define Planner
         let o1 offsets.get(1)
         guard o1 = null
             return 124
-        guard *o1 <> 4
+        guard *o1 <> 8
             return 125
 
-        ; Mixed struct: bool then int — padding puts int at offset 4.
+        ; Mixed struct: bool then int — padding puts int at offset 8
+        ; (8-byte alignment for int per s103).
         var bool_then_int Vector[PlannedProperty]$(2)
         bool_then_int.put(0, PlannedProperty(
             Span(0, 0), false, String$("flag"), String$(""),
@@ -12526,7 +12544,7 @@ define Planner
             Span(0, 0), false, String$("count"), String$(""),
             int_ty, null, null, 0
         ))
-        guard Planner.compute_struct_size(&bool_then_int) <> 8
+        guard Planner.compute_struct_size(&bool_then_int) <> 16
             return 126
         let bi_offsets Planner.compute_property_offsets$(&bool_then_int)
         let bi0 bi_offsets.get(0)
@@ -12537,7 +12555,7 @@ define Planner
         let bi1 bi_offsets.get(1)
         guard bi1 = null
             return 129
-        guard *bi1 <> 4
+        guard *bi1 <> 8
             return 130
 
         ; unify - identical concrete types → empty substitution.
