@@ -1587,7 +1587,8 @@ define Emitter
                     ; guard behaviour for multi-step chains while preserving correct
                     ; extractvalue emission for the common chain.length=1 case used by
                     ; cli.run guards.
-                    guard LLVMGetTypeKind(LLVMTypeOf(current_value)) = LLVMTypeKind.Pointer()
+                    let cur_kind LLVMGetTypeKind(LLVMTypeOf(current_value))
+                    guard cur_kind = LLVMTypeKind.Pointer()
                         return LLVMValueRef(null)
 
                     ; Defensive: extractvalue requires a non-null
@@ -1597,6 +1598,21 @@ define Emitter
                     ; LLVMBuildExtractValue → setName.
                     guard current_value.handle = null
                         return LLVMValueRef(null)
+
+                    ; Bail on non-aggregate (Int, Float, Function, etc.) —
+                    ; LLVMBuildExtractValue requires Struct or Array.
+                    ; getIndexedType returns null on a non-aggregate, EVI's
+                    ; result type ends up null, then setName SEGVs reading
+                    ; getContext() through the null type. Mirrors stage-0's
+                    ; ValTy->isAggregateType() guard at Emitter.cpp:3065.
+                    ; Nested form to avoid `and` precedence ambiguity:
+                    ; outer guard fires when cur_kind isn't Struct, then
+                    ; the inner guard bails iff it isn't Array either.
+                    guard cur_kind <> LLVMTypeKind.Struct()
+                    {
+                        guard cur_kind <> LLVMTypeKind.Array()
+                            return LLVMValueRef(null)
+                    }
 
                     ; Use extractvalue for struct field access. Name
                     ; uses to_c_string# (null-terminated heap copy)
@@ -3309,14 +3325,54 @@ define Emitter
         var phi_blocks Vector[LLVMBasicBlockRef]#(max_count)
         var phi_count: size_t 0
 
+        ; Track variant_index values already added to the switch. When
+        ; the planner can't resolve the union (fresh type var with empty
+        ; name), every PlannedWhen.variant_index defaults to 0 — adding
+        ; them all to LLVMAddCase produces `duplicate case value` and
+        ; rejects the IR at -c (passes -S verification but llc/IRTranslator
+        ; aborts). Skip duplicates so the IR remains well-formed; the
+        ; first-wins arm runs and the rest become unreachable.
+        var seen_tags Vector[size_t]#(choose_expr.cases.length + 1)
+        var seen_count: size_t 0
+
+        ; Reference type for the PHI — locked in by the first non-void
+        ; case_value or alt_value. Subsequent incoming values whose type
+        ; doesn't match it get filtered out (rather than producing a
+        ; type-mismatched PHI that llc rejects with "forward referenced
+        ; with type"). Mirrors stage-0 emitChoose's per-arm
+        ; `CaseValue->getType() == phiTy` gate.
+        var phi_ref_type LLVMTypeRef(null)
+
         ; Process each when case
         guard choose_expr.cases <> null
         {
             for when_case in choose_expr.cases
             {
+                ; Linear search for a matching seen variant_index.
+                var dup: bool false
+                var si: size_t 0
+                while si < seen_count
+                {
+                    let st_ptr seen_tags.get(si)
+                    guard st_ptr <> null
+                    {
+                        guard (*st_ptr) = when_case.variant_index
+                            set dup: true
+                    }
+                    set si: si + 1
+                }
+                guard dup
+                {
+                    ; Skip this whole arm.
+                    set si: si  ; no-op so the guard body isn't empty
+                }
+                guard dup = false
+                {
                 let case_block create_block(String$("choose.when"))
                 let tag_const LLVMConstInt(i8_ty, when_case.variant_index, 0)
                 LLVMAddCase(switch_inst, tag_const, case_block)
+                seen_tags.put(seen_count, when_case.variant_index)
+                set seen_count: seen_count + 1
 
                 LLVMPositionBuilderAtEnd(builder, case_block)
 
@@ -3350,11 +3406,34 @@ define Emitter
                 {
                     guard case_value.handle <> null
                     {
-                        phi_values.put(phi_count, case_value)
-                        phi_blocks.put(phi_count, LLVMGetInsertBlock(builder))
-                        set phi_count: phi_count + 1
+                        ; Skip void-typed values (e.g. results of LLVMBuildCall
+                        ; on a void-returning procedure) — emitting a PHI of
+                        ; void produces invalid IR (`phi void [<badref>, ...]`)
+                        ; that passes -S verification but crashes the AOT
+                        ; IRTranslator on -c. Mirrors stage-0 emitChoose's
+                        ; `!CaseValue->getType()->isVoidTy()` guard.
+                        let cv_type LLVMTypeOf(case_value)
+                        guard cv_type.handle <> null
+                        {
+                            guard LLVMGetTypeKind(cv_type) <> LLVMTypeKind.Void()
+                            {
+                                ; Lock the PHI type from the first incoming;
+                                ; only accept later values whose type matches
+                                ; (LLVM type pointers are uniqued, so handle
+                                ; equality is type equality).
+                                guard phi_ref_type.handle = null
+                                    set phi_ref_type: cv_type
+                                guard cv_type.handle = phi_ref_type.handle
+                                {
+                                    phi_values.put(phi_count, case_value)
+                                    phi_blocks.put(phi_count, LLVMGetInsertBlock(builder))
+                                    set phi_count: phi_count + 1
+                                }
+                            }
+                        }
                     }
                     LLVMBuildBr(builder, merge_block)
+                }
                 }
             }
         }
@@ -3376,9 +3455,23 @@ define Emitter
         {
             guard alt_value.handle <> null
             {
-                phi_values.put(phi_count, alt_value)
-                phi_blocks.put(phi_count, LLVMGetInsertBlock(builder))
-                set phi_count: phi_count + 1
+                ; Skip void-typed alternative values — same reason as the
+                ; per-case guard above.
+                let av_type LLVMTypeOf(alt_value)
+                guard av_type.handle <> null
+                {
+                    guard LLVMGetTypeKind(av_type) <> LLVMTypeKind.Void()
+                    {
+                        guard phi_ref_type.handle = null
+                            set phi_ref_type: av_type
+                        guard av_type.handle = phi_ref_type.handle
+                        {
+                            phi_values.put(phi_count, alt_value)
+                            phi_blocks.put(phi_count, LLVMGetInsertBlock(builder))
+                            set phi_count: phi_count + 1
+                        }
+                    }
+                }
             }
             LLVMBuildBr(builder, merge_block)
         }
@@ -4070,7 +4163,13 @@ define Emitter
                     guard LLVMGetTypeKind(value_type) = LLVMTypeKind.Pointer()
                         return value
 
-                    ; Otherwise, allocate and store (still uses NPO representation)
+                    ; Otherwise, allocate and store (still uses NPO representation).
+                    ; Bail if value is null (e.g. emit_operand fell through on a
+                    ; non-aggregate member-access chain) so we don't pass null
+                    ; into LLVMBuildStore — that would alloca on a null type
+                    ; and crash inside DataLayout::getABITypeAlign.
+                    guard value.handle = null
+                        return LLVMValueRef(null)
                     let value_ptr LLVMBuildAlloca(builder, value_type, "option.some")
                     LLVMBuildStore(builder, value, value_ptr)
                     return value_ptr
@@ -4105,10 +4204,15 @@ define Emitter
         guard vc.value <> null
         {
             let value emit_operand(vc.value.unwrap())
-            let data_ptr LLVMBuildStructGEP2(builder, union_type, union_ptr, 1, "variant.data.ptr")
-
-            ; Store value to data field
-            LLVMBuildStore(builder, value, data_ptr)
+            ; Skip the store if the operand emitted nothing — without
+            ; this guard, a null value passed into LLVMBuildStore SEGVs
+            ; in CreateAlignedStore reading the value's type. Same class
+            ; of bail as the NPO Some branch above.
+            guard value.handle <> null
+            {
+                let data_ptr LLVMBuildStructGEP2(builder, union_type, union_ptr, 1, "variant.data.ptr")
+                LLVMBuildStore(builder, value, data_ptr)
+            }
         }
 
         ; Load and return the union value
@@ -4673,8 +4777,22 @@ define Emitter
         guard current_function.handle = null
             return false
 
-        ; Get the return type - should be a Result type
-        let ret_ty LLVMGetReturnType(LLVMGetElementType(LLVMTypeOf(current_function)))
+        ; Get the return type - should be a Result type. LLVMGetElementType
+        ; is a no-op under opaque pointers (LLVM 14+), so go through
+        ; LLVMGlobalGetValueType to get the function's type, mirroring the
+        ; emit_return path at ~line 4614.
+        let func_ty LLVMGlobalGetValueType(current_function)
+        let ret_ty LLVMGetReturnType(func_ty)
+
+        ; Bail if return type isn't a Result (struct). Functions that throw
+        ; through an sret parameter return void at the LLVM level — handling
+        ; that path needs the sret-attribute lookup that stage-0 has at
+        ; Emitter.cpp:2659-2671. Until that lands, returning false here
+        ; avoids LLVMBuildAlloca's assert on a non-sized (void) type and
+        ; just drops this throw — the caller still terminates cleanly via
+        ; the surrounding return path.
+        guard LLVMGetTypeKind(ret_ty) <> LLVMTypeKind.Struct()
+            return false
 
         ; Allocate space for the Result
         let result_ptr LLVMBuildAlloca(builder, ret_ty, "throw.result")

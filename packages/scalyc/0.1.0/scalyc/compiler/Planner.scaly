@@ -8100,6 +8100,14 @@ define Planner
             {
                 let planned this.plan_module#(sub)
             }
+            guard sub.name.equals("lexer")
+            {
+                let planned this.plan_module#(sub)
+            }
+            guard sub.name.equals("parser")
+            {
+                let planned this.plan_module#(sub)
+            }
 
             ; Layout-only fallback: even when this sub-module isn't on
             ; the safe-walk list (or when it was walked but its struct
@@ -10870,6 +10878,17 @@ define Planner
     function join_dotted_name#(rp, parts: Vector[String]) returns String
     {
         var sb StringBuilder$()
+        ; Defensive: bail early if the Vector layout is corrupted —
+        ; length>0 with data=null. Some Type.name vectors picked up
+        ; via plan_type → resolve_type_base end up in this state once
+        ; stage-1 walks Planner.scaly, and Vector.get computes
+        ; data + i, returning a non-null but invalid 0x8 pointer for
+        ; i>0 (caller's null-check passes, then the deref SEGVs).
+        guard parts.length > 0
+        {
+            guard parts.data = null
+                return sb.to_string^rp()
+        }
         var i: size_t 0
         while i < parts.length
         {
