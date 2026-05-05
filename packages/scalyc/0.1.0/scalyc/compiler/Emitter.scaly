@@ -2594,9 +2594,23 @@ define Emitter
         guard op_name.equals(String$("*"))
             return LLVMBuildLoad2(builder, ty, op, "deref")
 
-        ; Address-of (operand should already be a pointer)
+        ; Address-of: when the operand is already a pointer, return it
+        ; directly. When the operand is a struct value (e.g. `&n` on a
+        ; let-bound struct), spill to a temp alloca and return the
+        ; alloca pointer. Mirrors stage-0's `addr.tmp` pattern
+        ; (Emitter.cpp ~3735) — required for `let n T(); let p &n` then
+        ; `(*p).field` to round-trip through opaque ptr correctly.
         guard op_name.equals(String$("&"))
+        {
+            let op_kind LLVMGetTypeKind(LLVMTypeOf(op))
+            guard op_kind = LLVMTypeKind.Struct()
+            {
+                let tmp LLVMBuildAlloca(builder, LLVMTypeOf(op), "addr.tmp")
+                LLVMBuildStore(builder, op, tmp)
+                return tmp
+            }
             return op
+        }
 
         LLVMValueRef(null)
     }
