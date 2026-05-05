@@ -354,7 +354,10 @@ define Planner
 
             ; Seed the function registry with C-runtime externs so name
             ; lookups for aligned_alloc/free/exit succeed from day one.
-            this.register_runtime_functions()
+            ; Use `^page` to put runtime Function records on the Planner's
+            ; owning page; `$` (default) would put them on the call's
+            ; local page and dangle on return (s100).
+            this.register_runtime_functions^page()
         }
 
         ; ================================================================
@@ -964,54 +967,78 @@ define Planner
         ; Parameter items and return types are built with Type.name
         ; Vectors so resolve_type_base recognises them correctly.
         ; ================================================================
-        function register_runtime_functions(this: Planner)
+        function register_runtime_functions#(rp, this: Planner)
         {
-            ; Helper-lambda pattern: a local function that builds a
-            ; Type with a single-segment name like "size_t" or "int".
-            ; We can't actually define a nested function here, so inline
-            ; each registration below.
+            ; All Vector / String / Type containers must live on `rp`
+            ; (the Planner's owning page) — `$` would put them on this
+            ; function's local page, which is freed on return, leaving
+            ; every Item.type and Type.generics ref dangling. Symptom
+            ; (s100): later `lookup_functions("exit")` returns a Function
+            ; whose param Type.generics reads as a tiny non-null bogus
+            ; pointer (e.g. 0x8), and resolve_type_base# crashes on
+            ; deref.
+            ;
+            ; Type itself is a value-defined struct (no init#) so we
+            ; can't write `Type^rp(...)`. Instead, hold each Type in a
+            ; Vector[Type]^rp(1) and take a ref via `vec.get(0)` —
+            ; mirrors handle_type# in Modeler.scaly.
 
             ; aligned_alloc(alignment: size_t, size: size_t) -> pointer[void]
-            var aa_size_path Vector[String]$(1)
-            aa_size_path.put(0, String$("size_t"))
-            let aa_size_type Type(
+            var aa_size_path Vector[String]^rp(1)
+            aa_size_path.put(0, String^rp("size_t"))
+            var aa_size_holder Vector[Type]^rp(1)
+            aa_size_holder.put(0, Type(
                 Span(0, 0), aa_size_path, null,
                 Lifetime.Unspecified(Unspecified())
-            )
-            var aa_void_path Vector[String]$(1)
-            aa_void_path.put(0, String$("void"))
-            let aa_void_type Type(
+            ))
+            let aa_size_ref aa_size_holder.get(0)
+
+            var aa_void_path Vector[String]^rp(1)
+            aa_void_path.put(0, String^rp("void"))
+            var aa_void_holder Vector[Type]^rp(1)
+            aa_void_holder.put(0, Type(
                 Span(0, 0), aa_void_path, null,
                 Lifetime.Unspecified(Unspecified())
-            )
-            var aa_ptr_gens Vector[Type]$(1)
-            aa_ptr_gens.put(0, aa_void_type)
-            var aa_ptr_path Vector[String]$(1)
-            aa_ptr_path.put(0, String$("pointer"))
-            let aa_ptr_void Type(
-                Span(0, 0), aa_ptr_path, &aa_ptr_gens,
+            ))
+
+            var aa_ptr_gens_holder Vector[Vector[Type]]^rp(1)
+            aa_ptr_gens_holder.put(0, aa_void_holder)
+            let aa_ptr_gens_ref aa_ptr_gens_holder.get(0)
+
+            var aa_ptr_path Vector[String]^rp(1)
+            aa_ptr_path.put(0, String^rp("pointer"))
+            var aa_ptr_void_holder Vector[Type]^rp(1)
+            aa_ptr_void_holder.put(0, Type(
+                Span(0, 0), aa_ptr_path, aa_ptr_gens_ref,
                 Lifetime.Unspecified(Unspecified())
-            )
-            var aa_inputs Vector[Item]$(2)
+            ))
+            let aa_ptr_void_ref aa_ptr_void_holder.get(0)
+
+            var aa_alignment_name Vector[String]^rp(1)
+            aa_alignment_name.put(0, String^rp("alignment"))
+            var aa_size_name Vector[String]^rp(1)
+            aa_size_name.put(0, String^rp("size"))
+
+            var aa_inputs Vector[Item]^rp(2)
             aa_inputs.put(0, Item(
                 Span(0, 0), false,
-                &(String$("alignment")),
-                &aa_size_type,
-                Vector[Attribute]$(0)
+                aa_alignment_name.get(0),
+                aa_size_ref,
+                Vector[Attribute]^rp(0)
             ))
             aa_inputs.put(1, Item(
                 Span(0, 0), false,
-                &(String$("size")),
-                &aa_size_type,
-                Vector[Attribute]$(0)
+                aa_size_name.get(0),
+                aa_size_ref,
+                Vector[Attribute]^rp(0)
             ))
             let aligned_alloc_fn Function(
                 Span(0, 0), false, false,
-                String$("aligned_alloc"),
-                Vector[GenericParameter]$(0),
+                String^rp("aligned_alloc"),
+                Vector[GenericParameter]^rp(0),
                 null,
                 aa_inputs,
-                &aa_ptr_void,
+                aa_ptr_void_ref,
                 null,
                 Lifetime.Unspecified(Unspecified()),
                 Implementation.Extern(Extern(Span(0, 0)))
@@ -1019,17 +1046,19 @@ define Planner
             this.register_function(aligned_alloc_fn)
 
             ; free(ptr: pointer[void])
-            var free_inputs Vector[Item]$(1)
+            var free_ptr_name Vector[String]^rp(1)
+            free_ptr_name.put(0, String^rp("ptr"))
+            var free_inputs Vector[Item]^rp(1)
             free_inputs.put(0, Item(
                 Span(0, 0), false,
-                &(String$("ptr")),
-                &aa_ptr_void,
-                Vector[Attribute]$(0)
+                free_ptr_name.get(0),
+                aa_ptr_void_ref,
+                Vector[Attribute]^rp(0)
             ))
             let free_fn Function(
                 Span(0, 0), false, false,
-                String$("free"),
-                Vector[GenericParameter]$(0),
+                String^rp("free"),
+                Vector[GenericParameter]^rp(0),
                 null,
                 free_inputs,
                 null,
@@ -1040,23 +1069,28 @@ define Planner
             this.register_function(free_fn)
 
             ; exit(code: int)
-            var int_path Vector[String]$(1)
-            int_path.put(0, String$("int"))
-            let int_type Type(
+            var int_path Vector[String]^rp(1)
+            int_path.put(0, String^rp("int"))
+            var int_holder Vector[Type]^rp(1)
+            int_holder.put(0, Type(
                 Span(0, 0), int_path, null,
                 Lifetime.Unspecified(Unspecified())
-            )
-            var exit_inputs Vector[Item]$(1)
+            ))
+            let int_ref int_holder.get(0)
+
+            var exit_code_name Vector[String]^rp(1)
+            exit_code_name.put(0, String^rp("code"))
+            var exit_inputs Vector[Item]^rp(1)
             exit_inputs.put(0, Item(
                 Span(0, 0), false,
-                &(String$("code")),
-                &int_type,
-                Vector[Attribute]$(0)
+                exit_code_name.get(0),
+                int_ref,
+                Vector[Attribute]^rp(0)
             ))
             let exit_fn Function(
                 Span(0, 0), false, false,
-                String$("exit"),
-                Vector[GenericParameter]$(0),
+                String^rp("exit"),
+                Vector[GenericParameter]^rp(0),
                 null,
                 exit_inputs,
                 null,
@@ -4148,6 +4182,46 @@ define Planner
                 return null
             let f (*f_ptr)
 
+            ; Set up type substitutions for the struct's type parameters.
+            ; Mirrors Planner.cpp:1660-1664 / 2004-2007. Without this, when
+            ; resolving the param/return Types of a generic method (e.g.
+            ; Array.add(this, item: T)) the bound `T` doesn't substitute to
+            ; the concrete generic argument (Program), so the mangled name
+            ; comes out as `_ZN5ArrayI7ProgramE3addE1T` instead of
+            ; `_ZN5ArrayI7ProgramE3addE7Program` and the link fails.
+            let saved_subst_len_lm type_substitutions.length
+            let conc_ref this.lookup_concept(struct_type.name)
+            guard conc_ref <> null
+            {
+                let conc (*conc_ref)
+                guard conc.parameters.length > 0
+                {
+                    guard struct_type.generics <> null
+                    {
+                        let gens_ref (*struct_type.generics)
+                        var pi: size_t 0
+                        while pi < conc.parameters.length
+                        {
+                            guard pi >= gens_ref.length
+                                set pi: conc.parameters.length
+                            guard pi < conc.parameters.length
+                            {
+                                let cp_ptr conc.parameters.get(pi)
+                                let gen_ptr gens_ref.get(pi)
+                                guard cp_ptr <> null
+                                {
+                                    guard gen_ptr <> null
+                                    {
+                                        this.define_type_substitution(cp_ptr.name, (*gen_ptr))
+                                    }
+                                }
+                                set pi: pi + 1
+                            }
+                        }
+                    }
+                }
+            }
+
             var return_type: PlannedType Planner.make_void_type#()
             guard f.returns_ <> null
             {
@@ -4188,6 +4262,7 @@ define Planner
                 set i: i + 1
             }
             var params_holder Vector[PlannedType]^rp(params_arr)
+            set type_substitutions.length: saved_subst_len_lm
 
             var has_page: bool false
             guard f.page_parameter <> null
@@ -4516,11 +4591,26 @@ define Planner
             let base Planner.resolve_type_base#(t)
 
             var after_subst: PlannedType base
+            var subst_fired: bool false
             guard type_substitutions.length > 0
             {
                 var sub_vec Vector[KeyValuePair[String, PlannedType]]^rp(type_substitutions)
                 set after_subst: Planner.apply_name_substitution#(base, &sub_vec)
+                ; If substitution actually replaced the name (T → Concrete),
+                ; the result is already a concrete type — skip the dotted-name
+                ; canonicalization that would shorten qualified names like
+                ; `scalyc.compiler.Plan.PlannedUnion` → `PlannedUnion`. Stage-0
+                ; preserves the full name in this case (encodeType uses the
+                ; pre-set MangledName shortcut at Planner.cpp:518); without
+                ; this guard stage-1 emits an inconsistent mangling — the
+                ; container generic uses `33scalyc.compiler.Plan.PlannedUnion`
+                ; (full) while the arg substitutes to `12PlannedUnion` (short),
+                ; producing a method symbol that no other side defines (s100).
+                guard after_subst.name.equals(base.name) = false
+                    set subst_fired: true
             }
+            guard subst_fired
+                return after_subst
 
             ; s96: Recursively canonicalize inner generics for ref[T] /
             ; pointer[T]. resolve_type_base# only recurses via itself
@@ -8113,6 +8203,10 @@ define Planner
                 let planned this.plan_module#(sub)
             }
             guard sub.name.equals("Emitter")
+            {
+                let planned this.plan_module#(sub)
+            }
+            guard sub.name.equals("Planner")
             {
                 let planned this.plan_module#(sub)
             }
