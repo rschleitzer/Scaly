@@ -3494,6 +3494,61 @@ define Planner
                             }
                         }
 
+                        ; s101: Implicit-this sibling method dispatch.
+                        ; When the standard lookup didn't find `fn_name`
+                        ; and `this: pointer[T]` is in scope, try resolving
+                        ; as T's method. Mirrors stage-0 Planner.cpp:1257-
+                        ; 1277 (lookupFunction's struct-member walk) +
+                        ; 9747-9786 (mangleFunction with parent = struct).
+                        ; Required for `define T { fn a() ... fn b() a() }`
+                        ; where `a()` from inside `b()` is a sibling method.
+                        ; Without this, sibling method calls fall through
+                        ; to mangled="" and the call drops out of the IR.
+                        guard match_ref = null
+                        {
+                            guard has_ns_mangled = false
+                            {
+                                let this_ref this.lookup_local(String#("this"))
+                                guard this_ref <> null
+                                {
+                                    let this_ty (*this_ref)
+                                    guard this_ty.name.equals(String$("pointer"))
+                                    {
+                                        guard this_ty.generics <> null
+                                        {
+                                            let gens_t (*this_ty.generics)
+                                            guard gens_t.length > 0
+                                            {
+                                                let inner_ptr gens_t.get(0)
+                                                guard inner_ptr <> null
+                                                {
+                                                    let inner_t (*inner_ptr)
+                                                    let mm_ref this.lookup_method#(inner_t, fn_name)
+                                                    guard mm_ref <> null
+                                                    {
+                                                        ; Build receiver_op as `this`.
+                                                        set receiver_op: PlannedOperand(
+                                                            result.loc,
+                                                            PlannedExpression.Variable(PlannedVariable(
+                                                                result.loc,
+                                                                String^rp("this"),
+                                                                this_ty,
+                                                                false
+                                                            )),
+                                                            null,
+                                                            this_ty
+                                                        )
+                                                        set match_ref: mm_ref
+                                                        set is_method_dispatch: true
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
                         var rt: PlannedType this.fresh_type_var#(String$(""))
                         var mangled: String String^rp("")
                         guard match_ref <> null

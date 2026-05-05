@@ -2668,6 +2668,18 @@ define Emitter
             return LLVMBuildURem(builder, l, r, "urem")
         }
 
+        ; Logical AND (on i1 booleans). Mirrors stage-0
+        ; Emitter.cpp:4176-4178. Without this handler, `a && b`
+        ; falls through to the comparison block which produces
+        ; an icmp without using the result, leaving downstream
+        ; if/while branches with no condition value.
+        guard op_name.equals(String$("&&"))
+            return LLVMBuildAnd(builder, l, r, "land")
+
+        ; Logical OR (on i1 booleans).
+        guard op_name.equals(String$("||"))
+            return LLVMBuildOr(builder, l, r, "lor")
+
         ; Bitwise AND
         guard op_name.equals(String$("&"))
             return LLVMBuildAnd(builder, l, r, "and")
