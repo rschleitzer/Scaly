@@ -68,16 +68,26 @@ define Array[T]
     function add(this: Array[T], items: Vector[T])
     {
         var new_length length + items.length
+        ; Unsigned-wraparound check: items.length > 0 should grow the
+        ; total. If new_length wraps below the existing length we'd
+        ; under-size the allocation below and OOB-write the memcpy.
+        guard new_length < length
+            exit(14)
+
         let size sizeof T
         guard (vector = null) || (new_length > vector.length)
             this.reallocate()
 
         guard new_length > vector.length
         {
+            ; Manual grow when one reallocate() doubling wasn't enough.
+            ; Allocate for new_length items, copy the live `length`
+            ; items (NOT capacity), and record new_length as the new
+            ; capacity.
             var own_page Page.get(this as pointer[void])
-            let data own_page.allocate(length * size, alignof T) as pointer[T]
-            let bytes_to_copy vector.length * size
-            guard vector.length > 0
+            let data own_page.allocate(new_length * size, alignof T) as pointer[T]
+            let bytes_to_copy length * size
+            guard length > 0
                 memcpy(data, vector.data, bytes_to_copy)
 
             let old_exclusive_page Page.get(vector.data as pointer[void])
@@ -102,7 +112,8 @@ define Array[T]
 
     operator [](this: Array[T], i: size_t) returns ref[T]?
     {
-        guard length < i + 1
+        ; `i >= length` avoids the `i + 1` overflow at SIZE_MAX.
+        guard i >= length
             return null
 
         vector.data + i
