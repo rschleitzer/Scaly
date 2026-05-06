@@ -396,14 +396,19 @@ define Emitter
         register_intrinsic_type(String$("i16"), LLVMInt16TypeInContext(context), 2, 2, true)
         register_intrinsic_type(String$("i32"), LLVMInt32TypeInContext(context), 4, 4, true)
         register_intrinsic_type(String$("i64"), LLVMInt64TypeInContext(context), 8, 8, true)
-        register_intrinsic_type(String$("int"), LLVMInt32TypeInContext(context), 4, 4, true)
+        ; s109: int/uint map to i64 to match stage-0 (Emitter.cpp:154-155).
+        ; Itanium mangling still uses 'i'/'j' (encode_type#); the LLVM-level
+        ; width difference is silently allowed at link time. Aligning here
+        ; makes literals like `0` / `100` flow through to size_t/i64 params
+        ; without requiring a separate width-promote pass.
+        register_intrinsic_type(String$("int"), LLVMInt64TypeInContext(context), 8, 8, true)
 
         ; Unsigned integers
         register_intrinsic_type(String$("u8"), LLVMInt8TypeInContext(context), 1, 1, false)
         register_intrinsic_type(String$("u16"), LLVMInt16TypeInContext(context), 2, 2, false)
         register_intrinsic_type(String$("u32"), LLVMInt32TypeInContext(context), 4, 4, false)
         register_intrinsic_type(String$("u64"), LLVMInt64TypeInContext(context), 8, 8, false)
-        register_intrinsic_type(String$("uint"), LLVMInt32TypeInContext(context), 4, 4, false)
+        register_intrinsic_type(String$("uint"), LLVMInt64TypeInContext(context), 8, 8, false)
         register_intrinsic_type(String$("size_t"), LLVMInt64TypeInContext(context), 8, 8, false)
 
         ; Floating point
@@ -850,9 +855,9 @@ define Emitter
         guard name.equals("u32")
             return LLVMInt32TypeInContext(context)
         guard name.equals("int")
-            return LLVMInt32TypeInContext(context)
+            return LLVMInt64TypeInContext(context)
         guard name.equals("uint")
-            return LLVMInt32TypeInContext(context)
+            return LLVMInt64TypeInContext(context)
         guard name.equals("i64")
             return LLVMInt64TypeInContext(context)
         guard name.equals("u64")

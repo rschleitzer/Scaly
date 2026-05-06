@@ -3171,29 +3171,64 @@ define Planner
                                 guard local_ref <> null
                                 {
                                     let local (*local_ref)
-                                    ; Skip generic types — lookup_method# /
-                                    ; mangle_method# don't include generic
-                                    ; parameters in the mangled name today,
-                                    ; so dispatch on a `Vector[int]` or
-                                    ; `Option[T]` would emit a non-generic
-                                    ; mangled name that doesn't match the
-                                    ; instantiated body. Defer that to s76.
-                                    ; s106: pointer[T] / ref[T] are themselves
-                                    ; generic but always auto-deref before
-                                    ; method lookup, so don't skip them — let
-                                    ; lookup_method#'s auto-deref pick the
-                                    ; method off the inner type. Without this,
-                                    ; init#'s implicit `page: pointer[…Page]`
-                                    ; would have its `page.allocate(…)` call
-                                    ; silently dropped.
+                                    ; s109: dispatch on generic receivers
+                                    ; (Container[int], Box[int]). encode_type#
+                                    ; handles `Name[args]` → `<len><name>I<args>E`,
+                                    ; so mangle_method# already produces the
+                                    ; specialised symbol (e.g. `_ZN9ContainerIiE`
+                                    ; `8set_itemEmi`). The previous skip was
+                                    ; written before encode_type# learned
+                                    ; generics; lifting it lets user-defined
+                                    ; `Container[int].set_item(...)` resolve
+                                    ; against the spec'd body emitted via
+                                    ; instantiate_generic#. Stdlib generics
+                                    ; (Vector / HashMap / etc.) are still
+                                    ; excluded because their bodies aren't
+                                    ; specialised in the planner walk — keep
+                                    ; them on the unspec'd dispatch path so
+                                    ; the existing extern-decl shim continues
+                                    ; to work.
                                     var skip_dispatch: bool false
                                     guard local.binding_type.generics <> null
                                     {
-                                        set skip_dispatch: true
-                                        guard local.binding_type.name.equals(String$("pointer"))
-                                            set skip_dispatch: false
-                                        guard local.binding_type.name.equals(String$("ref"))
-                                            set skip_dispatch: false
+                                        guard local.binding_type.name.equals(String$("pointer")) = false
+                                        {
+                                            guard local.binding_type.name.equals(String$("ref")) = false
+                                            {
+                                                guard local.binding_type.name.equals(String$("Vector"))
+                                                    set skip_dispatch: true
+                                                guard local.binding_type.name.equals(String$("HashMap"))
+                                                    set skip_dispatch: true
+                                                guard local.binding_type.name.equals(String$("HashMapBuilder"))
+                                                    set skip_dispatch: true
+                                                guard local.binding_type.name.equals(String$("HashSet"))
+                                                    set skip_dispatch: true
+                                                guard local.binding_type.name.equals(String$("HashSetBuilder"))
+                                                    set skip_dispatch: true
+                                                guard local.binding_type.name.equals(String$("Array"))
+                                                    set skip_dispatch: true
+                                                guard local.binding_type.name.equals(String$("List"))
+                                                    set skip_dispatch: true
+                                                guard local.binding_type.name.equals(String$("ListIterator"))
+                                                    set skip_dispatch: true
+                                                guard local.binding_type.name.equals(String$("BuilderList"))
+                                                    set skip_dispatch: true
+                                                guard local.binding_type.name.equals(String$("BuilderListIterator"))
+                                                    set skip_dispatch: true
+                                                guard local.binding_type.name.equals(String$("Option"))
+                                                    set skip_dispatch: true
+                                                guard local.binding_type.name.equals(String$("Result"))
+                                                    set skip_dispatch: true
+                                                guard local.binding_type.name.equals(String$("Slice"))
+                                                    set skip_dispatch: true
+                                                guard local.binding_type.name.equals(String$("Slot"))
+                                                    set skip_dispatch: true
+                                                guard local.binding_type.name.equals(String$("Node"))
+                                                    set skip_dispatch: true
+                                                guard local.binding_type.name.equals(String$("KeyValuePair"))
+                                                    set skip_dispatch: true
+                                            }
+                                        }
                                     }
                                     guard skip_dispatch = false
                                     {
@@ -5232,25 +5267,85 @@ define Planner
                 let conc (*conc_ref)
                 guard conc.parameters.length > 0
                 {
-                    var is_data_class: bool false
+                    ; s109: relax to any generic Structure. stdlib generics
+                    ; (Vector / HashMap / Array / etc.) historically SEGV
+                    ; when their bodies are walked with substitutions
+                    ; bound — keep them on the empty-mangled fallback
+                    ; path. User-defined generics with methods/inits
+                    ; (e.g. nested_generic's Box, generic_lifetime's
+                    ; Container) get specialised here so the spec'd
+                    ; bodies (`_ZN3BoxIiE3getEv`, `_ZN9ContainerIiE...`)
+                    ; reach the emitter.
+                    var is_struct: bool false
                     choose conc.definition
                         when s: Structure
-                        {
-                            guard s.members.length = 0
-                                guard s.initializers.length = 0
-                                    set is_data_class: true
-                        }
+                            set is_struct: true
                         else
                             0
-                    guard is_data_class
-                    {
-                        guard after_subst.generics <> null
+                    var is_stdlib_generic: bool false
+                    guard canonical_name.equals("Vector")
+                        set is_stdlib_generic: true
+                    guard canonical_name.equals("HashMap")
+                        set is_stdlib_generic: true
+                    guard canonical_name.equals("HashMapBuilder")
+                        set is_stdlib_generic: true
+                    guard canonical_name.equals("HashSet")
+                        set is_stdlib_generic: true
+                    guard canonical_name.equals("HashSetBuilder")
+                        set is_stdlib_generic: true
+                    guard canonical_name.equals("Array")
+                        set is_stdlib_generic: true
+                    guard canonical_name.equals("List")
+                        set is_stdlib_generic: true
+                    guard canonical_name.equals("ListIterator")
+                        set is_stdlib_generic: true
+                    guard canonical_name.equals("BuilderList")
+                        set is_stdlib_generic: true
+                    guard canonical_name.equals("BuilderListIterator")
+                        set is_stdlib_generic: true
+                    guard canonical_name.equals("Node")
+                        set is_stdlib_generic: true
+                    guard canonical_name.equals("Slot")
+                        set is_stdlib_generic: true
+                    guard canonical_name.equals("Slice")
+                        set is_stdlib_generic: true
+                    guard canonical_name.equals("Option")
+                        set is_stdlib_generic: true
+                    guard canonical_name.equals("Result")
+                        set is_stdlib_generic: true
+                    guard canonical_name.equals("KeyValuePair")
+                        set is_stdlib_generic: true
+                    guard is_struct
+                        guard is_stdlib_generic = false
                         {
-                            let g (*after_subst.generics)
-                            guard g.length = conc.parameters.length
-                                return this.instantiate_generic#(canonical_name, g, after_subst.loc)
+                            guard after_subst.generics <> null
+                            {
+                                let g (*after_subst.generics)
+                                guard g.length = conc.parameters.length
+                                {
+                                    ; s109: preserve the call-site lifetime
+                                    ; (^page / $ / #) on the specialised
+                                    ; PlannedType. instantiate_generic#
+                                    ; returns Lifetime.Unspecified by
+                                    ; default; without overlaying the
+                                    ; original after_subst.life,
+                                    ; `Container[int]^page_ptr(...)` loses
+                                    ; the page-pointer arg at the ctor
+                                    ; call site (`<null operand!>`).
+                                    let inst this.instantiate_generic#(canonical_name, g, after_subst.loc)
+                                    return PlannedType(
+                                        inst.loc,
+                                        inst.name,
+                                        inst.mangled_name,
+                                        inst.generics,
+                                        after_subst.life,
+                                        after_subst.origin,
+                                        after_subst.array_size,
+                                        after_subst.variable
+                                    )
+                                }
+                            }
                         }
-                    }
                 }
             }
 
