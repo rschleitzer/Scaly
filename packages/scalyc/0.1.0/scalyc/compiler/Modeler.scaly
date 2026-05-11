@@ -307,7 +307,28 @@ function handle_type#(syntax: TypeSyntax) returns ref[Type]?
     }
 
     let life handle_lifetime(syntax.lifetime)
-    Type#(Span(syntax.start, syntax.end), path, generics, life)
+    let base_type Type#(Span(syntax.start, syntax.end), path, generics, life)
+
+    ; s113: wrap optional types (T?) in Option[T], mirroring stage-0
+    ; Modeler.cpp:228-238. Without this, Vector.get's return type
+    ; `ref[T]?` stays as Type{Name=["ref"]} — needs_implicit_return_page
+    ; sees "ref" as primitive and skips the implicit page param.
+    ; Stage-0 sees `Option[ref[T]]` (RetName="Option", not primitive) and
+    ; adds the implicit page, producing the mangle that libscaly.a
+    ; defines. Required for ref_string_item to link.
+    guard syntax.optional = null
+        return base_type
+
+    var inner_holder Vector[Type]^rp(1)
+    inner_holder.put(0, base_type)
+    var inner_path Vector[String]#(1)
+    inner_path.put(0, String#("Option"))
+    Type#(
+        Span(syntax.start, syntax.end),
+        inner_path,
+        inner_holder,
+        Lifetime.Unspecified(Unspecified())
+    )
 }
 
 function handle_binding_annotation#(annotation: BindingAnnotationSyntax) returns ref[Type]?
