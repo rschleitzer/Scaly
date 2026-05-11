@@ -3915,9 +3915,50 @@ define Planner
                                                     guard match_ref <> null
                                                     {
                                                         let m (*match_ref)
-                                                        var new_args Vector[PlannedOperand]^rp(2)
-                                                        new_args.put(0, result)
-                                                        new_args.put(1, next_args)
+                                                        ; s112: build the chained
+                                                        ; PlannedCall's args list as
+                                                        ; [receiver, ...flattened tuple
+                                                        ; components]. Old code passed
+                                                        ; [receiver, tuple_operand] —
+                                                        ; emit_call then treated the
+                                                        ; tuple as a second user arg
+                                                        ; and the LLVMBuildCall2 arg
+                                                        ; count didn't match the
+                                                        ; method's `(this)` arity,
+                                                        ; so emit_operand on an empty
+                                                        ; Tuple returned null and
+                                                        ; the entire outer call
+                                                        ; dropped. Mirror the non-
+                                                        ; chained call branch at
+                                                        ; line ~3815.
+                                                        var chained_args_arr Array[PlannedOperand]$()
+                                                        chained_args_arr.add(result)
+                                                        choose next_args.expr
+                                                            when chained_tp: PlannedTuple
+                                                            {
+                                                                guard chained_tp.components <> null
+                                                                {
+                                                                    let chained_comps (*chained_tp.components)
+                                                                    var chained_ci: size_t 0
+                                                                    while chained_ci < chained_comps.length
+                                                                    {
+                                                                        let chained_c_ptr chained_comps.get(chained_ci)
+                                                                        guard chained_c_ptr <> null
+                                                                        {
+                                                                            let chained_c (*chained_c_ptr)
+                                                                            guard chained_c.value <> null
+                                                                            {
+                                                                                let chained_v (*chained_c.value)
+                                                                                chained_args_arr.add(this.collapse_operand_sequence#(chained_v))
+                                                                            }
+                                                                        }
+                                                                        set chained_ci: chained_ci + 1
+                                                                    }
+                                                                }
+                                                            }
+                                                            else
+                                                                0
+                                                        var new_args Vector[PlannedOperand]^rp(chained_args_arr)
                                                         let chained this.make_planned_call#(
                                                             next_args.loc,
                                                             method_name,
