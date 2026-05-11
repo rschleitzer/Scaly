@@ -5318,11 +5318,42 @@ define Planner
                     guard is_struct
                         guard is_stdlib_generic = false
                         {
-                            guard after_subst.generics <> null
+                            guard t.generics <> null
                             {
-                                let g (*after_subst.generics)
-                                guard g.length = conc.parameters.length
+                                let model_gens_inst (*t.generics)
+                                guard model_gens_inst.length = conc.parameters.length
                                 {
+                                    ; s110: recursively plan each generic arg
+                                    ; before instantiation. The args from
+                                    ; resolve_type_base# carry empty
+                                    ; mangled names (it only mangles
+                                    ; pointer/ref); for nested-generic
+                                    ; uses like Box[Box[int]] this means
+                                    ; the inner Box[int] flows into
+                                    ; instantiate_generic# as `Box`
+                                    ; with mangled="", and the spec'd
+                                    ; struct's property type bottoms
+                                    ; out with empty mangled name. That
+                                    ; makes map_type's lookup_struct_cache
+                                    ; miss and the outer Box[Box[int]]'s
+                                    ; value field emits as opaque ptr
+                                    ; instead of `%_Z3BoxIiE`. Mirrors
+                                    ; the s96 recursive plan_type# pass
+                                    ; for pointer/ref generics.
+                                    var canon_gens_inst Vector[PlannedType]^rp(model_gens_inst.length)
+                                    var ggi: size_t 0
+                                    while ggi < model_gens_inst.length
+                                    {
+                                        let gp_ptr model_gens_inst.get(ggi)
+                                        guard gp_ptr <> null
+                                        {
+                                            let gp (*gp_ptr)
+                                            let cgi this.plan_type#(gp)
+                                            canon_gens_inst.put(ggi, cgi)
+                                        }
+                                        set ggi: ggi + 1
+                                    }
+
                                     ; s109: preserve the call-site lifetime
                                     ; (^page / $ / #) on the specialised
                                     ; PlannedType. instantiate_generic#
@@ -5332,7 +5363,7 @@ define Planner
                                     ; `Container[int]^page_ptr(...)` loses
                                     ; the page-pointer arg at the ctor
                                     ; call site (`<null operand!>`).
-                                    let inst this.instantiate_generic#(canonical_name, g, after_subst.loc)
+                                    let inst this.instantiate_generic#(canonical_name, canon_gens_inst, after_subst.loc)
                                     return PlannedType(
                                         inst.loc,
                                         inst.name,

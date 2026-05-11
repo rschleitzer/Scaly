@@ -562,8 +562,16 @@ define Emitter
         guard cached.handle <> null
             return cached
 
-        ; Check intrinsic types
-        let intr_type map_intrinsic_type(planned_type.name)
+        ; Check intrinsic types via the cstring-literal lookup. The
+        ; Vector-based map_intrinsic_type stores names from
+        ; init_intrinsic_types' `String$(...)` values whose `data`
+        ; dangles after init returns, so it silently misses "int"
+        ; / "size_t" etc. and falls through to the opaque-ptr
+        ; fallback. That made `pointer[int]` map_type's elem_ty for
+        ; GEP/load come out as ptr instead of i64 — generic-spec'd
+        ; method bodies emitted `gep ptr / load ptr / ret 0` instead
+        ; of `gep i64 / load i64 / ret %deref` (s110).
+        let intr_type map_intrinsic_type_by_name(planned_type.name)
         guard intr_type.handle <> null
             return intr_type
 
