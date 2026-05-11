@@ -5359,38 +5359,59 @@ define Planner
                     guard is_struct
                         guard is_stdlib_generic = false
                         {
-                            guard t.generics <> null
+                            guard after_subst.generics <> null
                             {
-                                let model_gens_inst (*t.generics)
-                                guard model_gens_inst.length = conc.parameters.length
+                                let g (*after_subst.generics)
+                                guard g.length = conc.parameters.length
                                 {
                                     ; s110: recursively plan each generic arg
-                                    ; before instantiation. The args from
-                                    ; resolve_type_base# carry empty
-                                    ; mangled names (it only mangles
-                                    ; pointer/ref); for nested-generic
-                                    ; uses like Box[Box[int]] this means
-                                    ; the inner Box[int] flows into
-                                    ; instantiate_generic# as `Box`
-                                    ; with mangled="", and the spec'd
-                                    ; struct's property type bottoms
-                                    ; out with empty mangled name. That
-                                    ; makes map_type's lookup_struct_cache
-                                    ; miss and the outer Box[Box[int]]'s
-                                    ; value field emits as opaque ptr
-                                    ; instead of `%_Z3BoxIiE`. Mirrors
-                                    ; the s96 recursive plan_type# pass
-                                    ; for pointer/ref generics.
-                                    var canon_gens_inst Vector[PlannedType]^rp(model_gens_inst.length)
+                                    ; before instantiation, so nested generics
+                                    ; like Box[Box[int]] propagate inner
+                                    ; mangled names. Without this, inner args
+                                    ; from resolve_type_base# carry empty
+                                    ; mangled names and the spec'd struct's
+                                    ; property type bottoms out with empty
+                                    ; mangled — map_type's struct_cache miss
+                                    ; emits the outer's field as opaque ptr.
+                                    ; s115: skip the recursion when the inner
+                                    ; arg is already a struct (has non-empty
+                                    ; mangled_name) — the s110 case only
+                                    ; needs to fire for raw model types from
+                                    ; resolve_type_base#. Recursing on every
+                                    ; arg in instantiate_generic#'s loop
+                                    ; triggered deep stack growth in
+                                    ; scalyc.scaly self-compile because
+                                    ; nested-generic method bodies kept
+                                    ; re-entering plan_type# → instantiate_
+                                    ; generic# before the outer hit the
+                                    ; instantiated_structures cache.
+                                    var canon_gens_inst Vector[PlannedType]^rp(g.length)
                                     var ggi: size_t 0
-                                    while ggi < model_gens_inst.length
+                                    while ggi < g.length
                                     {
-                                        let gp_ptr model_gens_inst.get(ggi)
+                                        let gp_ptr g.get(ggi)
                                         guard gp_ptr <> null
                                         {
                                             let gp (*gp_ptr)
-                                            let cgi this.plan_type#(gp)
-                                            canon_gens_inst.put(ggi, cgi)
+                                            guard gp.mangled_name.get_length() > 0
+                                                canon_gens_inst.put(ggi, gp)
+                                            guard gp.mangled_name.get_length() = 0
+                                            {
+                                                guard t.generics <> null
+                                                {
+                                                    let mg (*t.generics)
+                                                    guard ggi < mg.length
+                                                    {
+                                                        let mp_ptr mg.get(ggi)
+                                                        guard mp_ptr <> null
+                                                        {
+                                                            let mp (*mp_ptr)
+                                                            let cgi this.plan_type#(mp)
+                                                            canon_gens_inst.put(ggi, cgi)
+                                                        }
+                                                    }
+                                                }
+                                            }
                                         }
                                         set ggi: ggi + 1
                                     }

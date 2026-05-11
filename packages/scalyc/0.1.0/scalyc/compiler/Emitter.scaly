@@ -3751,6 +3751,20 @@ define Emitter
                             set is_npo: false
                     }
                     set union_type: map_type(rt)
+                    ; s114: when map_type falls back to opaque ptr (the
+                    ; underlying union/struct isn't in struct_cache), use
+                    ; the `{ ptr }` placeholder struct instead. Stage-1
+                    ; calls into cross-package functions returning unions
+                    ; that aren't fully planned here (e.g. Parser.parse_file
+                    ; returns FileSyntax in a union throw shape); without
+                    ; this, emit_call's sret slot is allocated as `{ ptr }`
+                    ; (via get_or_create_struct_placeholder) but the
+                    ; subsequent `LLVMBuildStructGEP2(union_type, ...)`
+                    ; here uses `ptr` and emits an invalid
+                    ; `getelementptr inbounds ptr, ptr %sret.result, ...`
+                    ; that llc/IRTranslator rejects on -c.
+                    guard LLVMGetTypeKind(union_type) = LLVMTypeKind.Pointer()
+                        set union_type: get_or_create_struct_placeholder(rt.name, rt.mangled_name)
                 }
             }
         }
@@ -3873,9 +3887,26 @@ define Emitter
                     {
                         let data_ptr LLVMBuildStructGEP2(builder, union_type, union_ptr, 1, "variant.c_data().ptr")
                         let var_ty map_type(when_case.variant_type)
-                        let var_ptr LLVMBuildBitCast(builder, data_ptr, LLVMPointerTypeInContext(context, 0), "variant.c_data().cast")
-                        let var_value LLVMBuildLoad2(builder, var_ty, var_ptr, "variant.val")
-                        define_variable(when_case.name, var_value)
+                        ; s114: bail when variant_type is unresolved (mapped
+                        ; to void). LLVMBuildLoad2 of void calls into
+                        ; DataLayout::getTypeSizeInBits which SIGTRAPs on
+                        ; the VoidTy assertion. Symptom: stage-1 -c on
+                        ; parser.scaly / Modeler.scaly / Emitter.scaly aborts
+                        ; in emit_choose during the tagged-union variant
+                        ; payload extraction. Bind the variable to a null
+                        ; placeholder so subsequent code in the arm doesn't
+                        ; crash either; the actual value being wrong is
+                        ; preferable to aborting the whole module emit.
+                        guard LLVMGetTypeKind(var_ty) = LLVMTypeKind.Void()
+                        {
+                            define_variable(when_case.name, LLVMValueRef(null))
+                        }
+                        guard LLVMGetTypeKind(var_ty) <> LLVMTypeKind.Void()
+                        {
+                            let var_ptr LLVMBuildBitCast(builder, data_ptr, LLVMPointerTypeInContext(context, 0), "variant.c_data().cast")
+                            let var_value LLVMBuildLoad2(builder, var_ty, var_ptr, "variant.val")
+                            define_variable(when_case.name, var_value)
+                        }
                     }
                 }
 
