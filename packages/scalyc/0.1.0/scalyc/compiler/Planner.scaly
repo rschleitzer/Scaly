@@ -3345,13 +3345,26 @@ define Planner
                                             let extern_impl PlannedImplementation.Extern(
                                                 PlannedExternImpl(result.loc)
                                             )
+                                            ; s119: honor mm.requires_page_param so cross-package /
+                                            ; recursive-mid-planning stub IR signature matches the
+                                            ; proper PlannedFunction emitted later. Without this,
+                                            ; an early stub locks in a no-page-slot LLVM signature
+                                            ; for any function whose body recursively calls itself
+                                            ; (or is called before plan_function# records it).
+                                            var pp_ref_a: ref[String]? null
+                                            guard mm.requires_page_param
+                                            {
+                                                var pp_h_a Vector[String]^rp(1)
+                                                pp_h_a.put(0, String^rp("rp"))
+                                                set pp_ref_a: pp_h_a.get(0)
+                                            }
                                             this.record_function(PlannedFunction(
                                                 result.loc,
                                                 false,
                                                 false,
                                                 suffix,
                                                 mm.mangled_name,
-                                                null,
+                                                pp_ref_a,
                                                 &items_holder,
                                                 rt_holder.get(0),
                                                 mm.throws_type,
@@ -3477,13 +3490,21 @@ define Planner
                                                     let extern_impl2 PlannedImplementation.Extern(
                                                         PlannedExternImpl(result.loc)
                                                     )
+                                                    ; s119: see stub-A site above.
+                                                    var pp_ref_b: ref[String]? null
+                                                    guard mm3.requires_page_param
+                                                    {
+                                                        var pp_h_b Vector[String]^rp(1)
+                                                        pp_h_b.put(0, String^rp("rp"))
+                                                        set pp_ref_b: pp_h_b.get(0)
+                                                    }
                                                     this.record_function(PlannedFunction(
                                                         result.loc,
                                                         false,
                                                         false,
                                                         last_acc.name,
                                                         mm3.mangled_name,
-                                                        null,
+                                                        pp_ref_b,
                                                         &items_holder2,
                                                         rt_holder2.get(0),
                                                         mm3.throws_type,
