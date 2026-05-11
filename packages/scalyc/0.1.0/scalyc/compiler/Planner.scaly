@@ -260,6 +260,16 @@ define Planner
         instantiated_functions: Array[PlannedFunction]
         instantiated_globals: Array[PlannedGlobal]
 
+        ; s116: cycle detection for instantiate_generic#. Holds the
+        ; mangled names of generics currently being planned but not yet
+        ; recorded in instantiated_structures/_unions. Without this,
+        ; cross-module nested-generic chains (e.g. scalyc.scaly compile)
+        ; recurse plan_type# → instantiate_generic# → plan_structure# →
+        ; plan_function# → plan_type# without bound and blow the stack
+        ; in resolve_type_base#. Mirrors stage-0's FunctionsBeingPlanned
+        ; set (Planner.cpp:11685).
+        instantiating_structures: Array[String]
+
         ; Free-function registry. Entries are appended for every
         ; top-level Function encountered during the concept-registration
         ; pass. A single name can appear multiple times for overloads —
@@ -340,6 +350,7 @@ define Planner
             set instantiated_unions: Array[scalyc.compiler.Plan.PlannedUnion]^page()
             set instantiated_functions: Array[PlannedFunction]^page()
             set instantiated_globals: Array[PlannedGlobal]^page()
+            set instantiating_structures: Array[String]^page()
             set model_functions: Array[KeyValuePair[String, Function]]^page()
             set model_operators: Array[KeyValuePair[String, Operator]]^page()
             set search_paths: Array[String]^page()
@@ -1652,8 +1663,33 @@ define Planner
                 guard this.has_instantiated_union(mangled)
                     set already_cached: true
 
+            ; s116: cycle detection. Re-entry during cross-module
+            ; nested-generic planning (plan_structure# walks members →
+            ; plan_function# → plan_type# → instantiate_generic#) was
+            ; blowing the stack in resolve_type_base# before the outer
+            ; struct landed in instantiated_structures. If `mangled` is
+            ; already in instantiating_structures, return the shell
+            ; PlannedType without re-planning. The outer call eventually
+            ; completes and records the structure.
             guard already_cached = false
             {
+                var i: size_t 0
+                while i < instantiating_structures.length
+                {
+                    let im_ptr instantiating_structures.get(i)
+                    guard im_ptr <> null
+                    {
+                        guard im_ptr.equals(mangled)
+                            set already_cached: true
+                    }
+                    set i: i + 1
+                }
+            }
+
+            guard already_cached = false
+            {
+                instantiating_structures.add(mangled)
+
                 let saved_subst_len type_substitutions.length
 
                 ; Bind each generic parameter name to its concrete argument.
@@ -1693,6 +1729,12 @@ define Planner
 
                 ; Pop substitutions back to what the caller had.
                 set type_substitutions.length: saved_subst_len
+
+                ; Pop instantiating-marker. Length-based pop matches the
+                ; type_substitutions discipline above; the add() above
+                ; was the only push for this frame.
+                guard instantiating_structures.length > 0
+                    set instantiating_structures.length: instantiating_structures.length - 1
             }
 
             PlannedType(
