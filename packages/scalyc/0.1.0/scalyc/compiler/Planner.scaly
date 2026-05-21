@@ -8037,12 +8037,35 @@ define Planner
             ; this, `function#(x: T)` mangles correctly (PN4scaly...) but
             ; the LLVM signature drops the rp slot and stage-1 callers
             ; that pass `rp` first end up loading the wrong arg.
+            ;
+            ; s131: also set page_param_ref when needs_implicit_return_page
+            ; is true (return-by-page allocation injects an implicit page
+            ; arg the same way `#` does). Without this, the mangled name
+            ; includes `PN4scaly6memory4PageE` (via has_page above) but the
+            ; PlannedFunction's page_parameter stays null. emit_function_decl
+            ; then computes page_offset=0 and emits 3 LLVM params instead
+            ; of 4 — emit_function_body's variable-binding loop then maps
+            ; user params (this, i) to LLVMGetParam(1, 2), which actually
+            ; correspond to the page + this slots in the 4-arg LLVM
+            ; signature created by the s78/s83 extern-decl path (which
+            ; sees requires_page_param=true via MethodMatch). Symptom:
+            ; `Vector.get` body's `data + i` emits `add ptr %data, %2`
+            ; where %2 is the this-ptr slot, not the i index.
             var page_param_ref: ref[String]? null
             guard f.page_parameter <> null
             {
                 var pp_holder Vector[String]^rp(1)
                 pp_holder.put(0, String^rp((*f.page_parameter)))
                 set page_param_ref: pp_holder.get(0)
+            }
+            guard f.page_parameter = null
+            {
+                guard Planner.needs_implicit_return_page(f)
+                {
+                    var pp_holder Vector[String]^rp(1)
+                    pp_holder.put(0, String^rp("rp"))
+                    set page_param_ref: pp_holder.get(0)
+                }
             }
 
             let result PlannedFunction(
