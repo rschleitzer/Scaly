@@ -5562,6 +5562,24 @@ define Planner
                                     ; re-entering plan_type# → instantiate_
                                     ; generic# before the outer hit the
                                     ; instantiated_structures cache.
+                                    ; s133: refine the s115 short-circuit. Using `gp`
+                                    ; directly when its mangled is non-empty is safe
+                                    ; for inner args that are already fully specialised
+                                    ; (e.g. `Box[int]` arriving via type substitution).
+                                    ; But when the model side `mp` has generics yet
+                                    ; `gp.generics` is null, `gp` is the ABSTRACT
+                                    ; template (mangled looks like `_Z12KeyValuePair`,
+                                    ; no `I...E` suffix) and reusing it propagates the
+                                    ; truncated mangling through every nesting layer.
+                                    ; Concretely: HashMap[String, LocalBinding] uses
+                                    ; Slot[KeyValuePair[K, V]] internally; without this
+                                    ; carve-out, Vector<Vector<KeyValuePair<String,
+                                    ; LocalBinding>>>::ctor ends up named
+                                    ; `_ZN6VectorI6VectorI12KeyValuePairEEC1...`,
+                                    ; dropping the inner `I6String12LocalBindingE`.
+                                    ; Re-plan via plan_type# in this case so the
+                                    ; current substitutions (K → String, V →
+                                    ; LocalBinding) drive the inner mangling.
                                     var canon_gens_inst Vector[PlannedType]^rp(g.length)
                                     var ggi: size_t 0
                                     while ggi < g.length
@@ -5570,9 +5588,28 @@ define Planner
                                         guard gp_ptr <> null
                                         {
                                             let gp (*gp_ptr)
-                                            guard gp.mangled_name.get_length() > 0
-                                                canon_gens_inst.put(ggi, gp)
+                                            var need_replan: bool false
                                             guard gp.mangled_name.get_length() = 0
+                                                set need_replan: true
+                                            guard gp.generics = null
+                                            {
+                                                guard t.generics <> null
+                                                {
+                                                    let mg_check (*t.generics)
+                                                    guard ggi < mg_check.length
+                                                    {
+                                                        let mp_check_ptr mg_check.get(ggi)
+                                                        guard mp_check_ptr <> null
+                                                        {
+                                                            guard mp_check_ptr.generics <> null
+                                                                set need_replan: true
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                            guard need_replan = false
+                                                canon_gens_inst.put(ggi, gp)
+                                            guard need_replan
                                             {
                                                 guard t.generics <> null
                                                 {
