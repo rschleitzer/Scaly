@@ -1161,11 +1161,19 @@ define Emitter
             }
         }
 
-        ; Set linkage
+        ; Set linkage. s127: non-private functions get LinkOnceODR so
+        ; stdlib generic instantiations emitted by stage-1 merge with
+        ; the same symbols in libscaly.a / libscalyc.a rather than
+        ; producing "duplicate symbol" at link time. C++ uses this
+        ; linkage for template instantiations under the ODR rule:
+        ; multiple definitions are allowed, the linker picks one. macOS
+        ; Mach-O lowers LinkOnceODR to weak. Functions that are unique
+        ; (main, user-defined non-template helpers) still link correctly
+        ; — there's only one definition, so the "pick one" is a no-op.
         if func.is_private
             LLVMSetLinkage(llvm_func, LLVMLinkage.Internal())
         else
-            LLVMSetLinkage(llvm_func, LLVMLinkage.External())
+            LLVMSetLinkage(llvm_func, LLVMLinkage.LinkOnceODR())
 
         ; Cache the function
         cache_function(func.mangled_name, llvm_func)
