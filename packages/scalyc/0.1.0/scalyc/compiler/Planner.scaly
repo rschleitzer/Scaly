@@ -3601,50 +3601,145 @@ define Planner
                                             ; produce `_ZN7Console7printlnEP2i8`
                                             ; (string-literal type) which
                                             ; doesn't match libscaly's symbol.
+                                            ;
+                                            ; s129: when the prefix is a
+                                            ; Namespace concept, look up the
+                                            ; function within ITS members
+                                            ; first. resolve_function_call#
+                                            ; uses the global model_functions
+                                            ; registry (keyed by bare name),
+                                            ; so for Console.println it can
+                                            ; resolve to the PRELUDE's
+                                            ; `println(pointer[i8])` via
+                                            ; exact-match — even though we're
+                                            ; trying to dispatch to
+                                            ; Console.println(pointer[const_char]).
+                                            ; Without this carve-out, the
+                                            ; rebuild produces
+                                            ; `_ZN7Console7printlnEP2i8` (using
+                                            ; prelude's `pointer[i8]`) rather
+                                            ; than `...P10const_char`, and
+                                            ; the link fails against
+                                            ; libscaly's `..P10const_char`.
                                             var items_arr Array[PlannedItem]$()
+                                            var used_ns_local: bool false
+                                            choose nsc.definition
+                                                when ns_def: Namespace
+                                                {
+                                                    var mi_ns: size_t 0
+                                                    while mi_ns < ns_def.members.length
+                                                    {
+                                                        let m_ptr ns_def.members.get(mi_ns)
+                                                        guard m_ptr <> null
+                                                        {
+                                                            let mem (*m_ptr)
+                                                            choose mem
+                                                                when nf: Function
+                                                                {
+                                                                    guard used_ns_local = false
+                                                                    {
+                                                                        guard nf.name.equals(suffix)
+                                                                        {
+                                                                            ; Skip leading 'this'.
+                                                                            var pstart: size_t 0
+                                                                            guard nf.input.length > 0
+                                                                            {
+                                                                                let fi0 nf.input.get(0)
+                                                                                guard fi0 <> null
+                                                                                {
+                                                                                    guard fi0.name <> null
+                                                                                    {
+                                                                                        let fname (*fi0.name)
+                                                                                        guard fname.equals(String$("this"))
+                                                                                            set pstart: 1
+                                                                                    }
+                                                                                }
+                                                                            }
+                                                                            let expected_arity nf.input.length - pstart
+                                                                            guard expected_arity = arg_types.length
+                                                                            {
+                                                                                var pi_ns: size_t pstart
+                                                                                while pi_ns < nf.input.length
+                                                                                {
+                                                                                    let p_ptr nf.input.get(pi_ns)
+                                                                                    guard p_ptr <> null
+                                                                                    {
+                                                                                        guard p_ptr.type <> null
+                                                                                        {
+                                                                                            let pt (*p_ptr.type)
+                                                                                            let planned_p this.plan_type#(pt)
+                                                                                            var ity_holder Vector[PlannedType]^rp(1)
+                                                                                            ity_holder.put(0, planned_p)
+                                                                                            items_arr.add(PlannedItem(
+                                                                                                result.loc,
+                                                                                                false,
+                                                                                                null,
+                                                                                                ity_holder.get(0),
+                                                                                                null
+                                                                                            ))
+                                                                                        }
+                                                                                    }
+                                                                                    set pi_ns: pi_ns + 1
+                                                                                }
+                                                                                set used_ns_local: true
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }
+                                                                else
+                                                                    0
+                                                        }
+                                                        set mi_ns: mi_ns + 1
+                                                    }
+                                                }
+                                                else
+                                                    0
                                             let mm_for_params (*match_ref)
                                             let param_types_ref mm_for_params.parameter_types
-                                            guard param_types_ref <> null
+                                            guard used_ns_local = false
                                             {
-                                                let pts (*param_types_ref)
-                                                var ai: size_t 0
-                                                while ai < pts.length
+                                                guard param_types_ref <> null
                                                 {
-                                                    let pt_ptr pts.get(ai)
-                                                    guard pt_ptr <> null
+                                                    let pts (*param_types_ref)
+                                                    var ai: size_t 0
+                                                    while ai < pts.length
                                                     {
-                                                        var ity_holder Vector[PlannedType]^rp(1)
-                                                        ity_holder.put(0, (*pt_ptr))
-                                                        items_arr.add(PlannedItem(
-                                                            result.loc,
-                                                            false,
-                                                            null,
-                                                            ity_holder.get(0),
-                                                            null
-                                                        ))
+                                                        let pt_ptr pts.get(ai)
+                                                        guard pt_ptr <> null
+                                                        {
+                                                            var ity_holder Vector[PlannedType]^rp(1)
+                                                            ity_holder.put(0, (*pt_ptr))
+                                                            items_arr.add(PlannedItem(
+                                                                result.loc,
+                                                                false,
+                                                                null,
+                                                                ity_holder.get(0),
+                                                                null
+                                                            ))
+                                                        }
+                                                        set ai: ai + 1
                                                     }
-                                                    set ai: ai + 1
                                                 }
-                                            }
-                                            guard param_types_ref = null
-                                            {
-                                                var ai: size_t 0
-                                                while ai < arg_types.length
+                                                guard param_types_ref = null
                                                 {
-                                                    let at_ptr arg_types.get(ai)
-                                                    guard at_ptr <> null
+                                                    var ai: size_t 0
+                                                    while ai < arg_types.length
                                                     {
-                                                        var ity_holder Vector[PlannedType]^rp(1)
-                                                        ity_holder.put(0, (*at_ptr))
-                                                        items_arr.add(PlannedItem(
-                                                            result.loc,
-                                                            false,
-                                                            null,
-                                                            ity_holder.get(0),
-                                                            null
-                                                        ))
+                                                        let at_ptr arg_types.get(ai)
+                                                        guard at_ptr <> null
+                                                        {
+                                                            var ity_holder Vector[PlannedType]^rp(1)
+                                                            ity_holder.put(0, (*at_ptr))
+                                                            items_arr.add(PlannedItem(
+                                                                result.loc,
+                                                                false,
+                                                                null,
+                                                                ity_holder.get(0),
+                                                                null
+                                                            ))
+                                                        }
+                                                        set ai: ai + 1
                                                     }
-                                                    set ai: ai + 1
                                                 }
                                             }
                                             var items_holder Vector[PlannedItem]^rp(items_arr)
