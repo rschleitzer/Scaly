@@ -2470,6 +2470,7 @@ define Emitter
                                                         {
                                                             var current_ptr var_ptr
                                                             var chain_ok: bool true
+                                                            var last_field_is_ptr: bool false
                                                             var ci: size_t 0
                                                             while ci < chain.length
                                                             {
@@ -2494,6 +2495,14 @@ define Emitter
                                                                     guard chain_ok
                                                                     {
                                                                         let acc (*acc_ptr)
+                                                                        ; s122: remember whether the field's
+                                                                        ; IR slot is `ptr` (heap-stored, e.g.
+                                                                        ; stage-1's `Array[T]^page()` fields)
+                                                                        ; vs. an inline struct (e.g.
+                                                                        ; `Parser.lexer: Lexer`). Drives the
+                                                                        ; post-loop deref-load decision.
+                                                                        let field_ir_ty LLVMStructGetTypeAtIndex(current_struct_ty, acc.field_index as int)
+                                                                        set last_field_is_ptr: LLVMGetTypeKind(field_ir_ty) = LLVMTypeKind.Pointer()
                                                                         set current_ptr: LLVMBuildStructGEP2(builder, current_struct_ty, current_ptr, acc.field_index as u32, "field.inplace")
                                                                         guard ci + 1 < chain.length
                                                                             set current_struct_ty: map_type(acc.result_type)
@@ -2503,6 +2512,20 @@ define Emitter
                                                             }
                                                             guard chain_ok
                                                             {
+                                                                ; s122: load through if the final field's
+                                                                ; IR slot is `ptr`. Otherwise the callee
+                                                                ; receives `&slot_addr` and reads garbage
+                                                                ; when treating it as the struct start —
+                                                                ; breaks every method receiver whose field
+                                                                ; is heap-stored (`Array[T]^page()`,
+                                                                ; `Vector[T]^page()`, etc.) or genuinely
+                                                                ; `pointer[T]`/`ref[T]`. Inline-struct
+                                                                ; fields (e.g. `Parser.lexer`) keep the
+                                                                ; pre-s122 behavior (pass slot ptr = struct
+                                                                ; start). Mirrors C++ stage-0's reliance on
+                                                                ; inline struct storage at Emitter.cpp:3984.
+                                                                guard last_field_is_ptr
+                                                                    set current_ptr: LLVMBuildLoad2(builder, LLVMPointerTypeInContext(context, 0), current_ptr, "deref.recv")
                                                                 set arg_value: current_ptr
                                                                 set direct_alloca: true
                                                             }
