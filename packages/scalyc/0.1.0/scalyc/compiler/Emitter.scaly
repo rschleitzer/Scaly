@@ -738,13 +738,15 @@ define Emitter
         }
         guard name.equals("Array")
         {
-            ; Array[T]: { length, data: ptr, capacity, page }
-            var fields Vector[LLVMTypeRef]#(4)
+            ; Array[T] (packages/scaly/0.1.0/scaly/containers/Array.scaly):
+            ; { length: size_t, vector: pointer[Vector[T]] } — 2 fields.
+            ; Pre-s121 had a 4-field layout that didn't match the real
+            ; stdlib definition; corrected so deref-load through an
+            ; Array-typed field GEPs to the right offsets.
+            var fields Vector[LLVMTypeRef]#(2)
             fields.put(0, i64_ty)
             fields.put(1, ptr_ty)
-            fields.put(2, i64_ty)
-            fields.put(3, ptr_ty)
-            return LLVMStructTypeInContext(context, fields.data, 4, 0)
+            return LLVMStructTypeInContext(context, fields.data, 2, 0)
         }
         guard name.equals("List")
         {
@@ -1744,17 +1746,36 @@ define Emitter
                 }
                 else
                 {
-                    ; If current value is still a pointer (e.g. ref/pointer field
-                    ; from a previous extractvalue), bail safely. The deref-and-extract
-                    ; path through map_type + LLVMBuildLoad2 SEGVs in stage-1 when
-                    ; access.parent_type is the pointee struct type — leaving it for a
-                    ; future session. Returning null mirrors the original s55 inverted-
-                    ; guard behaviour for multi-step chains while preserving correct
-                    ; extractvalue emission for the common chain.length=1 case used by
-                    ; cli.run guards.
-                    let cur_kind LLVMGetTypeKind(LLVMTypeOf(current_value))
+                    var cur_kind LLVMGetTypeKind(LLVMTypeOf(current_value))
+
+                    ; s121: deref-load when current_value is a pointer
+                    ; to a struct. Happens when a previous chain step
+                    ; extracted a field whose stage-1 IR layout is `ptr`
+                    ; (heap-stored struct field like
+                    ; `scope_bindings: Array[...]^page()` or a
+                    ; `ref[T]?` value). Get the struct layout from
+                    ; access.parent_type via map_type, with a
+                    ; synthesize_literal_struct fallback for known
+                    ; stdlib generics (Vector / Array / HashMap / List)
+                    ; that map_type can't resolve. Load through, then
+                    ; the existing extractvalue path runs against a
+                    ; real struct value. Pre-s121 this branch bailed
+                    ; to LLVMValueRef(null), which left Planner.push_scope
+                    ; (and other Planner methods touching
+                    ; `this.scope_bindings.length` etc.) with empty
+                    ; bodies after the s120 in-place chain bail.
                     guard cur_kind = LLVMTypeKind.Pointer()
-                        return LLVMValueRef(null)
+                    {
+                        var deref_struct_ty map_type(access.parent_type)
+                        guard LLVMGetTypeKind(deref_struct_ty) <> LLVMTypeKind.Struct()
+                            set deref_struct_ty: synthesize_literal_struct(access.parent_type.name)
+                        guard deref_struct_ty.handle = null
+                            return LLVMValueRef(null)
+                        guard LLVMGetTypeKind(deref_struct_ty) <> LLVMTypeKind.Struct()
+                            return LLVMValueRef(null)
+                        set current_value: LLVMBuildLoad2(builder, deref_struct_ty, current_value, "deref")
+                        set cur_kind: LLVMGetTypeKind(LLVMTypeOf(current_value))
+                    }
 
                     ; Defensive: extractvalue requires a non-null
                     ; aggregate with a real type. If the chain step
