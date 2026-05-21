@@ -310,9 +310,19 @@ define Emitter
     current_function: LLVMValueRef
     current_block: LLVMBasicBlockRef
     current_function_can_throw: bool
-    ; Local variables: name -> LLVM value
+    ; Local variables: name -> LLVM value. Flat tables; per-scope
+    ; visibility maintained by scope_marks below.
     local_var_names: ref[Vector[String]]?
     local_var_values: ref[Vector[LLVMValueRef]]?
+    ; s128: scope stack. Each entry is a snapshot of
+    ; local_var_names.length at scope entry. enter_scope pushes;
+    ; exit_scope pops and truncates names+values back to the snapshot,
+    ; dropping any defines that happened inside the scope. Sibling
+    ; choose/if arms must each enter/exit a fresh scope, otherwise the
+    ; first arm's `var X` leaks into subsequent arms' lookups (s123
+    ; comment block lists this as the root cause of 106 dom errors and
+    ; the buggy stdlib Vector emissions that surfaced in s126 testing).
+    scope_marks: ref[Vector[size_t]]?
     ; Region/lifetime management
     current_region: RegionInfo
     ; Loop context stack for break/continue
@@ -348,6 +358,7 @@ define Emitter
         set current_function_can_throw: false
         set local_var_names: Vector[String]^page()
         set local_var_values: Vector[LLVMValueRef]^page()
+        set scope_marks: Vector[size_t]^page()
         set current_region: RegionInfo^page()
         set loop_stack: Vector[LoopContext]^page()
         set block_cleanup_stack: Vector[BlockCleanupContext]^page()
@@ -548,6 +559,39 @@ define Emitter
     {
         set local_var_names.length: 0
         set local_var_values.length: 0
+        set scope_marks.length: 0
+    }
+
+    ; s128: push a marker recording the current local_var_names.length.
+    ; Sites that introduce a fresh Scaly scope (choose case body, if
+    ; branch, while/for body, try arms, statement block) call enter_scope
+    ; on entry and exit_scope right before their terminator. Mirrors
+    ; stage-0's Emitter::enterScope / exitScope (which use a SmallVector
+    ; of similar snapshots).
+    procedure enter_scope(this)
+    {
+        scope_marks.add(local_var_names.length)
+    }
+
+    ; s128: pop the most recent scope marker, truncate local_var_names
+    ; and local_var_values back to that snapshot so any define_variable
+    ; calls made inside the scope are forgotten. Sibling arms calling
+    ; enter_scope/exit_scope around their bodies stop leaking names into
+    ; each other; lookup_variable's forward-iteration first-match rule
+    ; now picks the most recently defined version visible at the current
+    ; point.
+    procedure exit_scope(this)
+    {
+        guard scope_marks.length = 0
+            return  ; underflow: silently no-op
+        let mark_ptr scope_marks.get(scope_marks.length - 1)
+        guard mark_ptr <> null
+        {
+            let mark (*mark_ptr)
+            set local_var_names.length: mark
+            set local_var_values.length: mark
+        }
+        set scope_marks.length: scope_marks.length - 1
     }
 
     ; ========================================================================
@@ -1161,19 +1205,31 @@ define Emitter
             }
         }
 
-        ; Set linkage. s127: non-private functions get LinkOnceODR so
-        ; stdlib generic instantiations emitted by stage-1 merge with
-        ; the same symbols in libscaly.a / libscalyc.a rather than
-        ; producing "duplicate symbol" at link time. C++ uses this
+        ; Set linkage. s127: non-private functions WITH BODIES get
+        ; LinkOnceODR so stdlib generic instantiations emitted by stage-1
+        ; merge with the same symbols in libscaly.a / libscalyc.a rather
+        ; than producing "duplicate symbol" at link time. C++ uses this
         ; linkage for template instantiations under the ODR rule:
         ; multiple definitions are allowed, the linker picks one. macOS
-        ; Mach-O lowers LinkOnceODR to weak. Functions that are unique
-        ; (main, user-defined non-template helpers) still link correctly
-        ; — there's only one definition, so the "pick one" is a no-op.
+        ; Mach-O lowers LinkOnceODR to weak. Extern declarations (no
+        ; body — `function puts(...) extern`) must stay External; LLVM
+        ; rejects `declare linkonce_odr` because LinkOnceODR semantics
+        ; require a definition.
+        var is_extern: bool false
+        choose func.impl
+            when e: Extern
+                set is_extern: true
+            else
+                0
         if func.is_private
             LLVMSetLinkage(llvm_func, LLVMLinkage.Internal())
         else
-            LLVMSetLinkage(llvm_func, LLVMLinkage.LinkOnceODR())
+        {
+            if is_extern
+                LLVMSetLinkage(llvm_func, LLVMLinkage.External())
+            else
+                LLVMSetLinkage(llvm_func, LLVMLinkage.LinkOnceODR())
+        }
 
         ; Cache the function
         cache_function(func.mangled_name, llvm_func)
@@ -3630,6 +3686,11 @@ define Emitter
             set else_block: create_block(String$("if.else"))
         let merge_block create_block(String$("if.end"))
 
+        ; s128: capture the cond block (current insert point right before
+        ; the CondBr) so the no-else PHI fixup below can use it as the
+        ; false-path predecessor for the undef incoming.
+        let cond_block LLVMGetInsertBlock(builder)
+
         ; Branch based on condition
         if else_block.handle <> null
             LLVMBuildCondBr(builder, bool_cond, then_block, else_block)
@@ -3638,6 +3699,9 @@ define Emitter
 
         ; Emit then block
         LLVMPositionBuilderAtEnd(builder, then_block)
+        ; s128: fresh scope for the then-branch so any `var`/`let` in
+        ; it doesn't leak into the else-branch or the code after merge.
+        enter_scope()
         var then_value LLVMValueRef(null)
 
         ; session 25 pattern: choose ref[T]? when x: Some yields a garbage
@@ -3662,6 +3726,8 @@ define Emitter
         guard then_term.handle = null
             LLVMBuildBr(builder, merge_block)
         let then_end_block LLVMGetInsertBlock(builder)
+        ; s128: balance the then-branch scope.
+        exit_scope()
 
         ; Emit else block if present
         var else_value LLVMValueRef(null)
@@ -3670,6 +3736,8 @@ define Emitter
         guard else_block.handle <> null
         {
             LLVMPositionBuilderAtEnd(builder, else_block)
+            ; s128: fresh scope for the else-branch.
+            enter_scope()
 
             guard if_expr.alternative <> null
             {
@@ -3685,6 +3753,8 @@ define Emitter
             guard else_term.handle = null
                 LLVMBuildBr(builder, merge_block)
             set else_end_block: LLVMGetInsertBlock(builder)
+            ; s128: balance the else-branch scope.
+            exit_scope()
         }
 
         ; Continue at merge block
@@ -4064,6 +4134,11 @@ define Emitter
                 set seen_count: seen_count + 1
 
                 LLVMPositionBuilderAtEnd(builder, case_block)
+                ; s128: fresh per-case scope. The variant-name binding
+                ; (define_variable just below) and any `let`/`var` in
+                ; the consequent must not leak into sibling case bodies
+                ; or the code after the choose.
+                enter_scope()
 
                 ; Extract variant data and bind to variable. For NPO
                 ; Option, the Some payload IS the non-null pointer; bind
@@ -4180,12 +4255,19 @@ define Emitter
                     }
                     LLVMBuildBr(builder, merge_block)
                 }
+                ; s128: balance the enter_scope above. Place after the
+                ; case_term/LLVMBuildBr branch so the marker pops once
+                ; the case body is fully emitted (and the new alloca
+                ; sites it introduced via `var`/`let` are forgotten).
+                exit_scope()
                 }
             }
         }
 
         ; Emit alternative (else)
         LLVMPositionBuilderAtEnd(builder, default_block)
+        ; s128: default-block scope.
+        enter_scope()
         var alt_value LLVMValueRef(null)
         guard choose_expr.alternative <> null
         {
@@ -4229,6 +4311,8 @@ define Emitter
             }
             LLVMBuildBr(builder, merge_block)
         }
+        ; s128: balance default-block scope.
+        exit_scope()
 
         ; Continue at merge block
         LLVMPositionBuilderAtEnd(builder, merge_block)
@@ -4322,6 +4406,9 @@ define Emitter
 
         ; Emit body block
         LLVMPositionBuilderAtEnd(builder, body_block)
+        ; s128: fresh scope for the for-body so the loop counter binding
+        ; AND any `var`/`let` in the body don't leak past the loop.
+        enter_scope()
 
         ; Load current index and bind as loop variable
         let body_index LLVMBuildLoad2(builder, index_type, loop_counter, for_expr.identifier.c_data())
@@ -4334,6 +4421,8 @@ define Emitter
         let body_term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock(builder))
         guard body_term.handle = null
             LLVMBuildBr(builder, incr_block)
+        ; s128: balance.
+        exit_scope()
 
         ; Emit increment block: i++
         LLVMPositionBuilderAtEnd(builder, incr_block)
@@ -4432,6 +4521,8 @@ define Emitter
 
         ; Body block
         LLVMPositionBuilderAtEnd(builder, body_block)
+        ; s128: fresh scope for the iterator-for body.
+        enter_scope()
 
         ; Bind the loop variable to the next result (unwrapped from Option)
         ; For pointer-based iteration, next_result is already the element pointer
@@ -4443,6 +4534,8 @@ define Emitter
         let body_term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock(builder))
         guard body_term.handle = null
             LLVMBuildBr(builder, cond_block)
+        ; s128: balance.
+        exit_scope()
 
         ; Exit block
         LLVMPositionBuilderAtEnd(builder, exit_block)
@@ -4516,12 +4609,17 @@ define Emitter
 
         ; Emit body block
         LLVMPositionBuilderAtEnd(builder, body_block)
+        ; s128: fresh scope for the while-body so `var i 0; ...` inside
+        ; doesn't leak into outer code or sibling loop iterations.
+        enter_scope()
         emit_action(while_expr.body)
 
         ; Jump back to condition if not terminated
         let body_term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock(builder))
         guard body_term.handle = null
             LLVMBuildBr(builder, cond_block)
+        ; s128: balance.
+        exit_scope()
 
         ; Pop loop context
         pop_loop()
