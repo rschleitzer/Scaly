@@ -2146,6 +2146,61 @@ define Emitter
             set user_arg_count: argv.length
         }
 
+        ; s125: empty-parens constructor → inline field-default init.
+        ; Stage-0 (Emitter.cpp tuple-style ctor) inlines field-by-field
+        ; default initialization for `Type[T]$()` / `Type[T]()` with no
+        ; user args, rather than calling a no-args ctor. The mangled
+        ; `_ZN..EC1Ev` body often doesn't exist (Scaly types like List[T],
+        ; HashMapBuilder[K,V] declare only with-args inits, and the
+        ; field defaults — `head (null)`, `length: size_t (0)`, etc. —
+        ; carry the zero-init semantics implicitly). Stage-1's previous
+        ; behavior was to LLVMBuildCall2 the non-existent C1Ev symbol,
+        ; producing ~113 undefined refs at stage-2 link time.
+        ;
+        ; This bypass: when user_arg_count == 0 AND the struct_ty is a
+        ; concrete LLVM struct, walk fields and store `LLVMConstNull` of
+        ; each field's type. Matches stage-0's tuple.region pattern
+        ; (Emitter.cpp:5500 / handle_class IR for symbols_builder).
+        ; Requires_page_param ctors (Vector[T]^page(len)) and any ctor
+        ; with explicit user args go through the regular LLVMBuildCall2
+        ; path below.
+        guard user_arg_count = 0
+        {
+            guard call.requires_page_param = false
+            {
+                guard LLVMGetTypeKind(struct_ty) = LLVMTypeKind.Struct()
+                {
+                    let n_fields LLVMCountStructElementTypes(struct_ty)
+                    var fi: int 0
+                    while fi < n_fields
+                    {
+                        let field_ty LLVMStructGetTypeAtIndex(struct_ty, fi)
+                        guard field_ty.handle <> null
+                        {
+                            let field_ptr LLVMBuildStructGEP2(builder, struct_ty, struct_ptr, fi as u32, "tuple.field")
+                            let zero LLVMConstNull(field_ty)
+                            LLVMBuildStore(builder, zero, field_ptr)
+                        }
+                        set fi: fi + 1
+                    }
+                    return struct_ptr
+                }
+                ; s125b: stdlib generic instantiations (HashMapBuilder[K,V],
+                ; List[T], etc.) aren't in struct_cache, so map_type falls
+                ; back to opaque ptr — we can't walk fields. Still skip
+                ; the LLVMBuildCall2 to the non-existent C1Ev symbol;
+                ; Page::allocate returned memory is uninitialized but at
+                ; least the link will resolve. The downstream user code
+                ; that reads the struct may misbehave (size/layout
+                ; mismatch with the actual instantiation), but those are
+                ; separate stdlib-generic-instantiation gaps to fix
+                ; independently. Closes ~113 undefined C1Ev refs at
+                ; stage-2 link time.
+                guard LLVMGetTypeKind(struct_ty) <> LLVMTypeKind.Struct()
+                    return struct_ptr
+            }
+        }
+
         ; Total ctor arg count: this + (page if requires_page_param) + user_args.
         var total_ctor_args: size_t 1
         guard call.requires_page_param
