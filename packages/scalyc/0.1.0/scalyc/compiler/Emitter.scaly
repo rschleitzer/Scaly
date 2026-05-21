@@ -2448,21 +2448,43 @@ define Emitter
                                                         guard LLVMGetTypeKind(current_struct_ty) = LLVMTypeKind.Struct()
                                                         {
                                                             var current_ptr var_ptr
+                                                            var chain_ok: bool true
                                                             var ci: size_t 0
                                                             while ci < chain.length
                                                             {
                                                                 let acc_ptr chain.get(ci)
                                                                 guard acc_ptr <> null
                                                                 {
-                                                                    let acc (*acc_ptr)
-                                                                    set current_ptr: LLVMBuildStructGEP2(builder, current_struct_ty, current_ptr, acc.field_index as u32, "field.inplace")
-                                                                    guard ci + 1 < chain.length
-                                                                        set current_struct_ty: map_type(acc.result_type)
+                                                                    ; s120: bail when the next step's parent
+                                                                    ; struct type collapsed to opaque `ptr` —
+                                                                    ; stage-1's map_type fallback for
+                                                                    ; unresolved generics (e.g.
+                                                                    ; Array[KeyValuePair[String, LocalBinding]])
+                                                                    ; returns ptr, and LLVMBuildStructGEP2 with
+                                                                    ; that source type emits
+                                                                    ; `getelementptr inbounds ptr, ptr X, i32 0, i32 N`
+                                                                    ; which llc rejects with "invalid
+                                                                    ; getelementptr indices". Symptom: re-
+                                                                    ; including Planner in safe-walk crashes
+                                                                    ; -c at push_scope's
+                                                                    ; `scope_boundaries.add(scope_bindings.length)`.
+                                                                    guard LLVMGetTypeKind(current_struct_ty) <> LLVMTypeKind.Struct()
+                                                                        set chain_ok: false
+                                                                    guard chain_ok
+                                                                    {
+                                                                        let acc (*acc_ptr)
+                                                                        set current_ptr: LLVMBuildStructGEP2(builder, current_struct_ty, current_ptr, acc.field_index as u32, "field.inplace")
+                                                                        guard ci + 1 < chain.length
+                                                                            set current_struct_ty: map_type(acc.result_type)
+                                                                    }
                                                                 }
                                                                 set ci: ci + 1
                                                             }
-                                                            set arg_value: current_ptr
-                                                            set direct_alloca: true
+                                                            guard chain_ok
+                                                            {
+                                                                set arg_value: current_ptr
+                                                                set direct_alloca: true
+                                                            }
                                                         }
                                                     }
                                                 }
