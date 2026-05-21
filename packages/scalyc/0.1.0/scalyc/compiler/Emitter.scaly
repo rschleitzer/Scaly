@@ -1921,6 +1921,25 @@ define Emitter
         guard var_ptr.handle = null
             return LLVMValueRef(null)
 
+        ; s124: when variable.is_mutable but the looked-up value isn't a
+        ; pointer, treat it as immutable. Stage-1's flat variable table
+        ; doesn't scope per choose/if arm; sibling arms reusing the same
+        ; Scaly variable name (e.g. emit_constant's Boolean arm's
+        ; `let llvm_type LLVMInt1TypeInContext(...)` vs the Integer arm's
+        ; `var llvm_type ...`) cause forward lookup to return the
+        ; earlier let-binding's value-type LLVMValueRef instead of the
+        ; later var-binding's alloca pointer. Loading from that
+        ; value-type via LLVMBuildLoad2 emits invalid
+        ; `load T, T %val` which llc rejects with "load operand must be
+        ; a pointer to a first class type". Stage-0 has proper scoping;
+        ; we fall back to returning the value as-is here.
+        let var_ptr_ty LLVMTypeOf(var_ptr)
+        guard var_ptr_ty.handle <> null
+        {
+            guard LLVMGetTypeKind(var_ptr_ty) <> LLVMTypeKind.Pointer()
+                return var_ptr
+        }
+
         if variable.is_mutable
         {
             ; Mutable binding stored as pointer — load the value.
@@ -2266,9 +2285,28 @@ define Emitter
                 LLVMAddCallSiteAttribute(cv, 1 as u32, na_attr)
                 return sret_slot
             }
-            let result_type map_type(call.result_type)
+            var result_type map_type(call.result_type)
+            ; s124: when the declared function returns void (procedure),
+            ; force result_type to void here too so the call name is
+            ; empty. map_type falls back to opaque ptr for empty/unknown
+            ; result names, which LLVM otherwise treats as a non-void
+            ; result type. llc then rejects `%call = call void @fn()` with
+            ; "instructions returning void cannot have a name".
+            let fn_ty LLVMGlobalGetValueType(func)
+            guard fn_ty.handle <> null
+            {
+                guard LLVMGetTypeKind(fn_ty) = LLVMTypeKind.Function()
+                {
+                    let ret_ty LLVMGetReturnType(fn_ty)
+                    guard LLVMGetTypeKind(ret_ty) = LLVMTypeKind.Void()
+                        set result_type: ret_ty
+                }
+            }
             let func_type LLVMFunctionType(result_type, null as pointer[LLVMTypeRef], 0, 0)
-            return LLVMBuildCall2(builder, func_type, func, null as pointer[LLVMValueRef], 0, "call")
+            var call_name "call"
+            guard LLVMGetTypeKind(result_type) = LLVMTypeKind.Void()
+                set call_name: ""
+            return LLVMBuildCall2(builder, func_type, func, null as pointer[LLVMValueRef], 0, call_name)
         }
 
         guard call.args.length = 0
@@ -2290,9 +2328,23 @@ define Emitter
                 LLVMAddCallSiteAttribute(cv, 1 as u32, na_attr)
                 return sret_slot
             }
-            let result_type map_type(call.result_type)
+            var result_type map_type(call.result_type)
+            ; s124: same void-return guard as the call.args=null path.
+            let fn_ty LLVMGlobalGetValueType(func)
+            guard fn_ty.handle <> null
+            {
+                guard LLVMGetTypeKind(fn_ty) = LLVMTypeKind.Function()
+                {
+                    let ret_ty LLVMGetReturnType(fn_ty)
+                    guard LLVMGetTypeKind(ret_ty) = LLVMTypeKind.Void()
+                        set result_type: ret_ty
+                }
+            }
             let func_type LLVMFunctionType(result_type, null as pointer[LLVMTypeRef], 0, 0)
-            return LLVMBuildCall2(builder, func_type, func, null as pointer[LLVMValueRef], 0, "call")
+            var call_name "call"
+            guard LLVMGetTypeKind(result_type) = LLVMTypeKind.Void()
+                set call_name: ""
+            return LLVMBuildCall2(builder, func_type, func, null as pointer[LLVMValueRef], 0, call_name)
         }
 
         ; Emit arguments and create proper call.
@@ -3889,6 +3941,15 @@ define Emitter
         var phi_values Vector[LLVMValueRef]#(max_count)
         var phi_blocks Vector[LLVMBasicBlockRef]#(max_count)
         var phi_count: size_t 0
+        ; s124: track every block that branches to merge_block without
+        ; contributing a value (void result, type mismatch, statement-
+        ; only consequent). Without these, the PHI's incoming count
+        ; doesn't match the actual predecessor count and llc's verifier
+        ; rejects with "PHINode should have one entry for each
+        ; predecessor of its parent basic block". Filled in below; drained
+        ; at PHI assembly time with undef of phi_ref_type.
+        var undef_blocks Vector[LLVMBasicBlockRef]#(max_count)
+        var undef_count: size_t 0
 
         ; Track variant_index values already added to the switch. When
         ; the planner can't resolve the union (fresh type var with empty
@@ -3951,27 +4012,51 @@ define Emitter
                         define_variable(when_case.name, union_value)
                     guard is_npo = false
                     {
-                        let data_ptr LLVMBuildStructGEP2(builder, union_type, union_ptr, 1, "variant.c_data().ptr")
-                        let var_ty map_type(when_case.variant_type)
-                        ; s114: bail when variant_type is unresolved (mapped
-                        ; to void). LLVMBuildLoad2 of void calls into
-                        ; DataLayout::getTypeSizeInBits which SIGTRAPs on
-                        ; the VoidTy assertion. Symptom: stage-1 -c on
-                        ; parser.scaly / Modeler.scaly / Emitter.scaly aborts
-                        ; in emit_choose during the tagged-union variant
-                        ; payload extraction. Bind the variable to a null
-                        ; placeholder so subsequent code in the arm doesn't
-                        ; crash either; the actual value being wrong is
-                        ; preferable to aborting the whole module emit.
-                        guard LLVMGetTypeKind(var_ty) = LLVMTypeKind.Void()
-                        {
+                        ; s123: guard the field-1 GEP. When union_type is
+                        ; a single-field placeholder (`{ ptr }`, from the
+                        ; s114 get_or_create_struct_placeholder fallback)
+                        ; or otherwise lacks a data field, the GEP at index
+                        ; 1 is out-of-bounds and llc rejects with
+                        ; "invalid getelementptr indices" — passes -S
+                        ; verification but blocks AOT/-c. Triggered by
+                        ; parse_file's `choose parse_declaration_list#()`
+                        ; (nested `choose err when d: Different ...` inside
+                        ; the Error arm): stage-1's planner doesn't model
+                        ; `throws ParserError`, so the sret is the bare
+                        ; `ref[Vector[...]]?` placeholder rather than the
+                        ; Result `{ i8 tag, [N x i8] data }` shape stage-0
+                        ; synthesizes. Bind to null instead of GEP'ing —
+                        ; the whole nested choose is already mis-planned,
+                        ; but the IR is at least valid.
+                        var n_fields: int 0
+                        guard LLVMGetTypeKind(union_type) = LLVMTypeKind.Struct()
+                            set n_fields: LLVMCountStructElementTypes(union_type)
+                        guard n_fields < 2
                             define_variable(when_case.name, LLVMValueRef(null))
-                        }
-                        guard LLVMGetTypeKind(var_ty) <> LLVMTypeKind.Void()
+                        guard n_fields >= 2
                         {
-                            let var_ptr LLVMBuildBitCast(builder, data_ptr, LLVMPointerTypeInContext(context, 0), "variant.c_data().cast")
-                            let var_value LLVMBuildLoad2(builder, var_ty, var_ptr, "variant.val")
-                            define_variable(when_case.name, var_value)
+                            let data_ptr LLVMBuildStructGEP2(builder, union_type, union_ptr, 1, "variant.c_data().ptr")
+                            let var_ty map_type(when_case.variant_type)
+                            ; s114: bail when variant_type is unresolved (mapped
+                            ; to void). LLVMBuildLoad2 of void calls into
+                            ; DataLayout::getTypeSizeInBits which SIGTRAPs on
+                            ; the VoidTy assertion. Symptom: stage-1 -c on
+                            ; parser.scaly / Modeler.scaly / Emitter.scaly aborts
+                            ; in emit_choose during the tagged-union variant
+                            ; payload extraction. Bind the variable to a null
+                            ; placeholder so subsequent code in the arm doesn't
+                            ; crash either; the actual value being wrong is
+                            ; preferable to aborting the whole module emit.
+                            guard LLVMGetTypeKind(var_ty) = LLVMTypeKind.Void()
+                            {
+                                define_variable(when_case.name, LLVMValueRef(null))
+                            }
+                            guard LLVMGetTypeKind(var_ty) <> LLVMTypeKind.Void()
+                            {
+                                let var_ptr LLVMBuildBitCast(builder, data_ptr, LLVMPointerTypeInContext(context, 0), "variant.c_data().cast")
+                                let var_value LLVMBuildLoad2(builder, var_ty, var_ptr, "variant.val")
+                                define_variable(when_case.name, var_value)
+                            }
                         }
                     }
                 }
@@ -3994,6 +4079,8 @@ define Emitter
                 let case_term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock(builder))
                 guard case_term.handle = null
                 {
+                    let case_end_block LLVMGetInsertBlock(builder)
+                    var added_phi: bool false
                     guard case_value.handle <> null
                     {
                         ; Skip void-typed values (e.g. results of LLVMBuildCall
@@ -4016,11 +4103,17 @@ define Emitter
                                 guard cv_type.handle = phi_ref_type.handle
                                 {
                                     phi_values.put(phi_count, case_value)
-                                    phi_blocks.put(phi_count, LLVMGetInsertBlock(builder))
+                                    phi_blocks.put(phi_count, case_end_block)
                                     set phi_count: phi_count + 1
+                                    set added_phi: true
                                 }
                             }
                         }
+                    }
+                    guard added_phi = false
+                    {
+                        undef_blocks.put(undef_count, case_end_block)
+                        set undef_count: undef_count + 1
                     }
                     LLVMBuildBr(builder, merge_block)
                 }
@@ -4043,6 +4136,8 @@ define Emitter
         let alt_term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock(builder))
         guard alt_term.handle = null
         {
+            let alt_end_block LLVMGetInsertBlock(builder)
+            var added_alt_phi: bool false
             guard alt_value.handle <> null
             {
                 ; Skip void-typed alternative values — same reason as the
@@ -4057,11 +4152,17 @@ define Emitter
                         guard av_type.handle = phi_ref_type.handle
                         {
                             phi_values.put(phi_count, alt_value)
-                            phi_blocks.put(phi_count, LLVMGetInsertBlock(builder))
+                            phi_blocks.put(phi_count, alt_end_block)
                             set phi_count: phi_count + 1
+                            set added_alt_phi: true
                         }
                     }
                 }
+            }
+            guard added_alt_phi = false
+            {
+                undef_blocks.put(undef_count, alt_end_block)
+                set undef_count: undef_count + 1
             }
             LLVMBuildBr(builder, merge_block)
         }
@@ -4084,6 +4185,24 @@ define Emitter
                 ; quirk for single-ptr-field handles).
                 let first_val (*first_ptr)
                 let phi_ty LLVMTypeOf(first_val)
+                ; s124: append undef entries for every predecessor that
+                ; branched to merge_block without contributing a typed
+                ; value. PHI's incoming count must equal merge_block's
+                ; predecessor count; without this llc rejects with
+                ; "PHINode should have one entry for each predecessor".
+                let undef_val LLVMGetUndef(phi_ty)
+                var ui: size_t 0
+                while ui < undef_count
+                {
+                    let ub_ptr undef_blocks.get(ui)
+                    guard ub_ptr <> null
+                    {
+                        phi_values.put(phi_count, undef_val)
+                        phi_blocks.put(phi_count, (*ub_ptr))
+                        set phi_count: phi_count + 1
+                    }
+                    set ui: ui + 1
+                }
                 let phi LLVMBuildPhi(builder, phi_ty, "choose.value")
                 LLVMAddIncoming(phi, phi_values.data, phi_blocks.data, phi_count as int)
                 return phi
@@ -4312,12 +4431,18 @@ define Emitter
             }
             else { }
 
-        ; Ensure we have a boolean for the branch
+        ; Ensure we have a boolean for the branch. Both i1 and i64 have
+        ; LLVMTypeKind.Integer (kind=8), so a kind comparison never fires
+        ; — emit_if was fixed in session 32 to compare bit-width; emit_while
+        ; needs the same fix. Without it, while-conditions of the shape
+        ; `i < length as int` (where stage-1 plans the `as int` over the
+        ; whole comparison rather than just the rhs) emit `zext i1 to i64`
+        ; before the branch and llc rejects with "branch condition must
+        ; have 'i1' type".
         var bool_cond cond_value
         let cond_type LLVMTypeOf(cond_value)
-        let i1_type LLVMInt1TypeInContext(context)
 
-        guard LLVMGetTypeKind(cond_type) <> LLVMGetTypeKind(i1_type)
+        guard LLVMGetIntTypeWidth(cond_type) <> 1
         {
             let zero LLVMConstInt(cond_type, 0, 0)
             set bool_cond: LLVMBuildICmp(builder, LLVMIntPredicate.NE(), cond_value, zero, "while.tobool")
@@ -4923,6 +5048,20 @@ define Emitter
                         guard variable.is_mutable = false
                             return LLVMValueRef(null)  ; Cannot assign to immutable
 
+                        ; s124: same flat-variable-table leak as
+                        ; emit_variable. When sibling choose/if arms reuse
+                        ; the same Scaly variable name (`let X` in one,
+                        ; `set X: ...` in another), lookup returns the
+                        ; earlier let-binding's value-typed LLVMValueRef
+                        ; instead of the var alloca. Storing into a
+                        ; non-pointer is invalid IR; drop the store
+                        ; rather than emit `store T %a, T %b`.
+                        let store_ty LLVMTypeOf(var_ptr)
+                        guard store_ty.handle <> null
+                        {
+                            guard LLVMGetTypeKind(store_ty) <> LLVMTypeKind.Pointer()
+                                return value
+                        }
                         ; Store the value to the variable
                         LLVMBuildStore(builder, value, var_ptr)
                     }
