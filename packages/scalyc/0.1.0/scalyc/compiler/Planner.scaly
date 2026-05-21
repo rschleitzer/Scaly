@@ -5387,8 +5387,20 @@ define Planner
                         else
                             0
                     var is_stdlib_generic: bool false
-                    guard canonical_name.equals("Vector")
-                        set is_stdlib_generic: true
+                    ; s129: Vector + Array routed through instantiate_generic#
+                    ; (removed from the data-class restriction). The s107 gate
+                    ; originally excluded all stdlib generics because their
+                    ; bodies were "drag[ging] in cross-package references" —
+                    ; with s109..s127 (generic spec'd methods, intrinsic
+                    ; map_type, page_param stub, deref-load, receiver-load,
+                    ; emit_choose IR guards, empty-args ctor field-init, scope
+                    ; push/pop, LinkOnceODR linkage) all in place, stage-1 can
+                    ; now plan + emit those bodies. Removing Vector + Array
+                    ; from this list cuts Step-7 stage-2 link undef refs from
+                    ; 106 → 4. The matching skip_dispatch denylist site
+                    ; (~line 3240) is intentionally kept: `vec.add(x)` style
+                    ; method dispatch still routes via the extern-decl shim
+                    ; rather than the spec'd `_ZN6VectorI...E3addE...` lookup.
                     guard canonical_name.equals("HashMap")
                         set is_stdlib_generic: true
                     guard canonical_name.equals("HashMapBuilder")
@@ -5397,8 +5409,7 @@ define Planner
                         set is_stdlib_generic: true
                     guard canonical_name.equals("HashSetBuilder")
                         set is_stdlib_generic: true
-                    guard canonical_name.equals("Array")
-                        set is_stdlib_generic: true
+                    ; s129: Array removed alongside Vector (see comment above).
                     guard canonical_name.equals("List")
                         set is_stdlib_generic: true
                     guard canonical_name.equals("ListIterator")
