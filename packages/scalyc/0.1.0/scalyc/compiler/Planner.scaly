@@ -4843,16 +4843,24 @@ define Planner
             ; the concrete generic argument (Program), so the mangled name
             ; comes out as `_ZN5ArrayI7ProgramE3addE1T` instead of
             ; `_ZN5ArrayI7ProgramE3addE7Program` and the link fails.
+            ; s132: bind substitutions against the auto-deref'd `lookup_st`,
+            ; not the raw `struct_type`. For a `ref[Vector[Module]]` receiver,
+            ; struct_type.name="ref" and lookup_concept("ref")=null — the
+            ; substitution loop silently no-ops and `T` stays unbound, so
+            ; mangle_method emits `_ZN6VectorI6ModuleE3addE1T` instead of
+            ; `..3addE6Module`. Mirrors the auto-deref above this block
+            ; (lookup_st = struct_type.generics[0] when struct_type is
+            ; pointer/ref).
             let saved_subst_len_lm type_substitutions.length
-            let conc_ref this.lookup_concept(struct_type.name)
+            let conc_ref this.lookup_concept(lookup_st.name)
             guard conc_ref <> null
             {
                 let conc (*conc_ref)
                 guard conc.parameters.length > 0
                 {
-                    guard struct_type.generics <> null
+                    guard lookup_st.generics <> null
                     {
-                        let gens_ref (*struct_type.generics)
+                        let gens_ref (*lookup_st.generics)
                         var pi: size_t 0
                         while pi < conc.parameters.length
                         {
