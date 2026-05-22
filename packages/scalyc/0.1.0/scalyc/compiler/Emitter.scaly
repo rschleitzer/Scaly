@@ -646,6 +646,24 @@ define Emitter
         guard struct_type2.handle <> null
             return struct_type2
 
+        ; s136: known stdlib single-ptr-field structs. Without this,
+        ; map_type(String) falls through to the opaque-ptr fallback,
+        ; which makes `*string_ref` emit `load ptr, ptr` (8 bytes as a
+        ; raw pointer) instead of `load %_Z6String, ptr` (8 bytes as a
+        ; { ptr } struct). Stage-0 then passes the loaded ptr to a
+        ; struct-expecting callee, which reads garbage at offset 0
+        ; (the first byte of the string contents) and SEGVs. Returning
+        ; a literal `{ ptr }` here matches String's actual layout and
+        ; routes the deref through the struct path. Same shape works
+        ; for other 1-ptr-field stdlib types (StringIterator, Path,
+        ; ListIterator, etc.); add them only when needed.
+        guard planned_type.name.equals(String$("String"))
+        {
+            var fields Vector[LLVMTypeRef]#(1)
+            fields.put(0, LLVMPointerTypeInContext(context, 0))
+            return LLVMStructTypeInContext(context, fields.data, 1, 0)
+        }
+
         ; Fallback: opaque pointer (LLVM 15+ everything-is-ptr) instead
         ; of an opaque named struct. The named-opaque path reaches AOT
         ; codegen as `%0 = type opaque` and IRTranslator SEGVs on any
@@ -842,8 +860,43 @@ define Emitter
             return false
         guard rt.name.equals(String$("ref"))
             return false
+        ; s136: NPO Option detection. Option[ref[T]] / Option[pointer[T]]
+        ; is represented as a single nullable pointer at the LLVM level
+        ; (null=None, non-null=Some) — same width and ABI as ref/pointer.
+        ; Returning these via sret produces invalid IR: the callee writes
+        ; the pointer into the sret slot but the caller reads via x0/rax,
+        ; or vice versa, depending on which side is "fixed" — either way,
+        ; the loaded value is stack garbage. Vector.get returns
+        ; `ref[T]?` → Modeler s113 wraps it in Option[ref[T]] → without
+        ; this check, stage-1 sret'd the call site of `holder.get(0)` and
+        ; SEGV'd at the caller dereferencing the stale alloca pointer.
+        guard rt.name.equals(String$("Option"))
+            return is_npo_option(rt) = false
         ; Otherwise — struct or unknown cross-package type. Sret it.
         true
+    }
+
+    ; True iff `t` is `Option[ref[X]]` or `Option[pointer[X]]` — the
+    ; NPO (null-pointer optimization) Option layout that's represented
+    ; as a single nullable pointer rather than a tagged union.
+    function is_npo_option(this, t: PlannedType) returns bool
+    {
+        guard t.name.equals(String$("Option")) = false
+            return false
+        guard t.generics = null
+            return false
+        let gens (*t.generics)
+        guard gens.length = 0
+            return false
+        let inner_ptr gens.get(0)
+        guard inner_ptr = null
+            return false
+        let inner (*inner_ptr)
+        guard inner.name.equals(String$("ref"))
+            return true
+        guard inner.name.equals(String$("pointer"))
+            return true
+        false
     }
 
     ; s89: Equivalent predicate for a callee at a call site. Reads
@@ -859,6 +912,11 @@ define Emitter
             return false
         guard result_type.name.equals(String$("ref"))
             return false
+        ; s136: same NPO Option carve-out as needs_sret_for_return —
+        ; Option[ref[T]] / Option[pointer[T]] is a single ptr at the
+        ; ABI level.
+        guard result_type.name.equals(String$("Option"))
+            return is_npo_option(result_type) = false
         true
     }
 
@@ -2920,9 +2978,24 @@ define Emitter
         guard op_name.equals(String$("~"))
             return LLVMBuildNot(builder, op, "bitnot")
 
-        ; Dereference
+        ; Dereference. For struct result types, load + spill to a
+        ; temp alloca and return the alloca pointer — mirrors stage-0's
+        ; `init.arg.tmp` pattern. Callees that take struct args expect
+        ; `ptr` to the struct; emitting just the loaded struct value
+        ; would force every call site to do its own spill. ref_string_item's
+        ; `let n (*i.name)` then `String^rp(n)` hits this — `n` is the
+        ; loaded String value and the ctor needs a ptr to it.
         guard op_name.equals(String$("*"))
+        {
+            guard LLVMGetTypeKind(ty) = LLVMTypeKind.Struct()
+            {
+                let loaded LLVMBuildLoad2(builder, ty, op, "deref")
+                let tmp LLVMBuildAlloca(builder, ty, "deref.tmp")
+                LLVMBuildStore(builder, loaded, tmp)
+                return tmp
+            }
             return LLVMBuildLoad2(builder, ty, op, "deref")
+        }
 
         ; Address-of: when the operand is already a pointer, return it
         ; directly. When the operand is a struct value (e.g. `&n` on a
@@ -5268,8 +5341,41 @@ define Emitter
                                         let ptr emit_operand(arg_opt.unwrap())
                                         guard ptr.handle <> null
                                         {
-                                            ; Store to the dereferenced pointer
-                                            LLVMBuildStore(builder, value, ptr)
+                                            ; s136: when storing a struct value passed
+                                            ; by reference (LLVM-level ptr), load the
+                                            ; struct from the source ptr first so the
+                                            ; store writes the full struct contents
+                                            ; into the target slot. Without this,
+                                            ; `set *(data + i): item` in Vector[T]::put
+                                            ; for struct T stored the source ptr (8
+                                            ; bytes) instead of the struct value —
+                                            ; data[i] then held the address of the
+                                            ; argument's heap copy, not the copy
+                                            ; itself, and downstream `*holder.get(i)`
+                                            ; loaded that address as if it were the
+                                            ; first 8 bytes of a String (giving the
+                                            ; raw data pointer as the "String") and
+                                            ; equals/etc. read garbage.
+                                            var store_val LLVMValueRef(value.handle)
+                                            guard action.source <> null
+                                            {
+                                                let src_vec (*action.source)
+                                                guard src_vec.length > 0
+                                                {
+                                                    let src_op_ptr src_vec.get(0)
+                                                    guard src_op_ptr <> null
+                                                    {
+                                                        let src_op (*src_op_ptr)
+                                                        let src_ty map_type(src_op.result_type)
+                                                        guard LLVMGetTypeKind(src_ty) = LLVMTypeKind.Struct()
+                                                        {
+                                                            guard LLVMGetTypeKind(LLVMTypeOf(value)) = LLVMTypeKind.Pointer()
+                                                                set store_val: LLVMBuildLoad2(builder, src_ty, value, "store.load")
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                            LLVMBuildStore(builder, store_val, ptr)
                                         }
                                     }
                                 }
