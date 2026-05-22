@@ -155,6 +155,8 @@ use scaly.compiler.LLVM.LLVMInt8TypeInContext
 use scaly.compiler.LLVM.LLVMModuleCreateWithNameInContext
 use scaly.compiler.LLVM.LLVMPointerTypeInContext
 use scaly.compiler.LLVM.LLVMPositionBuilderAtEnd
+use scaly.compiler.LLVM.LLVMPositionBuilderBefore
+use scaly.compiler.LLVM.LLVMGetFirstInstruction
 use scaly.compiler.LLVM.LLVMPrintModuleToFile
 use scaly.compiler.LLVM.LLVMPrintModuleToString
 use scaly.compiler.LLVM.LLVMSetLinkage
@@ -502,6 +504,52 @@ define Emitter
         struct_cache_types.add(llvm_type)
     }
 
+    ; s138: Hoist alloca into the current function's entry block, mirroring
+    ; stage-0's `createEntryBlockAlloca` (Emitter.cpp:6640). Without
+    ; hoisting, an alloca inserted from within a loop body grows the stack
+    ; on every iteration (LLVM doesn't merge non-entry allocas), and the
+    ; static frame for big functions like Planner.collapse_operand_sequence#
+    ; ends up huge enough that a few levels of recursion blow past the 8MB
+    ; main-thread stack on macOS (rc=139 when stage-1 compiles
+    ; packages/scaly/0.1.0/scaly.scaly). Saves the current insertion point
+    ; via LLVMGetInsertBlock, repositions to before the entry block's first
+    ; instruction (or at-end if empty), emits the alloca, then restores
+    ; the insertion point.
+    function entry_alloca(this, ty: LLVMTypeRef, name: pointer[const_char]) returns LLVMValueRef
+    {
+        ; s138: session-34 ABI workaround. Stage-0 binds a struct-by-value
+        ; param to a ptr-typed slot aliasing the caller's storage, so
+        ; passing `ty` onward to LLVMBuildAlloca extern would forward the
+        ; alloca address as the struct value instead of the handle.
+        ; Reconstruct via .handle extract at function entry — same fix as
+        ; emit_intrinsic_unary_op / emit_intrinsic_binary_op.
+        var t LLVMTypeRef(ty.handle)
+        let saved_block LLVMGetInsertBlock(builder)
+        ; Scaly's `guard cond STMT` runs STMT when cond is TRUE. Fall
+        ; back to the in-place alloca only when current_function or
+        ; entry_block aren't usable; same-block check avoids a no-op
+        ; reposition.
+        guard current_function.handle = null
+            return LLVMBuildAlloca(builder, t, name)
+        let entry_block LLVMGetFirstBasicBlock(current_function)
+        guard entry_block.handle = null
+            return LLVMBuildAlloca(builder, t, name)
+        guard saved_block.handle = entry_block.handle
+            return LLVMBuildAlloca(builder, t, name)
+        let first_instr LLVMGetFirstInstruction(entry_block)
+        guard first_instr.handle <> null
+        {
+            LLVMPositionBuilderBefore(builder, first_instr)
+            let a LLVMBuildAlloca(builder, t, name)
+            LLVMPositionBuilderAtEnd(builder, saved_block)
+            return a
+        }
+        LLVMPositionBuilderAtEnd(builder, entry_block)
+        let a LLVMBuildAlloca(builder, t, name)
+        LLVMPositionBuilderAtEnd(builder, saved_block)
+        a
+    }
+
     ; ========================================================================
     ; Function Cache
     ; ========================================================================
@@ -819,6 +867,22 @@ define Emitter
             fields.put(1, ptr_ty)
             fields.put(2, i64_ty)
             return LLVMStructTypeInContext(context, fields.data, 3, 0)
+        }
+        guard name.equals("HashMapBuilder")
+        {
+            ; HashMapBuilder[K,V]: { length: size_t, slots: pointer[Vector[...]] }
+            var fields Vector[LLVMTypeRef]#(2)
+            fields.put(0, i64_ty)
+            fields.put(1, ptr_ty)
+            return LLVMStructTypeInContext(context, fields.data, 2, 0)
+        }
+        guard name.equals("HashSetBuilder")
+        {
+            ; HashSetBuilder[T]: { length: size_t, slots: pointer[Vector[...]] }
+            var fields Vector[LLVMTypeRef]#(2)
+            fields.put(0, i64_ty)
+            fields.put(1, ptr_ty)
+            return LLVMStructTypeInContext(context, fields.data, 2, 0)
         }
         LLVMTypeRef(null)
     }
@@ -1898,7 +1962,7 @@ define Emitter
                     let result_ty map_type(access.result_type)
 
                     ; Store the union value to an alloca
-                    let union_ptr LLVMBuildAlloca(builder, union_type, "union.tmp")
+                    let union_ptr entry_alloca(union_type, "union.tmp")
                     LLVMBuildStore(builder, current_value, union_ptr)
 
                     ; GEP to field 1 (the data field)
@@ -2299,7 +2363,7 @@ define Emitter
             set struct_ptr: LLVMBuildCall2(builder, alloc_call_ty, alloc_func, alloc_args.data, 3, "struct.region")
         }
         guard is_region_alloc = false
-            set struct_ptr: LLVMBuildAlloca(builder, struct_ty, "struct.init")
+            set struct_ptr: entry_alloca(struct_ty, "struct.init")
 
         ; Compute user arg count.
         var user_arg_count: size_t 0
@@ -2400,7 +2464,7 @@ define Emitter
                     let arg_kind LLVMGetTypeKind(LLVMTypeOf(arg_value))
                     guard arg_kind = LLVMTypeKind.Struct()
                     {
-                        let arg_alloca LLVMBuildAlloca(builder, LLVMTypeOf(arg_value), "arg.tmp")
+                        let arg_alloca entry_alloca(LLVMTypeOf(arg_value), "arg.tmp")
                         LLVMBuildStore(builder, arg_value, arg_alloca)
                         set arg_value: arg_alloca
                     }
@@ -2479,7 +2543,7 @@ define Emitter
                 set sret_element_ty: mapped
             guard sret_element_ty.handle = null
                 set sret_element_ty: get_or_create_struct_placeholder(call.result_type.name, call.result_type.mangled_name)
-            set sret_slot: LLVMBuildAlloca(builder, sret_element_ty, "sret.result")
+            set sret_slot: entry_alloca(sret_element_ty, "sret.result")
         }
 
         ; Build arguments
@@ -2837,7 +2901,7 @@ define Emitter
                     let arg_kind LLVMGetTypeKind(LLVMTypeOf(arg_value))
                     guard arg_kind = LLVMTypeKind.Struct()
                     {
-                        let arg_alloca LLVMBuildAlloca(builder, LLVMTypeOf(arg_value), "arg.tmp")
+                        let arg_alloca entry_alloca(LLVMTypeOf(arg_value), "arg.tmp")
                         LLVMBuildStore(builder, arg_value, arg_alloca)
                         set arg_value: arg_alloca
                     }
@@ -3008,7 +3072,7 @@ define Emitter
             guard LLVMGetTypeKind(ty) = LLVMTypeKind.Struct()
             {
                 let loaded LLVMBuildLoad2(builder, ty, op, "deref")
-                let tmp LLVMBuildAlloca(builder, ty, "deref.tmp")
+                let tmp entry_alloca(ty, "deref.tmp")
                 LLVMBuildStore(builder, loaded, tmp)
                 return tmp
             }
@@ -3026,7 +3090,7 @@ define Emitter
             let op_kind LLVMGetTypeKind(LLVMTypeOf(op))
             guard op_kind = LLVMTypeKind.Struct()
             {
-                let tmp LLVMBuildAlloca(builder, LLVMTypeOf(op), "addr.tmp")
+                let tmp entry_alloca(LLVMTypeOf(op), "addr.tmp")
                 LLVMBuildStore(builder, op, tmp)
                 return tmp
             }
@@ -3454,7 +3518,7 @@ define Emitter
                     set struct_type: lookup_struct_cache(tuple.tuple_type.name)
                 guard struct_type.handle <> null
                 {
-                    let tuple_ptr LLVMBuildAlloca(builder, struct_type, "tuple")
+                    let tuple_ptr entry_alloca(struct_type, "tuple")
                     LLVMBuildStore(builder, LLVMConstNull(struct_type), tuple_ptr)
                     ; Same load as the per-field-store branch below: when not
                     ; region-allocated, emit_binding needs the loaded struct
@@ -3568,7 +3632,7 @@ define Emitter
         }
 
         ; Allocate on stack (for non-region allocations)
-        let tuple_ptr LLVMBuildAlloca(builder, struct_type, "tuple")
+        let tuple_ptr entry_alloca(struct_type, "tuple")
 
         ; Empty struct (zero element types): skip the per-field GEP loop
         ; entirely — `LLVMBuildStructGEP2(t, p, 0)` on an empty struct
@@ -3697,7 +3761,7 @@ define Emitter
         let array_type LLVMArrayType2(element_llvm_type, total_count)
 
         ; Allocate array on stack
-        let array_ptr LLVMBuildAlloca(builder, array_type, "array")
+        let array_ptr entry_alloca(array_type, "array")
 
         ; Store each element using GEP
         let i64_type LLVMInt64TypeInContext(context)
@@ -4146,7 +4210,7 @@ define Emitter
         {
             guard value_kind <> 12
             {
-                set union_ptr: LLVMBuildAlloca(builder, union_type, "choose.union")
+                set union_ptr: entry_alloca(union_type, "choose.union")
                 LLVMBuildStore(builder, union_value, union_ptr)
             }
         }
@@ -4494,7 +4558,7 @@ define Emitter
         let index_type LLVMTypeOf(end_value)
 
         ; Create the loop counter (allocate on stack)
-        let loop_counter LLVMBuildAlloca(builder, index_type, "counter")
+        let loop_counter entry_alloca(index_type, "counter")
 
         ; Initialize loop counter to 0
         let zero LLVMConstInt(index_type, 0, 0)
@@ -4570,7 +4634,7 @@ define Emitter
         let type_kind LLVMGetTypeKind(coll_type)
         guard type_kind <> 14  ; Not pointer
         {
-            set collection_ptr: LLVMBuildAlloca(builder, coll_type, "coll.tmp")
+            set collection_ptr: entry_alloca(coll_type, "coll.tmp")
             LLVMBuildStore(builder, collection, collection_ptr)
         }
 
@@ -4581,7 +4645,7 @@ define Emitter
 
         ; Call get_iterator() on collection
         let iter_type map_type(for_expr.iterator_type)
-        let iter_alloca LLVMBuildAlloca(builder, iter_type, "iter.alloca")
+        let iter_alloca entry_alloca(iter_type, "iter.alloca")
 
         ; Build args for get_iterator call (just the collection pointer)
         var get_iter_args Vector[LLVMValueRef]#(1)
@@ -4690,7 +4754,7 @@ define Emitter
                 if while_expr.cond.binding_type.equals(String$("var"))
                 {
                     let ty LLVMTypeOf(cond_value)
-                    let alloca LLVMBuildAlloca(builder, ty, name.c_data())
+                    let alloca entry_alloca(ty, name.c_data())
                     LLVMBuildStore(builder, cond_value, alloca)
                     define_variable(name, alloca)
                 }
@@ -4769,7 +4833,7 @@ define Emitter
         }
 
         ; Store result to get pointer
-        let result_ptr LLVMBuildAlloca(builder, result_type, "try.result")
+        let result_ptr entry_alloca(result_type, "try.result")
         LLVMBuildStore(builder, result_value, result_ptr)
 
         ; Load the tag (first field, i8)
@@ -4801,7 +4865,7 @@ define Emitter
             {
                 if try_expr.cond.binding_type.equals(String$("var"))
                 {
-                    let alloca LLVMBuildAlloca(builder, i64_ty, name.c_data())
+                    let alloca entry_alloca(i64_ty, name.c_data())
                     LLVMBuildStore(builder, ok_value, alloca)
                     define_variable(name, alloca)
                 }
@@ -4981,14 +5045,14 @@ define Emitter
             ; Need to store to alloca
             if union_llvm_type.handle <> null
             {
-                set union_ptr: LLVMBuildAlloca(builder, union_llvm_type, "is.union")
+                set union_ptr: entry_alloca(union_llvm_type, "is.union")
                 LLVMBuildStore(builder, union_value, union_ptr)
             }
             else
             {
                 ; Fallback: use the value's type
                 let val_type LLVMTypeOf(union_value)
-                set union_ptr: LLVMBuildAlloca(builder, val_type, "is.union")
+                set union_ptr: entry_alloca(val_type, "is.union")
                 LLVMBuildStore(builder, union_value, union_ptr)
                 set union_llvm_type: val_type
             }
@@ -5188,7 +5252,7 @@ define Emitter
                     ; and crash inside DataLayout::getABITypeAlign.
                     guard value.handle = null
                         return LLVMValueRef(null)
-                    let value_ptr LLVMBuildAlloca(builder, value_type, "option.some")
+                    let value_ptr entry_alloca(value_type, "option.some")
                     LLVMBuildStore(builder, value, value_ptr)
                     return value_ptr
                 }
@@ -5210,7 +5274,7 @@ define Emitter
         }
 
         ; Allocate space for the union
-        let union_ptr LLVMBuildAlloca(builder, union_type, "variant.ptr")
+        let union_ptr entry_alloca(union_type, "variant.ptr")
 
         ; Store the tag (field 0)
         let i8_type LLVMInt8TypeInContext(context)
@@ -5571,6 +5635,17 @@ define Emitter
                     {
                         let inner (*inner_opt)
                         set current_type: map_type(inner)
+                        ; s138: map_type falls back to opaque-ptr for
+                        ; unmaterialised stdlib generics (HashMapBuilder[K,V]
+                        ; etc.), so LLVMBuildStructGEP2 below would emit an
+                        ; invalid `getelementptr inbounds ptr, ptr X, i32 0,
+                        ; i32 N`. Mirror the s121 fallback at
+                        ; emit_member_access_chain line 1921: when current_type
+                        ; isn't a Struct, try synthesize_literal_struct for
+                        ; known shapes. Walks plan.structures first, then the
+                        ; hardcoded stdlib-container table.
+                        guard LLVMGetTypeKind(current_type) <> LLVMTypeKind.Struct()
+                            set current_type: synthesize_literal_struct(inner.name)
                     }
                 }
             }
@@ -5762,7 +5837,7 @@ define Emitter
                 if binding.binding_type.equals(String$("var"))
                 {
                     ; Mutable binding: allocate on stack
-                    let alloca LLVMBuildAlloca(builder, ty, name.c_data())
+                    let alloca entry_alloca(ty, name.c_data())
                     LLVMBuildStore(builder, value, alloca)
                     define_variable(name, alloca)
                 }
@@ -5780,7 +5855,7 @@ define Emitter
                     let item_type_ref binding.binding_item.item_type
                     let item_type (*item_type_ref)
                     let ty map_type(item_type)
-                    let alloca LLVMBuildAlloca(builder, ty, name.c_data())
+                    let alloca entry_alloca(ty, name.c_data())
                     define_variable(name, alloca)
                 }
                 guard binding.binding_item.item_type = null
@@ -5937,7 +6012,7 @@ define Emitter
             return false
 
         ; Allocate space for the Result
-        let result_ptr LLVMBuildAlloca(builder, ret_ty, "throw.result")
+        let result_ptr entry_alloca(ret_ty, "throw.result")
 
         ; Set the tag to 1 (first error variant)
         let i8_ty LLVMInt8TypeInContext(context)

@@ -164,8 +164,14 @@ procedure LLVMDisposeBuilder(builder: LLVMBuilderRef) extern
 ; Position builder at end of a basic block
 procedure LLVMPositionBuilderAtEnd(builder: LLVMBuilderRef, block: LLVMBasicBlockRef) extern
 
+; Position builder before a specific instruction
+procedure LLVMPositionBuilderBefore(builder: LLVMBuilderRef, instr: LLVMValueRef) extern
+
 ; Get the current insertion block
 function LLVMGetInsertBlock(builder: LLVMBuilderRef) returns LLVMBasicBlockRef extern
+
+; Get the first instruction in a basic block
+function LLVMGetFirstInstruction(block: LLVMBasicBlockRef) returns LLVMValueRef extern
 
 ; ============================================================================
 ; Type Functions

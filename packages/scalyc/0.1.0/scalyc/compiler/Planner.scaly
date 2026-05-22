@@ -2365,7 +2365,13 @@ define Planner
                     set ci2: ci2 + 1
                 }
                 var merged_vec2 Vector[PlannedOperand]^rp(merged_arr2)
-                return this.collapse_operand_sequence#(merged_vec2)
+                ; s138: progress guard. If the rebuild produced the
+                ; same length (no actual merges — e.g.,
+                ; extract_row_to_type# returned null for every row),
+                ; recursing would loop forever. Fall through to the
+                ; rest of the function instead.
+                guard merged_vec2.length < ops.length
+                    return this.collapse_operand_sequence#(merged_vec2)
             }
 
             ; Pre-pass: merge lifetime-marker operands into the
@@ -2524,7 +2530,11 @@ define Planner
                     set mi: mi + 1
                 }
                 var merged_vec Vector[PlannedOperand]^rp(merged_arr)
-                return this.collapse_operand_sequence#(merged_vec)
+                ; s138: progress guard. Same as the s107 merge above:
+                ; if no marker was actually merged or dropped, avoid
+                ; infinite recursion.
+                guard merged_vec.length < ops.length
+                    return this.collapse_operand_sequence#(merged_vec)
             }
 
             let first_ptr ops.get(0)
