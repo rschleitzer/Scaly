@@ -146,6 +146,7 @@ use scaly.compiler.LLVM.LLVMGetNamedGlobal
 use scaly.compiler.LLVM.LLVMGlobalGetValueType
 use scaly.compiler.LLVM.LLVMGetReturnType
 use scaly.compiler.LLVM.LLVMGetTypeKind
+use scaly.compiler.LLVM.LLVMTypeIsSized
 use scaly.compiler.LLVM.LLVMInt16TypeInContext
 use scaly.compiler.LLVM.LLVMInt1TypeInContext
 use scaly.compiler.LLVM.LLVMInt32TypeInContext
@@ -1855,10 +1856,27 @@ define Emitter
             guard first <> null
             {
                 let parent_type first.parent_type
-                let struct_type map_type(parent_type)
+                var struct_type map_type(parent_type)
+                ; s137: Defensive sized-type check. map_type may return an
+                ; opaque named struct (cached via LLVMStructCreateNamed
+                ; before setBody) or fall through to the opaque-ptr
+                ; fallback for unmaterialised stdlib generics like
+                ; Vector[T] / HashMap[K,V] when their methods are now
+                ; dispatched (Vector removed from Planner.scaly skip_dispatch).
+                ; LLVMBuildLoad2 on an unsized type triggers a brk in
+                ; libLLVM's DataLayout::getTypeSizeInBits with no stderr.
+                ; Mirror the s121 fallback below: try
+                ; synthesize_literal_struct for known shapes, else bail.
                 guard struct_type.handle <> null
-                    set current_value: LLVMBuildLoad2(builder, struct_type, current_value, "load.struct")
-
+                {
+                    guard LLVMTypeIsSized(struct_type) = 0
+                        set struct_type: synthesize_literal_struct(parent_type.name)
+                }
+                guard struct_type.handle <> null
+                {
+                    guard LLVMTypeIsSized(struct_type) <> 0
+                        set current_value: LLVMBuildLoad2(builder, struct_type, current_value, "load.struct")
+                }
             }
         }
 
@@ -5517,7 +5535,18 @@ define Emitter
         ; by-value as a struct-field arg — copy fields into locals first.
         let var_ty planned_var.variable_type
         let var_ty_name var_ty.name
-        let is_pointer var_ty_name.equals(String$("pointer"))
+        ; s137: include `ref` alongside `pointer`. `var patched item` where
+        ; item is `(*item_ptr).unwrap()` binds a `ref[T]` whose LLVM
+        ; representation is `ptr`. Without this, member assignment
+        ; (`set patched.field: value`) treats patched as a struct and
+        ; emits `getelementptr inbounds ptr, ptr %patched, i32 0, i32 N`
+        ; which IRTranslator SEGVs on (GEP on `ptr` base type with struct
+        ; indices). With the branch, we load the ref's heap pointer first
+        ; and switch current_type to the inner struct for the GEP. Use
+        ; nested set instead of `or` to avoid precedence ambiguity.
+        var is_pointer var_ty_name.equals(String$("pointer"))
+        guard is_pointer = false
+            set is_pointer: var_ty_name.equals(String$("ref"))
         let is_this planned_var.name.equals(String$("this"))
 
         var current_type LLVMTypeRef(null)
