@@ -11087,6 +11087,37 @@ define Planner
         null
     }
 
+    ; planned_type_to_model_type: deep-convert PlannedType → Model.Type,
+    ; preserving nested generics. Used by extract_row_to_type# to rebuild
+    ; an outer Model.Type with proper inner generic structure.
+    function planned_type_to_model_type#(rp, pt: PlannedType) returns Type
+    {
+        var name_path Vector[String]^rp(1)
+        name_path.put(0, pt.name)
+        var maybe_gens: ref[Vector[Type]]? null
+        guard pt.generics <> null
+        {
+            let pgens (*pt.generics)
+            guard pgens.length > 0
+            {
+                var conv Vector[Type]^rp(pgens.length)
+                var i: size_t 0
+                while i < pgens.length
+                {
+                    let inner_ptr pgens.get(i)
+                    guard inner_ptr <> null
+                    {
+                        let inner (*inner_ptr)
+                        conv.put(i, Planner.planned_type_to_model_type#(inner))
+                    }
+                    set i: i + 1
+                }
+                set maybe_gens: &conv
+            }
+        }
+        Type(pt.loc, name_path, maybe_gens, pt.life)
+    }
+
     ; apply_name_substitution: substitute type-parameter names (e.g. "T",
     ; "K") with concrete types. Used by generic instantiation — the C++
     ; `TypeSubstitutions` is a name-keyed map populated before resolving
@@ -11302,9 +11333,16 @@ define Planner
             }
         }
 
-        ; Single-cell row: PlannedType → Model.Type. Convert any
-        ; existing generics by recursing through plan_type#'s inverse:
-        ; build Type(name=[pt.name], generics=...) preserving lifetime.
+        ; Single-cell row: PlannedType → Model.Type. Use the recursive
+        ; helper so nested generics survive the round-trip. s134: the
+        ; previous implementation built each inner generic as
+        ; `Type(name=[pt.name], generics=null)`, stripping deeper
+        ; generic information. For PT_Vector<KVP<S, LB>> this turned
+        ; the inner KVP into `Type("KeyValuePair", null)` — plan_type#
+        ; later fell through to `mangle_structure#("KeyValuePair", null)`
+        ; and produced the truncated `_Z12KeyValuePair` that broke
+        ; Step-7 link with `_ZN6VectorI6VectorI12KeyValuePairEE...`
+        ; calls.
         guard row.length = 1
         {
             let cell_ptr row.get(0)
@@ -11314,38 +11352,8 @@ define Planner
                 choose cell.expr
                     when et: PlannedType
                     {
-                        var name_path Vector[String]^rp(1)
-                        name_path.put(0, et.name)
-                        var maybe_gens: ref[Vector[Type]]? null
-                        guard et.generics <> null
-                        {
-                            let pgens (*et.generics)
-                            guard pgens.length > 0
-                            {
-                                var conv Vector[Type]^rp(pgens.length)
-                                var i: size_t 0
-                                while i < pgens.length
-                                {
-                                    let pt_ptr pgens.get(i)
-                                    guard pt_ptr <> null
-                                    {
-                                        let pt (*pt_ptr)
-                                        var ip Vector[String]^rp(1)
-                                        ip.put(0, pt.name)
-                                        conv.put(i, Type(pt.loc, ip, null, pt.life))
-                                    }
-                                    set i: i + 1
-                                }
-                                set maybe_gens: &conv
-                            }
-                        }
                         var holder Vector[Type]^rp(1)
-                        holder.put(0, Type(
-                            et.loc,
-                            name_path,
-                            maybe_gens,
-                            et.life
-                        ))
+                        holder.put(0, Planner.planned_type_to_model_type#(et))
                         return holder.get(0)
                     }
                     else
