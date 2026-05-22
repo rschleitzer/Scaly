@@ -7501,8 +7501,98 @@ define Planner
         function plan_binding#(rp, this: Planner, b: Binding) returns PlannedBinding
         {
             let planned_ops_flat this.plan_operands#(b.operation)
-            let collapsed this.collapse_operand_sequence#(planned_ops_flat)
-            let planned_item this.plan_item#(b.item)
+            let orig_item this.plan_item#(b.item)
+
+            ; s135: support `var NAME TYPE INIT` (no colon). When the
+            ; Modeler produces a Binding with no annotation but >=2
+            ; operands AND the first is a bare PlannedType (not Matrix/
+            ; Tuple-followed and not an operator), treat the first as
+            ; the item_type and the remaining as the initializer.
+            ; Without this, collapse_operand_sequence#'s binary loop
+            ; sees [Type, Const] as a would-be binary op, bails when
+            ; there's no rhs, returns just the Type, and emit_binding
+            ; drops the alloca entirely.
+            var peeled_idx: size_t 0
+            var has_peeled_type: bool false
+            var peeled_holder Vector[PlannedType]^rp(1)
+            guard orig_item.item_type = null
+            {
+                guard planned_ops_flat.length >= 2
+                {
+                    let first_ptr planned_ops_flat.get(0)
+                    guard first_ptr <> null
+                    {
+                        let first_op (*first_ptr)
+                        choose first_op.expr
+                            when ft: PlannedType
+                            {
+                                guard ft.name.get_length() > 0
+                                {
+                                    guard Planner.is_operator_name(ft.name) = false
+                                    {
+                                        let next_ptr planned_ops_flat.get(1)
+                                        guard next_ptr <> null
+                                        {
+                                            let next_op (*next_ptr)
+                                            var next_is_continuation: bool false
+                                            choose next_op.expr
+                                                when nm: scalyc.compiler.Plan.PlannedMatrix
+                                                    set next_is_continuation: true
+                                                when nt: PlannedTuple
+                                                    set next_is_continuation: true
+                                                when nty: PlannedType
+                                                {
+                                                    ; Lifetime markers (^name, $, #) are
+                                                    ; modeled as Expression.Type with an
+                                                    ; empty name path. Such markers
+                                                    ; participate in the same call/ctor
+                                                    ; collapse as Matrix/Tuple — don't
+                                                    ; peel.
+                                                    guard nty.name.get_length() = 0
+                                                        set next_is_continuation: true
+                                                }
+                                                else
+                                                    0
+                                            guard next_is_continuation = false
+                                            {
+                                                set has_peeled_type: true
+                                                set peeled_idx: 1
+                                                peeled_holder.put(0, ft)
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            else
+                                0
+                    }
+                }
+            }
+
+            ; Build the actual ops vector to collapse: either all of
+            ; planned_ops_flat or just the tail starting at peeled_idx.
+            var rest_arr Array[PlannedOperand]^rp()
+            var ri: size_t peeled_idx
+            while ri < planned_ops_flat.length
+            {
+                let p_ptr planned_ops_flat.get(ri)
+                guard p_ptr <> null
+                    rest_arr.add((*p_ptr))
+                set ri: ri + 1
+            }
+            let ops_to_collapse Vector[PlannedOperand]^rp(rest_arr)
+            let collapsed this.collapse_operand_sequence#(ops_to_collapse)
+
+            ; Rebuild PlannedItem with the peeled type if any.
+            var planned_item: PlannedItem orig_item
+            guard has_peeled_type
+                set planned_item: PlannedItem(
+                    orig_item.loc,
+                    orig_item.is_private,
+                    orig_item.name,
+                    peeled_holder.get(0),
+                    orig_item.attributes
+                )
 
             ; Use the annotated type if present; otherwise infer from the
             ; initializer's result type so emit_variable can map_type the
@@ -7535,7 +7625,7 @@ define Planner
             ; path. Mirrors stage-0 Planner.cpp:10947 where empty
             ; ValueOps produce a null `Init` field on the Binding.
             var ops_holder Vector[PlannedOperand]^rp(0)
-            guard b.operation.length > 0
+            guard rest_arr.length > 0
                 ops_holder.add(collapsed)
             PlannedBinding(
                 b.span,
