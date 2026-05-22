@@ -1067,7 +1067,30 @@ define Emitter
         ; Check cache first
         let cached lookup_function_cache(func.mangled_name)
         guard cached.handle <> null
+        {
+            ; s134: when the cached entry came from the s78/s83 extern-
+            ; decl path (External linkage) but the current call has a
+            ; real Action body and is not private, upgrade the linkage
+            ; to LinkOnceODR so stage-1's stdlib generic instantiations
+            ; merge with the same symbols in libscaly.a at link time
+            ; instead of producing duplicate-symbol errors. Without this,
+            ; `Array<T>::reallocate` (declared as extern via the s78
+            ; path when called from `Array<T>::add`) keeps its External
+            ; linkage even though the body is emitted, colliding with
+            ; libscaly.a's own definition.
+            var has_body: bool false
+            choose func.impl
+                when a: Action
+                    set has_body: true
+                else
+                    0
+            guard has_body
+            {
+                guard func.is_private = false
+                    LLVMSetLinkage(cached, LLVMLinkage.LinkOnceODR())
+            }
             return cached
+        }
 
         ; s89: Detect sret-needing returns. Itanium-mangled (`_ZN...`)
         ; functions returning a non-primitive non-pointer type get the
