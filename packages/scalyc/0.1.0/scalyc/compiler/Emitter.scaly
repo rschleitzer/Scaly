@@ -4747,23 +4747,25 @@ define Emitter
             return LLVMValueRef(null)
         }
 
-        ; Handle "while let" binding
-        choose while_expr.cond.binding_item.name
-            when name: Some
+        ; Handle "while let" binding. s25/s28: ref[String]? must be
+        ; unwrapped via guard + explicit deref. `choose ... when Some`
+        ; yields a String binding whose data ptr is garbage under NPO.
+        guard while_expr.cond.binding_item.name <> null
+        {
+            let name_ref while_expr.cond.binding_item.name
+            let name (*name_ref)
+            if while_expr.cond.binding_type.equals(String$("var"))
             {
-                if while_expr.cond.binding_type.equals(String$("var"))
-                {
-                    let ty LLVMTypeOf(cond_value)
-                    let alloca entry_alloca(ty, name.c_data())
-                    LLVMBuildStore(builder, cond_value, alloca)
-                    define_variable(name, alloca)
-                }
-                else
-                {
-                    define_variable(name, cond_value)
-                }
+                let ty LLVMTypeOf(cond_value)
+                let alloca entry_alloca(ty, name.c_data())
+                LLVMBuildStore(builder, cond_value, alloca)
+                define_variable(name, alloca)
             }
-            else { }
+            else
+            {
+                define_variable(name, cond_value)
+            }
+        }
 
         ; Ensure we have a boolean for the branch. Both i1 and i64 have
         ; LLVMTypeKind.Integer (kind=8), so a kind comparison never fires
@@ -4823,12 +4825,13 @@ define Emitter
         ; StructTypeKind = 12
         guard type_kind <> 12
         {
-            choose try_expr.cond.binding_item.name
-                when name: Some
-                {
-                    define_variable(name, result_value)
-                }
-                else { }
+            ; s25/s28: unwrap ref[String]? via guard + explicit deref.
+            guard try_expr.cond.binding_item.name <> null
+            {
+                let name_ref try_expr.cond.binding_item.name
+                let name (*name_ref)
+                define_variable(name, result_value)
+            }
             return result_value
         }
 
@@ -4859,22 +4862,23 @@ define Emitter
         let ok_data_ptr LLVMBuildStructGEP2(builder, result_type, result_ptr, 1, "ok.c_data().ptr")
         let ok_value LLVMBuildLoad2(builder, i64_ty, ok_data_ptr, "ok.val")
 
-        ; Bind value if name present
-        choose try_expr.cond.binding_item.name
-            when name: Some
+        ; Bind value if name present. s25/s28: unwrap ref[String]? via
+        ; guard + explicit deref.
+        guard try_expr.cond.binding_item.name <> null
+        {
+            let name_ref try_expr.cond.binding_item.name
+            let name (*name_ref)
+            if try_expr.cond.binding_type.equals(String$("var"))
             {
-                if try_expr.cond.binding_type.equals(String$("var"))
-                {
-                    let alloca entry_alloca(i64_ty, name.c_data())
-                    LLVMBuildStore(builder, ok_value, alloca)
-                    define_variable(name, alloca)
-                }
-                else
-                {
-                    define_variable(name, ok_value)
-                }
+                let alloca entry_alloca(i64_ty, name.c_data())
+                LLVMBuildStore(builder, ok_value, alloca)
+                define_variable(name, alloca)
             }
-            else { }
+            else
+            {
+                define_variable(name, ok_value)
+            }
+        }
 
         LLVMBuildBr(builder, merge_block)
 
