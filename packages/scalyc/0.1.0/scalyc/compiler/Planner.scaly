@@ -9236,6 +9236,10 @@ define Planner
             {
                 let planned this.plan_module#(sub)
             }
+            guard sub.name.equals("root_pages")
+            {
+                let planned this.plan_module#(sub)
+            }
             guard sub.name.equals("Console")
             {
                 let planned this.plan_module#(sub)

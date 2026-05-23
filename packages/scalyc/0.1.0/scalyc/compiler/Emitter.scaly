@@ -74,6 +74,11 @@ use scaly.compiler.LLVM.LLVMBuildPhi
 use scaly.compiler.LLVM.LLVMAppendBasicBlockInContext
 use scaly.compiler.LLVM.LLVMGetFirstBasicBlock
 use scaly.compiler.LLVM.LLVMGetNextBasicBlock
+use scaly.compiler.LLVM.LLVMGetFirstFunction
+use scaly.compiler.LLVM.LLVMGetNextFunction
+use scaly.compiler.LLVM.LLVMIsDeclaration
+use scaly.compiler.LLVM.LLVMGetValueName2
+use scaly.compiler.LLVM.LLVMConstNull
 use scaly.compiler.LLVM.LLVMBuildUnreachable
 use scaly.compiler.LLVM.LLVMBuildAShr
 use scaly.compiler.LLVM.LLVMBuildAdd
@@ -1830,7 +1835,108 @@ define Emitter
             }
         }
 
+        ; Step-7 link blocker: stage-1's planner emits deep-generic
+        ; template stubs (linkonce_odr functions with literal "T")
+        ; whose bodies call constructors with an EXTRA level of
+        ; generic wrapping. E.g. Vector<Vector<T>>::get_iterator's
+        ; body calls VectorIterator<Vector<Vector<T>>>::ctor (wrong)
+        ; instead of VectorIterator<Vector<T>>::ctor (right). Same
+        ; pattern for Array<Vector<T>>::Array referencing
+        ; Vector<Vector<Vector<T>>>::Vector. ld then errors because
+        ; those wrong-mangled targets have no definition anywhere.
+        ; These template stubs are never called at runtime (only
+        ; concrete instantiations like Vector<int> are reached), so
+        ; emitting empty bodies for any leftover declarations whose
+        ; mangled name contains the literal-T marker `I1TE` makes
+        ; the link succeed without affecting runtime correctness.
+        emit_template_stubs()
+
         true
+    }
+
+    ; Append empty stub bodies for any function declarations whose
+    ; mangled name embeds a literal-T template parameter. Walks the
+    ; module's function list via LLVMGetFirstFunction / LLVMGetNextFunction.
+    ; For void-return functions, emits `ret void`; for non-void, emits
+    ; `ret zeroinitializer` of the return type. Skips functions that
+    ; already have at least one basic block (definitions). Skips
+    ; non-template extern declarations (libc / LLVM-C API) by
+    ; requiring the literal-T marker in the symbol name.
+    procedure emit_template_stubs(this)
+    {
+        var func LLVMGetFirstFunction(llvm_module)
+        while func.handle <> null
+        {
+            guard LLVMIsDeclaration(func) <> 0
+            {
+                var name_len: size_t 0
+                let name_ptr LLVMGetValueName2(func, &name_len)
+                guard name_ptr <> null
+                {
+                    guard name_len > 4
+                    {
+                        ; Scan for the literal-T marker substring "I1TE" —
+                        ; Itanium encoding of a single-character type "T" as
+                        ; a generic argument. Only stage-1's template-stub
+                        ; sites use this; concrete instantiations spell out
+                        ; the type. Empty body is safe because no runtime
+                        ; path reaches a literal-T template.
+                        var has_marker: bool false
+                        var i: size_t 0
+                        let scan_limit name_len - 4
+                        while i <= scan_limit
+                        {
+                            guard has_marker = false
+                            {
+                                let p0 name_ptr + i
+                                let p1 name_ptr + (i + 1)
+                                let p2 name_ptr + (i + 2)
+                                let p3 name_ptr + (i + 3)
+                                let b0 *p0
+                                let b1 *p1
+                                let b2 *p2
+                                let b3 *p3
+                                ; ASCII 'I'=73, '1'=49, 'T'=84, 'E'=69 —
+                                ; Itanium-mangled marker "I1TE" for a single-
+                                ; char generic argument named "T". Scaly's
+                                ; lexer doesn't support char literals like 'I',
+                                ; so use numeric codes.
+                                guard b0 = 73
+                                {
+                                    guard b1 = 49
+                                    {
+                                        guard b2 = 84
+                                        {
+                                            guard b3 = 69
+                                                set has_marker: true
+                                        }
+                                    }
+                                }
+                            }
+                            set i: i + 1
+                        }
+                        guard has_marker
+                        {
+                            let saved_block LLVMGetInsertBlock(builder)
+                            let block LLVMAppendBasicBlockInContext(context, func, "stub.entry")
+                            LLVMPositionBuilderAtEnd(builder, block)
+                            let func_ty LLVMGlobalGetValueType(func)
+                            let ret_ty LLVMGetReturnType(func_ty)
+                            guard LLVMGetTypeKind(ret_ty) = LLVMTypeKind.Void()
+                                LLVMBuildRetVoid(builder)
+                            guard LLVMGetTypeKind(ret_ty) <> LLVMTypeKind.Void()
+                            {
+                                let zero LLVMConstNull(ret_ty)
+                                LLVMBuildRet(builder, zero)
+                            }
+                            guard saved_block.handle <> null
+                                LLVMPositionBuilderAtEnd(builder, saved_block)
+                        }
+                    }
+                }
+            }
+            set func: LLVMGetNextFunction(func)
+        }
     }
 
     ; ========================================================================
@@ -3821,6 +3927,14 @@ define Emitter
 
         ; Create array type
         let element_llvm_type map_type(matrix.element_type)
+        ; Guard against unsized element types. When the planner can't
+        ; resolve the matrix's element type (e.g. top-level array
+        ; literals in root_pages.scaly with unresolved generic walk),
+        ; map_type returns void, and LLVMBuildAlloca([N x void]) hits
+        ; an LLVM assertion in DataLayout::getTypeSizeInBits (rc=133).
+        ; Same shape as the s97 emit_throw void-ret guard.
+        guard LLVMGetTypeKind(element_llvm_type) = LLVMTypeKind.Void()
+            return LLVMValueRef(null)
         let array_type LLVMArrayType2(element_llvm_type, total_count)
 
         ; Allocate array on stack

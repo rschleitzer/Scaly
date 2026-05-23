@@ -265,6 +265,17 @@ function LLVMGetBasicBlockTerminator(block: LLVMBasicBlockRef) returns LLVMValue
 function LLVMGetFirstBasicBlock(func: LLVMValueRef) returns LLVMBasicBlockRef extern
 function LLVMGetNextBasicBlock(block: LLVMBasicBlockRef) returns LLVMBasicBlockRef extern
 
+; Walk the functions of a module + check whether a function has a body.
+; Used by emit_template_stubs to provide empty bodies for declared-only
+; deep-generic template references (mirror of stage-0's catch-all
+; emit pass — without this, the linker rejects libscaly_s1.o with
+; "undefined reference" to e.g. _ZN6VectorI6VectorI6VectorI1TEEEC1...
+; because Vector<Vector<T>>::get_iterator's body has a buggy double-
+; substituted call target).
+function LLVMGetFirstFunction(mod: LLVMModuleRef) returns LLVMValueRef extern
+function LLVMGetNextFunction(func: LLVMValueRef) returns LLVMValueRef extern
+function LLVMIsDeclaration(global: LLVMValueRef) returns int extern
+
 ; ============================================================================
 ; Constant Functions
 ; ============================================================================
