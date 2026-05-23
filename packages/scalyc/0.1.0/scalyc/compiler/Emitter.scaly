@@ -685,6 +685,20 @@ define Emitter
             return ptr_type
         }
 
+        ; NPO Option: Option[ref[T]] / Option[pointer[T]] is represented
+        ; as a single nullable pointer at the LLVM level. Without this,
+        ; map_type falls through to lookup_struct_cache("Option") which
+        ; returns the tagged-union %_Z6Option struct — incorrect for NPO.
+        ; needs_sret_for_return + call_needs_sret already carve Option-NPO
+        ; out of the sret path; map_type must agree so call sites get
+        ; `call ptr ...` (loadable, storable) instead of `call %_Z6Option`
+        ; (struct value that can't be a store target for `set *X: Y`).
+        guard is_npo_option(planned_type)
+        {
+            let ptr_type LLVMPointerTypeInContext(context, 0)
+            return ptr_type
+        }
+
         ; Look up struct type
         let struct_type lookup_struct_cache(planned_type.name)
         guard struct_type.handle <> null
