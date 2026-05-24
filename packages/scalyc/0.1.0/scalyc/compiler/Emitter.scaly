@@ -4397,6 +4397,14 @@ define Emitter
         ; condition means union_value is already a pointer to the union;
         ; a value-typed condition (struct value) needs alloca+store.
         var cond_is_pointer: bool false
+        ; s143: throws-call return type for binding the synthetic Success
+        ; arm to the bare sret value. Stage-1 doesn't wrap throws returns
+        ; in a Result struct, so for `choose parse_X#() when success:
+        ; Success ...`, the bound `success` should be the entire sret slot
+        ; loaded as the call's return_type — not the variant_type the
+        ; planner couldn't resolve and fell back to void.
+        var is_throws_call: bool false
+        var throws_call_return_type: PlannedType Planner.make_void_type#()
         guard choose_expr.condition <> null
         {
             let cond_vec (*choose_expr.condition)
@@ -4410,6 +4418,29 @@ define Emitter
                         set cond_is_pointer: true
                     guard cond_op.result_type.name.equals(String$("ref"))
                         set cond_is_pointer: true
+                    ; s143: an sret-returning call yields the sret slot
+                    ; pointer as its LLVM value, even though the planner's
+                    ; result_type names the bare struct. Without this, the
+                    ; alloca+store path below stores the pointer VALUE into
+                    ; a struct-typed alloca and the subsequent GEP reads
+                    ; the low byte of the pointer as the union tag —
+                    ; observed as parse_declaration falling through to its
+                    ; default choose.end (calling parse_use directly) for
+                    ; hello.scaly because byte 0 of the stack address
+                    ; sp+0x90 was 0x90 (neither 0 nor 1). Detect throws
+                    ; calls and treat union_value as already-a-pointer.
+                    ; Stage-0's emitChoose has the analogous branch at
+                    ; Emitter.cpp:4678 (UnionValue->getType()->isPointerTy()).
+                    choose cond_op.expr
+                        when call: Call
+                            guard call.can_throw
+                            {
+                                set cond_is_pointer: true
+                                set is_throws_call: true
+                                set throws_call_return_type: cond_op.result_type
+                            }
+                        else
+                            0
                 }
             }
         }
@@ -4586,6 +4617,36 @@ define Emitter
                         {
                             let data_ptr LLVMBuildStructGEP2(builder, union_type, union_ptr, 1, "variant.c_data().ptr")
                             let var_ty map_type(when_case.variant_type)
+                            ; s143: throws-call Success arm. Stage-1 doesn't
+                            ; wrap throws-call returns in a Result struct, so
+                            ; the sret slot IS the bare return value. Bind
+                            ; `success` to a load of the WHOLE sret slot as
+                            ; the call's return_type — not to a GEP of field
+                            ; 1 (which would skip past the type's first
+                            ; field). Without this, `set file: success`
+                            ; stores null_ptr (the void-bind fallback) into
+                            ; the file alloca and propagates garbage through
+                            ; to ProgramSyntax → Modeler.build_program reads
+                            ; syntax.file.declarations as junk and SIGBUSes.
+                            ; Error arm (variant_index=1) keeps the
+                            ; void-binding fallback below — stage-1 has no
+                            ; throws-data payload to recover.
+                            var did_throws_success_bind: bool false
+                            guard is_throws_call
+                            {
+                                guard when_case.variant_index = 0
+                                {
+                                    let rt_ty map_type(throws_call_return_type)
+                                    guard LLVMGetTypeKind(rt_ty) = LLVMTypeKind.Struct()
+                                    {
+                                        let rt_value LLVMBuildLoad2(builder, rt_ty, union_ptr, "throws.success.val")
+                                        define_variable(when_case.name, rt_value)
+                                        set did_throws_success_bind: true
+                                    }
+                                }
+                            }
+                            guard did_throws_success_bind = false
+                            {
                             ; s114: bail when variant_type is unresolved (mapped
                             ; to void). LLVMBuildLoad2 of void calls into
                             ; DataLayout::getTypeSizeInBits which SIGTRAPs on
@@ -4617,6 +4678,7 @@ define Emitter
                                 let var_ptr LLVMBuildBitCast(builder, data_ptr, LLVMPointerTypeInContext(context, 0), "variant.c_data().cast")
                                 let var_value LLVMBuildLoad2(builder, var_ty, var_ptr, "variant.val")
                                 define_variable(when_case.name, var_value)
+                            }
                             }
                         }
                     }
@@ -6321,8 +6383,36 @@ define Emitter
         }
         guard is_sret = false
         {
+            ; s143: function returns by value (not sret). Two sub-cases:
+            ; (a) Struct-by-value return: alloca a Result-like slot, store
+            ;     tag=1, load, ret value. Same as before.
+            ; (b) Primitive/pointer return: there's no place to write the
+            ;     tag and stage-1 doesn't model the Result wrap yet. Emit
+            ;     `ret <zero>` so the function unwinds instead of falling
+            ;     through to garbage. For ptr-returning throws functions
+            ;     (parse_declaration_list, parse_member_list, etc.), the
+            ;     caller's NPO-style choose treats null as the error case
+            ;     and dispatches accordingly. Without this, emit_throw was
+            ;     bailing silently — the case body was empty, the choose
+            ;     fell back to %choose.end → while.cond → re-enter forever.
             guard LLVMGetTypeKind(ret_ty) <> LLVMTypeKind.Struct()
-                return false
+            {
+                ; Evaluate the thrown value purely for its side effects
+                ; (constructor calls on the exception page etc.); we
+                ; can't store it anywhere here.
+                guard throw_stmt.result <> null
+                {
+                    guard throw_stmt.result.length > 0
+                        emit_operands(throw_stmt.result)
+                }
+                emit_block_cleanups(0)
+                let void_ty LLVMVoidTypeInContext(context)
+                if LLVMGetTypeKind(ret_ty) = LLVMGetTypeKind(void_ty)
+                    LLVMBuildRetVoid(builder)
+                else
+                    LLVMBuildRet(builder, LLVMConstNull(ret_ty))
+                return true
+            }
             set result_ty: ret_ty
             set result_ptr: entry_alloca(result_ty, "throw.result")
         }

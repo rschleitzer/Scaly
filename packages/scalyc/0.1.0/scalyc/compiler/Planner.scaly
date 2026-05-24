@@ -4020,6 +4020,21 @@ define Planner
                             guard mm_for_pp.requires_page_param
                                 set call_requires_page: true
                         }
+                        ; s143: propagate the matched function's can_throw
+                        ; flag so plan_choose# can recognise this as a
+                        ; throws-call when planning a choose over its
+                        ; result. Without this, cli.run's
+                        ; `choose p.parse_program#() when err: Error / when
+                        ; program: Success` doesn't get distinct
+                        ; variant_indices and the Error arm always wins via
+                        ; the s142 default-redirect.
+                        var call_can_throw: bool false
+                        guard match_ref <> null
+                        {
+                            let mm_for_ct (*match_ref)
+                            guard mm_for_ct.can_throw
+                                set call_can_throw: true
+                        }
                         var call_args_holder Vector[PlannedOperand]^rp(call_args)
                         let call PlannedCall(
                             result.loc,
@@ -4027,7 +4042,7 @@ define Planner
                             mangled,
                             false,
                             false,
-                            false,
+                            call_can_throw,
                             call_requires_page,
                             &call_args_holder,
                             rt,
@@ -6714,7 +6729,7 @@ define Planner
                 guard w_ptr <> null
                 {
                     let w (*w_ptr)
-                    catches_arr.add(this.plan_when#(w, exc_union_type))
+                    catches_arr.add(this.plan_when#(w, exc_union_type, false))
                 }
                 set ci: ci + 1
             }
@@ -6744,7 +6759,8 @@ define Planner
             rp,
             this: Planner,
             w: When,
-            union_type: PlannedType
+            union_type: PlannedType,
+            is_throws_call: bool
         ) returns PlannedWhen
         {
             this.push_scope()
@@ -6783,6 +6799,54 @@ define Planner
                     set variant_tag: tag as size_t
             }
 
+            ; s143: throws-call synthetic Error/Success variant assignment.
+            ; Mirrors stage-0 Planner.cpp:11363-11382. When the surrounding
+            ; choose's condition is a throwing call AND the union lookup
+            ; failed (variant_type still void), recognise the synthetic
+            ; "Error"/"err"/"error" and "Success"/"Ok"/"ok"/"value"/"node"
+            ; case names and assign variant_index 1 / 0 respectively.
+            ; Without this, emit_choose's seen_tags dedup collapses both
+            ; cases on variant_index=0, the second case body gets dropped,
+            ; and the s142 default-redirect picks whichever arm comes first
+            ; in source order — so cli.run's `choose parse_program#() when
+            ; err: Error / when program: Success` always takes the err arm
+            ; on hello.scaly and prints "Parse error" even when parsing
+            ; succeeds. Distinct variant_indices unblock the natural
+            ; first-byte-of-sret-slot dispatch: parse_X#'s emit_return
+            ; stores the struct (start.size_t low byte = 0 for hello.scaly
+            ; → Success arm); emit_throw stores tag=1 at offset 0 → Error
+            ; arm. Result union wrapping is the proper fix (1-2 day
+            ; refactor) but isn't required for hello.scaly's narrow path.
+            guard variant_type.name.equals("void")
+            {
+                guard is_throws_call
+                {
+                    let is_error variant_name.equals(String$("Error"))
+                    var is_err: bool is_error
+                    guard is_err = false
+                        set is_err: variant_name.equals(String$("err"))
+                    guard is_err = false
+                        set is_err: variant_name.equals(String$("error"))
+                    guard is_err
+                        set variant_tag: 1
+                    guard is_err = false
+                    {
+                        let is_success variant_name.equals(String$("Success"))
+                        var is_ok: bool is_success
+                        guard is_ok = false
+                            set is_ok: variant_name.equals(String$("Ok"))
+                        guard is_ok = false
+                            set is_ok: variant_name.equals(String$("ok"))
+                        guard is_ok = false
+                            set is_ok: variant_name.equals(String$("value"))
+                        guard is_ok = false
+                            set is_ok: variant_name.equals(String$("node"))
+                        guard is_ok
+                            set variant_tag: 0
+                    }
+                }
+            }
+
             this.define_local(w.name, binding_ty, false, false)
 
             let planned_cons this.plan_statement#(w.consequent)
@@ -6809,6 +6873,18 @@ define Planner
             let collapsed_cond this.collapse_operand_sequence#(planned_cond)
             let union_type collapsed_cond.result_type
 
+            ; s143: detect a throws-call as the choose condition. plan_when#
+            ; needs this so it can assign distinct variant_index to the
+            ; synthetic "Error" / "Success" arms, otherwise both collide on
+            ; variant_index=0 and emit_choose's seen_tags dedup drops the
+            ; second arm. See plan_when# comment for the full rationale.
+            var is_throws_call: bool false
+            choose collapsed_cond.expr
+                when call: Call
+                    set is_throws_call: call.can_throw
+                else
+                    0
+
             var cases_arr Array[PlannedWhen]$()
             var i: size_t 0
             while i < c.cases.length
@@ -6817,7 +6893,7 @@ define Planner
                 guard w_ptr <> null
                 {
                     let w (*w_ptr)
-                    cases_arr.add(this.plan_when#(w, union_type))
+                    cases_arr.add(this.plan_when#(w, union_type, is_throws_call))
                 }
                 set i: i + 1
             }
