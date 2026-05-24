@@ -6143,9 +6143,9 @@ define Emitter
         let sret_attr LLVMGetEnumAttributeAtIndex(current_function, 1 as u32, sret_kind_id())
         guard sret_attr.handle <> null
         {
+            let sret_ptr LLVMGetParam(current_function, 0)
             guard ret_val.handle <> null
             {
-                let sret_ptr LLVMGetParam(current_function, 0)
                 var to_store ret_val
                 guard LLVMGetTypeKind(LLVMTypeOf(ret_val)) = LLVMTypeKind.Pointer()
                 {
@@ -6155,6 +6155,29 @@ define Emitter
                 }
                 guard LLVMGetTypeKind(LLVMTypeOf(to_store)) = LLVMTypeKind.Struct()
                     LLVMBuildStore(builder, to_store, sret_ptr)
+            }
+            ; When emit_operands(ret.result) returns null (sub-emit dropped
+            ; statements — happens with multi-statement when-bodies that
+            ; reference union-variant member chains, e.g. parse_identifier's
+            ; `return name` where `let name String^page(ident.name.get_buffer(),
+            ; ident.name.length)` failed to emit), the sret slot is left
+            ; uninitialized. Caller reads garbage — for String that's a
+            ; non-null data pointer with huge length, so length() = 0 checks
+            ; in parse_extension don't fire and the parser loops forever.
+            ; Zero-initialize the sret slot so caller reads a well-defined
+            ; empty value (String { data: null } = length 0) and downstream
+            ; "is this empty?" checks work.
+            guard ret_val.handle = null
+            {
+                let sty LLVMGetTypeAttributeValue(sret_attr)
+                guard sty.handle <> null
+                {
+                    guard LLVMGetTypeKind(sty) = LLVMTypeKind.Struct()
+                    {
+                        let zero_struct LLVMConstNull(sty)
+                        LLVMBuildStore(builder, zero_struct, sret_ptr)
+                    }
+                }
             }
             LLVMBuildRetVoid(builder)
             return true
@@ -6204,30 +6227,49 @@ define Emitter
         guard current_function.handle = null
             return false
 
-        ; Get the return type - should be a Result type. LLVMGetElementType
-        ; is a no-op under opaque pointers (LLVM 14+), so go through
-        ; LLVMGlobalGetValueType to get the function's type, mirroring the
-        ; emit_return path at ~line 4614.
+        ; Two return shapes:
+        ; (a) sret: function's first param has the sret attribute and the
+        ;     LLVM return type is void. The Result is written to the
+        ;     sret slot and the function returns void. Stage-1 was
+        ;     bailing on this case (`ret_ty <> Struct → return false`),
+        ;     which left guard-bodies empty: `guard X throw Y` emitted
+        ;     `if X { br end }` instead of `if X { store result; ret void }`.
+        ;     Parser.parse_extension then fell through to parse_identifier
+        ;     even when no `.` punctuation was present, returning Success
+        ;     forever and infinite-looping parse_extension_list.
+        ; (b) Direct return: the function's LLVM return type is the
+        ;     Result struct itself. Allocate locally, store, ret.
         let func_ty LLVMGlobalGetValueType(current_function)
         let ret_ty LLVMGetReturnType(func_ty)
+        let sret_attr LLVMGetEnumAttributeAtIndex(current_function, 1 as u32, sret_kind_id())
 
-        ; Bail if return type isn't a Result (struct). Functions that throw
-        ; through an sret parameter return void at the LLVM level — handling
-        ; that path needs the sret-attribute lookup that stage-0 has at
-        ; Emitter.cpp:2659-2671. Until that lands, returning false here
-        ; avoids LLVMBuildAlloca's assert on a non-sized (void) type and
-        ; just drops this throw — the caller still terminates cleanly via
-        ; the surrounding return path.
-        guard LLVMGetTypeKind(ret_ty) <> LLVMTypeKind.Struct()
-            return false
-
-        ; Allocate space for the Result
-        let result_ptr entry_alloca(ret_ty, "throw.result")
+        var result_ptr LLVMValueRef(null)
+        var result_ty LLVMTypeRef(null)
+        var is_sret: bool false
+        guard sret_attr.handle <> null
+        {
+            let sty LLVMGetTypeAttributeValue(sret_attr)
+            guard sty.handle <> null
+            {
+                guard LLVMGetTypeKind(sty) = LLVMTypeKind.Struct()
+                {
+                    set is_sret: true
+                    set result_ptr: LLVMGetParam(current_function, 0)
+                    set result_ty: sty
+                }
+            }
+        }
+        guard is_sret = false
+        {
+            guard LLVMGetTypeKind(ret_ty) <> LLVMTypeKind.Struct()
+                return false
+            set result_ty: ret_ty
+            set result_ptr: entry_alloca(result_ty, "throw.result")
+        }
 
         ; Set the tag to 1 (first error variant)
         let i8_ty LLVMInt8TypeInContext(context)
-        let zero LLVMConstInt(LLVMInt32TypeInContext(context), 0, 0)
-        let tag_ptr LLVMBuildStructGEP2(builder, ret_ty, result_ptr, 0, "throw.tag.ptr")
+        let tag_ptr LLVMBuildStructGEP2(builder, result_ty, result_ptr, 0, "throw.tag.ptr")
         let tag_val LLVMConstInt(i8_ty, 1, 0)
         LLVMBuildStore(builder, tag_val, tag_ptr)
 
@@ -6239,9 +6281,20 @@ define Emitter
                 let thrown_value emit_operands(throw_stmt.result)
                 guard thrown_value.handle <> null
                 {
-                    ; Get pointer to the data field (field 1)
-                    let data_ptr LLVMBuildStructGEP2(builder, ret_ty, result_ptr, 1, "throw.c_data().ptr")
-                    LLVMBuildStore(builder, thrown_value, data_ptr)
+                    ; Get pointer to the data field (field 1).
+                    ; Stage-0 stores a pointer to the error object; here
+                    ; we just store whatever emit_operands produced — if
+                    ; the planner gave us a struct value, store it; if a
+                    ; pointer, store the pointer. Mirror the stage-0
+                    ; emitThrow data-handling at Emitter.cpp:2697+.
+                    var n_fields: int 0
+                    guard LLVMGetTypeKind(result_ty) = LLVMTypeKind.Struct()
+                        set n_fields: LLVMCountStructElementTypes(result_ty)
+                    guard n_fields >= 2
+                    {
+                        let data_ptr LLVMBuildStructGEP2(builder, result_ty, result_ptr, 1, "throw.data.ptr")
+                        LLVMBuildStore(builder, thrown_value, data_ptr)
+                    }
                 }
             }
         }
@@ -6249,9 +6302,15 @@ define Emitter
         ; Emit block-scoped cleanups
         emit_block_cleanups(0)
 
-        ; Load and return the result
-        let result LLVMBuildLoad2(builder, ret_ty, result_ptr, "throw.val")
-        LLVMBuildRet(builder, result)
+        ; Return: sret functions return void, direct-return functions
+        ; load+ret the result value.
+        guard is_sret
+            LLVMBuildRetVoid(builder)
+        guard is_sret = false
+        {
+            let result LLVMBuildLoad2(builder, result_ty, result_ptr, "throw.val")
+            LLVMBuildRet(builder, result)
+        }
 
         true
     }
