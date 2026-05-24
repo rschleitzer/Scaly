@@ -4487,6 +4487,17 @@ define Emitter
         ; `CaseValue->getType() == phiTy` gate.
         var phi_ref_type LLVMTypeRef(null)
 
+        ; First emitted case_block — used to redirect the default block
+        ; when the planner couldn't resolve variant indices (all cases
+        ; collide on variant_index=0, so most case bodies get dedup'd).
+        ; Without this redirect, the default block has no terminator
+        ; matching the dropped cases, and `choose parse_X#()` over a
+        ; throws-returning function emits a switch that loops forever:
+        ; my throw fix stores tag=1, switch case 0 doesn't match, default
+        ; (empty) brs to merge, parse_declaration_list re-enters forever.
+        var first_case_block LLVMBasicBlockRef(null)
+        var has_duplicates: bool false
+
         ; Process each when case
         guard choose_expr.cases <> null
         {
@@ -4507,8 +4518,13 @@ define Emitter
                 }
                 guard dup
                 {
-                    ; Skip this whole arm.
-                    set si: si  ; no-op so the guard body isn't empty
+                    ; Skip this whole arm — but remember that we saw a
+                    ; duplicate. After all cases are processed, the default
+                    ; block will branch to the first emitted case_block
+                    ; so the dropped cases' tags fall through to a real
+                    ; case body instead of staying in an empty default
+                    ; (which would re-enter the surrounding loop).
+                    set has_duplicates: true
                 }
                 guard dup = false
                 {
@@ -4517,6 +4533,8 @@ define Emitter
                 LLVMAddCase(switch_inst, tag_const, case_block)
                 seen_tags.put(seen_count, when_case.variant_index)
                 set seen_count: seen_count + 1
+                guard first_case_block.handle = null
+                    set first_case_block: case_block
 
                 LLVMPositionBuilderAtEnd(builder, case_block)
                 ; s128: fresh per-case scope. The variant-name binding
@@ -4682,6 +4700,28 @@ define Emitter
                     set alt_value: emit_action(action)
                 else
                     emit_statement(*r)
+        }
+        ; When the planner couldn't resolve all variant indices (multiple
+        ; cases collided on variant_index=0 → has_duplicates set), and
+        ; there's no explicit `else` clause to fill the default block,
+        ; redirect default to the first emitted case_block. That way the
+        ; dropped cases' tag values fall through to a real case body.
+        ; For parse_declaration_list's outer choose, this makes tag=1
+        ; (from my throw fix) flow into the Error case body — its nested
+        ; choose then has a chance to throw and exit the surrounding
+        ; while loop. Without this, the default block was empty and the
+        ; loop ran forever on the empty-file or hello.scaly input.
+        guard has_duplicates
+        {
+            guard choose_expr.alternative = null
+            {
+                guard first_case_block.handle <> null
+                {
+                    let cur_term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock(builder))
+                    guard cur_term.handle = null
+                        LLVMBuildBr(builder, first_case_block)
+                }
+            }
         }
         let alt_term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock(builder))
         guard alt_term.handle = null
