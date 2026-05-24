@@ -4555,7 +4555,15 @@ define Emitter
                         guard LLVMGetTypeKind(union_type) = LLVMTypeKind.Struct()
                             set n_fields: LLVMCountStructElementTypes(union_type)
                         guard n_fields < 2
-                            define_variable(when_case.name, LLVMValueRef(null))
+                        {
+                            ; Same as the void-var_ty branch below: bind to a
+                            ; non-null ConstNull(ptr) instead of a null handle
+                            ; so emit_call's null-arg bail doesn't silently
+                            ; drop the case body.
+                            let ptr_ty_n LLVMPointerTypeInContext(context, 0)
+                            let null_ptr_n LLVMConstNull(ptr_ty_n)
+                            define_variable(when_case.name, null_ptr_n)
+                        }
                         guard n_fields >= 2
                         {
                             let data_ptr LLVMBuildStructGEP2(builder, union_type, union_ptr, 1, "variant.c_data().ptr")
@@ -4572,7 +4580,19 @@ define Emitter
                             ; preferable to aborting the whole module emit.
                             guard LLVMGetTypeKind(var_ty) = LLVMTypeKind.Void()
                             {
-                                define_variable(when_case.name, LLVMValueRef(null))
+                                ; Bind to a non-null placeholder (null ptr value)
+                                ; rather than a null LLVMValueRef handle. emit_call
+                                ; bails the whole call if any arg's emit_operand
+                                ; returns null (line ~3056), so `when node: Success
+                                ; list.add$(node)` would silently emit NO code in
+                                ; the case body — parse_declaration_list's while
+                                ; loop then has empty case bodies and `br while.cond`
+                                ; from each, producing the empty-file/hello.scaly
+                                ; hang. The actual value being wrong is still
+                                ; preferable to aborting the case body emission.
+                                let ptr_ty LLVMPointerTypeInContext(context, 0)
+                                let null_ptr LLVMConstNull(ptr_ty)
+                                define_variable(when_case.name, null_ptr)
                             }
                             guard LLVMGetTypeKind(var_ty) <> LLVMTypeKind.Void()
                             {
