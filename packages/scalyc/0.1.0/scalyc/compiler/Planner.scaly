@@ -5780,13 +5780,93 @@ define Planner
         ; Simple Expression planners.
         ; ================================================================
 
-        ; plan_sizeof: SizeOf(type) → PlannedSizeOf with computed byte size.
-        ; The size is taken from get_primitive_alignment (which in the
-        ; simplified layout model doubles as the type's byte size).
+        ; plan_sizeof: SizeOf(type) → PlannedSizeOf with computed byte
+        ; size. get_primitive_alignment doubles as size for primitives
+        ; but returns the catch-all 8 for any non-primitive — wrong for
+        ; struct types like Module (80 B). Look the Concept up in the
+        ; registry (set up during plan_program's namespace walk, before
+        ; generic instantiation runs) and compute the size from its
+        ; Model.Property list. Each property's contribution is either a
+        ; primitive byte size or a hardcoded stdlib-container shape:
+        ; Vector = 16 (length + data), String/HashMap = 8 (single ptr).
+        ; That gives Module = 1 (bool) + 7 (pad) + 2*8 + 3*16 + 8 = 80,
+        ; matching the LLVM struct layout. Without this, Vector#(rp,len)
+        ; for Vector[Module] allocates len*8 instead of len*80, and
+        ; put(i, m) overruns and SEGVs build_program.
         function plan_sizeof#(rp, this: Planner, s: SizeOf) returns PlannedSizeOf
         {
             let sized this.plan_type#(s.type)
-            let size Planner.get_primitive_alignment(sized.name)
+            var size: size_t Planner.get_primitive_alignment(sized.name)
+            let c_ref this.lookup_concept(sized.name)
+            guard c_ref <> null
+            {
+                let c (*c_ref)
+                choose c.definition
+                    when st: Structure
+                    {
+                        var offset: size_t 0
+                        var max_align: size_t 1
+                        var pi: size_t 0
+                        while pi < st.properties.length
+                        {
+                            let p_ptr st.properties.get(pi)
+                            guard p_ptr <> null
+                            {
+                                let p (*p_ptr)
+                                guard p.type <> null
+                                {
+                                    let pt (*p.type)
+                                    guard pt.name.length > 0
+                                    {
+                                        let last_ptr pt.name.get(pt.name.length - 1)
+                                        guard last_ptr <> null
+                                        {
+                                            let prop_name (*last_ptr)
+                                            var fld_size: size_t Planner.get_primitive_alignment(prop_name)
+                                            var fld_align: size_t fld_size
+                                            guard prop_name.equals(String$("Vector"))
+                                            {
+                                                set fld_size: 16
+                                                set fld_align: 8
+                                            }
+                                            guard prop_name.equals(String$("Array"))
+                                            {
+                                                set fld_size: 16
+                                                set fld_align: 8
+                                            }
+                                            guard prop_name.equals(String$("String"))
+                                            {
+                                                set fld_size: 8
+                                                set fld_align: 8
+                                            }
+                                            guard prop_name.equals(String$("HashMap"))
+                                            {
+                                                set fld_size: 8
+                                                set fld_align: 8
+                                            }
+                                            guard prop_name.equals(String$("HashSet"))
+                                            {
+                                                set fld_size: 8
+                                                set fld_align: 8
+                                            }
+                                            set offset: Planner.align_offset(offset, fld_align) + fld_size
+                                            guard fld_align > max_align
+                                                set max_align: fld_align
+                                        }
+                                    }
+                                }
+                            }
+                            set pi: pi + 1
+                        }
+                        let total Planner.align_offset(offset, max_align)
+                        guard total > 0
+                            set size: total
+                    }
+                    else
+                    {
+                        0
+                    }
+            }
             PlannedSizeOf(s.span, sized, size)
         }
 
