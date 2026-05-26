@@ -3116,14 +3116,40 @@ define Emitter
                 ; mirrors stage-0's `init.arg.tmp` shim
                 ; (Emitter.cpp:3741-3744). Skipped when we already
                 ; have a pointer from the s101 alloca path.
+                ; s146: extern LLVM-C calls (callee name starts with
+                ; "LLVM") expect single-ptr-field wrapper structs
+                ; (LLVMContextRef = { ptr }) unwrapped to a bare ptr.
+                ; Mirrors stage-0 Emitter.cpp:3964-3981: extractvalue
+                ; the .handle field. Without this, the callee receives
+                ; the address of a stack slot holding the wrapper and
+                ; dereferences garbage — the LLVMModuleCreateWith-
+                ; NameInContext crash in stage-2's Emitter::initialize.
                 guard direct_alloca = false
                 {
                     let arg_kind LLVMGetTypeKind(LLVMTypeOf(arg_value))
                     guard arg_kind = LLVMTypeKind.Struct()
                     {
-                        let arg_alloca entry_alloca(LLVMTypeOf(arg_value), "arg.tmp")
-                        LLVMBuildStore(builder, arg_value, arg_alloca)
-                        set arg_value: arg_alloca
+                        var handled: bool false
+                        guard call.mangled_name.starts_with("LLVM")
+                        {
+                            let arg_ty LLVMTypeOf(arg_value)
+                            let nelems LLVMCountStructElementTypes(arg_ty)
+                            guard nelems = 1
+                            {
+                                let inner LLVMStructGetTypeAtIndex(arg_ty, 0)
+                                guard LLVMGetTypeKind(inner) = LLVMTypeKind.Pointer()
+                                {
+                                    set arg_value: LLVMBuildExtractValue(builder, arg_value, 0, "handle")
+                                    set handled: true
+                                }
+                            }
+                        }
+                        guard handled = false
+                        {
+                            let arg_alloca entry_alloca(LLVMTypeOf(arg_value), "arg.tmp")
+                            LLVMBuildStore(builder, arg_value, arg_alloca)
+                            set arg_value: arg_alloca
+                        }
                     }
                 }
 
@@ -3195,6 +3221,15 @@ define Emitter
             ; Without this, `var x T(); let p &x; (*p).f = 1` mutates
             ; a snapshot in `addr.tmp`, not x. Mirrors stage-0
             ; emitOperand's KeepOriginalPointer + &-shortcut path.
+            ; s146: discriminate by alloca's allocated type. For
+            ; heap-bound vars (var x Foo^p() / Foo$() / Foo#()), the
+            ; alloca holds a ptr; loading it returns the heap address
+            ; callers expect from &x — without this, Plan(&stmts, ...)
+            ; stores the stack alloca address into Plan.statements and
+            ; the next read after return dereferences freed memory.
+            ; For stack-bound mutable structs (var x Foo()), the alloca
+            ; holds the struct itself; passthrough returns the alloca
+            ; address so `(*p).f = 1` still mutates x in place.
             guard call.name.equals(String$("&"))
             {
                 guard arg_op.member_access = null
@@ -3207,9 +3242,20 @@ define Emitter
                                 let var_ptr lookup_variable(v.name)
                                 guard var_ptr.handle <> null
                                 {
-                                    let val_ty LLVMTypeOf(var_ptr)
-                                    guard LLVMGetTypeKind(val_ty) = LLVMTypeKind.Pointer()
-                                        return var_ptr
+                                    let is_alloca LLVMIsAAllocaInst(var_ptr)
+                                    guard is_alloca.handle <> null
+                                    {
+                                        let alloc_ty LLVMGetAllocatedType(var_ptr)
+                                        guard alloc_ty.handle <> null
+                                        {
+                                            guard LLVMGetTypeKind(alloc_ty) = LLVMTypeKind.Pointer()
+                                            {
+                                                let ptr_ty LLVMPointerTypeInContext(context, 0 as u32)
+                                                return LLVMBuildLoad2(builder, ptr_ty, var_ptr, "addr.heap")
+                                            }
+                                        }
+                                    }
+                                    return var_ptr
                                 }
                             }
                         }
