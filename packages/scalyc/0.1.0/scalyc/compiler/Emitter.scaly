@@ -1601,6 +1601,57 @@ define Emitter
                                     guard LLVMGetTypeKind(LLVMTypeOf(result)) = LLVMTypeKind.Pointer()
                                         set ret_val: LLVMBuildLoad2(builder, llvm_rt, result, "ret.load")
                                 }
+                                ; ptr-returning fn with struct value → heap-alloc
+                                ; on rp, store, ret ptr. Workaround for the planner
+                                ; force-stack-allocating `Foo#(...)` data-class
+                                ; ctors regardless of `#` (Planner.scaly:3047 "heap
+                                ; $/#/^ ctor support is deferred"). Without this,
+                                ; `function plan_program#() returns ref[Plan]? {
+                                ; Plan#(...) }` emits `ret ptr null` because the
+                                ; body yields a stack struct that can't be returned
+                                ; as a ref. Mirrors stage-0 emit_tuple's
+                                ; PageAllocate branch for Lifetime.Call.
+                                guard LLVMGetTypeKind(llvm_rt) = LLVMTypeKind.Pointer()
+                                {
+                                    guard LLVMGetTypeKind(LLVMTypeOf(ret_val)) = LLVMTypeKind.Struct()
+                                    {
+                                        let result_ty LLVMTypeOf(ret_val)
+                                        let rp_val lookup_variable(String$("rp"))
+                                        guard rp_val.handle <> null
+                                        {
+                                            var alloc_func lookup_function_cache(String$("_ZN4Page8allocateEmm"))
+                                            guard alloc_func.handle = null
+                                                set alloc_func: LLVMGetNamedFunction(llvm_module, "_ZN4Page8allocateEmm")
+                                            guard alloc_func.handle = null
+                                            {
+                                                var alloc_param_types_d Vector[LLVMTypeRef]#(3)
+                                                alloc_param_types_d.put(0, LLVMPointerTypeInContext(context, 0))
+                                                alloc_param_types_d.put(1, LLVMInt64TypeInContext(context))
+                                                alloc_param_types_d.put(2, LLVMInt64TypeInContext(context))
+                                                let alloc_ret_ty_d LLVMPointerTypeInContext(context, 0)
+                                                let alloc_decl_ty LLVMFunctionType(alloc_ret_ty_d, alloc_param_types_d.data, 3, 0)
+                                                set alloc_func: LLVMAddFunction(llvm_module, "_ZN4Page8allocateEmm", alloc_decl_ty)
+                                                LLVMSetLinkage(alloc_func, LLVMLinkage.External())
+                                                cache_function(String$("_ZN4Page8allocateEmm"), alloc_func)
+                                            }
+                                            let size_const LLVMSizeOf(result_ty)
+                                            let align_const LLVMAlignOf(result_ty)
+                                            var alloc_args Vector[LLVMValueRef]#(3)
+                                            alloc_args.put(0, rp_val)
+                                            alloc_args.put(1, size_const)
+                                            alloc_args.put(2, align_const)
+                                            var alloc_param_types_c Vector[LLVMTypeRef]#(3)
+                                            alloc_param_types_c.put(0, LLVMPointerTypeInContext(context, 0))
+                                            alloc_param_types_c.put(1, LLVMInt64TypeInContext(context))
+                                            alloc_param_types_c.put(2, LLVMInt64TypeInContext(context))
+                                            let alloc_ret_ty_c LLVMPointerTypeInContext(context, 0)
+                                            let alloc_call_ty LLVMFunctionType(alloc_ret_ty_c, alloc_param_types_c.data, 3, 0)
+                                            let heap_ptr LLVMBuildCall2(builder, alloc_call_ty, alloc_func, alloc_args.data, 3, "ret.region")
+                                            LLVMBuildStore(builder, ret_val, heap_ptr)
+                                            set ret_val: heap_ptr
+                                        }
+                                    }
+                                }
                                 ; Defensive: bail on type mismatch. Same rationale
                                 ; as emit_return — fall back to ConstNull which
                                 ; is always type-correct for the LLVM return
@@ -3800,8 +3851,58 @@ define Emitter
             set struct_type: LLVMStructTypeInContext(context, comp_types.data, comp_count as u32, 0)
         }
 
-        ; Allocate on stack (for non-region allocations)
-        let tuple_ptr entry_alloca(struct_type, "tuple")
+        ; Allocate on stack (default) or heap on the appropriate page when
+        ; the tuple carries a non-Unspecified lifetime (#/$/^). Mirrors stage-0
+        ; emitTuple's PageAllocate branch (Emitter.cpp:6389-6421). Without
+        ; this, every `Plan#(...)` / `Vector[T]^rp(...)` data-class ctor goes
+        ; to the stack and any caller storing the pointer past return-time
+        ; gets dangling memory.
+        var tuple_ptr: LLVMValueRef LLVMValueRef(null)
+        guard tuple.is_region_alloc
+        {
+            var page_var_name: String String$("rp")
+            choose tuple.life
+                when l: Local
+                    set page_var_name: String$("local_page")
+                when r: Reference
+                    set page_var_name: r.location
+                else
+                    0
+            let page_val lookup_variable(page_var_name)
+            guard page_val.handle <> null
+            {
+                var alloc_func lookup_function_cache(String$("_ZN4Page8allocateEmm"))
+                guard alloc_func.handle = null
+                    set alloc_func: LLVMGetNamedFunction(llvm_module, "_ZN4Page8allocateEmm")
+                guard alloc_func.handle = null
+                {
+                    var alloc_param_types_d Vector[LLVMTypeRef]#(3)
+                    alloc_param_types_d.put(0, LLVMPointerTypeInContext(context, 0))
+                    alloc_param_types_d.put(1, LLVMInt64TypeInContext(context))
+                    alloc_param_types_d.put(2, LLVMInt64TypeInContext(context))
+                    let alloc_ret_ty_d LLVMPointerTypeInContext(context, 0)
+                    let alloc_decl_ty LLVMFunctionType(alloc_ret_ty_d, alloc_param_types_d.data, 3, 0)
+                    set alloc_func: LLVMAddFunction(llvm_module, "_ZN4Page8allocateEmm", alloc_decl_ty)
+                    LLVMSetLinkage(alloc_func, LLVMLinkage.External())
+                    cache_function(String$("_ZN4Page8allocateEmm"), alloc_func)
+                }
+                let size_const LLVMSizeOf(struct_type)
+                let align_const LLVMAlignOf(struct_type)
+                var alloc_args Vector[LLVMValueRef]#(3)
+                alloc_args.put(0, page_val)
+                alloc_args.put(1, size_const)
+                alloc_args.put(2, align_const)
+                var alloc_param_types_c Vector[LLVMTypeRef]#(3)
+                alloc_param_types_c.put(0, LLVMPointerTypeInContext(context, 0))
+                alloc_param_types_c.put(1, LLVMInt64TypeInContext(context))
+                alloc_param_types_c.put(2, LLVMInt64TypeInContext(context))
+                let alloc_ret_ty_c LLVMPointerTypeInContext(context, 0)
+                let alloc_call_ty LLVMFunctionType(alloc_ret_ty_c, alloc_param_types_c.data, 3, 0)
+                set tuple_ptr: LLVMBuildCall2(builder, alloc_call_ty, alloc_func, alloc_args.data, 3, "tuple.region")
+            }
+        }
+        guard tuple_ptr.handle = null
+            set tuple_ptr: entry_alloca(struct_type, "tuple")
 
         ; Empty struct (zero element types): skip the per-field GEP loop
         ; entirely — `LLVMBuildStructGEP2(t, p, 0)` on an empty struct
@@ -3849,6 +3950,24 @@ define Emitter
                                 set cv: LLVMBuildSExt(builder, cv, field_ty, "tuple.sext")
                             guard cv_w > f_w
                                 set cv: LLVMBuildTrunc(builder, cv, field_ty, "tuple.trunc")
+                        }
+                    }
+                    ; Mirror stage-0 Emitter.cpp:6456-6469: when the value is a
+                    ; ptr but the field expects a struct, load the struct from
+                    ; the pointer before storing. Without this, an 8-byte ptr
+                    ; gets written into a wider struct slot and high bytes are
+                    ; stack garbage — observed: Vector[Module]#(0) stored into
+                    ; Module.modules (Vector<Module>=16B) leaves modules.data
+                    ; uninitialized AND puts the heap ptr into modules.length,
+                    ; making build_program's prelude loop run ~37 billion times.
+                    guard LLVMGetTypeKind(cv_ty) = LLVMTypeKind.Pointer()
+                    {
+                        guard LLVMGetTypeKind(field_ty) = LLVMTypeKind.Struct()
+                        {
+                            guard LLVMIsNull(cv) <> 0
+                                set cv: LLVMConstNull(field_ty)
+                            guard LLVMIsNull(cv) = 0
+                                set cv: LLVMBuildLoad2(builder, field_ty, cv, "field.load")
                         }
                     }
                 }

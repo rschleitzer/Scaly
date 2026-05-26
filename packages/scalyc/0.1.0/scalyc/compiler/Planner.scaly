@@ -3044,15 +3044,26 @@ define Planner
                                 }
                                 else
                                     0
-                            ; Force stack allocation with Unspecified
-                            ; lifetime; heap $/#/^ ctor support is deferred
-                            ; (would need scaly_page_alloc + RBMM wiring).
+                            ; Propagate the type's lifetime into the tuple.
+                            ; ctor_struct_type carries the lifetime from the
+                            ; lifetime marker merge (above) — `Plan#(...)` has
+                            ; life=Call; `String$(...)` has life=Local; etc.
+                            ; Non-Unspecified life ⇒ heap allocation
+                            ; (emit_tuple respects is_region_alloc by calling
+                            ; Page::allocate on the appropriate page).
+                            var is_region: bool false
+                            choose ctor_struct_type.life
+                                when u: Unspecified
+                                    0
+                                else
+                                    set is_region: true
+
                             let reshaped PlannedTuple(
                                 second.loc,
                                 components_holder,
                                 ctor_struct_type,
-                                false,
-                                Lifetime.Unspecified(Unspecified()),
+                                is_region,
+                                ctor_struct_type.life,
                                 null
                             )
                             set result: PlannedOperand(
