@@ -388,8 +388,12 @@ define Emitter
         ; Create LLVM context
         set context: LLVMContextCreate()
 
-        ; Create module
-        set llvm_module: LLVMModuleCreateWithNameInContext(module_name.c_data(), context)
+        ; Create module. Use to_c_string#, not c_data — the latter
+        ; returns a pointer into the String's varint-prefixed buffer
+        ; with NO null terminator, and LLVMModuleCreateWithNameInContext
+        ; reads until NUL. Without this, the Module ID is garbage from
+        ; whatever follows in the heap page (session 28).
+        set llvm_module: LLVMModuleCreateWithNameInContext(module_name.to_c_string#(), context)
 
         ; Create builder
         set builder: LLVMCreateBuilderInContext(context)
