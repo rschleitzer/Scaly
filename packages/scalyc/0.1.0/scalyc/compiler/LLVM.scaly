@@ -456,6 +456,12 @@ function LLVMIsNull(val: LLVMValueRef) returns int extern
 function LLVMIsAAllocaInst(val: LLVMValueRef) returns LLVMValueRef extern
 function LLVMGetAllocatedType(alloca: LLVMValueRef) returns LLVMTypeRef extern
 
+; Structure type name lookup. Returns a C string (NUL-terminated) when the
+; struct is named (`LLVMStructCreateNamed` + setBody), or null for anonymous
+; struct types. Used in emit_tuple to discriminate source struct kinds
+; (Array vs Vector vs etc.) when planning convert-constructor dispatch.
+function LLVMGetStructName(struct_ty: LLVMTypeRef) returns pointer[const_char] extern
+
 ; ============================================================================
 ; Target Functions
 ; ============================================================================
