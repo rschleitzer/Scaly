@@ -3269,8 +3269,14 @@ define Planner
                                                     set skip_dispatch: true
                                                 guard local.binding_type.name.equals(String$("Array"))
                                                     set skip_dispatch: true
-                                                guard local.binding_type.name.equals(String$("List"))
-                                                    set skip_dispatch: true
+                                                ; s148: List removed alongside the is_stdlib_generic lift.
+                                                ; Specialised List<T>::add/count/get_iterator bodies are
+                                                ; now emitted via instantiate_generic#, so dispatch can
+                                                ; route through the s109 extern-decl + record_function
+                                                ; path the same way Vector does (skip_dispatch on Vector
+                                                ; was lifted in s137, no regression there).
+                                                ; guard local.binding_type.name.equals(String$("List"))
+                                                ;     set skip_dispatch: true
                                                 guard local.binding_type.name.equals(String$("ListIterator"))
                                                     set skip_dispatch: true
                                                 guard local.binding_type.name.equals(String$("BuilderList"))
@@ -5548,16 +5554,33 @@ define Planner
                     guard canonical_name.equals("HashSetBuilder")
                         set is_stdlib_generic: true
                     ; s129: Array removed alongside Vector (see comment above).
-                    guard canonical_name.equals("List")
-                        set is_stdlib_generic: true
-                    guard canonical_name.equals("ListIterator")
-                        set is_stdlib_generic: true
+                    ; s148: List + ListIterator + Node removed analogous to
+                    ; the s129 Vector/Array lift. Without this, stage-1's
+                    ; planner doesn't run instantiate_generic# for
+                    ; List<StatementSyntax>/etc., so `list.add$(node)` calls
+                    ; emitted via the skip_dispatch (still kept) extern-decl
+                    ; shim have no body to link against. Specialised bodies
+                    ; (`_ZN4ListIxxxE3addExxx`) are needed because Itanium
+                    ; mangling makes each T-instantiation a distinct symbol
+                    ; and libscaly.a only provides List<int> (used by tests
+                    ; in scaly.scaly itself).
+                    ; guard canonical_name.equals("List")
+                    ;     set is_stdlib_generic: true
+                    ; guard canonical_name.equals("ListIterator")
+                    ;     set is_stdlib_generic: true
                     guard canonical_name.equals("BuilderList")
                         set is_stdlib_generic: true
                     guard canonical_name.equals("BuilderListIterator")
                         set is_stdlib_generic: true
-                    guard canonical_name.equals("Node")
-                        set is_stdlib_generic: true
+                    ; s148: Node removed alongside List (see comment above).
+                    ; List<T>::add allocates Node<T>; with Node in the
+                    ; stdlib-generic skip list it falls through to the
+                    ; abstract `{ptr, ptr}` placeholder (16 bytes for any
+                    ; T) instead of `{T, ptr}` (sizeof(T) + 8). Lifting
+                    ; lets instantiate_generic# produce a properly sized
+                    ; named struct per concrete T.
+                    ; guard canonical_name.equals("Node")
+                    ;     set is_stdlib_generic: true
                     guard canonical_name.equals("Slot")
                         set is_stdlib_generic: true
                     guard canonical_name.equals("Slice")
@@ -9859,6 +9882,75 @@ define Planner
             )
         }
 
+        ; s148: byte size of a type referenced by name (variant payload
+        ; or struct property). Knows about primitives, stdlib container
+        ; shapes (Vector/Array = 16, String/HashMap/HashSet = 8), and
+        ; walks registered Concept Structures' property lists when
+        ; the name is a struct. Default 8 (matches the catch-all in
+        ; get_primitive_alignment for unknown names).
+        function compute_payload_size(this: Planner, name: String) returns size_t
+        {
+            var size: size_t Planner.get_primitive_alignment(name)
+            guard name.equals(String$("Vector"))
+                return 16
+            guard name.equals(String$("Array"))
+                return 16
+            guard name.equals(String$("String"))
+                return 8
+            guard name.equals(String$("HashMap"))
+                return 8
+            guard name.equals(String$("HashSet"))
+                return 8
+            guard name.equals(String$("HashMapBuilder"))
+                return 8
+            guard name.equals(String$("HashSetBuilder"))
+                return 8
+            let c_ref this.lookup_concept(name)
+            guard c_ref <> null
+            {
+                let c (*c_ref)
+                choose c.definition
+                    when st: Structure
+                    {
+                        var offset: size_t 0
+                        var sa: size_t 1
+                        var pi: size_t 0
+                        while pi < st.properties.length
+                        {
+                            let p_ptr st.properties.get(pi)
+                            guard p_ptr <> null
+                            {
+                                let p (*p_ptr)
+                                guard p.type <> null
+                                {
+                                    let pt (*p.type)
+                                    guard pt.name.length > 0
+                                    {
+                                        let last_p pt.name.get(pt.name.length - 1)
+                                        guard last_p <> null
+                                        {
+                                            let pn (*last_p)
+                                            let fs this.compute_payload_size(pn)
+                                            let fa Planner.get_primitive_alignment(pn)
+                                            set offset: Planner.align_offset(offset, fa) + fs
+                                            guard fa > sa
+                                                set sa: fa
+                                        }
+                                    }
+                                }
+                            }
+                            set pi: pi + 1
+                        }
+                        let total Planner.align_offset(offset, sa)
+                        guard total > 0
+                            set size: total
+                    }
+                    else
+                        0
+            }
+            size
+        }
+
         ; plan_union: Model.Union → Plan.PlannedUnion.
         ; Similar scope to plan_structure: plans variants and computes
         ; size/alignment; skips methods/operators for now.
@@ -9880,7 +9972,44 @@ define Planner
             }
 
             var vs_holder Vector[PlannedVariant]^rp(planned_vs)
-            let u_size Planner.compute_union_size(&vs_holder)
+
+            ; s148: compute size with concept-aware variant sizing. The
+            ; static `Planner.compute_union_size` uses
+            ; `get_primitive_alignment(name)` for each variant's payload,
+            ; which returns the catch-all 8 for any non-primitive (so
+            ; e.g. OperationSyntax / LetSyntax all contributed 8 bytes
+            ; regardless of their real layout). StatementSyntax came out
+            ; as 16B instead of stage-0's ~64B → List<StatementSyntax>::add
+            ; allocated 16B Nodes that couldn't hold the value, so even
+            ; with calls now emitted the list never accumulated. Fix:
+            ; walk the registered Concept (Structure case) and sum
+            ; property sizes the same way plan_sizeof# does (s144).
+            var max_payload_size: size_t 0
+            var max_payload_align: size_t 1
+            var vi: size_t 0
+            while vi < planned_vs.length
+            {
+                let vp_ptr planned_vs.get(vi)
+                guard vp_ptr <> null
+                {
+                    let vp (*vp_ptr)
+                    guard vp.var_type <> null
+                    {
+                        let vt (*vp.var_type)
+                        let vsz this.compute_payload_size(vt.name)
+                        let val Planner.get_primitive_alignment(vt.name)
+                        guard vsz > max_payload_size
+                            set max_payload_size: vsz
+                        guard val > max_payload_align
+                            set max_payload_align: val
+                    }
+                }
+                set vi: vi + 1
+            }
+            var tag_sz: size_t 1
+            guard planned_vs.length > 256
+                set tag_sz: 4
+            let u_size Planner.align_offset(max_payload_size + tag_sz, max_payload_align)
             let u_align Planner.compute_union_alignment(&vs_holder)
 
             ; Build the union's own PlannedType + mangled_name upfront
