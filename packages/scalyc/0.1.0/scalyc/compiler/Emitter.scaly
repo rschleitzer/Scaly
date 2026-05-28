@@ -171,6 +171,8 @@ use scaly.compiler.LLVM.LLVMVerifyModule
 use scaly.compiler.LLVM.LLVMVoidTypeInContext
 use scaly.compiler.LLVM.LLVMWriteBitcodeToFile
 use scaly.compiler.LLVM.LLVMStructTypeInContext
+use scaly.compiler.LLVM.LLVMGetModuleDataLayout
+use scaly.compiler.LLVM.LLVMABISizeOfType
 use scaly.compiler.LLVM.LLVMGetEnumAttributeKindForName
 use scaly.compiler.LLVM.LLVMCreateTypeAttribute
 use scaly.compiler.LLVM.LLVMCreateEnumAttribute
@@ -1255,6 +1257,37 @@ define Emitter
     ; ========================================================================
     ; Function Declaration
     ; ========================================================================
+
+    ; s149: Build the Result-wrapper LLVM type for a throws function.
+    ; Shape: { i8 status, [N x i8] data } where N = max(sizeof T, 8).
+    ; The status byte (0 = Success, 1 = Throw) is independent from the
+    ; inner variant tag of T, fixing the stage-0/stage-1 collision when T
+    ; is a union and the Success variant has tag != 0.
+    ; Errors are passed by pointer (allocated on the exception page by
+    ; the thrower), so 8 bytes is sufficient for the error case. Mirrors
+    ; stage-0 Emitter.cpp:1204-1221.
+    function build_throws_result_type(this, value_ty: LLVMTypeRef) returns LLVMTypeRef
+    {
+        let td LLVMGetModuleDataLayout(llvm_module)
+        var value_size: u64 0
+        guard value_ty.handle <> null
+        {
+            guard LLVMGetTypeKind(value_ty) <> LLVMTypeKind.Void()
+                set value_size: LLVMABISizeOfType(td, value_ty)
+        }
+        let ptr_size: u64 8
+        var data_size: u64 value_size
+        guard ptr_size > data_size
+            set data_size: ptr_size
+        guard data_size = 0
+            set data_size: 1
+        let i8_ty LLVMInt8TypeInContext(context)
+        let data_arr_ty LLVMArrayType2(i8_ty, data_size as size_t)
+        var fields Vector[LLVMTypeRef]#(2)
+        fields.put(0, i8_ty)
+        fields.put(1, data_arr_ty)
+        LLVMStructTypeInContext(context, fields.data, 2, 0)
+    }
 
     ; Emit function declaration (signature only)
     function emit_function_decl(this, func: PlannedFunction) returns LLVMValueRef

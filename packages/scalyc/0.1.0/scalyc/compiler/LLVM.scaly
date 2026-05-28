@@ -208,6 +208,10 @@ function LLVMStructTypeInContext(context: LLVMContextRef, element_types: pointer
 function LLVMStructCreateNamed(context: LLVMContextRef, name: pointer[const_char]) returns LLVMTypeRef extern
 procedure LLVMStructSetBody(struct_type: LLVMTypeRef, element_types: pointer[LLVMTypeRef], element_count: int, packed: int) extern
 
+; Data layout / size queries — s149 Result wrapper sizing
+function LLVMGetModuleDataLayout(mod: LLVMModuleRef) returns LLVMTargetDataRef extern
+function LLVMABISizeOfType(td: LLVMTargetDataRef, ty: LLVMTypeRef) returns u64 extern
+
 ; Function type
 function LLVMFunctionType(return_type: LLVMTypeRef, param_types: pointer[LLVMTypeRef], param_count: int, is_var_arg: int) returns LLVMTypeRef extern
 
