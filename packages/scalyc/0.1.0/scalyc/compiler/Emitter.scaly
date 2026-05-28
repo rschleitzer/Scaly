@@ -1856,10 +1856,23 @@ define Emitter
             }
         }
 
-        ; Emit main wrapper for top-level statements if present
+        ; Emit main wrapper for top-level statements if present.
+        ; Stage-1's planner can't auto-deref `plan.statements.length`
+        ; (member access on a `ref[Vector[T]]?` after null-narrow), so a
+        ; direct `guard plan.statements.length > 0` would silently drop
+        ; both itself AND any surrounding guard body when stage-1 plans
+        ; Emitter.scaly. Counting via a `for in plan.statements` first pass
+        ; (auto-iter path works) then `guard count > 0` (local var compare)
+        ; sidesteps the gap. Without an outer length gate, scalyc.scaly's
+        ; emit (no top-level statements) would still create an empty `@main
+        ; () { ret 0 }` that overrides main.scaly's real entry at link time
+        ; — observed: stage-2 silently exiting with no output.
         guard plan.statements <> null
         {
-            guard plan.statements.length > 0
+            var stmt_count: size_t 0
+            for s in plan.statements
+                set stmt_count: stmt_count + 1
+            guard stmt_count > 0
             {
                 ; Create main function if not already present
                 let main_name String$("main")
@@ -3970,6 +3983,47 @@ define Emitter
             return tuple_ptr
         }
 
+        ; Whole-struct short-circuit: when a single comp is the whole struct
+        ; value (not field 0), copy the struct directly. Mirrors stage-0's
+        ; Vector::C1E copy-ctor dispatch — semantically equivalent for
+        ; layout-compatible source/target (both on rp). Without this,
+        ; `Vector[T]^rp(planned_stmts)` where planned_stmts came via sret
+        ; (single-comp, comp is ptr to a struct_type-typed alloca) stores
+        ; only 8 bytes (the ptr address) into the i64 length field, leaving
+        ; data uninitialized. Discriminator: cv is alloca whose allocated
+        ; type equals struct_type. Narrow enough to skip:
+        ; (a) `Vector[T]^rp(0)` — cv is i64, not alloca;
+        ; (b) `PlannedOperand#(ptr_field)` — comp_count >> 1 or alloca's
+        ;     type differs.
+        guard comp_count = 1
+        {
+            guard elem_count > 1
+            {
+                let cv0_ref comp_values.get(0)
+                guard cv0_ref <> null
+                {
+                    let cv0 (*cv0_ref)
+                    guard cv0.handle <> null
+                    {
+                        let cv0_ty LLVMTypeOf(cv0)
+                        let alloca_check LLVMIsAAllocaInst(cv0)
+                        guard alloca_check.handle <> null
+                        {
+                            let alloc_ty LLVMGetAllocatedType(alloca_check)
+                            guard alloc_ty.handle = struct_type.handle
+                            {
+                                let val LLVMBuildLoad2(builder, struct_type, cv0, "wholestruct.load")
+                                LLVMBuildStore(builder, val, tuple_ptr)
+                                guard tuple.is_region_alloc = false
+                                    return LLVMBuildLoad2(builder, struct_type, tuple_ptr, "tuple.val")
+                                return tuple_ptr
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         ; Store component values into struct fields. Use (*ref) instead
         ; of .unwrap() — the intrinsic Option.unwrap on `ref[LLVMValueRef]?`
         ; segfaults in stage-1 when the inner type is a struct.
@@ -5126,11 +5180,19 @@ define Emitter
         guard collection.handle = null
             return LLVMValueRef(null)
 
-        ; Get collection pointer (if not already pointer)
+        ; Get collection pointer (if not already pointer).
+        ; Bug fix: was comparing against raw `14` (Metadata kind), so a
+        ; ptr-typed collection (kind=12=Pointer) was always wrapped in a
+        ; fresh alloca slot, then the function was called with `&slot`
+        ; instead of the actual collection ptr — get_iterator received a
+        ; pointer to a stack slot containing the ptr, dereffed it to read
+        ; Vector{length,data} but got {vec_ptr, garbage} → iterator
+        ; uninitialized → next() returns garbage element pointers and
+        ; emit_struct_type SEGVs in the for-body.
         var collection_ptr collection
         let coll_type LLVMTypeOf(collection)
         let type_kind LLVMGetTypeKind(coll_type)
-        guard type_kind <> 14  ; Not pointer
+        guard type_kind <> LLVMTypeKind.Pointer()
         {
             set collection_ptr: entry_alloca(coll_type, "coll.tmp")
             LLVMBuildStore(builder, collection, collection_ptr)
@@ -5141,20 +5203,55 @@ define Emitter
         guard get_iter_fn.handle = null
             return LLVMValueRef(null)
 
-        ; Call get_iterator() on collection
+        ; Call get_iterator() on collection.
+        ; Stage-0 / stage-1's planner emits get_iterator with sret-return for
+        ; multi-field iterators (VectorIterator = {ptr, i64}): the function
+        ; signature is `void (sret iter, ptr page, ptr coll)` with 3 args.
+        ; A by-value 1-arg call site mismatches the function's ABI and at
+        ; runtime the callee reads garbage for page/coll, returning an
+        ; uninitialized iterator — next() then immediately yields null and
+        ; the for-loop body never runs. Build the 3-arg sret call to match.
         let iter_type map_type(for_expr.iterator_type)
         let iter_alloca entry_alloca(iter_type, "iter.alloca")
 
-        ; Build args for get_iterator call (just the collection pointer)
-        var get_iter_args Vector[LLVMValueRef]#(1)
-        var get_iter_param_types Vector[LLVMTypeRef]#(1)
-        get_iter_args.put(0, collection_ptr)
-        get_iter_param_types.put(0, LLVMTypeOf(collection_ptr))
+        let page_ptr_ty LLVMPointerTypeInContext(context, 0)
+        let coll_ptr_ty LLVMPointerTypeInContext(context, 0)
+        let iter_sret_ty LLVMPointerTypeInContext(context, 0)
 
-        ; Create function type and call get_iterator
-        let get_iter_func_type LLVMFunctionType(iter_type, get_iter_param_types.data, 1, 0)
-        let iterator LLVMBuildCall2(builder, get_iter_func_type, get_iter_fn, get_iter_args.data, 1, "iterator")
-        LLVMBuildStore(builder, iterator, iter_alloca)
+        let rp_val lookup_variable(String$("rp"))
+        var page_arg: LLVMValueRef LLVMValueRef(rp_val.handle)
+        guard page_arg.handle = null
+        {
+            var alloc_fn lookup_function_cache(String$("_Z21scaly_alloc_root_pagev"))
+            guard alloc_fn.handle = null
+                set alloc_fn: LLVMGetNamedFunction(llvm_module, "_Z21scaly_alloc_root_pagev")
+            guard alloc_fn.handle = null
+            {
+                let ret_ty LLVMPointerTypeInContext(context, 0)
+                let alloc_ty LLVMFunctionType(ret_ty, null as pointer[LLVMTypeRef], 0, 0)
+                set alloc_fn: LLVMAddFunction(llvm_module, "_Z21scaly_alloc_root_pagev", alloc_ty)
+                LLVMSetLinkage(alloc_fn, LLVMLinkage.External())
+                cache_function(String$("_Z21scaly_alloc_root_pagev"), alloc_fn)
+            }
+            let alloc_ret_ty LLVMPointerTypeInContext(context, 0)
+            let alloc_func_ty LLVMFunctionType(alloc_ret_ty, null as pointer[LLVMTypeRef], 0, 0)
+            set page_arg: LLVMBuildCall2(builder, alloc_func_ty, alloc_fn, null as pointer[LLVMValueRef], 0, "local_page")
+        }
+        guard page_arg.handle = null
+            return LLVMValueRef(null)
+
+        var get_iter_args Vector[LLVMValueRef]#(3)
+        var get_iter_param_types Vector[LLVMTypeRef]#(3)
+        get_iter_args.put(0, iter_alloca)
+        get_iter_args.put(1, page_arg)
+        get_iter_args.put(2, collection_ptr)
+        get_iter_param_types.put(0, iter_sret_ty)
+        get_iter_param_types.put(1, page_ptr_ty)
+        get_iter_param_types.put(2, coll_ptr_ty)
+
+        let void_ret_ty LLVMVoidTypeInContext(context)
+        let get_iter_func_type LLVMFunctionType(void_ret_ty, get_iter_param_types.data, 3, 0)
+        LLVMBuildCall2(builder, get_iter_func_type, get_iter_fn, get_iter_args.data, 3, "")
 
         ; Look up next function
         let next_fn LLVMGetNamedFunction(llvm_module, for_expr.next_method.c_data())
