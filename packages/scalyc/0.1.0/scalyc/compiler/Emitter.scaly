@@ -1621,21 +1621,64 @@ define Emitter
                     ; first via the sret element type.
                     if use_sret
                     {
-                        guard result.handle <> null
+                        let sret_ptr LLVMGetParam(llvm_func, 0)
+                        ; s150: throws-function implicit return must write
+                        ; into the Result wrapper {i8 status, [N x i8] data}
+                        ; — status=0 (Success) at field 0, T value at field 1.
+                        ; Without this, `function parse_program#() throws ...
+                        ; returns ProgramSyntax { ... ProgramSyntax(...) }`
+                        ; stored the bare ProgramSyntax at sret offset 0,
+                        ; clobbering the status byte. Caller's choose then
+                        ; reads garbage from the data offset and propagates
+                        ; corrupt bytes into the Modeler. Same idea as the
+                        ; emit_return throws branch below.
+                        guard current_function_can_throw
                         {
-                            let sret_ptr LLVMGetParam(llvm_func, 0)
-                            var to_store result
-                            guard LLVMGetTypeKind(LLVMTypeOf(result)) = LLVMTypeKind.Pointer()
+                            let sret_attr_imp LLVMGetEnumAttributeAtIndex(llvm_func, 1 as u32, sret_kind_id())
+                            guard sret_attr_imp.handle <> null
                             {
-                                let rt2 func.return_type.unwrap()
-                                var sty map_type(rt2)
-                                guard LLVMGetTypeKind(sty) <> LLVMTypeKind.Struct()
-                                    set sty: get_or_create_struct_placeholder(rt2.name, rt2.mangled_name)
-                                guard LLVMGetTypeKind(sty) = LLVMTypeKind.Struct()
-                                    set to_store: LLVMBuildLoad2(builder, sty, result, "sret.body")
+                                let result_sty LLVMGetTypeAttributeValue(sret_attr_imp)
+                                let i8_ty_imp LLVMInt8TypeInContext(context)
+                                let tag_ptr_imp LLVMBuildStructGEP2(builder, result_sty, sret_ptr, 0, "ret.tag.ptr")
+                                LLVMBuildStore(builder, LLVMConstInt(i8_ty_imp, 0, 0), tag_ptr_imp)
+                                guard result.handle <> null
+                                {
+                                    let data_ptr_imp LLVMBuildStructGEP2(builder, result_sty, sret_ptr, 1, "ret.data.ptr")
+                                    var to_store_imp result
+                                    guard LLVMGetTypeKind(LLVMTypeOf(result)) = LLVMTypeKind.Pointer()
+                                    {
+                                        let rt2 func.return_type.unwrap()
+                                        var sty_imp map_type(rt2)
+                                        guard LLVMGetTypeKind(sty_imp) <> LLVMTypeKind.Struct()
+                                            set sty_imp: get_or_create_struct_placeholder(rt2.name, rt2.mangled_name)
+                                        guard LLVMGetTypeKind(sty_imp) = LLVMTypeKind.Struct()
+                                            set to_store_imp: LLVMBuildLoad2(builder, sty_imp, result, "sret.body")
+                                    }
+                                    guard LLVMGetTypeKind(LLVMTypeOf(to_store_imp)) = LLVMTypeKind.Struct()
+                                    {
+                                        let store_inst LLVMBuildStore(builder, to_store_imp, data_ptr_imp)
+                                        LLVMSetAlignment(store_inst, 1 as u32)
+                                    }
+                                }
                             }
-                            guard LLVMGetTypeKind(LLVMTypeOf(to_store)) = LLVMTypeKind.Struct()
-                                LLVMBuildStore(builder, to_store, sret_ptr)
+                        }
+                        guard current_function_can_throw = false
+                        {
+                            guard result.handle <> null
+                            {
+                                var to_store result
+                                guard LLVMGetTypeKind(LLVMTypeOf(result)) = LLVMTypeKind.Pointer()
+                                {
+                                    let rt2 func.return_type.unwrap()
+                                    var sty map_type(rt2)
+                                    guard LLVMGetTypeKind(sty) <> LLVMTypeKind.Struct()
+                                        set sty: get_or_create_struct_placeholder(rt2.name, rt2.mangled_name)
+                                    guard LLVMGetTypeKind(sty) = LLVMTypeKind.Struct()
+                                        set to_store: LLVMBuildLoad2(builder, sty, result, "sret.body")
+                                }
+                                guard LLVMGetTypeKind(LLVMTypeOf(to_store)) = LLVMTypeKind.Struct()
+                                    LLVMBuildStore(builder, to_store, sret_ptr)
+                            }
                         }
                         LLVMBuildRetVoid(builder)
                     }
@@ -5006,7 +5049,13 @@ define Emitter
                                     {
                                         ; s149: load T from the Result-wrapper
                                         ; data field (pre-computed at offset 1).
+                                        ; s150: mark align 1 — the wrapper's
+                                        ; struct alignment is 1, and rt_ty's
+                                        ; natural alignment may be 8 (struct
+                                        ; with pointer fields), so the load
+                                        ; from byte offset 1 is misaligned.
                                         let rt_value LLVMBuildLoad2(builder, rt_ty, throws_success_ptr, "throws.success.val")
+                                        LLVMSetAlignment(rt_value, 1 as u32)
                                         define_variable(when_case.name, rt_value)
                                         set did_throws_success_bind: true
                                     }
@@ -6686,8 +6735,16 @@ define Emitter
                 let tag_ptr LLVMBuildStructGEP2(builder, result_sty, sret_ptr, 0, "ret.tag.ptr")
                 LLVMBuildStore(builder, LLVMConstInt(i8_ty_ret, 0, 0), tag_ptr)
                 let data_ptr LLVMBuildStructGEP2(builder, result_sty, sret_ptr, 1, "ret.data.ptr")
+                ; s150: data_ptr lives at byte offset 1 of the Result wrapper
+                ; (which has struct-alignment 1), so any natural-aligned T
+                ; load/store at this address is misaligned. Mark the store
+                ; align 1 so LLVM doesn't lower it to an aligned sequence.
+                ; Mirrors stage-0 emitReturn's CreateAlignedStore(..., Align(1)).
                 guard ret_val.handle <> null
-                    LLVMBuildStore(builder, ret_val, data_ptr)
+                {
+                    let store_inst LLVMBuildStore(builder, ret_val, data_ptr)
+                    LLVMSetAlignment(store_inst, 1 as u32)
+                }
                 LLVMBuildRetVoid(builder)
                 return true
             }
@@ -6868,7 +6925,10 @@ define Emitter
                     guard n_fields >= 2
                     {
                         let data_ptr LLVMBuildStructGEP2(builder, result_ty, result_ptr, 1, "throw.data.ptr")
-                        LLVMBuildStore(builder, thrown_value, data_ptr)
+                        ; s150: Result wrapper has struct-align 1; store at
+                        ; byte offset 1 is misaligned for natural-aligned T.
+                        let store_inst LLVMBuildStore(builder, thrown_value, data_ptr)
+                        LLVMSetAlignment(store_inst, 1 as u32)
                     }
                 }
             }

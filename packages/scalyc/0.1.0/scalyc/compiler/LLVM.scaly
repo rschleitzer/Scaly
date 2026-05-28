@@ -243,6 +243,13 @@ function LLVMCountParams(func: LLVMValueRef) returns int extern
 ; Set linkage
 procedure LLVMSetLinkage(global: LLVMValueRef, linkage: int) extern
 
+; Set the alignment (in bytes) of a load, store, or alloca instruction.
+; Used for the s149 Result-wrapper { i8, [N x i8] } whose struct alignment
+; is 1 — payload T at byte offset 1 is misaligned for any natural-aligned
+; type. Mirrors stage-0 emitChoose/emitReturn/emitThrow's
+; CreateAlignedLoad/Store(..., Align(1), ...).
+procedure LLVMSetAlignment(inst: LLVMValueRef, bytes: u32) extern
+
 ; Set calling convention
 procedure LLVMSetFunctionCallConv(func: LLVMValueRef, cc: int) extern
 
