@@ -2158,7 +2158,8 @@ define Planner
                 false,
                 &args_holder,
                 result_type,
-                Lifetime.Unspecified(Unspecified())
+                Lifetime.Unspecified(Unspecified()),
+                null
             )
         }
 
@@ -2701,7 +2702,8 @@ define Planner
                             false,
                             &args_holder_p,
                             rt,
-                            Lifetime.Unspecified(Unspecified())
+                            Lifetime.Unspecified(Unspecified()),
+                            null
                         )
                         return PlannedOperand(
                             result.loc,
@@ -2962,7 +2964,8 @@ define Planner
                                         has_page_param,
                                         &ctor_args_vec,
                                         ctor_struct_type,
-                                        ctor_struct_type.life
+                                        ctor_struct_type.life,
+                                        null
                                     )
                                     set result: PlannedOperand(
                                         second.loc,
@@ -4046,11 +4049,15 @@ define Planner
                         ; variant_indices and the Error arm always wins via
                         ; the s142 default-redirect.
                         var call_can_throw: bool false
+                        var call_throws_ty: ref[PlannedType]? null
                         guard match_ref <> null
                         {
                             let mm_for_ct (*match_ref)
                             guard mm_for_ct.can_throw
                                 set call_can_throw: true
+                            ; s149: propagate throws error type for Result-wrapper
+                            guard mm_for_ct.throws_type <> null
+                                set call_throws_ty: mm_for_ct.throws_type
                         }
                         var call_args_holder Vector[PlannedOperand]^rp(call_args)
                         let call PlannedCall(
@@ -4063,7 +4070,8 @@ define Planner
                             call_requires_page,
                             &call_args_holder,
                             rt,
-                            Lifetime.Unspecified(Unspecified())
+                            Lifetime.Unspecified(Unspecified()),
+                            call_throws_ty
                         )
                         set result: PlannedOperand(
                             result.loc,
@@ -4502,7 +4510,8 @@ define Planner
                         false,
                         &two_args_holder,
                         combined_type,
-                        Lifetime.Unspecified(Unspecified())
+                        Lifetime.Unspecified(Unspecified()),
+                        null
                     )
                     set result: PlannedOperand(
                         result.loc,

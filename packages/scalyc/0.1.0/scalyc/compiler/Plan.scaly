@@ -346,6 +346,7 @@ define PlannedCall
     args: ref[Vector[PlannedOperand]]?
     result_type: PlannedType
     life: Lifetime              ; For constructors: allocation lifetime
+    throws_type: ref[PlannedType]?  ; s149: throws error type for Result-wrapper sret
 )
 
 ; ============================================================================
