@@ -4019,6 +4019,70 @@ define Emitter
                                 return tuple_ptr
                             }
                         }
+
+                        ; Array→Vector convert (manual): cv is an Array
+                        ; struct value (e.g. from `extractvalue Planner,
+                        ; 8` for instantiated_structures), target is a
+                        ; Vector[T]. Both have {i64, ptr} layout (16B)
+                        ; but Array.vector is ptr-to-inner-Vector, NOT
+                        ; ptr-to-elements. Per-field memcpy would store
+                        ; Array.vector into Vector.data → for-iter sees
+                        ; garbage element ptrs → empty IR at stage-2.
+                        ; Inline the semantic of stage-0's
+                        ; Vector::C1E(rp, Array) — share the inner
+                        ; Vector's data buffer (RBMM-safe, both on rp):
+                        ;   v.length = arr.length
+                        ;   v.data   = (*arr.vector).data
+                        ; Discriminator: source struct's name matches
+                        ; "_Z5Array..." (Array-encoded Itanium prefix).
+                        guard LLVMGetTypeKind(cv0_ty) = LLVMTypeKind.Struct()
+                        {
+                            guard cv0_ty.handle <> struct_type.handle
+                            {
+                                let source_name_c LLVMGetStructName(cv0_ty)
+                                guard source_name_c <> null
+                                {
+                                    let source_name String#(source_name_c)
+                                    guard source_name.starts_with("_Z5Array")
+                                    {
+                                        ; Branch on Array.vector != null: empty
+                                        ; Arrays have vector=null and load would
+                                        ; SEGV. Store {0, null} for empty,
+                                        ; {arr.length, inner.data} otherwise.
+                                        let arr_len LLVMBuildExtractValue(builder, cv0, 0, "arr.length")
+                                        let arr_vec_ptr LLVMBuildExtractValue(builder, cv0, 1, "arr.vector")
+                                        let null_ptr LLVMConstNull(LLVMPointerTypeInContext(context, 0))
+                                        let is_null LLVMBuildICmp(builder, LLVMIntPredicate.EQ(), arr_vec_ptr, null_ptr, "arr.vec.isnull")
+                                        let then_block create_block(String$("conv.empty"))
+                                        let else_block create_block(String$("conv.deref"))
+                                        let end_block create_block(String$("conv.end"))
+                                        LLVMBuildCondBr(builder, is_null, then_block, else_block)
+                                        LLVMPositionBuilderAtEnd(builder, then_block)
+                                        let len_gep_e LLVMBuildStructGEP2(builder, struct_type, tuple_ptr, 0 as u32, "v.length.ptr")
+                                        LLVMBuildStore(builder, LLVMConstInt(LLVMInt64TypeInContext(context), 0, 0), len_gep_e)
+                                        let data_gep_e LLVMBuildStructGEP2(builder, struct_type, tuple_ptr, 1 as u32, "v.data.ptr")
+                                        LLVMBuildStore(builder, null_ptr, data_gep_e)
+                                        LLVMBuildBr(builder, end_block)
+                                        LLVMPositionBuilderAtEnd(builder, else_block)
+                                        var inner_ftys Vector[LLVMTypeRef]#(2)
+                                        inner_ftys.put(0, LLVMInt64TypeInContext(context))
+                                        inner_ftys.put(1, LLVMPointerTypeInContext(context, 0))
+                                        let inner_vec_ty LLVMStructTypeInContext(context, inner_ftys.data, 2, 0)
+                                        let inner_vec LLVMBuildLoad2(builder, inner_vec_ty, arr_vec_ptr, "arr.inner")
+                                        let inner_data LLVMBuildExtractValue(builder, inner_vec, 1, "arr.inner.data")
+                                        let len_gep LLVMBuildStructGEP2(builder, struct_type, tuple_ptr, 0 as u32, "v.length.ptr")
+                                        LLVMBuildStore(builder, arr_len, len_gep)
+                                        let data_gep LLVMBuildStructGEP2(builder, struct_type, tuple_ptr, 1 as u32, "v.data.ptr")
+                                        LLVMBuildStore(builder, inner_data, data_gep)
+                                        LLVMBuildBr(builder, end_block)
+                                        LLVMPositionBuilderAtEnd(builder, end_block)
+                                        guard tuple.is_region_alloc = false
+                                            return LLVMBuildLoad2(builder, struct_type, tuple_ptr, "tuple.val")
+                                        return tuple_ptr
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
