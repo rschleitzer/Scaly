@@ -1346,18 +1346,6 @@ define Emitter
                     set sret_type: mapped
                 guard sret_type.handle = null
                     set sret_type: get_or_create_struct_placeholder(rt.name, rt.mangled_name)
-                ; s149: throws functions wrap the return in
-                ; `{i8 status, [N x i8] data}` so the throws-tag is
-                ; separate from T's variant tag. Without this, a
-                ; throws-fn returning a union sets sret[0] to BOTH
-                ; the variant tag (on success) AND the throws tag
-                ; (on throw), and they collide whenever the Success
-                ; variant has tag != 0.
-                guard func.can_throw
-                {
-                    guard func.throws_type <> null
-                        set sret_type: build_throws_result_type(sret_type)
-                }
             }
             else
                 set llvm_return_type: mapped
