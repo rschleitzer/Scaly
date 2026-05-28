@@ -2825,13 +2825,6 @@ define Emitter
                 set sret_element_ty: mapped
             guard sret_element_ty.handle = null
                 set sret_element_ty: get_or_create_struct_placeholder(call.result_type.name, call.result_type.mangled_name)
-            ; s149: throws-call sret slot is the Result wrapper, matching
-            ; the callee's wrapped sret type from emit_function_decl.
-            guard call.can_throw
-            {
-                guard call.throws_type <> null
-                    set sret_element_ty: build_throws_result_type(sret_element_ty)
-            }
             set sret_slot: entry_alloca(sret_element_ty, "sret.result")
         }
 
