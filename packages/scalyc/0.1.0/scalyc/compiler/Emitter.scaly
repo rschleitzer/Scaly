@@ -1539,17 +1539,6 @@ define Emitter
                 ; Emit the function body
                 set current_function: llvm_func
 
-                ; s149: track whether this function wraps return in Result
-                ; — drives emit_return's status=0 + data-at-offset-1 path.
-                ; Set to true only when emit_function_decl actually wrapped
-                ; (use_sret && func.can_throw && func.throws_type != null).
-                set current_function_can_throw: false
-                guard func.can_throw
-                {
-                    guard func.throws_type <> null
-                        set current_function_can_throw: true
-                }
-
                 ; Create entry block
                 let entry_name String$("entry")
                 let entry_block LLVMAppendBasicBlockInContext(context, llvm_func, entry_name.c_data())
@@ -6659,37 +6648,12 @@ define Emitter
         guard sret_attr.handle <> null
         {
             let sret_ptr LLVMGetParam(current_function, 0)
-            let sty LLVMGetTypeAttributeValue(sret_attr)
-            ; s149: throws function — sret_ty is the Result wrapper
-            ; `{i8 status, [N x i8] data}`. Store 0 at field 0 (Success
-            ; tag) and the returned value at field 1 (data area).
-            guard current_function_can_throw
-            {
-                let i8_ty LLVMInt8TypeInContext(context)
-                let tag_ptr LLVMBuildStructGEP2(builder, sty, sret_ptr, 0, "ret.tag.ptr")
-                LLVMBuildStore(builder, LLVMConstInt(i8_ty, 0, 0), tag_ptr)
-                let data_ptr LLVMBuildStructGEP2(builder, sty, sret_ptr, 1, "ret.data.ptr")
-                guard ret_val.handle <> null
-                {
-                    var to_store ret_val
-                    guard LLVMGetTypeKind(LLVMTypeOf(ret_val)) = LLVMTypeKind.Pointer()
-                    {
-                        ; ret_val may be a pointer to the value (struct
-                        ; returned by-pointer). Don't dereference into a
-                        ; named sret element type — just store the raw
-                        ; bits over the data area.
-                        0
-                    }
-                    LLVMBuildStore(builder, to_store, data_ptr)
-                }
-                LLVMBuildRetVoid(builder)
-                return true
-            }
             guard ret_val.handle <> null
             {
                 var to_store ret_val
                 guard LLVMGetTypeKind(LLVMTypeOf(ret_val)) = LLVMTypeKind.Pointer()
                 {
+                    let sty LLVMGetTypeAttributeValue(sret_attr)
                     guard LLVMGetTypeKind(sty) = LLVMTypeKind.Struct()
                         set to_store: LLVMBuildLoad2(builder, sty, ret_val, "sret.body")
                 }
@@ -6709,6 +6673,7 @@ define Emitter
             ; "is this empty?" checks work.
             guard ret_val.handle = null
             {
+                let sty LLVMGetTypeAttributeValue(sret_attr)
                 guard sty.handle <> null
                 {
                     guard LLVMGetTypeKind(sty) = LLVMTypeKind.Struct()
