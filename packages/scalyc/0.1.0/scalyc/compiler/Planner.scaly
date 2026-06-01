@@ -5832,6 +5832,52 @@ define Planner
             ; (lookupConcept dotted) and 6263-6311 (resolveType module
             ; stack fallback).
             var canonical_name: String String^rp(after_subst.name)
+
+            ; Union.Variant pattern: a dotted name like `Member.Function`
+            ; where the prefix is a Union concept and the suffix is one of
+            ; its variants must KEEP its dotted form so that
+            ; collapse_operand_sequence#'s variant-ctor path (which splits
+            ; on '.' and looks the prefix up as a union) fires. The suffix-
+            ; canonicalization below would otherwise rewrite it to the bare
+            ; suffix when the variant name collides with a registered type
+            ; (e.g. `Concept`/`Function` are both Member variants AND Model
+            ; types), so `Member.Function(fn)` would be planned as a bare
+            ; `Function(fn)` construction and the union wrapper dropped —
+            ; every top-level function/concept member then gets an undef
+            ; tag and the planner's member loop skips it. Stage-0 resolves
+            ; the variant before resolveType ever sees it.
+            guard this.has_concept(canonical_name) = false
+            {
+                let vc_dot canonical_name.last_index_of("." as u8)
+                guard vc_dot > 0
+                {
+                    let vc_start (vc_dot as size_t) + 1
+                    let vc_total canonical_name.get_length()
+                    guard vc_total > vc_start
+                    {
+                        let vc_prefix canonical_name.substring(rp, 0, vc_dot as size_t)
+                        let vc_suffix canonical_name.substring(rp, vc_start, vc_total - vc_start)
+                        let vc_union_ref this.lookup_concept(vc_prefix)
+                        guard vc_union_ref <> null
+                        {
+                            let vc_uconc (*vc_union_ref)
+                            var vc_is_union: bool false
+                            choose vc_uconc.definition
+                                when u: scalyc.compiler.Model.Union
+                                    set vc_is_union: true
+                                else
+                                    0
+                            guard vc_is_union
+                            {
+                                let vc_tag this.lookup_variant_tag(vc_prefix, vc_suffix)
+                                guard vc_tag >= 0
+                                    return after_subst
+                            }
+                        }
+                    }
+                }
+            }
+
             guard this.has_concept(canonical_name) = false
             {
                 let last_dot canonical_name.last_index_of("." as u8)
