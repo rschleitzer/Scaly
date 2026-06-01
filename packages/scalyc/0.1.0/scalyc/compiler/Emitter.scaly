@@ -2418,9 +2418,46 @@ define Emitter
                     ; bodies after the s120 in-place chain bail.
                     guard cur_kind = LLVMTypeKind.Pointer()
                     {
-                        var deref_struct_ty map_type(access.parent_type)
+                        ; s155: when the parent hop's type is itself a
+                        ; pointer[T]/ref[T] (a pointer-typed intermediate
+                        ; field like Array.add's `vector.data`, where the
+                        ; chain extracted `vector: pointer[Inner]` and now
+                        ; resolves `.data` through it), current_value is the
+                        ; pointer and the struct to load is the pointee T.
+                        ; map_type(pointer[Inner]) returns `ptr`, not the
+                        ; Inner struct — unwrap to the inner generic first.
+                        ; Otherwise (s121 heap-stored struct field) the
+                        ; parent_type is already the struct, use it directly.
+                        var deref_parent access.parent_type
+                        guard access.parent_type.name.equals(String$("pointer"))
+                        {
+                            guard access.parent_type.generics <> null
+                            {
+                                let dpg (*access.parent_type.generics)
+                                guard dpg.length > 0
+                                {
+                                    let dip dpg.get(0)
+                                    guard dip <> null
+                                        set deref_parent: (*dip)
+                                }
+                            }
+                        }
+                        guard access.parent_type.name.equals(String$("ref"))
+                        {
+                            guard access.parent_type.generics <> null
+                            {
+                                let dpg (*access.parent_type.generics)
+                                guard dpg.length > 0
+                                {
+                                    let dip dpg.get(0)
+                                    guard dip <> null
+                                        set deref_parent: (*dip)
+                                }
+                            }
+                        }
+                        var deref_struct_ty map_type(deref_parent)
                         guard LLVMGetTypeKind(deref_struct_ty) <> LLVMTypeKind.Struct()
-                            set deref_struct_ty: synthesize_literal_struct(access.parent_type.name)
+                            set deref_struct_ty: synthesize_literal_struct(deref_parent.name)
                         guard deref_struct_ty.handle = null
                             return LLVMValueRef(null)
                         guard LLVMGetTypeKind(deref_struct_ty) <> LLVMTypeKind.Struct()
@@ -3492,6 +3529,59 @@ define Emitter
 
             guard right_arg = null
                 return LLVMValueRef(null)
+
+            ; s155: short-circuit || and && (Scaly semantics, mirrors
+            ; stage-0 emitOperand's lor/land). The RHS must NOT be
+            ; evaluated when the LHS already decides the result — e.g.
+            ; Array.add's `(vector = null) || (length = vector.length)`
+            ; derefs `vector.length` only when vector is non-null. An
+            ; eager `or i1` evaluates both and null-derefs on the first
+            ; add to an empty Array. Emit: cond-branch on LHS, evaluate
+            ; RHS in its own block, phi the two incomings.
+            var is_logical: bool false
+            guard call.name.equals(String$("||"))
+                set is_logical: true
+            guard call.name.equals(String$("&&"))
+                set is_logical: true
+            guard is_logical
+            {
+                let is_or call.name.equals(String$("||"))
+                let lc emit_operand(left_arg.unwrap())
+                let i1_ty LLVMInt1TypeInContext(context)
+                let entry_blk LLVMGetInsertBlock(builder)
+                let rhs_blk LLVMAppendBasicBlockInContext(context, current_function, "lor.rhs")
+                let end_blk LLVMAppendBasicBlockInContext(context, current_function, "lor.end")
+                guard is_or
+                    LLVMBuildCondBr(builder, lc, end_blk, rhs_blk)
+                guard is_or = false
+                    LLVMBuildCondBr(builder, lc, rhs_blk, end_blk)
+                ; Short-circuit value from the entry block: `||`
+                ; contributes constant true, `&&` contributes false.
+                var shortcut LLVMConstInt(i1_ty, 1, 0)
+                guard is_or = false
+                    set shortcut: LLVMConstInt(i1_ty, 0, 0)
+                LLVMPositionBuilderAtEnd(builder, rhs_blk)
+                var rc emit_operand(right_arg.unwrap())
+                ; If the RHS operand can't be emitted (a pre-existing
+                ; emit gap for that sub-expression), fall back to the
+                ; shortcut constant so the phi stays well-formed instead
+                ; of carrying a null operand. These cases were dropped
+                ; outright before short-circuiting existed.
+                guard rc.handle = null
+                    set rc: shortcut
+                let rhs_end LLVMGetInsertBlock(builder)
+                LLVMBuildBr(builder, end_blk)
+                LLVMPositionBuilderAtEnd(builder, end_blk)
+                let phi LLVMBuildPhi(builder, i1_ty, "lor.result")
+                var lvalues Vector[LLVMValueRef]#(2)
+                var lblocks Vector[LLVMBasicBlockRef]#(2)
+                lvalues.put(0, shortcut)
+                lvalues.put(1, rc)
+                lblocks.put(0, entry_blk)
+                lblocks.put(1, rhs_end)
+                LLVMAddIncoming(phi, lvalues.data, lblocks.data, 2)
+                return phi
+            }
 
             let left emit_operand(left_arg.unwrap())
             let right emit_operand(right_arg.unwrap())
