@@ -4302,19 +4302,84 @@ define Planner
                     }
                     when pas: PlannedAs
                     {
-                        var value_holder Vector[PlannedOperand]^rp(1)
-                        value_holder.put(0, result)
-                        let stitched PlannedAs(
-                            pas.loc,
-                            pas.target_type,
-                            value_holder.get(0)
-                        )
-                        set result: PlannedOperand(
-                            op.loc,
-                            PlannedExpression.As(stitched),
-                            null,
-                            pas.target_type
-                        )
+                        ; s152: compile-time fold `<string literal> as char`
+                        ; → CharacterConstant and `as u8` → IntegerConstant
+                        ; (first byte). Without this the string literal stays
+                        ; a ptr (@.str) and emit_as ptrtoint's the ADDRESS to
+                        ; i8 (garbage low byte), so `c = "/" as char` reduces
+                        ; to a constant comparison that folds to false — every
+                        ; such guard in cli/lexer/parser is silently dropped.
+                        ; Mirrors stage-0 Planner.cpp:4470-4517.
+                        var folded: bool false
+                        guard pas.target_type.name.equals(String$("char"))
+                        {
+                            choose result.expr
+                                when pc: scalyc.compiler.Plan.PlannedConstant
+                                {
+                                    choose pc.value
+                                        when s: StringConstant
+                                        {
+                                            let cc Constant.Character(CharacterConstant(s.span, s.value))
+                                            set result: PlannedOperand(
+                                                op.loc,
+                                                PlannedExpression.Constant(scalyc.compiler.Plan.PlannedConstant(cc)),
+                                                null,
+                                                pas.target_type
+                                            )
+                                            set folded: true
+                                        }
+                                        else
+                                            0
+                                }
+                                else
+                                    0
+                        }
+                        guard pas.target_type.name.equals(String$("u8"))
+                        {
+                            guard folded = false
+                            {
+                                choose result.expr
+                                    when pc: scalyc.compiler.Plan.PlannedConstant
+                                    {
+                                        choose pc.value
+                                            when s: StringConstant
+                                            {
+                                                guard s.value.get_length() > 0
+                                                {
+                                                    let bv s.value.get(0)
+                                                    let ic Constant.Integer(IntegerConstant(s.span, bv as size_t))
+                                                    set result: PlannedOperand(
+                                                        op.loc,
+                                                        PlannedExpression.Constant(scalyc.compiler.Plan.PlannedConstant(ic)),
+                                                        null,
+                                                        pas.target_type
+                                                    )
+                                                    set folded: true
+                                                }
+                                            }
+                                            else
+                                                0
+                                    }
+                                    else
+                                        0
+                            }
+                        }
+                        guard folded = false
+                        {
+                            var value_holder Vector[PlannedOperand]^rp(1)
+                            value_holder.put(0, result)
+                            let stitched PlannedAs(
+                                pas.loc,
+                                pas.target_type,
+                                value_holder.get(0)
+                            )
+                            set result: PlannedOperand(
+                                op.loc,
+                                PlannedExpression.As(stitched),
+                                null,
+                                pas.target_type
+                            )
+                        }
                         set handled_unary: true
                     }
                     else
@@ -4390,6 +4455,40 @@ define Planner
                             }
                             else
                                 0
+                    }
+
+                    ; rhs followed by an `as` cast: the postfix `as` binds
+                    ; tighter than a binary operator, so fold [rhs, As] into
+                    ; rhs first. Without this, `x = "/" as char` builds
+                    ; (x = "/") and casts the whole comparison — the
+                    ; string→char fold in the PlannedAs arm never sees the
+                    ; string and the comparison degenerates to a constant.
+                    ; Collapsing [rhs, As] lets that fold fire on the rhs.
+                    guard rhs_call_consumed = false
+                    {
+                        guard i + 2 < ops.length
+                        {
+                            let as_ptr ops.get(i + 2)
+                            guard as_ptr <> null
+                            {
+                                let as_op (*as_ptr)
+                                var is_as_after: bool false
+                                choose as_op.expr
+                                    when pa_after: PlannedAs
+                                        set is_as_after: true
+                                    else
+                                        0
+                                guard is_as_after
+                                {
+                                    var as_arr Array[PlannedOperand]$()
+                                    as_arr.add(rhs)
+                                    as_arr.add(as_op)
+                                    var as_vec Vector[PlannedOperand]^rp(as_arr)
+                                    set rhs: this.collapse_operand_sequence#(as_vec)
+                                    set rhs_call_consumed: true
+                                }
+                            }
+                        }
                     }
 
                     ; Precedence look-ahead. If ops[i+2] is an operator with
