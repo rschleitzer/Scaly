@@ -8434,6 +8434,33 @@ define Planner
                 set i: i + 1
             }
 
+            ; s152: register the implicit page parameter (function#'s `rp`)
+            ; as a pointer[Page] local so the body can pass it as an explicit
+            ; value argument — e.g. `file_path.substring(rp, start, length)`.
+            ; Without this `rp` doesn't resolve as a variable,
+            ; plan_type_operand# mis-plans the operand, and emit_call drops
+            ; the entire call (its arg emits a null handle, line ~3285).
+            ; Symptom: extract_program_name#'s implicit-return substring was
+            ; silently elided (bare `ret void`). Mirrors stage-0's page-param
+            ; binding in planFunction (Planner.cpp implicit `rp`).
+            guard f.page_parameter <> null
+            {
+                let pp_ref f.page_parameter
+                let pp_name (*pp_ref)
+                let pp_page_ty PlannedType(
+                    f.span,
+                    String^rp("Page"),
+                    String^rp(""),
+                    null,
+                    Lifetime.Unspecified(Unspecified()),
+                    null,
+                    String^rp(""),
+                    null
+                )
+                let pp_ptr_ty Planner.make_pointer_type#(pp_page_ty)
+                this.define_local(pp_name, pp_ptr_ty, false, false)
+            }
+
             var return_type: ref[PlannedType]? null
             guard f.returns_ <> null
             {
