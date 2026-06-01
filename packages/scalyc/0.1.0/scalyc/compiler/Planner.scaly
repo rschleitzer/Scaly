@@ -3971,6 +3971,186 @@ define Planner
                                         }
                                     }
                                 }
+
+                                ; s155: Static method call `Type.method(args)`
+                                ; where Type is a Structure concept and method
+                                ; is a this-less function member. Mirrors stage-0
+                                ; Planner.cpp:8421-8517. resolve_function_call#
+                                ; (suffix) above misses these because struct
+                                ; static methods aren't in the free-function
+                                ; registry. Without this, `Page.get(this as
+                                ; pointer[void])` inside Vector/Array.add resolves
+                                ; to null and the whole `let own_page` binding
+                                ; plus every downstream statement (allocate, the
+                                ; item store, `set data`) silently drops — leaving
+                                ; container .add() bodies that only bump `length`.
+                                guard match_ref = null
+                                {
+                                    let smc_ref this.lookup_concept(prefix)
+                                    guard smc_ref <> null
+                                    {
+                                        let smc (*smc_ref)
+                                        var static_fn: ref[Function]? null
+                                        choose smc.definition
+                                            when sst: Structure
+                                            {
+                                                var smi: size_t 0
+                                                while smi < sst.members.length
+                                                {
+                                                    let sm_ptr sst.members.get(smi)
+                                                    guard sm_ptr <> null
+                                                    {
+                                                        let sm (*sm_ptr)
+                                                        choose sm
+                                                            when sf: Function
+                                                            {
+                                                                guard static_fn = null
+                                                                {
+                                                                    guard sf.name.equals(suffix)
+                                                                    {
+                                                                        var is_static: bool true
+                                                                        guard sf.input.length > 0
+                                                                        {
+                                                                            let i0 sf.input.get(0)
+                                                                            guard i0 <> null
+                                                                            {
+                                                                                guard i0.name <> null
+                                                                                {
+                                                                                    guard (*i0.name).equals(String$("this"))
+                                                                                        set is_static: false
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                        guard is_static
+                                                                        {
+                                                                            var sfh Vector[Function]^rp(1)
+                                                                            sfh.put(0, sf)
+                                                                            set static_fn: sfh.get(0)
+                                                                        }
+                                                                    }
+                                                                }
+                                                                0
+                                                            }
+                                                            else
+                                                                0
+                                                    }
+                                                    set smi: smi + 1
+                                                }
+                                            }
+                                            else
+                                                0
+
+                                        guard static_fn <> null
+                                        {
+                                            let sfn (*static_fn)
+                                            var sparent_holder Vector[PlannedType]^rp(1)
+                                            sparent_holder.put(0, PlannedType(
+                                                result.loc,
+                                                String^rp(prefix),
+                                                Planner.encode_name(prefix),
+                                                null,
+                                                Lifetime.Unspecified(Unspecified()),
+                                                null,
+                                                String^rp(""),
+                                                null
+                                            ))
+                                            let sparent_ref sparent_holder.get(0)
+                                            var sitems_arr Array[PlannedItem]$()
+                                            var spi: size_t 0
+                                            while spi < sfn.input.length
+                                            {
+                                                let p_ptr sfn.input.get(spi)
+                                                guard p_ptr <> null
+                                                {
+                                                    guard p_ptr.type <> null
+                                                    {
+                                                        let pt (*p_ptr.type)
+                                                        let planned_p this.plan_type#(pt)
+                                                        var sity Vector[PlannedType]^rp(1)
+                                                        sity.put(0, planned_p)
+                                                        sitems_arr.add(PlannedItem(
+                                                            result.loc, false, null, sity.get(0), null
+                                                        ))
+                                                    }
+                                                }
+                                                set spi: spi + 1
+                                            }
+                                            var sitems_holder Vector[PlannedItem]^rp(sitems_arr)
+                                            ; Page-param flag mirrors plan_function#'s
+                                            ; has_page: explicit page_parameter OR an
+                                            ; implicit return-page (struct-returning fns
+                                            ; like statement_result_type get an rp arg in
+                                            ; the mangled name even with no `#`). Without
+                                            ; the implicit check, the call site mangles
+                                            ; `...E16PlannedStatement` while the def is
+                                            ; `...PageE16PlannedStatement` → link failure.
+                                            var s_pp: bool false
+                                            guard sfn.page_parameter <> null
+                                                set s_pp: true
+                                            guard Planner.needs_implicit_return_page(sfn)
+                                                set s_pp: true
+                                            let smangled Planner.mangle_function#(
+                                                suffix, &sitems_holder, sparent_ref, s_pp
+                                            )
+                                            var s_rt: PlannedType Planner.make_void_type#()
+                                            guard sfn.returns_ <> null
+                                                set s_rt: this.plan_type#((*sfn.returns_))
+                                            var s_throws: ref[PlannedType]? null
+                                            var s_can_throw: bool false
+                                            guard sfn.throws_ <> null
+                                            {
+                                                set s_can_throw: true
+                                                var sth Vector[PlannedType]^rp(1)
+                                                sth.put(0, this.plan_type#((*sfn.throws_)))
+                                                set s_throws: sth.get(0)
+                                            }
+                                            var srt_holder Vector[PlannedType]^rp(1)
+                                            srt_holder.put(0, s_rt)
+                                            var smm_holder Vector[MethodMatch]^rp(1)
+                                            smm_holder.put(0, MethodMatch(
+                                                null,
+                                                smangled,
+                                                s_rt,
+                                                null,
+                                                s_pp,
+                                                s_can_throw,
+                                                s_throws,
+                                                false
+                                            ))
+                                            set match_ref: smm_holder.get(0)
+                                            guard this.has_recorded_function(smangled) = false
+                                            {
+                                                var spp_ref: ref[String]? null
+                                                guard s_pp
+                                                {
+                                                    var spph Vector[String]^rp(1)
+                                                    spph.put(0, String^rp("rp"))
+                                                    set spp_ref: spph.get(0)
+                                                }
+                                                let sextern PlannedImplementation.Extern(
+                                                    PlannedExternImpl(result.loc)
+                                                )
+                                                this.record_function(PlannedFunction(
+                                                    result.loc,
+                                                    false,
+                                                    false,
+                                                    suffix,
+                                                    smangled,
+                                                    spp_ref,
+                                                    &sitems_holder,
+                                                    srt_holder.get(0),
+                                                    s_throws,
+                                                    Lifetime.Unspecified(Unspecified()),
+                                                    sextern,
+                                                    null,
+                                                    false,
+                                                    s_can_throw,
+                                                    null
+                                                ))
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         }
 
