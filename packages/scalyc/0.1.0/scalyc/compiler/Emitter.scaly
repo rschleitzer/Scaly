@@ -734,40 +734,76 @@ define Emitter
         ; in current_plan and emit on demand. emit_struct_type and
         ; emit_union_type cache before setting bodies, so cross-references
         ; in either direction are safe from infinite recursion.
+        ; Two-pass match. Generic instantiations (Vector[Member],
+        ; Vector[Module], ...) all share the bare name "Vector" in
+        ; current_plan.structures, so a name-first match would return
+        ; whichever Vector is first in the list (e.g. Vector[char]),
+        ; typing every Vector-valued struct field identically. The
+        ; mangled name (_Z6VectorI6MemberE) is the specialised key, so
+        ; match it FIRST across the whole list when non-empty; only
+        ; fall back to a bare-name match (non-generic types, or a
+        ; generic whose instantiation isn't recorded). Mirrors stage-0
+        ; Emitter.cpp:873-907 which keys Structures by specialised name.
         guard current_plan.structures <> null
         {
             let structs (*current_plan.structures)
-            var i: size_t 0
-            while i < structs.length
+            guard planned_type.mangled_name.get_length() > 0
             {
-                let s_ptr structs.get(i)
+                var i: size_t 0
+                while i < structs.length
+                {
+                    let s_ptr structs.get(i)
+                    guard s_ptr <> null
+                    {
+                        let s (*s_ptr)
+                        guard s.mangled_name.equals(planned_type.mangled_name)
+                            return emit_struct_type(s)
+                    }
+                    set i: i + 1
+                }
+            }
+            var k: size_t 0
+            while k < structs.length
+            {
+                let s_ptr structs.get(k)
                 guard s_ptr <> null
                 {
                     let s (*s_ptr)
                     guard s.name.equals(planned_type.name)
                         return emit_struct_type(s)
-                    guard s.mangled_name.equals(planned_type.mangled_name)
-                        return emit_struct_type(s)
                 }
-                set i: i + 1
+                set k: k + 1
             }
         }
         guard current_plan.unions <> null
         {
             let unions (*current_plan.unions)
-            var j: size_t 0
-            while j < unions.length
+            guard planned_type.mangled_name.get_length() > 0
             {
-                let u_ptr unions.get(j)
+                var j: size_t 0
+                while j < unions.length
+                {
+                    let u_ptr unions.get(j)
+                    guard u_ptr <> null
+                    {
+                        let u (*u_ptr)
+                        guard u.mangled_name.equals(planned_type.mangled_name)
+                            return emit_union_type(u)
+                    }
+                    set j: j + 1
+                }
+            }
+            var m: size_t 0
+            while m < unions.length
+            {
+                let u_ptr unions.get(m)
                 guard u_ptr <> null
                 {
                     let u (*u_ptr)
                     guard u.name.equals(planned_type.name)
                         return emit_union_type(u)
-                    guard u.mangled_name.equals(planned_type.mangled_name)
-                        return emit_union_type(u)
                 }
-                set j: j + 1
+                set m: m + 1
             }
         }
 
@@ -4588,6 +4624,21 @@ define Emitter
                         ; both branches already br to merge, so the IR stays
                         ; valid; the if simply yields no value.
                         guard then_ty.handle <> else_ty.handle
+                            return LLVMValueRef(null)
+
+                        ; Skip the PHI when the branch values are void.
+                        ; emit_action returns the LAST value it produced;
+                        ; for a branch whose final expression is a void call
+                        ; (e.g. `LLVMSetLinkage(...)`) that value is a void
+                        ; instruction. `then_ty = else_ty = void` passes the
+                        ; type-match guard above, but `phi void` is invalid
+                        ; IR ("void type only allowed for function results")
+                        ; and crashes object codegen. Both arms already br to
+                        ; merge, so skipping the PHI yields valid value-less
+                        ; IR. Mirrors emit_choose's s97 void-input skip.
+                        guard LLVMGetTypeKind(then_ty) = LLVMTypeKind.Void()
+                            return LLVMValueRef(null)
+                        guard LLVMGetTypeKind(else_ty) = LLVMTypeKind.Void()
                             return LLVMValueRef(null)
 
                         ; Create PHI node (types match)
