@@ -4100,11 +4100,26 @@ define Planner
                                 set call_throws_ty: mm_for_ct.throws_type
                         }
                         var call_args_holder Vector[PlannedOperand]^rp(call_args)
+                        ; Option::unwrap / unwrap_or are intrinsics: the
+                        ; emitter inlines them (NPO load / payload extract)
+                        ; rather than calling a library function. Marking
+                        ; them is_intrinsic here routes emit_call to
+                        ; emit_intrinsic_function. Without this, a `.unwrap()`
+                        ; reached via the multi-hop method-on-chain path
+                        ; emits `call _ZN6OptionIR<T>E6unwrapEv` for scalyc
+                        ; type args (PlannedType&, PlannedOperand&, ...) that
+                        ; libscaly.a (Option over scaly types only) can't
+                        ; provide → stage-2 link failure.
+                        var call_is_intrinsic: bool false
+                        guard fn_name.equals(String$("unwrap"))
+                            set call_is_intrinsic: true
+                        guard fn_name.equals(String$("unwrap_or"))
+                            set call_is_intrinsic: true
                         let call PlannedCall(
                             result.loc,
                             fn_name,
                             mangled,
-                            false,
+                            call_is_intrinsic,
                             false,
                             call_can_throw,
                             call_requires_page,
@@ -6381,6 +6396,47 @@ define Planner
                                 &access_holder,
                                 final_type
                             )
+                        }
+
+                        ; Trailing-method chain on a local (e.g.
+                        ; `o.inner.val()`): the chain has one or more
+                        ; field hops followed by a method hop. Return the
+                        ; Variable operand carrying the FULL chain so
+                        ; collapse_operand_sequence#'s method-on-chain
+                        ; dispatch (s83) truncates to the receiver
+                        ; (last_acc.parent_type) and resolves the method.
+                        ; Restricted to chains longer than one hop — the
+                        ; 1-hop `local.method()` case keeps its existing
+                        ; dotted-name qualified-call path to avoid
+                        ; regressing it. Without this, multi-hop method
+                        ; calls fell through to plan_type# (a dotted Type
+                        ; operand whose `()` looked like a free call to a
+                        ; non-existent function) and the whole call was
+                        ; dropped — breaking every `m.members.get(i)` /
+                        ; `m.modules.get(i)` loop body in plan_module# and
+                        ; register_module_concepts.
+                        guard has_method
+                        {
+                            guard access_chain.length > 1
+                            {
+                                let last_ptr access_chain.get(access_chain.length - 1)
+                                guard last_ptr <> null
+                                {
+                                    guard (*last_ptr).is_method
+                                    {
+                                        var access_holder_m Vector[PlannedMemberAccess]^rp(access_chain)
+                                        let final_type_m (*last_ptr).result_type
+                                        return PlannedOperand(
+                                            loc,
+                                            PlannedExpression.Variable(PlannedVariable(
+                                                loc, first_name, lb.binding_type, lb.is_mutable
+                                            )),
+                                            &access_holder_m,
+                                            final_type_m
+                                        )
+                                    }
+                                }
+                            }
                         }
                     }
 
