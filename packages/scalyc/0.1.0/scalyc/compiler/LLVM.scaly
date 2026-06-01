@@ -173,6 +173,12 @@ function LLVMGetInsertBlock(builder: LLVMBuilderRef) returns LLVMBasicBlockRef e
 ; Get the first instruction in a basic block
 function LLVMGetFirstInstruction(block: LLVMBasicBlockRef) returns LLVMValueRef extern
 
+; Cast a value to an instruction (returns null if not an instruction)
+function LLVMIsAInstruction(val: LLVMValueRef) returns LLVMValueRef extern
+
+; Get the basic block that contains an instruction
+function LLVMGetInstructionParent(inst: LLVMValueRef) returns LLVMBasicBlockRef extern
+
 ; ============================================================================
 ; Type Functions
 ; ============================================================================

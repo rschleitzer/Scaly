@@ -162,6 +162,8 @@ use scaly.compiler.LLVM.LLVMPointerTypeInContext
 use scaly.compiler.LLVM.LLVMPositionBuilderAtEnd
 use scaly.compiler.LLVM.LLVMPositionBuilderBefore
 use scaly.compiler.LLVM.LLVMGetFirstInstruction
+use scaly.compiler.LLVM.LLVMIsAInstruction
+use scaly.compiler.LLVM.LLVMGetInstructionParent
 use scaly.compiler.LLVM.LLVMPrintModuleToFile
 use scaly.compiler.LLVM.LLVMPrintModuleToString
 use scaly.compiler.LLVM.LLVMSetLinkage
@@ -4521,7 +4523,22 @@ define Emitter
                         let then_ty LLVMTypeOf(then_value)
                         let else_ty LLVMTypeOf(else_value)
 
-                        ; Create PHI node (types should match for well-formed code)
+                        ; Only build a PHI when both branches yield the same
+                        ; LLVM type. Stage-1's variant construction
+                        ; `Union.Variant(payload)` currently collapses to the
+                        ; bare payload type (a separate planner gap), so the
+                        ; two arms of an `if` whose branches construct
+                        ; different union variants produce mismatched struct
+                        ; types (e.g. Type vs Global). Building a PHI then
+                        ; fails llc with "defined with type X but expected Y".
+                        ; emit_choose handles this via its phi_ref_type lock;
+                        ; mirror it here. When types mismatch, skip the PHI —
+                        ; both branches already br to merge, so the IR stays
+                        ; valid; the if simply yields no value.
+                        guard then_ty.handle <> else_ty.handle
+                            return LLVMValueRef(null)
+
+                        ; Create PHI node (types match)
                         let phi LLVMBuildPhi(builder, then_ty, "if.value")
 
                         ; Add incoming values - need arrays for LLVMAddIncoming
@@ -5133,6 +5150,29 @@ define Emitter
                         {
                             guard LLVMGetTypeKind(cv_type) <> LLVMTypeKind.Void()
                             {
+                                ; The case value must dominate the edge into
+                                ; merge_block. emit_action returns the last
+                                ; LLVMValueRef it produced, which for a
+                                ; statement-y arm can be an intermediate
+                                ; defined in a nested block (e.g. a value from
+                                ; an inner `if`'s then-branch). If that block
+                                ; doesn't dominate case_end_block, using it as
+                                ; a PHI incoming yields "Instruction does not
+                                ; dominate all uses". Mirrors stage-0
+                                ; emitChoose (Emitter.cpp:4810): only accept
+                                ; the value when it's a non-instruction
+                                ; (constant/arg always dominate) or its
+                                ; defining block IS case_end_block.
+                                var dominates: bool true
+                                let cv_inst LLVMIsAInstruction(case_value)
+                                guard cv_inst.handle <> null
+                                {
+                                    let cv_parent LLVMGetInstructionParent(cv_inst)
+                                    guard cv_parent.handle <> case_end_block.handle
+                                        set dominates: false
+                                }
+                                guard dominates = true
+                                {
                                 ; Lock the PHI type from the first incoming;
                                 ; only accept later values whose type matches
                                 ; (LLVM type pointers are uniqued, so handle
@@ -5145,6 +5185,7 @@ define Emitter
                                     phi_blocks.put(phi_count, case_end_block)
                                     set phi_count: phi_count + 1
                                     set added_phi: true
+                                }
                                 }
                             }
                         }
@@ -5215,6 +5256,17 @@ define Emitter
                 {
                     guard LLVMGetTypeKind(av_type) <> LLVMTypeKind.Void()
                     {
+                        ; Same dominance gate as the per-case site above.
+                        var alt_dominates: bool true
+                        let av_inst LLVMIsAInstruction(alt_value)
+                        guard av_inst.handle <> null
+                        {
+                            let av_parent LLVMGetInstructionParent(av_inst)
+                            guard av_parent.handle <> alt_end_block.handle
+                                set alt_dominates: false
+                        }
+                        guard alt_dominates = true
+                        {
                         guard phi_ref_type.handle = null
                             set phi_ref_type: av_type
                         guard av_type.handle = phi_ref_type.handle
@@ -5223,6 +5275,7 @@ define Emitter
                             phi_blocks.put(phi_count, alt_end_block)
                             set phi_count: phi_count + 1
                             set added_alt_phi: true
+                        }
                         }
                     }
                 }
