@@ -3310,8 +3310,17 @@ define Planner
                                                     set skip_dispatch: true
                                                 guard local.binding_type.name.equals(String$("HashSetBuilder"))
                                                     set skip_dispatch: true
-                                                guard local.binding_type.name.equals(String$("Array"))
-                                                    set skip_dispatch: true
+                                                ; s154: Array removed from skip_dispatch, mirroring
+                                                ; the s137 Vector lift. Array[T] is specialised via
+                                                ; instantiate_generic# (s129), so the s109 method-
+                                                ; dispatch path (lookup_method# + extern-decl record)
+                                                ; produces the right `_ZN5ArrayI<T>E3addE<T>` symbol.
+                                                ; Without this, `functions.add(this.plan_function#(f,
+                                                ; null))` in plan_module#'s member loop skipped
+                                                ; dispatch entirely and the whole statement dropped —
+                                                ; so plan_function# was never called, instantiated_
+                                                ; functions stayed empty, and stage-2 emitted zero
+                                                ; functions.
                                                 ; s148: List removed alongside the is_stdlib_generic lift.
                                                 ; Specialised List<T>::add/count/get_iterator bodies are
                                                 ; now emitted via instantiate_generic#, so dispatch can
