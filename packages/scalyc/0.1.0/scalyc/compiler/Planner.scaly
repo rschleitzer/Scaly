@@ -2653,17 +2653,18 @@ define Planner
                             guard prefix_name.equals(String$("*"))
                             {
                                 ; Dereference: result is the pointer's
-                                ; element type (first generic parameter).
-                                guard rest_result.result_type.generics <> null
-                                {
-                                    let gens (*rest_result.result_type.generics)
-                                    guard gens.length > 0
-                                    {
-                                        let g_ptr gens.get(0)
-                                        guard g_ptr <> null
-                                            set rt: (*g_ptr)
-                                    }
-                                }
+                                ; element type. Use get_pointer_element_type
+                                ; so Option[ref[T]] / Option[pointer[T]]
+                                ; unwrap to T (NOT ref[T] / pointer[T]).
+                                ; Without this, choose-on-dereffed-union
+                                ; sees result_type=ref[T] and emit_choose's
+                                ; NPO heuristic dispatches via null check
+                                ; instead of tag dispatch — silently dropping
+                                ; all but one when-arm. Mirrors stage-0
+                                ; Planner.cpp:3866-3870.
+                                let elem_ref Planner.get_pointer_element_type(rest_result.result_type)
+                                guard elem_ref <> null
+                                    set rt: (*elem_ref)
                             }
                             ; s96: address-of — wrap operand in pointer[T].
                             ; Mirrors stage-0 Planner.cpp:3877 (resolvePrefix
