@@ -1114,29 +1114,13 @@ function handle_statements#(syntax: ref[Vector[StatementSyntax]]?) returns Vecto
 
     let stmts (*syntax)
 
-    ; Count non-Empty statements. EmptySyntax is a blank-line marker the
-    ; parser emits between real statements; it carries no value, and
-    ; admitting it as a trailing void Action would clobber the block's
-    ; last-value tracking. Mirrors Modeler.cpp:564-565.
-    var keep: size_t 0
-    var c: size_t 0
-    while c < stmts.length
-    {
-        let p stmts.get(c)
-        guard p <> null
-        {
-            let s (*p)
-            choose s
-                when e: EmptySyntax {}
-                else
-                    set keep: keep + 1
-        }
-        set c: c + 1
-    }
-
-    var result Vector[Statement]#(keep)
+    ; EmptySyntax is a blank-line marker the parser emits between real
+    ; statements; it carries no value, and admitting it as a trailing void
+    ; Action would clobber the block's last-value tracking. Mirrors
+    ; Modeler.cpp:564-565. OperationSyntax with embedded statement-like
+    ; operands may also produce multiple Actions, so we grow via .add.
+    var result Vector[Statement]#(0)
     var i: size_t 0
-    var w: size_t 0
     while i < stmts.length
     {
         let stmt_ptr stmts.get(i)
@@ -1145,16 +1129,125 @@ function handle_statements#(syntax: ref[Vector[StatementSyntax]]?) returns Vecto
             let stmt_syntax (*stmt_ptr)
             choose stmt_syntax
                 when e: EmptySyntax {}
+                when op: OperationSyntax
+                {
+                    var did_split: bool false
+                    guard op.operands <> null
+                    {
+                        let ops_ref op.operands
+                        let ops_val (*ops_ref)
+                        guard ops_val.length > 1
+                        {
+                            var stmt_like_count: size_t 0
+                            var c: size_t 0
+                            while c < ops_val.length
+                            {
+                                let op_ptr ops_val.get(c)
+                                guard op_ptr <> null
+                                {
+                                    let oe (*op_ptr)
+                                    guard is_statement_like_expression(oe.expression)
+                                        set stmt_like_count: stmt_like_count + 1
+                                }
+                                set c: c + 1
+                            }
+                            guard stmt_like_count > 0
+                            {
+                                ; Pre-model all operands once.
+                                var all_operands Vector[Operand]#(0)
+                                var ai: size_t 0
+                                while ai < ops_val.length
+                                {
+                                    let op_ptr2 ops_val.get(ai)
+                                    guard op_ptr2 <> null
+                                    {
+                                        let oe2 (*op_ptr2)
+                                        let modelled handle_operand#(oe2)
+                                        all_operands.add(modelled)
+                                    }
+                                    set ai: ai + 1
+                                }
+                                ; Group: each stmt-like operand closes its
+                                ; group. Operands after the last stmt-like
+                                ; form a tail group.
+                                var groups_emitted: size_t 0
+                                var group_start: size_t 0
+                                var bi: size_t 0
+                                while bi < ops_val.length
+                                {
+                                    let op_ptr3 ops_val.get(bi)
+                                    guard op_ptr3 <> null
+                                    {
+                                        let oe3 (*op_ptr3)
+                                        guard is_statement_like_expression(oe3.expression)
+                                        {
+                                            let group_size bi - group_start + 1
+                                            var group_ops Vector[Operand]#(0)
+                                            var gi: size_t 0
+                                            while gi < group_size
+                                            {
+                                                let opp all_operands.get(group_start + gi)
+                                                guard opp <> null
+                                                    group_ops.add(*opp)
+                                                set gi: gi + 1
+                                            }
+                                            result.add(Statement.Action(Action(group_ops, Vector[Operand]#(0))))
+                                            set groups_emitted: groups_emitted + 1
+                                            set group_start: bi + 1
+                                        }
+                                    }
+                                    set bi: bi + 1
+                                }
+                                guard group_start < ops_val.length
+                                {
+                                    let tail_size ops_val.length - group_start
+                                    var tail_ops Vector[Operand]#(0)
+                                    var ti: size_t 0
+                                    while ti < tail_size
+                                    {
+                                        let opp2 all_operands.get(group_start + ti)
+                                        guard opp2 <> null
+                                            tail_ops.add(*opp2)
+                                        set ti: ti + 1
+                                    }
+                                    result.add(Statement.Action(Action(tail_ops, Vector[Operand]#(0))))
+                                    set groups_emitted: groups_emitted + 1
+                                }
+                                guard groups_emitted > 1
+                                    set did_split: true
+                            }
+                        }
+                    }
+                    guard did_split = false
+                    {
+                        let stmt handle_statement#(stmt_syntax)
+                        result.add(stmt)
+                    }
+                }
                 else
                 {
                     let stmt handle_statement#(stmt_syntax)
-                    result.put(w, stmt)
-                    set w: w + 1
+                    result.add(stmt)
                 }
         }
         set i: i + 1
     }
     result
+}
+
+function is_statement_like_expression(expr: ExpressionSyntax) returns bool
+{
+    choose expr
+        when c: ChooseSyntax true
+        when ifs: IfSyntax true
+        when m: MatchSyntax true
+        when w: WhileSyntax true
+        when f: ForSyntax true
+        when t: TrySyntax true
+        when g: GuardSyntax true
+        when r: RepeatSyntax true
+        when b: BlockSyntax true
+        else false
 }
 
 ; ============================================================================
