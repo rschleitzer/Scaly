@@ -2083,6 +2083,58 @@ define Emitter
                             }
                             set i: i + 1
                         }
+                        ; Second marker: scalyc-specific stdlib-generic
+                        ; method instantiations whose body stage-1 can't
+                        ; emit (s125b: HashMapBuilder[K,V] et al. are treated
+                        ; as opaque ptr, so their methods come out as extern
+                        ; declares expecting libscaly.a to define them). The
+                        ; only such instantiation reached by scalyc.scaly is
+                        ; HashMapBuilder[String, Nameable] — Nameable is a
+                        ; scalyc type, so libscaly.a (built from scaly.scaly)
+                        ; never provides it. Until real HashMapBuilder
+                        ; instantiation lands (Step 4 generics), stub it to a
+                        ; no-op: equivalent to the pre-fix behavior where the
+                        ; symbol-registering `.add` call was dropped entirely.
+                        ; Marker "Nameable" = ASCII 78 97 109 101 97 98 108 101.
+                        guard has_marker = false
+                        {
+                            guard name_len > 8
+                            {
+                                var j: size_t 0
+                                let scan_limit2 name_len - 8
+                                while j <= scan_limit2
+                                {
+                                    guard has_marker = false
+                                    {
+                                        let q0 *(name_ptr + j)
+                                        guard q0 = 78
+                                        {
+                                            guard (*(name_ptr + (j + 1))) = 97
+                                            {
+                                                guard (*(name_ptr + (j + 2))) = 109
+                                                {
+                                                    guard (*(name_ptr + (j + 3))) = 101
+                                                    {
+                                                        guard (*(name_ptr + (j + 4))) = 97
+                                                        {
+                                                            guard (*(name_ptr + (j + 5))) = 98
+                                                            {
+                                                                guard (*(name_ptr + (j + 6))) = 108
+                                                                {
+                                                                    guard (*(name_ptr + (j + 7))) = 101
+                                                                        set has_marker: true
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                    set j: j + 1
+                                }
+                            }
+                        }
                         guard has_marker
                         {
                             let saved_block LLVMGetInsertBlock(builder)
