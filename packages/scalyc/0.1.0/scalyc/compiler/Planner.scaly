@@ -1430,6 +1430,25 @@ define Planner
                         let v_ptr u.variants.get(i)
                         guard v_ptr <> null
                         {
+                            ; Scaly `when TypeName: x` matches by the
+                            ; variant's TYPE name (last dotted segment),
+                            ; not its declared field name. `Empty: EmptySyntax`
+                            ; has name="Empty" but the when-arm reads
+                            ; "EmptySyntax". Fall back to the field name for
+                            ; Result-style `when err: Error`. Mirrors stage-0
+                            ; Planner.cpp:11291-11313.
+                            guard v_ptr.type <> null
+                            {
+                                let type_ptr v_ptr.type
+                                let type_val (*type_ptr)
+                                guard type_val.name.length > 0
+                                {
+                                    let last_ptr type_val.name.get(type_val.name.length - 1)
+                                    guard last_ptr <> null
+                                        guard last_ptr.equals(variant_name)
+                                            return i as int
+                                }
+                            }
                             guard v_ptr.name.equals(variant_name)
                                 return i as int
                         }
@@ -1466,7 +1485,27 @@ define Planner
                         let v_ptr u.variants.get(i)
                         guard v_ptr <> null
                         {
-                            guard v_ptr.name.equals(variant_name)
+                            ; Match by variant TYPE name (last dotted
+                            ; segment) first, then fall back to field name.
+                            ; Mirrors lookup_variant_tag / stage-0
+                            ; Planner.cpp:11291-11313.
+                            var matched: bool false
+                            guard v_ptr.type <> null
+                            {
+                                let type_ptr v_ptr.type
+                                let type_val (*type_ptr)
+                                guard type_val.name.length > 0
+                                {
+                                    let last_ptr type_val.name.get(type_val.name.length - 1)
+                                    guard last_ptr <> null
+                                        guard last_ptr.equals(variant_name)
+                                            set matched: true
+                                }
+                            }
+                            guard matched = false
+                                guard v_ptr.name.equals(variant_name)
+                                    set matched: true
+                            guard matched = true
                             {
                                 guard v_ptr.type = null
                                     return null
