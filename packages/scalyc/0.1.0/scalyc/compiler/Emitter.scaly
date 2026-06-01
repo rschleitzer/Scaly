@@ -5009,6 +5009,15 @@ define Emitter
         ; planner couldn't resolve and fell back to void.
         var is_throws_call: bool false
         var throws_call_return_type: PlannedType Planner.make_void_type#()
+        ; s157: a throws-call returning a pointer/ref (e.g.
+        ; parse_declaration_list# -> ref[Vector[..]]?) is NOT wrapped in
+        ; the sret Result struct — it returns the bare pointer and signals
+        ; an error by returning null (NPO-style, see emit_throw 7166-7197).
+        ; For these, union_value IS the returned pointer (null=error), so
+        ; the tag must come from a null-check and the Success arm binds
+        ; union_value directly — NOT a load from the (nonexistent) Result
+        ; wrapper's offset-1 data field.
+        var throws_is_ptr: bool false
         guard choose_expr.condition <> null
         {
             let cond_vec (*choose_expr.condition)
@@ -5042,6 +5051,10 @@ define Emitter
                                 set cond_is_pointer: true
                                 set is_throws_call: true
                                 set throws_call_return_type: cond_op.result_type
+                                guard cond_op.result_type.name.equals(String$("ref"))
+                                    set throws_is_ptr: true
+                                guard cond_op.result_type.name.equals(String$("pointer"))
+                                    set throws_is_ptr: true
                             }
                         else
                             0
@@ -5063,7 +5076,14 @@ define Emitter
         ; when non-null (Some has variant_index=0).
         let i8_ty LLVMInt8TypeInContext(context)
         var tag LLVMValueRef(null)
-        guard is_npo = false
+        ; s157: derive the tag from a null-check both for NPO Options and
+        ; for pointer-returning throws calls (union_value is the bare
+        ; returned pointer, null=error). A struct/sret throws call still
+        ; loads the tag from offset 0 of the Result wrapper.
+        var use_null_tag: bool is_npo
+        guard throws_is_ptr
+            set use_null_tag: true
+        guard use_null_tag = false
         {
             let tag_ptr LLVMBuildStructGEP2(builder, union_type, union_ptr, 0, "tag.ptr")
             set tag: LLVMBuildLoad2(builder, i8_ty, tag_ptr, "tag")
@@ -5074,15 +5094,20 @@ define Emitter
         ; Hoisting out of the deep nested guards avoids a stage-0
         ; codegen bug that placed the GEP result and its auto-deref
         ; extractvalue in different basic blocks → dominance error.
+        ; s157: skip for throws_is_ptr — there is no Result wrapper, so an
+        ; offset-1 GEP would point past the returned pointer value.
         var throws_success_ptr LLVMValueRef(null)
-        guard is_throws_call
+        var compute_throws_ptr: bool is_throws_call
+        guard throws_is_ptr
+            set compute_throws_ptr: false
+        guard compute_throws_ptr
         {
             let one_val LLVMConstInt(i8_ty, 1, 0)
             var idx_vec Vector[LLVMValueRef]#(1)
             idx_vec.put(0, one_val)
             set throws_success_ptr: LLVMBuildInBoundsGEP2(builder, i8_ty, union_ptr, idx_vec.data, 1, "throws.data.ptr")
         }
-        guard is_npo
+        guard use_null_tag
         {
             ; icmp eq ptr null returns i1; zext to i8 to match tagged path.
             let ptr_ty LLVMPointerTypeInContext(context, 0)
@@ -5252,22 +5277,53 @@ define Emitter
                             var did_throws_success_bind: bool false
                             guard is_throws_call
                             {
-                                guard when_case.variant_index = 0
+                                ; s157: pointer-returning throws call (NPO-style).
+                                ; union_value IS the returned pointer (null on
+                                ; error, the result on success) — there is no
+                                ; Result wrapper. Bind both arms directly to
+                                ; union_value: the Success arm gets the real
+                                ; pointer (e.g. the declarations Vector), the
+                                ; Error arm gets null (the err binding is unused
+                                ; in error arms). Restricting the old code to
+                                ; loading offset-1 of a nonexistent wrapper left
+                                ; `set declarations: success` bound to garbage
+                                ; null → modeler saw 0 declarations.
+                                guard throws_is_ptr
                                 {
-                                    let rt_ty map_type(throws_call_return_type)
-                                    guard LLVMGetTypeKind(rt_ty) = LLVMTypeKind.Struct()
+                                    define_variable(when_case.name, union_value)
+                                    set did_throws_success_bind: true
+                                }
+                                guard throws_is_ptr = false
+                                {
+                                    guard when_case.variant_index = 0
                                     {
-                                        ; s149: load T from the Result-wrapper
+                                        let rt_ty map_type(throws_call_return_type)
+                                        ; s149/s150: load T from the Result-wrapper
                                         ; data field (pre-computed at offset 1).
-                                        ; s150: mark align 1 — the wrapper's
-                                        ; struct alignment is 1, and rt_ty's
-                                        ; natural alignment may be 8 (struct
-                                        ; with pointer fields), so the load
-                                        ; from byte offset 1 is misaligned.
-                                        let rt_value LLVMBuildLoad2(builder, rt_ty, throws_success_ptr, "throws.success.val")
-                                        LLVMSetAlignment(rt_value, 1 as u32)
-                                        define_variable(when_case.name, rt_value)
-                                        set did_throws_success_bind: true
+                                        ; align 1 — the wrapper's struct alignment
+                                        ; is 1, rt_ty's natural alignment may be 8.
+                                        guard LLVMGetTypeKind(rt_ty) = LLVMTypeKind.Struct()
+                                        {
+                                            let rt_value LLVMBuildLoad2(builder, rt_ty, throws_success_ptr, "throws.success.val")
+                                            LLVMSetAlignment(rt_value, 1 as u32)
+                                            define_variable(when_case.name, rt_value)
+                                            set did_throws_success_bind: true
+                                        }
+                                    }
+                                    ; s156: Error arm (variant_index<>0). The
+                                    ; planner now types `err` as ParserError
+                                    ; (throws_ty), so var_ty is a real struct.
+                                    ; Load it from the Result-wrapper data field
+                                    ; (offset 1) where emit_throw stored it.
+                                    guard when_case.variant_index <> 0
+                                    {
+                                        guard LLVMGetTypeKind(var_ty) = LLVMTypeKind.Struct()
+                                        {
+                                            let err_value LLVMBuildLoad2(builder, var_ty, throws_success_ptr, "throws.err.val")
+                                            LLVMSetAlignment(err_value, 1 as u32)
+                                            define_variable(when_case.name, err_value)
+                                            set did_throws_success_bind: true
+                                        }
                                     }
                                 }
                             }

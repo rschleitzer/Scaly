@@ -223,26 +223,17 @@ define Parser
 
     function parse_declaration_list#(rp, this: Parser) returns ref[Vector[DeclarationSyntax]]? throws ParserError
     {
-        var list List[DeclarationSyntax]$()
-        while true
+        var acc Vector[DeclarationSyntax]#(0)
+        var parsing: bool true
+        while parsing
         {
             choose parse_declaration#()
                 when err: Error
-                {
-                    choose err
-                        when i: Invalid
-                            throw ParserError.Invalid(i)
-                        when d: Different
-                        {
-                            if list.head = null
-                                throw ParserError.Different(d)
-                            else
-                                return Vector[DeclarationSyntax]#(list)
-                        }
-                }
+                    set parsing: false
                 when node: Success
-                    list.add$(node)
+                    acc.add(node)
         }
+        acc
     }
 
     function parse_declaration#(rp, this: Parser) returns DeclarationSyntax throws ParserError
@@ -463,26 +454,21 @@ define Parser
 
     function parse_member_list#(rp, this: Parser) returns ref[Vector[MemberSyntax]]? throws ParserError
     {
-        var list List[MemberSyntax]$()
-        while true
+        var acc Vector[MemberSyntax]#(0)
+        var parsing: bool true
+        while parsing
         {
             choose parse_member#()
                 when err: Error
                 {
-                    choose err
-                        when i: Invalid
-                            throw ParserError.Invalid(i)
-                        when d: Different
-                        {
-                            if list.head = null
-                                throw ParserError.Different(d)
-                            else
-                                return Vector[MemberSyntax]#(list)
-                        }
+                    guard acc.length = 0
+                        throw err
+                    set parsing: false
                 }
                 when node: Success
-                    list.add$(node)
+                    acc.add(node)
         }
+        acc
     }
 
     function parse_member#(rp, this: Parser) returns MemberSyntax throws ParserError
@@ -688,26 +674,21 @@ define Parser
 
     function parse_genericparameter_list#(rp, this: Parser) returns ref[Vector[GenericParameterSyntax]]? throws ParserError
     {
-        var list List[GenericParameterSyntax]$()
-        while true
+        var acc Vector[GenericParameterSyntax]#(0)
+        var parsing: bool true
+        while parsing
         {
             choose parse_genericparameter#()
                 when err: Error
                 {
-                    choose err
-                        when i: Invalid
-                            throw ParserError.Invalid(i)
-                        when d: Different
-                        {
-                            if list.head = null
-                                throw ParserError.Different(d)
-                            else
-                                return Vector[GenericParameterSyntax]#(list)
-                        }
+                    guard acc.length = 0
+                        throw err
+                    set parsing: false
                 }
                 when node: Success
-                    list.add$(node)
+                    acc.add(node)
         }
+        acc
     }
 
     function parse_genericparameter#(rp, this: Parser) returns GenericParameterSyntax throws ParserError
@@ -966,26 +947,21 @@ define Parser
 
     function parse_variant_list#(rp, this: Parser) returns ref[Vector[VariantSyntax]]? throws ParserError
     {
-        var list List[VariantSyntax]$()
-        while true
+        var acc Vector[VariantSyntax]#(0)
+        var parsing: bool true
+        while parsing
         {
             choose parse_variant#()
                 when err: Error
                 {
-                    choose err
-                        when i: Invalid
-                            throw ParserError.Invalid(i)
-                        when d: Different
-                        {
-                            if list.head = null
-                                throw ParserError.Different(d)
-                            else
-                                return Vector[VariantSyntax]#(list)
-                        }
+                    guard acc.length = 0
+                        throw err
+                    set parsing: false
                 }
                 when node: Success
-                    list.add$(node)
+                    acc.add(node)
         }
+        acc
     }
 
     function parse_variant#(rp, this: Parser) returns VariantSyntax throws ParserError
@@ -1151,26 +1127,21 @@ define Parser
 
     function parse_genericargument_list#(rp, this: Parser) returns ref[Vector[GenericArgumentSyntax]]? throws ParserError
     {
-        var list List[GenericArgumentSyntax]$()
-        while true
+        var acc Vector[GenericArgumentSyntax]#(0)
+        var parsing: bool true
+        while parsing
         {
             choose parse_genericargument#()
                 when err: Error
                 {
-                    choose err
-                        when i: Invalid
-                            throw ParserError.Invalid(i)
-                        when d: Different
-                        {
-                            if list.head = null
-                                throw ParserError.Different(d)
-                            else
-                                return Vector[GenericArgumentSyntax]#(list)
-                        }
+                    guard acc.length = 0
+                        throw err
+                    set parsing: false
                 }
                 when node: Success
-                    list.add$(node)
+                    acc.add(node)
         }
+        acc
     }
 
     function parse_genericargument#(rp, this: Parser) returns GenericArgumentSyntax throws ParserError
@@ -1259,26 +1230,21 @@ define Parser
 
     function parse_item_list#(rp, this: Parser) returns ref[Vector[ItemSyntax]]? throws ParserError
     {
-        var list List[ItemSyntax]$()
-        while true
+        var acc Vector[ItemSyntax]#(0)
+        var parsing: bool true
+        while parsing
         {
             choose parse_item#()
                 when err: Error
                 {
-                    choose err
-                        when i: Invalid
-                            throw ParserError.Invalid(i)
-                        when d: Different
-                        {
-                            if list.head = null
-                                throw ParserError.Different(d)
-                            else
-                                return Vector[ItemSyntax]#(list)
-                        }
+                    guard acc.length = 0
+                        throw err
+                    set parsing: false
                 }
                 when node: Success
-                    list.add$(node)
+                    acc.add(node)
         }
+        acc
     }
 
     function parse_item#(rp, this: Parser) returns ItemSyntax throws ParserError
@@ -1403,26 +1369,21 @@ define Parser
 
     function parse_use_list#(rp, this: Parser) returns ref[Vector[UseSyntax]]? throws ParserError
     {
-        var list List[UseSyntax]$()
-        while true
+        var acc Vector[UseSyntax]#(0)
+        var parsing: bool true
+        while parsing
         {
             choose parse_use#()
                 when err: Error
                 {
-                    choose err
-                        when i: Invalid
-                            throw ParserError.Invalid(i)
-                        when d: Different
-                        {
-                            if list.head = null
-                                throw ParserError.Different(d)
-                            else
-                                return Vector[UseSyntax]#(list)
-                        }
+                    guard acc.length = 0
+                        throw err
+                    set parsing: false
                 }
                 when node: Success
-                    list.add$(node)
+                    acc.add(node)
         }
+        acc
     }
 
     function parse_use#(rp, this: Parser) returns UseSyntax throws ParserError
@@ -1611,26 +1572,21 @@ define Parser
 
     function parse_method_list#(rp, this: Parser) returns ref[Vector[MethodSyntax]]? throws ParserError
     {
-        var list List[MethodSyntax]$()
-        while true
+        var acc Vector[MethodSyntax]#(0)
+        var parsing: bool true
+        while parsing
         {
             choose parse_method#()
                 when err: Error
                 {
-                    choose err
-                        when i: Invalid
-                            throw ParserError.Invalid(i)
-                        when d: Different
-                        {
-                            if list.head = null
-                                throw ParserError.Different(d)
-                            else
-                                return Vector[MethodSyntax]#(list)
-                        }
+                    guard acc.length = 0
+                        throw err
+                    set parsing: false
                 }
                 when node: Success
-                    list.add$(node)
+                    acc.add(node)
         }
+        acc
     }
 
     function parse_method#(rp, this: Parser) returns MethodSyntax throws ParserError
@@ -1670,26 +1626,21 @@ define Parser
 
     function parse_init_list#(rp, this: Parser) returns ref[Vector[InitSyntax]]? throws ParserError
     {
-        var list List[InitSyntax]$()
-        while true
+        var acc Vector[InitSyntax]#(0)
+        var parsing: bool true
+        while parsing
         {
             choose parse_init#()
                 when err: Error
                 {
-                    choose err
-                        when i: Invalid
-                            throw ParserError.Invalid(i)
-                        when d: Different
-                        {
-                            if list.head = null
-                                throw ParserError.Different(d)
-                            else
-                                return Vector[InitSyntax]#(list)
-                        }
+                    guard acc.length = 0
+                        throw err
+                    set parsing: false
                 }
                 when node: Success
-                    list.add$(node)
+                    acc.add(node)
         }
+        acc
     }
 
     function parse_init#(rp, this: Parser) returns InitSyntax throws ParserError
@@ -2114,26 +2065,21 @@ define Parser
 
     function parse_extend_list#(rp, this: Parser) returns ref[Vector[ExtendSyntax]]? throws ParserError
     {
-        var list List[ExtendSyntax]$()
-        while true
+        var acc Vector[ExtendSyntax]#(0)
+        var parsing: bool true
+        while parsing
         {
             choose parse_extend#()
                 when err: Error
                 {
-                    choose err
-                        when i: Invalid
-                            throw ParserError.Invalid(i)
-                        when d: Different
-                        {
-                            if list.head = null
-                                throw ParserError.Different(d)
-                            else
-                                return Vector[ExtendSyntax]#(list)
-                        }
+                    guard acc.length = 0
+                        throw err
+                    set parsing: false
                 }
                 when node: Success
-                    list.add$(node)
+                    acc.add(node)
         }
+        acc
     }
 
     function parse_extend#(rp, this: Parser) returns ExtendSyntax throws ParserError
@@ -2201,26 +2147,21 @@ define Parser
 
     function parse_attribute_list#(rp, this: Parser) returns ref[Vector[AttributeSyntax]]? throws ParserError
     {
-        var list List[AttributeSyntax]$()
-        while true
+        var acc Vector[AttributeSyntax]#(0)
+        var parsing: bool true
+        while parsing
         {
             choose parse_attribute#()
                 when err: Error
                 {
-                    choose err
-                        when i: Invalid
-                            throw ParserError.Invalid(i)
-                        when d: Different
-                        {
-                            if list.head = null
-                                throw ParserError.Different(d)
-                            else
-                                return Vector[AttributeSyntax]#(list)
-                        }
+                    guard acc.length = 0
+                        throw err
+                    set parsing: false
                 }
                 when node: Success
-                    list.add$(node)
+                    acc.add(node)
         }
+        acc
     }
 
     function parse_attribute#(rp, this: Parser) returns AttributeSyntax throws ParserError
@@ -2313,26 +2254,21 @@ define Parser
 
     function parse_package_list#(rp, this: Parser) returns ref[Vector[PackageSyntax]]? throws ParserError
     {
-        var list List[PackageSyntax]$()
-        while true
+        var acc Vector[PackageSyntax]#(0)
+        var parsing: bool true
+        while parsing
         {
             choose parse_package#()
                 when err: Error
                 {
-                    choose err
-                        when i: Invalid
-                            throw ParserError.Invalid(i)
-                        when d: Different
-                        {
-                            if list.head = null
-                                throw ParserError.Different(d)
-                            else
-                                return Vector[PackageSyntax]#(list)
-                        }
+                    guard acc.length = 0
+                        throw err
+                    set parsing: false
                 }
                 when node: Success
-                    list.add$(node)
+                    acc.add(node)
         }
+        acc
     }
 
     function parse_package#(rp, this: Parser) returns PackageSyntax throws ParserError
@@ -2432,26 +2368,21 @@ define Parser
 
     function parse_operand_list#(rp, this: Parser) returns ref[Vector[OperandSyntax]]? throws ParserError
     {
-        var list List[OperandSyntax]$()
-        while true
+        var acc Vector[OperandSyntax]#(0)
+        var parsing: bool true
+        while parsing
         {
             choose parse_operand#()
                 when err: Error
                 {
-                    choose err
-                        when i: Invalid
-                            throw ParserError.Invalid(i)
-                        when d: Different
-                        {
-                            if list.head = null
-                                throw ParserError.Different(d)
-                            else
-                                return Vector[OperandSyntax]#(list)
-                        }
+                    guard acc.length = 0
+                        throw err
+                    set parsing: false
                 }
                 when node: Success
-                    list.add$(node)
+                    acc.add(node)
         }
+        acc
     }
 
     function parse_operand#(rp, this: Parser) returns OperandSyntax throws ParserError
@@ -2486,26 +2417,21 @@ define Parser
 
     function parse_memberaccess_list#(rp, this: Parser) returns ref[Vector[MemberAccessSyntax]]? throws ParserError
     {
-        var list List[MemberAccessSyntax]$()
-        while true
+        var acc Vector[MemberAccessSyntax]#(0)
+        var parsing: bool true
+        while parsing
         {
             choose parse_memberaccess#()
                 when err: Error
                 {
-                    choose err
-                        when i: Invalid
-                            throw ParserError.Invalid(i)
-                        when d: Different
-                        {
-                            if list.head = null
-                                throw ParserError.Different(d)
-                            else
-                                return Vector[MemberAccessSyntax]#(list)
-                        }
+                    guard acc.length = 0
+                        throw err
+                    set parsing: false
                 }
                 when node: Success
-                    list.add$(node)
+                    acc.add(node)
         }
+        acc
     }
 
     function parse_memberaccess#(rp, this: Parser) returns MemberAccessSyntax throws ParserError
@@ -2775,26 +2701,21 @@ define Parser
 
     function parse_component_list#(rp, this: Parser) returns ref[Vector[ComponentSyntax]]? throws ParserError
     {
-        var list List[ComponentSyntax]$()
-        while true
+        var acc Vector[ComponentSyntax]#(0)
+        var parsing: bool true
+        while parsing
         {
             choose parse_component#()
                 when err: Error
                 {
-                    choose err
-                        when i: Invalid
-                            throw ParserError.Invalid(i)
-                        when d: Different
-                        {
-                            if list.head = null
-                                throw ParserError.Different(d)
-                            else
-                                return Vector[ComponentSyntax]#(list)
-                        }
+                    guard acc.length = 0
+                        throw err
+                    set parsing: false
                 }
                 when node: Success
-                    list.add$(node)
+                    acc.add(node)
         }
+        acc
     }
 
     function parse_component#(rp, this: Parser) returns ComponentSyntax throws ParserError
@@ -2923,26 +2844,21 @@ define Parser
 
     function parse_element_list#(rp, this: Parser) returns ref[Vector[ElementSyntax]]? throws ParserError
     {
-        var list List[ElementSyntax]$()
-        while true
+        var acc Vector[ElementSyntax]#(0)
+        var parsing: bool true
+        while parsing
         {
             choose parse_element#()
                 when err: Error
                 {
-                    choose err
-                        when i: Invalid
-                            throw ParserError.Invalid(i)
-                        when d: Different
-                        {
-                            if list.head = null
-                                throw ParserError.Different(d)
-                            else
-                                return Vector[ElementSyntax]#(list)
-                        }
+                    guard acc.length = 0
+                        throw err
+                    set parsing: false
                 }
                 when node: Success
-                    list.add$(node)
+                    acc.add(node)
         }
+        acc
     }
 
     function parse_element#(rp, this: Parser) returns ElementSyntax throws ParserError
@@ -3138,26 +3054,21 @@ define Parser
 
     function parse_branch_list#(rp, this: Parser) returns ref[Vector[BranchSyntax]]? throws ParserError
     {
-        var list List[BranchSyntax]$()
-        while true
+        var acc Vector[BranchSyntax]#(0)
+        var parsing: bool true
+        while parsing
         {
             choose parse_branch#()
                 when err: Error
                 {
-                    choose err
-                        when i: Invalid
-                            throw ParserError.Invalid(i)
-                        when d: Different
-                        {
-                            if list.head = null
-                                throw ParserError.Different(d)
-                            else
-                                return Vector[BranchSyntax]#(list)
-                        }
+                    guard acc.length = 0
+                        throw err
+                    set parsing: false
                 }
                 when node: Success
-                    list.add$(node)
+                    acc.add(node)
         }
+        acc
     }
 
     function parse_branch#(rp, this: Parser) returns BranchSyntax throws ParserError
@@ -3196,26 +3107,21 @@ define Parser
 
     function parse_case_list#(rp, this: Parser) returns ref[Vector[CaseSyntax]]? throws ParserError
     {
-        var list List[CaseSyntax]$()
-        while true
+        var acc Vector[CaseSyntax]#(0)
+        var parsing: bool true
+        while parsing
         {
             choose parse_case#()
                 when err: Error
                 {
-                    choose err
-                        when i: Invalid
-                            throw ParserError.Invalid(i)
-                        when d: Different
-                        {
-                            if list.head = null
-                                throw ParserError.Different(d)
-                            else
-                                return Vector[CaseSyntax]#(list)
-                        }
+                    guard acc.length = 0
+                        throw err
+                    set parsing: false
                 }
                 when node: Success
-                    list.add$(node)
+                    acc.add(node)
         }
+        acc
     }
 
     function parse_case#(rp, this: Parser) returns CaseSyntax throws ParserError
@@ -3446,26 +3352,21 @@ define Parser
 
     function parse_when_list#(rp, this: Parser) returns ref[Vector[WhenSyntax]]? throws ParserError
     {
-        var list List[WhenSyntax]$()
-        while true
+        var acc Vector[WhenSyntax]#(0)
+        var parsing: bool true
+        while parsing
         {
             choose parse_when#()
                 when err: Error
                 {
-                    choose err
-                        when i: Invalid
-                            throw ParserError.Invalid(i)
-                        when d: Different
-                        {
-                            if list.head = null
-                                throw ParserError.Different(d)
-                            else
-                                return Vector[WhenSyntax]#(list)
-                        }
+                    guard acc.length = 0
+                        throw err
+                    set parsing: false
                 }
                 when node: Success
-                    list.add$(node)
+                    acc.add(node)
         }
+        acc
     }
 
     function parse_when#(rp, this: Parser) returns WhenSyntax throws ParserError
@@ -3521,26 +3422,17 @@ define Parser
 
     function parse_statement_list#(rp, this: Parser) returns ref[Vector[StatementSyntax]]? throws ParserError
     {
-        var list List[StatementSyntax]$()
-        while true
+        var acc Vector[StatementSyntax]#(0)
+        var parsing: bool true
+        while parsing
         {
             choose parse_statement#()
                 when err: Error
-                {
-                    choose err
-                        when i: Invalid
-                            throw ParserError.Invalid(i)
-                        when d: Different
-                        {
-                            if list.head = null
-                                throw ParserError.Different(d)
-                            else
-                                return Vector[StatementSyntax]#(list)
-                        }
-                }
+                    set parsing: false
                 when node: Success
-                    list.add$(node)
+                    acc.add(node)
         }
+        acc
     }
 
     function parse_statement#(rp, this: Parser) returns StatementSyntax throws ParserError
@@ -3845,26 +3737,21 @@ define Parser
 
     function parse_bindingspec_list#(rp, this: Parser) returns ref[Vector[BindingSpecSyntax]]? throws ParserError
     {
-        var list List[BindingSpecSyntax]$()
-        while true
+        var acc Vector[BindingSpecSyntax]#(0)
+        var parsing: bool true
+        while parsing
         {
             choose parse_bindingspec#()
                 when err: Error
                 {
-                    choose err
-                        when i: Invalid
-                            throw ParserError.Invalid(i)
-                        when d: Different
-                        {
-                            if list.head = null
-                                throw ParserError.Different(d)
-                            else
-                                return Vector[BindingSpecSyntax]#(list)
-                        }
+                    guard acc.length = 0
+                        throw err
+                    set parsing: false
                 }
                 when node: Success
-                    list.add$(node)
+                    acc.add(node)
         }
+        acc
     }
 
     function parse_bindingspec#(rp, this: Parser) returns BindingSpecSyntax throws ParserError
@@ -3960,26 +3847,21 @@ define Parser
 
     function parse_part_list#(rp, this: Parser) returns ref[Vector[PartSyntax]]? throws ParserError
     {
-        var list List[PartSyntax]$()
-        while true
+        var acc Vector[PartSyntax]#(0)
+        var parsing: bool true
+        while parsing
         {
             choose parse_part#()
                 when err: Error
                 {
-                    choose err
-                        when i: Invalid
-                            throw ParserError.Invalid(i)
-                        when d: Different
-                        {
-                            if list.head = null
-                                throw ParserError.Different(d)
-                            else
-                                return Vector[PartSyntax]#(list)
-                        }
+                    guard acc.length = 0
+                        throw err
+                    set parsing: false
                 }
                 when node: Success
-                    list.add$(node)
+                    acc.add(node)
         }
+        acc
     }
 
     function parse_part#(rp, this: Parser) returns PartSyntax throws ParserError
@@ -4035,26 +3917,21 @@ define Parser
 
     function parse_property_list#(rp, this: Parser) returns ref[Vector[PropertySyntax]]? throws ParserError
     {
-        var list List[PropertySyntax]$()
-        while true
+        var acc Vector[PropertySyntax]#(0)
+        var parsing: bool true
+        while parsing
         {
             choose parse_property#()
                 when err: Error
                 {
-                    choose err
-                        when i: Invalid
-                            throw ParserError.Invalid(i)
-                        when d: Different
-                        {
-                            if list.head = null
-                                throw ParserError.Different(d)
-                            else
-                                return Vector[PropertySyntax]#(list)
-                        }
+                    guard acc.length = 0
+                        throw err
+                    set parsing: false
                 }
                 when node: Success
-                    list.add$(node)
+                    acc.add(node)
         }
+        acc
     }
 
     function parse_property#(rp, this: Parser) returns PropertySyntax throws ParserError
@@ -4439,26 +4316,21 @@ define Parser
 
     function parse_action_list#(rp, this: Parser) returns ref[Vector[ActionSyntax]]? throws ParserError
     {
-        var list List[ActionSyntax]$()
-        while true
+        var acc Vector[ActionSyntax]#(0)
+        var parsing: bool true
+        while parsing
         {
             choose parse_action#()
                 when err: Error
                 {
-                    choose err
-                        when i: Invalid
-                            throw ParserError.Invalid(i)
-                        when d: Different
-                        {
-                            if list.head = null
-                                throw ParserError.Different(d)
-                            else
-                                return Vector[ActionSyntax]#(list)
-                        }
+                    guard acc.length = 0
+                        throw err
+                    set parsing: false
                 }
                 when node: Success
-                    list.add$(node)
+                    acc.add(node)
         }
+        acc
     }
 
     function parse_action#(rp, this: Parser) returns ActionSyntax throws ParserError
@@ -4703,26 +4575,21 @@ define Parser
 
     function parse_type_list#(rp, this: Parser) returns ref[Vector[TypeSyntax]]? throws ParserError
     {
-        var list List[TypeSyntax]$()
-        while true
+        var acc Vector[TypeSyntax]#(0)
+        var parsing: bool true
+        while parsing
         {
             choose parse_type#()
                 when err: Error
                 {
-                    choose err
-                        when i: Invalid
-                            throw ParserError.Invalid(i)
-                        when d: Different
-                        {
-                            if list.head = null
-                                throw ParserError.Different(d)
-                            else
-                                return Vector[TypeSyntax]#(list)
-                        }
+                    guard acc.length = 0
+                        throw err
+                    set parsing: false
                 }
                 when node: Success
-                    list.add$(node)
+                    acc.add(node)
         }
+        acc
     }
 
     function parse_type#(rp, this: Parser) returns TypeSyntax throws ParserError
@@ -4806,26 +4673,21 @@ define Parser
 
     function parse_extension_list#(rp, this: Parser) returns ref[Vector[ExtensionSyntax]]? throws ParserError
     {
-        var list List[ExtensionSyntax]$()
-        while true
+        var acc Vector[ExtensionSyntax]#(0)
+        var parsing: bool true
+        while parsing
         {
             choose parse_extension#()
                 when err: Error
                 {
-                    choose err
-                        when i: Invalid
-                            throw ParserError.Invalid(i)
-                        when d: Different
-                        {
-                            if list.head = null
-                                throw ParserError.Different(d)
-                            else
-                                return Vector[ExtensionSyntax]#(list)
-                        }
+                    guard acc.length = 0
+                        throw err
+                    set parsing: false
                 }
                 when node: Success
-                    list.add$(node)
+                    acc.add(node)
         }
+        acc
     }
 
     function parse_extension#(rp, this: Parser) returns ExtensionSyntax throws ParserError

@@ -7236,7 +7236,7 @@ define Planner
                 guard w_ptr <> null
                 {
                     let w (*w_ptr)
-                    catches_arr.add(this.plan_when#(w, exc_union_type, false))
+                    catches_arr.add(this.plan_when#(w, exc_union_type, false, null))
                 }
                 set ci: ci + 1
             }
@@ -7267,7 +7267,8 @@ define Planner
             this: Planner,
             w: When,
             union_type: PlannedType,
-            is_throws_call: bool
+            is_throws_call: bool,
+            throws_ty: ref[PlannedType]?
         ) returns PlannedWhen
         {
             this.push_scope()
@@ -7335,7 +7336,15 @@ define Planner
                     guard is_err = false
                         set is_err: variant_name.equals(String$("error"))
                     guard is_err
+                    {
                         set variant_tag: 1
+                        guard throws_ty <> null
+                        {
+                            let tt (*throws_ty)
+                            set binding_ty: tt
+                            set variant_type: tt
+                        }
+                    }
                     guard is_err = false
                     {
                         let is_success variant_name.equals(String$("Success"))
@@ -7386,9 +7395,14 @@ define Planner
             ; variant_index=0 and emit_choose's seen_tags dedup drops the
             ; second arm. See plan_when# comment for the full rationale.
             var is_throws_call: bool false
+            var throws_ty_ref: ref[PlannedType]? null
             choose collapsed_cond.expr
                 when call: Call
+                {
                     set is_throws_call: call.can_throw
+                    guard call.throws_type <> null
+                        set throws_ty_ref: call.throws_type
+                }
                 else
                     0
 
@@ -7400,7 +7414,7 @@ define Planner
                 guard w_ptr <> null
                 {
                     let w (*w_ptr)
-                    cases_arr.add(this.plan_when#(w, union_type, is_throws_call))
+                    cases_arr.add(this.plan_when#(w, union_type, is_throws_call, throws_ty_ref))
                 }
                 set i: i + 1
             }

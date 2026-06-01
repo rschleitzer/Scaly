@@ -64,22 +64,22 @@ define lexer
         init (src: String)
         {
             set source: src
-            if src.length = 0
-            {
-                set current: null
-                set end: null
-            }
-            else
-            {
-                set current: src.get_buffer()
-                set end: src.get_buffer() + src.length
-            }
+            set current: null
+            set end: null
             set position: 0
             set previous_position: 0
             set token: Token.Empty(EmptyToken())
-            guard current <> null
+            ; s157: stage-1 drops the original two-armed `if src.length = 0
+            ; {...} else {...}` block entirely (current/end never stored →
+            ; current=null → advance# bails → 0 tokens → 0 declarations).
+            ; A single guard whose block runs when the source is non-empty
+            ; emits correctly. Defaults (null) are set unconditionally above.
+            guard src.length() > 0
+            {
+                set current: src.get_buffer()
+                set end: src.get_buffer() + src.length()
                 skip_whitespace(true)
-
+            }
         }
 
         procedure read_character(this)
