@@ -1930,6 +1930,26 @@ define Emitter
         initialize(module_name)
         set current_plan: plan
 
+        ; s159: Pre-declare the extern C runtime functions memcpy/memset
+        ; up front, before any function body is emitted. Container methods
+        ; (Vector[T].add, Vector[T].init#) call memcpy/memset. The bodies
+        ; for early generic instantiations (char / String / *Syntax types)
+        ; are emitted before the lazy struct-copy helper (~line 6660)
+        ; materializes @memcpy, so emit_call's LLVMGetNamedFunction lookup
+        ; missed and the whole call was dropped — Vector growth silently
+        ; lost its old elements. The emit-order cutoff matched the first
+        ; @memcpy exactly. Declaring both here removes the ordering
+        ; dependency. Declared varargs (no param-type array): the call
+        ; sites build their own concrete func_type for LLVMBuildCall2, so
+        ; the declaration signature is cosmetic, and a varargs decl links
+        ; cleanly to libc. Unconditional is safe: the struct-copy helper
+        ; checks LLVMGetNamedFunction before adding, so it reuses these.
+        let rt_ptr LLVMPointerTypeInContext(context, 0)
+        let mc_fty LLVMFunctionType(rt_ptr, null as pointer[LLVMTypeRef], 0, 1)
+        LLVMAddFunction(llvm_module, "memcpy", mc_fty)
+        let ms_fty LLVMFunctionType(rt_ptr, null as pointer[LLVMTypeRef], 0, 1)
+        LLVMAddFunction(llvm_module, "memset", ms_fty)
+
         ; Emit all structures
         guard plan.structures <> null
         {
