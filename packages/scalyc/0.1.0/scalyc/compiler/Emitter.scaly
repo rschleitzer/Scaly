@@ -3082,42 +3082,53 @@ define Emitter
             return LLVMBuildCall2(builder, func_type, func, null as pointer[LLVMValueRef], 0, call_name)
         }
 
+        ; s168: zero-user-arg shortcut. SKIP it when the call needs an
+        ; implicit page (rp) arg — a `function#` callee with no explicit
+        ; args (e.g. `Planner.make_void_type#()`) must still receive rp in
+        ; slot 0 (after sret). The old shortcut passed only the sret and
+        ; dropped rp, so the callee read garbage in its page param and
+        ; Page::allocate crashed with a null/garbage page. Falling through
+        ; to the general path below handles page_offset + sret + zero user
+        ; args correctly (the user-arg while loop is a no-op).
         guard call.args.length = 0
         {
-            guard use_sret
+            guard call.requires_page_param = false
             {
-                var sa Vector[LLVMValueRef]#(1)
-                var sp Vector[LLVMTypeRef]#(1)
-                sa.put(0, sret_slot)
-                sp.put(0, LLVMPointerTypeInContext(context, 0))
-                let void_ty LLVMVoidTypeInContext(context)
-                let f_ty LLVMFunctionType(void_ty, sp.data, 1 as u32, 0)
-                let cv LLVMBuildCall2(builder, f_ty, func, sa.data, 1 as u32, "")
-                let sk sret_kind_id()
-                let nk noalias_kind_id()
-                let sa_attr LLVMCreateTypeAttribute(context, sk, sret_element_ty)
-                LLVMAddCallSiteAttribute(cv, 1 as u32, sa_attr)
-                let na_attr LLVMCreateEnumAttribute(context, nk, 0 as u64)
-                LLVMAddCallSiteAttribute(cv, 1 as u32, na_attr)
-                return sret_slot
-            }
-            var result_type map_type(call.result_type)
-            ; s124: same void-return guard as the call.args=null path.
-            let fn_ty LLVMGlobalGetValueType(func)
-            guard fn_ty.handle <> null
-            {
-                guard LLVMGetTypeKind(fn_ty) = LLVMTypeKind.Function()
+                guard use_sret
                 {
-                    let ret_ty LLVMGetReturnType(fn_ty)
-                    guard LLVMGetTypeKind(ret_ty) = LLVMTypeKind.Void()
-                        set result_type: ret_ty
+                    var sa Vector[LLVMValueRef]#(1)
+                    var sp Vector[LLVMTypeRef]#(1)
+                    sa.put(0, sret_slot)
+                    sp.put(0, LLVMPointerTypeInContext(context, 0))
+                    let void_ty LLVMVoidTypeInContext(context)
+                    let f_ty LLVMFunctionType(void_ty, sp.data, 1 as u32, 0)
+                    let cv LLVMBuildCall2(builder, f_ty, func, sa.data, 1 as u32, "")
+                    let sk sret_kind_id()
+                    let nk noalias_kind_id()
+                    let sa_attr LLVMCreateTypeAttribute(context, sk, sret_element_ty)
+                    LLVMAddCallSiteAttribute(cv, 1 as u32, sa_attr)
+                    let na_attr LLVMCreateEnumAttribute(context, nk, 0 as u64)
+                    LLVMAddCallSiteAttribute(cv, 1 as u32, na_attr)
+                    return sret_slot
                 }
+                var result_type map_type(call.result_type)
+                ; s124: same void-return guard as the call.args=null path.
+                let fn_ty LLVMGlobalGetValueType(func)
+                guard fn_ty.handle <> null
+                {
+                    guard LLVMGetTypeKind(fn_ty) = LLVMTypeKind.Function()
+                    {
+                        let ret_ty LLVMGetReturnType(fn_ty)
+                        guard LLVMGetTypeKind(ret_ty) = LLVMTypeKind.Void()
+                            set result_type: ret_ty
+                    }
+                }
+                let func_type LLVMFunctionType(result_type, null as pointer[LLVMTypeRef], 0, 0)
+                var call_name "call"
+                guard LLVMGetTypeKind(result_type) = LLVMTypeKind.Void()
+                    set call_name: ""
+                return LLVMBuildCall2(builder, func_type, func, null as pointer[LLVMValueRef], 0, call_name)
             }
-            let func_type LLVMFunctionType(result_type, null as pointer[LLVMTypeRef], 0, 0)
-            var call_name "call"
-            guard LLVMGetTypeKind(result_type) = LLVMTypeKind.Void()
-                set call_name: ""
-            return LLVMBuildCall2(builder, func_type, func, null as pointer[LLVMValueRef], 0, call_name)
         }
 
         ; Emit arguments and create proper call.
