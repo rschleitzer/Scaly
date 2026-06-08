@@ -4016,9 +4016,15 @@ define Emitter
                         ; For NPO, just load from the pointer
                         guard LLVMGetTypeKind(LLVMTypeOf(option_value)) = LLVMTypeKind.Pointer()
                         {
-                            ; Check if result is also a pointer (NPO case)
+                            ; s169: NPO Option (Option[ref[T]] / Option[pointer[T]])
+                            ; is represented as the raw pointer itself — option_value
+                            ; ALREADY is the unwrapped T*. Return it directly; do NOT
+                            ; load. The old `LLVMBuildLoad2(..., "unwrap.npo")` derefed
+                            ; T* as T**, reading T's first field (e.g. a PlannedType's
+                            ; loc.start) as the pointer. Mirrors stage-0's
+                            ; `return OptionValue` for the NPO branch (Emitter.cpp:3608).
                             guard LLVMGetTypeKind(result_ty) = LLVMTypeKind.Pointer()
-                                return LLVMBuildLoad2(builder, result_ty, option_value, "unwrap.npo")
+                                return option_value
 
                             ; Regular union case - option_value is pointer to union
                             ; Union layout: { i8 tag, [N x i8] payload }
