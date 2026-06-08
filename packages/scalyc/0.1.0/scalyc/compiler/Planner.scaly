@@ -3352,7 +3352,7 @@ define Planner
                                     }
                                     guard skip_dispatch = false
                                     {
-                                    let mm_ref this.lookup_method#(local.binding_type, suffix)
+                                    let mm_ref this.lookup_method#(local.binding_type, suffix, arg_types)
                                     guard mm_ref <> null
                                     {
                                         let mm (*mm_ref)
@@ -3486,7 +3486,7 @@ define Planner
                                         guard last_acc.is_method
                                         {
                                             let recv_type last_acc.parent_type
-                                            let mm_ref this.lookup_method#(recv_type, last_acc.name)
+                                            let mm_ref this.lookup_method#(recv_type, last_acc.name, arg_types)
                                             guard mm_ref <> null
                                             {
                                                 let mm3 (*mm_ref)
@@ -4183,7 +4183,7 @@ define Planner
                                                 guard inner_ptr <> null
                                                 {
                                                     let inner_t (*inner_ptr)
-                                                    let mm_ref this.lookup_method#(inner_t, fn_name)
+                                                    let mm_ref this.lookup_method#(inner_t, fn_name, arg_types)
                                                     guard mm_ref <> null
                                                     {
                                                         ; Build receiver_op as `this`.
@@ -4361,7 +4361,8 @@ define Planner
                                                 guard is_tuple
                                                 {
                                                     let match_ref this.lookup_method#(
-                                                        result.result_type, method_name
+                                                        result.result_type, method_name,
+                                                        Planner.extract_arg_types#(next_args)
                                                     )
                                                     guard match_ref <> null
                                                     {
@@ -5172,6 +5173,66 @@ define Planner
             sb.to_string^rp()
         }
 
+        ; method_params_match: does method `f`'s declared parameter list
+        ; (after skipping a leading `this`) match `arg_types`? Mirrors the
+        ; per-arg comparison in check_function_match#, but returns only a
+        ; bool so lookup_method# can pick the right overload among several
+        ; same-named methods. `exact_only` selects types_equal (pass 1) vs
+        ; types_compatible (pass 2).
+        function method_params_match#(
+            rp,
+            this: Planner,
+            f: Function,
+            arg_types: Vector[PlannedType],
+            exact_only: bool
+        ) returns bool
+        {
+            var param_start: size_t 0
+            guard f.input.length > 0
+            {
+                let first_ptr f.input.get(0)
+                guard first_ptr <> null
+                {
+                    guard first_ptr.name <> null
+                    {
+                        let fname (*first_ptr.name)
+                        guard fname.equals(String$("this"))
+                            set param_start: 1
+                    }
+                }
+            }
+
+            let expected_arity f.input.length - param_start
+            guard expected_arity <> arg_types.length
+                return false
+
+            var j: size_t 0
+            while j < arg_types.length
+            {
+                let p_ptr f.input.get(j + param_start)
+                let a_ptr arg_types.get(j)
+                guard p_ptr = null
+                    return false
+                guard a_ptr = null
+                    return false
+                guard p_ptr.type <> null
+                {
+                    let p_type (*p_ptr.type)
+                    let planned_p this.plan_type#(p_type)
+                    let arg (*a_ptr)
+                    var ok: bool false
+                    guard exact_only
+                        set ok: Planner.types_equal(planned_p, arg)
+                    guard exact_only = false
+                        set ok: Planner.types_compatible(planned_p, arg)
+                    guard ok = false
+                        return false
+                }
+                set j: j + 1
+            }
+            true
+        }
+
         ; lookup_method: more-detailed method lookup that returns a
         ; MethodMatch with mangled name, return type, and parameter
         ; types pre-computed. The `method` field of MethodMatch points
@@ -5182,7 +5243,8 @@ define Planner
             rp,
             this: Planner,
             struct_type: PlannedType,
-            method_name: String
+            method_name: String,
+            arg_types: Vector[PlannedType]
         ) returns ref[MethodMatch]?
         {
             ; s106: auto-deref pointer[T] / ref[T] before lookup. Mirrors
@@ -5221,10 +5283,58 @@ define Planner
             guard candidates.length = 0
                 return null
 
-            ; Take the first match. Overload resolution by arg types
-            ; happens in resolve_function_call / resolve_operator_call;
-            ; this simpler lookup picks-by-name only.
-            let f_ptr candidates.get(0)
+            ; s163: arg-type-aware overload selection. When a struct has
+            ; several same-named methods (e.g. String.equals(String) /
+            ; equals(pointer[const_char]) / equals(Vector[char])), pick the
+            ; overload whose declared parameter types match the call's
+            ; argument types — two passes (exact via types_equal, then
+            ; compatible) mirroring resolve_function_call#. Without this,
+            ; `joined.equals("pointer")` (arg pointer[const_char]) always
+            ; resolved to equals(String)[0], mangled _ZN6String6equalsE6String,
+            ; and a raw char* was passed where a String is expected →
+            ; get_length deref'd the literal bytes → SIGSEGV in
+            ; resolve_type_base#. A single candidate, or no arg-type match,
+            ; falls back to the first by-name candidate (prior behaviour).
+            var f_ptr: ref[Function]? candidates.get(0)
+            guard candidates.length > 1
+            {
+                let saved_subst_sel type_substitutions.length
+                var chosen: ref[Function]? null
+                var ci: size_t 0
+                while ci < candidates.length
+                {
+                    guard chosen = null
+                    {
+                        let c_ptr candidates.get(ci)
+                        guard c_ptr <> null
+                        {
+                            guard this.method_params_match#((*c_ptr), arg_types, true)
+                                set chosen: c_ptr
+                        }
+                    }
+                    set ci: ci + 1
+                }
+                guard chosen = null
+                {
+                    var ck: size_t 0
+                    while ck < candidates.length
+                    {
+                        guard chosen = null
+                        {
+                            let c_ptr candidates.get(ck)
+                            guard c_ptr <> null
+                            {
+                                guard this.method_params_match#((*c_ptr), arg_types, false)
+                                    set chosen: c_ptr
+                            }
+                        }
+                        set ck: ck + 1
+                    }
+                }
+                set type_substitutions.length: saved_subst_sel
+                guard chosen <> null
+                    set f_ptr: chosen
+            }
             guard f_ptr = null
                 return null
             let f (*f_ptr)
@@ -7131,7 +7241,12 @@ define Planner
             }
             guard is_integer = false
             {
-                let get_iter_match this.lookup_method#(iter_type, String$("get_iterator"))
+                ; get_iterator / next are zero-arg (only `this`), so an
+                ; empty arg_types list drives lookup_method#'s overload
+                ; selection.
+                var no_args_arr Array[PlannedType]$()
+                let no_args Vector[PlannedType]^rp(no_args_arr)
+                let get_iter_match this.lookup_method#(iter_type, String$("get_iterator"), no_args)
                 guard get_iter_match <> null
                 {
                     let gm (*get_iter_match)
@@ -7139,7 +7254,7 @@ define Planner
                     set iterator_type: gm.return_type
                     set get_iter_name: gm.mangled_name
 
-                    let next_match this.lookup_method#(iterator_type, String$("next"))
+                    let next_match this.lookup_method#(iterator_type, String$("next"), no_args)
                     guard next_match <> null
                     {
                         let nm (*next_match)
