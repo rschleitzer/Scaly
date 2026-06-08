@@ -5483,7 +5483,31 @@ define Emitter
                     let r when_case.consequent
                     choose (*r)
                         when action: Action
+                        {
                             set case_value: emit_action(action)
+                            ; s164: an arm whose body is a single sret-
+                            ; returning call yields the sret slot POINTER
+                            ; (an entry-block alloca), not the struct VALUE.
+                            ; The PHI below needs a value that dominates the
+                            ; edge into merge_block AND has the struct type
+                            ; the other arms produce. Load the struct in the
+                            ; current (case) block when the consequent's
+                            ; result_type is a struct but case_value is a
+                            ; pointer. Mirrors stage-0 emitChoose
+                            ; (Emitter.cpp:4829). Without this, plan_operand#'s
+                            ; Constant/Type arms (bare `this.plan_X_operand#()`)
+                            ; contributed `undef` to choose.value, so every
+                            ; variable/constant operand planned to garbage.
+                            guard case_value.handle <> null
+                            {
+                                let arm_ty map_type(action.result_type)
+                                guard LLVMGetTypeKind(arm_ty) = LLVMTypeKind.Struct()
+                                {
+                                    guard LLVMGetTypeKind(LLVMTypeOf(case_value)) = LLVMTypeKind.Pointer()
+                                        set case_value: LLVMBuildLoad2(builder, arm_ty, case_value, "choose.arm.load")
+                                }
+                            }
+                        }
                         else
                             emit_statement(*r)
                 }
@@ -5572,7 +5596,20 @@ define Emitter
             let r choose_expr.alternative
             choose (*r)
                 when action: Action
+                {
                     set alt_value: emit_action(action)
+                    ; s164: same sret-pointer→struct load as the per-case
+                    ; site above (mirrors stage-0 Emitter.cpp:4829).
+                    guard alt_value.handle <> null
+                    {
+                        let alt_ty map_type(action.result_type)
+                        guard LLVMGetTypeKind(alt_ty) = LLVMTypeKind.Struct()
+                        {
+                            guard LLVMGetTypeKind(LLVMTypeOf(alt_value)) = LLVMTypeKind.Pointer()
+                                set alt_value: LLVMBuildLoad2(builder, alt_ty, alt_value, "choose.alt.load")
+                        }
+                    }
+                }
                 else
                     emit_statement(*r)
         }
