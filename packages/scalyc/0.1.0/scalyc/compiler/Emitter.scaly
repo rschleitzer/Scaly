@@ -3307,6 +3307,7 @@ define Emitter
                                                             var current_ptr var_ptr
                                                             var chain_ok: bool true
                                                             var last_field_is_ptr: bool false
+                                                            var last_field_ty LLVMTypeRef(null)
                                                             var ci: size_t 0
                                                             while ci < chain.length
                                                             {
@@ -3339,6 +3340,7 @@ define Emitter
                                                                         ; post-loop deref-load decision.
                                                                         let field_ir_ty LLVMStructGetTypeAtIndex(current_struct_ty, acc.field_index as int)
                                                                         set last_field_is_ptr: LLVMGetTypeKind(field_ir_ty) = LLVMTypeKind.Pointer()
+                                                                        set last_field_ty: field_ir_ty
                                                                         set current_ptr: LLVMBuildStructGEP2(builder, current_struct_ty, current_ptr, acc.field_index as u32, "field.inplace")
                                                                         guard ci + 1 < chain.length
                                                                             set current_struct_ty: map_type(acc.result_type)
@@ -3362,6 +3364,23 @@ define Emitter
                                                                 ; inline struct storage at Emitter.cpp:3984.
                                                                 guard last_field_is_ptr
                                                                     set current_ptr: LLVMBuildLoad2(builder, LLVMPointerTypeInContext(context, 0), current_ptr, "deref.recv")
+                                                                ; s169: inline scalar final field (e.g. an Array's
+                                                                ; i64 `length`) passed to a by-value scalar param
+                                                                ; (`size_t`) — load the value, don't pass the
+                                                                ; field address. Without this, the in-place GEP
+                                                                ; ptr (a constant `this+offset`) is reinterpreted
+                                                                ; by the callee as the i64 value, corrupting it.
+                                                                ; Symptom: `scope_boundaries.add(scope_bindings.length)`
+                                                                ; pushed `&scope_bindings.length`; pop_scope read it
+                                                                ; back into scope_bindings.length → self-referential
+                                                                ; corruption → SEGV in lookup_local_binding. Struct
+                                                                ; final fields keep the pre-s169 in-place-ptr path
+                                                                ; (real receiver, by-ptr ABI).
+                                                                guard last_field_is_ptr = false
+                                                                {
+                                                                    guard LLVMGetTypeKind(last_field_ty) <> LLVMTypeKind.Struct()
+                                                                        set current_ptr: LLVMBuildLoad2(builder, last_field_ty, current_ptr, "field.val")
+                                                                }
                                                                 set arg_value: current_ptr
                                                                 set direct_alloca: true
                                                             }
