@@ -4167,6 +4167,64 @@ define Emitter
             }
         }
 
+        ; s160: a single anonymous component wrapping a struct deref
+        ; `(*ptr)` is a GROUPING, not a construction, even when tuple_type
+        ; names a cached struct/union. The planner sets a grouping's
+        ; tuple_type to the inner value's result_type, so `let x (*ptr)`
+        ; gives tuple_type = DeclarationSyntax / Member and the cache
+        ; lookup above wrongly flags construction — emit then builds a
+        ; `{ ptr }` wrapper around the deref pointer. emit_intrinsic_unary
+        ; _op's `*` returns a POINTER to the loaded struct (deref.tmp), so
+        ; here we load the struct VALUE from it and forward that, matching
+        ; stage-0's `let x (*p)` → loaded value. Forwarding the pointer
+        ; instead made a following `choose x` store 8 pointer bytes into
+        ; the union slot and read the tag from the low byte of the address
+        ; (build_module#/plan_module# member dispatch fell to the else
+        ; arm, planning no functions). Scoped narrowly to a deref inner so
+        ; real single-field constructions are untouched.
+        guard is_struct_construction
+        {
+            guard tuple.components.length = 1
+            {
+                let im_first tuple.components.get(0)
+                guard im_first <> null
+                {
+                    let imf (*im_first)
+                    guard imf.name = null
+                    {
+                        guard imf.value <> null
+                        {
+                            let ivops (*imf.value)
+                            guard ivops.length = 1
+                            {
+                                let ilast_ptr ivops.get(0)
+                                guard ilast_ptr <> null
+                                {
+                                    let ilast (*ilast_ptr)
+                                    choose ilast.expr
+                                        when icall: PlannedCall
+                                        {
+                                            guard icall.name.equals(String$("*"))
+                                            {
+                                                let deref_val emit_operands(imf.value)
+                                                guard deref_val.handle = null
+                                                    return LLVMValueRef(null)
+                                                let grp_ty map_type(tuple.tuple_type)
+                                                guard LLVMGetTypeKind(grp_ty) = LLVMTypeKind.Struct()
+                                                    return LLVMBuildLoad2(builder, grp_ty, deref_val, "grp.deref.val")
+                                                return deref_val
+                                            }
+                                        }
+                                        else
+                                            0
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         ; If single component with no name and not struct construction, just emit the value
         guard tuple.components.length = 1
         {
@@ -5078,6 +5136,35 @@ define Emitter
                             }
                         else
                             0
+                }
+            }
+        }
+        ; s160: a by-pointer struct/union parameter used directly as the
+        ; choose subject (`choose syntax` where syntax: DeclarationSyntax,
+        ; as in handle_declaration#/handle_export#) arrives as the
+        ; function-argument pointer, but the planner's result_type names
+        ; the value type so cond_is_pointer stays false. The alloca+store
+        ; below would then copy 8 pointer bytes into a struct-typed slot
+        ; and read the union tag from the low byte of the address — every
+        ; Function declaration dispatched to handle_declaration#'s else
+        ; arm, yielding a Package (tag 0) Member, so plan_module# never
+        ; planned a function. Structs/unions are always passed by-pointer
+        ; in this ABI, so if union_value IS one of the current function's
+        ; parameters it already points at the union — use it directly.
+        ; Deterministic handle comparison; the LLVMTypeOf(value) form is
+        ; unreliable here (reads uninitialized stack, see note above).
+        guard cond_is_pointer = false
+        {
+            guard current_function.handle <> null
+            {
+                let nparams LLVMCountParams(current_function)
+                var pi: int 0
+                while pi < nparams
+                {
+                    let p LLVMGetParam(current_function, pi)
+                    guard p.handle = union_value.handle
+                        set cond_is_pointer: true
+                    set pi: pi + 1
                 }
             }
         }
