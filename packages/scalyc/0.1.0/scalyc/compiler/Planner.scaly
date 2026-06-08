@@ -8394,8 +8394,19 @@ define Planner
 
         function plan_throw#(rp, this: Planner, t: Throw) returns PlannedThrow
         {
-            let planned this.plan_operands#(t.result)
-            var holder Vector[PlannedOperand]^rp(planned)
+            ; Collapse the operand sequence the same way plan_return# does.
+            ; A thrown value like `MyError.Different(DifferentSyntax())` arrives
+            ; as multiple flat operands ([MyError.Different, (DifferentSyntax())])
+            ; that must be folded into a single PlannedCall (variant
+            ; construction). emit_operands only emits ops.get(0), so without
+            ; the collapse only the bare type reference survives and emit_throw
+            ; drops the error value entirely (status byte stored, data left
+            ; uninitialised → caller reads a garbage variant tag).
+            let planned_flat this.plan_operands#(t.result)
+            let planned_collapsed this.collapse_operand_sequence#(planned_flat)
+            var holder Vector[PlannedOperand]^rp(1)
+            guard planned_flat.length > 0
+                holder.put(0, planned_collapsed)
             PlannedThrow(t.span, &holder)
         }
 
