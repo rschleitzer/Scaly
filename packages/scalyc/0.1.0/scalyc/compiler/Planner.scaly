@@ -8153,10 +8153,23 @@ define Planner
                     PlannedOperand(op.span, PlannedExpression.Repeat(pr), null, Planner.make_void_type#())
                 }
 
-            guard op.member_access = null
+            ; s164: bind member_access to a local BEFORE the guard. A
+            ; `guard`/`if`/... statement placed immediately after a
+            ; `let X choose {...}` binding is absorbed into the binding's
+            ; initializer operation by the parser (the choose's trailing
+            ; newline is consumed, so the operand list keeps collecting),
+            ; and since the Expression union has no Guard variant the
+            ; absorbed guard is silently dropped — stage-1 then emitted no
+            ; null-check and dereferenced a null op.member_access. A
+            ; non-stmt-like binding (`let ma ...`) closes the choose
+            ; binding's operation, so the following guard survives as its
+            ; own statement. (Stage-0's parser doesn't collapse this, so it
+            ; was never exercised there.)
+            let ma op.member_access
+            guard ma = null
                 return base
 
-            let members (*op.member_access)
+            let members (*ma)
             let access_chain this.resolve_member_access#(base.result_type, members)
             var access_holder Vector[PlannedMemberAccess]^rp(access_chain)
             var final_type: PlannedType base.result_type
