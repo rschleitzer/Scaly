@@ -6190,9 +6190,23 @@ define Emitter
     ; Emit sizeof
     function emit_sizeof(this, sizeof_expr: PlannedSizeOf) returns LLVMValueRef
     {
-        let size sizeof_expr.size
         let i64_type LLVMInt64TypeInContext(context)
-        LLVMConstInt(i64_type, size, 0)
+        ; Emit sizeof as the LLVM ABI size of the mapped type — a constexpr
+        ; (LLVMSizeOf is `ptrtoint (getelementptr (%T, null, 1))`), the same
+        ; form the Vector / struct allocations use. This guarantees the
+        ; value EQUALS the actual emitted LLVM layout size, so a Vector[T]'s
+        ; element stride and any struct's field GEPs stay consistent.
+        ; The planner's compute_payload_size estimate diverges from the real
+        ; layout for structs that embed unions (e.g. OperandSyntax embeds
+        ; ExpressionSyntax: planner 264 vs LLVM 256), which truncated every
+        ; Vector[OperandSyntax] element. Fall back to the planner's estimate
+        ; only when the type isn't materialised / sized.
+        let ty map_type(sizeof_expr.sized_type)
+        guard ty.handle = null
+            return LLVMConstInt(i64_type, sizeof_expr.size, 0)
+        guard LLVMTypeIsSized(ty) = 0
+            return LLVMConstInt(i64_type, sizeof_expr.size, 0)
+        LLVMSizeOf(ty)
     }
 
     ; Emit alignof

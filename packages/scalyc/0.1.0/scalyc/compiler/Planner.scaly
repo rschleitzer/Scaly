@@ -6228,126 +6228,18 @@ define Planner
         function plan_sizeof#(rp, this: Planner, s: SizeOf) returns PlannedSizeOf
         {
             let sized this.plan_type#(s.type)
-            var size: size_t Planner.get_primitive_alignment(sized.name)
-            let c_ref this.lookup_concept(sized.name)
-            guard c_ref <> null
-            {
-                let c (*c_ref)
-                choose c.definition
-                    when st: Structure
-                    {
-                        var offset: size_t 0
-                        var max_align: size_t 1
-                        var pi: size_t 0
-                        while pi < st.properties.length
-                        {
-                            let p_ptr st.properties.get(pi)
-                            guard p_ptr <> null
-                            {
-                                let p (*p_ptr)
-                                guard p.type <> null
-                                {
-                                    let pt (*p.type)
-                                    guard pt.name.length > 0
-                                    {
-                                        let last_ptr pt.name.get(pt.name.length - 1)
-                                        guard last_ptr <> null
-                                        {
-                                            let prop_name (*last_ptr)
-                                            var fld_size: size_t Planner.get_primitive_alignment(prop_name)
-                                            var fld_align: size_t fld_size
-                                            guard prop_name.equals(String$("Vector"))
-                                            {
-                                                set fld_size: 16
-                                                set fld_align: 8
-                                            }
-                                            guard prop_name.equals(String$("Array"))
-                                            {
-                                                set fld_size: 16
-                                                set fld_align: 8
-                                            }
-                                            guard prop_name.equals(String$("String"))
-                                            {
-                                                set fld_size: 8
-                                                set fld_align: 8
-                                            }
-                                            guard prop_name.equals(String$("HashMap"))
-                                            {
-                                                set fld_size: 8
-                                                set fld_align: 8
-                                            }
-                                            guard prop_name.equals(String$("HashSet"))
-                                            {
-                                                set fld_size: 8
-                                                set fld_align: 8
-                                            }
-                                            set offset: Planner.align_offset(offset, fld_align) + fld_size
-                                            guard fld_align > max_align
-                                                set max_align: fld_align
-                                        }
-                                    }
-                                }
-                            }
-                            set pi: pi + 1
-                        }
-                        let total Planner.align_offset(offset, max_align)
-                        guard total > 0
-                            set size: total
-                    }
-                    when un: scalyc.compiler.Model.Union
-                    {
-                        ; Union size = tag byte + max variant payload size,
-                        ; aligned to the max variant alignment. Mirrors
-                        ; plan_union#'s u_size computation (and stage-0
-                        ; computeUnionLayout). Without this arm a union
-                        ; type falls through to the primitive-alignment
-                        ; default (8), so `sizeof T` for T = a union (e.g.
-                        ; DeclarationSyntax = 88 bytes) yields 8 — and
-                        ; Vector[T].add then under-allocates its buffer to
-                        ; 8 bytes/element, corrupting every entry. (s144
-                        ; handled structs only.)
-                        var max_payload: size_t 0
-                        var max_palign: size_t 1
-                        var ui: size_t 0
-                        while ui < un.variants.length
-                        {
-                            let uv_ptr un.variants.get(ui)
-                            guard uv_ptr <> null
-                            {
-                                let uv (*uv_ptr)
-                                guard uv.type <> null
-                                {
-                                    let uvt (*uv.type)
-                                    guard uvt.name.length > 0
-                                    {
-                                        let uvn_ptr uvt.name.get(uvt.name.length - 1)
-                                        guard uvn_ptr <> null
-                                        {
-                                            let uvn (*uvn_ptr)
-                                            let uvsz this.compute_payload_size(uvn)
-                                            let uval Planner.get_primitive_alignment(uvn)
-                                            guard uvsz > max_payload
-                                                set max_payload: uvsz
-                                            guard uval > max_palign
-                                                set max_palign: uval
-                                        }
-                                    }
-                                }
-                            }
-                            set ui: ui + 1
-                        }
-                        var u_tag_sz: size_t 1
-                        guard un.variants.length > 256
-                            set u_tag_sz: 4
-                        let u_total Planner.align_offset(max_payload + u_tag_sz, max_palign)
-                        guard u_total > 0
-                            set size: u_total
-                    }
-                    else
-                    {
-                        0
-                    }
-            }
+            ; Delegate to compute_payload_size, which sizes primitives,
+            ; the stdlib container shapes (Vector/Array/String/HashMap/...),
+            ; Structures (recursing into each field) AND Unions (tag + max
+            ; variant payload). The earlier inline Structure arm here sized
+            ; each field via get_primitive_alignment, which returns the
+            ; default 8 for a nested struct/union-typed field — so e.g.
+            ; OperandSyntax (start+end+expression:ExpressionSyntax(232B)+
+            ; postfixes) came out 32 not 256, and Vector[OperandSyntax].add
+            ; under-allocated 32 bytes/element, truncating every operand's
+            ; embedded expression to its first 16 bytes. compute_payload_size
+            ; recurses, so nested struct/union fields are sized correctly.
+            let size this.compute_payload_size(sized.name)
             PlannedSizeOf(s.span, sized, size)
         }
 
@@ -10563,17 +10455,6 @@ define Planner
 
             var vs_holder Vector[PlannedVariant]^rp(planned_vs)
 
-            ; s148: compute size with concept-aware variant sizing. The
-            ; static `Planner.compute_union_size` uses
-            ; `get_primitive_alignment(name)` for each variant's payload,
-            ; which returns the catch-all 8 for any non-primitive (so
-            ; e.g. OperationSyntax / LetSyntax all contributed 8 bytes
-            ; regardless of their real layout). StatementSyntax came out
-            ; as 16B instead of stage-0's ~64B → List<StatementSyntax>::add
-            ; allocated 16B Nodes that couldn't hold the value, so even
-            ; with calls now emitted the list never accumulated. Fix:
-            ; walk the registered Concept (Structure case) and sum
-            ; property sizes the same way plan_sizeof# does (s144).
             var max_payload_size: size_t 0
             var max_payload_align: size_t 1
             var vi: size_t 0
