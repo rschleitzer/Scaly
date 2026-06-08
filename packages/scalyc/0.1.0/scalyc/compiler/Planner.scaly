@@ -10474,6 +10474,56 @@ define Planner
                         guard total > 0
                             set size: total
                     }
+                    when un: scalyc.compiler.Model.Union
+                    {
+                        ; s161: size a nested UNION field. Without this arm a
+                        ; union-typed property (e.g. RoutineSyntax's
+                        ; `implementation: ImplementationSyntax`, 24B) fell to
+                        ; the get_primitive_alignment default of 8 — so
+                        ; compute_payload_size(RoutineSyntax)=72 not 88,
+                        ; NamedSyntax=96 not 112, and plan_union# emitted
+                        ; TargetSyntax as {i8,[103xi8]}=104 (too small to hold
+                        ; its own 112B NamedSyntax variant). build_function#'s
+                        ; `load NamedSyntax` from the union payload then read
+                        ; past the allocation → garbage routine.parameters →
+                        ; SIGSEGV. Mirrors the plan_sizeof# union arm.
+                        var max_payload: size_t 0
+                        var max_palign: size_t 1
+                        var ui: size_t 0
+                        while ui < un.variants.length
+                        {
+                            let uv_ptr un.variants.get(ui)
+                            guard uv_ptr <> null
+                            {
+                                let uv (*uv_ptr)
+                                guard uv.type <> null
+                                {
+                                    let uvt (*uv.type)
+                                    guard uvt.name.length > 0
+                                    {
+                                        let uvn_ptr uvt.name.get(uvt.name.length - 1)
+                                        guard uvn_ptr <> null
+                                        {
+                                            let uvn (*uvn_ptr)
+                                            let uvsz this.compute_payload_size(uvn)
+                                            let uval Planner.get_primitive_alignment(uvn)
+                                            guard uvsz > max_payload
+                                                set max_payload: uvsz
+                                            guard uval > max_palign
+                                                set max_palign: uval
+                                        }
+                                    }
+                                }
+                            }
+                            set ui: ui + 1
+                        }
+                        var u_tag_sz: size_t 1
+                        guard un.variants.length > 256
+                            set u_tag_sz: 4
+                        let u_total Planner.align_offset(max_payload + u_tag_sz, max_palign)
+                        guard u_total > 0
+                            set size: u_total
+                    }
                     else
                         0
             }
