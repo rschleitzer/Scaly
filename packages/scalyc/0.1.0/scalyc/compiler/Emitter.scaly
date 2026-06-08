@@ -6499,7 +6499,8 @@ define Emitter
         ; Store the value (field 1) if present
         guard vc.value <> null
         {
-            let value emit_operand(vc.value.unwrap())
+            let op vc.value.unwrap()
+            let value emit_operand(op)
             ; Skip the store if the operand emitted nothing — without
             ; this guard, a null value passed into LLVMBuildStore SEGVs
             ; in CreateAlignedStore reading the value's type. Same class
@@ -6507,7 +6508,25 @@ define Emitter
             guard value.handle <> null
             {
                 let data_ptr LLVMBuildStructGEP2(builder, union_type, union_ptr, 1, "variant.data.ptr")
-                LLVMBuildStore(builder, value, data_ptr)
+                ; If the payload type is a struct but emit_operand produced a
+                ; POINTER (the operand is a local bound to an sret-returning
+                ; call, e.g. `let fn build_function#(...)` → Member.Function(fn)),
+                ; store the loaded struct VALUE, not the 8-byte pointer.
+                ; Without this the union payload got the sret-slot address and
+                ; every field of the stored struct read back as garbage.
+                ; ref/pointer/primitive payloads (expected type not a struct)
+                ; store as-is.
+                var to_store value
+                let expected_ty map_type(op.result_type)
+                guard expected_ty.handle <> null
+                {
+                    guard LLVMGetTypeKind(expected_ty) = LLVMTypeKind.Struct()
+                    {
+                        guard LLVMGetTypeKind(LLVMTypeOf(value)) = LLVMTypeKind.Pointer()
+                            set to_store: LLVMBuildLoad2(builder, expected_ty, value, "variant.payload")
+                    }
+                }
+                LLVMBuildStore(builder, to_store, data_ptr)
             }
         }
 
