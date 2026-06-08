@@ -391,6 +391,7 @@ function LLVMBuildNot(builder: LLVMBuilderRef, val: LLVMValueRef, name: pointer[
 
 function LLVMBuildICmp(builder: LLVMBuilderRef, op: int, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[const_char]) returns LLVMValueRef extern
 function LLVMBuildFCmp(builder: LLVMBuilderRef, op: int, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[const_char]) returns LLVMValueRef extern
+function LLVMBuildIsNotNull(builder: LLVMBuilderRef, val: LLVMValueRef, name: pointer[const_char]) returns LLVMValueRef extern
 
 ; ============================================================================
 ; Instruction Builder - Memory

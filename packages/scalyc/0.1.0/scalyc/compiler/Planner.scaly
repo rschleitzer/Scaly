@@ -1547,6 +1547,17 @@ define Planner
                 return Vector[KeyValuePair[String, PlannedType]]^rp(result)
             }
 
+            ; s167: the outer type constructors must match before recursing
+            ; into generics. Without this, `Vector[T]` matched `Array[String]`
+            ; (binding T=String from the inner generic), so find_initializer#
+            ; Pass 3 picked Vector's copy ctor `init#(other: Vector[T])` (which
+            ; precedes `init#(array: Array[T])`) for `Vector[String]#(an Array)`
+            ; — emitting a Vector(Vector) call passed an Array struct, whose
+            ; vector-ptr field was read as the data ptr → garbage String
+            ; elements → String::hash SIGSEGV.
+            guard pattern.name.equals(actual.name) = false
+                return Vector[KeyValuePair[String, PlannedType]]^rp(result)
+
             guard pattern.generics <> null
             {
                 guard actual.generics <> null
@@ -1601,7 +1612,7 @@ define Planner
         ) returns Vector[KeyValuePair[String, PlannedType]]
         {
             var result Array[KeyValuePair[String, PlannedType]]$()
-            guard param_types.length = arg_types.length
+            guard param_types.length <> arg_types.length
                 return Vector[KeyValuePair[String, PlannedType]]^rp(result)
 
             var i: size_t 0
@@ -2954,7 +2965,33 @@ define Planner
                                 ; cli.test() IR for `var opts Options$()`.
                                 {
                                     let has_page_param ini_match.page_parameter <> null
+                                    let saved_subst_ctor type_substitutions.length
+                                    guard ctor_struct_type.generics <> null
+                                    {
+                                        let cgens (*ctor_struct_type.generics)
+                                        let cc_ref this.lookup_concept(fn_name)
+                                        guard cc_ref <> null
+                                        {
+                                            let cc (*cc_ref)
+                                            var pgi: size_t 0
+                                            while pgi < cc.parameters.length
+                                            {
+                                                guard pgi < cgens.length
+                                                {
+                                                    let gp_ptr cc.parameters.get(pgi)
+                                                    let cg_ptr cgens.get(pgi)
+                                                    guard gp_ptr <> null
+                                                    {
+                                                        guard cg_ptr <> null
+                                                            this.define_type_substitution(gp_ptr.name, (*cg_ptr))
+                                                    }
+                                                }
+                                                set pgi: pgi + 1
+                                            }
+                                        }
+                                    }
                                     let init_input_items this.plan_items#(ini_match.input)
+                                    set type_substitutions.length: saved_subst_ctor
                                     var init_input_holder Vector[PlannedItem]^rp(init_input_items)
 
                                     var parent_holder Vector[PlannedType]^rp(1)
@@ -5354,7 +5391,19 @@ define Planner
             ; `..3addE6Module`. Mirrors the auto-deref above this block
             ; (lookup_st = struct_type.generics[0] when struct_type is
             ; pointer/ref).
-            let saved_subst_len_lm type_substitutions.length
+            ; s167: plan the method's return/param types with the RECEIVER's
+            ; generic bindings OVERRIDING any same-named ambient binding
+            ; (mirrors stage-0's TypeSubstitutions map-overwrite). For a
+            ; Vector<Vector<String>> receiver inside an instantiated
+            ; HashSet[String], Vector's `T` must bind to Vector<String>,
+            ; shadowing the ambient HashSet `T -> String`. Appending the
+            ; receiver binding doesn't help — name_substitution_lookup is
+            ; first-wins and a global last-wins flip breaks -c. So rebuild
+            ; the substitution list: keep ambient entries whose key is NOT a
+            ; receiver param, then append the receiver bindings; restore the
+            ; full ambient list afterward.
+            var rb_names Array[String]$()
+            var rb_vals Array[PlannedType]$()
             let conc_ref this.lookup_concept(lookup_st.name)
             guard conc_ref <> null
             {
@@ -5367,9 +5416,7 @@ define Planner
                         var pi: size_t 0
                         while pi < conc.parameters.length
                         {
-                            guard pi >= gens_ref.length
-                                set pi: conc.parameters.length
-                            guard pi < conc.parameters.length
+                            guard pi < gens_ref.length
                             {
                                 let cp_ptr conc.parameters.get(pi)
                                 let gen_ptr gens_ref.get(pi)
@@ -5377,14 +5424,62 @@ define Planner
                                 {
                                     guard gen_ptr <> null
                                     {
-                                        this.define_type_substitution(cp_ptr.name, (*gen_ptr))
+                                        rb_names.add(cp_ptr.name)
+                                        rb_vals.add((*gen_ptr))
                                     }
                                 }
-                                set pi: pi + 1
                             }
+                            set pi: pi + 1
                         }
                     }
                 }
+            }
+            ; Snapshot ambient substitutions for restore.
+            var subst_snapshot Array[KeyValuePair[String, PlannedType]]$()
+            var ssi: size_t 0
+            while ssi < type_substitutions.length
+            {
+                let sp type_substitutions.get(ssi)
+                guard sp <> null
+                    subst_snapshot.add((*sp))
+                set ssi: ssi + 1
+            }
+            ; Rebuild: ambient entries not shadowed by a receiver param,
+            ; then the receiver bindings (so they resolve under first-wins).
+            set type_substitutions.length: 0
+            var rsi: size_t 0
+            while rsi < subst_snapshot.length
+            {
+                let ep subst_snapshot.get(rsi)
+                guard ep <> null
+                {
+                    let e (*ep)
+                    var shadowed: bool false
+                    var ri: size_t 0
+                    while ri < rb_names.length
+                    {
+                        let rn_ptr rb_names.get(ri)
+                        guard rn_ptr <> null
+                            guard rn_ptr.equals(e.key)
+                                set shadowed: true
+                        set ri: ri + 1
+                    }
+                    guard shadowed = false
+                        type_substitutions.add(e)
+                }
+                set rsi: rsi + 1
+            }
+            var rbi: size_t 0
+            while rbi < rb_names.length
+            {
+                let rn_ptr rb_names.get(rbi)
+                let rv_ptr rb_vals.get(rbi)
+                guard rn_ptr <> null
+                {
+                    guard rv_ptr <> null
+                        this.define_type_substitution((*rn_ptr), (*rv_ptr))
+                }
+                set rbi: rbi + 1
             }
 
             var return_type: PlannedType Planner.make_void_type#()
@@ -5427,7 +5522,16 @@ define Planner
                 set i: i + 1
             }
             var params_holder Vector[PlannedType]^rp(params_arr)
-            set type_substitutions.length: saved_subst_len_lm
+            ; s167: restore the full ambient substitution list.
+            set type_substitutions.length: 0
+            var rst: size_t 0
+            while rst < subst_snapshot.length
+            {
+                let ep2 subst_snapshot.get(rst)
+                guard ep2 <> null
+                    type_substitutions.add((*ep2))
+                set rst: rst + 1
+            }
 
             var has_page: bool false
             guard f.page_parameter <> null
@@ -6057,10 +6161,12 @@ define Planner
                         set is_stdlib_generic: true
                     guard canonical_name.equals("HashMapBuilder")
                         set is_stdlib_generic: true
-                    guard canonical_name.equals("HashSet")
-                        set is_stdlib_generic: true
-                    guard canonical_name.equals("HashSetBuilder")
-                        set is_stdlib_generic: true
+                    ; s166: HashSet/HashSetBuilder lifted so
+                    ; instantiate_generic# emits their init# bodies.
+                    ; guard canonical_name.equals("HashSet")
+                    ;     set is_stdlib_generic: true
+                    ; guard canonical_name.equals("HashSetBuilder")
+                    ;     set is_stdlib_generic: true
                     ; s129: Array removed alongside Vector (see comment above).
                     ; s148: List + ListIterator + Node removed analogous to
                     ; the s129 Vector/Array lift. Without this, stage-1's

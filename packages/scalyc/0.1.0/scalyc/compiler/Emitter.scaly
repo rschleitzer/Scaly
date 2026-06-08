@@ -6100,11 +6100,16 @@ define Emitter
         var bool_cond cond_value
         let cond_type LLVMTypeOf(cond_value)
 
+        ; s167: `while let x = ptr_call()` (e.g. iterator.next() returning
+        ; ref[T]?) yields a pointer cond. The old LLVMConstInt(LLVMTypeOf(
+        ; cond_value), 0) emitted a malformed `icmp ne ptr X, i0 0` (the
+        ; Scaly-side LLVMTypeOf round-trip mis-reports a pointer value's type
+        ; as i0). LLVMBuildIsNotNull derives the null type from the value
+        ; INTERNALLY (C++ getNullValue(Val->getType())), giving a correct
+        ; `icmp ne ptr X, null` for pointers and `icmp ne iN X, 0` for
+        ; integers. The width <> 1 guard still skips already-boolean conds.
         guard LLVMGetIntTypeWidth(cond_type) <> 1
-        {
-            let zero LLVMConstInt(cond_type, 0, 0)
-            set bool_cond: LLVMBuildICmp(builder, LLVMIntPredicate.NE(), cond_value, zero, "while.tobool")
-        }
+            set bool_cond: LLVMBuildIsNotNull(builder, cond_value, "while.tobool")
 
         ; Branch: if true go to body, else exit
         LLVMBuildCondBr(builder, bool_cond, body_block, exit_block)
