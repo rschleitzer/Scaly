@@ -5020,12 +5020,22 @@ define Planner
                     ; Planner.cpp:4298-4322. Sets consumed_rest so the outer
                     ; loop breaks after this iteration since the entire
                     ; right side has been folded into rhs.
+                    ; s175: when the rhs call-fold (or as-fold) above
+                    ; consumed ops[i+2], the next operator sits at i+3 —
+                    ; checking i+2 saw the consumed Tuple, never an
+                    ; operator, so `starts_with(p) & len() > 2` left-
+                    ; folded to `(bool & len) > 2` = `1 > 2` = false and
+                    ; stage-2's parse_args rejected every -L/-l arg as
+                    ; "Unknown option".
+                    var prec_next: size_t i + 2
+                    guard rhs_call_consumed
+                        set prec_next: i + 3
                     let current_prec Planner.get_operator_precedence(op_name)
                     guard current_prec > 0
                     {
-                        guard i + 2 < ops.length
+                        guard prec_next < ops.length
                         {
-                            let next_op_ptr ops.get(i + 2)
+                            let next_op_ptr ops.get(prec_next)
                             guard next_op_ptr <> null
                             {
                                 let next_op (*next_op_ptr)
@@ -5039,7 +5049,7 @@ define Planner
                                             {
                                                 var right_arr Array[PlannedOperand]$()
                                                 right_arr.add(rhs)
-                                                var rr: size_t i + 2
+                                                var rr: size_t prec_next
                                                 while rr < ops.length
                                                 {
                                                     let p_ptr ops.get(rr)
