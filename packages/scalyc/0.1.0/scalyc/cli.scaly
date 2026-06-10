@@ -11,6 +11,15 @@ use scaly.io.Console
 use scaly.memory.runtime.system
 use scaly.memory.runtime.unlink
 
+; s175: local extern declarations so stage-1 emits `declare` for these.
+; The `use` lines above only resolve names; stage-1 doesn't walk the
+; scaly package's runtime module into LLVM declarations, so emit_call's
+; LLVMGetNamedFunction lookup failed and the system()/unlink() calls —
+; the entire link step — silently dropped from stage-2's cli.run. Same
+; in-file pattern as Planner.scaly's local `exit` extern (line 143).
+function system(command: pointer[const_char]) returns int extern
+function unlink(path: pointer[const_char]) returns int extern
+
 ; Compiler module imports
 use scalyc.compiler.Modeler
 use scalyc.compiler.Model.Program
