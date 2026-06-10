@@ -7994,6 +7994,32 @@ define Planner
                     }
                 }
             }
+            guard should_collapse = false
+            {
+                var mc: size_t 0
+                while mc < planned_value.length
+                {
+                    let mop_ptr planned_value.get(mc)
+                    guard mop_ptr <> null
+                    {
+                        let mop (*mop_ptr)
+                        guard mop.member_access <> null
+                        {
+                            let mma (*mop.member_access)
+                            guard mma.length > 0
+                            {
+                                let mh_ptr mma.get(mma.length - 1)
+                                guard mh_ptr <> null
+                                {
+                                    guard (*mh_ptr).is_method
+                                        set should_collapse: true
+                                }
+                            }
+                        }
+                    }
+                    set mc: mc + 1
+                }
+            }
             var value_holder Vector[PlannedOperand]^rp(planned_value)
             guard should_collapse
             {
