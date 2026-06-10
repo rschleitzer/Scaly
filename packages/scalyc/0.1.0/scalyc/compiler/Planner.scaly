@@ -2658,9 +2658,102 @@ define Planner
                     guard Planner.is_operator_name(ty.name)
                     {
                         let prefix_name ty.name
+
+                        ; s174: a prefix operator consumes exactly ONE
+                        ; operand — the immediately following one — unless
+                        ; that operand is itself a prefix operator (chained
+                        ; `*-x`: collapse the whole tail as the operand).
+                        ; The old code collapsed ops[1..end] wholesale, so
+                        ; `*p <> 42` planned as `*(p <> 42)` (deref of a
+                        ; bool) — emit_operands returned null and the whole
+                        ; surrounding if/guard silently dropped (lexer
+                        ; comment dispatch, prelude load). After the prefix
+                        ; call is built, the remaining operands continue
+                        ; through a recursive collapse. Mirrors stage-0
+                        ; Planner.cpp:4098-4283.
+                        var consumed: size_t 2
+                        var chained: bool false
+                        guard ops.length > 1
+                        {
+                            let chk_ptr ops.get(1)
+                            guard chk_ptr <> null
+                            {
+                                choose (*chk_ptr).expr
+                                    when cty: PlannedType
+                                    {
+                                        guard Planner.is_operator_name(cty.name)
+                                            set chained: true
+                                    }
+                                    else
+                                        0
+                            }
+                        }
+                        guard chained
+                            set consumed: ops.length
+
+                        ; s174: a call operand keeps its argument Tuple —
+                        ; consume [callee, Tuple] together so
+                        ; `~lexer.parse_punctuation#(CHAR_DOT())` keeps its
+                        ; argument. Stage-0 pre-groups calls in planOperands
+                        ; (Planner.cpp:7361+) so its consume-one never
+                        ; splits them; stage-1 groups during collapse, so
+                        ; the prefix branch must widen its bite here.
+                        ; Callable = non-operator Type (free function) or a
+                        ; member-access chain ending in an is_method hop.
+                        guard chained = false
+                        {
+                            guard ops.length > 2
+                            {
+                                let cal_ptr ops.get(1)
+                                let arg_ptr ops.get(2)
+                                guard cal_ptr <> null
+                                {
+                                    guard arg_ptr <> null
+                                    {
+                                        var arg_is_tuple: bool false
+                                        choose (*arg_ptr).expr
+                                            when t_arg: PlannedTuple
+                                                set arg_is_tuple: true
+                                            else
+                                                0
+                                        guard arg_is_tuple
+                                        {
+                                            var cal_callable: bool false
+                                            choose (*cal_ptr).expr
+                                                when cal_ty: PlannedType
+                                                {
+                                                    guard Planner.is_operator_name(cal_ty.name) = false
+                                                        set cal_callable: true
+                                                }
+                                                else
+                                                    0
+                                            guard cal_callable = false
+                                            {
+                                                guard (*cal_ptr).member_access <> null
+                                                {
+                                                    let cal_ma (*(*cal_ptr).member_access)
+                                                    guard cal_ma.length > 0
+                                                    {
+                                                        let cal_last cal_ma.get(cal_ma.length - 1)
+                                                        guard cal_last <> null
+                                                        {
+                                                            guard (*cal_last).is_method
+                                                                set cal_callable: true
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                            guard cal_callable
+                                                set consumed: 3
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
                         var rest_arr Array[PlannedOperand]$()
                         var r: size_t 1
-                        while r < ops.length
+                        while r < consumed
                         {
                             let p_ptr ops.get(r)
                             guard p_ptr <> null
@@ -2683,7 +2776,7 @@ define Planner
                                 var expanded: bool false
                                 guard r = 1
                                 {
-                                    guard ops.length = 2
+                                    guard chained = false
                                     {
                                         choose p_op.expr
                                             when tup: PlannedTuple
@@ -2803,12 +2896,29 @@ define Planner
                             Lifetime.Unspecified(Unspecified()),
                             null
                         )
-                        return PlannedOperand(
+                        let prefix_op PlannedOperand(
                             result.loc,
                             PlannedExpression.Call(call),
                             null,
                             rt
                         )
+                        ; s174: binary continuation — `*p <> 42` leaves
+                        ; [<>, 42] after the consumed [*, p]; re-collapse
+                        ; with the prefix call as the new first operand.
+                        guard consumed >= ops.length
+                            return prefix_op
+                        var cont_arr Array[PlannedOperand]$()
+                        cont_arr.add(prefix_op)
+                        var cc: size_t consumed
+                        while cc < ops.length
+                        {
+                            let c_ptr ops.get(cc)
+                            guard c_ptr <> null
+                                cont_arr.add((*c_ptr))
+                            set cc: cc + 1
+                        }
+                        var cont_vec Vector[PlannedOperand]^rp(cont_arr)
+                        return this.collapse_operand_sequence#(cont_vec)
                     }
                     0
                 }
