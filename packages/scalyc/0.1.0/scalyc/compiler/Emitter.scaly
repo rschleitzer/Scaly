@@ -5200,6 +5200,44 @@ define Emitter
                     ; would incorrectly enter the NPO path.
                     guard is_npo
                     {
+                        ; s173: a resolved variant_type on any arm means
+                        ; the planner matched a real union variant (e.g.
+                        ; `choose stmt` over ref[PlannedStatement] from a
+                        ; for-in loop variable, after plan_choose#'s ref
+                        ; peel) — dispatch via the tagged path, not the
+                        ; NPO null-check. Skip this demotion for throws-
+                        ; call conditions: their synthetic Success arm
+                        ; carries a non-void variant_type (s172) but
+                        ; still needs the null-tag handling (s157).
+                        var cond_is_throws: bool false
+                        choose cond_op.expr
+                            when tcall: Call
+                                guard tcall.can_throw
+                                    set cond_is_throws: true
+                            else
+                                0
+                        guard cond_is_throws = false
+                        {
+                            var has_resolved_variant: bool false
+                            guard choose_expr.cases <> null
+                            {
+                                let rcases (*choose_expr.cases)
+                                var ri: size_t 0
+                                while ri < rcases.length
+                                {
+                                    let rc_ptr rcases.get(ri)
+                                    guard rc_ptr <> null
+                                    {
+                                        let rc (*rc_ptr)
+                                        guard rc.variant_type.name.equals(String$("void")) = false
+                                            set has_resolved_variant: true
+                                    }
+                                    set ri: ri + 1
+                                }
+                            }
+                            guard has_resolved_variant
+                                set is_npo: false
+                        }
                         var has_some: bool false
                         guard choose_expr.cases <> null
                         {
