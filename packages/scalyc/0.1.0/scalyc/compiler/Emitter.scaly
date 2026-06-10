@@ -7468,9 +7468,43 @@ define Emitter
 
                 if binding.binding_type.equals(String$("var"))
                 {
+                    ; s174: a struct value held through a pointer (sret
+                    ; call result, by-ptr param) must be COPIED into a
+                    ; struct-typed alloca — alloca'ing the raw ptr makes
+                    ; a ptr slot that later field GEPs (emitted against
+                    ; the struct layout) read as if it were the struct
+                    ; itself, yielding garbage (plan_type's after_subst
+                    ; crash). Region-allocated bindings (var s String^rp)
+                    ; keep the ptr slot: their planned type is pointer[T]
+                    ; (s27), so map_type yields ptr, not a struct.
+                    var store_ty ty
+                    var store_val value
+                    guard binding.binding_item.item_type <> null
+                    {
+                        let bind_ty_ref binding.binding_item.item_type
+                        let mapped map_type((*bind_ty_ref))
+                        guard mapped.handle <> null
+                        {
+                            guard LLVMGetTypeKind(mapped) = LLVMTypeKind.Struct()
+                            {
+                                ; Opaque structs (fresh type vars, un-
+                                ; instantiated generics) have no body —
+                                ; loading through them is UB. Element
+                                ; count 0 covers both opaque and empty.
+                                guard LLVMCountStructElementTypes(mapped) > 0
+                                {
+                                    guard LLVMGetTypeKind(ty) = LLVMTypeKind.Pointer()
+                                    {
+                                        set store_ty: mapped
+                                        set store_val: LLVMBuildLoad2(builder, mapped, value, "binding.load")
+                                    }
+                                }
+                            }
+                        }
+                    }
                     ; Mutable binding: allocate on stack
-                    let alloca entry_alloca(ty, name.c_data())
-                    LLVMBuildStore(builder, value, alloca)
+                    let alloca entry_alloca(store_ty, name.c_data())
+                    LLVMBuildStore(builder, store_val, alloca)
                     define_variable(name, alloca)
                 }
                 else
