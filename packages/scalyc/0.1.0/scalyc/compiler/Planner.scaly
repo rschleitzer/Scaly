@@ -5387,6 +5387,68 @@ define Planner
                     }
                 }
             }
+            ; s172: Option[ref[T]] / Option[pointer[T]] unwrap — mirrors
+            ; stage-0 lookupMethod's Option fallback (Planner.cpp:1730-
+            ; 1737). Method calls through nullable ref fields
+            ; (`names.add(n)` where names: ref[Vector[String]]?) carry
+            ; parent_type Option[ref[Vector[String]]]; without the
+            ; unwrap, lookup walks "Option", finds nothing, and the s83
+            ; dispatch drops the whole call. Option's own methods are
+            ; exempt so NPO unwrap dispatch keeps resolving.
+            var mn_is_opt: bool false
+            guard method_name.equals(String$("unwrap"))
+                set mn_is_opt: true
+            guard method_name.equals(String$("unwrap_or"))
+                set mn_is_opt: true
+            guard method_name.equals(String$("is_some"))
+                set mn_is_opt: true
+            guard method_name.equals(String$("is_none"))
+                set mn_is_opt: true
+            guard mn_is_opt = false
+            {
+                guard lookup_st.name.equals(String$("Option"))
+                {
+                    guard lookup_st.generics <> null
+                    {
+                        let ogens (*lookup_st.generics)
+                        guard ogens.length > 0
+                        {
+                            let og_ptr ogens.get(0)
+                            guard og_ptr <> null
+                            {
+                                var inner_o (*og_ptr)
+                                guard inner_o.name.equals(String$("ref"))
+                                {
+                                    guard inner_o.generics <> null
+                                    {
+                                        let igens (*inner_o.generics)
+                                        guard igens.length > 0
+                                        {
+                                            let iip igens.get(0)
+                                            guard iip <> null
+                                                set inner_o: (*iip)
+                                        }
+                                    }
+                                }
+                                guard inner_o.name.equals(String$("pointer"))
+                                {
+                                    guard inner_o.generics <> null
+                                    {
+                                        let pgens (*inner_o.generics)
+                                        guard pgens.length > 0
+                                        {
+                                            let pip pgens.get(0)
+                                            guard pip <> null
+                                                set inner_o: (*pip)
+                                        }
+                                    }
+                                }
+                                set lookup_st: inner_o
+                            }
+                        }
+                    }
+                }
+            }
             let candidates this.lookup_methods#(lookup_st.name, method_name)
             guard candidates.length = 0
                 return null
@@ -5786,6 +5848,73 @@ define Planner
                                 let inner_ptr gens.get(0)
                                 guard inner_ptr <> null
                                     set lookup_type: (*inner_ptr)
+                            }
+                        }
+                    }
+
+                    ; s172: Option[ref[T]] / Option[pointer[T]] auto-deref —
+                    ; mirrors stage-0 lookupMethod's Option-unwrap fallback
+                    ; (Planner.cpp:1730-1737). A nullable ref field like
+                    ; `function_cache_names: ref[Vector[String]]?` is
+                    ; Option[ref[Vector[String]]]; without unwrapping,
+                    ; lookup_property/lookup_methods search "Option", find
+                    ; nothing, and the call (`names.add(n)`) silently
+                    ; drops — stage-2's function cache stayed empty and
+                    ; every body bailed at the cache miss. Option's own
+                    ; methods (is_some/is_none/unwrap/unwrap_or) are
+                    ; exempt so NPO unwrap dispatch keeps resolving on
+                    ; the Option itself.
+                    var m_is_opt_method: bool false
+                    guard m.equals(String$("unwrap"))
+                        set m_is_opt_method: true
+                    guard m.equals(String$("unwrap_or"))
+                        set m_is_opt_method: true
+                    guard m.equals(String$("is_some"))
+                        set m_is_opt_method: true
+                    guard m.equals(String$("is_none"))
+                        set m_is_opt_method: true
+                    guard m_is_opt_method = false
+                    {
+                        guard lookup_type.name.equals(String$("Option"))
+                        {
+                            guard lookup_type.generics <> null
+                            {
+                                let ogens (*lookup_type.generics)
+                                guard ogens.length > 0
+                                {
+                                    let og_ptr ogens.get(0)
+                                    guard og_ptr <> null
+                                    {
+                                        var inner_o (*og_ptr)
+                                        guard inner_o.name.equals(String$("ref"))
+                                        {
+                                            guard inner_o.generics <> null
+                                            {
+                                                let igens (*inner_o.generics)
+                                                guard igens.length > 0
+                                                {
+                                                    let iip igens.get(0)
+                                                    guard iip <> null
+                                                        set inner_o: (*iip)
+                                                }
+                                            }
+                                        }
+                                        guard inner_o.name.equals(String$("pointer"))
+                                        {
+                                            guard inner_o.generics <> null
+                                            {
+                                                let pgens (*inner_o.generics)
+                                                guard pgens.length > 0
+                                                {
+                                                    let pip pgens.get(0)
+                                                    guard pip <> null
+                                                        set inner_o: (*pip)
+                                                }
+                                            }
+                                        }
+                                        set lookup_type: inner_o
+                                    }
+                                }
                             }
                         }
                     }
