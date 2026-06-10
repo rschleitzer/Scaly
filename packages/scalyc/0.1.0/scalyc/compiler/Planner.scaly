@@ -4739,35 +4739,63 @@ define Planner
                     ; chained-if branches.
                     guard i + 2 < ops.length
                     {
+                        var rhs_callable: bool false
                         choose rhs.expr
                             when rty: PlannedType
                             {
                                 guard Planner.is_operator_name(rty.name) = false
-                                {
-                                    let after_ptr ops.get(i + 2)
-                                    guard after_ptr <> null
-                                    {
-                                        let after_op (*after_ptr)
-                                        var is_tuple_after: bool false
-                                        choose after_op.expr
-                                            when tp_after: PlannedTuple
-                                                set is_tuple_after: true
-                                            else
-                                                0
-                                        guard is_tuple_after
-                                        {
-                                            var sub_arr Array[PlannedOperand]$()
-                                            sub_arr.add(rhs)
-                                            sub_arr.add(after_op)
-                                            var sub_vec Vector[PlannedOperand]^rp(sub_arr)
-                                            set rhs: this.collapse_operand_sequence#(sub_vec)
-                                            set rhs_call_consumed: true
-                                        }
-                                    }
-                                }
+                                    set rhs_callable: true
                             }
                             else
                                 0
+
+                        ; s174: rhs with a member-access chain ending in a
+                        ; method hop is callable too (`i < path.get_length()`).
+                        ; Without this the Tuple after rhs is never consumed,
+                        ; the chain plans as a field access (extractvalue),
+                        ; and the comparison + branch drop — every
+                        ; `while i < x.method()` loop became dead code in
+                        ; stage-2 (extract_program_name, prelude path build).
+                        guard rhs_callable = false
+                        {
+                            guard rhs.member_access <> null
+                            {
+                                let rma (*rhs.member_access)
+                                guard rma.length > 0
+                                {
+                                    let rlast_ptr rma.get(rma.length - 1)
+                                    guard rlast_ptr <> null
+                                    {
+                                        guard (*rlast_ptr).is_method
+                                            set rhs_callable: true
+                                    }
+                                }
+                            }
+                        }
+
+                        guard rhs_callable
+                        {
+                            let after_ptr ops.get(i + 2)
+                            guard after_ptr <> null
+                            {
+                                let after_op (*after_ptr)
+                                var is_tuple_after: bool false
+                                choose after_op.expr
+                                    when tp_after: PlannedTuple
+                                        set is_tuple_after: true
+                                    else
+                                        0
+                                guard is_tuple_after
+                                {
+                                    var sub_arr Array[PlannedOperand]$()
+                                    sub_arr.add(rhs)
+                                    sub_arr.add(after_op)
+                                    var sub_vec Vector[PlannedOperand]^rp(sub_arr)
+                                    set rhs: this.collapse_operand_sequence#(sub_vec)
+                                    set rhs_call_consumed: true
+                                }
+                            }
+                        }
                     }
 
                     ; rhs followed by an `as` cast: the postfix `as` binds
