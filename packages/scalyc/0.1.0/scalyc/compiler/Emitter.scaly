@@ -3500,6 +3500,45 @@ define Emitter
                                     }
                                 }
                             }
+                            ; s173: same unwrap when the arg is a LOAD of a
+                            ; ptr-slot var. `var t map_intrinsic_type_by_name(..)`
+                            ; allocas a ptr slot holding the ADDRESS of the
+                            ; wrapper (sret slot or set-heap copy); emit_variable
+                            ; loads it, so the arg is a LoadInst of kind Pointer
+                            ; whose value points AT the wrapper, not the handle.
+                            ; stage-2's emit_constant passed exactly this to
+                            ; LLVMConstInt and crashed in ConstantInt::get.
+                            ; Gate on the PLANNED arg type naming an LLVM
+                            ; wrapper so bare pointer[T] args (idx_vec.data
+                            ; etc.) are untouched; bare handles from extern
+                            ; LLVM call results are CallInsts, not LoadInsts.
+                            guard arg_isa.handle = null
+                            {
+                                let arg_load_isa LLVMIsALoadInst(arg_value)
+                                guard arg_load_isa.handle <> null
+                                {
+                                    guard arg_operand.result_type.name.starts_with("LLVM")
+                                    {
+                                        let w_ty map_type(arg_operand.result_type)
+                                        guard w_ty.handle <> null
+                                        {
+                                            guard LLVMGetTypeKind(w_ty) = LLVMTypeKind.Struct()
+                                            {
+                                                let wnelems LLVMCountStructElementTypes(w_ty)
+                                                guard wnelems = 1
+                                                {
+                                                    let winner LLVMStructGetTypeAtIndex(w_ty, 0)
+                                                    guard LLVMGetTypeKind(winner) = LLVMTypeKind.Pointer()
+                                                    {
+                                                        let wrapper_val2 LLVMBuildLoad2(builder, w_ty, arg_value, "wrapper.load")
+                                                        set arg_value: LLVMBuildExtractValue(builder, wrapper_val2, 0, "handle")
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 }

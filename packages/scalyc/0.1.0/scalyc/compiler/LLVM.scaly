@@ -474,6 +474,12 @@ function LLVMIsNull(val: LLVMValueRef) returns int extern
 function LLVMIsAAllocaInst(val: LLVMValueRef) returns LLVMValueRef extern
 function LLVMGetAllocatedType(alloca: LLVMValueRef) returns LLVMTypeRef extern
 
+; Load instruction inspection — same isa<> pattern as LLVMIsAAllocaInst.
+; Used by emit_call's extern-LLVM arg unwrap (s173) to recognise a
+; loaded ptr-slot value (pointer to a single-ptr wrapper struct) that
+; must be dereferenced to the bare handle.
+function LLVMIsALoadInst(val: LLVMValueRef) returns LLVMValueRef extern
+
 ; Structure type name lookup. Returns a C string (NUL-terminated) when the
 ; struct is named (`LLVMStructCreateNamed` + setBody), or null for anonymous
 ; struct types. Used in emit_tuple to discriminate source struct kinds
