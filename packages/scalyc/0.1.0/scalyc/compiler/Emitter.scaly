@@ -596,17 +596,27 @@ define Emitter
 
     function lookup_variable(this, name: String) returns LLVMValueRef
     {
-        var i 0
-        for n in local_var_names
+        ; s174: scan BACKWARD so the innermost (most recently defined)
+        ; binding shadows outer ones. The old forward scan returned the
+        ; OUTERMOST match, so an inner `var i` re-initialized its own
+        ; alloca but all reads/writes resolved to the outer `i` — in
+        ; plan_function's needs_local_page loop the inner index started
+        ; at the outer loop's final value and Vector.get walked past the
+        ; end (flaky stage-2 SIGSEGV for any function with parameters).
+        var i: size_t local_var_names.length
+        while i > 0
         {
-            guard n.equals(name)
+            set i: i - 1
+            let n_ptr local_var_names.get(i)
+            guard n_ptr <> null
             {
-                let v local_var_values.get(i)
-                guard v <> null
-                    return v
-
+                guard (*n_ptr).equals(name)
+                {
+                    let v local_var_values.get(i)
+                    guard v <> null
+                        return (*v)
+                }
             }
-            set i: i + 1
         }
         LLVMValueRef(null)
     }
