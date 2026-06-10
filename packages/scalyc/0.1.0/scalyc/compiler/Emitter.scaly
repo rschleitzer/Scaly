@@ -6813,8 +6813,75 @@ define Emitter
                             guard LLVMGetTypeKind(store_ty) <> LLVMTypeKind.Pointer()
                                 return value
                         }
+                        ; s172: layout-mismatch store, mirrors stage-0
+                        ; Emitter.cpp:2076-2100. The alloca holds a POINTER
+                        ; to a heap struct (var X String^rp(...)) but the
+                        ; new value is a struct VALUE. Storing it bitwise
+                        ; would make the slot hold the struct's first field
+                        ; instead of a pointer — a later method call on the
+                        ; variable passes that field as `this` and faults
+                        ; (stage-2 fn_name.last_index_of on "\x06helper").
+                        ; Heap-alloc a copy on the local page (or rp) and
+                        ; store the new pointer instead.
+                        var store_val LLVMValueRef(value.handle)
+                        let is_alloca LLVMIsAAllocaInst(var_ptr)
+                        guard is_alloca.handle <> null
+                        {
+                            let alloc_ty LLVMGetAllocatedType(var_ptr)
+                            guard alloc_ty.handle <> null
+                            {
+                                guard LLVMGetTypeKind(alloc_ty) = LLVMTypeKind.Pointer()
+                                {
+                                    let val_ty LLVMTypeOf(value)
+                                    guard val_ty.handle <> null
+                                    {
+                                        guard LLVMGetTypeKind(val_ty) = LLVMTypeKind.Struct()
+                                        {
+                                            var copy_page LLVMValueRef(current_region.local_page.handle)
+                                            guard copy_page.handle = null
+                                            {
+                                                let rp_val lookup_variable(String$("rp"))
+                                                guard rp_val.handle <> null
+                                                    set copy_page: rp_val
+                                            }
+                                            guard copy_page.handle <> null
+                                            {
+                                                var alloc_func LLVMGetNamedFunction(llvm_module, "_ZN4Page8allocateEmm")
+                                                guard alloc_func.handle = null
+                                                {
+                                                    var ap_param_types Vector[LLVMTypeRef]#(3)
+                                                    ap_param_types.put(0, LLVMPointerTypeInContext(context, 0))
+                                                    ap_param_types.put(1, LLVMInt64TypeInContext(context))
+                                                    ap_param_types.put(2, LLVMInt64TypeInContext(context))
+                                                    let ap_decl_ty LLVMFunctionType(LLVMPointerTypeInContext(context, 0), ap_param_types.data, 3, 0)
+                                                    set alloc_func: LLVMAddFunction(llvm_module, "_ZN4Page8allocateEmm", ap_decl_ty)
+                                                    LLVMSetLinkage(alloc_func, LLVMLinkage.External())
+                                                }
+                                                let size_const LLVMSizeOf(val_ty)
+                                                let align_const LLVMAlignOf(val_ty)
+                                                var alloc_args Vector[LLVMValueRef]#(3)
+                                                alloc_args.put(0, copy_page)
+                                                alloc_args.put(1, size_const)
+                                                alloc_args.put(2, align_const)
+                                                var ap_call_pt Vector[LLVMTypeRef]#(3)
+                                                ap_call_pt.put(0, LLVMPointerTypeInContext(context, 0))
+                                                ap_call_pt.put(1, LLVMInt64TypeInContext(context))
+                                                ap_call_pt.put(2, LLVMInt64TypeInContext(context))
+                                                let ap_call_ty LLVMFunctionType(LLVMPointerTypeInContext(context, 0), ap_call_pt.data, 3, 0)
+                                                let heap_ptr LLVMBuildCall2(builder, ap_call_ty, alloc_func, alloc_args.data, 3, "set.heap")
+                                                guard heap_ptr.handle <> null
+                                                {
+                                                    LLVMBuildStore(builder, value, heap_ptr)
+                                                    set store_val: heap_ptr
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
                         ; Store the value to the variable
-                        LLVMBuildStore(builder, value, var_ptr)
+                        LLVMBuildStore(builder, store_val, var_ptr)
                     }
                     when call: Call
                     {
