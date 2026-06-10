@@ -3485,8 +3485,31 @@ define Emitter
                     ; stage-2's first LLVMAppendBasicBlockInContext
                     ; crashed in BasicBlock::insertInto on exactly this.
                     ; `&var` args are unaffected (direct_alloca=true).
+                    ; s175: `&var` args must KEEP the address — the s172/
+                    ; s173 unwraps below would load the wrapper through it
+                    ; and extract a null/garbage handle. write_object_to_
+                    ; file's `LLVMGetTargetFromTriple(triple, &target,
+                    ; null)` crashed inside libLLVM storing through a null
+                    ; out-pointer because &target (alloca of LLVMTargetRef
+                    ; holding null) was unwrapped to target.handle. The
+                    ; s172 note "(&var args are unaffected)" was wrong:
+                    ; direct_alloca is skipped for LLVM callees, so every
+                    ; &var on a single-ptr-field wrapper got unwrapped.
+                    ; Stage-0 passes the alloca directly for extern-LLVM
+                    ; &var args (s19, Emitter.cpp ~3341).
+                    var arg_is_addr_of: bool false
+                    choose arg_operand.expr
+                        when ac: Call
+                        {
+                            guard ac.name.equals(String$("&"))
+                                set arg_is_addr_of: true
+                        }
+                        else
+                            0
                     guard arg_kind = LLVMTypeKind.Pointer()
                     {
+                        guard arg_is_addr_of = false
+                        {
                         guard call.mangled_name.starts_with("LLVM")
                         {
                             let arg_isa LLVMIsAAllocaInst(arg_value)
@@ -3549,6 +3572,7 @@ define Emitter
                                     }
                                 }
                             }
+                        }
                         }
                     }
                 }
