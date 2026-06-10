@@ -993,22 +993,10 @@ function handle_operand#(syntax: OperandSyntax) returns Operand
         ; "name" with extensions ["equals"]. Flatten name + extensions
         ; into individual hops. Mirrors Modeler.cpp nameToType (Path =
         ; name + extensions); without this the trailing method hop is
-        ; dropped and the whole statement silently vanishes.
-        var total: size_t 0
-        var ci: size_t 0
-        while ci < members.length
-        {
-            let count_ptr members.get(ci)
-            guard count_ptr <> null
-            {
-                set total: total + 1
-                guard (*count_ptr).name.extensions <> null
-                    set total: total + (*(*count_ptr).name.extensions).length
-            }
-            set ci: ci + 1
-        }
-        var path Vector[String]#(total)
-        var pi: size_t 0
+        ; dropped and the whole statement silently vanishes. Array+add
+        ; (no pre-count) — a counting pass with nested derefs read
+        ; garbage lengths under stage-2.
+        var path_arr Array[String]$()
         var i: size_t 0
         while i < members.length
         {
@@ -1016,8 +1004,7 @@ function handle_operand#(syntax: OperandSyntax) returns Operand
             guard member_ptr <> null
             {
                 let member (*member_ptr)
-                path.put(pi, member.name.name)
-                set pi: pi + 1
+                path_arr.add(member.name.name)
                 guard member.name.extensions <> null
                 {
                     let exts (*member.name.extensions)
@@ -1027,8 +1014,8 @@ function handle_operand#(syntax: OperandSyntax) returns Operand
                         let ext_ptr exts.get(ei)
                         guard ext_ptr <> null
                         {
-                            path.put(pi, (*ext_ptr).name)
-                            set pi: pi + 1
+                            let ext (*ext_ptr)
+                            path_arr.add(ext.name)
                         }
                         set ei: ei + 1
                     }
@@ -1036,6 +1023,7 @@ function handle_operand#(syntax: OperandSyntax) returns Operand
             }
             set i: i + 1
         }
+        var path Vector[String]#(path_arr)
         var path_holder Vector[Vector[String]]^rp(1)
         path_holder.put(0, path)
         set member_access: path_holder.get(0)
