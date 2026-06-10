@@ -5929,7 +5929,114 @@ define Planner
                         guard prop.type <> null
                         {
                             let t (*prop.type)
+                            ; s173: bind the concept's type parameters to
+                            ; lookup_type's generic args before planning
+                            ; the property type — mirrors stage-0
+                            ; Planner.cpp:5078-5084. Without this,
+                            ; KeyValuePair[String, LocalBinding].key
+                            ; planned as bare "K", the next hop (.equals)
+                            ; failed to resolve, and the whole guard
+                            ; statement was dropped — stage-2's
+                            ; lookup_local_binding compare loop vanished,
+                            ; so every function param read planned as a
+                            ; Type expression and bodies emitted const 0.
+                            ; Receiver bindings shadow ambient same-named
+                            ; entries (s167 first-wins rebuild pattern
+                            ; from lookup_method#).
+                            var ps_names Array[String]$()
+                            var ps_vals Array[PlannedType]$()
+                            let pconc_ref this.lookup_concept(lookup_type.name)
+                            guard pconc_ref <> null
+                            {
+                                let pconc (*pconc_ref)
+                                guard pconc.parameters.length > 0
+                                {
+                                    guard lookup_type.generics <> null
+                                    {
+                                        let pgens (*lookup_type.generics)
+                                        var ppi: size_t 0
+                                        while ppi < pconc.parameters.length
+                                        {
+                                            guard ppi < pgens.length
+                                            {
+                                                let pcp pconc.parameters.get(ppi)
+                                                let pgp pgens.get(ppi)
+                                                guard pcp <> null
+                                                {
+                                                    guard pgp <> null
+                                                    {
+                                                        ps_names.add(pcp.name)
+                                                        ps_vals.add((*pgp))
+                                                    }
+                                                }
+                                            }
+                                            set ppi: ppi + 1
+                                        }
+                                    }
+                                }
+                            }
+                            var did_subst: bool false
+                            var ps_snapshot Array[KeyValuePair[String, PlannedType]]$()
+                            guard ps_names.length > 0
+                            {
+                                var psi: size_t 0
+                                while psi < type_substitutions.length
+                                {
+                                    let sp2 type_substitutions.get(psi)
+                                    guard sp2 <> null
+                                        ps_snapshot.add((*sp2))
+                                    set psi: psi + 1
+                                }
+                                set type_substitutions.length: 0
+                                var psr: size_t 0
+                                while psr < ps_snapshot.length
+                                {
+                                    let ep3 ps_snapshot.get(psr)
+                                    guard ep3 <> null
+                                    {
+                                        let e3 (*ep3)
+                                        var shadowed2: bool false
+                                        var pri: size_t 0
+                                        while pri < ps_names.length
+                                        {
+                                            let prn ps_names.get(pri)
+                                            guard prn <> null
+                                                guard prn.equals(e3.key)
+                                                    set shadowed2: true
+                                            set pri: pri + 1
+                                        }
+                                        guard shadowed2 = false
+                                            type_substitutions.add(e3)
+                                    }
+                                    set psr: psr + 1
+                                }
+                                var prb: size_t 0
+                                while prb < ps_names.length
+                                {
+                                    let prn2 ps_names.get(prb)
+                                    let prv2 ps_vals.get(prb)
+                                    guard prn2 <> null
+                                    {
+                                        guard prv2 <> null
+                                            this.define_type_substitution((*prn2), (*prv2))
+                                    }
+                                    set prb: prb + 1
+                                }
+                                set did_subst: true
+                            }
                             set prop_type: this.plan_type#(t)
+                            guard did_subst
+                            {
+                                set type_substitutions.length: 0
+                                var prr: size_t 0
+                                while prr < ps_snapshot.length
+                                {
+                                    let ep4 ps_snapshot.get(prr)
+                                    guard ep4 <> null
+                                        type_substitutions.add((*ep4))
+                                    set prr: prr + 1
+                                }
+                            }
                         }
                         let idx this.get_property_index(lookup_type.name, m)
                         ; s173: record the UNWRAPPED lookup_type as the
