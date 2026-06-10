@@ -3328,6 +3328,27 @@ define Emitter
                                                         guard LLVMGetTypeKind(current_struct_ty) = LLVMTypeKind.Struct()
                                                         {
                                                             var current_ptr var_ptr
+                                                            ; s175: a region-allocated binding (`var opts
+                                                            ; Options#()`) allocas a ptr SLOT holding the
+                                                            ; heap address (s27); GEPing the slot directly
+                                                            ; lands the field address in stack garbage —
+                                                            ; stage-2's parse_args crashed in
+                                                            ; Vector[String].add called on
+                                                            ; opts.extra_objects with a wild header. Load
+                                                            ; the base pointer first, mirroring stage-0's
+                                                            ; `load ptr` before the field GEP. Struct-typed
+                                                            ; allocas (var x T()) and by-ptr params keep
+                                                            ; the direct GEP.
+                                                            let base_isa LLVMIsAAllocaInst(current_ptr)
+                                                            guard base_isa.handle <> null
+                                                            {
+                                                                let base_aty LLVMGetAllocatedType(current_ptr)
+                                                                guard base_aty.handle <> null
+                                                                {
+                                                                    guard LLVMGetTypeKind(base_aty) = LLVMTypeKind.Pointer()
+                                                                        set current_ptr: LLVMBuildLoad2(builder, LLVMPointerTypeInContext(context, 0 as u32), current_ptr, "base.deref")
+                                                                }
+                                                            }
                                                             var chain_ok: bool true
                                                             var last_field_is_ptr: bool false
                                                             var last_field_ty LLVMTypeRef(null)
