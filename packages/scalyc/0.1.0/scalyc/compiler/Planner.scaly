@@ -518,6 +518,42 @@ define Planner
             null
         }
 
+        ; s177: like lookup_concept but only matches a concept whose
+        ; definition is a Namespace. `define Planner { define Planner(...) }`
+        ; registers both under one name, and lookup_concept's backward
+        ; scan (s95) returns the inner Structure. Qualified calls
+        ; (`Planner.make_void_type#()` from Emitter) need the OUTER
+        ; Namespace to mangle with the namespace parent — without it the
+        ; whole binding statement silently drops. Mirrors stage-0's
+        ; qualified-call path (Planner.cpp:8604), whose concept cache
+        ; holds the Namespace for the colliding name.
+        function lookup_namespace_concept(this: Planner, name: String) returns ref[Concept]?
+        {
+            guard concepts.length = 0
+                return null
+            var i: size_t concepts.length
+            while i > 0
+            {
+                set i: i - 1
+                let kvp_ptr concepts.get(i)
+                guard kvp_ptr <> null
+                {
+                    guard kvp_ptr.key.equals(name)
+                    {
+                        var is_ns: bool false
+                        choose kvp_ptr.value.definition
+                            when n: Namespace
+                                set is_ns: true
+                            else
+                                0
+                        guard is_ns
+                            return &kvp_ptr.value
+                    }
+                }
+            }
+            null
+        }
+
         function has_concept(this: Planner, name: String) returns bool
         {
             this.lookup_concept(name) <> null
@@ -3856,7 +3892,14 @@ define Planner
                                 set match_ref: this.resolve_function_call#(suffix, arg_types)
                                 guard match_ref <> null
                                 {
-                                    let ns_ref this.lookup_concept(prefix)
+                                    ; s177: prefer the Namespace concept for the
+                                    ; prefix. lookup_concept returns the inner
+                                    ; same-named Structure for `define Planner {
+                                    ; define Planner(...) }`, so `Planner.x#()`
+                                    ; from another namespace never took the
+                                    ; namespace-mangling branch and the whole
+                                    ; statement dropped.
+                                    let ns_ref this.lookup_namespace_concept(prefix)
                                     guard ns_ref <> null
                                     {
                                         let nsc (*ns_ref)
