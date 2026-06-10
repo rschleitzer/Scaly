@@ -2302,7 +2302,12 @@ define Emitter
         guard tm.handle = null
             return false
 
-        let emit_err LLVMTargetMachineEmitToFile(tm, llvm_module, filename.c_data(), 1,
+        ; s175: to_c_string#, not c_data() — c_data() points into the
+        ; varint-prefixed buffer with NO null terminator (s28 rule).
+        ; Exercised for the first time when stage-2 -o reached the
+        ; object-writing path.
+        let c_filename filename.to_c_string#()
+        let emit_err LLVMTargetMachineEmitToFile(tm, llvm_module, c_filename, 1,
             null as pointer[pointer[char]])
         LLVMDisposeTargetMachine(tm)
 
