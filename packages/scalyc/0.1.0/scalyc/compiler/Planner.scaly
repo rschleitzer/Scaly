@@ -7827,7 +7827,33 @@ define Planner
             ; recover its type — that's the union each `when` pattern
             ; selects a variant of.
             let collapsed_cond this.collapse_operand_sequence#(planned_cond)
-            let union_type collapsed_cond.result_type
+            ; s173: peel ref[T]/pointer[T] off the condition type so
+            ; plan_when# can resolve the union's variants. A for-in loop
+            ; variable is typed ref[T] (the iterator's next() return),
+            ; so `choose stmt` over Vector[PlannedStatement] otherwise
+            ; looks up variants on "ref" — every arm keeps tag 0 plus a
+            ; fresh binding type, emit_choose's seen_tags dedup drops all
+            ; but the first arm, and the NPO null-check path hijacks the
+            ; dispatch. Mirrors stage-0 Planner.cpp:11247-11250.
+            var union_type: PlannedType collapsed_cond.result_type
+            var peel_cond: bool false
+            guard union_type.name.equals(String$("ref"))
+                set peel_cond: true
+            guard union_type.name.equals(String$("pointer"))
+                set peel_cond: true
+            guard peel_cond
+            {
+                guard union_type.generics <> null
+                {
+                    let gens (*union_type.generics)
+                    guard gens.length > 0
+                    {
+                        let g_ptr gens.get(0)
+                        guard g_ptr <> null
+                            set union_type: (*g_ptr)
+                    }
+                }
+            }
 
             ; s143: detect a throws-call as the choose condition. plan_when#
             ; needs this so it can assign distinct variant_index to the
