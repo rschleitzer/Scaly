@@ -774,11 +774,32 @@ function handle_choose#(syntax: ChooseSyntax) returns Choose
 
 function handle_when#(syntax: WhenSyntax) returns When
 {
-    ; syntax.variant is a NameSyntax — extract the .name String for
-    ; the variant_path (single element for unqualified; later: walk
-    ; extensions for dotted paths).
-    var variant_path Vector[String]#(1)
+    ; syntax.variant is a NameSyntax — build the full variant_path
+    ; including extensions so dotted paths (`when u: a.b.Union`) keep
+    ; the variant name as the last segment. Mirrors Modeler.cpp
+    ; handleWhen (lines 903-909); same idiom as handle_type# above.
+    var ext_count: size_t 0
+    guard syntax.variant.extensions <> null
+        set ext_count: (*syntax.variant.extensions).length
+
+    var variant_path Vector[String]#(1 + ext_count)
     variant_path.put(0, syntax.variant.name)
+
+    guard syntax.variant.extensions <> null
+    {
+        let exts (*syntax.variant.extensions)
+        var i: size_t 0
+        while i < exts.length
+        {
+            let ext_ptr exts.get(i)
+            guard ext_ptr <> null
+            {
+                let ext (*ext_ptr)
+                variant_path.put(1 + i, ext.name)
+            }
+            set i: i + 1
+        }
+    }
 
     let stmt handle_command#(syntax.statement)
     When(
