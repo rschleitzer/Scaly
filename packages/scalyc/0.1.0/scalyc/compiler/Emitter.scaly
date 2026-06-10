@@ -6968,6 +6968,32 @@ define Emitter
                                 }
                             }
                         }
+                        ; s173: converse mismatch, mirrors stage-0
+                        ; Emitter.cpp:2098-2108. The alloca holds a struct
+                        ; VALUE but the new value is a POINTER to one (an
+                        ; sret slot from a struct-returning call — `set
+                        ; value: emit_expression(...)` in emit_operand).
+                        ; Storing the pointer bitwise makes the slot's
+                        ; first field hold a dangling stack address (the
+                        ; LLVMValueRef "handle" emit_intrinsic_binary_op
+                        ; then crashed dereferencing). Load the struct
+                        ; through the pointer first.
+                        guard is_alloca.handle <> null
+                        {
+                            let alloc_ty_c LLVMGetAllocatedType(var_ptr)
+                            guard alloc_ty_c.handle <> null
+                            {
+                                guard LLVMGetTypeKind(alloc_ty_c) = LLVMTypeKind.Struct()
+                                {
+                                    let val_ty_c LLVMTypeOf(store_val)
+                                    guard val_ty_c.handle <> null
+                                    {
+                                        guard LLVMGetTypeKind(val_ty_c) = LLVMTypeKind.Pointer()
+                                            set store_val: LLVMBuildLoad2(builder, alloc_ty_c, store_val, "set.load")
+                                    }
+                                }
+                            }
+                        }
                         ; Store the value to the variable
                         LLVMBuildStore(builder, store_val, var_ptr)
                     }
