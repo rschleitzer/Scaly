@@ -988,7 +988,27 @@ function handle_operand#(syntax: OperandSyntax) returns Operand
     guard syntax.members <> null
     {
         let members (*syntax.members)
-        var path Vector[String]#(members.length)
+        ; s177: a MemberAccessSyntax carries a dotted NameSyntax —
+        ; `(*p).name.equals(x)` parses as ONE member whose name is
+        ; "name" with extensions ["equals"]. Flatten name + extensions
+        ; into individual hops. Mirrors Modeler.cpp nameToType (Path =
+        ; name + extensions); without this the trailing method hop is
+        ; dropped and the whole statement silently vanishes.
+        var total: size_t 0
+        var ci: size_t 0
+        while ci < members.length
+        {
+            let count_ptr members.get(ci)
+            guard count_ptr <> null
+            {
+                set total: total + 1
+                guard (*count_ptr).name.extensions <> null
+                    set total: total + (*(*count_ptr).name.extensions).length
+            }
+            set ci: ci + 1
+        }
+        var path Vector[String]#(total)
+        var pi: size_t 0
         var i: size_t 0
         while i < members.length
         {
@@ -996,7 +1016,23 @@ function handle_operand#(syntax: OperandSyntax) returns Operand
             guard member_ptr <> null
             {
                 let member (*member_ptr)
-                path.put(i, member.name.name)
+                path.put(pi, member.name.name)
+                set pi: pi + 1
+                guard member.name.extensions <> null
+                {
+                    let exts (*member.name.extensions)
+                    var ei: size_t 0
+                    while ei < exts.length
+                    {
+                        let ext_ptr exts.get(ei)
+                        guard ext_ptr <> null
+                        {
+                            path.put(pi, (*ext_ptr).name)
+                            set pi: pi + 1
+                        }
+                        set ei: ei + 1
+                    }
+                }
             }
             set i: i + 1
         }
