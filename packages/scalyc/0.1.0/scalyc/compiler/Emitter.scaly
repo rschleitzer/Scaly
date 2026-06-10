@@ -5442,6 +5442,42 @@ define Emitter
                 }
             }
         }
+        ; s175: a let-bound struct/union local used as the choose subject
+        ; (`choose planned_impl` where planned_impl came from an sret-
+        ; returning call) arrives as the sret-slot POINTER — emit_variable
+        ; returns the stored handle as-is for immutable bindings — but
+        ; result_type names the value type, it's no throws call, and it's
+        ; not a function param, so none of the detections above fire. The
+        ; alloca+store below then stored the 8 pointer bytes into the
+        ; union slot and the tag read got the low byte of a STACK ADDRESS:
+        ; nonzero → silently fell to choose.else (plan_function's
+        ; needs_local_page stayed false); zero (1 in 16 stack depths,
+        ; ASLR-flaky) → choose.when loaded a garbage PlannedAction whose
+        ; source deref SIGSEGV'd — THE flaky prelude-planning crash.
+        ; Mirror stage-0's UnionValue->getType()->isPointerTy() check
+        ; (Emitter.cpp:4678), but ONLY for allocas: a ptr-returning
+        ; throws call's Error arm binds the returned pointer — which is
+        ; NULL on that path (s157: no error payload exists) — so a
+        ; direct GEP through a non-alloca pointer would null-deref
+        ; (regressed parse_name's inner `choose err` when this check
+        ; was unrestricted). An alloca is never null, so the direct-GEP
+        ; rewrite is safe exactly there. Bind LLVMTypeOf's result with
+        ; `let` before passing it on — the NESTED call form is what
+        ; stage-0 mis-lowers (see the s143 note above); the let-bound
+        ; form is the same shape emit_variable's s124/s87 checks use.
+        guard cond_is_pointer = false
+        {
+            let uv_ty LLVMTypeOf(union_value)
+            guard uv_ty.handle <> null
+            {
+                guard LLVMGetTypeKind(uv_ty) = LLVMTypeKind.Pointer()
+                {
+                    let uv_alloca LLVMIsAAllocaInst(union_value)
+                    guard uv_alloca.handle <> null
+                        set cond_is_pointer: true
+                }
+            }
+        }
         guard is_npo = false
         {
             guard cond_is_pointer = false
