@@ -2248,6 +2248,53 @@ define Planner
                         void_ty
                     )
                 }
+                ; Parenless zero-arg method call: a lone operand whose
+                ; member_access chain ends in an is_method hop (e.g.
+                ; `name.length`, `sb.get_length`). The ops>=2 method-on-
+                ; chain dispatch only fires when an args Tuple follows, so
+                ; a parenless trailing method would otherwise be returned
+                ; as-is and emit_member_access_chain treats it as a field
+                ; access — silently dropping the binding (encode_name's
+                ; `let len name.length` cascade). Synthesize an empty `()`
+                ; Tuple as a second operand and recurse, reusing the same
+                ; machinery that already handles `name.length()`. Mirrors
+                ; stage-0's IsZeroArgMethodCall auto-call (Planner.cpp:5117).
+                let only_op (*only_ptr)
+                guard only_op.member_access <> null
+                {
+                    let ma (*only_op.member_access)
+                    guard ma.length > 0
+                    {
+                        let last_ptr ma.get(ma.length - 1)
+                        guard last_ptr <> null
+                        {
+                            let last_hop (*last_ptr)
+                            guard last_hop.is_method
+                            {
+                                let void_ty Planner.make_void_type#()
+                                let empty_tuple PlannedTuple(
+                                    only_op.loc,
+                                    null,
+                                    void_ty,
+                                    false,
+                                    Lifetime.Unspecified(Unspecified()),
+                                    null
+                                )
+                                let tuple_op PlannedOperand(
+                                    only_op.loc,
+                                    PlannedExpression.Tuple(empty_tuple),
+                                    null,
+                                    void_ty
+                                )
+                                var two_arr Array[PlannedOperand]$()
+                                two_arr.add(only_op)
+                                two_arr.add(tuple_op)
+                                var two_vec Vector[PlannedOperand]^rp(two_arr)
+                                return this.collapse_operand_sequence#(two_vec)
+                            }
+                        }
+                    }
+                }
                 return (*only_ptr)
             }
 
@@ -6807,9 +6854,25 @@ define Planner
                         ; dropped — breaking every `m.members.get(i)` /
                         ; `m.modules.get(i)` loop body in plan_module# and
                         ; register_module_concepts.
+                        ; s171: relaxed from `> 1` to `> 0`. A single-hop
+                        ; method chain on a local (e.g. parenless
+                        ; `name.length`, `sb.get_length`) must also return
+                        ; the Variable+chain operand so collapse_operand_
+                        ; sequence# can build the call — with a trailing
+                        ; Tuple via the s83 method-on-chain dispatch, or
+                        ; without one via the s171 parenless-zero-arg path
+                        ; (ops.length==1 synthesizes an empty `()` Tuple).
+                        ; Previously single-hop fell through to plan_type#
+                        ; as a dotted Type "s.length", which the parenless
+                        ; case can't resolve, dropping encode_name's
+                        ; `let len name.length` and corrupting every mangled
+                        ; name. Only local-variable receivers reach here
+                        ; (namespaces aren't locals → still take the
+                        ; qualified-call path), so rerouting 1-hop method
+                        ; calls is safe.
                         guard has_method
                         {
-                            guard access_chain.length > 1
+                            guard access_chain.length > 0
                             {
                                 let last_ptr access_chain.get(access_chain.length - 1)
                                 guard last_ptr <> null
