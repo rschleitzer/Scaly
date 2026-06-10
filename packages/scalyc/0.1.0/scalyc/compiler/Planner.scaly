@@ -5932,8 +5932,17 @@ define Planner
                             set prop_type: this.plan_type#(t)
                         }
                         let idx this.get_property_index(lookup_type.name, m)
+                        ; s173: record the UNWRAPPED lookup_type as the
+                        ; hop's parent (mirrors stage-0 Planner.cpp:5104
+                        ; "Use dereferenced type for auto-deref").
+                        ; field_index is computed against lookup_type's
+                        ; layout; recording the pre-unwrap Option[ref[T]]
+                        ; made emit_member_access_chain's deref-load use
+                        ; the wrong struct type and bail — `ret.result
+                        ; .length > 0` in emit_return silently dropped,
+                        ; every stage-2 body returned const 0/null.
                         result.add(PlannedMemberAccess(
-                            m, idx as size_t, false, false, current, prop_type
+                            m, idx as size_t, false, false, lookup_type, prop_type
                         ))
                         set current: prop_type
                     }
@@ -5955,8 +5964,10 @@ define Planner
                                     let rt (*f.returns_)
                                     set return_ty: this.plan_type#(rt)
                                 }
+                                ; s173: parent = unwrapped lookup_type
+                                ; (stage-0 Planner.cpp:5142).
                                 result.add(PlannedMemberAccess(
-                                    m, 0, true, false, current, return_ty
+                                    m, 0, true, false, lookup_type, return_ty
                                 ))
                                 set current: return_ty
                             }
@@ -5973,8 +5984,10 @@ define Planner
                         guard tag >= 0
                         {
                             set matched: true
+                            ; s173: parent = unwrapped lookup_type
+                            ; (stage-0 Planner.cpp:5159).
                             result.add(PlannedMemberAccess(
-                                m, tag as size_t, false, true, current,
+                                m, tag as size_t, false, true, lookup_type,
                                 current
                             ))
                         }
@@ -6022,8 +6035,11 @@ define Planner
                                         guard found_payload
                                         {
                                             set matched: true
+                                            ; s173: parent = unwrapped
+                                            ; lookup_type (stage-0
+                                            ; Planner.cpp:5224).
                                             result.add(PlannedMemberAccess(
-                                                m, 1, false, true, current,
+                                                m, 1, false, true, lookup_type,
                                                 payload_type
                                             ))
                                             set current: payload_type
