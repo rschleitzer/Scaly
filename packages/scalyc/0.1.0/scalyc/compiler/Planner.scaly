@@ -11754,6 +11754,48 @@ define Planner
             }
         }
 
+        ; s170: a CONCRETE pointer[T] / ref[T] arg is a valid (non-null)
+        ; Some for an Option[ref[T]] / Option[pointer[T]] param. With NPO
+        ; the Option is just a nullable pointer, so `&input_holder`
+        ; (pointer[Vector[PlannedItem]]) is a legal value for a
+        ; `params: ref[Vector[PlannedItem]]?` param. Rules 7&8 above only
+        ; accept the null literal (pointer[void]); a real address-of
+        ; falls through. Recurse types_compatible into the Option's inner
+        ; generic so the s96 pointer↔ref rule handles the inner match
+        ; (inner ref[T] vs arg pointer[T]). Stage-0 resolves the
+        ; offending site (`Planner.mangle_function#(f.name, &input_holder,
+        ; ...)` in plan_function#) via the qualified-call name-only
+        ; fallback (Planner.cpp:7912) and never type-checks args, so it
+        ; has no equivalent rule; stage-1 takes the type-checked dotted
+        ; path (resolve_function_call# on the suffix), so without this
+        ; the put call is dropped, `add`'s mangled_name stays empty, and
+        ; stage-2's emit_function_decl SIGSEGVs in LLVMAddFunction(null).
+        guard param_type.name.equals("Option")
+        {
+            var arg_is_ptr_like: bool false
+            guard arg_type.name.equals("pointer")
+                set arg_is_ptr_like: true
+            guard arg_type.name.equals("ref")
+                set arg_is_ptr_like: true
+            guard arg_is_ptr_like
+            {
+                guard param_type.generics <> null
+                {
+                    let pg (*param_type.generics)
+                    guard pg.length > 0
+                    {
+                        let inner_ptr pg.get(0)
+                        guard inner_ptr <> null
+                        {
+                            let inner (*inner_ptr)
+                            guard Planner.types_compatible(inner, arg_type)
+                                return true
+                        }
+                    }
+                }
+            }
+        }
+
         false
     }
 
