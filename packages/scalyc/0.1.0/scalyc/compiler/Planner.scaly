@@ -11551,6 +11551,15 @@ define Planner
             ; starts planning the primary module's members.
             this.register_sibling_programs()
 
+            ; NOTE (s176): registering struct layouts for loaded-package
+            ; concrete structures here (register_struct_layouts_in_module#
+            ; over loaded_packages) fixes map_type's ptr fallback for
+            ; StringBuilder but flips String/Page/PageList from ptr to
+            ; real struct types throughout, changing ABI decisions in
+            ; everything stage-1 emits — stage-2 went to empty modules.
+            ; The under-sizing harm is instead contained in
+            ; emit_constructor_call's region-size fallback.
+
             ; plan_loaded_packages# is intentionally NOT called here.
             ; If invoked, it walks each loaded package and records every
             ; top-level Function via plan_function# -> instantiated_functions

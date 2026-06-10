@@ -2775,7 +2775,32 @@ define Emitter
     ; path.
     function emit_constructor_call(this, call: PlannedCall) returns LLVMValueRef
     {
-        let struct_ty map_type(call.result_type)
+        ; s176: region-allocated ctor results are planned as pointer[T]
+        ; (s27), so map_type(call.result_type) yields `ptr` and
+        ; LLVMSizeOf(ptr)=8 under-sized every Page::allocate for T
+        ; bigger than 8 bytes. The ctor then wrote sizeof(T) bytes into
+        ; the 8-byte slot; when the slot sat in the last 8 bytes of a
+        ; page, the overflow zeroed the NEXT page's header
+        ; (next_object=0), Page::allocate later returned address 0 and
+        ; PageList::add crashed (ref_string_item, sibling_heap_mutation,
+        ; flaky stage-2 corruption). Peel pointer[T] to T so sizing and
+        ; the zero-init field GEPs below see the real struct type —
+        ; mirrors stage-0, which sizes with the struct type.
+        var ctor_rt call.result_type
+        guard ctor_rt.name.equals(String$("pointer"))
+        {
+            guard ctor_rt.generics <> null
+            {
+                let gens (*ctor_rt.generics)
+                guard gens.length > 0
+                {
+                    let g0 gens.get(0)
+                    guard g0 <> null
+                        set ctor_rt: (*g0)
+                }
+            }
+        }
+        let struct_ty map_type(ctor_rt)
         guard struct_ty.handle = null
             return LLVMValueRef(null)
 
@@ -2858,7 +2883,24 @@ define Emitter
                 LLVMSetLinkage(alloc_func, LLVMLinkage.External())
                 cache_function(String$("_ZN4Page8allocateEmm"), alloc_func)
             }
-            let size_const LLVMSizeOf(struct_ty)
+            ; s176: when map_type fell back to opaque ptr (loaded-package
+            ; structs like StringBuilder aren't layout-registered),
+            ; LLVMSizeOf(ptr)=8 under-sizes the allocation: the 16-byte
+            ; StringBuilder ctor overflowed its 8-byte slot, and when the
+            ; slot sat in a page's last 8 bytes the overflow zeroed the
+            ; NEXT page's header (next_object=0) — Page::allocate then
+            ; returned address 0 and PageList::add crashed
+            ; (ref_string_item, sibling_heap_mutation, flaky stage-2
+            ; corruption). Registering real layouts flips String/Page
+            ; mapping everywhere (breaks stage-2 wholesale), so instead
+            ; allocate a pessimistic 64 bytes when the type is opaque —
+            ; over-allocation is waste, never corruption.
+            var size_const LLVMSizeOf(struct_ty)
+            guard LLVMGetTypeKind(struct_ty) = LLVMTypeKind.Pointer()
+            {
+                let i64_ty_sz LLVMInt64TypeInContext(context)
+                set size_const: LLVMConstInt(i64_ty_sz, 64, 0)
+            }
             let align_const LLVMAlignOf(struct_ty)
             var alloc_args Vector[LLVMValueRef]#(3)
             alloc_args.put(0, page_arg)
