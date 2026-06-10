@@ -4654,6 +4654,74 @@ define Planner
                             }
                         }
 
+                        ; s175: trailing FIELD access on a call result —
+                        ; `LLVMTypeOf(ret_val).handle <> llvm_rt.handle`.
+                        ; The chaining loop above only consumes a tuple's
+                        ; member_access when its last hop is a method
+                        ; followed by an args Tuple; a plain field hop on
+                        ; the call result was silently dropped, so the
+                        ; operand kept the callee's struct result_type,
+                        ; the following binary operator failed to resolve,
+                        ; and the whole statement vanished — stage-2's
+                        ; prelude print/println implicit return (`if
+                        ; LLVMTypeOf(ret_val).handle <> llvm_rt.handle ...
+                        ; LLVMBuildRet`) collapsed to `unreachable`.
+                        ; Re-resolve the hop names against the call's
+                        ; result type and attach the chain, but ONLY when
+                        ; every hop resolves as a property — method hops
+                        ; (chained calls, parenless methods) keep the
+                        ; existing paths unchanged.
+                        guard prev_tuple.member_access <> null
+                        {
+                            let tail_ma (*prev_tuple.member_access)
+                            guard tail_ma.length > 0
+                            {
+                                var tail_names Vector[String]^rp(tail_ma.length)
+                                var tni: size_t 0
+                                while tni < tail_ma.length
+                                {
+                                    let tn_ptr tail_ma.get(tni)
+                                    guard tn_ptr <> null
+                                        tail_names.put(tni, (*tn_ptr).name)
+                                    set tni: tni + 1
+                                }
+                                let tail_chain this.resolve_member_access#(result.result_type, tail_names)
+                                var all_props: bool false
+                                guard tail_chain.length > 0
+                                    set all_props: true
+                                var tci: size_t 0
+                                while tci < tail_chain.length
+                                {
+                                    let tc_ptr tail_chain.get(tci)
+                                    guard tc_ptr = null
+                                        set all_props: false
+                                    guard tc_ptr <> null
+                                    {
+                                        let tc (*tc_ptr)
+                                        guard tc.is_method
+                                            set all_props: false
+                                        guard tc.result_type.name.equals(String$("void"))
+                                            set all_props: false
+                                    }
+                                    set tci: tci + 1
+                                }
+                                guard all_props
+                                {
+                                    var tail_holder Vector[PlannedMemberAccess]^rp(tail_chain)
+                                    var tail_final: PlannedType result.result_type
+                                    let tl_ptr tail_chain.get(tail_chain.length - 1)
+                                    guard tl_ptr <> null
+                                        set tail_final: (*tl_ptr).result_type
+                                    set result: PlannedOperand(
+                                        result.loc,
+                                        result.expr,
+                                        &tail_holder,
+                                        tail_final
+                                    )
+                                }
+                            }
+                        }
+
                         ; Splice the remaining ops into a fresh vector
                         ; and recurse.
                         guard next_idx < ops.length
