@@ -3465,6 +3465,43 @@ define Emitter
                             set arg_value: arg_alloca
                         }
                     }
+                    ; s172: same unwrap when the arg is an ALLOCA of a
+                    ; single-ptr-field wrapper. A `let v scaly_fn()`
+                    ; binding whose callee returns LLVMValueRef via sret
+                    ; leaves v as the sret alloca; emit_variable hands
+                    ; back the alloca POINTER (kind Pointer, not Struct),
+                    ; so the s146 branch above never fires and the LLVM-C
+                    ; callee receives a stack address as the handle —
+                    ; stage-2's first LLVMAppendBasicBlockInContext
+                    ; crashed in BasicBlock::insertInto on exactly this.
+                    ; `&var` args are unaffected (direct_alloca=true).
+                    guard arg_kind = LLVMTypeKind.Pointer()
+                    {
+                        guard call.mangled_name.starts_with("LLVM")
+                        {
+                            let arg_isa LLVMIsAAllocaInst(arg_value)
+                            guard arg_isa.handle <> null
+                            {
+                                let arg_aty LLVMGetAllocatedType(arg_value)
+                                guard arg_aty.handle <> null
+                                {
+                                    guard LLVMGetTypeKind(arg_aty) = LLVMTypeKind.Struct()
+                                    {
+                                        let anelems LLVMCountStructElementTypes(arg_aty)
+                                        guard anelems = 1
+                                        {
+                                            let ainner LLVMStructGetTypeAtIndex(arg_aty, 0)
+                                            guard LLVMGetTypeKind(ainner) = LLVMTypeKind.Pointer()
+                                            {
+                                                let wrapper_val LLVMBuildLoad2(builder, arg_aty, arg_value, "wrapper.load")
+                                                set arg_value: LLVMBuildExtractValue(builder, wrapper_val, 0, "handle")
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
 
                 args_array.put(i + page_offset + sret_offset, arg_value)
