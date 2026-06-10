@@ -2926,6 +2926,30 @@ define Planner
                                         else
                                             0
                                 }
+                                when un: scalyc.compiler.Model.Union
+                                {
+                                    ; s172: Union#(value) copy-construction —
+                                    ; e.g. `set parameters: ParameterSetSyntax#(
+                                    ; success)` in parse_routine. Mirrors
+                                    ; stage-0's Union-with-lifetime branch
+                                    ; (Planner.cpp:9086): reshape the args
+                                    ; tuple with tuple_type = the union so
+                                    ; emit_tuple's whole-struct short-circuit
+                                    ; copies the value. find_initializer#
+                                    ; returns null for unions, so this always
+                                    ; takes the reshape fallback below.
+                                    ; Without it the construction falls
+                                    ; through to function lookup, resolves
+                                    ; nothing, and the whole `set` silently
+                                    ; drops — stage-2 modeled every function
+                                    ; with zero parameters (_Z3addv).
+                                    set is_struct_ctor: true
+                                    choose result.expr
+                                        when t: PlannedType
+                                            set ctor_struct_type: t
+                                        else
+                                            0
+                                }
                                 else
                                     0
                         }
