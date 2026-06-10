@@ -7575,25 +7575,63 @@ define Emitter
                     ; (s27), so map_type yields ptr, not a struct.
                     var store_ty ty
                     var store_val value
+                    ; s176: unannotated `var X sret_call_result` has no
+                    ; item_type, so the s174 copy never fired — the slot
+                    ; stayed alloca-ptr while `set X: ...` later stored a
+                    ; raw struct into it, and the deref-on-read loaded
+                    ; through the struct's first word (emit_function_body
+                    ; `var to_store result` → LLVMGetTypeKind on garbage).
+                    ; Fall back to the collapsed initializer operand's
+                    ; result_type for the same struct-copy decision.
+                    var mapped LLVMTypeRef(null)
                     guard binding.binding_item.item_type <> null
                     {
                         let bind_ty_ref binding.binding_item.item_type
-                        let mapped map_type((*bind_ty_ref))
-                        guard mapped.handle <> null
+                        set mapped: map_type((*bind_ty_ref))
+                    }
+                    guard binding.binding_item.item_type = null
+                    {
+                        guard binding.operation <> null
                         {
-                            guard LLVMGetTypeKind(mapped) = LLVMTypeKind.Struct()
+                            let ops_ref binding.operation
+                            let ops (*ops_ref)
+                            guard ops.length > 0
                             {
-                                ; Opaque structs (fresh type vars, un-
-                                ; instantiated generics) have no body —
-                                ; loading through them is UB. Element
-                                ; count 0 covers both opaque and empty.
-                                guard LLVMCountStructElementTypes(mapped) > 0
+                                let op0_ptr ops.get(0)
+                                guard op0_ptr <> null
                                 {
-                                    guard LLVMGetTypeKind(ty) = LLVMTypeKind.Pointer()
-                                    {
-                                        set store_ty: mapped
-                                        set store_val: LLVMBuildLoad2(builder, mapped, value, "binding.load")
-                                    }
+                                    ; Restrict to plain variable references
+                                    ; (`var X some_let`): only those alias
+                                    ; existing storage. Ctor/call results —
+                                    ; especially region-allocated `T$()` —
+                                    ; must keep their ptr slots (copying
+                                    ; snapshots the container header; the
+                                    ; next .add then corrupts the page
+                                    ; chain — parser keyword-init crash).
+                                    let op0 (*op0_ptr)
+                                    choose op0.expr
+                                        when pv: PlannedVariable
+                                            set mapped: map_type(op0.result_type)
+                                        else
+                                            0
+                                }
+                            }
+                        }
+                    }
+                    guard mapped.handle <> null
+                    {
+                        guard LLVMGetTypeKind(mapped) = LLVMTypeKind.Struct()
+                        {
+                            ; Opaque structs (fresh type vars, un-
+                            ; instantiated generics) have no body —
+                            ; loading through them is UB. Element
+                            ; count 0 covers both opaque and empty.
+                            guard LLVMCountStructElementTypes(mapped) > 0
+                            {
+                                guard LLVMGetTypeKind(ty) = LLVMTypeKind.Pointer()
+                                {
+                                    set store_ty: mapped
+                                    set store_val: LLVMBuildLoad2(builder, mapped, value, "binding.load")
                                 }
                             }
                         }
