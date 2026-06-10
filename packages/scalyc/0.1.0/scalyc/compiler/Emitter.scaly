@@ -4443,6 +4443,19 @@ define Emitter
                             }
                         }
 
+                        ; s172: the single component is already a struct
+                        ; VALUE of the target type (e.g. a choose-bound
+                        ; `success` payload in `ParameterSetSyntax#(success)`)
+                        ; — store it directly. The alloca branch below only
+                        ; covers by-pointer components.
+                        guard cv0_ty.handle = struct_type.handle
+                        {
+                            LLVMBuildStore(builder, cv0, tuple_ptr)
+                            guard tuple.is_region_alloc = false
+                                return LLVMBuildLoad2(builder, struct_type, tuple_ptr, "tuple.val")
+                            return tuple_ptr
+                        }
+
                         let alloca_check LLVMIsAAllocaInst(cv0)
                         guard alloca_check.handle <> null
                         {
