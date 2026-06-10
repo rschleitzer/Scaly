@@ -6526,8 +6526,17 @@ define Planner
                         set is_stdlib_generic: true
                     guard canonical_name.equals("Result")
                         set is_stdlib_generic: true
-                    guard canonical_name.equals("KeyValuePair")
-                        set is_stdlib_generic: true
+                    ; s173: KeyValuePair lifted (like s129 Vector/Array,
+                    ; s148 List). It's a pure data class — no methods, no
+                    ; init bodies, nothing to drag in. With it denylisted,
+                    ; KeyValuePair[String, LocalBinding] never reached
+                    ; instantiate_generic#, the emitter had no struct
+                    ; layout, and every member hop through a KVP element
+                    ; (lookup_local_binding's `kvp_ptr.key.equals(name)`)
+                    ; bailed at map_type → the whole guard statement
+                    ; dropped → stage-2 resolved NO local variables.
+                    ; guard canonical_name.equals("KeyValuePair")
+                    ;     set is_stdlib_generic: true
                     guard is_struct
                         guard is_stdlib_generic = false
                         {
