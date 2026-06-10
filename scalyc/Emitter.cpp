@@ -2095,6 +2095,17 @@ llvm::Expected<llvm::Value*> Emitter::emitAction(const PlannedAction &Action) {
                             "set.heap");
                         Builder->CreateStore(Value, HeapPtr);
                         Builder->CreateStore(HeapPtr, VarPtr);
+                    } else if (AllocTy->isStructTy() && ValTy->isPointerTy()) {
+                        // Converse mismatch: the alloca holds a struct by
+                        // value but the new value is a pointer to one (a
+                        // by-pointer struct param, e.g. `set binding_ty:
+                        // union_type` in plan_when). Storing the pointer
+                        // bitwise would overwrite only the first field
+                        // with an address and leave the rest stale. Load
+                        // the struct through the pointer first — mirrors
+                        // the member-access path fix above.
+                        llvm::Value *Loaded = Builder->CreateLoad(AllocTy, Value, "set.load");
+                        Builder->CreateStore(Loaded, VarPtr);
                     } else {
                         Builder->CreateStore(Value, VarPtr);
                     }
