@@ -4744,6 +4744,52 @@ define Planner
                 }
             }
 
+            ; s176: parenless zero-arg method call as the lhs of a binary
+            ; operator (`when_case.name.length > 0`) or before a postfix
+            ; `as` (`fr.value.length as int`). The s171 lone-operand path
+            ; only fires at ops.length==1 and the call detection above
+            ; requires a following Tuple, so this shape reached the binary
+            ; loop as a field access — the chain failed to resolve and the
+            ; whole statement silently dropped (emit_choose/emit_try
+            ; variant-binding guards vanished from stage-2). Synthesize
+            ; the empty `()` Tuple and fold result into the zero-arg call
+            ; before entering the loop. Mirrors stage-0's
+            ; IsZeroArgMethodCall auto-call (Planner.cpp:5117).
+            guard result.member_access <> null
+            {
+                let lhs_ma (*result.member_access)
+                guard lhs_ma.length > 0
+                {
+                    let lhs_last_ptr lhs_ma.get(lhs_ma.length - 1)
+                    guard lhs_last_ptr <> null
+                    {
+                        guard (*lhs_last_ptr).is_method
+                        {
+                            let void_ty_l Planner.make_void_type#()
+                            let empty_tuple_l PlannedTuple(
+                                result.loc,
+                                null,
+                                void_ty_l,
+                                false,
+                                Lifetime.Unspecified(Unspecified()),
+                                null
+                            )
+                            let tuple_op_l PlannedOperand(
+                                result.loc,
+                                PlannedExpression.Tuple(empty_tuple_l),
+                                null,
+                                void_ty_l
+                            )
+                            var two_arr_l Array[PlannedOperand]$()
+                            two_arr_l.add(result)
+                            two_arr_l.add(tuple_op_l)
+                            var two_vec_l Vector[PlannedOperand]^rp(two_arr_l)
+                            set result: this.collapse_operand_sequence#(two_vec_l)
+                        }
+                    }
+                }
+            }
+
             var i: size_t 1
             while i < ops.length
             {
@@ -5005,6 +5051,52 @@ define Planner
                                     var as_vec Vector[PlannedOperand]^rp(as_arr)
                                     set rhs: this.collapse_operand_sequence#(as_vec)
                                     set rhs_call_consumed: true
+                                }
+                            }
+                        }
+                    }
+
+                    ; s176: parenless zero-arg method call as the rhs
+                    ; (`0 < x.name.length`). The Tuple-fold above only
+                    ; fires when ops[i+2] is a Tuple; with no Tuple the
+                    ; chain stayed a field access and the comparison
+                    ; dropped. Fold rhs into the zero-arg call via the
+                    ; same empty-Tuple synthesis. Consumes NO extra
+                    ; operand, so rhs_call_consumed stays false (the
+                    ; precedence look-ahead below keeps using i+2).
+                    guard rhs_call_consumed = false
+                    {
+                        guard rhs.member_access <> null
+                        {
+                            let pma (*rhs.member_access)
+                            guard pma.length > 0
+                            {
+                                let plast_ptr pma.get(pma.length - 1)
+                                guard plast_ptr <> null
+                                {
+                                    guard (*plast_ptr).is_method
+                                    {
+                                        let void_ty_r Planner.make_void_type#()
+                                        let empty_tuple_r PlannedTuple(
+                                            rhs.loc,
+                                            null,
+                                            void_ty_r,
+                                            false,
+                                            Lifetime.Unspecified(Unspecified()),
+                                            null
+                                        )
+                                        let tuple_op_r PlannedOperand(
+                                            rhs.loc,
+                                            PlannedExpression.Tuple(empty_tuple_r),
+                                            null,
+                                            void_ty_r
+                                        )
+                                        var two_arr_r Array[PlannedOperand]$()
+                                        two_arr_r.add(rhs)
+                                        two_arr_r.add(tuple_op_r)
+                                        var two_vec_r Vector[PlannedOperand]^rp(two_arr_r)
+                                        set rhs: this.collapse_operand_sequence#(two_vec_r)
+                                    }
                                 }
                             }
                         }
