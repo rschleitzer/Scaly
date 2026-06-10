@@ -7629,7 +7629,23 @@ define Planner
                         guard is_ok = false
                             set is_ok: variant_name.equals(String$("node"))
                         guard is_ok
+                        {
+                            ; s172: bind the success arm to the call's
+                            ; result type (stage-0 Planner.cpp:11377-11380
+                            ; PW.VariantType = ValueType). Without this,
+                            ; binding_ty stays a fresh no-name type var,
+                            ; resolve_member_access# finds no properties
+                            ; on `success.field`, every hop defaults to
+                            ; field_index 0, and parse_routine's
+                            ; ReturnsSyntax#(success.start, success.end,
+                            ; success.type, ...) rebuilds the syntax with
+                            ; field 0 in every slot — stage-2 then sees
+                            ; empty type names ("int" → "", mangling
+                            ; _Z3addPN4scaly6memory4PageE, no bodies).
                             set variant_tag: 0
+                            set binding_ty: union_type
+                            set variant_type: union_type
+                        }
                     }
                 }
             }
