@@ -182,6 +182,17 @@ use scaly.compiler.LLVM.LLVMAddAttributeAtIndex
 use scaly.compiler.LLVM.LLVMGetEnumAttributeAtIndex
 use scaly.compiler.LLVM.LLVMGetTypeAttributeValue
 use scaly.compiler.LLVM.LLVMAddCallSiteAttribute
+use scaly.compiler.LLVM.LLVMUseRef
+use scaly.compiler.LLVM.LLVMGetFirstUse
+use scaly.compiler.LLVM.LLVMGetNextUse
+use scaly.compiler.LLVM.LLVMGetUser
+use scaly.compiler.LLVM.LLVMGetOperand
+use scaly.compiler.LLVM.LLVMIsAStoreInst
+use scaly.compiler.LLVM.LLVMIsACallInst
+use scaly.compiler.LLVM.LLVMIsAICmpInst
+use scaly.compiler.LLVM.LLVMIsAGetElementPtrInst
+use scaly.compiler.LLVM.LLVMBuildMemCpy
+use scaly.compiler.LLVM.LLVMGetLastInstruction
 use scaly.scalyc.parser.Parser
 use scaly.scalyc.parser.ParserError
 use scaly.compiler.Modeler.build_program
@@ -341,6 +352,28 @@ define Emitter
     loop_stack: ref[Vector[LoopContext]]?
     ; Block cleanup context stack
     block_cleanup_stack: ref[Vector[BlockCleanupContext]]?
+    ; s178: alloca-reuse pool. Entry-block temp slots (arg.tmp,
+    ; sret.result, deref.tmp, tuple, choose.union, variant.ptr) are
+    ; registered here and recycled across statements of the same
+    ; function when provably dead at statement end. Parallel vectors:
+    ; type, alloca, free flag (1 = available). temp_pool_start marks
+    ; the first entry belonging to current_function so earlier
+    ; functions' slots are never matched. temp_stmt_log records pool
+    ; indices acquired during the currently-emitting statement;
+    ; temp_stmt_log_start is the current statement's window start
+    ; (saved/restored across nested emit_statement calls).
+    temp_pool_types: ref[Vector[LLVMTypeRef]]?
+    temp_pool_slots: ref[Vector[LLVMValueRef]]?
+    temp_pool_free: ref[Vector[size_t]]?
+    temp_pool_start: size_t
+    temp_stmt_log: ref[Vector[size_t]]?
+    temp_stmt_log_start: size_t
+    ; s178: base allocas of values the emitter holds across scope
+    ; exits (choose/if arm results before their merge PHI exists,
+    ; the choose scrutinee + union slot while arms are emitted).
+    ; The scope-exit release pass skips pinned slots; pins expire
+    ; with their enclosing statement window.
+    temp_pinned: ref[Vector[LLVMValueRef]]?
     ; RBMM runtime functions
     page_type: LLVMTypeRef
     page_allocate: LLVMValueRef
@@ -374,6 +407,13 @@ define Emitter
         set current_region: RegionInfo^page()
         set loop_stack: Vector[LoopContext]^page()
         set block_cleanup_stack: Vector[BlockCleanupContext]^page()
+        set temp_pool_types: Vector[LLVMTypeRef]^page()
+        set temp_pool_slots: Vector[LLVMValueRef]^page()
+        set temp_pool_free: Vector[size_t]^page()
+        set temp_pool_start: 0
+        set temp_stmt_log: Vector[size_t]^page()
+        set temp_stmt_log_start: 0
+        set temp_pinned: Vector[LLVMValueRef]^page()
         set page_type: LLVMTypeRef(null)
         set page_allocate: LLVMValueRef(null)
         set page_allocate_page: LLVMValueRef(null)
@@ -563,6 +603,341 @@ define Emitter
         a
     }
 
+    ; s178: start a fresh pool window when a new function begins.
+    ; Slots registered by earlier functions live in dead frames'
+    ; entry blocks and must never be matched again.
+    procedure reset_temp_pool(this)
+    {
+        set temp_pool_start: temp_pool_slots.length
+        set temp_stmt_log_start: temp_stmt_log.length
+        set temp_stmt_log.length: temp_stmt_log_start
+    }
+
+    ; s178: acquire a temp slot of LLVM type `ty`. Reuses a free
+    ; pooled slot of the identical type (LLVM uniques types, so
+    ; handle equality is type equality) created earlier in the same
+    ; function; otherwise creates a fresh entry-block alloca and
+    ; registers it. Every handed-out slot is logged to the current
+    ; statement window for release_statement_temps. Without reuse,
+    ; big functions like Planner.collapse_operand_sequence# get one
+    ; ~600-byte slot per spill site (~450 of them) and the static
+    ; frame reaches ~460KB — deep recursion then needs ulimit -s
+    ; 65520 to self-compile.
+    function acquire_temp(this, ty: LLVMTypeRef, name: pointer[const_char]) returns LLVMValueRef
+    {
+        ; s34 ABI workaround: reconstruct the wrapper from .handle.
+        var t LLVMTypeRef(ty.handle)
+        guard current_function.handle = null
+            return entry_alloca(t, name)
+        var in_use_flag: size_t 0
+        var i: size_t temp_pool_start
+        while i < temp_pool_slots.length
+        {
+            let f_ptr temp_pool_free.get(i)
+            guard f_ptr <> null
+            {
+                let f_val (*f_ptr)
+                guard f_val = 1
+                {
+                    let ty_ptr temp_pool_types.get(i)
+                    guard ty_ptr <> null
+                    {
+                        let pool_ty (*ty_ptr)
+                        guard pool_ty.handle = t.handle
+                        {
+                            let slot_ptr temp_pool_slots.get(i)
+                            guard slot_ptr <> null
+                            {
+                                temp_pool_free.put(i, in_use_flag)
+                                temp_stmt_log.add(i)
+                                return (*slot_ptr)
+                            }
+                        }
+                    }
+                }
+            }
+            set i: i + 1
+        }
+        let a entry_alloca(t, name)
+        temp_pool_types.add(t)
+        temp_pool_slots.add(a)
+        temp_pool_free.add(in_use_flag)
+        temp_stmt_log.add(temp_pool_slots.length - 1)
+        a
+    }
+
+    ; s178: classify one IR user of a pooled slot pointer. Safe users
+    ; read through the pointer or borrow it: loads, stores INTO the
+    ; slot, call arguments (Scaly callees borrow struct args), and
+    ; null-check compares. A GEP derives a new pointer — recurse into
+    ; its uses. Storing the pointer AS A VALUE escapes; anything
+    ; unrecognized (phi of arm results, select, ret) escapes too.
+    function temp_user_is_safe(this, user_v: LLVMValueRef, ptr_v: LLVMValueRef, depth: size_t) returns bool
+    {
+        ; s34 ABI workaround: reconstruct wrappers from .handle.
+        var user LLVMValueRef(user_v.handle)
+        var ptr_val LLVMValueRef(ptr_v.handle)
+        let ld LLVMIsALoadInst(user)
+        guard ld.handle <> null
+            return true
+        let st LLVMIsAStoreInst(user)
+        guard st.handle <> null
+        {
+            ; Operand 0 of a store is the VALUE being stored; the
+            ; slot pointer appearing there means the pointer itself
+            ; is being saved somewhere — escaped.
+            let stored_val LLVMGetOperand(user, 0)
+            guard stored_val.handle = ptr_val.handle
+                return false
+            return true
+        }
+        let cl LLVMIsACallInst(user)
+        guard cl.handle <> null
+            return true
+        let ic LLVMIsAICmpInst(user)
+        guard ic.handle <> null
+            return true
+        let gep LLVMIsAGetElementPtrInst(user)
+        guard gep.handle <> null
+        {
+            guard temp_value_escapes(user, depth + 1)
+                return false
+            return true
+        }
+        false
+    }
+
+    ; s178: conservative escape check over the slot's emitted uses.
+    ; Depth-capped; unknown means escaped (slot is kept, never
+    ; reused). Future uses can only be created through handles the
+    ; emitter retains — local bindings are checked separately in
+    ; release_statement_temps, and values cannot cross statement
+    ; windows because emit_statement returns only bool.
+    function temp_value_escapes(this, v: LLVMValueRef, depth: size_t) returns bool
+    {
+        ; s34 ABI workaround: reconstruct the wrapper from .handle.
+        var val LLVMValueRef(v.handle)
+        guard depth > 3
+            return true
+        var u LLVMGetFirstUse(val)
+        while u.handle <> null
+        {
+            let user LLVMGetUser(u)
+            guard user.handle <> null
+            {
+                guard temp_user_is_safe(user, val, depth) = false
+                    return true
+            }
+            set u: LLVMGetNextUse(u)
+        }
+        false
+    }
+
+    ; s178: strip a GEP chain to its base and return the base when it
+    ; is an alloca; null otherwise. Used to map binding values and
+    ; pinned arm results back to the pool slot they live in (a when-
+    ; payload binding holds a GEP into the choose.union slot, not the
+    ; slot itself).
+    function temp_base_alloca(this, v: LLVMValueRef) returns LLVMValueRef
+    {
+        ; s34 ABI workaround: reconstruct the wrapper from .handle.
+        var cur LLVMValueRef(v.handle)
+        guard cur.handle = null
+            return LLVMValueRef(null)
+        var hops: size_t 0
+        while hops < 8
+        {
+            let gep LLVMIsAGetElementPtrInst(cur)
+            guard gep.handle = null
+                break
+            set cur: LLVMGetOperand(cur, 0)
+            set hops: hops + 1
+        }
+        let al LLVMIsAAllocaInst(cur)
+        guard al.handle = null
+            return LLVMValueRef(null)
+        cur
+    }
+
+    ; s178: pin a value the emitter holds across scope exits. The pin
+    ; expires with the enclosing statement window (emit_statement
+    ; restores temp_pinned.length), by which point the merge PHI
+    ; exists and the escape walk sees it.
+    procedure pin_temp_value(this, v: LLVMValueRef)
+    {
+        var val LLVMValueRef(v.handle)
+        let base temp_base_alloca(val)
+        guard base.handle <> null
+            temp_pinned.add(base)
+    }
+
+    ; s178: free pool slot `idx` unless it is pinned (a pending arm
+    ; result or the in-flight choose scrutinee), still referenced by
+    ; a live local binding — a let-bound sret/deref result has NO IR
+    ; store, the handle only lives in local_var_values — or its IR
+    ; uses show the pointer escaping. Conservative on all three:
+    ; kept slots are simply never reused.
+    procedure release_slot_if_dead(this, idx: size_t)
+    {
+        var free_flag: size_t 1
+        var depth0: size_t 0
+        guard idx < temp_pool_slots.length
+        {
+            let f_ptr temp_pool_free.get(idx)
+            guard f_ptr <> null
+            {
+                let f_val (*f_ptr)
+                guard f_val = 0
+                {
+                    let slot_ptr temp_pool_slots.get(idx)
+                    guard slot_ptr <> null
+                    {
+                        let slot (*slot_ptr)
+                        var kept: bool false
+                        var pi: size_t 0
+                        while pi < temp_pinned.length
+                        {
+                            let p_ptr temp_pinned.get(pi)
+                            guard p_ptr <> null
+                            {
+                                let pv (*p_ptr)
+                                guard pv.handle = slot.handle
+                                    set kept: true
+                            }
+                            set pi: pi + 1
+                        }
+                        guard kept = false
+                        {
+                            var vi: size_t 0
+                            while vi < local_var_values.length
+                            {
+                                let lv_ptr local_var_values.get(vi)
+                                guard lv_ptr <> null
+                                {
+                                    let lv (*lv_ptr)
+                                    let lv_base temp_base_alloca(lv)
+                                    guard lv_base.handle = slot.handle
+                                        set kept: true
+                                }
+                                set vi: vi + 1
+                            }
+                            guard kept = false
+                            {
+                                guard temp_value_escapes(slot, depth0) = false
+                                    temp_pool_free.put(idx, free_flag)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    ; s178: copy a struct value into `dst` without materializing the
+    ; whole struct as an SSA value. Big-aggregate load+store pairs
+    ; make the backend allocate a spill slot per loaded value —
+    ; ~350KB of collapse_operand_sequence#'s 430KB frame was spill
+    ; slots against only 84KB of real allocas (a 50-copy synthetic
+    ; shows 0x22000 vs 0x7000 frames). When the value is a load,
+    ; memcpy straight from the load's source pointer and erase the
+    ; load if nothing else uses it; non-struct or non-load values
+    ; fall back to a plain store.
+    ; Returns the emitted store or memcpy instruction — both void-
+    ; typed and non-null, so call sites where the original store was
+    ; in value position (the `when variable:` assignment arm tail in
+    ; emit_action) keep their exact observable behavior at null
+    ; checks and PHI void-gates.
+    function copy_struct_value(this, dst: LLVMValueRef, src_value: LLVMValueRef, ty: LLVMTypeRef) returns LLVMValueRef
+    {
+        ; s34 ABI workaround: reconstruct wrappers from .handle.
+        var d LLVMValueRef(dst.handle)
+        var sv LLVMValueRef(src_value.handle)
+        var t LLVMTypeRef(ty.handle)
+        ; Fallback stores are marked align 1: some destinations (the
+        ; throws Result data field at byte offset 1, s150) are
+        ; misaligned, and align 1 is always safe.
+        var is_struct: bool false
+        guard LLVMGetTypeKind(t) = LLVMTypeKind.Struct()
+            set is_struct: true
+        ; Opaque structs (fresh type vars, placeholders without a
+        ; body) have no size — LLVMSizeOf on them hits the
+        ; DataLayout::getTypeSizeInBits assertion (rc=133/SIGTRAP,
+        ; s97 class). Element count 0 covers opaque and empty.
+        guard is_struct
+        {
+            guard LLVMCountStructElementTypes(t) = 0
+                set is_struct: false
+        }
+        guard is_struct = false
+        {
+            let st0 LLVMBuildStore(builder, sv, d)
+            LLVMSetAlignment(st0, 1 as u32)
+            return st0
+        }
+        let ld LLVMIsALoadInst(sv)
+        guard ld.handle = null
+        {
+            let st1 LLVMBuildStore(builder, sv, d)
+            LLVMSetAlignment(st1, 1 as u32)
+            return st1
+        }
+        ; TEMPORAL SOUNDNESS GATE: memcpy reads the load's source at
+        ; COPY time, not load time. Only rewrite when the load is the
+        ; IMMEDIATELY PRECEDING instruction in the current block —
+        ; zero gap means the source cannot have been modified (or its
+        ; pooled slot reused) in between. A stale load (e.g. a let-
+        ; bound tuple.val consumed in a later statement) must store
+        ; its loaded SNAPSHOT: nested_struct returned WRONG when both
+        ; Rectangle fields memcpy'd from the recycled Point slot.
+        let cur_block LLVMGetInsertBlock(builder)
+        guard cur_block.handle = null
+        {
+            let st3 LLVMBuildStore(builder, sv, d)
+            LLVMSetAlignment(st3, 1 as u32)
+            return st3
+        }
+        let last_inst LLVMGetLastInstruction(cur_block)
+        guard last_inst.handle <> sv.handle
+        {
+            let st4 LLVMBuildStore(builder, sv, d)
+            LLVMSetAlignment(st4, 1 as u32)
+            return st4
+        }
+        let src_ptr LLVMGetOperand(sv, 0)
+        guard src_ptr.handle = null
+        {
+            let st2 LLVMBuildStore(builder, sv, d)
+            LLVMSetAlignment(st2, 1 as u32)
+            return st2
+        }
+        let size_const LLVMSizeOf(t)
+        ; The bypassed load is left in place even when now unused —
+        ; erasing it frees the instruction while emitter-held handles
+        ; (emit_action's `value`, a collected case_value) may still
+        ; reference it, and the backend prunes dead non-volatile
+        ; loads for free anyway (verified: 50 dead big loads add 0
+        ; bytes of frame).
+        LLVMBuildMemCpy(builder, d, 1, src_ptr, 1, size_const)
+    }
+
+    ; s178: return the current statement window's pooled temps to the
+    ; free pool when provably dead (see release_slot_if_dead).
+    procedure release_statement_temps(this)
+    {
+        var li: size_t temp_stmt_log_start
+        while li < temp_stmt_log.length
+        {
+            let idx_ptr temp_stmt_log.get(li)
+            guard idx_ptr <> null
+            {
+                let idx (*idx_ptr)
+                release_slot_if_dead(idx)
+            }
+            set li: li + 1
+        }
+        set temp_stmt_log.length: temp_stmt_log_start
+    }
+
     ; ========================================================================
     ; Function Cache
     ; ========================================================================
@@ -660,8 +1035,57 @@ define Emitter
         guard mark_ptr <> null
         {
             let mark (*mark_ptr)
+            ; s178: pooled slots whose only holders are the bindings
+            ; dying with this scope become reusable by sibling arms
+            ; and later scopes. Collect candidate pool indices from
+            ; the dying values (GEP chains stripped to their base
+            ; alloca) BEFORE truncating, release AFTER, so the
+            ; capture check in release_slot_if_dead sees only the
+            ; bindings that remain live. Only candidates reachable
+            ; from dying bindings are considered — a blanket pool
+            ; scan would free in-flight working slots (the enclosing
+            ; choose's union slot between arms, while-condition
+            ; temps) that no local references.
+            var cands Array[size_t]$()
+            var di: size_t mark
+            while di < local_var_values.length
+            {
+                let dv_ptr local_var_values.get(di)
+                guard dv_ptr <> null
+                {
+                    let dv (*dv_ptr)
+                    let base temp_base_alloca(dv)
+                    guard base.handle <> null
+                    {
+                        var ci: size_t temp_pool_start
+                        while ci < temp_pool_slots.length
+                        {
+                            let c_ptr temp_pool_slots.get(ci)
+                            guard c_ptr <> null
+                            {
+                                let cslot (*c_ptr)
+                                guard cslot.handle = base.handle
+                                    cands.add(ci)
+                            }
+                            set ci: ci + 1
+                        }
+                    }
+                }
+                set di: di + 1
+            }
             set local_var_names.length: mark
             set local_var_values.length: mark
+            var ri: size_t 0
+            while ri < cands.length
+            {
+                let r_ptr cands.get(ri)
+                guard r_ptr <> null
+                {
+                    let r_idx (*r_ptr)
+                    release_slot_if_dead(r_idx)
+                }
+                set ri: ri + 1
+            }
         }
         set scope_marks.length: scope_marks.length - 1
     }
@@ -1601,6 +2025,7 @@ define Emitter
                     return true
                 ; Emit the function body
                 set current_function: llvm_func
+                reset_temp_pool()
 
                 ; s149: track Result-wrapper return for emit_return.
                 set current_function_can_throw: false
@@ -1717,8 +2142,10 @@ define Emitter
                                     }
                                     guard LLVMGetTypeKind(LLVMTypeOf(to_store_imp)) = LLVMTypeKind.Struct()
                                     {
-                                        let store_inst LLVMBuildStore(builder, to_store_imp, data_ptr_imp)
-                                        LLVMSetAlignment(store_inst, 1 as u32)
+                                        ; s178: memcpy when to_store_imp is a
+                                        ; load — kills the spill slot.
+                                        let tsi_ty LLVMTypeOf(to_store_imp)
+                                        copy_struct_value(data_ptr_imp, to_store_imp, tsi_ty)
                                     }
                                 }
                             }
@@ -1738,7 +2165,11 @@ define Emitter
                                         set to_store: LLVMBuildLoad2(builder, sty, result, "sret.body")
                                 }
                                 guard LLVMGetTypeKind(LLVMTypeOf(to_store)) = LLVMTypeKind.Struct()
-                                    LLVMBuildStore(builder, to_store, sret_ptr)
+                                {
+                                    ; s178: memcpy when to_store is a load.
+                                    let ts_ty LLVMTypeOf(to_store)
+                                    copy_struct_value(sret_ptr, to_store, ts_ty)
+                                }
                             }
                         }
                         LLVMBuildRetVoid(builder)
@@ -2062,6 +2493,7 @@ define Emitter
                     let main_type LLVMFunctionType(i32_type, null as pointer[LLVMTypeRef], 0, 0)
                     let new_main LLVMAddFunction(llvm_module, main_name.c_data(), main_type)
                     set current_function: new_main
+                    reset_temp_pool()
 
                     let entry_name String$("entry")
                     let entry_block LLVMAppendBasicBlockInContext(context, new_main, entry_name.c_data())
@@ -2697,6 +3129,46 @@ define Emitter
             var ty map_intrinsic_type_by_name(variable.variable_type.name)
             guard ty.handle = null
                 set ty: map_type(variable.variable_type)
+            ; s178: an UNSIZED mapped type — void (planner fresh-type-
+            ; var fallback), function, or an opaque struct (cross-
+            ; package placeholder) — cannot be loaded: DataLayout::
+            ; getTypeSizeInBits asserts (rc=133/SIGTRAP). The alloca's
+            ; allocated type is the slot's ground truth; prefer it
+            ; when sized, else hand back the pointer unloaded.
+            var ty_unsized: bool false
+            let ty_kind LLVMGetTypeKind(ty)
+            guard ty_kind = LLVMTypeKind.Void()
+                set ty_unsized: true
+            guard ty_kind = LLVMTypeKind.Function()
+                set ty_unsized: true
+            guard ty_kind = LLVMTypeKind.Struct()
+            {
+                guard LLVMCountStructElementTypes(ty) = 0
+                    set ty_unsized: true
+            }
+            guard ty_unsized
+            {
+                let opq_isa LLVMIsAAllocaInst(var_ptr)
+                guard opq_isa.handle = null
+                    return var_ptr
+                let opq_alloc_ty LLVMGetAllocatedType(var_ptr)
+                guard opq_alloc_ty.handle = null
+                    return var_ptr
+                var opq_sized: bool true
+                let opq_kind LLVMGetTypeKind(opq_alloc_ty)
+                guard opq_kind = LLVMTypeKind.Void()
+                    set opq_sized: false
+                guard opq_kind = LLVMTypeKind.Function()
+                    set opq_sized: false
+                guard opq_kind = LLVMTypeKind.Struct()
+                {
+                    guard LLVMCountStructElementTypes(opq_alloc_ty) = 0
+                        set opq_sized: false
+                }
+                guard opq_sized = false
+                    return var_ptr
+                return LLVMBuildLoad2(builder, opq_alloc_ty, var_ptr, variable.name.c_data())
+            }
             ; s87: when the alloca's allocated type is `ptr` but the
             ; mapped variable type is a struct, the binding stored a
             ; heap pointer from a region-allocated ctor (Options#(),
@@ -3016,8 +3488,9 @@ define Emitter
                     let arg_kind LLVMGetTypeKind(LLVMTypeOf(arg_value))
                     guard arg_kind = LLVMTypeKind.Struct()
                     {
-                        let arg_alloca entry_alloca(LLVMTypeOf(arg_value), "arg.tmp")
-                        LLVMBuildStore(builder, arg_value, arg_alloca)
+                        let arg_alloca acquire_temp(LLVMTypeOf(arg_value), "arg.tmp")
+                        let av_ty LLVMTypeOf(arg_value)
+                        copy_struct_value(arg_alloca, arg_value, av_ty)
                         set arg_value: arg_alloca
                     }
                     ctor_args.put(slot, arg_value)
@@ -3104,7 +3577,7 @@ define Emitter
                 guard call.throws_type <> null
                     set sret_element_ty: build_throws_result_type(sret_element_ty)
             }
-            set sret_slot: entry_alloca(sret_element_ty, "sret.result")
+            set sret_slot: acquire_temp(sret_element_ty, "sret.result")
         }
 
         ; Build arguments
@@ -3538,8 +4011,9 @@ define Emitter
                         }
                         guard handled = false
                         {
-                            let arg_alloca entry_alloca(LLVMTypeOf(arg_value), "arg.tmp")
-                            LLVMBuildStore(builder, arg_value, arg_alloca)
+                            let arg_alloca acquire_temp(LLVMTypeOf(arg_value), "arg.tmp")
+                            let av_ty2 LLVMTypeOf(arg_value)
+                            copy_struct_value(arg_alloca, arg_value, av_ty2)
                             set arg_value: arg_alloca
                         }
                     }
@@ -3882,10 +4356,21 @@ define Emitter
         {
             guard LLVMGetTypeKind(ty) = LLVMTypeKind.Struct()
             {
+                ; s178: memcpy instead of load+store — a big-aggregate
+                ; load gets a backend spill slot (see copy_struct_value).
+                ; Opaque/empty structs (element count 0) keep the old
+                ; load+store path — LLVMSizeOf on them asserts (s97).
+                guard LLVMCountStructElementTypes(ty) > 0
+                {
+                    let tmp acquire_temp(ty, "deref.tmp")
+                    let size_const LLVMSizeOf(ty)
+                    LLVMBuildMemCpy(builder, tmp, 1, op, 1, size_const)
+                    return tmp
+                }
                 let loaded LLVMBuildLoad2(builder, ty, op, "deref")
-                let tmp entry_alloca(ty, "deref.tmp")
-                LLVMBuildStore(builder, loaded, tmp)
-                return tmp
+                let tmp2 acquire_temp(ty, "deref.tmp")
+                LLVMBuildStore(builder, loaded, tmp2)
+                return tmp2
             }
             return LLVMBuildLoad2(builder, ty, op, "deref")
         }
@@ -4335,7 +4820,7 @@ define Emitter
                     set struct_type: lookup_struct_cache(tuple.tuple_type.name)
                 guard struct_type.handle <> null
                 {
-                    let tuple_ptr entry_alloca(struct_type, "tuple")
+                    let tuple_ptr acquire_temp(struct_type, "tuple")
                     LLVMBuildStore(builder, LLVMConstNull(struct_type), tuple_ptr)
                     ; Same load as the per-field-store branch below: when not
                     ; region-allocated, emit_binding needs the loaded struct
@@ -4557,7 +5042,7 @@ define Emitter
             }
         }
         guard tuple_ptr.handle = null
-            set tuple_ptr: entry_alloca(struct_type, "tuple")
+            set tuple_ptr: acquire_temp(struct_type, "tuple")
 
         ; Empty struct (zero element types): skip the per-field GEP loop
         ; entirely — `LLVMBuildStructGEP2(t, p, 0)` on an empty struct
@@ -4833,7 +5318,10 @@ define Emitter
                     }
                 }
                 let field_ptr LLVMBuildStructGEP2(builder, struct_type, tuple_ptr, i as u32, "tuple.field")
-                LLVMBuildStore(builder, cv, field_ptr)
+                ; s178: memcpy when cv is a load (struct components such
+                ; as a PlannedExpression field are spill-heavy otherwise).
+                let cv_st_ty LLVMTypeOf(cv)
+                copy_struct_value(field_ptr, cv, cv_st_ty)
             }
             set i: i + 1
         }
@@ -5061,6 +5549,9 @@ define Emitter
         guard then_term.handle = null
             LLVMBuildBr(builder, merge_block)
         let then_end_block LLVMGetInsertBlock(builder)
+        ; s178: the then-value feeds the merge PHI that doesn't exist
+        ; yet — protect its slot from the scope-exit release.
+        pin_temp_value(then_value)
         ; s128: balance the then-branch scope.
         exit_scope()
 
@@ -5088,6 +5579,8 @@ define Emitter
             guard else_term.handle = null
                 LLVMBuildBr(builder, merge_block)
             set else_end_block: LLVMGetInsertBlock(builder)
+            ; s178: same PHI protection as the then-branch.
+            pin_temp_value(else_value)
             ; s128: balance the else-branch scope.
             exit_scope()
         }
@@ -5574,10 +6067,16 @@ define Emitter
         {
             guard cond_is_pointer = false
             {
-                set union_ptr: entry_alloca(union_type, "choose.union")
-                LLVMBuildStore(builder, union_value, union_ptr)
+                set union_ptr: acquire_temp(union_type, "choose.union")
+                copy_struct_value(union_ptr, union_value, union_type)
             }
         }
+        ; s178: keep the scrutinee and the union slot alive across arm
+        ; scope exits — a dying when-payload binding GEPs into them
+        ; (making them release candidates) while later arms still read
+        ; both. Pins expire with the enclosing statement window.
+        pin_temp_value(union_value)
+        pin_temp_value(union_ptr)
 
         ; Load the tag. For tagged unions, GEP into the union for the
         ; first field (i8). For NPO Option, derive the tag from a null
@@ -5979,6 +6478,10 @@ define Emitter
                     }
                     LLVMBuildBr(builder, merge_block)
                 }
+                ; s178: the case value feeds the merge PHI that doesn't
+                ; exist yet — protect its slot from the scope-exit
+                ; release.
+                pin_temp_value(case_value)
                 ; s128: balance the enter_scope above. Place after the
                 ; case_term/LLVMBuildBr branch so the marker pops once
                 ; the case body is fully emitted (and the new alloca
@@ -6082,6 +6585,8 @@ define Emitter
             }
             LLVMBuildBr(builder, merge_block)
         }
+        ; s178: same PHI protection as the per-case site.
+        pin_temp_value(alt_value)
         ; s128: balance default-block scope.
         exit_scope()
 
@@ -6911,7 +7416,7 @@ define Emitter
                     guard value.handle = null
                         return LLVMValueRef(null)
                     let value_ptr entry_alloca(value_type, "option.some")
-                    LLVMBuildStore(builder, value, value_ptr)
+                    copy_struct_value(value_ptr, value, value_type)
                     return value_ptr
                 }
             }
@@ -6932,7 +7437,7 @@ define Emitter
         }
 
         ; Allocate space for the union
-        let union_ptr entry_alloca(union_type, "variant.ptr")
+        let union_ptr acquire_temp(union_type, "variant.ptr")
 
         ; Store the tag (field 0)
         let i8_type LLVMInt8TypeInContext(context)
@@ -6970,7 +7475,10 @@ define Emitter
                             set to_store: LLVMBuildLoad2(builder, expected_ty, value, "variant.payload")
                     }
                 }
-                LLVMBuildStore(builder, to_store, data_ptr)
+                ; s178: memcpy when to_store is a load — also marks the
+                ; store align 1, correct for the byte-offset-1 data field.
+                let vp_ty LLVMTypeOf(to_store)
+                copy_struct_value(data_ptr, to_store, vp_ty)
             }
         }
 
@@ -6983,7 +7491,30 @@ define Emitter
     ; ========================================================================
 
     ; Emit a statement
+    ; s178: window wrapper around emit_statement_inner. Each statement
+    ; opens its own temp-pool window; pooled slots acquired while
+    ; emitting it are released at its end unless captured (see
+    ; release_statement_temps). Saving/restoring the window start
+    ; keeps nested statements (loop bodies, choose/if arms) from
+    ; releasing the enclosing statement's temps, while statements
+    ; INSIDE a loop body or arm still recycle each other's slots —
+    ; that's where collapse_operand_sequence#'s ~450 spill slots live.
+    ; Values cannot leak across windows: emit_statement returns only
+    ; bool, so expression values always flow through emit_action /
+    ; emit_operand inside one window.
     function emit_statement(this, stmt: PlannedStatement) returns bool
+    {
+        let saved_start temp_stmt_log_start
+        let saved_pinned temp_pinned.length
+        set temp_stmt_log_start: temp_stmt_log.length
+        let result emit_statement_inner(stmt)
+        release_statement_temps()
+        set temp_pinned.length: saved_pinned
+        set temp_stmt_log_start: saved_start
+        result
+    }
+
+    function emit_statement_inner(this, stmt: PlannedStatement) returns bool
     {
         choose stmt
             when action: Action
@@ -7136,7 +7667,8 @@ define Emitter
                                                 let heap_ptr LLVMBuildCall2(builder, ap_call_ty, alloc_func, alloc_args.data, 3, "set.heap")
                                                 guard heap_ptr.handle <> null
                                                 {
-                                                    LLVMBuildStore(builder, value, heap_ptr)
+                                                    ; s178: memcpy when value is a load.
+                                                    copy_struct_value(heap_ptr, value, val_ty)
                                                     set store_val: heap_ptr
                                                 }
                                             }
@@ -7171,8 +7703,10 @@ define Emitter
                                 }
                             }
                         }
-                        ; Store the value to the variable
-                        LLVMBuildStore(builder, store_val, var_ptr)
+                        ; Store the value to the variable. s178: memcpy
+                        ; when store_val is a load — kills the spill slot.
+                        let sv_ty LLVMTypeOf(store_val)
+                        copy_struct_value(var_ptr, store_val, sv_ty)
                     }
                     when call: Call
                     {
@@ -7678,9 +8212,11 @@ define Emitter
                             }
                         }
                     }
-                    ; Mutable binding: allocate on stack
-                    let alloca entry_alloca(store_ty, name.c_data())
-                    LLVMBuildStore(builder, store_val, alloca)
+                    ; Mutable binding: allocate on stack. s178: pooled —
+                    ; the slot returns to the free pool when the binding
+                    ; dies at exit_scope and nothing else references it.
+                    let alloca acquire_temp(store_ty, name.c_data())
+                    copy_struct_value(alloca, store_val, store_ty)
                     define_variable(name, alloca)
                 }
                 else
@@ -7697,7 +8233,8 @@ define Emitter
                     let item_type_ref binding.binding_item.item_type
                     let item_type (*item_type_ref)
                     let ty map_type(item_type)
-                    let alloca entry_alloca(ty, name.c_data())
+                    ; s178: pooled, same as the initialized var path.
+                    let alloca acquire_temp(ty, name.c_data())
                     define_variable(name, alloca)
                 }
                 guard binding.binding_item.item_type = null
@@ -7793,8 +8330,10 @@ define Emitter
                 ; Mirrors stage-0 emitReturn's CreateAlignedStore(..., Align(1)).
                 guard ret_val.handle <> null
                 {
-                    let store_inst LLVMBuildStore(builder, ret_val, data_ptr)
-                    LLVMSetAlignment(store_inst, 1 as u32)
+                    ; s178: memcpy when ret_val is a load — the helper
+                    ; marks fallback stores align 1 (s150).
+                    let rv_ty LLVMTypeOf(ret_val)
+                    copy_struct_value(data_ptr, ret_val, rv_ty)
                 }
                 LLVMBuildRetVoid(builder)
                 return true
@@ -7809,7 +8348,11 @@ define Emitter
                         set to_store: LLVMBuildLoad2(builder, sty, ret_val, "sret.body")
                 }
                 guard LLVMGetTypeKind(LLVMTypeOf(to_store)) = LLVMTypeKind.Struct()
-                    LLVMBuildStore(builder, to_store, sret_ptr)
+                {
+                    ; s178: memcpy when to_store is a load.
+                    let ts_ty2 LLVMTypeOf(to_store)
+                    copy_struct_value(sret_ptr, to_store, ts_ty2)
+                }
             }
             ; When emit_operands(ret.result) returns null (sub-emit dropped
             ; statements — happens with multi-statement when-bodies that

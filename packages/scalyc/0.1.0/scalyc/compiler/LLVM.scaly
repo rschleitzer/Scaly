@@ -28,6 +28,7 @@ define LLVMMemoryBufferRef(handle: pointer[void])
 define LLVMDIBuilderRef(handle: pointer[void])
 define LLVMMetadataRef(handle: pointer[void])
 define LLVMAttributeRef(handle: pointer[void])
+define LLVMUseRef(handle: pointer[void])
 
 ; ============================================================================
 ; LLVM Enums
@@ -172,6 +173,7 @@ function LLVMGetInsertBlock(builder: LLVMBuilderRef) returns LLVMBasicBlockRef e
 
 ; Get the first instruction in a basic block
 function LLVMGetFirstInstruction(block: LLVMBasicBlockRef) returns LLVMValueRef extern
+function LLVMGetLastInstruction(block: LLVMBasicBlockRef) returns LLVMValueRef extern
 
 ; Cast a value to an instruction (returns null if not an instruction)
 function LLVMIsAInstruction(val: LLVMValueRef) returns LLVMValueRef extern
@@ -479,6 +481,28 @@ function LLVMGetAllocatedType(alloca: LLVMValueRef) returns LLVMTypeRef extern
 ; loaded ptr-slot value (pointer to a single-ptr wrapper struct) that
 ; must be dereferenced to the bare handle.
 function LLVMIsALoadInst(val: LLVMValueRef) returns LLVMValueRef extern
+
+; s178: use-list walking + instruction classification for the alloca
+; reuse pool's escape check (Emitter.temp_value_escapes). Same isa<>
+; pattern as LLVMIsAAllocaInst: returns the value when it is an
+; instance of the class, null otherwise. LLVMGetOperand(store, 0) is
+; the stored VALUE; operand 1 is the destination pointer.
+function LLVMGetFirstUse(val: LLVMValueRef) returns LLVMUseRef extern
+function LLVMGetNextUse(u: LLVMUseRef) returns LLVMUseRef extern
+function LLVMGetUser(u: LLVMUseRef) returns LLVMValueRef extern
+function LLVMGetOperand(val: LLVMValueRef, index: int) returns LLVMValueRef extern
+function LLVMIsAStoreInst(val: LLVMValueRef) returns LLVMValueRef extern
+function LLVMIsACallInst(val: LLVMValueRef) returns LLVMValueRef extern
+function LLVMIsAICmpInst(val: LLVMValueRef) returns LLVMValueRef extern
+function LLVMIsAGetElementPtrInst(val: LLVMValueRef) returns LLVMValueRef extern
+
+; s178: struct copies through memcpy instead of load+store pairs. A
+; big-aggregate load materializes the whole struct as an SSA value and
+; the backend allocates a spill slot for it; memcpy moves the bytes
+; pointer-to-pointer with no SSA value. Bypassed loads are left in
+; place (the backend prunes dead non-volatile loads for free); do NOT
+; erase them — emitter-held handles may still reference the value.
+function LLVMBuildMemCpy(builder: LLVMBuilderRef, dst: LLVMValueRef, dst_align: int, src: LLVMValueRef, src_align: int, size: LLVMValueRef) returns LLVMValueRef extern
 
 ; Structure type name lookup. Returns a C string (NUL-terminated) when the
 ; struct is named (`LLVMStructCreateNamed` + setBody), or null for anonymous
