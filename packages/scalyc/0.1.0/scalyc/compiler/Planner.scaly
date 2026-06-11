@@ -2814,6 +2814,24 @@ define Planner
                                 {
                                     guard chained = false
                                     {
+                                        ; s177: keep a grouped operand intact
+                                        ; when it carries a member-access
+                                        ; chain. Expanding the interior drops
+                                        ; the chain — `(*(*p).items)` lost
+                                        ; its .items hop and the outer deref
+                                        ; re-deref'd the base struct (length
+                                        ; read field 0 of the wrong struct).
+                                        ; The operand is already fully planned
+                                        ; with the chain's final result_type.
+                                        var p_has_chain: bool false
+                                        guard p_op.member_access <> null
+                                        {
+                                            let pma (*p_op.member_access)
+                                            guard pma.length > 0
+                                                set p_has_chain: true
+                                        }
+                                        guard p_has_chain = false
+                                        {
                                         choose p_op.expr
                                             when tup: PlannedTuple
                                             {
@@ -2851,6 +2869,7 @@ define Planner
                                             }
                                             else
                                                 0
+                                        }
                                     }
                                 }
                                 guard expanded = false
