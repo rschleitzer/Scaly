@@ -1681,6 +1681,166 @@ define Emitter
     ; Union Type Emission
     ; ========================================================================
 
+    ; s179: round offset up to a multiple of align (a power of two).
+    ; Local to Emitter — small let-steps instead of one mixed
+    ; +/-//* expression (no fixed operator precedence).
+    function abi_align_to(this, offset: size_t, align: size_t) returns size_t
+    {
+        guard align < 2
+            return offset
+        let a_m1 align - 1
+        let sum offset + a_m1
+        let q sum / align
+        q * align
+    }
+
+    ; s179: true when every type reachable from ty has a knowable ABI
+    ; size. Opaque structs (fresh type vars, s114 placeholders), void,
+    ; vectors, and function types are unsizeable — callers must fall
+    ; back to a conservative estimate rather than risk under-sizing.
+    function llvm_type_sizable(this, ty: LLVMTypeRef) returns bool
+    {
+        var t LLVMTypeRef(ty.handle)
+        guard t.handle = null
+            return false
+        let kind LLVMGetTypeKind(t)
+        guard kind = LLVMTypeKind.Void()
+            return false
+        guard kind = LLVMTypeKind.FunctionKind()
+            return false
+        guard kind = LLVMTypeKind.Label()
+            return false
+        guard kind = LLVMTypeKind.Metadata()
+            return false
+        guard kind = LLVMTypeKind.VectorKind()
+            return false
+        guard kind = LLVMTypeKind.ArrayKind()
+            return llvm_type_sizable(LLVMGetElementType(t))
+        guard kind = LLVMTypeKind.Struct()
+        {
+            guard LLVMIsOpaqueStruct(t) <> 0
+                return false
+            let n LLVMCountStructElementTypes(t)
+            var i: int 0
+            while i < n
+            {
+                let f_ok llvm_type_sizable(LLVMStructGetTypeAtIndex(t, i))
+                guard f_ok = false
+                    return false
+                set i: i + 1
+            }
+            return true
+        }
+        true
+    }
+
+    ; s179: ABI alignment of an LLVM type, walked structurally.
+    ; Matches DataLayout::getABITypeAlign for everything stage-1
+    ; emits (ints, floats, pointers, non-packed structs, arrays).
+    ; Never calls into DataLayout: LLVMABISizeOfType corrupts
+    ; stage-1 process state (s149) and getTypeSizeInBits SIGTRAPs
+    ; on opaque structs (s97). Check llvm_type_sizable first.
+    function llvm_type_abi_align(this, ty: LLVMTypeRef) returns size_t
+    {
+        var t LLVMTypeRef(ty.handle)
+        let kind LLVMGetTypeKind(t)
+        guard kind = LLVMTypeKind.Integer()
+        {
+            let w LLVMGetIntTypeWidth(t)
+            guard w <= 8
+                return 1
+            guard w <= 16
+                return 2
+            guard w <= 32
+                return 4
+            return 8
+        }
+        guard kind = LLVMTypeKind.Pointer()
+            return 8
+        guard kind = LLVMTypeKind.Double()
+            return 8
+        guard kind = LLVMTypeKind.Float()
+            return 4
+        guard kind = LLVMTypeKind.Half()
+            return 2
+        guard kind = LLVMTypeKind.ArrayKind()
+            return llvm_type_abi_align(LLVMGetElementType(t))
+        guard kind = LLVMTypeKind.Struct()
+        {
+            var max_a: size_t 1
+            let n LLVMCountStructElementTypes(t)
+            var i: int 0
+            while i < n
+            {
+                let fa llvm_type_abi_align(LLVMStructGetTypeAtIndex(t, i))
+                guard fa > max_a
+                    set max_a: fa
+                set i: i + 1
+            }
+            return max_a
+        }
+        1
+    }
+
+    ; s179: ABI alloc size of an LLVM type, walked structurally.
+    ; Mirrors stage-0's getTypeSize (DataLayout::getTypeAllocSize,
+    ; Emitter.cpp:6637) without touching DataLayout — see the s149/
+    ; s97 cautions on llvm_type_abi_align. Check llvm_type_sizable
+    ; first; unsizeable kinds return 0 here.
+    function llvm_type_abi_size(this, ty: LLVMTypeRef) returns size_t
+    {
+        var t LLVMTypeRef(ty.handle)
+        let kind LLVMGetTypeKind(t)
+        guard kind = LLVMTypeKind.Integer()
+        {
+            let w LLVMGetIntTypeWidth(t)
+            guard w <= 8
+                return 1
+            guard w <= 16
+                return 2
+            guard w <= 32
+                return 4
+            guard w <= 64
+                return 8
+            return 16
+        }
+        guard kind = LLVMTypeKind.Pointer()
+            return 8
+        guard kind = LLVMTypeKind.Double()
+            return 8
+        guard kind = LLVMTypeKind.Float()
+            return 4
+        guard kind = LLVMTypeKind.Half()
+            return 2
+        guard kind = LLVMTypeKind.ArrayKind()
+        {
+            let elem LLVMGetElementType(t)
+            let n LLVMGetArrayLength2(t)
+            let elem_sz llvm_type_abi_size(elem)
+            return elem_sz * (n as size_t)
+        }
+        guard kind = LLVMTypeKind.Struct()
+        {
+            var offset: size_t 0
+            var sa: size_t 1
+            let n LLVMCountStructElementTypes(t)
+            var i: int 0
+            while i < n
+            {
+                let ft LLVMStructGetTypeAtIndex(t, i)
+                let fs llvm_type_abi_size(ft)
+                let fa llvm_type_abi_align(ft)
+                let aligned abi_align_to(offset, fa)
+                set offset: aligned + fs
+                guard fa > sa
+                    set sa: fa
+                set i: i + 1
+            }
+            return abi_align_to(offset, sa)
+        }
+        0
+    }
+
     ; Emit LLVM type for a PlannedUnion (tagged union)
     function emit_union_type(this, union_type: PlannedUnion) returns LLVMTypeRef
     {
@@ -1698,30 +1858,69 @@ define Emitter
         ; Build union body: { i8 tag, [data_size x i8] data }
         let i8_type LLVMInt8TypeInContext(context)
 
-        ; Data size is total size minus tag size (1 byte for i8 tag)
-        ; Account for alignment padding
-        var data_size union_type.size
-        guard data_size > 0
-            set data_size: data_size - 1
-
-        ; If no data, just use tag alone
-        if data_size = 0
+        ; s179: data size = max ABI size over the variants' LLVM
+        ; types, mirroring stage-0 emitUnionType (Emitter.cpp:1045-
+        ; 1063): no tag byte folded into the array, no alignment
+        ; rounding of the array. The planner's name-keyed estimate
+        ; (union_type.size = align(max_payload+tag, align)) over-
+        ; sizes every union and compounds through nesting —
+        ; PlannedExpression payload was 584B vs stage-0's 457B.
+        ; Fall back to the planner estimate when any variant maps
+        ; to an unsizeable type (opaque struct, void, vector):
+        ; the estimate only ever over-allocates, which is safe,
+        ; while walker under-sizing would corrupt page headers at
+        ; region-allocation sites (s27/s176-fix-4 class).
+        var data_size: size_t 0
+        guard union_type.size > 0
+            set data_size: union_type.size - 1
+        var walker_ok: bool true
+        var max_size: size_t 0
+        guard union_type.variants <> null
         {
-            var element_types Vector[LLVMTypeRef]#(1)
-            element_types.put(0, i8_type)
-            LLVMStructSetBody(llvm_union, element_types.data, 1, 0)
+            let vars (*union_type.variants)
+            var vi: size_t 0
+            while vi < vars.length
+            {
+                let v_ptr vars.get(vi)
+                guard v_ptr <> null
+                {
+                    let v (*v_ptr)
+                    guard v.var_type <> null
+                    {
+                        let vt (*v.var_type)
+                        let v_llvm map_type(vt)
+                        guard v_llvm.handle = null
+                            set walker_ok: false
+                        guard v_llvm.handle <> null
+                        {
+                            let v_ok llvm_type_sizable(v_llvm)
+                            guard v_ok = false
+                                set walker_ok: false
+                            guard v_ok
+                            {
+                                let vs llvm_type_abi_size(v_llvm)
+                                guard vs > max_size
+                                    set max_size: vs
+                            }
+                        }
+                    }
+                }
+                set vi: vi + 1
+            }
         }
-        else
-        {
-            ; Create data array type
-            let data_array_type LLVMArrayType2(i8_type, data_size)
+        guard walker_ok
+            set data_size: max_size
 
-            var element_types Vector[LLVMTypeRef]#(2)
-            element_types.put(0, i8_type)       ; tag field
-            element_types.put(1, data_array_type) ; data field
+        ; Always emit both fields — stage-0 emits { i8, [0 x i8] }
+        ; even for payload-less unions, and construction/choose sites
+        ; GEP field 1 unconditionally, so the data field must exist.
+        let data_array_type LLVMArrayType2(i8_type, data_size)
 
-            LLVMStructSetBody(llvm_union, element_types.data, 2, 0)
-        }
+        var element_types Vector[LLVMTypeRef]#(2)
+        element_types.put(0, i8_type)       ; tag field
+        element_types.put(1, data_array_type) ; data field
+
+        LLVMStructSetBody(llvm_union, element_types.data, 2, 0)
 
         llvm_union
     }
@@ -1905,7 +2104,7 @@ define Emitter
                             var pass_by_ptr: bool false
                             guard kind = LLVMTypeKind.Struct()
                                 set pass_by_ptr: true
-                            guard kind = LLVMTypeKind.Array()
+                            guard kind = LLVMTypeKind.ArrayKind()
                                 set pass_by_ptr: true
                             guard pass_by_ptr
                             {
@@ -2965,7 +3164,7 @@ define Emitter
                     ; the inner guard bails iff it isn't Array either.
                     guard cur_kind <> LLVMTypeKind.Struct()
                     {
-                        guard cur_kind <> LLVMTypeKind.Array()
+                        guard cur_kind <> LLVMTypeKind.ArrayKind()
                             return LLVMValueRef(null)
                     }
 
@@ -3139,7 +3338,7 @@ define Emitter
             let ty_kind LLVMGetTypeKind(ty)
             guard ty_kind = LLVMTypeKind.Void()
                 set ty_unsized: true
-            guard ty_kind = LLVMTypeKind.Function()
+            guard ty_kind = LLVMTypeKind.FunctionKind()
                 set ty_unsized: true
             guard ty_kind = LLVMTypeKind.Struct()
             {
@@ -3158,7 +3357,7 @@ define Emitter
                 let opq_kind LLVMGetTypeKind(opq_alloc_ty)
                 guard opq_kind = LLVMTypeKind.Void()
                     set opq_sized: false
-                guard opq_kind = LLVMTypeKind.Function()
+                guard opq_kind = LLVMTypeKind.FunctionKind()
                     set opq_sized: false
                 guard opq_kind = LLVMTypeKind.Struct()
                 {
@@ -3611,7 +3810,7 @@ define Emitter
             let fn_ty LLVMGlobalGetValueType(func)
             guard fn_ty.handle <> null
             {
-                guard LLVMGetTypeKind(fn_ty) = LLVMTypeKind.Function()
+                guard LLVMGetTypeKind(fn_ty) = LLVMTypeKind.FunctionKind()
                 {
                     let ret_ty LLVMGetReturnType(fn_ty)
                     guard LLVMGetTypeKind(ret_ty) = LLVMTypeKind.Void()
@@ -3659,7 +3858,7 @@ define Emitter
                 let fn_ty LLVMGlobalGetValueType(func)
                 guard fn_ty.handle <> null
                 {
-                    guard LLVMGetTypeKind(fn_ty) = LLVMTypeKind.Function()
+                    guard LLVMGetTypeKind(fn_ty) = LLVMTypeKind.FunctionKind()
                     {
                         let ret_ty LLVMGetReturnType(fn_ty)
                         guard LLVMGetTypeKind(ret_ty) = LLVMTypeKind.Void()

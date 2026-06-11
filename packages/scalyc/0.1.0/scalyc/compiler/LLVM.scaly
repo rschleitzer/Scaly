@@ -80,11 +80,16 @@ define LLVMTypeKind
     function PPC_FP128() returns int { 6 }
     function Label() returns int { 7 }
     function Integer() returns int { 8 }
-    function Function() returns int { 9 }
+    ; s179: Function/Array/Vector are named *Kind because the bare
+    ; names collide with the Model.Function / stdlib Array / Vector
+    ; concepts: stage-1's planner resolves `LLVMTypeKind.Array()` as
+    ; a zero-init construction of the colliding concept instead of
+    ; this call, silently dropping the comparison that uses it.
+    function FunctionKind() returns int { 9 }
     function Struct() returns int { 10 }
-    function Array() returns int { 11 }
+    function ArrayKind() returns int { 11 }
     function Pointer() returns int { 12 }
-    function Vector() returns int { 13 }
+    function VectorKind() returns int { 13 }
     function Metadata() returns int { 14 }
 }
 
@@ -231,6 +236,8 @@ function LLVMGetReturnType(func_type: LLVMTypeRef) returns LLVMTypeRef extern
 function LLVMCountStructElementTypes(struct_type: LLVMTypeRef) returns int extern
 function LLVMGetStructElementTypes(struct_type: LLVMTypeRef, dest: pointer[LLVMTypeRef]) extern
 function LLVMStructGetTypeAtIndex(struct_type: LLVMTypeRef, index: int) returns LLVMTypeRef extern
+function LLVMIsOpaqueStruct(struct_type: LLVMTypeRef) returns int extern
+function LLVMGetArrayLength2(array_type: LLVMTypeRef) returns u64 extern
 
 ; ============================================================================
 ; Function Functions
