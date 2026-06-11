@@ -326,6 +326,12 @@ define Emitter
     ; Function cache: mangled name -> LLVM function
     function_cache_names: ref[Vector[String]]?
     function_cache_funcs: ref[Vector[LLVMValueRef]]?
+    ; s180: throws Result-wrapper cache: callee mangled name -> wrapper
+    ; type. Keyed per callee so emit_function_decl and emit_call always
+    ; build the IDENTICAL wrapper even when their value_ty provenance
+    ; differs (resolved struct vs cross-package placeholder).
+    throws_result_names: ref[Vector[String]]?
+    throws_result_types: ref[Vector[LLVMTypeRef]]?
     ; Intrinsic types
     intrinsic_type_names: ref[Vector[String]]?
     intrinsic_types: ref[Vector[IntrinsicTypeInfo]]?
@@ -396,6 +402,8 @@ define Emitter
         set struct_cache_types: Vector[LLVMTypeRef]^page()
         set function_cache_names: Vector[String]^page()
         set function_cache_funcs: Vector[LLVMValueRef]^page()
+        set throws_result_names: Vector[String]^page()
+        set throws_result_types: Vector[LLVMTypeRef]^page()
         set intrinsic_type_names: Vector[String]^page()
         set intrinsic_types: Vector[IntrinsicTypeInfo]^page()
         set current_function: LLVMValueRef(null)
@@ -1937,28 +1945,86 @@ define Emitter
     ; Errors are passed by pointer (allocated on the exception page by
     ; the thrower), so 8 bytes is sufficient for the error case. Mirrors
     ; stage-0 Emitter.cpp:1204-1221.
-    function build_throws_result_type(this, value_ty: LLVMTypeRef) returns LLVMTypeRef
+    function build_throws_result_type(this, value_ty: LLVMTypeRef, mangled_name: String) returns LLVMTypeRef
     {
-        ; Result wrapper: { i8 status, [256 x i8] data }.
+        ; Result wrapper: { i8 status, [N x i8] data }.
         ;
-        ; A conservative fixed payload of 256 bytes covers every
-        ; Syntax/Model type the scalyc parser/modeler returns through
-        ; a throws function. LLVMABISizeOfType (the proper way to
-        ; size this) corrupts stage-1 process state — every call to
-        ; it leaks state that surfaces as PC=0/LR=0 at exit time,
-        ; even though the emitted .o file is byte-correct. Walking
-        ; the struct field-count produces estimates that undercount
-        ; nested-struct fields (e.g. ProgramSyntax = 4 top-level
-        ; fields but ~48 bytes because FileSyntax inlines 3 more).
-        ; 256 bytes is enough headroom for all throws-returning
-        ; types here and matches caller + callee within the same
-        ; emit pass.
+        ; s180: N = max(sizeof T, 8), computed from value_ty via the
+        ; s179 walkers — NEVER LLVMABISizeOfType, which corrupts
+        ; stage-1 process state (s149: every call leaks state that
+        ; surfaces as PC=0/LR=0 at exit time, even though the emitted
+        ; .o file is byte-correct). 8 bytes covers the error arm:
+        ; errors are passed by pointer, allocated on the exception
+        ; page by the thrower.
+        ;
+        ; Falls back to the old conservative s149 fixed 256 when
+        ; value_ty is unsizeable (opaque struct, s97 class) or is the
+        ; literal `{ptr}` cross-package placeholder from
+        ; get_or_create_struct_placeholder — that stands in for a
+        ; struct of UNKNOWN size, and under-sizing lets the callee
+        ; write past the caller's sret slot. Over-allocation is the
+        ; safe direction.
+        ;
+        ; Cached per callee mangled name so every site touching the
+        ; wrapper for the same function (emit_function_decl sret type,
+        ; emit_call sret temp) builds the IDENTICAL type even when
+        ; value_ty resolves differently across sites.
+        var i 0
+        for n in throws_result_names
+        {
+            guard n.equals(mangled_name)
+            {
+                let t throws_result_types.get(i)
+                guard t <> null
+                    return t
+
+            }
+            set i: i + 1
+        }
+
+        ; Reconstruct via .handle (session-34/36 single-ptr-field
+        ; struct-param ABI pattern) before introspecting.
+        var vt LLVMTypeRef(value_ty.handle)
+        var data_size: size_t 256
+        guard vt.handle <> null
+        {
+            var is_placeholder: bool false
+            guard LLVMGetTypeKind(vt) = LLVMTypeKind.Struct()
+            {
+                guard LLVMIsOpaqueStruct(vt) = 0
+                {
+                    let name_c LLVMGetStructName(vt)
+                    guard name_c = null
+                    {
+                        guard LLVMCountStructElementTypes(vt) = 1
+                        {
+                            let f0 LLVMStructGetTypeAtIndex(vt, 0)
+                            guard LLVMGetTypeKind(f0) = LLVMTypeKind.Pointer()
+                                set is_placeholder: true
+                        }
+                    }
+                }
+            }
+            guard is_placeholder = false
+            {
+                guard llvm_type_sizable(vt)
+                {
+                    set data_size: llvm_type_abi_size(vt)
+                    guard data_size < 8
+                        set data_size: 8
+                }
+            }
+        }
+
         let i8_ty LLVMInt8TypeInContext(context)
-        let data_arr_ty LLVMArrayType2(i8_ty, 256 as size_t)
+        let data_arr_ty LLVMArrayType2(i8_ty, data_size)
         var fields Vector[LLVMTypeRef]#(2)
         fields.put(0, i8_ty)
         fields.put(1, data_arr_ty)
-        LLVMStructTypeInContext(context, fields.data, 2, 0)
+        let result_ty LLVMStructTypeInContext(context, fields.data, 2, 0)
+        throws_result_names.add(mangled_name)
+        throws_result_types.add(result_ty)
+        result_ty
     }
 
     ; Emit function declaration (signature only)
@@ -2029,7 +2095,7 @@ define Emitter
                 guard func.can_throw
                 {
                     guard func.throws_type <> null
-                        set sret_type: build_throws_result_type(sret_type)
+                        set sret_type: build_throws_result_type(sret_type, func.mangled_name)
                 }
             }
             else
@@ -3774,7 +3840,7 @@ define Emitter
             guard call.can_throw
             {
                 guard call.throws_type <> null
-                    set sret_element_ty: build_throws_result_type(sret_element_ty)
+                    set sret_element_ty: build_throws_result_type(sret_element_ty, call.mangled_name)
             }
             set sret_slot: acquire_temp(sret_element_ty, "sret.result")
         }
