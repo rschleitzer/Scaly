@@ -160,6 +160,17 @@ define LocalBinding
     is_on_page: bool
 )
 
+; One HARD diagnostic: a construct the planner could not resolve and that
+; would otherwise be silently dropped from the emitted IR. `start` is the
+; byte offset of the construct in its source file (Span.start); cli.run
+; formats it as file:line:col like stage-0's formatErrorHeader and fails
+; the compile.
+define PlannerDiagnostic
+(
+    start: size_t
+    message: String
+)
+
 define Planner
 {
     ; ========================================================================
@@ -303,6 +314,13 @@ define Planner
         ; plumbing Result[T, E] through every helper.
         errors: Array[String]
 
+        ; HARD diagnostics. Unlike `errors` (advisory — speculative
+        ; lookup misses land there thousands of times during a clean
+        ; self-compile), an entry here means a construct WOULD be
+        ; dropped from the emitted IR. cli.run prints these with
+        ; file:line:col and fails the compile (s185, roadmap Step C).
+        diagnostics: Array[PlannerDiagnostic]
+
         ; Sibling programs: Model.Programs belonging to the same
         ; compilation unit but loaded from separate source files.
         ; Mirrors Planner.cpp's SiblingPrograms — main.scaly may
@@ -357,6 +375,7 @@ define Planner
             set loaded_packages: Array[KeyValuePair[String, Module]]^page()
             set loaded_module_paths: Array[KeyValuePair[String, Module]]^page()
             set errors: Array[String]^page()
+            set diagnostics: Array[PlannerDiagnostic]^page()
             set sibling_programs: Array[Program]^page()
             set current_namespace: null
             set current_namespace_name: null
@@ -796,6 +815,19 @@ define Planner
         function has_errors(this: Planner) returns bool
         {
             errors.length > 0
+        }
+
+        ; Record a HARD diagnostic with the construct's source position.
+        ; Use this only on paths where the construct is certain to be
+        ; dropped from the IR — cli.run fails the compile on these.
+        function add_diagnostic(this: Planner, loc: Span, message: String)
+        {
+            diagnostics.add(PlannerDiagnostic(loc.start, message))
+        }
+
+        function has_diagnostics(this: Planner) returns bool
+        {
+            diagnostics.length > 0
         }
 
         ; Look up a previously loaded package in the cache.
@@ -4723,6 +4755,106 @@ define Planner
                                 }
                                 guard recv_is_option = false
                                     set call_is_intrinsic: false
+                            }
+                        }
+                        ; s185 (roadmap Step C): resolution exhausted —
+                        ; mangled stays "". emit_call cannot look up such
+                        ; a call; it would be SILENTLY dropped from the
+                        ; IR. Two rescues replace the drop:
+                        ; (a) bare variant construction `Some(5)`: scan
+                        ;     the registered unions for a variant named
+                        ;     fn_name and divert to a
+                        ;     PlannedVariantConstruction. Stage-0's JIT
+                        ;     path plans this shape (its AOT path dropped
+                        ;     it too). First matching union wins. The
+                        ;     scan is O(concepts^2) but only runs after
+                        ;     resolution failure — never on a clean
+                        ;     self-compile.
+                        ; (b) otherwise a HARD diagnostic with source
+                        ;     position; cli.run prints it and fails the
+                        ;     compile instead of emitting truncated IR.
+                        guard mangled.get_length() = 0
+                        {
+                            guard call_is_intrinsic = false
+                            {
+                                guard fn_name.last_index_of(46 as u8) < 0
+                                {
+                                    var bv_found: bool false
+                                    var bv_tag: size_t 0
+                                    var bv_union_name String^rp("")
+                                    var bvi: size_t 0
+                                    while bvi < concepts.length
+                                    {
+                                        guard bv_found = false
+                                        {
+                                            let bv_kvp concepts.get(bvi)
+                                            guard bv_kvp <> null
+                                            {
+                                                let bv_t this.lookup_variant_tag(bv_kvp.key, fn_name)
+                                                guard bv_t >= 0
+                                                {
+                                                    set bv_found: true
+                                                    set bv_tag: bv_t as size_t
+                                                    set bv_union_name: bv_kvp.key
+                                                }
+                                            }
+                                        }
+                                        set bvi: bvi + 1
+                                    }
+                                    guard bv_found
+                                    {
+                                        let bv_union_ty PlannedType(
+                                            result.loc,
+                                            bv_union_name,
+                                            Planner.mangle_structure#(bv_union_name, null),
+                                            null,
+                                            Lifetime.Unspecified(Unspecified()),
+                                            null,
+                                            String^rp(""),
+                                            null
+                                        )
+                                        var bv_payload: ref[PlannedOperand]? null
+                                        guard call_args_holder.length > 0
+                                            set bv_payload: call_args_holder.get(0)
+                                        let bv_vc PlannedVariantConstruction(
+                                            result.loc,
+                                            bv_union_ty,
+                                            fn_name,
+                                            bv_tag,
+                                            bv_payload
+                                        )
+                                        ; Keep a trailing member chain on the
+                                        ; construction result and early-return,
+                                        ; mirroring the gate's variant-ctor
+                                        ; branch (s184).
+                                        set result: this.rebind_trailing_chain#(PlannedOperand(
+                                            result.loc,
+                                            PlannedExpression.VariantConstruction(bv_vc),
+                                            second.member_access,
+                                            bv_union_ty
+                                        ))
+                                        guard ops.length > 2
+                                        {
+                                            var bv_remaining Array[PlannedOperand]$()
+                                            bv_remaining.add(result)
+                                            var bv_rr: size_t 2
+                                            while bv_rr < ops.length
+                                            {
+                                                let bv_ptr ops.get(bv_rr)
+                                                guard bv_ptr <> null
+                                                    bv_remaining.add((*bv_ptr))
+                                                set bv_rr: bv_rr + 1
+                                            }
+                                            var bv_vec Vector[PlannedOperand]^rp(bv_remaining)
+                                            return this.collapse_operand_sequence#(bv_vec)
+                                        }
+                                        return result
+                                    }
+                                }
+                                var dsb StringBuilder$()
+                                dsb.append("function not found: ")
+                                dsb.append(fn_name)
+                                this.add_diagnostic(result.loc, dsb.to_string^rp())
                             }
                         }
                         let call PlannedCall(

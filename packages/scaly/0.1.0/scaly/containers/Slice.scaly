@@ -71,11 +71,46 @@ define Slice[T](data: pointer[T], length: size_t)
         memcmp(data as pointer[void], other.data as pointer[void], length * sizeof T) = 0
     }
 
+    ; Bodies inlined from equals() as call-free byte loops: stage-1's
+    ; planner resolves NO function call (sibling method or extern
+    ; memcmp) from a generic concept's operator body, and since s185
+    ; such an unresolvable call is a hard error instead of a silent
+    ; drop. Only intrinsic ops (deref, +, <>) appear here. Multi-
+    ; statement operator bodies must use guard, not if — if-statements
+    ; break the enclosing generic's instantiation under stage-1.
     operator ==(other: Slice[T]) returns bool
-        equals(other)
+    {
+        guard length <> other.length
+            return false
+        let a_bytes data as pointer[u8]
+        let b_bytes other.data as pointer[u8]
+        let n length * sizeof T
+        var i: size_t 0
+        while i < n
+        {
+            guard *(a_bytes + i) <> *(b_bytes + i)
+                return false
+            set i: i + 1
+        }
+        true
+    }
 
     operator <>(other: Slice[T]) returns bool
-        not equals(other)
+    {
+        guard length <> other.length
+            return true
+        let a_bytes data as pointer[u8]
+        let b_bytes other.data as pointer[u8]
+        let n length * sizeof T
+        var i: size_t 0
+        while i < n
+        {
+            guard *(a_bytes + i) <> *(b_bytes + i)
+                return true
+            set i: i + 1
+        }
+        false
+    }
 
     ; Check if starts with prefix
     function starts_with(this, prefix: Slice[T]) returns bool

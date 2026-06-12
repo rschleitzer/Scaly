@@ -29,7 +29,7 @@ define String (data: pointer[u8](null))
         ; Over-allocate by 1 byte so c_data() is safely null-terminated for
         ; C APIs. Keeps the logical content length unchanged.
         set data: page.allocate(overall_length + (1 as size_t), 1) as pointer[u8]
-        memcpy(data, length_array, counter + (1 as size_t))
+        memcpy(data as pointer[void], length_array as pointer[void], counter + (1 as size_t))
         set *(data + overall_length): (0 as u8)
     }
 
@@ -55,7 +55,7 @@ define String (data: pointer[u8](null))
         set *(length_array + counter): rest as u8
         let overall_length counter + (1 as size_t) + length
         set data: page.allocate(overall_length + (1 as size_t), 1) as pointer[u8]
-        memcpy(data, length_array, counter + (1 as size_t))
+        memcpy(data as pointer[void], length_array as pointer[void], counter + (1 as size_t))
         memcpy((data + counter + (1 as size_t)) as pointer[void], other, length)
         set *(data + overall_length): (0 as u8)
     }
@@ -77,7 +77,7 @@ define String (data: pointer[u8](null))
         set *(length_array + counter): rest as u8
         let overall_length counter + (1 as size_t) + other.length
         set data: page.allocate(overall_length + (1 as size_t), 1) as pointer[u8]
-        memcpy(data, length_array, counter + (1 as size_t))
+        memcpy(data as pointer[void], length_array as pointer[void], counter + (1 as size_t))
         guard other.length > 0
             memcpy((data + counter + (1 as size_t)) as pointer[void], other.data, other.length)
         set *(data + overall_length): (0 as u8)
@@ -107,7 +107,7 @@ define String (data: pointer[u8](null))
         set *(length_array + counter): rest as u8
         let overall_length counter + (1 as size_t) + length
         set data: page.allocate(overall_length + (1 as size_t), 1) as pointer[u8]
-        memcpy(data, length_array, counter + (1 as size_t))
+        memcpy(data as pointer[void], length_array as pointer[void], counter + (1 as size_t))
         memcpy((data + counter + (1 as size_t)) as pointer[void], c_string, length)
         set *(data + overall_length): (0 as u8)
     }

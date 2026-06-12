@@ -9248,8 +9248,13 @@ function test() returns int
             guard emit_result = false
                 return 112
 
-            ; Verify the function was emitted
-            let answer_fn LLVMGetNamedFunction(emitter.llvm_module, String$("_Z6answerv").c_data())
+            ; Verify the function was emitted. Bind module and name to
+            ; locals first: the `emitter.llvm_module` member-access arg +
+            ; `String$(...).c_data()` ctor-chain arg shape is unresolvable
+            ; by stage-1's planner and the call silently dropped (s185).
+            let test_mod emitter.llvm_module
+            var answer_name String$("_Z6answerv")
+            let answer_fn LLVMGetNamedFunction(test_mod, answer_name.c_data())
             guard answer_fn.handle = null
                 return 113
 
@@ -9354,7 +9359,10 @@ function test() returns int
                 return 162
 
             ; Verify double function was emitted
-            let double_fn LLVMGetNamedFunction(emitter.llvm_module, String$("_Z6doublei").c_data())
+            ; Locals-first call shape — same s185 rationale as test 110.
+            let test_mod2 emitter.llvm_module
+            var double_name String$("_Z6doublei")
+            let double_fn LLVMGetNamedFunction(test_mod2, double_name.c_data())
             guard double_fn.handle = null
                 return 163
 
@@ -9419,7 +9427,10 @@ function test() returns int
                 return 192
 
             ; Verify unwrap function was emitted
-            let unwrap_fn LLVMGetNamedFunction(emitter.llvm_module, String$("_Z6unwrap6Option").c_data())
+            ; Locals-first call shape — same s185 rationale as test 110.
+            let test_mod3 emitter.llvm_module
+            var unwrap_name String$("_Z6unwrap6Option")
+            let unwrap_fn LLVMGetNamedFunction(test_mod3, unwrap_name.c_data())
             guard unwrap_fn.handle = null
                 return 193
 

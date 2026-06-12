@@ -334,6 +334,16 @@ define cli
             return 4
         }
 
+        ; s185 (roadmap Step C): hard diagnostics — constructs the
+        ; planner could not resolve and the emitter would silently
+        ; drop. Print each with file:line:col and fail the compile,
+        ; mirroring stage-0's error behavior.
+        guard planner.has_diagnostics()
+        {
+            cli.print_diagnostics#(&planner, opts.input_file, source)
+            return 4
+        }
+
         guard opts.verbose
             Console.println("Planning completed successfully")
 
@@ -506,6 +516,86 @@ define cli
             }
             set i: i + 1
         }
+    }
+
+    ; Print hard planner diagnostics in stage-0's error format:
+    ;     <file>:<line>:<col>: error: <message>
+    ; Line/col are computed by walking the main source text up to the
+    ; recorded byte offset (mirrors stage-0 calculatePosition). NOTE:
+    ; offsets of constructs from other modules of the package are
+    ; attributed to the main input file — single-file accuracy first.
+    function print_diagnostics#(planner: ref[Planner.Planner], file_path: String, source: String)
+    {
+        var di: size_t 0
+        while di < planner.diagnostics.length
+        {
+            let d_ptr planner.diagnostics.get(di)
+            guard d_ptr <> null
+            {
+                var line: size_t 1
+                var col: size_t 1
+                let src_len source.get_length()
+                var target d_ptr.start
+                guard target > src_len
+                    set target: src_len
+                var off: size_t 0
+                while off < target
+                {
+                    ; Numeric LF compare: `"\n" as char` compiles to a
+                    ; never-true comparison under stage-1 (escape handling
+                    ; in char-cast literals); 10 works in every stage.
+                    let c source.get(off)
+                    if c = (10 as char)
+                    {
+                        set line: line + 1
+                        set col: 1
+                    }
+                    else
+                    {
+                        set col: col + 1
+                    }
+                    set off: off + 1
+                }
+                var msg StringBuilder#()
+                msg.append(file_path)
+                msg.append(":")
+                msg.append(cli.format_size#(line))
+                msg.append(":")
+                msg.append(cli.format_size#(col))
+                msg.append(": error: ")
+                msg.append(d_ptr.message)
+                let msg_str msg.to_string#()
+                Console.println(msg_str.to_c_string#())
+            }
+            set di: di + 1
+        }
+    }
+
+    ; Decimal formatting for diagnostics. Local mirror of
+    ; Planner.size_to_string to avoid cross-namespace call resolution
+    ; risk under stage-1.
+    function format_size#(n: size_t) returns String
+    {
+        guard n = 0
+            return String#("0")
+        var value n
+        var digits Array[char]$()
+        while value > 0
+        {
+            let digit ((value % 10) as char) + 48 as char
+            digits.add(digit)
+            set value: value / 10
+        }
+        var sb StringBuilder#()
+        var i digits.length
+        while i > 0
+        {
+            set i: i - 1
+            let d digits.get(i)
+            guard d <> null
+                sb.append(*d)
+        }
+        sb.to_string#()
     }
 
     function extract_program_name#(file_path: String) returns String
