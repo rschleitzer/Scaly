@@ -3262,7 +3262,7 @@ define Emitter
                     String$("void"),
                     String$("v"),
                     null,
-                    scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.UnspecifiedLifetime()),
+                    scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.Unspecified()),
                     null,
                     String$(""),
                     null
