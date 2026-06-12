@@ -3569,7 +3569,35 @@ define Emitter
                 ; ^name: page is the named local variable.
                 let nv lookup_variable(ref_name)
                 guard nv.handle <> null
-                    set page_arg: nv
+                {
+                    var page_val LLVMValueRef(nv.handle)
+                    guard ref_name.equals(String$("this"))
+                    {
+                        ; ^this: the receiver is an object pointer, not a
+                        ; pointer[Page] — wrap it in Page.get(this). Mirrors
+                        ; stage-0's planner (Planner.cpp generatePageGetThis),
+                        ; which plans Page.get(this) as the page operand.
+                        ; Without this, the object pointer is passed as the
+                        ; Page* receiver and Page.allocate returns garbage.
+                        var get_fn lookup_function_cache(String$("_Z3getPv"))
+                        guard get_fn.handle = null
+                            set get_fn: LLVMGetNamedFunction(llvm_module, "_Z3getPv")
+                        let ptr_ty LLVMPointerTypeInContext(context, 0)
+                        var get_param_tys Vector[LLVMTypeRef]#(1)
+                        get_param_tys.put(0, ptr_ty)
+                        let get_fn_ty LLVMFunctionType(ptr_ty, get_param_tys.data, 1, 0)
+                        guard get_fn.handle = null
+                        {
+                            set get_fn: LLVMAddFunction(llvm_module, "_Z3getPv", get_fn_ty)
+                            LLVMSetLinkage(get_fn, LLVMLinkage.External())
+                            cache_function(String$("_Z3getPv"), get_fn)
+                        }
+                        var get_args Vector[LLVMValueRef]#(1)
+                        get_args.put(0, page_val)
+                        set page_val: LLVMBuildCall2(builder, get_fn_ty, get_fn, get_args.data, 1, "own_page")
+                    }
+                    set page_arg: page_val
+                }
             }
             guard has_ref_name = false
             {
@@ -5273,9 +5301,32 @@ define Emitter
                     set page_var_name: r.location
                 else
                     0
-            let page_val lookup_variable(page_var_name)
-            guard page_val.handle <> null
+            let page_val_raw lookup_variable(page_var_name)
+            guard page_val_raw.handle <> null
             {
+                var page_val LLVMValueRef(page_val_raw.handle)
+                guard page_var_name.equals(String$("this"))
+                {
+                    ; ^this: the receiver is an object pointer, not a
+                    ; pointer[Page] — wrap it in Page.get(this). Mirrors
+                    ; stage-0's planner (Planner.cpp generatePageGetThis).
+                    var get_fn lookup_function_cache(String$("_Z3getPv"))
+                    guard get_fn.handle = null
+                        set get_fn: LLVMGetNamedFunction(llvm_module, "_Z3getPv")
+                    let get_ptr_ty LLVMPointerTypeInContext(context, 0)
+                    var get_param_tys Vector[LLVMTypeRef]#(1)
+                    get_param_tys.put(0, get_ptr_ty)
+                    let get_fn_ty LLVMFunctionType(get_ptr_ty, get_param_tys.data, 1, 0)
+                    guard get_fn.handle = null
+                    {
+                        set get_fn: LLVMAddFunction(llvm_module, "_Z3getPv", get_fn_ty)
+                        LLVMSetLinkage(get_fn, LLVMLinkage.External())
+                        cache_function(String$("_Z3getPv"), get_fn)
+                    }
+                    var get_args Vector[LLVMValueRef]#(1)
+                    get_args.put(0, page_val)
+                    set page_val: LLVMBuildCall2(builder, get_fn_ty, get_fn, get_args.data, 1, "own_page")
+                }
                 var alloc_func lookup_function_cache(String$("_ZN4Page8allocateEmm"))
                 guard alloc_func.handle = null
                     set alloc_func: LLVMGetNamedFunction(llvm_module, "_ZN4Page8allocateEmm")
