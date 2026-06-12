@@ -41,7 +41,10 @@ define Array[T]
     {
         set length: 0
         set vector: null
-        let exclusive_page (*scaly.memory.Page.get(this as pointer[void])).allocate_exclusive_page()
+        ; Two-step form (same as reallocate): stage-1's planner drops the
+        ; chained `(*Page.get(this)).allocate_exclusive_page()` shape.
+        let own_page Page.get(this as pointer[void])
+        let exclusive_page own_page.allocate_exclusive_page()
         set vector: Vector[T]^exclusive_page(size)
     }
 
