@@ -265,7 +265,7 @@ define lexer
                     guard length = 0
                         return Token.Invalid(InvalidToken())
 
-                    return Token.Identifier(IdentifierToken(String#(start, length)))
+                    return Token.Identifier(IdentifierToken(String^this(start, length)))
                 }
 
                 let c *current
@@ -275,7 +275,7 @@ define lexer
                     set length: length + 1
                 }
                 else
-                    return Token.Identifier(IdentifierToken(String#(start, length)))
+                    return Token.Identifier(IdentifierToken(String^this(start, length)))
             }
         }
 
@@ -291,7 +291,7 @@ define lexer
                     guard length = 0
                         return Token.Invalid(InvalidToken())
 
-                    return Token.Attribute(AttributeToken(String#(start, length)))
+                    return Token.Attribute(AttributeToken(String^this(start, length)))
                 }
 
                 let c *current
@@ -301,7 +301,7 @@ define lexer
                     set length: length + 1
                 }
                 else
-                    return Token.Attribute(AttributeToken(String#(start, length)))
+                    return Token.Attribute(AttributeToken(String^this(start, length)))
             }
         }
 
@@ -320,7 +320,7 @@ define lexer
                     guard length = 1
                         return Token.Invalid(InvalidToken())
 
-                    return Token.Identifier(IdentifierToken(String#(start, length)))
+                    return Token.Identifier(IdentifierToken(String^this(start, length)))
                 }
 
                 let c *current
@@ -328,7 +328,7 @@ define lexer
                 if (c = 43) || (c = 45) || (c = 42) || (c = 47) || (c = 61) || (c = 37) || (c = 38) || (c = 124) || (c = 94) || (c = 126) || (c = 60) || (c = 62)
                     continue
                 else
-                    return Token.Identifier(IdentifierToken(String#(start, length)))
+                    return Token.Identifier(IdentifierToken(String^this(start, length)))
             }
         }
 
@@ -350,7 +350,7 @@ define lexer
                 guard c = 34  ; '"' - end of string
                 {
                     read_character()
-                    return Token.Literal(LiteralToken(Literal.String(StringLiteral(String#(start, length - 1)))))
+                    return Token.Literal(LiteralToken(Literal.String(StringLiteral(String^this(start, length - 1)))))
                 }
 
                 guard c = 92  ; '\\' - escape sequence
@@ -408,7 +408,7 @@ define lexer
                 guard c = 39  ; '\'' - end of string identifier
                 {
                     read_character()
-                    return Token.Identifier(IdentifierToken(String#(start, length - 1)))
+                    return Token.Identifier(IdentifierToken(String^this(start, length - 1)))
                 }
 
                 guard c = 92  ; '\\' - escape sequence
@@ -465,7 +465,7 @@ define lexer
                 guard c = 96  ; '`' - end of fragment
                 {
                     read_character()
-                    return Token.Literal(LiteralToken(Literal.Fragment(FragmentLiteral(String#(start, length - 1)))))
+                    return Token.Literal(LiteralToken(Literal.Fragment(FragmentLiteral(String^this(start, length - 1)))))
                 }
 
                 guard c = 92  ; '\\' - escape sequence
@@ -494,7 +494,7 @@ define lexer
             set length: length + 1
 
             guard current = null
-                return Token.Literal(LiteralToken(Literal.Integer(IntegerLiteral(String#(start, length)))))
+                return Token.Literal(LiteralToken(Literal.Integer(IntegerLiteral(String^this(start, length)))))
 
             let c *current
 
@@ -513,7 +513,7 @@ define lexer
             guard c = 66  ; 'B'
                 return scan_boolean_literal()
 
-            return Token.Literal(LiteralToken(Literal.Integer(IntegerLiteral(String#(start, length)))))
+            return Token.Literal(LiteralToken(Literal.Integer(IntegerLiteral(String^this(start, length)))))
         }
 
         procedure scan_integer_literal(this, start: pointer[char], initial_length: size_t) returns Token
@@ -526,7 +526,7 @@ define lexer
                 set length: length + 1
 
                 guard current = null
-                    return Token.Literal(LiteralToken(Literal.Integer(IntegerLiteral(String#(start, length)))))
+                    return Token.Literal(LiteralToken(Literal.Integer(IntegerLiteral(String^this(start, length)))))
 
                 let c *current
 
@@ -539,7 +539,7 @@ define lexer
                 guard (c = 69) || (c = 101)  ; 'E' or 'e'
                     return scan_exponent(start, length)
 
-                return Token.Literal(LiteralToken(Literal.Integer(IntegerLiteral(String#(start, length)))))
+                return Token.Literal(LiteralToken(Literal.Integer(IntegerLiteral(String^this(start, length)))))
             }
         }
 
@@ -553,7 +553,7 @@ define lexer
                 set length: length + 1
 
                 guard current = null
-                    return Token.Literal(LiteralToken(Literal.FloatingPoint(FloatingPointLiteral(String#(start, length)))))
+                    return Token.Literal(LiteralToken(Literal.FloatingPoint(FloatingPointLiteral(String^this(start, length)))))
 
                 let c *current
 
@@ -563,7 +563,7 @@ define lexer
                 guard (c = 69) || (c = 101)  ; 'E' or 'e'
                     return scan_exponent(start, length)
 
-                return Token.Literal(LiteralToken(Literal.FloatingPoint(FloatingPointLiteral(String#(start, length)))))
+                return Token.Literal(LiteralToken(Literal.FloatingPoint(FloatingPointLiteral(String^this(start, length)))))
             }
         }
 
@@ -577,14 +577,14 @@ define lexer
                 set length: length + 1
 
                 guard current = null
-                    return Token.Literal(LiteralToken(Literal.FloatingPoint(FloatingPointLiteral(String#(start, length)))))
+                    return Token.Literal(LiteralToken(Literal.FloatingPoint(FloatingPointLiteral(String^this(start, length)))))
 
                 let c *current
 
                 guard (c >= 48) && (c <= 57)  ; '0'-'9'
                     continue
 
-                return Token.Literal(LiteralToken(Literal.FloatingPoint(FloatingPointLiteral(String#(start, length)))))
+                return Token.Literal(LiteralToken(Literal.FloatingPoint(FloatingPointLiteral(String^this(start, length)))))
             }
         }
 
@@ -598,14 +598,14 @@ define lexer
                 set length: length + 1
 
                 guard current = null
-                    return Token.Literal(LiteralToken(Literal.Hex(HexLiteral(String#(start, length)))))
+                    return Token.Literal(LiteralToken(Literal.Hex(HexLiteral(String^this(start, length)))))
 
                 let c *current
 
                 guard ((c >= 48) && (c <= 57)) || ((c >= 65) && (c <= 70)) || ((c >= 97) && (c <= 102))
                     continue
 
-                return Token.Literal(LiteralToken(Literal.Hex(HexLiteral(String#(start, length)))))
+                return Token.Literal(LiteralToken(Literal.Hex(HexLiteral(String^this(start, length)))))
             }
         }
 
@@ -887,7 +887,7 @@ define lexer
     {
         ; Test 1: Empty input
         {
-            var lexer Lexer(String$(""))
+            var lexer Lexer$(String$(""))
             choose lexer.token
                 when e: Empty {}
                 else
@@ -899,7 +899,7 @@ define lexer
 
         ; Test 2: Identifier
         {
-            var lexer Lexer(String$("abc_123"))
+            var lexer Lexer$(String$("abc_123"))
             lexer.advance$()
             choose lexer.token
                 when ident: Identifier
@@ -914,7 +914,7 @@ define lexer
 
         ; Test 3: Integer literal
         {
-            var lexer Lexer(String$("42"))
+            var lexer Lexer$(String$("42"))
             lexer.advance$()
             choose lexer.token
                 when lit: Literal
@@ -935,7 +935,7 @@ define lexer
 
         ; Test 4: Colon from newline
         {
-            var lexer Lexer(String$("a\nb"))
+            var lexer Lexer$(String$("a\nb"))
             lexer.advance$()  ; 'a'
             lexer.advance$()  ; newline -> colon
             choose lexer.token
@@ -946,7 +946,7 @@ define lexer
 
         ; Test 5: Single-line comment (doesn't swallow newline)
         {
-            var lexer Lexer(String$("a;comment\nb"))
+            var lexer Lexer$(String$("a;comment\nb"))
             lexer.advance$()  ; 'a'
             lexer.advance$()  ; newline -> colon (comment skipped)
             choose lexer.token
@@ -979,7 +979,7 @@ define lexer
 
         ; Test 6: String literal
         {
-            var lexer Lexer(String$("\"hello\""))
+            var lexer Lexer$(String$("\"hello\""))
             lexer.advance$()
             choose lexer.token
                 when lit: Literal
@@ -1000,7 +1000,7 @@ define lexer
 
         ; Test 7: Freeform identifier (single quotes)
         {
-            var lexer Lexer(String$("'my identifier'"))
+            var lexer Lexer$(String$("'my identifier'"))
             lexer.advance$()
             choose lexer.token
                 when ident: Identifier
@@ -1015,7 +1015,7 @@ define lexer
 
         ; Test 8: Hex literal
         {
-            var lexer Lexer(String$("0xABcd"))
+            var lexer Lexer$(String$("0xABcd"))
             lexer.advance$()
             choose lexer.token
                 when lit: Literal
@@ -1036,7 +1036,7 @@ define lexer
 
         ; Test 9: Boolean literal
         {
-            var lexer Lexer(String$("0B1"))
+            var lexer Lexer$(String$("0B1"))
             lexer.advance$()
             choose lexer.token
                 when lit: Literal
@@ -1057,7 +1057,7 @@ define lexer
 
         ; Test 10: Floating point
         {
-            var lexer Lexer(String$("3.14"))
+            var lexer Lexer$(String$("3.14"))
             lexer.advance$()
             choose lexer.token
                 when lit: Literal
@@ -1078,7 +1078,7 @@ define lexer
 
         ; Test 11: Operator
         {
-            var lexer Lexer(String$("<>"))
+            var lexer Lexer$(String$("<>"))
             lexer.advance$()
             choose lexer.token
                 when ident: Identifier
@@ -1093,7 +1093,7 @@ define lexer
 
         ; Test 12: Attribute
         {
-            var lexer Lexer(String$("@summary"))
+            var lexer Lexer$(String$("@summary"))
             lexer.advance$()
             choose lexer.token
                 when attr: Attribute
@@ -1108,7 +1108,7 @@ define lexer
 
         ; Test 13: Multi-line comment
         {
-            var lexer Lexer(String$(";* comment *;x"))
+            var lexer Lexer$(String$(";* comment *;x"))
             lexer.advance$()
             choose lexer.token
                 when ident: Identifier

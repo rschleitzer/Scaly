@@ -347,6 +347,12 @@ define String (data: pointer[u8](null))
 
     function hash(this: String) returns size_t
     {
+        ; Empty strings (data null) are legal and must hash like a
+        ; zero-length buffer — equals() treats them as equal to any
+        ; other empty string, so the hashes must agree too.
+        guard data = null
+            return hashing.hash(null as pointer[char], 0)
+
         var length: size_t 0
         var bit_count: size_t 0
         var index: size_t 0
