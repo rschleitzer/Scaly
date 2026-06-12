@@ -154,26 +154,21 @@ define Parser
 "
     function parse_"(downcase-string (id syntax))"_list#(rp, this: Parser) returns ref[Vector["(id syntax)"Syntax]]? throws ParserError
     {
-        var list List["(id syntax)"Syntax]$()
-        while true
+        var acc List["(id syntax)"Syntax]$()
+        var parsing: bool true
+        while parsing
         {
             choose parse_"(downcase-string (id syntax))"#()
                 when err: Error
                 {
-                    choose err
-                        when i: Invalid
-                            throw ParserError.Invalid(i)
-                        when d: Different
-                        {
-                            if list.head = null
-                                throw ParserError.Different(d)
-                            else
-                                return Vector["(id syntax)"Syntax]#(list)
-                        }
+                    guard acc.head = null
+                        throw err
+                    set parsing: false
                 }
                 when node: Success
-                    list.add$(node)
+                    acc.add(node)
         }
+        Vector["(id syntax)"Syntax]#(acc)
     }
 "       ) "")
 "
