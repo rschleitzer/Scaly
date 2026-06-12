@@ -6795,6 +6795,56 @@ define Planner
                     guard total > start
                     {
                         let suffix canonical_name.substring(rp, start, total - start)
+                        ; s182: Namespace-function pattern. A dotted name
+                        ; like `NS.Thing` where the prefix is a Namespace
+                        ; concept declaring a FUNCTION named `Thing` must
+                        ; KEEP its dotted form. Canonicalizing to the bare
+                        ; suffix whenever the function name collides with
+                        ; a registered concept (the s179 class:
+                        ; `LLVMTypeKind.Array()` planned as a zero-init
+                        ; `Array` construction, call + enclosing comparison
+                        ; silently dropped) hands the construction gate a
+                        ; false match. With the dotted form kept, the
+                        ; gate's lookup_concept misses and the dotted-call
+                        ; fallback resolves the namespace function.
+                        ; Mirrors stage-0's ordering: the qualified-call
+                        ; branch runs BEFORE the construction check
+                        ; (Planner.cpp:8604 vs 8754).
+                        var nf_keep_dotted: bool false
+                        let nf_ns_ref this.lookup_namespace_concept(
+                            canonical_name.substring(rp, 0, last_dot as size_t))
+                        guard nf_ns_ref <> null
+                        {
+                            let nf_conc (*nf_ns_ref)
+                            choose nf_conc.definition
+                                when nf_ns: Namespace
+                                {
+                                    var nf_mi: size_t 0
+                                    while nf_mi < nf_ns.members.length
+                                    {
+                                        let nf_m_ptr nf_ns.members.get(nf_mi)
+                                        guard nf_m_ptr <> null
+                                        {
+                                            let nf_mem (*nf_m_ptr)
+                                            choose nf_mem
+                                                when nff: Function
+                                                {
+                                                    guard nff.name.equals(suffix)
+                                                        set nf_keep_dotted: true
+                                                    0
+                                                }
+                                                else
+                                                    0
+                                        }
+                                        set nf_mi: nf_mi + 1
+                                    }
+                                    0
+                                }
+                                else
+                                    0
+                        }
+                        guard nf_keep_dotted
+                            return after_subst
                         guard this.has_concept(suffix)
                             set canonical_name: suffix
                     }

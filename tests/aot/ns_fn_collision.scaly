@@ -1,0 +1,23 @@
+; AOT Test: namespace function colliding with a concept name (s179/s182)
+; A zero-arg namespace function whose name equals a registered concept
+; must be planned as a CALL, not a zero-init construction of the concept.
+; Expected: 42
+
+define Thing(x: int)
+
+define NS
+{
+    function Thing() returns int { 42 }
+}
+
+function check() returns int
+{
+    guard NS.Thing() <> 42
+        return 1
+    0
+}
+
+if check() = 0
+    print("42")
+else
+    print("WRONG")
