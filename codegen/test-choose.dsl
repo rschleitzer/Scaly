@@ -1,5 +1,6 @@
 <!DOCTYPE STYLE-SHEET PUBLIC "-//James Clark//DTD DSSSL Style Sheet//EN" [
 <!ENTITY testcpp   SYSTEM "testcpp.scm">
+<!ENTITY testscaly SYSTEM "testscaly.scm">
 <!ENTITY testdoc   SYSTEM "testdoc.scm">
 <!ENTITY helpers   SYSTEM "helpers.scm">
 <!ENTITY fodeclare SYSTEM "fodeclare.scm">
@@ -11,6 +12,7 @@
 &fodeclare;
 &helpers;
 &testcpp;
+&testscaly;
 &testdoc;
 
 <![CDATA[
@@ -25,6 +27,7 @@
         (file "docs/scaly/generated-choose.xml"
             (generate-testdoc)
         )
+        (generate-selfhosted-tests "choose")
     )
 )
 ]]>
