@@ -2466,12 +2466,91 @@ define Planner
                                                                 &model_gens,
                                                                 final_life
                                                             ))
-                                                            let merged_op PlannedOperand(
+                                                            ; s184: the Matrix operand's member
+                                                            ; chain was resolved against the
+                                                            ; matrix ELEMENT type (garbage for
+                                                            ; `Option[int].None`) — re-resolve
+                                                            ; it against the merged generic
+                                                            ; type. A lone variant hop with no
+                                                            ; argument tuple following becomes
+                                                            ; a unit VariantConstruction
+                                                            ; (stage-0 Planner.cpp:9342); with
+                                                            ; a tuple it stays a Type operand
+                                                            ; carrying the resolved variant hop
+                                                            ; for the construction gate.
+                                                            var merged_op PlannedOperand(
                                                                 cp_op.loc,
                                                                 PlannedExpression.Type(merged_type),
                                                                 np_op.member_access,
                                                                 merged_type
                                                             )
+                                                            guard np_op.member_access <> null
+                                                            {
+                                                                let raw_ma (*np_op.member_access)
+                                                                guard raw_ma.length > 0
+                                                                {
+                                                                    var ma_names Vector[String]^rp(raw_ma.length)
+                                                                    var mni: size_t 0
+                                                                    while mni < raw_ma.length
+                                                                    {
+                                                                        let mn_ptr raw_ma.get(mni)
+                                                                        guard mn_ptr <> null
+                                                                            ma_names.put(mni, (*mn_ptr).name)
+                                                                        set mni: mni + 1
+                                                                    }
+                                                                    let re_chain this.resolve_member_access#(merged_type, ma_names)
+                                                                    guard re_chain.length = 1
+                                                                    {
+                                                                        let rc0_ptr re_chain.get(0)
+                                                                        guard rc0_ptr <> null
+                                                                        {
+                                                                            let rc0 (*rc0_ptr)
+                                                                            guard rc0.is_union_value
+                                                                            {
+                                                                                var next_is_tuple: bool false
+                                                                                guard ci2 + 2 < ops.length
+                                                                                {
+                                                                                    let t2_ptr ops.get(ci2 + 2)
+                                                                                    guard t2_ptr <> null
+                                                                                    {
+                                                                                        choose (*t2_ptr).expr
+                                                                                            when mt2: PlannedTuple
+                                                                                                set next_is_tuple: true
+                                                                                            else
+                                                                                                0
+                                                                                    }
+                                                                                }
+                                                                                guard next_is_tuple = false
+                                                                                {
+                                                                                    let unit_vc2 PlannedVariantConstruction(
+                                                                                        cp_op.loc,
+                                                                                        merged_type,
+                                                                                        rc0.name,
+                                                                                        rc0.field_index,
+                                                                                        null
+                                                                                    )
+                                                                                    set merged_op: PlannedOperand(
+                                                                                        cp_op.loc,
+                                                                                        PlannedExpression.VariantConstruction(unit_vc2),
+                                                                                        null,
+                                                                                        merged_type
+                                                                                    )
+                                                                                }
+                                                                                guard next_is_tuple
+                                                                                {
+                                                                                    var rh_holder Vector[PlannedMemberAccess]^rp(re_chain)
+                                                                                    set merged_op: PlannedOperand(
+                                                                                        cp_op.loc,
+                                                                                        PlannedExpression.Type(merged_type),
+                                                                                        &rh_holder,
+                                                                                        merged_type
+                                                                                    )
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
                                                             merged_arr2.add(merged_op)
                                                             set did_merge2: true
                                                         }
@@ -3108,12 +3187,50 @@ define Planner
                                     ; nothing, and the whole `set` silently
                                     ; drops — stage-2 modeled every function
                                     ; with zero parameters (_Z3addv).
-                                    set is_struct_ctor: true
-                                    choose result.expr
-                                        when t: PlannedType
-                                            set ctor_struct_type: t
-                                        else
-                                            0
+                                    ;
+                                    ; s184: generic union variant ctor —
+                                    ; `Option[int].Some(42)`. The planned
+                                    ; Type operand names the union and
+                                    ; carries the variant as its first
+                                    ; resolved member-access hop (stage-0
+                                    ; Case 2, Planner.cpp:8279). Divert to
+                                    ; the variant-ctor branch; the s172
+                                    ; copy-construction applies only when
+                                    ; no variant hop is present.
+                                    var has_variant_hop: bool false
+                                    guard result.member_access <> null
+                                    {
+                                        let vma (*result.member_access)
+                                        guard vma.length > 0
+                                        {
+                                            let vh_ptr vma.get(0)
+                                            guard vh_ptr <> null
+                                            {
+                                                let vhop (*vh_ptr)
+                                                guard vhop.is_union_value
+                                                {
+                                                    set has_variant_hop: true
+                                                    set is_variant_ctor: true
+                                                    set ctor_variant_name: vhop.name
+                                                    set ctor_variant_tag: vhop.field_index
+                                                    choose result.expr
+                                                        when t: PlannedType
+                                                            set ctor_union_type: t
+                                                        else
+                                                            0
+                                                }
+                                            }
+                                        }
+                                    }
+                                    guard has_variant_hop = false
+                                    {
+                                        set is_struct_ctor: true
+                                        choose result.expr
+                                            when t: PlannedType
+                                                set ctor_struct_type: t
+                                            else
+                                                0
+                                    }
                                 }
                                 else
                                     0
@@ -3280,12 +3397,12 @@ define Planner
                                         ctor_struct_type.life,
                                         null
                                     )
-                                    set result: PlannedOperand(
+                                    set result: this.rebind_trailing_chain#(PlannedOperand(
                                         second.loc,
                                         PlannedExpression.Call(ctor_call),
                                         second.member_access,
                                         ctor_struct_type
-                                    )
+                                    ))
                                     guard ops.length > 2
                                     {
                                         var remaining_c Array[PlannedOperand]$()
@@ -3382,12 +3499,12 @@ define Planner
                                 ctor_struct_type.life,
                                 null
                             )
-                            set result: PlannedOperand(
+                            set result: this.rebind_trailing_chain#(PlannedOperand(
                                 second.loc,
                                 PlannedExpression.Tuple(reshaped),
                                 second.member_access,
                                 ctor_struct_type
-                            )
+                            ))
                             guard ops.length > 2
                             {
                                 var remaining Array[PlannedOperand]$()
@@ -3447,12 +3564,15 @@ define Planner
                                 ctor_variant_tag,
                                 payload_holder
                             )
-                            set result: PlannedOperand(
+                            ; s184: keep a trailing member chain on the
+                            ; construction result (`Option.Some(5).value`)
+                            ; — same rule as the struct-ctor sites.
+                            set result: this.rebind_trailing_chain#(PlannedOperand(
                                 second.loc,
                                 PlannedExpression.VariantConstruction(vc),
-                                null,
+                                second.member_access,
                                 ctor_union_type
-                            )
+                            ))
                             guard ops.length > 2
                             {
                                 var remaining Array[PlannedOperand]$()
@@ -4584,6 +4704,27 @@ define Planner
                             set call_is_intrinsic: true
                         guard fn_name.equals(String$("unwrap_or"))
                             set call_is_intrinsic: true
+                        ; s184: only Option's OWN unwrap/unwrap_or are
+                        ; intrinsic. A user-defined free function named
+                        ; `unwrap` resolves via match_ref without a
+                        ; receiver and must emit as a plain call —
+                        ; marking it intrinsic routed it through
+                        ; emit_intrinsic_function, which returned null
+                        ; and silently dropped the whole statement.
+                        guard call_is_intrinsic
+                        {
+                            guard match_ref <> null
+                            {
+                                var recv_is_option: bool false
+                                guard is_method_dispatch
+                                {
+                                    guard receiver_op.result_type.name.equals(String$("Option"))
+                                        set recv_is_option: true
+                                }
+                                guard recv_is_option = false
+                                    set call_is_intrinsic: false
+                            }
+                        }
                         let call PlannedCall(
                             result.loc,
                             fn_name,
@@ -5301,6 +5442,10 @@ define Planner
                                 guard op_name.equals(String$("/"))
                                     set combined_type: result.result_type
                                 guard op_name.equals(String$("%"))
+                                    set combined_type: result.result_type
+                                guard op_name.equals(String$("div"))
+                                    set combined_type: result.result_type
+                                guard op_name.equals(String$("mod"))
                                     set combined_type: result.result_type
                                 guard op_name.equals(String$("&"))
                                     set combined_type: result.result_type
@@ -6154,6 +6299,70 @@ define Planner
             )
         }
 
+        ; s184: a construction result can carry a trailing member chain
+        ; (`Point(3, 4).x`). The construction gate attaches the chain raw
+        ; and keeps result_type = the struct type, so plan_tuple's
+        ; single-component lift typed the whole group as the struct and
+        ; emit_tuple rebuilt the struct from the extracted field. Resolve
+        ; the hops against the operand's result type and rewrite chain +
+        ; result_type when every hop resolves as a property — the same
+        ; rule as the s175 call-branch fix. Returns the operand
+        ; unchanged when the chain is absent or not all-property.
+        function rebind_trailing_chain#(
+            rp,
+            this: Planner,
+            operand: PlannedOperand
+        ) returns PlannedOperand
+        {
+            guard operand.member_access = null
+                return operand
+            let tail_ma (*operand.member_access)
+            guard tail_ma.length = 0
+                return operand
+            var tail_names Vector[String]^rp(tail_ma.length)
+            var tni: size_t 0
+            while tni < tail_ma.length
+            {
+                let tn_ptr tail_ma.get(tni)
+                guard tn_ptr <> null
+                    tail_names.put(tni, (*tn_ptr).name)
+                set tni: tni + 1
+            }
+            let tail_chain this.resolve_member_access#(operand.result_type, tail_names)
+            var all_props: bool false
+            guard tail_chain.length > 0
+                set all_props: true
+            var tci: size_t 0
+            while tci < tail_chain.length
+            {
+                let tc_ptr tail_chain.get(tci)
+                guard tc_ptr = null
+                    set all_props: false
+                guard tc_ptr <> null
+                {
+                    let tc (*tc_ptr)
+                    guard tc.is_method
+                        set all_props: false
+                    guard tc.result_type.name.equals(String$("void"))
+                        set all_props: false
+                }
+                set tci: tci + 1
+            }
+            guard all_props = false
+                return operand
+            var tail_holder Vector[PlannedMemberAccess]^rp(tail_chain)
+            var tail_final: PlannedType operand.result_type
+            let tl_ptr tail_chain.get(tail_chain.length - 1)
+            guard tl_ptr <> null
+                set tail_final: (*tl_ptr).result_type
+            PlannedOperand(
+                operand.loc,
+                operand.expr,
+                &tail_holder,
+                tail_final
+            )
+        }
+
         ; ================================================================
         ; resolve_member_access: walk a chain of member names against
         ; `base_type`, producing a PlannedMemberAccess for each hop.
@@ -6242,6 +6451,12 @@ define Planner
                     guard m.equals(String$("is_some"))
                         set m_is_opt_method: true
                     guard m.equals(String$("is_none"))
+                        set m_is_opt_method: true
+                    ; s184: variant names resolve on the union itself
+                    ; (`Option[int].None` after the generic merge) —
+                    ; unwrapping would look "None" up on the payload
+                    ; type and produce a void placeholder hop.
+                    guard this.lookup_variant_tag(lookup_type.name, m) >= 0
                         set m_is_opt_method: true
                     guard m_is_opt_method = false
                     {
@@ -8270,9 +8485,40 @@ define Planner
 
             guard union_type.name.equals("void") = false
             {
+                ; s184: bind the union's generic parameters to the
+                ; scrutinee's generic args before planning the payload
+                ; type — `when v: Some` over Option[int] must type v as
+                ; int, not T (which maps to ptr and drops the implicit
+                ; return). Same pattern as the s81 ctor-diversion site.
+                let saved_subst_when type_substitutions.length
+                guard union_type.generics <> null
+                {
+                    let wgens (*union_type.generics)
+                    let wconc_ref this.lookup_concept(union_type.name)
+                    guard wconc_ref <> null
+                    {
+                        let wconc (*wconc_ref)
+                        var wpi: size_t 0
+                        while wpi < wconc.parameters.length
+                        {
+                            guard wpi < wgens.length
+                            {
+                                let wp_ptr wconc.parameters.get(wpi)
+                                let wg_ptr wgens.get(wpi)
+                                guard wp_ptr <> null
+                                {
+                                    guard wg_ptr <> null
+                                        this.define_type_substitution(wp_ptr.name, (*wg_ptr))
+                                }
+                            }
+                            set wpi: wpi + 1
+                        }
+                    }
+                }
                 let payload_ref this.lookup_variant_type#(
                     union_type.name, variant_name
                 )
+                set type_substitutions.length: saved_subst_when
                 guard payload_ref <> null
                 {
                     set binding_ty: (*payload_ref)
@@ -8713,6 +8959,19 @@ define Planner
                                     set should_collapse: true
                                 when i: PlannedIs
                                     set should_collapse: true
+                                when tp: PlannedTuple
+                                {
+                                    ; Call/construction shape: a Tuple at
+                                    ; k>=1 is an argument list following a
+                                    ; callee/concept (`f(x)`, `Point(3, 4)`,
+                                    ; `abs (- 5)`). Without collapse the
+                                    ; grouped form `(f(x))` keeps the raw
+                                    ; 2-operand sequence and emit_tuple's
+                                    ; grouping shortcut emits only the
+                                    ; callee operand — the whole statement
+                                    ; silently drops.
+                                    set should_collapse: true
+                                }
                                 when ty: PlannedType
                                 {
                                     ; s90: binary operator at k>=1 (e.g.
@@ -8732,6 +8991,13 @@ define Planner
                                     ; (unconditional collapse on every
                                     ; component value).
                                     guard Planner.is_operator_name(ty.name)
+                                        set should_collapse: true
+                                    ; Named infix operators (`div`, `mod`)
+                                    ; are not operator-shaped names, but a
+                                    ; name WITH a precedence at k>=1 sits in
+                                    ; operator position — collapse so the
+                                    ; binary loop can build the call.
+                                    guard Planner.get_operator_precedence(ty.name) > 0
                                         set should_collapse: true
                                 }
                                 else
@@ -8765,6 +9031,42 @@ define Planner
                         }
                     }
                     set mc: mc + 1
+                }
+            }
+            ; s184: generic-argument shape — a bare Type followed by a
+            ; Matrix (`Option[int].None` as a lone argument). Collapse
+            ; runs the s107 [Type, Matrix] merge; without it the raw
+            ; pair reaches emit_tuple, which emits only the bare Type
+            ; operand and the statement silently drops.
+            guard should_collapse = false
+            {
+                guard planned_value.length > 1
+                {
+                    let g0_ptr planned_value.get(0)
+                    let g1_ptr planned_value.get(1)
+                    guard g0_ptr <> null
+                    {
+                        guard g1_ptr <> null
+                        {
+                            var g0_bare_type: bool false
+                            choose (*g0_ptr).expr
+                                when g0t: PlannedType
+                                {
+                                    guard g0t.generics = null
+                                        set g0_bare_type: true
+                                }
+                                else
+                                    0
+                            guard g0_bare_type
+                            {
+                                choose (*g1_ptr).expr
+                                    when g1m: scalyc.compiler.Plan.PlannedMatrix
+                                        set should_collapse: true
+                                    else
+                                        0
+                            }
+                        }
+                    }
                 }
             }
             var value_holder Vector[PlannedOperand]^rp(planned_value)
@@ -9125,6 +9427,91 @@ define Planner
         }
 
         ; plan_operands: batch plan_operand over a Vector.
+        ; s184: unit variant referenced without an argument tuple —
+        ; `Option.None` as a value. Mirrors stage-0's planOperands
+        ; Case 3 (Planner.cpp:8376-8419): a two-segment name whose
+        ; first segment is a registered union and whose second a
+        ; payload-less variant plans as a PlannedVariantConstruction
+        ; with no value. Returns null when the shape doesn't match so
+        ; the caller falls back to plan_operand#. Locals win — a
+        ; shadowing local binding disqualifies the union lookup.
+        function try_plan_unit_variant#(
+            rp,
+            this: Planner,
+            t: Type,
+            loc: Span
+        ) returns ref[PlannedOperand]?
+        {
+            guard t.name.length <> 2
+                return null
+            let u_ptr t.name.get(0)
+            let v_ptr t.name.get(1)
+            guard u_ptr = null
+                return null
+            guard v_ptr = null
+                return null
+            let union_name (*u_ptr)
+            let variant_name (*v_ptr)
+            guard this.lookup_local_binding(union_name) <> null
+                return null
+            let uconc_ref this.lookup_concept(union_name)
+            guard uconc_ref = null
+                return null
+            let uconc (*uconc_ref)
+            var unit_variant: bool false
+            choose uconc.definition
+                when uvd: scalyc.compiler.Model.Union
+                {
+                    var uvi: size_t 0
+                    while uvi < uvd.variants.length
+                    {
+                        let var_ptr uvd.variants.get(uvi)
+                        guard var_ptr <> null
+                        {
+                            let var_def (*var_ptr)
+                            guard var_def.name.equals(variant_name)
+                            {
+                                guard var_def.type = null
+                                    set unit_variant: true
+                            }
+                        }
+                        set uvi: uvi + 1
+                    }
+                }
+                else
+                    0
+            guard unit_variant = false
+                return null
+            let unit_tag this.lookup_variant_tag(union_name, variant_name)
+            guard unit_tag < 0
+                return null
+            let unit_union_ty PlannedType(
+                loc,
+                union_name,
+                Planner.mangle_structure#(union_name, null),
+                null,
+                Lifetime.Unspecified(Unspecified()),
+                null,
+                String^rp(""),
+                null
+            )
+            let unit_vc PlannedVariantConstruction(
+                loc,
+                unit_union_ty,
+                variant_name,
+                unit_tag as size_t,
+                null
+            )
+            var holder Vector[PlannedOperand]^rp(1)
+            holder.put(0, PlannedOperand(
+                loc,
+                PlannedExpression.VariantConstruction(unit_vc),
+                null,
+                unit_union_ty
+            ))
+            holder.get(0)
+        }
+
         function plan_operands#(
             rp,
             this: Planner,
@@ -9139,8 +9526,45 @@ define Planner
                 guard op_ptr <> null
                 {
                     let op (*op_ptr)
-                    let pl this.plan_operand#(op)
-                    result.put(i, pl)
+                    ; s184 unit-variant lookahead: only a Type operand
+                    ; NOT followed by an argument Tuple and carrying no
+                    ; member chain qualifies — `Union.Unit()` (with
+                    ; parens) must keep flowing through the collapse
+                    ; construction gate as [Type, Tuple].
+                    var unit_ref: ref[PlannedOperand]? null
+                    guard op.member_access = null
+                    {
+                        var followed_by_tuple: bool false
+                        guard i + 1 < ops.length
+                        {
+                            let next_ptr ops.get(i + 1)
+                            guard next_ptr <> null
+                            {
+                                choose (*next_ptr).expression
+                                    when nt: Tuple
+                                        set followed_by_tuple: true
+                                    else
+                                        0
+                            }
+                        }
+                        guard followed_by_tuple = false
+                        {
+                            choose op.expression
+                                when uty: Type
+                                    set unit_ref: this.try_plan_unit_variant#(uty, op.span)
+                                else
+                                    0
+                        }
+                    }
+                    guard unit_ref <> null
+                    {
+                        result.put(i, (*unit_ref))
+                    }
+                    guard unit_ref = null
+                    {
+                        let pl this.plan_operand#(op)
+                        result.put(i, pl)
+                    }
                 }
                 set i: i + 1
             }

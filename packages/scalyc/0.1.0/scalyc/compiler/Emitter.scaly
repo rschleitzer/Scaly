@@ -107,6 +107,7 @@ use scaly.compiler.LLVM.LLVMBuildRet
 use scaly.compiler.LLVM.LLVMBuildRetVoid
 use scaly.compiler.LLVM.LLVMBuildSDiv
 use scaly.compiler.LLVM.LLVMBuildSRem
+use scaly.compiler.LLVM.LLVMBuildSelect
 use scaly.compiler.LLVM.LLVMBuildShl
 use scaly.compiler.LLVM.LLVMBuildStore
 use scaly.compiler.LLVM.LLVMBuildStructGEP2
@@ -4630,6 +4631,25 @@ define Emitter
         guard op_name.equals(String$("+"))
             return op
 
+        ; Absolute value. Stage-0 calls the llvm.abs/llvm.fabs
+        ; intrinsics (Emitter.cpp:4238); icmp/fcmp + select is
+        ; semantically equivalent (abs with is_int_min_poison=false)
+        ; and needs no intrinsic-declaration bindings.
+        guard op_name.equals(String$("abs"))
+        {
+            guard is_float
+            {
+                let fzero LLVMConstReal(ty, 0.0)
+                let fneg LLVMBuildFNeg(builder, op, "fneg")
+                let fisneg LLVMBuildFCmp(builder, LLVMRealPredicate.OLT(), op, fzero, "isneg")
+                return LLVMBuildSelect(builder, fisneg, fneg, op, "fabs")
+            }
+            let zero LLVMConstInt(ty, 0, 0)
+            let neg LLVMBuildNeg(builder, op, "neg")
+            let isneg LLVMBuildICmp(builder, LLVMIntPredicate.SLT(), op, zero, "isneg")
+            return LLVMBuildSelect(builder, isneg, neg, op, "abs")
+        }
+
         ; Logical not
         guard op_name.equals(String$("!"))
             return LLVMBuildNot(builder, op, "not")
@@ -4828,6 +4848,32 @@ define Emitter
 
         ; Modulo
         guard op_name.equals(String$("%"))
+        {
+            guard is_float
+                return LLVMBuildFRem(builder, l, r, "frem")
+
+            guard is_signed
+                return LLVMBuildSRem(builder, l, r, "srem")
+
+            return LLVMBuildURem(builder, l, r, "urem")
+        }
+
+        ; Named integer division/modulo operators. Stage-0 never
+        ; implemented these (its emitter has no handler; the test
+        ; passed by accident of operand-sequence semantics) — stage-N
+        ; lowers them like `/` and `%`.
+        guard op_name.equals(String$("div"))
+        {
+            guard is_float
+                return LLVMBuildFDiv(builder, l, r, "fdiv")
+
+            guard is_signed
+                return LLVMBuildSDiv(builder, l, r, "sdiv")
+
+            return LLVMBuildUDiv(builder, l, r, "udiv")
+        }
+
+        guard op_name.equals(String$("mod"))
         {
             guard is_float
                 return LLVMBuildFRem(builder, l, r, "frem")
@@ -7495,13 +7541,88 @@ define Emitter
 
         let union_value emit_operand(is_expr.value.unwrap())
 
-        ; Handle "is null" for optional types
+        ; Handle "is null" for optional types. NPO (compare the value
+        ; against null) only applies when the Option's payload is
+        ; pointer-like; a tag-encoded Option[int] needs a tag compare
+        ; against None (tag 1). Mirrors stage-0 Emitter.cpp:5915-5955.
         guard is_expr.is_null_check
         {
-            ; For pointer types, compare to null
+            let val_op is_expr.value.unwrap()
+            var opt_ty val_op.result_type
+            var value_is_ptr: bool false
+            guard opt_ty.name.equals(String$("pointer")) || opt_ty.name.equals(String$("ref"))
+            {
+                guard opt_ty.generics <> null
+                {
+                    let vgens (*opt_ty.generics)
+                    guard vgens.length > 0
+                    {
+                        let vip vgens.get(0)
+                        guard vip <> null
+                        {
+                            set opt_ty: (*vip)
+                            set value_is_ptr: true
+                        }
+                    }
+                }
+            }
+            var uses_npo: bool true
+            guard opt_ty.name.equals(String$("Option"))
+            {
+                guard opt_ty.generics <> null
+                {
+                    let ogens (*opt_ty.generics)
+                    guard ogens.length > 0
+                    {
+                        let oip ogens.get(0)
+                        guard oip <> null
+                        {
+                            set uses_npo: false
+                            guard (*oip).name.equals(String$("pointer"))
+                                set uses_npo: true
+                            guard (*oip).name.equals(String$("ref"))
+                                set uses_npo: true
+                        }
+                    }
+                }
+            }
+            guard uses_npo = false
+            {
+                ; Tag-encoded Option: load the tag and compare with 1
+                ; (None is the second variant after Some).
+                let i8_type_n LLVMInt8TypeInContext(context)
+                var union_llvm_type_n lookup_struct_cache(opt_ty.name)
+                guard union_llvm_type_n.handle = null
+                    set union_llvm_type_n: lookup_struct_cache(opt_ty.mangled_name)
+                guard union_llvm_type_n.handle = null
+                    set union_llvm_type_n: map_type(opt_ty)
+                guard union_llvm_type_n.handle <> null
+                {
+                    guard LLVMGetTypeKind(union_llvm_type_n) = LLVMTypeKind.Struct()
+                    {
+                        var union_ptr_n union_value
+                        guard LLVMGetTypeKind(LLVMTypeOf(union_value)) <> LLVMTypeKind.Pointer()
+                        {
+                            set union_ptr_n: entry_alloca(union_llvm_type_n, "is.union")
+                            LLVMBuildStore(builder, union_value, union_ptr_n)
+                        }
+                        let tag_ptr_n LLVMBuildStructGEP2(builder, union_llvm_type_n, union_ptr_n, 0, "is.tag.ptr")
+                        let tag_n LLVMBuildLoad2(builder, i8_type_n, tag_ptr_n, "is.tag")
+                        let expected_n LLVMConstInt(i8_type_n, 1, 0)
+                        return LLVMBuildICmp(builder, LLVMIntPredicate.EQ(), tag_n, expected_n, "is.result")
+                    }
+                }
+            }
+            ; NPO / fallback: compare the pointer value against null.
             let ptr_type LLVMPointerTypeInContext(context, 0)
+            var npo_value union_value
+            guard uses_npo
+            {
+                guard value_is_ptr
+                    set npo_value: LLVMBuildLoad2(builder, ptr_type, union_value, "option.val")
+            }
             let null_ptr LLVMConstNull(ptr_type)
-            return LLVMBuildICmp(builder, LLVMIntPredicate.EQ(), union_value, null_ptr, "is.null")
+            return LLVMBuildICmp(builder, LLVMIntPredicate.EQ(), npo_value, null_ptr, "is.null")
         }
 
         ; For union variant check: compare tag with expected variant_tag
