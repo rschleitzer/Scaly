@@ -1,5 +1,30 @@
 use scaly.memory.runtime
 
+define ArrayIterator[T]
+(
+    array: pointer[Array[T]]
+    position: size_t
+)
+{
+    init (a: pointer[Array[T]])
+    {
+        set array: a
+        set position: 0
+    }
+
+    function next(this: ArrayIterator[T]) returns pointer[T]
+    {
+        guard array = null
+            return null
+
+        guard position = array.length
+            return null
+
+        set position: position + 1
+        return array.get_buffer() + (position - 1)
+    }
+}
+
 define Array[T]
 (
     length: size_t
@@ -109,6 +134,24 @@ define Array[T]
 
         vector.data + i
     }
+
+    ; Bounds-checked element assign within the collected length (not
+    ; the capacity). Growth goes through add only — an index at or past
+    ; length is a caller bug, so it traps.
+    function put(this: Array[T], i: size_t, item: T)
+    {
+        guard i >= length
+        {
+            scaly_eputs("Array.put: index out of bounds")
+            scaly_eputnl()
+            exit(15)
+        }
+
+        set *(vector.data + i): item
+    }
+
+    function get_iterator(this: Array[T]) returns ArrayIterator[T]
+        ArrayIterator[T](this)
 
     operator [](this: Array[T], i: size_t) returns ref[T]?
     {

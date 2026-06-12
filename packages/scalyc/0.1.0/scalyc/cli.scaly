@@ -53,9 +53,9 @@ define Options
     show_help: bool
     no_prelude: bool        ; --no-prelude: skip auto-loading prelude
     error_message: String
-    library_paths: Vector[String]   ; -L<path> entries (no leading -L)
-    libraries: Vector[String]       ; -l<name> entries (no leading -l)
-    extra_objects: Vector[String]   ; positional .a / .o paths
+    library_paths: Array[String]    ; -L<path> entries (no leading -L)
+    libraries: Array[String]        ; -l<name> entries (no leading -l)
+    extra_objects: Array[String]    ; positional .a / .o paths
 )
 {
     init()
@@ -72,9 +72,9 @@ define Options
         set show_help: false
         set no_prelude: false
         set error_message: String()
-        set library_paths: Vector[String]()
-        set libraries: Vector[String]()
-        set extra_objects: Vector[String]()
+        set library_paths: Array[String]()
+        set libraries: Array[String]()
+        set extra_objects: Array[String]()
     }
 
     function has_error(this) returns bool

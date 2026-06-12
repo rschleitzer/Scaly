@@ -1163,8 +1163,9 @@ function handle_statements#(syntax: ref[Vector[StatementSyntax]]?) returns Vecto
     ; statements; it carries no value, and admitting it as a trailing void
     ; Action would clobber the block's last-value tracking. Mirrors
     ; Modeler.cpp:564-565. OperationSyntax with embedded statement-like
-    ; operands may also produce multiple Actions, so we grow via .add.
-    var result Vector[Statement]#(0)
+    ; operands may also produce multiple Actions, so the final count is
+    ; unknown — collect into an Array, freeze to a Vector at the end.
+    var result Array[Statement]$()
     var i: size_t 0
     while i < stmts.length
     {
@@ -1199,7 +1200,7 @@ function handle_statements#(syntax: ref[Vector[StatementSyntax]]?) returns Vecto
                             guard stmt_like_count > 0
                             {
                                 ; Pre-model all operands once.
-                                var all_operands Vector[Operand]#(0)
+                                var all_operands Vector[Operand]#(ops_val.length)
                                 var ai: size_t 0
                                 while ai < ops_val.length
                                 {
@@ -1208,7 +1209,7 @@ function handle_statements#(syntax: ref[Vector[StatementSyntax]]?) returns Vecto
                                     {
                                         let oe2 (*op_ptr2)
                                         let modelled handle_operand#(oe2)
-                                        all_operands.add(modelled)
+                                        all_operands.put(ai, modelled)
                                     }
                                     set ai: ai + 1
                                 }
@@ -1227,13 +1228,13 @@ function handle_statements#(syntax: ref[Vector[StatementSyntax]]?) returns Vecto
                                         guard is_statement_like_expression(oe3.expression)
                                         {
                                             let group_size bi - group_start + 1
-                                            var group_ops Vector[Operand]#(0)
+                                            var group_ops Vector[Operand]#(group_size)
                                             var gi: size_t 0
                                             while gi < group_size
                                             {
                                                 let opp all_operands.get(group_start + gi)
                                                 guard opp <> null
-                                                    group_ops.add(*opp)
+                                                    group_ops.put(gi, *opp)
                                                 set gi: gi + 1
                                             }
                                             result.add(Statement.Action(Action(group_ops, Vector[Operand]#(0))))
@@ -1246,13 +1247,13 @@ function handle_statements#(syntax: ref[Vector[StatementSyntax]]?) returns Vecto
                                 guard group_start < ops_val.length
                                 {
                                     let tail_size ops_val.length - group_start
-                                    var tail_ops Vector[Operand]#(0)
+                                    var tail_ops Vector[Operand]#(tail_size)
                                     var ti: size_t 0
                                     while ti < tail_size
                                     {
                                         let opp2 all_operands.get(group_start + ti)
                                         guard opp2 <> null
-                                            tail_ops.add(*opp2)
+                                            tail_ops.put(ti, *opp2)
                                         set ti: ti + 1
                                     }
                                     result.add(Statement.Action(Action(tail_ops, Vector[Operand]#(0))))
@@ -1277,7 +1278,7 @@ function handle_statements#(syntax: ref[Vector[StatementSyntax]]?) returns Vecto
         }
         set i: i + 1
     }
-    result
+    Vector[Statement]#(result)
 }
 
 function is_statement_like_expression(expr: ExpressionSyntax) returns bool
@@ -2041,7 +2042,7 @@ function handle_constituent#(path: String, syntax: MemberSyntax, symbols_builder
 function handle_namespace#(name: String, path: String, syntax: NamespaceSyntax, is_private: bool) returns Namespace
 {
     var symbols_builder HashMapBuilder[String, Nameable]$()
-    var modules Vector[Module]#(0)
+    var modules Array[Module]$()
     var members Vector[Member]#(0)
 
     ; `define <ns> { module foo }` resolves to <path>/<ns>/foo.scaly so
@@ -2086,7 +2087,7 @@ function handle_namespace#(name: String, path: String, syntax: NamespaceSyntax, 
 
     Namespace(
         Span(syntax.start, syntax.end),
-        modules,
+        Vector[Module]#(modules),
         members,
         symbols
     )
@@ -2335,9 +2336,9 @@ function handle_definition#(path: String, syntax: DefinitionSyntax, is_private: 
 
 ; Append a child module loaded from <path>/<name>.scaly to `modules`. The
 ; helper exists in procedure form so the choose-arm in build_module# is a
-; single call (works around a stage-0 codegen issue where in-place
-; Vector[Module].add inside a choose-arm corrupts the caller's frame).
-procedure handle_module_decl#(path: String, mod_syntax: ModuleSyntax, is_private: bool, modules: ref[Vector[Module]])
+; single call (works around a stage-0 codegen issue where an in-place
+; collection .add inside a choose-arm corrupts the caller's frame).
+procedure handle_module_decl#(path: String, mod_syntax: ModuleSyntax, is_private: bool, modules: ref[Array[Module]])
 {
     let loaded build_referenced_module#(path, mod_syntax.name, is_private)
     modules.add(loaded)
@@ -2368,7 +2369,7 @@ function format_version#(rp, version_ref: ref[VersionSyntax]) returns String
 ; Try `<base>/<name>/<version>/<name>.scaly`. Returns true and writes the
 ; loaded module to `out` on success; false otherwise. Out parameter avoids
 ; constructing an "empty" Module that the caller would have to filter.
-procedure handle_package_decl#(pkg_syntax: PackageSyntax, packages: ref[Vector[Module]])
+procedure handle_package_decl#(pkg_syntax: PackageSyntax, packages: ref[Array[Module]])
 {
     let pkg_name pkg_syntax.name.name
     var version_str String$("0.1.0")
@@ -2449,7 +2450,7 @@ function build_module#(path: String, file_name: String, name: String, syntax: Fi
 
     ; Handle declarations (uses are now part of declarations)
     var uses Vector[Use]#(0)
-    var modules Vector[Module]#(0)
+    var modules Array[Module]$()
     var members Vector[Member]#(0)
     guard syntax.declarations <> null
     {
@@ -2492,7 +2493,7 @@ function build_module#(path: String, file_name: String, name: String, syntax: Fi
         is_private,
         file_name,
         name,
-        modules,
+        Vector[Module]#(modules),
         uses,
         members,
         symbols
@@ -2505,7 +2506,7 @@ function build_module#(path: String, file_name: String, name: String, syntax: Fi
 
 function build_program#(file_name: String, program_name: String, syntax: ProgramSyntax, enable_prelude: bool) returns Program
 {
-    var packages Vector[Module]#(0)
+    var packages Array[Module]$()
     guard syntax.file.declarations <> null
     {
         let decl_syns (*syntax.file.declarations)
@@ -2577,7 +2578,7 @@ function build_program#(file_name: String, program_name: String, syntax: Program
     let statements handle_statements#(syntax.statements)
 
     Program(
-        packages,
+        Vector[Module]#(packages),
         main_module,
         statements
     )

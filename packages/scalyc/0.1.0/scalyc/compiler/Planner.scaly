@@ -9239,7 +9239,10 @@ define Planner
             ; ValueOps produce a null `Init` field on the Binding.
             var ops_holder Vector[PlannedOperand]^rp(0)
             guard rest_arr.length > 0
-                ops_holder.add(collapsed)
+            {
+                set ops_holder: Vector[PlannedOperand]^rp(1)
+                ops_holder.put(0, collapsed)
+            }
             PlannedBinding(
                 b.span,
                 b.binding_type,
