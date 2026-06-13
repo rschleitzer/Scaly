@@ -13,23 +13,33 @@ define String (data: pointer[u8](null))
 
     init#(page, length: size_t)
     {
-        var length_array: u8[PACKED_SIZE]
+        ; s186: two-pass varint length prefix (count, then write directly
+        ; into data). The old form used a `u8[PACKED_SIZE]` stack scratch,
+        ; but stage-1's planner doesn't resolve the fixed-array suffix, so
+        ; the scratch alloca'd as a scalar and `*(scratch + i)` emitted
+        ; invalid store-into-integer IR — tolerated only by the non-
+        ; verifying object path, an .ll round-trip (Step D seed) rejects it.
         var rest length
-
         var counter: size_t 0
         while rest >= (0x80 as size_t)
         {
-            set *(length_array + counter): (rest as u8) | (0x80 as u8)
             set rest: rest >> (7 as size_t)
             set counter: counter + (1 as size_t)
         }
 
-        set *(length_array + counter): rest as u8
         let overall_length counter + (1 as size_t) + length
         ; Over-allocate by 1 byte so c_data() is safely null-terminated for
         ; C APIs. Keeps the logical content length unchanged.
         set data: page.allocate(overall_length + (1 as size_t), 1) as pointer[u8]
-        memcpy(data as pointer[void], length_array as pointer[void], counter + (1 as size_t))
+        var wrest length
+        var wi: size_t 0
+        while wrest >= (0x80 as size_t)
+        {
+            set *(data + wi): (wrest as u8) | (0x80 as u8)
+            set wrest: wrest >> (7 as size_t)
+            set wi: wi + (1 as size_t)
+        }
+        set *(data + wi): wrest as u8
         set *(data + overall_length): (0 as u8)
     }
 
@@ -41,21 +51,25 @@ define String (data: pointer[u8](null))
             return
         }
 
-        var length_array: u8[PACKED_SIZE]
         var rest length
-
         var counter: size_t 0
         while rest >= (0x80 as size_t)
         {
-            set *(length_array + counter): (rest as u8) | (0x80 as u8)
             set rest: rest >> (7 as size_t)
             set counter: counter + (1 as size_t)
         }
 
-        set *(length_array + counter): rest as u8
         let overall_length counter + (1 as size_t) + length
         set data: page.allocate(overall_length + (1 as size_t), 1) as pointer[u8]
-        memcpy(data as pointer[void], length_array as pointer[void], counter + (1 as size_t))
+        var wrest length
+        var wi: size_t 0
+        while wrest >= (0x80 as size_t)
+        {
+            set *(data + wi): (wrest as u8) | (0x80 as u8)
+            set wrest: wrest >> (7 as size_t)
+            set wi: wi + (1 as size_t)
+        }
+        set *(data + wi): wrest as u8
         memcpy((data + counter + (1 as size_t)) as pointer[void], other, length)
         set *(data + overall_length): (0 as u8)
     }
@@ -63,21 +77,25 @@ define String (data: pointer[u8](null))
     init#(page, other: Vector[char])
     {
         ; Delegate to String(page, pointer, length)
-        var length_array: u8[PACKED_SIZE]
         var rest other.length
-
         var counter: size_t 0
         while rest >= (0x80 as size_t)
         {
-            set *(length_array + counter): (rest as u8) | (0x80 as u8)
             set rest: rest >> (7 as size_t)
             set counter: counter + (1 as size_t)
         }
 
-        set *(length_array + counter): rest as u8
         let overall_length counter + (1 as size_t) + other.length
         set data: page.allocate(overall_length + (1 as size_t), 1) as pointer[u8]
-        memcpy(data as pointer[void], length_array as pointer[void], counter + (1 as size_t))
+        var wrest other.length
+        var wi: size_t 0
+        while wrest >= (0x80 as size_t)
+        {
+            set *(data + wi): (wrest as u8) | (0x80 as u8)
+            set wrest: wrest >> (7 as size_t)
+            set wi: wi + (1 as size_t)
+        }
+        set *(data + wi): wrest as u8
         guard other.length > 0
             memcpy((data + counter + (1 as size_t)) as pointer[void], other.data, other.length)
         set *(data + overall_length): (0 as u8)
@@ -93,21 +111,25 @@ define String (data: pointer[u8](null))
             return
         }
 
-        var length_array: u8[PACKED_SIZE]
         var rest length
-
         var counter: size_t 0
         while rest >= (0x80 as size_t)
         {
-            set *(length_array + counter): (rest as u8) | (0x80 as u8)
             set rest: rest >> (7 as size_t)
             set counter: counter + (1 as size_t)
         }
 
-        set *(length_array + counter): rest as u8
         let overall_length counter + (1 as size_t) + length
         set data: page.allocate(overall_length + (1 as size_t), 1) as pointer[u8]
-        memcpy(data as pointer[void], length_array as pointer[void], counter + (1 as size_t))
+        var wrest length
+        var wi: size_t 0
+        while wrest >= (0x80 as size_t)
+        {
+            set *(data + wi): (wrest as u8) | (0x80 as u8)
+            set wrest: wrest >> (7 as size_t)
+            set wi: wi + (1 as size_t)
+        }
+        set *(data + wi): wrest as u8
         memcpy((data + counter + (1 as size_t)) as pointer[void], c_string, length)
         set *(data + overall_length): (0 as u8)
     }

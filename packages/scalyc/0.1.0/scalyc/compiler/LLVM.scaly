@@ -257,6 +257,7 @@ function LLVMCountParams(func: LLVMValueRef) returns int extern
 
 ; Set linkage
 procedure LLVMSetLinkage(global: LLVMValueRef, linkage: int) extern
+function LLVMGetLinkage(global: LLVMValueRef) returns int extern
 
 ; Set the alignment (in bytes) of a load, store, or alloca instruction.
 ; Used for the s149 Result-wrapper { i8, [N x i8] } whose struct alignment

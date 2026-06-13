@@ -168,6 +168,7 @@ use scaly.compiler.LLVM.LLVMGetInstructionParent
 use scaly.compiler.LLVM.LLVMPrintModuleToFile
 use scaly.compiler.LLVM.LLVMPrintModuleToString
 use scaly.compiler.LLVM.LLVMSetLinkage
+use scaly.compiler.LLVM.LLVMGetLinkage
 use scaly.compiler.LLVM.LLVMStructCreateNamed
 use scaly.compiler.LLVM.LLVMTypeOf
 use scaly.compiler.LLVM.LLVMVerifyModule
@@ -2997,6 +2998,20 @@ define Emitter
                             }
                             guard saved_block.handle <> null
                                 LLVMPositionBuilderAtEnd(builder, saved_block)
+                        }
+                        ; s186: a `declare linkonce_odr` (declaration, no body)
+                        ; is invalid IR — linkonce_odr requires a definition.
+                        ; A genuine external callee carries External linkage; a
+                        ; leftover linkonce_odr declaration is a stray, never-
+                        ; defined uninstantiated generic (e.g. bare
+                        ; `Option::unwrap`). Demote it to External so the .ll
+                        ; verifies (Step D seed round-trip); unreferenced, the
+                        ; linker drops it. External (not an empty body) avoids
+                        ; shadowing a real libscaly.a definition (s17 lesson).
+                        guard has_marker = false
+                        {
+                            guard LLVMGetLinkage(func) = LLVMLinkage.LinkOnceODR()
+                                LLVMSetLinkage(func, LLVMLinkage.External())
                         }
                     }
                 }
