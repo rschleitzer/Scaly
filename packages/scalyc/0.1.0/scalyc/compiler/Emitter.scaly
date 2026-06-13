@@ -2205,7 +2205,30 @@ define Emitter
                 set func_cstr: "main"
         }
 
-        let llvm_func LLVMAddFunction(llvm_module, func_cstr, func_type)
+        var is_extern: bool false
+        choose func.impl
+            when e: Extern
+                set is_extern: true
+            else
+                0
+
+        ; s187: for an EXTERN declaration, reuse an existing same-named
+        ; function instead of letting LLVMAddFunction auto-rename it to
+        ; `name.1`/`name.2`. The s159 up-front varargs decls of memcpy/memset
+        ; collide with the Scaly source's own concrete-signature extern decls
+        ; (Vector/String): the second add was renamed `memset.1`/`memcpy.2`,
+        ; the call cache pointed at the renamed symbol, and the seed link
+        ; then had undefined `memset.1`/`memcpy.2` (libc only provides
+        ; `memset`/`memcpy`). The bootstrap masked it — libscaly.a was
+        ; stage-0-built (stage-0 emits plain `@memcpy`/`@memset`). Restricted
+        ; to extern: a non-extern same-name collision is a genuine duplicate
+        ; that must keep its own symbol (the auto-rename), else a second
+        ; emit_function_body would append a body into the first definition.
+        var llvm_func LLVMGetNamedFunction(llvm_module, func_cstr)
+        guard is_extern = false
+            set llvm_func: LLVMAddFunction(llvm_module, func_cstr, func_type)
+        guard llvm_func.handle = null
+            set llvm_func: LLVMAddFunction(llvm_module, func_cstr, func_type)
 
         ; s89: Apply sret + noalias attributes to first param so AArch64
         ; lowering uses x8 for the indirect-result-location register.
@@ -2232,12 +2255,6 @@ define Emitter
         ; body — `function puts(...) extern`) must stay External; LLVM
         ; rejects `declare linkonce_odr` because LinkOnceODR semantics
         ; require a definition.
-        var is_extern: bool false
-        choose func.impl
-            when e: Extern
-                set is_extern: true
-            else
-                0
         if func.is_private
             LLVMSetLinkage(llvm_func, LLVMLinkage.Internal())
         else
@@ -2866,7 +2883,49 @@ define Emitter
         ; the link succeed without affecting runtime correctness.
         emit_template_stubs()
 
+        ensure_free_page_get()
+
         true
+    }
+
+    ; s187: define the free-form page-get intrinsic `_Z3getPv`. The s181
+    ; `^this` region-alloc emission (and the planner's page-get sites)
+    ; reference `get(void*)` mangled as the free `_Z3getPv`, but the Scaly
+    ; source defines `Page.get` under the namespace mangling
+    ; `_ZN4Page3getEPv`. Stage-0's generatePageGetThis plans Page.get under
+    ; the free name so its body is emitted; stage-1 only ever DECLARED
+    ; `_Z3getPv` (on-the-fly in emit_call), leaving it undefined in the
+    ; seed (.ll round-trip with no stage-0-built libscaly.a). Tie the free
+    ; form to the namespace definition: when `_ZN4Page3getEPv` has a body
+    ; in this module (only true for scaly.ll, where Page is defined) and
+    ; `_Z3getPv` is referenced but bodyless, emit `_Z3getPv` as a
+    ; LinkOnceODR forwarder. Emitting it ONLY where Page.get is defined
+    ; keeps scalyc.ll declaring-not-defining (no duplicate at link).
+    procedure ensure_free_page_get(this)
+    {
+        let page_get LLVMGetNamedFunction(llvm_module, "_ZN4Page3getEPv")
+        guard page_get.handle = null
+            return
+        guard LLVMIsDeclaration(page_get) <> 0
+            return
+        let free_get LLVMGetNamedFunction(llvm_module, "_Z3getPv")
+        guard free_get.handle = null
+            return
+        guard LLVMIsDeclaration(free_get) = 0
+            return
+
+        let saved_block LLVMGetInsertBlock(builder)
+        LLVMSetLinkage(free_get, LLVMLinkage.LinkOnceODR())
+        let block LLVMAppendBasicBlockInContext(context, free_get, "entry")
+        LLVMPositionBuilderAtEnd(builder, block)
+        let arg0 LLVMGetParam(free_get, 0)
+        let pg_ty LLVMGlobalGetValueType(page_get)
+        var call_args Vector[LLVMValueRef]#(1)
+        call_args.put(0, arg0)
+        let result LLVMBuildCall2(builder, pg_ty, page_get, call_args.data, 1, "page")
+        LLVMBuildRet(builder, result)
+        guard saved_block.handle <> null
+            LLVMPositionBuilderAtEnd(builder, saved_block)
     }
 
     ; Append empty stub bodies for any function declarations whose
@@ -2890,45 +2949,41 @@ define Emitter
                 {
                     guard name_len > 4
                     {
-                        ; Scan for the literal-T marker substring "I1TE" —
-                        ; Itanium encoding of a single-character type "T" as
-                        ; a generic argument. Only stage-1's template-stub
-                        ; sites use this; concrete instantiations spell out
-                        ; the type. Empty body is safe because no runtime
-                        ; path reaches a literal-T template.
-                        var has_marker: bool false
-                        var i: size_t 0
-                        let scan_limit name_len - 4
-                        while i <= scan_limit
+                        ; s187: detect a literal 1-char type parameter T/K/V
+                        ; anywhere in the mangled name by reusing the proven
+                        ; is_uninstantiated_template (a single 'T'(84)/'K'(75)/
+                        ; 'V'(86) preceded by '1'(49) preceded by a non-digit).
+                        ; The old inline scan matched only the 4-byte window
+                        ; "I1TE", missing K/V and embedded forms like "I1K1VE"
+                        ; (the K,V iterator
+                        ; BuilderListIterator<Slot<KeyValuePair<K,V>>>::next
+                        ; referenced by the dead uninstantiated HashMapBuilder
+                        ; template), which then stayed an undefined declaration
+                        ; in the seed. Inlining the K/V scan here was
+                        ; miscompiled by stage-1 (crash on template-heavy
+                        ; modules); calling the existing fixed-point-clean
+                        ; function on a String sidesteps it.
+                        ;
+                        ; s17 lesson: ONLY consider Scaly-mangled (`_Z...`)
+                        ; symbols. The broadened T/K/V test would otherwise
+                        ; match LLVM-C / libc externs — e.g.
+                        ; `LLVMInt1TypeInContext` ("...t1T...": 't' non-digit,
+                        ; '1', 'T') — and stub the i1-type constructor to
+                        ; `ret null`, crashing every bool/icmp emission. The
+                        ; old "I1TE" 4-byte window happened to exclude them
+                        ; (required 'I' before "1T"); the general test does
+                        ; not, so gate on the `_Z` prefix explicitly.
+                        var is_scaly_mangled: bool false
+                        guard (*(name_ptr + 0)) = 95
                         {
-                            guard has_marker = false
-                            {
-                                let p0 name_ptr + i
-                                let p1 name_ptr + (i + 1)
-                                let p2 name_ptr + (i + 2)
-                                let p3 name_ptr + (i + 3)
-                                let b0 *p0
-                                let b1 *p1
-                                let b2 *p2
-                                let b3 *p3
-                                ; ASCII 'I'=73, '1'=49, 'T'=84, 'E'=69 —
-                                ; Itanium-mangled marker "I1TE" for a single-
-                                ; char generic argument named "T". Scaly's
-                                ; lexer doesn't support char literals like 'I',
-                                ; so use numeric codes.
-                                guard b0 = 73
-                                {
-                                    guard b1 = 49
-                                    {
-                                        guard b2 = 84
-                                        {
-                                            guard b3 = 69
-                                                set has_marker: true
-                                        }
-                                    }
-                                }
-                            }
-                            set i: i + 1
+                            guard (*(name_ptr + 1)) = 90
+                                set is_scaly_mangled: true
+                        }
+                        var has_marker: bool false
+                        guard is_scaly_mangled
+                        {
+                            let mname String$(name_ptr as pointer[const_char], name_len)
+                            set has_marker: is_uninstantiated_template(mname)
                         }
                         ; Second marker: scalyc-specific stdlib-generic
                         ; method instantiations whose body stage-1 can't
