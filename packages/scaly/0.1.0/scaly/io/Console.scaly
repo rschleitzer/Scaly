@@ -14,6 +14,13 @@ define Console
     function println(message: pointer[const_char])
     {
         Console.print(message)
-        write(STDOUT_FD, "\n" as pointer[void], 1 as size_t)
+        ; Numeric LF byte: the lexer stores the "\n" string literal raw as
+        ; [0x5c,0x6e] (no escape decode — s185 escape class), so under
+        ; stage-emitted code write(…,"\n",1) emitted a backslash, not a
+        ; newline. Writing a 10 (LF) byte directly works in every stage,
+        ; mirroring cli.print_diagnostics#'s numeric `10 as char` compare.
+        var nl: u8 (10 as u8)
+        let nl_ptr &nl
+        write(STDOUT_FD, nl_ptr as pointer[void], 1 as size_t)
     }
 }
