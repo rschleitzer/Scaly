@@ -281,6 +281,11 @@ define Planner
         ; set (Planner.cpp:11685).
         instantiating_structures: Array[String]
 
+        ; s188: structure mangled names already lazily full-instantiated by
+        ; lookup_method#'s call-site hook, so a re-entrant resolution of the
+        ; same concept's method during its own body planning is a no-op.
+        instantiating_methods: Array[String]
+
         ; Free-function registry. Entries are appended for every
         ; top-level Function encountered during the concept-registration
         ; pass. A single name can appear multiple times for overloads —
@@ -369,6 +374,7 @@ define Planner
             set instantiated_functions: Array[PlannedFunction]^page()
             set instantiated_globals: Array[PlannedGlobal]^page()
             set instantiating_structures: Array[String]^page()
+            set instantiating_methods: Array[String]^page()
             set model_functions: Array[KeyValuePair[String, Function]]^page()
             set model_operators: Array[KeyValuePair[String, Operator]]^page()
             set search_paths: Array[String]^page()
@@ -6156,6 +6162,89 @@ define Planner
                 return null
             let f (*f_ptr)
 
+            ; ── s188: lazy full instantiation of a HashSet-machinery generic
+            ; concept reached via a method CALL rather than a type annotation.
+            ; plan_type#'s instantiate_generic# only fires for generic types
+            ; written as annotations; methods called transitively from another
+            ; generic's body (BuilderList<Slot<String>>::add from
+            ; HashSetBuilder::add_internal, the Vector<BuilderList<…>> bucket
+            ; ops, the iterator next() chain) are reached only as calls, so
+            ; their owning structure was never instantiated — declared, never
+            ; defined → undefined at seed link. Instantiate the WHOLE structure
+            ; here (layout + ctor + ALL methods, consistent — a per-method hook
+            ; is wrong: it makes the method real while the ctor stays a stub →
+            ; null-field deref) the first time any method resolves.
+            ; instantiate_generic# self-dedups (has_instantiated_structure) and
+            ; self-guards cycles; its bodies resolve further machinery calls →
+            ; recursion to fixed point. GATED to the data-structure plumbing
+            ; HashSet<String> needs: firing for every generic concept also
+            ; makes HashMap/HashMapBuilder<String,Nameable> (Modeler symbol
+            ; table) real, which activates a latent-broken reallocate→page
+            ; path the baseline masks with a no-op stub (runtime SIGSEGV).
+            ; Ambient substitutions are cleared first: instantiate_generic#
+            ; binds the concept params to the explicit concrete args, and a
+            ; same-named ambient binding would win under first-wins lookup.
+            guard Planner.is_lazy_machinery_generic(lookup_st.name)
+            {
+                guard lookup_st.generics <> null
+                {
+                    let li_gens (*lookup_st.generics)
+                    guard li_gens.length > 0
+                    {
+                        let li_smangled Planner.mangle_structure#(lookup_st.name, lookup_st.generics)
+                        var li_need: bool true
+                        guard this.has_instantiated_structure(li_smangled)
+                            set li_need: false
+                        guard li_need
+                            guard this.has_instantiated_union(li_smangled)
+                                set li_need: false
+                        var li_ip: size_t 0
+                        while li_ip < instantiating_methods.length
+                        {
+                            let li_mp instantiating_methods.get(li_ip)
+                            guard li_mp <> null
+                                guard li_mp.equals(li_smangled)
+                                    set li_need: false
+                            set li_ip: li_ip + 1
+                        }
+                        guard li_need
+                        {
+                            let li_conc this.lookup_concept(lookup_st.name)
+                            guard li_conc <> null
+                            {
+                                guard (*li_conc).parameters.length > 0
+                                {
+                                    instantiating_methods.add(li_smangled)
+                                    var li_args_holder Vector[PlannedType]^rp(li_gens)
+                                    var li_snap Array[KeyValuePair[String, PlannedType]]$()
+                                    var li_si: size_t 0
+                                    while li_si < type_substitutions.length
+                                    {
+                                        let li_sp type_substitutions.get(li_si)
+                                        guard li_sp <> null
+                                            li_snap.add((*li_sp))
+                                        set li_si: li_si + 1
+                                    }
+                                    set type_substitutions.length: 0
+                                    let li_pt this.instantiate_generic#(lookup_st.name, li_args_holder, lookup_st.loc)
+                                    set type_substitutions.length: 0
+                                    var li_ri: size_t 0
+                                    while li_ri < li_snap.length
+                                    {
+                                        let li_rp li_snap.get(li_ri)
+                                        guard li_rp <> null
+                                            type_substitutions.add((*li_rp))
+                                        set li_ri: li_ri + 1
+                                    }
+                                    guard instantiating_methods.length > 0
+                                        set instantiating_methods.length: instantiating_methods.length - 1
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
             ; Set up type substitutions for the struct's type parameters.
             ; Mirrors Planner.cpp:1660-1664 / 2004-2007. Without this, when
             ; resolving the param/return Types of a generic method (e.g.
@@ -7272,10 +7361,23 @@ define Planner
                     ;     set is_stdlib_generic: true
                     ; guard canonical_name.equals("ListIterator")
                     ;     set is_stdlib_generic: true
-                    guard canonical_name.equals("BuilderList")
-                        set is_stdlib_generic: true
-                    guard canonical_name.equals("BuilderListIterator")
-                        set is_stdlib_generic: true
+                    ; s188: BuilderList + BuilderListIterator lifted (like
+                    ; s129 Vector/Array, s148 List/Node, s166 HashSet).
+                    ; HashSetBuilder<String> (un-denylisted) holds buckets:
+                    ; Vector[BuilderList[Slot[String]]] and its real
+                    ; add_internal/reallocate call BuilderList<Slot<String>>::
+                    ; {add,get_iterator} + the iterator next() chain. With
+                    ; these denylisted, plan_type# resolved them to a mangled
+                    ; name only (declare, never define → undefined at seed
+                    ; link). instantiate_generic# plans layout + ctor + ALL
+                    ; methods consistently. This handles the type-annotation
+                    ; path; lookup_method#'s s188 lazy hook handles the
+                    ; call-reached path (BuilderList::add etc. are reached
+                    ; only as calls from inside another generic's body).
+                    ; guard canonical_name.equals("BuilderList")
+                    ;     set is_stdlib_generic: true
+                    ; guard canonical_name.equals("BuilderListIterator")
+                    ;     set is_stdlib_generic: true
                     ; s148: Node removed alongside List (see comment above).
                     ; List<T>::add allocates Node<T>; with Node in the
                     ; stdlib-generic skip list it falls through to the
@@ -7285,8 +7387,10 @@ define Planner
                     ; named struct per concrete T.
                     ; guard canonical_name.equals("Node")
                     ;     set is_stdlib_generic: true
-                    guard canonical_name.equals("Slot")
-                        set is_stdlib_generic: true
+                    ; s188: Slot lifted — element type of BuilderList<Slot<T>>,
+                    ; a pure data class (plan_structure# just records layout).
+                    ; guard canonical_name.equals("Slot")
+                    ;     set is_stdlib_generic: true
                     guard canonical_name.equals("Slice")
                         set is_stdlib_generic: true
                     guard canonical_name.equals("Option")
@@ -14741,6 +14845,27 @@ define Planner
                 true
             else
                 false
+    }
+
+    ; s188: allowlist of data-structure plumbing generics that lookup_method#
+    ; may lazily full-instantiate when reached via a method CALL. Restricted
+    ; to the machinery HashSet<String> transitively needs — making EVERY
+    ; generic concept real this way also activates latent-broken paths the
+    ; baseline masks with stubs (HashMap/HashMapBuilder<String,Nameable> in
+    ; the Modeler symbol table → reallocate→page SIGSEGV) and test-only
+    ; instantiations (Option/Result/Slice from containers::test_*).
+    function is_lazy_machinery_generic(name: String) returns bool
+    {
+        guard name.equals("BuilderList") = false
+            guard name.equals("BuilderListIterator") = false
+                guard name.equals("ListIterator") = false
+                    guard name.equals("VectorIterator") = false
+                        guard name.equals("Vector") = false
+                            guard name.equals("Node") = false
+                                guard name.equals("Slot") = false
+                                    guard name.equals("KeyValuePair") = false
+                                        return false
+        true
     }
 
     ; is_generic_type_param_name: single ASCII uppercase letter — how the
