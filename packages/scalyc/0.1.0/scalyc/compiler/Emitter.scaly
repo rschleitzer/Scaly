@@ -4708,6 +4708,58 @@ define Emitter
                         else
                             0
                 }
+                ; `&X.field` (address-of a member access): return a GEP
+                ; into the ORIGINAL storage, not a pointer to a stack copy.
+                ; Without this, emit_operand below materialises the field
+                ; VALUE into a temp and emit_intrinsic_unary_op spills it to
+                ; `addr.tmp` (a stack slot), so `return &old_current.element`
+                ; (ListIterator.next) returned a dangling stack address —
+                ; every iterator / HashMap reference (List/BuilderList/
+                ; HashMap/the keyword HashSet) read back garbage in
+                ; stage-emitted code. Mirrors stage-0's `&`-GEP path
+                ; (Emitter.cpp:3506-3536): walk the planned member-access
+                ; chain emitting LLVMBuildStructGEP2 from the base pointer.
+                guard arg_op.member_access <> null
+                {
+                    let ma_ref arg_op.member_access.unwrap()
+                    let ma_chain (*ma_ref)
+                    guard ma_chain.length > 0
+                    {
+                        let base_ptr emit_expression(arg_op.expr)
+                        guard base_ptr.handle <> null
+                        {
+                            guard LLVMGetTypeKind(LLVMTypeOf(base_ptr)) = LLVMTypeKind.Pointer()
+                            {
+                                var gep_ptr base_ptr
+                                var gep_advanced: bool false
+                                var gep_stop: bool false
+                                var gi: size_t 0
+                                while gi < ma_chain.length
+                                {
+                                    guard gep_stop = false
+                                    {
+                                        let gacc_ptr ma_chain.get(gi)
+                                        guard gacc_ptr <> null
+                                        {
+                                            let gacc (*gacc_ptr)
+                                            let gsty map_type(gacc.parent_type)
+                                            guard LLVMGetTypeKind(gsty) = LLVMTypeKind.Struct()
+                                            {
+                                                set gep_ptr: LLVMBuildStructGEP2(builder, gsty, gep_ptr, gacc.field_index as u32, "addr.gep")
+                                                set gep_advanced: true
+                                            }
+                                            guard LLVMGetTypeKind(gsty) <> LLVMTypeKind.Struct()
+                                                set gep_stop: true
+                                        }
+                                    }
+                                    set gi: gi + 1
+                                }
+                                guard gep_advanced
+                                    return gep_ptr
+                            }
+                        }
+                    }
+                }
             }
 
             let operand emit_operand(arg_op)
