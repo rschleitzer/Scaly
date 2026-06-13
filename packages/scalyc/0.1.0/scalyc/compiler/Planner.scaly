@@ -11559,6 +11559,15 @@ define Planner
             {
                 let planned this.plan_module#(sub)
             }
+            ; s188: hashing namespace (hash FNV-1a + is_prime + get_prime).
+            ; Now walkable after the sqrt/fixed-array removals in hashing.scaly.
+            ; Needed real for the seed: HashSetBuilder<String>::reallocate
+            ; calls get_prime, String::hash calls hash — declare-only (→
+            ; undefined at link) until the namespace is walked.
+            guard sub.name.equals("hashing")
+            {
+                let planned this.plan_module#(sub)
+            }
             guard sub.name.equals("StringBuilder")
             {
                 let planned this.plan_module#(sub)

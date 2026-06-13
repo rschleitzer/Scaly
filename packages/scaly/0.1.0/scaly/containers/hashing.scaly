@@ -1,25 +1,26 @@
 define hashing
 {
 
-; https://planetmath.org/goodhashtableprimes
-define HASH_PRIMES: size_t[] [
-    3, 5, 11, 23, 53, 97, 193, 389, 769, 1543, 3079, 6151, 12289, 24593, 49157, 98317, 196613,
-    393241, 786433, 1572869, 3145739, 6291469, 12582917, 25165843, 50331653, 100663319, 201326611,
-    402653189, 805306457, 1610612741,
-]
-
+; s188: is_prime tests divisor*divisor <= candidate instead of
+; precomputing sqrt(candidate). The original `sqrt(candidate as double)`
+; was a libm call that stage-0 silently DROPPED (emitted sitofp+fptosi,
+; no call — the identity, so limit became candidate) and that the s185
+; planner diagnostic now hard-errors as "function not found: sqrt". The
+; integer test is exact (no fp), libm-free, and lets the self-hosted
+; planner walk the hashing namespace so get_prime/hash get real bodies
+; for the .ll seed (HashSetBuilder::reallocate calls get_prime;
+; String::hash calls hash) instead of declare-only → undefined at link.
 function is_prime(candidate: size_t) returns bool
 {
     guard (candidate & 1) <> 0
     {
-        let limit sqrt(candidate as double) as size_t
         var divisor: size_t 3
-        while divisor <= limit
+        while divisor * divisor <= candidate
         {
-            set divisor: divisor + 2
             guard (candidate % divisor) = 0
                 return false
 
+            set divisor: divisor + 2
         }
         return true
     }
@@ -27,28 +28,22 @@ function is_prime(candidate: size_t) returns bool
     return candidate = 2
 }
 
+; s188: get_prime searches for the next prime >= (size | 1) directly
+; instead of consulting a HASH_PRIMES: size_t[] table. The fixed-array
+; module global (Planner.cpp:6193-6254 primitive-with-generic-arg →
+; pointer[elem]+ArraySize) is unported in the self-hosted planner, so
+; the table form couldn't be walked. The search returns a valid (if not
+; curated) hash-table size; resizes are rare and capacities are runtime
+; values, so this is fixed-point- and behaviour-safe.
 function get_prime(size: size_t) returns size_t
 {
+    var i size | 1
+    while i < SIZE_MAX
     {
-        var i: int 0
-        while i < 30
-        {
-            guard *(hashing.HASH_PRIMES + i) >= size
-                return *(hashing.HASH_PRIMES + i)
+        guard is_prime(i)
+            return i
 
-            set i: i + 1
-        }
-    }
-
-    {
-        var i size | 1
-        while i < SIZE_MAX
-        {
-            guard is_prime(i)
-                return i
-
-            set i: i + 2
-        }
+        set i: i + 2
     }
     return size
 }
