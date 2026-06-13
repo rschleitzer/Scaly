@@ -2063,6 +2063,7 @@ define Planner
                 has_page,
                 can_throw,
                 throws_ref,
+                false,
                 false
             ))
             match_holder.get(0)
@@ -2184,6 +2185,9 @@ define Planner
                                 guard inst.return_type <> null
                                     set inst_return: (*inst.return_type)
 
+                                var gm_takes_this: bool false
+                                guard param_start2 > 0
+                                    set gm_takes_this: true
                                 var match_holder Vector[MethodMatch]^rp(1)
                                 match_holder.put(0, MethodMatch(
                                     null,
@@ -2193,7 +2197,8 @@ define Planner
                                     inst.page_parameter <> null,
                                     inst.can_throw,
                                     inst.throws_type,
-                                    false
+                                    false,
+                                    gm_takes_this
                                 ))
                                 return match_holder.get(0)
                             }
@@ -4553,6 +4558,7 @@ define Planner
                                                 s_pp,
                                                 s_can_throw,
                                                 s_throws,
+                                                false,
                                                 false
                                             ))
                                             set match_ref: smm_holder.get(0)
@@ -4624,20 +4630,28 @@ define Planner
                                                     let mm_ref this.lookup_method#(inner_t, fn_name, arg_types)
                                                     guard mm_ref <> null
                                                     {
-                                                        ; Build receiver_op as `this`.
-                                                        set receiver_op: PlannedOperand(
-                                                            result.loc,
-                                                            PlannedExpression.Variable(PlannedVariable(
-                                                                result.loc,
-                                                                String^rp("this"),
-                                                                this_ty,
-                                                                false
-                                                            )),
-                                                            null,
-                                                            this_ty
-                                                        )
                                                         set match_ref: mm_ref
-                                                        set is_method_dispatch: true
+                                                        ; Prepend the `this` receiver ONLY for instance
+                                                        ; methods. A STATIC sibling method (Page::get,
+                                                        ; Page::allocate_page) takes no `this` — prepending
+                                                        ; it passes the wrong arg0 (s189: `get(object)` →
+                                                        ; `get(this, object)` → current_page self-loop).
+                                                        guard (*mm_ref).takes_this
+                                                        {
+                                                            ; Build receiver_op as `this`.
+                                                            set receiver_op: PlannedOperand(
+                                                                result.loc,
+                                                                PlannedExpression.Variable(PlannedVariable(
+                                                                    result.loc,
+                                                                    String^rp("this"),
+                                                                    this_ty,
+                                                                    false
+                                                                )),
+                                                                null,
+                                                                this_ty
+                                                            )
+                                                            set is_method_dispatch: true
+                                                        }
                                                     }
                                                 }
                                             }
@@ -6473,6 +6487,17 @@ define Planner
             ; File.read_to_string#) emits only the explicit args and the
             ; callee reads garbage in the rp slot — observed as the empty
             ; cli.run "Could not read input file" path before s88.
+            ; takes_this distinguishes instance methods (param_start=1, a
+            ; leading `this`) from STATIC methods (param_start=0, e.g.
+            ; Page::get / Page::allocate_page). The sibling-dispatch site
+            ; (s101) prepends the `this` receiver only when this is true —
+            ; a static method called unqualified from a sibling method must
+            ; NOT get `this` prepended (s189: `get(object)` was emitted as
+            ; `get(this, object)`, returning this's page → current_page
+            ; self-loop → infinite recursion in Page::allocate).
+            var mm_takes_this: bool false
+            guard param_start > 0
+                set mm_takes_this: true
             var match_holder Vector[MethodMatch]^rp(1)
             match_holder.put(0, MethodMatch(
                 null,
@@ -6482,7 +6507,8 @@ define Planner
                 has_page,
                 can_throw,
                 throws_ref,
-                false
+                false,
+                mm_takes_this
             ))
             match_holder.get(0)
         }

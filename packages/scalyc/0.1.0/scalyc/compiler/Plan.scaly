@@ -623,6 +623,7 @@ define MethodMatch
     can_throw: bool
     throws_type: ref[PlannedType]?
     is_intrinsic: bool
+    takes_this: bool
 )
 
 ; Result of operator lookup
