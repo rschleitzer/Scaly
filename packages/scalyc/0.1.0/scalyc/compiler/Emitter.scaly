@@ -196,7 +196,7 @@ use scaly.compiler.LLVM.LLVMBuildMemCpy
 use scaly.compiler.LLVM.LLVMGetLastInstruction
 use scaly.scalyc.parser.Parser
 use scaly.scalyc.parser.ParserError
-use scaly.compiler.Modeler.build_program
+use scalyc.compiler.Modeler
 use scaly.compiler.Planner.Planner
 
 define Emitter
@@ -3843,8 +3843,30 @@ define Emitter
             ; Try to find it in the module
             set func: LLVMGetNamedFunction(llvm_module, call.mangled_name.c_data())
             guard func.handle = null
-                return LLVMValueRef(null)
-
+            {
+                ; s186: cross-package runtime callee with a resolved
+                ; mangled name but no in-module decl (e.g. scaly_eputs /
+                ; scaly_eputnl from root_pages.scaly — stage-0 emits full
+                ; bodies into the module, stage-1's planner does not, so the
+                ; symbol lives only in libscaly.a). The planner-side s185
+                ; diagnostic already hard-errors genuinely unresolved calls,
+                ; so a non-empty mangled name here is a real symbol resolved
+                ; at link time. Declare it as an external varargs function
+                ; (same cosmetic-signature pattern as memcpy/memset and
+                ; scaly_alloc_root_page below — every call path builds its
+                ; own concrete func_type for LLVMBuildCall2). Without this
+                ; the call was silently dropped: not_implemented's stderr
+                ; prints vanished from every stage-2+ binary.
+                guard call.mangled_name.get_length() = 0
+                    return LLVMValueRef(null)
+                var decl_ret map_intrinsic_type_by_name(call.result_type.name)
+                guard decl_ret.handle = null
+                    set decl_ret: map_type(call.result_type)
+                let decl_ty LLVMFunctionType(decl_ret, null as pointer[LLVMTypeRef], 0, 1)
+                set func: LLVMAddFunction(llvm_module, call.mangled_name.c_data(), decl_ty)
+                LLVMSetLinkage(func, LLVMLinkage.External())
+                cache_function(call.mangled_name, func)
+            }
         }
 
         ; s89: Detect sret-style call. Itanium-mangled callees with a
@@ -9205,7 +9227,7 @@ function test() returns int
         when syntax: Success
         {
             ; Model the parsed program
-            let program build_program#(String$("test.scaly"), String$("test"), syntax, true)
+            let program Modeler.build_program#(String$("test.scaly"), String$("test"), syntax, true)
 
             ; Plan the program
             var planner Planner#(String$("test.scaly"))
@@ -9237,7 +9259,7 @@ function test() returns int
             return 110
         when syntax: Success
         {
-            let program build_program#(String$("test2.scaly"), String$("test2"), syntax, true)
+            let program Modeler.build_program#(String$("test2.scaly"), String$("test2"), syntax, true)
             var planner Planner#(String$("test2.scaly"))
             let plan planner.plan_program(program)
             guard plan = null
@@ -9267,7 +9289,7 @@ function test() returns int
             return 120
         when syntax: Success
         {
-            let program build_program#(String$("test3.scaly"), String$("test3"), syntax, true)
+            let program Modeler.build_program#(String$("test3.scaly"), String$("test3"), syntax, true)
             var planner Planner#(String$("test3.scaly"))
             let plan planner.plan_program(program)
             guard plan = null
@@ -9287,7 +9309,7 @@ function test() returns int
             return 130
         when syntax: Success
         {
-            let program build_program#(String$("test4.scaly"), String$("test4"), syntax, true)
+            let program Modeler.build_program#(String$("test4.scaly"), String$("test4"), syntax, true)
             var planner Planner#(String$("test4.scaly"))
             let plan planner.plan_program(program)
             guard plan = null
@@ -9307,7 +9329,7 @@ function test() returns int
             return 140
         when syntax: Success
         {
-            let program build_program#(String$("test5.scaly"), String$("test5"), syntax, true)
+            let program Modeler.build_program#(String$("test5.scaly"), String$("test5"), syntax, true)
             var planner Planner#(String$("test5.scaly"))
             let plan planner.plan_program(program)
             guard plan = null
@@ -9327,7 +9349,7 @@ function test() returns int
             return 150
         when syntax: Success
         {
-            let program build_program#(String$("test6.scaly"), String$("test6"), syntax, true)
+            let program Modeler.build_program#(String$("test6.scaly"), String$("test6"), syntax, true)
             var planner Planner#(String$("test6.scaly"))
             let plan planner.plan_program(program)
             guard plan = null
@@ -9347,7 +9369,7 @@ function test() returns int
             return 160
         when syntax: Success
         {
-            let program build_program#(String$("test7.scaly"), String$("test7"), syntax, true)
+            let program Modeler.build_program#(String$("test7.scaly"), String$("test7"), syntax, true)
             var planner Planner#(String$("test7.scaly"))
             let plan planner.plan_program(program)
             guard plan = null
@@ -9375,7 +9397,7 @@ function test() returns int
             return 170
         when syntax: Success
         {
-            let program build_program#(String$("test8.scaly"), String$("test8"), syntax, true)
+            let program Modeler.build_program#(String$("test8.scaly"), String$("test8"), syntax, true)
             var planner Planner#(String$("test8.scaly"))
             let plan planner.plan_program(program)
             guard plan = null
@@ -9395,7 +9417,7 @@ function test() returns int
             return 180
         when syntax: Success
         {
-            let program build_program#(String$("test9.scaly"), String$("test9"), syntax, true)
+            let program Modeler.build_program#(String$("test9.scaly"), String$("test9"), syntax, true)
             var planner Planner#(String$("test9.scaly"))
             let plan planner.plan_program(program)
             guard plan = null
@@ -9415,7 +9437,7 @@ function test() returns int
             return 190
         when syntax: Success
         {
-            let program build_program#(String$("test10.scaly"), String$("test10"), syntax, true)
+            let program Modeler.build_program#(String$("test10.scaly"), String$("test10"), syntax, true)
             var planner Planner#(String$("test10.scaly"))
             let plan planner.plan_program(program)
             guard plan = null
@@ -9443,7 +9465,7 @@ function test() returns int
             return 200
         when syntax: Success
         {
-            let program build_program#(String$("test11.scaly"), String$("test11"), syntax, true)
+            let program Modeler.build_program#(String$("test11.scaly"), String$("test11"), syntax, true)
             var planner Planner#(String$("test11.scaly"))
             let plan planner.plan_program(program)
             guard plan = null
@@ -9464,7 +9486,7 @@ function test() returns int
             return 210
         when syntax: Success
         {
-            let program build_program#(String$("test12.scaly"), String$("test12"), syntax, true)
+            let program Modeler.build_program#(String$("test12.scaly"), String$("test12"), syntax, true)
             var planner Planner#(String$("test12.scaly"))
             let plan planner.plan_program(program)
             guard plan = null
