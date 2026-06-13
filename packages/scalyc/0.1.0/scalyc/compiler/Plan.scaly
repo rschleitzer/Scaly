@@ -530,6 +530,7 @@ define PlannedGlobal
     mangled_name: String
     global_type: PlannedType
     value: ref[Vector[PlannedOperand]]?
+    is_mutable: bool
 )
 
 define PlannedStructure

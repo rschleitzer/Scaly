@@ -5290,6 +5290,40 @@ define Planner
                         else
                             String^rp("")
 
+                    ; s189: rhs is itself a prefix operator (`x & ~y`,
+                    ; `b.bitmap & ~((1 as u64) << slot)`). Grab the prefix
+                    ; operator plus its single following operand and collapse
+                    ; them into one operand so the binary op sees `~y`, not a
+                    ; bare `~`. Without this the prefix RHS dropped and the
+                    ; whole `&`/`|` expression vanished (stack_bucket_of's
+                    ; `& ~BUCKET_MASK`, scaly_alloc_page's bitmap clear).
+                    ; Advances i by 3 via rhs_call_consumed (op, ~, operand).
+                    guard i + 2 < ops.length
+                    {
+                        var rhs_is_prefix: bool false
+                        choose rhs.expr
+                            when rpty: PlannedType
+                            {
+                                guard Planner.is_operator_name(rpty.name)
+                                    set rhs_is_prefix: true
+                            }
+                            else
+                                0
+                        guard rhs_is_prefix
+                        {
+                            let pfx_operand_ptr ops.get(i + 2)
+                            guard pfx_operand_ptr <> null
+                            {
+                                var pfx_arr Array[PlannedOperand]$()
+                                pfx_arr.add(rhs)
+                                pfx_arr.add((*pfx_operand_ptr))
+                                var pfx_vec Vector[PlannedOperand]^rp(pfx_arr)
+                                set rhs: this.collapse_operand_sequence#(pfx_vec)
+                                set rhs_call_consumed: true
+                            }
+                        }
+                    }
+
                     ; If rhs is a non-operator Type immediately followed by
                     ; a Tuple, treat it as an ungrouped call (`A | f()` →
                     ; rhs = Call(f), not Type(f)). Stage-0's planOperands
@@ -7800,6 +7834,21 @@ define Planner
                     guard g_ref <> null
                     {
                         let g (*g_ref)
+                        ; Mutable module globals must LOAD the current value on
+                        ; every read — never inline the initializer constant.
+                        ; Emit a GlobalRef; emit_global_ref loads it (s189).
+                        guard g.is_mutable
+                            return PlannedOperand(
+                                loc,
+                                PlannedExpression.GlobalRef(PlannedGlobalRef(
+                                    loc,
+                                    g.name,
+                                    g.mangled_name,
+                                    g.global_type
+                                )),
+                                null,
+                                g.global_type
+                            )
                         guard g.value <> null
                         {
                             let val_vec (*g.value)
@@ -11337,13 +11386,19 @@ define Planner
             let planned_type this.plan_type#(g.type)
             let planned_value this.plan_operands#(g.value)
             var value_holder Vector[PlannedOperand]^rp(planned_value)
-            let mangled Planner.encode_name(name)
+            ; Module-level mutable globals (stack_head etc.) keep their bare
+            ; name as the LLVM symbol, matching stage-0 (@stack_head). Const
+            ; defines stay Itanium-length-prefixed via encode_name (s189).
+            var mangled Planner.encode_name(name)
+            guard g.is_mutable
+                set mangled: String^rp(name)
             let result PlannedGlobal(
                 g.span,
                 String^rp(name),
                 mangled,
                 planned_type,
-                &value_holder
+                &value_holder,
+                g.is_mutable
             )
             this.record_global(result)
             result

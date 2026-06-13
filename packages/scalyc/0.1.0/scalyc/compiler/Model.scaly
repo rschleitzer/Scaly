@@ -358,12 +358,13 @@ define Namespace
     symbols: HashMap[String, Nameable]
 )
 
-; Global constant
+; Global constant (is_mutable=false) or module-level mutable global (true)
 define Global
 (
     span: Span
     type: Type
     value: Vector[Operand]
+    is_mutable: bool
 )
 
 ; Definition union

@@ -150,6 +150,7 @@ use scaly.compiler.LLVM.LLVMGetIntTypeWidth
 use scaly.compiler.LLVM.LLVMGetNamedFunction
 use scaly.compiler.LLVM.LLVMGetNamedGlobal
 use scaly.compiler.LLVM.LLVMGlobalGetValueType
+use scaly.compiler.LLVM.LLVMIsGlobalConstant
 use scaly.compiler.LLVM.LLVMGetReturnType
 use scaly.compiler.LLVM.LLVMGetTypeKind
 use scaly.compiler.LLVM.LLVMTypeIsSized
@@ -2778,14 +2779,10 @@ define Emitter
                 emit_function_decl(func)
         }
 
-        ; Emit function bodies
-        guard plan.functions <> null
-        {
-            for func in plan.functions
-                emit_function_body(func)
-        }
-
-        ; Emit global variables.
+        ; Emit global variables BEFORE function bodies so that
+        ; emit_global_ref / the GlobalRef store arm can resolve them via
+        ; LLVMGetNamedGlobal while emitting bodies that read/write them
+        ; (s189 — mutable runtime globals like @stack_top).
         ;
         ; Globals declared as `define NAME: int VALUE` carry a planned
         ; `int`/`u8`/`size_t` type. The general map_type path runs an
@@ -2814,9 +2811,27 @@ define Emitter
                         LLVMSetInitializer(gv, init_value)
                 }
 
-                ; Globals are constant by default (no is_mutable field)
-                LLVMSetGlobalConstant(gv, 1)
+                ; s189: mutable module globals (stack_head etc.) need a
+                ; concrete initializer and must NOT be marked constant —
+                ; reads load and `set NAME:` stores. A mutable global with
+                ; no explicit initializer still needs one for a definition
+                ; (vs an external declaration), so zero-init it.
+                guard global.is_mutable
+                {
+                    guard global.value = null
+                        LLVMSetInitializer(gv, LLVMConstNull(global_type))
+                    LLVMSetGlobalConstant(gv, 0)
+                }
+                guard global.is_mutable = false
+                    LLVMSetGlobalConstant(gv, 1)
             }
+        }
+
+        ; Emit function bodies
+        guard plan.functions <> null
+        {
+            for func in plan.functions
+                emit_function_body(func)
         }
 
         ; Emit main wrapper for top-level statements if present.
@@ -3611,6 +3626,16 @@ define Emitter
         let gv LLVMGetNamedGlobal(llvm_module, global.mangled_name.c_data())
         guard gv.handle = null
             return LLVMValueRef(null)
+
+        ; s189: a mutable module global (marked non-constant) reads as a
+        ; LOAD of the current stored value. Member access / comparison on
+        ; the result then operates on the loaded pointer/scalar, not the
+        ; global's address. Constant globals keep the address-return path.
+        guard LLVMIsGlobalConstant(gv) = 0
+        {
+            let gv_ty LLVMGlobalGetValueType(gv)
+            return LLVMBuildLoad2(builder, gv_ty, gv, "global.load")
+        }
 
         ; Check if this is an array type (has array_size set)
         guard global.global_type.array_size.get_length() > 0
@@ -8381,6 +8406,30 @@ define Emitter
                             }
                         }
                     }
+                    when global_ref: GlobalRef
+                    {
+                        ; s189: assignment to a module-level mutable global.
+                        let gv LLVMGetNamedGlobal(llvm_module, global_ref.mangled_name.c_data())
+                        guard gv.handle = null
+                            return value
+
+                        ; Member-access store (`set heap_head.prev: x`):
+                        ; the global slot behaves like a pointer-typed
+                        ; alloca, so reuse emit_member_assignment via a
+                        ; synthesized PlannedVariable describing its type —
+                        ; it loads the stored pointer, GEPs the field, stores.
+                        guard target_op.member_access <> null
+                        {
+                            guard target_op.member_access.length > 0
+                            {
+                                let gv_pv PlannedVariable(global_ref.loc, global_ref.name, global_ref.global_type, true)
+                                return emit_member_assignment(gv, gv_pv, target_op.member_access, value)
+                            }
+                        }
+
+                        ; Simple whole-value store: `set NAME: value`.
+                        LLVMBuildStore(builder, value, gv)
+                    }
                     else
                     {
                         ; Other assignment targets not yet supported
@@ -8535,11 +8584,21 @@ define Emitter
             set current_type: map_type(var_ty)
         guard is_pointer
         {
-            ; Pointer-typed local: load the pointer first (unless this).
+            ; Pointer-typed local: load the pointer first ONLY when the slot
+            ; is an alloca holding the pointer (`var p` / a stored param).
+            ; A `let p <call>` binds p to the pointer VALUE directly — there
+            ; the load would deref the pointed-to memory (s189: create_stack
+            ; _bucket's `set sb.prev`, where sb = aligned_alloc result, gave
+            ; `load ptr, %call` of uninitialised bucket memory → SIGSEGV).
+            ; `this` is always the raw pointer arg, never loaded.
             guard is_this = false
             {
-                let ptr_type LLVMPointerTypeInContext(context, 0)
-                set current_ptr: LLVMValueRef(LLVMBuildLoad2(builder, ptr_type, current_ptr, "ptr.load").handle)
+                let mp_is_alloca LLVMIsAAllocaInst(current_ptr)
+                guard mp_is_alloca.handle <> null
+                {
+                    let ptr_type LLVMPointerTypeInContext(context, 0)
+                    set current_ptr: LLVMValueRef(LLVMBuildLoad2(builder, ptr_type, current_ptr, "ptr.load").handle)
+                }
             }
             ; Inner generic = struct type for GEP.
             guard var_ty.generics <> null

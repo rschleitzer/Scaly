@@ -357,6 +357,9 @@ procedure LLVMSetInitializer(global_var: LLVMValueRef, constant_val: LLVMValueRe
 ; Set global constant
 procedure LLVMSetGlobalConstant(global_var: LLVMValueRef, is_constant: int) extern
 
+; Query whether a global is marked constant (0 = mutable global)
+function LLVMIsGlobalConstant(global_var: LLVMValueRef) returns int extern
+
 ; ============================================================================
 ; Instruction Builder - Arithmetic
 ; ============================================================================

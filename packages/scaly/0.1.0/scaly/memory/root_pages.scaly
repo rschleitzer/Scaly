@@ -132,10 +132,17 @@ procedure scaly_eputi(n: i64)
     write(2 as int, (buf + pos) as pointer[void], len as size_t)
 }
 
-define HEX_DIGITS: char[] [
-    48, 49, 50, 51, 52, 53, 54, 55,
-    56, 57, 97, 98, 99, 100, 101, 102,
-]
+; Hex digit for a nibble (0..15), computed arithmetically. A fixed-array
+; `char[]` lookup table would be a module-level array constant, which
+; stage-1's planner emits as an external declaration (no body) — the
+; unported Planner.cpp:6193 array-global gap. Computing the digit keeps
+; the runtime self-hostable (s189, same avoidance as s188's hashing).
+function hex_digit(nibble: i64) returns char
+{
+    guard nibble < 10 as i64
+        return (nibble + 48) as char       ; '0'..'9'
+    (nibble - 10 + 97) as char             ; 'a'..'f'
+}
 
 procedure scaly_eputp(p: pointer[void])
 {
@@ -147,7 +154,7 @@ procedure scaly_eputp(p: pointer[void])
     while i >= 2 as i64
     {
         let nibble (val & (15 as u64)) as i64
-        set *(buf + i): *(HEX_DIGITS + nibble)
+        set *(buf + i): hex_digit(nibble)
         set val: val >> (4 as u64)
         set i: i - 1
     }
@@ -216,28 +223,30 @@ function create_heap_bucket() returns pointer[HeapBucketHeader]
 }
 
 ; --------------------------------------------------------------------------
-; Count trailing zeros in a u64 (for the HeapBucket bitmap scan). De Bruijn
-; multiplication — no branches, 11 ops. Caller must ensure x != 0.
+; Count trailing zeros in a u64 (for the HeapBucket bitmap scan). Caller
+; must ensure x != 0. A linear shift-loop instead of the De Bruijn table:
+; the table would be an i32[] module-global array constant, which stage-1's
+; planner emits as an external declaration with no body (the unported
+; Planner.cpp:6193 array-global gap) — the seed would fail to link. The
+; loop costs at most 63 iterations and runs only on heap-bucket allocation.
 ; --------------------------------------------------------------------------
-
-define DEBRUIJN_MAGIC u64 0x03F79D71B4CB0A89
-
-define DEBRUIJN_TABLE: i32[] [
-    0, 1, 48, 2, 57, 49, 28, 3,
-    61, 58, 50, 42, 38, 29, 17, 4,
-    62, 55, 59, 36, 53, 51, 43, 22,
-    45, 39, 33, 30, 24, 18, 12, 5,
-    63, 47, 56, 27, 60, 41, 37, 16,
-    54, 35, 52, 21, 44, 32, 23, 11,
-    46, 26, 40, 15, 34, 20, 31, 10,
-    25, 14, 19, 9, 13, 8, 7, 6,
-]
 
 function ctz_u64(x: u64) returns i32
 {
-    let isolated x & (0 - x)                  ; x & (-x) isolates lowest bit
-    let idx (isolated * DEBRUIJN_MAGIC) >> 58
-    *(DEBRUIJN_TABLE + idx)
+    ; count is i64 throughout: `set count: count + 1` widens int arithmetic
+    ; to i64, and an i32 slot would get an 8-byte store clobbering the
+    ; adjacent `v` slot (observed corrupting heap-bucket slot selection
+    ; under stage-1's allocation pattern, s189). Cast to i32 only at return.
+    var count 0 as i64
+    var v x
+    while count < 64 as i64
+    {
+        guard (v & (1 as u64)) <> (0 as u64)
+            return count as i32
+        set count: count + 1
+        set v: v >> (1 as u64)
+    }
+    count as i32
 }
 
 ; --------------------------------------------------------------------------

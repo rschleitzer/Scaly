@@ -2147,6 +2147,32 @@ function handle_declaration#(path: String, syntax: DeclarationSyntax, symbols_bu
             (*symbols_builder).add(operator_.name, Nameable.Operator(operator_))
             Member.Operator(operator_)
         }
+        when mut: MutableSyntax
+        {
+            ; Module-level mutable global: `mutable NAME: T init`. Modeled
+            ; as a Concept wrapping a mutable Global so it flows through
+            ; plan_concept → plan_global# and is emitted as a real @global
+            ; with load/store reads (s189). Requires a type annotation;
+            ; without one we drop it (mirrors stage-0's hard error leniently).
+            var mg_type_ref: ref[Type]? null
+            guard mut.binding.annotation <> null
+                set mg_type_ref: handle_binding_annotation#(*mut.binding.annotation)
+            guard mg_type_ref <> null
+            {
+                let mg_value handle_operands#(mut.binding.operation)
+                let mg_global Global(Span(mut.start, mut.end), *mg_type_ref, mg_value, true)
+                let mg_concept Concept(
+                    Span(mut.start, mut.end),
+                    String#(mut.binding.name),
+                    Vector[GenericParameter]#(0),
+                    Vector[Attribute]#(0),
+                    Definition.Global(mg_global)
+                )
+                (*symbols_builder).add(mg_concept.name, Nameable.Concept(mg_concept))
+                return Member.Concept(mg_concept)
+            }
+            Member.Package(Vector[Module]#(0))
+        }
         when mod: ModuleSyntax
             Member.Package(Vector[Module]#(0))
         else
@@ -2340,7 +2366,7 @@ function handle_definition#(path: String, syntax: DefinitionSyntax, is_private: 
                 ; Global constant
                 let operation handle_operands#(constant_syntax.operation)
                 let const_type handle_type#(constant_syntax.type)
-                Definition.Global(Global(loc, *const_type, operation))
+                Definition.Global(Global(loc, *const_type, operation, false))
             }
         }
         when intrinsic_syntax: IntrinsicSyntax
