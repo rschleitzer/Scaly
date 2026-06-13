@@ -2253,6 +2253,54 @@ define Emitter
         llvm_func
     }
 
+    ; s186: detect an uninstantiated generic template by its mangled name.
+    ; A literal 1-char type parameter named T/K/V is Itanium-encoded as the
+    ; byte sequence `1T` / `1K` / `1V` (length-1 name + the letter). Stage-1's
+    ; planner spuriously plans these templates with unresolved field/param
+    ; types, so emit_function_body would produce garbage instructions (null
+    ; branch conditions, store-into-integer). They are provably dead — the
+    ; C++ stage-0 omits them entirely yet links a fully working compiler.
+    ; The byte BEFORE the `1` must not be a digit, else `1T` would match the
+    ; tail of a multi-digit length prefix on a real type name (e.g. an
+    ; 11-char name `11Txxxxxxxxx`). Concrete instantiations spell out their
+    ; types (`6String`, `i`, `IiE`) and never carry a length-1 T/K/V token.
+    function is_uninstantiated_template(this, mangled: String) returns bool
+    {
+        let n mangled.get_length()
+        guard n <= 2
+            return false
+        var i: size_t 2
+        while i < n
+        {
+            let c mangled.get(i)
+            var is_param: bool false
+            guard c = (84 as char)
+                set is_param: true
+            guard c = (75 as char)
+                set is_param: true
+            guard c = (86 as char)
+                set is_param: true
+            guard is_param
+            {
+                let prev mangled.get(i - 1)
+                guard prev = (49 as char)
+                {
+                    let prev2 mangled.get(i - 2)
+                    var prev2_digit: bool false
+                    guard prev2 >= (48 as char)
+                    {
+                        guard prev2 <= (57 as char)
+                            set prev2_digit: true
+                    }
+                    guard prev2_digit = false
+                        return true
+                }
+            }
+            set i: i + 1
+        }
+        false
+    }
+
     ; Emit function body (implementation)
     function emit_function_body(this, func: PlannedFunction) returns bool
     {
@@ -2289,6 +2337,27 @@ define Emitter
                 let existing_bb LLVMGetFirstBasicBlock(llvm_func)
                 guard existing_bb.handle <> null
                     return true
+                ; s186: uninstantiated generic template — emit an empty stub
+                ; body instead of the real (unresolved, garbage-producing)
+                ; one. Keeps the textual .ll verifiably valid for the Step D
+                ; seed build; these stubs are never reached at runtime.
+                guard is_uninstantiated_template(func.mangled_name)
+                {
+                    set current_function: llvm_func
+                    let stub_entry String$("entry")
+                    let stub_block LLVMAppendBasicBlockInContext(context, llvm_func, stub_entry.c_data())
+                    LLVMPositionBuilderAtEnd(builder, stub_block)
+                    let stub_func_ty LLVMGlobalGetValueType(llvm_func)
+                    let stub_ret_ty LLVMGetReturnType(stub_func_ty)
+                    guard LLVMGetTypeKind(stub_ret_ty) = LLVMTypeKind.Void()
+                        LLVMBuildRetVoid(builder)
+                    guard LLVMGetTypeKind(stub_ret_ty) <> LLVMTypeKind.Void()
+                    {
+                        let stub_zero LLVMConstNull(stub_ret_ty)
+                        LLVMBuildRet(builder, stub_zero)
+                    }
+                    return true
+                }
                 ; Emit the function body
                 set current_function: llvm_func
                 reset_temp_pool()
@@ -4577,8 +4646,23 @@ define Emitter
             guard is_logical
             {
                 let is_or call.name.equals(String$("||"))
-                let lc emit_operand(left_arg.unwrap())
+                var lc emit_operand(left_arg.unwrap())
                 let i1_ty LLVMInt1TypeInContext(context)
+                ; If the LHS operand can't be emitted (the same pre-existing
+                ; emit gap the RHS guard below handles — e.g. a literal-param
+                ; generic stub like `Array<KeyValuePair<K,V>>::add` where the
+                ; field type is unresolved, so `vector = null` plans to null),
+                ; route to the RHS block instead of emitting `br <null>`: a
+                ; false LHS evaluates the RHS for `||`, a true LHS for `&&`.
+                ; These dead stubs never run, but the IR must stay valid so a
+                ; textual `.ll` round-trips through clang (Step D seed build).
+                guard lc.handle = null
+                {
+                    guard is_or
+                        set lc: LLVMConstInt(i1_ty, 0, 0)
+                    guard is_or = false
+                        set lc: LLVMConstInt(i1_ty, 1, 0)
+                }
                 let entry_blk LLVMGetInsertBlock(builder)
                 let rhs_blk LLVMAppendBasicBlockInContext(context, current_function, "lor.rhs")
                 let end_blk LLVMAppendBasicBlockInContext(context, current_function, "lor.end")
