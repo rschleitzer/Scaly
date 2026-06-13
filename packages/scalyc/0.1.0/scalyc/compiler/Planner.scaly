@@ -6170,6 +6170,42 @@ define Planner
             guard candidates.length > 1
             {
                 let saved_subst_sel type_substitutions.length
+                ; Bind the receiver concept's generic parameters to the
+                ; concrete generics of lookup_st before matching, so a
+                ; candidate's declared `T` param plans to the concrete
+                ; type (e.g. Array[char].add: T→char). Without this,
+                ; method_params_match# plans `plan_type#(T)` as an
+                ; unbound type var that types_equal() treats as matching
+                ; anything, so `buffer.add(Vector[char](...))` resolved
+                ; to add(item: T) [= add(char)] instead of
+                ; add(items: Vector[T]) — the Vector pointer was passed
+                ; where an i8 was expected (s190). Stage-0 sidesteps this
+                ; by collecting candidates from the already-instantiated
+                ; structure's monomorphised methods.
+                guard lookup_st.generics <> null
+                {
+                    let mm_conc this.lookup_concept(lookup_st.name)
+                    guard mm_conc <> null
+                    {
+                        let mm_c (*mm_conc)
+                        let mm_gens (*lookup_st.generics)
+                        var mm_pi: size_t 0
+                        while mm_pi < mm_c.parameters.length
+                        {
+                            guard mm_pi < mm_gens.length
+                            {
+                                let mm_p mm_c.parameters.get(mm_pi)
+                                let mm_a mm_gens.get(mm_pi)
+                                guard mm_p <> null
+                                {
+                                    guard mm_a <> null
+                                        this.define_type_substitution(mm_p.name, (*mm_a))
+                                }
+                            }
+                            set mm_pi: mm_pi + 1
+                        }
+                    }
+                }
                 var chosen: ref[Function]? null
                 var ci: size_t 0
                 while ci < candidates.length
