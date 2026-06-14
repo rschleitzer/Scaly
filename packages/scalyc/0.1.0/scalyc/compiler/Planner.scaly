@@ -355,6 +355,14 @@ define Planner
         ; entry, stays empty until then.
         program_use_aliases: Array[String]
 
+        ; Parallel to program_use_aliases: the second-to-last segment of
+        ; each `use a.b.c` clause (the enclosing-namespace name for
+        ; mangling), or empty when the clause has only one segment.
+        ; Lets a bare call to a use-imported namespace member mangle as
+        ; `_ZN<ns><fn>E…` (matching the member's definition) instead of
+        ; the free `_Z<fn>…` (which would be undefined at link).
+        program_use_namespaces: Array[String]
+
         ; Monotonic counter for synthesizing unique lambda names.
         next_lambda_id: size_t
     )
@@ -386,6 +394,7 @@ define Planner
             set current_namespace: null
             set current_namespace_name: null
             set program_use_aliases: Array[String]^page()
+            set program_use_namespaces: Array[String]^page()
             set next_lambda_id: 0
 
             ; Seed the function registry with C-runtime externs so name
@@ -742,10 +751,41 @@ define Planner
                         let last_ptr path.get(path.length - 1)
                         guard last_ptr <> null
                             program_use_aliases.add((*last_ptr))
+                        var ns_name String^this("")
+                        guard path.length > 1
+                        {
+                            let ns_ptr path.get(path.length - 2)
+                            guard ns_ptr <> null
+                                set ns_name: String^this((*ns_ptr))
+                        }
+                        program_use_namespaces.add(ns_name)
                     }
                 }
                 set i: i + 1
             }
+        }
+
+        ; lookup_use_alias_namespace: scan program_use_aliases in parallel
+        ; with program_use_namespaces; return the namespace segment of the
+        ; use clause whose last segment equals `name`, or empty if none.
+        function lookup_use_alias_namespace#(rp, this: Planner, name: String) returns String
+        {
+            var i: size_t 0
+            while i < program_use_aliases.length
+            {
+                let a_ptr program_use_aliases.get(i)
+                guard a_ptr <> null
+                {
+                    guard a_ptr.equals(name)
+                    {
+                        let ns_ptr program_use_namespaces.get(i)
+                        guard ns_ptr <> null
+                            return String^rp((*ns_ptr))
+                    }
+                }
+                set i: i + 1
+            }
+            String^rp("")
         }
 
         ; is_program_use_alias: linear scan of program_use_aliases.
@@ -1995,16 +2035,30 @@ define Planner
                     }
                 }
 
+                ; Determine the namespace to mangle with: the current
+                ; namespace for a sibling call, otherwise the namespace of
+                ; a use-imported alias matching f.name (s192 — use-aliased
+                ; bare calls must mangle `_ZN<ns><fn>E…` like the member's
+                ; definition, not the free `_Z<fn>…` which links nowhere).
+                var ns_for_mangle String^rp("")
+                guard is_namespace_sibling
+                {
+                    let cnsn (*current_namespace_name)
+                    set ns_for_mangle: String^rp(cnsn)
+                }
                 guard is_namespace_sibling = false
+                    set ns_for_mangle: this.lookup_use_alias_namespace#(f.name)
+
+                guard ns_for_mangle.get_length() = 0
                     set mangled: Planner.mangle_free_function_from_types#(
                         f.name, params_holder, has_page
                     )
 
-                guard is_namespace_sibling
+                guard ns_for_mangle.get_length() > 0
                 {
                     ; Build a PlannedType for the namespace and items
                     ; for params, then call mangle_function# with parent.
-                    let cnsn (*current_namespace_name)
+                    let cnsn ns_for_mangle
                     var ns_parent_holder Vector[PlannedType]^rp(1)
                     ns_parent_holder.put(0, PlannedType(
                         Span(0, 0),
@@ -12032,6 +12086,14 @@ define Planner
                         let last_ptr path.get(path.length - 1)
                         guard last_ptr <> null
                             program_use_aliases.add((*last_ptr))
+                        var ns_name String^this("")
+                        guard path.length > 1
+                        {
+                            let ns_ptr path.get(path.length - 2)
+                            guard ns_ptr <> null
+                                set ns_name: String^this((*ns_ptr))
+                        }
+                        program_use_namespaces.add(ns_name)
                     }
                 }
                 set uu: uu + 1

@@ -1,0 +1,22 @@
+; Regression (s192): a bare call to a function imported via `use NS.fn` must
+; mangle as the namespace member (_ZN<ns><fn>E…), matching its definition —
+; not the free _Z<fn>… form (undefined at link). Frozen stage-0 silently DROPS
+; the call (returns the arg), so this runs only against a self-hosted stage.
+; Expected: PASS
+
+define util
+{
+    function compute(x: int) returns int
+        x + 2
+}
+
+use util.compute
+
+function run(n: int) returns int
+    compute(n)
+
+let result run(40)
+if result = 42
+    print("PASS")
+else
+    print("FAIL")
