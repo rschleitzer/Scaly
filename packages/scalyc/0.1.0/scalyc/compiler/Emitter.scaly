@@ -616,6 +616,29 @@ define Emitter
         a
     }
 
+    ; parse_array_size: numeric String → size_t, or 0 for empty / any
+    ; non-digit (the s192 fixed-array stack alloca only fires on a numeric
+    ; array_size; named-constant sizes return 0 and fall back to a plain
+    ; pointer slot, matching stage-0's std::stoull guard at Emitter.cpp:2393).
+    function parse_array_size(s: String) returns size_t
+    {
+        guard s.get_length() = 0
+            return 0
+        var result: size_t 0
+        var i: size_t 0
+        while i < s.get_length()
+        {
+            let c s.get(i)
+            guard c < (48 as u8)
+                return 0
+            guard c > (57 as u8)
+                return 0
+            set result: result * 10 + ((c - (48 as u8)) as size_t)
+            set i: i + 1
+        }
+        result
+    }
+
     ; s178: start a fresh pool window when a new function begins.
     ; Slots registered by earlier functions live in dead frames'
     ; entry blocks and must never be matched again.
@@ -8997,6 +9020,53 @@ define Emitter
                 {
                     let item_type_ref binding.binding_item.item_type
                     let item_type (*item_type_ref)
+
+                    ; s192: fixed-size stack array — the planner rewrites
+                    ; `T[N]` (T primitive) to pointer[T] with a numeric
+                    ; array_size. Allocate `[N x T]`, then store a decayed
+                    ; first-element pointer in a ptr slot so `*(buf + i)`
+                    ; works. Mirrors stage-0 Emitter.cpp:2401-2418. The
+                    ; backing array uses entry_alloca (a stable entry-block
+                    ; slot), NOT the statement-scoped temp pool — the buffer
+                    ; outlives the declaring statement.
+                    var arr_count: size_t 0
+                    guard item_type.name.equals("pointer")
+                    {
+                        guard item_type.array_size.get_length() > 0
+                            set arr_count: Emitter.parse_array_size(item_type.array_size)
+                    }
+                    guard arr_count > 0
+                    {
+                        var elem_ty LLVMTypeRef(null)
+                        guard item_type.generics <> null
+                        {
+                            let egens (*item_type.generics)
+                            guard egens.length > 0
+                            {
+                                let e_ptr egens.get(0)
+                                guard e_ptr <> null
+                                    set elem_ty: map_type((*e_ptr))
+                            }
+                        }
+                        guard elem_ty.handle <> null
+                        {
+                            let arr_ty LLVMArrayType2(elem_ty, arr_count)
+                            let arr_alloca entry_alloca(arr_ty, name.c_data())
+                            let i64_type LLVMInt64TypeInContext(context)
+                            let zero LLVMConstInt(i64_type, 0, 0)
+                            var indices Vector[LLVMValueRef]#(2)
+                            indices.put(0, zero)
+                            indices.put(1, zero)
+                            let first_elem LLVMBuildInBoundsGEP2(
+                                builder, arr_ty, arr_alloca, indices.data, 2, "arr.ptr")
+                            let ptr_ty LLVMPointerTypeInContext(context, 0)
+                            let ptr_slot entry_alloca(ptr_ty, name.c_data())
+                            LLVMBuildStore(builder, first_elem, ptr_slot)
+                            define_variable(name, ptr_slot)
+                            return true
+                        }
+                    }
+
                     let ty map_type(item_type)
                     ; s178: pooled, same as the initialized var path.
                     let alloca acquire_temp(ty, name.c_data())

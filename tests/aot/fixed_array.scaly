@@ -1,0 +1,19 @@
+; AOT Test: fixed-size stack array (s192)
+; `var buffer u8[N]` allocates [N x u8] on the stack and decays to a
+; pointer for `*(buffer + i)` access.
+; Expected: OK
+
+function fill() returns u8
+{
+    var buffer u8[4]
+    set *(buffer + 0): (65 as u8)
+    set *(buffer + 1): (66 as u8)
+    set *(buffer + 2): (67 as u8)
+    *(buffer + 2)
+}
+
+let r fill()
+if r = (67 as u8)
+    print("OK")
+else
+    print("BAD")

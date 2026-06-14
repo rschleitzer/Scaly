@@ -2652,6 +2652,50 @@ define Planner
                                                             set did_merge2: true
                                                         }
                                                     }
+                                                    ; s192: stack-array pattern
+                                                    ; `primitive[N]`. The generic
+                                                    ; extraction above fails (the
+                                                    ; row is an integer Constant,
+                                                    ; not a Type), so build a
+                                                    ; size-as-generic model Type and
+                                                    ; let plan_type# rewrite it to
+                                                    ; pointer[T] with array_size set.
+                                                    ; Mirrors stage-0
+                                                    ; Planner.cpp:7249-7289.
+                                                    guard did_merge2 = false
+                                                    {
+                                                        guard Planner.is_primitive_type_name(ct2.name)
+                                                        {
+                                                            let sz Planner.matrix_single_int_size#(nm2)
+                                                            guard sz.get_length() > 0
+                                                            {
+                                                                var sz_path Vector[String]^rp(1)
+                                                                sz_path.put(0, sz)
+                                                                var sz_gens Vector[Type]^rp(1)
+                                                                sz_gens.put(0, Type(
+                                                                    ct2.loc,
+                                                                    sz_path,
+                                                                    null,
+                                                                    Lifetime.Unspecified(Unspecified())
+                                                                ))
+                                                                var arr_name_path Vector[String]^rp(1)
+                                                                arr_name_path.put(0, ct2.name)
+                                                                let arr_type this.plan_type#(Type(
+                                                                    ct2.loc,
+                                                                    arr_name_path,
+                                                                    &sz_gens,
+                                                                    ct2.life
+                                                                ))
+                                                                merged_arr2.add(PlannedOperand(
+                                                                    cp_op.loc,
+                                                                    PlannedExpression.Type(arr_type),
+                                                                    null,
+                                                                    arr_type
+                                                                ))
+                                                                set did_merge2: true
+                                                            }
+                                                        }
+                                                    }
                                                     0
                                                 }
                                                 else
@@ -7313,6 +7357,67 @@ define Planner
                 return after_subst
             }
 
+            ; s192: fixed-size array type `T[N]` where T is a primitive.
+            ; The model carries the size N as a "generic argument" of the
+            ; primitive. Rewrite to pointer[T] with array_size set so
+            ; emit_binding allocas `[N x T]` on the stack and decays it to
+            ; a pointer. Without this the primitive-with-generic falls
+            ; through to the concept path, the binding gets a bogus scalar
+            ; type, and the whole enclosing body is dropped (e.g.
+            ; `var buffer char[64]`). Mirrors stage-0 Planner.cpp:6193-6255.
+            guard Planner.is_primitive_type_name(after_subst.name)
+            {
+                guard after_subst.generics <> null
+                {
+                    let arr_gens (*after_subst.generics)
+                    guard arr_gens.length > 0
+                    {
+                        let size_ptr arr_gens.get(0)
+                        guard size_ptr <> null
+                        {
+                            let size_name (*size_ptr).name
+                            ; Build the element pointer type pointer[T].
+                            var probe_holder Vector[PlannedType]^rp(1)
+                            probe_holder.put(0, PlannedType(
+                                after_subst.loc,
+                                after_subst.name,
+                                String^rp(""),
+                                null,
+                                after_subst.life,
+                                null,
+                                String^rp(""),
+                                null
+                            ))
+                            let elem_mangled Planner.encode_type#((*probe_holder.get(0)))
+                            var elem_holder Vector[PlannedType]^rp(1)
+                            elem_holder.put(0, PlannedType(
+                                after_subst.loc,
+                                after_subst.name,
+                                elem_mangled,
+                                null,
+                                after_subst.life,
+                                null,
+                                String^rp(""),
+                                null
+                            ))
+                            var ptr_sb StringBuilder$()
+                            ptr_sb.append("P")
+                            ptr_sb.append(elem_mangled)
+                            return PlannedType(
+                                after_subst.loc,
+                                String^rp("pointer"),
+                                ptr_sb.to_string^rp(),
+                                &elem_holder,
+                                after_subst.life,
+                                null,
+                                String^rp(size_name),
+                                null
+                            )
+                        }
+                    }
+                }
+            }
+
             ; Otherwise consult the concept table: a registered user type
             ; mangles as "_Z"-length-prefix-with-optional-generic-block.
             ;
@@ -10071,6 +10176,36 @@ define Planner
             let ops_to_collapse Vector[PlannedOperand]^rp(rest_arr)
             let collapsed this.collapse_operand_sequence#(ops_to_collapse)
 
+            ; s192: stack array declaration `var buffer char[64]` (no
+            ; init). The single operand collapses to a PlannedType that
+            ; plan_type# rewrote to pointer[T] with array_size set; treat
+            ; it as the item TYPE (no initializer), not a value operand.
+            ; Mirrors stage-0 Planner.cpp:10953-10978. Without this the
+            ; lone-type operand is kept as an init, emit_operands returns
+            ; null on it, and emit_binding drops the slot.
+            var is_stack_array_decl: bool false
+            var stack_array_holder Vector[PlannedType]^rp(1)
+            guard has_peeled_type = false
+            {
+                guard orig_item.item_type = null
+                {
+                    choose collapsed.expr
+                        when ct: PlannedType
+                        {
+                            guard ct.array_size.get_length() > 0
+                            {
+                                guard ct.name.equals("pointer")
+                                {
+                                    set is_stack_array_decl: true
+                                    stack_array_holder.put(0, ct)
+                                }
+                            }
+                        }
+                        else
+                            0
+                }
+            }
+
             ; Rebuild PlannedItem with the peeled type if any.
             var planned_item: PlannedItem orig_item
             guard has_peeled_type
@@ -10079,6 +10214,14 @@ define Planner
                     orig_item.is_private,
                     orig_item.name,
                     peeled_holder.get(0),
+                    orig_item.attributes
+                )
+            guard is_stack_array_decl
+                set planned_item: PlannedItem(
+                    orig_item.loc,
+                    orig_item.is_private,
+                    orig_item.name,
+                    stack_array_holder.get(0),
                     orig_item.attributes
                 )
 
@@ -10093,7 +10236,10 @@ define Planner
             ; Emit an equality constraint between the declared binding
             ; type and the collapsed initializer's result type. Solvable
             ; cases either confirm the annotation or fix the fresh var.
-            this.add_equality_constraint(binding_type, collapsed.result_type, b.span)
+            ; Skipped for a stack-array decl: there is no initializer —
+            ; the "collapsed" operand IS the type.
+            guard is_stack_array_decl = false
+                this.add_equality_constraint(binding_type, collapsed.result_type, b.span)
 
             ; Register the local in the current scope.
             guard planned_item.name <> null
@@ -10115,8 +10261,11 @@ define Planner
             var ops_holder Vector[PlannedOperand]^rp(0)
             guard rest_arr.length > 0
             {
-                set ops_holder: Vector[PlannedOperand]^rp(1)
-                ops_holder.put(0, collapsed)
+                guard is_stack_array_decl = false
+                {
+                    set ops_holder: Vector[PlannedOperand]^rp(1)
+                    ops_holder.put(0, collapsed)
+                }
             }
             PlannedBinding(
                 b.span,
@@ -14096,6 +14245,42 @@ define Planner
     ;   second cell is PlannedMatrix → recurse into each nested row,
     ;   build Model.Type with generics filled in.
     ; Otherwise: return null (caller treats this as extraction failure).
+    ; matrix_single_int_size: if a PlannedMatrix is exactly one row with a
+    ; single integer-constant cell, return its decimal value as a String;
+    ; otherwise empty. Recognises the `primitive[N]` stack-array shape in
+    ; collapse_operand_sequence#'s Type+Matrix merge (s192).
+    function matrix_single_int_size#(rp, nm: scalyc.compiler.Plan.PlannedMatrix) returns String
+    {
+        guard nm.operations = null
+            return String^rp("")
+        let rows (*nm.operations)
+        guard rows.length <> 1
+            return String^rp("")
+        let row0_ptr rows.get(0)
+        guard row0_ptr = null
+            return String^rp("")
+        let row0 (*row0_ptr)
+        guard row0.length <> 1
+            return String^rp("")
+        let cell_ptr row0.get(0)
+        guard cell_ptr = null
+            return String^rp("")
+        let cell (*cell_ptr)
+        var out String^rp("")
+        choose cell.expr
+            when c: scalyc.compiler.Plan.PlannedConstant
+            {
+                choose c.value
+                    when ic: IntegerConstant
+                        set out: Planner.size_to_string(ic.value)
+                    else
+                        0
+            }
+            else
+                0
+        out
+    }
+
     function extract_row_to_type#(rp, row: Vector[PlannedOperand]) returns ref[Type]?
     {
         guard row.length = 0
