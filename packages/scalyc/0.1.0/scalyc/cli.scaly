@@ -52,6 +52,7 @@ define Options
     plan_only: bool         ; --plan: just run planner
     show_help: bool
     no_prelude: bool        ; --no-prelude: skip auto-loading prelude
+    no_tests: bool          ; --no-tests: omit test/test_* functions (seed build)
     error_message: String
     library_paths: Array[String]    ; -L<path> entries (no leading -L)
     libraries: Array[String]        ; -l<name> entries (no leading -l)
@@ -71,6 +72,7 @@ define Options
         set plan_only: false
         set show_help: false
         set no_prelude: false
+        set no_tests: false
         set error_message: String()
         set library_paths: Array[String]()
         set libraries: Array[String]()
@@ -141,6 +143,10 @@ define cli
                 else if arg.equals(String$("--no-prelude"))
                 {
                     set opts.no_prelude: true
+                }
+                else if arg.equals(String$("--no-tests"))
+                {
+                    set opts.no_tests: true
                 }
                 else if arg.equals(String$("-o"))
                 {
@@ -217,6 +223,7 @@ define cli
         Console.println("  --model        Build semantic model")
         Console.println("  --plan         Run planner (type resolution)")
         Console.println("  --no-prelude   Skip auto-loading prelude module")
+        Console.println("  --no-tests     Omit test/test_* functions (seed build)")
     }
 
     ; Run the compiler with parsed options
@@ -359,6 +366,7 @@ define cli
 
         var config EmitterConfig$()
         set config.emit_debug_info: false
+        set config.skip_tests: opts.no_tests
 
         var emitter Emitter.Emitter$(config)
         let emit_result emitter.emit(plan, program_name)

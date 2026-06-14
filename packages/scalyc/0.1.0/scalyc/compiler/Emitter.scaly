@@ -227,6 +227,7 @@ define EmitterConfig
     opt_level: int              ; 0 = none, 1-3 = increasing
     target_triple: String       ; Empty = host
     data_layout: String         ; Empty = default for target
+    skip_tests: bool            ; --no-tests: omit test/test_* functions
 )
 {
     init()
@@ -236,6 +237,7 @@ define EmitterConfig
         set opt_level: 0
         set target_triple: String()
         set data_layout: String()
+        set skip_tests: false
     }
 }
 
@@ -2733,6 +2735,23 @@ define Emitter
     ; ========================================================================
 
     ; Emit a complete plan
+    ; Reachability-free test exclusion for the .ll seed build (--no-tests).
+    ; The scaly/scalyc package test orchestrators (`test`, `test_*`) are the
+    ; only callers of uninstantiated generics (Option[int], Result[int,bool],
+    ; Slice[int].subslice, HashMap[String,int]); cli.main never reaches them.
+    ; Default off, so normal -c/-o/AOT/selfhosted emission is unchanged; the
+    ; seed build passes --no-tests so these dead symbols drop and the seed
+    ; links with zero undefined. NOT a compiler-wide name skip (that regresses
+    ; AOT sibling_call's legit `function test()`) — gated on the flag.
+    function is_test_function(this, func: PlannedFunction) returns bool
+    {
+        guard config.skip_tests = false
+            return false
+        guard func.name.equals(String$("test"))
+            return true
+        func.name.starts_with(String$("test_"))
+    }
+
     function emit(this, plan: Plan, module_name: String) returns bool
     {
         initialize(module_name)
@@ -2776,7 +2795,10 @@ define Emitter
         guard plan.functions <> null
         {
             for func in plan.functions
-                emit_function_decl(func)
+            {
+                guard is_test_function(func) = false
+                    emit_function_decl(func)
+            }
         }
 
         ; Emit global variables BEFORE function bodies so that
@@ -2831,7 +2853,10 @@ define Emitter
         guard plan.functions <> null
         {
             for func in plan.functions
-                emit_function_body(func)
+            {
+                guard is_test_function(func) = false
+                    emit_function_body(func)
+            }
         }
 
         ; Emit main wrapper for top-level statements if present.
