@@ -26,3 +26,4 @@ output/
 retired/*/obj/
 retired/*/target/
 scalyc_native
+dist/
