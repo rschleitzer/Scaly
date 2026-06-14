@@ -262,27 +262,24 @@ function scaly_alloc_root_page() returns pointer[Page]
         guard stack_head = null
             set stack_head: create_stack_bucket(null as pointer[StackBucketHeader])
 
-        let p first_usable_page(stack_head as pointer[void])
+        let p first_usable_page(stack_head)
         set stack_top: p
         reset_page(p)
         return p
     }
 
     ; Regular push: bump to the next page in the current bucket.
-    ; The `as` casts on args here and below give stage-1's planner a
-    ; concrete arg type — mutable-global reads and member hops on them
-    ; otherwise type as fresh vars and the calls fail to resolve (s185).
-    let bucket stack_bucket_of(stack_top as pointer[Page])
+    let bucket stack_bucket_of(stack_top)
     let next_addr (stack_top as size_t + PAGE_SIZE) as pointer[Page]
 
-    guard next_addr > last_usable_page(bucket as pointer[void])
+    guard next_addr > last_usable_page(bucket)
     {
         ; Current bucket exhausted — walk to an existing next bucket or
         ; create one.
         guard bucket.next = null
-            set bucket.next: create_stack_bucket(bucket as pointer[StackBucketHeader])
+            set bucket.next: create_stack_bucket(bucket)
 
-        let fresh first_usable_page(bucket.next as pointer[void])
+        let fresh first_usable_page(bucket.next)
         set stack_top: fresh
         reset_page(fresh)
         return fresh
@@ -300,15 +297,15 @@ procedure scaly_release_root_page(p: pointer[Page])
     guard p <> stack_top
     {
         scaly_eputs("scaly_release_root_page: LIFO violation — release=")
-        scaly_eputp(p as pointer[void])
+        scaly_eputp(p)
         scaly_eputs(" top=")
-        scaly_eputp(stack_top as pointer[void])
+        scaly_eputp(stack_top)
         scaly_eputnl()
         abort()
     }
 
     let bucket stack_bucket_of(p)
-    let first first_usable_page(bucket as pointer[void])
+    let first first_usable_page(bucket)
 
     guard p <> first
     {
@@ -324,7 +321,7 @@ procedure scaly_release_root_page(p: pointer[Page])
         return
     }
 
-    set stack_top: last_usable_page(bucket.prev as pointer[void])
+    set stack_top: last_usable_page(bucket.prev)
 }
 
 ; --------------------------------------------------------------------------
@@ -338,7 +335,7 @@ function scaly_alloc_page() returns pointer[Page]
 
     let b heap_head
     ; Invariant: b.bitmap != 0 (we unlink full buckets below).
-    let slot ctz_u64(b.bitmap as u64)
+    let slot ctz_u64(b.bitmap)
     set b.bitmap: b.bitmap & ~((1 as u64) << slot)
 
     let page_addr (b as size_t) + ((slot + 1) as size_t) * PAGE_SIZE
@@ -403,13 +400,10 @@ procedure scaly_trace_dump()
         let e trace_entries + i
         guard (*e).push_count = (*e).pop_count
         {
-            ; Bind+cast: `e` derives from the mutable global
-            ; trace_entries, so (*e).field args type as fresh vars under
-            ; stage-1 and the calls drop (s185). Casts pin the arg types.
-            let pushes (*e).push_count as i64
-            let pops (*e).pop_count as i64
+            let pushes (*e).push_count
+            let pops (*e).pop_count
             scaly_eputs("scaly_trace_root: UNBALANCED ")
-            scaly_eputs((*e).name as pointer[const_char])
+            scaly_eputs((*e).name)
             scaly_eputs(" push=")
             scaly_eputi(pushes)
             scaly_eputs(" pop=")
@@ -450,7 +444,7 @@ function scaly_trace_find_or_add(name: pointer[const_char]) returns pointer[Trac
     while i < trace_count
     {
         let e trace_entries + i
-        guard strcmp((*e).name as pointer[const_char], name) = 0
+        guard strcmp((*e).name, name) = 0
             return e
         set i: i + 1
     }

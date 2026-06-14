@@ -50,7 +50,7 @@ define io
             return -12
 
         var buffer char[64]
-        let read_count fread(buffer as pointer[void], 1 as size_t, 64 as size_t, file)
+        let read_count fread(buffer, 1 as size_t, 64 as size_t, file)
         fclose(file)
 
         guard read_count <> content_len
