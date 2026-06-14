@@ -16,22 +16,42 @@
 #   4. FIXED POINT: seed re-emits the 3 .ll byte-identical to the reference
 #
 # Usage: tools/seed.sh [self-hosted-compiler] [out-dir]
-#   self-hosted-compiler  default /tmp/scalyc_stage2 (canonical promoted stage)
+#   self-hosted-compiler  default /tmp/scalyc_stage2 (canonical promoted stage);
+#                         if it does not exist, tools/bootstrap.sh builds it.
 #   out-dir               default dist/seed (gitignored; per-target artifact)
 #
-# .ll artifacts are NOT checked into the repo: ~12MB, arm64 DataLayout + LLVM
+# TURNKEY per platform: on a fresh checkout with the deps below installed, run
+# `tools/seed.sh` (no args) -> bootstraps stage-2 -> emits + verifies the seed
+# for THIS host's target triple (the compiler is host-only; one seed per box).
+#   The "fabulous four" LP64 targets and how to install deps:
+#     arm64-apple-darwin   brew install llvm@18 cmake openjade
+#     x86_64-apple-darwin  (Intel Mac)  same brew formulae
+#     x86_64-linux-gnu     apt install llvm-18-dev clang-18 cmake openjade \
+#                                      zlib1g-dev libzstd-dev
+#     aarch64-linux-gnu    same apt packages (arm64 Ubuntu)
+# Override LLVM detection with LLVM18=/path; see tools/llvm-env.sh.
+#
+# .ll artifacts are NOT checked into the repo: ~12MB, target DataLayout + LLVM
 # version baked in (union payload sizes computed at emission). One .ll set per
 # target triple, regenerated and fixed-point-verified per release.
 set -e
 cd "$(dirname "$0")/.."
+source tools/llvm-env.sh
+[ "$llvm_env_ok" = "1" ] || { echo "SEED: FAIL — LLVM 18 not found"; exit 1; }
 
 CC=${1:-/tmp/scalyc_stage2}
 OUT=${2:-dist/seed}
-L=/opt/homebrew/opt/llvm@18
-LLC=$L/bin/llc
+CLANG=${CLANG:-clang}
 
 mkdir -p "$OUT"
 fail() { echo "SEED: FAIL — $1"; exit 1; }
+
+if [ ! -x "$CC" ]; then
+  echo "seed: $CC not found — bootstrapping"
+  tools/bootstrap.sh || fail "bootstrap"
+  CC=/tmp/scalyc_stage2          # bootstrap.sh's output
+  [ -x "$CC" ] || fail "bootstrap produced no $CC"
+fi
 
 echo "seed: emitting .ll with $CC --no-tests"
 ( ulimit -s 65520
@@ -41,15 +61,16 @@ echo "seed: emitting .ll with $CC --no-tests"
   "$CC" -S --no-tests -o "$OUT/scaly.ll" packages/scaly/0.1.0/scaly.scaly || exit 1
 ) || fail "emission"
 
-echo "seed: llc -> obj (llvm@18) + link (system clang, no dynamic_lookup)"
+echo "seed: llc -> obj (LLVM 18) + link ($CLANG, no dynamic_lookup)"
 for f in main scalyc scaly; do
   "$LLC" -filetype=obj "$OUT/$f.ll" -o "$OUT/$f.o" || fail "llc $f.ll"
 done
-# System clang: Apple ld. NO -Wl,-undefined,dynamic_lookup — a clean link
-# proves zero undefined. (llvm@18 llc is required: Apple clang rejects the
-# seed's mul/ptrtoint-getelementptr constexprs.)
-if ! clang "$OUT/main.o" "$OUT/scalyc.o" "$OUT/scaly.o" \
-     -L$L/lib -lLLVM-18 -o "$OUT/scalyc_seed" 2> "$OUT/link.log"; then
+# NO -Wl,-undefined,dynamic_lookup — a clean link proves zero undefined.
+# (LLVM-18 llc is required: some system clangs reject the seed's
+# mul/ptrtoint-getelementptr constexprs; llc-18 accepts them. The final link
+# is plain object linking, so any clang/cc works.)
+if ! "$CLANG" "$OUT/main.o" "$OUT/scalyc.o" "$OUT/scaly.o" \
+     -L"$LLVM_LIBDIR" -l"$LLVM_LIBNAME" -o "$OUT/scalyc_seed" 2> "$OUT/link.log"; then
   grep -v 'reexported library' "$OUT/link.log" || true
   fail "link (undefined symbols)"
 fi
