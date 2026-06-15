@@ -157,20 +157,17 @@ llvm::Expected<"(id syntax)"Syntax> Parser::parse"(id syntax)"() {
 "       (if (abstract? syntax)
             ;; Abstract syntax - try each alternative
             ($
-"    std::string FirstRealError;
-"               (apply-to-children-of syntax (lambda (content) ($
+                (apply-to-children-of syntax (lambda (content) ($
 "    {
         auto Result = parse"(link content)"();
         if (Result)
             return "(id syntax)"Syntax{std::move(*Result)};
         std::string ErrMsg = llvm::toString(Result.takeError());
-        if (ErrMsg != \"different syntax\" && FirstRealError.empty())
-            FirstRealError = std::move(ErrMsg);
+        if (ErrMsg != \"different syntax\")
+            return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
     }
 "               )))
-"    if (!FirstRealError.empty())
-        return llvm::make_error<llvm::StringError>(FirstRealError, llvm::inconvertibleErrorCode());
-    return different();
+"    return different();
 "           )
             ;; Concrete syntax - parse each field
             ($

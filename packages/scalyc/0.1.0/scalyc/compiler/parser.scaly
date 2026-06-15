@@ -230,9 +230,19 @@ define Parser
             choose parse_declaration#()
                 when err: Error
                 {
-                    guard acc.head = null
-                        throw err
-                    set parsing: false
+                    ; Different = no more items; stop the list (or rethrow if the
+                    ; list is still empty, so the caller sees Different). Invalid =
+                    ; an item committed then hit a real syntax error; propagate it
+                    ; instead of silently truncating the list (e.g. a no-else if).
+                    choose err
+                        when i: Invalid
+                            throw ParserError.Invalid(i)
+                        when d: Different
+                        {
+                            guard acc.head = null
+                                throw err
+                            set parsing: false
+                        }
                 }
                 when node: Success
                     acc.add(node)
@@ -465,9 +475,19 @@ define Parser
             choose parse_member#()
                 when err: Error
                 {
-                    guard acc.head = null
-                        throw err
-                    set parsing: false
+                    ; Different = no more items; stop the list (or rethrow if the
+                    ; list is still empty, so the caller sees Different). Invalid =
+                    ; an item committed then hit a real syntax error; propagate it
+                    ; instead of silently truncating the list (e.g. a no-else if).
+                    choose err
+                        when i: Invalid
+                            throw ParserError.Invalid(i)
+                        when d: Different
+                        {
+                            guard acc.head = null
+                                throw err
+                            set parsing: false
+                        }
                 }
                 when node: Success
                     acc.add(node)
@@ -685,9 +705,19 @@ define Parser
             choose parse_genericparameter#()
                 when err: Error
                 {
-                    guard acc.head = null
-                        throw err
-                    set parsing: false
+                    ; Different = no more items; stop the list (or rethrow if the
+                    ; list is still empty, so the caller sees Different). Invalid =
+                    ; an item committed then hit a real syntax error; propagate it
+                    ; instead of silently truncating the list (e.g. a no-else if).
+                    choose err
+                        when i: Invalid
+                            throw ParserError.Invalid(i)
+                        when d: Different
+                        {
+                            guard acc.head = null
+                                throw err
+                            set parsing: false
+                        }
                 }
                 when node: Success
                     acc.add(node)
@@ -958,9 +988,19 @@ define Parser
             choose parse_variant#()
                 when err: Error
                 {
-                    guard acc.head = null
-                        throw err
-                    set parsing: false
+                    ; Different = no more items; stop the list (or rethrow if the
+                    ; list is still empty, so the caller sees Different). Invalid =
+                    ; an item committed then hit a real syntax error; propagate it
+                    ; instead of silently truncating the list (e.g. a no-else if).
+                    choose err
+                        when i: Invalid
+                            throw ParserError.Invalid(i)
+                        when d: Different
+                        {
+                            guard acc.head = null
+                                throw err
+                            set parsing: false
+                        }
                 }
                 when node: Success
                     acc.add(node)
@@ -1138,9 +1178,19 @@ define Parser
             choose parse_genericargument#()
                 when err: Error
                 {
-                    guard acc.head = null
-                        throw err
-                    set parsing: false
+                    ; Different = no more items; stop the list (or rethrow if the
+                    ; list is still empty, so the caller sees Different). Invalid =
+                    ; an item committed then hit a real syntax error; propagate it
+                    ; instead of silently truncating the list (e.g. a no-else if).
+                    choose err
+                        when i: Invalid
+                            throw ParserError.Invalid(i)
+                        when d: Different
+                        {
+                            guard acc.head = null
+                                throw err
+                            set parsing: false
+                        }
                 }
                 when node: Success
                     acc.add(node)
@@ -1241,9 +1291,19 @@ define Parser
             choose parse_item#()
                 when err: Error
                 {
-                    guard acc.head = null
-                        throw err
-                    set parsing: false
+                    ; Different = no more items; stop the list (or rethrow if the
+                    ; list is still empty, so the caller sees Different). Invalid =
+                    ; an item committed then hit a real syntax error; propagate it
+                    ; instead of silently truncating the list (e.g. a no-else if).
+                    choose err
+                        when i: Invalid
+                            throw ParserError.Invalid(i)
+                        when d: Different
+                        {
+                            guard acc.head = null
+                                throw err
+                            set parsing: false
+                        }
                 }
                 when node: Success
                     acc.add(node)
@@ -1380,9 +1440,19 @@ define Parser
             choose parse_use#()
                 when err: Error
                 {
-                    guard acc.head = null
-                        throw err
-                    set parsing: false
+                    ; Different = no more items; stop the list (or rethrow if the
+                    ; list is still empty, so the caller sees Different). Invalid =
+                    ; an item committed then hit a real syntax error; propagate it
+                    ; instead of silently truncating the list (e.g. a no-else if).
+                    choose err
+                        when i: Invalid
+                            throw ParserError.Invalid(i)
+                        when d: Different
+                        {
+                            guard acc.head = null
+                                throw err
+                            set parsing: false
+                        }
                 }
                 when node: Success
                     acc.add(node)
@@ -1583,9 +1653,19 @@ define Parser
             choose parse_method#()
                 when err: Error
                 {
-                    guard acc.head = null
-                        throw err
-                    set parsing: false
+                    ; Different = no more items; stop the list (or rethrow if the
+                    ; list is still empty, so the caller sees Different). Invalid =
+                    ; an item committed then hit a real syntax error; propagate it
+                    ; instead of silently truncating the list (e.g. a no-else if).
+                    choose err
+                        when i: Invalid
+                            throw ParserError.Invalid(i)
+                        when d: Different
+                        {
+                            guard acc.head = null
+                                throw err
+                            set parsing: false
+                        }
                 }
                 when node: Success
                     acc.add(node)
@@ -1637,9 +1717,19 @@ define Parser
             choose parse_init#()
                 when err: Error
                 {
-                    guard acc.head = null
-                        throw err
-                    set parsing: false
+                    ; Different = no more items; stop the list (or rethrow if the
+                    ; list is still empty, so the caller sees Different). Invalid =
+                    ; an item committed then hit a real syntax error; propagate it
+                    ; instead of silently truncating the list (e.g. a no-else if).
+                    choose err
+                        when i: Invalid
+                            throw ParserError.Invalid(i)
+                        when d: Different
+                        {
+                            guard acc.head = null
+                                throw err
+                            set parsing: false
+                        }
                 }
                 when node: Success
                     acc.add(node)
@@ -2076,9 +2166,19 @@ define Parser
             choose parse_extend#()
                 when err: Error
                 {
-                    guard acc.head = null
-                        throw err
-                    set parsing: false
+                    ; Different = no more items; stop the list (or rethrow if the
+                    ; list is still empty, so the caller sees Different). Invalid =
+                    ; an item committed then hit a real syntax error; propagate it
+                    ; instead of silently truncating the list (e.g. a no-else if).
+                    choose err
+                        when i: Invalid
+                            throw ParserError.Invalid(i)
+                        when d: Different
+                        {
+                            guard acc.head = null
+                                throw err
+                            set parsing: false
+                        }
                 }
                 when node: Success
                     acc.add(node)
@@ -2158,9 +2258,19 @@ define Parser
             choose parse_attribute#()
                 when err: Error
                 {
-                    guard acc.head = null
-                        throw err
-                    set parsing: false
+                    ; Different = no more items; stop the list (or rethrow if the
+                    ; list is still empty, so the caller sees Different). Invalid =
+                    ; an item committed then hit a real syntax error; propagate it
+                    ; instead of silently truncating the list (e.g. a no-else if).
+                    choose err
+                        when i: Invalid
+                            throw ParserError.Invalid(i)
+                        when d: Different
+                        {
+                            guard acc.head = null
+                                throw err
+                            set parsing: false
+                        }
                 }
                 when node: Success
                     acc.add(node)
@@ -2265,9 +2375,19 @@ define Parser
             choose parse_package#()
                 when err: Error
                 {
-                    guard acc.head = null
-                        throw err
-                    set parsing: false
+                    ; Different = no more items; stop the list (or rethrow if the
+                    ; list is still empty, so the caller sees Different). Invalid =
+                    ; an item committed then hit a real syntax error; propagate it
+                    ; instead of silently truncating the list (e.g. a no-else if).
+                    choose err
+                        when i: Invalid
+                            throw ParserError.Invalid(i)
+                        when d: Different
+                        {
+                            guard acc.head = null
+                                throw err
+                            set parsing: false
+                        }
                 }
                 when node: Success
                     acc.add(node)
@@ -2379,9 +2499,19 @@ define Parser
             choose parse_operand#()
                 when err: Error
                 {
-                    guard acc.head = null
-                        throw err
-                    set parsing: false
+                    ; Different = no more items; stop the list (or rethrow if the
+                    ; list is still empty, so the caller sees Different). Invalid =
+                    ; an item committed then hit a real syntax error; propagate it
+                    ; instead of silently truncating the list (e.g. a no-else if).
+                    choose err
+                        when i: Invalid
+                            throw ParserError.Invalid(i)
+                        when d: Different
+                        {
+                            guard acc.head = null
+                                throw err
+                            set parsing: false
+                        }
                 }
                 when node: Success
                     acc.add(node)
@@ -2428,9 +2558,19 @@ define Parser
             choose parse_memberaccess#()
                 when err: Error
                 {
-                    guard acc.head = null
-                        throw err
-                    set parsing: false
+                    ; Different = no more items; stop the list (or rethrow if the
+                    ; list is still empty, so the caller sees Different). Invalid =
+                    ; an item committed then hit a real syntax error; propagate it
+                    ; instead of silently truncating the list (e.g. a no-else if).
+                    choose err
+                        when i: Invalid
+                            throw ParserError.Invalid(i)
+                        when d: Different
+                        {
+                            guard acc.head = null
+                                throw err
+                            set parsing: false
+                        }
                 }
                 when node: Success
                     acc.add(node)
@@ -2712,9 +2852,19 @@ define Parser
             choose parse_component#()
                 when err: Error
                 {
-                    guard acc.head = null
-                        throw err
-                    set parsing: false
+                    ; Different = no more items; stop the list (or rethrow if the
+                    ; list is still empty, so the caller sees Different). Invalid =
+                    ; an item committed then hit a real syntax error; propagate it
+                    ; instead of silently truncating the list (e.g. a no-else if).
+                    choose err
+                        when i: Invalid
+                            throw ParserError.Invalid(i)
+                        when d: Different
+                        {
+                            guard acc.head = null
+                                throw err
+                            set parsing: false
+                        }
                 }
                 when node: Success
                     acc.add(node)
@@ -2855,9 +3005,19 @@ define Parser
             choose parse_element#()
                 when err: Error
                 {
-                    guard acc.head = null
-                        throw err
-                    set parsing: false
+                    ; Different = no more items; stop the list (or rethrow if the
+                    ; list is still empty, so the caller sees Different). Invalid =
+                    ; an item committed then hit a real syntax error; propagate it
+                    ; instead of silently truncating the list (e.g. a no-else if).
+                    choose err
+                        when i: Invalid
+                            throw ParserError.Invalid(i)
+                        when d: Different
+                        {
+                            guard acc.head = null
+                                throw err
+                            set parsing: false
+                        }
                 }
                 when node: Success
                     acc.add(node)
@@ -3065,9 +3225,19 @@ define Parser
             choose parse_branch#()
                 when err: Error
                 {
-                    guard acc.head = null
-                        throw err
-                    set parsing: false
+                    ; Different = no more items; stop the list (or rethrow if the
+                    ; list is still empty, so the caller sees Different). Invalid =
+                    ; an item committed then hit a real syntax error; propagate it
+                    ; instead of silently truncating the list (e.g. a no-else if).
+                    choose err
+                        when i: Invalid
+                            throw ParserError.Invalid(i)
+                        when d: Different
+                        {
+                            guard acc.head = null
+                                throw err
+                            set parsing: false
+                        }
                 }
                 when node: Success
                     acc.add(node)
@@ -3118,9 +3288,19 @@ define Parser
             choose parse_case#()
                 when err: Error
                 {
-                    guard acc.head = null
-                        throw err
-                    set parsing: false
+                    ; Different = no more items; stop the list (or rethrow if the
+                    ; list is still empty, so the caller sees Different). Invalid =
+                    ; an item committed then hit a real syntax error; propagate it
+                    ; instead of silently truncating the list (e.g. a no-else if).
+                    choose err
+                        when i: Invalid
+                            throw ParserError.Invalid(i)
+                        when d: Different
+                        {
+                            guard acc.head = null
+                                throw err
+                            set parsing: false
+                        }
                 }
                 when node: Success
                     acc.add(node)
@@ -3363,9 +3543,19 @@ define Parser
             choose parse_when#()
                 when err: Error
                 {
-                    guard acc.head = null
-                        throw err
-                    set parsing: false
+                    ; Different = no more items; stop the list (or rethrow if the
+                    ; list is still empty, so the caller sees Different). Invalid =
+                    ; an item committed then hit a real syntax error; propagate it
+                    ; instead of silently truncating the list (e.g. a no-else if).
+                    choose err
+                        when i: Invalid
+                            throw ParserError.Invalid(i)
+                        when d: Different
+                        {
+                            guard acc.head = null
+                                throw err
+                            set parsing: false
+                        }
                 }
                 when node: Success
                     acc.add(node)
@@ -3433,9 +3623,19 @@ define Parser
             choose parse_statement#()
                 when err: Error
                 {
-                    guard acc.head = null
-                        throw err
-                    set parsing: false
+                    ; Different = no more items; stop the list (or rethrow if the
+                    ; list is still empty, so the caller sees Different). Invalid =
+                    ; an item committed then hit a real syntax error; propagate it
+                    ; instead of silently truncating the list (e.g. a no-else if).
+                    choose err
+                        when i: Invalid
+                            throw ParserError.Invalid(i)
+                        when d: Different
+                        {
+                            guard acc.head = null
+                                throw err
+                            set parsing: false
+                        }
                 }
                 when node: Success
                     acc.add(node)
@@ -3752,9 +3952,19 @@ define Parser
             choose parse_bindingspec#()
                 when err: Error
                 {
-                    guard acc.head = null
-                        throw err
-                    set parsing: false
+                    ; Different = no more items; stop the list (or rethrow if the
+                    ; list is still empty, so the caller sees Different). Invalid =
+                    ; an item committed then hit a real syntax error; propagate it
+                    ; instead of silently truncating the list (e.g. a no-else if).
+                    choose err
+                        when i: Invalid
+                            throw ParserError.Invalid(i)
+                        when d: Different
+                        {
+                            guard acc.head = null
+                                throw err
+                            set parsing: false
+                        }
                 }
                 when node: Success
                     acc.add(node)
@@ -3862,9 +4072,19 @@ define Parser
             choose parse_part#()
                 when err: Error
                 {
-                    guard acc.head = null
-                        throw err
-                    set parsing: false
+                    ; Different = no more items; stop the list (or rethrow if the
+                    ; list is still empty, so the caller sees Different). Invalid =
+                    ; an item committed then hit a real syntax error; propagate it
+                    ; instead of silently truncating the list (e.g. a no-else if).
+                    choose err
+                        when i: Invalid
+                            throw ParserError.Invalid(i)
+                        when d: Different
+                        {
+                            guard acc.head = null
+                                throw err
+                            set parsing: false
+                        }
                 }
                 when node: Success
                     acc.add(node)
@@ -3932,9 +4152,19 @@ define Parser
             choose parse_property#()
                 when err: Error
                 {
-                    guard acc.head = null
-                        throw err
-                    set parsing: false
+                    ; Different = no more items; stop the list (or rethrow if the
+                    ; list is still empty, so the caller sees Different). Invalid =
+                    ; an item committed then hit a real syntax error; propagate it
+                    ; instead of silently truncating the list (e.g. a no-else if).
+                    choose err
+                        when i: Invalid
+                            throw ParserError.Invalid(i)
+                        when d: Different
+                        {
+                            guard acc.head = null
+                                throw err
+                            set parsing: false
+                        }
                 }
                 when node: Success
                     acc.add(node)
@@ -4331,9 +4561,19 @@ define Parser
             choose parse_action#()
                 when err: Error
                 {
-                    guard acc.head = null
-                        throw err
-                    set parsing: false
+                    ; Different = no more items; stop the list (or rethrow if the
+                    ; list is still empty, so the caller sees Different). Invalid =
+                    ; an item committed then hit a real syntax error; propagate it
+                    ; instead of silently truncating the list (e.g. a no-else if).
+                    choose err
+                        when i: Invalid
+                            throw ParserError.Invalid(i)
+                        when d: Different
+                        {
+                            guard acc.head = null
+                                throw err
+                            set parsing: false
+                        }
                 }
                 when node: Success
                     acc.add(node)
@@ -4590,9 +4830,19 @@ define Parser
             choose parse_type#()
                 when err: Error
                 {
-                    guard acc.head = null
-                        throw err
-                    set parsing: false
+                    ; Different = no more items; stop the list (or rethrow if the
+                    ; list is still empty, so the caller sees Different). Invalid =
+                    ; an item committed then hit a real syntax error; propagate it
+                    ; instead of silently truncating the list (e.g. a no-else if).
+                    choose err
+                        when i: Invalid
+                            throw ParserError.Invalid(i)
+                        when d: Different
+                        {
+                            guard acc.head = null
+                                throw err
+                            set parsing: false
+                        }
                 }
                 when node: Success
                     acc.add(node)
@@ -4688,9 +4938,19 @@ define Parser
             choose parse_extension#()
                 when err: Error
                 {
-                    guard acc.head = null
-                        throw err
-                    set parsing: false
+                    ; Different = no more items; stop the list (or rethrow if the
+                    ; list is still empty, so the caller sees Different). Invalid =
+                    ; an item committed then hit a real syntax error; propagate it
+                    ; instead of silently truncating the list (e.g. a no-else if).
+                    choose err
+                        when i: Invalid
+                            throw ParserError.Invalid(i)
+                        when d: Different
+                        {
+                            guard acc.head = null
+                                throw err
+                            set parsing: false
+                        }
                 }
                 when node: Success
                     acc.add(node)

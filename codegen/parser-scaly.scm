@@ -161,9 +161,19 @@ define Parser
             choose parse_"(downcase-string (id syntax))"#()
                 when err: Error
                 {
-                    guard acc.head = null
-                        throw err
-                    set parsing: false
+                    ; Different = no more items; stop the list (or rethrow if the
+                    ; list is still empty, so the caller sees Different). Invalid =
+                    ; an item committed then hit a real syntax error; propagate it
+                    ; instead of silently truncating the list (e.g. a no-else if).
+                    choose err
+                        when i: Invalid
+                            throw ParserError.Invalid(i)
+                        when d: Different
+                        {
+                            guard acc.head = null
+                                throw err
+                            set parsing: false
+                        }
                 }
                 when node: Success
                     acc.add(node)
