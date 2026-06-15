@@ -36,3 +36,15 @@ emits the trio with `--no-tests`, and verifies the fixed point), then installed
 here with `tools/install-seed.sh`. Because emission is host-independent, you may
 mint on any LP64-LE host — but **verify on each target** (run hello + the AOT
 corpus + a fixed-point re-emit) before trusting it there. See `RELEASING.md`.
+
+## Verification status
+
+The `verify-seed` CI matrix (`.github/workflows/verify-seed.yml`) builds from
+this seed and runs `tools/verify-seed.sh` (hello + AOT corpus) on every push:
+
+- ✅ `arm64-apple-darwin` — verified (incl. byte-identical fixed point)
+- ✅ `x86_64-linux-gnu` — verified
+- ✅ `aarch64-linux-gnu` — verified
+- ⚠️ `x86_64-apple-darwin` — expected-good, unverified (GitHub's Intel macOS
+  runner is being retired; the leg is non-blocking). Same Mach-O/LP64 family as
+  the verified `arm64-apple-darwin`.

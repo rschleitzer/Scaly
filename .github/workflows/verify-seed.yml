@@ -38,14 +38,18 @@ jobs:
   verify:
     name: ${{ matrix.triple }}
     runs-on: ${{ matrix.os }}
+    # x86_64-apple-darwin is allowed to fail: GitHub is retiring Intel macOS
+    # runners (macos-13), so that leg often never schedules. It is the same
+    # Mach-O/LP64 family as the arm64-apple-darwin leg, which is a hard gate.
+    continue-on-error: ${{ matrix.allow_failure || false }}
     strategy:
       fail-fast: false
       matrix:
         include:
-          - { os: macos-14,        triple: arm64-apple-darwin }   # Apple Silicon
-          - { os: macos-13,        triple: x86_64-apple-darwin }  # Intel (see note below)
-          - { os: ubuntu-24.04,    triple: x86_64-linux-gnu }
-          - { os: ubuntu-24.04-arm, triple: aarch64-linux-gnu }   # GitHub-hosted arm64 Linux
+          - { os: macos-14,         triple: arm64-apple-darwin }   # Apple Silicon
+          - { os: macos-13,         triple: x86_64-apple-darwin, allow_failure: true }  # Intel (often unavailable)
+          - { os: ubuntu-24.04,     triple: x86_64-linux-gnu }
+          - { os: ubuntu-24.04-arm, triple: aarch64-linux-gnu }    # GitHub-hosted arm64 Linux
     steps:
       - uses: actions/checkout@v4
 
@@ -68,6 +72,7 @@ jobs:
       - name: Verify (hello + AOT corpus)
         run: tools/verify-seed.sh
 
-# NOTE: macos-13 is GitHub's last Intel macOS image. If it is retired, the
-# x86_64-apple-darwin leg will fail to schedule; replace it with a self-hosted
-# Intel-mac runner, or drop that triple until one is available.
+# NOTE: macos-13 is GitHub's last Intel macOS image and is being retired, so the
+# x86_64-apple-darwin leg often never schedules. It is marked allow_failure (see
+# continue-on-error above) so it never blocks the workflow. To make it a hard
+# gate again, attach a self-hosted Intel-mac runner and drop its allow_failure.

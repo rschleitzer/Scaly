@@ -52,8 +52,13 @@ ABI boundary. Each target is built from the seed and **verified** in two tiers:
   (main ~1 GB, scaly ~5.6 GB), so it does not fit free runners — run it on a box
   with enough RAM. This is the strongest proof of the single-seed model.
 
-Current status: functionally verified + fixed-point on `arm64-apple-darwin`; the
-other three are expected-good, pending the first green CI run.
+Current status: functionally verified in CI on `arm64-apple-darwin`,
+`x86_64-linux-gnu`, and `aarch64-linux-gnu` (plus fixed-point on
+`arm64-apple-darwin`). `x86_64-apple-darwin` is expected-good but unverified —
+GitHub's Intel macOS runner (`macos-13`) is being retired and rarely schedules,
+so that matrix leg is non-blocking (`allow_failure`); verify it on a self-hosted
+Intel Mac or at release. It is the same Mach-O/LP64 family as the green
+`arm64-apple-darwin` leg.
 
 (The C++ stage-0 stays frozen-but-buildable: it refreshes the seed, brings up
 genuinely new data models, and is an independent lineage for diverse double
