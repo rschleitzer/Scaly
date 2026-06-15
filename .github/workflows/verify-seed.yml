@@ -1,0 +1,71 @@
+name: verify-seed
+
+# Rebuild the committed seed (seed/) into a working scalyc with no C++ toolchain,
+# then verify it natively on each of the four LP64 little-endian targets:
+# hello + AOT corpus (self-checked vs each test's ; Expected:) + a byte-identical
+# fixed-point re-emit. This is the per-target gate behind the single-seed model
+# (see RELEASING.md / seed/README.md).
+
+on:
+  push:
+    branches: [ master ]
+    paths:
+      - 'seed/**'
+      - 'packages/**'
+      - 'tests/aot/**'
+      - 'tools/build-from-seed.sh'
+      - 'tools/verify-seed.sh'
+      - 'tools/llvm-env.sh'
+      - '.github/workflows/verify-seed.yml'
+  pull_request:
+    paths:
+      - 'seed/**'
+      - 'packages/**'
+      - 'tests/aot/**'
+      - 'tools/build-from-seed.sh'
+      - 'tools/verify-seed.sh'
+      - 'tools/llvm-env.sh'
+      - '.github/workflows/verify-seed.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: verify-seed-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: ${{ matrix.triple }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: macos-14,        triple: arm64-apple-darwin }   # Apple Silicon
+          - { os: macos-13,        triple: x86_64-apple-darwin }  # Intel (see note below)
+          - { os: ubuntu-24.04,    triple: x86_64-linux-gnu }
+          - { os: ubuntu-24.04-arm, triple: aarch64-linux-gnu }   # GitHub-hosted arm64 Linux
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install LLVM 18 (macOS)
+        if: runner.os == 'macOS'
+        run: brew install llvm@18
+
+      - name: Install LLVM 18 (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y llvm-18 llvm-18-dev clang-18
+
+      - name: Build scalyc from the seed (no C++)
+        env:
+          # Ubuntu ships clang as clang-18; macOS uses the system clang for linking.
+          CLANG: ${{ runner.os == 'Linux' && 'clang-18' || 'clang' }}
+        run: tools/build-from-seed.sh
+
+      - name: Verify (hello + AOT corpus + fixed point)
+        run: tools/verify-seed.sh
+
+# NOTE: macos-13 is GitHub's last Intel macOS image. If it is retired, the
+# x86_64-apple-darwin leg will fail to schedule; replace it with a self-hosted
+# Intel-mac runner, or drop that triple until one is available.

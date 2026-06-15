@@ -51,7 +51,9 @@ echo "build-from-seed: OK — $OUT (from seed/, no C++)"
 # Build the runtime archive the self-hosted compiler links every program
 # against (/tmp/libscaly.a — the path is fixed in cli.scaly). It supplies the
 # RBMM runtime; --no-prelude keeps print/println out of it to avoid duplicate
-# symbols. Built with the compiler we just produced, so this stays C++-free.
-"$OUT" -c --no-prelude -o /tmp/libscaly.o packages/scaly/0.1.0/scaly.scaly
+# symbols, and --no-tests drops the test_* orchestrators (which reference
+# uninstantiated generics and would otherwise leave undefined symbols in the
+# single archive object). Built with the compiler we just produced — C++-free.
+"$OUT" -c --no-prelude --no-tests -o /tmp/libscaly.o packages/scaly/0.1.0/scaly.scaly
 ar rcs /tmp/libscaly.a /tmp/libscaly.o
 echo "build-from-seed: runtime archive /tmp/libscaly.a ready"

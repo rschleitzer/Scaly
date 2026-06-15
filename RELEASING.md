@@ -41,8 +41,11 @@ the size/align emission generalized off its hardcoded 64-bit constants.
 (struct-by-value / `sret`) into the IR that meet `libLLVM`/`libc` at a platform
 ABI boundary. Each target must still be built and **verified** — hello + the AOT
 corpus + a fixed-point re-emit — before the seed is trusted there. Current
-status: verified on `arm64-apple-darwin`; the other three are expected-good but
-unverified.
+status: verified on `arm64-apple-darwin`; the other three are expected-good,
+pending the first green CI run. The gate is automated in
+`.github/workflows/verify-seed.yml`, which builds from the committed seed and
+runs `tools/verify-seed.sh` (hello + AOT corpus + fixed point) on all four
+targets on every push.
 
 (The C++ stage-0 stays frozen-but-buildable: it refreshes the seed, brings up
 genuinely new data models, and is an independent lineage for diverse double
