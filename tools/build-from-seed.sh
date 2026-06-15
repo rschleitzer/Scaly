@@ -42,8 +42,19 @@ for f in main scalyc scaly; do
     "$LLC" -filetype=obj "$SEED/$f.ll" -o "$WORK/$f.o"
 done
 
+# On Linux, stock GNU ld (BFD) fails to link libLLVM-18 ("failed to set dynamic
+# section sizes: bad value"); lld handles it. Use lld when present. macOS ld64
+# links fine, so leave it alone there.
+LINKARGS=()
+if [ "$(uname -s)" = "Linux" ]; then
+    for c in "$LLVM_PREFIX/bin/ld.lld" ld.lld ld.lld-18; do
+        p=$(command -v "$c" 2>/dev/null || true)
+        [ -n "$p" ] && { LINKARGS+=("-fuse-ld=$p"); break; }
+    done
+fi
+
 mkdir -p "$(dirname "$OUT")"
-${CLANG:-clang} "$WORK/main.o" "$WORK/scalyc.o" "$WORK/scaly.o" \
+${CLANG:-clang} "${LINKARGS[@]}" "$WORK/main.o" "$WORK/scalyc.o" "$WORK/scaly.o" \
     -L"$LLVM_LIBDIR" -l"$LLVM_LIBNAME" -o "$OUT"
 
 echo "build-from-seed: OK — $OUT (from seed/, no C++)"

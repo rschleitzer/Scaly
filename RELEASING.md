@@ -39,13 +39,21 @@ the size/align emission generalized off its hardcoded 64-bit constants.
 **Verification is still per target.** Portable *emission* is proven; portable
 *execution* is not automatic, because the compiler bakes some ABI choices
 (struct-by-value / `sret`) into the IR that meet `libLLVM`/`libc` at a platform
-ABI boundary. Each target must still be built and **verified** — hello + the AOT
-corpus + a fixed-point re-emit — before the seed is trusted there. Current
-status: verified on `arm64-apple-darwin`; the other three are expected-good,
-pending the first green CI run. The gate is automated in
-`.github/workflows/verify-seed.yml`, which builds from the committed seed and
-runs `tools/verify-seed.sh` (hello + AOT corpus + fixed point) on all four
-targets on every push.
+ABI boundary. Each target is built from the seed and **verified** in two tiers:
+
+- **Functional (every push, all four targets, free CI).** Build with
+  `tools/build-from-seed.sh`, then `tools/verify-seed.sh`: hello + the AOT corpus
+  (self-checked against each test's `; Expected:`). This proves the seed builds a
+  *correct* compiler on the target. Automated in
+  `.github/workflows/verify-seed.yml`.
+- **Byte-identical fixed point (release time, high-RAM machine).**
+  `VERIFY_FIXEDPOINT=1 tools/verify-seed.sh` additionally re-emits all three `.ll`
+  and `cmp`s them against `seed/`. Re-emitting `scalyc.ll` peaks at **~15 GB**
+  (main ~1 GB, scaly ~5.6 GB), so it does not fit free runners — run it on a box
+  with enough RAM. This is the strongest proof of the single-seed model.
+
+Current status: functionally verified + fixed-point on `arm64-apple-darwin`; the
+other three are expected-good, pending the first green CI run.
 
 (The C++ stage-0 stays frozen-but-buildable: it refreshes the seed, brings up
 genuinely new data models, and is an independent lineage for diverse double
@@ -157,9 +165,11 @@ cmp r_scaly.ll scaly.ll && echo "fixed point OK"
 - [ ] Tag the release (`git tag v<version>`), push the tag.
 - [ ] Refresh the single seed once (`tools/seed.sh && tools/install-seed.sh`) on
       any LP64-LE host; commit `seed/`.
-- [ ] **Verify** the seed on **each** of the four targets — build with
-      `tools/build-from-seed.sh`, then run hello + the AOT corpus + a fixed-point
-      re-emit (`SEED: OK`). Use real machines, VMs, or a CI matrix.
+- [ ] **Functional verify** on all four targets — the `verify-seed` CI matrix
+      (build + hello + AOT corpus) must be green.
+- [ ] **Fixed-point verify** on a high-RAM machine — `VERIFY_FIXEDPOINT=1
+      tools/verify-seed.sh` re-emits all three `.ll` byte-identical to `seed/`
+      (~15 GB peak; once per release is enough since the IR is host-independent).
 - [ ] Package the one `.ll` trio + `SHA256SUMS` as `scaly-seed-<version>.tar.gz`
       (section 3) and attach it to the GitHub release.
 - [ ] In the release notes, state the pinned **LLVM version** and list the four

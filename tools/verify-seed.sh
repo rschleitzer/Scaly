@@ -47,13 +47,20 @@ done
 [ -z "$bad" ] || fail "AOT:$bad"
 echo "verify: AOT $pass/$total OK ($skipped skipped)"
 
-echo "verify: fixed point vs committed seed/"
-for f in main scalyc; do
-  "$SC" -S --no-tests -o "$WORK/$f.ll" packages/scalyc/0.1.0/$f.scaly >/dev/null 2>&1 || fail "re-emit $f.ll"
-done
-"$SC" -S --no-tests -o "$WORK/scaly.ll" packages/scaly/0.1.0/scaly.scaly >/dev/null 2>&1 || fail "re-emit scaly.ll"
-for f in main scalyc scaly; do
-  cmp -s "$WORK/$f.ll" "seed/$f.ll" || fail "fixed point: $f.ll differs from committed seed"
-done
-
-echo "VERIFY: OK — hello + AOT $pass/$total + fixed point byte-identical to seed/"
+# Byte-identical fixed-point re-emit proves the compiler reproduces the exact
+# committed seed on this target. OFF by default: re-emitting scalyc.ll peaks at
+# ~15 GB (main ~1 GB, scaly ~5.6 GB), over free CI runners. Run it at release
+# time on a high-RAM machine:  VERIFY_FIXEDPOINT=1 tools/verify-seed.sh
+if [ -n "$VERIFY_FIXEDPOINT" ]; then
+  echo "verify: fixed point vs committed seed/ (re-emit; high memory)"
+  for f in main scalyc; do
+    "$SC" -S --no-tests -o "$WORK/$f.ll" packages/scalyc/0.1.0/$f.scaly >/dev/null 2>&1 || fail "re-emit $f.ll"
+  done
+  "$SC" -S --no-tests -o "$WORK/scaly.ll" packages/scaly/0.1.0/scaly.scaly >/dev/null 2>&1 || fail "re-emit scaly.ll"
+  for f in main scalyc scaly; do
+    cmp -s "$WORK/$f.ll" "seed/$f.ll" || fail "fixed point: $f.ll differs from committed seed"
+  done
+  echo "VERIFY: OK — hello + AOT $pass/$total + fixed point byte-identical to seed/"
+else
+  echo "VERIFY: OK — hello + AOT $pass/$total (fixed point skipped; set VERIFY_FIXEDPOINT=1 to include it)"
+fi

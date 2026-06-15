@@ -2,9 +2,11 @@ name: verify-seed
 
 # Rebuild the committed seed (seed/) into a working scalyc with no C++ toolchain,
 # then verify it natively on each of the four LP64 little-endian targets:
-# hello + AOT corpus (self-checked vs each test's ; Expected:) + a byte-identical
-# fixed-point re-emit. This is the per-target gate behind the single-seed model
-# (see RELEASING.md / seed/README.md).
+# hello + AOT corpus (self-checked vs each test's ; Expected:). This functional
+# gate proves the single seed builds a CORRECT compiler per target. The heavier
+# byte-identical fixed-point re-emit (scalyc.ll peaks at ~15 GB, over free-runner
+# limits) is a release-time check on a high-RAM machine — VERIFY_FIXEDPOINT=1
+# tools/verify-seed.sh. See RELEASING.md / seed/README.md.
 
 on:
   push:
@@ -55,7 +57,7 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y llvm-18 llvm-18-dev clang-18
+          sudo apt-get install -y llvm-18 llvm-18-dev clang-18 lld-18
 
       - name: Build scalyc from the seed (no C++)
         env:
@@ -63,7 +65,7 @@ jobs:
           CLANG: ${{ runner.os == 'Linux' && 'clang-18' || 'clang' }}
         run: tools/build-from-seed.sh
 
-      - name: Verify (hello + AOT corpus + fixed point)
+      - name: Verify (hello + AOT corpus)
         run: tools/verify-seed.sh
 
 # NOTE: macos-13 is GitHub's last Intel macOS image. If it is retired, the
