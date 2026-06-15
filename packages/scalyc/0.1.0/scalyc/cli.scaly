@@ -292,7 +292,16 @@ define cli
         choose p.parse_program#()
             when err: Error
             {
-                Console.println("Parse error")
+                ; s194: the thrown error now survives propagation (NPO
+                ; retired), so surface the real message + location instead
+                ; of a bare "Parse error". Invalid carries the parser's
+                ; diagnostic (e.g. "expected Else" for a no-else `if`);
+                ; Different means the top-level construct simply didn't match.
+                choose err
+                    when i: Invalid
+                        cli.print_parse_error#(opts.input_file, source, i.start, i.message)
+                    when d: Different
+                        Console.println("Parse error")
                 return 2
             }
             when program: Success
@@ -532,6 +541,42 @@ define cli
     ; recorded byte offset (mirrors stage-0 calculatePosition). NOTE:
     ; offsets of constructs from other modules of the package are
     ; attributed to the main input file — single-file accuracy first.
+    ; s194: format a single parse error as `file:line:col: <message>`,
+    ; mirroring print_diagnostics#'s offset→line/col walk (numeric LF
+    ; compare — `"\n" as char` mis-compiles under stage-1).
+    function print_parse_error#(file_path: String, source: String, offset: size_t, message: String)
+    {
+        var line: size_t 1
+        var col: size_t 1
+        let src_len source.get_length()
+        var target offset
+        guard target > src_len
+            set target: src_len
+        var off: size_t 0
+        while off < target
+        {
+            let c source.get(off)
+            if c = (10 as char)
+            {
+                set line: line + 1
+                set col: 1
+            }
+            else
+                set col: col + 1
+            set off: off + 1
+        }
+        var msg StringBuilder#()
+        msg.append(file_path)
+        msg.append(":")
+        msg.append(cli.format_size#(line))
+        msg.append(":")
+        msg.append(cli.format_size#(col))
+        msg.append(": ")
+        msg.append(message)
+        let msg_str msg.to_string#()
+        Console.println(msg_str.to_c_string#())
+    }
+
     function print_diagnostics#(planner: ref[Planner.Planner], file_path: String, source: String)
     {
         var di: size_t 0
