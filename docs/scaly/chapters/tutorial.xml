@@ -10,19 +10,52 @@
     <title>Getting Started</title>
 
     <section xml:id="tut-build">
-      <title>Building the Compiler</title>
-      <para>Scaly is compiled by <command>scalyc</command>. You build it from
-        source once, then use it to compile your own programs. You will need a
-        C++17 compiler, LLVM 18, and CMake 3.16 or newer. On macOS, install the
-        dependencies with Homebrew; on Ubuntu, with apt:</para>
+      <title>Building the Compiler from the Seed</title>
+      <para>Scaly is self-hosted: the compiler is written in Scaly and compiles
+        itself. It is distributed as a <emphasis>seed</emphasis> — the compiler
+        emitted as its own LLVM IR, the <filename>.ll</filename> files committed
+        under <filename>seed/</filename> (one set per target platform). Turning
+        the seed back into a working <command>scalyc</command> needs only LLVM 18
+        and a C compiler for the final link; no C++ toolchain is involved.</para>
+      <para>Install the prerequisites, then run the build script from the
+        repository root:</para>
+      <programlisting>; macOS
+brew install llvm@18
+
+; Ubuntu 24.04
+sudo apt install llvm-18 clang-18</programlisting>
+      <programlisting>tools/build-from-seed.sh</programlisting>
+      <para>This compiles the seed with <command>llc</command>, links it into
+        <filename>scalyc/build/scalyc</filename>, and builds the small runtime
+        archive the compiler links your programs against. For brevity, the rest
+        of this tutorial assumes the compiler is on your <envar>PATH</envar>:</para>
+      <programlisting>export PATH="$PWD/scalyc/build:$PATH"</programlisting>
+      <note>
+        <para>The runtime archive lives at <filename>/tmp/libscaly.a</filename>.
+          If it gets cleared — for example after a reboot — and the compiler
+          reports it missing, just re-run <filename>tools/build-from-seed.sh</filename>
+          to rebuild it.</para>
+      </note>
+    </section>
+
+    <section xml:id="tut-build-cpp">
+      <title>Bootstrapping from C++ (Fallback)</title>
+      <para>The compiler that produced the seed was originally bootstrapped from
+        a reference implementation written in C++. You only need that path to
+        mint a seed for a brand-new platform — the compiler is host-only and
+        cannot cross-build a seed for another architecture — or to work on the
+        compiler itself. It needs a C++17 compiler, CMake, and openjade in
+        addition to LLVM 18:</para>
       <programlisting>; macOS
 brew install llvm@18 cmake openjade
 
 ; Ubuntu 24.04
 sudo apt install llvm-18-dev clang-18 cmake openjade zlib1g-dev libzstd-dev</programlisting>
-      <para>From the repository root, build the compiler:</para>
-      <programlisting>./build.sh</programlisting>
-      <para>This produces the compiler at <filename>scalyc/build/scalyc</filename>.</para>
+      <para><command>./build.sh</command> builds the C++ stage-0 compiler, and
+        <filename>tools/seed.sh</filename> then bootstraps it into the
+        self-hosted compiler and emits a fresh, fixed-point-verified seed. See
+        <filename>RELEASING.md</filename> for the full seed-distribution
+        process.</para>
     </section>
 
     <section xml:id="tut-hello">
