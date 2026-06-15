@@ -1,0 +1,239 @@
+<chapter xml:id="tutorial">
+  <title>Tutorial</title>
+
+  <para>This chapter is a hands-on introduction to Scaly. It gets you from an
+    empty file to a running program, then takes you on a quick tour of the
+    language. Later chapters cover everything here in depth; the goal now is to
+    write and run real code as fast as possible.</para>
+
+  <section xml:id="tut-getting-started">
+    <title>Getting Started</title>
+
+    <section xml:id="tut-build">
+      <title>Building the Compiler</title>
+      <para>Scaly is compiled by <command>scalyc</command>. You build it from
+        source once, then use it to compile your own programs. You will need a
+        C++17 compiler, LLVM 18, and CMake 3.16 or newer. On macOS, install the
+        dependencies with Homebrew; on Ubuntu, with apt:</para>
+      <programlisting>; macOS
+brew install llvm@18 cmake openjade
+
+; Ubuntu 24.04
+sudo apt install llvm-18-dev clang-18 cmake openjade zlib1g-dev libzstd-dev</programlisting>
+      <para>From the repository root, build the compiler:</para>
+      <programlisting>./build.sh</programlisting>
+      <para>This produces the compiler at <filename>scalyc/build/scalyc</filename>.</para>
+    </section>
+
+    <section xml:id="tut-hello">
+      <title>Hello, World!</title>
+      <para>A Scaly program is just a file of statements — there is no
+        <code>main</code> function to declare and nothing to import. Put this
+        single line in a file called <filename>hello.scaly</filename>:</para>
+      <programlisting>print("Hello, World!")</programlisting>
+      <para>Compile it to an executable with <option>-o</option>, then run the
+        result:</para>
+      <programlisting>scalyc -o hello hello.scaly
+./hello</programlisting>
+      <para>The program prints:</para>
+      <screen>Hello, World!</screen>
+      <para>That is the whole edit-compile-run loop. Everything that follows is
+        just more interesting things to put between the braces.</para>
+    </section>
+  </section>
+
+  <section xml:id="tut-tour">
+    <title>A Tour of Scaly</title>
+    <para>This section sweeps quickly across the language using small, complete
+      programs. If something is not fully explained here, do not worry —
+      every feature is covered in detail in the rest of this specification, and
+      each part of the tour points you to the relevant chapter.</para>
+
+    <section xml:id="tut-values">
+      <title>Values and Bindings</title>
+      <para>Bind a value to a name with <code>let</code>. There is no equals
+        sign — the name is followed directly by its value. Use <code>var</code>
+        for a binding you intend to change, and <code>set</code> to change it.
+        A semicolon starts a comment.</para>
+      <programlisting>let answer 42        ; immutable binding
+var count 0          ; mutable binding
+set count: count + 1 ; assignment uses a colon</programlisting>
+      <para>The equals sign <code>=</code> is reserved for comparison, so it
+        never gets confused with assignment. See <xref linkend="lexical"/> for
+        the full lexical rules.</para>
+    </section>
+
+    <section xml:id="tut-operators">
+      <title>Operators and Precedence</title>
+      <para>Operators are ordinary identifiers, not keywords baked into the
+        grammar. When they are chained, they combine using standard mathematical
+        precedence — multiplication binds tighter than addition:</para>
+      <programlisting>; 3 + 4 * 5 is 3 + 20, which is 23 — not 35
+let result 3 + 4 * 5
+if result = 23
+    print("got 23")
+else
+    print("unexpected")</programlisting>
+      <para>Parentheses group explicitly, and an operator written before its
+        operand acts as a prefix function (<code>-x</code>, <code>~flag</code>).
+        See <xref linkend="expressions"/> for the complete model.</para>
+    </section>
+
+    <section xml:id="tut-control-flow">
+      <title>Control Flow</title>
+      <para><code>if</code> chooses between branches. Single-statement branches
+        need no braces; the condition needs no parentheses:</para>
+      <programlisting>let n 7
+if n &lt; 0
+    print("negative")
+else if n = 0
+    print("zero")
+else
+    print("positive")</programlisting>
+      <para><code>while</code> repeats as long as its condition holds. Use braces
+        for a multi-statement body:</para>
+      <programlisting>var sum 0
+var i 1
+while i &lt;= 10
+{
+    set sum: sum + i
+    set i: i + 1
+}
+; sum is now 55</programlisting>
+      <para><code>for</code> iterates. <code>for i in 4</code> runs
+        <code>i</code> from 0 up to — but not including — 4:</para>
+      <programlisting>var total 0
+for i in 4
+    set total: total + i
+; total is 0 + 1 + 2 + 3 = 6</programlisting>
+    </section>
+
+    <section xml:id="tut-functions">
+      <title>Functions</title>
+      <para>A function declares its parameter types and return type. The value
+        of the last expression is returned automatically — no <code>return</code>
+        keyword is needed for the final result. A single-expression body needs no
+        braces:</para>
+      <programlisting>function add(a: int, b: int) returns int
+    a + b
+
+let s add(3, 4)      ; s is 7</programlisting>
+      <para>Functions can call themselves. Here is the classic factorial:</para>
+      <programlisting>function factorial(n: int) returns int
+    if n &lt;= 1
+        1
+    else
+        n * factorial(n - 1)
+
+let f factorial(5)   ; f is 120</programlisting>
+      <para>Functions are pure: they read their arguments and return a value,
+        with no side effects. To mutate, use a procedure.</para>
+    </section>
+
+    <section xml:id="tut-procedures">
+      <title>Procedures and Mutation</title>
+      <para>A <code>procedure</code> is like a function but may change its inputs
+        and perform side effects. The distinction is visible at every call site,
+        so a reader always knows which calls can mutate state. See
+        <xref linkend="types-params-mutation"/> for the details.</para>
+      <programlisting>define Counter(value: int)
+{
+    procedure increment(this)
+        set value: value + 1
+
+    function get(this) returns int
+        value
+}
+
+var c Counter(0)
+c.increment()
+c.increment()
+let v c.get()        ; v is 2</programlisting>
+    </section>
+
+    <section xml:id="tut-structs">
+      <title>Structures and Methods</title>
+      <para>Define a structure by listing its fields. A structure with public
+        fields gets a constructor that takes them in order. Methods are
+        functions or procedures whose first parameter is <code>this</code>:</para>
+      <programlisting>define Point(x: int, y: int)
+{
+    function distance_squared(this) returns int
+        this.x * this.x + this.y * this.y
+}
+
+let p Point(3, 4)
+let d p.distance_squared()   ; d is 25</programlisting>
+      <para><xref linkend="types-constructors"/> covers constructors, including
+        the page-aware <code>init#</code> form used by types that allocate.</para>
+    </section>
+
+    <section xml:id="tut-unions">
+      <title>Unions, Options, and choose</title>
+      <para>A <code>union</code> holds one of several variants. Each variant may
+        carry a payload. The most common union is <code>Option</code>, which
+        represents a value that may be absent:</para>
+      <programlisting>define Option union(Some: int, None)
+
+let present Option.Some(42)
+let absent  Option.None</programlisting>
+      <para>Match on a union with <code>choose</code>. Each <code>when</code>
+        clause names a binding, then the variant, then the result; the binding
+        is bound to the variant's payload. An <code>else</code> clause handles
+        the remaining variants:</para>
+      <programlisting>function or_zero(o: Option) returns int
+    choose o
+        when v: Some
+            v
+        else
+            0
+
+let a or_zero(Option.Some(7))   ; a is 7
+let b or_zero(Option.None)      ; b is 0</programlisting>
+      <para>See <xref linkend="types-unions"/> for union layout, the
+        <code>T?</code> shorthand, and pattern matching in full.</para>
+    </section>
+  </section>
+
+  <section xml:id="tut-together">
+    <title>Putting It Together</title>
+    <para>Let us combine the pieces into one small, complete program: a safe
+      division that returns an <code>Option</code> instead of crashing on a zero
+      divisor, with the caller deciding what to print.</para>
+    <para>Start with the function. It returns <code>None</code> when the divisor
+      is zero, and <code>Some</code> with the quotient otherwise:</para>
+    <programlisting>define Option union(Some: int, None)
+
+function safe_divide(a: int, b: int) returns Option
+    if b = 0
+        Option.None
+    else
+        Option.Some(a / b)</programlisting>
+    <para>Now call it and react to the result with <code>choose</code>. The
+      <code>Some</code> arm receives the quotient; the <code>else</code> arm
+      handles division by zero:</para>
+    <programlisting>let result safe_divide(20, 4)
+choose result
+    when q: Some
+        if q = 5
+            print("20 / 4 = 5")
+        else
+            print("unexpected quotient")
+    else
+        print("cannot divide by zero")</programlisting>
+    <para>Put both pieces in <filename>divide.scaly</filename>, then build and
+      run it:</para>
+    <programlisting>scalyc -o divide divide.scaly
+./divide</programlisting>
+    <para>It prints:</para>
+    <screen>20 / 4 = 5</screen>
+    <para>Change the call to <code>safe_divide(7, 0)</code> and the same program
+      prints <computeroutput>cannot divide by zero</computeroutput> — the union
+      makes the failure a value you must handle, not a crash you can forget.</para>
+    <para>From here, the rest of this specification fills in the details: the
+      <xref linkend="lexical"/> rules, the full <xref linkend="expressions"/>
+      model, and the <xref linkend="types"/> system including generics,
+      lifetimes, and region-based memory management.</para>
+  </section>
+
+</chapter>

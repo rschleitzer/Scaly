@@ -1,0 +1,663 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<HTML
+><HEAD
+><TITLE
+>Tutorial</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"><LINK
+REL="HOME"
+TITLE="The Scaly Programming Language"
+HREF="index.html"><LINK
+REL="PREVIOUS"
+TITLE="Introduction"
+HREF="introduction.htm"><LINK
+REL="NEXT"
+TITLE="Lexical Structure"
+HREF="lexical.htm"><META
+HTTP-EQUIV="Content-Type"
+CONTENT="text/html; charset=UTF-8"></HEAD
+><BODY
+CLASS="chapter"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>The Scaly Programming Language</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="introduction.htm"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+></TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="lexical.htm"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="chapter"
+><H1
+><A
+NAME="AEN38"
+></A
+>Chapter 2 Tutorial</H1
+><DIV
+CLASS="TOC"
+><DL
+><DT
+><B
+>Table of Contents</B
+></DT
+><DT
+><A
+HREF="tutorial.htm#AEN41"
+>Getting Started</A
+></DT
+><DT
+><A
+HREF="tutorial.htm#AEN64"
+>A Tour of Scaly</A
+></DT
+><DT
+><A
+HREF="tutorial.htm#AEN134"
+>Putting It Together</A
+></DT
+></DL
+></DIV
+><P
+>This chapter is a hands-on introduction to Scaly. It gets you from an
+    empty file to a running program, then takes you on a quick tour of the
+    language. Later chapters cover everything here in depth; the goal now is to
+    write and run real code as fast as possible.</P
+><DIV
+CLASS="section"
+><H1
+CLASS="section"
+><A
+NAME="AEN41"
+>Getting Started</A
+></H1
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN43"
+>Building the Compiler</A
+></H2
+><P
+>Scaly is compiled by <B
+CLASS="command"
+>scalyc</B
+>. You build it from
+        source once, then use it to compile your own programs. You will need a
+        C++17 compiler, LLVM 18, and CMake 3.16 or newer. On macOS, install the
+        dependencies with Homebrew; on Ubuntu, with apt:</P
+><PRE
+CLASS="programlisting"
+>; macOS
+brew install llvm@18 cmake openjade
+
+; Ubuntu 24.04
+sudo apt install llvm-18-dev clang-18 cmake openjade zlib1g-dev libzstd-dev</PRE
+><P
+>From the repository root, build the compiler:</P
+><PRE
+CLASS="programlisting"
+>./build.sh</PRE
+><P
+>This produces the compiler at <TT
+CLASS="filename"
+>scalyc/build/scalyc</TT
+>.</P
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN52"
+>Hello, World!</A
+></H2
+><P
+>A Scaly program is just a file of statements — there is no
+        <TT
+CLASS="code"
+>main</TT
+> function to declare and nothing to import. Put this
+        single line in a file called <TT
+CLASS="filename"
+>hello.scaly</TT
+>:</P
+><PRE
+CLASS="programlisting"
+>print("Hello, World!")</PRE
+><P
+>Compile it to an executable with <CODE
+CLASS="option"
+>-o</CODE
+>, then run the
+        result:</P
+><PRE
+CLASS="programlisting"
+>scalyc -o hello hello.scaly
+./hello</PRE
+><P
+>The program prints:</P
+><PRE
+CLASS="screen"
+>Hello, World!</PRE
+><P
+>That is the whole edit-compile-run loop. Everything that follows is
+        just more interesting things to put between the braces.</P
+></DIV
+></DIV
+><DIV
+CLASS="section"
+><H1
+CLASS="section"
+><A
+NAME="AEN64"
+>A Tour of Scaly</A
+></H1
+><P
+>This section sweeps quickly across the language using small, complete
+      programs. If something is not fully explained here, do not worry —
+      every feature is covered in detail in the rest of this specification, and
+      each part of the tour points you to the relevant chapter.</P
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN67"
+>Values and Bindings</A
+></H2
+><P
+>Bind a value to a name with <TT
+CLASS="code"
+>let</TT
+>. There is no equals
+        sign — the name is followed directly by its value. Use <TT
+CLASS="code"
+>var</TT
+>
+        for a binding you intend to change, and <TT
+CLASS="code"
+>set</TT
+> to change it.
+        A semicolon starts a comment.</P
+><PRE
+CLASS="programlisting"
+>let answer 42        ; immutable binding
+var count 0          ; mutable binding
+set count: count + 1 ; assignment uses a colon</PRE
+><P
+>The equals sign <TT
+CLASS="code"
+>=</TT
+> is reserved for comparison, so it
+        never gets confused with assignment. See <A
+HREF="lexical.htm"
+>Chapter 3</A
+> for
+        the full lexical rules.</P
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN77"
+>Operators and Precedence</A
+></H2
+><P
+>Operators are ordinary identifiers, not keywords baked into the
+        grammar. When they are chained, they combine using standard mathematical
+        precedence — multiplication binds tighter than addition:</P
+><PRE
+CLASS="programlisting"
+>; 3 + 4 * 5 is 3 + 20, which is 23 — not 35
+let result 3 + 4 * 5
+if result = 23
+    print("got 23")
+else
+    print("unexpected")</PRE
+><P
+>Parentheses group explicitly, and an operator written before its
+        operand acts as a prefix function (<TT
+CLASS="code"
+>-x</TT
+>, <TT
+CLASS="code"
+>~flag</TT
+>).
+        See <A
+HREF="expressions.htm"
+>Chapter 7</A
+> for the complete model.</P
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN85"
+>Control Flow</A
+></H2
+><P
+><TT
+CLASS="code"
+>if</TT
+> chooses between branches. Single-statement branches
+        need no braces; the condition needs no parentheses:</P
+><PRE
+CLASS="programlisting"
+>let n 7
+if n &#60; 0
+    print("negative")
+else if n = 0
+    print("zero")
+else
+    print("positive")</PRE
+><P
+><TT
+CLASS="code"
+>while</TT
+> repeats as long as its condition holds. Use braces
+        for a multi-statement body:</P
+><PRE
+CLASS="programlisting"
+>var sum 0
+var i 1
+while i &#60;= 10
+{
+    set sum: sum + i
+    set i: i + 1
+}
+; sum is now 55</PRE
+><P
+><TT
+CLASS="code"
+>for</TT
+> iterates. <TT
+CLASS="code"
+>for i in 4</TT
+> runs
+        <TT
+CLASS="code"
+>i</TT
+> from 0 up to — but not including — 4:</P
+><PRE
+CLASS="programlisting"
+>var total 0
+for i in 4
+    set total: total + i
+; total is 0 + 1 + 2 + 3 = 6</PRE
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN98"
+>Functions</A
+></H2
+><P
+>A function declares its parameter types and return type. The value
+        of the last expression is returned automatically — no <TT
+CLASS="code"
+>return</TT
+>
+        keyword is needed for the final result. A single-expression body needs no
+        braces:</P
+><PRE
+CLASS="programlisting"
+>function add(a: int, b: int) returns int
+    a + b
+
+let s add(3, 4)      ; s is 7</PRE
+><P
+>Functions can call themselves. Here is the classic factorial:</P
+><PRE
+CLASS="programlisting"
+>function factorial(n: int) returns int
+    if n &#60;= 1
+        1
+    else
+        n * factorial(n - 1)
+
+let f factorial(5)   ; f is 120</PRE
+><P
+>Functions are pure: they read their arguments and return a value,
+        with no side effects. To mutate, use a procedure.</P
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN106"
+>Procedures and Mutation</A
+></H2
+><P
+>A <TT
+CLASS="code"
+>procedure</TT
+> is like a function but may change its inputs
+        and perform side effects. The distinction is visible at every call site,
+        so a reader always knows which calls can mutate state. See
+        <A
+HREF="types.htm#AEN356"
+>the Section called <I
+>Mutation via Procedures</I
+> in Chapter 4</A
+> for the details.</P
+><PRE
+CLASS="programlisting"
+>define Counter(value: int)
+{
+    procedure increment(this)
+        set value: value + 1
+
+    function get(this) returns int
+        value
+}
+
+var c Counter(0)
+c.increment()
+c.increment()
+let v c.get()        ; v is 2</PRE
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN112"
+>Structures and Methods</A
+></H2
+><P
+>Define a structure by listing its fields. A structure with public
+        fields gets a constructor that takes them in order. Methods are
+        functions or procedures whose first parameter is <TT
+CLASS="code"
+>this</TT
+>:</P
+><PRE
+CLASS="programlisting"
+>define Point(x: int, y: int)
+{
+    function distance_squared(this) returns int
+        this.x * this.x + this.y * this.y
+}
+
+let p Point(3, 4)
+let d p.distance_squared()   ; d is 25</PRE
+><P
+><A
+HREF="types.htm#AEN362"
+>the Section called <I
+>Constructors</I
+> in Chapter 4</A
+> covers constructors, including
+        the page-aware <TT
+CLASS="code"
+>init#</TT
+> form used by types that allocate.</P
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN120"
+>Unions, Options, and choose</A
+></H2
+><P
+>A <TT
+CLASS="code"
+>union</TT
+> holds one of several variants. Each variant may
+        carry a payload. The most common union is <TT
+CLASS="code"
+>Option</TT
+>, which
+        represents a value that may be absent:</P
+><PRE
+CLASS="programlisting"
+>define Option union(Some: int, None)
+
+let present Option.Some(42)
+let absent  Option.None</PRE
+><P
+>Match on a union with <TT
+CLASS="code"
+>choose</TT
+>. Each <TT
+CLASS="code"
+>when</TT
+>
+        clause names a binding, then the variant, then the result; the binding
+        is bound to the variant's payload. An <TT
+CLASS="code"
+>else</TT
+> clause handles
+        the remaining variants:</P
+><PRE
+CLASS="programlisting"
+>function or_zero(o: Option) returns int
+    choose o
+        when v: Some
+            v
+        else
+            0
+
+let a or_zero(Option.Some(7))   ; a is 7
+let b or_zero(Option.None)      ; b is 0</PRE
+><P
+>See <A
+HREF="types.htm#AEN497"
+>the Section called <I
+>Union Types</I
+> in Chapter 4</A
+> for union layout, the
+        <TT
+CLASS="code"
+>T?</TT
+> shorthand, and pattern matching in full.</P
+></DIV
+></DIV
+><DIV
+CLASS="section"
+><H1
+CLASS="section"
+><A
+NAME="AEN134"
+>Putting It Together</A
+></H1
+><P
+>Let us combine the pieces into one small, complete program: a safe
+      division that returns an <TT
+CLASS="code"
+>Option</TT
+> instead of crashing on a zero
+      divisor, with the caller deciding what to print.</P
+><P
+>Start with the function. It returns <TT
+CLASS="code"
+>None</TT
+> when the divisor
+      is zero, and <TT
+CLASS="code"
+>Some</TT
+> with the quotient otherwise:</P
+><PRE
+CLASS="programlisting"
+>define Option union(Some: int, None)
+
+function safe_divide(a: int, b: int) returns Option
+    if b = 0
+        Option.None
+    else
+        Option.Some(a / b)</PRE
+><P
+>Now call it and react to the result with <TT
+CLASS="code"
+>choose</TT
+>. The
+      <TT
+CLASS="code"
+>Some</TT
+> arm receives the quotient; the <TT
+CLASS="code"
+>else</TT
+> arm
+      handles division by zero:</P
+><PRE
+CLASS="programlisting"
+>let result safe_divide(20, 4)
+choose result
+    when q: Some
+        if q = 5
+            print("20 / 4 = 5")
+        else
+            print("unexpected quotient")
+    else
+        print("cannot divide by zero")</PRE
+><P
+>Put both pieces in <TT
+CLASS="filename"
+>divide.scaly</TT
+>, then build and
+      run it:</P
+><PRE
+CLASS="programlisting"
+>scalyc -o divide divide.scaly
+./divide</PRE
+><P
+>It prints:</P
+><PRE
+CLASS="screen"
+>20 / 4 = 5</PRE
+><P
+>Change the call to <TT
+CLASS="code"
+>safe_divide(7, 0)</TT
+> and the same program
+      prints <SAMP
+CLASS="computeroutput"
+>cannot divide by zero</SAMP
+> — the union
+      makes the failure a value you must handle, not a crash you can forget.</P
+><P
+>From here, the rest of this specification fills in the details: the
+      <A
+HREF="lexical.htm"
+>Chapter 3</A
+> rules, the full <A
+HREF="expressions.htm"
+>Chapter 7</A
+>
+      model, and the <A
+HREF="types.htm"
+>Chapter 4</A
+> system including generics,
+      lifetimes, and region-based memory management.</P
+></DIV
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="introduction.htm"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="index.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="lexical.htm"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Introduction</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+>&nbsp;</TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Lexical Structure</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>
