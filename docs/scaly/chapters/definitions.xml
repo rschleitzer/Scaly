@@ -4,8 +4,7 @@
   <section xml:id="def-overview">
     <title>Overview</title>
     <para>Definitions declare new types that can be used throughout a program.
-      Types can have properties, methods, and nested definitions.
-    </para>
+      Types can have properties, methods, and nested definitions.</para>
   </section>
 
   &generated-definitions;

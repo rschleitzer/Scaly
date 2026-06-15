@@ -71,7 +71,7 @@ WIDTH="100%"></DIV
 CLASS="chapter"
 ><H1
 ><A
-NAME="AEN1169"
+NAME="AEN1177"
 ></A
 >Chapter 6 Expressions</H1
 ><DIV
@@ -83,57 +83,57 @@ CLASS="TOC"
 ></DT
 ><DT
 ><A
-HREF="expressions.htm#AEN1171"
+HREF="expressions.htm#AEN1179"
 >Overview</A
 ></DT
 ><DT
 ><A
-HREF="expressions.htm#AEN1174"
+HREF="expressions.htm#AEN1182"
 >Literals</A
 ></DT
 ><DT
 ><A
-HREF="expressions.htm#AEN1324"
+HREF="expressions.htm#AEN1332"
 >Operations</A
 ></DT
 ><DT
 ><A
-HREF="expressions.htm#AEN1482"
+HREF="expressions.htm#AEN1490"
 >Comparison Operators</A
 ></DT
 ><DT
 ><A
-HREF="expressions.htm#AEN1569"
+HREF="expressions.htm#AEN1577"
 >Boolean Operators</A
 ></DT
 ><DT
 ><A
-HREF="expressions.htm#AEN1626"
+HREF="expressions.htm#AEN1634"
 >Bitwise Operators</A
 ></DT
 ><DT
 ><A
-HREF="expressions.htm#AEN1661"
+HREF="expressions.htm#AEN1669"
 >If Expressions</A
 ></DT
 ><DT
 ><A
-HREF="expressions.htm#AEN1669"
+HREF="expressions.htm#AEN1677"
 >Match Expressions</A
 ></DT
 ><DT
 ><A
-HREF="expressions.htm#AEN1678"
+HREF="expressions.htm#AEN1686"
 >Choose Expressions</A
 ></DT
 ><DT
 ><A
-HREF="expressions.htm#AEN1742"
+HREF="expressions.htm#AEN1750"
 >Optional Types</A
 ></DT
 ><DT
 ><A
-HREF="expressions.htm#AEN1806"
+HREF="expressions.htm#AEN1814"
 >Variant Construction</A
 ></DT
 ></DL
@@ -143,22 +143,24 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN1171"
+NAME="AEN1179"
 >Overview</A
 ></H1
 ><P
 >Expressions are the core computational units of Scaly. Every expression
-      evaluates to a value. Unlike many languages, Scaly uses postfix operators
-      and does not define operator precedence — evaluation order is always
-      explicit.
-    </P
+      evaluates to a value. An operation is a sequence of operands; operators are
+      ordinary identifiers rather than built-in keywords. When operators are
+      chained, they combine according to standard mathematical precedence
+      (multiplicative binds tighter than additive, which binds tighter than
+      comparison). Prefix forms and parentheses provide explicit control where
+      needed.</P
 ></DIV
 ><DIV
 CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN1174"
+NAME="AEN1182"
 >Literals</A
 ></H1
 ><P
@@ -168,7 +170,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN1177"
+NAME="AEN1185"
 >Boolean Literals</A
 ></H2
 ><P
@@ -178,7 +180,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN1180"
+NAME="AEN1188"
 ></A
 ><TABLE
 BORDER="0"
@@ -233,7 +235,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN1199"
+NAME="AEN1207"
 >Integer Literals</A
 ></H2
 ><P
@@ -243,7 +245,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN1202"
+NAME="AEN1210"
 ></A
 ><TABLE
 BORDER="0"
@@ -311,7 +313,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN1226"
+NAME="AEN1234"
 >Hexadecimal Literals</A
 ></H2
 ><P
@@ -321,7 +323,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN1229"
+NAME="AEN1237"
 ></A
 ><TABLE
 BORDER="0"
@@ -389,7 +391,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN1253"
+NAME="AEN1261"
 >Floating-Point Literals</A
 ></H2
 ><P
@@ -399,7 +401,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN1256"
+NAME="AEN1264"
 ></A
 ><TABLE
 BORDER="0"
@@ -467,7 +469,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN1280"
+NAME="AEN1288"
 >String Literals</A
 ></H2
 ><P
@@ -477,7 +479,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN1283"
+NAME="AEN1291"
 ></A
 ><TABLE
 BORDER="0"
@@ -530,7 +532,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN1302"
+NAME="AEN1310"
 >Character Literals</A
 ></H2
 ><P
@@ -540,7 +542,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN1305"
+NAME="AEN1313"
 ></A
 ><TABLE
 BORDER="0"
@@ -595,7 +597,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN1324"
+NAME="AEN1332"
 >Operations</A
 ></H1
 ><P
@@ -605,7 +607,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN1327"
+NAME="AEN1335"
 >Prefix Functions</A
 ></H2
 ><P
@@ -618,7 +620,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN1330"
+NAME="AEN1338"
 ></A
 ><TABLE
 BORDER="0"
@@ -686,7 +688,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN1354"
+NAME="AEN1362"
 >Operator Chains</A
 ></H2
 ><P
@@ -699,7 +701,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN1357"
+NAME="AEN1365"
 ></A
 ><TABLE
 BORDER="0"
@@ -819,7 +821,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN1401"
+NAME="AEN1409"
 >Parentheses and Grouping</A
 ></H2
 ><P
@@ -830,7 +832,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN1404"
+NAME="AEN1412"
 ></A
 ><TABLE
 BORDER="0"
@@ -898,7 +900,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN1428"
+NAME="AEN1436"
 >Identifier Shapes</A
 ></H2
 ><P
@@ -908,7 +910,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN1431"
+NAME="AEN1439"
 ></A
 ><TABLE
 BORDER="0"
@@ -963,7 +965,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN1450"
+NAME="AEN1458"
 >Let Bindings</A
 ></H2
 ><P
@@ -973,7 +975,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN1453"
+NAME="AEN1461"
 ></A
 ><TABLE
 BORDER="0"
@@ -1059,7 +1061,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN1482"
+NAME="AEN1490"
 >Comparison Operators</A
 ></H1
 ><P
@@ -1069,7 +1071,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN1485"
+NAME="AEN1493"
 >Equality</A
 ></H2
 ><P
@@ -1079,7 +1081,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN1488"
+NAME="AEN1496"
 ></A
 ><TABLE
 BORDER="0"
@@ -1160,7 +1162,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN1517"
+NAME="AEN1525"
 >Relational Operators</A
 ></H2
 ><P
@@ -1170,7 +1172,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN1520"
+NAME="AEN1528"
 ></A
 ><TABLE
 BORDER="0"
@@ -1303,7 +1305,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN1569"
+NAME="AEN1577"
 >Boolean Operators</A
 ></H1
 ><P
@@ -1313,7 +1315,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN1572"
+NAME="AEN1580"
 >Boolean Negation</A
 ></H2
 ><P
@@ -1323,7 +1325,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN1575"
+NAME="AEN1583"
 ></A
 ><TABLE
 BORDER="0"
@@ -1378,7 +1380,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN1594"
+NAME="AEN1602"
 >Boolean And/Or</A
 ></H2
 ><P
@@ -1388,7 +1390,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN1597"
+NAME="AEN1605"
 ></A
 ><TABLE
 BORDER="0"
@@ -1469,7 +1471,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN1626"
+NAME="AEN1634"
 >Bitwise Operators</A
 ></H1
 ><P
@@ -1479,7 +1481,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN1629"
+NAME="AEN1637"
 >Bit Shifts</A
 ></H2
 ><P
@@ -1489,7 +1491,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN1632"
+NAME="AEN1640"
 ></A
 ><TABLE
 BORDER="0"
@@ -1570,7 +1572,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN1661"
+NAME="AEN1669"
 >If Expressions</A
 ></H1
 ><P
@@ -1582,16 +1584,14 @@ CLASS="code"
       and optionally <TT
 CLASS="code"
 >else</TT
-> with an alternative.
-    </P
+> with an alternative.</P
 ><PRE
 CLASS="programlisting"
 >if true: 1 else 0        ; evaluates to 1
 if false: 1 else 0       ; evaluates to 0
 if 5 &#62; 3: 10 else 20     ; evaluates to 10</PRE
 ><P
->&#13;      If expressions can be nested:
-    </P
+>If expressions can be nested:</P
 ><PRE
 CLASS="programlisting"
 >if false: 1 else if true: 2 else 3  ; evaluates to 2</PRE
@@ -1601,7 +1601,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN1669"
+NAME="AEN1677"
 >Match Expressions</A
 ></H1
 ><P
@@ -1616,15 +1616,13 @@ CLASS="code"
 > branches, and optionally <TT
 CLASS="code"
 >else</TT
->.
-    </P
+>.</P
 ><PRE
 CLASS="programlisting"
 >match 2: case 1: 10 case 2: 20 else 0  ; evaluates to 20
 match 5: case 1: 10 else 0              ; evaluates to 0</PRE
 ><P
->&#13;      Multiple cases can share the same branch:
-    </P
+>Multiple cases can share the same branch:</P
 ><PRE
 CLASS="programlisting"
 >match 2: case 1 case 2: "one or two" else "other"</PRE
@@ -1634,7 +1632,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN1678"
+NAME="AEN1686"
 >Choose Expressions</A
 ></H1
 ><P
@@ -1644,7 +1642,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN1681"
+NAME="AEN1689"
 >Choose on Variant Construction</A
 ></H2
 ><P
@@ -1654,7 +1652,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN1684"
+NAME="AEN1692"
 ></A
 ><TABLE
 BORDER="0"
@@ -1711,7 +1709,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN1703"
+NAME="AEN1711"
 >Choose with Binding</A
 ></H2
 ><P
@@ -1721,7 +1719,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN1706"
+NAME="AEN1714"
 ></A
 ><TABLE
 BORDER="0"
@@ -1764,7 +1762,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN1720"
+NAME="AEN1728"
 >Multiple When Clauses</A
 ></H2
 ><P
@@ -1774,7 +1772,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN1723"
+NAME="AEN1731"
 ></A
 ><TABLE
 BORDER="0"
@@ -1831,7 +1829,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN1742"
+NAME="AEN1750"
 >Optional Types</A
 ></H1
 ><P
@@ -1841,7 +1839,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN1745"
+NAME="AEN1753"
 >Is Null Check</A
 ></H2
 ><P
@@ -1851,7 +1849,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN1748"
+NAME="AEN1756"
 ></A
 ><TABLE
 BORDER="0"
@@ -1910,7 +1908,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN1767"
+NAME="AEN1775"
 >Optional Type Sugar</A
 ></H2
 ><P
@@ -1920,7 +1918,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN1770"
+NAME="AEN1778"
 ></A
 ><TABLE
 BORDER="0"
@@ -1964,7 +1962,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN1784"
+NAME="AEN1792"
 >Generic Option Types</A
 ></H2
 ><P
@@ -1974,7 +1972,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN1787"
+NAME="AEN1795"
 ></A
 ><TABLE
 BORDER="0"
@@ -2031,7 +2029,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN1806"
+NAME="AEN1814"
 >Variant Construction</A
 ></H1
 ><P
@@ -2041,7 +2039,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN1809"
+NAME="AEN1817"
 >Construct Variants</A
 ></H2
 ><P
@@ -2051,7 +2049,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN1812"
+NAME="AEN1820"
 ></A
 ><TABLE
 BORDER="0"
@@ -2108,7 +2106,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN1831"
+NAME="AEN1839"
 >Variant Is Expression</A
 ></H2
 ><P
@@ -2118,7 +2116,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN1834"
+NAME="AEN1842"
 ></A
 ><TABLE
 BORDER="0"

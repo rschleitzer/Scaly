@@ -3,26 +3,34 @@
 
   <section xml:id="types-overview">
     <title>Overview</title>
-    <para>Scaly's type system is designed for maximum portability across backends.
-      The compiler itself has no built-in knowledge of primitive types. Instead,
-      all types — including integers, floats, and booleans — are defined in
-      backend-specific prelude files.</para>
+    <para>Scaly currently recognizes a fixed set of primitive types — integers,
+      floats, booleans, and pointer types — which the LLVM-based emitter maps to
+      the corresponding LLVM types. A possible future direction, described in the
+      following sections, is to make the type system fully backend-agnostic, with
+      even the primitive types supplied by a backend-specific prelude rather than
+      built into the compiler.</para>
   </section>
 
   <section xml:id="types-intrinsic">
-    <title>Intrinsic Types</title>
+    <title>Intrinsic Types (Future Direction)</title>
+    <note>
+      <para>The mechanism described in this section and the two that follow
+        (<emphasis>Type Aliases</emphasis> and <emphasis>Backend Preludes</emphasis>)
+        is a planned design, not current behavior. Today the compiler knows its
+        primitive types directly and targets LLVM only.</para>
+    </note>
     <para>An <emphasis>intrinsic type</emphasis> is a type whose implementation is
-      provided by the backend, not by Scaly code. Intrinsic types are declared
-      using the <literal>intrinsic</literal> keyword:</para>
+      provided by the backend, not by Scaly code. Under this design, intrinsic
+      types would be declared using the <literal>intrinsic</literal> keyword:</para>
     <programlisting>
 define i32 intrinsic
 define i64 intrinsic
 define f64 intrinsic
     </programlisting>
-    <para>The compiler does not interpret these definitions — it simply records that
-      these types exist and are intrinsic. The backend (Emitter) is responsible
-      for mapping intrinsic types to the target platform's representation.</para>
-    <para>This design enables Scaly to target any backend:</para>
+    <para>The compiler would not interpret these definitions — it would simply record
+      that these types exist and are intrinsic. The backend (Emitter) would be
+      responsible for mapping intrinsic types to the target platform's representation.</para>
+    <para>This design would enable Scaly to target any backend:</para>
     <itemizedlist>
       <listitem><para><emphasis>LLVM</emphasis>: <literal>i32</literal>, <literal>i64</literal>, <literal>f32</literal>, <literal>f64</literal></para></listitem>
       <listitem><para><emphasis>JavaScript</emphasis>: <literal>number</literal>, <literal>string</literal>, <literal>boolean</literal></para></listitem>
@@ -32,7 +40,7 @@ define f64 intrinsic
   </section>
 
   <section xml:id="types-aliases">
-    <title>Type Aliases</title>
+    <title>Type Aliases (Future Direction)</title>
     <para>Type aliases provide human-friendly names for intrinsic or compound types:</para>
     <programlisting>
 define bool i1
@@ -45,7 +53,7 @@ define size_t u64
   </section>
 
   <section xml:id="types-prelude">
-    <title>Backend Preludes</title>
+    <title>Backend Preludes (Future Direction)</title>
     <para>Each backend provides a <emphasis>prelude</emphasis> file that defines the
       intrinsic types and their aliases for that target. The prelude is implicitly
       loaded before any user code.</para>
@@ -108,13 +116,15 @@ let x: i32 42        ; OK: type explicitly annotated
   </section>
 
   <section xml:id="types-references">
-    <title>References and Aliasing</title>
-    <para>Scaly does not have reference types. There is no <literal>ref[T]</literal>
-      or equivalent. This follows the ParaSail philosophy: no pointers or aliasing
-      at the language level.</para>
-    <para>Values flow through functions. When a function receives a parameter, it
-      gets read-only access (implemented as a pointer under the hood, but not
-      exposed in the type system). When a function returns, it returns a value.</para>
+    <title>References</title>
+    <para>By default, values flow through functions by value: a function parameter
+      gets read-only access to its argument, and a function returns a value.</para>
+    <para>To refer to an existing value without copying it, Scaly provides the
+      reference type <literal>ref[T]</literal> — a non-owning, borrowed reference
+      to a <literal>T</literal>. References are used for parameters and for nullable
+      fields, written <literal>ref[T]?</literal>. Like <literal>pointer[T]</literal>,
+      a reference is represented as a machine pointer, but it carries borrow
+      semantics rather than the unchecked, low-level meaning of a raw pointer.</para>
 
     <section xml:id="types-pointers">
       <title>Low-Level Pointers</title>
@@ -141,10 +151,9 @@ function find(list: List[T], predicate: function(T) returns bool) returns Option
 }
 
 let result find(items, \x: x > 10)
-choose result {
-    when Some(value): process(value)
-    when None: handle_not_found()
-}
+choose result
+    when value: Some: process(value)
+    else handle_not_found()
       </programlisting>
       <para>The compiler optimizes <literal>Option[T]</literal> to a simple
         nullable pointer — no space overhead for the tag.</para>
@@ -409,11 +418,12 @@ procedure parse(input: String) returns AST throws ParseError {
       <para>A function can only throw one error type. To represent multiple error
         kinds, use a union:</para>
       <programlisting>
-define FileError union {
-    NotFound { path: String }
-    PermissionDenied { path: String }
-    IoError { message: String }
-}
+define FileError union
+(
+    NotFound: String
+    PermissionDenied: String
+    IoError: String
+)
 
 function readFile(path: String) returns String throws FileError {
     ...
@@ -428,13 +438,13 @@ function readFile(path: String) returns String throws FileError {
       <para>Handle errors with <literal>try</literal> and <literal>when</literal> clauses:</para>
       <programlisting>
 try let ast parse(input)
-    when InvalidSyntax(pos, msg): reportError(pos, msg)
-    when UnexpectedEof: reportError(0, "unexpected end of file")
+    when e: InvalidSyntax: reportError(e)
+    when e: UnexpectedEof: reportError(e)
       </programlisting>
       <para>If not all error variants are covered, an <literal>else</literal> clause is required:</para>
       <programlisting>
 try let ast parse(input)
-    when InvalidSyntax(pos, msg): reportError(pos, msg)
+    when e: InvalidSyntax: reportError(e)
     else panic("unhandled error")
       </programlisting>
     </section>
@@ -468,13 +478,17 @@ throw ParseError.InvalidSyntax(pos, msg)!   ; explicit thrown lifetime</programl
   <section xml:id="types-unions">
     <title>Union Types</title>
     <para>A union type (also called sum type or tagged union) can hold one of
-      several variants. Each variant can have its own fields:</para>
+      several variants. Each variant optionally carries a payload of a single
+      type (use a struct for several fields):</para>
     <programlisting>
-define Shape union {
-    Circle { radius: f64 }
-    Rectangle { width: f64, height: f64 }
-    Triangle { a: f64, b: f64, c: f64 }
-}
+define Rectangle ( width: f64, height: f64 )
+
+define Shape union
+(
+    Circle: f64
+    Box: Rectangle
+    Empty
+)
 
 let s Shape.Circle(5.0)
     </programlisting>
@@ -491,34 +505,36 @@ Shape = { tag: u8, data: [size of largest variant] }
 
     <section xml:id="types-unions-choose">
       <title>Pattern Matching with <literal>choose</literal></title>
-      <para>Use <literal>choose</literal>-<literal>when</literal> to match on variants:</para>
+      <para>Use <literal>choose</literal>-<literal>when</literal> to match on variants.
+        Each <literal>when</literal> clause names a binding, then the variant, then
+        the result; the binding is bound to the variant's payload:</para>
       <programlisting>
 choose s
-    when Circle(r): computeCircleArea(r)
-    when Rectangle(w, h): w * h
-    when Triangle(a, b, c): heronArea(a, b, c)</programlisting>
+    when r: Circle: computeCircleArea(r)
+    when b: Box: b.width * b.height
+    else 0.0</programlisting>
       <para>If not all variants are covered, an <literal>else</literal> clause is required:</para>
       <programlisting>
-choose s when Circle(r): computeCircleArea(r) else 0.0    ; handles Rectangle and Triangle</programlisting>
+choose s: when r: Circle: computeCircleArea(r) else 0.0    ; handles Box and Empty</programlisting>
     </section>
 
     <section xml:id="types-unions-option">
       <title>Option Type</title>
       <para><literal>Option[T]</literal> is a union for nullable values:</para>
       <programlisting>
-define Option[T] union {
-    Some { value: T }
+define Option[T] union
+(
+    Some: T
     None
-}
+)
 
 function find(list: List[T], pred: function(T) returns bool) returns Option[T] {
     ...
 }
 
-choose find(items, \x: x > 10) {
-    when Some(value): process(value)
-    when None: handle_not_found()
-}
+choose find(items, \x: x > 10)
+    when value: Some: process(value)
+    else handle_not_found()
       </programlisting>
     </section>
 

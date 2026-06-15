@@ -89,61 +89,61 @@ HREF="types.htm#AEN125"
 ><DT
 ><A
 HREF="types.htm#AEN128"
->Intrinsic Types</A
+>Intrinsic Types (Future Direction)</A
 ></DT
 ><DT
 ><A
-HREF="types.htm#AEN164"
->Type Aliases</A
+HREF="types.htm#AEN168"
+>Type Aliases (Future Direction)</A
 ></DT
 ><DT
 ><A
-HREF="types.htm#AEN171"
->Backend Preludes</A
+HREF="types.htm#AEN175"
+>Backend Preludes (Future Direction)</A
 ></DT
 ><DT
 ><A
-HREF="types.htm#AEN181"
+HREF="types.htm#AEN185"
 >Literal Type Inference</A
 ></DT
 ><DT
 ><A
-HREF="types.htm#AEN190"
->References and Aliasing</A
+HREF="types.htm#AEN194"
+>References</A
 ></DT
 ><DT
 ><A
-HREF="types.htm#AEN212"
+HREF="types.htm#AEN219"
 >Parameter Passing</A
 ></DT
 ><DT
 ><A
-HREF="types.htm#AEN234"
+HREF="types.htm#AEN241"
 >Constructors</A
 ></DT
 ><DT
 ><A
-HREF="types.htm#AEN309"
+HREF="types.htm#AEN316"
 >Closures (Lambdas)</A
 ></DT
 ><DT
 ><A
-HREF="types.htm#AEN328"
+HREF="types.htm#AEN335"
 >Error Handling</A
 ></DT
 ><DT
 ><A
-HREF="types.htm#AEN369"
+HREF="types.htm#AEN376"
 >Union Types</A
 ></DT
 ><DT
 ><A
-HREF="types.htm#AEN405"
+HREF="types.htm#AEN413"
 >Generics</A
 ></DT
 ><DT
 ><A
-HREF="types.htm#AEN435"
+HREF="types.htm#AEN443"
 >Lifetimes and Memory Regions</A
 ></DT
 ></DL
@@ -157,10 +157,12 @@ NAME="AEN125"
 >Overview</A
 ></H1
 ><P
->Scaly's type system is designed for maximum portability across backends.
-      The compiler itself has no built-in knowledge of primitive types. Instead,
-      all types — including integers, floats, and booleans — are defined in
-      backend-specific prelude files.</P
+>Scaly currently recognizes a fixed set of primitive types — integers,
+      floats, booleans, and pointer types — which the LLVM-based emitter maps to
+      the corresponding LLVM types. A possible future direction, described in the
+      following sections, is to make the type system fully backend-agnostic, with
+      even the primitive types supplied by a backend-specific prelude rather than
+      built into the compiler.</P
 ></DIV
 ><DIV
 CLASS="section"
@@ -168,8 +170,33 @@ CLASS="section"
 CLASS="section"
 ><A
 NAME="AEN128"
->Intrinsic Types</A
+>Intrinsic Types (Future Direction)</A
 ></H1
+><DIV
+CLASS="note"
+><BLOCKQUOTE
+CLASS="note"
+><P
+><B
+>Note: </B
+>The mechanism described in this section and the two that follow
+        (<SPAN
+CLASS="emphasis"
+><I
+CLASS="emphasis"
+>Type Aliases</I
+></SPAN
+> and <SPAN
+CLASS="emphasis"
+><I
+CLASS="emphasis"
+>Backend Preludes</I
+></SPAN
+>)
+        is a planned design, not current behavior. Today the compiler knows its
+        primitive types directly and targets LLVM only.</P
+></BLOCKQUOTE
+></DIV
 ><P
 >An <SPAN
 CLASS="emphasis"
@@ -178,8 +205,8 @@ CLASS="emphasis"
 >intrinsic type</I
 ></SPAN
 > is a type whose implementation is
-      provided by the backend, not by Scaly code. Intrinsic types are declared
-      using the <TT
+      provided by the backend, not by Scaly code. Under this design, intrinsic
+      types would be declared using the <TT
 CLASS="literal"
 >intrinsic</TT
 > keyword:</P
@@ -190,11 +217,11 @@ define i64 intrinsic
 define f64 intrinsic
     </PRE
 ><P
->The compiler does not interpret these definitions — it simply records that
-      these types exist and are intrinsic. The backend (Emitter) is responsible
-      for mapping intrinsic types to the target platform's representation.</P
+>The compiler would not interpret these definitions — it would simply record
+      that these types exist and are intrinsic. The backend (Emitter) would be
+      responsible for mapping intrinsic types to the target platform's representation.</P
 ><P
->This design enables Scaly to target any backend:</P
+>This design would enable Scaly to target any backend:</P
 ><P
 ></P
 ><UL
@@ -290,8 +317,8 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN164"
->Type Aliases</A
+NAME="AEN168"
+>Type Aliases (Future Direction)</A
 ></H1
 ><P
 >Type aliases provide human-friendly names for intrinsic or compound types:</P
@@ -317,8 +344,8 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN171"
->Backend Preludes</A
+NAME="AEN175"
+>Backend Preludes (Future Direction)</A
 ></H1
 ><P
 >Each backend provides a <SPAN
@@ -333,7 +360,7 @@ CLASS="emphasis"
 ><DIV
 CLASS="example"
 ><A
-NAME="AEN175"
+NAME="AEN179"
 ></A
 ><P
 ><B
@@ -361,7 +388,7 @@ define size_t u64
 ><DIV
 CLASS="example"
 ><A
-NAME="AEN178"
+NAME="AEN182"
 ></A
 ><P
 ><B
@@ -386,7 +413,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN181"
+NAME="AEN185"
 >Literal Type Inference</A
 ></H1
 ><P
@@ -427,26 +454,37 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN190"
->References and Aliasing</A
+NAME="AEN194"
+>References</A
 ></H1
 ><P
->Scaly does not have reference types. There is no <TT
+>By default, values flow through functions by value: a function parameter
+      gets read-only access to its argument, and a function returns a value.</P
+><P
+>To refer to an existing value without copying it, Scaly provides the
+      reference type <TT
 CLASS="literal"
 >ref[T]</TT
->
-      or equivalent. This follows the ParaSail philosophy: no pointers or aliasing
-      at the language level.</P
-><P
->Values flow through functions. When a function receives a parameter, it
-      gets read-only access (implemented as a pointer under the hood, but not
-      exposed in the type system). When a function returns, it returns a value.</P
+> — a non-owning, borrowed reference
+      to a <TT
+CLASS="literal"
+>T</TT
+>. References are used for parameters and for nullable
+      fields, written <TT
+CLASS="literal"
+>ref[T]?</TT
+>. Like <TT
+CLASS="literal"
+>pointer[T]</TT
+>,
+      a reference is represented as a machine pointer, but it carries borrow
+      semantics rather than the unchecked, low-level meaning of a raw pointer.</P
 ><DIV
 CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN195"
+NAME="AEN202"
 >Low-Level Pointers</A
 ></H2
 ><P
@@ -480,7 +518,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN203"
+NAME="AEN210"
 >Nullable Values</A
 ></H2
 ><P
@@ -502,10 +540,9 @@ CLASS="programlisting"
 }
 
 let result find(items, \x: x &#62; 10)
-choose result {
-    when Some(value): process(value)
-    when None: handle_not_found()
-}
+choose result
+    when value: Some: process(value)
+    else handle_not_found()
       </PRE
 ><P
 >The compiler optimizes <TT
@@ -520,7 +557,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN212"
+NAME="AEN219"
 >Parameter Passing</A
 ></H1
 ><P
@@ -551,7 +588,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN217"
+NAME="AEN224"
 >Implementation</A
 ></H2
 ><P
@@ -593,7 +630,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN228"
+NAME="AEN235"
 >Mutation via Procedures</A
 ></H2
 ><P
@@ -623,7 +660,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN234"
+NAME="AEN241"
 >Constructors</A
 ></H1
 ><P
@@ -634,7 +671,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN237"
+NAME="AEN244"
 >Implicit Constructors</A
 ></H2
 ><P
@@ -652,7 +689,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN241"
+NAME="AEN248"
 >Explicit Constructors</A
 ></H2
 ><P
@@ -699,7 +736,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN253"
+NAME="AEN260"
 >The <TT
 CLASS="literal"
 >this</TT
@@ -734,7 +771,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN262"
+NAME="AEN269"
 >Complete Initialization</A
 ></H2
 ><P
@@ -756,7 +793,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN266"
+NAME="AEN273"
 >Constructor Return</A
 ></H2
 ><P
@@ -778,7 +815,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN272"
+NAME="AEN279"
 >Constructed Value Lifetime</A
 ></H2
 ><P
@@ -830,7 +867,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN286"
+NAME="AEN293"
 >Page-Parameterized Constructors (<TT
 CLASS="literal"
 >init#</TT
@@ -910,7 +947,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN309"
+NAME="AEN316"
 >Closures (Lambdas)</A
 ></H1
 ><P
@@ -926,7 +963,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN313"
+NAME="AEN320"
 >Capturing Variables</A
 ></H2
 ><P
@@ -946,7 +983,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN317"
+NAME="AEN324"
 >Closures Are Pure</A
 ></H2
 ><P
@@ -963,7 +1000,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN321"
+NAME="AEN328"
 >Closure Lifetime</A
 ></H2
 ><P
@@ -982,7 +1019,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN325"
+NAME="AEN332"
 >Implementation</A
 ></H2
 ><P
@@ -996,7 +1033,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN328"
+NAME="AEN335"
 >Error Handling</A
 ></H1
 ><P
@@ -1007,7 +1044,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN331"
+NAME="AEN338"
 >The <TT
 CLASS="literal"
 >throws</TT
@@ -1039,7 +1076,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN339"
+NAME="AEN346"
 >Single Error Type</A
 ></H2
 ><P
@@ -1047,11 +1084,12 @@ NAME="AEN339"
         kinds, use a union:</P
 ><PRE
 CLASS="programlisting"
->&#13;define FileError union {
-    NotFound { path: String }
-    PermissionDenied { path: String }
-    IoError { message: String }
-}
+>&#13;define FileError union
+(
+    NotFound: String
+    PermissionDenied: String
+    IoError: String
+)
 
 function readFile(path: String) returns String throws FileError {
     ...
@@ -1072,7 +1110,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN346"
+NAME="AEN353"
 >The <TT
 CLASS="literal"
 >try</TT
@@ -1092,8 +1130,8 @@ CLASS="literal"
 ><PRE
 CLASS="programlisting"
 >&#13;try let ast parse(input)
-    when InvalidSyntax(pos, msg): reportError(pos, msg)
-    when UnexpectedEof: reportError(0, "unexpected end of file")
+    when e: InvalidSyntax: reportError(e)
+    when e: UnexpectedEof: reportError(e)
       </PRE
 ><P
 >If not all error variants are covered, an <TT
@@ -1103,7 +1141,7 @@ CLASS="literal"
 ><PRE
 CLASS="programlisting"
 >&#13;try let ast parse(input)
-    when InvalidSyntax(pos, msg): reportError(pos, msg)
+    when e: InvalidSyntax: reportError(e)
     else panic("unhandled error")
       </PRE
 ></DIV
@@ -1112,7 +1150,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN357"
+NAME="AEN364"
 >Error Propagation</A
 ></H2
 ><P
@@ -1138,7 +1176,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN363"
+NAME="AEN370"
 >Error Lifetime</A
 ></H2
 ><P
@@ -1160,19 +1198,23 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN369"
+NAME="AEN376"
 >Union Types</A
 ></H1
 ><P
 >A union type (also called sum type or tagged union) can hold one of
-      several variants. Each variant can have its own fields:</P
+      several variants. Each variant optionally carries a payload of a single
+      type (use a struct for several fields):</P
 ><PRE
 CLASS="programlisting"
->&#13;define Shape union {
-    Circle { radius: f64 }
-    Rectangle { width: f64, height: f64 }
-    Triangle { a: f64, b: f64, c: f64 }
-}
+>&#13;define Rectangle ( width: f64, height: f64 )
+
+define Shape union
+(
+    Circle: f64
+    Box: Rectangle
+    Empty
+)
 
 let s Shape.Circle(5.0)
     </PRE
@@ -1181,7 +1223,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN373"
+NAME="AEN380"
 >Memory Layout</A
 ></H2
 ><P
@@ -1199,7 +1241,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN378"
+NAME="AEN385"
 >Pattern Matching with <TT
 CLASS="literal"
 >choose</TT
@@ -1212,13 +1254,18 @@ CLASS="literal"
 >-<TT
 CLASS="literal"
 >when</TT
-> to match on variants:</P
+> to match on variants.
+        Each <TT
+CLASS="literal"
+>when</TT
+> clause names a binding, then the variant, then
+        the result; the binding is bound to the variant's payload:</P
 ><PRE
 CLASS="programlisting"
 >&#13;choose s
-    when Circle(r): computeCircleArea(r)
-    when Rectangle(w, h): w * h
-    when Triangle(a, b, c): heronArea(a, b, c)</PRE
+    when r: Circle: computeCircleArea(r)
+    when b: Box: b.width * b.height
+    else 0.0</PRE
 ><P
 >If not all variants are covered, an <TT
 CLASS="literal"
@@ -1226,14 +1273,14 @@ CLASS="literal"
 > clause is required:</P
 ><PRE
 CLASS="programlisting"
->&#13;choose s when Circle(r): computeCircleArea(r) else 0.0    ; handles Rectangle and Triangle</PRE
+>&#13;choose s: when r: Circle: computeCircleArea(r) else 0.0    ; handles Box and Empty</PRE
 ></DIV
 ><DIV
 CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN388"
+NAME="AEN396"
 >Option Type</A
 ></H2
 ><P
@@ -1243,19 +1290,19 @@ CLASS="literal"
 > is a union for nullable values:</P
 ><PRE
 CLASS="programlisting"
->&#13;define Option[T] union {
-    Some { value: T }
+>&#13;define Option[T] union
+(
+    Some: T
     None
-}
+)
 
 function find(list: List[T], pred: function(T) returns bool) returns Option[T] {
     ...
 }
 
-choose find(items, \x: x &#62; 10) {
-    when Some(value): process(value)
-    when None: handle_not_found()
-}
+choose find(items, \x: x &#62; 10)
+    when value: Some: process(value)
+    else handle_not_found()
       </PRE
 ></DIV
 ><DIV
@@ -1263,7 +1310,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN393"
+NAME="AEN401"
 >Option Optimization</A
 ></H2
 ><P
@@ -1298,7 +1345,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN405"
+NAME="AEN413"
 >Generics</A
 ></H1
 ><P
@@ -1321,7 +1368,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN409"
+NAME="AEN417"
 >Monomorphization</A
 ></H2
 ><P
@@ -1379,7 +1426,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN429"
+NAME="AEN437"
 >Name Mangling</A
 ></H2
 ><P
@@ -1403,7 +1450,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN435"
+NAME="AEN443"
 >Lifetimes and Memory Regions</A
 ></H1
 ><P
@@ -1415,7 +1462,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN438"
+NAME="AEN446"
 >Stack vs Page Allocation</A
 ></H2
 ><P
@@ -1462,7 +1509,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN453"
+NAME="AEN461"
 >Lifetime Kinds</A
 ></H2
 ><P
@@ -1521,7 +1568,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN476"
+NAME="AEN484"
 >Local Lifetime ($)</A
 ></H2
 ><P
@@ -1568,7 +1615,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN484"
+NAME="AEN492"
 >Caller Lifetime (#)</A
 ></H2
 ><P
@@ -1589,7 +1636,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN489"
+NAME="AEN497"
 >Thrown Lifetime (!)</A
 ></H2
 ><P
@@ -1612,7 +1659,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN494"
+NAME="AEN502"
 >Reference Lifetime (^name)</A
 ></H2
 ><P
@@ -1653,7 +1700,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN503"
+NAME="AEN511"
 >By-Value Returns</A
 ></H2
 ><P
@@ -1674,7 +1721,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN508"
+NAME="AEN516"
 >Lifetime Inference</A
 ></H2
 ><P

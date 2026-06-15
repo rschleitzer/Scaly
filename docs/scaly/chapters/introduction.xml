@@ -3,23 +3,23 @@
 
   <section xml:id="intro-overview">
     <title>Overview</title>
-    <para>
-      Scaly is a programming language designed to be self-scaling: it adapts
-      to the needs of the developer, from simple scripts to complex systems.
-      The language emphasizes clarity through postfix operators, eliminating
-      precedence rules, and optional region-based memory management.
-    </para>
+    <para>Scaly is a programming language designed to be self-scaling: it adapts
+      to the needs of the developer, from simple scripts to complex systems. The
+      language combines a uniform grammar — with no hardcoded operators, since
+      operators are ordinary identifiers — with optional region-based memory
+      management. Standard mathematical precedence applies when operators are
+      chained, while prefix forms and parentheses give explicit control where it
+      is needed.</para>
   </section>
 
   <section xml:id="intro-philosophy">
     <title>Design Philosophy</title>
-    <para>
-      Scaly follows these core principles:
-    </para>
+    <para>Scaly follows these core principles:</para>
     <itemizedlist>
       <listitem>
-        <para><emphasis>Clarity over cleverness</emphasis> — Code should be
-        readable without mental parsing of operator precedence.</para>
+        <para><emphasis>Uniform syntax</emphasis> — Operators are ordinary
+        identifiers rather than keywords baked into the grammar, so the language
+        and its standard library share one small, regular syntax.</para>
       </listitem>
       <listitem>
         <para><emphasis>Explicit over implicit</emphasis> — Memory management
@@ -34,19 +34,18 @@
 
   <section xml:id="intro-status">
     <title>Implementation Status</title>
-    <para>
-      This specification documents the language as it is implemented.
-      Features are added incrementally, with each addition reflected
-      immediately in this document.
-    </para>
-    <para>
-      Current implementation status:
-    </para>
+    <para>This specification documents the language as it is implemented. Scaly
+      is built by a self-hosting compiler written in Scaly itself; the compiler
+      compiles its own source and reproduces itself bit-identically across
+      successive bootstrap stages.</para>
+    <para>The compiler pipeline — lexer, parser, modeler, planner, and an
+      LLVM-based emitter — is feature-complete. Current implementation
+      status:</para>
     <itemizedlist>
-      <listitem><para>Literals — <emphasis>implemented</emphasis></para></listitem>
-      <listitem><para>Operators — <emphasis>planned</emphasis></para></listitem>
-      <listitem><para>Bindings — <emphasis>planned</emphasis></para></listitem>
-      <listitem><para>Functions — <emphasis>planned</emphasis></para></listitem>
+      <listitem><para>Lexer, parser, modeler, planner, emitter — <emphasis>implemented</emphasis></para></listitem>
+      <listitem><para>LLVM code generation (JIT and ahead-of-time) — <emphasis>implemented</emphasis></para></listitem>
+      <listitem><para>Region-based memory management — <emphasis>implemented</emphasis></para></listitem>
+      <listitem><para>Self-hosting bootstrap — <emphasis>achieved</emphasis> (the compiler compiles itself)</para></listitem>
     </itemizedlist>
   </section>
 

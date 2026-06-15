@@ -3,31 +3,23 @@
 
   <section xml:id="lex-overview">
     <title>Overview</title>
-    <para>
-      This chapter describes the lexical structure of Scaly: how source text
+    <para>This chapter describes the lexical structure of Scaly: how source text
       is divided into tokens. The lexer transforms a sequence of characters
-      into a sequence of tokens that the parser then processes.
-    </para>
+      into a sequence of tokens that the parser then processes.</para>
   </section>
 
   <section xml:id="lex-whitespace">
     <title>Whitespace and Line Breaks</title>
-    <para>
-      Whitespace characters (space, tab) separate tokens but are otherwise
+    <para>Whitespace characters (space, tab) separate tokens but are otherwise
       insignificant. Line breaks, however, are syntactically meaningful in
-      Scaly — they can terminate statements and declarations.
-    </para>
-    <para>
-      A colon (<literal>:</literal>) can be used in place of a line break
-      when multiple statements should appear on a single line.
-    </para>
+      Scaly — they can terminate statements and declarations.</para>
+    <para>A colon (<literal>:</literal>) can be used in place of a line break
+      when multiple statements should appear on a single line.</para>
   </section>
 
   <section xml:id="lex-comments">
     <title>Comments</title>
-    <para>
-      Scaly supports two forms of comments:
-    </para>
+    <para>Scaly supports two forms of comments:</para>
     <itemizedlist>
       <listitem>
         <para><emphasis>Single-line comments</emphasis> start with a semicolon
@@ -51,10 +43,8 @@
 
     <section xml:id="lex-integers">
       <title>Integer Literals</title>
-      <para>
-        Integer literals represent whole numbers. They can be written in
-        decimal or hexadecimal notation.
-      </para>
+      <para>Integer literals represent whole numbers. They can be written in
+        decimal or hexadecimal notation.</para>
       <programlisting>
 42        ; decimal
 0x2A      ; hexadecimal (same value)
@@ -63,10 +53,8 @@
 
     <section xml:id="lex-floats">
       <title>Floating-Point Literals</title>
-      <para>
-        Floating-point literals represent decimal numbers with a fractional
-        part or an exponent.
-      </para>
+      <para>Floating-point literals represent decimal numbers with a fractional
+        part or an exponent.</para>
       <programlisting>
 3.14159       ; pi
 2.5e10        ; scientific notation
@@ -76,20 +64,16 @@
 
     <section xml:id="lex-strings">
       <title>String Literals</title>
-      <para>
-        String literals are enclosed in double quotes. They support standard
-        escape sequences.
-      </para>
+      <para>String literals are enclosed in double quotes. They support standard
+        escape sequences.</para>
       <programlisting>
 "Hello, World!"
 "Line 1\nLine 2"      ; with newline escape
 "Tab:\tValue"         ; with tab
 "Quote: \"nested\""   ; escaped quotes
       </programlisting>
-      <para>
-        Strings can span multiple lines without any special syntax — newlines
-        are simply included as part of the string content:
-      </para>
+      <para>Strings can span multiple lines without any special syntax — newlines
+        are simply included as part of the string content:</para>
       <programlisting>
 "This is a string
 that spans multiple
@@ -99,10 +83,8 @@ lines."
 
     <section xml:id="lex-characters">
       <title>Character Literals</title>
-      <para>
-        Character literals represent single Unicode code points, enclosed
-        in backticks.
-      </para>
+      <para>Character literals represent single Unicode code points, enclosed
+        in backticks.</para>
       <programlisting>
 `a`           ; lowercase a
 `\n`          ; newline character
@@ -112,9 +94,7 @@ lines."
 
     <section xml:id="lex-booleans">
       <title>Boolean Literals</title>
-      <para>
-        Boolean literals are <literal>true</literal> and <literal>false</literal>.
-      </para>
+      <para>Boolean literals are <literal>true</literal> and <literal>false</literal>.</para>
       <programlisting>
 true
 false
@@ -158,10 +138,8 @@ set x: 43                 ; assigns 43 to x
 
   <section xml:id="lex-identifiers">
     <title>Identifiers</title>
-    <para>
-      Identifiers name variables, functions, types, and other entities.
-      Scaly supports three forms of identifiers:
-    </para>
+    <para>Identifiers name variables, functions, types, and other entities.
+      Scaly supports three forms of identifiers:</para>
     <itemizedlist>
       <listitem>
         <para><emphasis>Alphanumeric identifiers</emphasis> start with a letter
