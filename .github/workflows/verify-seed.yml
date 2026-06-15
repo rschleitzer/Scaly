@@ -1,7 +1,8 @@
 name: verify-seed
 
 # Rebuild the committed seed (seed/) into a working scalyc with no C++ toolchain,
-# then verify it natively on each of the four LP64 little-endian targets:
+# then verify it natively on the three CI-reachable LP64 little-endian targets
+# (x86_64-apple-darwin is covered by inference — see the note at the bottom):
 # hello + AOT corpus (self-checked vs each test's ; Expected:). This functional
 # gate proves the single seed builds a CORRECT compiler per target. The heavier
 # byte-identical fixed-point re-emit (scalyc.ll peaks at ~15 GB, over free-runner
@@ -38,16 +39,11 @@ jobs:
   verify:
     name: ${{ matrix.triple }}
     runs-on: ${{ matrix.os }}
-    # x86_64-apple-darwin is allowed to fail: GitHub is retiring Intel macOS
-    # runners (macos-13), so that leg often never schedules. It is the same
-    # Mach-O/LP64 family as the arm64-apple-darwin leg, which is a hard gate.
-    continue-on-error: ${{ matrix.allow_failure || false }}
     strategy:
       fail-fast: false
       matrix:
         include:
           - { os: macos-14,         triple: arm64-apple-darwin }   # Apple Silicon
-          - { os: macos-13,         triple: x86_64-apple-darwin, allow_failure: true }  # Intel (often unavailable)
           - { os: ubuntu-24.04,     triple: x86_64-linux-gnu }
           - { os: ubuntu-24.04-arm, triple: aarch64-linux-gnu }    # GitHub-hosted arm64 Linux
     steps:
@@ -72,7 +68,10 @@ jobs:
       - name: Verify (hello + AOT corpus)
         run: tools/verify-seed.sh
 
-# NOTE: macos-13 is GitHub's last Intel macOS image and is being retired, so the
-# x86_64-apple-darwin leg often never schedules. It is marked allow_failure (see
-# continue-on-error above) so it never blocks the workflow. To make it a hard
-# gate again, attach a self-hosted Intel-mac runner and drop its allow_failure.
+# NOTE: x86_64-apple-darwin is intentionally NOT in the matrix. GitHub's last
+# Intel macOS image (macos-13) is being retired and rarely schedules. The target
+# is covered by inference — its two halves are each verified here (x86_64 SysV
+# ABI via x86_64-linux-gnu, Mach-O/darwin via arm64-apple-darwin) — and the seed
+# is host-independent. To verify it explicitly, run tools/build-from-seed.sh +
+# tools/verify-seed.sh on an Intel Mac, or attach a self-hosted Intel runner and
+# add the leg back: { os: macos-13, triple: x86_64-apple-darwin }.

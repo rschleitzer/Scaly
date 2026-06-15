@@ -45,6 +45,8 @@ this seed and runs `tools/verify-seed.sh` (hello + AOT corpus) on every push:
 - ✅ `arm64-apple-darwin` — verified (incl. byte-identical fixed point)
 - ✅ `x86_64-linux-gnu` — verified
 - ✅ `aarch64-linux-gnu` — verified
-- ⚠️ `x86_64-apple-darwin` — expected-good, unverified (GitHub's Intel macOS
-  runner is being retired; the leg is non-blocking). Same Mach-O/LP64 family as
-  the verified `arm64-apple-darwin`.
+- 🔹 `x86_64-apple-darwin` — best-effort, covered by inference (not in CI; no
+  GitHub Intel-mac runner). Its two halves are each verified above — the x86_64
+  System-V ABI via `x86_64-linux-gnu` and Mach-O/darwin via `arm64-apple-darwin`
+  — and the seed is host-independent. Run `tools/build-from-seed.sh` +
+  `tools/verify-seed.sh` on an Intel Mac to verify it explicitly.

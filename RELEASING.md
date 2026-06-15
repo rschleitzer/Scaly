@@ -41,10 +41,10 @@ the size/align emission generalized off its hardcoded 64-bit constants.
 (struct-by-value / `sret`) into the IR that meet `libLLVM`/`libc` at a platform
 ABI boundary. Each target is built from the seed and **verified** in two tiers:
 
-- **Functional (every push, all four targets, free CI).** Build with
-  `tools/build-from-seed.sh`, then `tools/verify-seed.sh`: hello + the AOT corpus
-  (self-checked against each test's `; Expected:`). This proves the seed builds a
-  *correct* compiler on the target. Automated in
+- **Functional (every push, the three CI-reachable targets, free CI).** Build
+  with `tools/build-from-seed.sh`, then `tools/verify-seed.sh`: hello + the AOT
+  corpus (self-checked against each test's `; Expected:`). This proves the seed
+  builds a *correct* compiler on the target. Automated in
   `.github/workflows/verify-seed.yml`.
 - **Byte-identical fixed point (release time, high-RAM machine).**
   `VERIFY_FIXEDPOINT=1 tools/verify-seed.sh` additionally re-emits all three `.ll`
@@ -54,11 +54,13 @@ ABI boundary. Each target is built from the seed and **verified** in two tiers:
 
 Current status: functionally verified in CI on `arm64-apple-darwin`,
 `x86_64-linux-gnu`, and `aarch64-linux-gnu` (plus fixed-point on
-`arm64-apple-darwin`). `x86_64-apple-darwin` is expected-good but unverified —
-GitHub's Intel macOS runner (`macos-13`) is being retired and rarely schedules,
-so that matrix leg is non-blocking (`allow_failure`); verify it on a self-hosted
-Intel Mac or at release. It is the same Mach-O/LP64 family as the green
-`arm64-apple-darwin` leg.
+`arm64-apple-darwin`). **`x86_64-apple-darwin` is best-effort, covered by
+inference** — it is not in the CI matrix (GitHub's Intel macOS runners are being
+retired). Its two halves are each verified above: the x86_64 System-V ABI via
+`x86_64-linux-gnu`, and Mach-O/darwin object emission + linking via
+`arm64-apple-darwin`; combined with the host-independent seed, the residual risk
+is minimal. To verify it explicitly, run `tools/build-from-seed.sh` +
+`tools/verify-seed.sh` on an Intel Mac.
 
 (The C++ stage-0 stays frozen-but-buildable: it refreshes the seed, brings up
 genuinely new data models, and is an independent lineage for diverse double
@@ -68,10 +70,10 @@ compiling.)
 
 | Triple | Platform | Status |
 |---|---|---|
-| `arm64-apple-darwin`  | Apple Silicon macOS | supported |
-| `x86_64-apple-darwin` | Intel macOS         | supported |
-| `x86_64-linux-gnu`    | x86-64 Linux        | supported |
-| `aarch64-linux-gnu`   | arm64 Linux         | supported |
+| `arm64-apple-darwin`  | Apple Silicon macOS | verified in CI |
+| `x86_64-linux-gnu`    | x86-64 Linux        | verified in CI |
+| `aarch64-linux-gnu`   | arm64 Linux         | verified in CI |
+| `x86_64-apple-darwin` | Intel macOS         | best-effort (covered by inference; no CI runner) |
 
 All four are LP64 little-endian. 32-bit / big-endian targets are **not**
 supported until the s179 union-sizing walker and the align/sizeof emission are
