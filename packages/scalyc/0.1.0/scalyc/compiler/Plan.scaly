@@ -292,6 +292,12 @@ define PlannedTry
     cond: PlannedBinding
     catches: ref[Vector[PlannedWhen]]?
     alternative: ref[PlannedStatement]?
+    ; When the try condition is a throwing call, throws_type is the error
+    ; union (the function's `throws T`). The wrapper status tag is 0 on
+    ; success, non-zero on error; the thrown error union is stored INLINE in
+    ; the wrapper data field, and its own variant tag selects the catch arm.
+    throws_type: PlannedType
+    is_throwing_cond: bool
 )
 
 define PlannedSizeOf

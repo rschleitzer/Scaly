@@ -296,6 +296,10 @@ struct PlannedMatch {
     std::shared_ptr<PlannedStatement> Alternative;
 };
 
+// Sentinel VariantIndex for a generic `when e: Error` catch-all arm in a
+// throws `try`: it matches every error tag rather than one specific variant.
+inline constexpr size_t ErrorCatchAllIndex = static_cast<size_t>(-1);
+
 struct PlannedWhen {
     Span Loc;
     std::string Name;
@@ -338,6 +342,12 @@ struct PlannedTry {
     PlannedBinding Cond;
     std::vector<PlannedWhen> Catches;
     std::shared_ptr<PlannedStatement> Alternative;
+    // When the try condition is a throwing call, this is the error union type
+    // (the function's `throws T`). The wrapper tag is 0 on success and 1 on
+    // error; on error the data field holds a pointer to a T error object whose
+    // own union tag selects the matching catch arm. Empty when not a throws.
+    PlannedType ThrowsType;
+    bool IsThrowingCond = false;
 };
 
 struct PlannedSizeOf {

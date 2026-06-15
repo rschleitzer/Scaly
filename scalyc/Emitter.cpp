@@ -5646,211 +5646,243 @@ llvm::Expected<llvm::Value*> Emitter::emitTry(const PlannedTry &Try) {
         return ResultValue;
     }
 
-    // Get pointer to the result value
+    // Get a pointer to the wrapper { i8 status, [N x i8] data } and its type.
     llvm::Value *ResultPtr;
     llvm::Type *ResultType = ResultValue->getType();
     if (ResultValue->getType()->isPointerTy()) {
         ResultPtr = ResultValue;
-        // Need to determine the actual struct type - for now assume it's stored
+        // Recover the wrapper struct type from the condition's result type
+        // cache when possible — the GEPs below need the pointee struct type.
+        if (!Try.Cond.Operation.empty()) {
+            const PlannedType &CT = Try.Cond.Operation[0].ResultType;
+            auto It = StructCache.find(CT.MangledName);
+            if (It == StructCache.end()) It = StructCache.find(CT.Name);
+            if (It != StructCache.end()) ResultType = It->second;
+        }
     } else {
-        // Store the result to get a pointer
         ResultPtr = createEntryBlockAlloca(ResultType, "try.result");
         Builder->CreateStore(ResultValue, ResultPtr);
     }
 
-    // Load the tag (first field, i8) - Result layout: { i8 tag, [size x i8] data }
     llvm::Type *I8Ty = llvm::Type::getInt8Ty(*Context);
+    llvm::Type *PtrTy = llvm::PointerType::get(*Context, 0);
+
+    // Wrapper status tag at offset 0: 0 = success, non-zero = error.
     llvm::Value *TagPtr = Builder->CreateStructGEP(ResultType, ResultPtr, 0, "tag.ptr");
     llvm::Value *Tag = Builder->CreateLoad(I8Ty, TagPtr, "tag");
 
-    // Create blocks
+    bool HasErrHandling = !Try.Catches.empty() || (bool)Try.Alternative;
     llvm::BasicBlock *OkBlock = createBlock("try.ok");
-    llvm::BasicBlock *ErrBlock = (Try.Catches.empty() && !Try.Alternative)
-        ? nullptr : createBlock("try.err");
+    llvm::BasicBlock *ErrBlock = HasErrHandling ? createBlock("try.err") : nullptr;
     llvm::BasicBlock *MergeBlock = createBlock("try.end");
 
-    // Check if tag is 0 (Ok)
     llvm::Value *IsOk = Builder->CreateICmpEQ(Tag, llvm::ConstantInt::get(I8Ty, 0), "is.ok");
     Builder->CreateCondBr(IsOk, OkBlock, ErrBlock ? ErrBlock : MergeBlock);
 
-    // Track values and source blocks for PHI node
-    std::vector<std::pair<llvm::Value*, llvm::BasicBlock*>> IncomingValues;
-
-    // Emit Ok block - bind the success value and continue
-    Builder->SetInsertPoint(OkBlock);
-
-    // Extract the Ok data from the union (data is at index 1)
-    // For now, extract as i64 to match typical catch/else types
-    llvm::Value *OkDataPtr = Builder->CreateStructGEP(ResultType, ResultPtr, 1, "ok.data.ptr");
-    llvm::Type *I64Ty = llvm::Type::getInt64Ty(*Context);
-    llvm::Value *OkValue = Builder->CreateLoad(I64Ty, OkDataPtr, "ok.val");
-
-    // Bind the value if there's a name
-    if (!BindingName.empty()) {
-        if (IsMutable) {
-            llvm::AllocaInst *Alloca = createEntryBlockAlloca(I64Ty, BindingName);
-            Builder->CreateStore(OkValue, Alloca);
-            LocalVariables[BindingName] = Alloca;
-        } else {
-            LocalVariables[BindingName] = OkValue;
+    // The try expression's value (the success value, or a catch/else body
+    // value) is funnelled through an entry-block alloca so it dominates the
+    // merge regardless of which arm produced it (mirrors emitChoose).
+    llvm::AllocaInst *ResultAlloca = nullptr;
+    llvm::Type *ResultValTy = nullptr;
+    auto storeArmValue = [&](llvm::Value *V) {
+        if (!V || V->getType()->isVoidTy()) return;
+        llvm::BasicBlock *Cur = Builder->GetInsertBlock();
+        if (Cur->getTerminator()) return;
+        if (auto *Inst = llvm::dyn_cast<llvm::Instruction>(V))
+            if (Inst->getParent() != Cur) return;  // doesn't dominate here
+        if (!ResultAlloca) {
+            ResultAlloca = createEntryBlockAlloca(V->getType(), "try.value");
+            ResultValTy = V->getType();
         }
+        llvm::Value *SV = V;
+        if (ResultValTy->isStructTy() && V->getType()->isPointerTy())
+            SV = Builder->CreateLoad(ResultValTy, V, "try.branch.load");
+        if (SV->getType() == ResultValTy)
+            Builder->CreateStore(SV, ResultAlloca);
+    };
+
+    // --- Ok block: bind the success value; it leaks into the enclosing scope.
+    Builder->SetInsertPoint(OkBlock);
+    {
+        llvm::Value *OkDataPtr = Builder->CreateStructGEP(ResultType, ResultPtr, 1, "ok.data.ptr");
+        llvm::Type *OkType = llvm::Type::getInt64Ty(*Context);
+        if (Try.Cond.BindingItem.ItemType) {
+            llvm::Type *Mapped = mapType(*Try.Cond.BindingItem.ItemType);
+            if (Mapped && !Mapped->isVoidTy()) OkType = Mapped;
+        }
+        llvm::Value *OkValue = Builder->CreateAlignedLoad(OkType, OkDataPtr, llvm::Align(1), "ok.val");
+        if (!BindingName.empty()) {
+            if (IsMutable) {
+                llvm::AllocaInst *A = createEntryBlockAlloca(OkType, BindingName);
+                Builder->CreateStore(OkValue, A);
+                LocalVariables[BindingName] = A;
+            } else {
+                LocalVariables[BindingName] = OkValue;
+            }
+        }
+        // Contribute the success value to the try-expression's merge value only
+        // when it is scalar/pointer. When the bound success type is an aggregate
+        // (e.g. `try let r = fail()` where fail returns a union) the merge type
+        // is established by the scalar catch/else arms instead — the success
+        // path of such an expression-try is degenerate (its value can't unify
+        // with the scalar arms), and forcing the aggregate type here would make
+        // the merge load mismatch the enclosing return.
+        if (!OkType->isAggregateType())
+            storeArmValue(OkValue);
+        if (!Builder->GetInsertBlock()->getTerminator())
+            Builder->CreateBr(MergeBlock);
     }
 
-    IncomingValues.push_back({OkValue, OkBlock});
-    Builder->CreateBr(MergeBlock);
-
-    // Emit error handling blocks
+    // --- Error path. On error the wrapper data field holds a pointer to the
+    // thrown error object (a value of the function's `throws T` union); the
+    // catch arms select on that object's OWN variant tag.
     if (ErrBlock) {
         Builder->SetInsertPoint(ErrBlock);
 
-        if (!Try.Catches.empty()) {
-            // Create switch for different error types
-            llvm::BasicBlock *DefaultBlock = Try.Alternative
-                ? createBlock("try.else") : MergeBlock;
+        llvm::Value *ErrDataPtr = Builder->CreateStructGEP(ResultType, ResultPtr, 1, "err.data.ptr");
+        llvm::Value *ErrObjPtr = Builder->CreateAlignedLoad(PtrTy, ErrDataPtr, llvm::Align(1), "err.obj.ptr");
 
-            llvm::SwitchInst *Switch = Builder->CreateSwitch(Tag, DefaultBlock, Try.Catches.size());
+        // The error union's LLVM struct type, for reading its variant tag.
+        llvm::Type *ErrUnionTy = nullptr;
+        if (!Try.ThrowsType.Name.empty()) {
+            auto It = StructCache.find(Try.ThrowsType.MangledName);
+            if (It == StructCache.end()) It = StructCache.find(Try.ThrowsType.Name);
+            if (It != StructCache.end()) ErrUnionTy = It->second;
+            if (!ErrUnionTy) {
+                llvm::Type *M = mapType(Try.ThrowsType);
+                if (M && M->isStructTy()) ErrUnionTy = M;
+            }
+        }
 
-            // Process each catch clause
-            for (size_t i = 0; i < Try.Catches.size(); ++i) {
-                const auto &Catch = Try.Catches[i];
+        // A generic `when e: Error` arm catches every error tag.
+        int CatchAllArm = -1;
+        for (size_t i = 0; i < Try.Catches.size(); ++i)
+            if (Try.Catches[i].VariantIndex == ErrorCatchAllIndex) { CatchAllArm = (int)i; break; }
 
-                llvm::BasicBlock *CatchBlock = createBlock("try.catch." + Catch.Name);
-                // Use the variant's tag from the planned union
-                Switch->addCase(
-                    llvm::cast<llvm::ConstantInt>(llvm::ConstantInt::get(I8Ty, Catch.VariantIndex)),
-                    CatchBlock
-                );
-
-                Builder->SetInsertPoint(CatchBlock);
-
-                // Extract error from union: data field holds a pointer to
-                // the error object on the exception page. Load the pointer,
-                // then load the variant value through it.
-                if (!Catch.Name.empty()) {
-                    llvm::Value *DataPtr = Builder->CreateStructGEP(
-                        ResultType, ResultPtr, 1, "err.data.ptr");
-
-                    llvm::Type *PtrTy = llvm::PointerType::get(*Context, 0);
-                    llvm::Value *ErrObjPtr = Builder->CreateLoad(PtrTy, DataPtr, "err.obj.ptr");
-
-                    llvm::Type *VarTy = mapType(Catch.VariantType);
-                    llvm::Value *ErrValue = Builder->CreateLoad(VarTy, ErrObjPtr, "err.val");
-
-                    LocalVariables[Catch.Name] = ErrValue;
+        // Emit one catch arm's binding + body into the current block.
+        auto emitCatchArm = [&](const PlannedWhen &Catch) -> llvm::Error {
+            if (!Catch.Name.empty()) {
+                llvm::Type *VarTy = mapType(Catch.VariantType);
+                llvm::Value *Bound;
+                if (Catch.VariantIndex == ErrorCatchAllIndex) {
+                    // Bind the whole error union value (e.g. for re-throw).
+                    Bound = Builder->CreateAlignedLoad(VarTy, ErrObjPtr, llvm::Align(1), "err.val");
+                } else if (ErrUnionTy) {
+                    // Bind the variant payload from the error object's data.
+                    llvm::Value *PayloadPtr = Builder->CreateStructGEP(ErrUnionTy, ErrObjPtr, 1, "err.payload.ptr");
+                    Bound = Builder->CreateAlignedLoad(VarTy, PayloadPtr, llvm::Align(1), "err.val");
+                } else {
+                    Bound = Builder->CreateAlignedLoad(VarTy, ErrObjPtr, llvm::Align(1), "err.val");
                 }
-
-                llvm::Value *CatchValue = nullptr;
-
-                if (Catch.Consequent) {
-                    if (auto *Action = std::get_if<PlannedAction>(Catch.Consequent.get())) {
-                        auto ValueOrErr = emitAction(*Action);
-                        if (!ValueOrErr)
-                            return ValueOrErr.takeError();
-                        if (Action->Target.empty()) {
-                            CatchValue = *ValueOrErr;
-                        }
-                    } else if (auto *Binding = std::get_if<PlannedBinding>(Catch.Consequent.get())) {
-                        if (auto Err = emitBinding(*Binding))
-                            return std::move(Err);
-                    }
-                }
-
-                // Capture the current block BEFORE adding the branch
-                llvm::BasicBlock *CatchEndBlock = Builder->GetInsertBlock();
-
-                if (!CatchEndBlock->getTerminator()) {
-                    Builder->CreateBr(MergeBlock);
-                    // Add to PHI if we have a value
-                    if (CatchValue) {
-                        IncomingValues.push_back({CatchValue, CatchEndBlock});
-                    }
+                LocalVariables[Catch.Name] = Bound;
+            }
+            llvm::Value *CatchValue = nullptr;
+            if (Catch.Consequent) {
+                if (auto *Action = std::get_if<PlannedAction>(Catch.Consequent.get())) {
+                    auto V = emitAction(*Action);
+                    if (!V) return V.takeError();
+                    if (Action->Target.empty()) CatchValue = *V;
+                } else if (auto *B = std::get_if<PlannedBinding>(Catch.Consequent.get())) {
+                    if (auto E = emitBinding(*B)) return E;
+                } else {
+                    if (auto E = emitStatement(*Catch.Consequent)) return E;
                 }
             }
-
-            // Emit else block if present
-            if (Try.Alternative) {
-                Builder->SetInsertPoint(DefaultBlock);
-                llvm::Value *ElseValue = nullptr;
-
-                if (auto *Action = std::get_if<PlannedAction>(Try.Alternative.get())) {
-                    auto ValueOrErr = emitAction(*Action);
-                    if (!ValueOrErr)
-                        return ValueOrErr.takeError();
-                    if (Action->Target.empty()) {
-                        ElseValue = *ValueOrErr;
-                    }
-                } else if (auto *Binding = std::get_if<PlannedBinding>(Try.Alternative.get())) {
-                    if (auto Err = emitBinding(*Binding))
-                        return std::move(Err);
-                }
-
-                // Capture the current block BEFORE adding the branch
-                llvm::BasicBlock *ElseEndBlock = Builder->GetInsertBlock();
-
-                if (!ElseEndBlock->getTerminator()) {
-                    Builder->CreateBr(MergeBlock);
-                    if (ElseValue) {
-                        IncomingValues.push_back({ElseValue, ElseEndBlock});
-                    }
-                }
-            }
-        } else if (Try.Alternative) {
-            // No catches, just else
-            llvm::Value *ElseValue = nullptr;
-
-            if (auto *Action = std::get_if<PlannedAction>(Try.Alternative.get())) {
-                auto ValueOrErr = emitAction(*Action);
-                if (!ValueOrErr)
-                    return ValueOrErr.takeError();
-                if (Action->Target.empty()) {
-                    ElseValue = *ValueOrErr;
-                }
-            } else if (auto *Binding = std::get_if<PlannedBinding>(Try.Alternative.get())) {
-                if (auto Err = emitBinding(*Binding))
-                    return std::move(Err);
-            }
-
-            // Capture the current block BEFORE adding the branch
-            llvm::BasicBlock *ElseEndBlock = Builder->GetInsertBlock();
-
-            if (!ElseEndBlock->getTerminator()) {
+            storeArmValue(CatchValue);
+            if (!Builder->GetInsertBlock()->getTerminator())
                 Builder->CreateBr(MergeBlock);
-                if (ElseValue) {
-                    IncomingValues.push_back({ElseValue, ElseEndBlock});
+            return llvm::Error::success();
+        };
+
+        // Emit the alternative (else dropper) body into a block.
+        auto emitElseInto = [&](llvm::BasicBlock *BB) -> llvm::Error {
+            Builder->SetInsertPoint(BB);
+            llvm::Value *ElseValue = nullptr;
+            if (Try.Alternative) {
+                if (auto *Action = std::get_if<PlannedAction>(Try.Alternative.get())) {
+                    auto V = emitAction(*Action);
+                    if (!V) return V.takeError();
+                    if (Action->Target.empty()) ElseValue = *V;
+                } else if (auto *B = std::get_if<PlannedBinding>(Try.Alternative.get())) {
+                    if (auto E = emitBinding(*B)) return E;
+                } else {
+                    if (auto E = emitStatement(*Try.Alternative)) return E;
                 }
             }
+            storeArmValue(ElseValue);
+            if (!Builder->GetInsertBlock()->getTerminator())
+                Builder->CreateBr(MergeBlock);
+            return llvm::Error::success();
+        };
+
+        // Specific catch arms switch on the error object's own variant tag.
+        std::vector<const PlannedWhen*> SpecificArms;
+        for (size_t i = 0; i < Try.Catches.size(); ++i)
+            if (Try.Catches[i].VariantIndex != ErrorCatchAllIndex)
+                SpecificArms.push_back(&Try.Catches[i]);
+
+        if (!SpecificArms.empty() && ErrUnionTy) {
+            // Default target: catch-all arm > else block > a dedicated
+            // unreachable block (errors are assumed exhaustive then; routing
+            // unmatched errors to merge would break OkValue's domination).
+            llvm::BasicBlock *CatchAllBlock = nullptr;
+            llvm::BasicBlock *ElseBlock = nullptr;
+            llvm::BasicBlock *UnreachBlock = nullptr;
+            llvm::BasicBlock *DefaultBlock;
+            if (CatchAllArm >= 0) {
+                CatchAllBlock = createBlock("try.catch.all");
+                DefaultBlock = CatchAllBlock;
+            } else if (Try.Alternative) {
+                ElseBlock = createBlock("try.else");
+                DefaultBlock = ElseBlock;
+            } else {
+                UnreachBlock = createBlock("try.unmatched");
+                DefaultBlock = UnreachBlock;
+            }
+
+            llvm::Value *ErrTagPtr = Builder->CreateStructGEP(ErrUnionTy, ErrObjPtr, 0, "err.tag.ptr");
+            llvm::Value *ErrTag = Builder->CreateAlignedLoad(I8Ty, ErrTagPtr, llvm::Align(1), "err.tag");
+            llvm::SwitchInst *Switch = Builder->CreateSwitch(ErrTag, DefaultBlock, SpecificArms.size());
+
+            std::vector<size_t> SeenTags;
+            for (const PlannedWhen *Arm : SpecificArms) {
+                bool Dup = false;
+                for (size_t t : SeenTags) if (t == Arm->VariantIndex) { Dup = true; break; }
+                if (Dup) continue;
+                SeenTags.push_back(Arm->VariantIndex);
+                llvm::BasicBlock *CatchBlock = createBlock("try.catch." + Arm->Name);
+                Switch->addCase(
+                    llvm::cast<llvm::ConstantInt>(llvm::ConstantInt::get(I8Ty, Arm->VariantIndex)),
+                    CatchBlock);
+                Builder->SetInsertPoint(CatchBlock);
+                if (auto E = emitCatchArm(*Arm)) return E;
+            }
+
+            if (CatchAllBlock) {
+                Builder->SetInsertPoint(CatchAllBlock);
+                if (auto E = emitCatchArm(Try.Catches[CatchAllArm])) return E;
+            } else if (ElseBlock) {
+                if (auto E = emitElseInto(ElseBlock)) return E;
+            } else if (UnreachBlock) {
+                Builder->SetInsertPoint(UnreachBlock);
+                Builder->CreateUnreachable();
+            }
+        } else if (CatchAllArm >= 0) {
+            // Only a generic Error catch-all.
+            if (auto E = emitCatchArm(Try.Catches[CatchAllArm])) return E;
+        } else if (Try.Alternative) {
+            // No catches, just an else dropper.
+            if (auto E = emitElseInto(ErrBlock)) return E;
+        } else if (!Builder->GetInsertBlock()->getTerminator()) {
+            Builder->CreateBr(MergeBlock);
         }
     }
 
-    // Continue at merge block
+    // --- Merge. The try-bound variable stays in scope for following statements.
     Builder->SetInsertPoint(MergeBlock);
-
-    // Clean up binding from scope
-    if (!BindingName.empty()) {
-        LocalVariables.erase(BindingName);
-    }
-
-    // Create PHI node if branches produce values. Must come before any other
-    // instruction in the merge block to satisfy LLVM's PHI-grouping rule.
     llvm::Value *MergedValue = nullptr;
-    if (!IncomingValues.empty()) {
-        llvm::Type *ValueType = IncomingValues[0].first->getType();
-        bool AllSameType = true;
-        for (const auto &[Val, Block] : IncomingValues) {
-            if (Val->getType() != ValueType) {
-                AllSameType = false;
-                break;
-            }
-        }
-
-        if (AllSameType) {
-            llvm::PHINode *PHI = Builder->CreatePHI(ValueType, IncomingValues.size(), "try.value");
-            for (const auto &[Val, Block] : IncomingValues) {
-                PHI->addIncoming(Val, Block);
-            }
-            MergedValue = PHI;
-        }
-    }
+    if (ResultAlloca)
+        MergedValue = Builder->CreateLoad(ResultValTy, ResultAlloca, "try.value.load");
 
     // Release the try-scope exception page only if we allocated it ourselves
     // (default $ lifetime). For ^name/#/! lifetimes, the page is borrowed

@@ -11543,25 +11543,49 @@ llvm::Expected<PlannedTry> Planner::planTry(const Try &TryExpr) {
     Result.Loc = TryExpr.Loc;
     Result.Life = TryExpr.Life;
 
-    pushScope();
-
+    // The try-bound variable (e.g. `try let q ...`) leaks into the ENCLOSING
+    // scope: the only way execution falls through past the try block is the
+    // success path, where the binding is in scope. So plan the binding in the
+    // current scope (not a pushed one). Catch/else variables, by contrast, are
+    // scoped to their own arm and get a pushed scope each below.
     auto PlannedCond = planBinding(TryExpr.Cond);
     if (!PlannedCond) {
-        popScope();
         return PlannedCond.takeError();
     }
     Result.Cond = std::move(*PlannedCond);
 
-    // Get the result type from the binding's operation to look up the union
-    const PlannedUnion *CondUnion = nullptr;
+    // Detect a throwing-call condition. A throws function returns the Result
+    // wrapper { i8 status, [N x i8] data }; the catch arms select error
+    // variants of the function's `throws T` union (NOT the success type).
+    bool IsThrowingCall = false;
+    std::shared_ptr<PlannedType> ThrowsType;
     if (!Result.Cond.Operation.empty()) {
-        const auto &ResultType = Result.Cond.Operation[0].ResultType;
-        auto UnionIt = InstantiatedUnions.find(ResultType.MangledName);
-        if (UnionIt == InstantiatedUnions.end()) {
-            UnionIt = InstantiatedUnions.find(ResultType.Name);
+        if (auto *Call = std::get_if<PlannedCall>(&Result.Cond.Operation[0].Expr)) {
+            if (Call->CanThrow) {
+                IsThrowingCall = true;
+                ThrowsType = Call->ThrowsType;
+            }
         }
-        if (UnionIt != InstantiatedUnions.end()) {
-            CondUnion = &UnionIt->second;
+    }
+    Result.IsThrowingCond = IsThrowingCall;
+    if (ThrowsType)
+        Result.ThrowsType = *ThrowsType;
+
+    // The union whose variants the catch arms match against: for a throws call
+    // it is the error union (ThrowsType); otherwise the condition's own type.
+    const PlannedUnion *CondUnion = nullptr;
+    {
+        const PlannedType *LookupType = nullptr;
+        if (IsThrowingCall && ThrowsType)
+            LookupType = ThrowsType.get();
+        else if (!Result.Cond.Operation.empty())
+            LookupType = &Result.Cond.Operation[0].ResultType;
+        if (LookupType) {
+            auto UnionIt = InstantiatedUnions.find(LookupType->MangledName);
+            if (UnionIt == InstantiatedUnions.end())
+                UnionIt = InstantiatedUnions.find(LookupType->Name);
+            if (UnionIt != InstantiatedUnions.end())
+                CondUnion = &UnionIt->second;
         }
     }
 
@@ -11579,6 +11603,7 @@ llvm::Expected<PlannedTry> Planner::planTry(const Try &TryExpr) {
 
         // Look up the variant in the union to get its tag
         // We compare by TYPE name since Scaly syntax uses "when TypeName: x"
+        bool Resolved = false;
         if (CondUnion && !VariantTypeName.empty()) {
             for (size_t i = 0; i < CondUnion->Variants.size(); ++i) {
                 // Check if variant's type matches the type name from the when clause
@@ -11597,22 +11622,34 @@ llvm::Expected<PlannedTry> Planner::planTry(const Try &TryExpr) {
                     if (CondUnion->Variants[i].VarType) {
                         PW.VariantType = *CondUnion->Variants[i].VarType;
                     }
+                    Resolved = true;
                     break;
                 }
             }
         }
 
+        // Generic catch-all error name (`when e: Error`): bind the whole error
+        // union. Marked with the sentinel index so the emitter routes every
+        // error tag here.
+        if (!Resolved && IsThrowingCall && ThrowsType &&
+            (VariantTypeName == "Error" || VariantTypeName == "error" ||
+             VariantTypeName == "err")) {
+            PW.VariantIndex = ErrorCatchAllIndex;
+            PW.VariantType = *ThrowsType;
+            Resolved = true;
+        }
+
         // Fallback: resolve the variant path if we didn't find it in the union
-        if (PW.VariantType.Name.empty()) {
+        if (!Resolved && PW.VariantType.Name.empty()) {
             auto ResolvedType = resolveTypePath(Catch.VariantPath, Catch.Loc);
             if (!ResolvedType) {
-                popScope();
                 return ResolvedType.takeError();
             }
             PW.VariantType = std::move(*ResolvedType);
         }
 
-        // Add the catch variable to the scope so it can be referenced in the consequent
+        // The catch variable is scoped to its own arm only.
+        pushScope();
         if (!Catch.Name.empty()) {
             defineLocal(Catch.Name, PW.VariantType, false);  // false = not mutable
         }
@@ -11625,20 +11662,21 @@ llvm::Expected<PlannedTry> Planner::planTry(const Try &TryExpr) {
             }
             PW.Consequent = std::make_unique<PlannedStatement>(std::move(*PlannedCons));
         }
+        popScope();
 
         Result.Catches.push_back(std::move(PW));
     }
 
     if (TryExpr.Alternative) {
+        pushScope();
         auto PlannedAlt = planStatement(*TryExpr.Alternative);
         if (!PlannedAlt) {
             popScope();
             return PlannedAlt.takeError();
         }
         Result.Alternative = std::make_unique<PlannedStatement>(std::move(*PlannedAlt));
+        popScope();
     }
-
-    popScope();
 
     return Result;
 }

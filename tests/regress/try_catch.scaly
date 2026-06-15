@@ -1,0 +1,41 @@
+; Regression (B2, follow-up to the s194 throws work): try/when error-handling.
+; Before this fix try/when was broken in BOTH the frozen C++ stage-0 and the
+; self-hosted seed:
+;   - the try-bound variable (`q`) was scoped to the try block and removed at
+;     block exit, so a `return q` AFTER the try reported "Type 'q' cannot be
+;     used as a value" (planner) / "Undefined variable: q" (emitter);
+;   - the catch arms switched on the WRAPPER status tag (0=ok / 1=error) using
+;     the error variant index, so `when e: Bad` (Bad's index 0) collided with
+;     the success tag and the merge PHI / value domination was invalid IR.
+; The fix leaks the try-bound variable into the ENCLOSING scope (the success
+; path is the only fall-through past the try) and switches the error path on
+; the thrown error union's OWN variant tag. Expected: PASS.
+
+define Detail(a: int)
+
+define TErr union (Bad: Detail)
+
+; Scalar-returning throws: throws Bad on b=0, else returns b+100.
+function step(b: int) returns int throws TErr
+{
+    guard b = 0
+        throw TErr.Bad(Detail(7))
+    return b + 100
+}
+
+; The catch arm returns, so reaching past the try implies success — `q` is in
+; scope there.
+function run(b: int) returns int
+{
+    try let q step(b)
+        when e: Bad
+            return 55
+    return q
+}
+
+let a run(5)     ; success path -> q (105) used after the try
+let z run(0)     ; throw -> caught -> 55
+if a + z = 160
+    print("PASS")
+else
+    print("FAIL")

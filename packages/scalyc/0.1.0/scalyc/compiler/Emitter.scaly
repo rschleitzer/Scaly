@@ -7734,12 +7734,10 @@ define Emitter
         guard result_value.handle = null
             return LLVMValueRef(null)
 
-        let result_type LLVMTypeOf(result_value)
-        let type_kind LLVMGetTypeKind(result_type)
+        let i8_ty LLVMInt8TypeInContext(context)
 
-        ; If not a struct (union), just return it (no error possible)
-        ; StructTypeKind = 12
-        guard type_kind <> 12
+        ; Non-throwing try: nothing can go wrong — bind the value and return it.
+        guard try_expr.is_throwing_cond = false
         {
             ; s25/s28: unwrap ref[String]? via guard + explicit deref.
             guard try_expr.cond.binding_item.name <> null
@@ -7751,154 +7749,191 @@ define Emitter
             return result_value
         }
 
-        ; Store result to get pointer
-        let result_ptr entry_alloca(result_type, "try.result")
-        LLVMBuildStore(builder, result_value, result_ptr)
+        ; Throwing-call try. The callee returns the Result wrapper
+        ; { i8 status, [N x i8] data } via sret and emit_operands hands back
+        ; the sret-slot POINTER (the wrapper base). Use byte-offset (i8) GEPs:
+        ; the planner types the condition as the SCALAR success type, not the
+        ; wrapper struct, so a struct GEP would be invalid (emit_choose s194).
+        ;   byte 0 : status (0 = success, non-zero = error)
+        ;   byte 1 : the success value (on success), OR the thrown error union
+        ;            stored INLINE (on error) whose own variant tag is byte 1
+        ;   byte 2 : the inline error union's variant payload
+        let result_ptr result_value
 
-        ; Load the tag (first field, i8)
-        let i8_ty LLVMInt8TypeInContext(context)
-        let tag_ptr LLVMBuildStructGEP2(builder, result_type, result_ptr, 0, "tag.ptr")
-        let tag LLVMBuildLoad2(builder, i8_ty, tag_ptr, "tag")
+        ; Wrapper status tag at byte offset 0.
+        let tag LLVMBuildLoad2(builder, i8_ty, result_ptr, "tag")
+        LLVMSetAlignment(tag, 1 as u32)
 
-        ; Create blocks
+        ; Is there any error handling (catches or an else dropper)?
+        var has_err: bool false
+        guard try_expr.catches <> null
+        {
+            guard try_expr.catches.length > 0
+                set has_err: true
+        }
+        guard try_expr.alternative <> null
+            set has_err: true
+
         let ok_block create_block(String$("try.ok"))
-        let err_block create_block(String$("try.err"))
         let merge_block create_block(String$("try.end"))
+        var err_block LLVMBasicBlockRef(null)
+        guard has_err
+            set err_block: create_block(String$("try.err"))
 
-        ; Check if tag is 0 (Ok)
         let zero LLVMConstInt(i8_ty, 0, 0)
         let is_ok LLVMBuildICmp(builder, LLVMIntPredicate.EQ(), tag, zero, "is.ok")
-        LLVMBuildCondBr(builder, is_ok, ok_block, err_block)
+        var err_target err_block
+        guard err_block.handle = null
+            set err_target: merge_block
+        LLVMBuildCondBr(builder, is_ok, ok_block, err_target)
 
-        ; Emit Ok block
+        ; --- Ok block: bind the success value; it leaks into the enclosing
+        ; scope (the planner defines it there). The success path is the only
+        ; way execution falls through past the merge, so the Ok block
+        ; dominates subsequent statements.
         LLVMPositionBuilderAtEnd(builder, ok_block)
-
-        ; Extract the Ok data
-        let i64_ty LLVMInt64TypeInContext(context)
-        let ok_data_ptr LLVMBuildStructGEP2(builder, result_type, result_ptr, 1, "ok.c_data().ptr")
-        let ok_value LLVMBuildLoad2(builder, i64_ty, ok_data_ptr, "ok.val")
-
-        ; Bind value if name present. s25/s28: unwrap ref[String]? via
-        ; guard + explicit deref.
+        var ok_type LLVMInt64TypeInContext(context)
+        guard try_expr.cond.binding_item.item_type <> null
+        {
+            let mapped map_type(try_expr.cond.binding_item.item_type.unwrap())
+            guard mapped.handle <> null
+                set ok_type: mapped
+        }
+        let ok_one LLVMConstInt(i8_ty, 1, 0)
+        var ok_idx Vector[LLVMValueRef]#(1)
+        ok_idx.put(0, ok_one)
+        let ok_data_ptr LLVMBuildInBoundsGEP2(builder, i8_ty, result_ptr, ok_idx.data, 1, "ok.data.ptr")
+        let ok_value LLVMBuildLoad2(builder, ok_type, ok_data_ptr, "ok.val")
+        LLVMSetAlignment(ok_value, 1 as u32)
         guard try_expr.cond.binding_item.name <> null
         {
             let name_ref try_expr.cond.binding_item.name
             let name (*name_ref)
             if try_expr.cond.binding_type.equals(String$("var"))
             {
-                let alloca entry_alloca(i64_ty, name.c_data())
+                let alloca entry_alloca(ok_type, name.c_data())
                 LLVMBuildStore(builder, ok_value, alloca)
                 define_variable(name, alloca)
             }
             else
-            {
                 define_variable(name, ok_value)
-            }
         }
-
-        LLVMBuildBr(builder, merge_block)
-
-        ; Emit Err block
-        LLVMPositionBuilderAtEnd(builder, err_block)
-
-        ; Handle catches - pattern match on error variants
-        guard try_expr.catches <> null
-        {
-            guard try_expr.catches.length > 0
-            {
-                ; Extract error data from the union's data field
-                let err_data_ptr LLVMBuildStructGEP2(builder, result_type, result_ptr, 1, "err.data.ptr")
-
-                ; If multiple catches, create a switch on the tag
-                if try_expr.catches.length > 1
-                {
-                    let catch_end_block create_block(String$("catch.end"))
-                    let catch_default_block create_block(String$("catch.default"))
-
-                    ; Create switch on tag (tags 1, 2, 3... for different error variants)
-                    let catch_count try_expr.catches.length as int
-                    let catch_switch LLVMBuildSwitch(builder, tag, catch_default_block, catch_count)
-
-                    for catch_case in try_expr.catches
-                    {
-                        let catch_block create_block(String$("catch.case"))
-                        let catch_tag_const LLVMConstInt(i8_ty, catch_case.variant_index, 0)
-                        LLVMAddCase(catch_switch, catch_tag_const, catch_block)
-
-                        LLVMPositionBuilderAtEnd(builder, catch_block)
-
-                        ; Bind error value if name present
-                        guard catch_case.name.length > 0
-                        {
-                            let err_ty map_type(catch_case.variant_type)
-                            let err_value LLVMBuildLoad2(builder, err_ty, err_data_ptr, "err.val")
-                            define_variable(catch_case.name, err_value)
-                        }
-
-                        ; Execute catch consequent. s25/s28: unwrap via
-                        ; guard + deref.
-                        guard catch_case.consequent <> null
-                        {
-                            let stmt_ref catch_case.consequent
-                            emit_statement(*stmt_ref)
-                        }
-
-                        ; Jump to catch end if no terminator
-                        let catch_term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock(builder))
-                        guard catch_term.handle = null
-                            LLVMBuildBr(builder, catch_end_block)
-                    }
-
-                    ; Default block jumps to alternative handling
-                    LLVMPositionBuilderAtEnd(builder, catch_default_block)
-                    LLVMBuildBr(builder, catch_end_block)
-
-                    ; Continue from catch end
-                    LLVMPositionBuilderAtEnd(builder, catch_end_block)
-                }
-                else
-                {
-                    ; Single catch - just bind and execute
-                    let single_catch try_expr.catches.get(0)
-                    guard single_catch <> null
-                    {
-                        let catch_case single_catch.unwrap()
-
-                        ; Bind error value if name present
-                        guard catch_case.name.length > 0
-                        {
-                            let err_ty map_type(catch_case.variant_type)
-                            let err_value LLVMBuildLoad2(builder, err_ty, err_data_ptr, "err.val")
-                            define_variable(catch_case.name, err_value)
-                        }
-
-                        ; Execute catch consequent. s25/s28: unwrap via
-                        ; guard + deref.
-                        guard catch_case.consequent <> null
-                        {
-                            let stmt_ref catch_case.consequent
-                            emit_statement(*stmt_ref)
-                        }
-                    }
-                }
-            }
-        }
-
-        ; Handle alternative. s25/s28: unwrap via guard + deref.
-        guard try_expr.alternative <> null
-        {
-            let stmt_ref try_expr.alternative
-            emit_statement(*stmt_ref)
-        }
-
-        let err_term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock(builder))
-        guard err_term.handle = null
+        let ok_term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock(builder))
+        guard ok_term.handle = null
             LLVMBuildBr(builder, merge_block)
 
-        ; Continue at merge block
-        LLVMPositionBuilderAtEnd(builder, merge_block)
+        ; --- Error path. On error the wrapper data field holds the thrown
+        ; error union INLINE; the catch arms select on that union's OWN
+        ; variant tag (NOT the wrapper status, which is 1 for every error).
+        guard err_block.handle <> null
+        {
+            LLVMPositionBuilderAtEnd(builder, err_block)
 
-        ; Return ok_value (or PHI if both branches produce values)
+            ; Inline error union tag at byte offset 1 (the union's own tag is
+            ; the first byte of the wrapper data field).
+            let et_one LLVMConstInt(i8_ty, 1, 0)
+            var et_idx Vector[LLVMValueRef]#(1)
+            et_idx.put(0, et_one)
+            let errtag_ptr LLVMBuildInBoundsGEP2(builder, i8_ty, result_ptr, et_idx.data, 1, "err.tag.ptr")
+            let err_tag LLVMBuildLoad2(builder, i8_ty, errtag_ptr, "err.tag")
+            LLVMSetAlignment(err_tag, 1 as u32)
+
+            ; The variant payload sits at byte offset 2 (after the wrapper
+            ; status byte and the inline error union's own tag byte).
+            let pl_two LLVMConstInt(i8_ty, 2, 0)
+            var pl_idx Vector[LLVMValueRef]#(1)
+            pl_idx.put(0, pl_two)
+            let payload_ptr LLVMBuildInBoundsGEP2(builder, i8_ty, result_ptr, pl_idx.data, 1, "err.payload.ptr")
+
+            var has_catches: bool false
+            guard try_expr.catches <> null
+            {
+                guard try_expr.catches.length > 0
+                    set has_catches: true
+            }
+
+            ; Catches present: switch on the inner error tag. Default → else
+            ; dropper if present, otherwise unreachable (errors assumed
+            ; exhaustive; routing unmatched errors to merge would break the Ok
+            ; value's domination of statements after the try).
+            guard has_catches
+            {
+                var default_block create_block(String$("try.unmatched"))
+                var have_else: bool false
+                guard try_expr.alternative <> null
+                {
+                    set default_block: create_block(String$("try.else"))
+                    set have_else: true
+                }
+                let catch_count try_expr.catches.length as int
+                let catch_switch LLVMBuildSwitch(builder, err_tag, default_block, catch_count)
+
+                for catch_case in try_expr.catches
+                {
+                    let catch_block create_block(String$("try.catch"))
+                    let catch_tag_const LLVMConstInt(i8_ty, catch_case.variant_index, 0)
+                    LLVMAddCase(catch_switch, catch_tag_const, catch_block)
+
+                    LLVMPositionBuilderAtEnd(builder, catch_block)
+
+                    ; Bind the variant payload (byte offset 2 of the wrapper)
+                    ; if the arm names it. Skip when the variant type is void
+                    ; (an unresolved / generic `when e: Error` arm): loading a
+                    ; void type is invalid IR.
+                    guard catch_case.name.length > 0
+                    {
+                        guard catch_case.variant_type.name.equals(String$("void")) = false
+                        {
+                            let err_ty map_type(catch_case.variant_type)
+                            let err_value LLVMBuildLoad2(builder, err_ty, payload_ptr, "err.val")
+                            LLVMSetAlignment(err_value, 1 as u32)
+                            define_variable(catch_case.name, err_value)
+                        }
+                    }
+
+                    guard catch_case.consequent <> null
+                    {
+                        let stmt_ref catch_case.consequent
+                        emit_statement(*stmt_ref)
+                    }
+
+                    let cterm LLVMGetBasicBlockTerminator(LLVMGetInsertBlock(builder))
+                    guard cterm.handle = null
+                        LLVMBuildBr(builder, merge_block)
+                }
+
+                LLVMPositionBuilderAtEnd(builder, default_block)
+                guard have_else = false
+                    LLVMBuildUnreachable(builder)
+                guard have_else
+                {
+                    guard try_expr.alternative <> null
+                    {
+                        let stmt_ref try_expr.alternative
+                        emit_statement(*stmt_ref)
+                    }
+                    let dterm LLVMGetBasicBlockTerminator(LLVMGetInsertBlock(builder))
+                    guard dterm.handle = null
+                        LLVMBuildBr(builder, merge_block)
+                }
+            }
+
+            ; No catches, just an else dropper.
+            guard has_catches = false
+            {
+                guard try_expr.alternative <> null
+                {
+                    let stmt_ref try_expr.alternative
+                    emit_statement(*stmt_ref)
+                }
+                let eterm LLVMGetBasicBlockTerminator(LLVMGetInsertBlock(builder))
+                guard eterm.handle = null
+                    LLVMBuildBr(builder, merge_block)
+            }
+        }
+
+        ; Continue at merge block.
+        LLVMPositionBuilderAtEnd(builder, merge_block)
         ok_value
     }
 

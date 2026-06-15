@@ -8904,16 +8904,22 @@ define Planner
         ; plan_try: try { binding } catch WhenPatterns else alt.
         function plan_try#(rp, this: Planner, t: Try) returns PlannedTry
         {
-            this.push_scope()
+            ; The try-bound variable (e.g. `try let q ...`) leaks into the
+            ; ENCLOSING scope: the success path is the only way execution
+            ; falls through past the try block, where the binding is in
+            ; scope. So plan the binding in the current scope — do NOT push
+            ; a scope around it. plan_when# scopes each catch arm; the else
+            ; arm gets its own scope below.
             let planned_bind this.plan_binding#(t.binding)
 
-            ; The exception union for catches is the result type of the
-            ; binding's last (call) operand — the call's throws_ flows
-            ; back into the operand's result_type at resolve time (C++
-            ; reference: planTry uses Operation[0].ResultType). When the
-            ; binding has no operands we fall back to void so plan_when
-            ; uses fresh type vars.
-            var exc_union_type: PlannedType Planner.make_void_type#()
+            ; Detect a throwing-call condition. A throws function returns the
+            ; Result wrapper { i8 status, [N x i8] data }; on error the data
+            ; field holds the thrown error union INLINE. The catch arms select
+            ; error variants of the function's `throws T` union (NOT the
+            ; success type), so resolve them against the throws union.
+            var is_throwing: bool false
+            var throws_type: PlannedType Planner.make_void_type#()
+            var union_for_catches: PlannedType Planner.make_void_type#()
             guard planned_bind.operation <> null
             {
                 let ops (*planned_bind.operation)
@@ -8921,7 +8927,25 @@ define Planner
                 {
                     let last_ptr ops.get(ops.length - 1)
                     guard last_ptr <> null
-                        set exc_union_type: (*last_ptr).result_type
+                    {
+                        let last_op (*last_ptr)
+                        set union_for_catches: last_op.result_type
+                        choose last_op.expr
+                            when call: Call
+                            {
+                                guard call.can_throw
+                                {
+                                    set is_throwing: true
+                                    guard call.throws_type <> null
+                                    {
+                                        set throws_type: (*call.throws_type)
+                                        set union_for_catches: (*call.throws_type)
+                                    }
+                                }
+                            }
+                            else
+                                0
+                    }
                 }
             }
 
@@ -8933,7 +8957,7 @@ define Planner
                 guard w_ptr <> null
                 {
                     let w (*w_ptr)
-                    catches_arr.add(this.plan_when#(w, exc_union_type, false, null))
+                    catches_arr.add(this.plan_when#(w, union_for_catches, false, null))
                 }
                 set ci: ci + 1
             }
@@ -8941,16 +8965,17 @@ define Planner
             var alternative_ref: ref[PlannedStatement]? null
             guard t.alternative <> null
             {
+                this.push_scope()
                 let alt (*t.alternative)
                 let planned_alt this.plan_statement#(alt)
+                this.pop_scope()
                 var alt_holder Vector[PlannedStatement]^rp(1)
                 alt_holder.put(0, planned_alt)
                 set alternative_ref: alt_holder.get(0)
             }
-            this.pop_scope()
 
             var catches_holder Vector[PlannedWhen]^rp(catches_arr)
-            PlannedTry(t.span, planned_bind, &catches_holder, alternative_ref)
+            PlannedTry(t.span, planned_bind, &catches_holder, alternative_ref, throws_type, is_throwing)
         }
 
         ; plan_when: one pattern arm of choose/try. When `union_type` is
