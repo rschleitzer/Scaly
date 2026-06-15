@@ -5,6 +5,8 @@
 #   1. hello.scaly compiles + runs -> "Hello, World!"
 #   2. AOT corpus: each tests/aot/*.scaly compiles, runs, and its stdout matches
 #      the test's own `; Expected:` comment (no stage-0 reference needed).
+#   2b. Regression suite (tests/regress): self-hosted-only fixes that the frozen
+#      C++ stage-0 lacks; each must print PASS.
 #   3. FIXED POINT: the compiler re-emits main/scalyc/scaly .ll byte-identical to
 #      the committed seed/. This is the real proof that the single committed seed
 #      is valid on this target.
@@ -47,6 +49,12 @@ done
 [ -z "$bad" ] || fail "AOT:$bad"
 echo "verify: AOT $pass/$total OK ($skipped skipped)"
 
+# Self-hosted regression suite — fixes where the self-hosted compiler is strictly
+# more correct than the frozen C++ stage-0 (so they can't live in the stage-0-
+# referenced AOT corpus). Each test must print PASS.
+echo "verify: regression suite"
+tests/regress/run.sh "$SC" || fail "regression suite"
+
 # Byte-identical fixed-point re-emit proves the compiler reproduces the exact
 # committed seed on this target. OFF by default: re-emitting scalyc.ll peaks at
 # ~15 GB (main ~1 GB, scaly ~5.6 GB), over free CI runners. Run it at release
@@ -60,7 +68,7 @@ if [ -n "$VERIFY_FIXEDPOINT" ]; then
   for f in main scalyc scaly; do
     cmp -s "$WORK/$f.ll" "seed/$f.ll" || fail "fixed point: $f.ll differs from committed seed"
   done
-  echo "VERIFY: OK — hello + AOT $pass/$total + fixed point byte-identical to seed/"
+  echo "VERIFY: OK — hello + AOT $pass/$total + regress + fixed point byte-identical to seed/"
 else
-  echo "VERIFY: OK — hello + AOT $pass/$total (fixed point skipped; set VERIFY_FIXEDPOINT=1 to include it)"
+  echo "VERIFY: OK — hello + AOT $pass/$total + regress (fixed point skipped; set VERIFY_FIXEDPOINT=1 to include it)"
 fi

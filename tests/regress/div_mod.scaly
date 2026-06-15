@@ -1,0 +1,14 @@
+; Regression (s184): `div` is integer division and `mod` is remainder. The
+; frozen C++ stage-0 never got the s184 fix — its planner drops div/mod and the
+; operation yields the RHS operand (20 div 4 -> 4), so this runs only against a
+; self-hosted stage. Values are chosen to differ from that buggy RHS result:
+; 20 div 4 = 5 (not 4), 7 mod 3 = 1 (not 3), 100 div 7 = 14 (not 7).
+; Expected: PASS
+
+let a 20 div 4
+let b 7 mod 3
+let c 100 div 7
+if (a = 5) & (b = 1) & (c = 14)
+    print("PASS")
+else
+    print("FAIL")
