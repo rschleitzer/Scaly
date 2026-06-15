@@ -1,0 +1,59 @@
+; Regression (s194): real error-handling for THROWS functions in the
+; SELF-HOSTED compiler. The seed's emitter used to lower ptr/ref-returning
+; throws via NPO (null = error, no payload/tag), so an error thrown below the
+; first ref-returning function VANISHED (the caller read null as success) and
+; the seed silently accepted invalid input. s194 retires NPO and routes every
+; throws return through the Result wrapper {i8 status, [N x i8] data}, sized
+; for max(return, error) so a fat error union stored by emit_throw can't
+; overflow a small return's slot (the bug that clobbered the caller's stack).
+; Stage-0 was always wrapper-based and passes this too; it guards the seed
+; against regressing back to NPO. Expected: PASS
+
+define Detail(a: int, b: int, c: int)
+
+; A deliberately WIDE error union — wider than an int/ptr return. This is the
+; case that overflowed the wrapper before s194.
+define Err union (
+    Stop: Detail
+    Bad: Detail
+)
+
+; Scalar-returning throws: throws on b=0, else returns 42.
+function scalar_step(b: int) returns int throws Err
+{
+    guard b = 0
+        throw Err.Bad(Detail(1, 2, 3))
+    return b + 41
+}
+
+; Caller that propagates the error implicitly via choose+throw.
+function propagate(b: int) returns int throws Err
+{
+    choose scalar_step(b)
+        when e: Error
+            throw e
+        when s: Success
+            return s
+}
+
+; Top-level dispatcher: returns the success value, or a sentinel on error.
+function run(b: int) returns int
+{
+    choose propagate(b)
+        when e: Error
+            return 999
+        when s: Success
+            return s
+}
+
+let ok run(1)        ; success path -> 42
+let bad run(0)       ; throw -> propagated -> caught -> 999
+if ok = 42
+{
+    if bad = 999
+        print("PASS")
+    else
+        print("FAIL")
+}
+else
+    print("FAIL")

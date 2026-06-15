@@ -1973,17 +1973,58 @@ define Emitter
     ; Errors are passed by pointer (allocated on the exception page by
     ; the thrower), so 8 bytes is sufficient for the error case. Mirrors
     ; stage-0 Emitter.cpp:1204-1221.
-    function build_throws_result_type(this, value_ty: LLVMTypeRef, mangled_name: String) returns LLVMTypeRef
+    ; s194: payload-size contribution of one type to the throws Result
+    ; wrapper's data field. Returns the s179-walked ABI size, or 256 (the
+    ; conservative over-allocation) when the type is null/opaque/unsizeable
+    ; or the `{ptr}` cross-package placeholder (unknown true size — under-
+    ; sizing would let a store overflow the caller's slot).
+    function throws_wrapper_payload_size(this, ty: LLVMTypeRef) returns size_t
+    {
+        var t LLVMTypeRef(ty.handle)
+        guard t.handle = null
+            return 0
+        ; `{ptr}` placeholder with no struct name → unknown real size.
+        guard LLVMGetTypeKind(t) = LLVMTypeKind.Struct()
+        {
+            guard LLVMIsOpaqueStruct(t) = 0
+            {
+                let name_c LLVMGetStructName(t)
+                guard name_c = null
+                {
+                    guard LLVMCountStructElementTypes(t) = 1
+                    {
+                        let f0 LLVMStructGetTypeAtIndex(t, 0)
+                        guard LLVMGetTypeKind(f0) = LLVMTypeKind.Pointer()
+                            return 256
+                    }
+                }
+            }
+        }
+        guard llvm_type_sizable(t) = false
+            return 256
+        llvm_type_abi_size(t)
+    }
+
+    function build_throws_result_type(this, value_ty: LLVMTypeRef, throws_ty: LLVMTypeRef, mangled_name: String) returns LLVMTypeRef
     {
         ; Result wrapper: { i8 status, [N x i8] data }.
         ;
-        ; s180: N = max(sizeof T, 8), computed from value_ty via the
-        ; s179 walkers — NEVER LLVMABISizeOfType, which corrupts
-        ; stage-1 process state (s149: every call leaks state that
-        ; surfaces as PC=0/LR=0 at exit time, even though the emitted
-        ; .o file is byte-correct). 8 bytes covers the error arm:
-        ; errors are passed by pointer, allocated on the exception
-        ; page by the thrower.
+        ; s194: N = max(sizeof T, sizeof throws_type, 8). The data field
+        ; holds the RETURN value T on the success path AND the thrown error
+        ; (stored BY VALUE by emit_throw) on the error path, so it must fit
+        ; the LARGER of the two. The s149 note below ("8 bytes covers the
+        ; error arm: errors passed by pointer") is FALSE for the self-hosted
+        ; emit_throw, which stores the whole error struct inline — a ref/
+        ; scalar-returning throws (T=ptr → 8 bytes) whose error is a fat
+        ; union (ParserError = 25 bytes) otherwise overflowed the 8-byte
+        ; data field and clobbered the CALLER's stack (the s157→s194 NPO
+        ; retirement exposed this: struct returns happened to be ≥ the error
+        ; size, ref/scalar returns are not).
+        ;
+        ; s180: computed via the s179 walkers — NEVER LLVMABISizeOfType,
+        ; which corrupts stage-1 process state (s149: every call leaks state
+        ; that surfaces as PC=0/LR=0 at exit time, even though the emitted
+        ; .o file is byte-correct).
         ;
         ; Falls back to the old conservative s149 fixed 256 when
         ; value_ty is unsizeable (opaque struct, s97 class) or is the
@@ -2010,39 +2051,20 @@ define Emitter
             set i: i + 1
         }
 
-        ; Reconstruct via .handle (session-34/36 single-ptr-field
-        ; struct-param ABI pattern) before introspecting.
-        var vt LLVMTypeRef(value_ty.handle)
-        var data_size: size_t 256
-        guard vt.handle <> null
-        {
-            var is_placeholder: bool false
-            guard LLVMGetTypeKind(vt) = LLVMTypeKind.Struct()
-            {
-                guard LLVMIsOpaqueStruct(vt) = 0
-                {
-                    let name_c LLVMGetStructName(vt)
-                    guard name_c = null
-                    {
-                        guard LLVMCountStructElementTypes(vt) = 1
-                        {
-                            let f0 LLVMStructGetTypeAtIndex(vt, 0)
-                            guard LLVMGetTypeKind(f0) = LLVMTypeKind.Pointer()
-                                set is_placeholder: true
-                        }
-                    }
-                }
-            }
-            guard is_placeholder = false
-            {
-                guard llvm_type_sizable(vt)
-                {
-                    set data_size: llvm_type_abi_size(vt)
-                    guard data_size < 8
-                        set data_size: 8
-                }
-            }
-        }
+        ; Size from the RETURN value type. Reconstruct via .handle
+        ; (session-34/36 single-ptr-field struct-param ABI pattern) before
+        ; introspecting. A `{ptr}` cross-package placeholder (unknown true
+        ; size) or any unsizeable type falls back to 256 (over-alloc is the
+        ; safe direction).
+        var value_size: size_t throws_wrapper_payload_size(value_ty)
+        ; Size from the THROWS error type — emit_throw stores the whole
+        ; error struct inline into the data field.
+        var throws_size: size_t throws_wrapper_payload_size(throws_ty)
+        var data_size value_size
+        guard throws_size > data_size
+            set data_size: throws_size
+        guard data_size < 8
+            set data_size: 8
 
         let i8_ty LLVMInt8TypeInContext(context)
         let data_arr_ty LLVMArrayType2(i8_ty, data_size)
@@ -2092,7 +2114,24 @@ define Emitter
         ; stage-0's lowering (Emitter.cpp:1241-1245). Without this, calls
         ; into stage-0-built libscaly.a (which always sret-ifies the same
         ; signature) read x0 instead of x8 and corrupt the return path.
-        let use_sret needs_sret_for_return(func.mangled_name, func.return_type)
+        var use_sret needs_sret_for_return(func.mangled_name, func.return_type)
+        ; s194: EVERY throwing function returns via the Result wrapper sret,
+        ; regardless of its declared return type (scalar/ref/struct alike).
+        ; The wrapper {i8 status, [N x i8] data} is itself a struct, so it
+        ; is always sret-returned. Mirrors stage-0, where the throws wrap at
+        ; Emitter.cpp:1204 runs BEFORE the isStructTy() sret test at :1241 —
+        ; making sret automatic for all throws. This retires the s157 NPO-
+        ; for-ptr scheme (bare pointer, null=error) which lost the error tag
+        ; and silently swallowed errors at the first ref-returning throw.
+        var can_throw_sret: bool false
+        guard func.can_throw
+        {
+            guard func.throws_type <> null
+            {
+                set use_sret: true
+                set can_throw_sret: true
+            }
+        }
 
         ; Determine return type
         var llvm_return_type LLVMVoidTypeInContext(context)
@@ -2103,27 +2142,46 @@ define Emitter
             let mapped map_type(rt)
             if use_sret
             {
-                ; Resolve the sret element type to a sized struct so the
-                ; type attribute carries the correct slot size. If map_type
-                ; returns a struct, use it. If it returns ptr (cross-pkg
-                ; fallback), synthesize a `{ ptr }` placeholder for now —
-                ; correct for `String`-like single-pointer-field structs.
-                guard LLVMGetTypeKind(mapped) = LLVMTypeKind.Struct()
-                    set sret_type: mapped
-                guard sret_type.handle = null
-                    set sret_type: get_or_create_struct_placeholder(rt.name, rt.mangled_name)
-                ; s149: throws functions wrap return in `{i8 status,
-                ; [N x i8] data}`. Status byte is separate from T's
-                ; variant tag at offset 0 of the bare struct, fixing
-                ; the collision when T is a union with non-zero Success
-                ; variant tag. Mirrors stage-0 Emitter.cpp:1204-1221.
-                ; Caller MUST also wrap (see emit_call) — otherwise the
-                ; callee writes past the caller's smaller sret slot and
-                ; corrupts the return address.
-                guard func.can_throw
+                ; s194: throws wrapper base. The wrapper data field is sized
+                ; from the mapped inner type (8 for ptr/ref, ≤8→8 for
+                ; scalars, sizeof for structs). A struct return type that
+                ; map_type lowered to a bare pointer (cross-package fallback)
+                ; must use the {ptr} placeholder so build_throws_result_type
+                ; sizes data conservatively (256) rather than 8 — the real
+                ; struct may exceed 8 bytes and under-sizing corrupts the
+                ; caller's frame. Scalar/ref/ptr returns keep `mapped`.
+                guard can_throw_sret
                 {
+                    var wrap_base mapped
+                    guard LLVMGetTypeKind(mapped) = LLVMTypeKind.Pointer()
+                    {
+                        var rt_is_ref: bool false
+                        guard rt.name.equals(String$("pointer"))
+                            set rt_is_ref: true
+                        guard rt.name.equals(String$("ref"))
+                            set rt_is_ref: true
+                        guard is_npo_option(rt)
+                            set rt_is_ref: true
+                        guard rt_is_ref = false
+                            set wrap_base: get_or_create_struct_placeholder(rt.name, rt.mangled_name)
+                    }
+                    ; The wrapper data must also fit the thrown error (stored
+                    ; inline by emit_throw), so size it for max(T, throws_ty).
+                    var throws_llvm LLVMTypeRef(null)
                     guard func.throws_type <> null
-                        set sret_type: build_throws_result_type(sret_type, func.mangled_name)
+                        set throws_llvm: map_type((*func.throws_type.unwrap()))
+                    set sret_type: build_throws_result_type(wrap_base, throws_llvm, func.mangled_name)
+                }
+                ; Non-throwing sret: resolve the element type to a sized
+                ; struct. If map_type returns a struct, use it; if it returns
+                ; ptr (cross-pkg fallback), synthesize a `{ ptr }` placeholder
+                ; — correct for `String`-like single-pointer-field structs.
+                guard can_throw_sret = false
+                {
+                    guard LLVMGetTypeKind(mapped) = LLVMTypeKind.Struct()
+                        set sret_type: mapped
+                    guard sret_type.handle = null
+                        set sret_type: get_or_create_struct_placeholder(rt.name, rt.mangled_name)
                 }
             }
             else
@@ -2422,7 +2480,15 @@ define Emitter
                 ; s89: sret-using functions consume LLVM-arg index 0 for
                 ; the indirect-result-location pointer; page/user params
                 ; shift right by one. Same heuristic as emit_function_decl.
-                let use_sret needs_sret_for_return(func.mangled_name, func.return_type)
+                ; s194: must match emit_function_decl's forced sret for
+                ; throws functions, or the param indices bound below would
+                ; be off by one (the sret pointer occupies LLVM-arg 0).
+                var use_sret needs_sret_for_return(func.mangled_name, func.return_type)
+                guard func.can_throw
+                {
+                    guard func.throws_type <> null
+                        set use_sret: true
+                }
                 var sret_offset: size_t 0
                 guard use_sret
                     set sret_offset: 1
@@ -2509,23 +2575,41 @@ define Emitter
                                 guard result.handle <> null
                                 {
                                     let data_ptr_imp LLVMBuildStructGEP2(builder, result_sty, sret_ptr, 1, "ret.data.ptr")
+                                    let rt2 func.return_type.unwrap()
+                                    ; s194: a genuinely scalar/ref/ptr return
+                                    ; type stores its value as-is into the data
+                                    ; field (copy_struct_value plain-stores
+                                    ; non-structs, align 1). Only a STRUCT
+                                    ; return whose body yielded a pointer-to-
+                                    ; struct (heap `Foo#(...)`) needs the load-
+                                    ; first so the whole aggregate is memcpy'd,
+                                    ; not just 8 bytes of the pointer.
+                                    var ret_is_value: bool false
+                                    guard map_intrinsic_type_by_name(rt2.name).handle <> null
+                                        set ret_is_value: true
+                                    guard rt2.name.equals(String$("pointer"))
+                                        set ret_is_value: true
+                                    guard rt2.name.equals(String$("ref"))
+                                        set ret_is_value: true
+                                    guard is_npo_option(rt2)
+                                        set ret_is_value: true
                                     var to_store_imp result
-                                    guard LLVMGetTypeKind(LLVMTypeOf(result)) = LLVMTypeKind.Pointer()
+                                    guard ret_is_value = false
                                     {
-                                        let rt2 func.return_type.unwrap()
-                                        var sty_imp map_type(rt2)
-                                        guard LLVMGetTypeKind(sty_imp) <> LLVMTypeKind.Struct()
-                                            set sty_imp: get_or_create_struct_placeholder(rt2.name, rt2.mangled_name)
-                                        guard LLVMGetTypeKind(sty_imp) = LLVMTypeKind.Struct()
-                                            set to_store_imp: LLVMBuildLoad2(builder, sty_imp, result, "sret.body")
+                                        guard LLVMGetTypeKind(LLVMTypeOf(result)) = LLVMTypeKind.Pointer()
+                                        {
+                                            var sty_imp map_type(rt2)
+                                            guard LLVMGetTypeKind(sty_imp) <> LLVMTypeKind.Struct()
+                                                set sty_imp: get_or_create_struct_placeholder(rt2.name, rt2.mangled_name)
+                                            guard LLVMGetTypeKind(sty_imp) = LLVMTypeKind.Struct()
+                                                set to_store_imp: LLVMBuildLoad2(builder, sty_imp, result, "sret.body")
+                                        }
                                     }
-                                    guard LLVMGetTypeKind(LLVMTypeOf(to_store_imp)) = LLVMTypeKind.Struct()
-                                    {
-                                        ; s178: memcpy when to_store_imp is a
-                                        ; load — kills the spill slot.
-                                        let tsi_ty LLVMTypeOf(to_store_imp)
-                                        copy_struct_value(data_ptr_imp, to_store_imp, tsi_ty)
-                                    }
+                                    ; s178: memcpy when to_store_imp is a load —
+                                    ; kills the spill slot; non-structs become a
+                                    ; plain align-1 store of the value.
+                                    let tsi_ty LLVMTypeOf(to_store_imp)
+                                    copy_struct_value(data_ptr_imp, to_store_imp, tsi_ty)
                                 }
                             }
                         }
@@ -4086,24 +4170,52 @@ define Emitter
         ; pattern: alloca a slot, pass slot ptr (with sret + noalias)
         ; as first arg, call returns void, then load from slot. Required
         ; to match libscaly.a's stage-0-emitted callees.
-        let use_sret call_needs_sret(call.mangled_name, call.result_type)
+        var use_sret call_needs_sret(call.mangled_name, call.result_type)
+        ; s194: every throws CALL receives the Result-wrapper sret slot,
+        ; matching emit_function_decl's forced sret. Mirrors the decl-side
+        ; wrap-base logic so build_throws_result_type (cached per mangled
+        ; name) sees a consistent base type from either side.
+        var call_can_throw_sret: bool false
+        guard call.can_throw
+        {
+            guard call.throws_type <> null
+            {
+                set use_sret: true
+                set call_can_throw_sret: true
+            }
+        }
         var sret_slot LLVMValueRef(null)
         var sret_element_ty LLVMTypeRef(null)
         guard use_sret
         {
             let mapped map_type(call.result_type)
-            guard LLVMGetTypeKind(mapped) = LLVMTypeKind.Struct()
-                set sret_element_ty: mapped
-            guard sret_element_ty.handle = null
-                set sret_element_ty: get_or_create_struct_placeholder(call.result_type.name, call.result_type.mangled_name)
-            ; s149: caller's sret slot for a throws call must match the
-            ; callee's Result-wrapper sret type (see emit_function_decl).
-            ; Without this, the callee writes past the caller's smaller
-            ; slot and corrupts the stack frame.
-            guard call.can_throw
+            guard call_can_throw_sret
             {
+                var wrap_base mapped
+                guard LLVMGetTypeKind(mapped) = LLVMTypeKind.Pointer()
+                {
+                    var rt_is_ref: bool false
+                    guard call.result_type.name.equals(String$("pointer"))
+                        set rt_is_ref: true
+                    guard call.result_type.name.equals(String$("ref"))
+                        set rt_is_ref: true
+                    guard is_npo_option(call.result_type)
+                        set rt_is_ref: true
+                    guard rt_is_ref = false
+                        set wrap_base: get_or_create_struct_placeholder(call.result_type.name, call.result_type.mangled_name)
+                }
+                ; Match the decl-side wrapper size: max(T, throws_ty).
+                var throws_llvm LLVMTypeRef(null)
                 guard call.throws_type <> null
-                    set sret_element_ty: build_throws_result_type(sret_element_ty, call.mangled_name)
+                    set throws_llvm: map_type((*call.throws_type.unwrap()))
+                set sret_element_ty: build_throws_result_type(wrap_base, throws_llvm, call.mangled_name)
+            }
+            guard call_can_throw_sret = false
+            {
+                guard LLVMGetTypeKind(mapped) = LLVMTypeKind.Struct()
+                    set sret_element_ty: mapped
+                guard sret_element_ty.handle = null
+                    set sret_element_ty: get_or_create_struct_placeholder(call.result_type.name, call.result_type.mangled_name)
             }
             set sret_slot: acquire_temp(sret_element_ty, "sret.result")
         }
@@ -6667,10 +6779,20 @@ define Emitter
                                 set cond_is_pointer: true
                                 set is_throws_call: true
                                 set throws_call_return_type: cond_op.result_type
-                                guard cond_op.result_type.name.equals(String$("ref"))
-                                    set throws_is_ptr: true
-                                guard cond_op.result_type.name.equals(String$("pointer"))
-                                    set throws_is_ptr: true
+                                ; s194: throws_is_ptr (the s157 NPO-for-ptr
+                                ; branch) is RETIRED — every throws call now
+                                ; returns the Result wrapper sret, so ptr/ref
+                                ; returns read the tag + value from the wrapper
+                                ; like struct returns (no null-sentinel path).
+                                ; CRUCIAL: clear is_npo. A throws call returning
+                                ; `ref[T]?`/`pointer[T]?` (= Option[ref/ptr])
+                                ; otherwise trips the NPO detection above, and
+                                ; the NPO path would null-check the sret WRAPPER
+                                ; pointer (never null → tag always 0 → always
+                                ; Success → parse_*_list# loops forever adding
+                                ; garbage). The wrapper's status byte is the
+                                ; authority now, not a null sentinel.
+                                set is_npo: false
                             }
                         else
                             0
@@ -6772,8 +6894,18 @@ define Emitter
             set use_null_tag: true
         guard use_null_tag = false
         {
-            let tag_ptr LLVMBuildStructGEP2(builder, union_type, union_ptr, 0, "tag.ptr")
-            set tag: LLVMBuildLoad2(builder, i8_ty, tag_ptr, "tag")
+            ; s194: for a throws call the tag is byte 0 of the Result wrapper
+            ; and union_ptr IS the wrapper base — load it directly. union_type
+            ; here is the inner return-type mapping (a SCALAR like i64 for
+            ; `returns int throws E`), so a struct GEP would emit an invalid
+            ; `getelementptr i64, ptr, 0, 0` that crashes the object backend.
+            guard is_throws_call
+                set tag: LLVMBuildLoad2(builder, i8_ty, union_ptr, "tag")
+            guard is_throws_call = false
+            {
+                let tag_ptr LLVMBuildStructGEP2(builder, union_type, union_ptr, 0, "tag.ptr")
+                set tag: LLVMBuildLoad2(builder, i8_ty, tag_ptr, "tag")
+            }
         }
 
         ; s149: pre-compute the throws-call Result-wrapper data pointer
@@ -6914,22 +7046,64 @@ define Emitter
                         define_variable(when_case.name, union_value)
                     guard is_npo = false
                     {
+                        ; s194: throws-call arm — hoisted ABOVE the n_fields
+                        ; gate. union_ptr is the Result-wrapper sret slot
+                        ; {i8 status, [N x i8] data}; the value lives at byte
+                        ; offset 1 (throws_success_ptr). The Success arm
+                        ; (variant_index=0) binds the whole returned T loaded
+                        ; from the data field; the Error arm (variant_index<>0)
+                        ; binds the throws_type value emit_throw stored there.
+                        ; Works for scalar/ref/struct T alike now that the
+                        ; wrapper is ALWAYS present (NPO-for-ptr retired). This
+                        ; must run independent of union_type's field count —
+                        ; a ref/ptr return lowers union_type to a 1-field
+                        ; `{ptr}` placeholder (n_fields=1) which the old gate
+                        ; bound to null, dropping the value.
+                        guard is_throws_call
+                        {
+                            guard when_case.variant_index = 0
+                            {
+                                let rt_ty map_type(throws_call_return_type)
+                                guard LLVMGetTypeKind(rt_ty) = LLVMTypeKind.Void()
+                                {
+                                    let ptr_ty_s LLVMPointerTypeInContext(context, 0)
+                                    define_variable(when_case.name, LLVMConstNull(ptr_ty_s))
+                                }
+                                guard LLVMGetTypeKind(rt_ty) <> LLVMTypeKind.Void()
+                                {
+                                    ; align 1 — the wrapper's struct alignment is
+                                    ; 1, rt_ty's natural alignment may be 8.
+                                    let rt_value LLVMBuildLoad2(builder, rt_ty, throws_success_ptr, "throws.success.val")
+                                    LLVMSetAlignment(rt_value, 1 as u32)
+                                    define_variable(when_case.name, rt_value)
+                                }
+                            }
+                            guard when_case.variant_index <> 0
+                            {
+                                let var_ty_e map_type(when_case.variant_type)
+                                guard LLVMGetTypeKind(var_ty_e) = LLVMTypeKind.Void()
+                                {
+                                    let ptr_ty_e LLVMPointerTypeInContext(context, 0)
+                                    define_variable(when_case.name, LLVMConstNull(ptr_ty_e))
+                                }
+                                guard LLVMGetTypeKind(var_ty_e) <> LLVMTypeKind.Void()
+                                {
+                                    let err_value LLVMBuildLoad2(builder, var_ty_e, throws_success_ptr, "throws.err.val")
+                                    LLVMSetAlignment(err_value, 1 as u32)
+                                    define_variable(when_case.name, err_value)
+                                }
+                            }
+                        }
+                        guard is_throws_call = false
+                        {
                         ; s123: guard the field-1 GEP. When union_type is
                         ; a single-field placeholder (`{ ptr }`, from the
                         ; s114 get_or_create_struct_placeholder fallback)
                         ; or otherwise lacks a data field, the GEP at index
                         ; 1 is out-of-bounds and llc rejects with
                         ; "invalid getelementptr indices" — passes -S
-                        ; verification but blocks AOT/-c. Triggered by
-                        ; parse_file's `choose parse_declaration_list#()`
-                        ; (nested `choose err when d: Different ...` inside
-                        ; the Error arm): stage-1's planner doesn't model
-                        ; `throws ParserError`, so the sret is the bare
-                        ; `ref[Vector[...]]?` placeholder rather than the
-                        ; Result `{ i8 tag, [N x i8] data }` shape stage-0
-                        ; synthesizes. Bind to null instead of GEP'ing —
-                        ; the whole nested choose is already mis-planned,
-                        ; but the IR is at least valid.
+                        ; verification but blocks AOT/-c. Bind to null
+                        ; instead of GEP'ing — the IR stays valid.
                         var n_fields: int 0
                         guard LLVMGetTypeKind(union_type) = LLVMTypeKind.Struct()
                             set n_fields: LLVMCountStructElementTypes(union_type)
@@ -6947,97 +7121,14 @@ define Emitter
                         {
                             let data_ptr LLVMBuildStructGEP2(builder, union_type, union_ptr, 1, "variant.c_data().ptr")
                             let var_ty map_type(when_case.variant_type)
-                            ; s143: throws-call Success arm. Stage-1 doesn't
-                            ; wrap throws-call returns in a Result struct, so
-                            ; the sret slot IS the bare return value. Bind
-                            ; `success` to a load of the WHOLE sret slot as
-                            ; the call's return_type — not to a GEP of field
-                            ; 1 (which would skip past the type's first
-                            ; field). Without this, `set file: success`
-                            ; stores null_ptr (the void-bind fallback) into
-                            ; the file alloca and propagates garbage through
-                            ; to ProgramSyntax → Modeler.build_program reads
-                            ; syntax.file.declarations as junk and SIGBUSes.
-                            ; Error arm (variant_index=1) keeps the
-                            ; void-binding fallback below — stage-1 has no
-                            ; throws-data payload to recover.
-                            var did_throws_success_bind: bool false
-                            guard is_throws_call
-                            {
-                                ; s157: pointer-returning throws call (NPO-style).
-                                ; union_value IS the returned pointer (null on
-                                ; error, the result on success) — there is no
-                                ; Result wrapper. Bind both arms directly to
-                                ; union_value: the Success arm gets the real
-                                ; pointer (e.g. the declarations Vector), the
-                                ; Error arm gets null (the err binding is unused
-                                ; in error arms). Restricting the old code to
-                                ; loading offset-1 of a nonexistent wrapper left
-                                ; `set declarations: success` bound to garbage
-                                ; null → modeler saw 0 declarations.
-                                guard throws_is_ptr
-                                {
-                                    define_variable(when_case.name, union_value)
-                                    set did_throws_success_bind: true
-                                }
-                                guard throws_is_ptr = false
-                                {
-                                    guard when_case.variant_index = 0
-                                    {
-                                        let rt_ty map_type(throws_call_return_type)
-                                        ; s149/s150: load T from the Result-wrapper
-                                        ; data field (pre-computed at offset 1).
-                                        ; align 1 — the wrapper's struct alignment
-                                        ; is 1, rt_ty's natural alignment may be 8.
-                                        guard LLVMGetTypeKind(rt_ty) = LLVMTypeKind.Struct()
-                                        {
-                                            let rt_value LLVMBuildLoad2(builder, rt_ty, throws_success_ptr, "throws.success.val")
-                                            LLVMSetAlignment(rt_value, 1 as u32)
-                                            define_variable(when_case.name, rt_value)
-                                            set did_throws_success_bind: true
-                                        }
-                                    }
-                                    ; s156: Error arm (variant_index<>0). The
-                                    ; planner now types `err` as ParserError
-                                    ; (throws_ty), so var_ty is a real struct.
-                                    ; Load it from the Result-wrapper data field
-                                    ; (offset 1) where emit_throw stored it.
-                                    guard when_case.variant_index <> 0
-                                    {
-                                        guard LLVMGetTypeKind(var_ty) = LLVMTypeKind.Struct()
-                                        {
-                                            let err_value LLVMBuildLoad2(builder, var_ty, throws_success_ptr, "throws.err.val")
-                                            LLVMSetAlignment(err_value, 1 as u32)
-                                            define_variable(when_case.name, err_value)
-                                            set did_throws_success_bind: true
-                                        }
-                                    }
-                                }
-                            }
-                            guard did_throws_success_bind = false
-                            {
                             ; s114: bail when variant_type is unresolved (mapped
                             ; to void). LLVMBuildLoad2 of void calls into
                             ; DataLayout::getTypeSizeInBits which SIGTRAPs on
-                            ; the VoidTy assertion. Symptom: stage-1 -c on
-                            ; parser.scaly / Modeler.scaly / Emitter.scaly aborts
-                            ; in emit_choose during the tagged-union variant
-                            ; payload extraction. Bind the variable to a null
+                            ; the VoidTy assertion. Bind the variable to a null
                             ; placeholder so subsequent code in the arm doesn't
-                            ; crash either; the actual value being wrong is
-                            ; preferable to aborting the whole module emit.
+                            ; crash either.
                             guard LLVMGetTypeKind(var_ty) = LLVMTypeKind.Void()
                             {
-                                ; Bind to a non-null placeholder (null ptr value)
-                                ; rather than a null LLVMValueRef handle. emit_call
-                                ; bails the whole call if any arg's emit_operand
-                                ; returns null (line ~3056), so `when node: Success
-                                ; list.add$(node)` would silently emit NO code in
-                                ; the case body — parse_declaration_list's while
-                                ; loop then has empty case bodies and `br while.cond`
-                                ; from each, producing the empty-file/hello.scaly
-                                ; hang. The actual value being wrong is still
-                                ; preferable to aborting the case body emission.
                                 let ptr_ty LLVMPointerTypeInContext(context, 0)
                                 let null_ptr LLVMConstNull(ptr_ty)
                                 define_variable(when_case.name, null_ptr)
@@ -7048,7 +7139,7 @@ define Emitter
                                 let var_value LLVMBuildLoad2(builder, var_ty, var_ptr, "variant.val")
                                 define_variable(when_case.name, var_value)
                             }
-                            }
+                        }
                         }
                     }
                 }
