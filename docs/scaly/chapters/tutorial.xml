@@ -14,9 +14,11 @@
       <para>Scaly is self-hosted: the compiler is written in Scaly and compiles
         itself. It is distributed as a <emphasis>seed</emphasis> — the compiler
         emitted as its own LLVM IR, the <filename>.ll</filename> files committed
-        under <filename>seed/</filename> (one set per target platform). Turning
-        the seed back into a working <command>scalyc</command> needs only LLVM 18
-        and a C compiler for the final link; no C++ toolchain is involved.</para>
+        under <filename>seed/</filename>. A single seed serves every 64-bit
+        little-endian target — the IR carries no target triple, so the compiler
+        you build from it targets whatever machine it runs on. Turning the seed
+        back into a working <command>scalyc</command> needs only LLVM 18 and a C
+        compiler for the final link; no C++ toolchain is involved.</para>
       <para>Install the prerequisites, then run the build script from the
         repository root:</para>
       <programlisting>; macOS

@@ -21,17 +21,32 @@ its fixed point, and publish the artifacts.
   proves zero undefined symbols), runs `hello` + the AOT corpus, and checks the
   **fixed point**: the seed re-emits all three `.ll` byte-identical to itself.
 
-### One seed per target triple — the hard constraint
+### One seed for all LP64 little-endian targets
 
-The compiler is **host-only**. `write_object_to_file` uses
-`LLVMGetDefaultTargetTriple`; there is no `--target` flag, and although the
-emitted `.ll` carries no `target triple`/`datalayout` line, it **bakes in LP64
-sizes and alignments at emission** (union payload sizes, `align 8`,
-`ptrtoint`/`mul i64` sizeof constexprs). A seed is therefore valid only for the
-triple it was emitted on, and must be **minted by running the toolchain natively
-on that triple** — there is no cross-emission, and a seed cannot bootstrap a
-different architecture. (This is why the C++ stage-0 stays frozen-but-buildable:
-it is the per-platform bootstrap root.)
+The emitted `.ll` carries **no `target triple` and no `datalayout` line**, and the
+compiler computes every size and alignment from **fixed LP64 constants** at
+emission (union payload sizes, `align 8`, `ptrtoint`/`mul i64` sizeof
+constexprs) — it never consults the host `DataLayout`. So the IR is
+host-independent: a mint on any LP64-LE host emits the same `.ll`, `llc`
+retargets it, and the compiler built from it reads its own triple via
+`LLVMGetDefaultTargetTriple` at runtime. **A single seed therefore serves every
+LP64 little-endian target** — the "fabulous four" below — and the repo commits
+exactly one, under `seed/`, rebuilt with `tools/build-from-seed.sh`.
+
+Not covered: LLP64 (Windows x64), 32-bit, and big-endian targets — those need
+the size/align emission generalized off its hardcoded 64-bit constants.
+
+**Verification is still per target.** Portable *emission* is proven; portable
+*execution* is not automatic, because the compiler bakes some ABI choices
+(struct-by-value / `sret`) into the IR that meet `libLLVM`/`libc` at a platform
+ABI boundary. Each target must still be built and **verified** — hello + the AOT
+corpus + a fixed-point re-emit — before the seed is trusted there. Current
+status: verified on `arm64-apple-darwin`; the other three are expected-good but
+unverified.
+
+(The C++ stage-0 stays frozen-but-buildable: it refreshes the seed, brings up
+genuinely new data models, and is an independent lineage for diverse double
+compiling.)
 
 ### The "fabulous four" supported targets
 
@@ -56,10 +71,13 @@ generalized off their hardcoded 64-bit constants.
 
 ---
 
-## 2. Mint a seed (run on each target machine)
+## 2. Mint the seed (once, on any LP64-LE host)
 
-Install the dependencies, clone the repo at the release tag, then run one
-command. `tools/seed.sh` with no arguments bootstraps a fresh stage-2 if needed.
+Emission is host-independent, so the seed is minted once on any LP64-LE machine
+(per-target *verification* is section 5). Install the dependencies, clone the
+repo at the release tag, then run one command. `tools/seed.sh` with no arguments
+bootstraps a fresh stage-2 if needed; `tools/install-seed.sh` then copies the
+result into the committed `seed/`.
 
 | Target | Install dependencies |
 |---|---|
@@ -86,24 +104,22 @@ and re-run. The `openjade: non SGML character` lines are benign warnings.
 
 ---
 
-## 3. Package the artifacts (per target)
+## 3. Package the artifact (one tarball for all LP64-LE targets)
 
-Bundle the three `.ll` files plus a checksum manifest. Name the tarball by the
-release version and the triple (`clang -dumpmachine`, trimmed to the base
-triple, e.g. `arm64-apple-darwin`).
+Bundle the three `.ll` files plus a checksum manifest. One artifact covers every
+LP64-LE target, so name the tarball by the release version only.
 
 ```sh
 VERSION=<version>                                   # e.g. 0.1.0
-TRIPLE=$(clang -dumpmachine | sed 's/[0-9.]*$//')   # strip the OS version suffix
-DEST="scaly-seed-$VERSION-$TRIPLE"
+DEST="scaly-seed-$VERSION"
 
 mkdir -p "$DEST"
-cp dist/seed/main.ll dist/seed/scalyc.ll dist/seed/scaly.ll "$DEST/"
+cp seed/main.ll seed/scalyc.ll seed/scaly.ll "$DEST/"
 ( cd "$DEST" && shasum -a 256 *.ll > SHA256SUMS )   # Linux: sha256sum
 tar czf "$DEST.tar.gz" "$DEST"
 ```
 
-Each tarball is ~10–11 MB (mostly `scalyc.ll`). Record the LLVM version used
+The tarball is ~10–11 MB (mostly `scalyc.ll`). Record the LLVM version used
 (`llc --version | head -1`) in the release notes — it is the seed's contract.
 
 ---
@@ -136,23 +152,31 @@ cmp r_scaly.ll scaly.ll && echo "fixed point OK"
 ## 5. Release checklist
 
 - [ ] Tag the release (`git tag v<version>`), push the tag.
-- [ ] On **each** of the four target machines: `tools/seed.sh` → `SEED: OK`.
-- [ ] Package each target's `.ll` trio + `SHA256SUMS` (section 3).
-- [ ] Create the GitHub release; attach all four `scaly-seed-<version>-<triple>.tar.gz`.
+- [ ] Refresh the single seed once (`tools/seed.sh && tools/install-seed.sh`) on
+      any LP64-LE host; commit `seed/`.
+- [ ] **Verify** the seed on **each** of the four targets — build with
+      `tools/build-from-seed.sh`, then run hello + the AOT corpus + a fixed-point
+      re-emit (`SEED: OK`). Use real machines, VMs, or a CI matrix.
+- [ ] Package the one `.ll` trio + `SHA256SUMS` as `scaly-seed-<version>.tar.gz`
+      (section 3) and attach it to the GitHub release.
 - [ ] In the release notes, state the pinned **LLVM version** and list the four
-      triples with their `SEED: OK` confirmation.
+      triples with their verification confirmation.
 - [ ] (Independence) confirm the C++ stage-0 still builds on at least one
       platform — it remains the diverse-double-compiling anchor and the
-      per-platform bootstrap root.
+      bootstrap root for new data models.
 
 ---
 
 ## 6. Notes
 
-- `dist/` is gitignored. Seeds are release artifacts, never committed (~10 MB
-  each, one per triple, LLVM-version- and ABI-specific).
+- The canonical seed is **committed** under `seed/` (one trio, ~10 MB, for all
+  LP64-LE targets, LLVM-version-specific). `dist/` stays gitignored — it is the
+  `tools/seed.sh` work area; `tools/install-seed.sh` promotes a verified mint
+  from there into `seed/`.
 - The seed lineage is produced entirely by the self-hosted compiler. Keeping the
   C++ stage-0 buildable preserves an independent lineage for trusting-trust /
   diverse double-compiling — do not delete it.
-- Tooling reference: `tools/seed.sh` (build + verify), `tools/bootstrap.sh`
-  (stage-0 → stage1 → stage2), `tools/llvm-env.sh` (LLVM-18 detection).
+- Tooling reference: `tools/seed.sh` (mint + verify), `tools/install-seed.sh`
+  (promote a mint into `seed/`), `tools/build-from-seed.sh` (rebuild scalyc from
+  `seed/`, no C++), `tools/bootstrap.sh` (stage-0 → stage1 → stage2),
+  `tools/llvm-env.sh` (LLVM-18 detection).

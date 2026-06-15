@@ -75,10 +75,11 @@ HREF="tutorial.htm#AEN43"
 >Building the Compiler from the Seed</I
 > in Chapter 2</A
 >, which needs only
-    LLVM 18 and a C compiler. This appendix covers the C++ bootstrap, which you
-    need in only two cases: minting a seed for a brand-new platform — the
-    compiler is host-only and cannot cross-build a seed for another architecture
-    — or working on the compiler itself.</P
+    LLVM 18 and a C compiler. A single seed already covers every 64-bit
+    little-endian target, so most platforms need no bootstrap at all. You need
+    the C++ bootstrap in only two cases: refreshing the seed after changing the
+    compiler, or bringing up a target with a different data model (32-bit,
+    big-endian, or LLP64), which the seed does not cover.</P
 ><P
 >The compiler that produced the seed was originally bootstrapped from a
     reference implementation written in C++. Building it needs a C++17 compiler,

@@ -135,12 +135,14 @@ CLASS="filename"
         under <TT
 CLASS="filename"
 >seed/</TT
-> (one set per target platform). Turning
-        the seed back into a working <B
+>. A single seed serves every 64-bit
+        little-endian target — the IR carries no target triple, so the compiler
+        you build from it targets whatever machine it runs on. Turning the seed
+        back into a working <B
 CLASS="command"
 >scalyc</B
-> needs only LLVM 18
-        and a C compiler for the final link; no C++ toolchain is involved.</P
+> needs only LLVM 18 and a C
+        compiler for the final link; no C++ toolchain is involved.</P
 ><P
 >Install the prerequisites, then run the build script from the
         repository root:</P
