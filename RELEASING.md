@@ -144,7 +144,7 @@ shasum -a 256 -c SHA256SUMS                         # integrity
 LLC=$(command -v llc-18 || echo "$(brew --prefix llvm@18)/bin/llc")
 LIB="$(dirname "$(dirname "$LLC")")/lib"
 
-for f in main scalyc scaly; do "$LLC" -filetype=obj "$f.ll" -o "$f.o"; done
+for f in main scalyc scaly; do "$LLC" -relocation-model=pic -filetype=obj "$f.ll" -o "$f.o"; done
 clang main.o scalyc.o scaly.o -L"$LIB" -lLLVM-18 -o scalyc
 
 ./scalyc -o hello <path>/tests/aot/hello.scaly && ./hello   # -> Hello, World!

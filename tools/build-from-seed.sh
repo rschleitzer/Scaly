@@ -39,7 +39,10 @@ fi
 WORK=$(mktemp -d)
 trap 'rm -rf "$WORK"' EXIT
 for f in main scalyc scaly; do
-    "$LLC" -filetype=obj "$SEED/$f.ll" -o "$WORK/$f.o"
+    # -relocation-model=pic: x86-64 Linux links executables as PIE, which rejects
+    # llc's default (static) R_X86_64_32 absolute relocations. PIC is the default
+    # on Mach-O, so this is a no-op on macOS and harmless on aarch64.
+    "$LLC" -relocation-model=pic -filetype=obj "$SEED/$f.ll" -o "$WORK/$f.o"
 done
 
 # On Linux, stock GNU ld (BFD) fails to link libLLVM-18 ("failed to set dynamic

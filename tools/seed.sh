@@ -63,7 +63,9 @@ echo "seed: emitting .ll with $CC --no-tests"
 
 echo "seed: llc -> obj (LLVM 18) + link ($CLANG, no dynamic_lookup)"
 for f in main scalyc scaly; do
-  "$LLC" -filetype=obj "$OUT/$f.ll" -o "$OUT/$f.o" || fail "llc $f.ll"
+  # -relocation-model=pic: x86-64 Linux PIE rejects llc's default R_X86_64_32
+  # abs relocations; PIC is the Mach-O default, so this is a no-op on macOS.
+  "$LLC" -relocation-model=pic -filetype=obj "$OUT/$f.ll" -o "$OUT/$f.o" || fail "llc $f.ll"
 done
 # NO -Wl,-undefined,dynamic_lookup — a clean link proves zero undefined.
 # (LLVM-18 llc is required: some system clangs reject the seed's
