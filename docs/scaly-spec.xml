@@ -12,6 +12,7 @@
   <!ENTITY generated-definitions SYSTEM "scaly/generated-definitions.xml">
   <!ENTITY generated-choose SYSTEM "scaly/generated-choose.xml">
   <!ENTITY stdlib SYSTEM "scaly/stdlib.xml">
+  <!ENTITY appendix-bootstrap SYSTEM "scaly/chapters/appendix-bootstrap.xml">
 ]>
 <book xmlns="http://docbook.org/ns/docbook" version="5.0">
   <title>The Scaly Programming Language</title>
@@ -24,5 +25,6 @@
   &definitions;
   &expressions;
   &stdlib;
+  &appendix-bootstrap;
 
 </book>

@@ -1,0 +1,170 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<HTML
+><HEAD
+><TITLE
+>Bootstrapping the Compiler from C++</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"><LINK
+REL="HOME"
+TITLE="The Scaly Programming Language"
+HREF="index.html"><LINK
+REL="PREVIOUS"
+TITLE="Standard Library Reference"
+HREF="stdlib.htm"><META
+HTTP-EQUIV="Content-Type"
+CONTENT="text/html; charset=UTF-8"></HEAD
+><BODY
+CLASS="appendix"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>The Scaly Programming Language</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="stdlib.htm"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+></TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+>&nbsp;</TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="appendix"
+><H1
+><A
+NAME="AEN2307"
+></A
+>Appendix B. Bootstrapping the Compiler from C++</H1
+><P
+>Scaly is self-hosted. The normal way to build the compiler is from the
+    committed seed, as described in <A
+HREF="tutorial.htm#AEN43"
+>the Section called <I
+>Building the Compiler from the Seed</I
+> in Chapter 2</A
+>, which needs only
+    LLVM 18 and a C compiler. This appendix covers the C++ bootstrap, which you
+    need in only two cases: minting a seed for a brand-new platform — the
+    compiler is host-only and cannot cross-build a seed for another architecture
+    — or working on the compiler itself.</P
+><P
+>The compiler that produced the seed was originally bootstrapped from a
+    reference implementation written in C++. Building it needs a C++17 compiler,
+    CMake, and openjade in addition to LLVM 18:</P
+><PRE
+CLASS="programlisting"
+>; macOS
+brew install llvm@18 cmake openjade
+
+; Ubuntu 24.04
+sudo apt install llvm-18-dev clang-18 cmake openjade zlib1g-dev libzstd-dev</PRE
+><P
+><B
+CLASS="command"
+>./build.sh</B
+> builds the C++ stage-0 compiler, and
+    <TT
+CLASS="filename"
+>tools/seed.sh</TT
+> then bootstraps it into the self-hosted
+    compiler and emits a fresh, fixed-point-verified seed. See
+    <TT
+CLASS="filename"
+>RELEASING.md</TT
+> for the full seed-distribution process.</P
+><P
+>The C++ implementation is kept buildable on purpose: it is an
+    independent compiler lineage, which preserves a diverse-double-compiling
+    check against trusting-trust attacks, and it is the per-platform bootstrap
+    root for new architectures. It is not part of the language or its everyday
+    toolchain.</P
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="stdlib.htm"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="index.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>&nbsp;</TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Standard Library Reference</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+>&nbsp;</TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>&nbsp;</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

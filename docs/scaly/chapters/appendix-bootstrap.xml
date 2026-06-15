@@ -1,0 +1,29 @@
+<appendix xml:id="appendix-bootstrap">
+  <title>Bootstrapping the Compiler from C++</title>
+
+  <para>Scaly is self-hosted. The normal way to build the compiler is from the
+    committed seed, as described in <xref linkend="tut-build"/>, which needs only
+    LLVM 18 and a C compiler. This appendix covers the C++ bootstrap, which you
+    need in only two cases: minting a seed for a brand-new platform — the
+    compiler is host-only and cannot cross-build a seed for another architecture
+    — or working on the compiler itself.</para>
+
+  <para>The compiler that produced the seed was originally bootstrapped from a
+    reference implementation written in C++. Building it needs a C++17 compiler,
+    CMake, and openjade in addition to LLVM 18:</para>
+  <programlisting>; macOS
+brew install llvm@18 cmake openjade
+
+; Ubuntu 24.04
+sudo apt install llvm-18-dev clang-18 cmake openjade zlib1g-dev libzstd-dev</programlisting>
+  <para><command>./build.sh</command> builds the C++ stage-0 compiler, and
+    <filename>tools/seed.sh</filename> then bootstraps it into the self-hosted
+    compiler and emits a fresh, fixed-point-verified seed. See
+    <filename>RELEASING.md</filename> for the full seed-distribution process.</para>
+
+  <para>The C++ implementation is kept buildable on purpose: it is an
+    independent compiler lineage, which preserves a diverse-double-compiling
+    check against trusting-trust attacks, and it is the per-platform bootstrap
+    root for new architectures. It is not part of the language or its everyday
+    toolchain.</para>
+</appendix>

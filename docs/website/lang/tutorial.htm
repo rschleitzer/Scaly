@@ -88,12 +88,12 @@ HREF="tutorial.htm#AEN41"
 ></DT
 ><DT
 ><A
-HREF="tutorial.htm#AEN82"
+HREF="tutorial.htm#AEN76"
 >A Tour of Scaly</A
 ></DT
 ><DT
 ><A
-HREF="tutorial.htm#AEN152"
+HREF="tutorial.htm#AEN146"
 >Putting It Together</A
 ></DT
 ></DL
@@ -190,51 +190,20 @@ CLASS="filename"
           to rebuild it.</P
 ></BLOCKQUOTE
 ></DIV
+><P
+>The C++ bootstrap that originally produced the seed is described in
+        <A
+HREF="appendix-bootstrap.htm"
+>Appendix B</A
+>; you do not need it for everyday
+        use.</P
 ></DIV
 ><DIV
 CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN62"
->Bootstrapping from C++ (Fallback)</A
-></H2
-><P
->The compiler that produced the seed was originally bootstrapped from
-        a reference implementation written in C++. You only need that path to
-        mint a seed for a brand-new platform — the compiler is host-only and
-        cannot cross-build a seed for another architecture — or to work on the
-        compiler itself. It needs a C++17 compiler, CMake, and openjade in
-        addition to LLVM 18:</P
-><PRE
-CLASS="programlisting"
->; macOS
-brew install llvm@18 cmake openjade
-
-; Ubuntu 24.04
-sudo apt install llvm-18-dev clang-18 cmake openjade zlib1g-dev libzstd-dev</PRE
-><P
-><B
-CLASS="command"
->./build.sh</B
-> builds the C++ stage-0 compiler, and
-        <TT
-CLASS="filename"
->tools/seed.sh</TT
-> then bootstraps it into the
-        self-hosted compiler and emits a fresh, fixed-point-verified seed. See
-        <TT
-CLASS="filename"
->RELEASING.md</TT
-> for the full seed-distribution
-        process.</P
-></DIV
-><DIV
-CLASS="section"
-><H2
-CLASS="section"
-><A
-NAME="AEN70"
+NAME="AEN64"
 >Hello, World!</A
 ></H2
 ><P
@@ -275,7 +244,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN82"
+NAME="AEN76"
 >A Tour of Scaly</A
 ></H1
 ><P
@@ -288,7 +257,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN85"
+NAME="AEN79"
 >Values and Bindings</A
 ></H2
 ><P
@@ -326,7 +295,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN95"
+NAME="AEN89"
 >Operators and Precedence</A
 ></H2
 ><P
@@ -360,7 +329,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN103"
+NAME="AEN97"
 >Control Flow</A
 ></H2
 ><P
@@ -418,7 +387,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN116"
+NAME="AEN110"
 >Functions</A
 ></H2
 ><P
@@ -455,7 +424,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN124"
+NAME="AEN118"
 >Procedures and Mutation</A
 ></H2
 ><P
@@ -466,7 +435,7 @@ CLASS="code"
         and perform side effects. The distinction is visible at every call site,
         so a reader always knows which calls can mutate state. See
         <A
-HREF="types.htm#AEN374"
+HREF="types.htm#AEN368"
 >the Section called <I
 >Mutation via Procedures</I
 > in Chapter 4</A
@@ -492,7 +461,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN130"
+NAME="AEN124"
 >Structures and Methods</A
 ></H2
 ><P
@@ -514,7 +483,7 @@ let p Point(3, 4)
 let d p.distance_squared()   ; d is 25</PRE
 ><P
 ><A
-HREF="types.htm#AEN380"
+HREF="types.htm#AEN374"
 >the Section called <I
 >Constructors</I
 > in Chapter 4</A
@@ -529,7 +498,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN138"
+NAME="AEN132"
 >Unions, Options, and choose</A
 ></H2
 ><P
@@ -575,7 +544,7 @@ let a or_zero(Option.Some(7))   ; a is 7
 let b or_zero(Option.None)      ; b is 0</PRE
 ><P
 >See <A
-HREF="types.htm#AEN515"
+HREF="types.htm#AEN509"
 >the Section called <I
 >Union Types</I
 > in Chapter 4</A
@@ -591,7 +560,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN152"
+NAME="AEN146"
 >Putting It Together</A
 ></H1
 ><P

@@ -36,26 +36,9 @@ sudo apt install llvm-18 clang-18</programlisting>
           reports it missing, just re-run <filename>tools/build-from-seed.sh</filename>
           to rebuild it.</para>
       </note>
-    </section>
-
-    <section xml:id="tut-build-cpp">
-      <title>Bootstrapping from C++ (Fallback)</title>
-      <para>The compiler that produced the seed was originally bootstrapped from
-        a reference implementation written in C++. You only need that path to
-        mint a seed for a brand-new platform — the compiler is host-only and
-        cannot cross-build a seed for another architecture — or to work on the
-        compiler itself. It needs a C++17 compiler, CMake, and openjade in
-        addition to LLVM 18:</para>
-      <programlisting>; macOS
-brew install llvm@18 cmake openjade
-
-; Ubuntu 24.04
-sudo apt install llvm-18-dev clang-18 cmake openjade zlib1g-dev libzstd-dev</programlisting>
-      <para><command>./build.sh</command> builds the C++ stage-0 compiler, and
-        <filename>tools/seed.sh</filename> then bootstraps it into the
-        self-hosted compiler and emits a fresh, fixed-point-verified seed. See
-        <filename>RELEASING.md</filename> for the full seed-distribution
-        process.</para>
+      <para>The C++ bootstrap that originally produced the seed is described in
+        <xref linkend="appendix-bootstrap"/>; you do not need it for everyday
+        use.</para>
     </section>
 
     <section xml:id="tut-hello">
