@@ -292,6 +292,11 @@ function LLVMGetBasicBlockTerminator(block: LLVMBasicBlockRef) returns LLVMValue
 function LLVMGetFirstBasicBlock(func: LLVMValueRef) returns LLVMBasicBlockRef extern
 function LLVMGetNextBasicBlock(block: LLVMBasicBlockRef) returns LLVMBasicBlockRef extern
 
+; Value-cast: returns the value if it is a ReturnInst, else null. Used by
+; patch_prior_returns to release the function-local page on early-return
+; paths emitted before the lazy page allocation.
+function LLVMIsAReturnInst(val: LLVMValueRef) returns LLVMValueRef extern
+
 ; Walk the functions of a module + check whether a function has a body.
 ; Used by emit_template_stubs to provide empty bodies for declared-only
 ; deep-generic template references (mirror of stage-0's catch-all

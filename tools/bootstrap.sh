@@ -21,6 +21,17 @@ LINK="-L$LLVM_LIBDIR -l$LLVM_LIBNAME"
 echo "bootstrap: stage-0 -> stage1"
 ./scalyc/build/scalyc -o /tmp/scalyc_stage1 packages/scalyc/0.1.0/main.scaly $LINK 2>&1 | grep -v 'warning' || true
 
+# Rebuild the scaly-package runtime archive with stage1 so stage2's -o link
+# (cli.run appends /tmp/libscaly.a) picks up a fix-consistent runtime. A STALE
+# /tmp/libscaly.a — built by an older compiler — silently shadows the correct
+# generic instantiations (it links before libscalyc1.a, so its linkonce_odr
+# copies win), reintroducing fixed bugs in stage2 while stage1 stays fine.
+# --no-tests drops test/test_* (dead from cli.main, reference uninstantiated
+# generics that would otherwise be undefined at link).
+echo "bootstrap: stage1 -> /tmp/libscaly.a (runtime archive)"
+( ulimit -s 65520; /tmp/scalyc_stage1 -c --no-prelude --no-tests -o /tmp/libscaly.o packages/scaly/0.1.0/scaly.scaly )
+ar rcs /tmp/libscaly.a /tmp/libscaly.o
+
 echo "bootstrap: stage1 -> stage2"
 ( ulimit -s 65520
   /tmp/scalyc_stage1 -c -o /tmp/sc1.o packages/scalyc/0.1.0/scalyc.scaly

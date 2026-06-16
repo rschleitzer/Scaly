@@ -74,6 +74,7 @@ use scaly.compiler.LLVM.LLVMBuildPhi
 use scaly.compiler.LLVM.LLVMAppendBasicBlockInContext
 use scaly.compiler.LLVM.LLVMGetFirstBasicBlock
 use scaly.compiler.LLVM.LLVMGetNextBasicBlock
+use scaly.compiler.LLVM.LLVMIsAReturnInst
 use scaly.compiler.LLVM.LLVMGetFirstFunction
 use scaly.compiler.LLVM.LLVMGetNextFunction
 use scaly.compiler.LLVM.LLVMIsDeclaration
@@ -362,6 +363,13 @@ define Emitter
     current_function: LLVMValueRef
     current_block: LLVMBasicBlockRef
     current_function_can_throw: bool
+    ; s196: the current function's lazily-allocated root page for transient
+    ; #/$/for allocations in a non-rp function. Mirrors stage-0's
+    ; CurrentRegion.LocalPage but kept SEPARATE from current_region.local_page
+    ; so the (never-exercised) watermark/block-cleanup machinery stays dead.
+    ; Allocated once at entry-block start by get_or_create_local_page and
+    ; released (scaly_release_root_page) on every function exit path.
+    function_local_page: LLVMValueRef
     ; Local variables: name -> LLVM value. Flat tables; per-scope
     ; visibility maintained by scope_marks below.
     local_var_names: ref[Array[String]]?
@@ -438,6 +446,7 @@ define Emitter
         set current_function: LLVMValueRef(null)
         set current_block: LLVMBasicBlockRef(null)
         set current_function_can_throw: false
+        set function_local_page: LLVMValueRef(null)
         set local_var_names: Array[String]^page()
         set local_var_values: Array[LLVMValueRef]^page()
         set scope_marks: Array[size_t]^page()
@@ -794,6 +803,200 @@ define Emitter
         let a LLVMBuildAlloca(builder, t, name)
         LLVMPositionBuilderAtEnd(builder, saved_block)
         a
+    }
+
+    ; ========================================================================
+    ; s196: function-local root-page lifecycle (the root-page leak fix).
+    ;
+    ; A non-rp function that does a #/$/for allocation has no caller page to
+    ; allocate on, so the three rp-fallback sites (emit_constructor_call,
+    ; emit_call, emit_for) used to call scaly_alloc_root_page WITHOUT ever
+    ; releasing it — one leaked StackBucket page per fallback occurrence per
+    ; call. Compiling the large scalyc.scaly leaked ~177k root pages / ~49GB
+    ; and OOM-killed the self-hosted compiler. Stage-0 (Emitter.cpp) caches
+    ; ONE page per function (getOrCreateLocalPage) and releases it on every
+    ; exit; this ports that lifecycle. Kept on a dedicated field
+    ; function_local_page (NOT current_region.local_page) so the emitter's
+    ; never-exercised watermark/block-cleanup paths stay dead.
+    ; ========================================================================
+
+    ; Look up or declare scaly_alloc_root_page() -> ptr.
+    function get_alloc_root_page_fn(this) returns LLVMValueRef
+    {
+        var alloc_fn lookup_function_cache(String$("_Z21scaly_alloc_root_pagev"))
+        guard alloc_fn.handle = null
+            set alloc_fn: LLVMGetNamedFunction(llvm_module, "_Z21scaly_alloc_root_pagev")
+        guard alloc_fn.handle = null
+        {
+            let ret_ty LLVMPointerTypeInContext(context, 0)
+            let alloc_ty LLVMFunctionType(ret_ty, null as pointer[LLVMTypeRef], 0, 0)
+            set alloc_fn: LLVMAddFunction(llvm_module, "_Z21scaly_alloc_root_pagev", alloc_ty)
+            LLVMSetLinkage(alloc_fn, LLVMLinkage.External())
+            cache_function(String$("_Z21scaly_alloc_root_pagev"), alloc_fn)
+        }
+        alloc_fn
+    }
+
+    ; Look up or declare scaly_release_root_page(ptr) -> void.
+    function get_release_root_page_fn(this) returns LLVMValueRef
+    {
+        var rel_fn lookup_function_cache(String$("_Z23scaly_release_root_pageP4Page"))
+        guard rel_fn.handle = null
+            set rel_fn: LLVMGetNamedFunction(llvm_module, "_Z23scaly_release_root_pageP4Page")
+        guard rel_fn.handle = null
+        {
+            let void_ty LLVMVoidTypeInContext(context)
+            let ptr_ty LLVMPointerTypeInContext(context, 0)
+            var ptys Vector[LLVMTypeRef]#(1)
+            ptys.put(0, ptr_ty)
+            let fty LLVMFunctionType(void_ty, ptys.data, 1, 0)
+            set rel_fn: LLVMAddFunction(llvm_module, "_Z23scaly_release_root_pageP4Page", fty)
+            LLVMSetLinkage(rel_fn, LLVMLinkage.External())
+            cache_function(String$("_Z23scaly_release_root_pageP4Page"), rel_fn)
+        }
+        rel_fn
+    }
+
+    ; Resolve the page for a `^name` reference lifetime: the named local
+    ; variable's value, wrapped in Page.get(...) when the name is `this`
+    ; (the receiver is an object pointer, not a pointer[Page]). Returns null
+    ; if the named variable is not in scope. Shared by emit_constructor_call
+    ; and emit_call so that `x.method^own_page(...)` allocates on own_page —
+    ; NOT on the function-local page, which is released on exit (s196: an
+    ; escaping allocation on the local page is a use-after-free).
+    function resolve_reference_page(this, ref_name: String) returns LLVMValueRef
+    {
+        let nv lookup_variable(ref_name)
+        guard nv.handle = null
+            return LLVMValueRef(null)
+        var page_val LLVMValueRef(nv.handle)
+        guard ref_name.equals(String$("this"))
+        {
+            ; ^this: wrap the receiver in Page.get(this). Mirrors stage-0's
+            ; generatePageGetThis.
+            var get_fn lookup_function_cache(String$("_Z3getPv"))
+            guard get_fn.handle = null
+                set get_fn: LLVMGetNamedFunction(llvm_module, "_Z3getPv")
+            let ptr_ty LLVMPointerTypeInContext(context, 0)
+            var get_param_tys Vector[LLVMTypeRef]#(1)
+            get_param_tys.put(0, ptr_ty)
+            let get_fn_ty LLVMFunctionType(ptr_ty, get_param_tys.data, 1, 0)
+            guard get_fn.handle = null
+            {
+                set get_fn: LLVMAddFunction(llvm_module, "_Z3getPv", get_fn_ty)
+                LLVMSetLinkage(get_fn, LLVMLinkage.External())
+                cache_function(String$("_Z3getPv"), get_fn)
+            }
+            var get_args Vector[LLVMValueRef]#(1)
+            get_args.put(0, page_val)
+            set page_val: LLVMBuildCall2(builder, get_fn_ty, get_fn, get_args.data, 1, "own_page")
+        }
+        page_val
+    }
+
+    ; Return this function's local root page, allocating it once (at the
+    ; start of the entry block, so it dominates every use and every return)
+    ; on first demand. Mirrors stage-0's getOrCreateLocalPage.
+    function get_or_create_local_page(this) returns LLVMValueRef
+    {
+        guard function_local_page.handle <> null
+            return function_local_page
+        guard current_function.handle = null
+            return LLVMValueRef(null)
+        let entry_block LLVMGetFirstBasicBlock(current_function)
+        guard entry_block.handle = null
+            return LLVMValueRef(null)
+
+        let alloc_fn get_alloc_root_page_fn()
+        let alloc_ret_ty LLVMPointerTypeInContext(context, 0)
+        let alloc_func_ty LLVMFunctionType(alloc_ret_ty, null as pointer[LLVMTypeRef], 0, 0)
+
+        ; Insert at entry-block start (mirror entry_alloca's placement).
+        let saved_block LLVMGetInsertBlock(builder)
+        let first_instr LLVMGetFirstInstruction(entry_block)
+        guard first_instr.handle <> null
+            LLVMPositionBuilderBefore(builder, first_instr)
+        guard first_instr.handle = null
+            LLVMPositionBuilderAtEnd(builder, entry_block)
+        set function_local_page: LLVMBuildCall2(builder, alloc_func_ty, alloc_fn, null as pointer[LLVMValueRef], 0, "local_page")
+        guard saved_block.handle <> null
+            LLVMPositionBuilderAtEnd(builder, saved_block)
+
+        ; Patch returns emitted before this allocation (early-return guards).
+        patch_prior_returns(function_local_page)
+        function_local_page
+    }
+
+    ; Release the local page before every return already emitted into the
+    ; current function (before the lazy allocation above). Those paths
+    ; reached the return WITHOUT touching the page, so it is fresh and a
+    ; bare scaly_release_root_page is correct — no deallocate_extensions
+    ; (which would otherwise risk self-recursion when the scaly package's
+    ; own deallocate_extensions is compiled).
+    procedure patch_prior_returns(this, page: LLVMValueRef)
+    {
+        guard page.handle = null
+            return
+        let rel_fn get_release_root_page_fn()
+        let void_ty LLVMVoidTypeInContext(context)
+        let ptr_ty LLVMPointerTypeInContext(context, 0)
+        var ptys Vector[LLVMTypeRef]#(1)
+        ptys.put(0, ptr_ty)
+        let rel_fty LLVMFunctionType(void_ty, ptys.data, 1, 0)
+
+        let saved_block LLVMGetInsertBlock(builder)
+        var bb LLVMGetFirstBasicBlock(current_function)
+        while bb.handle <> null
+        {
+            let term LLVMGetBasicBlockTerminator(bb)
+            guard term.handle <> null
+            {
+                let ret_inst LLVMIsAReturnInst(term)
+                guard ret_inst.handle <> null
+                {
+                    LLVMPositionBuilderBefore(builder, term)
+                    var args Vector[LLVMValueRef]#(1)
+                    args.put(0, page)
+                    LLVMBuildCall2(builder, rel_fty, rel_fn, args.data, 1, "")
+                }
+            }
+            set bb: LLVMGetNextBasicBlock(bb)
+        }
+        guard saved_block.handle <> null
+            LLVMPositionBuilderAtEnd(builder, saved_block)
+    }
+
+    ; Release function_local_page at the current builder position (just
+    ; before the caller emits a terminating return/throw). Calls
+    ; deallocate_extensions(page) only when the page was actually used
+    ; (next_object moved off page+1) — a fresh page skips it, which also
+    ; breaks deallocate_extensions' own self-recursion (its for-loop's
+    ; iterator page is always fresh). Mirrors stage-0 emitReturn's cleanup.
+    procedure emit_release_local_page(this)
+    {
+        ; Nothing to release when this function never allocated a local page.
+        ; (Scaly `guard cond STMT` runs STMT when cond is TRUE, so this
+        ; returns exactly when the page IS null.)
+        guard function_local_page.handle = null
+            return
+        let page function_local_page
+        let ptr_ty LLVMPointerTypeInContext(context, 0)
+        let void_ty LLVMVoidTypeInContext(context)
+
+        ; scaly_release_root_page(page). Returns the StackBucket root page,
+        ; fixing the leak. Note: we deliberately do NOT call
+        ; deallocate_extensions here — the transient #/$/for allocations on a
+        ; function-local page fit in the single root page (no extension
+        ; chain), and calling deallocate_extensions would risk a runtime
+        ; self-recursion when the scaly package's own deallocate_extensions
+        ; (which itself takes a local page for its for-loop) is compiled.
+        let rel_fn get_release_root_page_fn()
+        var r_ptys Vector[LLVMTypeRef]#(1)
+        r_ptys.put(0, ptr_ty)
+        let r_fty LLVMFunctionType(void_ty, r_ptys.data, 1, 0)
+        var r_args Vector[LLVMValueRef]#(1)
+        r_args.put(0, page)
+        LLVMBuildCall2(builder, r_fty, rel_fn, r_args.data, 1, "")
     }
 
     ; parse_array_size: numeric String → size_t, or 0 for empty / any
@@ -2591,6 +2794,10 @@ define Emitter
         guard llvm_func.handle = null
             return false
 
+        ; s196: a fresh function starts with no local root page; it is
+        ; allocated lazily by get_or_create_local_page and released on exit.
+        set function_local_page: LLVMValueRef(null)
+
         ; Skip extern functions - they have no body
         choose func.impl
             when ext: Extern
@@ -2729,6 +2936,9 @@ define Emitter
                 let term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock(builder))
                 guard term.handle = null
                 {
+                    ; s196: release the function-local root page on the
+                    ; implicit-return path (no-op when none was allocated).
+                    emit_release_local_page()
                     let func_ty LLVMGlobalGetValueType(llvm_func)
                     let llvm_rt LLVMGetReturnType(func_ty)
                     let void_ty LLVMVoidTypeInContext(context)
@@ -3182,6 +3392,8 @@ define Emitter
                     let new_main LLVMAddFunction(llvm_module, main_name.c_data(), main_type)
                     set current_function: new_main
                     reset_temp_pool()
+                    ; s196: synthetic main starts with no local root page.
+                    set function_local_page: LLVMValueRef(null)
 
                     let entry_name String$("entry")
                     let entry_block LLVMAppendBasicBlockInContext(context, new_main, entry_name.c_data())
@@ -3201,6 +3413,9 @@ define Emitter
                     let term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock(builder))
                     guard term.handle = null
                     {
+                        ; s196: release main's local root page (no-op when
+                        ; the program body allocated none on it).
+                        emit_release_local_page()
                         let zero LLVMConstInt(i32_type, 0, 0)
                         LLVMBuildRet(builder, zero)
                     }
@@ -4067,63 +4282,16 @@ define Emitter
         guard is_region_alloc
         {
             guard has_ref_name
-            {
-                ; ^name: page is the named local variable.
-                let nv lookup_variable(ref_name)
-                guard nv.handle <> null
-                {
-                    var page_val LLVMValueRef(nv.handle)
-                    guard ref_name.equals(String$("this"))
-                    {
-                        ; ^this: the receiver is an object pointer, not a
-                        ; pointer[Page] — wrap it in Page.get(this). Mirrors
-                        ; stage-0's planner (Planner.cpp generatePageGetThis),
-                        ; which plans Page.get(this) as the page operand.
-                        ; Without this, the object pointer is passed as the
-                        ; Page* receiver and Page.allocate returns garbage.
-                        var get_fn lookup_function_cache(String$("_Z3getPv"))
-                        guard get_fn.handle = null
-                            set get_fn: LLVMGetNamedFunction(llvm_module, "_Z3getPv")
-                        let ptr_ty LLVMPointerTypeInContext(context, 0)
-                        var get_param_tys Vector[LLVMTypeRef]#(1)
-                        get_param_tys.put(0, ptr_ty)
-                        let get_fn_ty LLVMFunctionType(ptr_ty, get_param_tys.data, 1, 0)
-                        guard get_fn.handle = null
-                        {
-                            set get_fn: LLVMAddFunction(llvm_module, "_Z3getPv", get_fn_ty)
-                            LLVMSetLinkage(get_fn, LLVMLinkage.External())
-                            cache_function(String$("_Z3getPv"), get_fn)
-                        }
-                        var get_args Vector[LLVMValueRef]#(1)
-                        get_args.put(0, page_val)
-                        set page_val: LLVMBuildCall2(builder, get_fn_ty, get_fn, get_args.data, 1, "own_page")
-                    }
-                    set page_arg: page_val
-                }
-            }
+                set page_arg: resolve_reference_page(ref_name)
             guard has_ref_name = false
             {
                 let rp_val lookup_variable(String$("rp"))
                 guard rp_val.handle <> null
                     set page_arg: rp_val
+                ; s196: non-# caller — reuse this function's single local
+                ; root page (released on exit) instead of leaking a fresh one.
                 guard page_arg.handle = null
-                {
-                    ; Lazy root-page alloc, same as emit_call's fallback.
-                    var alloc_fn lookup_function_cache(String$("_Z21scaly_alloc_root_pagev"))
-                    guard alloc_fn.handle = null
-                        set alloc_fn: LLVMGetNamedFunction(llvm_module, "_Z21scaly_alloc_root_pagev")
-                    guard alloc_fn.handle = null
-                    {
-                        let ret_ty LLVMPointerTypeInContext(context, 0)
-                        let alloc_ty LLVMFunctionType(ret_ty, null as pointer[LLVMTypeRef], 0, 0)
-                        set alloc_fn: LLVMAddFunction(llvm_module, "_Z21scaly_alloc_root_pagev", alloc_ty)
-                        LLVMSetLinkage(alloc_fn, LLVMLinkage.External())
-                        cache_function(String$("_Z21scaly_alloc_root_pagev"), alloc_fn)
-                    }
-                    let alloc_ret_ty LLVMPointerTypeInContext(context, 0)
-                    let alloc_func_ty LLVMFunctionType(alloc_ret_ty, null as pointer[LLVMTypeRef], 0, 0)
-                    set page_arg: LLVMBuildCall2(builder, alloc_func_ty, alloc_fn, null as pointer[LLVMValueRef], 0, "local_page")
-                }
+                    set page_arg: get_or_create_local_page()
             }
             guard page_arg.handle = null
                 return LLVMValueRef(null)
@@ -4530,30 +4698,33 @@ define Emitter
         guard call.requires_page_param
         {
             set page_offset: 1
-            ; First, try the caller's own rp.
-            let rp_val lookup_variable(String$("rp"))
-            guard rp_val.handle <> null
-                set page_arg: rp_val
+            ; s196: honor a `^name` reference lifetime FIRST (e.g.
+            ; `list.add^own_page(...)`). The named page is where the callee's
+            ; allocations must land — typically a persistent page (own_page,
+            ; this's page). Routing these through the caller's local page
+            ; (the old behavior) put escaping nodes on a page that is released
+            ; on exit, corrupting the structure once the local page is reused.
+            var ref_name2: String String$("")
+            var has_ref2: bool false
+            choose call.life
+                when r: Lifetime.Reference
+                {
+                    set has_ref2: true
+                    set ref_name2: r.location
+                }
+                else
+                    0
+            guard has_ref2
+                set page_arg: resolve_reference_page(ref_name2)
+            ; Otherwise (or if the named var wasn't in scope): the caller's rp,
+            ; else this function's single local root page (released on exit).
             guard page_arg.handle = null
             {
-                ; Non-# caller: allocate a root page on demand. Get
-                ; or declare the runtime symbol; emit a call. The
-                ; release pair is omitted in stage-1 — leaks one
-                ; page per non-# caller but keeps the IR linkable.
-                var alloc_fn lookup_function_cache(String$("_Z21scaly_alloc_root_pagev"))
-                guard alloc_fn.handle = null
-                    set alloc_fn: LLVMGetNamedFunction(llvm_module, "_Z21scaly_alloc_root_pagev")
-                guard alloc_fn.handle = null
-                {
-                    let ret_ty LLVMPointerTypeInContext(context, 0)
-                    let alloc_ty LLVMFunctionType(ret_ty, null as pointer[LLVMTypeRef], 0, 0)
-                    set alloc_fn: LLVMAddFunction(llvm_module, "_Z21scaly_alloc_root_pagev", alloc_ty)
-                    LLVMSetLinkage(alloc_fn, LLVMLinkage.External())
-                    cache_function(String$("_Z21scaly_alloc_root_pagev"), alloc_fn)
-                }
-                let alloc_ret_ty LLVMPointerTypeInContext(context, 0)
-                let alloc_func_ty LLVMFunctionType(alloc_ret_ty, null as pointer[LLVMTypeRef], 0, 0)
-                set page_arg: LLVMBuildCall2(builder, alloc_func_ty, alloc_fn, null as pointer[LLVMValueRef], 0, "local_page")
+                let rp_val lookup_variable(String$("rp"))
+                guard rp_val.handle <> null
+                    set page_arg: rp_val
+                guard page_arg.handle = null
+                    set page_arg: get_or_create_local_page()
             }
         }
 
@@ -7741,23 +7912,11 @@ define Emitter
 
         let rp_val lookup_variable(String$("rp"))
         var page_arg: LLVMValueRef LLVMValueRef(rp_val.handle)
+        ; s196: non-# caller — reuse this function's single local root page
+        ; (released on exit) for the iterator instead of leaking a fresh one
+        ; per for-loop.
         guard page_arg.handle = null
-        {
-            var alloc_fn lookup_function_cache(String$("_Z21scaly_alloc_root_pagev"))
-            guard alloc_fn.handle = null
-                set alloc_fn: LLVMGetNamedFunction(llvm_module, "_Z21scaly_alloc_root_pagev")
-            guard alloc_fn.handle = null
-            {
-                let ret_ty LLVMPointerTypeInContext(context, 0)
-                let alloc_ty LLVMFunctionType(ret_ty, null as pointer[LLVMTypeRef], 0, 0)
-                set alloc_fn: LLVMAddFunction(llvm_module, "_Z21scaly_alloc_root_pagev", alloc_ty)
-                LLVMSetLinkage(alloc_fn, LLVMLinkage.External())
-                cache_function(String$("_Z21scaly_alloc_root_pagev"), alloc_fn)
-            }
-            let alloc_ret_ty LLVMPointerTypeInContext(context, 0)
-            let alloc_func_ty LLVMFunctionType(alloc_ret_ty, null as pointer[LLVMTypeRef], 0, 0)
-            set page_arg: LLVMBuildCall2(builder, alloc_func_ty, alloc_fn, null as pointer[LLVMValueRef], 0, "local_page")
-        }
+            set page_arg: get_or_create_local_page()
         guard page_arg.handle = null
             return LLVMValueRef(null)
 
@@ -9458,40 +9617,11 @@ define Emitter
         ; Emit block-scoped cleanups for all pending blocks
         emit_block_cleanups(0)
 
-        ; Clean up local page before returning
-        guard current_region.local_page.handle <> null
-        {
-            ; First try to call deallocate_extensions if the Page runtime is available
-            let dealloc_name String$("_ZN4scaly6memory4Page22deallocate_extensionsE")
-            let dealloc_fn LLVMGetNamedFunction(llvm_module, dealloc_name.c_data())
-            guard dealloc_fn.handle <> null
-            {
-                ; Call deallocate_extensions(local_page)
-                var dealloc_args Vector[LLVMValueRef]#(1)
-                dealloc_args.put(0, current_region.local_page)
-                let ptr_type LLVMPointerTypeInContext(context, 0)
-                let void_type LLVMVoidTypeInContext(context)
-                var dealloc_param_types Vector[LLVMTypeRef]#(1)
-                dealloc_param_types.put(0, ptr_type)
-                let dealloc_func_type LLVMFunctionType(void_type, dealloc_param_types.data, 1, 0)
-                LLVMBuildCall2(builder, dealloc_func_type, dealloc_fn, dealloc_args.data, 1, "")
-            }
-
-            ; Free the local page itself
-            let free_name String$("free")
-            let free_fn LLVMGetNamedFunction(llvm_module, free_name.c_data())
-            guard free_fn.handle <> null
-            {
-                var free_args Vector[LLVMValueRef]#(1)
-                free_args.put(0, current_region.local_page)
-                let ptr_type LLVMPointerTypeInContext(context, 0)
-                let void_type LLVMVoidTypeInContext(context)
-                var free_param_types Vector[LLVMTypeRef]#(1)
-                free_param_types.put(0, ptr_type)
-                let free_func_type LLVMFunctionType(void_type, free_param_types.data, 1, 0)
-                LLVMBuildCall2(builder, free_func_type, free_fn, free_args.data, 1, "")
-            }
-        }
+        ; s196: release the function-local root page before returning
+        ; (no-op when none was allocated). Replaces the old dead cleanup
+        ; that read the never-set current_region.local_page and used free()
+        ; instead of scaly_release_root_page.
+        emit_release_local_page()
 
         ; Create the return instruction. Querying the function's
         ; actual LLVM return type guards against the case where
@@ -9680,6 +9810,8 @@ define Emitter
                         emit_operands(throw_stmt.result)
                 }
                 emit_block_cleanups(0)
+                ; s196: release the function-local root page on the throw path.
+                emit_release_local_page()
                 let void_ty LLVMVoidTypeInContext(context)
                 if LLVMGetTypeKind(ret_ty) = LLVMGetTypeKind(void_ty)
                     LLVMBuildRetVoid(builder)
@@ -9728,6 +9860,9 @@ define Emitter
 
         ; Emit block-scoped cleanups
         emit_block_cleanups(0)
+
+        ; s196: release the function-local root page before unwinding.
+        emit_release_local_page()
 
         ; Return: sret functions return void, direct-return functions
         ; load+ret the result value.

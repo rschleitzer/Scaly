@@ -2790,6 +2790,7 @@ define Planner
                     ; If THIS op is a marker (no prior Type to merge
                     ; into), drop it.
                     var is_marker: bool false
+                    var this_marker_life: Lifetime Lifetime.Unspecified(Unspecified())
                     choose mp_op.expr
                         when ty: PlannedType
                         {
@@ -2799,7 +2800,10 @@ define Planner
                                     when u: Unspecified
                                         0
                                     else
+                                    {
                                         set is_marker: true
+                                        set this_marker_life: ty.life
+                                    }
                             }
                             0
                         }
@@ -2807,6 +2811,56 @@ define Planner
                             0
                     guard is_marker
                     {
+                        ; s196: a STANDALONE marker — the preceding op was
+                        ; not a PlannedType to merge into (e.g. a method
+                        ; receiver planned as Variable+chain, as in
+                        ; `slot_list.add^own_page(Slot(...))`). If the NEXT
+                        ; op is the method's args PlannedTuple, merge the
+                        ; `^name` lifetime into that tuple's `life` so the
+                        ; method-dispatch call-construction site can
+                        ; propagate it onto PlannedCall.life. Without this
+                        ; the marker is dropped and the call's allocations
+                        ; land on the function-local page (released on exit)
+                        ; instead of the named region — corrupting escaping
+                        ; HashSet nodes once the local page is released.
+                        ; Otherwise (no following tuple) drop the marker as
+                        ; before.
+                        guard mi + 1 < ops.length
+                        {
+                            let mtp_ptr ops.get(mi + 1)
+                            guard mtp_ptr <> null
+                            {
+                                let mtp_op (*mtp_ptr)
+                                var merged_tuple_done: bool false
+                                choose mtp_op.expr
+                                    when tp: PlannedTuple
+                                    {
+                                        let new_tp PlannedTuple(
+                                            tp.loc,
+                                            tp.components,
+                                            tp.tuple_type,
+                                            tp.is_region_alloc,
+                                            this_marker_life,
+                                            tp.region_arg
+                                        )
+                                        merged_arr.add(PlannedOperand(
+                                            mtp_op.loc,
+                                            PlannedExpression.Tuple(new_tp),
+                                            mtp_op.member_access,
+                                            mtp_op.result_type
+                                        ))
+                                        set merged_tuple_done: true
+                                        0
+                                    }
+                                    else
+                                        0
+                                guard merged_tuple_done
+                                {
+                                    set mi: mi + 2
+                                    continue
+                                }
+                            }
+                        }
                         set mi: mi + 1
                         continue
                     }
@@ -4975,6 +5029,42 @@ define Planner
                                 this.add_diagnostic(result.loc, dsb.to_string^rp())
                             }
                         }
+                        ; s196: propagate a `^name`/`#`/`$` lifetime onto the
+                        ; PlannedCall. emit_call reads call.life inside its
+                        ; requires_page_param branch: a Reference life routes
+                        ; the page argument through resolve_reference_page(name)
+                        ; (e.g. own_page) rather than the function-local page.
+                        ; Mirrors stage-0 Planner.cpp:7444 (CallLifeRef =
+                        ; HasLifetimeThenArgs ? MethodLifetime : TypeExpr->Life).
+                        ; The marker pre-pass merges the `^name` either into the
+                        ; receiver TYPE (`slot_list.add^own_page` — receiver is
+                        ; a multi-segment PlannedType) or into the args TUPLE
+                        ; (receiver planned as Variable+chain). Read both.
+                        var call_life: Lifetime Lifetime.Unspecified(Unspecified())
+                        choose result.expr
+                            when ty_life: PlannedType
+                            {
+                                choose ty_life.life
+                                    when u: Unspecified
+                                        0
+                                    else
+                                        set call_life: ty_life.life
+                                0
+                            }
+                            else
+                                0
+                        choose second.expr
+                            when tp_life: PlannedTuple
+                            {
+                                choose tp_life.life
+                                    when u: Unspecified
+                                        0
+                                    else
+                                        set call_life: tp_life.life
+                                0
+                            }
+                            else
+                                0
                         let call PlannedCall(
                             result.loc,
                             fn_name,
@@ -4985,7 +5075,7 @@ define Planner
                             call_requires_page,
                             &call_args_holder,
                             rt,
-                            Lifetime.Unspecified(Unspecified()),
+                            call_life,
                             call_throws_ty
                         )
                         set result: PlannedOperand(
