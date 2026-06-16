@@ -1,7 +1,7 @@
 {
+    // Scaly has no bundled VS Code grammar yet; treat .scaly as plain text
+    // so the editor stops guessing. Comments start with ';'.
     "files.associations": {
-        "cstdint": "cpp",
-        "cstdio": "cpp",
-        "__config": "cpp"
+        "*.scaly": "plaintext"
     }
 }

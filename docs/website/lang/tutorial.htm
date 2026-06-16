@@ -89,11 +89,16 @@ HREF="tutorial.htm#AEN41"
 ><DT
 ><A
 HREF="tutorial.htm#AEN76"
+>Using Scaly with VS Code</A
+></DT
+><DT
+><A
+HREF="tutorial.htm#AEN143"
 >A Tour of Scaly</A
 ></DT
 ><DT
 ><A
-HREF="tutorial.htm#AEN146"
+HREF="tutorial.htm#AEN213"
 >Putting It Together</A
 ></DT
 ></DL
@@ -247,6 +252,303 @@ CLASS="section"
 CLASS="section"
 ><A
 NAME="AEN76"
+>Using Scaly with VS Code</A
+></H1
+><P
+>You can drive the whole edit-compile-run-debug loop from
+      <SPAN
+CLASS="application"
+>Visual Studio Code</SPAN
+>: a build task to compile the
+      file you are editing, a run task to execute it, and a launch
+      configuration that stops at breakpoints and lets you step through your
+      Scaly source. Debugging uses the DWARF information the compiler emits with
+      the <CODE
+CLASS="option"
+>-g</CODE
+> flag, so breakpoints land on real source lines and
+      scalar local variables show their values.</P
+><P
+>Open the Scaly repository as your workspace folder and install the
+      <SPAN
+CLASS="emphasis"
+><I
+CLASS="emphasis"
+>CodeLLDB</I
+></SPAN
+> extension (extension id
+      <TT
+CLASS="code"
+>vadimcn.vscode-lldb</TT
+>), which provides the
+      <TT
+CLASS="code"
+>lldb</TT
+> debugger type used below.</P
+><DIV
+CLASS="note"
+><BLOCKQUOTE
+CLASS="note"
+><P
+><B
+>Note: </B
+>Run the compiler with the repository root as the working directory.
+        The prelude (which defines <TT
+CLASS="code"
+>print</TT
+> and friends) is resolved
+        relative to the current directory, so building from elsewhere fails with
+        <SAMP
+CLASS="computeroutput"
+>function not found: print</SAMP
+>. The tasks
+        below set <TT
+CLASS="code"
+>cwd</TT
+> to <TT
+CLASS="code"
+>${workspaceFolder}</TT
+> for exactly
+        this reason.</P
+></BLOCKQUOTE
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN91"
+>Build and Run Tasks</A
+></H2
+><P
+>Create <TT
+CLASS="filename"
+>.vscode/tasks.json</TT
+> with a build task that
+        compiles the open file with debug info, and a run task that executes the
+        result:</P
+><PRE
+CLASS="programlisting"
+>{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "scaly: build (debug)",
+            "type": "shell",
+            "command": "${workspaceFolder}/scalyc/build/scalyc",
+            "args": ["-g", "-o", "${fileBasenameNoExtension}", "${file}"],
+            "options": { "cwd": "${workspaceFolder}" },
+            "group": { "kind": "build", "isDefault": true },
+            "problemMatcher": {
+                "owner": "scaly",
+                "fileLocation": ["autoDetect", "${workspaceFolder}"],
+                "pattern": {
+                    "regexp": "^(.*):(\\d+):(\\d+):\\s+(error|warning):\\s+(.*)$",
+                    "file": 1, "line": 2, "column": 3,
+                    "severity": 4, "message": 5
+                }
+            }
+        },
+        {
+            "label": "scaly: run",
+            "type": "shell",
+            "command": "${workspaceFolder}/${fileBasenameNoExtension}",
+            "options": { "cwd": "${workspaceFolder}" },
+            "dependsOn": "scaly: build (debug)"
+        }
+    ]
+}</PRE
+><P
+>Press <B
+CLASS="keycap"
+>Cmd</B
+>+<B
+CLASS="keycap"
+>Shift</B
+>+<B
+CLASS="keycap"
+>B</B
+>
+        (or <B
+CLASS="keycap"
+>Ctrl</B
+>+<B
+CLASS="keycap"
+>Shift</B
+>+<B
+CLASS="keycap"
+>B</B
+>) to
+        build the file in the active editor. The
+        <TT
+CLASS="code"
+>problemMatcher</TT
+> turns any compiler diagnostic into a
+        clickable entry in the Problems panel. Use <SPAN
+CLASS="guimenu"
+>Terminal &#62; Run
+        Task</SPAN
+> and pick <SPAN
+CLASS="guimenuitem"
+>scaly: run</SPAN
+> to build
+        and execute.</P
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN106"
+>Launch Configuration</A
+></H2
+><P
+>Create <TT
+CLASS="filename"
+>.vscode/launch.json</TT
+> so
+        <B
+CLASS="keycap"
+>F5</B
+> builds the open file and starts it under the
+        debugger:</P
+><PRE
+CLASS="programlisting"
+>{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug Scaly file",
+            "type": "lldb",
+            "request": "launch",
+            "preLaunchTask": "scaly: build (debug)",
+            "program": "${workspaceFolder}/${fileBasenameNoExtension}",
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        }
+    ]
+}</PRE
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN112"
+>Setting a Breakpoint and Stepping</A
+></H2
+><P
+>Put this program in <TT
+CLASS="filename"
+>area.scaly</TT
+> at the repository
+        root. It computes a rectangle's area from two mutable bindings — small,
+        but enough to stop and inspect some values:</P
+><PRE
+CLASS="programlisting"
+>var width 8
+var height 5
+var area width * height
+if area = 40
+    print("the area is 40")
+else
+    print("unexpected area")</PRE
+><P
+>Click in the gutter to the left of the
+        <TT
+CLASS="code"
+>var area width * height</TT
+> line to set a breakpoint (a red dot
+        appears), then press <B
+CLASS="keycap"
+>F5</B
+>. The program builds and runs,
+        and execution stops at that line before it executes — at which point
+        <TT
+CLASS="code"
+>width</TT
+> and <TT
+CLASS="code"
+>height</TT
+> already have values but
+        <TT
+CLASS="code"
+>area</TT
+> does not yet.</P
+><P
+>With execution paused you can:</P
+><P
+></P
+><UL
+><LI
+><P
+>Read <TT
+CLASS="code"
+>width</TT
+> and <TT
+CLASS="code"
+>height</TT
+> in the
+            <SPAN
+CLASS="guilabel"
+>Variables</SPAN
+> pane, or hover them in the editor to
+            see their values.</P
+></LI
+><LI
+><P
+>Step one line at a time with <B
+CLASS="keycap"
+>F10</B
+>
+            (<SPAN
+CLASS="guimenuitem"
+>Step Over</SPAN
+>) — after stepping past the
+            breakpoint line, <TT
+CLASS="code"
+>area</TT
+> appears with the value
+            <SAMP
+CLASS="computeroutput"
+>40</SAMP
+>. Step into a called function with
+            <B
+CLASS="keycap"
+>F11</B
+>.</P
+></LI
+><LI
+><P
+>Press <B
+CLASS="keycap"
+>F5</B
+> again to continue to the program's
+            end.</P
+></LI
+></UL
+><P
+>Breakpoints, stepping, and variable inspection all rely on the
+        <CODE
+CLASS="option"
+>-g</CODE
+> debug information; without it the program still runs,
+        but the debugger has no source lines to stop on. Breakpoints land on
+        top-level statements, bindings, and function bodies; the
+        <SPAN
+CLASS="guilabel"
+>Variables</SPAN
+> pane shows scalar locals such as integers
+        and booleans. Lines inside loop and conditional bodies, and aggregate
+        values, have coarser support for now.</P
+></DIV
+></DIV
+><DIV
+CLASS="section"
+><H1
+CLASS="section"
+><A
+NAME="AEN143"
 >A Tour of Scaly</A
 ></H1
 ><P
@@ -259,7 +561,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN79"
+NAME="AEN146"
 >Values and Bindings</A
 ></H2
 ><P
@@ -297,7 +599,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN89"
+NAME="AEN156"
 >Operators and Precedence</A
 ></H2
 ><P
@@ -331,7 +633,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN97"
+NAME="AEN164"
 >Control Flow</A
 ></H2
 ><P
@@ -389,7 +691,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN110"
+NAME="AEN177"
 >Functions</A
 ></H2
 ><P
@@ -426,7 +728,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN118"
+NAME="AEN185"
 >Procedures and Mutation</A
 ></H2
 ><P
@@ -437,7 +739,7 @@ CLASS="code"
         and perform side effects. The distinction is visible at every call site,
         so a reader always knows which calls can mutate state. See
         <A
-HREF="types.htm#AEN368"
+HREF="types.htm#AEN435"
 >the Section called <I
 >Mutation via Procedures</I
 > in Chapter 4</A
@@ -463,7 +765,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN124"
+NAME="AEN191"
 >Structures and Methods</A
 ></H2
 ><P
@@ -485,7 +787,7 @@ let p Point(3, 4)
 let d p.distance_squared()   ; d is 25</PRE
 ><P
 ><A
-HREF="types.htm#AEN374"
+HREF="types.htm#AEN441"
 >the Section called <I
 >Constructors</I
 > in Chapter 4</A
@@ -500,7 +802,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN132"
+NAME="AEN199"
 >Unions, Options, and choose</A
 ></H2
 ><P
@@ -546,7 +848,7 @@ let a or_zero(Option.Some(7))   ; a is 7
 let b or_zero(Option.None)      ; b is 0</PRE
 ><P
 >See <A
-HREF="types.htm#AEN509"
+HREF="types.htm#AEN576"
 >the Section called <I
 >Union Types</I
 > in Chapter 4</A
@@ -562,7 +864,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN146"
+NAME="AEN213"
 >Putting It Together</A
 ></H1
 ><P

@@ -141,6 +141,7 @@ define PlannedVariant
 
 define PlannedAction
 (
+    loc: Span
     source: ref[Vector[PlannedOperand]]?
     target: ref[Vector[PlannedOperand]]?
     result_type: PlannedType

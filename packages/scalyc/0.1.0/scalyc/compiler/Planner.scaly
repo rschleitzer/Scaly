@@ -10331,7 +10331,20 @@ define Planner
                 set target_holder: &target_vec
             }
 
+            ; For -g line info: take the location from the FIRST flat source
+            ; operand, which carries the authoritative source span. The
+            ; collapsed operand's loc is sometimes synthesized (start 0),
+            ; which would emit a useless DILocation at line 0.
+            var action_loc planned_source_collapsed.loc
+            guard planned_source_flat.length > 0
+            {
+                let first_op_ptr planned_source_flat.get(0)
+                guard first_op_ptr <> null
+                    set action_loc: (*first_op_ptr).loc
+            }
+
             PlannedAction(
+                action_loc,
                 &source_holder,
                 target_holder,
                 result_type

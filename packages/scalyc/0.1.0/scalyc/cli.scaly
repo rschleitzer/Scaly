@@ -53,6 +53,7 @@ define Options
     show_help: bool
     no_prelude: bool        ; --no-prelude: skip auto-loading prelude
     no_tests: bool          ; --no-tests: omit test/test_* functions (seed build)
+    debug: bool             ; -g: emit DWARF debug info
     error_message: String
     library_paths: Array[String]    ; -L<path> entries (no leading -L)
     libraries: Array[String]        ; -l<name> entries (no leading -l)
@@ -73,6 +74,7 @@ define Options
         set show_help: false
         set no_prelude: false
         set no_tests: false
+        set debug: false
         set error_message: String()
         set library_paths: Array[String]()
         set libraries: Array[String]()
@@ -123,6 +125,10 @@ define cli
                 else if arg.equals(String$("-c"))
                 {
                     set opts.compile_only: true
+                }
+                else if arg.equals(String$("-g"))
+                {
+                    set opts.debug: true
                 }
                 else if arg.equals(String$("--lex"))
                 {
@@ -374,10 +380,12 @@ define cli
         ; ================================================================
 
         var config EmitterConfig$()
-        set config.emit_debug_info: false
+        set config.emit_debug_info: opts.debug
         set config.skip_tests: opts.no_tests
 
         var emitter Emitter.Emitter$(config)
+        guard opts.debug
+            emitter.set_debug_source(opts.input_file, source)
         let emit_result emitter.emit(plan, program_name)
 
         guard emit_result = false
@@ -500,6 +508,22 @@ define cli
         cmd_builder.append(opts.output_file)
         let cmd_str cmd_builder.to_string#()
         let link_rc system(cmd_str.c_data())
+
+        ; -g: on macOS the linker leaves DWARF in a debug map that points at
+        ; the temp .o (Mach-O doesn't embed DWARF in the executable), so lldb
+        ; needs a standalone .dSYM next to the binary. Run dsymutil while the
+        ; .o still exists. Harmless elsewhere — on ELF the executable already
+        ; carries DWARF, and an absent dsymutil just fails into 2>/dev/null.
+        guard opts.debug
+            guard link_rc = 0
+            {
+                var dsym_builder StringBuilder#()
+                dsym_builder.append("dsymutil ")
+                dsym_builder.append(opts.output_file)
+                dsym_builder.append(" 2>/dev/null")
+                let dsym_str dsym_builder.to_string#()
+                let dsym_rc system(dsym_str.c_data())
+            }
 
         let unlink_rc unlink(tmp_obj.c_data())
 

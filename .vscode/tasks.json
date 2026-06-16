@@ -1,18 +1,53 @@
 {
+    // Build/run tasks for Scaly programs.
+    //
+    // The compiler resolves the prelude relative to its working directory
+    // (packages/scaly/0.1.0/scaly), so every task runs with the repository
+    // root as cwd. Build scalyc first: tools/build-from-seed.sh
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "build",
-            "command": "dotnet",
-            "type": "process",
+            "label": "scaly: build (debug)",
+            "type": "shell",
+            "command": "${workspaceFolder}/scalyc/build/scalyc",
             "args": [
-                "build",
-                "${workspaceFolder}/scaly.sln"
+                "-g",
+                "-o",
+                "${fileBasenameNoExtension}",
+                "${file}"
             ],
-            "problemMatcher": "$msCompile",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
             "group": {
                 "kind": "build",
                 "isDefault": true
+            },
+            "problemMatcher": {
+                "owner": "scaly",
+                "fileLocation": ["autoDetect", "${workspaceFolder}"],
+                "pattern": {
+                    "regexp": "^(.*):(\\d+):(\\d+):\\s+(error|warning):\\s+(.*)$",
+                    "file": 1,
+                    "line": 2,
+                    "column": 3,
+                    "severity": 4,
+                    "message": 5
+                }
+            }
+        },
+        {
+            "label": "scaly: run",
+            "type": "shell",
+            "command": "${workspaceFolder}/${fileBasenameNoExtension}",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "dependsOn": "scaly: build (debug)",
+            "group": "test",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
             }
         }
     ]

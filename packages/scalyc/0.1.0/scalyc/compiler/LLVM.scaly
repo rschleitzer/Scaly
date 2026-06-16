@@ -589,3 +589,50 @@ function LLVMInitializeFunctionPassManager(fpm: LLVMPassManagerRef) returns int 
 function LLVMRunFunctionPassManager(fpm: LLVMPassManagerRef, func: LLVMValueRef) returns int extern
 function LLVMFinalizeFunctionPassManager(fpm: LLVMPassManagerRef) returns int extern
 
+; ============================================================================
+; Debug Info (DWARF) — DIBuilder
+; ============================================================================
+;
+; Bindings for the LLVM-C DebugInfo API (DebugInfo.h). Used by the Emitter
+; only when EmitterConfig.emit_debug_info is true (the -g flag).
+;
+; C `unsigned`/`LLVMBool`/`LLVMDIFlags`/enum params are 32-bit and MUST be
+; declared `i32`, NOT `int` (= i64). On Apple arm64 the stack packs 32-bit
+; args into 4-byte slots; passing i64 shifts every following stack arg by
+; 4 bytes, corrupting spFlags/CU flags (no DISPFlagDefinition, wrong
+; splitDebugInlining). `size_t` params stay 64-bit; pointers/refs stay ptr.
+; Enum values used below:
+;   LLVMDWARFSourceLanguage: C89 = 1 (closest to Scaly semantics)
+;   LLVMDWARFEmissionKind:   Full = 1
+;   LLVMModuleFlagBehavior:  Warning = 1
+;   LLVMDWARFTypeEncoding:   DW_ATE_signed = 5, DW_ATE_boolean = 2,
+;                            DW_ATE_unsigned = 7
+;   DEBUG_METADATA_VERSION:  3
+
+; Module-flag plumbing (Dwarf Version / Debug Info Version).
+function LLVMValueAsMetadata(val: LLVMValueRef) returns LLVMMetadataRef extern
+procedure LLVMAddModuleFlag(mod: LLVMModuleRef, behavior: i32, key: pointer[const_char], key_len: size_t, val: LLVMMetadataRef) extern
+
+; Builder lifecycle.
+function LLVMCreateDIBuilder(mod: LLVMModuleRef) returns LLVMDIBuilderRef extern
+procedure LLVMDIBuilderFinalize(builder: LLVMDIBuilderRef) extern
+
+; Compile unit + file.
+function LLVMDIBuilderCreateFile(builder: LLVMDIBuilderRef, filename: pointer[const_char], filename_len: size_t, directory: pointer[const_char], directory_len: size_t) returns LLVMMetadataRef extern
+function LLVMDIBuilderCreateCompileUnit(builder: LLVMDIBuilderRef, lang: i32, file_ref: LLVMMetadataRef, producer: pointer[const_char], producer_len: size_t, is_optimized: i32, flags: pointer[const_char], flags_len: size_t, runtime_ver: i32, split_name: pointer[const_char], split_name_len: size_t, kind: i32, dwo_id: i32, split_debug_inlining: i32, debug_info_for_profiling: i32, sysroot: pointer[const_char], sysroot_len: size_t, sdk: pointer[const_char], sdk_len: size_t) returns LLVMMetadataRef extern
+
+; Functions (DISubprogram) + their subroutine type.
+function LLVMDIBuilderCreateSubroutineType(builder: LLVMDIBuilderRef, file: LLVMMetadataRef, parameter_types: pointer[LLVMMetadataRef], num_parameter_types: i32, flags: i32) returns LLVMMetadataRef extern
+function LLVMDIBuilderCreateFunction(builder: LLVMDIBuilderRef, scope: LLVMMetadataRef, name: pointer[const_char], name_len: size_t, linkage_name: pointer[const_char], linkage_name_len: size_t, file: LLVMMetadataRef, line_no: i32, ty: LLVMMetadataRef, is_local_to_unit: i32, is_definition: i32, scope_line: i32, flags: i32, is_optimized: i32) returns LLVMMetadataRef extern
+procedure LLVMSetSubprogram(func: LLVMValueRef, sp: LLVMMetadataRef) extern
+
+; Line locations.
+function LLVMDIBuilderCreateDebugLocation(ctx: LLVMContextRef, line: i32, column: i32, scope: LLVMMetadataRef, inlined_at: LLVMMetadataRef) returns LLVMMetadataRef extern
+procedure LLVMSetCurrentDebugLocation2(builder: LLVMBuilderRef, loc: LLVMMetadataRef) extern
+
+; Local variables (Phase B).
+function LLVMDIBuilderCreateBasicType(builder: LLVMDIBuilderRef, name: pointer[const_char], name_len: size_t, size_in_bits: size_t, encoding: i32, flags: i32) returns LLVMMetadataRef extern
+function LLVMDIBuilderCreateAutoVariable(builder: LLVMDIBuilderRef, scope: LLVMMetadataRef, name: pointer[const_char], name_len: size_t, file: LLVMMetadataRef, line_no: i32, ty: LLVMMetadataRef, always_preserve: i32, flags: i32, align_in_bits: i32) returns LLVMMetadataRef extern
+function LLVMDIBuilderCreateExpression(builder: LLVMDIBuilderRef, addr: pointer[size_t], length: size_t) returns LLVMMetadataRef extern
+function LLVMDIBuilderInsertDeclareAtEnd(builder: LLVMDIBuilderRef, storage: LLVMValueRef, var_info: LLVMMetadataRef, expr: LLVMMetadataRef, debug_loc: LLVMMetadataRef, block: LLVMBasicBlockRef) returns LLVMValueRef extern
+

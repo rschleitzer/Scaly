@@ -1,31 +1,19 @@
 {
-    // Use IntelliSense to learn about possible attributes.
-    // Hover to view descriptions of existing attributes.
-    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    // Debug Scaly programs with CodeLLDB (extension id: vadimcn.vscode-lldb).
+    //
+    // Builds the open .scaly file with -g, then launches it under lldb.
+    // Breakpoints, stepping, and scalar local variables work from the
+    // DWARF the compiler emits with -g.
     "version": "0.2.0",
     "configurations": [
         {
-            "name": ".NET Core Launch (console)",
-            "type": "coreclr",
+            "name": "Debug Scaly file",
+            "type": "lldb",
             "request": "launch",
-            "preLaunchTask": "build",
-            //"program": "${workspaceFolder}/scalyc/bin/Debug/net5.0/linux-x64/scalyc.dll",
-            "program": "${workspaceFolder}/scalyc/bin/Debug/net6.0/osx-arm64/scalyc.dll",
-            "args": [
-                "-o",
-                "strlen",
-                "../scalyc/tests/strlen.scaly",
-            ],
-            "cwd": "${workspaceFolder}/runtime",
-            "console": "internalConsole",
-            "stopAtEntry": false,
-            "internalConsoleOptions": "openOnSessionStart"
-        },
-        {
-            "name": ".NET Core Attach",
-            "type": "coreclr",
-            "request": "attach",
-            "processId": "${command:pickProcess}"
+            "preLaunchTask": "scaly: build (debug)",
+            "program": "${workspaceFolder}/${fileBasenameNoExtension}",
+            "args": [],
+            "cwd": "${workspaceFolder}"
         }
     ]
 }

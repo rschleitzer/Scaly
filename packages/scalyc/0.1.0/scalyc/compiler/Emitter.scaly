@@ -216,6 +216,14 @@ define IntrinsicTypeInfo
     is_signed: bool
 )
 
+; A 1-based source line/column, computed from a byte offset for DWARF.
+; i32 fields: the LLVM-C DI APIs take 32-bit line/column (see LLVM.scaly).
+define DebugPos
+(
+    line: i32
+    col: i32
+)
+
 ; ============================================================================
 ; Emitter Configuration
 ; ============================================================================
@@ -320,6 +328,16 @@ define Emitter
     context: LLVMContextRef
     llvm_module: LLVMModuleRef
     builder: LLVMBuilderRef
+    ; Debug info (DWARF) — populated only when config.emit_debug_info.
+    ; source_text/source_file feed byte-offset -> (line,col) conversion;
+    ; di_builder/di_file/di_cu are the compile-unit handles; current_di_scope
+    ; is the DISubprogram of the function currently being emitted.
+    di_builder: LLVMDIBuilderRef
+    di_file: LLVMMetadataRef
+    di_cu: LLVMMetadataRef
+    current_di_scope: LLVMMetadataRef
+    source_text: String
+    source_file: String
     ; Current plan being emitted
     current_plan: ref[Plan]?
     ; Type cache: name -> LLVM type (using parallel vectors)
@@ -400,6 +418,12 @@ define Emitter
         set context: LLVMContextRef(null)
         set llvm_module: LLVMModuleRef(null)
         set builder: LLVMBuilderRef(null)
+        set di_builder: LLVMDIBuilderRef(null)
+        set di_file: LLVMMetadataRef(null)
+        set di_cu: LLVMMetadataRef(null)
+        set current_di_scope: LLVMMetadataRef(null)
+        set source_text: String()
+        set source_file: String()
         set current_plan: null
         set type_cache_names: Array[String]^page()
         set type_cache_types: Array[LLVMTypeRef]^page()
@@ -457,6 +481,162 @@ define Emitter
 
         ; Initialize intrinsic types
         init_intrinsic_types()
+
+        ; Set up DWARF debug info (-g). No-op unless emit_debug_info.
+        init_debug_info()
+    }
+
+    ; Record the source file path + contents for -g. Must be called
+    ; before emit() so initialize()'s init_debug_info() sees them.
+    procedure set_debug_source(this, file: String, src: String)
+    {
+        set source_file: file
+        set source_text: src
+    }
+
+    ; Create the DIBuilder, compile unit and file, and set the DWARF
+    ; module flags. Gated on emit_debug_info (guard runs the return when
+    ; the flag is FALSE — Scaly hard rule #6).
+    procedure init_debug_info(this)
+    {
+        guard config.emit_debug_info = false
+            return
+
+        ; Module flags: Dwarf Version = 4 (lldb-friendly),
+        ; Debug Info Version = 3 (DEBUG_METADATA_VERSION). Behavior 1 = Warning.
+        let i32_ty LLVMInt32TypeInContext(context)
+        let dwarf_ver LLVMValueAsMetadata(LLVMConstInt(i32_ty, 4, 0))
+        var dwarf_key String$("Dwarf Version")
+        LLVMAddModuleFlag(llvm_module, (1 as i32), dwarf_key.c_data(), dwarf_key.get_length(), dwarf_ver)
+        let di_ver LLVMValueAsMetadata(LLVMConstInt(i32_ty, 3, 0))
+        var di_key String$("Debug Info Version")
+        LLVMAddModuleFlag(llvm_module, (1 as i32), di_key.c_data(), di_key.get_length(), di_ver)
+
+        ; DIBuilder + file + compile unit.
+        set di_builder: LLVMCreateDIBuilder(llvm_module)
+
+        var fname source_file
+        guard fname.get_length() = 0
+            set fname: String$("<unknown>")
+        var dir String$(".")
+        set di_file: LLVMDIBuilderCreateFile(di_builder, fname.c_data(), fname.get_length(), dir.c_data(), dir.get_length())
+
+        ; lang 1 = DW_LANG_C89 (closest to Scaly), emission kind 1 = Full.
+        var producer String$("scalyc")
+        var empty String$("")
+        set di_cu: LLVMDIBuilderCreateCompileUnit(di_builder, (1 as i32), di_file, producer.c_data(), producer.get_length(), (0 as i32), empty.c_data(), (0 as size_t), (0 as i32), empty.c_data(), (0 as size_t), (1 as i32), (0 as i32), (1 as i32), (0 as i32), empty.c_data(), (0 as size_t), empty.c_data(), (0 as size_t))
+    }
+
+    ; Convert a byte offset into the source into a 1-based (line, column).
+    ; Mirrors cli.print_diagnostics#'s scan; numeric LF compare (10) per s185.
+    function compute_debug_pos(this, offset: size_t) returns DebugPos
+    {
+        var line: i32 1
+        var col: i32 1
+        let src_len source_text.get_length()
+        var target offset
+        guard target > src_len
+            set target: src_len
+        var off: size_t 0
+        while off < target
+        {
+            let c source_text.get(off)
+            if c = (10 as char)
+            {
+                set line: line + 1
+                set col: 1
+            }
+            else
+                set col: col + 1
+            set off: off + 1
+        }
+        DebugPos(line, col)
+    }
+
+    ; Attach a DILocation to the builder for subsequent instructions.
+    ; No-op unless emit_debug_info and a function scope is active.
+    procedure set_debug_location(this, span: Span)
+    {
+        guard config.emit_debug_info = false
+            return
+        guard current_di_scope.handle = null
+            return
+        let pos compute_debug_pos(span.start)
+        let loc LLVMDIBuilderCreateDebugLocation(context, pos.line, pos.col, current_di_scope, LLVMMetadataRef(null))
+        LLVMSetCurrentDebugLocation2(builder, loc)
+    }
+
+    ; Create the DISubprogram for a function being emitted, attach it to
+    ; llvm_func, store it as current_di_scope, and set an initial line
+    ; location so prologue instructions carry a !dbg. -g only.
+    ; Uses the current_function field (NOT a passed LLVMValueRef param):
+    ; a single-ptr-field struct param arrives as a stack-alloca alias under
+    ; the stage-0/1 ABI (s34/s36), so LLVMSetSubprogram would get a garbage
+    ; handle. The field read is unaffected.
+    procedure set_function_debug_scope(this, func: PlannedFunction)
+    {
+        let pos compute_debug_pos(func.loc.start)
+
+        ; Subroutine type with an empty parameter list: enough for
+        ; breakpoints + stepping, not a full signature. A single null
+        ; element (the usual "void return" form) SIGSEGVs in LLVM's
+        ; getOrCreateTypeArray, so pass an empty array instead.
+        let subroutine_ty LLVMDIBuilderCreateSubroutineType(di_builder, di_file, null as pointer[LLVMMetadataRef], (0 as i32), (0 as i32))
+
+        var name func.name
+        var mangled func.mangled_name
+        ; is_local_to_unit=0, is_definition=1, flags=0, is_optimized=0 — cast
+        ; to i32 so the call passes 4-byte stack args (Apple-arm64 packing;
+        ; see LLVM.scaly). pos.line/scope_line are already i32.
+        let sp LLVMDIBuilderCreateFunction(di_builder, di_file, name.c_data(), name.get_length(), mangled.c_data(), mangled.get_length(), di_file, pos.line, subroutine_ty, (0 as i32), (1 as i32), pos.line, (0 as i32), (0 as i32))
+        LLVMSetSubprogram(current_function, sp)
+        set current_di_scope: sp
+
+        ; Initial location at the function line covers prologue calls.
+        let loc LLVMDIBuilderCreateDebugLocation(context, pos.line, pos.col, sp, LLVMMetadataRef(null))
+        LLVMSetCurrentDebugLocation2(builder, loc)
+    }
+
+    ; Like set_function_debug_scope but for a synthetic function that has
+    ; no PlannedFunction (the top-level `main` wrapping the program's
+    ; top-level statements). -g only; caller guards on emit_debug_info.
+    ; Attaches to current_function (set by the caller before this).
+    procedure set_synthetic_debug_scope(this, name: String, line: i32)
+    {
+        let subroutine_ty LLVMDIBuilderCreateSubroutineType(di_builder, di_file, null as pointer[LLVMMetadataRef], (0 as i32), (0 as i32))
+        var nm name
+        let sp LLVMDIBuilderCreateFunction(di_builder, di_file, nm.c_data(), nm.get_length(), nm.c_data(), nm.get_length(), di_file, line, subroutine_ty, (0 as i32), (1 as i32), line, (0 as i32), (0 as i32))
+        LLVMSetSubprogram(current_function, sp)
+        set current_di_scope: sp
+        let loc LLVMDIBuilderCreateDebugLocation(context, line, (1 as i32), sp, LLVMMetadataRef(null))
+        LLVMSetCurrentDebugLocation2(builder, loc)
+    }
+
+    ; Clear the builder's current debug location and the active scope.
+    ; Called at function-body exit so later stub/forwarder emission (which
+    ; has no DISubprogram) does not inherit a stale scope.
+    procedure clear_debug_location(this)
+    {
+        set current_di_scope: LLVMMetadataRef(null)
+        LLVMSetCurrentDebugLocation2(builder, LLVMMetadataRef(null))
+    }
+
+    ; Set the line location for a statement before emitting it. -g only.
+    procedure set_statement_debug_location(this, stmt: PlannedStatement)
+    {
+        choose stmt
+            when action: Action
+                set_debug_location(action.loc)
+            when binding: Binding
+                set_debug_location(binding.loc)
+            when ret: Return
+                set_debug_location(ret.loc)
+            when throw_stmt: Throw
+                set_debug_location(throw_stmt.loc)
+            when brk: Break
+                set_debug_location(brk.loc)
+            when cont: Continue
+                set_debug_location(cont.loc)
     }
 
     ; Initialize intrinsic type mappings
@@ -2477,6 +2657,14 @@ define Emitter
                 let entry_block LLVMAppendBasicBlockInContext(context, llvm_func, entry_name.c_data())
                 LLVMPositionBuilderAtEnd(builder, entry_block)
 
+                ; -g: start with a clean debug-location state, then (if
+                ; enabled) attach this function's DISubprogram + an initial
+                ; line location. Clearing first stops a stale scope from a
+                ; prior function bleeding into stubs/this prologue.
+                clear_debug_location()
+                guard config.emit_debug_info
+                    set_function_debug_scope(func)
+
                 ; s89: sret-using functions consume LLVM-arg index 0 for
                 ; the indirect-result-location pointer; page/user params
                 ; shift right by one. Same heuristic as emit_function_decl.
@@ -2999,6 +3187,12 @@ define Emitter
                     let entry_block LLVMAppendBasicBlockInContext(context, new_main, entry_name.c_data())
                     LLVMPositionBuilderAtEnd(builder, entry_block)
 
+                    ; -g: give the synthetic main its own DISubprogram so the
+                    ; top-level statements (the program body) are debuggable.
+                    clear_debug_location()
+                    guard config.emit_debug_info
+                        set_synthetic_debug_scope(main_name, 1)
+
                     ; Emit top-level statements
                     for stmt in plan.statements
                         emit_statement(stmt)
@@ -3010,6 +3204,9 @@ define Emitter
                         let zero LLVMConstInt(i32_type, 0, 0)
                         LLVMBuildRet(builder, zero)
                     }
+
+                    ; Clear before any later stub/forwarder emission.
+                    clear_debug_location()
                 }
             }
         }
@@ -3028,9 +3225,17 @@ define Emitter
         ; emitting empty bodies for any leftover declarations whose
         ; mangled name contains the literal-T marker `I1TE` makes
         ; the link succeed without affecting runtime correctness.
+        ; -g: drop any active debug location so the stub/forwarder bodies
+        ; below (which have no DISubprogram) don't inherit a stale scope.
+        clear_debug_location()
+
         emit_template_stubs()
 
         ensure_free_page_get()
+
+        ; -g: resolve all deferred debug-info references into the module.
+        guard config.emit_debug_info
+            LLVMDIBuilderFinalize(di_builder)
 
         true
     }
@@ -8396,6 +8601,9 @@ define Emitter
 
     function emit_statement_inner(this, stmt: PlannedStatement) returns bool
     {
+        ; -g: set the line location for this statement's instructions.
+        guard config.emit_debug_info
+            set_statement_debug_location(stmt)
         choose stmt
             when action: Action
             {
@@ -9132,6 +9340,35 @@ define Emitter
                     let alloca acquire_temp(store_ty, name.c_data())
                     copy_struct_value(alloca, store_val, store_ty)
                     define_variable(name, alloca)
+
+                    ; -g: declare this mutable local for the debugger so
+                    ; `frame variable` / the Variables pane shows it. Only
+                    ; scalar integers/bool get a DIType here (aggregates and
+                    ; pointers are skipped — no dbg.declare, so they simply
+                    ; don't appear rather than emitting an invalid type).
+                    ; Inlined (not a helper) to avoid passing the LLVMTypeRef
+                    ; alloca through a Scaly param (s34 single-ptr-struct ABI).
+                    guard config.emit_debug_info
+                        guard LLVMGetTypeKind(store_ty) = LLVMTypeKind.Integer()
+                        {
+                            let width LLVMGetIntTypeWidth(store_ty)
+                            var enc (5 as i32)            ; DW_ATE_signed
+                            var dbits (width as size_t)
+                            var tyname String$("int")
+                            guard width = 1
+                            {
+                                set enc: (2 as i32)       ; DW_ATE_boolean
+                                set dbits: (8 as size_t)
+                                set tyname: String$("bool")
+                            }
+                            let dty LLVMDIBuilderCreateBasicType(di_builder, tyname.c_data(), tyname.get_length(), dbits, enc, (0 as i32))
+                            let dpos compute_debug_pos(binding.loc.start)
+                            let dvar LLVMDIBuilderCreateAutoVariable(di_builder, current_di_scope, name.c_data(), name.get_length(), di_file, dpos.line, dty, (0 as i32), (0 as i32), (0 as i32))
+                            let dexpr LLVMDIBuilderCreateExpression(di_builder, null as pointer[size_t], (0 as size_t))
+                            let dloc LLVMDIBuilderCreateDebugLocation(context, dpos.line, dpos.col, current_di_scope, LLVMMetadataRef(null))
+                            let dblk LLVMGetInsertBlock(builder)
+                            let ddecl LLVMDIBuilderInsertDeclareAtEnd(di_builder, alloca, dvar, dexpr, dloc, dblk)
+                        }
                 }
                 else
                 {

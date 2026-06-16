@@ -60,6 +60,139 @@ sudo apt install llvm-18 clang-18</programlisting>
     </section>
   </section>
 
+  <section xml:id="tut-vscode">
+    <title>Using Scaly with VS Code</title>
+    <para>You can drive the whole edit-compile-run-debug loop from
+      <application>Visual Studio Code</application>: a build task to compile the
+      file you are editing, a run task to execute it, and a launch
+      configuration that stops at breakpoints and lets you step through your
+      Scaly source. Debugging uses the DWARF information the compiler emits with
+      the <option>-g</option> flag, so breakpoints land on real source lines and
+      scalar local variables show their values.</para>
+    <para>Open the Scaly repository as your workspace folder and install the
+      <emphasis>CodeLLDB</emphasis> extension (extension id
+      <code>vadimcn.vscode-lldb</code>), which provides the
+      <code>lldb</code> debugger type used below.</para>
+    <note>
+      <para>Run the compiler with the repository root as the working directory.
+        The prelude (which defines <code>print</code> and friends) is resolved
+        relative to the current directory, so building from elsewhere fails with
+        <computeroutput>function not found: print</computeroutput>. The tasks
+        below set <code>cwd</code> to <code>${workspaceFolder}</code> for exactly
+        this reason.</para>
+    </note>
+
+    <section xml:id="tut-vscode-tasks">
+      <title>Build and Run Tasks</title>
+      <para>Create <filename>.vscode/tasks.json</filename> with a build task that
+        compiles the open file with debug info, and a run task that executes the
+        result:</para>
+      <programlisting>{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "scaly: build (debug)",
+            "type": "shell",
+            "command": "${workspaceFolder}/scalyc/build/scalyc",
+            "args": ["-g", "-o", "${fileBasenameNoExtension}", "${file}"],
+            "options": { "cwd": "${workspaceFolder}" },
+            "group": { "kind": "build", "isDefault": true },
+            "problemMatcher": {
+                "owner": "scaly",
+                "fileLocation": ["autoDetect", "${workspaceFolder}"],
+                "pattern": {
+                    "regexp": "^(.*):(\\d+):(\\d+):\\s+(error|warning):\\s+(.*)$",
+                    "file": 1, "line": 2, "column": 3,
+                    "severity": 4, "message": 5
+                }
+            }
+        },
+        {
+            "label": "scaly: run",
+            "type": "shell",
+            "command": "${workspaceFolder}/${fileBasenameNoExtension}",
+            "options": { "cwd": "${workspaceFolder}" },
+            "dependsOn": "scaly: build (debug)"
+        }
+    ]
+}</programlisting>
+      <para>Press <keycap>Cmd</keycap>+<keycap>Shift</keycap>+<keycap>B</keycap>
+        (or <keycap>Ctrl</keycap>+<keycap>Shift</keycap>+<keycap>B</keycap>) to
+        build the file in the active editor. The
+        <code>problemMatcher</code> turns any compiler diagnostic into a
+        clickable entry in the Problems panel. Use <guimenu>Terminal &gt; Run
+        Task</guimenu> and pick <guimenuitem>scaly: run</guimenuitem> to build
+        and execute.</para>
+    </section>
+
+    <section xml:id="tut-vscode-launch">
+      <title>Launch Configuration</title>
+      <para>Create <filename>.vscode/launch.json</filename> so
+        <keycap>F5</keycap> builds the open file and starts it under the
+        debugger:</para>
+      <programlisting>{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug Scaly file",
+            "type": "lldb",
+            "request": "launch",
+            "preLaunchTask": "scaly: build (debug)",
+            "program": "${workspaceFolder}/${fileBasenameNoExtension}",
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        }
+    ]
+}</programlisting>
+    </section>
+
+    <section xml:id="tut-vscode-debug">
+      <title>Setting a Breakpoint and Stepping</title>
+      <para>Put this program in <filename>area.scaly</filename> at the repository
+        root. It computes a rectangle's area from two mutable bindings — small,
+        but enough to stop and inspect some values:</para>
+      <programlisting>var width 8
+var height 5
+var area width * height
+if area = 40
+    print("the area is 40")
+else
+    print("unexpected area")</programlisting>
+      <para>Click in the gutter to the left of the
+        <code>var area width * height</code> line to set a breakpoint (a red dot
+        appears), then press <keycap>F5</keycap>. The program builds and runs,
+        and execution stops at that line before it executes — at which point
+        <code>width</code> and <code>height</code> already have values but
+        <code>area</code> does not yet.</para>
+      <para>With execution paused you can:</para>
+      <itemizedlist>
+        <listitem>
+          <para>Read <code>width</code> and <code>height</code> in the
+            <guilabel>Variables</guilabel> pane, or hover them in the editor to
+            see their values.</para>
+        </listitem>
+        <listitem>
+          <para>Step one line at a time with <keycap>F10</keycap>
+            (<guimenuitem>Step Over</guimenuitem>) — after stepping past the
+            breakpoint line, <code>area</code> appears with the value
+            <computeroutput>40</computeroutput>. Step into a called function with
+            <keycap>F11</keycap>.</para>
+        </listitem>
+        <listitem>
+          <para>Press <keycap>F5</keycap> again to continue to the program's
+            end.</para>
+        </listitem>
+      </itemizedlist>
+      <para>Breakpoints, stepping, and variable inspection all rely on the
+        <option>-g</option> debug information; without it the program still runs,
+        but the debugger has no source lines to stop on. Breakpoints land on
+        top-level statements, bindings, and function bodies; the
+        <guilabel>Variables</guilabel> pane shows scalar locals such as integers
+        and booleans. Lines inside loop and conditional bodies, and aggregate
+        values, have coarser support for now.</para>
+    </section>
+  </section>
+
   <section xml:id="tut-tour">
     <title>A Tour of Scaly</title>
     <para>This section sweeps quickly across the language using small, complete
