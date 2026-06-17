@@ -93,12 +93,12 @@ HREF="tutorial.htm#AEN76"
 ></DT
 ><DT
 ><A
-HREF="tutorial.htm#AEN143"
+HREF="tutorial.htm#AEN199"
 >A Tour of Scaly</A
 ></DT
 ><DT
 ><A
-HREF="tutorial.htm#AEN213"
+HREF="tutorial.htm#AEN269"
 >Putting It Together</A
 ></DT
 ></DL
@@ -533,14 +533,221 @@ CLASS="keycap"
 CLASS="option"
 >-g</CODE
 > debug information; without it the program still runs,
-        but the debugger has no source lines to stop on. Breakpoints land on
-        top-level statements, bindings, and function bodies; the
+        but the debugger has no source lines to stop on.</P
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN142"
+>Stepping into Functions and the Call Stack</A
+></H2
+><P
+>Stepping becomes more interesting once a function is involved.
+        <B
+CLASS="keycap"
+>F10</B
+> (<SPAN
+CLASS="guimenuitem"
+>Step Over</SPAN
+>) runs a call as
+        a single step; <B
+CLASS="keycap"
+>F11</B
+> (<SPAN
+CLASS="guimenuitem"
+>Step Into</SPAN
+>)
+        descends into the called function so you can watch it run. Put this
+        program in <TT
+CLASS="filename"
+>rectangle.scaly</TT
+> at the repository
+        root — it factors the area calculation out into a function:</P
+><PRE
+CLASS="programlisting"
+>function area(w: int, h: int) returns int
+{
+    var result w * h
+    result
+}
+
+var width 8
+var height 5
+var a area(width, height)
+if a = 40
+    print("the area is 40")
+else
+    print("unexpected area")</PRE
+><P
+>Set a breakpoint on the <TT
+CLASS="code"
+>var a area(width, height)</TT
+> line
+        and press <B
+CLASS="keycap"
+>F5</B
+>. When execution stops there,
+        <TT
+CLASS="code"
+>width</TT
+> and <TT
+CLASS="code"
+>height</TT
+> show in the
         <SPAN
 CLASS="guilabel"
 >Variables</SPAN
-> pane shows scalar locals such as integers
-        and booleans. Lines inside loop and conditional bodies, and aggregate
-        values, have coarser support for now.</P
+> pane. Now press <B
+CLASS="keycap"
+>F11</B
+>
+        instead of <B
+CLASS="keycap"
+>F10</B
+>: the editor jumps into the body of
+        <TT
+CLASS="code"
+>area</TT
+> and stops on <TT
+CLASS="code"
+>var result w * h</TT
+>.</P
+><P
+>The <SPAN
+CLASS="guilabel"
+>Call Stack</SPAN
+> pane (bottom-left of the Run and
+        Debug view) now lists two frames — <TT
+CLASS="code"
+>area</TT
+> on top and
+        <TT
+CLASS="code"
+>main</TT
+> below it — showing exactly how you got here. Click a
+        frame to switch the <SPAN
+CLASS="guilabel"
+>Variables</SPAN
+> pane and the editor to
+        that frame's context: selecting <TT
+CLASS="code"
+>main</TT
+> shows
+        <TT
+CLASS="code"
+>width</TT
+> and <TT
+CLASS="code"
+>height</TT
+> again, while
+        <TT
+CLASS="code"
+>area</TT
+> shows its own local <TT
+CLASS="code"
+>result</TT
+> (still
+        unassigned at this point, just as <TT
+CLASS="code"
+>area</TT
+> was before its line
+        ran in the previous example).</P
+><P
+>From inside the function you can keep stepping, press
+        <B
+CLASS="keycap"
+>Shift</B
+>+<B
+CLASS="keycap"
+>F11</B
+>
+        (<SPAN
+CLASS="guimenuitem"
+>Step Out</SPAN
+>) to return to the caller, or
+        <B
+CLASS="keycap"
+>F5</B
+> to continue to the end. The function-and-procedure
+        model is covered in <A
+HREF="tutorial.htm#AEN233"
+>the Section called <I
+>Functions</I
+></A
+> and
+        <A
+HREF="tutorial.htm#AEN241"
+>the Section called <I
+>Procedures and Mutation</I
+></A
+>.</P
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN179"
+>What the Debugger Shows</A
+></H2
+><P
+>Debug support tracks the parts of the language that are most useful
+        to inspect today, and is being widened over time. At present:</P
+><P
+></P
+><UL
+><LI
+><P
+>Breakpoints land on top-level statements, bindings, and function
+            bodies.</P
+></LI
+><LI
+><P
+>The <SPAN
+CLASS="guilabel"
+>Variables</SPAN
+> pane shows scalar
+            <TT
+CLASS="code"
+>var</TT
+> locals — integers and booleans — for whichever
+            stack frame is selected.</P
+></LI
+><LI
+><P
+>Function parameters, <TT
+CLASS="code"
+>let</TT
+> (immutable) bindings, and
+            aggregate values such as structures and strings are not shown
+            yet.</P
+></LI
+><LI
+><P
+>Lines inside loop and conditional bodies currently share the
+            location of the enclosing statement, so breakpoints and stepping are
+            coarser there.</P
+></LI
+><LI
+><P
+>The <SPAN
+CLASS="guilabel"
+>Watch</SPAN
+> view and
+            <SPAN
+CLASS="guilabel"
+>Debug Console</SPAN
+> evaluate expressions as C/C++ and
+            do not understand Scaly names. To read a value, use the
+            <SPAN
+CLASS="guilabel"
+>Variables</SPAN
+> pane or hover over the name in the
+            editor.</P
+></LI
+></UL
 ></DIV
 ></DIV
 ><DIV
@@ -548,7 +755,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN143"
+NAME="AEN199"
 >A Tour of Scaly</A
 ></H1
 ><P
@@ -561,7 +768,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN146"
+NAME="AEN202"
 >Values and Bindings</A
 ></H2
 ><P
@@ -599,7 +806,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN156"
+NAME="AEN212"
 >Operators and Precedence</A
 ></H2
 ><P
@@ -633,7 +840,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN164"
+NAME="AEN220"
 >Control Flow</A
 ></H2
 ><P
@@ -691,7 +898,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN177"
+NAME="AEN233"
 >Functions</A
 ></H2
 ><P
@@ -728,7 +935,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN185"
+NAME="AEN241"
 >Procedures and Mutation</A
 ></H2
 ><P
@@ -739,7 +946,7 @@ CLASS="code"
         and perform side effects. The distinction is visible at every call site,
         so a reader always knows which calls can mutate state. See
         <A
-HREF="types.htm#AEN435"
+HREF="types.htm#AEN491"
 >the Section called <I
 >Mutation via Procedures</I
 > in Chapter 4</A
@@ -765,7 +972,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN191"
+NAME="AEN247"
 >Structures and Methods</A
 ></H2
 ><P
@@ -787,7 +994,7 @@ let p Point(3, 4)
 let d p.distance_squared()   ; d is 25</PRE
 ><P
 ><A
-HREF="types.htm#AEN441"
+HREF="types.htm#AEN497"
 >the Section called <I
 >Constructors</I
 > in Chapter 4</A
@@ -802,7 +1009,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN199"
+NAME="AEN255"
 >Unions, Options, and choose</A
 ></H2
 ><P
@@ -848,7 +1055,7 @@ let a or_zero(Option.Some(7))   ; a is 7
 let b or_zero(Option.None)      ; b is 0</PRE
 ><P
 >See <A
-HREF="types.htm#AEN576"
+HREF="types.htm#AEN632"
 >the Section called <I
 >Union Types</I
 > in Chapter 4</A
@@ -864,7 +1071,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN213"
+NAME="AEN269"
 >Putting It Together</A
 ></H1
 ><P

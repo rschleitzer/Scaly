@@ -185,11 +185,85 @@ else
       </itemizedlist>
       <para>Breakpoints, stepping, and variable inspection all rely on the
         <option>-g</option> debug information; without it the program still runs,
-        but the debugger has no source lines to stop on. Breakpoints land on
-        top-level statements, bindings, and function bodies; the
-        <guilabel>Variables</guilabel> pane shows scalar locals such as integers
-        and booleans. Lines inside loop and conditional bodies, and aggregate
-        values, have coarser support for now.</para>
+        but the debugger has no source lines to stop on.</para>
+    </section>
+
+    <section xml:id="tut-vscode-callstack">
+      <title>Stepping into Functions and the Call Stack</title>
+      <para>Stepping becomes more interesting once a function is involved.
+        <keycap>F10</keycap> (<guimenuitem>Step Over</guimenuitem>) runs a call as
+        a single step; <keycap>F11</keycap> (<guimenuitem>Step Into</guimenuitem>)
+        descends into the called function so you can watch it run. Put this
+        program in <filename>rectangle.scaly</filename> at the repository
+        root — it factors the area calculation out into a function:</para>
+      <programlisting>function area(w: int, h: int) returns int
+{
+    var result w * h
+    result
+}
+
+var width 8
+var height 5
+var a area(width, height)
+if a = 40
+    print("the area is 40")
+else
+    print("unexpected area")</programlisting>
+      <para>Set a breakpoint on the <code>var a area(width, height)</code> line
+        and press <keycap>F5</keycap>. When execution stops there,
+        <code>width</code> and <code>height</code> show in the
+        <guilabel>Variables</guilabel> pane. Now press <keycap>F11</keycap>
+        instead of <keycap>F10</keycap>: the editor jumps into the body of
+        <code>area</code> and stops on <code>var result w * h</code>.</para>
+      <para>The <guilabel>Call Stack</guilabel> pane (bottom-left of the Run and
+        Debug view) now lists two frames — <code>area</code> on top and
+        <code>main</code> below it — showing exactly how you got here. Click a
+        frame to switch the <guilabel>Variables</guilabel> pane and the editor to
+        that frame's context: selecting <code>main</code> shows
+        <code>width</code> and <code>height</code> again, while
+        <code>area</code> shows its own local <code>result</code> (still
+        unassigned at this point, just as <code>area</code> was before its line
+        ran in the previous example).</para>
+      <para>From inside the function you can keep stepping, press
+        <keycap>Shift</keycap>+<keycap>F11</keycap>
+        (<guimenuitem>Step Out</guimenuitem>) to return to the caller, or
+        <keycap>F5</keycap> to continue to the end. The function-and-procedure
+        model is covered in <xref linkend="tut-functions"/> and
+        <xref linkend="tut-procedures"/>.</para>
+    </section>
+
+    <section xml:id="tut-vscode-limits">
+      <title>What the Debugger Shows</title>
+      <para>Debug support tracks the parts of the language that are most useful
+        to inspect today, and is being widened over time. At present:</para>
+      <itemizedlist>
+        <listitem>
+          <para>Breakpoints land on top-level statements, bindings, and function
+            bodies.</para>
+        </listitem>
+        <listitem>
+          <para>The <guilabel>Variables</guilabel> pane shows scalar
+            <code>var</code> locals — integers and booleans — for whichever
+            stack frame is selected.</para>
+        </listitem>
+        <listitem>
+          <para>Function parameters, <code>let</code> (immutable) bindings, and
+            aggregate values such as structures and strings are not shown
+            yet.</para>
+        </listitem>
+        <listitem>
+          <para>Lines inside loop and conditional bodies currently share the
+            location of the enclosing statement, so breakpoints and stepping are
+            coarser there.</para>
+        </listitem>
+        <listitem>
+          <para>The <guilabel>Watch</guilabel> view and
+            <guilabel>Debug Console</guilabel> evaluate expressions as C/C++ and
+            do not understand Scaly names. To read a value, use the
+            <guilabel>Variables</guilabel> pane or hover over the name in the
+            editor.</para>
+        </listitem>
+      </itemizedlist>
     </section>
   </section>
 
