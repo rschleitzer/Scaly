@@ -93,12 +93,12 @@ HREF="tutorial.htm#AEN76"
 ></DT
 ><DT
 ><A
-HREF="tutorial.htm#AEN199"
+HREF="tutorial.htm#AEN203"
 >A Tour of Scaly</A
 ></DT
 ><DT
 ><A
-HREF="tutorial.htm#AEN269"
+HREF="tutorial.htm#AEN273"
 >Putting It Together</A
 ></DT
 ></DL
@@ -672,13 +672,13 @@ CLASS="keycap"
 >F5</B
 > to continue to the end. The function-and-procedure
         model is covered in <A
-HREF="tutorial.htm#AEN233"
+HREF="tutorial.htm#AEN237"
 >the Section called <I
 >Functions</I
 ></A
 > and
         <A
-HREF="tutorial.htm#AEN241"
+HREF="tutorial.htm#AEN245"
 >the Section called <I
 >Procedures and Mutation</I
 ></A
@@ -717,18 +717,32 @@ CLASS="code"
 ></LI
 ><LI
 ><P
+>Breakpoints and stepping work line-by-line inside loop and
+            conditional bodies, so you can stop on individual statements within
+            a <TT
+CLASS="code"
+>while</TT
+>, <TT
+CLASS="code"
+>for</TT
+>, <TT
+CLASS="code"
+>if</TT
+>, or
+            <TT
+CLASS="code"
+>choose</TT
+> body, not just on the enclosing
+            statement.</P
+></LI
+><LI
+><P
 >Function parameters, <TT
 CLASS="code"
 >let</TT
 > (immutable) bindings, and
             aggregate values such as structures and strings are not shown
             yet.</P
-></LI
-><LI
-><P
->Lines inside loop and conditional bodies currently share the
-            location of the enclosing statement, so breakpoints and stepping are
-            coarser there.</P
 ></LI
 ><LI
 ><P
@@ -755,7 +769,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN199"
+NAME="AEN203"
 >A Tour of Scaly</A
 ></H1
 ><P
@@ -768,7 +782,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN202"
+NAME="AEN206"
 >Values and Bindings</A
 ></H2
 ><P
@@ -806,7 +820,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN212"
+NAME="AEN216"
 >Operators and Precedence</A
 ></H2
 ><P
@@ -840,7 +854,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN220"
+NAME="AEN224"
 >Control Flow</A
 ></H2
 ><P
@@ -898,7 +912,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN233"
+NAME="AEN237"
 >Functions</A
 ></H2
 ><P
@@ -935,7 +949,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN241"
+NAME="AEN245"
 >Procedures and Mutation</A
 ></H2
 ><P
@@ -946,7 +960,7 @@ CLASS="code"
         and perform side effects. The distinction is visible at every call site,
         so a reader always knows which calls can mutate state. See
         <A
-HREF="types.htm#AEN491"
+HREF="types.htm#AEN495"
 >the Section called <I
 >Mutation via Procedures</I
 > in Chapter 4</A
@@ -972,7 +986,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN247"
+NAME="AEN251"
 >Structures and Methods</A
 ></H2
 ><P
@@ -994,7 +1008,7 @@ let p Point(3, 4)
 let d p.distance_squared()   ; d is 25</PRE
 ><P
 ><A
-HREF="types.htm#AEN497"
+HREF="types.htm#AEN501"
 >the Section called <I
 >Constructors</I
 > in Chapter 4</A
@@ -1009,7 +1023,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN255"
+NAME="AEN259"
 >Unions, Options, and choose</A
 ></H2
 ><P
@@ -1055,7 +1069,7 @@ let a or_zero(Option.Some(7))   ; a is 7
 let b or_zero(Option.None)      ; b is 0</PRE
 ><P
 >See <A
-HREF="types.htm#AEN632"
+HREF="types.htm#AEN636"
 >the Section called <I
 >Union Types</I
 > in Chapter 4</A
@@ -1071,7 +1085,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN269"
+NAME="AEN273"
 >Putting It Together</A
 ></H1
 ><P

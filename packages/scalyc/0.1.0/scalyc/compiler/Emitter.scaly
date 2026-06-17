@@ -8794,6 +8794,17 @@ define Emitter
     ; Emit an action (expression statement or assignment)
     function emit_action(this, action: PlannedAction) returns LLVMValueRef
     {
+        ; -g line info: every action carries its own source span (plan_action#
+        ; takes it from the first flat source operand). emit_block, emit_if's
+        ; Action branches, and the while/for/choose bodies call emit_action
+        ; DIRECTLY — bypassing emit_statement's set_statement_debug_location —
+        ; so without this, statements nested inside a loop or conditional body
+        ; inherit the enclosing statement's line. emit_action is the single
+        ; chokepoint they all share. set_debug_location self-guards on
+        ; emit_debug_info and returns before its O(n) offset scan when -g is
+        ; off, so default (no-g) emission stays byte-identical.
+        set_debug_location(action.loc)
+
         ; Emit source operands
         var value emit_operands(action.source)
         guard value.handle = null

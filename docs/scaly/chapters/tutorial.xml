@@ -247,14 +247,16 @@ else
             stack frame is selected.</para>
         </listitem>
         <listitem>
+          <para>Breakpoints and stepping work line-by-line inside loop and
+            conditional bodies, so you can stop on individual statements within
+            a <code>while</code>, <code>for</code>, <code>if</code>, or
+            <code>choose</code> body, not just on the enclosing
+            statement.</para>
+        </listitem>
+        <listitem>
           <para>Function parameters, <code>let</code> (immutable) bindings, and
             aggregate values such as structures and strings are not shown
             yet.</para>
-        </listitem>
-        <listitem>
-          <para>Lines inside loop and conditional bodies currently share the
-            location of the enclosing statement, so breakpoints and stepping are
-            coarser there.</para>
         </listitem>
         <listitem>
           <para>The <guilabel>Watch</guilabel> view and
