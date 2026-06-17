@@ -167,7 +167,38 @@ cmp r_scaly.ll scaly.ll && echo "fixed point OK"
 
 ---
 
-## 5. Release checklist
+## 5. Publish the scaly.io installer
+
+End users install with `curl -fsSL https://scaly.io/install.sh | sh`, which
+downloads a tarball from `scaly.io/downloads/`, builds `scalyc` from the seed,
+and installs it under `~/.scaly`. After refreshing `seed/`, republish so the
+public installer ships the new version:
+
+```sh
+tools/publish-install.sh <version>      # e.g. 0.1.0
+```
+
+This runs `tools/make-dist.sh` (bundles `seed/` + the `scaly` stdlib sources +
+`LICENSE` into `dist/scaly-<version>.tar.gz`) and `aws s3 cp`s both
+`docs/website/install.sh` and that tarball to `s3://scaly.io/`, then invalidates
+CloudFront. The tarball lives under the `/downloads/` prefix, which
+`docs/deploy.sh` **excludes** from its whole-bucket `--delete` sync, so a routine
+docs deploy never removes it.
+
+This is a *different* artifact from the GitHub-release `.ll` trio of section 3:
+the installer tarball also carries the **stdlib sources** (the front-end parses
+them to type-check user programs) and `LICENSE`. It contains no `scalyc`
+sources — only the seed (the compiler as IR). After publishing, confirm the
+endpoints serve `200`:
+
+```sh
+curl -fsSL -o /dev/null -w '%{http_code}\n' https://scaly.io/install.sh
+curl -fsSL -I https://scaly.io/downloads/scaly-<version>.tar.gz
+```
+
+---
+
+## 6. Release checklist
 
 - [ ] Tag the release (`git tag v<version>`), push the tag.
 - [ ] Refresh the single seed once (`tools/seed.sh && tools/install-seed.sh`) on
@@ -179,6 +210,9 @@ cmp r_scaly.ll scaly.ll && echo "fixed point OK"
       (~15 GB peak; once per release is enough since the IR is host-independent).
 - [ ] Package the one `.ll` trio + `SHA256SUMS` as `scaly-seed-<version>.tar.gz`
       (section 3) and attach it to the GitHub release.
+- [ ] Publish the scaly.io installer (`tools/publish-install.sh <version>`, section
+      5) so `curl … | sh` ships the new seed; confirm `https://scaly.io/install.sh`
+      and `/downloads/scaly-<version>.tar.gz` serve `200`.
 - [ ] In the release notes, state the pinned **LLVM version** and list the four
       triples with their verification confirmation.
 - [ ] (Independence) confirm the C++ stage-0 still builds on at least one
@@ -187,7 +221,7 @@ cmp r_scaly.ll scaly.ll && echo "fixed point OK"
 
 ---
 
-## 6. Notes
+## 7. Notes
 
 - The canonical seed is **committed** under `seed/` (one trio, ~10 MB, for all
   LP64-LE targets, LLVM-version-specific). `dist/` stays gitignored — it is the
@@ -199,4 +233,6 @@ cmp r_scaly.ll scaly.ll && echo "fixed point OK"
 - Tooling reference: `tools/seed.sh` (mint + verify), `tools/install-seed.sh`
   (promote a mint into `seed/`), `tools/build-from-seed.sh` (rebuild scalyc from
   `seed/`, no C++), `tools/bootstrap.sh` (stage-0 → stage1 → stage2),
-  `tools/llvm-env.sh` (LLVM-18 detection).
+  `tools/llvm-env.sh` (LLVM-18 detection), `tools/make-dist.sh` (bundle the
+  scaly.io installer tarball), `tools/publish-install.sh` (upload `install.sh` +
+  tarball to scaly.io).
