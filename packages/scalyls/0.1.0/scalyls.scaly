@@ -6,6 +6,9 @@
 
 package scaly 0.1.0
 
+; The diagnostics module drives the self-hosted compiler pipeline.
+package scalyc 0.1.0
+
 define scalyls
 {
     ; JSON value tree + parser + serializer (reusable; not LSP-specific).
@@ -13,4 +16,10 @@ define scalyls
 
     ; Content-Length framed JSON-RPC transport over stdin/stdout.
     module rpc
+
+    ; Diagnostics: text -> compiler pipeline -> publishDiagnostics.
+    module diagnostics
+
+    ; LSP JSON-RPC lifecycle + dispatch loop.
+    module server
 }

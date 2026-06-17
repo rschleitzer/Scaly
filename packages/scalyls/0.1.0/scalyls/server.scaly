@@ -1,0 +1,219 @@
+; server.scaly - LSP JSON-RPC lifecycle + dispatch loop.
+;
+; Reads Content-Length framed messages from stdin (scalyls.rpc), parses
+; each body as JSON (scalyls.json), dispatches on `method`, and writes
+; framed JSON responses to stdout. Requests (with an `id`) get a Response;
+; notifications (no `id`) do not.
+;
+; Lifecycle handled here:
+;   initialize   -> capabilities + serverInfo
+;   initialized  -> notification, ignored
+;   shutdown     -> null result
+;   exit         -> terminate the process
+;
+; Diagnostics for textDocument/didOpen and textDocument/didChange live in
+; scalyls.diagnostics; the dispatch hooks call into it.
+;
+; STRING/JSON NOTE: outgoing JSON is assembled with a local StringBuilder,
+; appending to it directly (the in-place method-call form, which is the
+; only StringBuilder-mutation that propagates — an aggregate receiver is
+; copied across a plain call boundary). Helpers therefore RETURN String
+; pieces (the format_i64#/quote_string# pattern) rather than mutating a
+; passed-in builder. Double quotes are injected as 0x22 bytes (the lexer
+; does not decode `\"` reliably — same class as the CR/LF escape issue).
+;
+; CONTROL-FLOW NOTE: `guard COND STMT` runs STMT when COND is TRUE (no
+; else). One statement per line (`;` starts a comment, not a separator).
+
+use scaly.containers.String
+use scaly.containers.StringBuilder
+use scaly.memory.Page
+use scaly.memory.runtime
+use scalyls.rpc
+use scalyls.json
+use scalyls.json.JsonValue
+use scalyls.diagnostics
+
+define server
+{
+    ; Main loop: read a frame, dispatch, repeat. An empty body means EOF
+    ; on stdin -> shut the loop down.
+    function run()
+    {
+        while true
+        {
+            let body rpc.read_message#()
+            guard body.get_length() = (0 as size_t)
+                return
+
+            server.handle_message(body)
+        }
+    }
+
+    function handle_message(body: String)
+    {
+        let msg json.parse#(body)
+
+        let method_val json.get(msg, "method")
+        let method json.as_string#(method_val)
+
+        ; An `id` field marks a Request (needs a Response). Notifications
+        ; carry no id. A comparison result bound straight to a `let`
+        ; mis-plans under stage-0, so latch has_id via a guard instead.
+        let id_val json.get(msg, "id")
+        var has_id true
+        guard json.is_null(id_val)
+            set has_id: false
+        let id json.as_i64(id_val)
+
+        guard method.equals("initialize")
+        {
+            guard has_id
+                rpc.write_message(server.initialize_response#(id))
+            return
+        }
+
+        guard method.equals("shutdown")
+        {
+            guard has_id
+                rpc.write_message(server.null_result_response#(id))
+            return
+        }
+
+        guard method.equals("exit")
+        {
+            exit(0)
+            return
+        }
+
+        guard method.equals("textDocument/didOpen")
+        {
+            server.handle_did_open(msg)
+            return
+        }
+
+        guard method.equals("textDocument/didChange")
+        {
+            server.handle_did_change(msg)
+            return
+        }
+
+        ; initialized + any other notification: ignore. Unknown requests
+        ; are left unanswered for now (the client tolerates this for the
+        ; methods we do not advertise).
+    }
+
+    ; ====================================================================
+    ; Document sync -> diagnostics
+    ; ====================================================================
+
+    function handle_did_open(msg: JsonValue)
+    {
+        let params json.get(msg, "params")
+        let doc json.get(params, "textDocument")
+        let uri json.as_string#(json.get(doc, "uri"))
+        let text json.as_string#(json.get(doc, "text"))
+        server.publish_for(uri, text)
+    }
+
+    function handle_did_change(msg: JsonValue)
+    {
+        let params json.get(msg, "params")
+        let doc json.get(params, "textDocument")
+        let uri json.as_string#(json.get(doc, "uri"))
+
+        ; textDocumentSync = full: the last contentChange carries the whole
+        ; document text.
+        let changes json.get(params, "contentChanges")
+        let n json.array_length(changes)
+        guard n = (0 as size_t)
+            return
+
+        let last json.array_get(changes, n - (1 as size_t))
+        let text json.as_string#(json.get(last, "text"))
+        server.publish_for(uri, text)
+    }
+
+    function publish_for(uri: String, text: String)
+    {
+        let payload diagnostics.publish_diagnostics#(uri, text)
+        rpc.write_message(payload)
+    }
+
+    ; ====================================================================
+    ; Response builders (local StringBuilder; quotes as 0x22 bytes; nested
+    ; pieces via String-returning helpers)
+    ; ====================================================================
+
+    ; {"jsonrpc":"2.0","id":<id>,"result":{"capabilities":
+    ;   {"textDocumentSync":1},"serverInfo":{"name":"scalyls",
+    ;   "version":"0.1.0"}}}
+    function initialize_response#(rp, id: i64) returns String
+    {
+        var sb StringBuilder#()
+        sb.append(0x7B as char)                    ; {
+        sb.append(server.key#("jsonrpc"))
+        sb.append(server.quoted#("2.0"))
+        sb.append(0x2C as char)                    ; ,
+        sb.append(server.key#("id"))
+        sb.append(json.format_i64#(id))
+        sb.append(0x2C as char)
+        sb.append(server.key#("result"))
+        sb.append(0x7B as char)                    ; result {
+        sb.append(server.key#("capabilities"))
+        sb.append(0x7B as char)                    ; capabilities {
+        sb.append(server.key#("textDocumentSync"))
+        sb.append(0x31 as char)                    ; 1
+        sb.append(0x7D as char)                    ; } capabilities
+        sb.append(0x2C as char)
+        sb.append(server.key#("serverInfo"))
+        sb.append(0x7B as char)                    ; serverInfo {
+        sb.append(server.key#("name"))
+        sb.append(server.quoted#("scalyls"))
+        sb.append(0x2C as char)
+        sb.append(server.key#("version"))
+        sb.append(server.quoted#("0.1.0"))
+        sb.append(0x7D as char)                    ; } serverInfo
+        sb.append(0x7D as char)                    ; } result
+        sb.append(0x7D as char)                    ; } root
+        sb.to_string#()
+    }
+
+    ; {"jsonrpc":"2.0","id":<id>,"result":null}
+    function null_result_response#(rp, id: i64) returns String
+    {
+        var sb StringBuilder#()
+        sb.append(0x7B as char)
+        sb.append(server.key#("jsonrpc"))
+        sb.append(server.quoted#("2.0"))
+        sb.append(0x2C as char)
+        sb.append(server.key#("id"))
+        sb.append(json.format_i64#(id))
+        sb.append(0x2C as char)
+        sb.append(server.key#("result"))
+        sb.append("null")
+        sb.append(0x7D as char)
+        sb.to_string#()
+    }
+
+    ; `"key":`  (quoted key followed by a colon)
+    function key#(rp, k: pointer[const_char]) returns String
+    {
+        var sb StringBuilder#()
+        sb.append(0x22 as char)
+        sb.append(k)
+        sb.append(0x22 as char)
+        sb.append(0x3A as char)                    ; :
+        sb.to_string#()
+    }
+
+    ; `"s"`  (quoted string literal; no escaping — fixed ASCII only)
+    function quoted#(rp, s: pointer[const_char]) returns String
+    {
+        var sb StringBuilder#()
+        sb.append(0x22 as char)
+        sb.append(s)
+        sb.append(0x22 as char)
+        sb.to_string#()
+    }
+}

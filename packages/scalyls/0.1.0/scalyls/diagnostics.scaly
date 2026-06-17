@@ -1,0 +1,225 @@
+; diagnostics.scaly - Run a document's text through the Scaly compiler
+; pipeline (parse -> model -> plan; no emitter) and turn the collected
+; errors into an LSP textDocument/publishDiagnostics notification.
+;
+; Sources of diagnostics (mirrors cli.run#'s --plan path):
+;   * parser ParserError.Invalid  -> one diagnostic at its byte offset
+;   * planner.diagnostics         -> the hard, would-be-dropped resolutions
+; The advisory planner.errors array is intentionally ignored (it fires
+; thousands of times benignly during a normal compile).
+;
+; Envelope:
+;   {"jsonrpc":"2.0","method":"textDocument/publishDiagnostics",
+;    "params":{"uri":<uri>,"diagnostics":[ <diag>... ]}}
+; Each <diag>:
+;   {"range":{"start":{"line":L,"character":C},
+;             "end":{"line":L,"character":C}},
+;    "severity":1,"message":<msg>}
+; LSP line/character are 0-based (one less than cli's 1-based report).
+;
+; STRING/JSON NOTE: outgoing JSON uses a local StringBuilder appended in
+; place; nested pieces come from String-returning helpers (a StringBuilder
+; passed to a callee to mutate does not propagate). Quotes are 0x22 bytes.
+;
+; CONTROL-FLOW NOTE: `guard COND STMT` runs STMT when COND is TRUE (no
+; else). One statement per line. `choose *ptr` does not parse — bind the
+; deref to a local first.
+
+use scaly.containers.String
+use scaly.containers.StringBuilder
+use scaly.containers.Vector
+use scaly.memory.Page
+use scaly.memory.runtime
+use scalyls.json
+
+; Compiler pipeline (scalyc package).
+use scalyc.compiler.parser
+use scalyc.compiler.Modeler
+use scalyc.compiler.Model.Program
+use scalyc.compiler.Planner
+
+define diagnostics
+{
+    ; Build a publishDiagnostics notification for `uri` from `text`.
+    function publish_diagnostics#(rp, uri: String, text: String) returns String
+    {
+        var sb StringBuilder#()
+        sb.append(0x7B as char)                    ; {
+        sb.append(diagnostics.key#("jsonrpc"))
+        sb.append(diagnostics.quoted#("2.0"))
+        sb.append(0x2C as char)
+        sb.append(diagnostics.key#("method"))
+        sb.append(diagnostics.quoted#("textDocument/publishDiagnostics"))
+        sb.append(0x2C as char)
+        sb.append(diagnostics.key#("params"))
+        sb.append(0x7B as char)                    ; params {
+        sb.append(diagnostics.key#("uri"))
+        sb.append(json.quote_string#(uri))
+        sb.append(0x2C as char)
+        sb.append(diagnostics.key#("diagnostics"))
+        sb.append(0x5B as char)                    ; [
+
+        ; `first` gates the comma separator between diagnostic objects.
+        var first true
+        let path diagnostics.strip_uri#(uri)
+
+        var p parser.Parser$(text)
+        choose p.parse_program#()
+            when err: Error
+            {
+                ; Surface the parse error and stop (no model/plan on a
+                ; document that does not parse).
+                choose err
+                    when i: Invalid
+                    {
+                        sb.append(diagnostics.diag_object#(text, i.start, i.message))
+                        set first: false
+                    }
+                    when d: Different
+                    {
+                        sb.append(diagnostics.diag_object#(text, 0 as size_t, String#("unexpected top-level construct")))
+                        set first: false
+                    }
+            }
+            when program: Success
+            {
+                let prog_name String#("document")
+                let model Modeler.build_program#(path, prog_name, program, true)
+
+                var planner Planner.Planner$(path)
+                diagnostics.register_packages(&planner, &model)
+                let plan planner.plan_program(model)
+
+                var di: size_t 0
+                while di < planner.diagnostics.length
+                {
+                    let dp planner.diagnostics.get(di)
+                    guard dp <> null
+                    {
+                        guard first = false
+                            sb.append(0x2C as char)
+
+                        sb.append(diagnostics.diag_object#(text, dp.start, dp.message))
+                        set first: false
+                    }
+                    set di: di + 1
+                }
+            }
+
+        sb.append(0x5D as char)                    ; ]
+        sb.append(0x7D as char)                    ; } params
+        sb.append(0x7D as char)                    ; } root
+        sb.to_string#()
+    }
+
+    ; Register every loaded package's concepts with the planner
+    ; (inlined mirror of cli.register_packages).
+    procedure register_packages(planner: pointer[Planner.Planner], model: pointer[Program])
+    {
+        var i: size_t 0
+        while i < model.packages.length
+        {
+            let pkg_ptr model.packages.get(i)
+            guard pkg_ptr <> null
+            {
+                planner.register_loaded_package(pkg_ptr.name, *pkg_ptr)
+                planner.register_module_concepts(*pkg_ptr)
+            }
+            set i: i + 1
+        }
+    }
+
+    ; One LSP diagnostic object at the given byte offset.
+    function diag_object#(rp, source: String, offset: size_t, message: String) returns String
+    {
+        ; Byte offset -> 0-based line / character (ASCII; UTF-16 units ==
+        ; bytes for ASCII, good enough for now). Numeric LF compare (10),
+        ; never "\n" (the lexer mis-handles the escape).
+        var line: size_t 0
+        var col: size_t 0
+        let src_len source.get_length()
+        var target offset
+        guard target > src_len
+            set target: src_len
+        var off: size_t 0
+        while off < target
+        {
+            let c source.get(off)
+            if c = (10 as char)
+            {
+                set line: line + 1
+                set col: 0 as size_t
+            }
+            else
+                set col: col + 1
+            set off: off + 1
+        }
+
+        var sb StringBuilder#()
+        sb.append(0x7B as char)                    ; {
+        sb.append(diagnostics.key#("range"))
+        sb.append(0x7B as char)                    ; range {
+        sb.append(diagnostics.key#("start"))
+        sb.append(diagnostics.pos#(line, col))
+        sb.append(0x2C as char)
+        sb.append(diagnostics.key#("end"))
+        sb.append(diagnostics.pos#(line, col + (1 as size_t)))
+        sb.append(0x7D as char)                    ; } range
+        sb.append(0x2C as char)
+        sb.append(diagnostics.key#("severity"))
+        sb.append(0x31 as char)                    ; 1 = Error
+        sb.append(0x2C as char)
+        sb.append(diagnostics.key#("message"))
+        sb.append(json.quote_string#(message))
+        sb.append(0x7D as char)                    ; }
+        sb.to_string#()
+    }
+
+    ; {"line":L,"character":C}
+    function pos#(rp, line: size_t, character: size_t) returns String
+    {
+        var sb StringBuilder#()
+        sb.append(0x7B as char)
+        sb.append(diagnostics.key#("line"))
+        sb.append(json.format_i64#(line as i64))
+        sb.append(0x2C as char)
+        sb.append(diagnostics.key#("character"))
+        sb.append(json.format_i64#(character as i64))
+        sb.append(0x7D as char)
+        sb.to_string#()
+    }
+
+    ; Strip a `file://` scheme prefix from a document URI, leaving a
+    ; filesystem path the modeler can resolve sibling modules against.
+    ; Non-file URIs are returned unchanged.
+    function strip_uri#(rp, uri: String) returns String
+    {
+        guard uri.starts_with("file://")
+            return uri
+
+        ; 7 == length of "file://"
+        let len uri.get_length()
+        uri.substring(rp, 7 as size_t, len - (7 as size_t))
+    }
+
+    ; `"key":`
+    function key#(rp, k: pointer[const_char]) returns String
+    {
+        var sb StringBuilder#()
+        sb.append(0x22 as char)
+        sb.append(k)
+        sb.append(0x22 as char)
+        sb.append(0x3A as char)
+        sb.to_string#()
+    }
+
+    ; `"s"`
+    function quoted#(rp, s: pointer[const_char]) returns String
+    {
+        var sb StringBuilder#()
+        sb.append(0x22 as char)
+        sb.append(s)
+        sb.append(0x22 as char)
+        sb.to_string#()
+    }
+}
