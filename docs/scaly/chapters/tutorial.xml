@@ -9,51 +9,67 @@
   <section xml:id="tut-getting-started">
     <title>Getting Started</title>
 
-    <section xml:id="tut-build">
-      <title>Building the Compiler from the Seed</title>
-      <para>Scaly is self-hosted: the compiler is written in Scaly and compiles
-        itself. It is distributed as a <emphasis>seed</emphasis> — the compiler
-        emitted as its own LLVM IR, the <filename>.ll</filename> files committed
-        under <filename>seed/</filename>. A single seed serves every 64-bit
-        little-endian target — the IR carries no target triple, so the compiler
-        you build from it targets whatever machine it runs on. Turning the seed
-        back into a working <command>scalyc</command> needs only LLVM 18 and a C
-        compiler for the final link; no C++ toolchain is involved.</para>
-      <para>Install the prerequisites, then run the build script from the
-        repository root:</para>
+    <section xml:id="tut-install">
+      <title>Installing Scaly</title>
+      <para>The quickest way to get the compiler is the installer hosted on
+        scaly.io. Scaly ships as its own LLVM IR (a <emphasis>seed</emphasis>)
+        and is turned into a native binary on your own machine, so first install
+        LLVM 18 and a C compiler:</para>
       <programlisting>; macOS
 brew install llvm@18
 
-; Ubuntu 24.04
+; Ubuntu / Debian
 sudo apt install llvm-18 clang-18</programlisting>
+      <para>Then run the installer. It downloads Scaly, builds it for your
+        machine, and puts <command>scalyc</command> on your <envar>PATH</envar>
+        under <filename>~/.scaly</filename> — no <command>sudo</command>
+        required:</para>
+      <programlisting>curl -fsSL https://scaly.io/install.sh | sh</programlisting>
+      <para>Open a new terminal afterwards so the updated <envar>PATH</envar>
+        takes effect; then <command>scalyc</command> works from any directory, as
+        the rest of this tutorial assumes. To uninstall, remove
+        <filename>~/.scaly</filename> and the <envar>PATH</envar> line the
+        installer added to your shell profile.</para>
+    </section>
+
+    <section xml:id="tut-build">
+      <title>Building from Source</title>
+      <para>If you have the source repository — for contributing to the compiler
+        itself — you can build <command>scalyc</command> directly instead of
+        using the installer. Scaly is self-hosted: the compiler is written in
+        Scaly and compiles itself, distributed as a <emphasis>seed</emphasis> —
+        the compiler emitted as its own LLVM IR, the <filename>.ll</filename>
+        files committed under <filename>seed/</filename>. A single seed serves
+        every 64-bit little-endian target — the IR carries no target triple, so
+        the compiler you build from it targets whatever machine it runs on.
+        Turning the seed back into a working <command>scalyc</command> needs only
+        LLVM 18 and a C compiler for the final link; no C++ toolchain is
+        involved.</para>
+      <para>With the prerequisites above installed, run the build script from the
+        repository root:</para>
       <programlisting>tools/build-from-seed.sh</programlisting>
       <para>This compiles the seed with <command>llc</command>, links it into
         <filename>scalyc/build/scalyc</filename>, and builds the small runtime
-        archive the compiler links your programs against.</para>
-      <para>To run <command>scalyc</command> from any directory, install it once:</para>
+        archive the compiler links your programs against. To put it on your
+        <envar>PATH</envar> from a repository checkout:</para>
       <programlisting>tools/install.sh</programlisting>
-      <para>This puts a small <command>scalyc</command> wrapper in
-        <filename>/usr/local/bin</filename> — which is on the default
-        <envar>PATH</envar> on both macOS and Linux, so there is nothing to add
-        to your shell profile. (Writing there may prompt for your password;
-        override the location with <envar>BINDIR</envar>, e.g.
-        <userinput>BINDIR="$HOME/.local/bin" tools/install.sh</userinput>.) The
-        wrapper points back at the compiler in this repository and sets
+      <para>This installs a small <command>scalyc</command> wrapper in
+        <filename>/usr/local/bin</filename> (override with <envar>BINDIR</envar>,
+        e.g. <userinput>BINDIR="$HOME/.local/bin" tools/install.sh</userinput>)
+        that points back at the compiler in this repository and sets
         <envar>SCALY_HOME</envar> so the prelude and standard library are found
         whatever your current directory is; rebuilding the compiler is picked up
-        automatically with no reinstall. The rest of this tutorial assumes
-        <command>scalyc</command> is installed this way. To remove it again, run
-        <filename>tools/uninstall.sh</filename> (same <envar>BINDIR</envar>
-        override).</para>
+        automatically with no reinstall. Remove it again with
+        <filename>tools/uninstall.sh</filename>.</para>
       <note>
-        <para>Installing with <filename>tools/install.sh</filename> (below)
-          builds the small runtime archive into a persistent location under the
-          repository, and the installed <command>scalyc</command> rebuilds it
-          automatically if it ever goes missing — so there is nothing to
-          maintain. If you instead run <filename>scalyc/build/scalyc</filename>
-          directly without installing, its archive lives at
-          <filename>/tmp/libscaly.a</filename>, which is cleared on reboot;
-          re-run <filename>tools/build-from-seed.sh</filename> to rebuild it.</para>
+        <para><filename>tools/install.sh</filename> builds the small runtime
+          archive into a persistent location under the repository, and the
+          installed <command>scalyc</command> rebuilds it automatically if it
+          ever goes missing. If you instead run
+          <filename>scalyc/build/scalyc</filename> directly without installing,
+          its archive lives at <filename>/tmp/libscaly.a</filename>, which is
+          cleared on reboot; re-run <filename>tools/build-from-seed.sh</filename>
+          to rebuild it.</para>
       </note>
       <para>The C++ bootstrap that originally produced the seed is described in
         <xref linkend="appendix-bootstrap"/>; you do not need it for everyday
@@ -91,7 +107,7 @@ sudo apt install llvm-18 clang-18</programlisting>
       <code>vadimcn.vscode-lldb</code>), which provides the
       <code>lldb</code> debugger type used below. The tasks call
       <command>scalyc</command> by name, so install it on your
-      <envar>PATH</envar> first (see <xref linkend="tut-build"/>).</para>
+      <envar>PATH</envar> first (see <xref linkend="tut-install"/>).</para>
     <note>
       <para>Because the installed <command>scalyc</command> wrapper sets
         <envar>SCALY_HOME</envar> for you, the compiler finds the prelude (which

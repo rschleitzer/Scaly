@@ -88,17 +88,17 @@ HREF="tutorial.htm#AEN41"
 ></DT
 ><DT
 ><A
-HREF="tutorial.htm#AEN90"
+HREF="tutorial.htm#AEN102"
 >Using Scaly with VS Code</A
 ></DT
 ><DT
 ><A
-HREF="tutorial.htm#AEN222"
+HREF="tutorial.htm#AEN234"
 >A Tour of Scaly</A
 ></DT
 ><DT
 ><A
-HREF="tutorial.htm#AEN292"
+HREF="tutorial.htm#AEN304"
 >Putting It Together</A
 ></DT
 ></DL
@@ -122,42 +122,106 @@ CLASS="section"
 CLASS="section"
 ><A
 NAME="AEN43"
->Building the Compiler from the Seed</A
+>Installing Scaly</A
 ></H2
 ><P
->Scaly is self-hosted: the compiler is written in Scaly and compiles
-        itself. It is distributed as a <SPAN
+>The quickest way to get the compiler is the installer hosted on
+        scaly.io. Scaly ships as its own LLVM IR (a <SPAN
 CLASS="emphasis"
 ><I
 CLASS="emphasis"
 >seed</I
 ></SPAN
-> — the compiler
-        emitted as its own LLVM IR, the <TT
-CLASS="filename"
->.ll</TT
-> files committed
-        under <TT
-CLASS="filename"
->seed/</TT
->. A single seed serves every 64-bit
-        little-endian target — the IR carries no target triple, so the compiler
-        you build from it targets whatever machine it runs on. Turning the seed
-        back into a working <B
-CLASS="command"
->scalyc</B
-> needs only LLVM 18 and a C
-        compiler for the final link; no C++ toolchain is involved.</P
-><P
->Install the prerequisites, then run the build script from the
-        repository root:</P
+>)
+        and is turned into a native binary on your own machine, so first install
+        LLVM 18 and a C compiler:</P
 ><PRE
 CLASS="programlisting"
 >; macOS
 brew install llvm@18
 
-; Ubuntu 24.04
+; Ubuntu / Debian
 sudo apt install llvm-18 clang-18</PRE
+><P
+>Then run the installer. It downloads Scaly, builds it for your
+        machine, and puts <B
+CLASS="command"
+>scalyc</B
+> on your <CODE
+CLASS="envar"
+>PATH</CODE
+>
+        under <TT
+CLASS="filename"
+>~/.scaly</TT
+> — no <B
+CLASS="command"
+>sudo</B
+>
+        required:</P
+><PRE
+CLASS="programlisting"
+>curl -fsSL https://scaly.io/install.sh | sh</PRE
+><P
+>Open a new terminal afterwards so the updated <CODE
+CLASS="envar"
+>PATH</CODE
+>
+        takes effect; then <B
+CLASS="command"
+>scalyc</B
+> works from any directory, as
+        the rest of this tutorial assumes. To uninstall, remove
+        <TT
+CLASS="filename"
+>~/.scaly</TT
+> and the <CODE
+CLASS="envar"
+>PATH</CODE
+> line the
+        installer added to your shell profile.</P
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN59"
+>Building from Source</A
+></H2
+><P
+>If you have the source repository — for contributing to the compiler
+        itself — you can build <B
+CLASS="command"
+>scalyc</B
+> directly instead of
+        using the installer. Scaly is self-hosted: the compiler is written in
+        Scaly and compiles itself, distributed as a <SPAN
+CLASS="emphasis"
+><I
+CLASS="emphasis"
+>seed</I
+></SPAN
+> —
+        the compiler emitted as its own LLVM IR, the <TT
+CLASS="filename"
+>.ll</TT
+>
+        files committed under <TT
+CLASS="filename"
+>seed/</TT
+>. A single seed serves
+        every 64-bit little-endian target — the IR carries no target triple, so
+        the compiler you build from it targets whatever machine it runs on.
+        Turning the seed back into a working <B
+CLASS="command"
+>scalyc</B
+> needs only
+        LLVM 18 and a C compiler for the final link; no C++ toolchain is
+        involved.</P
+><P
+>With the prerequisites above installed, run the build script from the
+        repository root:</P
 ><PRE
 CLASS="programlisting"
 >tools/build-from-seed.sh</PRE
@@ -170,56 +234,41 @@ CLASS="command"
 CLASS="filename"
 >scalyc/build/scalyc</TT
 >, and builds the small runtime
-        archive the compiler links your programs against.</P
-><P
->To run <B
-CLASS="command"
->scalyc</B
-> from any directory, install it once:</P
+        archive the compiler links your programs against. To put it on your
+        <CODE
+CLASS="envar"
+>PATH</CODE
+> from a repository checkout:</P
 ><PRE
 CLASS="programlisting"
 >tools/install.sh</PRE
 ><P
->This puts a small <B
+>This installs a small <B
 CLASS="command"
 >scalyc</B
 > wrapper in
         <TT
 CLASS="filename"
 >/usr/local/bin</TT
-> — which is on the default
-        <CODE
-CLASS="envar"
->PATH</CODE
-> on both macOS and Linux, so there is nothing to add
-        to your shell profile. (Writing there may prompt for your password;
-        override the location with <CODE
+> (override with <CODE
 CLASS="envar"
 >BINDIR</CODE
->, e.g.
-        <KBD
+>,
+        e.g. <KBD
 CLASS="userinput"
 >BINDIR="$HOME/.local/bin" tools/install.sh</KBD
->.) The
-        wrapper points back at the compiler in this repository and sets
+>)
+        that points back at the compiler in this repository and sets
         <CODE
 CLASS="envar"
 >SCALY_HOME</CODE
 > so the prelude and standard library are found
         whatever your current directory is; rebuilding the compiler is picked up
-        automatically with no reinstall. The rest of this tutorial assumes
-        <B
-CLASS="command"
->scalyc</B
-> is installed this way. To remove it again, run
+        automatically with no reinstall. Remove it again with
         <TT
 CLASS="filename"
 >tools/uninstall.sh</TT
-> (same <CODE
-CLASS="envar"
->BINDIR</CODE
->
-        override).</P
+>.</P
 ><DIV
 CLASS="note"
 ><BLOCKQUOTE
@@ -227,29 +276,29 @@ CLASS="note"
 ><P
 ><B
 >Note: </B
->Installing with <TT
+><TT
 CLASS="filename"
 >tools/install.sh</TT
-> (below)
-          builds the small runtime archive into a persistent location under the
-          repository, and the installed <B
+> builds the small runtime
+          archive into a persistent location under the repository, and the
+          installed <B
 CLASS="command"
 >scalyc</B
-> rebuilds it
-          automatically if it ever goes missing — so there is nothing to
-          maintain. If you instead run <TT
-CLASS="filename"
->scalyc/build/scalyc</TT
->
-          directly without installing, its archive lives at
+> rebuilds it automatically if it
+          ever goes missing. If you instead run
           <TT
 CLASS="filename"
+>scalyc/build/scalyc</TT
+> directly without installing,
+          its archive lives at <TT
+CLASS="filename"
 >/tmp/libscaly.a</TT
->, which is cleared on reboot;
-          re-run <TT
+>, which is
+          cleared on reboot; re-run <TT
 CLASS="filename"
 >tools/build-from-seed.sh</TT
-> to rebuild it.</P
+>
+          to rebuild it.</P
 ></BLOCKQUOTE
 ></DIV
 ><P
@@ -265,7 +314,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN78"
+NAME="AEN90"
 >Hello, World!</A
 ></H2
 ><P
@@ -306,7 +355,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN90"
+NAME="AEN102"
 >Using Scaly with VS Code</A
 ></H1
 ><P
@@ -350,7 +399,7 @@ CLASS="envar"
 > first (see <A
 HREF="tutorial.htm#AEN43"
 >the Section called <I
->Building the Compiler from the Seed</I
+>Installing Scaly</I
 ></A
 >).</P
 ><DIV
@@ -392,7 +441,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN110"
+NAME="AEN122"
 >Build and Run Tasks</A
 ></H2
 ><P
@@ -474,7 +523,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN125"
+NAME="AEN137"
 >Launch Configuration</A
 ></H2
 ><P
@@ -509,7 +558,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN131"
+NAME="AEN143"
 >Setting a Breakpoint and Stepping</A
 ></H2
 ><P
@@ -615,7 +664,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN161"
+NAME="AEN173"
 >Stepping into Functions and the Call Stack</A
 ></H2
 ><P
@@ -747,13 +796,13 @@ CLASS="keycap"
 >F5</B
 > to continue to the end. The function-and-procedure
         model is covered in <A
-HREF="tutorial.htm#AEN256"
+HREF="tutorial.htm#AEN268"
 >the Section called <I
 >Functions</I
 ></A
 > and
         <A
-HREF="tutorial.htm#AEN264"
+HREF="tutorial.htm#AEN276"
 >the Section called <I
 >Procedures and Mutation</I
 ></A
@@ -764,7 +813,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN198"
+NAME="AEN210"
 >What the Debugger Shows</A
 ></H2
 ><P
@@ -844,7 +893,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN222"
+NAME="AEN234"
 >A Tour of Scaly</A
 ></H1
 ><P
@@ -857,7 +906,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN225"
+NAME="AEN237"
 >Values and Bindings</A
 ></H2
 ><P
@@ -895,7 +944,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN235"
+NAME="AEN247"
 >Operators and Precedence</A
 ></H2
 ><P
@@ -929,7 +978,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN243"
+NAME="AEN255"
 >Control Flow</A
 ></H2
 ><P
@@ -987,7 +1036,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN256"
+NAME="AEN268"
 >Functions</A
 ></H2
 ><P
@@ -1024,7 +1073,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN264"
+NAME="AEN276"
 >Procedures and Mutation</A
 ></H2
 ><P
@@ -1035,7 +1084,7 @@ CLASS="code"
         and perform side effects. The distinction is visible at every call site,
         so a reader always knows which calls can mutate state. See
         <A
-HREF="types.htm#AEN514"
+HREF="types.htm#AEN526"
 >the Section called <I
 >Mutation via Procedures</I
 > in Chapter 4</A
@@ -1061,7 +1110,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN270"
+NAME="AEN282"
 >Structures and Methods</A
 ></H2
 ><P
@@ -1083,7 +1132,7 @@ let p Point(3, 4)
 let d p.distance_squared()   ; d is 25</PRE
 ><P
 ><A
-HREF="types.htm#AEN520"
+HREF="types.htm#AEN532"
 >the Section called <I
 >Constructors</I
 > in Chapter 4</A
@@ -1098,7 +1147,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN278"
+NAME="AEN290"
 >Unions, Options, and choose</A
 ></H2
 ><P
@@ -1144,7 +1193,7 @@ let a or_zero(Option.Some(7))   ; a is 7
 let b or_zero(Option.None)      ; b is 0</PRE
 ><P
 >See <A
-HREF="types.htm#AEN655"
+HREF="types.htm#AEN667"
 >the Section called <I
 >Union Types</I
 > in Chapter 4</A
@@ -1160,7 +1209,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN292"
+NAME="AEN304"
 >Putting It Together</A
 ></H1
 ><P
