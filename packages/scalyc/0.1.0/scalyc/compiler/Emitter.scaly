@@ -2936,6 +2936,16 @@ define Emitter
                 let term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock(builder))
                 guard term.handle = null
                 {
+                    ; The appended terminating return inherits the body's last
+                    ; debug location. For an implicit-return function that is
+                    ; the return expression's line (correct). NOTE: do NOT
+                    ; redirect this to func.loc.end — that span points at the
+                    ; START OF THE NEXT DECLARATION, not the closing brace, so
+                    ; tagging the ret with it makes a step over a call hop to an
+                    ; unrelated line in the same file. (The synthetic main uses
+                    ; an EOF location instead; a function has no equivalent
+                    ; reliable closing-brace offset here.)
+
                     ; s196: release the function-local root page on the
                     ; implicit-return path (no-op when none was allocated).
                     emit_release_local_page()
@@ -3413,6 +3423,17 @@ define Emitter
                     let term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock(builder))
                     guard term.handle = null
                     {
+                        ; -g: point the synthetic return past the last source
+                        ; line (EOF) rather than letting it inherit the last
+                        ; statement's location. Without this the trailing `ret`
+                        ; carries whatever line was set last — for an if/loop as
+                        ; the final statement that is a branch/body line that may
+                        ; not have run, so stepping appears to hop backward into
+                        ; it. An EOF location steps forward off the end of the
+                        ; program (into the C runtime), like a function's closing
+                        ; brace. compute_debug_pos clamps to the source length.
+                        set_debug_location(Span(source_text.get_length(), source_text.get_length()))
+
                         ; s196: release main's local root page (no-op when
                         ; the program body allocated none on it).
                         emit_release_local_page()
