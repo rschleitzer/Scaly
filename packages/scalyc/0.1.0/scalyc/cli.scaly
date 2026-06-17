@@ -253,6 +253,24 @@ define cli
         sb.to_string^rp()
     }
 
+    ; Resolve the C compiler used to link the final executable. Honors
+    ; $SCALY_CC (the installed wrapper bakes in the compiler the installer
+    ; found, e.g. clang-18 on a box that has no plain `clang`), then $CC,
+    ; falling back to `clang`. Unset → `clang`, exactly as before, so CI /
+    ; bootstrap / AOT linking is byte-for-byte unchanged.
+    function link_compiler#(rp) returns String
+    {
+        var name getenv("SCALY_CC")
+        guard name = null
+            set name: getenv("CC")
+        guard name = null
+            return String^rp("clang")
+        var s String$(name)
+        guard s.get_length() = 0
+            return String^rp("clang")
+        String^rp(name)
+    }
+
     ; Run the compiler with parsed options
     ; Returns 0 on success, non-zero on error
     function run#(opts: Options) returns int
@@ -468,7 +486,8 @@ define cli
         }
 
         var cmd_builder StringBuilder#()
-        cmd_builder.append("clang ")
+        cmd_builder.append(link_compiler#())
+        cmd_builder.append(" ")
         cmd_builder.append(tmp_obj)
         ; Append the scaly stdlib static archive. Provides runtime
         ; functions (scaly_alloc_root_page etc.) that stage-1 emits

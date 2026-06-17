@@ -137,6 +137,9 @@ cat > "$PREFIX/bin/scalyc" <<EOF
 #!/bin/sh
 # Scaly compiler wrapper — installed by https://scaly.io/install.sh
 export SCALY_HOME="\${SCALY_HOME:-$PREFIX}"
+# Link user programs with the C compiler the installer found (e.g. clang-18 on
+# a box with no plain \`clang\`); the compiler defaults to \`clang\` otherwise.
+export SCALY_CC="\${SCALY_CC:-$CC}"
 if [ ! -f "\$SCALY_HOME/lib/libscaly.a" ]; then
     "\$SCALY_HOME/libexec/scalyc" -c --no-prelude --no-tests \\
         -o "\$SCALY_HOME/lib/libscaly.o" "\$SCALY_HOME/packages/scaly/0.1.0/scaly.scaly" >/dev/null 2>&1 \\
