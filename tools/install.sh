@@ -28,12 +28,22 @@ REPO=$(pwd)
 BINDIR=${BINDIR:-/usr/local/bin}
 BIN="$REPO/scalyc/build/scalyc"
 
-# Build the compiler from the committed seed if it isn't present yet. This also
-# produces /tmp/libscaly.a. Entirely C++-free (llc + a C compiler).
+# Build the compiler from the committed seed if it isn't present yet.
+# Entirely C++-free (llc + a C compiler).
 if [ ! -x "$BIN" ]; then
   echo "install: scalyc/build/scalyc not found — building from seed"
   tools/build-from-seed.sh "$BIN"
 fi
+
+# Build the runtime archive into a PERSISTENT location ($REPO/lib) so it
+# survives reboots. The compiler links $SCALY_HOME/lib/libscaly.a when
+# SCALY_HOME is set (the wrapper sets it), instead of the ephemeral
+# /tmp/libscaly.a. Rebuilt fresh here so it matches the just-built compiler.
+echo "install: building runtime archive lib/libscaly.a"
+mkdir -p "$REPO/lib"
+"$BIN" -c --no-prelude --no-tests -o "$REPO/lib/libscaly.o" \
+    "$REPO/packages/scaly/0.1.0/scaly.scaly"
+ar rcs "$REPO/lib/libscaly.a" "$REPO/lib/libscaly.o"
 
 WRAPPER="$BINDIR/scalyc"
 TMP=$(mktemp)
@@ -45,12 +55,13 @@ cat > "$TMP" <<EOF
 # Respects a pre-set SCALY_HOME (e.g. to point at a different checkout).
 export SCALY_HOME="\${SCALY_HOME:-$REPO}"
 
-# The runtime archive lives at a fixed path the compiler bakes in; /tmp is
-# cleared on reboot, so rebuild it from the seed-built compiler if it is gone.
-if [ ! -f /tmp/libscaly.a ]; then
+# The compiler links \$SCALY_HOME/lib/libscaly.a (a persistent path that
+# survives reboots). install.sh builds it; rebuild here as a safety net if it
+# is ever missing.
+if [ ! -f "\$SCALY_HOME/lib/libscaly.a" ]; then
     "\$SCALY_HOME/scalyc/build/scalyc" -c --no-prelude --no-tests \\
-        -o /tmp/libscaly.o "\$SCALY_HOME/packages/scaly/0.1.0/scaly.scaly" >/dev/null 2>&1 \\
-        && ar rcs /tmp/libscaly.a /tmp/libscaly.o
+        -o "\$SCALY_HOME/lib/libscaly.o" "\$SCALY_HOME/packages/scaly/0.1.0/scaly.scaly" >/dev/null 2>&1 \\
+        && ar rcs "\$SCALY_HOME/lib/libscaly.a" "\$SCALY_HOME/lib/libscaly.o"
 fi
 
 exec "\$SCALY_HOME/scalyc/build/scalyc" "\$@"

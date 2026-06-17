@@ -44,10 +44,14 @@ sudo apt install llvm-18 clang-18</programlisting>
         automatically with no reinstall. The rest of this tutorial assumes
         <command>scalyc</command> is installed this way.</para>
       <note>
-        <para>The runtime archive lives at <filename>/tmp/libscaly.a</filename>.
-          If it gets cleared — for example after a reboot — and the compiler
-          reports it missing, just re-run <filename>tools/build-from-seed.sh</filename>
-          to rebuild it.</para>
+        <para>Installing with <filename>tools/install.sh</filename> (below)
+          builds the small runtime archive into a persistent location under the
+          repository, and the installed <command>scalyc</command> rebuilds it
+          automatically if it ever goes missing — so there is nothing to
+          maintain. If you instead run <filename>scalyc/build/scalyc</filename>
+          directly without installing, its archive lives at
+          <filename>/tmp/libscaly.a</filename>, which is cleared on reboot;
+          re-run <filename>tools/build-from-seed.sh</filename> to rebuild it.</para>
       </note>
       <para>The C++ bootstrap that originally produced the seed is described in
         <xref linkend="appendix-bootstrap"/>; you do not need it for everyday

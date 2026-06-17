@@ -10,6 +10,7 @@ use scaly.io.File
 use scaly.io.Console
 use scaly.memory.runtime.system
 use scaly.memory.runtime.unlink
+use scaly.memory.root_pages.getenv
 
 ; s175: local extern declarations so stage-1 emits `declare` for these.
 ; The `use` lines above only resolve names; stage-1 doesn't walk the
@@ -230,6 +231,26 @@ define cli
         Console.println("  --plan         Run planner (type resolution)")
         Console.println("  --no-prelude   Skip auto-loading prelude module")
         Console.println("  --no-tests     Omit test/test_* functions (seed build)")
+    }
+
+    ; Resolve the runtime static archive the linker pulls in. When SCALY_HOME
+    ; is set (the installed `scalyc` wrapper sets it), the archive lives at a
+    ; PERSISTENT path under the install tree, $SCALY_HOME/lib/libscaly.a, so it
+    ; survives reboots — unlike /tmp, which is cleared on boot. With SCALY_HOME
+    ; unset (CI, bootstrap, AOT harness) it stays /tmp/libscaly.a exactly as
+    ; before, so those paths are byte-for-byte unchanged.
+    function runtime_archive_path#(rp) returns String
+    {
+        let home getenv("SCALY_HOME")
+        guard home = null
+            return String^rp("/tmp/libscaly.a")
+        var home_str String$(home)
+        guard home_str.get_length() = 0
+            return String^rp("/tmp/libscaly.a")
+        var sb StringBuilder$()
+        sb.append(home_str)
+        sb.append("/lib/libscaly.a")
+        sb.to_string^rp()
     }
 
     ; Run the compiler with parsed options
@@ -460,7 +481,8 @@ define cli
         ; user .o's also emit those — `ld` then fails with duplicate
         ; symbols on every AOT test that pulls libscaly.o in for
         ; the runtime (s111).
-        cmd_builder.append(" /tmp/libscaly.a")
+        cmd_builder.append(" ")
+        cmd_builder.append(runtime_archive_path#())
 
         ; Forward extra positional .a / .o inputs from the user
         ; (e.g. /tmp/libscalyc.a for stage-1 self-build). Required
