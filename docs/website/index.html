@@ -159,13 +159,21 @@
         }
 
         .install-cmd {
+            display: flex;
+            align-items: center;
+            gap: 8px;
             font-family: 'JetBrains Mono', monospace;
             font-size: 0.8125rem;
             background: #f5f5f4;
             border: 1px solid var(--border);
             border-radius: 6px;
-            padding: 10px 12px;
+            padding: 8px 8px 8px 12px;
             color: var(--text);
+        }
+
+        .install-text {
+            flex: 1;
+            min-width: 0;
             overflow-x: auto;
             white-space: nowrap;
         }
@@ -174,6 +182,37 @@
             color: var(--text-muted);
             user-select: none;
         }
+
+        .copy-btn {
+            flex-shrink: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            padding: 0;
+            background: transparent;
+            border: none;
+            border-radius: 6px;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: color 0.15s ease, background 0.15s ease;
+        }
+
+        .copy-btn:hover {
+            color: var(--accent);
+            background: var(--accent-soft);
+        }
+
+        .copy-btn svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        .copy-btn .icon-check { display: none; }
+        .copy-btn.copied { color: var(--accent); }
+        .copy-btn.copied .icon-clip { display: none; }
+        .copy-btn.copied .icon-check { display: inline; }
 
         /* Contact */
         .contact {
@@ -280,7 +319,27 @@
 
         <section class="projects">
             <span class="section-label">Projects</span>
-            
+
+            <div class="project-card">
+                <a href="lang/" style="text-decoration: none; color: inherit;">
+                    <div class="project-header">
+                        <span class="project-name">Scaly</span>
+                        <span class="project-arrow">→</span>
+                    </div>
+                    <p class="project-desc">A self-scaling programming language with postfix operators, no precedence rules, clean syntax without semicolons, and region-based memory management.</p>
+                </a>
+                <span class="project-tag">Language Specification</span>
+                <a href="lang/scaly-spec.rtf" class="project-tag" style="text-decoration: none;">Download RTF</a>
+                <p class="install-label">Install (requires LLVM 18)</p>
+                <div class="install-cmd">
+                    <code class="install-text"><span class="prompt">$ </span>curl -fsSL https://scaly.io/install.sh | sh</code>
+                    <button class="copy-btn" type="button" aria-label="Copy install command" data-copy="curl -fsSL https://scaly.io/install.sh | sh" onclick="copyInstall(this)">
+                        <svg class="icon-clip" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                        <svg class="icon-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                    </button>
+                </div>
+            </div>
+
             <a href="https://github.com/rschleitzer/openjade-js" class="project-card">
                 <div class="project-header">
                     <span class="project-name">openjade-js</span>
@@ -307,31 +366,46 @@
                 <p class="project-desc">A C# port of the OpenJade DSSSL stylesheet processor. Bringing document transformation to the .NET ecosystem.</p>
                 <span class="project-tag">C#</span>
             </a>
-
-            <div class="project-card">
-                <a href="lang/" style="text-decoration: none; color: inherit;">
-                    <div class="project-header">
-                        <span class="project-name">Scaly</span>
-                        <span class="project-arrow">→</span>
-                    </div>
-                    <p class="project-desc">A programming language with postfix operators, no precedence rules, clean syntax without semicolons, and optional region-based memory management.</p>
-                </a>
-                <span class="project-tag">Language Specification</span>
-                <a href="lang/scaly-spec.rtf" class="project-tag" style="text-decoration: none;">Download RTF</a>
-                <p class="install-label">Install (requires LLVM 18)</p>
-                <div class="install-cmd"><span class="prompt">$ </span>curl -fsSL https://scaly.io/install.sh | sh</div>
-            </div>
-
-            <a href="repl/" class="project-card">
-                <div class="project-header">
-                    <span class="project-name">Scaly REPL</span>
-                    <span class="project-arrow">→</span>
-                </div>
-                <p class="project-desc">Try Scaly in your browser. An interactive playground for experimenting with the language.</p>
-                <span class="project-tag">Interactive</span>
-            </a>
         </section>
 
         <footer class="footer">
             <div class="footer-content">
+                <span>Made by Ralf Schleitzer</span>
+                <a href="https://github.com/rschleitzer">GitHub</a>
+            </div>
+        </footer>
+    </main>
+
+    <script>
+        function copyInstall(btn) {
+            var text = btn.getAttribute('data-copy');
+            var mark = function () {
+                btn.classList.add('copied');
+                btn.setAttribute('aria-label', 'Copied');
+                setTimeout(function () {
+                    btn.classList.remove('copied');
+                    btn.setAttribute('aria-label', 'Copy install command');
+                }, 1500);
+            };
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(mark, function () { fallbackCopy(text); mark(); });
+            } else {
+                fallbackCopy(text);
+                mark();
+            }
+        }
+        function fallbackCopy(text) {
+            var ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.position = 'fixed';
+            ta.style.opacity = '0';
+            document.body.appendChild(ta);
+            ta.focus();
+            ta.select();
+            try { document.execCommand('copy'); } catch (e) {}
+            document.body.removeChild(ta);
+        }
+    </script>
+</body>
+</html>
           
