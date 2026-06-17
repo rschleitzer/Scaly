@@ -42,7 +42,9 @@ sudo apt install llvm-18 clang-18</programlisting>
         <envar>SCALY_HOME</envar> so the prelude and standard library are found
         whatever your current directory is; rebuilding the compiler is picked up
         automatically with no reinstall. The rest of this tutorial assumes
-        <command>scalyc</command> is installed this way.</para>
+        <command>scalyc</command> is installed this way. To remove it again, run
+        <filename>tools/uninstall.sh</filename> (same <envar>BINDIR</envar>
+        override).</para>
       <note>
         <para>Installing with <filename>tools/install.sh</filename> (below)
           builds the small runtime archive into a persistent location under the
