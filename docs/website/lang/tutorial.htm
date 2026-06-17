@@ -88,17 +88,17 @@ HREF="tutorial.htm#AEN41"
 ></DT
 ><DT
 ><A
-HREF="tutorial.htm#AEN76"
+HREF="tutorial.htm#AEN85"
 >Using Scaly with VS Code</A
 ></DT
 ><DT
 ><A
-HREF="tutorial.htm#AEN203"
+HREF="tutorial.htm#AEN212"
 >A Tour of Scaly</A
 ></DT
 ><DT
 ><A
-HREF="tutorial.htm#AEN273"
+HREF="tutorial.htm#AEN282"
 >Putting It Together</A
 ></DT
 ></DL
@@ -170,14 +170,48 @@ CLASS="command"
 CLASS="filename"
 >scalyc/build/scalyc</TT
 >, and builds the small runtime
-        archive the compiler links your programs against. For brevity, the rest
-        of this tutorial assumes the compiler is on your <CODE
-CLASS="envar"
->PATH</CODE
->:</P
+        archive the compiler links your programs against.</P
+><P
+>To run <B
+CLASS="command"
+>scalyc</B
+> from any directory, install it once:</P
 ><PRE
 CLASS="programlisting"
->export PATH="$PWD/scalyc/build:$PATH"</PRE
+>tools/install.sh</PRE
+><P
+>This puts a small <B
+CLASS="command"
+>scalyc</B
+> wrapper in
+        <TT
+CLASS="filename"
+>/usr/local/bin</TT
+> — which is on the default
+        <CODE
+CLASS="envar"
+>PATH</CODE
+> on both macOS and Linux, so there is nothing to add
+        to your shell profile. (Writing there may prompt for your password;
+        override the location with <CODE
+CLASS="envar"
+>BINDIR</CODE
+>, e.g.
+        <KBD
+CLASS="userinput"
+>BINDIR="$HOME/.local/bin" tools/install.sh</KBD
+>.) The
+        wrapper points back at the compiler in this repository and sets
+        <CODE
+CLASS="envar"
+>SCALY_HOME</CODE
+> so the prelude and standard library are found
+        whatever your current directory is; rebuilding the compiler is picked up
+        automatically with no reinstall. The rest of this tutorial assumes
+        <B
+CLASS="command"
+>scalyc</B
+> is installed this way.</P
 ><DIV
 CLASS="note"
 ><BLOCKQUOTE
@@ -210,7 +244,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN64"
+NAME="AEN73"
 >Hello, World!</A
 ></H2
 ><P
@@ -251,7 +285,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN76"
+NAME="AEN85"
 >Using Scaly with VS Code</A
 ></H1
 ><P
@@ -317,7 +351,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN91"
+NAME="AEN100"
 >Build and Run Tasks</A
 ></H2
 ><P
@@ -399,7 +433,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN106"
+NAME="AEN115"
 >Launch Configuration</A
 ></H2
 ><P
@@ -434,7 +468,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN112"
+NAME="AEN121"
 >Setting a Breakpoint and Stepping</A
 ></H2
 ><P
@@ -540,7 +574,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN142"
+NAME="AEN151"
 >Stepping into Functions and the Call Stack</A
 ></H2
 ><P
@@ -672,13 +706,13 @@ CLASS="keycap"
 >F5</B
 > to continue to the end. The function-and-procedure
         model is covered in <A
-HREF="tutorial.htm#AEN237"
+HREF="tutorial.htm#AEN246"
 >the Section called <I
 >Functions</I
 ></A
 > and
         <A
-HREF="tutorial.htm#AEN245"
+HREF="tutorial.htm#AEN254"
 >the Section called <I
 >Procedures and Mutation</I
 ></A
@@ -689,7 +723,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN179"
+NAME="AEN188"
 >What the Debugger Shows</A
 ></H2
 ><P
@@ -769,7 +803,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN203"
+NAME="AEN212"
 >A Tour of Scaly</A
 ></H1
 ><P
@@ -782,7 +816,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN206"
+NAME="AEN215"
 >Values and Bindings</A
 ></H2
 ><P
@@ -820,7 +854,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN216"
+NAME="AEN225"
 >Operators and Precedence</A
 ></H2
 ><P
@@ -854,7 +888,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN224"
+NAME="AEN233"
 >Control Flow</A
 ></H2
 ><P
@@ -912,7 +946,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN237"
+NAME="AEN246"
 >Functions</A
 ></H2
 ><P
@@ -949,7 +983,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN245"
+NAME="AEN254"
 >Procedures and Mutation</A
 ></H2
 ><P
@@ -960,7 +994,7 @@ CLASS="code"
         and perform side effects. The distinction is visible at every call site,
         so a reader always knows which calls can mutate state. See
         <A
-HREF="types.htm#AEN495"
+HREF="types.htm#AEN504"
 >the Section called <I
 >Mutation via Procedures</I
 > in Chapter 4</A
@@ -986,7 +1020,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN251"
+NAME="AEN260"
 >Structures and Methods</A
 ></H2
 ><P
@@ -1008,7 +1042,7 @@ let p Point(3, 4)
 let d p.distance_squared()   ; d is 25</PRE
 ><P
 ><A
-HREF="types.htm#AEN501"
+HREF="types.htm#AEN510"
 >the Section called <I
 >Constructors</I
 > in Chapter 4</A
@@ -1023,7 +1057,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN259"
+NAME="AEN268"
 >Unions, Options, and choose</A
 ></H2
 ><P
@@ -1069,7 +1103,7 @@ let a or_zero(Option.Some(7))   ; a is 7
 let b or_zero(Option.None)      ; b is 0</PRE
 ><P
 >See <A
-HREF="types.htm#AEN636"
+HREF="types.htm#AEN645"
 >the Section called <I
 >Union Types</I
 > in Chapter 4</A
@@ -1085,7 +1119,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN273"
+NAME="AEN282"
 >Putting It Together</A
 ></H1
 ><P

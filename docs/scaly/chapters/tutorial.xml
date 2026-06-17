@@ -29,9 +29,20 @@ sudo apt install llvm-18 clang-18</programlisting>
       <programlisting>tools/build-from-seed.sh</programlisting>
       <para>This compiles the seed with <command>llc</command>, links it into
         <filename>scalyc/build/scalyc</filename>, and builds the small runtime
-        archive the compiler links your programs against. For brevity, the rest
-        of this tutorial assumes the compiler is on your <envar>PATH</envar>:</para>
-      <programlisting>export PATH="$PWD/scalyc/build:$PATH"</programlisting>
+        archive the compiler links your programs against.</para>
+      <para>To run <command>scalyc</command> from any directory, install it once:</para>
+      <programlisting>tools/install.sh</programlisting>
+      <para>This puts a small <command>scalyc</command> wrapper in
+        <filename>/usr/local/bin</filename> — which is on the default
+        <envar>PATH</envar> on both macOS and Linux, so there is nothing to add
+        to your shell profile. (Writing there may prompt for your password;
+        override the location with <envar>BINDIR</envar>, e.g.
+        <userinput>BINDIR="$HOME/.local/bin" tools/install.sh</userinput>.) The
+        wrapper points back at the compiler in this repository and sets
+        <envar>SCALY_HOME</envar> so the prelude and standard library are found
+        whatever your current directory is; rebuilding the compiler is picked up
+        automatically with no reinstall. The rest of this tutorial assumes
+        <command>scalyc</command> is installed this way.</para>
       <note>
         <para>The runtime archive lives at <filename>/tmp/libscaly.a</filename>.
           If it gets cleared — for example after a reboot — and the compiler
