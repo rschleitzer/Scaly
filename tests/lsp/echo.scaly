@@ -1,0 +1,24 @@
+; AOT smoke test for the scalyls.rpc transport.
+; Reads Content-Length framed messages from stdin and writes each body
+; back out as a frame, until EOF. Drives the framing end-to-end:
+;   printf 'Content-Length: 5\r\n\r\nhello' | echo  ->  same frame back
+
+package scaly 0.1.0
+package scalyls 0.1.0
+
+use scaly.containers.String
+use scalyls.rpc
+
+function run()
+{
+    while true
+    {
+        let body rpc.read_message#()
+        guard body.get_length() = (0 as size_t)
+            return
+
+        rpc.write_message(body)
+    }
+}
+
+run()

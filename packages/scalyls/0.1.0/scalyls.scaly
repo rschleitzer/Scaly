@@ -1,0 +1,16 @@
+; scalyls - Scaly Language Server
+;
+; Package root. Depends on the scaly stdlib. The compiler pipeline
+; (scalyc package) is pulled in later, once the server moves past the
+; transport/JSON foundation built here in Step 1+2.
+
+package scaly 0.1.0
+
+define scalyls
+{
+    ; JSON value tree + parser + serializer (reusable; not LSP-specific).
+    module json
+
+    ; Content-Length framed JSON-RPC transport over stdin/stdout.
+    module rpc
+}

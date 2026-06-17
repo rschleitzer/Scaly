@@ -1,0 +1,652 @@
+; json.scaly - A minimal JSON value tree, parser and serializer.
+;
+; Scope: enough JSON for LSP / JSON-RPC traffic. Numbers are stored as
+; i64 (LSP positions and ids are integers); a fractional/exponent part is
+; parsed and discarded (the integer part is kept). String escapes are
+; handled on read AND write: " \ / and the control escapes b f n r t,
+; plus \uXXXX decoded to a single byte when it lands in 0..0x7F.
+;
+; LAYOUT NOTE: the array/object children are held in non-generic structs
+; (JsonArray / JsonObject = count + raw pointer) rather than
+; Vector[JsonValue]. A recursive union whose layout pulls in a generic
+; instantiation (Vector[JsonValue]) crashes the stage-0 planner when the
+; union is used from ANOTHER package — the compiler's own recursive
+; unions are all intra-package, so that path is untested. Pointers break
+; the layout cycle with no generic instantiation, so the union lays out
+; the same way in every consuming package.
+;
+; PAYLOADLESS-VARIANT NOTE: every variant carries a payload (Null wraps an
+; empty JsonNull). A BARE payloadless variant value (`JsonValue.Null`)
+; emits fine intra-package but is read as a TYPE, not a value, when the
+; union comes from another package ("cannot be used as a value"). The
+; compiler's own unions follow the same rule — e.g. Lifetime.Unspecified
+; wraps an Unspecified() struct rather than being bare.
+;
+; CONTROL-FLOW NOTE: `guard COND STMT` runs STMT when COND is TRUE and has
+; no else (it desugars to an `if` with no alternative). Real branching
+; uses if/else. Every guard below is the true-runs-the-body form.
+
+use scaly.containers.String
+use scaly.containers.StringBuilder
+use scaly.containers.Array
+use scaly.containers.List
+use scaly.containers.ListIterator
+use scaly.memory.Page
+use scaly.memory.runtime
+
+; Empty payload for the Null variant (see PAYLOADLESS-VARIANT NOTE).
+define JsonNull ()
+
+; A contiguous, count-tagged run of JsonValues / JsonMembers. `items` /
+; `members` is null when count is 0.
+define JsonArray (count: size_t, items: pointer[JsonValue])
+define JsonMember (key: String, value: JsonValue)
+define JsonObject (count: size_t, members: pointer[JsonMember])
+
+define JsonValue union
+(
+    Null: JsonNull
+    Bool: bool
+    Number: i64
+    Str: String
+    Array: JsonArray
+    Object: JsonObject
+)
+
+; Cursor over the source text. `ok` latches false on the first parse
+; error; a malformed document still yields a well-formed (if truncated)
+; JsonValue rather than throwing.
+define JsonParser
+(
+    source: String
+    pos: size_t
+    ok: bool
+)
+
+define json
+{
+    ; ====================================================================
+    ; Construction helpers (value position)
+    ; ====================================================================
+
+    function null_value() returns JsonValue
+        JsonValue.Null(JsonNull())
+
+    function bool_value(b: bool) returns JsonValue
+        JsonValue.Bool(b)
+
+    function number_value(n: i64) returns JsonValue
+        JsonValue.Number(n)
+
+    function string_value(s: String) returns JsonValue
+        JsonValue.Str(s)
+
+    ; ====================================================================
+    ; Accessors
+    ; ====================================================================
+
+    function is_null(this: JsonValue) returns bool
+    {
+        choose this
+            when n: Null
+                true
+            else
+                false
+    }
+
+    function as_i64(this: JsonValue) returns i64
+    {
+        choose this
+            when n: Number
+                n
+            else
+                0
+    }
+
+    function as_bool(this: JsonValue) returns bool
+    {
+        choose this
+            when b: Bool
+                b
+            else
+                false
+    }
+
+    ; Returns a copy of the string payload, or an empty String otherwise.
+    function as_string#(rp, this: JsonValue) returns String
+    {
+        choose this
+            when s: Str
+                String^rp(s)
+            else
+                String()
+    }
+
+    function array_length(this: JsonValue) returns size_t
+    {
+        choose this
+            when arr: Array
+                arr.count
+            else
+                0 as size_t
+    }
+
+    ; Element i of an array, or Null when out of range / not an array.
+    ; The returned value aliases the tree (no deep copy).
+    function array_get(this: JsonValue, i: size_t) returns JsonValue
+    {
+        choose this
+            when arr: Array
+            {
+                guard i >= arr.count
+                    return json.null_value()
+
+                *(arr.items + i)
+            }
+            else
+                json.null_value()
+    }
+
+    ; Look up a member of an object by key. Returns Null when the value is
+    ; not an object or the key is absent.
+    function get(this: JsonValue, key: pointer[const_char]) returns JsonValue
+    {
+        choose this
+            when obj: Object
+            {
+                var i: size_t 0
+                while i < obj.count
+                {
+                    let mm (*(obj.members + i))
+                    guard mm.key.equals(key)
+                        return mm.value
+
+                    set i: i + 1
+                }
+                json.null_value()
+            }
+            else
+                json.null_value()
+    }
+
+    ; ====================================================================
+    ; Parsing
+    ; ====================================================================
+
+    function parse#(rp, source: String) returns JsonValue
+    {
+        var p JsonParser(source, 0 as size_t, true)
+        json.parse_value#(&p)
+    }
+
+    function parse_value#(rp, p: pointer[JsonParser]) returns JsonValue
+    {
+        json.skip_ws(p)
+        let c json.peek(p)
+        guard c = (0 as u8)
+        {
+            set p.ok: false
+            return json.null_value()
+        }
+
+        guard c = (0x7B as u8)             ; '{'
+            return json.parse_object#(p)
+
+        guard c = (0x5B as u8)             ; '['
+            return json.parse_array#(p)
+
+        guard c = (0x22 as u8)             ; '"'
+            return JsonValue.Str(json.parse_string#(p))
+
+        guard json.match_literal(p, "true")
+            return JsonValue.Bool(true)
+
+        guard json.match_literal(p, "false")
+            return JsonValue.Bool(false)
+
+        guard json.match_literal(p, "null")
+            return json.null_value()
+
+        guard json.is_digit(c) || (c = (0x2D as u8))   ; digit or '-'
+            return JsonValue.Number(json.parse_number(p))
+
+        set p.ok: false
+        json.null_value()
+    }
+
+    function parse_object#(rp, p: pointer[JsonParser]) returns JsonValue
+    {
+        json.expect(p, 0x7B as u8)         ; '{'
+        json.skip_ws(p)
+
+        var members List[JsonMember]$()
+        var count: size_t 0
+
+        if json.peek(p) = (0x7D as u8)     ; empty object '}'
+            json.advance(p)
+        else
+        {
+            while true
+            {
+                json.skip_ws(p)
+                let key json.parse_string#(p)
+                json.skip_ws(p)
+                json.expect(p, 0x3A as u8) ; ':'
+                let value json.parse_value#(p)
+                members.add(JsonMember(key, value))
+                set count: count + 1
+                json.skip_ws(p)
+
+                let sep json.peek(p)
+                guard sep <> (0x2C as u8)  ; not ',' -> object ends
+                {
+                    json.expect(p, 0x7D as u8)
+                    break
+                }
+                json.advance(p)            ; consume ','
+            }
+        }
+
+        ; Materialize the List into a contiguous, order-preserving buffer.
+        guard count = (0 as size_t)
+            return JsonValue.Object(JsonObject(0 as size_t, null))
+
+        let buf rp.allocate(count * sizeof JsonMember, alignof JsonMember) as pointer[JsonMember]
+        var it members.get_iterator()
+        var i count
+        while let m it.next()
+        {
+            set i: i - 1
+            set *(buf + i): *m
+        }
+        JsonValue.Object(JsonObject(count, buf))
+    }
+
+    function parse_array#(rp, p: pointer[JsonParser]) returns JsonValue
+    {
+        json.expect(p, 0x5B as u8)         ; '['
+        json.skip_ws(p)
+
+        var items List[JsonValue]$()
+        var count: size_t 0
+
+        if json.peek(p) = (0x5D as u8)     ; empty array ']'
+            json.advance(p)
+        else
+        {
+            while true
+            {
+                let value json.parse_value#(p)
+                items.add(value)
+                set count: count + 1
+                json.skip_ws(p)
+
+                let sep json.peek(p)
+                guard sep <> (0x2C as u8)  ; not ',' -> array ends
+                {
+                    json.expect(p, 0x5D as u8)
+                    break
+                }
+                json.advance(p)            ; consume ','
+            }
+        }
+
+        guard count = (0 as size_t)
+            return JsonValue.Array(JsonArray(0 as size_t, null))
+
+        let buf rp.allocate(count * sizeof JsonValue, alignof JsonValue) as pointer[JsonValue]
+        var it items.get_iterator()
+        var i count
+        while let e it.next()
+        {
+            set i: i - 1
+            set *(buf + i): *e
+        }
+        JsonValue.Array(JsonArray(count, buf))
+    }
+
+    function parse_string#(rp, p: pointer[JsonParser]) returns String
+    {
+        guard json.peek(p) <> (0x22 as u8)   ; must open with '"'
+        {
+            set p.ok: false
+            return String()
+        }
+
+        json.advance(p)                    ; opening quote
+        var sb StringBuilder#()
+
+        while true
+        {
+            let c json.peek(p)
+            guard c = (0 as u8)            ; EOF before close
+            {
+                set p.ok: false
+                return sb.to_string#()
+            }
+
+            guard c = (0x22 as u8)         ; closing quote
+            {
+                json.advance(p)
+                return sb.to_string#()
+            }
+
+            if c = (0x5C as u8)            ; backslash escape
+            {
+                json.advance(p)            ; consume backslash
+                let e json.peek(p)
+                json.advance(p)            ; consume escape char
+                sb.append(json.decode_escape(p, e))
+            }
+            else
+            {
+                sb.append(c as char)
+                json.advance(p)
+            }
+        }
+
+        sb.to_string#()
+    }
+
+    ; Maps an escape letter to its byte. For \u, reads four hex digits and
+    ; emits the low byte when the codepoint is ASCII, else '?'.
+    function decode_escape(p: pointer[JsonParser], e: u8) returns char
+    {
+        guard e = (0x6E as u8)             ; 'n'
+            return 10 as char
+
+        guard e = (0x74 as u8)             ; 't'
+            return 9 as char
+
+        guard e = (0x72 as u8)             ; 'r'
+            return 13 as char
+
+        guard e = (0x62 as u8)             ; 'b'
+            return 8 as char
+
+        guard e = (0x66 as u8)             ; 'f'
+            return 12 as char
+
+        guard e = (0x75 as u8)             ; 'u'
+        {
+            var value: i64 0
+            var k 0
+            while k < 4
+            {
+                let h json.peek(p)
+                json.advance(p)
+                set value: (value * 16) + json.hex_value(h)
+                set k: k + 1
+            }
+            guard value < 128
+                return value as char
+
+            return 0x3F as char            ; '?'
+        }
+
+        ; default: \" \\ \/ map to themselves
+        e as char
+    }
+
+    function parse_number(p: pointer[JsonParser]) returns i64
+    {
+        var negative false
+        guard json.peek(p) = (0x2D as u8)  ; '-'
+        {
+            set negative: true
+            json.advance(p)
+        }
+
+        var value: i64 0
+        while json.is_digit(json.peek(p))
+        {
+            set value: (value * 10) + ((json.peek(p) - (0x30 as u8)) as i64)
+            json.advance(p)
+        }
+
+        ; Discard a fractional/exponent part (integer part kept).
+        guard json.peek(p) = (0x2E as u8)  ; '.'
+        {
+            json.advance(p)
+            while json.is_digit(json.peek(p))
+                json.advance(p)
+        }
+
+        guard negative
+            return 0 - value
+
+        value
+    }
+
+    ; ====================================================================
+    ; Low-level cursor helpers
+    ; ====================================================================
+
+    function peek(p: pointer[JsonParser]) returns u8
+    {
+        guard p.pos >= p.source.get_length()
+            return 0 as u8
+
+        p.source.get(p.pos)
+    }
+
+    function advance(p: pointer[JsonParser])
+        set p.pos: p.pos + 1
+
+    function skip_ws(p: pointer[JsonParser])
+    {
+        ; space 0x20, tab 0x09, LF 0x0A, CR 0x0D
+        var c json.peek(p)
+        while (c = (0x20 as u8)) || (c = (0x09 as u8)) || (c = (0x0A as u8)) || (c = (0x0D as u8))
+        {
+            json.advance(p)
+            set c: json.peek(p)
+        }
+    }
+
+    function expect(p: pointer[JsonParser], c: u8)
+    {
+        guard json.peek(p) = c
+        {
+            json.advance(p)
+            return
+        }
+        set p.ok: false
+    }
+
+    function is_digit(c: u8) returns bool
+        (c >= (0x30 as u8)) && (c <= (0x39 as u8))
+
+    function hex_value(c: u8) returns i64
+    {
+        guard (c >= (0x30 as u8)) && (c <= (0x39 as u8))     ; 0-9
+            return (c - (0x30 as u8)) as i64
+
+        guard (c >= (0x61 as u8)) && (c <= (0x66 as u8))     ; a-f
+            return ((c - (0x61 as u8)) + (10 as u8)) as i64
+
+        guard (c >= (0x41 as u8)) && (c <= (0x46 as u8))     ; A-F
+            return ((c - (0x41 as u8)) + (10 as u8)) as i64
+
+        0
+    }
+
+    ; Matches `lit` at the cursor; advances past it and returns true on a
+    ; hit, leaves the cursor untouched and returns false on a miss.
+    function match_literal(p: pointer[JsonParser], lit: pointer[const_char]) returns bool
+    {
+        let len strlen(lit)
+        var i: size_t 0
+        while i < len
+        {
+            guard (p.pos + i) >= p.source.get_length()
+                return false
+
+            guard p.source.get(p.pos + i) <> (*(lit as pointer[u8] + i))
+                return false
+
+            set i: i + 1
+        }
+        set p.pos: p.pos + len
+        true
+    }
+
+    ; ====================================================================
+    ; Serialization
+    ;
+    ; Recursive: each level builds its own StringBuilder and the recursion
+    ; returns String pieces (a StringBuilder does not propagate when passed
+    ; across a function boundary). This relies on two stage-0 planner fixes
+    ; (s197): a method call on a call result with a lifetime — e.g.
+    ; sb.append(json.format_i64#(n)) is fine, but `expr#(x).to_c_string$()`
+    ; was dropped — and a recursive namespace call whose first param is
+    ; named `this` (json.stringify#(...) calling itself). Both are now
+    ; handled; see Planner.cpp processChainedMethodCalls + the namespace
+    ; sibling arg-count match.
+    ; ====================================================================
+
+    function stringify#(rp, this: JsonValue) returns String
+    {
+        ; Every arm uses an explicit `return`: in a choose that mixes
+        ; explicit-return arms with bare-expression arms, the bare arms
+        ; yield an empty/dropped value under stage-0.
+        choose this
+            when nul: Null
+                return String#("null")
+            when b: Bool
+            {
+                guard b
+                    return String#("true")
+                return String#("false")
+            }
+            when n: Number
+                return json.format_i64#(n)
+            when s: Str
+                return json.quote_string#(s)
+            when arr: Array
+            {
+                var sb StringBuilder#()
+                sb.append(0x5B as char)    ; '['
+                var i: size_t 0
+                while i < arr.count
+                {
+                    guard i > (0 as size_t)
+                        sb.append(0x2C as char)       ; ','
+
+                    sb.append(json.stringify#(*(arr.items + i)))
+                    set i: i + 1
+                }
+                sb.append(0x5D as char)    ; ']'
+                return sb.to_string#()
+            }
+            when obj: Object
+            {
+                var sb StringBuilder#()
+                sb.append(0x7B as char)    ; '{'
+                var i: size_t 0
+                while i < obj.count
+                {
+                    guard i > (0 as size_t)
+                        sb.append(0x2C as char)
+
+                    let mm (*(obj.members + i))
+                    sb.append(json.quote_string#(mm.key))
+                    sb.append(0x3A as char)           ; ':'
+                    sb.append(json.stringify#(mm.value))
+                    set i: i + 1
+                }
+                sb.append(0x7D as char)    ; '}'
+                return sb.to_string#()
+            }
+            else
+                return String#("null")
+    }
+
+    ; Quote and escape a string into a "..."-wrapped JSON string literal.
+    function quote_string#(rp, s: String) returns String
+    {
+        var sb StringBuilder#()
+        sb.append(0x22 as char)            ; opening '"'
+        let len s.get_length()
+        var i: size_t 0
+        while i < len
+        {
+            let c s.get(i)
+            if c = (0x22 as u8)            ; '"'
+            {
+                sb.append(0x5C as char)
+                sb.append(0x22 as char)
+            }
+            else
+            {
+                if c = (0x5C as u8)        ; '\'
+                {
+                    sb.append(0x5C as char)
+                    sb.append(0x5C as char)
+                }
+                else
+                {
+                    if c = (0x0A as u8)    ; LF
+                    {
+                        sb.append(0x5C as char)
+                        sb.append(0x6E as char)       ; 'n'
+                    }
+                    else
+                    {
+                        if c = (0x0D as u8)    ; CR
+                        {
+                            sb.append(0x5C as char)
+                            sb.append(0x72 as char)   ; 'r'
+                        }
+                        else
+                        {
+                            if c = (0x09 as u8)    ; tab
+                            {
+                                sb.append(0x5C as char)
+                                sb.append(0x74 as char)   ; 't'
+                            }
+                            else
+                                sb.append(c as char)
+                        }
+                    }
+                }
+            }
+            set i: i + 1
+        }
+        sb.append(0x22 as char)            ; closing '"'
+        sb.to_string#()
+    }
+
+    function format_i64#(rp, n: i64) returns String
+    {
+        guard n = 0
+            return String#("0")
+
+        var sb StringBuilder#()
+        var value n
+        guard value < 0
+        {
+            sb.append(0x2D as char)        ; '-'
+            set value: 0 - value
+        }
+
+        ; Collect digits least-significant first, then emit reversed.
+        var digits Array[char]$()
+        while value > 0
+        {
+            let digit ((value % 10) as char) + (0x30 as char)
+            digits.add(digit)
+            set value: value / 10
+        }
+
+        var i digits.length
+        while i > 0
+        {
+            set i: i - 1
+            let d digits.get(i)
+            guard d <> null
+                sb.append(*d)
+        }
+        sb.to_string#()
+    }
+}

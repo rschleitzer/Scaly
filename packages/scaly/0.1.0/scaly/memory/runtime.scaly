@@ -10,6 +10,11 @@ procedure abort() extern
 ; I/O and string functions
 function strlen(s: pointer[const_char]) returns size_t extern
 function write(fd: int, buf: pointer[void], count: size_t) returns size_t extern
+; POSIX read(2). Returns bytes read, 0 at EOF, or (size_t)-1 on error.
+; Unreferenced by the scaly package itself, so it emits no `declare` into
+; scaly.ll (fixpoint-safe); consumers (e.g. the LSP stdin transport)
+; reference it and get the declaration in their own module.
+function read(fd: int, buf: pointer[void], count: size_t) returns size_t extern
 function memset(dest: pointer[void], value: int, count: size_t) returns pointer[void] extern
 function memcpy(dest: pointer[void], src: pointer[void], count: size_t) returns pointer[void] extern
 

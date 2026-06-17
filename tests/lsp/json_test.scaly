@@ -1,0 +1,129 @@
+; AOT test for scalyls.json + scalyls.rpc framing helpers.
+; Prints "PASS" when every check holds, else "FAIL <code>".
+;
+; Quotes are injected as 0x22 bytes (never as \" string literals) so the
+; test does not depend on lexer escape decoding. Statements are one per
+; line (';' starts a comment in Scaly, it is not a separator).
+
+package scaly 0.1.0
+package scalyls 0.1.0
+
+use scaly.containers.String
+use scaly.containers.StringBuilder
+use scaly.io.Console
+use scalyls.json
+use scalyls.json.JsonValue
+use scalyls.rpc
+
+function run_test() returns int
+{
+    ; Build  {"id":42,"name":"hi","ok":true,"neg":-7,"arr":[1,2,3]}
+    ; in canonical (compact) form, matching the serializer's output.
+    var b StringBuilder#()
+    b.append(0x7B as char)             ; {
+    b.append(0x22 as char)
+    b.append("id")
+    b.append(0x22 as char)
+    b.append(0x3A as char)             ; :
+    b.append("42")
+    b.append(0x2C as char)             ; ,
+    b.append(0x22 as char)
+    b.append("name")
+    b.append(0x22 as char)
+    b.append(0x3A as char)
+    b.append(0x22 as char)
+    b.append("hi")
+    b.append(0x22 as char)
+    b.append(0x2C as char)
+    b.append(0x22 as char)
+    b.append("ok")
+    b.append(0x22 as char)
+    b.append(0x3A as char)
+    b.append("true")
+    b.append(0x2C as char)
+    b.append(0x22 as char)
+    b.append("neg")
+    b.append(0x22 as char)
+    b.append(0x3A as char)
+    b.append("-7")
+    b.append(0x2C as char)
+    b.append(0x22 as char)
+    b.append("arr")
+    b.append(0x22 as char)
+    b.append(0x3A as char)
+    b.append(0x5B as char)             ; [
+    b.append("1")
+    b.append(0x2C as char)
+    b.append("2")
+    b.append(0x2C as char)
+    b.append("3")
+    b.append(0x5D as char)             ; ]
+    b.append(0x7D as char)             ; }
+    let src b.to_string#()
+
+    let v json.parse#(src)
+
+    ; Accessor checks
+    let id json.get(v, "id")
+    guard json.as_i64(id) <> 42
+        return 1
+
+    let neg json.get(v, "neg")
+    guard json.as_i64(neg) <> (0 - 7)
+        return 2
+
+    let ok json.get(v, "ok")
+    guard json.as_bool(ok) = false
+        return 3
+
+    let name json.get(v, "name")
+    let name_str json.as_string#(name)
+    guard name_str.equals("hi") = false
+        return 4
+
+    let missing json.get(v, "absent")
+    guard json.is_null(missing) = false
+        return 5
+
+    let arr json.get(v, "arr")
+    guard json.array_length(arr) <> (3 as size_t)
+        return 6
+    guard json.as_i64(json.array_get(arr, 1 as size_t)) <> 2
+        return 9
+
+    ; Round-trip: canonical serialization reproduces src exactly.
+    let out json.stringify#(v)
+    guard out.equals(src) = false
+        return 10
+
+    ; ---- rpc framing helpers ----
+    let hsize rpc.parse_header_size(String#("Content-Length: 4096"))
+    guard hsize <> (4096 as size_t)
+        return 7
+
+    let hs rpc.format_size#(4096 as size_t)
+    guard hs.equals("4096") = false
+        return 8
+
+    0
+}
+
+function main_test() returns int
+{
+    let rc run_test()
+    guard rc = 0
+    {
+        Console.println("PASS")
+        return 0
+    }
+
+    ; FAIL <code> on a single line, code formatted via the rpc helper.
+    var fb StringBuilder#()
+    fb.append("FAIL ")
+    fb.append(rpc.format_size#(rc as size_t))
+    let msg fb.to_string#()
+    Console.println(msg.to_c_string$())
+    rc
+}
+
+let result main_test()
