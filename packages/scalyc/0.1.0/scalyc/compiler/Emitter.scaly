@@ -347,6 +347,11 @@ define Emitter
     ; Struct cache: name -> LLVM struct type
     struct_cache_names: ref[Array[String]]?
     struct_cache_types: ref[Array[LLVMTypeRef]]?
+    ; -g: DIType cache: mangled name -> DWARF composite type. Keyed like
+    ; struct_cache; the entry is a forward decl while members are built,
+    ; then replaced with the final type (RAUW) so back-pointers resolve.
+    di_type_cache_names: ref[Array[String]]?
+    di_type_cache_types: ref[Array[LLVMMetadataRef]]?
     ; Function cache: mangled name -> LLVM function
     function_cache_names: ref[Array[String]]?
     function_cache_funcs: ref[Array[LLVMValueRef]]?
@@ -437,6 +442,8 @@ define Emitter
         set type_cache_types: Array[LLVMTypeRef]^page()
         set struct_cache_names: Array[String]^page()
         set struct_cache_types: Array[LLVMTypeRef]^page()
+        set di_type_cache_names: Array[String]^page()
+        set di_type_cache_types: Array[LLVMMetadataRef]^page()
         set function_cache_names: Array[String]^page()
         set function_cache_funcs: Array[LLVMValueRef]^page()
         set throws_result_names: Array[String]^page()
@@ -604,6 +611,363 @@ define Emitter
         ; Initial location at the function line covers prologue calls.
         let loc LLVMDIBuilderCreateDebugLocation(context, pos.line, pos.col, sp, LLVMMetadataRef(null))
         LLVMSetCurrentDebugLocation2(builder, loc)
+    }
+
+    ; ------------------------------------------------------------------------
+    ; -g: DWARF type construction for aggregate (struct/union) and pointer
+    ; locals. All callers guard on emit_debug_info. di_type_for is the
+    ; dispatcher; di_struct_type/di_union_type build composites with a
+    ; forward-decl-then-RAUW cycle break.
+    ; ------------------------------------------------------------------------
+
+    function lookup_di_cache(this, name: String) returns LLVMMetadataRef
+    {
+        var i 0
+        for n in di_type_cache_names
+        {
+            guard n.equals(name)
+            {
+                let t di_type_cache_types.get(i)
+                guard t <> null
+                    return t
+            }
+            set i: i + 1
+        }
+        LLVMMetadataRef(null)
+    }
+
+    ; Map a primitive type name to a DWARF basic type; null if not primitive.
+    ; Encodings: signed=5, unsigned=7, boolean=2, float=4, signed_char=6,
+    ; unsigned_char=8.
+    function di_basic_type(this, name: String) returns LLVMMetadataRef
+    {
+        var bits: size_t 0
+        var enc: i32 (5 as i32)
+        guard name.equals(String$("bool"))
+        {
+            set bits: (8 as size_t)
+            set enc: (2 as i32)
+        }
+        guard name.equals(String$("char"))
+        {
+            set bits: (8 as size_t)
+            set enc: (8 as i32)
+        }
+        guard name.equals(String$("i8"))
+            set bits: (8 as size_t)
+        guard name.equals(String$("u8"))
+        {
+            set bits: (8 as size_t)
+            set enc: (7 as i32)
+        }
+        guard name.equals(String$("i16"))
+            set bits: (16 as size_t)
+        guard name.equals(String$("u16"))
+        {
+            set bits: (16 as size_t)
+            set enc: (7 as i32)
+        }
+        guard name.equals(String$("i32"))
+            set bits: (32 as size_t)
+        guard name.equals(String$("u32"))
+        {
+            set bits: (32 as size_t)
+            set enc: (7 as i32)
+        }
+        guard name.equals(String$("i64"))
+            set bits: (64 as size_t)
+        guard name.equals(String$("u64"))
+        {
+            set bits: (64 as size_t)
+            set enc: (7 as i32)
+        }
+        guard name.equals(String$("int"))
+            set bits: (64 as size_t)
+        guard name.equals(String$("uint"))
+        {
+            set bits: (64 as size_t)
+            set enc: (7 as i32)
+        }
+        guard name.equals(String$("size_t"))
+        {
+            set bits: (64 as size_t)
+            set enc: (7 as i32)
+        }
+        guard name.equals(String$("float"))
+        {
+            set bits: (32 as size_t)
+            set enc: (4 as i32)
+        }
+        guard name.equals(String$("f32"))
+        {
+            set bits: (32 as size_t)
+            set enc: (4 as i32)
+        }
+        guard name.equals(String$("double"))
+        {
+            set bits: (64 as size_t)
+            set enc: (4 as i32)
+        }
+        guard name.equals(String$("f64"))
+        {
+            set bits: (64 as size_t)
+            set enc: (4 as i32)
+        }
+        guard bits = 0
+            return LLVMMetadataRef(null)
+        LLVMDIBuilderCreateBasicType(di_builder, name.c_data(), name.get_length(), bits, enc, (0 as i32))
+    }
+
+    ; Synthesize an opaque unsigned basic type of the given width — used
+    ; for a struct member whose own DIType couldn't be resolved, so the
+    ; member stays typed (valid DWARF) and the layout offset is preserved.
+    function di_placeholder_type(this, bits: size_t) returns LLVMMetadataRef
+    {
+        var b bits
+        guard b = 0
+            set b: (8 as size_t)
+        var nm String$("")
+        LLVMDIBuilderCreateBasicType(di_builder, nm.c_data(), nm.get_length(), b, (7 as i32), (0 as i32))
+    }
+
+    function di_type_for(this, pt: PlannedType) returns LLVMMetadataRef
+    {
+        ; pointer[T] / ref[T] — both lower to ptr; point at the pointee's
+        ; DIType (cycle-safe: a struct pointee resolves to its cached
+        ; forward decl while it is being built).
+        guard pt.name.equals(String$("pointer")) or pt.name.equals(String$("ref"))
+        {
+            var inner LLVMMetadataRef(null)
+            guard pt.generics <> null
+            {
+                let gens (*pt.generics)
+                guard gens.length > 0
+                {
+                    let g0p gens.get(0)
+                    guard g0p <> null
+                        set inner: di_type_for((*g0p))
+                }
+            }
+            return LLVMDIBuilderCreatePointerType(di_builder, inner, (64 as size_t), (64 as i32), (0 as i32), pt.name.c_data(), pt.name.get_length())
+        }
+
+        let basic di_basic_type(pt.name)
+        guard basic.handle <> null
+            return basic
+
+        ; struct — prefer the specialised mangled name, else the bare name.
+        guard current_plan.structures <> null
+        {
+            let structs (*current_plan.structures)
+            guard pt.mangled_name.get_length() > 0
+            {
+                var i: size_t 0
+                while i < structs.length
+                {
+                    let sp structs.get(i)
+                    guard sp <> null
+                    {
+                        let s (*sp)
+                        guard s.mangled_name.equals(pt.mangled_name)
+                            return di_struct_type(s)
+                    }
+                    set i: i + 1
+                }
+            }
+            var k: size_t 0
+            while k < structs.length
+            {
+                let sp structs.get(k)
+                guard sp <> null
+                {
+                    let s (*sp)
+                    guard s.name.equals(pt.name)
+                        return di_struct_type(s)
+                }
+                set k: k + 1
+            }
+        }
+
+        ; union
+        guard current_plan.unions <> null
+        {
+            let unions (*current_plan.unions)
+            guard pt.mangled_name.get_length() > 0
+            {
+                var j: size_t 0
+                while j < unions.length
+                {
+                    let up unions.get(j)
+                    guard up <> null
+                    {
+                        let u (*up)
+                        guard u.mangled_name.equals(pt.mangled_name)
+                            return di_union_type(u)
+                    }
+                    set j: j + 1
+                }
+            }
+            var m: size_t 0
+            while m < unions.length
+            {
+                let up unions.get(m)
+                guard up <> null
+                {
+                    let u (*up)
+                    guard u.name.equals(pt.name)
+                        return di_union_type(u)
+                }
+                set m: m + 1
+            }
+        }
+
+        LLVMMetadataRef(null)
+    }
+
+    ; Build a DICompositeType (DW_TAG_structure_type = 19) for a struct.
+    ; Member sizes/offsets come from the planner's already-computed
+    ; PlannedProperty.offset (size = next field's offset - this offset, or
+    ; struct size for the last field), so no type-size re-derivation needed.
+    function di_struct_type(this, s: PlannedStructure) returns LLVMMetadataRef
+    {
+        let cached lookup_di_cache(s.mangled_name)
+        guard cached.handle <> null
+            return cached
+
+        let pos compute_debug_pos(s.loc.start)
+        let size_bits (s.size * 8)
+        var empty String$("")
+
+        ; Forward decl FIRST, cached, so a back-pointer member resolves here.
+        let fwd LLVMDIBuilderCreateReplaceableCompositeType(di_builder, (19 as i32), s.name.c_data(), s.name.get_length(), di_cu, di_file, pos.line, (0 as i32), (size_bits as size_t), (0 as i32), (0 as i32), empty.c_data(), (0 as size_t))
+        let idx di_type_cache_names.length
+        di_type_cache_names.add(s.mangled_name)
+        di_type_cache_types.add(fwd)
+
+        var members_ptr (null as pointer[LLVMMetadataRef])
+        var added: size_t 0
+        guard s.properties <> null
+        {
+            let props (*s.properties)
+            guard props.length > 0
+            {
+                var member_vec Vector[LLVMMetadataRef]#(props.length)
+                var mi: size_t 0
+                while mi < props.length
+                {
+                    let pp props.get(mi)
+                    guard pp <> null
+                    {
+                        let prop (*pp)
+                        let this_off prop.offset
+                        var next_off s.size
+                        guard mi + 1 < props.length
+                        {
+                            let np props.get(mi + 1)
+                            guard np <> null
+                                set next_off: (*np).offset
+                        }
+                        var msize_bytes: size_t 0
+                        guard next_off > this_off
+                            set msize_bytes: next_off - this_off
+                        let msize_bits (msize_bytes * 8)
+                        var mty di_type_for(prop.prop_type)
+                        guard mty.handle = null
+                            set mty: di_placeholder_type(msize_bits)
+                        let member LLVMDIBuilderCreateMemberType(di_builder, fwd, prop.name.c_data(), prop.name.get_length(), di_file, pos.line, (msize_bits as size_t), (0 as i32), (this_off * 8 as size_t), (0 as i32), mty)
+                        member_vec.put(added, member)
+                        set added: added + 1
+                    }
+                    set mi: mi + 1
+                }
+                set members_ptr: member_vec.data
+            }
+        }
+
+        let final LLVMDIBuilderCreateStructType(di_builder, di_cu, s.name.c_data(), s.name.get_length(), di_file, pos.line, (size_bits as size_t), (0 as i32), (0 as i32), LLVMMetadataRef(null), members_ptr, (added as i32), (0 as i32), LLVMMetadataRef(null), empty.c_data(), (0 as size_t))
+        LLVMMetadataReplaceAllUsesWith(fwd, final)
+        di_type_cache_types.put(idx, final)
+        final
+    }
+
+    ; A tagged union: outer struct { tag @ 0, payload @ tag_size }, where the
+    ; payload is a DWARF union of the variant payload types (each at offset 0).
+    function di_union_type(this, u: PlannedUnion) returns LLVMMetadataRef
+    {
+        let cached lookup_di_cache(u.mangled_name)
+        guard cached.handle <> null
+            return cached
+
+        let pos compute_debug_pos(u.loc.start)
+        let size_bits (u.size * 8)
+        var empty String$("")
+
+        ; Forward decl (emitted as a struct, tag 19), cached for cycle-break.
+        let fwd LLVMDIBuilderCreateReplaceableCompositeType(di_builder, (19 as i32), u.name.c_data(), u.name.get_length(), di_cu, di_file, pos.line, (0 as i32), (size_bits as size_t), (0 as i32), (0 as i32), empty.c_data(), (0 as size_t))
+        let idx di_type_cache_names.length
+        di_type_cache_names.add(u.mangled_name)
+        di_type_cache_types.add(fwd)
+
+        ; Tag: 1 byte for <=256 variants, else 4 (mirrors compute_union_size).
+        var tag_size: size_t 1
+        guard u.variants <> null
+            guard u.variants.length > 256
+                set tag_size: 4
+        let payload_bytes (u.size - tag_size)
+        let payload_bits (payload_bytes * 8)
+
+        ; Build the payload union from variants that carry a payload.
+        var payload_ty LLVMMetadataRef(null)
+        guard u.variants <> null
+        {
+            let variants (*u.variants)
+            guard variants.length > 0
+            {
+                var var_vec Vector[LLVMMetadataRef]#(variants.length)
+                var vadded: size_t 0
+                var vi: size_t 0
+                while vi < variants.length
+                {
+                    let vp variants.get(vi)
+                    guard vp <> null
+                    {
+                        let variant (*vp)
+                        guard variant.var_type <> null
+                        {
+                            let vt (*variant.var_type)
+                            var vty di_type_for(vt)
+                            guard vty.handle = null
+                                set vty: di_placeholder_type(payload_bits)
+                            let vmember LLVMDIBuilderCreateMemberType(di_builder, fwd, variant.name.c_data(), variant.name.get_length(), di_file, pos.line, (payload_bits as size_t), (0 as i32), (0 as size_t), (0 as i32), vty)
+                            var_vec.put(vadded, vmember)
+                            set vadded: vadded + 1
+                        }
+                    }
+                    set vi: vi + 1
+                }
+                guard vadded > 0
+                    set payload_ty: LLVMDIBuilderCreateUnionType(di_builder, di_cu, u.name.c_data(), u.name.get_length(), di_file, pos.line, (payload_bits as size_t), (0 as i32), (0 as i32), var_vec.data, (vadded as i32), (0 as i32), empty.c_data(), (0 as size_t))
+            }
+        }
+
+        ; Outer struct members: tag, then payload (if any).
+        var tag_name String$("tag")
+        var pay_name String$("payload")
+        let tag_member LLVMDIBuilderCreateMemberType(di_builder, fwd, tag_name.c_data(), tag_name.get_length(), di_file, pos.line, (tag_size * 8 as size_t), (0 as i32), (0 as size_t), (0 as i32), di_placeholder_type(tag_size * 8))
+        var out_vec Vector[LLVMMetadataRef]#(2)
+        out_vec.put(0, tag_member)
+        var out_count: size_t 1
+        guard payload_ty.handle <> null
+        {
+            let pay_member LLVMDIBuilderCreateMemberType(di_builder, fwd, pay_name.c_data(), pay_name.get_length(), di_file, pos.line, (payload_bits as size_t), (0 as i32), (tag_size * 8 as size_t), (0 as i32), payload_ty)
+            out_vec.put(1, pay_member)
+            set out_count: 2
+        }
+
+        let final LLVMDIBuilderCreateStructType(di_builder, di_cu, u.name.c_data(), u.name.get_length(), di_file, pos.line, (size_bits as size_t), (0 as i32), (0 as i32), LLVMMetadataRef(null), out_vec.data, (out_count as i32), (0 as i32), LLVMMetadataRef(null), empty.c_data(), (0 as size_t))
+        LLVMMetadataReplaceAllUsesWith(fwd, final)
+        di_type_cache_types.put(idx, final)
+        final
     }
 
     ; Like set_function_debug_scope but for a synthetic function that has
@@ -9533,13 +9897,16 @@ define Emitter
                     define_variable(name, alloca)
 
                     ; -g: declare this mutable local for the debugger so
-                    ; `frame variable` / the Variables pane shows it. Only
-                    ; scalar integers/bool get a DIType here (aggregates and
-                    ; pointers are skipped — no dbg.declare, so they simply
-                    ; don't appear rather than emitting an invalid type).
-                    ; Inlined (not a helper) to avoid passing the LLVMTypeRef
-                    ; alloca through a Scaly param (s34 single-ptr-struct ABI).
+                    ; `frame variable` / the Variables pane shows it. Scalar
+                    ; integers/bool get a basic DIType inline (the scalar path
+                    ; below is byte-identical to before); structs/unions/
+                    ; pointers derive their DIType from the binding's planned
+                    ; type via di_type_for (s.34-safe: PlannedType is multi-
+                    ; field; only the alloca stays inline as an LLVMValueRef).
                     guard config.emit_debug_info
+                    {
+                        let dpos compute_debug_pos(binding.loc.start)
+                        var dty LLVMMetadataRef(null)
                         guard LLVMGetTypeKind(store_ty) = LLVMTypeKind.Integer()
                         {
                             let width LLVMGetIntTypeWidth(store_ty)
@@ -9552,14 +9919,40 @@ define Emitter
                                 set dbits: (8 as size_t)
                                 set tyname: String$("bool")
                             }
-                            let dty LLVMDIBuilderCreateBasicType(di_builder, tyname.c_data(), tyname.get_length(), dbits, enc, (0 as i32))
-                            let dpos compute_debug_pos(binding.loc.start)
+                            set dty: LLVMDIBuilderCreateBasicType(di_builder, tyname.c_data(), tyname.get_length(), dbits, enc, (0 as i32))
+                        }
+                        ; aggregates / pointers: resolve from the planned type
+                        ; (annotated item_type first, else the initializer's
+                        ; collapsed result_type).
+                        guard dty.handle = null
+                        {
+                            guard binding.binding_item.item_type <> null
+                            {
+                                let it_ref binding.binding_item.item_type
+                                set dty: di_type_for((*it_ref))
+                            }
+                            guard binding.binding_item.item_type = null
+                                guard binding.operation <> null
+                                {
+                                    let ops_ref binding.operation
+                                    let ops (*ops_ref)
+                                    guard ops.length > 0
+                                    {
+                                        let op0_ptr ops.get(0)
+                                        guard op0_ptr <> null
+                                            set dty: di_type_for((*op0_ptr).result_type)
+                                    }
+                                }
+                        }
+                        guard dty.handle <> null
+                        {
                             let dvar LLVMDIBuilderCreateAutoVariable(di_builder, current_di_scope, name.c_data(), name.get_length(), di_file, dpos.line, dty, (0 as i32), (0 as i32), (0 as i32))
                             let dexpr LLVMDIBuilderCreateExpression(di_builder, null as pointer[size_t], (0 as size_t))
                             let dloc LLVMDIBuilderCreateDebugLocation(context, dpos.line, dpos.col, current_di_scope, LLVMMetadataRef(null))
                             let dblk LLVMGetInsertBlock(builder)
                             let ddecl LLVMDIBuilderInsertDeclareAtEnd(di_builder, alloca, dvar, dexpr, dloc, dblk)
                         }
+                    }
                 }
                 else
                 {

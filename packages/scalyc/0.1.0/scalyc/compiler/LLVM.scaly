@@ -641,3 +641,17 @@ function LLVMDIBuilderCreateAutoVariable(builder: LLVMDIBuilderRef, scope: LLVMM
 function LLVMDIBuilderCreateExpression(builder: LLVMDIBuilderRef, addr: pointer[size_t], length: size_t) returns LLVMMetadataRef extern
 function LLVMDIBuilderInsertDeclareAtEnd(builder: LLVMDIBuilderRef, storage: LLVMValueRef, var_info: LLVMMetadataRef, expr: LLVMMetadataRef, debug_loc: LLVMMetadataRef, block: LLVMBasicBlockRef) returns LLVMValueRef extern
 
+; Aggregate types (struct/union/pointer) — for debugging struct/union locals.
+; size_in_bits/offset_in_bits are uint64_t (size_t, 64-bit); line/align/flags/
+; num_elements/run_time_lang/address_space/tag are 32-bit C args → i32 (see the
+; Apple-arm64 packing note above). `elements` is a C array of DITypes.
+function LLVMDIBuilderCreateStructType(builder: LLVMDIBuilderRef, scope: LLVMMetadataRef, name: pointer[const_char], name_len: size_t, file: LLVMMetadataRef, line_number: i32, size_in_bits: size_t, align_in_bits: i32, flags: i32, derived_from: LLVMMetadataRef, elements: pointer[LLVMMetadataRef], num_elements: i32, run_time_lang: i32, vtable_holder: LLVMMetadataRef, unique_id: pointer[const_char], unique_id_len: size_t) returns LLVMMetadataRef extern
+function LLVMDIBuilderCreateUnionType(builder: LLVMDIBuilderRef, scope: LLVMMetadataRef, name: pointer[const_char], name_len: size_t, file: LLVMMetadataRef, line_number: i32, size_in_bits: size_t, align_in_bits: i32, flags: i32, elements: pointer[LLVMMetadataRef], num_elements: i32, run_time_lang: i32, unique_id: pointer[const_char], unique_id_len: size_t) returns LLVMMetadataRef extern
+function LLVMDIBuilderCreateMemberType(builder: LLVMDIBuilderRef, scope: LLVMMetadataRef, name: pointer[const_char], name_len: size_t, file: LLVMMetadataRef, line_no: i32, size_in_bits: size_t, align_in_bits: i32, offset_in_bits: size_t, flags: i32, ty: LLVMMetadataRef) returns LLVMMetadataRef extern
+function LLVMDIBuilderCreatePointerType(builder: LLVMDIBuilderRef, pointee_ty: LLVMMetadataRef, size_in_bits: size_t, align_in_bits: i32, address_space: i32, name: pointer[const_char], name_len: size_t) returns LLVMMetadataRef extern
+; Forward declaration + RAUW: breaks self-referential cycles (Node →
+; pointer[Node]). Create the replaceable temp, cache it, build members
+; (a back-pointer resolves to the temp), then replace it with the final type.
+function LLVMDIBuilderCreateReplaceableCompositeType(builder: LLVMDIBuilderRef, tag: i32, name: pointer[const_char], name_len: size_t, scope: LLVMMetadataRef, file: LLVMMetadataRef, line: i32, runtime_lang: i32, size_in_bits: size_t, align_in_bits: i32, flags: i32, unique_id: pointer[const_char], unique_id_len: size_t) returns LLVMMetadataRef extern
+procedure LLVMMetadataReplaceAllUsesWith(temp_target: LLVMMetadataRef, replacement: LLVMMetadataRef) extern
+
