@@ -2,8 +2,8 @@ Scaly
 =====
 
 [_Scaly_](https://scaly.io) — the _self-scaling programming language_. A
-self-hosted compiler with LLVM codegen, postfix operators with no precedence
-rules, clean syntax without semicolons, and region-based memory management.
+self-hosted compiler with LLVM code generation, region-based memory management,
+and a clean, semicolon-free syntax.
 
 Install
 -------
