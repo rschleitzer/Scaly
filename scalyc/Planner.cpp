@@ -2444,11 +2444,30 @@ llvm::Expected<Planner::MethodCallResult> Planner::processChainedMethodCalls(
         }
 
         if (!MemberChain->empty() && MemberChain->back().IsMethod) {
-            // Check if there's another tuple following for the chained method
-            if (ChainIdx + 1 < Ops.size() &&
-                std::holds_alternative<Tuple>(Ops[ChainIdx + 1].Expr)) {
+            // The chained method's args follow the member-access operand,
+            // optionally preceded by a lifetime marker (a Type with empty
+            // name and a non-Unspecified Life), e.g. `result.to_c_string$()`
+            // where `$` sits between `to_c_string` and `()`. Mirror the
+            // main method-call path (which uses HasLifetimeThenArgs) so a
+            // chained `#`/`$`/`^` method on a call result is not dropped.
+            size_t ArgsIdx = ChainIdx + 1;
+            Lifetime ChainLifetime = UnspecifiedLifetime{};
+            if (ChainIdx + 1 < Ops.size()) {
+                if (auto* LifeType = std::get_if<Type>(&Ops[ChainIdx + 1].Expr)) {
+                    if (LifeType->Name.empty() &&
+                        !std::holds_alternative<UnspecifiedLifetime>(LifeType->Life) &&
+                        ChainIdx + 2 < Ops.size() &&
+                        std::holds_alternative<Tuple>(Ops[ChainIdx + 2].Expr)) {
+                        ChainLifetime = LifeType->Life;
+                        ArgsIdx = ChainIdx + 2;
+                    }
+                }
+            }
 
-                const auto& ChainedArgsOp = Ops[ChainIdx + 1];
+            if (ArgsIdx < Ops.size() &&
+                std::holds_alternative<Tuple>(Ops[ArgsIdx].Expr)) {
+
+                const auto& ChainedArgsOp = Ops[ArgsIdx];
                 std::string ChainedMethodName = MemberChain->back().Name;
                 PlannedType ChainedInstanceType = MemberChain->back().ParentType;
 
@@ -2478,7 +2497,44 @@ llvm::Expected<Planner::MethodCallResult> Planner::processChainedMethodCalls(
 
                     ChainedCall.Args = std::make_shared<std::vector<PlannedOperand>>();
 
-                    // First arg is the instance (current CallOp)
+                    // Page parameter handling for `#`/`$`/`^` methods (e.g.
+                    // to_c_string#(page, this)). Mirrors the main path at the
+                    // RequiresPageParam site: for ^name the region page is the
+                    // first arg; for $/# the Emitter injects the page from
+                    // Life, so just set the flag and record local-allocation.
+                    if (ChainedMethodMatch->RequiresPageParam) {
+                        ChainedCall.RequiresPageParam = true;
+                        ChainedCall.Life = ChainLifetime;
+
+                        if (auto* RefLife = std::get_if<ReferenceLifetime>(&ChainLifetime)) {
+                            if (RefLife->Location == "this") {
+                                auto PageGetResult = generatePageGetThis(RefLife->Loc);
+                                if (!PageGetResult) {
+                                    return PageGetResult.takeError();
+                                }
+                                ChainedCall.Args->push_back(std::move(*PageGetResult));
+                            } else {
+                                auto RegionBinding = lookupLocalBinding(RefLife->Location);
+                                if (!RegionBinding) {
+                                    return makeUndefinedSymbolError(File, RefLife->Loc, RefLife->Location);
+                                }
+                                PlannedOperand RegionArg;
+                                RegionArg.Loc = RefLife->Loc;
+                                RegionArg.ResultType = RegionBinding->Type;
+                                RegionArg.Expr = PlannedVariable{RefLife->Loc, RefLife->Location,
+                                                                 RegionBinding->Type, RegionBinding->IsMutable};
+                                ChainedCall.Args->push_back(std::move(RegionArg));
+                            }
+                        } else {
+                            // $ / # / implicit: Emitter uses LocalPage or rp.
+                            CurrentFunctionUsesLocalLifetime = true;
+                            if (!ScopeInfoStack.empty()) {
+                                ScopeInfoStack.back().HasLocalAllocations = true;
+                            }
+                        }
+                    }
+
+                    // Then the instance (current CallOp)
                     ChainedCall.Args->push_back(std::move(Result.CallOp));
 
                     // Add remaining arguments
@@ -2496,8 +2552,11 @@ llvm::Expected<Planner::MethodCallResult> Planner::processChainedMethodCalls(
                     Result.CallOp.ResultType = ChainedMethodMatch->ReturnType;
                     Result.CallOp.Expr = std::move(ChainedCall);
 
-                    ChainIdx++;
-                    Result.ConsumedOperands++;
+                    // Advance past the lifetime marker (if any) and the args
+                    // tuple. ArgsIdx points at the tuple, which carries any
+                    // further member access for the next chained call.
+                    Result.ConsumedOperands += (ArgsIdx - ChainIdx);
+                    ChainIdx = ArgsIdx;
                     CurrentArgsOp = &Ops[ChainIdx];
                     continue;  // Check for more chained calls
                 }
@@ -7887,22 +7946,23 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                             CallOp.ResultType = *PlannedFunc->Returns;
                         }
 
-                        // Apply any member access on the result
-                        if (NextOp.MemberAccess && !NextOp.MemberAccess->empty()) {
-                            auto MemberChain = resolveMemberAccessChain(CallOp.ResultType,
-                                                                         *NextOp.MemberAccess, NextOp.Loc);
-                            if (!MemberChain) {
-                                return MemberChain.takeError();
-                            }
-                            CallOp.MemberAccess = std::make_shared<std::vector<PlannedMemberAccess>>(
-                                std::move(*MemberChain));
-                            if (!CallOp.MemberAccess->empty()) {
-                                CallOp.ResultType = CallOp.MemberAccess->back().ResultType;
-                            }
+                        // Handle chained method calls on the result, e.g.
+                        // ns.func#(args).method$().method2(). The trailing
+                        // member access (plus any lifetime marker and its own
+                        // args) rides on the tuple operand at i+1; route it
+                        // through the shared chained-method handler. Recording
+                        // it as a plain (uncalled) member access here would
+                        // DROP the chained call. processChainedMethodCalls also
+                        // subsumes the non-method member-access case (it applies
+                        // the member access when the tail isn't a method call).
+                        auto ChainResult = processChainedMethodCalls(std::move(CallOp), ProcessedOps, i + 1);
+                        if (!ChainResult) {
+                            return ChainResult.takeError();
                         }
-
-                        Result.push_back(std::move(CallOp));
-                        i++;  // Skip the tuple operand
+                        Result.push_back(std::move(ChainResult->CallOp));
+                        // The args tuple is at i+1; the for-loop's ++i then
+                        // advances past it (and past any chained operands).
+                        i = (i + 1) + ChainResult->ConsumedOperands;
                         continue;
                     }
                 }
@@ -9529,7 +9589,15 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                             bool FoundNsSibling = false;
                             for (const auto& NsMember : CurrentNamespace->Members) {
                                 if (auto* NsFunc = std::get_if<Function>(&NsMember)) {
-                                    // Discount implicit 'this' parameter when matching arg count
+                                    // Match either with the implicit 'this' parameter
+                                    // discounted (sibling method called as `f(args)`
+                                    // with an implicit receiver) OR with the full
+                                    // input count (qualified call `ns.f(this, args)`
+                                    // that provides the receiver explicitly — e.g. a
+                                    // recursive `ns.f#(child)` whose first param is
+                                    // named `this`). The downstream MatchedFunc search
+                                    // (IsNamespaceSibling) uses the full count, so this
+                                    // must accept it too or the call is dropped.
                                     size_t ExplicitInputCount = NsFunc->Input.size();
                                     if (!NsFunc->Input.empty() && NsFunc->Input[0].Name &&
                                         *NsFunc->Input[0].Name == "this") {
@@ -9537,7 +9605,8 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                                     }
                                     if (NsFunc->Name == FuncName &&
                                         NsFunc->Parameters.empty() &&
-                                        ExplicitInputCount == ArgTypes.size()) {
+                                        (ExplicitInputCount == ArgTypes.size() ||
+                                         NsFunc->Input.size() == ArgTypes.size())) {
                                         if (NsFunc->Returns) {
                                             FuncResult = resolveType(*NsFunc->Returns, Op.Loc);
                                         } else {
