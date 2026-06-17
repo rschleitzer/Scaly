@@ -93,12 +93,12 @@ HREF="tutorial.htm#AEN102"
 ></DT
 ><DT
 ><A
-HREF="tutorial.htm#AEN234"
+HREF="tutorial.htm#AEN253"
 >A Tour of Scaly</A
 ></DT
 ><DT
 ><A
-HREF="tutorial.htm#AEN304"
+HREF="tutorial.htm#AEN323"
 >Putting It Together</A
 ></DT
 ></DL
@@ -388,7 +388,23 @@ CLASS="code"
       <TT
 CLASS="code"
 >lldb</TT
-> debugger type used below. The tasks call
+> debugger type used below. Reload the window afterwards
+      (<SPAN
+CLASS="guimenu"
+>Command Palette</SPAN
+> &#62; <SPAN
+CLASS="guimenuitem"
+>Developer: Reload
+      Window</SPAN
+>) so the extension activates; if
+      <B
+CLASS="keycap"
+>F5</B
+> reports <FONT
+COLOR="RED"
+>configured debug type 'lldb' is not
+      supported</FONT
+>, CodeLLDB is not installed or not enabled. The tasks call
       <B
 CLASS="command"
 >scalyc</B
@@ -401,7 +417,20 @@ HREF="tutorial.htm#AEN43"
 >the Section called <I
 >Installing Scaly</I
 ></A
->).</P
+>). If
+      <SPAN
+CLASS="application"
+>Visual Studio Code</SPAN
+> was already running when you
+      installed <B
+CLASS="command"
+>scalyc</B
+>, restart it so its process picks up
+      the updated <CODE
+CLASS="envar"
+>PATH</CODE
+> — otherwise the tasks will fail to find
+      the compiler.</P
 ><DIV
 CLASS="note"
 ><BLOCKQUOTE
@@ -441,7 +470,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN122"
+NAME="AEN129"
 >Build and Run Tasks</A
 ></H2
 ><P
@@ -523,7 +552,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN137"
+NAME="AEN144"
 >Launch Configuration</A
 ></H2
 ><P
@@ -558,7 +587,59 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN143"
+NAME="AEN150"
+>Allowing Breakpoints in Scaly Files</A
+></H2
+><P
+>By default VS Code only lets you set breakpoints in files whose
+        language it recognizes <SPAN
+CLASS="emphasis"
+><I
+CLASS="emphasis"
+>and</I
+></SPAN
+> for which an installed
+        debugger has declared breakpoint support. Languages like C# ship a VS
+        Code extension that does both, so breakpoints work there out of the box.
+        Scaly has no such extension yet, so <TT
+CLASS="filename"
+>.scaly</TT
+> files are
+        treated as plain text — clicking the gutter does nothing and no red dot
+        appears.</P
+><P
+>Until a Scaly language extension exists, lift that restriction by
+        creating <TT
+CLASS="filename"
+>.vscode/settings.json</TT
+>:</P
+><PRE
+CLASS="programlisting"
+>{
+    "debug.allowBreakpointsEverywhere": true
+}</PRE
+><P
+>With this set, breakpoints can be placed in any file, including
+        <TT
+CLASS="filename"
+>.scaly</TT
+>. (The same effect is available globally via
+        <SPAN
+CLASS="guimenu"
+>Command Palette</SPAN
+> &#62; <SPAN
+CLASS="guimenuitem"
+>Preferences: Open
+        User Settings (JSON)</SPAN
+> if you prefer it for every
+        workspace.)</P
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN162"
 >Setting a Breakpoint and Stepping</A
 ></H2
 ><P
@@ -664,7 +745,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN173"
+NAME="AEN192"
 >Stepping into Functions and the Call Stack</A
 ></H2
 ><P
@@ -796,13 +877,13 @@ CLASS="keycap"
 >F5</B
 > to continue to the end. The function-and-procedure
         model is covered in <A
-HREF="tutorial.htm#AEN268"
+HREF="tutorial.htm#AEN287"
 >the Section called <I
 >Functions</I
 ></A
 > and
         <A
-HREF="tutorial.htm#AEN276"
+HREF="tutorial.htm#AEN295"
 >the Section called <I
 >Procedures and Mutation</I
 ></A
@@ -813,7 +894,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN210"
+NAME="AEN229"
 >What the Debugger Shows</A
 ></H2
 ><P
@@ -893,7 +974,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN234"
+NAME="AEN253"
 >A Tour of Scaly</A
 ></H1
 ><P
@@ -906,7 +987,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN237"
+NAME="AEN256"
 >Values and Bindings</A
 ></H2
 ><P
@@ -944,7 +1025,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN247"
+NAME="AEN266"
 >Operators and Precedence</A
 ></H2
 ><P
@@ -978,7 +1059,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN255"
+NAME="AEN274"
 >Control Flow</A
 ></H2
 ><P
@@ -1036,7 +1117,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN268"
+NAME="AEN287"
 >Functions</A
 ></H2
 ><P
@@ -1073,7 +1154,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN276"
+NAME="AEN295"
 >Procedures and Mutation</A
 ></H2
 ><P
@@ -1084,7 +1165,7 @@ CLASS="code"
         and perform side effects. The distinction is visible at every call site,
         so a reader always knows which calls can mutate state. See
         <A
-HREF="types.htm#AEN526"
+HREF="types.htm#AEN545"
 >the Section called <I
 >Mutation via Procedures</I
 > in Chapter 4</A
@@ -1110,7 +1191,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN282"
+NAME="AEN301"
 >Structures and Methods</A
 ></H2
 ><P
@@ -1132,7 +1213,7 @@ let p Point(3, 4)
 let d p.distance_squared()   ; d is 25</PRE
 ><P
 ><A
-HREF="types.htm#AEN532"
+HREF="types.htm#AEN551"
 >the Section called <I
 >Constructors</I
 > in Chapter 4</A
@@ -1147,7 +1228,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN290"
+NAME="AEN309"
 >Unions, Options, and choose</A
 ></H2
 ><P
@@ -1193,7 +1274,7 @@ let a or_zero(Option.Some(7))   ; a is 7
 let b or_zero(Option.None)      ; b is 0</PRE
 ><P
 >See <A
-HREF="types.htm#AEN667"
+HREF="types.htm#AEN686"
 >the Section called <I
 >Union Types</I
 > in Chapter 4</A
@@ -1209,7 +1290,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN304"
+NAME="AEN323"
 >Putting It Together</A
 ></H1
 ><P

@@ -105,9 +105,17 @@ sudo apt install llvm-18 clang</programlisting>
     <para>Open your project folder as your VS Code workspace and install the
       <emphasis>CodeLLDB</emphasis> extension (extension id
       <code>vadimcn.vscode-lldb</code>), which provides the
-      <code>lldb</code> debugger type used below. The tasks call
+      <code>lldb</code> debugger type used below. Reload the window afterwards
+      (<guimenu>Command Palette</guimenu> &gt; <guimenuitem>Developer: Reload
+      Window</guimenuitem>) so the extension activates; if
+      <keycap>F5</keycap> reports <errortext>configured debug type 'lldb' is not
+      supported</errortext>, CodeLLDB is not installed or not enabled. The tasks call
       <command>scalyc</command> by name, so install it on your
-      <envar>PATH</envar> first (see <xref linkend="tut-install"/>).</para>
+      <envar>PATH</envar> first (see <xref linkend="tut-install"/>). If
+      <application>Visual Studio Code</application> was already running when you
+      installed <command>scalyc</command>, restart it so its process picks up
+      the updated <envar>PATH</envar> — otherwise the tasks will fail to find
+      the compiler.</para>
     <note>
       <para>Because the installed <command>scalyc</command> wrapper sets
         <envar>SCALY_HOME</envar> for you, the compiler finds the prelude (which
@@ -180,6 +188,27 @@ sudo apt install llvm-18 clang</programlisting>
         }
     ]
 }</programlisting>
+    </section>
+
+    <section xml:id="tut-vscode-breakpoints-setting">
+      <title>Allowing Breakpoints in Scaly Files</title>
+      <para>By default VS Code only lets you set breakpoints in files whose
+        language it recognizes <emphasis>and</emphasis> for which an installed
+        debugger has declared breakpoint support. Languages like C# ship a VS
+        Code extension that does both, so breakpoints work there out of the box.
+        Scaly has no such extension yet, so <filename>.scaly</filename> files are
+        treated as plain text — clicking the gutter does nothing and no red dot
+        appears.</para>
+      <para>Until a Scaly language extension exists, lift that restriction by
+        creating <filename>.vscode/settings.json</filename>:</para>
+      <programlisting>{
+    "debug.allowBreakpointsEverywhere": true
+}</programlisting>
+      <para>With this set, breakpoints can be placed in any file, including
+        <filename>.scaly</filename>. (The same effect is available globally via
+        <guimenu>Command Palette</guimenu> &gt; <guimenuitem>Preferences: Open
+        User Settings (JSON)</guimenuitem> if you prefer it for every
+        workspace.)</para>
     </section>
 
     <section xml:id="tut-vscode-debug">
