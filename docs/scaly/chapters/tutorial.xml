@@ -19,7 +19,7 @@
 brew install llvm@18
 
 ; Ubuntu / Debian
-sudo apt install llvm-18 clang-18</programlisting>
+sudo apt install llvm-18 clang</programlisting>
       <para>Then run the installer. It downloads Scaly, builds it for your
         machine, and puts <command>scalyc</command> on your <envar>PATH</envar>
         under <filename>~/.scaly</filename> — no <command>sudo</command>

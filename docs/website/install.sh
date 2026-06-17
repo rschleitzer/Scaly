@@ -8,7 +8,7 @@
 # executable on your machine, so you need LLVM 18 and a C compiler present:
 #
 #   macOS         brew install llvm@18
-#   Ubuntu/Debian sudo apt install llvm-18 clang-18
+#   Ubuntu/Debian sudo apt install llvm-18 clang
 #
 # Then `scalyc -o hello hello.scaly` works from any directory.
 #
@@ -55,7 +55,7 @@ if [ -z "$LLVM_PREFIX" ] || [ ! -d "$LLVM_PREFIX" ] || [ -z "$LLC" ]; then
 scaly-install: error: LLVM 18 not found.
   The compiler is distributed as LLVM IR and needs LLVM 18 to build locally.
     macOS:         brew install llvm@18
-    Ubuntu/Debian: sudo apt install llvm-18 clang-18
+    Ubuntu/Debian: sudo apt install llvm-18 clang
   Then re-run, or set LLVM18=/path/to/llvm-18 if it lives somewhere custom.
 EOF
   exit 1
@@ -65,9 +65,11 @@ LLVM_LIBNAME="${LLVM_LIBNAME:-LLVM-18}"
 
 CC="${CC:-}"
 if [ -z "$CC" ]; then
-  for c in cc clang gcc; do if have "$c"; then CC="$c"; break; fi; done
+  # Probe unversioned names first, then the versioned ones apt ships
+  # (`apt install clang-18` provides clang-18, not clang/cc).
+  for c in cc clang gcc clang-18 gcc-18 cc-18; do if have "$c"; then CC="$c"; break; fi; done
 fi
-[ -n "$CC" ] || die "no C compiler found (need cc/clang/gcc for the final link)"
+[ -n "$CC" ] || die "no C compiler found (need cc/clang/gcc or clang-18 for the final link)"
 
 have curl || have wget || die "need curl or wget to download the distribution"
 have tar || die "need tar to unpack the distribution"

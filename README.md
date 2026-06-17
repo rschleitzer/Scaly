@@ -15,7 +15,7 @@ machine, so you need **LLVM 18** and a C compiler first:
 # macOS
 brew install llvm@18
 # Ubuntu / Debian
-sudo apt install llvm-18 clang-18
+sudo apt install llvm-18 clang
 ```
 
 Then run the installer — it puts `scalyc` on your `PATH` under `~/.scaly`, no
