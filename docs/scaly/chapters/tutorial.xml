@@ -80,17 +80,20 @@ sudo apt install llvm-18 clang-18</programlisting>
       Scaly source. Debugging uses the DWARF information the compiler emits with
       the <option>-g</option> flag, so breakpoints land on real source lines and
       scalar local variables show their values.</para>
-    <para>Open the Scaly repository as your workspace folder and install the
+    <para>Open your project folder as your VS Code workspace and install the
       <emphasis>CodeLLDB</emphasis> extension (extension id
       <code>vadimcn.vscode-lldb</code>), which provides the
-      <code>lldb</code> debugger type used below.</para>
+      <code>lldb</code> debugger type used below. The tasks call
+      <command>scalyc</command> by name, so install it on your
+      <envar>PATH</envar> first (see <xref linkend="tut-build"/>).</para>
     <note>
-      <para>Run the compiler with the repository root as the working directory.
-        The prelude (which defines <code>print</code> and friends) is resolved
-        relative to the current directory, so building from elsewhere fails with
-        <computeroutput>function not found: print</computeroutput>. The tasks
-        below set <code>cwd</code> to <code>${workspaceFolder}</code> for exactly
-        this reason.</para>
+      <para>Because the installed <command>scalyc</command> wrapper sets
+        <envar>SCALY_HOME</envar> for you, the compiler finds the prelude (which
+        defines <code>print</code> and friends) and the standard library no
+        matter where your <filename>.scaly</filename> files live — you do not
+        have to work inside the compiler's own source tree. The tasks set
+        <code>cwd</code> to <code>${workspaceFolder}</code> only so the compiled
+        executable lands beside your source.</para>
     </note>
 
     <section xml:id="tut-vscode-tasks">
@@ -104,7 +107,7 @@ sudo apt install llvm-18 clang-18</programlisting>
         {
             "label": "scaly: build (debug)",
             "type": "shell",
-            "command": "${workspaceFolder}/scalyc/build/scalyc",
+            "command": "scalyc",
             "args": ["-g", "-o", "${fileBasenameNoExtension}", "${file}"],
             "options": { "cwd": "${workspaceFolder}" },
             "group": { "kind": "build", "isDefault": true },

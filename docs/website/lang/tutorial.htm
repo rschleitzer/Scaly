@@ -93,12 +93,12 @@ HREF="tutorial.htm#AEN85"
 ></DT
 ><DT
 ><A
-HREF="tutorial.htm#AEN212"
+HREF="tutorial.htm#AEN217"
 >A Tour of Scaly</A
 ></DT
 ><DT
 ><A
-HREF="tutorial.htm#AEN282"
+HREF="tutorial.htm#AEN287"
 >Putting It Together</A
 ></DT
 ></DL
@@ -303,7 +303,7 @@ CLASS="option"
 > flag, so breakpoints land on real source lines and
       scalar local variables show their values.</P
 ><P
->Open the Scaly repository as your workspace folder and install the
+>Open your project folder as your VS Code workspace and install the
       <SPAN
 CLASS="emphasis"
 ><I
@@ -318,7 +318,20 @@ CLASS="code"
       <TT
 CLASS="code"
 >lldb</TT
-> debugger type used below.</P
+> debugger type used below. The tasks call
+      <B
+CLASS="command"
+>scalyc</B
+> by name, so install it on your
+      <CODE
+CLASS="envar"
+>PATH</CODE
+> first (see <A
+HREF="tutorial.htm#AEN43"
+>the Section called <I
+>Building the Compiler from the Seed</I
+></A
+>).</P
 ><DIV
 CLASS="note"
 ><BLOCKQUOTE
@@ -326,24 +339,31 @@ CLASS="note"
 ><P
 ><B
 >Note: </B
->Run the compiler with the repository root as the working directory.
-        The prelude (which defines <TT
+>Because the installed <B
+CLASS="command"
+>scalyc</B
+> wrapper sets
+        <CODE
+CLASS="envar"
+>SCALY_HOME</CODE
+> for you, the compiler finds the prelude (which
+        defines <TT
 CLASS="code"
 >print</TT
-> and friends) is resolved
-        relative to the current directory, so building from elsewhere fails with
-        <SAMP
-CLASS="computeroutput"
->function not found: print</SAMP
->. The tasks
-        below set <TT
+> and friends) and the standard library no
+        matter where your <TT
+CLASS="filename"
+>.scaly</TT
+> files live — you do not
+        have to work inside the compiler's own source tree. The tasks set
+        <TT
 CLASS="code"
 >cwd</TT
 > to <TT
 CLASS="code"
 >${workspaceFolder}</TT
-> for exactly
-        this reason.</P
+> only so the compiled
+        executable lands beside your source.</P
 ></BLOCKQUOTE
 ></DIV
 ><DIV
@@ -351,7 +371,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN100"
+NAME="AEN105"
 >Build and Run Tasks</A
 ></H2
 ><P
@@ -369,7 +389,7 @@ CLASS="programlisting"
         {
             "label": "scaly: build (debug)",
             "type": "shell",
-            "command": "${workspaceFolder}/scalyc/build/scalyc",
+            "command": "scalyc",
             "args": ["-g", "-o", "${fileBasenameNoExtension}", "${file}"],
             "options": { "cwd": "${workspaceFolder}" },
             "group": { "kind": "build", "isDefault": true },
@@ -433,7 +453,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN115"
+NAME="AEN120"
 >Launch Configuration</A
 ></H2
 ><P
@@ -468,7 +488,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN121"
+NAME="AEN126"
 >Setting a Breakpoint and Stepping</A
 ></H2
 ><P
@@ -574,7 +594,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN151"
+NAME="AEN156"
 >Stepping into Functions and the Call Stack</A
 ></H2
 ><P
@@ -706,13 +726,13 @@ CLASS="keycap"
 >F5</B
 > to continue to the end. The function-and-procedure
         model is covered in <A
-HREF="tutorial.htm#AEN246"
+HREF="tutorial.htm#AEN251"
 >the Section called <I
 >Functions</I
 ></A
 > and
         <A
-HREF="tutorial.htm#AEN254"
+HREF="tutorial.htm#AEN259"
 >the Section called <I
 >Procedures and Mutation</I
 ></A
@@ -723,7 +743,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN188"
+NAME="AEN193"
 >What the Debugger Shows</A
 ></H2
 ><P
@@ -803,7 +823,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN212"
+NAME="AEN217"
 >A Tour of Scaly</A
 ></H1
 ><P
@@ -816,7 +836,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN215"
+NAME="AEN220"
 >Values and Bindings</A
 ></H2
 ><P
@@ -854,7 +874,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN225"
+NAME="AEN230"
 >Operators and Precedence</A
 ></H2
 ><P
@@ -888,7 +908,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN233"
+NAME="AEN238"
 >Control Flow</A
 ></H2
 ><P
@@ -946,7 +966,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN246"
+NAME="AEN251"
 >Functions</A
 ></H2
 ><P
@@ -983,7 +1003,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN254"
+NAME="AEN259"
 >Procedures and Mutation</A
 ></H2
 ><P
@@ -994,7 +1014,7 @@ CLASS="code"
         and perform side effects. The distinction is visible at every call site,
         so a reader always knows which calls can mutate state. See
         <A
-HREF="types.htm#AEN504"
+HREF="types.htm#AEN509"
 >the Section called <I
 >Mutation via Procedures</I
 > in Chapter 4</A
@@ -1020,7 +1040,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN260"
+NAME="AEN265"
 >Structures and Methods</A
 ></H2
 ><P
@@ -1042,7 +1062,7 @@ let p Point(3, 4)
 let d p.distance_squared()   ; d is 25</PRE
 ><P
 ><A
-HREF="types.htm#AEN510"
+HREF="types.htm#AEN515"
 >the Section called <I
 >Constructors</I
 > in Chapter 4</A
@@ -1057,7 +1077,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN268"
+NAME="AEN273"
 >Unions, Options, and choose</A
 ></H2
 ><P
@@ -1103,7 +1123,7 @@ let a or_zero(Option.Some(7))   ; a is 7
 let b or_zero(Option.None)      ; b is 0</PRE
 ><P
 >See <A
-HREF="types.htm#AEN645"
+HREF="types.htm#AEN650"
 >the Section called <I
 >Union Types</I
 > in Chapter 4</A
@@ -1119,7 +1139,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN282"
+NAME="AEN287"
 >Putting It Together</A
 ></H1
 ><P
