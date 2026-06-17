@@ -21,7 +21,7 @@
 #   tools/install.sh                 # -> /usr/local/bin/scalyc
 #   BINDIR="$HOME/.local/bin" tools/install.sh
 #
-# Uninstall: remove the wrapper, e.g.  sudo rm /usr/local/bin/scalyc
+# Uninstall: tools/uninstall.sh (same BINDIR override).
 set -e
 cd "$(dirname "$0")/.."
 REPO=$(pwd)
