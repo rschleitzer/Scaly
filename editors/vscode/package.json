@@ -1,0 +1,68 @@
+{
+  "name": "scaly",
+  "displayName": "Scaly",
+  "description": "Scaly language support (LSP client for scalyls)",
+  "version": "0.1.0",
+  "publisher": "scaly",
+  "license": "SEE LICENSE IN ../../LICENSE",
+  "engines": {
+    "vscode": "^1.75.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "main": "./out/extension.js",
+  "activationEvents": [
+    "onLanguage:scaly"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "scaly",
+        "aliases": [
+          "Scaly",
+          "scaly"
+        ],
+        "extensions": [
+          ".scaly"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "commands": [
+      {
+        "command": "scaly.restartServer",
+        "title": "Scaly: Restart Language Server"
+      }
+    ],
+    "configuration": {
+      "type": "object",
+      "title": "Scaly",
+      "properties": {
+        "scaly.server.path": {
+          "type": "string",
+          "default": "/tmp/scalyls",
+          "description": "Path to the scalyls language server binary."
+        },
+        "scaly.home": {
+          "type": "string",
+          "default": "",
+          "description": "SCALY_HOME passed to the server (prelude/packages search root). If empty, the first workspace folder is used."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "dependencies": {
+    "vscode-languageclient": "^9.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.75.0",
+    "typescript": "^5.4.0"
+  }
+}
