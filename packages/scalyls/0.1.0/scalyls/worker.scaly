@@ -130,6 +130,16 @@ define worker
             return true
         }
 
+        ; definition: re-read the file; `text` carries the packed "<line>
+        ; <char>" cursor position. The result Location refers back to `uri`.
+        guard kind.equals("g")
+        {
+            let path diagnostics.strip_uri#(uri)
+            let source File.read_to_string#(path)
+            rpc.write_message_fd(out_fd, symbols.definition_packed#(source, uri, text))
+            return true
+        }
+
         rpc.write_message_fd(out_fd, diagnostics.publish_diagnostics#(uri, text))
         true
     }
@@ -233,6 +243,13 @@ define worker
     ; the cursor; the server maps "" to a null result.
     function hover#(rp, uri: String, packed: String) returns String
         worker.exchange#("h", uri, packed, String#(""))
+
+    ; Go-to-definition for `uri` at the packed "<line> <char>" position.
+    ; Returns the LSP Location object, or "" (empty) if the worker is
+    ; unavailable / no declaration matches the identifier under the cursor;
+    ; the server maps "" to a null result.
+    function definition#(rp, uri: String, packed: String) returns String
+        worker.exchange#("g", uri, packed, String#(""))
 
     ; Send one (kind,uri,text) request to the worker and return its framed
     ; reply, or `fallback` if the worker is unavailable / crashed / hung.

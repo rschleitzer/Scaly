@@ -133,6 +133,13 @@ define server
             return
         }
 
+        guard method.equals("textDocument/definition")
+        {
+            guard has_id
+                server.handle_definition(msg, id)
+            return
+        }
+
         ; initialized + any other notification: ignore. Unknown requests
         ; are left unanswered for now (the client tolerates this for the
         ; methods we do not advertise).
@@ -205,6 +212,29 @@ define server
         rpc.write_message(server.hover_response#(id, result))
     }
 
+    ; definition: like hover, the request carries a uri + {line,character}.
+    ; Pack the position as "<line> <char>" and hand it to the worker, which
+    ; re-reads the file and resolves the identifier under the cursor to a
+    ; declaration in the same file. An empty worker reply -> result:null.
+    function handle_definition(msg: JsonValue, id: i64)
+    {
+        let params json.get(msg, "params")
+        let doc json.get(params, "textDocument")
+        let uri json.as_string#(json.get(doc, "uri"))
+        let position json.get(params, "position")
+        let line json.as_i64(json.get(position, "line"))
+        let character json.as_i64(json.get(position, "character"))
+
+        var pb StringBuilder#()
+        pb.append(json.format_i64#(line))
+        pb.append(0x20 as char)                    ; space
+        pb.append(json.format_i64#(character))
+        let packed pb.to_string#()
+
+        let result worker.definition#(uri, packed)
+        rpc.write_message(server.definition_response#(id, result))
+    }
+
     ; A closed document leaves no buffer to analyze; clear whatever
     ; diagnostics the editor still shows for it (empty diagnostics array).
     function handle_did_close(msg: JsonValue)
@@ -254,6 +284,9 @@ define server
         sb.append("true")
         sb.append(0x2C as char)
         sb.append(server.key#("hoverProvider"))
+        sb.append("true")
+        sb.append(0x2C as char)
+        sb.append(server.key#("definitionProvider"))
         sb.append("true")
         sb.append(0x7D as char)                    ; } capabilities
         sb.append(0x2C as char)
@@ -323,6 +356,29 @@ define server
     ; pre-serialized hover object, or null when empty (no symbol at cursor).
     ; Hover payloads are small, so a single append is fine here.
     function hover_response#(rp, id: i64, result: String) returns String
+    {
+        var sb StringBuilder#()
+        sb.append(0x7B as char)
+        sb.append(server.key#("jsonrpc"))
+        sb.append(server.quoted#("2.0"))
+        sb.append(0x2C as char)
+        sb.append(server.key#("id"))
+        sb.append(json.format_i64#(id))
+        sb.append(0x2C as char)
+        sb.append(server.key#("result"))
+        guard result.get_length() = (0 as size_t)
+            sb.append("null")
+        guard result.get_length() > (0 as size_t)
+            sb.append(result)
+        sb.append(0x7D as char)
+        sb.to_string#()
+    }
+
+    ; {"jsonrpc":"2.0","id":<id>,"result":<result>}  where <result> is the
+    ; pre-serialized Location object, or null when empty (no declaration found
+    ; for the identifier under the cursor). A single Location is small, so a
+    ; single append is fine here.
+    function definition_response#(rp, id: i64, result: String) returns String
     {
         var sb StringBuilder#()
         sb.append(0x7B as char)

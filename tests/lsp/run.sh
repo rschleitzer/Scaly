@@ -239,6 +239,66 @@ PY
 rc=$?
 if [ $rc -eq 0 ]; then ok "lsp hover"; else bad "lsp hover"; fi
 
+# ---- definition: jump to the declaration named under the cursor ----
+# Intra-file go-to-definition: extract the identifier at the cursor and find
+# a declaration with that name. Exercises a top-level function call, a method
+# (innermost in a struct body), a type reference, a union variant, and the
+# no-match / off-symbol null cases.
+python3 - <<'PY'
+import sys, json, subprocess
+src = ("function add(a: int, b: int) returns int\n{\n    return a + b\n}\n\n"
+       "define Point\n(\n    x: int\n)\n{\n"
+       "    function get_x(this: Point) returns int\n    {\n        return x\n    }\n}\n\n"
+       "define Shape union (\n    Circle: int\n    Square: int\n)\n\n"
+       "function use_it(p: Point) returns int\n{\n    return add(p.get_x(), 1)\n}\n")
+path = "/tmp/lsp_def_test.scaly"
+open(path, "w").write(src)
+def frame(o):
+    b=json.dumps(o).encode(); return ("Content-Length: %d\r\n\r\n"%len(b)).encode()+b
+def df(idn, line, char):
+    return frame({"jsonrpc":"2.0","id":idn,"method":"textDocument/definition",
+                  "params":{"textDocument":{"uri":"file://"+path},
+                            "position":{"line":line,"character":char}}})
+inp  = frame({"jsonrpc":"2.0","id":1,"method":"initialize","params":{}})
+inp += frame({"jsonrpc":"2.0","method":"initialized","params":{}})
+inp += df(2, 23, 12)    # `add` in `return add(...)` -> top-level add at line 0
+inp += df(3, 23, 18)    # `get_x` in `p.get_x()`     -> method at line 10
+inp += df(4, 21, 20)    # `Point` in `p: Point`      -> define Point at line 5
+inp += df(5, 1, 1)      # `(` punctuation            -> null
+inp += df(6, 100, 0)    # past EOF                    -> null
+inp += frame({"jsonrpc":"2.0","id":9,"method":"shutdown"})
+inp += frame({"jsonrpc":"2.0","method":"exit"})
+out = subprocess.run(["/tmp/scalyls"], input=inp, stdout=subprocess.PIPE).stdout
+frames, d = [], out
+while d:
+    i = d.find(b"\r\n\r\n")
+    if i < 0: break
+    n = int(d[:i].decode().split(":")[1].strip())
+    frames.append(json.loads(d[i+4:i+4+n])); d = d[i+4+n:]
+failures = 0
+def check(cond, label):
+    global failures
+    print(("PASS  " if cond else "FAIL  ") + label)
+    if not cond: failures += 1
+caps = frames[0]["result"]["capabilities"]
+check(caps.get("definitionProvider") is True, "initialize advertises definitionProvider")
+def loc(idn):
+    f = next((x for x in frames if x.get("id") == idn), None)
+    return (f or {}).get("result")
+def line_of(idn):
+    r = loc(idn)
+    return None if r is None else r["range"]["start"]["line"]
+check(loc(2) is not None and loc(2)["uri"] == "file://"+path, "definition -> Location with the file uri")
+check(line_of(2) == 0, "call site -> top-level function decl (line 0)")
+check(line_of(3) == 10, "method call -> method decl (line 10)")
+check(line_of(4) == 5, "type reference -> define decl (line 5)")
+check(loc(5) is None, "punctuation under cursor -> null")
+check(loc(6) is None, "past EOF -> null")
+sys.exit(1 if failures else 0)
+PY
+rc=$?
+if [ $rc -eq 0 ]; then ok "lsp definition"; else bad "lsp definition"; fi
+
 echo "-----"
 echo "PASS: $pass  FAIL: $fail"
 [ $fail -eq 0 ]

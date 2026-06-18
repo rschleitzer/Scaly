@@ -835,4 +835,349 @@ define symbols
             }
         String#("")
     }
+
+    ; ====================================================================
+    ; textDocument/definition (parse-only, single file)
+    ;
+    ; Extract the identifier under the cursor, then search this file's parse
+    ; tree for a declaration with that exact name and return its LSP Location
+    ; ({"uri":...,"range":...}). This is intra-file only: no cross-file or
+    ; scope resolution, so it jumps to the FIRST declaration of that name in
+    ; the document. An unknown / non-identifier cursor yields "" (the server
+    ; maps "" to result:null).
+    ;
+    ; The walk mirrors the documentSymbol / hover walks 1:1 (same union-by-
+    ; payload-type matching, same control-flow idioms), but matches by name
+    ; instead of by cursor-offset containment.
+    ; ====================================================================
+
+    ; The request frame packs the position as "<line> <character>" (same as
+    ; hover). Parse it, find the identifier at that offset, and resolve it to a
+    ; Location, or "" when there is no identifier / no matching declaration.
+    function definition_packed#(rp, source: String, uri: String, packed: String) returns String
+    {
+        var line: size_t 0
+        var character: size_t 0
+        var seen_space: bool false
+        var i: size_t 0
+        let n packed.get_length()
+        while i < n
+        {
+            let c packed.get(i)
+            guard c = (0x20 as u8)
+                set seen_space: true
+            guard c <> (0x20 as u8)
+            {
+                let digit (c - (0x30 as u8)) as size_t
+                guard seen_space = false
+                    set line: line * (10 as size_t) + digit
+                guard seen_space
+                    set character: character * (10 as size_t) + digit
+            }
+            set i: i + 1
+        }
+
+        let offset symbols.position_to_offset#(source, line, character)
+        let name symbols.identifier_at#(source, offset)
+        guard name.get_length() = (0 as size_t)
+            return String#("")
+        symbols.find_definition#(source, uri, name)
+    }
+
+    ; Is byte `c` part of a normal (alphanumeric / underscore) identifier?
+    function is_ident_byte(c: u8) returns bool
+    {
+        guard c >= (0x30 as u8)
+            guard c <= (0x39 as u8)
+                return true                        ; 0-9
+        guard c >= (0x41 as u8)
+            guard c <= (0x5A as u8)
+                return true                        ; A-Z
+        guard c >= (0x61 as u8)
+            guard c <= (0x7A as u8)
+                return true                        ; a-z
+        guard c = (0x5F as u8)
+            return true                            ; _
+        false
+    }
+
+    ; The maximal identifier run covering `offset`, or "" if the cursor is not
+    ; on (or just past) an identifier. Anchors on the byte at `offset`, else
+    ; the byte before it (cursor sitting just after the name), then expands.
+    function identifier_at#(rp, source: String, offset: size_t) returns String
+    {
+        let len source.get_length()
+        guard len = (0 as size_t)
+            return String#("")
+        var off offset
+        guard off >= len
+            set off: len - (1 as size_t)
+
+        var anchor off
+        guard symbols.is_ident_byte(source.get(off)) = false
+        {
+            guard off = (0 as size_t)
+                return String#("")
+            guard symbols.is_ident_byte(source.get(off - (1 as size_t))) = false
+                return String#("")
+            set anchor: off - (1 as size_t)
+        }
+
+        var start anchor
+        while start > (0 as size_t)
+        {
+            guard symbols.is_ident_byte(source.get(start - (1 as size_t))) = false
+                break
+            set start: start - (1 as size_t)
+        }
+        var end anchor + (1 as size_t)
+        while end < len
+        {
+            guard symbols.is_ident_byte(source.get(end)) = false
+                break
+            set end: end + (1 as size_t)
+        }
+
+        var sb StringBuilder#()
+        var k start
+        while k < end
+        {
+            sb.append(source.get(k) as char)
+            set k: k + 1
+        }
+        sb.to_string#()
+    }
+
+    ; Parse the program and return the Location of the first declaration named
+    ; `name`, or "" on no match / parse error.
+    function find_definition#(rp, source: String, uri: String, name: String) returns String
+    {
+        var p parser.Parser$(source)
+        var result String#("")
+        choose p.parse_program#()
+            when err: Error
+                set result: String#("")
+            when program: Success
+            {
+                let file program.file
+                guard file.declarations <> null
+                {
+                    let decls (*file.declarations)
+                    var i: size_t 0
+                    while i < decls.length
+                    {
+                        guard result.get_length() = (0 as size_t)
+                        {
+                            let dptr decls.get(i)
+                            guard dptr <> null
+                            {
+                                let d (*dptr)
+                                set result: symbols.def_decl#(source, uri, d, name)
+                            }
+                        }
+                        set i: i + 1
+                    }
+                }
+            }
+        result
+    }
+
+    ; One top-level declaration: a Location if it (or a nested member) is named
+    ; `name`, else "".
+    function def_decl#(rp, source: String, uri: String, decl: DeclarationSyntax, name: String) returns String
+    {
+        choose decl
+            when f: FunctionSyntax
+                return symbols.def_match#(source, uri, symbols.target_name#(f.target), name, f.start)
+            when pr: ProcedureSyntax
+                return symbols.def_match#(source, uri, symbols.target_name#(pr.target), name, pr.start)
+            when o: OperatorSyntax
+                return symbols.def_match#(source, uri, symbols.target_name#(o.target), name, o.start)
+            when def: DefinitionSyntax
+                return symbols.def_definition#(source, uri, def, name)
+            when m: ModuleSyntax
+                return symbols.def_match#(source, uri, String#(m.name), name, m.start)
+            when mut: MutableSyntax
+                return symbols.def_match#(source, uri, String#(mut.binding.name), name, mut.start)
+            when priv: PrivateSyntax
+                return symbols.def_export#(source, uri, priv.export_, name)
+            when e: EmptySyntax
+                return String#("")
+            when pkg: PackageSyntax
+                return String#("")
+            when u: UseSyntax
+                return String#("")
+            when t: TraitSyntax
+                return String#("")
+            when mac: MacroSyntax
+                return String#("")
+    }
+
+    ; A `private` declaration unwraps to its exported construct.
+    function def_export#(rp, source: String, uri: String, export_: ExportSyntax, name: String) returns String
+    {
+        choose export_
+            when f: FunctionSyntax
+                return symbols.def_match#(source, uri, symbols.target_name#(f.target), name, f.start)
+            when pr: ProcedureSyntax
+                return symbols.def_match#(source, uri, symbols.target_name#(pr.target), name, pr.start)
+            when o: OperatorSyntax
+                return symbols.def_match#(source, uri, symbols.target_name#(o.target), name, o.start)
+            when def: DefinitionSyntax
+                return symbols.def_definition#(source, uri, def, name)
+            when t: TraitSyntax
+                return String#("")
+            when m: ModuleSyntax
+                return symbols.def_match#(source, uri, String#(m.name), name, m.start)
+    }
+
+    ; A `define X`: try its members/variants first (innermost), then its own
+    ; name.
+    function def_definition#(rp, source: String, uri: String, def: DefinitionSyntax, name: String) returns String
+    {
+        var child String#("")
+        choose def.concept_
+            when c: ClassSyntax
+                set child: symbols.def_body#(source, uri, c.body, name)
+            when n: NamespaceSyntax
+                set child: symbols.def_namespace#(source, uri, n, name)
+            when un: UnionSyntax
+                set child: symbols.def_union#(source, uri, un, name)
+            else
+                0
+        guard child.get_length() > (0 as size_t)
+            return child
+        symbols.def_match#(source, uri, def.name, name, def.start)
+    }
+
+    ; Members of a class body.
+    function def_body#(rp, source: String, uri: String, body: ref[BodySyntax]?, name: String) returns String
+    {
+        var result String#("")
+        guard body <> null
+        {
+            let b (*body)
+            guard b.members <> null
+            {
+                let members (*b.members)
+                var i: size_t 0
+                while i < members.length
+                {
+                    guard result.get_length() = (0 as size_t)
+                    {
+                        let mptr members.get(i)
+                        guard mptr <> null
+                        {
+                            let m (*mptr)
+                            set result: symbols.def_member#(source, uri, m, name)
+                        }
+                    }
+                    set i: i + 1
+                }
+            }
+        }
+        result
+    }
+
+    ; One class/union member.
+    function def_member#(rp, source: String, uri: String, member: MemberSyntax, name: String) returns String
+    {
+        choose member
+            when f: FunctionSyntax
+                return symbols.def_match#(source, uri, symbols.target_name#(f.target), name, f.start)
+            when pr: ProcedureSyntax
+                return symbols.def_match#(source, uri, symbols.target_name#(pr.target), name, pr.start)
+            when o: OperatorSyntax
+                return symbols.def_match#(source, uri, symbols.target_name#(o.target), name, o.start)
+            when ini: InitSyntax
+                return String#("")
+            when dei: DeInitSyntax
+                return String#("")
+            when def: DefinitionSyntax
+                return symbols.def_definition#(source, uri, def, name)
+            when e: EmptySyntax
+                return String#("")
+            when im: ImplementSyntax
+                return String#("")
+            when t: TraitSyntax
+                return String#("")
+            when mac: MacroSyntax
+                return String#("")
+            when m: ModuleSyntax
+                return symbols.def_match#(source, uri, String#(m.name), name, m.start)
+    }
+
+    ; Nested declarations of a namespace.
+    function def_namespace#(rp, source: String, uri: String, ns: NamespaceSyntax, name: String) returns String
+    {
+        var result String#("")
+        guard ns.declarations <> null
+        {
+            let decls (*ns.declarations)
+            var i: size_t 0
+            while i < decls.length
+            {
+                guard result.get_length() = (0 as size_t)
+                {
+                    let dptr decls.get(i)
+                    guard dptr <> null
+                    {
+                        let d (*dptr)
+                        set result: symbols.def_decl#(source, uri, d, name)
+                    }
+                }
+                set i: i + 1
+            }
+        }
+        result
+    }
+
+    ; Variants of a union, then any body members.
+    function def_union#(rp, source: String, uri: String, un: UnionSyntax, name: String) returns String
+    {
+        var result String#("")
+        guard un.variants <> null
+        {
+            let variants (*un.variants)
+            var i: size_t 0
+            while i < variants.length
+            {
+                guard result.get_length() = (0 as size_t)
+                {
+                    let vptr variants.get(i)
+                    guard vptr <> null
+                        set result: symbols.def_match#(source, uri, String#(vptr.name), name, vptr.start)
+                }
+                set i: i + 1
+            }
+        }
+        guard result.get_length() = (0 as size_t)
+            guard un.body <> null
+                set result: symbols.def_body#(source, uri, un.body, name)
+        result
+    }
+
+    ; A Location pointing at `start` when `candidate` equals `name`, else "".
+    function def_match#(rp, source: String, uri: String, candidate: String, name: String, start: size_t) returns String
+    {
+        guard candidate.equals(name)
+            return symbols.location_object#(source, uri, start)
+        String#("")
+    }
+
+    ; LSP Location: {"uri":<uri>,"range":{...}} — a zero-width range at `start`
+    ; (the declaration keyword), so the editor jumps there without selecting
+    ; the whole declaration body.
+    function location_object#(rp, source: String, uri: String, start: size_t) returns String
+    {
+        var sb StringBuilder#()
+        sb.append(0x7B as char)                    ; {
+        sb.append(symbols.key#("uri"))
+        sb.append(json.quote_string#(uri))
+        sb.append(0x2C as char)
+        sb.append(symbols.key#("range"))
+        sb.append(symbols.range_for#(source, start, start))
+        sb.append(0x7D as char)                    ; }
+        sb.to_string#()
+    }
 }
