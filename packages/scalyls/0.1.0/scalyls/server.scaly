@@ -33,6 +33,7 @@ use scalyls.rpc
 use scalyls.json
 use scalyls.json.JsonValue
 use scalyls.diagnostics
+use scalyls.docstore
 use scalyls.worker
 
 define server
@@ -169,6 +170,9 @@ define server
         let doc json.get(params, "textDocument")
         let uri json.as_string#(json.get(doc, "uri"))
         let text json.as_string#(json.get(doc, "text"))
+        ; Remember the buffer so later navigation requests (which carry only a
+        ; uri) see this text — including unsaved edits — instead of disk.
+        docstore.put(uri, text)
         server.publish_for(uri, text)
     }
 
@@ -187,6 +191,8 @@ define server
 
         let last json.array_get(changes, n - (1 as size_t))
         let text json.as_string#(json.get(last, "text"))
+        ; Update the stored buffer to this (unsaved) edit.
+        docstore.put(uri, text)
         server.publish_for(uri, text)
     }
 
@@ -199,7 +205,10 @@ define server
         let params json.get(msg, "params")
         let doc json.get(params, "textDocument")
         let uri json.as_string#(json.get(doc, "uri"))
-        let result worker.symbols#(uri)
+        ; In-memory text (empty -> worker reads disk) so the outline reflects
+        ; unsaved edits.
+        let text docstore.get#(uri)
+        let result worker.symbols#(uri, text)
         rpc.write_message(server.document_symbol_response#(id, result))
     }
 
@@ -222,7 +231,8 @@ define server
         pb.append(json.format_i64#(character))
         let packed pb.to_string#()
 
-        let result worker.hover#(uri, packed)
+        let text docstore.get#(uri)
+        let result worker.hover#(uri, text, packed)
         rpc.write_message(server.hover_response#(id, result))
     }
 
@@ -245,7 +255,8 @@ define server
         pb.append(json.format_i64#(character))
         let packed pb.to_string#()
 
-        let result worker.definition#(uri, packed)
+        let text docstore.get#(uri)
+        let result worker.definition#(uri, text, packed)
         rpc.write_message(server.definition_response#(id, result))
     }
 
@@ -269,7 +280,8 @@ define server
         pb.append(json.format_i64#(character))
         let packed pb.to_string#()
 
-        let result worker.references#(uri, packed)
+        let text docstore.get#(uri)
+        let result worker.references#(uri, text, packed)
         ; document_symbol_response# wraps a pre-serialized JSON array as the
         ; result, appending it byte-at-a-time (a many-occurrence array can be
         ; large — same large-append hazard as the outline).
@@ -293,7 +305,8 @@ define server
         pb.append(json.format_i64#(character))
         let packed pb.to_string#()
 
-        let result worker.highlights#(uri, packed)
+        let text docstore.get#(uri)
+        let result worker.highlights#(uri, text, packed)
         rpc.write_message(server.document_symbol_response#(id, result))
     }
 
@@ -304,6 +317,8 @@ define server
         let params json.get(msg, "params")
         let doc json.get(params, "textDocument")
         let uri json.as_string#(json.get(doc, "uri"))
+        ; Drop the in-memory buffer; subsequent requests fall back to disk.
+        docstore.remove(uri)
         let payload diagnostics.clear_diagnostics#(uri)
         rpc.write_message(payload)
     }

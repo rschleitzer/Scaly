@@ -23,6 +23,10 @@ define scalyls
     ; documentSymbol: text -> parse -> DocumentSymbol[] outline tree.
     module symbols
 
+    ; In-memory document store (parent side) so navigation features see
+    ; unsaved editor edits instead of re-reading from disk.
+    module docstore
+
     ; Crash-isolated worker subprocess running the diagnostics pipeline.
     module worker
 

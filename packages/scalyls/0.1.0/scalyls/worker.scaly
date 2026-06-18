@@ -78,11 +78,16 @@ define worker
     ; ====================================================================
     ; Child side: read framed {uri,text} requests, emit framed payloads.
     ; ====================================================================
-    ; Protocol (over the pipe, NOT JSON): each request is THREE framed
-    ; messages — a kind tag ("d" diagnostics / "s" documentSymbol), then the
-    ; uri, then the raw document text — and the reply is one framed payload.
-    ; Raw framing avoids round-tripping arbitrary document text through JSON
-    ; string-escaping (which would corrupt newlines/quotes/braces).
+    ; Protocol (over the pipe, NOT JSON): each request is FOUR framed
+    ; messages — a kind tag ("d" diagnostics / "s" documentSymbol / "h" hover
+    ; / "g" definition / "r" references / "l" documentHighlight), the uri, the
+    ; raw document text (the parent's in-memory copy; empty = unknown), then a
+    ; packed "<line> <char>" cursor position (empty for d/s) — and the reply
+    ; is one framed payload. Raw framing avoids round-tripping arbitrary
+    ; document text through JSON string-escaping (which would corrupt
+    ; newlines/quotes/braces). When the document text frame is empty (the
+    ; parent has no buffer for this uri) the worker re-reads the file from
+    ; disk, preserving the old stateless behavior as a fallback.
     function serve(in_fd: int, out_fd: int) returns int
     {
         ; Each request is handled in serve_one (a plain helper) so its local
@@ -108,59 +113,55 @@ define worker
             return false
 
         let uri rpc.read_message_fd#(in_fd)
-        let text rpc.read_message_fd#(in_fd)
+        let doctext rpc.read_message_fd#(in_fd)
+        let position rpc.read_message_fd#(in_fd)
 
-        ; documentSymbol: the request carries only a uri (the parent is
-        ; stateless), so re-read the file from disk and parse it.
+        ; Resolve the document source: prefer the parent's in-memory copy
+        ; (sees unsaved edits); fall back to reading the file from disk when
+        ; the parent has no buffer for this uri (empty doctext frame).
+        let path diagnostics.strip_uri#(uri)
+        var source doctext
+        guard source.get_length() = (0 as size_t)
+            set source: File.read_to_string#(path)
+
+        ; documentSymbol: outline of the resolved source.
         guard kind.equals("s")
         {
-            let path diagnostics.strip_uri#(uri)
-            let source File.read_to_string#(path)
             rpc.write_message_fd(out_fd, symbols.document_symbols#(source))
             return true
         }
 
-        ; hover: re-read the file; `text` carries the packed "<line> <char>"
-        ; cursor position (the parent is stateless, no doc text).
+        ; hover: symbol under the packed "<line> <char>" cursor position.
         guard kind.equals("h")
         {
-            let path diagnostics.strip_uri#(uri)
-            let source File.read_to_string#(path)
-            rpc.write_message_fd(out_fd, symbols.hover_packed#(source, text))
+            rpc.write_message_fd(out_fd, symbols.hover_packed#(source, position))
             return true
         }
 
-        ; definition: re-read the file; `text` carries the packed "<line>
-        ; <char>" cursor position. The result Location refers back to `uri`.
+        ; definition: declaration for the identifier at the cursor; the
+        ; result Location refers back to `uri`.
         guard kind.equals("g")
         {
-            let path diagnostics.strip_uri#(uri)
-            let source File.read_to_string#(path)
-            rpc.write_message_fd(out_fd, symbols.definition_packed#(source, uri, text))
+            rpc.write_message_fd(out_fd, symbols.definition_packed#(source, uri, position))
             return true
         }
 
-        ; references: re-read the file; `text` carries the packed "<line>
-        ; <char>" cursor position. The result Locations refer back to `uri`.
+        ; references: all occurrences of the identifier at the cursor; the
+        ; result Locations refer back to `uri`.
         guard kind.equals("r")
         {
-            let path diagnostics.strip_uri#(uri)
-            let source File.read_to_string#(path)
-            rpc.write_message_fd(out_fd, symbols.references_packed#(source, uri, text))
+            rpc.write_message_fd(out_fd, symbols.references_packed#(source, uri, position))
             return true
         }
 
-        ; documentHighlight: re-read the file; `text` carries the packed
-        ; "<line> <char>" cursor position. Result is range-only (no uri).
+        ; documentHighlight: occurrences in the current document (range-only).
         guard kind.equals("l")
         {
-            let path diagnostics.strip_uri#(uri)
-            let source File.read_to_string#(path)
-            rpc.write_message_fd(out_fd, symbols.highlights_packed#(source, text))
+            rpc.write_message_fd(out_fd, symbols.highlights_packed#(source, position))
             return true
         }
 
-        rpc.write_message_fd(out_fd, diagnostics.publish_diagnostics#(uri, text))
+        rpc.write_message_fd(out_fd, diagnostics.publish_diagnostics#(uri, source))
         true
     }
 
@@ -247,49 +248,48 @@ define worker
 
     ; Analyze (uri,text) in the worker. Returns the publishDiagnostics
     ; payload, or an empty-diagnostics clear payload if the worker is
-    ; unavailable / crashed / hung (and respawns it next time).
+    ; unavailable / crashed / hung (and respawns it next time). The text is
+    ; the editor's latest buffer (the position frame is unused for diagnostics).
     function analyze#(rp, uri: String, text: String) returns String
-        worker.exchange#("d", uri, text, diagnostics.clear_diagnostics#(uri))
+        worker.exchange#("d", uri, text, String#(""), diagnostics.clear_diagnostics#(uri))
 
-    ; Build the documentSymbol result for `uri` in the worker. Returns the
-    ; JSON array; an empty array `[]` if the worker is unavailable/crashed/
-    ; hung. The text frame is unused (the worker re-reads from disk) but kept
-    ; for protocol uniformity.
-    function symbols#(rp, uri: String) returns String
-        worker.exchange#("s", uri, String#(""), String#("[]"))
+    ; Build the documentSymbol result for `uri` in the worker. `text` is the
+    ; in-memory document copy (empty -> worker reads disk). Returns the JSON
+    ; array; an empty array `[]` if the worker is unavailable/crashed/hung.
+    function symbols#(rp, uri: String, text: String) returns String
+        worker.exchange#("s", uri, text, String#(""), String#("[]"))
 
-    ; Hover for `uri` at the packed "<line> <char>" position. Returns the LSP
-    ; hover object, or "" (empty) if the worker is unavailable / no symbol at
-    ; the cursor; the server maps "" to a null result.
-    function hover#(rp, uri: String, packed: String) returns String
-        worker.exchange#("h", uri, packed, String#(""))
+    ; Hover for `uri` at the packed "<line> <char>" position. `text` is the
+    ; in-memory document copy (empty -> worker reads disk). Returns the LSP
+    ; hover object, or "" (empty) if unavailable / no symbol at the cursor.
+    function hover#(rp, uri: String, text: String, packed: String) returns String
+        worker.exchange#("h", uri, text, packed, String#(""))
 
     ; Go-to-definition for `uri` at the packed "<line> <char>" position.
-    ; Returns the LSP Location object, or "" (empty) if the worker is
-    ; unavailable / no declaration matches the identifier under the cursor;
-    ; the server maps "" to a null result.
-    function definition#(rp, uri: String, packed: String) returns String
-        worker.exchange#("g", uri, packed, String#(""))
+    ; `text` is the in-memory copy (empty -> worker reads disk). Returns the
+    ; LSP Location object, or "" if unavailable / no matching declaration.
+    function definition#(rp, uri: String, text: String, packed: String) returns String
+        worker.exchange#("g", uri, text, packed, String#(""))
 
     ; Find-all-references for `uri` at the packed "<line> <char>" position.
-    ; Returns the LSP Location[] array; an empty array `[]` if the worker is
-    ; unavailable / crashed / hung or there is no identifier at the cursor.
-    function references#(rp, uri: String, packed: String) returns String
-        worker.exchange#("r", uri, packed, String#("[]"))
+    ; `text` is the in-memory copy (empty -> worker reads disk). Returns the
+    ; LSP Location[] array; `[]` if unavailable / crashed / hung / no identifier.
+    function references#(rp, uri: String, text: String, packed: String) returns String
+        worker.exchange#("r", uri, text, packed, String#("[]"))
 
     ; documentHighlight for `uri` at the packed "<line> <char>" position.
-    ; Returns the LSP DocumentHighlight[] array (ranges only); `[]` if the
-    ; worker is unavailable / crashed / hung or there is no identifier.
-    function highlights#(rp, uri: String, packed: String) returns String
-        worker.exchange#("l", uri, packed, String#("[]"))
+    ; `text` is the in-memory copy (empty -> worker reads disk). Returns the
+    ; LSP DocumentHighlight[] array (ranges only); `[]` if unavailable / none.
+    function highlights#(rp, uri: String, text: String, packed: String) returns String
+        worker.exchange#("l", uri, text, packed, String#("[]"))
 
-    ; Send one (kind,uri,text) request to the worker and return its framed
-    ; reply, or `fallback` if the worker is unavailable / crashed / hung.
-    ; Up to two attempts: a worker that crashed mid-request is reaped and the
-    ; request retried once on a fresh worker, so a transient crash is
+    ; Send one (kind,uri,text,position) request to the worker and return its
+    ; framed reply, or `fallback` if the worker is unavailable / crashed /
+    ; hung. Up to two attempts: a worker that crashed mid-request is reaped
+    ; and the request retried once on a fresh worker, so a transient crash is
     ; invisible to the editor. A deterministically-crashing input falls
     ; through to the fallback after the retry (bounded — no respawn storm).
-    function exchange#(rp, kind: pointer[const_char], uri: String, text: String, fallback: String) returns String
+    function exchange#(rp, kind: pointer[const_char], uri: String, text: String, position: String, fallback: String) returns String
     {
         var attempts: int 0
         while attempts < 2
@@ -300,11 +300,13 @@ define worker
             guard worker_pid <= 0
                 return fallback
 
-            ; Send the request as three raw frames: kind, uri, document text.
+            ; Send the request as four raw frames: kind, uri, doc text,
+            ; packed cursor position.
             let kind_str String#(kind)
             rpc.write_message_fd(worker_in, kind_str)
             rpc.write_message_fd(worker_in, uri)
             rpc.write_message_fd(worker_in, text)
+            rpc.write_message_fd(worker_in, position)
 
             ; Wait for the answer with a timeout (catches a hung pipeline).
             var pfd pollfd(worker_out as i32, POLLIN, 0 as i16)

@@ -403,6 +403,58 @@ PY
 rc=$?
 if [ $rc -eq 0 ]; then ok "lsp documentHighlight"; else bad "lsp documentHighlight"; fi
 
+# ---- in-memory document store: unsaved edits are visible ----
+# The store keeps the editor's latest text per uri so navigation requests
+# (which carry only a uri) reflect UNSAVED edits instead of re-reading disk.
+# Write one thing to disk, didOpen it, then didChange to DIFFERENT text that
+# is NEVER written to disk. documentSymbol must report the edited (in-memory)
+# outline. After didClose the entry is dropped and it falls back to disk.
+python3 - <<'PY'
+import sys, json, subprocess
+path = "/tmp/lsp_docstore_test.scaly"
+disk   = "function on_disk() returns int\n{\n    return 1\n}\n"
+edited = "function edited_only() returns int\n{\n    return 2\n}\n"
+open(path, "w").write(disk)          # disk has `on_disk`; never rewritten
+def frame(o):
+    b=json.dumps(o).encode(); return ("Content-Length: %d\r\n\r\n"%len(b)).encode()+b
+def docsym(idn):
+    return frame({"jsonrpc":"2.0","id":idn,"method":"textDocument/documentSymbol",
+                  "params":{"textDocument":{"uri":"file://"+path}}})
+inp  = frame({"jsonrpc":"2.0","id":1,"method":"initialize","params":{}})
+inp += frame({"jsonrpc":"2.0","method":"initialized","params":{}})
+inp += frame({"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{
+        "uri":"file://"+path,"languageId":"scaly","version":1,"text":disk}}})
+inp += frame({"jsonrpc":"2.0","method":"textDocument/didChange","params":{
+        "textDocument":{"uri":"file://"+path,"version":2},
+        "contentChanges":[{"text":edited}]}})   # unsaved edit, NOT on disk
+inp += docsym(2)                                 # must reflect the edit
+inp += frame({"jsonrpc":"2.0","method":"textDocument/didClose","params":{
+        "textDocument":{"uri":"file://"+path}}})
+inp += docsym(3)                                 # store dropped -> disk
+inp += frame({"jsonrpc":"2.0","id":9,"method":"shutdown"})
+inp += frame({"jsonrpc":"2.0","method":"exit"})
+out = subprocess.run(["/tmp/scalyls"], input=inp, stdout=subprocess.PIPE).stdout
+frames, d = [], out
+while d:
+    i = d.find(b"\r\n\r\n")
+    if i < 0: break
+    n = int(d[:i].decode().split(":")[1].strip())
+    frames.append(json.loads(d[i+4:i+4+n])); d = d[i+4+n:]
+failures = 0
+def check(cond, label):
+    global failures
+    print(("PASS  " if cond else "FAIL  ") + label)
+    if not cond: failures += 1
+def names(idn):
+    f = next((x for x in frames if x.get("id") == idn), None)
+    return [s["name"] for s in ((f or {}).get("result") or [])]
+check(names(2) == ["edited_only"], "documentSymbol reflects the unsaved edit (in-memory store)")
+check(names(3) == ["on_disk"], "after didClose -> falls back to disk content")
+sys.exit(1 if failures else 0)
+PY
+rc=$?
+if [ $rc -eq 0 ]; then ok "lsp in-memory document store"; else bad "lsp in-memory document store"; fi
+
 echo "-----"
 echo "PASS: $pass  FAIL: $fail"
 [ $fail -eq 0 ]

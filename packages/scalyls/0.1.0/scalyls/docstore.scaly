@@ -1,0 +1,211 @@
+; docstore.scaly - in-memory document store (parent side).
+;
+; The server is otherwise stateless: documentSymbol / hover / definition /
+; references / documentHighlight all carry only a uri, so the worker used to
+; re-read the file from disk — stale for unsaved editor buffers. This store
+; keeps the latest text the editor sent (didOpen / didChange) per uri so the
+; navigation features see UNSAVED edits. didClose drops the entry.
+;
+; MEMORY MODEL: the store must outlive a single request, so it cannot live on
+; a per-request local page (those are reclaimed every iteration) and cannot
+; live on a long-lived root page (the stack-LIFO discipline forbids freeing or
+; replacing a page once per-request pages stack above it -> an unbounded leak
+; on every keystroke). It therefore uses libc malloc/free directly, completely
+; orthogonal to the Scaly page allocator: each slot's uri/text bytes are
+; malloc'd copies, FREED on replace (didChange) and on didClose. Memory stays
+; bounded (one live copy per open document). A scalar `pointer` module-global
+; with a `null` initializer is allowed (mutable-global support, s189); the
+; slot array is lazily malloc'd on first use.
+;
+; The store lives ONLY in the parent. The worker (a forked child) receives the
+; text over its request pipe, so it never touches this module.
+;
+; CONTROL-FLOW NOTE: `guard COND STMT` runs STMT when COND is TRUE (no else).
+; One statement per line (`;` starts a comment, not a separator).
+
+use scaly.containers.String
+use scaly.memory.runtime
+
+; libc allocator. free + memcpy come from scaly.memory.runtime; malloc is not
+; declared there, so declare it here (fixpoint-safe — no scaly/scalyc source
+; is touched).
+function malloc(size: size_t) returns pointer[void] extern
+
+; Max number of simultaneously-open documents tracked. An editor rarely keeps
+; more than a handful open; a full table just falls back to reading disk.
+define DOC_CAP int 256
+
+; One tracked document: malloc'd uri + text byte copies (NOT page-owned).
+; `used` marks a live slot.
+define DocSlot
+(
+    uri_data:  pointer[u8]
+    uri_len:   size_t
+    text_data: pointer[u8]
+    text_len:  size_t
+    used:      bool
+)
+
+; The slot array, lazily malloc'd. null until the first store access.
+mutable doc_slots: pointer[DocSlot] null
+
+define docstore
+{
+    ; Lazily allocate + zero the slot array on first use. A malloc failure
+    ; leaves doc_slots null; callers then no-op and navigation falls back to
+    ; reading the file from disk.
+    procedure ensure()
+    {
+        guard doc_slots = null
+        {
+            let bytes (DOC_CAP as size_t) * sizeof DocSlot
+            set doc_slots: malloc(bytes) as pointer[DocSlot]
+            guard doc_slots = null
+                return
+
+            var i 0
+            while i < DOC_CAP
+            {
+                let s doc_slots + i
+                set s.used: false
+                set s.uri_data: null
+                set s.uri_len: 0 as size_t
+                set s.text_data: null
+                set s.text_len: 0 as size_t
+                set i: i + 1
+            }
+        }
+    }
+
+    ; Index of the live slot whose uri matches, or -1. Builds a String view
+    ; over each stored uri (on this function's local page) for the compare.
+    function find(uri: String) returns int
+    {
+        guard doc_slots <> null
+        {
+            var i 0
+            while i < DOC_CAP
+            {
+                let s doc_slots + i
+                guard s.used
+                {
+                    let su String#(s.uri_data as pointer[const_char], s.uri_len)
+                    guard su.equals(uri)
+                        return i
+                }
+                set i: i + 1
+            }
+        }
+        0 - 1
+    }
+
+    ; Replace slot `s`'s text with a fresh malloc'd copy of `text`'s content
+    ; bytes, freeing the previous copy. An empty text leaves text_data null.
+    procedure set_text(s: pointer[DocSlot], text: String)
+    {
+        guard s.text_data <> null
+            free(s.text_data as pointer[void])
+        set s.text_data: null
+        set s.text_len: 0 as size_t
+
+        let len text.get_length()
+        guard len > (0 as size_t)
+        {
+            let dst malloc(len) as pointer[u8]
+            guard dst <> null
+            {
+                memcpy(dst as pointer[void], text.get_buffer() as pointer[void], len)
+                set s.text_data: dst
+                set s.text_len: len
+            }
+        }
+    }
+
+    ; Set slot `s`'s uri to a fresh malloc'd copy of `uri`'s content bytes,
+    ; freeing any previous copy (slots are reused after didClose).
+    procedure set_uri(s: pointer[DocSlot], uri: String)
+    {
+        guard s.uri_data <> null
+            free(s.uri_data as pointer[void])
+        set s.uri_data: null
+        set s.uri_len: 0 as size_t
+
+        let len uri.get_length()
+        guard len > (0 as size_t)
+        {
+            let dst malloc(len) as pointer[u8]
+            guard dst <> null
+            {
+                memcpy(dst as pointer[void], uri.get_buffer() as pointer[void], len)
+                set s.uri_data: dst
+                set s.uri_len: len
+            }
+        }
+    }
+
+    ; Record (or replace) the latest text for `uri`. Called on didOpen and
+    ; every didChange. Replacing frees the old text copy first (bounded).
+    procedure put(uri: String, text: String)
+    {
+        docstore.ensure()
+        guard doc_slots = null
+            return
+
+        let idx docstore.find(uri)
+        guard idx >= 0
+        {
+            let s doc_slots + idx
+            docstore.set_text(s, text)
+            return
+        }
+
+        ; New document: take the first free slot.
+        var i 0
+        while i < DOC_CAP
+        {
+            let s doc_slots + i
+            guard s.used = false
+            {
+                docstore.set_uri(s, uri)
+                docstore.set_text(s, text)
+                set s.used: true
+                return
+            }
+            set i: i + 1
+        }
+        ; Table full: drop silently — navigation falls back to disk.
+    }
+
+    ; Drop the entry for `uri` (didClose), freeing its malloc'd copies.
+    procedure remove(uri: String)
+    {
+        let idx docstore.find(uri)
+        guard idx >= 0
+        {
+            let s doc_slots + idx
+            guard s.text_data <> null
+                free(s.text_data as pointer[void])
+            guard s.uri_data <> null
+                free(s.uri_data as pointer[void])
+            set s.text_data: null
+            set s.text_len: 0 as size_t
+            set s.uri_data: null
+            set s.uri_len: 0 as size_t
+            set s.used: false
+        }
+    }
+
+    ; The stored text for `uri` (a fresh copy on the caller's page), or an
+    ; empty String on a miss. The worker treats empty as "read from disk".
+    function get#(rp, uri: String) returns String
+    {
+        let idx docstore.find(uri)
+        guard idx >= 0
+        {
+            let s doc_slots + idx
+            guard s.text_data <> null
+                return String#(s.text_data as pointer[const_char], s.text_len)
+        }
+        String#("")
+    }
+}
