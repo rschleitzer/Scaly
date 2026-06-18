@@ -498,6 +498,358 @@ define symbols
     }
 
     ; ====================================================================
+    ; textDocument/completion (parse-only)
+    ;
+    ; Collect every declared name in the file — top-level functions /
+    ; procedures / operators / types / mutables, plus the members of structs,
+    ; namespaces and unions — into a flat LSP CompletionItem[] array. The
+    ; editor does the prefix filtering, so the cursor position is not used (a
+    ; future member-after-`.` mode would need type resolution). The result is
+    ; the bare JSON array `[ <item>... ]`; the server wraps it in a Response.
+    ;
+    ; Each <item>: {"label":<name>,"kind":<int>}. LSP CompletionItemKind ints
+    ; (DISTINCT from documentSymbol's SymbolKind ints):
+    ;   Method=2 Function=3 Constructor=4 Variable=6 Module=9 Enum=13
+    ;   EnumMember=20 Constant=21 Struct=22 Operator=24
+    ;
+    ; Same parse-tree walk as documentSymbol, but flattened: each helper
+    ; returns a COMMA-JOINED FRAGMENT of items (no surrounding brackets, no
+    ; leading/trailing comma), and callers join non-empty fragments with a
+    ; single comma. Items are small, but the whole array can be large (a big
+    ; file has hundreds of names), so fragments are appended ONE BYTE AT A TIME
+    ; — the same large-append hazard documented in the STRING/JSON NOTE.
+    ; ====================================================================
+
+    function completion_items#(rp, source: String) returns String
+    {
+        var sb StringBuilder#()
+        sb.append(0x5B as char)                    ; [
+
+        var p parser.Parser$(source)
+        choose p.parse_program#()
+            when err: Error {}
+            when program: Success
+            {
+                let file program.file
+                guard file.declarations <> null
+                {
+                    let decls (*file.declarations)
+                    var first true
+                    var i: size_t 0
+                    while i < decls.length
+                    {
+                        let dptr decls.get(i)
+                        guard dptr <> null
+                        {
+                            let d (*dptr)
+                            let frag symbols.completion_decl#(source, d)
+                            guard frag.get_length() > (0 as size_t)
+                            {
+                                guard first = false
+                                    sb.append(0x2C as char)
+                                var ci: size_t 0
+                                let cn frag.get_length()
+                                while ci < cn
+                                {
+                                    sb.append(frag.get(ci) as char)
+                                    set ci: ci + 1
+                                }
+                                set first: false
+                            }
+                        }
+                        set i: i + 1
+                    }
+                }
+            }
+
+        sb.append(0x5D as char)                    ; ]
+        sb.to_string#()
+    }
+
+    ; A {"label":<name>,"kind":<int>} item. Small -> plain append is fine.
+    function completion_item#(rp, name: String, kind: i64) returns String
+    {
+        var sb StringBuilder#()
+        sb.append(0x7B as char)                    ; {
+        sb.append(symbols.key#("label"))
+        sb.append(json.quote_string#(name))
+        sb.append(0x2C as char)
+        sb.append(symbols.key#("kind"))
+        sb.append(json.format_i64#(kind))
+        sb.append(0x7D as char)                    ; }
+        sb.to_string#()
+    }
+
+    ; One top-level declaration -> a fragment (its own item, plus the members
+    ; of a definition). "" for use/package/empty/trait/macro.
+    function completion_decl#(rp, source: String, decl: DeclarationSyntax) returns String
+    {
+        choose decl
+            when f: FunctionSyntax
+                return symbols.completion_item#(symbols.target_name#(f.target), 3 as i64)
+            when pr: ProcedureSyntax
+                return symbols.completion_item#(symbols.target_name#(pr.target), 3 as i64)
+            when o: OperatorSyntax
+                return symbols.completion_item#(symbols.target_name#(o.target), 24 as i64)
+            when def: DefinitionSyntax
+                return symbols.completion_definition#(source, def)
+            when m: ModuleSyntax
+                return symbols.completion_item#(m.name, 9 as i64)
+            when mut: MutableSyntax
+                return symbols.completion_item#(mut.binding.name, 6 as i64)
+            when priv: PrivateSyntax
+                return symbols.completion_export#(source, priv.export_)
+            when e: EmptySyntax
+                return String#("")
+            when pkg: PackageSyntax
+                return String#("")
+            when u: UseSyntax
+                return String#("")
+            when t: TraitSyntax
+                return String#("")
+            when mac: MacroSyntax
+                return String#("")
+    }
+
+    ; A `private` declaration unwraps to its exported construct.
+    function completion_export#(rp, source: String, export_: ExportSyntax) returns String
+    {
+        choose export_
+            when f: FunctionSyntax
+                return symbols.completion_item#(symbols.target_name#(f.target), 3 as i64)
+            when pr: ProcedureSyntax
+                return symbols.completion_item#(symbols.target_name#(pr.target), 3 as i64)
+            when o: OperatorSyntax
+                return symbols.completion_item#(symbols.target_name#(o.target), 24 as i64)
+            when def: DefinitionSyntax
+                return symbols.completion_definition#(source, def)
+            when t: TraitSyntax
+                return String#("")
+            when m: ModuleSyntax
+                return symbols.completion_item#(m.name, 9 as i64)
+    }
+
+    ; A `define X` -> the type's name item followed by its members' items.
+    function completion_definition#(rp, source: String, def: DefinitionSyntax) returns String
+    {
+        var kind: i64 (22 as i64)
+        var members String#("")
+        choose def.concept_
+            when c: ClassSyntax
+            {
+                set kind: (22 as i64)
+                set members: symbols.completion_body#(source, c.body)
+            }
+            when n: NamespaceSyntax
+            {
+                set kind: (9 as i64)
+                set members: symbols.completion_namespace#(source, n)
+            }
+            when un: UnionSyntax
+            {
+                set kind: (13 as i64)
+                set members: symbols.completion_union#(source, un)
+            }
+            when cn: ConstantSyntax
+                set kind: (21 as i64)
+            when dl: DelegateSyntax
+                set kind: (3 as i64)
+            when ic: IntrinsicSyntax
+                set kind: (22 as i64)
+
+        let name_item symbols.completion_item#(def.name, kind)
+        var sb StringBuilder#()
+        var ai: size_t 0
+        let an name_item.get_length()
+        while ai < an
+        {
+            sb.append(name_item.get(ai) as char)
+            set ai: ai + 1
+        }
+        guard members.get_length() > (0 as size_t)
+        {
+            sb.append(0x2C as char)
+            var mi: size_t 0
+            let mn members.get_length()
+            while mi < mn
+            {
+                sb.append(members.get(mi) as char)
+                set mi: mi + 1
+            }
+        }
+        sb.to_string#()
+    }
+
+    ; Members of a class body -> a comma-joined fragment (no brackets).
+    function completion_body#(rp, source: String, body: ref[BodySyntax]?) returns String
+    {
+        var sb StringBuilder#()
+        var first true
+        guard body <> null
+        {
+            let b (*body)
+            guard b.members <> null
+            {
+                let members (*b.members)
+                var i: size_t 0
+                while i < members.length
+                {
+                    let mptr members.get(i)
+                    guard mptr <> null
+                    {
+                        let m (*mptr)
+                        let frag symbols.completion_member#(source, m)
+                        guard frag.get_length() > (0 as size_t)
+                        {
+                            guard first = false
+                                sb.append(0x2C as char)
+                            var ci: size_t 0
+                            let cn frag.get_length()
+                            while ci < cn
+                            {
+                                sb.append(frag.get(ci) as char)
+                                set ci: ci + 1
+                            }
+                            set first: false
+                        }
+                    }
+                    set i: i + 1
+                }
+            }
+        }
+        sb.to_string#()
+    }
+
+    ; One class/union member -> an item, or "" / a nested fragment.
+    function completion_member#(rp, source: String, member: MemberSyntax) returns String
+    {
+        choose member
+            when f: FunctionSyntax
+                return symbols.completion_item#(symbols.target_name#(f.target), 2 as i64)
+            when pr: ProcedureSyntax
+                return symbols.completion_item#(symbols.target_name#(pr.target), 2 as i64)
+            when o: OperatorSyntax
+                return symbols.completion_item#(symbols.target_name#(o.target), 24 as i64)
+            when ini: InitSyntax
+                return symbols.completion_item#(String#("init"), 4 as i64)
+            when dei: DeInitSyntax
+                return symbols.completion_item#(String#("deinit"), 4 as i64)
+            when def: DefinitionSyntax
+                return symbols.completion_definition#(source, def)
+            when e: EmptySyntax
+                return String#("")
+            when im: ImplementSyntax
+                return String#("")
+            when t: TraitSyntax
+                return String#("")
+            when mac: MacroSyntax
+                return String#("")
+            when m: ModuleSyntax
+                return symbols.completion_item#(m.name, 9 as i64)
+    }
+
+    ; Nested declarations of a namespace -> a comma-joined fragment.
+    function completion_namespace#(rp, source: String, ns: NamespaceSyntax) returns String
+    {
+        var sb StringBuilder#()
+        var first true
+        guard ns.declarations <> null
+        {
+            let decls (*ns.declarations)
+            var i: size_t 0
+            while i < decls.length
+            {
+                let dptr decls.get(i)
+                guard dptr <> null
+                {
+                    let d (*dptr)
+                    let frag symbols.completion_decl#(source, d)
+                    guard frag.get_length() > (0 as size_t)
+                    {
+                        guard first = false
+                            sb.append(0x2C as char)
+                        var ci: size_t 0
+                        let cn frag.get_length()
+                        while ci < cn
+                        {
+                            sb.append(frag.get(ci) as char)
+                            set ci: ci + 1
+                        }
+                        set first: false
+                    }
+                }
+                set i: i + 1
+            }
+        }
+        sb.to_string#()
+    }
+
+    ; Variants (EnumMember) + body members of a union -> a comma-joined
+    ; fragment.
+    function completion_union#(rp, source: String, un: UnionSyntax) returns String
+    {
+        var sb StringBuilder#()
+        var first true
+        guard un.variants <> null
+        {
+            let variants (*un.variants)
+            var i: size_t 0
+            while i < variants.length
+            {
+                let vptr variants.get(i)
+                guard vptr <> null
+                {
+                    let vitem symbols.completion_item#(vptr.name, 20 as i64)
+                    guard first = false
+                        sb.append(0x2C as char)
+                    var ci: size_t 0
+                    let cn vitem.get_length()
+                    while ci < cn
+                    {
+                        sb.append(vitem.get(ci) as char)
+                        set ci: ci + 1
+                    }
+                    set first: false
+                }
+                set i: i + 1
+            }
+        }
+        guard un.body <> null
+        {
+            let b (*un.body)
+            guard b.members <> null
+            {
+                let members (*b.members)
+                var j: size_t 0
+                while j < members.length
+                {
+                    let mptr members.get(j)
+                    guard mptr <> null
+                    {
+                        let m (*mptr)
+                        let frag symbols.completion_member#(source, m)
+                        guard frag.get_length() > (0 as size_t)
+                        {
+                            guard first = false
+                                sb.append(0x2C as char)
+                            var ci: size_t 0
+                            let cn frag.get_length()
+                            while ci < cn
+                            {
+                                sb.append(frag.get(ci) as char)
+                                set ci: ci + 1
+                            }
+                            set first: false
+                        }
+                    }
+                    set j: j + 1
+                }
+            }
+        }
+        sb.to_string#()
+    }
+
+    ; ====================================================================
     ; textDocument/hover (parse-only)
     ;
     ; Find the innermost declaration whose [start,end) byte range contains

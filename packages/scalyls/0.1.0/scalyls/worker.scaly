@@ -131,6 +131,14 @@ define worker
             return true
         }
 
+        ; completion: every declared name in the resolved source as a flat
+        ; CompletionItem[] (position unused — the editor prefix-filters).
+        guard kind.equals("c")
+        {
+            rpc.write_message_fd(out_fd, symbols.completion_items#(source))
+            return true
+        }
+
         ; hover: symbol under the packed "<line> <char>" cursor position.
         guard kind.equals("h")
         {
@@ -282,6 +290,12 @@ define worker
     ; LSP DocumentHighlight[] array (ranges only); `[]` if unavailable / none.
     function highlights#(rp, uri: String, text: String, packed: String) returns String
         worker.exchange#("l", uri, text, packed, String#("[]"))
+
+    ; Completion for `uri`. `text` is the in-memory copy (empty -> worker
+    ; reads disk); the position is sent for protocol uniformity but unused.
+    ; Returns a CompletionItem[] of every declared name; `[]` if unavailable.
+    function completion#(rp, uri: String, text: String, packed: String) returns String
+        worker.exchange#("c", uri, text, packed, String#("[]"))
 
     ; Send one (kind,uri,text,position) request to the worker and return its
     ; framed reply, or `fallback` if the worker is unavailable / crashed /

@@ -403,6 +403,60 @@ PY
 rc=$?
 if [ $rc -eq 0 ]; then ok "lsp documentHighlight"; else bad "lsp documentHighlight"; fi
 
+# ---- completion: every declared name (top-level + members) ----
+# Parse-only flat CompletionItem[]: top-level functions/mutables/types plus
+# struct methods and union variants, each with its CompletionItemKind. The
+# cursor position is not used (the editor prefix-filters).
+python3 - <<'PY'
+import sys, json, subprocess
+src = ("function add(a: int, b: int) returns int\n{\n    return a + b\n}\n\n"
+       "mutable counter: int 0\n\n"
+       "define Point\n(\n    x: int\n)\n{\n"
+       "    function get_x(this: Point) returns int\n    {\n        return x\n    }\n}\n\n"
+       "define Shape union (\n    Circle: int\n    Square: int\n)\n")
+path = "/tmp/lsp_completion_test.scaly"
+open(path, "w").write(src)
+def frame(o):
+    b=json.dumps(o).encode(); return ("Content-Length: %d\r\n\r\n"%len(b)).encode()+b
+inp  = frame({"jsonrpc":"2.0","id":1,"method":"initialize","params":{}})
+inp += frame({"jsonrpc":"2.0","method":"initialized","params":{}})
+inp += frame({"jsonrpc":"2.0","id":2,"method":"textDocument/completion",
+              "params":{"textDocument":{"uri":"file://"+path},
+                        "position":{"line":2,"character":4}}})
+inp += frame({"jsonrpc":"2.0","id":9,"method":"shutdown"})
+inp += frame({"jsonrpc":"2.0","method":"exit"})
+out = subprocess.run(["/tmp/scalyls"], input=inp, stdout=subprocess.PIPE).stdout
+frames, d = [], out
+while d:
+    i = d.find(b"\r\n\r\n")
+    if i < 0: break
+    n = int(d[:i].decode().split(":")[1].strip())
+    frames.append(json.loads(d[i+4:i+4+n])); d = d[i+4+n:]
+failures = 0
+def check(cond, label):
+    global failures
+    print(("PASS  " if cond else "FAIL  ") + label)
+    if not cond: failures += 1
+caps = frames[0]["result"]["capabilities"]
+check(isinstance(caps.get("completionProvider"), dict), "initialize advertises completionProvider (object)")
+r = next((f for f in frames if f.get("id") == 2), None)
+items = (r or {}).get("result")
+check(isinstance(items, list), "completion -> array result")
+items = items or []
+by = {it["label"]: it["kind"] for it in items}
+check([it["label"] for it in items] == ["add","counter","Point","get_x","Shape","Circle","Square"],
+      "flat names: top-level + members, in source order")
+check(by.get("add") == 3, "function -> Function(3)")
+check(by.get("counter") == 6, "mutable -> Variable(6)")
+check(by.get("Point") == 22, "define struct -> Struct(22)")
+check(by.get("get_x") == 2, "struct method -> Method(2)")
+check(by.get("Shape") == 13, "union -> Enum(13)")
+check(by.get("Circle") == 20, "union variant -> EnumMember(20)")
+sys.exit(1 if failures else 0)
+PY
+rc=$?
+if [ $rc -eq 0 ]; then ok "lsp completion"; else bad "lsp completion"; fi
+
 # ---- in-memory document store: unsaved edits are visible ----
 # The store keeps the editor's latest text per uri so navigation requests
 # (which carry only a uri) reflect UNSAVED edits instead of re-reading disk.

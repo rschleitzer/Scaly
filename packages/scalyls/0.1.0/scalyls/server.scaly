@@ -155,6 +155,13 @@ define server
             return
         }
 
+        guard method.equals("textDocument/completion")
+        {
+            guard has_id
+                server.handle_completion(msg, id)
+            return
+        }
+
         ; initialized + any other notification: ignore. Unknown requests
         ; are left unanswered for now (the client tolerates this for the
         ; methods we do not advertise).
@@ -310,6 +317,22 @@ define server
         rpc.write_message(server.document_symbol_response#(id, result))
     }
 
+    ; completion: return every declared name in the document as a flat
+    ; CompletionItem[] (the editor prefix-filters; the cursor position is not
+    ; used). Like the other navigation requests, the in-memory text is passed
+    ; so unsaved edits are reflected; an empty buffer -> worker reads disk.
+    function handle_completion(msg: JsonValue, id: i64)
+    {
+        let params json.get(msg, "params")
+        let doc json.get(params, "textDocument")
+        let uri json.as_string#(json.get(doc, "uri"))
+        let text docstore.get#(uri)
+        ; The CompletionItem[] array can be large (many names); reuse the
+        ; byte-at-a-time array wrapper.
+        let result worker.completion#(uri, text, String#(""))
+        rpc.write_message(server.document_symbol_response#(id, result))
+    }
+
     ; A closed document leaves no buffer to analyze; clear whatever
     ; diagnostics the editor still shows for it (empty diagnostics array).
     function handle_did_close(msg: JsonValue)
@@ -371,6 +394,12 @@ define server
         sb.append(0x2C as char)
         sb.append(server.key#("documentHighlightProvider"))
         sb.append("true")
+        sb.append(0x2C as char)
+        ; completionProvider must be a CompletionOptions object (not a bool).
+        ; Empty {} = no trigger chars; the editor invokes it on word typing.
+        sb.append(server.key#("completionProvider"))
+        sb.append(0x7B as char)                    ; {
+        sb.append(0x7D as char)                    ; }
         sb.append(0x7D as char)                    ; } capabilities
         sb.append(0x2C as char)
         sb.append(server.key#("serverInfo"))
