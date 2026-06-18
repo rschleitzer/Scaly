@@ -147,7 +147,7 @@ define worker
         ; all-names list (the editor prefix-filters either way).
         guard kind.equals("c")
         {
-            rpc.write_message_fd(out_fd, symbols.completion_packed#(source, position))
+            rpc.write_message_fd(out_fd, symbols.completion_packed#(source, uri, position))
             return true
         }
 

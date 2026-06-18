@@ -636,8 +636,9 @@ if [ $rc -eq 0 ]; then ok "lsp rename"; else bad "lsp rename"; fi
 # ---- context-aware completion (member-after-`.`, lexical) ----
 # When a `.` precedes the cursor and its receiver names a declared concept,
 # completion returns only that concept's members. A struct receiver yields
-# its methods; a union receiver yields its variants; an unknown receiver (a
-# variable) or no dot falls back to the flat all-names list.
+# its methods; a union receiver yields its variants; a variable receiver is
+# resolved to its declared type (here `p: Point` -> Point's members); no dot
+# falls back to the flat all-names list.
 python3 - <<'PY'
 import sys, json, subprocess
 src = ("function add(a: int, b: int) returns int\n{\n    return a + b\n}\n\n"
@@ -662,7 +663,7 @@ def comp(idn, line, char):
                             "position":{"line":line,"character":char}}})
 pl, pc = after_dot("Point.get_x(p)", 5)   # struct receiver
 sl, sc = after_dot("Shape.Circle", 5)     # union receiver
-vl, vc = after_dot("p.get_x()", 1)        # variable receiver (unknown)
+vl, vc = after_dot("p.get_x()", 1)        # variable receiver (param p: Point)
 inp  = frame({"jsonrpc":"2.0","id":1,"method":"initialize","params":{}})
 inp += frame({"jsonrpc":"2.0","method":"initialized","params":{}})
 inp += comp(2, pl, pc)
@@ -695,7 +696,7 @@ check(kinds(2).get("get_x") == 2, "member kept its CompletionItemKind (Method=2)
 check(labels(3) == ["Circle","Square"], "`Shape.` -> only the union's variants")
 check(kinds(3).get("Circle") == 20, "variant kept its CompletionItemKind (EnumMember=20)")
 flat = ["add","counter","Point","get_x","Shape","Circle","Square","trigger"]
-check(labels(4) == flat, "unknown receiver `p.` -> flat all-names fallback")
+check(labels(4) == ["get_x"], "variable receiver `p.` (p: Point) -> Point's members")
 check(labels(5) == flat, "no dot -> flat all-names list (unchanged)")
 sys.exit(1 if failures else 0)
 PY
@@ -820,6 +821,80 @@ sys.exit(1 if failures else 0)
 PY
 rc=$?
 if [ $rc -eq 0 ]; then ok "lsp workspace/symbol"; else bad "lsp workspace/symbol"; fi
+
+# ---- type-aware completion (variable receivers, lexical) ----
+# A variable receiver `v.` resolves `v`'s declared type lexically (constructor
+# `var v T#(...)`, annotated `v: T`, parameter `(v: T)`, or `this: T`) and then
+# lists that type's members — looking in the current file first, then sibling
+# .scaly files (cross-file). A primitive / unresolvable type falls back to the
+# flat all-names list. Two files in a temp dir: Widget is defined only in
+# types.scaly; main.scaly uses it via a local, a parameter, and an int.
+python3 - <<'PY'
+import sys, json, subprocess, os, tempfile
+d = tempfile.mkdtemp(prefix="lsp_tcompl_")
+types = ("define Widget\n(\n    w: int\n)\n{\n"
+         "    function area(this: Widget) returns int\n    {\n        return w\n    }\n"
+         "    procedure grow(this: Widget)\n    {\n        return\n    }\n"
+         "    function inspect(this: Widget) returns int\n    {\n        return this.area()\n    }\n}\n")
+main = ("function run(g: Widget) returns int\n{\n"
+        "    var local Widget#(3)\n"
+        "    var count: int 0\n"
+        "    let a local.area()\n"
+        "    let b g.area()\n"
+        "    let c count.area()\n"
+        "    return a + b\n}\n")
+tp = os.path.join(d, "types.scaly"); open(tp, "w").write(types)
+mp = os.path.join(d, "main.scaly");  open(mp, "w").write(main)
+turi = "file://"+tp; muri = "file://"+mp
+def frame(o):
+    b=json.dumps(o).encode(); return ("Content-Length: %d\r\n\r\n"%len(b)).encode()+b
+def comp(idn, uri, line, char):
+    return frame({"jsonrpc":"2.0","id":idn,"method":"textDocument/completion",
+                  "params":{"textDocument":{"uri":uri},"position":{"line":line,"character":char}}})
+def afterdot(src, needle, recv_len):
+    idx = src.index(needle) + recv_len            # offset of the dot
+    pre = src[:idx]; return pre.count("\n"), (idx - (pre.rfind("\n")+1)) + 1
+ll, lc = afterdot(main, "local.area()", 5)        # ctor form, cross-file
+gl, gc = afterdot(main, "g.area()", 1)            # param form, cross-file
+nl, nc = afterdot(main, "count.area()", 5)        # int -> no members -> flat
+hl, hc = afterdot(types, "this.area()", 4)        # this-receiver, intra-file
+inp  = frame({"jsonrpc":"2.0","id":1,"method":"initialize","params":{}})
+inp += frame({"jsonrpc":"2.0","method":"initialized","params":{}})
+inp += comp(2, muri, ll, lc)
+inp += comp(3, muri, gl, gc)
+inp += comp(4, muri, nl, nc)
+inp += comp(5, turi, hl, hc)
+inp += frame({"jsonrpc":"2.0","id":9,"method":"shutdown"})
+inp += frame({"jsonrpc":"2.0","method":"exit"})
+out = subprocess.run(["/tmp/scalyls"], input=inp, stdout=subprocess.PIPE).stdout
+frames, dd = [], out
+while dd:
+    i = dd.find(b"\r\n\r\n")
+    if i < 0: break
+    n = int(dd[:i].decode().split(":")[1].strip())
+    frames.append(json.loads(dd[i+4:i+4+n])); dd = dd[i+4+n:]
+failures = 0
+def check(cond, label):
+    global failures
+    print(("PASS  " if cond else "FAIL  ") + label)
+    if not cond: failures += 1
+def res(idn):
+    f = next((x for x in frames if x.get("id") == idn), None)
+    return (f or {}).get("result")
+def labels(idn):
+    return [it["label"] for it in (res(idn) or [])]
+def kinds(idn):
+    return {it["label"]: it["kind"] for it in (res(idn) or [])}
+members = ["area","grow","inspect"]
+check(labels(2) == members, "ctor form `var local Widget#(..)` -> Widget members (cross-file)")
+check(kinds(2).get("area") == 2, "cross-file member kept its kind (Method=2)")
+check(labels(3) == members, "param form `g: Widget` -> Widget members (cross-file)")
+check(labels(5) == members, "`this.` inside a method -> enclosing type's members (intra-file)")
+check(labels(4) == ["run"], "int receiver `count.` -> flat fallback (no member type)")
+sys.exit(1 if failures else 0)
+PY
+rc=$?
+if [ $rc -eq 0 ]; then ok "lsp type-aware completion"; else bad "lsp type-aware completion"; fi
 
 echo "-----"
 echo "PASS: $pass  FAIL: $fail"

@@ -877,7 +877,7 @@ define symbols
     ; ====================================================================
 
     ; Decide member-context vs flat completion from the packed cursor position.
-    function completion_packed#(rp, source: String, packed: String) returns String
+    function completion_packed#(rp, source: String, uri: String, packed: String) returns String
     {
         var line: size_t 0
         var character: size_t 0
@@ -904,13 +904,243 @@ define symbols
         let receiver symbols.receiver_before_cursor#(source, offset)
         guard receiver.get_length() > (0 as size_t)
         {
-            ; A non-empty result means the receiver named a declared concept;
-            ; "" means no such concept -> fall through to the flat list.
-            let members symbols.member_completions#(source, receiver)
-            guard members.get_length() > (0 as size_t)
-                return members
+            ; Case 1: the receiver token itself names a declared concept in this
+            ; file (Type. / namespace. / union.) -> that concept's members.
+            let direct symbols.member_completions#(source, receiver)
+            guard direct.get_length() > (0 as size_t)
+                return direct
+            ; Case 2: the receiver is a VARIABLE (`p.`, `sb.`, `this.`). Resolve
+            ; its declared type lexically, then list that type's members (looking
+            ; in this file first, then sibling .scaly files in the dir tree).
+            let tname symbols.resolve_variable_type#(source, receiver)
+            guard tname.get_length() > (0 as size_t)
+            {
+                let mem symbols.members_for_type#(source, uri, tname)
+                guard mem.get_length() > (0 as size_t)
+                    return mem
+            }
         }
         symbols.completion_items#(source)
+    }
+
+    ; Members of the concept named `type_name`: this file first, then sibling
+    ; .scaly files under the current file's directory tree (cross-file). ""
+    ; when no such concept is found anywhere.
+    function members_for_type#(rp, source: String, uri: String, type_name: String) returns String
+    {
+        let here symbols.member_completions#(source, type_name)
+        guard here.get_length() > (0 as size_t)
+            return here
+        symbols.member_completions_in_workspace#(uri, type_name)
+    }
+
+    ; Enumerate sibling .scaly files (skipping the current one) and return the
+    ; members of the first concept named `type_name`, mirroring
+    ; find_definition_in_workspace#. "" if none / no directory.
+    function member_completions_in_workspace#(rp, uri: String, type_name: String) returns String
+    {
+        let path symbols.uri_to_path#(uri)
+        let dir symbols.dir_of#(path)
+        guard dir.get_length() = (0 as size_t)
+            return String#("")
+        let listing symbols.list_scaly_files#(dir)   ; abs paths, each + LF
+
+        var result String#("")
+        var line_start: size_t 0
+        let n listing.get_length()
+        var i: size_t 0
+        while i < n
+        {
+            guard listing.get(i) = (10 as char)
+            {
+                guard result.get_length() = (0 as size_t)
+                {
+                    let fpath symbols.substring#(listing, line_start, i)
+                    guard fpath.get_length() > (0 as size_t)
+                        guard fpath.equals(path) = false
+                            guard File.exists(fpath)
+                            {
+                                let fsrc File.read_to_string#(fpath)
+                                set result: symbols.member_completions#(fsrc, type_name)
+                            }
+                }
+                set line_start: i + (1 as size_t)
+            }
+            set i: i + (1 as size_t)
+        }
+        result
+    }
+
+    ; Lexically resolve the declared type name of the variable `receiver` (the
+    ; base concept name, generics stripped). Recognises two declaration shapes,
+    ; first occurrence in the file winning (no scope/shadow tracking):
+    ;   - colon form:  `var receiver: TYPE` / `let receiver: TYPE` / param
+    ;     `receiver: TYPE`  -> the identifier after the `:`.
+    ;   - constructor form: `var receiver TYPE$(...)` / `let receiver TYPE#(...)`
+    ;     (a lifetime sigil $/#/^ or `[`/`(` right after TYPE) -> TYPE.
+    ; "" when no such declaration is found (e.g. `let r compute(x)` with no
+    ; sigil, or an undeclared name) -> caller falls back to the flat list.
+    function resolve_variable_type#(rp, source: String, receiver: String) returns String
+    {
+        let len source.get_length()
+        var prev_start: size_t 0       ; previous identifier token span
+        var prev_end: size_t 0
+        var have_prev: size_t 0        ; 1 once a prev identifier token is seen
+        var prev_punct: size_t 0       ; last significant punctuation: ( , or 0
+        var result String#("")
+        var k: size_t 0
+        while k < len
+        {
+            guard result.get_length() <> (0 as size_t)
+                break
+            let c source.get(k)
+            guard symbols.is_ident_byte(c) = false
+            {
+                guard c = (0x28 as u8)
+                    set prev_punct: c as size_t
+                guard c = (0x2C as u8)
+                    set prev_punct: c as size_t
+                guard c <> (0x20 as u8)
+                    guard c <> (0x09 as u8)
+                        guard c <> (0x28 as u8)
+                            guard c <> (0x2C as u8)
+                                set prev_punct: (0 as size_t)
+                set k: k + (1 as size_t)
+            }
+            guard symbols.is_ident_byte(c)
+            {
+                var j k
+                while j < len
+                {
+                    guard symbols.is_ident_byte(source.get(j)) = false
+                        break
+                    set j: j + (1 as size_t)
+                }
+                guard symbols.token_equals(source, k, j, receiver)
+                    set result: symbols.type_after_decl#(source, j, len, prev_start, prev_end, have_prev, prev_punct)
+                set prev_start: k
+                set prev_end: j
+                set have_prev: (1 as size_t)
+                set prev_punct: (0 as size_t)
+                set k: j
+            }
+        }
+        result
+    }
+
+    ; Given the receiver token ending at `recv_end` and its left context (the
+    ; previous identifier token + last punctuation), return the declared type
+    ; name, or "" when this isn't a declaration of the receiver.
+    function type_after_decl#(rp, source: String, recv_end: size_t, len: size_t, prev_start: size_t, prev_end: size_t, have_prev: size_t, prev_punct: size_t) returns String
+    {
+        let after symbols.skip_ws(source, recv_end, len)
+
+        ; Is the previous identifier token the keyword `var` or `let`? The
+        ; keyword literals are bound to locals first: a bare string literal
+        ; passed straight to the non-`#` token_equals has no page and crashes.
+        var is_binding: bool false
+        guard have_prev <> (0 as size_t)
+        {
+            let kw_var String#("var")
+            let kw_let String#("let")
+            guard symbols.token_equals(source, prev_start, prev_end, kw_var)
+                set is_binding: true
+            guard symbols.token_equals(source, prev_start, prev_end, kw_let)
+                set is_binding: true
+        }
+        ; A parameter context: the receiver is preceded by `(` or `,`.
+        var is_param: bool false
+        guard prev_punct = (0x28 as size_t)
+            set is_param: true
+        guard prev_punct = (0x2C as size_t)
+            set is_param: true
+
+        ; Colon form: `receiver : TYPE` (annotated binding or parameter) -> the
+        ; identifier after the `:`.
+        guard after < len
+            guard source.get(after) = (0x3A as u8)
+            {
+                var colon_ok: bool false
+                guard is_binding
+                    set colon_ok: true
+                guard is_param
+                    set colon_ok: true
+                guard colon_ok
+                {
+                    let tstart symbols.skip_ws(source, after + (1 as size_t), len)
+                    return symbols.read_type_name#(source, tstart, len)
+                }
+            }
+
+        ; Constructor form: `var/let receiver TYPE<sigil>` -> TYPE.
+        guard is_binding
+            guard after < len
+                guard symbols.is_ident_byte(source.get(after))
+                {
+                    var te after
+                    while te < len
+                    {
+                        guard symbols.is_ident_byte(source.get(te)) = false
+                            break
+                        set te: te + (1 as size_t)
+                    }
+                    guard te < len
+                        guard symbols.is_ctor_sigil(source.get(te))
+                            return symbols.substring#(source, after, te)
+                }
+        String#("")
+    }
+
+    ; First index at or after `pos` that is not a space or tab.
+    function skip_ws(source: String, pos: size_t, len: size_t) returns size_t
+    {
+        var p pos
+        while p < len
+        {
+            let c source.get(p)
+            guard c <> (0x20 as u8)
+                guard c <> (0x09 as u8)
+                    break
+            set p: p + (1 as size_t)
+        }
+        p
+    }
+
+    ; A constructor follows a type name when the next byte is a lifetime sigil
+    ; ($ # ^) or a `[` (generics) / `(` (call). `(` is permissive: a false
+    ; positive resolves a non-existent concept and harmlessly falls back.
+    function is_ctor_sigil(c: u8) returns bool
+    {
+        guard c = (0x24 as u8)
+            return true                            ; $
+        guard c = (0x23 as u8)
+            return true                            ; #
+        guard c = (0x5E as u8)
+            return true                            ; ^
+        guard c = (0x5B as u8)
+            return true                            ; [
+        guard c = (0x28 as u8)
+            return true                            ; (
+        false
+    }
+
+    ; Read the leading identifier at `start` (stops at the first non-ident byte,
+    ; so a generic `Vector[char]` yields the base `Vector`). "" if none.
+    function read_type_name#(rp, source: String, start: size_t, len: size_t) returns String
+    {
+        guard start < len
+            guard symbols.is_ident_byte(source.get(start))
+            {
+                var e start
+                while e < len
+                {
+                    guard symbols.is_ident_byte(source.get(e)) = false
+                        break
+                    set e: e + (1 as size_t)
+                }
+                return symbols.substring#(source, start, e)
+            }
+        String#("")
     }
 
     ; The identifier token immediately before a `.` to the left of `offset`,
