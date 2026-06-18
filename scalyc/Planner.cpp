@@ -10995,19 +10995,21 @@ llvm::Expected<PlannedBinding> Planner::planBinding(const Binding &Bind) {
         return PlannedOp.takeError();
     }
 
-    // Skip the leading `=` operator if present (binding syntax: name = value)
+    // Skip a LEADING `=` (binding-assignment form `let x = value`). `=` is
+    // also the comparison operator, so a NON-leading `=` (`let r a = b`) must
+    // NOT be stripped — it passes through to collapseOperandSequence as the
+    // comparison `r = (a == b)`. (The old code stripped the first `=`
+    // anywhere, silently dropping the comparison and everything after it.)
     std::vector<PlannedOperand> ValueOps;
-    bool SkippedEquals = false;
-    for (auto &Op : *PlannedOp) {
-        if (!SkippedEquals) {
-            if (auto *TypeExpr = std::get_if<PlannedType>(&Op.Expr)) {
+    for (size_t k = 0; k < PlannedOp->size(); ++k) {
+        if (k == 0) {
+            if (auto *TypeExpr = std::get_if<PlannedType>(&(*PlannedOp)[0].Expr)) {
                 if (TypeExpr->Name == "=") {
-                    SkippedEquals = true;
-                    continue;  // Skip the = operator
+                    continue;  // leading '=' : binding-assignment separator
                 }
             }
         }
-        ValueOps.push_back(std::move(Op));
+        ValueOps.push_back(std::move((*PlannedOp)[k]));
     }
 
     // Collapse operand sequence to create PlannedCall structures for operators

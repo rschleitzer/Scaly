@@ -10203,12 +10203,50 @@ define Planner
         ;      resolve by name.
         ;
         ; plan_binding now collapses the operation sequence. Stack-array
-        ; type detection (`[T, N]` at binding site) and skip-leading-`=`
-        ; folding are deferred.
+        ; type detection (`[T, N]` at binding site) is deferred.
         ; ================================================================
+
+        ; Drop a LEADING `=` from a binding initializer (the assignment
+        ; form `let x = value` → operands `[=, value]`). `=` is also the
+        ; comparison operator, so a NON-leading `=` (`let r a = b`) must be
+        ; kept — it collapses to the comparison `r = (a == b)`. Mirrors the
+        ; stage-0 index-0 guard in Planner.cpp::planBinding.
+        function strip_leading_eq#(rp, ops: Vector[PlannedOperand]) returns Vector[PlannedOperand]
+        {
+            guard ops.length > (0 as size_t)
+            {
+                let f0 ops.get(0)
+                guard f0 <> null
+                {
+                    let f0v (*f0)
+                    choose f0v.expr
+                        when e0: PlannedType
+                        {
+                            guard e0.name.equals("=")
+                            {
+                                var arr Array[PlannedOperand]^rp()
+                                var i: size_t 1
+                                while i < ops.length
+                                {
+                                    let p ops.get(i)
+                                    guard p <> null
+                                        arr.add((*p))
+                                    set i: i + 1
+                                }
+                                return Vector[PlannedOperand]^rp(arr)
+                            }
+                        }
+                        else
+                            0
+                }
+            }
+            ops
+        }
+
         function plan_binding#(rp, this: Planner, b: Binding) returns PlannedBinding
         {
-            let planned_ops_flat this.plan_operands#(b.operation)
+            let raw_ops_flat this.plan_operands#(b.operation)
+            let planned_ops_flat Planner.strip_leading_eq#(raw_ops_flat)
             let orig_item this.plan_item#(b.item)
 
             ; s135: support `var NAME TYPE INIT` (no colon). When the

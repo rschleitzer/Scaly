@@ -1,0 +1,30 @@
+; AOT Test: a NON-leading `=` in a binding initializer is the COMPARISON
+; operator (`let r a = b` ≡ `let r (a == b)`), not a silently-dropped LHS.
+; Pre-fix, planBinding stripped the first `=` anywhere in the initializer,
+; binding `r` to just `a` and dropping `= b`. The fix strips `=` only at
+; operand index 0 (the `let x = value` assignment form), so a non-leading
+; `=` flows through to the comparison. Both stages now agree.
+; Expected: PASS
+
+function id(n: int) returns int
+    n
+
+function check() returns int
+{
+    let x id(5)
+
+    let eq x = 5            ; comparison 5 = 5 -> true (pre-fix: eq = x = 5)
+    guard eq = false
+        return 1
+
+    let ne x = 9            ; comparison 5 = 9 -> false (pre-fix: ne = x = 5)
+    guard ne
+        return 2
+
+    0
+}
+
+if check() = 0
+    print("PASS")
+else
+    print("FAIL")
