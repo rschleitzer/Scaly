@@ -89,6 +89,45 @@ PY
 rc=$?
 if [ $rc -eq 0 ]; then ok "lsp server lifecycle+diagnostics"; else bad "lsp server lifecycle+diagnostics"; fi
 
+# ---- crash isolation: kill the worker mid-session, server must recover ----
+python3 - <<'PY'
+import sys, json, subprocess, time, os
+def frame(o):
+    b=json.dumps(o).encode(); return ("Content-Length: %d\r\n\r\n"%len(b)).encode()+b
+def readframe(f):
+    hdr=b""
+    while b"\r\n\r\n" not in hdr:
+        c=f.read(1)
+        if not c: return None
+        hdr+=c
+    n=int(hdr.decode().split(":")[1].strip()); return json.loads(f.read(n))
+bad="function f() returns int\n{\n    return nope()\n}\n"
+p=subprocess.Popen(["/tmp/scalyls"],stdin=subprocess.PIPE,stdout=subprocess.PIPE)
+def send(o): p.stdin.write(frame(o)); p.stdin.flush()
+try:
+    send({"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}); readframe(p.stdout)
+    send({"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{
+        "uri":"file:///t.scaly","languageId":"scaly","version":1,"text":bad}}})
+    readframe(p.stdout)                      # diag (worker now alive)
+    time.sleep(0.2)
+    kids=subprocess.run(["pgrep","-P",str(p.pid)],stdout=subprocess.PIPE).stdout.decode().split()
+    for k in kids: os.kill(int(k), 9)        # simulate a compiler crash
+    time.sleep(0.2)
+    send({"jsonrpc":"2.0","method":"textDocument/didChange","params":{
+        "textDocument":{"uri":"file:///t.scaly","version":2},"contentChanges":[{"text":bad}]}})
+    d=readframe(p.stdout)                     # must STILL be a correct answer
+    send({"jsonrpc":"2.0","id":2,"method":"shutdown"}); readframe(p.stdout)
+    send({"jsonrpc":"2.0","method":"exit"}); p.wait(timeout=10)
+    diags=(d or {}).get("params",{}).get("diagnostics",[])
+    ok = len(diags)==1 and "nope" in diags[0]["message"]
+    print(("PASS  " if ok else "FAIL  ")+"worker crash -> server recovers + retries")
+    sys.exit(0 if ok else 1)
+except Exception as e:
+    print("FAIL  worker crash isolation ("+str(e)+")"); sys.exit(1)
+PY
+rc=$?
+if [ $rc -eq 0 ]; then ok "lsp worker crash isolation"; else bad "lsp worker crash isolation"; fi
+
 echo "-----"
 echo "PASS: $pass  FAIL: $fail"
 [ $fail -eq 0 ]

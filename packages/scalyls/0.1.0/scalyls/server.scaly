@@ -33,6 +33,7 @@ use scalyls.rpc
 use scalyls.json
 use scalyls.json.JsonValue
 use scalyls.diagnostics
+use scalyls.worker
 
 define server
 {
@@ -165,9 +166,12 @@ define server
         rpc.write_message(payload)
     }
 
+    ; Diagnostics are computed in a crash-isolated worker subprocess (see
+    ; scalyls.worker): a SIGSEGV/abort/hang in the compiler pipeline on a
+    ; bad document then loses only that one result, not the whole server.
     function publish_for(uri: String, text: String)
     {
-        let payload diagnostics.publish_diagnostics#(uri, text)
+        let payload worker.analyze#(uri, text)
         rpc.write_message(payload)
     }
 

@@ -1,0 +1,241 @@
+; worker.scaly - crash-isolated analysis worker.
+;
+; The diagnostics pipeline (parser -> modeler -> planner) runs the real
+; Scaly compiler, which still SIGSEGVs / aborts / hangs on some inputs.
+; Running it in-process would take the whole server down on a single bad
+; document. So the parent (server.run) does ONLY transport + dispatch, and
+; the dangerous pipeline runs in a persistent child process:
+;
+;     editor <-stdio-> [parent: transport + dispatch]
+;                            |  request  (pipe: parent -> worker)
+;                            v  response (pipe: worker -> parent)
+;                      [worker: diagnostics pipeline]
+;
+; Per analysis the parent sends two raw frames (uri, then document text)
+; to the worker, then waits for the framed publishDiagnostics payload with
+; a TIMEOUT (raw framing avoids JSON-escaping arbitrary document text). If
+; the worker crashes (EOF on its output pipe) or hangs (poll timeout), the
+; parent kills + reaps it, returns an empty-diagnostics clear for the uri,
+; and re-spawns a fresh worker on the next request. The parent thus never
+; dies from a compiler bug.
+;
+; The worker is persistent (one fork, many requests) rather than fork-per-
+; request: the pipeline is stateless per document, and the page leak that
+; would have made a long-lived worker grow without bound is fixed.
+;
+; CONTROL-FLOW NOTE: `guard COND STMT` runs STMT when COND is TRUE (no
+; else). One statement per line. CR/LF are numeric bytes (rpc handles the
+; framing); quotes are 0x22 bytes.
+
+use scaly.containers.String
+use scaly.containers.StringBuilder
+use scaly.memory.Page
+use scaly.memory.runtime
+use scalyls.rpc
+use scalyls.diagnostics
+
+; POSIX process / pipe primitives (libc). Declared here rather than in the
+; scaly package so no scaly/scalyc source is touched (fixpoint-safe).
+function fork() returns int extern
+; pipe fills two C `int` (32-bit) fds. Scaly `int` is 64-bit, so the fd
+; pair MUST be an i32[2] (an int[2] would be 2x8 bytes and splice both fds
+; into one garbage i64). The fd values themselves are small and widen
+; cleanly into `int` when handed to read/write/close.
+function pipe(fds: pointer[i32]) returns i32 extern
+function close(fd: int) returns int extern
+function waitpid(pid: int, status: pointer[int], options: int) returns int extern
+function kill(pid: int, sig: int) returns int extern
+function poll(fds: pointer[pollfd], nfds: u64, timeout: int) returns int extern
+function signal(sig: int, handler: pointer[void]) returns pointer[void] extern
+
+; struct pollfd { int fd; short events; short revents; } — 8 bytes, matches
+; the C layout on LP64 (i32 + i16 + i16).
+define pollfd
+(
+    fd: i32
+    events: i16
+    revents: i16
+)
+
+define POLLIN i16 1
+define SIGKILL int 9
+define SIGPIPE int 13
+
+; Wait at most this long for the worker to answer one analysis before
+; declaring it hung and killing it (milliseconds).
+define ANALYZE_TIMEOUT_MS int 8000
+
+; Worker process state, owned by the PARENT. worker_pid <= 0 means "no
+; live worker"; the fds are the parent's ends of the two pipes.
+mutable worker_pid: int 0
+mutable worker_in:  int 0      ; parent -> worker  (write end)
+mutable worker_out: int 0      ; worker -> parent  (read end)
+
+define worker
+{
+    ; ====================================================================
+    ; Child side: read framed {uri,text} requests, emit framed payloads.
+    ; ====================================================================
+    ; Protocol (over the pipe, NOT JSON): each request is two framed
+    ; messages — the uri, then the raw document text — and the reply is one
+    ; framed publishDiagnostics payload. Raw framing avoids round-tripping
+    ; arbitrary document text through JSON string-escaping (which would
+    ; corrupt newlines/quotes/braces).
+    function serve(in_fd: int, out_fd: int) returns int
+    {
+        ; Each request is handled in serve_one (a plain helper) so its local
+        ; page — holding the request frames AND everything the diagnostics
+        ; pipeline allocates — is reclaimed every iteration. Handling inline
+        ; in this never-returning loop would pin it all on serve's page and
+        ; leak the whole pipeline working-set per request. The loop is driven
+        ; by a flag (a call WITH args is not accepted as a while condition).
+        var keep_going true
+        while keep_going
+            set keep_going: worker.serve_one(in_fd, out_fd)
+        0
+    }
+
+    ; Handle one request. Returns true to keep serving, false at EOF (the
+    ; parent closed its end). A plain (non-#) helper so its local page —
+    ; holding the request frames AND the whole diagnostics-pipeline working
+    ; set — is reclaimed on return, every iteration.
+    function serve_one(in_fd: int, out_fd: int) returns bool
+    {
+        let uri rpc.read_message_fd#(in_fd)
+        guard uri.get_length() = (0 as size_t)
+            return false
+
+        let text rpc.read_message_fd#(in_fd)
+        let payload diagnostics.publish_diagnostics#(uri, text)
+        rpc.write_message_fd(out_fd, payload)
+        true
+    }
+
+    ; ====================================================================
+    ; Parent side: spawn / kill / analyze.
+    ; ====================================================================
+
+    ; Fork a fresh worker and record its pid + pipe fds. On any failure
+    ; worker_pid stays 0 (analyze then falls back to a clear payload).
+    procedure spawn()
+    {
+        ; Writing to a dead worker's pipe must NOT kill the parent with
+        ; SIGPIPE — that would defeat the whole isolation. Ignore it so the
+        ; write returns an error instead; analyze then respawns. Set once in
+        ; the parent (re-setting on respawn is harmless); the child inherits
+        ; the disposition, which is fine.
+        signal(SIGPIPE, 1 as pointer[void])  ; SIG_IGN
+
+        var p2c i32[2]                       ; parent -> child
+        guard pipe(p2c as pointer[i32]) <> 0
+            return
+        var c2p i32[2]                       ; child -> parent
+        guard pipe(c2p as pointer[i32]) <> 0
+            return
+
+        let pid fork()
+        guard pid = 0
+        {
+            ; Child: keep p2c read end + c2p write end; drop the others.
+            ; CRUCIAL: also drop the inherited editor stdin/stdout (fd 0/1).
+            ; The worker talks only over the pipes; if it kept fd 1 open the
+            ; editor's stdout pipe would never see EOF when the parent exits
+            ; (the child would still hold a write end) and the client would
+            ; hang. stderr (fd 2) stays open for crash output.
+            close(0)
+            close(1)
+            close(*(p2c + 1))
+            close(*(c2p + 0))
+            let rc worker.serve(*(p2c + 0), *(c2p + 1))
+            exit(rc)
+            return
+        }
+        guard pid < 0                        ; fork failed
+        {
+            close(*(p2c + 0))
+            close(*(p2c + 1))
+            close(*(c2p + 0))
+            close(*(c2p + 1))
+            return
+        }
+
+        ; Parent: keep p2c write end + c2p read end; drop the others.
+        close(*(p2c + 0))
+        close(*(c2p + 1))
+        set worker_pid: pid
+        set worker_in:  *(p2c + 1)
+        set worker_out: *(c2p + 0)
+    }
+
+    procedure ensure()
+    {
+        guard worker_pid <= 0
+            worker.spawn()
+    }
+
+    ; Kill + reap the current worker and close its pipes. Leaves state in
+    ; the "no worker" condition so the next analyze re-spawns.
+    procedure shutdown()
+    {
+        guard worker_pid > 0
+        {
+            kill(worker_pid, SIGKILL)
+            var status int 0
+            waitpid(worker_pid, &status, 0)
+        }
+        guard worker_in > 0
+            close(worker_in)
+        guard worker_out > 0
+            close(worker_out)
+        set worker_pid: 0
+        set worker_in:  0
+        set worker_out: 0
+    }
+
+    ; Analyze (uri,text) in the worker. Returns the publishDiagnostics
+    ; payload, or an empty-diagnostics clear payload if the worker is
+    ; unavailable / crashed / hung (and respawns it next time).
+    function analyze#(rp, uri: String, text: String) returns String
+    {
+        ; Up to two attempts: a worker that crashed mid-analysis is reaped
+        ; and the request retried once on a fresh worker, so a transient
+        ; crash is invisible to the editor. A deterministically-crashing
+        ; input falls through to the clear payload after the retry (bounded
+        ; — no respawn storm).
+        var attempts: int 0
+        while attempts < 2
+        {
+            set attempts: attempts + 1
+            worker.ensure()
+            ; No live worker (spawn failed): nothing to analyze -> clear.
+            guard worker_pid <= 0
+                return diagnostics.clear_diagnostics#(uri)
+
+            ; Send the request as two raw frames: uri, then document text.
+            rpc.write_message_fd(worker_in, uri)
+            rpc.write_message_fd(worker_in, text)
+
+            ; Wait for the answer with a timeout (catches a hung pipeline).
+            var pfd pollfd(worker_out as i32, POLLIN, 0 as i16)
+            let pr poll(&pfd, 1 as u64, ANALYZE_TIMEOUT_MS)
+
+            ; poll == 0 (timeout) or < 0 (error): the pipeline hung. Kill it
+            ; and give up — retrying would just hang again.
+            guard pr <= 0
+            {
+                worker.shutdown()
+                return diagnostics.clear_diagnostics#(uri)
+            }
+
+            let resp rpc.read_message_fd#(worker_out)
+            ; Non-empty = a real answer.
+            guard resp.get_length() > (0 as size_t)
+                return resp
+
+            ; Empty = the worker crashed mid-analysis (its write end closed).
+            ; Reap it; the loop respawns a fresh one and retries once.
+            worker.shutdown()
+        }
+        diagnostics.clear_diagnostics#(uri)
+    }
+}

@@ -20,6 +20,9 @@ define scalyls
     ; Diagnostics: text -> compiler pipeline -> publishDiagnostics.
     module diagnostics
 
+    ; Crash-isolated worker subprocess running the diagnostics pipeline.
+    module worker
+
     ; LSP JSON-RPC lifecycle + dispatch loop.
     module server
 }

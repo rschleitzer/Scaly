@@ -203,4 +203,124 @@ define rpc
         }
         sb.to_string#()
     }
+
+    ; ====================================================================
+    ; fd-parameterized variants — same framing, but over an arbitrary fd
+    ; (the worker pipe) instead of stdin/stdout. Kept as independent copies
+    ; of the stdin/stdout functions above so the proven editor path is
+    ; never disturbed.
+    ; ====================================================================
+
+    function read_byte_fd(fd: int) returns int
+    {
+        var c: u8 0
+        let cp &c
+        let n read(fd, cp as pointer[void], 1 as size_t)
+        guard n = (1 as size_t)
+            return (*cp) as int
+
+        -1
+    }
+
+    function read_exact_fd(fd: int, buf: pointer[void], n: size_t)
+    {
+        var total: size_t 0
+        while total < n
+        {
+            let dst (buf as pointer[u8] + total) as pointer[void]
+            let got read(fd, dst, n - total)
+
+            guard got = (0 as size_t)
+                return
+
+            guard got > (n - total)
+                return
+
+            set total: total + got
+        }
+    }
+
+    function read_message_fd#(rp, fd: int) returns String
+    {
+        var content_length: size_t 0
+
+        while true
+        {
+            var line StringBuilder$()
+            var eof false
+
+            while true
+            {
+                let b rpc.read_byte_fd(fd)
+                guard b < 0
+                {
+                    set eof: true
+                    break
+                }
+
+                guard b = 10
+                    break
+
+                guard b <> 13
+                    line.append(b as char)
+            }
+
+            guard eof
+                return String()
+
+            let line_str line.to_string$()
+            guard line_str.get_length() = (0 as size_t)
+                break
+
+            guard line_str.starts_with("Content-Length:")
+                set content_length: rpc.parse_header_size(line_str)
+        }
+
+        guard content_length = (0 as size_t)
+            return String()
+
+        var body String^rp(content_length)
+        let buf body.get_buffer()
+        rpc.read_exact_fd(fd, buf as pointer[void], content_length)
+        body
+    }
+
+    function write_all_fd(fd: int, s: String)
+    {
+        let len s.get_length()
+        guard len = (0 as size_t)
+            return
+
+        let buf s.get_buffer()
+        var total: size_t 0
+        while total < len
+        {
+            let dst (buf + total) as pointer[void]
+            let w write(fd, dst, len - total)
+
+            guard w = (0 as size_t)
+                return
+
+            guard w > (len - total)
+                return
+
+            set total: total + w
+        }
+    }
+
+    function write_message_fd(fd: int, body: String)
+    {
+        let len body.get_length()
+
+        var sb StringBuilder$()
+        sb.append("Content-Length: ")
+        sb.append(rpc.format_size#(len))
+        sb.append(13 as char)
+        sb.append(10 as char)
+        sb.append(13 as char)
+        sb.append(10 as char)
+
+        rpc.write_all_fd(fd, sb.to_string$())
+        rpc.write_all_fd(fd, body)
+    }
 }
