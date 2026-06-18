@@ -1,0 +1,499 @@
+; symbols.scaly - textDocument/documentSymbol support.
+;
+; Parse a document's text (parser only — no modeler/planner) and turn its
+; top-level declarations into a hierarchical LSP DocumentSymbol[] tree. The
+; result is the bare JSON array `[ <symbol>... ]`; the parent wraps it in a
+; Response envelope with the request id (server.handle_document_symbol).
+;
+; Each <symbol>:
+;   {"name":<name>,"kind":<int>,"range":{...},"selectionRange":{...},
+;    "children":[ <symbol>... ]}
+; LSP SymbolKind ints used here:
+;   Module=2 Namespace=3 Constructor=9 Enum=10 Method=6 Function=12
+;   Variable=13 Constant=14 EnumMember=22 Struct=23 Operator=25
+; range/selectionRange use the syntax node's start..end byte offsets,
+; converted to 0-based line/character (selectionRange == range here).
+;
+; UNION-MATCH NOTE: the Syntax unions are matched by PAYLOAD TYPE name
+; (`when f: FunctionSyntax`), mirroring Modeler.scaly — NOT by variant tag.
+; The throws-union from parse_program# is matched by tag (Success/Error).
+;
+; STRING/JSON NOTE: outgoing JSON uses a local StringBuilder appended in
+; place; nested pieces come from String-returning helpers. Quotes are 0x22
+; bytes. A potentially-large piece (a nested symbol / children array) is
+; appended ONE BYTE AT A TIME (inline `while` over its bytes) rather than as
+; a single StringBuilder.append(String): the runtime's Array.add(Vector)
+; takes a manual-grow path (own_page.allocate of the whole new buffer)
+; whenever a single append more than doubles the buffer's capacity, and that
+; path SIGSEGVs for buffers larger than one exclusive page. Byte-at-a-time
+; append only ever grows via the safe reallocate() doubling, so it never
+; trips it. The loop is inlined (not a helper) because a StringBuilder
+; mutated through a pointer/by-value parameter does not propagate to the
+; caller — only the in-place `sb.append(...)` form on a local does.
+;
+; CONTROL-FLOW NOTE: `guard COND STMT` runs STMT when COND is TRUE (no
+; else). One statement per line. `choose *ptr` does not parse — bind the
+; deref to a local first. In a choose returning a value, EVERY arm uses an
+; explicit `return` (mixing return + bare arms drops the bare ones).
+
+use scaly.containers.String
+use scaly.containers.StringBuilder
+use scaly.containers.Vector
+use scaly.memory.Page
+use scaly.memory.runtime
+use scalyls.json
+
+use scalyc.compiler.parser
+
+; Syntax tree types (parser output). Imported by payload type so the
+; `choose ... when x: TSyntax` arms resolve.
+use scalyc.compiler.Syntax.DeclarationSyntax
+use scalyc.compiler.Syntax.DefinitionSyntax
+use scalyc.compiler.Syntax.MemberSyntax
+use scalyc.compiler.Syntax.ExportSyntax
+use scalyc.compiler.Syntax.TargetSyntax
+use scalyc.compiler.Syntax.BodySyntax
+use scalyc.compiler.Syntax.NamespaceSyntax
+use scalyc.compiler.Syntax.UnionSyntax
+use scalyc.compiler.Syntax.EmptySyntax
+use scalyc.compiler.Syntax.PackageSyntax
+use scalyc.compiler.Syntax.UseSyntax
+use scalyc.compiler.Syntax.PrivateSyntax
+use scalyc.compiler.Syntax.FunctionSyntax
+use scalyc.compiler.Syntax.ProcedureSyntax
+use scalyc.compiler.Syntax.OperatorSyntax
+use scalyc.compiler.Syntax.TraitSyntax
+use scalyc.compiler.Syntax.MacroSyntax
+use scalyc.compiler.Syntax.ModuleSyntax
+use scalyc.compiler.Syntax.MutableSyntax
+use scalyc.compiler.Syntax.ClassSyntax
+use scalyc.compiler.Syntax.ConstantSyntax
+use scalyc.compiler.Syntax.DelegateSyntax
+use scalyc.compiler.Syntax.IntrinsicSyntax
+use scalyc.compiler.Syntax.NamedSyntax
+use scalyc.compiler.Syntax.RoutineSyntax
+use scalyc.compiler.Syntax.InitSyntax
+use scalyc.compiler.Syntax.DeInitSyntax
+use scalyc.compiler.Syntax.ImplementSyntax
+use scalyc.compiler.Syntax.VariantSyntax
+
+define symbols
+{
+    ; Build the documentSymbol result ARRAY from `source`. On a parse error
+    ; the array is empty (the diagnostics path reports the error separately).
+    function document_symbols#(rp, source: String) returns String
+    {
+        var sb StringBuilder#()
+        sb.append(0x5B as char)                    ; [
+
+        var p parser.Parser$(source)
+        choose p.parse_program#()
+            when err: Error {}
+            when program: Success
+            {
+                let file program.file
+                guard file.declarations <> null
+                {
+                    let decls (*file.declarations)
+                    var first true
+                    var i: size_t 0
+                    while i < decls.length
+                    {
+                        let dptr decls.get(i)
+                        guard dptr <> null
+                        {
+                            let d (*dptr)
+                            let piece symbols.decl_symbol#(source, d)
+                            guard piece.get_length() > (0 as size_t)
+                            {
+                                guard first = false
+                                    sb.append(0x2C as char)    ; ,
+                                var ci: size_t 0
+                                let cn piece.get_length()
+                                while ci < cn
+                                {
+                                    sb.append(piece.get(ci) as char)
+                                    set ci: ci + 1
+                                }
+                                set first: false
+                            }
+                        }
+                        set i: i + 1
+                    }
+                }
+            }
+
+        sb.append(0x5D as char)                    ; ]
+        sb.to_string#()
+    }
+
+    ; One top-level declaration -> a symbol, or "" for declarations with no
+    ; outline presence (use/package/empty). Every arm returns explicitly.
+    function decl_symbol#(rp, source: String, decl: DeclarationSyntax) returns String
+    {
+        choose decl
+            when f: FunctionSyntax
+                return symbols.routine_symbol#(source, f.target, f.start, f.end, 12 as i64)
+            when pr: ProcedureSyntax
+                return symbols.routine_symbol#(source, pr.target, pr.start, pr.end, 12 as i64)
+            when o: OperatorSyntax
+                return symbols.routine_symbol#(source, o.target, o.start, o.end, 25 as i64)
+            when def: DefinitionSyntax
+                return symbols.definition_symbol#(source, def)
+            when m: ModuleSyntax
+                return symbols.symbol_object#(source, m.name, 2 as i64, m.start, m.end, String#("[]"))
+            when mut: MutableSyntax
+                return symbols.symbol_object#(source, mut.binding.name, 13 as i64, mut.start, mut.end, String#("[]"))
+            when priv: PrivateSyntax
+                return symbols.export_symbol#(source, priv.export_)
+            when e: EmptySyntax
+                return String#("")
+            when pkg: PackageSyntax
+                return String#("")
+            when u: UseSyntax
+                return String#("")
+            when t: TraitSyntax
+                return String#("")
+            when mac: MacroSyntax
+                return String#("")
+    }
+
+    ; A `private` declaration unwraps to its exported construct.
+    function export_symbol#(rp, source: String, export_: ExportSyntax) returns String
+    {
+        choose export_
+            when f: FunctionSyntax
+                return symbols.routine_symbol#(source, f.target, f.start, f.end, 12 as i64)
+            when pr: ProcedureSyntax
+                return symbols.routine_symbol#(source, pr.target, pr.start, pr.end, 12 as i64)
+            when o: OperatorSyntax
+                return symbols.routine_symbol#(source, o.target, o.start, o.end, 25 as i64)
+            when def: DefinitionSyntax
+                return symbols.definition_symbol#(source, def)
+            when t: TraitSyntax
+                return String#("")
+            when m: ModuleSyntax
+                return symbols.symbol_object#(source, m.name, 2 as i64, m.start, m.end, String#("[]"))
+    }
+
+    ; A function / procedure / operator: name from its target, no children.
+    function routine_symbol#(rp, source: String, target: TargetSyntax, start: size_t, end: size_t, kind: i64) returns String
+    {
+        let name symbols.target_name#(target)
+        symbols.symbol_object#(source, name, kind, start, end, String#("[]"))
+    }
+
+    ; The declared name of a routine target (operator targets may be the
+    ; anonymous index form `[]`).
+    function target_name#(rp, target: TargetSyntax) returns String
+    {
+        choose target
+            when named: NamedSyntax
+                return String#(named.name)
+            when r: RoutineSyntax
+                return String#("[]")
+    }
+
+    ; A `define X` declaration. Kind + children depend on the concept:
+    ;   Class -> Struct(23) with its members as children
+    ;   Namespace -> Namespace(3) with its declarations as children
+    ;   Union -> Enum(10) with its variants (+ body members) as children
+    ;   Constant -> Constant(14); Delegate -> Function(12); Intrinsic -> Struct(23)
+    function definition_symbol#(rp, source: String, def: DefinitionSyntax) returns String
+    {
+        var kind: i64 (23 as i64)
+        var children String#("[]")
+        choose def.concept_
+            when c: ClassSyntax
+            {
+                set kind: (23 as i64)
+                set children: symbols.body_children#(source, c.body)
+            }
+            when n: NamespaceSyntax
+            {
+                set kind: (3 as i64)
+                set children: symbols.namespace_children#(source, n)
+            }
+            when un: UnionSyntax
+            {
+                set kind: (10 as i64)
+                set children: symbols.union_children#(source, un)
+            }
+            when cn: ConstantSyntax
+                set kind: (14 as i64)
+            when dl: DelegateSyntax
+                set kind: (12 as i64)
+            when ic: IntrinsicSyntax
+                set kind: (23 as i64)
+        symbols.symbol_object#(source, def.name, kind, def.start, def.end, children)
+    }
+
+    ; Children of a class body: methods, constructors, nested definitions.
+    function body_children#(rp, source: String, body: ref[BodySyntax]?) returns String
+    {
+        var sb StringBuilder#()
+        sb.append(0x5B as char)                    ; [
+        guard body <> null
+        {
+            let b (*body)
+            guard b.members <> null
+            {
+                let members (*b.members)
+                var first true
+                var i: size_t 0
+                while i < members.length
+                {
+                    let mptr members.get(i)
+                    guard mptr <> null
+                    {
+                        let m (*mptr)
+                        let piece symbols.member_symbol#(source, m)
+                        guard piece.get_length() > (0 as size_t)
+                        {
+                            guard first = false
+                                sb.append(0x2C as char)
+                            var ci: size_t 0
+                            let cn piece.get_length()
+                            while ci < cn
+                            {
+                                sb.append(piece.get(ci) as char)
+                                set ci: ci + 1
+                            }
+                            set first: false
+                        }
+                    }
+                    set i: i + 1
+                }
+            }
+        }
+        sb.append(0x5D as char)                    ; ]
+        sb.to_string#()
+    }
+
+    ; One member of a class/union body -> a symbol, or "" if it has no
+    ; outline presence (empty, implement, trait, macro, module).
+    function member_symbol#(rp, source: String, member: MemberSyntax) returns String
+    {
+        choose member
+            when f: FunctionSyntax
+                return symbols.routine_symbol#(source, f.target, f.start, f.end, 6 as i64)
+            when pr: ProcedureSyntax
+                return symbols.routine_symbol#(source, pr.target, pr.start, pr.end, 6 as i64)
+            when o: OperatorSyntax
+                return symbols.routine_symbol#(source, o.target, o.start, o.end, 25 as i64)
+            when ini: InitSyntax
+                return symbols.symbol_object#(source, String#("init"), 9 as i64, ini.start, ini.end, String#("[]"))
+            when dei: DeInitSyntax
+                return symbols.symbol_object#(source, String#("deinit"), 9 as i64, dei.start, dei.end, String#("[]"))
+            when def: DefinitionSyntax
+                return symbols.definition_symbol#(source, def)
+            when e: EmptySyntax
+                return String#("")
+            when im: ImplementSyntax
+                return String#("")
+            when t: TraitSyntax
+                return String#("")
+            when mac: MacroSyntax
+                return String#("")
+            when m: ModuleSyntax
+                return symbols.symbol_object#(source, m.name, 2 as i64, m.start, m.end, String#("[]"))
+    }
+
+    ; Children of a namespace: its nested declarations (reuses decl_symbol#).
+    function namespace_children#(rp, source: String, ns: NamespaceSyntax) returns String
+    {
+        var sb StringBuilder#()
+        sb.append(0x5B as char)                    ; [
+        guard ns.declarations <> null
+        {
+            let decls (*ns.declarations)
+            var first true
+            var i: size_t 0
+            while i < decls.length
+            {
+                let dptr decls.get(i)
+                guard dptr <> null
+                {
+                    let d (*dptr)
+                    let piece symbols.decl_symbol#(source, d)
+                    guard piece.get_length() > (0 as size_t)
+                    {
+                        guard first = false
+                            sb.append(0x2C as char)
+                        var ci: size_t 0
+                        let cn piece.get_length()
+                        while ci < cn
+                        {
+                            sb.append(piece.get(ci) as char)
+                            set ci: ci + 1
+                        }
+                        set first: false
+                    }
+                }
+                set i: i + 1
+            }
+        }
+        sb.append(0x5D as char)                    ; ]
+        sb.to_string#()
+    }
+
+    ; Children of a union: each variant as an EnumMember(22), then any body
+    ; members (methods defined on the union).
+    function union_children#(rp, source: String, un: UnionSyntax) returns String
+    {
+        var sb StringBuilder#()
+        sb.append(0x5B as char)                    ; [
+        var first true
+        guard un.variants <> null
+        {
+            let variants (*un.variants)
+            var i: size_t 0
+            while i < variants.length
+            {
+                let vptr variants.get(i)
+                guard vptr <> null
+                {
+                    guard first = false
+                        sb.append(0x2C as char)
+                    let vsym symbols.symbol_object#(source, vptr.name, 22 as i64, vptr.start, vptr.end, String#("[]"))
+                    var ci: size_t 0
+                    let cn vsym.get_length()
+                    while ci < cn
+                    {
+                        sb.append(vsym.get(ci) as char)
+                        set ci: ci + 1
+                    }
+                    set first: false
+                }
+                set i: i + 1
+            }
+        }
+        guard un.body <> null
+        {
+            let b (*un.body)
+            guard b.members <> null
+            {
+                let members (*b.members)
+                var j: size_t 0
+                while j < members.length
+                {
+                    let mptr members.get(j)
+                    guard mptr <> null
+                    {
+                        let m (*mptr)
+                        let piece symbols.member_symbol#(source, m)
+                        guard piece.get_length() > (0 as size_t)
+                        {
+                            guard first = false
+                                sb.append(0x2C as char)
+                            var ci: size_t 0
+                            let cn piece.get_length()
+                            while ci < cn
+                            {
+                                sb.append(piece.get(ci) as char)
+                                set ci: ci + 1
+                            }
+                            set first: false
+                        }
+                    }
+                    set j: j + 1
+                }
+            }
+        }
+        sb.append(0x5D as char)                    ; ]
+        sb.to_string#()
+    }
+
+    ; ====================================================================
+    ; Leaf builders
+    ; ====================================================================
+
+    function symbol_object#(rp, source: String, name: String, kind: i64, start: size_t, end: size_t, children: String) returns String
+    {
+        var sb StringBuilder#()
+        sb.append(0x7B as char)                    ; {
+        sb.append(symbols.key#("name"))
+        sb.append(json.quote_string#(name))
+        sb.append(0x2C as char)
+        sb.append(symbols.key#("kind"))
+        sb.append(json.format_i64#(kind))
+        sb.append(0x2C as char)
+        sb.append(symbols.key#("range"))
+        sb.append(symbols.range_for#(source, start, end))
+        sb.append(0x2C as char)
+        sb.append(symbols.key#("selectionRange"))
+        sb.append(symbols.range_for#(source, start, end))
+        sb.append(0x2C as char)
+        sb.append(symbols.key#("children"))
+        var ci: size_t 0
+        let cn children.get_length()
+        while ci < cn
+        {
+            sb.append(children.get(ci) as char)
+            set ci: ci + 1
+        }
+        sb.append(0x7D as char)                    ; }
+        sb.to_string#()
+    }
+
+    ; {"start":<pos>,"end":<pos>}
+    function range_for#(rp, source: String, start: size_t, end: size_t) returns String
+    {
+        var sb StringBuilder#()
+        sb.append(0x7B as char)
+        sb.append(symbols.key#("start"))
+        sb.append(symbols.offset_to_pos#(source, start))
+        sb.append(0x2C as char)
+        sb.append(symbols.key#("end"))
+        sb.append(symbols.offset_to_pos#(source, end))
+        sb.append(0x7D as char)
+        sb.to_string#()
+    }
+
+    ; Byte offset -> {"line":L,"character":C}, both 0-based. ASCII columns
+    ; (UTF-16 units == bytes for ASCII). Numeric LF compare (10), never "\n".
+    ; Mirrors diagnostics.diag_object#'s offset walk.
+    function offset_to_pos#(rp, source: String, offset: size_t) returns String
+    {
+        var line: size_t 0
+        var col: size_t 0
+        let src_len source.get_length()
+        var target offset
+        guard target > src_len
+            set target: src_len
+        var off: size_t 0
+        while off < target
+        {
+            let c source.get(off)
+            if c = (10 as char)
+            {
+                set line: line + 1
+                set col: 0 as size_t
+            }
+            else
+                set col: col + 1
+            set off: off + 1
+        }
+
+        var sb StringBuilder#()
+        sb.append(0x7B as char)
+        sb.append(symbols.key#("line"))
+        sb.append(json.format_i64#(line as i64))
+        sb.append(0x2C as char)
+        sb.append(symbols.key#("character"))
+        sb.append(json.format_i64#(col as i64))
+        sb.append(0x7D as char)
+        sb.to_string#()
+    }
+
+    ; `"key":`
+    function key#(rp, k: pointer[const_char]) returns String
+    {
+        var sb StringBuilder#()
+        sb.append(0x22 as char)
+        sb.append(k)
+        sb.append(0x22 as char)
+        sb.append(0x3A as char)                    ; :
+        sb.to_string#()
+    }
+}

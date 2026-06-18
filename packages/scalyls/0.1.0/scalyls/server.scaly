@@ -119,6 +119,13 @@ define server
             return
         }
 
+        guard method.equals("textDocument/documentSymbol")
+        {
+            guard has_id
+                server.handle_document_symbol(msg, id)
+            return
+        }
+
         ; initialized + any other notification: ignore. Unknown requests
         ; are left unanswered for now (the client tolerates this for the
         ; methods we do not advertise).
@@ -153,6 +160,19 @@ define server
         let last json.array_get(changes, n - (1 as size_t))
         let text json.as_string#(json.get(last, "text"))
         server.publish_for(uri, text)
+    }
+
+    ; documentSymbol: return the outline tree for the requested document.
+    ; The request carries only a uri (no text), so the worker re-reads the
+    ; file from disk. The result is the DocumentSymbol[] array wrapped in a
+    ; Response envelope with the request id.
+    function handle_document_symbol(msg: JsonValue, id: i64)
+    {
+        let params json.get(msg, "params")
+        let doc json.get(params, "textDocument")
+        let uri json.as_string#(json.get(doc, "uri"))
+        let result worker.symbols#(uri)
+        rpc.write_message(server.document_symbol_response#(id, result))
     }
 
     ; A closed document leaves no buffer to analyze; clear whatever
@@ -199,6 +219,9 @@ define server
         sb.append(0x7B as char)                    ; capabilities {
         sb.append(server.key#("textDocumentSync"))
         sb.append(0x31 as char)                    ; 1
+        sb.append(0x2C as char)
+        sb.append(server.key#("documentSymbolProvider"))
+        sb.append("true")
         sb.append(0x7D as char)                    ; } capabilities
         sb.append(0x2C as char)
         sb.append(server.key#("serverInfo"))
@@ -227,6 +250,38 @@ define server
         sb.append(0x2C as char)
         sb.append(server.key#("result"))
         sb.append("null")
+        sb.append(0x7D as char)
+        sb.to_string#()
+    }
+
+    ; {"jsonrpc":"2.0","id":<id>,"result":<result>}  where <result> is a
+    ; pre-serialized JSON value (the DocumentSymbol[] array).
+    ;
+    ; `result` can be many KB (a big file's outline). It is appended ONE BYTE
+    ; AT A TIME, not via a single StringBuilder.append(String): a single
+    ; append that more than doubles the buffer hits the runtime's manual-grow
+    ; path (own_page.allocate of the whole buffer), which SIGSEGVs past one
+    ; exclusive page. This runs in the PARENT (no crash isolation), so the
+    ; byte-at-a-time form is what keeps a large outline from killing the
+    ; server. See symbols.scaly's STRING/JSON NOTE.
+    function document_symbol_response#(rp, id: i64, result: String) returns String
+    {
+        var sb StringBuilder#()
+        sb.append(0x7B as char)
+        sb.append(server.key#("jsonrpc"))
+        sb.append(server.quoted#("2.0"))
+        sb.append(0x2C as char)
+        sb.append(server.key#("id"))
+        sb.append(json.format_i64#(id))
+        sb.append(0x2C as char)
+        sb.append(server.key#("result"))
+        var ci: size_t 0
+        let cn result.get_length()
+        while ci < cn
+        {
+            sb.append(result.get(ci) as char)
+            set ci: ci + 1
+        }
         sb.append(0x7D as char)
         sb.to_string#()
     }

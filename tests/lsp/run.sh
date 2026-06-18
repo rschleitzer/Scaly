@@ -128,6 +128,60 @@ PY
 rc=$?
 if [ $rc -eq 0 ]; then ok "lsp worker crash isolation"; else bad "lsp worker crash isolation"; fi
 
+# ---- documentSymbol: outline tree for a file on disk ----
+# The request carries only a uri, so the worker re-reads the file; write a
+# known one to disk first. Exercises functions, a module-level mutable, a
+# struct with methods (children), and a union with variant children.
+python3 - <<'PY'
+import sys, json, subprocess
+src = ("function add(a: int, b: int) returns int\n{\n    return a + b\n}\n\n"
+       "mutable counter: int 0\n\n"
+       "define Point\n(\n    x: int\n)\n{\n"
+       "    function get_x(this: Point) returns int\n    {\n        return x\n    }\n}\n\n"
+       "define Shape union (\n    Circle: int\n    Square: int\n)\n")
+path = "/tmp/lsp_symbols_test.scaly"
+open(path, "w").write(src)
+def frame(o):
+    b=json.dumps(o).encode(); return ("Content-Length: %d\r\n\r\n"%len(b)).encode()+b
+inp  = frame({"jsonrpc":"2.0","id":1,"method":"initialize","params":{}})
+inp += frame({"jsonrpc":"2.0","method":"initialized","params":{}})
+inp += frame({"jsonrpc":"2.0","id":2,"method":"textDocument/documentSymbol",
+              "params":{"textDocument":{"uri":"file://"+path}}})
+inp += frame({"jsonrpc":"2.0","id":3,"method":"shutdown"})
+inp += frame({"jsonrpc":"2.0","method":"exit"})
+out = subprocess.run(["/tmp/scalyls"], input=inp, stdout=subprocess.PIPE).stdout
+frames, d = [], out
+while d:
+    i = d.find(b"\r\n\r\n")
+    if i < 0: break
+    n = int(d[:i].decode().split(":")[1].strip())
+    frames.append(json.loads(d[i+4:i+4+n])); d = d[i+4+n:]
+failures = 0
+def check(cond, label):
+    global failures
+    print(("PASS  " if cond else "FAIL  ") + label)
+    if not cond: failures += 1
+caps = frames[0]["result"]["capabilities"]
+check(caps.get("documentSymbolProvider") is True, "initialize advertises documentSymbolProvider")
+r = next((f for f in frames if f.get("id") == 2), None)
+syms = (r or {}).get("result")
+check(isinstance(syms, list), "documentSymbol -> array result")
+syms = syms or []
+top = {s["name"]: s for s in syms}
+check([s["name"] for s in syms] == ["add","counter","Point","Shape"], "top-level names + order")
+check(top.get("add",{}).get("kind") == 12, "function -> Function(12)")
+check(top.get("counter",{}).get("kind") == 13, "mutable -> Variable(13)")
+check(top.get("Point",{}).get("kind") == 23, "define struct -> Struct(23)")
+check([c["name"] for c in top.get("Point",{}).get("children",[])] == ["get_x"], "struct method child")
+check(top.get("Point",{}).get("children",[{}])[0].get("kind") == 6, "method -> Method(6)")
+check(top.get("Shape",{}).get("kind") == 10, "union -> Enum(10)")
+check([c["name"] for c in top.get("Shape",{}).get("children",[])] == ["Circle","Square"], "union variant children")
+check(top.get("Shape",{}).get("children",[{}])[0].get("kind") == 22, "variant -> EnumMember(22)")
+sys.exit(1 if failures else 0)
+PY
+rc=$?
+if [ $rc -eq 0 ]; then ok "lsp documentSymbol outline"; else bad "lsp documentSymbol outline"; fi
+
 echo "-----"
 echo "PASS: $pass  FAIL: $fail"
 [ $fail -eq 0 ]

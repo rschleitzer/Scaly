@@ -221,12 +221,15 @@ define diagnostics
     ; Non-file URIs are returned unchanged.
     function strip_uri#(rp, uri: String) returns String
     {
+        ; `guard COND STMT` runs STMT when COND is TRUE: strip the prefix on
+        ; a file:// URI, otherwise fall through and return it unchanged.
         guard uri.starts_with("file://")
-            return uri
-
-        ; 7 == length of "file://"
-        let len uri.get_length()
-        uri.substring(rp, 7 as size_t, len - (7 as size_t))
+        {
+            ; 7 == length of "file://"
+            let len uri.get_length()
+            return uri.substring(rp, 7 as size_t, len - (7 as size_t))
+        }
+        uri
     }
 
     ; `"key":`

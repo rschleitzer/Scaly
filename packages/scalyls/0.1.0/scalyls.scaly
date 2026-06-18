@@ -20,6 +20,9 @@ define scalyls
     ; Diagnostics: text -> compiler pipeline -> publishDiagnostics.
     module diagnostics
 
+    ; documentSymbol: text -> parse -> DocumentSymbol[] outline tree.
+    module symbols
+
     ; Crash-isolated worker subprocess running the diagnostics pipeline.
     module worker
 

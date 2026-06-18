@@ -2,9 +2,16 @@
 
 A minimal VS Code language client for [scalyls](../../packages/scalyls/0.1.0), the
 Scaly language server (itself written in Scaly). It registers the `.scaly`
-language, launches the server over stdio, and surfaces the diagnostics the
-server pushes (parse / model / plan errors). No hover/completion/definition yet —
-those are planned server-side work.
+language, launches the server over stdio, and surfaces what the server provides:
+
+- **Diagnostics** — parse / model / plan errors, pushed by the server.
+- **Document symbols / outline** — the Outline view, breadcrumbs, and
+  "Go to Symbol in File" (`Cmd+Shift+O`), showing functions, structs/unions
+  (with their methods and variants), namespaces, and module-level mutables.
+
+No hover/completion/definition yet — those are planned server-side work. The
+client itself is generic `vscode-languageclient`; it picks up each feature
+automatically as the server advertises the capability.
 
 ## 1. Build the language server
 
@@ -74,6 +81,15 @@ The simplest setup: open the Scaly repo root
    Problems entry clear.
 3. Close the file — any remaining diagnostics for it clear.
 4. Open a clean, valid `.scaly` file — no diagnostics appear.
+
+### Verify the outline
+
+Open any `.scaly` file (e.g. one under `packages/`) and open the **Outline**
+view (Explorer sidebar) or press `Cmd+Shift+O`. The tree lists top-level
+functions, `define` structs/unions/namespaces (with their methods and union
+variants nested underneath), and module-level `mutable` globals. The outline is
+read from the file **on disk**, so save the file to refresh it after edits (an
+in-memory document store is a planned follow-up alongside incremental sync).
 
 ### Restart the server
 
