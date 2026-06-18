@@ -79,11 +79,12 @@ define worker
     ; Child side: read framed {uri,text} requests, emit framed payloads.
     ; ====================================================================
     ; Protocol (over the pipe, NOT JSON): each request is FOUR framed
-    ; messages — a kind tag ("d" diagnostics / "s" documentSymbol / "h" hover
-    ; / "g" definition / "r" references / "l" documentHighlight), the uri, the
-    ; raw document text (the parent's in-memory copy; empty = unknown), then a
-    ; packed "<line> <char>" cursor position (empty for d/s) — and the reply
-    ; is one framed payload. Raw framing avoids round-tripping arbitrary
+    ; messages — a kind tag ("d" diagnostics / "s" documentSymbol / "c"
+    ; completion / "h" hover / "g" definition / "r" references / "l"
+    ; documentHighlight / "n" rename / "p" prepareRename), the uri, the raw
+    ; document text (the parent's in-memory copy; empty = unknown), then a
+    ; packed cursor position ("<line> <char>", or "<line> <char> <newName>"
+    ; for rename; empty for d/s) — and the reply is one framed payload. Raw framing avoids round-tripping arbitrary
     ; document text through JSON string-escaping (which would corrupt
     ; newlines/quotes/braces). When the document text frame is empty (the
     ; parent has no buffer for this uri) the worker re-reads the file from
@@ -166,6 +167,22 @@ define worker
         guard kind.equals("l")
         {
             rpc.write_message_fd(out_fd, symbols.highlights_packed#(source, position))
+            return true
+        }
+
+        ; rename: rewrite every occurrence of the identifier at the cursor to
+        ; the new name (packed as "<line> <char> <newName>"); the result
+        ; WorkspaceEdit refers back to `uri`.
+        guard kind.equals("n")
+        {
+            rpc.write_message_fd(out_fd, symbols.rename_packed#(source, uri, position))
+            return true
+        }
+
+        ; prepareRename: the range of the renameable identifier at the cursor.
+        guard kind.equals("p")
+        {
+            rpc.write_message_fd(out_fd, symbols.prepare_rename_packed#(source, position))
             return true
         }
 
@@ -296,6 +313,18 @@ define worker
     ; Returns a CompletionItem[] of every declared name; `[]` if unavailable.
     function completion#(rp, uri: String, text: String, packed: String) returns String
         worker.exchange#("c", uri, text, packed, String#("[]"))
+
+    ; Rename for `uri`. `packed` is "<line> <char> <newName>". `text` is the
+    ; in-memory copy (empty -> worker reads disk). Returns the LSP
+    ; WorkspaceEdit, or "" if unavailable / no identifier at the cursor.
+    function rename#(rp, uri: String, text: String, packed: String) returns String
+        worker.exchange#("n", uri, text, packed, String#(""))
+
+    ; prepareRename for `uri` at the packed "<line> <char>" position. `text`
+    ; is the in-memory copy (empty -> worker reads disk). Returns the LSP Range
+    ; of the renameable identifier, or "" if unavailable / not renameable.
+    function prepare_rename#(rp, uri: String, text: String, packed: String) returns String
+        worker.exchange#("p", uri, text, packed, String#(""))
 
     ; Send one (kind,uri,text,position) request to the worker and return its
     ; framed reply, or `fallback` if the worker is unavailable / crashed /

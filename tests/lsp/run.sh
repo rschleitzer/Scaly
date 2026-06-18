@@ -564,6 +564,75 @@ PY
 rc=$?
 if [ $rc -eq 0 ]; then ok "lsp in-memory document store"; else bad "lsp in-memory document store"; fi
 
+# ---- rename + prepareRename (lexical, single file) ----
+# prepareRename returns the range of the identifier under the cursor;
+# rename returns a WorkspaceEdit rewriting every whole-token occurrence of
+# it to the new name. Exercises a multiply-called function (whole-token, so
+# the param `a` is NOT renamed inside `add`), and the off-symbol null cases.
+python3 - <<'PY'
+import sys, json, subprocess
+src = ("function add(a: int, b: int) returns int\n{\n    return a + b\n}\n\n"
+       "function main() returns int\n{\n    return add(add(1, 2), 3)\n}\n")
+path = "/tmp/lsp_rename_test.scaly"
+open(path, "w").write(src)
+def frame(o):
+    b=json.dumps(o).encode(); return ("Content-Length: %d\r\n\r\n"%len(b)).encode()+b
+def pr(idn, line, char):
+    return frame({"jsonrpc":"2.0","id":idn,"method":"textDocument/prepareRename",
+                  "params":{"textDocument":{"uri":"file://"+path},
+                            "position":{"line":line,"character":char}}})
+def rn(idn, line, char, name):
+    return frame({"jsonrpc":"2.0","id":idn,"method":"textDocument/rename",
+                  "params":{"textDocument":{"uri":"file://"+path},
+                            "position":{"line":line,"character":char},"newName":name}})
+inp  = frame({"jsonrpc":"2.0","id":1,"method":"initialize","params":{}})
+inp += frame({"jsonrpc":"2.0","method":"initialized","params":{}})
+inp += pr(2, 0, 10)         # prepareRename on `add` -> its range
+inp += rn(3, 0, 10, "plus") # rename `add` -> `plus` (3 edits: decl + 2 calls)
+inp += rn(4, 2, 11, "z")    # rename param `a` -> `z` (2 edits, NOT in `add`)
+inp += pr(5, 1, 0)          # prepareRename on `{` -> null
+inp += rn(6, 1, 0, "x")     # rename on `{` -> null
+inp += frame({"jsonrpc":"2.0","id":9,"method":"shutdown"})
+inp += frame({"jsonrpc":"2.0","method":"exit"})
+out = subprocess.run(["/tmp/scalyls"], input=inp, stdout=subprocess.PIPE).stdout
+frames, d = [], out
+while d:
+    i = d.find(b"\r\n\r\n")
+    if i < 0: break
+    n = int(d[:i].decode().split(":")[1].strip())
+    frames.append(json.loads(d[i+4:i+4+n])); d = d[i+4+n:]
+failures = 0
+def check(cond, label):
+    global failures
+    print(("PASS  " if cond else "FAIL  ") + label)
+    if not cond: failures += 1
+caps = frames[0]["result"]["capabilities"]
+rp = caps.get("renameProvider")
+check(isinstance(rp, dict) and rp.get("prepareProvider") is True,
+      "initialize advertises renameProvider with prepareProvider")
+def res(idn):
+    f = next((x for x in frames if x.get("id") == idn), None)
+    return (f or {}).get("result")
+# prepareRename -> the range of `add` (line 0, chars 9..12)
+pre = res(2) or {}
+check(pre.get("start",{}) == {"line":0,"character":9} and
+      pre.get("end",{}) == {"line":0,"character":12}, "prepareRename -> identifier range")
+# rename `add` -> WorkspaceEdit with 3 edits, all newText "plus"
+edits = ((res(3) or {}).get("changes") or {}).get("file://"+path)
+check(isinstance(edits, list) and len(edits) == 3, "rename `add` -> 3 TextEdits (decl + 2 calls)")
+check(edits is not None and all(e["newText"] == "plus" for e in edits), "every edit carries the new name")
+starts = sorted((e["range"]["start"]["line"], e["range"]["start"]["character"]) for e in (edits or []))
+check(starts == [(0,9),(7,11),(7,15)], "edit ranges cover each whole-token occurrence")
+# rename param `a` -> only 2 edits (whole-token: not the `a` inside `add`)
+a_edits = ((res(4) or {}).get("changes") or {}).get("file://"+path)
+check(isinstance(a_edits, list) and len(a_edits) == 2, "rename `a` -> 2 edits (not the `a` in `add`)")
+check(res(5) is None, "prepareRename off any identifier -> null")
+check(res(6) is None, "rename off any identifier -> null")
+sys.exit(1 if failures else 0)
+PY
+rc=$?
+if [ $rc -eq 0 ]; then ok "lsp rename"; else bad "lsp rename"; fi
+
 echo "-----"
 echo "PASS: $pass  FAIL: $fail"
 [ $fail -eq 0 ]
