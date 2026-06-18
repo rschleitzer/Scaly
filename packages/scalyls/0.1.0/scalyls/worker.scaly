@@ -148,11 +148,12 @@ define worker
             return true
         }
 
-        ; definition: declaration for the identifier at the cursor; the
-        ; result Location refers back to `uri`.
+        ; definition: declaration for the identifier at the cursor. Searches
+        ; the current file first (result Location refers back to `uri`), then
+        ; sibling .scaly files in the same directory tree (cross-file).
         guard kind.equals("g")
         {
-            rpc.write_message_fd(out_fd, symbols.definition_packed#(source, uri, position))
+            rpc.write_message_fd(out_fd, symbols.definition_workspace_packed#(source, uri, position))
             return true
         }
 

@@ -39,11 +39,25 @@
 use scaly.containers.String
 use scaly.containers.StringBuilder
 use scaly.containers.Vector
+use scaly.io.File
 use scaly.memory.Page
 use scaly.memory.runtime
 use scalyls.json
 
 use scalyc.compiler.parser
+
+; libc stream primitives for enumerating sibling .scaly files when a
+; go-to-definition target is not in the current file. Declared here (not in
+; the scaly package) so no scaly/scalyc source is touched (fixpoint-safe).
+; popen runs `/bin/sh -c <cmd>` — portable across macOS + Linux, sidestepping
+; the platform-specific `struct dirent` layout that raw readdir would need.
+function popen(command: pointer[const_char], mode: pointer[const_char]) returns pointer[void] extern
+function pclose(stream: pointer[void]) returns int extern
+; fgetc returns a C `int` (32-bit). It MUST be i32, not Scaly's 64-bit int:
+; at EOF the C -1 (0xFFFFFFFF) would zero-extend to 4294967295 in a 64-bit
+; register, so an i64 `c < 0` EOF test never fires and the read loop spins
+; forever (worker hang -> poll timeout -> null result).
+function fgetc(stream: pointer[void]) returns i32 extern
 
 ; Syntax tree types (parser output). Imported by payload type so the
 ; `choose ... when x: TSyntax` arms resolve.
@@ -1782,6 +1796,201 @@ define symbols
         sb.append(symbols.range_for#(source, start, start))
         sb.append(0x7D as char)                    ; }
         sb.to_string#()
+    }
+
+    ; ====================================================================
+    ; Cross-file go-to-definition (workspace)
+    ;
+    ; definition_packed# above resolves the cursor identifier within the
+    ; CURRENT file. When it finds nothing, fall back to a workspace search:
+    ; enumerate the sibling .scaly files in the current file's directory (and
+    ; subdirectories) and run the same name-matching parse-tree walk over each,
+    ; returning the first match's Location (pointing at that other file). The
+    ; current file's in-memory `source` is searched first (so unsaved edits
+    ; win); other files are read from disk.
+    ;
+    ; File discovery shells out to `find` via popen — portable across macOS +
+    ; Linux, and crash-isolated in the worker, so a discovery failure can only
+    ; lose this one result. LIMITS (documented): searches the current file's
+    ; directory tree only (not other packages); intra-package, lexical name
+    ; match, first file wins on a name defined in several files; a single quote
+    ; in the directory path breaks the `find` command (workspace paths rarely
+    ; have one).
+    ; ====================================================================
+
+    ; Try the current file first; on a miss, search sibling files. `source` is
+    ; the in-memory current-file text; `uri` is its file:// uri.
+    function definition_workspace_packed#(rp, source: String, uri: String, packed: String) returns String
+    {
+        let here symbols.definition_packed#(source, uri, packed)
+        guard here.get_length() > (0 as size_t)
+            return here
+
+        ; Intra-file miss: re-derive the cursor identifier and search siblings.
+        var line: size_t 0
+        var character: size_t 0
+        var seen_space: bool false
+        var i: size_t 0
+        let pn packed.get_length()
+        while i < pn
+        {
+            let c packed.get(i)
+            guard c = (0x20 as u8)
+                set seen_space: true
+            guard c <> (0x20 as u8)
+            {
+                let digit (c - (0x30 as u8)) as size_t
+                guard seen_space = false
+                    set line: line * (10 as size_t) + digit
+                guard seen_space
+                    set character: character * (10 as size_t) + digit
+            }
+            set i: i + 1
+        }
+        let offset symbols.position_to_offset#(source, line, character)
+        let name symbols.identifier_at#(source, offset)
+        guard name.get_length() = (0 as size_t)
+            return String#("")
+        symbols.find_definition_in_workspace#(uri, name)
+    }
+
+    ; Enumerate sibling .scaly files and return the first one declaring `name`,
+    ; as a Location pointing at that file. "" if none / no directory.
+    function find_definition_in_workspace#(rp, uri: String, name: String) returns String
+    {
+        let path symbols.uri_to_path#(uri)
+        let dir symbols.dir_of#(path)
+        guard dir.get_length() = (0 as size_t)
+            return String#("")
+        let listing symbols.list_scaly_files#(dir)   ; abs paths, each + LF
+
+        var result String#("")
+        var line_start: size_t 0
+        let n listing.get_length()
+        var i: size_t 0
+        while i < n
+        {
+            guard listing.get(i) = (10 as char)
+            {
+                guard result.get_length() = (0 as size_t)
+                {
+                    let fpath symbols.substring#(listing, line_start, i)
+                    guard fpath.get_length() > (0 as size_t)
+                        guard fpath.equals(path) = false
+                            guard File.exists(fpath)
+                            {
+                                let fsrc File.read_to_string#(fpath)
+                                let furi symbols.path_to_uri#(fpath)
+                                set result: symbols.find_definition#(fsrc, furi, name)
+                            }
+                }
+                set line_start: i + (1 as size_t)
+            }
+            set i: i + (1 as size_t)
+        }
+        result
+    }
+
+    ; Run `find '<dir>' -name '*.scaly'` and return its stdout (newline-
+    ; separated absolute paths) with a guaranteed trailing LF. "" on failure.
+    ; The quote bytes are emitted as 0x27 (the lexer treats a `'` as the start
+    ; of a string-identifier token, so it must not appear in a "..." literal).
+    function list_scaly_files#(rp, dir: String) returns String
+    {
+        var cmd StringBuilder#()
+        cmd.append("find ")
+        cmd.append(0x27 as char)                   ; '
+        var di: size_t 0
+        let dn dir.get_length()
+        while di < dn
+        {
+            cmd.append(dir.get(di) as char)
+            set di: di + (1 as size_t)
+        }
+        cmd.append(0x27 as char)                   ; '
+        cmd.append(" -name ")
+        cmd.append(0x27 as char)                   ; '
+        cmd.append("*.scaly")
+        cmd.append(0x27 as char)                   ; '
+        cmd.append(" 2>/dev/null")
+        let cmd_str cmd.to_string#()
+
+        let f popen(cmd_str.to_c_string#(), "r")
+        guard f = null
+            return String#("")
+
+        var sb StringBuilder#()
+        var keep true
+        while keep
+        {
+            let c fgetc(f)
+            guard c < (0 as i32)
+                set keep: false
+            guard c >= (0 as i32)
+                sb.append(c as char)
+        }
+        pclose(f)
+        sb.append(0x0A as char)                    ; trailing LF
+        sb.to_string#()
+    }
+
+    ; Bytes [start,end) of `s` as a new String.
+    function substring#(rp, s: String, start: size_t, end: size_t) returns String
+    {
+        var sb StringBuilder#()
+        var i start
+        while i < end
+        {
+            sb.append(s.get(i) as char)
+            set i: i + (1 as size_t)
+        }
+        sb.to_string#()
+    }
+
+    ; Strip a leading "file://" from a uri to get the filesystem path.
+    function uri_to_path#(rp, uri: String) returns String
+    {
+        guard uri.starts_with("file://")
+            return symbols.substring#(uri, 7 as size_t, uri.get_length())
+        uri
+    }
+
+    ; Wrap a filesystem path back into a "file://" uri.
+    function path_to_uri#(rp, path: String) returns String
+    {
+        var sb StringBuilder#()
+        sb.append("file://")
+        var i: size_t 0
+        let n path.get_length()
+        while i < n
+        {
+            sb.append(path.get(i) as char)
+            set i: i + (1 as size_t)
+        }
+        sb.to_string#()
+    }
+
+    ; The directory portion of `path` (everything before the last '/'), or "".
+    function dir_of#(rp, path: String) returns String
+    {
+        let n path.get_length()
+        guard n = (0 as size_t)
+            return String#("")
+        var last: size_t 0
+        var found false
+        var i: size_t 0
+        while i < n
+        {
+            guard path.get(i) = (0x2F as u8)       ; /
+            {
+                set last: i
+                set found: true
+            }
+            set i: i + (1 as size_t)
+        }
+        guard found
+            return symbols.substring#(path, 0 as size_t, last)
+        String#("")
     }
 
     ; ====================================================================

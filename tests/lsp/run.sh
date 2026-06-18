@@ -702,6 +702,64 @@ PY
 rc=$?
 if [ $rc -eq 0 ]; then ok "lsp context-aware completion"; else bad "lsp context-aware completion"; fi
 
+# ---- cross-file go-to-definition (workspace) ----
+# When the cursor identifier is not declared in the current file, the worker
+# enumerates sibling .scaly files (via `find`) and returns the declaration
+# from whichever file defines it. Two files in a temp dir: caller.scaly uses
+# `helper_fn` and the type `Widget`, both defined only in helper.scaly.
+python3 - <<'PY'
+import sys, json, subprocess, os, tempfile
+d = tempfile.mkdtemp(prefix="lsp_xdef_")
+helper = ("function helper_fn(n: int) returns int\n{\n    return n + 1\n}\n\n"
+          "define Widget\n(\n    w: int\n)\n{\n"
+          "    function area(this: Widget) returns int\n    {\n        return w\n    }\n}\n")
+caller = ("function caller(x: int) returns int\n{\n    let v helper_fn(x)\n    return v\n}\n\n"
+          "function make(w: Widget) returns int\n{\n    return 0\n}\n")
+hp = os.path.join(d, "helper.scaly"); open(hp, "w").write(helper)
+cp = os.path.join(d, "caller.scaly"); open(cp, "w").write(caller)
+curi = "file://"+cp; huri = "file://"+hp
+def frame(o):
+    b=json.dumps(o).encode(); return ("Content-Length: %d\r\n\r\n"%len(b)).encode()+b
+def df(idn, line, char):
+    return frame({"jsonrpc":"2.0","id":idn,"method":"textDocument/definition",
+                  "params":{"textDocument":{"uri":curi},"position":{"line":line,"character":char}}})
+hc = caller.split("\n")[2].index("helper_fn") + 1   # `helper_fn` call site
+wc = caller.split("\n")[6].index("Widget") + 1      # `Widget` type reference
+inp  = frame({"jsonrpc":"2.0","id":1,"method":"initialize","params":{}})
+inp += frame({"jsonrpc":"2.0","method":"initialized","params":{}})
+inp += df(2, 2, hc)     # helper_fn -> cross-file helper.scaly:0
+inp += df(3, 6, wc)     # Widget    -> cross-file helper.scaly:5
+inp += df(4, 0, 10)     # caller    -> intra-file caller.scaly:0
+inp += df(5, 1, 0)      # `{`       -> null (no identifier anywhere)
+inp += frame({"jsonrpc":"2.0","id":9,"method":"shutdown"})
+inp += frame({"jsonrpc":"2.0","method":"exit"})
+out = subprocess.run(["/tmp/scalyls"], input=inp, stdout=subprocess.PIPE).stdout
+frames, dd = [], out
+while dd:
+    i = dd.find(b"\r\n\r\n")
+    if i < 0: break
+    n = int(dd[:i].decode().split(":")[1].strip())
+    frames.append(json.loads(dd[i+4:i+4+n])); dd = dd[i+4+n:]
+failures = 0
+def check(cond, label):
+    global failures
+    print(("PASS  " if cond else "FAIL  ") + label)
+    if not cond: failures += 1
+def loc(idn):
+    f = next((x for x in frames if x.get("id") == idn), None)
+    return (f or {}).get("result")
+def at(idn):
+    r = loc(idn)
+    return None if r is None else (r["uri"], r["range"]["start"]["line"])
+check(at(2) == (huri, 0), "cross-file: call site -> function in sibling file (helper.scaly:0)")
+check(at(3) == (huri, 5), "cross-file: type reference -> define in sibling file (helper.scaly:5)")
+check(at(4) == (curi, 0), "intra-file still wins (caller.scaly:0)")
+check(loc(5) is None, "no identifier under cursor -> null")
+sys.exit(1 if failures else 0)
+PY
+rc=$?
+if [ $rc -eq 0 ]; then ok "lsp cross-file definition"; else bad "lsp cross-file definition"; fi
+
 echo "-----"
 echo "PASS: $pass  FAIL: $fail"
 [ $fail -eq 0 ]
