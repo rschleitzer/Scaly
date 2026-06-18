@@ -1482,15 +1482,11 @@ llvm::Error Emitter::emitFunctionBody(const PlannedFunction &Func,
     // Only call deallocate_extensions if the page was actually used for allocations
     auto CleanupLocalPage = [this]() {
         if (CurrentRegion.LocalPage && PageType) {
-            // Check if the page was used for allocations by comparing next_object to page + 1
-            // A fresh page has next_object = page + 1 (after reset), so if unchanged, no allocations were made
+            // Clean up if the page was used for allocations (next_object moved
+            // off page+1) OR it owns an extension chain / exclusive pages — a
+            // page can own extensions without advancing its own bump pointer.
             // This avoids infinite recursion: deallocate_extensions -> get_iterator -> deallocate_extensions
-            llvm::Value *NextObjectPtr = Builder->CreateStructGEP(PageType, CurrentRegion.LocalPage, 0, "next_object_ptr");
-            llvm::Value *NextObject = Builder->CreateLoad(Builder->getPtrTy(), NextObjectPtr, "next_object");
-            llvm::Value *PagePlus1 = Builder->CreateGEP(PageType, CurrentRegion.LocalPage,
-                                                        llvm::ConstantInt::get(llvm::Type::getInt64Ty(*Context), 1),
-                                                        "page_plus_1");
-            llvm::Value *WasUsed = Builder->CreateICmpNE(NextObject, PagePlus1, "page_was_used");
+            llvm::Value *WasUsed = emitPageNeedsCleanup(*Builder, CurrentRegion.LocalPage);
 
             llvm::BasicBlock *CleanupBlock = llvm::BasicBlock::Create(*Context, "cleanup", CurrentFunction);
             llvm::BasicBlock *SkipCleanupBlock = llvm::BasicBlock::Create(*Context, "skip_cleanup", CurrentFunction);
@@ -1788,13 +1784,8 @@ llvm::Error Emitter::emitInitializerBody(const PlannedStructure &Struct,
     // Clean up local page before return if allocated
     if (Init.NeedsLocalPage && CurrentRegion.LocalPage && PageType) {
         if (!Builder->GetInsertBlock()->getTerminator()) {
-            // Check if the page was actually used for allocations
-            llvm::Value *NextObjectPtr = Builder->CreateStructGEP(PageType, CurrentRegion.LocalPage, 0, "next_object_ptr");
-            llvm::Value *NextObject = Builder->CreateLoad(Builder->getPtrTy(), NextObjectPtr, "next_object");
-            llvm::Value *PagePlus1 = Builder->CreateGEP(PageType, CurrentRegion.LocalPage,
-                                                        llvm::ConstantInt::get(llvm::Type::getInt64Ty(*Context), 1),
-                                                        "page_plus_1");
-            llvm::Value *WasUsed = Builder->CreateICmpNE(NextObject, PagePlus1, "page_was_used");
+            // Clean up if used OR owning an extension chain / exclusive pages.
+            llvm::Value *WasUsed = emitPageNeedsCleanup(*Builder, CurrentRegion.LocalPage);
 
             llvm::BasicBlock *CleanupBlock = llvm::BasicBlock::Create(*Context, "cleanup", CurrentFunction);
             llvm::BasicBlock *ContinueBlock = llvm::BasicBlock::Create(*Context, "continue", CurrentFunction);
@@ -2449,15 +2440,11 @@ llvm::Error Emitter::emitReturn(const PlannedReturn &Return) {
     // Clean up local page before returning
     // Only call deallocate_extensions if the page was actually used for allocations
     if (CurrentRegion.LocalPage) {
-        // Check if the page was used for allocations by comparing next_object to page + 1
-        // A fresh page has next_object = page + 1 (after reset), so if unchanged, no allocations were made
+        // Clean up if the page was used (next_object moved off page+1) OR it
+        // owns an extension chain / exclusive pages — a page can own extensions
+        // without advancing its own bump pointer.
         // This avoids infinite recursion: deallocate_extensions -> get_iterator -> deallocate_extensions
-        llvm::Value *NextObjectPtr = Builder->CreateStructGEP(PageType, CurrentRegion.LocalPage, 0, "next_object_ptr");
-        llvm::Value *NextObject = Builder->CreateLoad(Builder->getPtrTy(), NextObjectPtr, "next_object");
-        llvm::Value *PagePlus1 = Builder->CreateGEP(PageType, CurrentRegion.LocalPage,
-                                                    llvm::ConstantInt::get(llvm::Type::getInt64Ty(*Context), 1),
-                                                    "page_plus_1");
-        llvm::Value *WasUsed = Builder->CreateICmpNE(NextObject, PagePlus1, "page_was_used");
+        llvm::Value *WasUsed = emitPageNeedsCleanup(*Builder, CurrentRegion.LocalPage);
 
         llvm::BasicBlock *CleanupBlock = llvm::BasicBlock::Create(*Context, "cleanup", CurrentFunction);
         llvm::BasicBlock *ContinueBlock = llvm::BasicBlock::Create(*Context, "continue", CurrentFunction);
@@ -6753,15 +6740,12 @@ void Emitter::patchPriorReturnsForLocalPage(llvm::Value *LocalPage) {
         }
         if (AlreadyReleased) continue;
 
-        // Mirror the emitReturn cleanup: only call deallocate_extensions if
-        // the page's bump pointer has moved (avoids recursion into
-        // deallocate_extensions on a fresh page).
+        // Mirror the emitReturn cleanup: call deallocate_extensions if the
+        // page's bump pointer has moved OR it owns an extension chain /
+        // exclusive pages (avoids recursion into deallocate_extensions on a
+        // genuinely fresh page).
         llvm::IRBuilder<> B(Ret);
-        llvm::Value *NextObjPtr = B.CreateStructGEP(PageType, LocalPage, 0, "patch.next_object_ptr");
-        llvm::Value *NextObj = B.CreateLoad(PtrTy, NextObjPtr, "patch.next_object");
-        llvm::Value *PagePlus1 = B.CreateGEP(PageType, LocalPage,
-            llvm::ConstantInt::get(I64Ty, 1), "patch.page_plus_1");
-        llvm::Value *WasUsed = B.CreateICmpNE(NextObj, PagePlus1, "patch.page_was_used");
+        llvm::Value *WasUsed = emitPageNeedsCleanup(B, LocalPage);
 
         llvm::Instruction *ThenTerm = llvm::SplitBlockAndInsertIfThen(
             WasUsed, Ret, /*Unreachable=*/false);
@@ -6787,6 +6771,31 @@ void Emitter::patchPriorReturnsForLocalPage(llvm::Value *LocalPage) {
         }
         PreRet.CreateCall(PageReleaseRootPage, {LocalPage});
     }
+}
+
+llvm::Value *Emitter::emitPageNeedsCleanup(llvm::IRBuilder<> &B, llvm::Value *Page) {
+    llvm::Type *PtrTy = B.getPtrTy();
+    llvm::Value *NullPtr = llvm::ConstantPointerNull::get(B.getPtrTy());
+
+    // Own bump pointer moved: next_object != page + 1.
+    llvm::Value *NextObjectPtr = B.CreateStructGEP(PageType, Page, 0, "next_object_ptr");
+    llvm::Value *NextObject = B.CreateLoad(PtrTy, NextObjectPtr, "next_object");
+    llvm::Value *PagePlus1 = B.CreateGEP(PageType, Page,
+        llvm::ConstantInt::get(llvm::Type::getInt64Ty(*Context), 1), "page_plus_1");
+    llvm::Value *WasUsed = B.CreateICmpNE(NextObject, PagePlus1, "page_was_used");
+
+    // Owns an extension chain: next_page != null.
+    llvm::Value *NextPagePtr = B.CreateStructGEP(PageType, Page, 2, "next_page_ptr");
+    llvm::Value *NextPage = B.CreateLoad(PtrTy, NextPagePtr, "next_page");
+    llvm::Value *HasNextPage = B.CreateICmpNE(NextPage, NullPtr, "has_next_page");
+
+    // Owns exclusive pages: exclusive_pages.head != null. PageList's head is
+    // its first (only) field, so field 3 of Page coincides with head's address.
+    llvm::Value *ExclHeadPtr = B.CreateStructGEP(PageType, Page, 3, "excl_head_ptr");
+    llvm::Value *ExclHead = B.CreateLoad(PtrTy, ExclHeadPtr, "excl_head");
+    llvm::Value *HasExcl = B.CreateICmpNE(ExclHead, NullPtr, "has_excl");
+
+    return B.CreateOr(B.CreateOr(WasUsed, HasNextPage), HasExcl, "page_needs_cleanup");
 }
 
 llvm::BasicBlock *Emitter::createBlock(llvm::StringRef Name) {

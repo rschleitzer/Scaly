@@ -370,6 +370,13 @@ private:
     // name. No-op unless the trace functions are declared in this module.
     void emitRootTrace(bool IsPop);
 
+    // Compute the i1 predicate gating deallocate_extensions on a local page:
+    // true when the page's own bump pointer moved (next_object != page+1) OR
+    // it owns a next_page extension chain OR it owns exclusive pages. A page
+    // can own extensions without advancing its own bump pointer (large first
+    // allocation / large alignment), so the bump-pointer check alone leaks.
+    llvm::Value *emitPageNeedsCleanup(llvm::IRBuilder<> &B, llvm::Value *Page);
+
     // Walk the current function's ret instructions and splice in the
     // standard Deallocate/Release cleanup for any ret emitted before the
     // on-demand local page existed. Invoked from getOrCreateLocalPage.
