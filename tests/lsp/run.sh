@@ -633,6 +633,75 @@ PY
 rc=$?
 if [ $rc -eq 0 ]; then ok "lsp rename"; else bad "lsp rename"; fi
 
+# ---- context-aware completion (member-after-`.`, lexical) ----
+# When a `.` precedes the cursor and its receiver names a declared concept,
+# completion returns only that concept's members. A struct receiver yields
+# its methods; a union receiver yields its variants; an unknown receiver (a
+# variable) or no dot falls back to the flat all-names list.
+python3 - <<'PY'
+import sys, json, subprocess
+src = ("function add(a: int, b: int) returns int\n{\n    return a + b\n}\n\n"
+       "mutable counter: int 0\n\n"
+       "define Point\n(\n    x: int\n)\n{\n"
+       "    function get_x(this: Point) returns int\n    {\n        return x\n    }\n}\n\n"
+       "define Shape union (\n    Circle: int\n    Square: int\n)\n\n"
+       "function trigger(p: Point) returns int\n{\n    let q Point.get_x(p)\n"
+       "    let s Shape.Circle\n    return q + p.get_x()\n}\n")
+path = "/tmp/lsp_ctxcompl_test.scaly"
+open(path, "w").write(src)
+def linecol(idx):
+    pre = src[:idx]; return pre.count("\n"), idx - (pre.rfind("\n")+1)
+def after_dot(needle, recv_len):
+    idx = src.index(needle) + recv_len            # offset of the dot
+    l, c = linecol(idx); return l, c + 1          # cursor right after the dot
+def frame(o):
+    b=json.dumps(o).encode(); return ("Content-Length: %d\r\n\r\n"%len(b)).encode()+b
+def comp(idn, line, char):
+    return frame({"jsonrpc":"2.0","id":idn,"method":"textDocument/completion",
+                  "params":{"textDocument":{"uri":"file://"+path},
+                            "position":{"line":line,"character":char}}})
+pl, pc = after_dot("Point.get_x(p)", 5)   # struct receiver
+sl, sc = after_dot("Shape.Circle", 5)     # union receiver
+vl, vc = after_dot("p.get_x()", 1)        # variable receiver (unknown)
+inp  = frame({"jsonrpc":"2.0","id":1,"method":"initialize","params":{}})
+inp += frame({"jsonrpc":"2.0","method":"initialized","params":{}})
+inp += comp(2, pl, pc)
+inp += comp(3, sl, sc)
+inp += comp(4, vl, vc)
+inp += comp(5, 2, 4)                       # no dot -> flat
+inp += frame({"jsonrpc":"2.0","id":9,"method":"shutdown"})
+inp += frame({"jsonrpc":"2.0","method":"exit"})
+out = subprocess.run(["/tmp/scalyls"], input=inp, stdout=subprocess.PIPE).stdout
+frames, d = [], out
+while d:
+    i = d.find(b"\r\n\r\n")
+    if i < 0: break
+    n = int(d[:i].decode().split(":")[1].strip())
+    frames.append(json.loads(d[i+4:i+4+n])); d = d[i+4+n:]
+failures = 0
+def check(cond, label):
+    global failures
+    print(("PASS  " if cond else "FAIL  ") + label)
+    if not cond: failures += 1
+def res(idn):
+    f = next((x for x in frames if x.get("id") == idn), None)
+    return (f or {}).get("result")
+def labels(idn):
+    return [it["label"] for it in (res(idn) or [])]
+def kinds(idn):
+    return {it["label"]: it["kind"] for it in (res(idn) or [])}
+check(labels(2) == ["get_x"], "`Point.` -> only the struct's members")
+check(kinds(2).get("get_x") == 2, "member kept its CompletionItemKind (Method=2)")
+check(labels(3) == ["Circle","Square"], "`Shape.` -> only the union's variants")
+check(kinds(3).get("Circle") == 20, "variant kept its CompletionItemKind (EnumMember=20)")
+flat = ["add","counter","Point","get_x","Shape","Circle","Square","trigger"]
+check(labels(4) == flat, "unknown receiver `p.` -> flat all-names fallback")
+check(labels(5) == flat, "no dot -> flat all-names list (unchanged)")
+sys.exit(1 if failures else 0)
+PY
+rc=$?
+if [ $rc -eq 0 ]; then ok "lsp context-aware completion"; else bad "lsp context-aware completion"; fi
+
 echo "-----"
 echo "PASS: $pass  FAIL: $fail"
 [ $fail -eq 0 ]

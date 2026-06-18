@@ -132,11 +132,12 @@ define worker
             return true
         }
 
-        ; completion: every declared name in the resolved source as a flat
-        ; CompletionItem[] (position unused — the editor prefix-filters).
+        ; completion: when a `.` precedes the cursor and its receiver names a
+        ; declared concept, the members of that concept; otherwise the flat
+        ; all-names list (the editor prefix-filters either way).
         guard kind.equals("c")
         {
-            rpc.write_message_fd(out_fd, symbols.completion_items#(source))
+            rpc.write_message_fd(out_fd, symbols.completion_packed#(source, position))
             return true
         }
 
@@ -308,9 +309,11 @@ define worker
     function highlights#(rp, uri: String, text: String, packed: String) returns String
         worker.exchange#("l", uri, text, packed, String#("[]"))
 
-    ; Completion for `uri`. `text` is the in-memory copy (empty -> worker
-    ; reads disk); the position is sent for protocol uniformity but unused.
-    ; Returns a CompletionItem[] of every declared name; `[]` if unavailable.
+    ; Completion for `uri` at the packed "<line> <char>" position. `text` is
+    ; the in-memory copy (empty -> worker reads disk). Returns the members of
+    ; the `.`-qualified receiver under the cursor when it names a declared
+    ; concept, else a CompletionItem[] of every declared name; `[]` if
+    ; unavailable.
     function completion#(rp, uri: String, text: String, packed: String) returns String
         worker.exchange#("c", uri, text, packed, String#("[]"))
 

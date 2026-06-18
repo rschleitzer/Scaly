@@ -388,19 +388,31 @@ define server
         rpc.write_message(server.document_symbol_response#(id, result))
     }
 
-    ; completion: return every declared name in the document as a flat
-    ; CompletionItem[] (the editor prefix-filters; the cursor position is not
-    ; used). Like the other navigation requests, the in-memory text is passed
-    ; so unsaved edits are reflected; an empty buffer -> worker reads disk.
+    ; completion: when a `.` precedes the cursor and its receiver names a
+    ; declared concept, return that concept's members; otherwise return every
+    ; declared name as a flat CompletionItem[] (the editor prefix-filters).
+    ; Pack the cursor position "<line> <char>" so the worker can detect the
+    ; member-access context. Like the other navigation requests, the in-memory
+    ; text is passed so unsaved edits are reflected; empty -> worker reads disk.
     function handle_completion(msg: JsonValue, id: i64)
     {
         let params json.get(msg, "params")
         let doc json.get(params, "textDocument")
         let uri json.as_string#(json.get(doc, "uri"))
+        let position json.get(params, "position")
+        let line json.as_i64(json.get(position, "line"))
+        let character json.as_i64(json.get(position, "character"))
+
+        var pb StringBuilder#()
+        pb.append(json.format_i64#(line))
+        pb.append(0x20 as char)                    ; space
+        pb.append(json.format_i64#(character))
+        let packed pb.to_string#()
+
         let text docstore.get#(uri)
         ; The CompletionItem[] array can be large (many names); reuse the
         ; byte-at-a-time array wrapper.
-        let result worker.completion#(uri, text, String#(""))
+        let result worker.completion#(uri, text, packed)
         rpc.write_message(server.document_symbol_response#(id, result))
     }
 

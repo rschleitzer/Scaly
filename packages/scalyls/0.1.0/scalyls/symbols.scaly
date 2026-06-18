@@ -850,6 +850,257 @@ define symbols
     }
 
     ; ====================================================================
+    ; Context-aware completion (member-after-`.`, lexical)
+    ;
+    ; When a `.` precedes the cursor, offer ONLY the members of the receiver
+    ; whose name immediately precedes the dot — but only when that name is a
+    ; declared struct / namespace / union in this file (a LEXICAL match on the
+    ; receiver token, not a type resolution of an arbitrary expression). So
+    ; `Point.` / `json.` / `Shape.` complete to that concept's members; an
+    ; unknown receiver (a variable like `sb.`, which needs the planner to type)
+    ; or no dot at all falls back to the flat all-names list (completion_items#).
+    ; The cursor arrives as a packed "<line> <char>" (same as hover).
+    ; ====================================================================
+
+    ; Decide member-context vs flat completion from the packed cursor position.
+    function completion_packed#(rp, source: String, packed: String) returns String
+    {
+        var line: size_t 0
+        var character: size_t 0
+        var seen_space: bool false
+        var i: size_t 0
+        let pn packed.get_length()
+        while i < pn
+        {
+            let c packed.get(i)
+            guard c = (0x20 as u8)
+                set seen_space: true
+            guard c <> (0x20 as u8)
+            {
+                let digit (c - (0x30 as u8)) as size_t
+                guard seen_space = false
+                    set line: line * (10 as size_t) + digit
+                guard seen_space
+                    set character: character * (10 as size_t) + digit
+            }
+            set i: i + 1
+        }
+
+        let offset symbols.position_to_offset#(source, line, character)
+        let receiver symbols.receiver_before_cursor#(source, offset)
+        guard receiver.get_length() > (0 as size_t)
+        {
+            ; A non-empty result means the receiver named a declared concept;
+            ; "" means no such concept -> fall through to the flat list.
+            let members symbols.member_completions#(source, receiver)
+            guard members.get_length() > (0 as size_t)
+                return members
+        }
+        symbols.completion_items#(source)
+    }
+
+    ; The identifier token immediately before a `.` to the left of `offset`,
+    ; skipping any in-progress member word the cursor sits in. "" when there is
+    ; no `.`-qualified receiver (so the caller offers the flat list). E.g. for
+    ; `Point.ge|`, `Point.|`, or `Point .|` returns "Point"; for `foo|`, `a + b`,
+    ; or `).` returns "".
+    function receiver_before_cursor#(rp, source: String, offset: size_t) returns String
+    {
+        let len source.get_length()
+        guard len = (0 as size_t)
+            return String#("")
+        var p offset
+        guard p > len
+            set p: len
+
+        ; Skip back over the in-progress member word (identifier bytes left of
+        ; the cursor), leaving p just after the dot (or unchanged).
+        while p > (0 as size_t)
+        {
+            guard symbols.is_ident_byte(source.get(p - (1 as size_t))) = false
+                break
+            set p: p - (1 as size_t)
+        }
+
+        ; Require a `.` immediately to the left.
+        guard p > (0 as size_t)
+            guard source.get(p - (1 as size_t)) = (0x2E as u8)
+            {
+                let dot p - (1 as size_t)
+                ; Walk back over the receiver identifier ending just before it.
+                var r dot
+                while r > (0 as size_t)
+                {
+                    guard symbols.is_ident_byte(source.get(r - (1 as size_t))) = false
+                        break
+                    set r: r - (1 as size_t)
+                }
+                guard r < dot
+                {
+                    var sb StringBuilder#()
+                    var k r
+                    while k < dot
+                    {
+                        sb.append(source.get(k) as char)
+                        set k: k + 1
+                    }
+                    return sb.to_string#()
+                }
+            }
+        String#("")
+    }
+
+    ; Parse the program and return the member CompletionItem[] of the concept
+    ; named `receiver` (found at top level or nested in a namespace), or "" when
+    ; no such concept exists. A found concept with no members yields "[]" (a
+    ; non-empty string), distinguishing it from the not-found "".
+    function member_completions#(rp, source: String, receiver: String) returns String
+    {
+        var p parser.Parser$(source)
+        var result String#("")
+        choose p.parse_program#()
+            when err: Error
+                set result: String#("")
+            when program: Success
+            {
+                let file program.file
+                guard file.declarations <> null
+                {
+                    let decls (*file.declarations)
+                    var i: size_t 0
+                    while i < decls.length
+                    {
+                        guard result.get_length() = (0 as size_t)
+                        {
+                            let dptr decls.get(i)
+                            guard dptr <> null
+                            {
+                                let d (*dptr)
+                                set result: symbols.mem_decl#(source, d, receiver)
+                            }
+                        }
+                        set i: i + 1
+                    }
+                }
+            }
+        result
+    }
+
+    ; One top-level declaration: the members of `receiver` if this is (or
+    ; nests) the matching definition, else "".
+    function mem_decl#(rp, source: String, decl: DeclarationSyntax, receiver: String) returns String
+    {
+        choose decl
+            when f: FunctionSyntax
+                return String#("")
+            when pr: ProcedureSyntax
+                return String#("")
+            when o: OperatorSyntax
+                return String#("")
+            when def: DefinitionSyntax
+                return symbols.mem_definition#(source, def, receiver)
+            when m: ModuleSyntax
+                return String#("")
+            when mut: MutableSyntax
+                return String#("")
+            when priv: PrivateSyntax
+                return symbols.mem_export#(source, priv.export_, receiver)
+            when e: EmptySyntax
+                return String#("")
+            when pkg: PackageSyntax
+                return String#("")
+            when u: UseSyntax
+                return String#("")
+            when t: TraitSyntax
+                return String#("")
+            when mac: MacroSyntax
+                return String#("")
+    }
+
+    ; A `private` declaration unwraps to its exported construct.
+    function mem_export#(rp, source: String, export_: ExportSyntax, receiver: String) returns String
+    {
+        choose export_
+            when f: FunctionSyntax
+                return String#("")
+            when pr: ProcedureSyntax
+                return String#("")
+            when o: OperatorSyntax
+                return String#("")
+            when def: DefinitionSyntax
+                return symbols.mem_definition#(source, def, receiver)
+            when t: TraitSyntax
+                return String#("")
+            when m: ModuleSyntax
+                return String#("")
+    }
+
+    ; A `define X`: when its name equals `receiver`, return its members wrapped
+    ; as a JSON array (Class -> methods, Namespace -> declarations, Union ->
+    ; variants + body). Otherwise recurse into a namespace's nested
+    ; declarations for a nested match. "" when neither matches.
+    function mem_definition#(rp, source: String, def: DefinitionSyntax, receiver: String) returns String
+    {
+        guard def.name.equals(receiver)
+        {
+            var members String#("")
+            choose def.concept_
+                when c: ClassSyntax
+                    set members: symbols.completion_body#(source, c.body)
+                when n: NamespaceSyntax
+                    set members: symbols.completion_namespace#(source, n)
+                when un: UnionSyntax
+                    set members: symbols.completion_union#(source, un)
+                else
+                    0
+            var sb StringBuilder#()
+            sb.append(0x5B as char)                ; [
+            var ci: size_t 0
+            let cn members.get_length()
+            while ci < cn
+            {
+                sb.append(members.get(ci) as char)
+                set ci: ci + 1
+            }
+            sb.append(0x5D as char)                ; ]
+            return sb.to_string#()
+        }
+        var nested String#("")
+        choose def.concept_
+            when n: NamespaceSyntax
+                set nested: symbols.mem_namespace#(source, n, receiver)
+            else
+                0
+        nested
+    }
+
+    ; Nested declarations of a namespace: first nested definition named
+    ; `receiver`, else "".
+    function mem_namespace#(rp, source: String, ns: NamespaceSyntax, receiver: String) returns String
+    {
+        var result String#("")
+        guard ns.declarations <> null
+        {
+            let decls (*ns.declarations)
+            var i: size_t 0
+            while i < decls.length
+            {
+                guard result.get_length() = (0 as size_t)
+                {
+                    let dptr decls.get(i)
+                    guard dptr <> null
+                    {
+                        let d (*dptr)
+                        set result: symbols.mem_decl#(source, d, receiver)
+                    }
+                }
+                set i: i + 1
+            }
+        }
+        result
+    }
+
+    ; ====================================================================
     ; textDocument/hover (parse-only)
     ;
     ; Find the innermost declaration whose [start,end) byte range contains
