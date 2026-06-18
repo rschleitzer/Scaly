@@ -924,6 +924,12 @@ define symbols
                 guard mem.get_length() > (0 as size_t)
                     return mem
             }
+            ; Case 3: the receiver names a concept defined in ANOTHER file or a
+            ; dependency package (e.g. `String.` / `Vector.` from the stdlib).
+            ; Search the dir tree then the package tree.
+            let xpkg symbols.member_completions_in_workspace#(uri, receiver)
+            guard xpkg.get_length() > (0 as size_t)
+                return xpkg
         }
         symbols.completion_items#(source)
     }
@@ -941,11 +947,27 @@ define symbols
 
     ; Enumerate sibling .scaly files (skipping the current one) and return the
     ; members of the first concept named `type_name`, mirroring
-    ; find_definition_in_workspace#. "" if none / no directory.
+    ; find_definition_in_workspace#: the current file's directory tree first,
+    ; then ON A MISS the package dependency tree (so stdlib String/StringBuilder/
+    ; Vector members complete). "" if none.
     function member_completions_in_workspace#(rp, uri: String, type_name: String) returns String
     {
         let path symbols.uri_to_path#(uri)
         let dir symbols.dir_of#(path)
+        let here symbols.member_completions_in_dir#(dir, path, type_name)
+        guard here.get_length() > (0 as size_t)
+            return here
+        let pkg symbols.package_search_dir#(path)
+        guard pkg.get_length() > (0 as size_t)
+            guard pkg.equals(dir) = false
+                return symbols.member_completions_in_dir#(pkg, path, type_name)
+        String#("")
+    }
+
+    ; Enumerate the .scaly files under `dir` (recursively, skipping self_path)
+    ; and return the members of the first concept named `type_name`. "" if none.
+    function member_completions_in_dir#(rp, dir: String, self_path: String, type_name: String) returns String
+    {
         guard dir.get_length() = (0 as size_t)
             return String#("")
         let listing symbols.list_scaly_files#(dir)   ; abs paths, each + LF
@@ -962,7 +984,7 @@ define symbols
                 {
                     let fpath symbols.substring#(listing, line_start, i)
                     guard fpath.get_length() > (0 as size_t)
-                        guard fpath.equals(path) = false
+                        guard fpath.equals(self_path) = false
                             guard File.exists(fpath)
                             {
                                 let fsrc File.read_to_string#(fpath)

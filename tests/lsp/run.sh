@@ -1044,6 +1044,67 @@ PY
 rc=$?
 if [ $rc -eq 0 ]; then ok "lsp cross-package definition+signatureHelp"; else bad "lsp cross-package definition+signatureHelp"; fi
 
+# ---- LSP server: cross-package member completion -------------------------
+# SCALY_HOME points at the repo so member completion scans packages/scaly when
+# the receiver's type/concept is not in the current file's dir tree. The doc is
+# in /tmp (NOT under packages/), so any member hit comes from the cross-package
+# search. `sb.` is a variable receiver (Case 2: resolve type StringBuilder);
+# `String.` is a literal concept-name receiver (Case 3: workspace/package).
+SCALY_HOME="$(pwd)" python3 - <<'PY'
+import sys, json, subprocess, os
+def frame(o):
+    b = json.dumps(o).encode()
+    return ("Content-Length: %d\r\n\r\n" % len(b)).encode() + b
+
+uri = "file:///tmp/xpkgmem.scaly"
+doc = ("function f()\n"               # 0
+       "{\n"                          # 1
+       "    var sb StringBuilder$()\n"# 2
+       "    sb.x\n"                    # 3
+       "    String.x\n"               # 4
+       "}\n")                         # 5
+
+inp  = frame({"jsonrpc":"2.0","id":1,"method":"initialize","params":{}})
+inp += frame({"jsonrpc":"2.0","method":"initialized","params":{}})
+inp += frame({"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{
+        "uri":uri,"languageId":"scaly","version":1,"text":doc}}})
+inp += frame({"jsonrpc":"2.0","id":2,"method":"textDocument/completion","params":{
+        "textDocument":{"uri":uri},"position":{"line":3,"character":7}}})   # sb.
+inp += frame({"jsonrpc":"2.0","id":3,"method":"textDocument/completion","params":{
+        "textDocument":{"uri":uri},"position":{"line":4,"character":11}}})  # String.
+inp += frame({"jsonrpc":"2.0","id":9,"method":"shutdown"})
+inp += frame({"jsonrpc":"2.0","method":"exit"})
+
+out = subprocess.run(["/tmp/scalyls"], input=inp, stdout=subprocess.PIPE,
+                     env={**os.environ, "SCALY_HOME": os.getcwd()}).stdout
+frames, d = [], out
+while d:
+    i = d.find(b"\r\n\r\n")
+    if i < 0: break
+    n = int(d[:i].decode().split(":")[1].strip())
+    frames.append(json.loads(d[i+4:i+4+n])); d = d[i+4+n:]
+
+failures = 0
+def check(cond, label):
+    global failures
+    print(("PASS  " if cond else "FAIL  ") + label)
+    if not cond: failures += 1
+def labels(idn):
+    f = next((x for x in frames if x.get("id") == idn), None)
+    r = (f or {}).get("result")
+    return [it["label"] for it in r] if isinstance(r, list) else None
+
+l2 = labels(2)
+check(l2 is not None and "append" in l2 and "to_string" in l2 and "f" not in l2,
+      "sb. -> StringBuilder members cross-package (variable receiver, not flat)")
+l3 = labels(3)
+check(l3 is not None and "substring" in l3 and "equals" in l3 and "f" not in l3,
+      "String. -> String members cross-package (concept-name receiver, not flat)")
+sys.exit(1 if failures else 0)
+PY
+rc=$?
+if [ $rc -eq 0 ]; then ok "lsp cross-package member completion"; else bad "lsp cross-package member completion"; fi
+
 echo "-----"
 echo "PASS: $pass  FAIL: $fail"
 [ $fail -eq 0 ]
