@@ -986,6 +986,64 @@ PY
 rc=$?
 if [ $rc -eq 0 ]; then ok "lsp signatureHelp"; else bad "lsp signatureHelp"; fi
 
+# ---- LSP server: cross-package definition + signatureHelp ----------------
+# SCALY_HOME points at the repo so the worker scans packages/scaly (the stdlib)
+# when a symbol is not found in the current file's directory tree. The open
+# document lives in /tmp (NOT under packages/), so a hit can only come from the
+# cross-package search.
+SCALY_HOME="$(pwd)" python3 - <<'PY'
+import sys, json, subprocess, os
+def frame(o):
+    b = json.dumps(o).encode()
+    return ("Content-Length: %d\r\n\r\n" % len(b)).encode() + b
+
+uri = "file:///tmp/xpkg.scaly"
+doc = ("function f()\n"               # 0
+       "{\n"                          # 1
+       "    var sb StringBuilder$()\n"# 2
+       "    sb.append(c)\n"           # 3
+       "}\n")                         # 4
+
+inp  = frame({"jsonrpc":"2.0","id":1,"method":"initialize","params":{}})
+inp += frame({"jsonrpc":"2.0","method":"initialized","params":{}})
+inp += frame({"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{
+        "uri":uri,"languageId":"scaly","version":1,"text":doc}}})
+inp += frame({"jsonrpc":"2.0","id":2,"method":"textDocument/definition","params":{
+        "textDocument":{"uri":uri},"position":{"line":2,"character":15}}})
+inp += frame({"jsonrpc":"2.0","id":3,"method":"textDocument/signatureHelp","params":{
+        "textDocument":{"uri":uri},"position":{"line":3,"character":14}}})
+inp += frame({"jsonrpc":"2.0","id":9,"method":"shutdown"})
+inp += frame({"jsonrpc":"2.0","method":"exit"})
+
+out = subprocess.run(["/tmp/scalyls"], input=inp, stdout=subprocess.PIPE,
+                     env={**os.environ, "SCALY_HOME": os.getcwd()}).stdout
+frames, d = [], out
+while d:
+    i = d.find(b"\r\n\r\n")
+    if i < 0: break
+    n = int(d[:i].decode().split(":")[1].strip())
+    frames.append(json.loads(d[i+4:i+4+n])); d = d[i+4+n:]
+
+failures = 0
+def check(cond, label):
+    global failures
+    print(("PASS  " if cond else "FAIL  ") + label)
+    if not cond: failures += 1
+def res(idn):
+    f = next((x for x in frames if x.get("id") == idn), None)
+    return (f or {}).get("result")
+
+r2 = res(2)
+check(r2 is not None and "packages/scaly" in r2.get("uri",""),
+      "definition: StringBuilder resolves into packages/scaly (cross-package)")
+r3 = res(3)
+check(r3 is not None and r3["signatures"][0]["label"] == "append(character: char)",
+      "signatureHelp: StringBuilder.append resolves cross-package (this dropped)")
+sys.exit(1 if failures else 0)
+PY
+rc=$?
+if [ $rc -eq 0 ]; then ok "lsp cross-package definition+signatureHelp"; else bad "lsp cross-package definition+signatureHelp"; fi
+
 echo "-----"
 echo "PASS: $pass  FAIL: $fail"
 [ $fail -eq 0 ]

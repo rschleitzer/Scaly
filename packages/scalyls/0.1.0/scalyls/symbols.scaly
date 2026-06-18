@@ -42,6 +42,7 @@ use scaly.containers.Vector
 use scaly.io.File
 use scaly.memory.Page
 use scaly.memory.runtime
+use scaly.memory.root_pages.getenv
 use scalyls.json
 
 use scalyc.compiler.parser
@@ -2088,12 +2089,30 @@ define symbols
         symbols.find_definition_in_workspace#(uri, name)
     }
 
-    ; Enumerate sibling .scaly files and return the first one declaring `name`,
-    ; as a Location pointing at that file. "" if none / no directory.
+    ; Resolve `name` across the workspace: first the current file's directory
+    ; tree (intra-package / project-local, fast), then — on a miss — the package
+    ; dependency tree (stdlib + declared packages under <SCALY_HOME/>packages/),
+    ; so symbols defined in packages/scaly etc. resolve cross-package. Returns a
+    ; Location pointing at the matching file, or "".
     function find_definition_in_workspace#(rp, uri: String, name: String) returns String
     {
         let path symbols.uri_to_path#(uri)
         let dir symbols.dir_of#(path)
+        let here symbols.find_definition_in_dir#(dir, path, name)
+        guard here.get_length() > (0 as size_t)
+            return here
+        let pkg symbols.package_search_dir#(path)
+        guard pkg.get_length() > (0 as size_t)
+            guard pkg.equals(dir) = false
+                return symbols.find_definition_in_dir#(pkg, path, name)
+        String#("")
+    }
+
+    ; Enumerate the .scaly files under `dir` (recursively) and return the first
+    ; one (other than `self_path`) declaring `name`, as a Location pointing at
+    ; that file. "" if none / empty dir.
+    function find_definition_in_dir#(rp, dir: String, self_path: String, name: String) returns String
+    {
         guard dir.get_length() = (0 as size_t)
             return String#("")
         let listing symbols.list_scaly_files#(dir)   ; abs paths, each + LF
@@ -2110,7 +2129,7 @@ define symbols
                 {
                     let fpath symbols.substring#(listing, line_start, i)
                     guard fpath.get_length() > (0 as size_t)
-                        guard fpath.equals(path) = false
+                        guard fpath.equals(self_path) = false
                             guard File.exists(fpath)
                             {
                                 let fsrc File.read_to_string#(fpath)
@@ -2123,6 +2142,91 @@ define symbols
             set i: i + (1 as size_t)
         }
         result
+    }
+
+    ; ====================================================================
+    ; Cross-package search roots
+    ;
+    ; Beyond the current file's directory tree, cross-package go-to-definition
+    ; and signatureHelp also scan the package dependency tree so stdlib symbols
+    ; (String / StringBuilder / Page / Vector, …) resolve. The package root is
+    ; resolved the same way the compiler resolves the prelude (Modeler.scaly's
+    ; scaly_home_base#): <SCALY_HOME>/packages when SCALY_HOME is set (the
+    ; install wrapper sets it — absolute), else derived from the current file's
+    ; path by walking up to the enclosing `/packages` segment (covers in-repo
+    ; development). Both yield ABSOLUTE paths so the result Location uri opens.
+    ; ====================================================================
+
+    ; "<SCALY_HOME>/" when SCALY_HOME is set and non-empty, else "". Mirrors
+    ; Modeler.scaly::scaly_home_base#.
+    function scaly_home_base#(rp) returns String
+    {
+        let home getenv("SCALY_HOME")
+        guard home = null
+            return String#("")
+        var home_str String$(home)
+        guard home_str.get_length() = (0 as size_t)
+            return String#("")
+        var sb StringBuilder#()
+        var i: size_t 0
+        let hl home_str.get_length()
+        while i < hl
+        {
+            sb.append(home_str.get(i) as char)
+            set i: i + (1 as size_t)
+        }
+        sb.append(0x2F as char)                        ; /
+        sb.to_string#()
+    }
+
+    ; The packages/ root to scan for cross-package symbols, or "" when none can
+    ; be determined. Prefers <SCALY_HOME>/packages; otherwise the longest prefix
+    ; of `path` ending in a `/packages` segment.
+    function package_search_dir#(rp, path: String) returns String
+    {
+        let base symbols.scaly_home_base#()
+        guard base.get_length() > (0 as size_t)
+        {
+            var sb StringBuilder#()
+            var i: size_t 0
+            let bl base.get_length()
+            while i < bl
+            {
+                sb.append(base.get(i) as char)
+                set i: i + (1 as size_t)
+            }
+            sb.append("packages")
+            return sb.to_string#()
+        }
+        symbols.packages_dir_from_path#(path)
+    }
+
+    ; `path` truncated to include its last "/packages" segment (so
+    ; "/u/Scaly/packages/scalyls/0.1.0/x.scaly" -> "/u/Scaly/packages"), or ""
+    ; when `path` is not under a packages/ directory.
+    function packages_dir_from_path#(rp, path: String) returns String
+    {
+        let needle String#("/packages/")
+        let pn path.get_length()
+        let nn needle.get_length()
+        guard pn >= nn
+        {
+            var last_found: size_t 0
+            var found false
+            var i: size_t 0
+            while i + nn <= pn
+            {
+                guard symbols.matches_at(path, i, needle)
+                {
+                    set last_found: i
+                    set found: true
+                }
+                set i: i + (1 as size_t)
+            }
+            guard found
+                return symbols.substring#(path, 0 as size_t, last_found + nn - (1 as size_t))
+        }
+        String#("")
     }
 
     ; Run `find '<dir>' -name '*.scaly'` and return its stdout (newline-
@@ -3718,13 +3822,27 @@ define symbols
         sb.to_string#()
     }
 
-    ; Cross-file: search sibling .scaly files in the current file's directory
-    ; tree for the first routine named `name` and return its SignatureHelp.
-    ; "" if none / no directory. Mirrors find_definition_in_workspace#.
+    ; Cross-file signatureHelp: the current file's directory tree first, then —
+    ; on a miss — the package dependency tree (so stdlib routines resolve), the
+    ; same two-step search as find_definition_in_workspace#. "" if none.
     function find_signature_in_workspace#(rp, uri: String, name: String, active: size_t) returns String
     {
         let path symbols.uri_to_path#(uri)
         let dir symbols.dir_of#(path)
+        let here symbols.find_signature_in_dir#(dir, path, name, active)
+        guard here.get_length() > (0 as size_t)
+            return here
+        let pkg symbols.package_search_dir#(path)
+        guard pkg.get_length() > (0 as size_t)
+            guard pkg.equals(dir) = false
+                return symbols.find_signature_in_dir#(pkg, path, name, active)
+        String#("")
+    }
+
+    ; Enumerate the .scaly files under `dir` (recursively) and return the first
+    ; routine named `name`'s SignatureHelp (skipping `self_path`). "" if none.
+    function find_signature_in_dir#(rp, dir: String, self_path: String, name: String, active: size_t) returns String
+    {
         guard dir.get_length() = (0 as size_t)
             return String#("")
         let listing symbols.list_scaly_files#(dir)
@@ -3741,7 +3859,7 @@ define symbols
                 {
                     let fpath symbols.substring#(listing, line_start, i)
                     guard fpath.get_length() > (0 as size_t)
-                        guard fpath.equals(path) = false
+                        guard fpath.equals(self_path) = false
                             guard File.exists(fpath)
                             {
                                 let fsrc File.read_to_string#(fpath)
