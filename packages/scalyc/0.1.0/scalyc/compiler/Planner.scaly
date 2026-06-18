@@ -2123,6 +2123,116 @@ define Planner
             match_holder.get(0)
         }
 
+        ; s-LSP: is `prefix` a namespace declaring a member function named
+        ; `suffix` whose first parameter is `this`? Used by the dotted-call
+        ; fallback to recognise a namespace this-method invoked qualified
+        ; with an explicit receiver (`NS.f(recv, ...)`). Mirrors the member
+        ; scan in stage-0's name-only Namespace path (Planner.cpp:8663-8674).
+        ; Kept out of collapse_operand_sequence# (its frame is the heaviest
+        ; in the compiler) so stage-1 emits it correctly into stage-2.
+        function is_namespace_this_method#(rp, this: Planner, prefix: String, suffix: String) returns bool
+        {
+            let ns_chk this.lookup_namespace_concept(prefix)
+            guard ns_chk <> null
+            {
+                let nsc_chk (*ns_chk)
+                choose nsc_chk.definition
+                    when nd_chk: Namespace
+                    {
+                        var mci: size_t 0
+                        while mci < nd_chk.members.length
+                        {
+                            let mcp nd_chk.members.get(mci)
+                            guard mcp <> null
+                            {
+                                let mc (*mcp)
+                                choose mc
+                                    when ncf: Function
+                                    {
+                                        guard ncf.name.equals(suffix)
+                                        {
+                                            guard ncf.input.length > 0
+                                            {
+                                                let nmi0 ncf.input.get(0)
+                                                guard nmi0 <> null
+                                                {
+                                                    guard nmi0.name <> null
+                                                    {
+                                                        guard (*nmi0.name).equals(String$("this"))
+                                                            return true
+                                                    }
+                                                }
+                                            }
+                                        }
+                                        0
+                                    }
+                                    else
+                                        0
+                            }
+                            set mci: mci + 1
+                        }
+                    }
+                    else
+                        0
+            }
+            false
+        }
+
+        ; s-LSP: resolve `NS.f(recv, ...)` where `f(this: T, ...)` is a
+        ; namespace this-method invoked qualified with an explicit receiver.
+        ; Returns the MethodMatch (this-implicit, so `_ZN<ns><fn>E…`) or null.
+        ; Builds the receiver-dropped argument list in ITS OWN frame and
+        ; resolves the this-implicit overload; the caller's namespace-mangling
+        ; block then rebuilds the namespaced mangled name. Kept whole here so
+        ; collapse_operand_sequence# adds no locals (its s178 alloca pool
+        ; mis-aliases any added there — see the call site).
+        function resolve_namespace_this_method#(
+            rp,
+            this: Planner,
+            prefix: String,
+            suffix: String,
+            arg_types: Vector[PlannedType]
+        ) returns ref[MethodMatch]?
+        {
+            guard arg_types.length > 0
+            {
+                guard this.is_namespace_this_method#(prefix, suffix)
+                {
+                    var tail_arr Array[PlannedType]$()
+                    var tci: size_t 1
+                    while tci < arg_types.length
+                    {
+                        let tap arg_types.get(tci)
+                        guard tap <> null
+                            tail_arr.add((*tap))
+                        set tci: tci + 1
+                    }
+                    var tail_vec Vector[PlannedType]^rp(tail_arr)
+                    return this.resolve_function_call#(suffix, tail_vec)
+                }
+            }
+            null
+        }
+
+        ; s-LSP: the dotted-call fallback's resolution, as ONE call so the
+        ; caller (collapse_operand_sequence#) keeps a single `set match_ref:`
+        ; statement — adding a branch there perturbed its s178 alloca pool.
+        ; Try the normal this-implicit overload first; if that misses, try the
+        ; namespace this-method-with-explicit-receiver form.
+        function resolve_dotted_call#(
+            rp,
+            this: Planner,
+            prefix: String,
+            suffix: String,
+            arg_types: Vector[PlannedType]
+        ) returns ref[MethodMatch]?
+        {
+            let m this.resolve_function_call#(suffix, arg_types)
+            guard m <> null
+                return m
+            this.resolve_namespace_this_method#(prefix, suffix, arg_types)
+        }
+
         ; ================================================================
         ; resolve_function_call: return a MethodMatch describing the
         ; chosen overload of `name` for the given argument types. Two-pass
@@ -4223,7 +4333,29 @@ define Planner
                                     dot_pos + 1,
                                     fn_name.get_length() - dot_pos - 1
                                 )
-                                set match_ref: this.resolve_function_call#(suffix, arg_types)
+                                ; s-LSP: resolve the dotted call. resolve_dotted_call#
+                                ; first tries the normal this-implicit overload,
+                                ; then — for a namespace this-method invoked
+                                ; qualified with an EXPLICIT receiver
+                                ; (`NS.f(recv, ...)` for `f(this: T, ...)`, where
+                                ; `recv` is in arg_types but the this-implicit
+                                ; matcher skips `this` and arity-fails) — retries
+                                ; with the receiver arg dropped. Mirrors stage-0's
+                                ; name-only Namespace path (Planner.cpp:8663); the
+                                ; namespace-mangling block below then drops `this`
+                                ; from the name (`_ZN<ns><fn>Ev`) and the call
+                                ; still passes every explicit arg, so `recv` fills
+                                ; `this`. This stays ONE statement — one call, one
+                                ; store to match_ref, exactly as the old single
+                                ; resolve_function_call# — so collapse_operand_
+                                ; sequence#'s s178 alloca pool keeps match_ref in a
+                                ; stable slot. An earlier two-statement form (a
+                                ; `guard match_ref = null { set match_ref: ... }`
+                                ; diamond) perturbed the pool's liveness and aliased
+                                ; match_ref onto a recycled slot (two_vec), losing
+                                ; the value before the final mangled-name read.
+                                set match_ref: this.resolve_dotted_call#(prefix, suffix, arg_types)
+
                                 guard match_ref <> null
                                 {
                                     ; s177: prefer the Namespace concept for the

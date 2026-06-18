@@ -1,0 +1,36 @@
+; AOT Test: namespace this-method called qualified with an explicit
+; receiver (LSP/json pattern). `NS.f(recv, ...)` where `f(this: T, ...)`
+; passes the receiver explicitly, so it lands in the argument list while
+; the matcher implicitly skips `this`. The planner must still resolve it
+; (mirrors stage-0's name-only Namespace path) and emit a call to the
+; this-implicit-mangled `_ZN<ns><fn>E...` symbol with `recv` as arg 0.
+; Expected: PASS
+
+define Box(value: int)
+
+define ops
+{
+    function make() returns Box
+        Box(7)
+
+    function get_value(this: Box) returns int
+        this.value
+
+    function is_seven(this: Box) returns bool
+        this.value = 7
+}
+
+function check() returns int
+{
+    let b ops.make()
+    guard ops.get_value(b) <> 7
+        return 1
+    guard ops.is_seven(b) = false
+        return 2
+    0
+}
+
+if check() = 0
+    print("PASS")
+else
+    print("WRONG")
