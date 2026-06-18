@@ -182,6 +182,63 @@ PY
 rc=$?
 if [ $rc -eq 0 ]; then ok "lsp documentSymbol outline"; else bad "lsp documentSymbol outline"; fi
 
+# ---- hover: symbol under the cursor for a file on disk ----
+# Like documentSymbol, the request carries only a uri + position; the worker
+# re-reads the file. Exercises a top-level function, a method inside a struct
+# (innermost wins), a module-level mutable, and an empty result off any symbol.
+python3 - <<'PY'
+import sys, json, subprocess
+src = ("function add(a: int, b: int) returns int\n{\n    return a + b\n}\n\n"
+       "mutable counter: int 0\n\n"
+       "define Point\n(\n    x: int\n)\n{\n"
+       "    function get_x(this: Point) returns int\n    {\n        return x\n    }\n}\n")
+path = "/tmp/lsp_hover_test.scaly"
+open(path, "w").write(src)
+def frame(o):
+    b=json.dumps(o).encode(); return ("Content-Length: %d\r\n\r\n"%len(b)).encode()+b
+def hov(idn, line, char):
+    return frame({"jsonrpc":"2.0","id":idn,"method":"textDocument/hover",
+                  "params":{"textDocument":{"uri":"file://"+path},
+                            "position":{"line":line,"character":char}}})
+inp  = frame({"jsonrpc":"2.0","id":1,"method":"initialize","params":{}})
+inp += frame({"jsonrpc":"2.0","method":"initialized","params":{}})
+inp += hov(2, 0, 10)     # inside `add`
+inp += hov(3, 12, 18)    # inside Point.get_x (innermost)
+inp += hov(4, 5, 10)     # inside `counter`
+inp += hov(5, 100, 0)    # past EOF -> no symbol (declaration ranges run to
+                         # the next token, so blank lines between decls still
+                         # report the preceding one; past-EOF is the reliable
+                         # null case)
+inp += frame({"jsonrpc":"2.0","id":6,"method":"shutdown"})
+inp += frame({"jsonrpc":"2.0","method":"exit"})
+out = subprocess.run(["/tmp/scalyls"], input=inp, stdout=subprocess.PIPE).stdout
+frames, d = [], out
+while d:
+    i = d.find(b"\r\n\r\n")
+    if i < 0: break
+    n = int(d[:i].decode().split(":")[1].strip())
+    frames.append(json.loads(d[i+4:i+4+n])); d = d[i+4+n:]
+failures = 0
+def check(cond, label):
+    global failures
+    print(("PASS  " if cond else "FAIL  ") + label)
+    if not cond: failures += 1
+caps = frames[0]["result"]["capabilities"]
+check(caps.get("hoverProvider") is True, "initialize advertises hoverProvider")
+def val(idn):
+    f = next((x for x in frames if x.get("id") == idn), None)
+    r = (f or {}).get("result")
+    if r is None: return None
+    return r.get("contents", {}).get("value")
+check(val(2) == "function add", "hover on function -> 'function add'")
+check(val(3) == "method get_x", "hover in method (innermost) -> 'method get_x'")
+check(val(4) == "mutable counter", "hover on mutable -> 'mutable counter'")
+check(val(5) is None, "hover off any symbol -> null result")
+sys.exit(1 if failures else 0)
+PY
+rc=$?
+if [ $rc -eq 0 ]; then ok "lsp hover"; else bad "lsp hover"; fi
+
 echo "-----"
 echo "PASS: $pass  FAIL: $fail"
 [ $fail -eq 0 ]

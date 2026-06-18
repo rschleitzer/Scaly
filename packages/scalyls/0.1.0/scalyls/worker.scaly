@@ -120,6 +120,16 @@ define worker
             return true
         }
 
+        ; hover: re-read the file; `text` carries the packed "<line> <char>"
+        ; cursor position (the parent is stateless, no doc text).
+        guard kind.equals("h")
+        {
+            let path diagnostics.strip_uri#(uri)
+            let source File.read_to_string#(path)
+            rpc.write_message_fd(out_fd, symbols.hover_packed#(source, text))
+            return true
+        }
+
         rpc.write_message_fd(out_fd, diagnostics.publish_diagnostics#(uri, text))
         true
     }
@@ -217,6 +227,12 @@ define worker
     ; for protocol uniformity.
     function symbols#(rp, uri: String) returns String
         worker.exchange#("s", uri, String#(""), String#("[]"))
+
+    ; Hover for `uri` at the packed "<line> <char>" position. Returns the LSP
+    ; hover object, or "" (empty) if the worker is unavailable / no symbol at
+    ; the cursor; the server maps "" to a null result.
+    function hover#(rp, uri: String, packed: String) returns String
+        worker.exchange#("h", uri, packed, String#(""))
 
     ; Send one (kind,uri,text) request to the worker and return its framed
     ; reply, or `fallback` if the worker is unavailable / crashed / hung.

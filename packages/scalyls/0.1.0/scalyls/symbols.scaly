@@ -496,4 +496,343 @@ define symbols
         sb.append(0x3A as char)                    ; :
         sb.to_string#()
     }
+
+    ; ====================================================================
+    ; textDocument/hover (parse-only)
+    ;
+    ; Find the innermost declaration whose [start,end) byte range contains
+    ; the cursor and report its kind + name as a markdown code span. Reuses
+    ; the same parse-tree walk as documentSymbol but returns a single hit.
+    ; The cursor arrives as a 0-based (line, character); convert it to a byte
+    ; offset with position_to_offset#. Hover text is short, so plain
+    ; StringBuilder.append is fine here (the byte-at-a-time rule is only for
+    ; potentially-large pieces — see the STRING/JSON NOTE).
+    ; ====================================================================
+
+    ; The request frame packs the position as "<line> <character>" (decimal,
+    ; space-separated). Parse it, run the walk, and wrap the result in the LSP
+    ; hover envelope. An empty walk result yields "" (server -> result:null).
+    function hover_packed#(rp, source: String, packed: String) returns String
+    {
+        var line: size_t 0
+        var character: size_t 0
+        var seen_space: bool false
+        var i: size_t 0
+        let n packed.get_length()
+        while i < n
+        {
+            let c packed.get(i)
+            guard c = (0x20 as u8)
+                set seen_space: true
+            guard c <> (0x20 as u8)
+            {
+                let digit (c - (0x30 as u8)) as size_t
+                guard seen_space = false
+                    set line: line * (10 as size_t) + digit
+                guard seen_space
+                    set character: character * (10 as size_t) + digit
+            }
+            set i: i + 1
+        }
+        symbols.hover_envelope#(symbols.hover_at#(source, line, character))
+    }
+
+    ; {"contents":{"kind":"markdown","value":<text>}}  or "" when text empty.
+    function hover_envelope#(rp, text: String) returns String
+    {
+        guard text.get_length() = (0 as size_t)
+            return String#("")
+        var sb StringBuilder#()
+        sb.append(0x7B as char)
+        sb.append(symbols.key#("contents"))
+        sb.append(0x7B as char)
+        sb.append(symbols.key#("kind"))
+        sb.append(json.quote_string#(String#("markdown")))
+        sb.append(0x2C as char)
+        sb.append(symbols.key#("value"))
+        sb.append(json.quote_string#(text))
+        sb.append(0x7D as char)
+        sb.append(0x7D as char)
+        sb.to_string#()
+    }
+
+    ; 0-based (line, character) -> byte offset. Walks LFs to the line start,
+    ; then advances `character` columns, clamping at the next LF / EOF.
+    function position_to_offset#(rp, source: String, line: size_t, character: size_t) returns size_t
+    {
+        let len source.get_length()
+        var off: size_t 0
+        var cur_line: size_t 0
+        while cur_line < line
+        {
+            guard off >= len
+                return off
+            let c source.get(off)
+            set off: off + 1
+            guard c = (10 as char)
+                set cur_line: cur_line + 1
+        }
+        var col: size_t 0
+        while col < character
+        {
+            guard off >= len
+                return off
+            let c source.get(off)
+            guard c = (10 as char)
+                return off
+            set off: off + 1
+            set col: col + 1
+        }
+        off
+    }
+
+    ; Parse the program and return the hover text for the innermost top-level
+    ; declaration containing `offset`, or "" on no match / parse error.
+    function hover_at#(rp, source: String, line: size_t, character: size_t) returns String
+    {
+        let offset symbols.position_to_offset#(source, line, character)
+        var p parser.Parser$(source)
+        var result String#("")
+        choose p.parse_program#()
+            when err: Error
+                set result: String#("")
+            when program: Success
+            {
+                let file program.file
+                guard file.declarations <> null
+                {
+                    let decls (*file.declarations)
+                    var i: size_t 0
+                    while i < decls.length
+                    {
+                        guard result.get_length() = (0 as size_t)
+                        {
+                            let dptr decls.get(i)
+                            guard dptr <> null
+                            {
+                                let d (*dptr)
+                                set result: symbols.hover_decl#(source, d, offset)
+                            }
+                        }
+                        set i: i + 1
+                    }
+                }
+            }
+        result
+    }
+
+    ; Hover text for one top-level declaration (recurses for the innermost).
+    function hover_decl#(rp, source: String, decl: DeclarationSyntax, offset: size_t) returns String
+    {
+        choose decl
+            when f: FunctionSyntax
+                return symbols.hover_leaf#(f.start, f.end, offset, "function", symbols.target_name#(f.target))
+            when pr: ProcedureSyntax
+                return symbols.hover_leaf#(pr.start, pr.end, offset, "procedure", symbols.target_name#(pr.target))
+            when o: OperatorSyntax
+                return symbols.hover_leaf#(o.start, o.end, offset, "operator", symbols.target_name#(o.target))
+            when def: DefinitionSyntax
+                return symbols.hover_definition#(source, def, offset)
+            when m: ModuleSyntax
+                return symbols.hover_leaf#(m.start, m.end, offset, "module", String#(m.name))
+            when mut: MutableSyntax
+                return symbols.hover_leaf#(mut.start, mut.end, offset, "mutable", String#(mut.binding.name))
+            when priv: PrivateSyntax
+                return symbols.hover_export#(source, priv.export_, offset)
+            when e: EmptySyntax
+                return String#("")
+            when pkg: PackageSyntax
+                return String#("")
+            when u: UseSyntax
+                return String#("")
+            when t: TraitSyntax
+                return String#("")
+            when mac: MacroSyntax
+                return String#("")
+    }
+
+    ; A `private` declaration unwraps to its exported construct.
+    function hover_export#(rp, source: String, export_: ExportSyntax, offset: size_t) returns String
+    {
+        choose export_
+            when f: FunctionSyntax
+                return symbols.hover_leaf#(f.start, f.end, offset, "function", symbols.target_name#(f.target))
+            when pr: ProcedureSyntax
+                return symbols.hover_leaf#(pr.start, pr.end, offset, "procedure", symbols.target_name#(pr.target))
+            when o: OperatorSyntax
+                return symbols.hover_leaf#(o.start, o.end, offset, "operator", symbols.target_name#(o.target))
+            when def: DefinitionSyntax
+                return symbols.hover_definition#(source, def, offset)
+            when t: TraitSyntax
+                return String#("")
+            when m: ModuleSyntax
+                return symbols.hover_leaf#(m.start, m.end, offset, "module", String#(m.name))
+    }
+
+    ; A `define X`. Recurse into the body/members for the innermost match;
+    ; otherwise report the concept itself (struct/namespace/union/…).
+    function hover_definition#(rp, source: String, def: DefinitionSyntax, offset: size_t) returns String
+    {
+        guard offset >= def.start
+        {
+            guard offset < def.end
+            {
+                var child String#("")
+                choose def.concept_
+                    when c: ClassSyntax
+                        set child: symbols.hover_body#(source, c.body, offset)
+                    when n: NamespaceSyntax
+                        set child: symbols.hover_namespace#(source, n, offset)
+                    when un: UnionSyntax
+                        set child: symbols.hover_union#(source, un, offset)
+                    else
+                        0
+                guard child.get_length() > (0 as size_t)
+                    return child
+
+                var kind String#("struct")
+                choose def.concept_
+                    when c2: ClassSyntax
+                        set kind: String#("struct")
+                    when n2: NamespaceSyntax
+                        set kind: String#("namespace")
+                    when un2: UnionSyntax
+                        set kind: String#("union")
+                    when cn2: ConstantSyntax
+                        set kind: String#("constant")
+                    when dl2: DelegateSyntax
+                        set kind: String#("function")
+                    when ic2: IntrinsicSyntax
+                        set kind: String#("struct")
+                var sb StringBuilder#()
+                sb.append(kind)
+                sb.append(0x20 as char)
+                sb.append(def.name)
+                return sb.to_string#()
+            }
+        }
+        String#("")
+    }
+
+    ; Innermost-matching member of a class body, or "".
+    function hover_body#(rp, source: String, body: ref[BodySyntax]?, offset: size_t) returns String
+    {
+        var result String#("")
+        guard body <> null
+        {
+            let b (*body)
+            guard b.members <> null
+            {
+                let members (*b.members)
+                var i: size_t 0
+                while i < members.length
+                {
+                    guard result.get_length() = (0 as size_t)
+                    {
+                        let mptr members.get(i)
+                        guard mptr <> null
+                        {
+                            let m (*mptr)
+                            set result: symbols.hover_member#(source, m, offset)
+                        }
+                    }
+                    set i: i + 1
+                }
+            }
+        }
+        result
+    }
+
+    ; Hover text for one class/union member (recurses into nested defines).
+    function hover_member#(rp, source: String, member: MemberSyntax, offset: size_t) returns String
+    {
+        choose member
+            when f: FunctionSyntax
+                return symbols.hover_leaf#(f.start, f.end, offset, "method", symbols.target_name#(f.target))
+            when pr: ProcedureSyntax
+                return symbols.hover_leaf#(pr.start, pr.end, offset, "method", symbols.target_name#(pr.target))
+            when o: OperatorSyntax
+                return symbols.hover_leaf#(o.start, o.end, offset, "operator", symbols.target_name#(o.target))
+            when ini: InitSyntax
+                return symbols.hover_leaf#(ini.start, ini.end, offset, "init", String#("init"))
+            when dei: DeInitSyntax
+                return symbols.hover_leaf#(dei.start, dei.end, offset, "deinit", String#("deinit"))
+            when def: DefinitionSyntax
+                return symbols.hover_definition#(source, def, offset)
+            when e: EmptySyntax
+                return String#("")
+            when im: ImplementSyntax
+                return String#("")
+            when t: TraitSyntax
+                return String#("")
+            when mac: MacroSyntax
+                return String#("")
+            when m: ModuleSyntax
+                return symbols.hover_leaf#(m.start, m.end, offset, "module", String#(m.name))
+    }
+
+    ; Innermost-matching nested declaration of a namespace, or "".
+    function hover_namespace#(rp, source: String, ns: NamespaceSyntax, offset: size_t) returns String
+    {
+        var result String#("")
+        guard ns.declarations <> null
+        {
+            let decls (*ns.declarations)
+            var i: size_t 0
+            while i < decls.length
+            {
+                guard result.get_length() = (0 as size_t)
+                {
+                    let dptr decls.get(i)
+                    guard dptr <> null
+                    {
+                        let d (*dptr)
+                        set result: symbols.hover_decl#(source, d, offset)
+                    }
+                }
+                set i: i + 1
+            }
+        }
+        result
+    }
+
+    ; A union: each variant, then any body members.
+    function hover_union#(rp, source: String, un: UnionSyntax, offset: size_t) returns String
+    {
+        var result String#("")
+        guard un.variants <> null
+        {
+            let variants (*un.variants)
+            var i: size_t 0
+            while i < variants.length
+            {
+                guard result.get_length() = (0 as size_t)
+                {
+                    let vptr variants.get(i)
+                    guard vptr <> null
+                        set result: symbols.hover_leaf#(vptr.start, vptr.end, offset, "case", String#(vptr.name))
+                }
+                set i: i + 1
+            }
+        }
+        guard result.get_length() = (0 as size_t)
+            guard un.body <> null
+                set result: symbols.hover_body#(source, un.body, offset)
+        result
+    }
+
+    ; `kind name` when start <= offset < end, else "".
+    function hover_leaf#(rp, start: size_t, end: size_t, offset: size_t, kind: pointer[const_char], name: String) returns String
+    {
+        guard offset >= start
+            guard offset < end
+            {
+                var sb StringBuilder#()
+                sb.append(kind)
+                sb.append(0x20 as char)
+                sb.append(name)
+                return sb.to_string#()
+            }
+        String#("")
+    }
 }
