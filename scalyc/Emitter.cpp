@@ -2226,12 +2226,58 @@ llvm::Expected<llvm::Value*> Emitter::emitAction(const PlannedAction &Action) {
                     llvm::inconvertibleErrorCode()
                 );
             }
-            // If Value is a pointer but the target is a scalar, load first.
-            llvm::Type *TargetTy = GV->getValueType();
-            if (Value->getType()->isPointerTy() && !TargetTy->isPointerTy()) {
-                Value = Builder->CreateLoad(TargetTy, Value, "store.val");
+            if (TargetOp.MemberAccess && !TargetOp.MemberAccess->empty()) {
+                // `set global.field: value` — the global is the BASE of a
+                // member-access chain, not the store target. For a pointer
+                // global (e.g. `mutable heap_head: pointer[HeapBucketHeader]`),
+                // load it to get the struct pointer, then GEP into the field;
+                // for a by-value struct global, GV is already the struct addr.
+                // Storing into GV directly here would clobber the global itself
+                // (e.g. `set heap_head.prev: null` wiping the free-list head).
+                PlannedType BaseType = GRef->GlobalType;
+                const PlannedType *InnerTypePtr = nullptr;
+                if ((BaseType.Name == "pointer" || BaseType.Name == "ref") &&
+                    !BaseType.Generics.empty()) {
+                    InnerTypePtr = &BaseType.Generics[0];
+                }
+                llvm::Value *CurrentPtr;
+                llvm::Type *CurrentType;
+                if (InnerTypePtr) {
+                    CurrentPtr = Builder->CreateLoad(GV->getValueType(), GV,
+                                                     GRef->Name + ".load");
+                    CurrentType = mapType(*InnerTypePtr);
+                } else {
+                    CurrentPtr = GV;
+                    CurrentType = mapType(BaseType);
+                }
+                for (const auto &Member : *TargetOp.MemberAccess) {
+                    if (!CurrentType || !CurrentType->isStructTy()) {
+                        return llvm::make_error<llvm::StringError>(
+                            "Cannot resolve member-access store on global: " + GRef->Name,
+                            llvm::inconvertibleErrorCode()
+                        );
+                    }
+                    CurrentPtr = Builder->CreateStructGEP(CurrentType, CurrentPtr,
+                                                          Member.FieldIndex, Member.Name);
+                    CurrentType = llvm::cast<llvm::StructType>(CurrentType)
+                                      ->getElementType(Member.FieldIndex);
+                }
+                if (Value->getType()->isPointerTy()) {
+                    llvm::Type *StoreType = mapType(Action.ResultType);
+                    if (StoreType && StoreType->isStructTy()) {
+                        Value = Builder->CreateLoad(StoreType, Value, "deref.val");
+                    }
+                }
+                Builder->CreateStore(Value, CurrentPtr);
+            } else {
+                // Direct `set global: value`. If Value is a pointer but the
+                // target is a scalar, load first.
+                llvm::Type *TargetTy = GV->getValueType();
+                if (Value->getType()->isPointerTy() && !TargetTy->isPointerTy()) {
+                    Value = Builder->CreateLoad(TargetTy, Value, "store.val");
+                }
+                Builder->CreateStore(Value, GV);
             }
-            Builder->CreateStore(Value, GV);
         } else if (auto *Call = std::get_if<PlannedCall>(&TargetOp.Expr)) {
             // Handle direct dereference assignment like *ptr = value (no parentheses)
             if (Call->Name == "*" && Call->Args && Call->Args->size() == 1) {
