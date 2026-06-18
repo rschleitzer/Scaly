@@ -1,0 +1,222 @@
+; symindex.scaly - persistent workspace symbol index (worker side).
+;
+; workspace/symbol (and the cross-package definition / signatureHelp searches)
+; parse every .scaly file under the search root on EACH request. Parsing is the
+; dominant cost (~100ms over the scalyc package's 17k-line files); reading and
+; hashing a file is O(bytes) and cheap by comparison. This cache stores, per
+; file path, the file's content hash plus the pre-built UNFILTERED symbol blob
+; (a tagged record list, see below), so a query reuses the parse whenever the
+; file is unchanged and re-parses only the files whose content actually moved.
+;
+; INVALIDATION is by content hash, not mtime or editor notifications: on every
+; query the worker reads each file (cheap) and hashes it; a matching hash means
+; the cached blob is still valid, any change (save, git checkout, external edit)
+; flips the hash and forces a re-parse. This keeps the index correct for ANY
+; disk change with no protocol additions, and matches workspace/symbol's
+; existing disk-based semantics (unsaved editor edits, which never touch disk,
+; are not reflected — same as before the index).
+;
+; BLOB FORMAT: each symbol is one record `name <0x09> json <0x0A>`. A complete
+; SymbolInformation JSON object never contains a raw tab or newline (json.
+; quote_string# escapes 0x09/0x0A/0x0D to \t/\n/\r and the location object is
+; single-line), so the tab/newline delimiters are unambiguous. A query filters
+; the blob by walking records, matching `name`, and emitting the `json` parts.
+;
+; MEMORY MODEL: identical to docstore — the index must outlive a single request
+; but a long-lived Scaly root page would leak under the stack-LIFO discipline,
+; so each slot's path/blob bytes are libc malloc'd copies (freed on replace),
+; orthogonal to the page allocator. A scalar `pointer` module-global with a
+; `null` initializer is allowed (s189); the slot array is lazily malloc'd.
+;
+; This index lives ONLY in the worker (a forked child), which is where parsing
+; happens and which is persistent across requests. A worker crash + respawn
+; simply starts with an empty index that refills lazily.
+;
+; CONTROL-FLOW NOTE: `guard COND STMT` runs STMT when COND is TRUE (no else).
+; One statement per line (`;` starts a comment, not a separator).
+
+use scaly.containers.String
+use scaly.memory.runtime
+
+; libc allocator. free + memcpy come from scaly.memory.runtime; malloc is not
+; declared there, so declare it here (fixpoint-safe — no scaly/scalyc source
+; is touched).
+function malloc(size: size_t) returns pointer[void] extern
+
+; Max number of files tracked. The scaly + scalyc packages total ~30 files; a
+; large monorepo workspace could have more, so allow generous headroom. A full
+; table just falls back to re-parsing the overflow files every query.
+define IDX_CAP int 4096
+
+; One cached file: malloc'd path + symbol-blob byte copies (NOT page-owned),
+; the content hash they were built from, and a `used` flag.
+define IdxSlot
+(
+    path_data: pointer[u8]
+    path_len:  size_t
+    chash:     size_t
+    blob_data: pointer[u8]
+    blob_len:  size_t
+    used:      bool
+)
+
+; The slot array, lazily malloc'd. null until the first index access.
+mutable idx_slots: pointer[IdxSlot] null
+
+define symindex
+{
+    ; Lazily allocate + zero the slot array on first use. A malloc failure
+    ; leaves idx_slots null; callers then treat every file as a cache miss.
+    procedure ensure()
+    {
+        guard idx_slots = null
+        {
+            let bytes (IDX_CAP as size_t) * sizeof IdxSlot
+            set idx_slots: malloc(bytes) as pointer[IdxSlot]
+            guard idx_slots = null
+                return
+
+            var i 0
+            while i < IDX_CAP
+            {
+                let s idx_slots + i
+                set s.used: false
+                set s.path_data: null
+                set s.path_len: 0 as size_t
+                set s.chash: 0 as size_t
+                set s.blob_data: null
+                set s.blob_len: 0 as size_t
+                set i: i + 1
+            }
+        }
+    }
+
+    ; Index of the live slot whose path matches, or -1.
+    function find(path: String) returns int
+    {
+        guard idx_slots <> null
+        {
+            var i 0
+            while i < IDX_CAP
+            {
+                let s idx_slots + i
+                guard s.used
+                {
+                    let sp String#(s.path_data as pointer[const_char], s.path_len)
+                    guard sp.equals(path)
+                        return i
+                }
+                set i: i + 1
+            }
+        }
+        0 - 1
+    }
+
+    ; True when `path` is cached AND was built from content hashing to `chash`
+    ; — i.e. the cached blob is still valid for the file's current content.
+    function valid(path: String, chash: size_t) returns bool
+    {
+        let idx symindex.find(path)
+        guard idx >= 0
+        {
+            let s idx_slots + idx
+            guard s.chash = chash
+                return true
+        }
+        false
+    }
+
+    ; The cached blob for `path` (a fresh copy on the caller's page), or "" on a
+    ; miss. Callers should gate on valid() first; an empty blob is a legitimate
+    ; cached value (a file with no symbols).
+    function get_blob#(rp, path: String) returns String
+    {
+        let idx symindex.find(path)
+        guard idx >= 0
+        {
+            let s idx_slots + idx
+            guard s.blob_data <> null
+                return String#(s.blob_data as pointer[const_char], s.blob_len)
+        }
+        String#("")
+    }
+
+    ; Replace slot `s`'s blob with a fresh malloc'd copy of `blob`'s bytes,
+    ; freeing the previous copy. An empty blob leaves blob_data null.
+    procedure set_blob(s: pointer[IdxSlot], blob: String)
+    {
+        guard s.blob_data <> null
+            free(s.blob_data as pointer[void])
+        set s.blob_data: null
+        set s.blob_len: 0 as size_t
+
+        let len blob.get_length()
+        guard len > (0 as size_t)
+        {
+            let dst malloc(len) as pointer[u8]
+            guard dst <> null
+            {
+                memcpy(dst as pointer[void], blob.get_buffer() as pointer[void], len)
+                set s.blob_data: dst
+                set s.blob_len: len
+            }
+        }
+    }
+
+    ; Set slot `s`'s path to a fresh malloc'd copy of `path`'s bytes, freeing
+    ; any previous copy (slots are reused after overflow eviction).
+    procedure set_path(s: pointer[IdxSlot], path: String)
+    {
+        guard s.path_data <> null
+            free(s.path_data as pointer[void])
+        set s.path_data: null
+        set s.path_len: 0 as size_t
+
+        let len path.get_length()
+        guard len > (0 as size_t)
+        {
+            let dst malloc(len) as pointer[u8]
+            guard dst <> null
+            {
+                memcpy(dst as pointer[void], path.get_buffer() as pointer[void], len)
+                set s.path_data: dst
+                set s.path_len: len
+            }
+        }
+    }
+
+    ; Record (or replace) the symbol blob + content hash for `path`. Replacing
+    ; frees the old blob first (bounded: one live copy per indexed file).
+    procedure put(path: String, chash: size_t, blob: String)
+    {
+        symindex.ensure()
+        guard idx_slots = null
+            return
+
+        let idx symindex.find(path)
+        guard idx >= 0
+        {
+            let s idx_slots + idx
+            symindex.set_blob(s, blob)
+            set s.chash: chash
+            return
+        }
+
+        ; New file: take the first free slot.
+        var i 0
+        while i < IDX_CAP
+        {
+            let s idx_slots + i
+            guard s.used = false
+            {
+                symindex.set_path(s, path)
+                symindex.set_blob(s, blob)
+                set s.chash: chash
+                set s.used: true
+                return
+            }
+            set i: i + 1
+        }
+        ; Table full: drop silently — that file is re-parsed every query.
+    }
+}

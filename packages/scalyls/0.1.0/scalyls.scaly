@@ -20,6 +20,10 @@ define scalyls
     ; Diagnostics: text -> compiler pipeline -> publishDiagnostics.
     module diagnostics
 
+    ; Persistent workspace symbol index (worker side): content-hashed per-file
+    ; symbol blobs so workspace/symbol re-parses only changed files.
+    module symindex
+
     ; documentSymbol: text -> parse -> DocumentSymbol[] outline tree.
     module symbols
 

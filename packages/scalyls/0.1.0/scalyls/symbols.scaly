@@ -44,6 +44,7 @@ use scaly.memory.Page
 use scaly.memory.runtime
 use scaly.memory.root_pages.getenv
 use scalyls.json
+use scalyls.symindex
 
 use scalyc.compiler.parser
 
@@ -2364,13 +2365,18 @@ define symbols
     ; The SymbolKind ints are the same as documentSymbol's (Function=12 etc.),
     ; NOT completion's CompletionItemKind. The walk mirrors completion_items#
     ; 1:1 (flat, comma-joined fragments) but each item carries a Location and
-    ; is filtered by the query. LIMITS: parses every .scaly under the root on
-    ; each query (no persistent index — a broad query over a huge tree is slow
-    ; / may hit the worker timeout -> []); intra-workspace; lexical name match.
+    ; is filtered by the query. PERSISTENT INDEX (symindex): the per-file symbol
+    ; set is parsed once into a content-hashed blob and reused across queries —
+    ; only files whose content changed are re-parsed, so repeated queries over a
+    ; large tree are cheap. LIMITS: intra-workspace; lexical name match; the
+    ; index reflects disk content (unsaved editor edits don't show, as before).
     ; ====================================================================
 
     ; Search every .scaly file under `root` and return the SymbolInformation[]
     ; array (already bracketed). "[]" when root is empty (no workspace folder).
+    ; Each file's UNFILTERED symbol blob is cached by content hash in symindex;
+    ; a query reuses the cached parse when the file is unchanged and filters the
+    ; blob by name, re-parsing only files whose content moved.
     function workspace_symbols#(rp, root: String, query: String) returns String
     {
         guard root.get_length() = (0 as size_t)
@@ -2392,8 +2398,17 @@ define symbols
                     guard File.exists(fpath)
                     {
                         let fsrc File.read_to_string#(fpath)
-                        let furi symbols.path_to_uri#(fpath)
-                        let frag symbols.workspace_symbols_in_file#(fsrc, furi, query)
+                        let chash fsrc.hash()
+                        var blob String#("")
+                        guard symindex.valid(fpath, chash)
+                            set blob: symindex.get_blob#(fpath)
+                        guard symindex.valid(fpath, chash) = false
+                        {
+                            let furi symbols.path_to_uri#(fpath)
+                            set blob: symbols.workspace_symbols_in_file#(fsrc, furi)
+                            symindex.put(fpath, chash, blob)
+                        }
+                        let frag symbols.filter_ws_blob#(blob, query)
                         guard frag.get_length() > (0 as size_t)
                         {
                             guard first = false
@@ -2416,12 +2431,14 @@ define symbols
         sb.to_string#()
     }
 
-    ; All matching symbols in one file as a comma-joined fragment (no brackets).
-    function workspace_symbols_in_file#(rp, source: String, uri: String, query: String) returns String
+    ; All symbols in one file as an UNFILTERED tagged blob: each record is
+    ; `name <0x09> {json} <0x0A>`. Cacheable (query-independent); a query is
+    ; applied later by filter_ws_blob#. Records are newline-terminated, so the
+    ; builders below concatenate fragments rather than comma-joining.
+    function workspace_symbols_in_file#(rp, source: String, uri: String) returns String
     {
         var p parser.Parser$(source)
         var sb StringBuilder#()
-        var first true
         choose p.parse_program#()
             when err: Error {}
             when program: Success
@@ -2437,19 +2454,13 @@ define symbols
                         guard dptr <> null
                         {
                             let d (*dptr)
-                            let frag symbols.ws_decl#(source, uri, d, query)
-                            guard frag.get_length() > (0 as size_t)
+                            let frag symbols.ws_decl#(source, uri, d)
+                            var ci: size_t 0
+                            let cn frag.get_length()
+                            while ci < cn
                             {
-                                guard first = false
-                                    sb.append(0x2C as char)
-                                var ci: size_t 0
-                                let cn frag.get_length()
-                                while ci < cn
-                                {
-                                    sb.append(frag.get(ci) as char)
-                                    set ci: ci + 1
-                                }
-                                set first: false
+                                sb.append(frag.get(ci) as char)
+                                set ci: ci + 1
                             }
                         }
                         set i: i + 1
@@ -2459,25 +2470,80 @@ define symbols
         sb.to_string#()
     }
 
+    ; Filter a cached tagged blob by `query`, emitting the matching records'
+    ; JSON objects comma-joined (no brackets) — the per-file fragment that
+    ; workspace_symbols# joins across files. Each record is
+    ; `name <0x09> {json} <0x0A>`; the name is matched (case-insensitive
+    ; substring), the json part emitted on a match.
+    function filter_ws_blob#(rp, blob: String, query: String) returns String
+    {
+        var sb StringBuilder#()
+        var first true
+        let n blob.get_length()
+        var rec_start: size_t 0
+        var i: size_t 0
+        while i < n
+        {
+            guard blob.get(i) = (10 as char)       ; record terminator
+            {
+                var tab: size_t rec_start
+                var found_tab false
+                var t: size_t rec_start
+                while t < i
+                {
+                    guard found_tab = false
+                        guard blob.get(t) = (9 as char)
+                        {
+                            set tab: t
+                            set found_tab: true
+                        }
+                    set t: t + (1 as size_t)
+                }
+                guard found_tab
+                {
+                    let name symbols.substring#(blob, rec_start, tab)
+                    guard symbols.name_matches(name, query)
+                    {
+                        let jstart tab + (1 as size_t)
+                        let jobj symbols.substring#(blob, jstart, i)
+                        guard first = false
+                            sb.append(0x2C as char)
+                        var ci: size_t 0
+                        let cn jobj.get_length()
+                        while ci < cn
+                        {
+                            sb.append(jobj.get(ci) as char)
+                            set ci: ci + 1
+                        }
+                        set first: false
+                    }
+                }
+                set rec_start: i + (1 as size_t)
+            }
+            set i: i + (1 as size_t)
+        }
+        sb.to_string#()
+    }
+
     ; One top-level declaration -> a fragment (its own item if it matches, plus
     ; its members). "" for use/package/empty/trait/macro and non-matches.
-    function ws_decl#(rp, source: String, uri: String, decl: DeclarationSyntax, query: String) returns String
+    function ws_decl#(rp, source: String, uri: String, decl: DeclarationSyntax) returns String
     {
         choose decl
             when f: FunctionSyntax
-                return symbols.ws_item#(source, uri, symbols.target_name#(f.target), 12 as i64, f.start, f.end, query)
+                return symbols.ws_item#(source, uri, symbols.target_name#(f.target), 12 as i64, f.start, f.end)
             when pr: ProcedureSyntax
-                return symbols.ws_item#(source, uri, symbols.target_name#(pr.target), 12 as i64, pr.start, pr.end, query)
+                return symbols.ws_item#(source, uri, symbols.target_name#(pr.target), 12 as i64, pr.start, pr.end)
             when o: OperatorSyntax
-                return symbols.ws_item#(source, uri, symbols.target_name#(o.target), 25 as i64, o.start, o.end, query)
+                return symbols.ws_item#(source, uri, symbols.target_name#(o.target), 25 as i64, o.start, o.end)
             when def: DefinitionSyntax
-                return symbols.ws_definition#(source, uri, def, query)
+                return symbols.ws_definition#(source, uri, def)
             when m: ModuleSyntax
-                return symbols.ws_item#(source, uri, String#(m.name), 2 as i64, m.start, m.end, query)
+                return symbols.ws_item#(source, uri, String#(m.name), 2 as i64, m.start, m.end)
             when mut: MutableSyntax
-                return symbols.ws_item#(source, uri, String#(mut.binding.name), 13 as i64, mut.start, mut.end, query)
+                return symbols.ws_item#(source, uri, String#(mut.binding.name), 13 as i64, mut.start, mut.end)
             when priv: PrivateSyntax
-                return symbols.ws_export#(source, uri, priv.export_, query)
+                return symbols.ws_export#(source, uri, priv.export_)
             when e: EmptySyntax
                 return String#("")
             when pkg: PackageSyntax
@@ -2491,26 +2557,26 @@ define symbols
     }
 
     ; A `private` declaration unwraps to its exported construct.
-    function ws_export#(rp, source: String, uri: String, export_: ExportSyntax, query: String) returns String
+    function ws_export#(rp, source: String, uri: String, export_: ExportSyntax) returns String
     {
         choose export_
             when f: FunctionSyntax
-                return symbols.ws_item#(source, uri, symbols.target_name#(f.target), 12 as i64, f.start, f.end, query)
+                return symbols.ws_item#(source, uri, symbols.target_name#(f.target), 12 as i64, f.start, f.end)
             when pr: ProcedureSyntax
-                return symbols.ws_item#(source, uri, symbols.target_name#(pr.target), 12 as i64, pr.start, pr.end, query)
+                return symbols.ws_item#(source, uri, symbols.target_name#(pr.target), 12 as i64, pr.start, pr.end)
             when o: OperatorSyntax
-                return symbols.ws_item#(source, uri, symbols.target_name#(o.target), 25 as i64, o.start, o.end, query)
+                return symbols.ws_item#(source, uri, symbols.target_name#(o.target), 25 as i64, o.start, o.end)
             when def: DefinitionSyntax
-                return symbols.ws_definition#(source, uri, def, query)
+                return symbols.ws_definition#(source, uri, def)
             when t: TraitSyntax
                 return String#("")
             when m: ModuleSyntax
-                return symbols.ws_item#(source, uri, String#(m.name), 2 as i64, m.start, m.end, query)
+                return symbols.ws_item#(source, uri, String#(m.name), 2 as i64, m.start, m.end)
     }
 
     ; A `define X` -> its own item (struct/namespace/union/…) joined with its
     ; members' items.
-    function ws_definition#(rp, source: String, uri: String, def: DefinitionSyntax, query: String) returns String
+    function ws_definition#(rp, source: String, uri: String, def: DefinitionSyntax) returns String
     {
         var kind: i64 (23 as i64)
         var children String#("")
@@ -2518,17 +2584,17 @@ define symbols
             when c: ClassSyntax
             {
                 set kind: (23 as i64)
-                set children: symbols.ws_body#(source, uri, c.body, query)
+                set children: symbols.ws_body#(source, uri, c.body)
             }
             when n: NamespaceSyntax
             {
                 set kind: (3 as i64)
-                set children: symbols.ws_namespace#(source, uri, n, query)
+                set children: symbols.ws_namespace#(source, uri, n)
             }
             when un: UnionSyntax
             {
                 set kind: (10 as i64)
-                set children: symbols.ws_union#(source, uri, un, query)
+                set children: symbols.ws_union#(source, uri, un)
             }
             when cn: ConstantSyntax
                 set kind: (14 as i64)
@@ -2536,15 +2602,14 @@ define symbols
                 set kind: (12 as i64)
             when ic: IntrinsicSyntax
                 set kind: (23 as i64)
-        let own symbols.ws_item#(source, uri, def.name, kind, def.start, def.end, query)
+        let own symbols.ws_item#(source, uri, def.name, kind, def.start, def.end)
         symbols.join_fragments#(own, children)
     }
 
     ; Members of a class body -> a comma-joined fragment.
-    function ws_body#(rp, source: String, uri: String, body: ref[BodySyntax]?, query: String) returns String
+    function ws_body#(rp, source: String, uri: String, body: ref[BodySyntax]?) returns String
     {
         var sb StringBuilder#()
-        var first true
         guard body <> null
         {
             let b (*body)
@@ -2558,19 +2623,13 @@ define symbols
                     guard mptr <> null
                     {
                         let m (*mptr)
-                        let frag symbols.ws_member#(source, uri, m, query)
-                        guard frag.get_length() > (0 as size_t)
+                        let frag symbols.ws_member#(source, uri, m)
+                        var ci: size_t 0
+                        let cn frag.get_length()
+                        while ci < cn
                         {
-                            guard first = false
-                                sb.append(0x2C as char)
-                            var ci: size_t 0
-                            let cn frag.get_length()
-                            while ci < cn
-                            {
-                                sb.append(frag.get(ci) as char)
-                                set ci: ci + 1
-                            }
-                            set first: false
+                            sb.append(frag.get(ci) as char)
+                            set ci: ci + 1
                         }
                     }
                     set i: i + 1
@@ -2581,21 +2640,21 @@ define symbols
     }
 
     ; One class/union member -> an item, or "" / a nested fragment.
-    function ws_member#(rp, source: String, uri: String, member: MemberSyntax, query: String) returns String
+    function ws_member#(rp, source: String, uri: String, member: MemberSyntax) returns String
     {
         choose member
             when f: FunctionSyntax
-                return symbols.ws_item#(source, uri, symbols.target_name#(f.target), 6 as i64, f.start, f.end, query)
+                return symbols.ws_item#(source, uri, symbols.target_name#(f.target), 6 as i64, f.start, f.end)
             when pr: ProcedureSyntax
-                return symbols.ws_item#(source, uri, symbols.target_name#(pr.target), 6 as i64, pr.start, pr.end, query)
+                return symbols.ws_item#(source, uri, symbols.target_name#(pr.target), 6 as i64, pr.start, pr.end)
             when o: OperatorSyntax
-                return symbols.ws_item#(source, uri, symbols.target_name#(o.target), 25 as i64, o.start, o.end, query)
+                return symbols.ws_item#(source, uri, symbols.target_name#(o.target), 25 as i64, o.start, o.end)
             when ini: InitSyntax
-                return symbols.ws_item#(source, uri, String#("init"), 9 as i64, ini.start, ini.end, query)
+                return symbols.ws_item#(source, uri, String#("init"), 9 as i64, ini.start, ini.end)
             when dei: DeInitSyntax
-                return symbols.ws_item#(source, uri, String#("deinit"), 9 as i64, dei.start, dei.end, query)
+                return symbols.ws_item#(source, uri, String#("deinit"), 9 as i64, dei.start, dei.end)
             when def: DefinitionSyntax
-                return symbols.ws_definition#(source, uri, def, query)
+                return symbols.ws_definition#(source, uri, def)
             when e: EmptySyntax
                 return String#("")
             when im: ImplementSyntax
@@ -2605,14 +2664,13 @@ define symbols
             when mac: MacroSyntax
                 return String#("")
             when m: ModuleSyntax
-                return symbols.ws_item#(source, uri, String#(m.name), 2 as i64, m.start, m.end, query)
+                return symbols.ws_item#(source, uri, String#(m.name), 2 as i64, m.start, m.end)
     }
 
-    ; Nested declarations of a namespace -> a comma-joined fragment.
-    function ws_namespace#(rp, source: String, uri: String, ns: NamespaceSyntax, query: String) returns String
+    ; Nested declarations of a namespace -> a concatenated record fragment.
+    function ws_namespace#(rp, source: String, uri: String, ns: NamespaceSyntax) returns String
     {
         var sb StringBuilder#()
-        var first true
         guard ns.declarations <> null
         {
             let decls (*ns.declarations)
@@ -2623,19 +2681,13 @@ define symbols
                 guard dptr <> null
                 {
                     let d (*dptr)
-                    let frag symbols.ws_decl#(source, uri, d, query)
-                    guard frag.get_length() > (0 as size_t)
+                    let frag symbols.ws_decl#(source, uri, d)
+                    var ci: size_t 0
+                    let cn frag.get_length()
+                    while ci < cn
                     {
-                        guard first = false
-                            sb.append(0x2C as char)
-                        var ci: size_t 0
-                        let cn frag.get_length()
-                        while ci < cn
-                        {
-                            sb.append(frag.get(ci) as char)
-                            set ci: ci + 1
-                        }
-                        set first: false
+                        sb.append(frag.get(ci) as char)
+                        set ci: ci + 1
                     }
                 }
                 set i: i + 1
@@ -2647,10 +2699,9 @@ define symbols
     ; Variants (EnumMember=22) + body members of a union -> a comma-joined
     ; fragment. Each variant is filtered by the query, so the comma is only
     ; emitted for a matching variant.
-    function ws_union#(rp, source: String, uri: String, un: UnionSyntax, query: String) returns String
+    function ws_union#(rp, source: String, uri: String, un: UnionSyntax) returns String
     {
         var sb StringBuilder#()
-        var first true
         guard un.variants <> null
         {
             let variants (*un.variants)
@@ -2660,19 +2711,13 @@ define symbols
                 let vptr variants.get(i)
                 guard vptr <> null
                 {
-                    let vitem symbols.ws_item#(source, uri, String#(vptr.name), 22 as i64, vptr.start, vptr.end, query)
-                    guard vitem.get_length() > (0 as size_t)
+                    let vitem symbols.ws_item#(source, uri, String#(vptr.name), 22 as i64, vptr.start, vptr.end)
+                    var ci: size_t 0
+                    let cn vitem.get_length()
+                    while ci < cn
                     {
-                        guard first = false
-                            sb.append(0x2C as char)
-                        var ci: size_t 0
-                        let cn vitem.get_length()
-                        while ci < cn
-                        {
-                            sb.append(vitem.get(ci) as char)
-                            set ci: ci + 1
-                        }
-                        set first: false
+                        sb.append(vitem.get(ci) as char)
+                        set ci: ci + 1
                     }
                 }
                 set i: i + 1
@@ -2691,19 +2736,13 @@ define symbols
                     guard mptr <> null
                     {
                         let m (*mptr)
-                        let frag symbols.ws_member#(source, uri, m, query)
-                        guard frag.get_length() > (0 as size_t)
+                        let frag symbols.ws_member#(source, uri, m)
+                        var ci: size_t 0
+                        let cn frag.get_length()
+                        while ci < cn
                         {
-                            guard first = false
-                                sb.append(0x2C as char)
-                            var ci: size_t 0
-                            let cn frag.get_length()
-                            while ci < cn
-                            {
-                                sb.append(frag.get(ci) as char)
-                                set ci: ci + 1
-                            }
-                            set first: false
+                            sb.append(frag.get(ci) as char)
+                            set ci: ci + 1
                         }
                     }
                     set j: j + 1
@@ -2713,30 +2752,39 @@ define symbols
         sb.to_string#()
     }
 
-    ; One SymbolInformation {"name","kind","location"} when `name` matches the
-    ; query, else "".
-    function ws_item#(rp, source: String, uri: String, name: String, kind: i64, start: size_t, end: size_t, query: String) returns String
+    ; One tagged symbol record `name <0x09> {"name","kind","location"} <0x0A>`.
+    ; UNFILTERED (query-independent, so it can be cached); filter_ws_blob# does
+    ; the name match later. A SymbolInformation JSON object never contains a raw
+    ; tab or newline (json.quote_string# escapes them), so the delimiters are
+    ; unambiguous.
+    function ws_item#(rp, source: String, uri: String, name: String, kind: i64, start: size_t, end: size_t) returns String
     {
-        guard symbols.name_matches(name, query)
+        var sb StringBuilder#()
+        var ni: size_t 0
+        let nn name.get_length()
+        while ni < nn                              ; raw name (matched by filter)
         {
-            var sb StringBuilder#()
-            sb.append(0x7B as char)                ; {
-            sb.append(symbols.key#("name"))
-            sb.append(json.quote_string#(name))
-            sb.append(0x2C as char)
-            sb.append(symbols.key#("kind"))
-            sb.append(json.format_i64#(kind))
-            sb.append(0x2C as char)
-            sb.append(symbols.key#("location"))
-            sb.append(symbols.location_span_object#(source, uri, start, end))
-            sb.append(0x7D as char)                ; }
-            return sb.to_string#()
+            sb.append(name.get(ni) as char)
+            set ni: ni + (1 as size_t)
         }
-        String#("")
+        sb.append(0x09 as char)                    ; tab: name / json separator
+        sb.append(0x7B as char)                    ; {
+        sb.append(symbols.key#("name"))
+        sb.append(json.quote_string#(name))
+        sb.append(0x2C as char)
+        sb.append(symbols.key#("kind"))
+        sb.append(json.format_i64#(kind))
+        sb.append(0x2C as char)
+        sb.append(symbols.key#("location"))
+        sb.append(symbols.location_span_object#(source, uri, start, end))
+        sb.append(0x7D as char)                    ; }
+        sb.append(0x0A as char)                    ; newline: record terminator
+        sb.to_string#()
     }
 
-    ; Join two comma-joined fragments with a comma, skipping empties. The
-    ; result can be large, so the bytes are copied one at a time.
+    ; Concatenate two tagged-record fragments (records are newline-terminated,
+    ; so plain concatenation yields a valid record stream). The result can be
+    ; large, so the bytes are copied one at a time.
     function join_fragments#(rp, a: String, b: String) returns String
     {
         guard a.get_length() = (0 as size_t)
@@ -2751,7 +2799,6 @@ define symbols
             sb.append(a.get(i) as char)
             set i: i + (1 as size_t)
         }
-        sb.append(0x2C as char)
         var j: size_t 0
         let bn b.get_length()
         while j < bn

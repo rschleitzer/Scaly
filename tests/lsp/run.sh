@@ -822,6 +822,66 @@ PY
 rc=$?
 if [ $rc -eq 0 ]; then ok "lsp workspace/symbol"; else bad "lsp workspace/symbol"; fi
 
+# ---- persistent workspace symbol index (cache reuse + invalidation) ----
+# The worker caches each file's parsed symbol blob keyed by content hash, so
+# repeated workspace/symbol queries reuse the parse and only changed files are
+# re-parsed. This test interleaves I/O (Popen) to change a file ON DISK between
+# two queries in ONE session and asserts the index reflects the new content
+# (content-hash invalidation), then that a third identical query is stable.
+python3 - <<'PY'
+import sys, json, subprocess, os, tempfile
+d = tempfile.mkdtemp(prefix="lsp_idx_")
+fp = os.path.join(d, "idx.scaly")
+open(fp, "w").write("function index_alpha() returns int\n{\n    return 1\n}\n")
+def frame(o):
+    s = json.dumps(o).encode(); return ("Content-Length: %d\r\n\r\n" % len(s)).encode() + s
+p = subprocess.Popen(["/tmp/scalyls"], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+def send(o):
+    p.stdin.write(frame(o)); p.stdin.flush()
+def read_frame():
+    hdr = b""
+    while b"\r\n\r\n" not in hdr:
+        ch = p.stdout.read(1)
+        if not ch: return None
+        hdr += ch
+    n = int(hdr.split(b"\r\n")[0].split(b":")[1].strip())
+    return json.loads(p.stdout.read(n))
+def result_for(idn):                              # read frames until id `idn`
+    while True:
+        f = read_frame()
+        if f is None: return None
+        if f.get("id") == idn: return f.get("result")
+def names(r): return sorted(s["name"] for s in (r or []))
+
+send({"jsonrpc":"2.0","id":1,"method":"initialize","params":{"rootUri":"file://"+d}})
+result_for(1)
+send({"jsonrpc":"2.0","method":"initialized","params":{}})
+send({"jsonrpc":"2.0","id":2,"method":"workspace/symbol","params":{"query":"index_"}})
+q1 = names(result_for(2))
+# Change the file on disk -> different content hash -> must re-parse.
+open(fp, "w").write("function index_beta() returns int\n{\n    return 2\n}\n")
+send({"jsonrpc":"2.0","id":3,"method":"workspace/symbol","params":{"query":"index_"}})
+q2 = names(result_for(3))
+send({"jsonrpc":"2.0","id":4,"method":"workspace/symbol","params":{"query":"index_"}})
+q3 = names(result_for(4))
+send({"jsonrpc":"2.0","id":9,"method":"shutdown"})
+result_for(9)
+send({"jsonrpc":"2.0","method":"exit"})
+p.wait()
+
+failures = 0
+def check(cond, label):
+    global failures
+    print(("PASS  " if cond else "FAIL  ") + label)
+    if not cond: failures += 1
+check(q1 == ["index_alpha"], "first query indexes index_alpha")
+check(q2 == ["index_beta"],  "disk change picked up (content-hash invalidation)")
+check(q3 == ["index_beta"],  "repeated query stable (cache reuse)")
+sys.exit(1 if failures else 0)
+PY
+rc=$?
+if [ $rc -eq 0 ]; then ok "lsp workspace symbol index"; else bad "lsp workspace symbol index"; fi
+
 # ---- type-aware completion (variable receivers, lexical) ----
 # A variable receiver `v.` resolves `v`'s declared type lexically (constructor
 # `var v T#(...)`, annotated `v: T`, parameter `(v: T)`, or `this: T`) and then
