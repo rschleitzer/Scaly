@@ -6984,16 +6984,24 @@ llvm::Value *Emitter::getCalleeExceptionPage() {
     }
 
     // Fallback: we're in a non-throwing function calling a throwing one
-    // outside any try. The callee still needs somewhere to allocate its
-    // error object; allocate a one-off page so the emitted IR is valid.
-    // The callee will terminate the program via exit(1) if it actually
-    // throws (since the caller has no way to catch), so the leak here is
-    // bounded to the crash path.
-    // Fallback pages must NOT come from the StackBucket — they are leaked
-    // by design (callee terminates via exit(1) on a throw it can't bubble
-    // out), so a StackBucket slot would break LIFO invariants for the real
-    // root pages that come later.
-    //
+    // outside any try. The callee allocates its error object on the page we
+    // pass; the caller then consumes that error via a choose/try (a
+    // non-throwing function cannot propagate, so any reachable throwing call
+    // is necessarily caught here, or the program exits). The error must
+    // therefore outlive the call but only up to THIS frame — exactly the
+    // lifetime of the caller's local page. Route it onto the local page so
+    // it is reclaimed by the function-exit deallocate_extensions instead of
+    // leaking a standalone heap page on every call. A long-running host (the
+    // LSP) calls such a catcher (publish_diagnostics# -> parse_program#)
+    // once per edit; the single forwarded exception page accumulates one
+    // error per speculative parse-throw and grew unbounded before this.
+    // Reusing the existing root page does NOT push a StackBucket slot, so
+    // LIFO is preserved (the old concern was about allocate_root_page).
+    if (llvm::Value *LP = getOrCreateLocalPage()) {
+        return LP;
+    }
+    // No local page available (function with no $ allocations). Fall back to
+    // a one-off heap page so the emitted IR is valid.
     // Don't gate on !isDeclaration() — when iterating P.Structures alphabetically
     // in Phase 3, "cli" methods emit before "Page" methods, so PageAllocatePage
     // is still a declaration while cli.run#'s body is emitted. The body *will* be
