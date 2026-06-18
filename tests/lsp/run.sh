@@ -356,6 +356,53 @@ PY
 rc=$?
 if [ $rc -eq 0 ]; then ok "lsp references"; else bad "lsp references"; fi
 
+# ---- documentHighlight: occurrences in the current document (no uri) ----
+# Same lexical scan as references, but each result is a range-only
+# DocumentHighlight (the editor knows the current document).
+python3 - <<'PY'
+import sys, json, subprocess
+src = ("function add(a: int, b: int) returns int\n{\n    return a + b\n}\n\n"
+       "function main() returns int\n{\n    return add(add(1, 2), 3)\n}\n")
+path = "/tmp/lsp_hl_test.scaly"
+open(path, "w").write(src)
+def frame(o):
+    b=json.dumps(o).encode(); return ("Content-Length: %d\r\n\r\n"%len(b)).encode()+b
+def hl(idn, line, char):
+    return frame({"jsonrpc":"2.0","id":idn,"method":"textDocument/documentHighlight",
+                  "params":{"textDocument":{"uri":"file://"+path},
+                            "position":{"line":line,"character":char}}})
+inp  = frame({"jsonrpc":"2.0","id":1,"method":"initialize","params":{}})
+inp += frame({"jsonrpc":"2.0","method":"initialized","params":{}})
+inp += hl(2, 0, 10)    # `add` -> 3 ranges
+inp += hl(3, 1, 0)     # `{`   -> []
+inp += frame({"jsonrpc":"2.0","id":9,"method":"shutdown"})
+inp += frame({"jsonrpc":"2.0","method":"exit"})
+out = subprocess.run(["/tmp/scalyls"], input=inp, stdout=subprocess.PIPE).stdout
+frames, d = [], out
+while d:
+    i = d.find(b"\r\n\r\n")
+    if i < 0: break
+    n = int(d[:i].decode().split(":")[1].strip())
+    frames.append(json.loads(d[i+4:i+4+n])); d = d[i+4+n:]
+failures = 0
+def check(cond, label):
+    global failures
+    print(("PASS  " if cond else "FAIL  ") + label)
+    if not cond: failures += 1
+caps = frames[0]["result"]["capabilities"]
+check(caps.get("documentHighlightProvider") is True, "initialize advertises documentHighlightProvider")
+def res(idn):
+    f = next((x for x in frames if x.get("id") == idn), None)
+    return (f or {}).get("result")
+hi = res(2) or []
+check(len(hi) == 3, "`add` -> 3 highlights")
+check(all("uri" not in x and "range" in x for x in hi), "highlights are range-only (no uri)")
+check(res(3) == [], "no identifier under cursor -> []")
+sys.exit(1 if failures else 0)
+PY
+rc=$?
+if [ $rc -eq 0 ]; then ok "lsp documentHighlight"; else bad "lsp documentHighlight"; fi
+
 echo "-----"
 echo "PASS: $pass  FAIL: $fail"
 [ $fail -eq 0 ]

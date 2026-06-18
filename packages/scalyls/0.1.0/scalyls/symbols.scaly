@@ -1228,7 +1228,16 @@ define symbols
         let name symbols.identifier_at#(source, offset)
         guard name.get_length() = (0 as size_t)
             return String#("[]")
+        symbols.scan_tokens#(source, uri, name, true)
+    }
 
+    ; Scan `source` for every whole-token occurrence of `name` and build a
+    ; JSON array of either LSP Locations ({"uri":...,"range":...} when
+    ; `want_uri`, for references) or DocumentHighlights ({"range":...} when
+    ; not, for documentHighlight). Each occurrence is appended one byte at a
+    ; time (the array can be large — see the STRING/JSON NOTE).
+    function scan_tokens#(rp, source: String, uri: String, name: String, want_uri: bool) returns String
+    {
         var sb StringBuilder#()
         sb.append(0x5B as char)                    ; [
         var first true
@@ -1254,12 +1263,16 @@ define symbols
                 {
                     guard first = false
                         sb.append(0x2C as char)    ; ,
-                    let loc symbols.location_span_object#(source, uri, k, j)
+                    var piece String#("")
+                    guard want_uri
+                        set piece: symbols.location_span_object#(source, uri, k, j)
+                    guard want_uri = false
+                        set piece: symbols.highlight_object#(source, k, j)
                     var ci: size_t 0
-                    let cn loc.get_length()
+                    let cn piece.get_length()
                     while ci < cn
                     {
-                        sb.append(loc.get(ci) as char)
+                        sb.append(piece.get(ci) as char)
                         set ci: ci + 1
                     }
                     set first: false
@@ -1295,6 +1308,56 @@ define symbols
         sb.append(symbols.key#("uri"))
         sb.append(json.quote_string#(uri))
         sb.append(0x2C as char)
+        sb.append(symbols.key#("range"))
+        sb.append(symbols.range_for#(source, start, end))
+        sb.append(0x7D as char)                    ; }
+        sb.to_string#()
+    }
+
+    ; ====================================================================
+    ; textDocument/documentHighlight (lexical, single file)
+    ;
+    ; The same whole-token lexical scan as references, but the result is a
+    ; DocumentHighlight[] — per-document ranges with NO uri (the editor knows
+    ; the current document). The editor uses this to highlight every
+    ; occurrence of the symbol under the cursor. No identifier -> `[]`.
+    ; ====================================================================
+
+    function highlights_packed#(rp, source: String, packed: String) returns String
+    {
+        var line: size_t 0
+        var character: size_t 0
+        var seen_space: bool false
+        var i: size_t 0
+        let pn packed.get_length()
+        while i < pn
+        {
+            let c packed.get(i)
+            guard c = (0x20 as u8)
+                set seen_space: true
+            guard c <> (0x20 as u8)
+            {
+                let digit (c - (0x30 as u8)) as size_t
+                guard seen_space = false
+                    set line: line * (10 as size_t) + digit
+                guard seen_space
+                    set character: character * (10 as size_t) + digit
+            }
+            set i: i + 1
+        }
+
+        let offset symbols.position_to_offset#(source, line, character)
+        let name symbols.identifier_at#(source, offset)
+        guard name.get_length() = (0 as size_t)
+            return String#("[]")
+        symbols.scan_tokens#(source, String#(""), name, false)
+    }
+
+    ; LSP DocumentHighlight: {"range":{...}} covering the whole token.
+    function highlight_object#(rp, source: String, start: size_t, end: size_t) returns String
+    {
+        var sb StringBuilder#()
+        sb.append(0x7B as char)                    ; {
         sb.append(symbols.key#("range"))
         sb.append(symbols.range_for#(source, start, end))
         sb.append(0x7D as char)                    ; }
