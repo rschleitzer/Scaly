@@ -96,6 +96,9 @@ use scalyc.compiler.Syntax.ParametersSyntax
 use scalyc.compiler.Syntax.ItemSyntax
 use scalyc.compiler.Syntax.TypeSyntax
 use scalyc.compiler.Syntax.TypeAnnotationSyntax
+use scalyc.compiler.Syntax.PartSyntax
+use scalyc.compiler.Syntax.FieldSyntax
+use scalyc.compiler.Syntax.PropertySyntax
 
 define symbols
 {
@@ -907,6 +910,25 @@ define symbols
         }
 
         let offset symbols.position_to_offset#(source, line, character)
+
+        ; Case 0: a multi-segment field-access chain `a.b.c.` — resolve the type
+        ; of the chain by following each field/method through the type graph,
+        ; then list the final type's members. Falls back to flat on any
+        ; unresolved step.
+        let chain symbols.receiver_chain_before_cursor#(source, offset)
+        guard chain.get_length() > (0 as size_t)
+            guard symbols.has_dot(chain)
+            {
+                let ctype symbols.resolve_chain_type#(source, uri, chain)
+                guard ctype.get_length() > (0 as size_t)
+                {
+                    let cmem symbols.members_for_type#(source, uri, ctype)
+                    guard cmem.get_length() > (0 as size_t)
+                        return cmem
+                }
+                return symbols.completion_items#(source)
+            }
+
         let receiver symbols.receiver_before_cursor#(source, offset)
         guard receiver.get_length() > (0 as size_t)
         {
@@ -924,6 +946,16 @@ define symbols
                 let mem symbols.members_for_type#(source, uri, tname)
                 guard mem.get_length() > (0 as size_t)
                     return mem
+                ; The receiver was bound from a CALL (`let r foo(x)`): the lexical
+                ; resolver returns the callee name, which is a function, not a
+                ; concept. Use the function's declared return type instead.
+                let rt symbols.function_return_type_ws#(source, uri, tname)
+                guard rt.get_length() > (0 as size_t)
+                {
+                    let rmem symbols.members_for_type#(source, uri, rt)
+                    guard rmem.get_length() > (0 as size_t)
+                        return rmem
+                }
             }
             ; Case 3: the receiver names a concept defined in ANOTHER file or a
             ; dependency package (e.g. `String.` / `Vector.` from the stdlib).
@@ -1169,6 +1201,541 @@ define symbols
                 return symbols.substring#(source, start, e)
             }
         String#("")
+    }
+
+    ; ====================================================================
+    ; Type-graph resolution (field-access chains + call-result return types)
+    ;
+    ; The single-identifier receiver resolver above (resolve_variable_type#)
+    ; handles `v.` where `v` is a variable of a constructor/annotated type. The
+    ; helpers below extend that to the cases it can't reach by following the
+    ; declared types through the parse tree:
+    ;   - field-access chains `a.b.c.` — resolve `a`'s type, look up field `b`'s
+    ;     type in that concept, then field `c`'s type, and list `c`'s members.
+    ;   - call results `let r foo(x); r.` — `foo` is a function, not a concept,
+    ;     so use its declared RETURN type.
+    ; This is genuine type resolution through the declared type graph (not full
+    ; Hindley-Milner inference): a field/return type is taken as its base concept
+    ; name. LIMITS: a generic / pointer / ref field type resolves to the wrapper
+    ; base (`pointer`/`ref`/`Vector`), not the inner element type; intermediate
+    ; method-CALLS in a chain (`a.f().b`) are not followed (the `(` stops the
+    ; chain capture); first-declaration-wins, no scope/shadow/generic-substitution.
+    ; ====================================================================
+
+    ; The base concept name of a TypeSyntax (its NameSyntax base, generics and
+    ; dotted extensions dropped) — e.g. `Vector` from `Vector[char]`.
+    function type_base_name#(rp, ty: TypeSyntax) returns String
+    {
+        let nms ty.name
+        String#(nms.name)
+    }
+
+    ; The base name of a routine's declared return type, or "" when it returns
+    ; nothing.
+    function routine_return_base#(rp, routine: RoutineSyntax) returns String
+    {
+        guard routine.returns_ <> null
+        {
+            let rs (*routine.returns_)
+            return symbols.type_base_name#(rs.type)
+        }
+        String#("")
+    }
+
+    ; If `target` is a routine NAMED `name`, its return-type base name, else "".
+    function target_return_type#(rp, source: String, target: TargetSyntax, name: String) returns String
+    {
+        choose target
+            when named: NamedSyntax
+            {
+                guard named.name.equals(name)
+                    return symbols.routine_return_base#(named.routine)
+                return String#("")
+            }
+            when r: RoutineSyntax
+                return String#("")
+    }
+
+    ; The type (base concept name) of member `member_name` of concept
+    ; `type_name`, searching THIS source only: a field/property's declared type,
+    ; or a method's return type. "" when the concept or member is not found here.
+    function member_type#(rp, source: String, type_name: String, member_name: String) returns String
+    {
+        var p parser.Parser$(source)
+        var result String#("")
+        choose p.parse_program#()
+            when err: Error
+                set result: String#("")
+            when program: Success
+            {
+                let file program.file
+                guard file.declarations <> null
+                {
+                    let decls (*file.declarations)
+                    var i: size_t 0
+                    while i < decls.length
+                    {
+                        guard result.get_length() = (0 as size_t)
+                        {
+                            let dptr decls.get(i)
+                            guard dptr <> null
+                            {
+                                let d (*dptr)
+                                set result: symbols.mt_decl#(source, d, type_name, member_name)
+                            }
+                        }
+                        set i: i + 1
+                    }
+                }
+            }
+        result
+    }
+
+    function mt_decl#(rp, source: String, decl: DeclarationSyntax, type_name: String, member_name: String) returns String
+    {
+        choose decl
+            when def: DefinitionSyntax
+                return symbols.mt_definition#(source, def, type_name, member_name)
+            when priv: PrivateSyntax
+                return symbols.mt_export#(source, priv.export_, type_name, member_name)
+            else
+                return String#("")
+    }
+
+    function mt_export#(rp, source: String, export_: ExportSyntax, type_name: String, member_name: String) returns String
+    {
+        choose export_
+            when def: DefinitionSyntax
+                return symbols.mt_definition#(source, def, type_name, member_name)
+            else
+                return String#("")
+    }
+
+    ; The concept named `type_name`: look up `member_name` in its fields/methods.
+    ; Otherwise recurse into a namespace's nested declarations.
+    function mt_definition#(rp, source: String, def: DefinitionSyntax, type_name: String, member_name: String) returns String
+    {
+        guard def.name.equals(type_name)
+        {
+            var t String#("")
+            choose def.concept_
+                when c: ClassSyntax
+                    set t: symbols.mt_in_class#(source, c, member_name)
+                else
+                    0
+            return t
+        }
+        var nested String#("")
+        choose def.concept_
+            when n: NamespaceSyntax
+                set nested: symbols.mt_namespace#(source, n, type_name, member_name)
+            else
+                0
+        nested
+    }
+
+    function mt_namespace#(rp, source: String, ns: NamespaceSyntax, type_name: String, member_name: String) returns String
+    {
+        var result String#("")
+        guard ns.declarations <> null
+        {
+            let decls (*ns.declarations)
+            var i: size_t 0
+            while i < decls.length
+            {
+                guard result.get_length() = (0 as size_t)
+                {
+                    let dptr decls.get(i)
+                    guard dptr <> null
+                    {
+                        let d (*dptr)
+                        set result: symbols.mt_decl#(source, d, type_name, member_name)
+                    }
+                }
+                set i: i + 1
+            }
+        }
+        result
+    }
+
+    ; Look up `member_name` in a class: its structure fields first, then its
+    ; method bodies' return types. "" when absent.
+    function mt_in_class#(rp, source: String, c: ClassSyntax, member_name: String) returns String
+    {
+        var result String#("")
+        guard c.structure.parts <> null
+        {
+            let parts (*c.structure.parts)
+            var i: size_t 0
+            while i < parts.length
+            {
+                guard result.get_length() = (0 as size_t)
+                {
+                    let pp parts.get(i)
+                    guard pp <> null
+                    {
+                        let part (*pp)
+                        set result: symbols.mt_part#(source, part, member_name)
+                    }
+                }
+                set i: i + 1
+            }
+        }
+        guard result.get_length() > (0 as size_t)
+            return result
+        guard c.body <> null
+        {
+            let b (*c.body)
+            guard b.members <> null
+            {
+                let members (*b.members)
+                var j: size_t 0
+                while j < members.length
+                {
+                    guard result.get_length() = (0 as size_t)
+                    {
+                        let mp members.get(j)
+                        guard mp <> null
+                        {
+                            let m (*mp)
+                            set result: symbols.mt_member_return#(source, m, member_name)
+                        }
+                    }
+                    set j: j + 1
+                }
+            }
+        }
+        result
+    }
+
+    ; A field/property part named `member_name` -> its declared type base, "".
+    function mt_part#(rp, source: String, part: PartSyntax, member_name: String) returns String
+    {
+        choose part
+            when fld: FieldSyntax
+            {
+                guard fld.property.name.equals(member_name)
+                    return symbols.type_base_name#(fld.property.annotation.type)
+                return String#("")
+            }
+            when prop: PropertySyntax
+            {
+                guard prop.name.equals(member_name)
+                    return symbols.type_base_name#(prop.annotation.type)
+                return String#("")
+            }
+    }
+
+    ; A class-body method named `member_name` -> its return-type base, "".
+    function mt_member_return#(rp, source: String, member: MemberSyntax, member_name: String) returns String
+    {
+        choose member
+            when f: FunctionSyntax
+                return symbols.target_return_type#(source, f.target, member_name)
+            when pr: ProcedureSyntax
+                return symbols.target_return_type#(source, pr.target, member_name)
+            else
+                return String#("")
+    }
+
+    ; member_type# across the workspace: THIS source first, then the current
+    ; file's directory tree, then the package tree (so stdlib field/method types
+    ; resolve). "" when the concept/member is found nowhere.
+    function member_type_ws#(rp, source: String, uri: String, type_name: String, member_name: String) returns String
+    {
+        let here symbols.member_type#(source, type_name, member_name)
+        guard here.get_length() > (0 as size_t)
+            return here
+        let path symbols.uri_to_path#(uri)
+        let dir symbols.dir_of#(path)
+        let in_dir symbols.member_type_in_dir#(dir, path, type_name, member_name)
+        guard in_dir.get_length() > (0 as size_t)
+            return in_dir
+        let pkg symbols.package_search_dir#(path)
+        guard pkg.get_length() > (0 as size_t)
+            guard pkg.equals(dir) = false
+                return symbols.member_type_in_dir#(pkg, path, type_name, member_name)
+        String#("")
+    }
+
+    function member_type_in_dir#(rp, dir: String, self_path: String, type_name: String, member_name: String) returns String
+    {
+        guard dir.get_length() = (0 as size_t)
+            return String#("")
+        let listing symbols.list_scaly_files#(dir)
+        var result String#("")
+        var line_start: size_t 0
+        let n listing.get_length()
+        var i: size_t 0
+        while i < n
+        {
+            guard listing.get(i) = (10 as char)
+            {
+                guard result.get_length() = (0 as size_t)
+                {
+                    let fpath symbols.substring#(listing, line_start, i)
+                    guard fpath.get_length() > (0 as size_t)
+                        guard fpath.equals(self_path) = false
+                            guard File.exists(fpath)
+                            {
+                                let fsrc File.read_to_string#(fpath)
+                                set result: symbols.member_type#(fsrc, type_name, member_name)
+                            }
+                }
+                set line_start: i + (1 as size_t)
+            }
+            set i: i + (1 as size_t)
+        }
+        result
+    }
+
+    ; The declared return-type base of a top-level (or namespace-nested)
+    ; function/procedure named `fname`, searching THIS source only. "" when not
+    ; found / no return type.
+    function function_return_type#(rp, source: String, fname: String) returns String
+    {
+        var p parser.Parser$(source)
+        var result String#("")
+        choose p.parse_program#()
+            when err: Error
+                set result: String#("")
+            when program: Success
+            {
+                let file program.file
+                guard file.declarations <> null
+                {
+                    let decls (*file.declarations)
+                    var i: size_t 0
+                    while i < decls.length
+                    {
+                        guard result.get_length() = (0 as size_t)
+                        {
+                            let dptr decls.get(i)
+                            guard dptr <> null
+                            {
+                                let d (*dptr)
+                                set result: symbols.frt_decl#(source, d, fname)
+                            }
+                        }
+                        set i: i + 1
+                    }
+                }
+            }
+        result
+    }
+
+    function frt_decl#(rp, source: String, decl: DeclarationSyntax, fname: String) returns String
+    {
+        choose decl
+            when f: FunctionSyntax
+                return symbols.target_return_type#(source, f.target, fname)
+            when pr: ProcedureSyntax
+                return symbols.target_return_type#(source, pr.target, fname)
+            when def: DefinitionSyntax
+                return symbols.frt_definition#(source, def, fname)
+            when priv: PrivateSyntax
+                return symbols.frt_export#(source, priv.export_, fname)
+            else
+                return String#("")
+    }
+
+    function frt_export#(rp, source: String, export_: ExportSyntax, fname: String) returns String
+    {
+        choose export_
+            when f: FunctionSyntax
+                return symbols.target_return_type#(source, f.target, fname)
+            when pr: ProcedureSyntax
+                return symbols.target_return_type#(source, pr.target, fname)
+            when def: DefinitionSyntax
+                return symbols.frt_definition#(source, def, fname)
+            else
+                return String#("")
+    }
+
+    function frt_definition#(rp, source: String, def: DefinitionSyntax, fname: String) returns String
+    {
+        var result String#("")
+        choose def.concept_
+            when n: NamespaceSyntax
+            {
+                guard n.declarations <> null
+                {
+                    let decls (*n.declarations)
+                    var i: size_t 0
+                    while i < decls.length
+                    {
+                        guard result.get_length() = (0 as size_t)
+                        {
+                            let dptr decls.get(i)
+                            guard dptr <> null
+                            {
+                                let d (*dptr)
+                                set result: symbols.frt_decl#(source, d, fname)
+                            }
+                        }
+                        set i: i + 1
+                    }
+                }
+            }
+            else
+                0
+        result
+    }
+
+    ; function_return_type# across the workspace: THIS source, then dir tree,
+    ; then package tree. "" when found nowhere.
+    function function_return_type_ws#(rp, source: String, uri: String, fname: String) returns String
+    {
+        let here symbols.function_return_type#(source, fname)
+        guard here.get_length() > (0 as size_t)
+            return here
+        let path symbols.uri_to_path#(uri)
+        let dir symbols.dir_of#(path)
+        let in_dir symbols.function_return_type_in_dir#(dir, path, fname)
+        guard in_dir.get_length() > (0 as size_t)
+            return in_dir
+        let pkg symbols.package_search_dir#(path)
+        guard pkg.get_length() > (0 as size_t)
+            guard pkg.equals(dir) = false
+                return symbols.function_return_type_in_dir#(pkg, path, fname)
+        String#("")
+    }
+
+    function function_return_type_in_dir#(rp, dir: String, self_path: String, fname: String) returns String
+    {
+        guard dir.get_length() = (0 as size_t)
+            return String#("")
+        let listing symbols.list_scaly_files#(dir)
+        var result String#("")
+        var line_start: size_t 0
+        let n listing.get_length()
+        var i: size_t 0
+        while i < n
+        {
+            guard listing.get(i) = (10 as char)
+            {
+                guard result.get_length() = (0 as size_t)
+                {
+                    let fpath symbols.substring#(listing, line_start, i)
+                    guard fpath.get_length() > (0 as size_t)
+                        guard fpath.equals(self_path) = false
+                            guard File.exists(fpath)
+                            {
+                                let fsrc File.read_to_string#(fpath)
+                                set result: symbols.function_return_type#(fsrc, fname)
+                            }
+                }
+                set line_start: i + (1 as size_t)
+            }
+            set i: i + (1 as size_t)
+        }
+        result
+    }
+
+    ; True when `s` contains a `.` (a multi-segment receiver chain).
+    function has_dot(s: String) returns bool
+    {
+        let n s.get_length()
+        var i: size_t 0
+        while i < n
+        {
+            guard s.get(i) = (0x2E as u8)
+                return true
+            set i: i + (1 as size_t)
+        }
+        false
+    }
+
+    ; The full dotted receiver chain `a.b.c` to the left of `offset`, skipping
+    ; the in-progress member word the cursor sits in. "" when there is no
+    ; `.`-qualified receiver. Walks left over identifier bytes and dots from the
+    ; dot before the cursor; stops at the first other byte (so `f().b` captures
+    ; only `b`). Leading dots are trimmed.
+    function receiver_chain_before_cursor#(rp, source: String, offset: size_t) returns String
+    {
+        let len source.get_length()
+        guard len = (0 as size_t)
+            return String#("")
+        var p offset
+        guard p > len
+            set p: len
+
+        ; Skip back over the in-progress member word.
+        while p > (0 as size_t)
+        {
+            guard symbols.is_ident_byte(source.get(p - (1 as size_t))) = false
+                break
+            set p: p - (1 as size_t)
+        }
+
+        guard p > (0 as size_t)
+            guard source.get(p - (1 as size_t)) = (0x2E as u8)
+            {
+                let dot p - (1 as size_t)
+                ; Walk left over [ident | '.'] to the chain start.
+                var cstart dot
+                while cstart > (0 as size_t)
+                {
+                    let cc source.get(cstart - (1 as size_t))
+                    guard symbols.is_ident_byte(cc) = false
+                        guard cc <> (0x2E as u8)
+                            break
+                    set cstart: cstart - (1 as size_t)
+                }
+                ; Trim a leading dot (e.g. after `)` -> `.a.b`).
+                guard cstart < dot
+                    guard source.get(cstart) = (0x2E as u8)
+                        set cstart: cstart + (1 as size_t)
+                guard cstart < dot
+                    return symbols.substring#(source, cstart, dot)
+            }
+        String#("")
+    }
+
+    ; Resolve the type (base concept name) of a multi-segment receiver chain
+    ; `a.b.c`: resolve `a`'s declared type, then follow each subsequent segment
+    ; as a field/method of the running type. "" when any step fails to resolve.
+    function resolve_chain_type#(rp, source: String, uri: String, chain: String) returns String
+    {
+        let n chain.get_length()
+        var base String#("")
+        var seg_start: size_t 0
+        var seg_index: size_t 0
+        var failed false
+        var i: size_t 0
+        while i <= n
+        {
+            var at_delim false
+            guard i = n
+                set at_delim: true
+            guard i < n
+                guard chain.get(i) = (0x2E as u8)
+                    set at_delim: true
+            guard at_delim
+            {
+                guard failed = false
+                {
+                    let seg symbols.substring#(chain, seg_start, i)
+                    guard seg.get_length() = (0 as size_t)
+                        set failed: true
+                    guard seg.get_length() > (0 as size_t)
+                    {
+                        guard seg_index = (0 as size_t)
+                            set base: symbols.resolve_variable_type#(source, seg)
+                        guard seg_index > (0 as size_t)
+                            set base: symbols.member_type_ws#(source, uri, base, seg)
+                        guard base.get_length() = (0 as size_t)
+                            set failed: true
+                    }
+                    set seg_index: seg_index + (1 as size_t)
+                }
+                set seg_start: i + (1 as size_t)
+            }
+            set i: i + (1 as size_t)
+        }
+        guard failed
+            return String#("")
+        base
     }
 
     ; The identifier token immediately before a `.` to the left of `offset`,

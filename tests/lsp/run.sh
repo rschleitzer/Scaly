@@ -1165,6 +1165,68 @@ PY
 rc=$?
 if [ $rc -eq 0 ]; then ok "lsp cross-package member completion"; else bad "lsp cross-package member completion"; fi
 
+# ---- real type-aware completion (field-access chains + call results) ----
+# Beyond the single-identifier variable receiver (Step 17), the resolver now
+# follows the declared type GRAPH: a field-access chain `r.origin.` resolves
+# r:Rect -> field origin:Point -> Point's members, and a call-result binding
+# `let p make()` resolves to make()'s return type Point. Both list ONLY Point's
+# member (px), proving real type resolution rather than the flat all-names list.
+python3 - <<'PY'
+import sys, json, subprocess, os, tempfile
+d = tempfile.mkdtemp(prefix="lsp_realtc_")
+src = (
+"define Point\n(\n    x: int\n)\n{\n"
+"    function px(this: Point) returns int\n    {\n        return x\n    }\n}\n"
+"define Rect\n(\n    origin: Point\n)\n{\n"
+"    function area(this: Rect) returns int\n    {\n        return 0\n    }\n}\n"
+"function make() returns Point\n{\n    return Point(1)\n}\n"
+"function run(r: Rect) returns int\n{\n"
+"    r.origin.z\n"          # chain: r:Rect -> origin:Point -> Point members
+"    let p make()\n"
+"    p.z\n"                 # call-result: p = make() : Point
+"    return 0\n}\n")
+fp = os.path.join(d, "m.scaly"); open(fp, "w").write(src)
+uri = "file://"+fp
+def frame(o):
+    b = json.dumps(o).encode(); return ("Content-Length: %d\r\n\r\n" % len(b)).encode() + b
+def afterdot(needle, recvlen):
+    idx = src.index(needle) + recvlen; pre = src[:idx]; return pre.count("\n"), idx - (pre.rfind("\n")+1) + 1
+cl, cc = afterdot("r.origin.z", 8)    # cursor after "r.origin."
+pl, pc = afterdot("p.z", 1)           # cursor after "p."
+inp  = frame({"jsonrpc":"2.0","id":1,"method":"initialize","params":{}})
+inp += frame({"jsonrpc":"2.0","method":"initialized","params":{}})
+inp += frame({"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{
+        "uri":uri,"languageId":"scaly","version":1,"text":src}}})
+inp += frame({"jsonrpc":"2.0","id":2,"method":"textDocument/completion","params":{
+        "textDocument":{"uri":uri},"position":{"line":cl,"character":cc}}})
+inp += frame({"jsonrpc":"2.0","id":3,"method":"textDocument/completion","params":{
+        "textDocument":{"uri":uri},"position":{"line":pl,"character":pc}}})
+inp += frame({"jsonrpc":"2.0","id":9,"method":"shutdown"})
+inp += frame({"jsonrpc":"2.0","method":"exit"})
+out = subprocess.run(["/tmp/scalyls"], input=inp, stdout=subprocess.PIPE).stdout
+frames, dd = [], out
+while dd:
+    i = dd.find(b"\r\n\r\n")
+    if i < 0: break
+    n = int(dd[:i].decode().split(":")[1].strip())
+    frames.append(json.loads(dd[i+4:i+4+n])); dd = dd[i+4+n:]
+failures = 0
+def check(cond, label):
+    global failures
+    print(("PASS  " if cond else "FAIL  ") + label)
+    if not cond: failures += 1
+def labels(idn):
+    r = next((x for x in frames if x.get("id") == idn), {}).get("result")
+    return [it["label"] for it in r] if isinstance(r, list) else None
+l2 = labels(2)
+check(l2 == ["px"], "field-access chain r.origin. -> Point members only (not flat)")
+l3 = labels(3)
+check(l3 == ["px"], "call-result `let p make()` p. -> make()'s return type Point")
+sys.exit(1 if failures else 0)
+PY
+rc=$?
+if [ $rc -eq 0 ]; then ok "lsp real type-aware completion"; else bad "lsp real type-aware completion"; fi
+
 echo "-----"
 echo "PASS: $pass  FAIL: $fail"
 [ $fail -eq 0 ]
