@@ -85,6 +85,8 @@ define server
 
         guard method.equals("initialize")
         {
+            ; Capture the workspace root (workspace/symbol carries no uri).
+            server.capture_workspace_root(msg)
             guard has_id
                 rpc.write_message(server.initialize_response#(id))
             return
@@ -174,6 +176,13 @@ define server
         {
             guard has_id
                 server.handle_rename(msg, id)
+            return
+        }
+
+        guard method.equals("workspace/symbol")
+        {
+            guard has_id
+                server.handle_workspace_symbol(msg, id)
             return
         }
 
@@ -481,6 +490,49 @@ define server
             rpc.write_message(server.document_symbol_response#(id, result))
     }
 
+    ; workspace/symbol: search the whole workspace for declarations whose name
+    ; matches params.query. The request carries no document uri, so the search
+    ; root comes from the stored workspace root (captured at initialize). The
+    ; result SymbolInformation[] can be large -> byte-at-a-time wrap.
+    function handle_workspace_symbol(msg: JsonValue, id: i64)
+    {
+        let params json.get(msg, "params")
+        let query json.as_string#(json.get(params, "query"))
+        let root docstore.workspace_root#()
+        let result worker.workspace_symbols#(root, query)
+        rpc.write_message(server.document_symbol_response#(id, result))
+    }
+
+    ; Capture the workspace root path from initialize params. Prefer rootUri
+    ; (file:// -> path), then rootPath, then workspaceFolders[0].uri. Stored in
+    ; the docstore so workspace/symbol (which carries no uri) can find it.
+    function capture_workspace_root(msg: JsonValue)
+    {
+        let params json.get(msg, "params")
+
+        let root_uri_val json.get(params, "rootUri")
+        guard json.is_null(root_uri_val) = false
+        {
+            docstore.set_workspace_root(symbols.uri_to_path#(json.as_string#(root_uri_val)))
+            return
+        }
+
+        let root_path_val json.get(params, "rootPath")
+        guard json.is_null(root_path_val) = false
+        {
+            docstore.set_workspace_root(json.as_string#(root_path_val))
+            return
+        }
+
+        let folders json.get(params, "workspaceFolders")
+        guard json.is_null(folders) = false
+            guard json.array_length(folders) > (0 as size_t)
+            {
+                let f0 json.array_get(folders, 0 as size_t)
+                docstore.set_workspace_root(symbols.uri_to_path#(json.as_string#(json.get(f0, "uri"))))
+            }
+    }
+
     ; A closed document leaves no buffer to analyze; clear whatever
     ; diagnostics the editor still shows for it (empty diagnostics array).
     function handle_did_close(msg: JsonValue)
@@ -556,6 +608,9 @@ define server
         sb.append(server.key#("prepareProvider"))
         sb.append("true")
         sb.append(0x7D as char)                    ; }
+        sb.append(0x2C as char)
+        sb.append(server.key#("workspaceSymbolProvider"))
+        sb.append("true")
         sb.append(0x7D as char)                    ; } capabilities
         sb.append(0x2C as char)
         sb.append(server.key#("serverInfo"))

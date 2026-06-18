@@ -760,6 +760,67 @@ PY
 rc=$?
 if [ $rc -eq 0 ]; then ok "lsp cross-file definition"; else bad "lsp cross-file definition"; fi
 
+# ---- workspace/symbol (parse-based, all files) ----
+# Query the whole workspace for declarations whose name matches a substring
+# (case-insensitive). The root comes from initialize's rootUri. Two files in
+# a temp dir contribute functions, a struct + method, a mutable, and a union
+# variant; a case-insensitive substring query gathers them from both files.
+python3 - <<'PY'
+import sys, json, subprocess, os, tempfile
+d = tempfile.mkdtemp(prefix="lsp_wsym_")
+a = ("function alpha_one(n: int) returns int\n{\n    return n\n}\n\n"
+     "define Gadget\n(\n    g: int\n)\n{\n"
+     "    function alpha_method(this: Gadget) returns int\n    {\n        return g\n    }\n}\n")
+b = ("mutable alpha_counter: int 0\n\n"
+     "define Shape union (\n    AlphaVariant: int\n    Beta: int\n)\n")
+ap = os.path.join(d, "a.scaly"); open(ap, "w").write(a)
+bp = os.path.join(d, "b.scaly"); open(bp, "w").write(b)
+auri = "file://"+ap; buri = "file://"+bp
+def frame(o):
+    s=json.dumps(o).encode(); return ("Content-Length: %d\r\n\r\n"%len(s)).encode()+s
+def wsym(idn, q):
+    return frame({"jsonrpc":"2.0","id":idn,"method":"workspace/symbol","params":{"query":q}})
+inp  = frame({"jsonrpc":"2.0","id":1,"method":"initialize","params":{"rootUri":"file://"+d}})
+inp += frame({"jsonrpc":"2.0","method":"initialized","params":{}})
+inp += wsym(2, "alpha")     # case-insensitive substring across both files
+inp += wsym(3, "Gadget")    # a type name
+inp += wsym(4, "zzz")       # no match
+inp += frame({"jsonrpc":"2.0","id":9,"method":"shutdown"})
+inp += frame({"jsonrpc":"2.0","method":"exit"})
+out = subprocess.run(["/tmp/scalyls"], input=inp, stdout=subprocess.PIPE).stdout
+frames, dd = [], out
+while dd:
+    i = dd.find(b"\r\n\r\n")
+    if i < 0: break
+    n = int(dd[:i].decode().split(":")[1].strip())
+    frames.append(json.loads(dd[i+4:i+4+n])); dd = dd[i+4+n:]
+failures = 0
+def check(cond, label):
+    global failures
+    print(("PASS  " if cond else "FAIL  ") + label)
+    if not cond: failures += 1
+caps = frames[0]["result"]["capabilities"]
+check(caps.get("workspaceSymbolProvider") is True, "initialize advertises workspaceSymbolProvider")
+def res(idn):
+    f = next((x for x in frames if x.get("id") == idn), None)
+    return (f or {}).get("result")
+def by_name(idn):
+    return {s["name"]: (s["kind"], s["location"]["uri"]) for s in (res(idn) or [])}
+al = by_name(2)
+check(set(al.keys()) == {"alpha_one","alpha_method","alpha_counter","AlphaVariant"},
+      "'alpha' matches names across both files (case-insensitive substring)")
+check(al.get("alpha_one") == (12, auri), "function -> Function(12) in a.scaly")
+check(al.get("alpha_method") == (6, auri), "struct method -> Method(6) in a.scaly")
+check(al.get("alpha_counter") == (13, buri), "mutable -> Variable(13) in b.scaly")
+check(al.get("AlphaVariant") == (22, buri), "union variant -> EnumMember(22) in b.scaly")
+g = by_name(3)
+check(set(g.keys()) == {"Gadget"} and g["Gadget"][0] == 23, "'Gadget' -> the struct only (Struct=23)")
+check(res(4) == [], "no match -> []")
+sys.exit(1 if failures else 0)
+PY
+rc=$?
+if [ $rc -eq 0 ]; then ok "lsp workspace/symbol"; else bad "lsp workspace/symbol"; fi
+
 echo "-----"
 echo "PASS: $pass  FAIL: $fail"
 [ $fail -eq 0 ]

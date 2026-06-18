@@ -49,8 +49,44 @@ define DocSlot
 ; The slot array, lazily malloc'd. null until the first store access.
 mutable doc_slots: pointer[DocSlot] null
 
+; The workspace root path (from initialize's rootUri/rootPath/workspaceFolders),
+; as a malloc'd byte copy. Used by workspace/symbol, which carries no document
+; uri. null until initialize captures it.
+mutable ws_root_data: pointer[u8] null
+mutable ws_root_len:  size_t 0
+
 define docstore
 {
+    ; Record the workspace root (a filesystem path) as a fresh malloc'd copy,
+    ; freeing any previous one. Empty path leaves it null.
+    procedure set_workspace_root(path: String)
+    {
+        guard ws_root_data <> null
+            free(ws_root_data as pointer[void])
+        set ws_root_data: null
+        set ws_root_len: 0 as size_t
+
+        let len path.get_length()
+        guard len > (0 as size_t)
+        {
+            let dst malloc(len) as pointer[u8]
+            guard dst <> null
+            {
+                memcpy(dst as pointer[void], path.get_buffer() as pointer[void], len)
+                set ws_root_data: dst
+                set ws_root_len: len
+            }
+        }
+    }
+
+    ; The workspace root path (a fresh copy on the caller's page), or "" when
+    ; initialize provided none.
+    function workspace_root#(rp) returns String
+    {
+        guard ws_root_data <> null
+            return String#(ws_root_data as pointer[const_char], ws_root_len)
+        String#("")
+    }
     ; Lazily allocate + zero the slot array on first use. A malloc failure
     ; leaves doc_slots null; callers then no-op and navigation falls back to
     ; reading the file from disk.

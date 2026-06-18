@@ -1994,6 +1994,459 @@ define symbols
     }
 
     ; ====================================================================
+    ; workspace/symbol (parse-based, all files)
+    ;
+    ; Build a flat LSP SymbolInformation[] of every declaration across the
+    ; workspace whose name matches the query (case-insensitive substring; an
+    ; empty query matches everything), reusing the cross-file `find` discovery
+    ; + the parse-tree walk. Each item:
+    ;   {"name":..,"kind":<SymbolKind int>,"location":{"uri":..,"range":..}}
+    ; The SymbolKind ints are the same as documentSymbol's (Function=12 etc.),
+    ; NOT completion's CompletionItemKind. The walk mirrors completion_items#
+    ; 1:1 (flat, comma-joined fragments) but each item carries a Location and
+    ; is filtered by the query. LIMITS: parses every .scaly under the root on
+    ; each query (no persistent index — a broad query over a huge tree is slow
+    ; / may hit the worker timeout -> []); intra-workspace; lexical name match.
+    ; ====================================================================
+
+    ; Search every .scaly file under `root` and return the SymbolInformation[]
+    ; array (already bracketed). "[]" when root is empty (no workspace folder).
+    function workspace_symbols#(rp, root: String, query: String) returns String
+    {
+        guard root.get_length() = (0 as size_t)
+            return String#("[]")
+        let listing symbols.list_scaly_files#(root)
+
+        var sb StringBuilder#()
+        sb.append(0x5B as char)                    ; [
+        var first true
+        var line_start: size_t 0
+        let n listing.get_length()
+        var i: size_t 0
+        while i < n
+        {
+            guard listing.get(i) = (10 as char)
+            {
+                let fpath symbols.substring#(listing, line_start, i)
+                guard fpath.get_length() > (0 as size_t)
+                    guard File.exists(fpath)
+                    {
+                        let fsrc File.read_to_string#(fpath)
+                        let furi symbols.path_to_uri#(fpath)
+                        let frag symbols.workspace_symbols_in_file#(fsrc, furi, query)
+                        guard frag.get_length() > (0 as size_t)
+                        {
+                            guard first = false
+                                sb.append(0x2C as char)
+                            var ci: size_t 0
+                            let cn frag.get_length()
+                            while ci < cn
+                            {
+                                sb.append(frag.get(ci) as char)
+                                set ci: ci + 1
+                            }
+                            set first: false
+                        }
+                    }
+                set line_start: i + (1 as size_t)
+            }
+            set i: i + (1 as size_t)
+        }
+        sb.append(0x5D as char)                    ; ]
+        sb.to_string#()
+    }
+
+    ; All matching symbols in one file as a comma-joined fragment (no brackets).
+    function workspace_symbols_in_file#(rp, source: String, uri: String, query: String) returns String
+    {
+        var p parser.Parser$(source)
+        var sb StringBuilder#()
+        var first true
+        choose p.parse_program#()
+            when err: Error {}
+            when program: Success
+            {
+                let file program.file
+                guard file.declarations <> null
+                {
+                    let decls (*file.declarations)
+                    var i: size_t 0
+                    while i < decls.length
+                    {
+                        let dptr decls.get(i)
+                        guard dptr <> null
+                        {
+                            let d (*dptr)
+                            let frag symbols.ws_decl#(source, uri, d, query)
+                            guard frag.get_length() > (0 as size_t)
+                            {
+                                guard first = false
+                                    sb.append(0x2C as char)
+                                var ci: size_t 0
+                                let cn frag.get_length()
+                                while ci < cn
+                                {
+                                    sb.append(frag.get(ci) as char)
+                                    set ci: ci + 1
+                                }
+                                set first: false
+                            }
+                        }
+                        set i: i + 1
+                    }
+                }
+            }
+        sb.to_string#()
+    }
+
+    ; One top-level declaration -> a fragment (its own item if it matches, plus
+    ; its members). "" for use/package/empty/trait/macro and non-matches.
+    function ws_decl#(rp, source: String, uri: String, decl: DeclarationSyntax, query: String) returns String
+    {
+        choose decl
+            when f: FunctionSyntax
+                return symbols.ws_item#(source, uri, symbols.target_name#(f.target), 12 as i64, f.start, f.end, query)
+            when pr: ProcedureSyntax
+                return symbols.ws_item#(source, uri, symbols.target_name#(pr.target), 12 as i64, pr.start, pr.end, query)
+            when o: OperatorSyntax
+                return symbols.ws_item#(source, uri, symbols.target_name#(o.target), 25 as i64, o.start, o.end, query)
+            when def: DefinitionSyntax
+                return symbols.ws_definition#(source, uri, def, query)
+            when m: ModuleSyntax
+                return symbols.ws_item#(source, uri, String#(m.name), 2 as i64, m.start, m.end, query)
+            when mut: MutableSyntax
+                return symbols.ws_item#(source, uri, String#(mut.binding.name), 13 as i64, mut.start, mut.end, query)
+            when priv: PrivateSyntax
+                return symbols.ws_export#(source, uri, priv.export_, query)
+            when e: EmptySyntax
+                return String#("")
+            when pkg: PackageSyntax
+                return String#("")
+            when u: UseSyntax
+                return String#("")
+            when t: TraitSyntax
+                return String#("")
+            when mac: MacroSyntax
+                return String#("")
+    }
+
+    ; A `private` declaration unwraps to its exported construct.
+    function ws_export#(rp, source: String, uri: String, export_: ExportSyntax, query: String) returns String
+    {
+        choose export_
+            when f: FunctionSyntax
+                return symbols.ws_item#(source, uri, symbols.target_name#(f.target), 12 as i64, f.start, f.end, query)
+            when pr: ProcedureSyntax
+                return symbols.ws_item#(source, uri, symbols.target_name#(pr.target), 12 as i64, pr.start, pr.end, query)
+            when o: OperatorSyntax
+                return symbols.ws_item#(source, uri, symbols.target_name#(o.target), 25 as i64, o.start, o.end, query)
+            when def: DefinitionSyntax
+                return symbols.ws_definition#(source, uri, def, query)
+            when t: TraitSyntax
+                return String#("")
+            when m: ModuleSyntax
+                return symbols.ws_item#(source, uri, String#(m.name), 2 as i64, m.start, m.end, query)
+    }
+
+    ; A `define X` -> its own item (struct/namespace/union/…) joined with its
+    ; members' items.
+    function ws_definition#(rp, source: String, uri: String, def: DefinitionSyntax, query: String) returns String
+    {
+        var kind: i64 (23 as i64)
+        var children String#("")
+        choose def.concept_
+            when c: ClassSyntax
+            {
+                set kind: (23 as i64)
+                set children: symbols.ws_body#(source, uri, c.body, query)
+            }
+            when n: NamespaceSyntax
+            {
+                set kind: (3 as i64)
+                set children: symbols.ws_namespace#(source, uri, n, query)
+            }
+            when un: UnionSyntax
+            {
+                set kind: (10 as i64)
+                set children: symbols.ws_union#(source, uri, un, query)
+            }
+            when cn: ConstantSyntax
+                set kind: (14 as i64)
+            when dl: DelegateSyntax
+                set kind: (12 as i64)
+            when ic: IntrinsicSyntax
+                set kind: (23 as i64)
+        let own symbols.ws_item#(source, uri, def.name, kind, def.start, def.end, query)
+        symbols.join_fragments#(own, children)
+    }
+
+    ; Members of a class body -> a comma-joined fragment.
+    function ws_body#(rp, source: String, uri: String, body: ref[BodySyntax]?, query: String) returns String
+    {
+        var sb StringBuilder#()
+        var first true
+        guard body <> null
+        {
+            let b (*body)
+            guard b.members <> null
+            {
+                let members (*b.members)
+                var i: size_t 0
+                while i < members.length
+                {
+                    let mptr members.get(i)
+                    guard mptr <> null
+                    {
+                        let m (*mptr)
+                        let frag symbols.ws_member#(source, uri, m, query)
+                        guard frag.get_length() > (0 as size_t)
+                        {
+                            guard first = false
+                                sb.append(0x2C as char)
+                            var ci: size_t 0
+                            let cn frag.get_length()
+                            while ci < cn
+                            {
+                                sb.append(frag.get(ci) as char)
+                                set ci: ci + 1
+                            }
+                            set first: false
+                        }
+                    }
+                    set i: i + 1
+                }
+            }
+        }
+        sb.to_string#()
+    }
+
+    ; One class/union member -> an item, or "" / a nested fragment.
+    function ws_member#(rp, source: String, uri: String, member: MemberSyntax, query: String) returns String
+    {
+        choose member
+            when f: FunctionSyntax
+                return symbols.ws_item#(source, uri, symbols.target_name#(f.target), 6 as i64, f.start, f.end, query)
+            when pr: ProcedureSyntax
+                return symbols.ws_item#(source, uri, symbols.target_name#(pr.target), 6 as i64, pr.start, pr.end, query)
+            when o: OperatorSyntax
+                return symbols.ws_item#(source, uri, symbols.target_name#(o.target), 25 as i64, o.start, o.end, query)
+            when ini: InitSyntax
+                return symbols.ws_item#(source, uri, String#("init"), 9 as i64, ini.start, ini.end, query)
+            when dei: DeInitSyntax
+                return symbols.ws_item#(source, uri, String#("deinit"), 9 as i64, dei.start, dei.end, query)
+            when def: DefinitionSyntax
+                return symbols.ws_definition#(source, uri, def, query)
+            when e: EmptySyntax
+                return String#("")
+            when im: ImplementSyntax
+                return String#("")
+            when t: TraitSyntax
+                return String#("")
+            when mac: MacroSyntax
+                return String#("")
+            when m: ModuleSyntax
+                return symbols.ws_item#(source, uri, String#(m.name), 2 as i64, m.start, m.end, query)
+    }
+
+    ; Nested declarations of a namespace -> a comma-joined fragment.
+    function ws_namespace#(rp, source: String, uri: String, ns: NamespaceSyntax, query: String) returns String
+    {
+        var sb StringBuilder#()
+        var first true
+        guard ns.declarations <> null
+        {
+            let decls (*ns.declarations)
+            var i: size_t 0
+            while i < decls.length
+            {
+                let dptr decls.get(i)
+                guard dptr <> null
+                {
+                    let d (*dptr)
+                    let frag symbols.ws_decl#(source, uri, d, query)
+                    guard frag.get_length() > (0 as size_t)
+                    {
+                        guard first = false
+                            sb.append(0x2C as char)
+                        var ci: size_t 0
+                        let cn frag.get_length()
+                        while ci < cn
+                        {
+                            sb.append(frag.get(ci) as char)
+                            set ci: ci + 1
+                        }
+                        set first: false
+                    }
+                }
+                set i: i + 1
+            }
+        }
+        sb.to_string#()
+    }
+
+    ; Variants (EnumMember=22) + body members of a union -> a comma-joined
+    ; fragment. Each variant is filtered by the query, so the comma is only
+    ; emitted for a matching variant.
+    function ws_union#(rp, source: String, uri: String, un: UnionSyntax, query: String) returns String
+    {
+        var sb StringBuilder#()
+        var first true
+        guard un.variants <> null
+        {
+            let variants (*un.variants)
+            var i: size_t 0
+            while i < variants.length
+            {
+                let vptr variants.get(i)
+                guard vptr <> null
+                {
+                    let vitem symbols.ws_item#(source, uri, String#(vptr.name), 22 as i64, vptr.start, vptr.end, query)
+                    guard vitem.get_length() > (0 as size_t)
+                    {
+                        guard first = false
+                            sb.append(0x2C as char)
+                        var ci: size_t 0
+                        let cn vitem.get_length()
+                        while ci < cn
+                        {
+                            sb.append(vitem.get(ci) as char)
+                            set ci: ci + 1
+                        }
+                        set first: false
+                    }
+                }
+                set i: i + 1
+            }
+        }
+        guard un.body <> null
+        {
+            let b (*un.body)
+            guard b.members <> null
+            {
+                let members (*b.members)
+                var j: size_t 0
+                while j < members.length
+                {
+                    let mptr members.get(j)
+                    guard mptr <> null
+                    {
+                        let m (*mptr)
+                        let frag symbols.ws_member#(source, uri, m, query)
+                        guard frag.get_length() > (0 as size_t)
+                        {
+                            guard first = false
+                                sb.append(0x2C as char)
+                            var ci: size_t 0
+                            let cn frag.get_length()
+                            while ci < cn
+                            {
+                                sb.append(frag.get(ci) as char)
+                                set ci: ci + 1
+                            }
+                            set first: false
+                        }
+                    }
+                    set j: j + 1
+                }
+            }
+        }
+        sb.to_string#()
+    }
+
+    ; One SymbolInformation {"name","kind","location"} when `name` matches the
+    ; query, else "".
+    function ws_item#(rp, source: String, uri: String, name: String, kind: i64, start: size_t, end: size_t, query: String) returns String
+    {
+        guard symbols.name_matches(name, query)
+        {
+            var sb StringBuilder#()
+            sb.append(0x7B as char)                ; {
+            sb.append(symbols.key#("name"))
+            sb.append(json.quote_string#(name))
+            sb.append(0x2C as char)
+            sb.append(symbols.key#("kind"))
+            sb.append(json.format_i64#(kind))
+            sb.append(0x2C as char)
+            sb.append(symbols.key#("location"))
+            sb.append(symbols.location_span_object#(source, uri, start, end))
+            sb.append(0x7D as char)                ; }
+            return sb.to_string#()
+        }
+        String#("")
+    }
+
+    ; Join two comma-joined fragments with a comma, skipping empties. The
+    ; result can be large, so the bytes are copied one at a time.
+    function join_fragments#(rp, a: String, b: String) returns String
+    {
+        guard a.get_length() = (0 as size_t)
+            return b
+        guard b.get_length() = (0 as size_t)
+            return a
+        var sb StringBuilder#()
+        var i: size_t 0
+        let an a.get_length()
+        while i < an
+        {
+            sb.append(a.get(i) as char)
+            set i: i + (1 as size_t)
+        }
+        sb.append(0x2C as char)
+        var j: size_t 0
+        let bn b.get_length()
+        while j < bn
+        {
+            sb.append(b.get(j) as char)
+            set j: j + (1 as size_t)
+        }
+        sb.to_string#()
+    }
+
+    ; Lowercase an ASCII byte (A-Z -> a-z), else unchanged.
+    function lower_byte(c: u8) returns u8
+    {
+        guard c >= (0x41 as u8)
+            guard c <= (0x5A as u8)
+                return c + (0x20 as u8)
+        c
+    }
+
+    ; True when `name[start..)` begins with `query` (case-insensitive).
+    function matches_at(name: String, start: size_t, query: String) returns bool
+    {
+        let qn query.get_length()
+        var j: size_t 0
+        while j < qn
+        {
+            guard symbols.lower_byte(name.get(start + j)) <> symbols.lower_byte(query.get(j))
+                return false
+            set j: j + (1 as size_t)
+        }
+        true
+    }
+
+    ; True when `query` is a case-insensitive substring of `name` (empty query
+    ; matches everything).
+    function name_matches(name: String, query: String) returns bool
+    {
+        let qn query.get_length()
+        guard qn = (0 as size_t)
+            return true
+        let nn name.get_length()
+        guard nn < qn
+            return false
+        var i: size_t 0
+        let last nn - qn
+        while i <= last
+        {
+            guard symbols.matches_at(name, i, query)
+                return true
+            set i: i + (1 as size_t)
+        }
+        false
+    }
+
+    ; ====================================================================
     ; textDocument/references (lexical, single file)
     ;
     ; Extract the identifier under the cursor and return an LSP Location[]

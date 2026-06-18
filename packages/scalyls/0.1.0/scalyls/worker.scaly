@@ -117,6 +117,16 @@ define worker
         let doctext rpc.read_message_fd#(in_fd)
         let position rpc.read_message_fd#(in_fd)
 
+        ; workspace/symbol: the `uri` frame carries the workspace ROOT path and
+        ; `position` the query; there is no single document. Handle it before
+        ; the per-document source resolution below (which would try to read the
+        ; root directory as a file).
+        guard kind.equals("w")
+        {
+            rpc.write_message_fd(out_fd, symbols.workspace_symbols#(uri, position))
+            return true
+        }
+
         ; Resolve the document source: prefer the parent's in-memory copy
         ; (sees unsaved edits); fall back to reading the file from disk when
         ; the parent has no buffer for this uri (empty doctext frame).
@@ -329,6 +339,13 @@ define worker
     ; of the renameable identifier, or "" if unavailable / not renameable.
     function prepare_rename#(rp, uri: String, text: String, packed: String) returns String
         worker.exchange#("p", uri, text, packed, String#(""))
+
+    ; workspace/symbol: search every .scaly file under `root` for declarations
+    ; matching `query`. `root` rides in the uri frame, `query` in the position
+    ; frame; the text frame is unused. Returns SymbolInformation[]; `[]` if
+    ; unavailable / no root / no match.
+    function workspace_symbols#(rp, root: String, query: String) returns String
+        worker.exchange#("w", root, String#(""), query, String#("[]"))
 
     ; Send one (kind,uri,text,position) request to the worker and return its
     ; framed reply, or `fallback` if the worker is unavailable / crashed /
