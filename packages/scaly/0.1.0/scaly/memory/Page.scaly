@@ -122,6 +122,15 @@ define Page
         while page <> null
         {
             let next_page page.next_page
+            ; Each extension page can own its OWN exclusive pages (an
+            ; Array.reallocate calls allocate_exclusive_page on whatever page
+            ; is current — a chain page during a large allocation). Free them
+            ; before releasing the chain page, or they orphan their buckets.
+            for excl in page.exclusive_pages
+            {
+                excl.deallocate_extensions()
+                scaly_release_page(excl)
+            }
             scaly_release_page(page)
             set page: next_page
         }
