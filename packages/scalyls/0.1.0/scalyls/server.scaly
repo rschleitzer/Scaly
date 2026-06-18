@@ -112,6 +112,12 @@ define server
             return
         }
 
+        guard method.equals("textDocument/didClose")
+        {
+            server.handle_did_close(msg)
+            return
+        }
+
         ; initialized + any other notification: ignore. Unknown requests
         ; are left unanswered for now (the client tolerates this for the
         ; methods we do not advertise).
@@ -146,6 +152,17 @@ define server
         let last json.array_get(changes, n - (1 as size_t))
         let text json.as_string#(json.get(last, "text"))
         server.publish_for(uri, text)
+    }
+
+    ; A closed document leaves no buffer to analyze; clear whatever
+    ; diagnostics the editor still shows for it (empty diagnostics array).
+    function handle_did_close(msg: JsonValue)
+    {
+        let params json.get(msg, "params")
+        let doc json.get(params, "textDocument")
+        let uri json.as_string#(json.get(doc, "uri"))
+        let payload diagnostics.clear_diagnostics#(uri)
+        rpc.write_message(payload)
     }
 
     function publish_for(uri: String, text: String)

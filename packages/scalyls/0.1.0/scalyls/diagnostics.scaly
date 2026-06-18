@@ -112,6 +112,33 @@ define diagnostics
         sb.to_string#()
     }
 
+    ; Build a publishDiagnostics notification with an EMPTY diagnostics
+    ; array for `uri` — used on textDocument/didClose to clear any
+    ; diagnostics the editor is still showing for a now-closed document.
+    ; Same envelope as publish_diagnostics#, minus the compiler pipeline.
+    function clear_diagnostics#(rp, uri: String) returns String
+    {
+        var sb StringBuilder#()
+        sb.append(0x7B as char)                    ; {
+        sb.append(diagnostics.key#("jsonrpc"))
+        sb.append(diagnostics.quoted#("2.0"))
+        sb.append(0x2C as char)
+        sb.append(diagnostics.key#("method"))
+        sb.append(diagnostics.quoted#("textDocument/publishDiagnostics"))
+        sb.append(0x2C as char)
+        sb.append(diagnostics.key#("params"))
+        sb.append(0x7B as char)                    ; params {
+        sb.append(diagnostics.key#("uri"))
+        sb.append(json.quote_string#(uri))
+        sb.append(0x2C as char)
+        sb.append(diagnostics.key#("diagnostics"))
+        sb.append(0x5B as char)                    ; [
+        sb.append(0x5D as char)                    ; ]
+        sb.append(0x7D as char)                    ; } params
+        sb.append(0x7D as char)                    ; } root
+        sb.to_string#()
+    }
+
     ; Register every loaded package's concepts with the planner
     ; (inlined mirror of cli.register_packages).
     procedure register_packages(planner: pointer[Planner.Planner], model: pointer[Program])

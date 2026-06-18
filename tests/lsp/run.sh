@@ -52,6 +52,8 @@ inp += frame({"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDoc
 inp += frame({"jsonrpc":"2.0","method":"textDocument/didChange","params":{
         "textDocument":{"uri":"file:///tmp/ok.scaly","version":2},
         "contentChanges":[{"text":"function f() returns int\n{\n    return nope()\n}\n"}]}})
+inp += frame({"jsonrpc":"2.0","method":"textDocument/didClose","params":{
+        "textDocument":{"uri":"file:///tmp/ok.scaly"}}})
 inp += frame({"jsonrpc":"2.0","id":2,"method":"shutdown"})
 inp += frame({"jsonrpc":"2.0","method":"exit"})
 
@@ -69,7 +71,7 @@ def check(cond, label):
     print(("PASS  " if cond else "FAIL  ") + label)
     if not cond: failures += 1
 
-check(len(frames) == 4, "frame count == 4 (init, didOpen diag, didChange diag, shutdown)")
+check(len(frames) == 5, "frame count == 5 (init, didOpen diag, didChange diag, didClose clear, shutdown)")
 check(frames[0].get("id") == 1 and "capabilities" in frames[0].get("result", {}), "initialize -> capabilities")
 check(frames[0]["result"]["capabilities"].get("textDocumentSync") == 1, "textDocumentSync == 1 (full)")
 check(frames[1].get("method") == "textDocument/publishDiagnostics", "didOpen -> publishDiagnostics")
@@ -78,7 +80,10 @@ diags = frames[2]["params"]["diagnostics"]
 check(len(diags) == 1, "didChange (bad call) -> 1 diagnostic")
 check("nope" in diags[0]["message"], "diagnostic message names the missing fn")
 check(diags[0]["range"]["start"]["line"] == 2, "diagnostic on 0-based line 2")
-check(frames[3].get("id") == 2 and frames[3].get("result") is None, "shutdown -> null result")
+check(frames[3].get("method") == "textDocument/publishDiagnostics", "didClose -> publishDiagnostics")
+check(frames[3]["params"]["uri"] == "file:///tmp/ok.scaly", "didClose clears the right uri")
+check(frames[3]["params"]["diagnostics"] == [], "didClose -> empty diagnostics (cleared)")
+check(frames[4].get("id") == 2 and frames[4].get("result") is None, "shutdown -> null result")
 sys.exit(1 if failures else 0)
 PY
 rc=$?
