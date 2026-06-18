@@ -40,14 +40,28 @@ define server
     ; on stdin -> shut the loop down.
     function run()
     {
-        while true
-        {
-            let body rpc.read_message#()
-            guard body.get_length() = (0 as size_t)
-                return
+        ; Each message is read + dispatched inside process_one(), a plain
+        ; (non-#) helper. The message body — read via read_message#() onto
+        ; the HELPER's local page (rp resolves to the callee's own root
+        ; page) — and everything the dispatch allocates on that page are
+        ; reclaimed when process_one() returns, every iteration. Reading
+        ; the body directly on run()'s never-returning loop page instead
+        ; pinned one oversized body page per edit there forever.
+        while server.process_one()
+            0
+    }
 
-            server.handle_message(body)
-        }
+    ; Read and dispatch a single message. Returns true to continue the
+    ; loop, false at EOF (empty body) to shut it down. The body lives on
+    ; this function's local page and is freed on return.
+    function process_one() returns bool
+    {
+        let body rpc.read_message#()
+        guard body.get_length() = (0 as size_t)
+            return false
+
+        server.handle_message(body)
+        true
     }
 
     function handle_message(body: String)
