@@ -299,6 +299,63 @@ PY
 rc=$?
 if [ $rc -eq 0 ]; then ok "lsp definition"; else bad "lsp definition"; fi
 
+# ---- references: all whole-token occurrences of the identifier ----
+# Lexical Find-All-References: extract the identifier at the cursor and return
+# a Location per whole-token occurrence. Exercises a multiply-called function,
+# whole-token matching (the param `a` must NOT match inside `add`), and the
+# no-identifier `[]` case.
+python3 - <<'PY'
+import sys, json, subprocess
+src = ("function add(a: int, b: int) returns int\n{\n    return a + b\n}\n\n"
+       "function main() returns int\n{\n    return add(add(1, 2), 3)\n}\n")
+path = "/tmp/lsp_ref_test.scaly"
+open(path, "w").write(src)
+def frame(o):
+    b=json.dumps(o).encode(); return ("Content-Length: %d\r\n\r\n"%len(b)).encode()+b
+def rf(idn, line, char):
+    return frame({"jsonrpc":"2.0","id":idn,"method":"textDocument/references",
+                  "params":{"textDocument":{"uri":"file://"+path},
+                            "position":{"line":line,"character":char},
+                            "context":{"includeDeclaration":True}}})
+inp  = frame({"jsonrpc":"2.0","id":1,"method":"initialize","params":{}})
+inp += frame({"jsonrpc":"2.0","method":"initialized","params":{}})
+inp += rf(2, 0, 10)    # `add` -> 3 occurrences (decl + the two nested calls)
+inp += rf(3, 2, 11)    # `a` param -> 2 (decl + the use; NOT the `a` in `add`)
+inp += rf(4, 1, 0)     # `{` -> []
+inp += frame({"jsonrpc":"2.0","id":9,"method":"shutdown"})
+inp += frame({"jsonrpc":"2.0","method":"exit"})
+out = subprocess.run(["/tmp/scalyls"], input=inp, stdout=subprocess.PIPE).stdout
+frames, d = [], out
+while d:
+    i = d.find(b"\r\n\r\n")
+    if i < 0: break
+    n = int(d[:i].decode().split(":")[1].strip())
+    frames.append(json.loads(d[i+4:i+4+n])); d = d[i+4+n:]
+failures = 0
+def check(cond, label):
+    global failures
+    print(("PASS  " if cond else "FAIL  ") + label)
+    if not cond: failures += 1
+caps = frames[0]["result"]["capabilities"]
+check(caps.get("referencesProvider") is True, "initialize advertises referencesProvider")
+def res(idn):
+    f = next((x for x in frames if x.get("id") == idn), None)
+    return (f or {}).get("result")
+def spans(idn):
+    return [(x["uri"], x["range"]["start"]["line"], x["range"]["start"]["character"],
+             x["range"]["end"]["character"]) for x in (res(idn) or [])]
+add_spans = spans(2)
+check(len(add_spans) == 3, "`add` -> 3 occurrences (decl + 2 calls)")
+check(all(u == "file://"+path for (u,_,_,_) in add_spans), "each occurrence carries the file uri")
+check((0,9,12) in [(l,s,e) for (_,l,s,e) in add_spans], "decl occurrence range covers the whole token")
+a_spans = spans(3)
+check(len(a_spans) == 2, "`a` -> 2 (whole-token: not the `a` inside `add`)")
+check(res(4) == [], "no identifier under cursor -> []")
+sys.exit(1 if failures else 0)
+PY
+rc=$?
+if [ $rc -eq 0 ]; then ok "lsp references"; else bad "lsp references"; fi
+
 echo "-----"
 echo "PASS: $pass  FAIL: $fail"
 [ $fail -eq 0 ]

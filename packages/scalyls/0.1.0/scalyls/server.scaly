@@ -140,6 +140,13 @@ define server
             return
         }
 
+        guard method.equals("textDocument/references")
+        {
+            guard has_id
+                server.handle_references(msg, id)
+            return
+        }
+
         ; initialized + any other notification: ignore. Unknown requests
         ; are left unanswered for now (the client tolerates this for the
         ; methods we do not advertise).
@@ -235,6 +242,33 @@ define server
         rpc.write_message(server.definition_response#(id, result))
     }
 
+    ; references: the request carries a uri + {line,character} + a
+    ; context.includeDeclaration flag (ignored — the lexical scan cannot
+    ; distinguish the declaration from uses, so all whole-token occurrences
+    ; are always returned). Pack the position and hand it to the worker, which
+    ; re-reads the file and scans it. The result is a Location[] array.
+    function handle_references(msg: JsonValue, id: i64)
+    {
+        let params json.get(msg, "params")
+        let doc json.get(params, "textDocument")
+        let uri json.as_string#(json.get(doc, "uri"))
+        let position json.get(params, "position")
+        let line json.as_i64(json.get(position, "line"))
+        let character json.as_i64(json.get(position, "character"))
+
+        var pb StringBuilder#()
+        pb.append(json.format_i64#(line))
+        pb.append(0x20 as char)                    ; space
+        pb.append(json.format_i64#(character))
+        let packed pb.to_string#()
+
+        let result worker.references#(uri, packed)
+        ; document_symbol_response# wraps a pre-serialized JSON array as the
+        ; result, appending it byte-at-a-time (a many-occurrence array can be
+        ; large — same large-append hazard as the outline).
+        rpc.write_message(server.document_symbol_response#(id, result))
+    }
+
     ; A closed document leaves no buffer to analyze; clear whatever
     ; diagnostics the editor still shows for it (empty diagnostics array).
     function handle_did_close(msg: JsonValue)
@@ -287,6 +321,9 @@ define server
         sb.append("true")
         sb.append(0x2C as char)
         sb.append(server.key#("definitionProvider"))
+        sb.append("true")
+        sb.append(0x2C as char)
+        sb.append(server.key#("referencesProvider"))
         sb.append("true")
         sb.append(0x7D as char)                    ; } capabilities
         sb.append(0x2C as char)
