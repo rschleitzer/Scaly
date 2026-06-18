@@ -73,7 +73,7 @@ def check(cond, label):
 
 check(len(frames) == 5, "frame count == 5 (init, didOpen diag, didChange diag, didClose clear, shutdown)")
 check(frames[0].get("id") == 1 and "capabilities" in frames[0].get("result", {}), "initialize -> capabilities")
-check(frames[0]["result"]["capabilities"].get("textDocumentSync") == 1, "textDocumentSync == 1 (full)")
+check(frames[0]["result"]["capabilities"].get("textDocumentSync") == 2, "textDocumentSync == 2 (incremental)")
 check(frames[1].get("method") == "textDocument/publishDiagnostics", "didOpen -> publishDiagnostics")
 check(frames[1]["params"]["diagnostics"] == [], "valid doc -> no diagnostics")
 diags = frames[2]["params"]["diagnostics"]
@@ -456,6 +456,61 @@ sys.exit(1 if failures else 0)
 PY
 rc=$?
 if [ $rc -eq 0 ]; then ok "lsp completion"; else bad "lsp completion"; fi
+
+# ---- incremental sync (textDocumentSync: 2): ranged edits ----
+# The client sends deltas (a range + replacement text), not the whole doc.
+# Apply two sequential ranged edits to the in-memory buffer and confirm a
+# navigation request reflects the rebuilt document. Disk is never touched.
+python3 - <<'PY'
+import sys, json, subprocess
+path = "/tmp/lsp_incr_test.scaly"
+src  = "function alpha() returns int\n{\n    return 1\n}\n"
+open(path, "w").write(src)             # disk has `alpha`; never rewritten
+def frame(o):
+    b=json.dumps(o).encode(); return ("Content-Length: %d\r\n\r\n"%len(b)).encode()+b
+def change(version, edits):
+    return frame({"jsonrpc":"2.0","method":"textDocument/didChange","params":{
+        "textDocument":{"uri":"file://"+path,"version":version},
+        "contentChanges":edits}})
+inp  = frame({"jsonrpc":"2.0","id":1,"method":"initialize","params":{}})
+inp += frame({"jsonrpc":"2.0","method":"initialized","params":{}})
+inp += frame({"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{
+        "uri":"file://"+path,"languageId":"scaly","version":1,"text":src}}})
+# rename `alpha` (line 0, chars 9..14) -> `beta_renamed`
+inp += change(2, [{"range":{"start":{"line":0,"character":9},
+                            "end":{"line":0,"character":14}}, "text":"beta_renamed"}])
+inp += frame({"jsonrpc":"2.0","id":2,"method":"textDocument/documentSymbol",
+              "params":{"textDocument":{"uri":"file://"+path}}})
+# a second ranged edit applied ON TOP of the first: `1` -> `42`
+inp += change(3, [{"range":{"start":{"line":2,"character":11},
+                            "end":{"line":2,"character":12}}, "text":"42"}])
+inp += frame({"jsonrpc":"2.0","id":3,"method":"textDocument/hover",
+              "params":{"textDocument":{"uri":"file://"+path},"position":{"line":0,"character":11}}})
+inp += frame({"jsonrpc":"2.0","id":9,"method":"shutdown"})
+inp += frame({"jsonrpc":"2.0","method":"exit"})
+out = subprocess.run(["/tmp/scalyls"], input=inp, stdout=subprocess.PIPE).stdout
+frames, d = [], out
+while d:
+    i = d.find(b"\r\n\r\n")
+    if i < 0: break
+    n = int(d[:i].decode().split(":")[1].strip())
+    frames.append(json.loads(d[i+4:i+4+n])); d = d[i+4+n:]
+failures = 0
+def check(cond, label):
+    global failures
+    print(("PASS  " if cond else "FAIL  ") + label)
+    if not cond: failures += 1
+sym = next((f for f in frames if f.get("id") == 2), None)
+names = [s["name"] for s in ((sym or {}).get("result") or [])]
+check(names == ["beta_renamed"], "ranged edit rebuilt the doc (alpha -> beta_renamed)")
+hov = next((f for f in frames if f.get("id") == 3), None)
+val = ((hov or {}).get("result") or {}).get("contents", {}).get("value")
+check(val == "function beta_renamed", "second ranged edit applied on top (sequential)")
+check(open(path).read() == src, "disk file untouched (edits are in-memory)")
+sys.exit(1 if failures else 0)
+PY
+rc=$?
+if [ $rc -eq 0 ]; then ok "lsp incremental sync"; else bad "lsp incremental sync"; fi
 
 # ---- in-memory document store: unsaved edits are visible ----
 # The store keeps the editor's latest text per uri so navigation requests
