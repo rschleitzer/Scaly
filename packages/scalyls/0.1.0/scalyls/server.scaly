@@ -179,6 +179,13 @@ define server
             return
         }
 
+        guard method.equals("textDocument/signatureHelp")
+        {
+            guard has_id
+                server.handle_signature_help(msg, id)
+            return
+        }
+
         guard method.equals("workspace/symbol")
         {
             guard has_id
@@ -345,6 +352,29 @@ define server
         let text docstore.get#(uri)
         let result worker.definition#(uri, text, packed)
         rpc.write_message(server.definition_response#(id, result))
+    }
+
+    ; signatureHelp: the request carries a uri + {line,character}. Pack the
+    ; position as "<line> <char>" and ask the worker for the parameter list of
+    ; the call enclosing the cursor. An empty worker reply -> result:null.
+    function handle_signature_help(msg: JsonValue, id: i64)
+    {
+        let params json.get(msg, "params")
+        let doc json.get(params, "textDocument")
+        let uri json.as_string#(json.get(doc, "uri"))
+        let position json.get(params, "position")
+        let line json.as_i64(json.get(position, "line"))
+        let character json.as_i64(json.get(position, "character"))
+
+        var pb StringBuilder#()
+        pb.append(json.format_i64#(line))
+        pb.append(0x20 as char)                    ; space
+        pb.append(json.format_i64#(character))
+        let packed pb.to_string#()
+
+        let text docstore.get#(uri)
+        let result worker.signature_help#(uri, text, packed)
+        rpc.write_message(server.hover_response#(id, result))
     }
 
     ; references: the request carries a uri + {line,character} + a
@@ -607,6 +637,21 @@ define server
         sb.append(0x7B as char)                    ; {
         sb.append(server.key#("prepareProvider"))
         sb.append("true")
+        sb.append(0x7D as char)                    ; }
+        sb.append(0x2C as char)
+        ; signatureHelpProvider with ( and , as trigger / retrigger chars.
+        sb.append(server.key#("signatureHelpProvider"))
+        sb.append(0x7B as char)                    ; {
+        sb.append(server.key#("triggerCharacters"))
+        sb.append(0x5B as char)                    ; [
+        sb.append(0x22 as char)                    ; "
+        sb.append(0x28 as char)                    ; (
+        sb.append(0x22 as char)                    ; "
+        sb.append(0x2C as char)                    ; ,
+        sb.append(0x22 as char)                    ; "
+        sb.append(0x2C as char)                    ; , (the trigger char)
+        sb.append(0x22 as char)                    ; "
+        sb.append(0x5D as char)                    ; ]
         sb.append(0x7D as char)                    ; }
         sb.append(0x2C as char)
         sb.append(server.key#("workspaceSymbolProvider"))

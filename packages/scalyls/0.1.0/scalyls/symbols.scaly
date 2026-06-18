@@ -90,6 +90,10 @@ use scalyc.compiler.Syntax.InitSyntax
 use scalyc.compiler.Syntax.DeInitSyntax
 use scalyc.compiler.Syntax.ImplementSyntax
 use scalyc.compiler.Syntax.VariantSyntax
+use scalyc.compiler.Syntax.ParametersSyntax
+use scalyc.compiler.Syntax.ItemSyntax
+use scalyc.compiler.Syntax.TypeSyntax
+use scalyc.compiler.Syntax.TypeAnnotationSyntax
 
 define symbols
 {
@@ -3058,5 +3062,696 @@ define symbols
         }
 
         symbols.range_for#(source, start, end)
+    }
+
+    ; ====================================================================
+    ; textDocument/signatureHelp (parse-only)
+    ;
+    ; When the cursor is inside a call's argument list, find the function /
+    ; procedure / operator / method being called (the identifier just before
+    ; the enclosing `(`) and report its parameter list as an LSP SignatureHelp,
+    ; with activeParameter set to the depth-0 comma count between the `(` and
+    ; the cursor. The target is found by the same name-matching parse-tree walk
+    ; as definition (this file first, then sibling .scaly files in the dir tree).
+    ;
+    ; LIMITS (lexical, like definition/references): the call target is matched
+    ; by NAME only (no receiver-type resolution), so `obj.method(` resolves to
+    ; the first `method` declared anywhere; constructors (`Foo#(`) are not
+    ; matched (no named init). String literals / comments inside the argument
+    ; list can confuse the bracket scan. The cursor arrives as a packed
+    ; "<line> <char>" (same as hover).
+    ;
+    ; Result: {"signatures":[{"label":"name(p0, p1)","parameters":[
+    ;   {"label":"p0"},{"label":"p1"}]}],"activeSignature":0,
+    ;   "activeParameter":<n>}  or "" (server -> result:null) when the cursor is
+    ; not in a recognised call.
+    ; ====================================================================
+
+    function signature_packed#(rp, source: String, uri: String, packed: String) returns String
+    {
+        var line: size_t 0
+        var character: size_t 0
+        var seen_space: bool false
+        var i: size_t 0
+        let pn packed.get_length()
+        while i < pn
+        {
+            let c packed.get(i)
+            guard c = (0x20 as u8)
+                set seen_space: true
+            guard c <> (0x20 as u8)
+            {
+                let digit (c - (0x30 as u8)) as size_t
+                guard seen_space = false
+                    set line: line * (10 as size_t) + digit
+                guard seen_space
+                    set character: character * (10 as size_t) + digit
+            }
+            set i: i + 1
+        }
+
+        let offset symbols.position_to_offset#(source, line, character)
+        let paren symbols.find_enclosing_paren#(source, offset)
+        let len source.get_length()
+        guard paren < len
+        {
+            let name symbols.name_before_paren#(source, paren)
+            guard name.get_length() > (0 as size_t)
+            {
+                let active symbols.count_active_param(source, paren, offset)
+                let here symbols.find_signature#(source, name, active)
+                guard here.get_length() > (0 as size_t)
+                    return here
+                let ws symbols.find_signature_in_workspace#(uri, name, active)
+                guard ws.get_length() > (0 as size_t)
+                    return ws
+            }
+        }
+        String#("")
+    }
+
+    ; Scan left from `offset` for the `(` that encloses the cursor at the
+    ; current argument nesting. Returns its byte offset, or the source length
+    ; (a sentinel that is never a valid match, since offset <= len) when there
+    ; is no enclosing `(` — including when a `[` encloses us first (an index /
+    ; generic, not a call). Closing brackets raise the depth; matching openers
+    ; lower it; an opener at depth 0 is the enclosing one.
+    function find_enclosing_paren#(source: String, offset: size_t) returns size_t
+    {
+        let len source.get_length()
+        var p offset
+        guard p > len
+            set p: len
+        var depth: size_t 0
+        var result len
+        var searching true
+        while searching
+        {
+            guard p = (0 as size_t)
+                set searching: false
+            guard p > (0 as size_t)
+            {
+                let c source.get(p - (1 as size_t))
+                guard c = (0x29 as u8)                 ; )
+                    set depth: depth + (1 as size_t)
+                guard c = (0x5D as u8)                 ; ]
+                    set depth: depth + (1 as size_t)
+                guard c = (0x28 as u8)                 ; (
+                {
+                    guard depth = (0 as size_t)
+                    {
+                        set result: p - (1 as size_t)
+                        set searching: false
+                    }
+                    guard depth > (0 as size_t)
+                        set depth: depth - (1 as size_t)
+                }
+                guard c = (0x5B as u8)                 ; [
+                {
+                    guard depth = (0 as size_t)
+                        set searching: false           ; an index/generic encloses us
+                    guard depth > (0 as size_t)
+                        set depth: depth - (1 as size_t)
+                }
+                set p: p - (1 as size_t)
+            }
+        }
+        result
+    }
+
+    ; The identifier ending just before `paren_pos` (skipping whitespace), i.e.
+    ; the called function's name, or "" when none (e.g. `(` after `)` or `]`).
+    function name_before_paren#(rp, source: String, paren_pos: size_t) returns String
+    {
+        var e paren_pos
+        while e > (0 as size_t)
+        {
+            let c source.get(e - (1 as size_t))
+            guard c <> (0x20 as u8)
+                guard c <> (0x09 as u8)
+                    guard c <> (0x0A as u8)
+                        guard c <> (0x0D as u8)
+                            break
+            set e: e - (1 as size_t)
+        }
+        guard e = (0 as size_t)
+            return String#("")
+        guard symbols.is_ident_byte(source.get(e - (1 as size_t))) = false
+            return String#("")
+        var s e
+        while s > (0 as size_t)
+        {
+            guard symbols.is_ident_byte(source.get(s - (1 as size_t))) = false
+                break
+            set s: s - (1 as size_t)
+        }
+        symbols.substring#(source, s, e)
+    }
+
+    ; Count depth-0 commas between `paren_pos` and `offset` — the 0-based index
+    ; of the argument the cursor is in. Nested `()`/`[]` are skipped.
+    function count_active_param(source: String, paren_pos: size_t, offset: size_t) returns size_t
+    {
+        let len source.get_length()
+        var end offset
+        guard end > len
+            set end: len
+        var depth: size_t 0
+        var commas: size_t 0
+        var i paren_pos + (1 as size_t)
+        while i < end
+        {
+            let c source.get(i)
+            guard c = (0x28 as u8)
+                set depth: depth + (1 as size_t)
+            guard c = (0x5B as u8)
+                set depth: depth + (1 as size_t)
+            guard c = (0x29 as u8)
+                guard depth > (0 as size_t)
+                    set depth: depth - (1 as size_t)
+            guard c = (0x5D as u8)
+                guard depth > (0 as size_t)
+                    set depth: depth - (1 as size_t)
+            guard c = (0x2C as u8)
+                guard depth = (0 as size_t)
+                    set commas: commas + (1 as size_t)
+            set i: i + (1 as size_t)
+        }
+        commas
+    }
+
+    ; Parse the program and return the SignatureHelp for the first function /
+    ; procedure / operator / method named `name`, or "" on no match / parse error.
+    function find_signature#(rp, source: String, name: String, active: size_t) returns String
+    {
+        var p parser.Parser$(source)
+        var result String#("")
+        choose p.parse_program#()
+            when err: Error
+                set result: String#("")
+            when program: Success
+            {
+                let file program.file
+                guard file.declarations <> null
+                {
+                    let decls (*file.declarations)
+                    var i: size_t 0
+                    while i < decls.length
+                    {
+                        guard result.get_length() = (0 as size_t)
+                        {
+                            let dptr decls.get(i)
+                            guard dptr <> null
+                            {
+                                let d (*dptr)
+                                set result: symbols.sig_decl#(source, d, name, active)
+                            }
+                        }
+                        set i: i + 1
+                    }
+                }
+            }
+        result
+    }
+
+    ; One top-level declaration: a SignatureHelp if it (or a nested member) is
+    ; the routine named `name`, else "".
+    function sig_decl#(rp, source: String, decl: DeclarationSyntax, name: String, active: size_t) returns String
+    {
+        choose decl
+            when f: FunctionSyntax
+                return symbols.sig_target#(source, f.target, name, active)
+            when pr: ProcedureSyntax
+                return symbols.sig_target#(source, pr.target, name, active)
+            when o: OperatorSyntax
+                return symbols.sig_target#(source, o.target, name, active)
+            when def: DefinitionSyntax
+                return symbols.sig_definition#(source, def, name, active)
+            when m: ModuleSyntax
+                return String#("")
+            when mut: MutableSyntax
+                return String#("")
+            when priv: PrivateSyntax
+                return symbols.sig_export#(source, priv.export_, name, active)
+            when e: EmptySyntax
+                return String#("")
+            when pkg: PackageSyntax
+                return String#("")
+            when u: UseSyntax
+                return String#("")
+            when t: TraitSyntax
+                return String#("")
+            when mac: MacroSyntax
+                return String#("")
+    }
+
+    ; A `private` declaration unwraps to its exported construct.
+    function sig_export#(rp, source: String, export_: ExportSyntax, name: String, active: size_t) returns String
+    {
+        choose export_
+            when f: FunctionSyntax
+                return symbols.sig_target#(source, f.target, name, active)
+            when pr: ProcedureSyntax
+                return symbols.sig_target#(source, pr.target, name, active)
+            when o: OperatorSyntax
+                return symbols.sig_target#(source, o.target, name, active)
+            when def: DefinitionSyntax
+                return symbols.sig_definition#(source, def, name, active)
+            when t: TraitSyntax
+                return String#("")
+            when m: ModuleSyntax
+                return String#("")
+    }
+
+    ; A `define X`: recurse into the body / namespace / union for a member
+    ; routine named `name` (a definition itself has no parameter list).
+    function sig_definition#(rp, source: String, def: DefinitionSyntax, name: String, active: size_t) returns String
+    {
+        var child String#("")
+        choose def.concept_
+            when c: ClassSyntax
+                set child: symbols.sig_body#(source, c.body, name, active)
+            when n: NamespaceSyntax
+                set child: symbols.sig_namespace#(source, n, name, active)
+            when un: UnionSyntax
+                set child: symbols.sig_union#(source, un, name, active)
+            else
+                0
+        child
+    }
+
+    ; Members of a class body.
+    function sig_body#(rp, source: String, body: ref[BodySyntax]?, name: String, active: size_t) returns String
+    {
+        var result String#("")
+        guard body <> null
+        {
+            let b (*body)
+            guard b.members <> null
+            {
+                let members (*b.members)
+                var i: size_t 0
+                while i < members.length
+                {
+                    guard result.get_length() = (0 as size_t)
+                    {
+                        let mptr members.get(i)
+                        guard mptr <> null
+                        {
+                            let m (*mptr)
+                            set result: symbols.sig_member#(source, m, name, active)
+                        }
+                    }
+                    set i: i + 1
+                }
+            }
+        }
+        result
+    }
+
+    ; One class/union member.
+    function sig_member#(rp, source: String, member: MemberSyntax, name: String, active: size_t) returns String
+    {
+        choose member
+            when f: FunctionSyntax
+                return symbols.sig_target#(source, f.target, name, active)
+            when pr: ProcedureSyntax
+                return symbols.sig_target#(source, pr.target, name, active)
+            when o: OperatorSyntax
+                return symbols.sig_target#(source, o.target, name, active)
+            when ini: InitSyntax
+                return String#("")
+            when dei: DeInitSyntax
+                return String#("")
+            when def: DefinitionSyntax
+                return symbols.sig_definition#(source, def, name, active)
+            when e: EmptySyntax
+                return String#("")
+            when im: ImplementSyntax
+                return String#("")
+            when t: TraitSyntax
+                return String#("")
+            when mac: MacroSyntax
+                return String#("")
+            when m: ModuleSyntax
+                return String#("")
+    }
+
+    ; Nested declarations of a namespace.
+    function sig_namespace#(rp, source: String, ns: NamespaceSyntax, name: String, active: size_t) returns String
+    {
+        var result String#("")
+        guard ns.declarations <> null
+        {
+            let decls (*ns.declarations)
+            var i: size_t 0
+            while i < decls.length
+            {
+                guard result.get_length() = (0 as size_t)
+                {
+                    let dptr decls.get(i)
+                    guard dptr <> null
+                    {
+                        let d (*dptr)
+                        set result: symbols.sig_decl#(source, d, name, active)
+                    }
+                }
+                set i: i + 1
+            }
+        }
+        result
+    }
+
+    ; Body members of a union (variants carry no parameter list).
+    function sig_union#(rp, source: String, un: UnionSyntax, name: String, active: size_t) returns String
+    {
+        var result String#("")
+        guard un.body <> null
+            set result: symbols.sig_body#(source, un.body, name, active)
+        result
+    }
+
+    ; If the routine target is named `name`, build its SignatureHelp; else "".
+    function sig_target#(rp, source: String, target: TargetSyntax, name: String, active: size_t) returns String
+    {
+        choose target
+            when named: NamedSyntax
+            {
+                guard named.name.equals(name)
+                    return symbols.build_signature#(source, String#(named.name), named.routine, active)
+                return String#("")
+            }
+            when r: RoutineSyntax
+                return String#("")
+    }
+
+    ; Assemble the SignatureHelp JSON for a routine: a label "name(p0, p1)" and
+    ; a parameters array, with activeParameter clamped to the last parameter.
+    function build_signature#(rp, source: String, name: String, routine: RoutineSyntax, active: size_t) returns String
+    {
+        var sig_label StringBuilder#()
+        var arr StringBuilder#()
+        var count: size_t 0
+
+        var ni: size_t 0
+        let nl name.get_length()
+        while ni < nl
+        {
+            sig_label.append(name.get(ni) as char)
+            set ni: ni + (1 as size_t)
+        }
+        sig_label.append(0x28 as char)                 ; (
+
+        var first true
+        guard routine.parameters <> null
+        {
+            let ps (*routine.parameters)
+            choose ps
+                when params: ParametersSyntax
+                {
+                    guard params.items <> null
+                    {
+                        let items (*params.items)
+                        ; Drop a leading `this` receiver parameter: at a call
+                        ; site the receiver is written as `recv.method(...)` (or
+                        ; is implicit for a sibling call), never as the first
+                        ; argument, so showing/counting it would misalign
+                        ; activeParameter for every method.
+                        var i: size_t 0
+                        guard items.length > (0 as size_t)
+                        {
+                            let i0 items.get(0 as size_t)
+                            guard i0 <> null
+                            {
+                                let it0 (*i0)
+                                let kw_this String#("this")
+                                guard it0.name.equals(kw_this)
+                                    set i: 1 as size_t
+                            }
+                        }
+                        while i < items.length
+                        {
+                            let iptr items.get(i)
+                            guard iptr <> null
+                            {
+                                let it (*iptr)
+                                let ptext symbols.param_label#(source, it)
+                                guard ptext.get_length() > (0 as size_t)
+                                {
+                                    guard first = false
+                                    {
+                                        sig_label.append(0x2C as char)
+                                        sig_label.append(0x20 as char)
+                                        arr.append(0x2C as char)
+                                    }
+                                    var li: size_t 0
+                                    let ll ptext.get_length()
+                                    while li < ll
+                                    {
+                                        sig_label.append(ptext.get(li) as char)
+                                        set li: li + (1 as size_t)
+                                    }
+                                    let item_obj symbols.param_item#(ptext)
+                                    var ai: size_t 0
+                                    let al item_obj.get_length()
+                                    while ai < al
+                                    {
+                                        arr.append(item_obj.get(ai) as char)
+                                        set ai: ai + (1 as size_t)
+                                    }
+                                    set first: false
+                                    set count: count + (1 as size_t)
+                                }
+                            }
+                            set i: i + (1 as size_t)
+                        }
+                    }
+                }
+                when ty: TypeSyntax
+                {
+                    let ptext symbols.type_text#(source, ty)
+                    guard ptext.get_length() > (0 as size_t)
+                    {
+                        var li: size_t 0
+                        let ll ptext.get_length()
+                        while li < ll
+                        {
+                            sig_label.append(ptext.get(li) as char)
+                            set li: li + (1 as size_t)
+                        }
+                        let item_obj symbols.param_item#(ptext)
+                        var ai: size_t 0
+                        let al item_obj.get_length()
+                        while ai < al
+                        {
+                            arr.append(item_obj.get(ai) as char)
+                            set ai: ai + (1 as size_t)
+                        }
+                        set count: count + (1 as size_t)
+                    }
+                }
+        }
+        sig_label.append(0x29 as char)                 ; )
+
+        var act active
+        guard count > (0 as size_t)
+            guard act >= count
+                set act: count - (1 as size_t)
+        guard count = (0 as size_t)
+            set act: (0 as size_t)
+
+        let sig_label_str sig_label.to_string#()
+        let arr_str arr.to_string#()
+
+        var sb StringBuilder#()
+        sb.append(0x7B as char)
+        sb.append(symbols.key#("signatures"))
+        sb.append(0x5B as char)                        ; [
+        sb.append(0x7B as char)                        ; {
+        sb.append(symbols.key#("label"))
+        sb.append(json.quote_string#(sig_label_str))
+        sb.append(0x2C as char)
+        sb.append(symbols.key#("parameters"))
+        sb.append(0x5B as char)                        ; [
+        var pi: size_t 0
+        let pl arr_str.get_length()
+        while pi < pl
+        {
+            sb.append(arr_str.get(pi) as char)
+            set pi: pi + (1 as size_t)
+        }
+        sb.append(0x5D as char)                        ; ]
+        sb.append(0x7D as char)                        ; }
+        sb.append(0x5D as char)                        ; ]
+        sb.append(0x2C as char)
+        sb.append(symbols.key#("activeSignature"))
+        sb.append(0x30 as char)                        ; 0
+        sb.append(0x2C as char)
+        sb.append(symbols.key#("activeParameter"))
+        sb.append(json.format_i64#(act as i64))
+        sb.append(0x7D as char)
+        sb.to_string#()
+    }
+
+    ; The label for one parameter: "name" or "name: Type". Reconstructed from
+    ; the clean ItemSyntax.name + a recursive render of the annotation's type
+    ; (NOT source spans — the lexer reads one token ahead, so every syntax-node
+    ; `end` overshoots into the next token; only `name` fields are reliable).
+    function param_label#(rp, source: String, it: ItemSyntax) returns String
+    {
+        var sb StringBuilder#()
+        let nm it.name
+        var i: size_t 0
+        let nl nm.get_length()
+        while i < nl
+        {
+            sb.append(nm.get(i) as char)
+            set i: i + (1 as size_t)
+        }
+        guard it.annotation <> null
+        {
+            let ann (*it.annotation)
+            let tt symbols.type_text#(source, ann.type)
+            guard tt.get_length() > (0 as size_t)
+            {
+                sb.append(0x3A as char)                ; :
+                sb.append(0x20 as char)                ; space
+                var ti: size_t 0
+                let tl tt.get_length()
+                while ti < tl
+                {
+                    sb.append(tt.get(ti) as char)
+                    set ti: ti + (1 as size_t)
+                }
+            }
+        }
+        sb.to_string#()
+    }
+
+    ; Render a TypeSyntax back to text: base name, dotted extensions, generic
+    ; arguments in `[...]` (recursive), and a trailing `?` when optional. Built
+    ; entirely from `name` String fields, so it is immune to the span-overshoot
+    ; that makes substring of a type unreliable.
+    function type_text#(rp, source: String, ty: TypeSyntax) returns String
+    {
+        var sb StringBuilder#()
+        let nms ty.name
+        let bn nms.name
+        var i: size_t 0
+        let bl bn.get_length()
+        while i < bl
+        {
+            sb.append(bn.get(i) as char)
+            set i: i + (1 as size_t)
+        }
+        guard nms.extensions <> null
+        {
+            let exts (*nms.extensions)
+            var ei: size_t 0
+            while ei < exts.length
+            {
+                let eptr exts.get(ei)
+                guard eptr <> null
+                {
+                    let ex (*eptr)
+                    sb.append(0x2E as char)            ; .
+                    let en ex.name
+                    var xi: size_t 0
+                    let xl en.get_length()
+                    while xi < xl
+                    {
+                        sb.append(en.get(xi) as char)
+                        set xi: xi + (1 as size_t)
+                    }
+                }
+                set ei: ei + (1 as size_t)
+            }
+        }
+        guard ty.generics <> null
+        {
+            let g (*ty.generics)
+            guard g.generics <> null
+            {
+                let gs (*g.generics)
+                sb.append(0x5B as char)                ; [
+                var first true
+                var gi: size_t 0
+                while gi < gs.length
+                {
+                    let gptr gs.get(gi)
+                    guard gptr <> null
+                    {
+                        let ga (*gptr)
+                        guard first = false
+                        {
+                            sb.append(0x2C as char)
+                            sb.append(0x20 as char)
+                        }
+                        let inner symbols.type_text#(source, ga.type)
+                        var ii: size_t 0
+                        let il inner.get_length()
+                        while ii < il
+                        {
+                            sb.append(inner.get(ii) as char)
+                            set ii: ii + (1 as size_t)
+                        }
+                        set first: false
+                    }
+                    set gi: gi + (1 as size_t)
+                }
+                sb.append(0x5D as char)                ; ]
+            }
+        }
+        guard ty.optional <> null
+            sb.append(0x3F as char)                    ; ?
+        sb.to_string#()
+    }
+
+    ; A {"label":<text>} parameter object.
+    function param_item#(rp, ptext: String) returns String
+    {
+        var sb StringBuilder#()
+        sb.append(0x7B as char)
+        sb.append(symbols.key#("label"))
+        sb.append(json.quote_string#(ptext))
+        sb.append(0x7D as char)
+        sb.to_string#()
+    }
+
+    ; Cross-file: search sibling .scaly files in the current file's directory
+    ; tree for the first routine named `name` and return its SignatureHelp.
+    ; "" if none / no directory. Mirrors find_definition_in_workspace#.
+    function find_signature_in_workspace#(rp, uri: String, name: String, active: size_t) returns String
+    {
+        let path symbols.uri_to_path#(uri)
+        let dir symbols.dir_of#(path)
+        guard dir.get_length() = (0 as size_t)
+            return String#("")
+        let listing symbols.list_scaly_files#(dir)
+
+        var result String#("")
+        var line_start: size_t 0
+        let n listing.get_length()
+        var i: size_t 0
+        while i < n
+        {
+            guard listing.get(i) = (10 as char)
+            {
+                guard result.get_length() = (0 as size_t)
+                {
+                    let fpath symbols.substring#(listing, line_start, i)
+                    guard fpath.get_length() > (0 as size_t)
+                        guard fpath.equals(path) = false
+                            guard File.exists(fpath)
+                            {
+                                let fsrc File.read_to_string#(fpath)
+                                set result: symbols.find_signature#(fsrc, name, active)
+                            }
+                }
+                set line_start: i + (1 as size_t)
+            }
+            set i: i + (1 as size_t)
+        }
+        result
     }
 }

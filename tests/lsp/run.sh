@@ -896,6 +896,96 @@ PY
 rc=$?
 if [ $rc -eq 0 ]; then ok "lsp type-aware completion"; else bad "lsp type-aware completion"; fi
 
+# ---- LSP server: signatureHelp -------------------------------------------
+python3 - <<'PY'
+import sys, json, subprocess
+def frame(o):
+    b = json.dumps(o).encode()
+    return ("Content-Length: %d\r\n\r\n" % len(b)).encode() + b
+
+uri = "file:///tmp/sig.scaly"
+doc = (
+    "function foo(buf: pointer[Page], items: Vector[char], opt: ref[String]?) returns int\n"  # 0
+    "{\n"                                                                                       # 1
+    "    return 0\n"                                                                            # 2
+    "}\n"                                                                                       # 3
+    "function noargs() returns int\n"                                                           # 4
+    "{\n"                                                                                       # 5
+    "    return 1\n"                                                                            # 6
+    "}\n"                                                                                       # 7
+    "define Box\n"                                                                              # 8
+    "(\n"                                                                                       # 9
+    "    v: int\n"                                                                              # 10
+    ")\n"                                                                                       # 11
+    "{\n"                                                                                       # 12
+    "    function put(this: Box, key: String, value: int) returns int\n"                       # 13
+    "    {\n"                                                                                   # 14
+    "        return value\n"                                                                    # 15
+    "    }\n"                                                                                   # 16
+    "}\n"                                                                                       # 17
+    "function run()\n"                                                                          # 18
+    "{\n"                                                                                       # 19
+    "    foo(a, b, c)\n"                                                                        # 20
+    "    noargs()\n"                                                                            # 21
+    "    box.put(k, v)\n"                                                                       # 22
+    "}\n")                                                                                      # 23
+
+def sig(idn, ln, ch):
+    return frame({"jsonrpc":"2.0","id":idn,"method":"textDocument/signatureHelp","params":{
+        "textDocument":{"uri":uri},"position":{"line":ln,"character":ch}}})
+
+inp  = frame({"jsonrpc":"2.0","id":1,"method":"initialize","params":{}})
+inp += frame({"jsonrpc":"2.0","method":"initialized","params":{}})
+inp += frame({"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{
+        "uri":uri,"languageId":"scaly","version":1,"text":doc}}})
+inp += sig(2, 20, 9)    # foo(a,b,c): cursor on a  -> active 0
+inp += sig(3, 20, 15)   # foo(a,b,c): cursor on c  -> active 2
+inp += sig(4, 21, 11)   # noargs() inside          -> 0 params
+inp += sig(5, 22, 14)   # box.put(k,v): cursor on v -> active 1, `this` dropped
+inp += sig(6, 18, 11)   # not inside any call       -> null
+inp += frame({"jsonrpc":"2.0","id":9,"method":"shutdown"})
+inp += frame({"jsonrpc":"2.0","method":"exit"})
+
+out = subprocess.run(["/tmp/scalyls"], input=inp, stdout=subprocess.PIPE).stdout
+frames, d = [], out
+while d:
+    i = d.find(b"\r\n\r\n")
+    if i < 0: break
+    n = int(d[:i].decode().split(":")[1].strip())
+    frames.append(json.loads(d[i+4:i+4+n])); d = d[i+4+n:]
+
+failures = 0
+def check(cond, label):
+    global failures
+    print(("PASS  " if cond else "FAIL  ") + label)
+    if not cond: failures += 1
+def res(idn):
+    f = next((x for x in frames if x.get("id") == idn), None)
+    return (f or {}).get("result")
+
+caps = frames[0]["result"]["capabilities"]
+check("signatureHelpProvider" in caps, "advertises signatureHelpProvider")
+check(caps["signatureHelpProvider"]["triggerCharacters"] == ["(", ","], "trigger chars ( and ,")
+
+r2 = res(2)
+check(r2["signatures"][0]["label"] == "foo(buf: pointer[Page], items: Vector[char], opt: ref[String]?)", "full signature label with complex types")
+check([p["label"] for p in r2["signatures"][0]["parameters"]] == ["buf: pointer[Page]","items: Vector[char]","opt: ref[String]?"], "parameter labels reconstructed")
+check(r2["activeParameter"] == 0, "first arg -> activeParameter 0")
+check(res(3)["activeParameter"] == 2, "third arg -> activeParameter 2")
+
+r4 = res(4)
+check(r4["signatures"][0]["label"] == "noargs()" and r4["signatures"][0]["parameters"] == [], "no-arg call -> empty parameter list")
+
+r5 = res(5)
+check(r5["signatures"][0]["label"] == "put(key: String, value: int)", "method call drops the `this` receiver param")
+check(r5["activeParameter"] == 1, "second written arg -> activeParameter 1 (value)")
+
+check(res(6) is None, "cursor not inside a call -> result null")
+sys.exit(1 if failures else 0)
+PY
+rc=$?
+if [ $rc -eq 0 ]; then ok "lsp signatureHelp"; else bad "lsp signatureHelp"; fi
+
 echo "-----"
 echo "PASS: $pass  FAIL: $fail"
 [ $fail -eq 0 ]
