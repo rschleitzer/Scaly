@@ -13362,6 +13362,251 @@ llvm::Expected<PlannedModule> Planner::planModule(const Module &Mod) {
 // Main Entry Point
 // ============================================================================
 
+// ============================================================================
+// Escape checker (RBMM blocker C), Vector 3: pass-to-storing-callee.
+//
+// A reference into a Local ($) page passed to a callee that STORES it into
+// frame-external memory (its `this`/param field, a global, or a pointer deref)
+// is a use-after-free once the local page is freed at scope exit. Implemented
+// as a POST-PASS Plan-tree walker so call discovery lives in one place instead
+// of the many scattered PlannedCall construction sites in collapseOperandSequence.
+//
+// Two passes over every planned function body:
+//   Pass 0 (collect): record which parameters a function stores frame-external,
+//                     and into which destination (a param like `this`, or @ext).
+//   Pass 1 (check):   at each call, if a local-page-ref arg is bound to such a
+//                     param AND the destination outlives the arg → error.
+// This increment is NON-TRANSITIVE (a param that escapes only by being passed
+// to a deeper escaping callee is not chased) — documented limitation.
+// ============================================================================
+
+static bool isReferenceLikeType(const PlannedType &T) {
+    return T.Name == "pointer" || T.Name == "ref";
+}
+
+void Planner::escapeRegisterParams(const std::string &Mangled,
+                                   const std::vector<PlannedItem> &Input,
+                                   const std::optional<std::string> &PageParam) {
+    std::vector<std::string> Names;
+    for (const auto &P : Input) {
+        Names.push_back(P.Name ? *P.Name : std::string());
+    }
+    CalleeParamNames[Mangled] = std::move(Names);
+}
+
+// A destination arg outlives the (local-page) arg passed alongside it when it
+// refers to memory living beyond the current frame: a parameter of the current
+// function (caller-provided), or a #/^ allocated local. A same-frame $/stack
+// local dies WITH the arg → safe.
+bool Planner::escapeDestArgOutlives(const PlannedOperand &Op) {
+    if (const auto *V = std::get_if<PlannedVariable>(&Op.Expr)) {
+        if (EscapeFnParams.count(V->Name)) return true;  // param of current fn
+        const Lifetime &L = Op.ResultType.Life;
+        if (std::holds_alternative<CallLifetime>(L) ||
+            std::holds_alternative<ReferenceLifetime>(L)) return true;
+        const Lifetime &L2 = V->VariableType.Life;
+        if (std::holds_alternative<CallLifetime>(L2) ||
+            std::holds_alternative<ReferenceLifetime>(L2)) return true;
+        return false;
+    }
+    if (std::holds_alternative<PlannedGlobalRef>(Op.Expr)) return true;
+    return false;  // conservative-skip for increment 1 (documented)
+}
+
+void Planner::escapeHandleStore(const PlannedAction &Act) {
+    if (EscapeWalkMode != 0) return;
+    if (Act.Target.empty() || Act.Source.empty()) return;
+    // Value operand (collapsed single operand): must be a bare reference-like
+    // parameter of the current function for its pointee to escape.
+    const PlannedOperand &Val = Act.Source[0];
+    const auto *V = std::get_if<PlannedVariable>(&Val.Expr);
+    if (!V) return;
+    if (Val.MemberAccess && !Val.MemberAccess->empty()) return;
+    if (!EscapeFnParams.count(V->Name)) return;
+    if (!isReferenceLikeType(Val.ResultType)) return;
+    // Destination: a param's `.field` (escapes into that param) / global / deref.
+    const PlannedOperand &Tgt = Act.Target[0];
+    std::string Dest;
+    if (const auto *TV = std::get_if<PlannedVariable>(&Tgt.Expr)) {
+        bool hasMember = Tgt.MemberAccess && !Tgt.MemberAccess->empty();
+        if (!hasMember) return;                       // bare reassignment, same frame
+        if (EscapeFnParams.count(TV->Name)) Dest = TV->Name;  // param.field
+        else return;                                  // same-frame local.field
+    } else if (std::holds_alternative<PlannedGlobalRef>(Tgt.Expr)) {
+        Dest = "@ext";
+    } else if (std::holds_alternative<PlannedCall>(Tgt.Expr)) {
+        Dest = "@ext";                                // store through pointer deref
+    } else {
+        return;
+    }
+    EscapeSummary[EscapeFnMangled][V->Name].insert(Dest);
+}
+
+void Planner::escapeHandleCall(const PlannedCall &Call) {
+    if (EscapeWalkMode != 1 || EscapeFound) return;
+    auto SumIt = EscapeSummary.find(Call.MangledName);
+    if (SumIt == EscapeSummary.end()) return;
+    auto PNIt = CalleeParamNames.find(Call.MangledName);
+    if (PNIt == CalleeParamNames.end()) return;
+    const std::vector<std::string> &Params = PNIt->second;
+    if (!Call.Args) return;
+    const std::vector<PlannedOperand> &Args = *Call.Args;
+    if (Args.size() < Params.size()) return;
+    // A leading page arg (#/^ region operand) makes Args longer than Input;
+    // align them from the right so Args[Off+i] <-> Params[i].
+    size_t Off = Args.size() - Params.size();
+    auto indexOf = [&](const std::string &N) -> int {
+        for (size_t i = 0; i < Params.size(); ++i)
+            if (Params[i] == N) return (int)i;
+        return -1;
+    };
+    for (const auto &[EscParam, Dests] : SumIt->second) {
+        int ei = indexOf(EscParam);
+        if (ei < 0) continue;
+        const PlannedOperand &Arg = Args[Off + (size_t)ei];
+        if (!isReferenceToLocalPage(Arg.ResultType)) continue;  // only $-local refs escape
+        for (const std::string &Dest : Dests) {
+            bool violates = false;
+            if (Dest == "@ext") {
+                violates = true;
+            } else {
+                int di = indexOf(Dest);
+                if (di < 0) continue;
+                violates = escapeDestArgOutlives(Args[Off + (size_t)di]);
+            }
+            if (violates) {
+                EscapeFound = true;
+                EscapeLoc = Call.Loc;
+                return;
+            }
+        }
+    }
+}
+
+void Planner::escapeWalkOperand(const PlannedOperand &Op) {
+    if (EscapeWalkMode == 1 && EscapeFound) return;
+    const PlannedExpression &E = Op.Expr;
+    if (const auto *C = std::get_if<PlannedCall>(&E)) {
+        escapeHandleCall(*C);
+        if (C->Args) escapeWalkOperands(*C->Args);
+    } else if (const auto *T = std::get_if<PlannedTuple>(&E)) {
+        for (const auto &Comp : T->Components) escapeWalkOperands(Comp.Value);
+    } else if (const auto *B = std::get_if<PlannedBlock>(&E)) {
+        for (const auto &S : B->Statements) {
+            // PlannedStatement by value here; reuse the shared_ptr walker shape.
+            auto SP = std::make_shared<PlannedStatement>(S);
+            escapeWalkStatement(SP);
+        }
+    } else if (const auto *If = std::get_if<PlannedIf>(&E)) {
+        escapeWalkOperands(If->Condition);
+        escapeWalkStatement(If->Consequent);
+        escapeWalkStatement(If->Alternative);
+    } else if (const auto *M = std::get_if<PlannedMatch>(&E)) {
+        escapeWalkOperands(M->Condition);
+        for (const auto &Br : M->Branches) {
+            for (const auto &Cs : Br.Cases) escapeWalkOperands(Cs.Condition);
+            escapeWalkStatement(Br.Consequent);
+        }
+        escapeWalkStatement(M->Alternative);
+    } else if (const auto *Ch = std::get_if<PlannedChoose>(&E)) {
+        escapeWalkOperands(Ch->Condition);
+        for (const auto &Cs : Ch->Cases) escapeWalkStatement(Cs.Consequent);
+        escapeWalkStatement(Ch->Alternative);
+    } else if (const auto *F = std::get_if<PlannedFor>(&E)) {
+        escapeWalkOperands(F->Expr);
+        escapeWalkAction(F->Body);
+    } else if (const auto *W = std::get_if<PlannedWhile>(&E)) {
+        escapeWalkOperands(W->Cond.Operation);
+        escapeWalkAction(W->Body);
+    } else if (const auto *Tr = std::get_if<PlannedTry>(&E)) {
+        escapeWalkOperands(Tr->Cond.Operation);
+        for (const auto &Ca : Tr->Catches) escapeWalkStatement(Ca.Consequent);
+        escapeWalkStatement(Tr->Alternative);
+    } else if (const auto *Is = std::get_if<PlannedIs>(&E)) {
+        if (Is->Value) escapeWalkOperand(*Is->Value);
+    } else if (const auto *As = std::get_if<PlannedAs>(&E)) {
+        if (As->Value) escapeWalkOperand(*As->Value);
+    } else if (const auto *VC = std::get_if<PlannedVariantConstruction>(&E)) {
+        if (VC->Value) escapeWalkOperand(*VC->Value);
+    } else if (const auto *Mx = std::get_if<PlannedMatrix>(&E)) {
+        for (const auto &Row : Mx->Operations) escapeWalkOperands(Row);
+    }
+}
+
+void Planner::escapeWalkOperands(const std::vector<PlannedOperand> &Ops) {
+    for (const auto &Op : Ops) {
+        if (EscapeWalkMode == 1 && EscapeFound) return;
+        escapeWalkOperand(Op);
+    }
+}
+
+void Planner::escapeWalkStatement(const std::shared_ptr<PlannedStatement> &Stmt) {
+    if (!Stmt) return;
+    if (EscapeWalkMode == 1 && EscapeFound) return;
+    if (const auto *A = std::get_if<PlannedAction>(Stmt.get())) {
+        escapeWalkAction(*A);
+    } else if (const auto *Bind = std::get_if<PlannedBinding>(Stmt.get())) {
+        escapeWalkOperands(Bind->Operation);
+    } else if (const auto *Ret = std::get_if<PlannedReturn>(Stmt.get())) {
+        escapeWalkOperands(Ret->Result);
+    } else if (const auto *Thr = std::get_if<PlannedThrow>(Stmt.get())) {
+        escapeWalkOperands(Thr->Result);
+    } else if (const auto *Brk = std::get_if<PlannedBreak>(Stmt.get())) {
+        escapeWalkOperands(Brk->Result);
+    }
+    // PlannedContinue: nothing to walk.
+}
+
+void Planner::escapeWalkAction(const PlannedAction &Act) {
+    escapeHandleStore(Act);
+    escapeWalkOperands(Act.Source);
+    escapeWalkOperands(Act.Target);
+}
+
+void Planner::escapeWalkImpl(const PlannedImplementation &Impl) {
+    if (const auto *A = std::get_if<PlannedAction>(&Impl)) {
+        escapeWalkAction(*A);
+    }
+}
+
+void Planner::escapeWalkFunction(const std::string &Mangled,
+                                 const std::vector<PlannedItem> &Input,
+                                 const std::optional<std::string> &PageParam,
+                                 const PlannedImplementation &Impl) {
+    EscapeFnMangled = Mangled;
+    EscapeFnParams.clear();
+    for (const auto &P : Input)
+        if (P.Name) EscapeFnParams.insert(*P.Name);
+    if (PageParam) EscapeFnParams.insert(*PageParam);
+    escapeWalkImpl(Impl);
+}
+
+llvm::Error Planner::checkInterproceduralEscapes() {
+    // Every planned function body — free functions AND methods — lives in
+    // InstantiatedFunctions (planFunction records each one). Operators are pure
+    // (cannot store) and initializers are reached via tuple construction, not a
+    // PlannedCall, so their summaries would never be consulted; both are
+    // excluded for increment 1 (kept symmetric with the self-hosted compiler).
+    // Register callee param-name lists for arg<->param mapping.
+    for (const auto &[Name, F] : InstantiatedFunctions)
+        escapeRegisterParams(F.MangledName, F.Input, F.PageParameter);
+
+    // Pass 0: build the escape summary.
+    EscapeWalkMode = 0;
+    for (const auto &[Name, F] : InstantiatedFunctions)
+        escapeWalkFunction(F.MangledName, F.Input, F.PageParameter, F.Impl);
+
+    // Pass 1: check every call against the summary.
+    EscapeWalkMode = 1;
+    EscapeFound = false;
+    for (const auto &[Name, F] : InstantiatedFunctions) {
+        escapeWalkFunction(F.MangledName, F.Input, F.PageParameter, F.Impl);
+        if (EscapeFound)
+            return makeEscapingReferenceError(File, EscapeLoc, "call");
+    }
+    return llvm::Error::success();
+}
+
 llvm::Expected<Plan> Planner::plan(const Program &Prog) {
     Plan Result;
 
@@ -13423,6 +13668,12 @@ llvm::Expected<Plan> Planner::plan(const Program &Prog) {
     }
     for (auto &Pair : PlannedGlobals) {
         Result.Globals[Pair.first] = Pair.second;
+    }
+
+    // Escape checker (RBMM blocker C), Vector 3: pass-to-storing-callee.
+    if (auto E = checkInterproceduralEscapes()) {
+        CurrentPlan = nullptr;
+        return std::move(E);
     }
 
     CurrentPlan = nullptr;

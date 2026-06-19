@@ -172,6 +172,24 @@ define PlannerDiagnostic
     message: String
 )
 
+; Escape checker (RBMM blocker C), Vector 3: pass-to-storing-callee.
+; One summary entry: the function at instantiated_functions[callee_fn_index]
+; STORES its parameter #param_index into frame-external memory. dest_kind 0 =
+; the destination is that callee's parameter #dest_index (e.g. `this.field`);
+; dest_kind 1 = the destination is a module global or a pointer deref (@ext,
+; always frame-external). callee_param_count is the callee's Input length, used
+; to align a call's args from the right (skipping any leading page arg).
+; Indices are computed at collect time so the per-call check needs no signature
+; lookup. Mirrors Planner.cpp's EscapeSummary/CalleeParamNames.
+define EscapeRecord
+(
+    callee_fn_index: size_t
+    callee_param_count: size_t
+    param_index: size_t
+    dest_kind: size_t
+    dest_index: size_t
+)
+
 define Planner
 {
     ; ========================================================================
@@ -366,6 +384,20 @@ define Planner
 
         ; Monotonic counter for synthesizing unique lambda names.
         next_lambda_id: size_t
+
+        ; Escape checker (RBMM blocker C), Vector 3 — interprocedural
+        ; pass-to-storing-callee. Built by check_interprocedural_escapes#
+        ; as a post-pass Plan-tree walk over instantiated_functions.
+        ; escape_records is the summary (see EscapeRecord); escape_checking
+        ; gates collect (false) vs check (true) mode; escape_fn_index names
+        ; the function currently being walked (re-fetched via
+        ; instantiated_functions.get to avoid storing its ref/String fields,
+        ; which corrupt — s34); escape_found short-circuits once a violation
+        ; has been reported.
+        escape_records: Array[EscapeRecord]
+        escape_checking: bool
+        escape_found: bool
+        escape_fn_index: size_t
     )
     {
         init#(page, filename: String)
@@ -397,6 +429,10 @@ define Planner
             set program_use_aliases: Array[String]^page()
             set program_use_namespaces: Array[String]^page()
             set next_lambda_id: 0
+            set escape_records: Array[EscapeRecord]^page()
+            set escape_checking: false
+            set escape_found: false
+            set escape_fn_index: 0
 
             ; Seed the function registry with C-runtime externs so name
             ; lookups for aligned_alloc/free/exit succeed from day one.
@@ -10704,6 +10740,594 @@ define Planner
             false
         }
 
+        ; ================================================================
+        ; Escape checker (RBMM blocker C), Vector 3: pass-to-storing-callee.
+        ;
+        ; A reference into a Local ($) page passed to a callee that STORES
+        ; it into frame-external memory (its `this`/param field, a global,
+        ; or a pointer deref) is a use-after-free once the local page is
+        ; freed at scope exit. Implemented as a POST-PASS Plan-tree walker
+        ; (call discovery in ONE place rather than the many scattered
+        ; PlannedCall construction sites in collapse_operand_sequence#).
+        ;
+        ; Two passes over every planned function body:
+        ;   Pass 0 (collect): record which parameter a function stores
+        ;                     frame-external, and into which destination.
+        ;   Pass 1 (check):   at each call, if a local-page-ref arg is bound
+        ;                     to such a param AND the destination outlives
+        ;                     the arg -> hard diagnostic.
+        ; Non-transitive (a param escaping only via a deeper escaping callee
+        ; is not chased) — documented limitation, mirrors Planner.cpp.
+        ;
+        ; The walk mirrors the Emitter's body walk EXACTLY (emit_function_body
+        ; -> emit_action -> emit_operands -> emit_operand / emit_statement),
+        ; the only shape proven not to corrupt under stage-0 codegen.
+        ; ================================================================
+
+        ; True when `t` is a bare reference-like type (pointer[T]/ref[T]),
+        ; regardless of pointee lifetime. Used at collect time on a callee's
+        ; stored parameter; the local-page determination happens at the call
+        ; site via is_reference_to_local_page. Mirrors isReferenceLikeType.
+        function is_reference_like(t: PlannedType) returns bool
+        {
+            let ptr_name String$("pointer")
+            guard t.name.equals(ptr_name)
+                return true
+            let ref_name String$("ref")
+            guard t.name.equals(ref_name)
+                return true
+            false
+        }
+
+        ; Index of a parameter named `name` in the CURRENT function's Input
+        ; (re-fetched via escape_fn_index), or -1. Excludes the page param
+        ; (which is not part of the arg<->param mapping), matching the C++
+        ; CalleeParamNames (Input only).
+        function escape_param_index_current(this: Planner, name: String) returns int
+        {
+            let fp instantiated_functions.get(escape_fn_index)
+            guard fp = null
+                return -1
+            guard fp.input = null
+                return -1
+            var i: size_t 0
+            while i < fp.input.length
+            {
+                let it_ptr fp.input.get(i)
+                guard it_ptr <> null
+                {
+                    let nm_ptr it_ptr.name
+                    guard nm_ptr <> null
+                    {
+                        let nm (*nm_ptr)
+                        guard nm.equals(name)
+                            return (i as int)
+                    }
+                }
+                set i: i + 1
+            }
+            -1
+        }
+
+        ; The current function's Input length (the callee param count recorded
+        ; in a summary entry; used to right-align a call's args).
+        function escape_current_param_count(this: Planner) returns size_t
+        {
+            let fp instantiated_functions.get(escape_fn_index)
+            guard fp = null
+                return 0
+            guard fp.input = null
+                return 0
+            fp.input.length
+        }
+
+        ; True when `name` is a parameter (or page receiver) of the CURRENT
+        ; function — i.e. caller-provided memory that outlives this frame.
+        ; Mirrors the EscapeFnParams membership test (Input + PageParam).
+        function escape_name_is_current_param(this: Planner, name: String) returns bool
+        {
+            let fp instantiated_functions.get(escape_fn_index)
+            guard fp = null
+                return false
+            guard fp.page_parameter <> null
+            {
+                let pp (*fp.page_parameter)
+                guard pp.equals(name)
+                    return true
+            }
+            guard fp.input = null
+                return false
+            var i: size_t 0
+            while i < fp.input.length
+            {
+                let it_ptr fp.input.get(i)
+                guard it_ptr <> null
+                {
+                    let nm_ptr it_ptr.name
+                    guard nm_ptr <> null
+                    {
+                        let nm (*nm_ptr)
+                        guard nm.equals(name)
+                            return true
+                    }
+                }
+                set i: i + 1
+            }
+            false
+        }
+
+        ; A destination arg outlives the (local-page) arg passed alongside it
+        ; when it refers to memory living beyond the current frame: a parameter
+        ; of the current function, or a #/^ allocated value, or a module
+        ; global. A same-frame $/stack local dies WITH the arg -> safe.
+        ; Mirrors Planner.cpp::escapeDestArgOutlives.
+        function escape_dest_arg_outlives(this: Planner, op: PlannedOperand) returns bool
+        {
+            choose op.expr
+                when v: Variable
+                {
+                    guard this.escape_name_is_current_param(v.name)
+                        return true
+                    choose op.result_type.life
+                        when c: Call
+                            return true
+                        when r: Reference
+                            return true
+                        else
+                            0
+                    choose v.variable_type.life
+                        when c: Call
+                            return true
+                        when r: Reference
+                            return true
+                        else
+                            0
+                    return false
+                }
+                when g: GlobalRef
+                    return true
+                else
+                    0
+            false
+        }
+
+        ; Pass 0: at a frame-external store of a current-function parameter
+        ; reference, record a summary entry. Reuses the Vector-2 store shape
+        ; (value = a bare reference-like param; target = param.field / global
+        ; / deref). Runs only in collect mode.
+        function escape_handle_store(this: Planner, act: PlannedAction)
+        {
+            guard escape_checking
+                return
+            guard act.source = null
+                return
+            guard act.target = null
+                return
+            guard act.source.length = 0
+                return
+            guard act.target.length = 0
+                return
+            let val_ptr act.source.get(0)
+            guard val_ptr = null
+                return
+            let tgt_ptr act.target.get(0)
+            guard tgt_ptr = null
+                return
+            let val val_ptr.unwrap()
+            let tgt tgt_ptr.unwrap()
+
+            ; Value must be a bare reference-like PARAMETER of the current fn.
+            var stored_param_index: int -1
+            choose val.expr
+                when v: Variable
+                {
+                    var val_has_member false
+                    guard val.member_access <> null
+                    {
+                        let vma (*val.member_access)
+                        guard vma.length > (0 as size_t)
+                            set val_has_member: true
+                    }
+                    guard val_has_member = false
+                    {
+                        guard Planner.is_reference_like(val.result_type)
+                            set stored_param_index: this.escape_param_index_current(v.name)
+                    }
+                }
+                else
+                    0
+            guard stored_param_index < 0
+                return
+
+            ; Destination: a param's `.field` (dest_kind 0) / global / deref
+            ; (dest_kind 1). A bare reassignment or same-frame local.field is
+            ; not frame-external -> skip.
+            var dest_kind: int -1
+            var dest_index: int 0
+            choose tgt.expr
+                when tv: Variable
+                {
+                    var tgt_has_member false
+                    guard tgt.member_access <> null
+                    {
+                        let tma (*tgt.member_access)
+                        guard tma.length > (0 as size_t)
+                            set tgt_has_member: true
+                    }
+                    guard tgt_has_member
+                    {
+                        let ti this.escape_param_index_current(tv.name)
+                        guard ti >= 0
+                        {
+                            set dest_kind: 0
+                            set dest_index: ti
+                        }
+                    }
+                }
+                when g: GlobalRef
+                    set dest_kind: 1
+                when c: Call
+                    set dest_kind: 1
+                else
+                    0
+            guard dest_kind < 0
+                return
+
+            let cpc this.escape_current_param_count()
+            escape_records.add(EscapeRecord(
+                escape_fn_index,
+                cpc,
+                (stored_param_index as size_t),
+                (dest_kind as size_t),
+                (dest_index as size_t)
+            ))
+        }
+
+        ; Pass 1: check one call against one summary entry.
+        function escape_check_call_record(this: Planner, call: PlannedCall, rec: EscapeRecord)
+        {
+            guard escape_found
+                return
+            let callee instantiated_functions.get(rec.callee_fn_index)
+            guard callee = null
+                return
+            guard callee.mangled_name.equals(call.mangled_name) = false
+                return
+            guard call.args = null
+                return
+            guard call.args.length < rec.callee_param_count
+                return
+            let off call.args.length - rec.callee_param_count
+            let arg_idx off + rec.param_index
+            guard arg_idx >= call.args.length
+                return
+            let arg_ptr call.args.get(arg_idx)
+            guard arg_ptr = null
+                return
+            let arg arg_ptr.unwrap()
+            guard Planner.is_reference_to_local_page(arg.result_type)
+            {
+                var violates false
+                guard rec.dest_kind = 1
+                    set violates: true
+                guard rec.dest_kind = 0
+                {
+                    let dest_idx off + rec.dest_index
+                    guard dest_idx < call.args.length
+                    {
+                        let dest_ptr call.args.get(dest_idx)
+                        guard dest_ptr <> null
+                            set violates: this.escape_dest_arg_outlives(dest_ptr.unwrap())
+                    }
+                }
+                guard violates
+                {
+                    this.add_diagnostic(call.loc, String^this("reference into a local ($) page escapes via call - the callee stores it into memory that outlives this frame; allocate with '#' (caller page) or '^name' (region)"))
+                    set escape_found: true
+                }
+            }
+        }
+
+        ; Pass 1: a call may match several summary entries (e.g. two escaping
+        ; params); check each.
+        function escape_handle_call(this: Planner, call: PlannedCall)
+        {
+            guard escape_checking = false
+                return
+            guard escape_found
+                return
+            guard call.args = null
+                return
+            var ri: size_t 0
+            while ri < escape_records.length
+            {
+                guard escape_found
+                    return
+                let rec_ptr escape_records.get(ri)
+                guard rec_ptr <> null
+                    this.escape_check_call_record(call, (*rec_ptr))
+                set ri: ri + 1
+            }
+        }
+
+        ; Walk all operands in a (nullable) operand vector. Takes the
+        ; ref[Vector]? field directly + auto-derefs (a by-value Vector param
+        ; corrupts .length). Element passed by value via .unwrap(), mirroring
+        ; emit_operands -> emit_operand(first.unwrap()).
+        function escape_walk_operands(this: Planner, ops: ref[Vector[PlannedOperand]]?)
+        {
+            guard escape_found
+                return
+            guard ops = null
+                return
+            var i: size_t 0
+            while i < ops.length
+            {
+                guard escape_found
+                    return
+                let op_ptr ops.get(i)
+                guard op_ptr <> null
+                    this.escape_walk_operand(op_ptr.unwrap())
+                set i: i + 1
+            }
+        }
+
+        ; Walk one statement reached through a ref[PlannedStatement]? field.
+        function escape_walk_statement_ref(this: Planner, stmt: ref[PlannedStatement]?)
+        {
+            guard escape_found
+                return
+            guard stmt <> null
+            {
+                let s stmt
+                this.escape_walk_statement((*s))
+            }
+        }
+
+        ; Walk one operand by value. choose op.expr mirrors emit_operand;
+        ; the recursive arms mirror Planner.cpp::escapeWalkOperand.
+        function escape_walk_operand(this: Planner, op: PlannedOperand)
+        {
+            guard escape_found
+                return
+            choose op.expr
+                when call: Call
+                {
+                    this.escape_handle_call(call)
+                    this.escape_walk_operands(call.args)
+                }
+                when tp: Tuple
+                {
+                    guard tp.components <> null
+                    {
+                        var i: size_t 0
+                        while i < tp.components.length
+                        {
+                            let c_ptr tp.components.get(i)
+                            guard c_ptr <> null
+                                this.escape_walk_operands(c_ptr.value)
+                            set i: i + 1
+                        }
+                    }
+                }
+                when blk: Block
+                {
+                    guard blk.statements <> null
+                    {
+                        var i: size_t 0
+                        while i < blk.statements.length
+                        {
+                            let s_ptr blk.statements.get(i)
+                            guard s_ptr <> null
+                                this.escape_walk_statement(s_ptr.unwrap())
+                            set i: i + 1
+                        }
+                    }
+                }
+                when iff: If
+                {
+                    this.escape_walk_operands(iff.condition)
+                    this.escape_walk_statement_ref(iff.consequent)
+                    this.escape_walk_statement_ref(iff.alternative)
+                }
+                when mt: Match
+                {
+                    this.escape_walk_operands(mt.condition)
+                    guard mt.branches <> null
+                    {
+                        var i: size_t 0
+                        while i < mt.branches.length
+                        {
+                            let br_ptr mt.branches.get(i)
+                            guard br_ptr <> null
+                            {
+                                let br (*br_ptr)
+                                guard br.cases <> null
+                                {
+                                    var ci: size_t 0
+                                    while ci < br.cases.length
+                                    {
+                                        let cs_ptr br.cases.get(ci)
+                                        guard cs_ptr <> null
+                                        {
+                                            let cs (*cs_ptr)
+                                            this.escape_walk_operands(cs.condition)
+                                        }
+                                        set ci: ci + 1
+                                    }
+                                }
+                                this.escape_walk_statement_ref(br.consequent)
+                            }
+                            set i: i + 1
+                        }
+                    }
+                    this.escape_walk_statement_ref(mt.alternative)
+                }
+                when ch: Choose
+                {
+                    this.escape_walk_operands(ch.condition)
+                    guard ch.cases <> null
+                    {
+                        var i: size_t 0
+                        while i < ch.cases.length
+                        {
+                            let w_ptr ch.cases.get(i)
+                            guard w_ptr <> null
+                            {
+                                let w (*w_ptr)
+                                this.escape_walk_statement_ref(w.consequent)
+                            }
+                            set i: i + 1
+                        }
+                    }
+                    this.escape_walk_statement_ref(ch.alternative)
+                }
+                when fr: For
+                {
+                    this.escape_walk_operands(fr.expr)
+                    this.escape_walk_action(fr.body)
+                }
+                when wh: While
+                {
+                    this.escape_walk_operands(wh.cond.operation)
+                    this.escape_walk_action(wh.body)
+                }
+                when tr: Try
+                {
+                    this.escape_walk_operands(tr.cond.operation)
+                    guard tr.catches <> null
+                    {
+                        var i: size_t 0
+                        while i < tr.catches.length
+                        {
+                            let w_ptr tr.catches.get(i)
+                            guard w_ptr <> null
+                            {
+                                let w (*w_ptr)
+                                this.escape_walk_statement_ref(w.consequent)
+                            }
+                            set i: i + 1
+                        }
+                    }
+                    this.escape_walk_statement_ref(tr.alternative)
+                }
+                when is_expr: Is
+                {
+                    guard is_expr.value <> null
+                    {
+                        let r is_expr.value
+                        this.escape_walk_operand((*r))
+                    }
+                }
+                when as_expr: As
+                {
+                    guard as_expr.value <> null
+                    {
+                        let r as_expr.value
+                        this.escape_walk_operand((*r))
+                    }
+                }
+                when vc: VariantConstruction
+                {
+                    guard vc.value <> null
+                    {
+                        let r vc.value
+                        this.escape_walk_operand((*r))
+                    }
+                }
+                when mx: Matrix
+                {
+                    guard mx.operations <> null
+                    {
+                        var i: size_t 0
+                        while i < mx.operations.length
+                        {
+                            let row_ptr mx.operations.get(i)
+                            guard row_ptr <> null
+                                this.escape_walk_operands(row_ptr)
+                            set i: i + 1
+                        }
+                    }
+                }
+                else
+                    0
+        }
+
+        ; Walk one statement by value. choose stmt mirrors emit_statement.
+        function escape_walk_statement(this: Planner, stmt: PlannedStatement)
+        {
+            guard escape_found
+                return
+            choose stmt
+                when action: Action
+                    this.escape_walk_action(action)
+                when binding: Binding
+                    this.escape_walk_operands(binding.operation)
+                when ret: Return
+                    this.escape_walk_operands(ret.result)
+                when throw_stmt: Throw
+                    this.escape_walk_operands(throw_stmt.result)
+                when brk: Break
+                    this.escape_walk_operands(brk.result)
+                when cont: Continue
+                    0
+        }
+
+        ; Walk one action by value (the whole PlannedAction, mirroring
+        ; emit_action(action)). Handle the store first, then recurse into
+        ; the source/target operand vectors.
+        function escape_walk_action(this: Planner, act: PlannedAction)
+        {
+            guard escape_found
+                return
+            this.escape_handle_store(act)
+            this.escape_walk_operands(act.source)
+            this.escape_walk_operands(act.target)
+        }
+
+        ; Walk one function body. Mirrors emit_function_body: choose func.impl
+        ; and feed the whole Action by value to escape_walk_action.
+        function escape_walk_function_body(this: Planner, func: PlannedFunction)
+        {
+            choose func.impl
+                when action: Action
+                    this.escape_walk_action(action)
+                else
+                    0
+        }
+
+        ; Post-pass entry: two passes over instantiated_functions.
+        function check_interprocedural_escapes(this: Planner)
+        {
+            ; Pass 0: build the escape summary.
+            set escape_checking: false
+            set escape_found: false
+            var i: size_t 0
+            for func in instantiated_functions
+            {
+                set escape_fn_index: i
+                this.escape_walk_function_body(func)
+                set i: i + 1
+            }
+
+            ; Clean code records nothing -> nothing to check.
+            guard escape_records.length = 0
+                return
+
+            ; Pass 1: check every call against the summary.
+            set escape_checking: true
+            var j: size_t 0
+            for func in instantiated_functions
+            {
+                guard escape_found = false
+                {
+                    set escape_fn_index: j
+                    this.escape_walk_function_body(func)
+                }
+                set j: j + 1
+            }
+        }
+
         function plan_return#(rp, this: Planner, r: Return) returns PlannedReturn
         {
             let planned_flat this.plan_operands#(r.result)
@@ -13085,6 +13709,11 @@ define Planner
 
             let planned_main this.plan_module#(prog.module_)
             let planned_stmts this.plan_statements#(prog.statements)
+
+            ; Escape checker (RBMM blocker C), Vector 3: pass-to-storing-callee.
+            ; Runs once instantiated_functions is fully populated; appends a
+            ; hard diagnostic (failed at cli.run) on a detected escape.
+            this.check_interprocedural_escapes()
 
             var stmts_holder Vector[PlannedStatement]^rp(planned_stmts)
             var structs_holder Vector[PlannedStructure]^rp(instantiated_structures)

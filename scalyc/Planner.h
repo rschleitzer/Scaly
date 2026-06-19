@@ -147,6 +147,26 @@ private:
     // Track if current function uses $ allocations (needs local page)
     bool CurrentFunctionUsesLocalLifetime = false;
 
+    // ===== Escape checker (RBMM blocker C), Vector 3: pass-to-storing-callee ====
+    // A reference into a Local ($) page passed to a callee that STORES it into
+    // frame-external memory is a use-after-free once the local page is freed at
+    // scope exit. Built as a post-pass Plan-tree walker (call discovery lives in
+    // one place rather than the many scattered PlannedCall construction sites).
+    //
+    // Summary: callee-mangled -> (escaping-param-name -> set of destinations).
+    // A destination is either a callee parameter name (the param escapes into
+    // THAT param's `.field`, e.g. `this`) or "@ext" (escapes into a module
+    // global or through a pointer deref — always frame-external).
+    std::map<std::string, std::map<std::string, std::set<std::string>>> EscapeSummary;
+    // callee-mangled -> ordered parameter names (for arg<->param mapping).
+    std::map<std::string, std::vector<std::string>> CalleeParamNames;
+    // Transient walk state.
+    int EscapeWalkMode = 0;                 // 0 = collect summary, 1 = check calls
+    std::set<std::string> EscapeFnParams;   // current function's parameter names
+    std::string EscapeFnMangled;            // current function's mangled name
+    bool EscapeFound = false;               // a violation was detected (check mode)
+    Span EscapeLoc;                         // location of the violation
+
     // Recursion depth tracking for stack overflow prevention
     // Note: Each planning frame is ~200KB due to std::variant and locals
     // Max depth of 200 requires ~40MB stack - use ulimit -s unlimited for large files
@@ -374,6 +394,24 @@ private:
     // ========== Module Planning ==========
 
     llvm::Expected<PlannedModule> planModule(const Module &Mod);
+
+    // ===== Escape checker (Vector 3) post-pass over the completed Plan =====
+    llvm::Error checkInterproceduralEscapes();
+    void escapeRegisterParams(const std::string &Mangled,
+                              const std::vector<PlannedItem> &Input,
+                              const std::optional<std::string> &PageParam);
+    void escapeWalkFunction(const std::string &Mangled,
+                            const std::vector<PlannedItem> &Input,
+                            const std::optional<std::string> &PageParam,
+                            const PlannedImplementation &Impl);
+    void escapeWalkImpl(const PlannedImplementation &Impl);
+    void escapeWalkAction(const PlannedAction &Act);
+    void escapeWalkStatement(const std::shared_ptr<PlannedStatement> &Stmt);
+    void escapeWalkOperands(const std::vector<PlannedOperand> &Ops);
+    void escapeWalkOperand(const PlannedOperand &Op);
+    void escapeHandleStore(const PlannedAction &Act);
+    void escapeHandleCall(const PlannedCall &Call);
+    bool escapeDestArgOutlives(const PlannedOperand &Op);
 
     // ========== Scope Management ==========
 

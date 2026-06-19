@@ -1,0 +1,30 @@
+; OK (positive control): passing a $-local ref to a storing callee whose
+; receiver is ALSO a same-frame local — the receiver struct (`h`) and the
+; pointee (`bx`) die together at scope exit, so nothing escapes. Must COMPILE
+; (no false positive — `h` is a local var, not a parameter).
+define Box
+(
+    v: int
+)
+define Holder
+(
+    b: pointer[Box]
+)
+{
+    procedure stash(this, p: pointer[Box])
+        set this.b: p
+}
+
+function build() returns int
+{
+    let bx0 Box$(1)
+    var h Holder(&bx0)
+    let bx Box$(7)
+    h.stash(&bx)
+    return (*h.b).v
+}
+
+function main() returns int
+{
+    return 0
+}
