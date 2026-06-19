@@ -4183,6 +4183,19 @@ define symbols
     ; Enumerate the .scaly files under `dir` (recursively) and return the first
     ; one (other than `self_path`) declaring `name`, as a Location pointing at
     ; that file. "" if none / empty dir.
+    ;
+    ; Step 29: instead of re-parsing each file with find_definition# on every
+    ; request, query the persistent symindex — the SAME content-hash-cached ws
+    ; symbol blobs workspace/symbol and semanticTokens build (parse-once,
+    ; shared). Each cached record carries a full SymbolInformation whose
+    ; location object holds a SPAN range (uri + selecting range), so a cross-file
+    ; definition is answered straight from a cached record (def_from_ws_blob#) —
+    ; no re-parse, no new blob data. The first def-on-miss in a session warms the
+    ; index; later def / workspace-symbol / semanticTokens requests reuse it.
+    ; RANGE NOTE: the cached location's range is a SPAN (selects the decl), where
+    ; the current-file path (definition_packed#) returns a zero-width range
+    ; (jump-without-select). A span is valid LSP and nicer for cross-file (it's
+    ; what workspace/symbol already ships) — kept intentionally.
     function find_definition_in_dir#(rp, dir: String, self_path: String, name: String) returns String
     {
         guard dir.get_length() = (0 as size_t)
@@ -4205,8 +4218,17 @@ define symbols
                             guard File.exists(fpath)
                             {
                                 let fsrc File.read_to_string#(fpath)
-                                let furi symbols.path_to_uri#(fpath)
-                                set result: symbols.find_definition#(fsrc, furi, name)
+                                let chash fsrc.hash()
+                                var blob String#("")
+                                guard symindex.valid(fpath, chash)
+                                    set blob: symindex.get_blob#(fpath)
+                                guard symindex.valid(fpath, chash) = false
+                                {
+                                    let furi symbols.path_to_uri#(fpath)
+                                    set blob: symbols.workspace_symbols_in_file#(fsrc, furi)
+                                    symindex.put(fpath, chash, blob)
+                                }
+                                set result: symbols.def_from_ws_blob#(blob, name)
                             }
                 }
                 set line_start: i + (1 as size_t)
@@ -4214,6 +4236,93 @@ define symbols
             set i: i + (1 as size_t)
         }
         result
+    }
+
+    ; Walk a cached ws symbol blob (records "name<TAB>{json}<LF>") and return the
+    ; location object of the FIRST record whose name EXACTLY equals `name`, or "".
+    ; Records are in declaration order, so the first exact match is the file's
+    ; first declaration of `name` — matching find_definition#'s first-wins.
+    ; EXACT byte match (NOT name_matches, which is case-insensitive SUBSTRING —
+    ; wrong for a definition jump). The returned location object is the same
+    ; {uri,range} shape find_definition# emits (range here is a SPAN). The
+    ; location is the LAST field in each record's json, single-line; its value
+    ; is extracted by finding the "location": needle and taking the balanced
+    ; {...} after it (depth-tracked — the range nests {start{},end{}}).
+    function def_from_ws_blob#(rp, blob: String, name: String) returns String
+    {
+        var needle StringBuilder#()
+        needle.append(0x22 as char)                ; "
+        needle.append("location")
+        needle.append(0x22 as char)                ; "
+        needle.append(0x3A as char)                ; :
+        let loc_needle needle.to_string#()
+        let ln loc_needle.get_length()
+
+        let nm_len name.get_length()
+        let n blob.get_length()
+        var rec_start: size_t 0
+        var i: size_t 0
+        while i < n
+        {
+            guard blob.get(i) = (10 as u8)             ; record terminator
+            {
+                ; name = [rec_start, tab)
+                var tab rec_start
+                while tab < i
+                {
+                    guard blob.get(tab) = (9 as u8)
+                        break
+                    set tab: tab + (1 as size_t)
+                }
+                ; exact name match
+                guard tab - rec_start = nm_len
+                {
+                    var matched true
+                    var k: size_t 0
+                    while k < nm_len
+                    {
+                        guard blob.get(rec_start + k) <> name.get(k)
+                        {
+                            set matched: false
+                            break
+                        }
+                        set k: k + (1 as size_t)
+                    }
+                    guard matched
+                    {
+                        ; find "location": in the json part [tab, i)
+                        var s tab
+                        while s + ln <= i
+                        {
+                            guard symbols.matches_at(blob, s, loc_needle)
+                            {
+                                ; balanced {...} after the needle
+                                var lstart s + ln
+                                var j lstart
+                                var depth: i64 0
+                                while j < i
+                                {
+                                    let c blob.get(j)
+                                    guard c = (0x7B as u8)
+                                        set depth: depth + (1 as i64)
+                                    guard c = (0x7D as u8)
+                                    {
+                                        set depth: depth - (1 as i64)
+                                        guard depth = (0 as i64)
+                                            return symbols.substring#(blob, lstart, j + (1 as size_t))
+                                    }
+                                    set j: j + (1 as size_t)
+                                }
+                            }
+                            set s: s + (1 as size_t)
+                        }
+                    }
+                }
+                set rec_start: i + (1 as size_t)
+            }
+            set i: i + (1 as size_t)
+        }
+        String#("")
     }
 
     ; ====================================================================

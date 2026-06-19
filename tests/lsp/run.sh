@@ -882,6 +882,75 @@ PY
 rc=$?
 if [ $rc -eq 0 ]; then ok "lsp workspace symbol index"; else bad "lsp workspace symbol index"; fi
 
+# ---- cross-file definition via the persistent symindex (Step 29) ----
+# Cross-file go-to-definition now queries the SAME content-hash-cached symbol
+# blobs workspace/symbol / semanticTokens build, instead of re-parsing each
+# sibling per request. This interleaves I/O (Popen) to prove the cache across
+# requests in ONE session: a def-on-miss warms the index; a disk change to the
+# target file between two identical queries is picked up via content-hash
+# invalidation (the decl moves down); a repeated query is stable (cache reuse).
+python3 - <<'PY'
+import sys, json, subprocess, os, tempfile
+d = tempfile.mkdtemp(prefix="lsp_xdefcache_")
+hp = os.path.join(d, "helper.scaly")
+cp = os.path.join(d, "caller.scaly")
+helper_v1 = ("function xfn_target(n: int) returns int\n{\n    return n + 1\n}\n")
+helper_v2 = ("function filler() returns int\n{\n    return 0\n}\n\n"
+             "function xfn_target(n: int) returns int\n{\n    return n + 1\n}\n")
+caller = ("function caller(x: int) returns int\n{\n    let v xfn_target(x)\n    return v\n}\n")
+open(hp, "w").write(helper_v1)
+open(cp, "w").write(caller)
+curi = "file://"+cp; huri = "file://"+hp
+xc = caller.split("\n")[2].index("xfn_target") + 1   # `xfn_target` call site col
+def frame(o):
+    s = json.dumps(o).encode(); return ("Content-Length: %d\r\n\r\n" % len(s)).encode() + s
+p = subprocess.Popen(["/tmp/scalyls"], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+def send(o):
+    p.stdin.write(frame(o)); p.stdin.flush()
+def read_frame():
+    hdr = b""
+    while b"\r\n\r\n" not in hdr:
+        ch = p.stdout.read(1)
+        if not ch: return None
+        hdr += ch
+    n = int(hdr.split(b"\r\n")[0].split(b":")[1].strip())
+    return json.loads(p.stdout.read(n))
+def result_for(idn):
+    while True:
+        f = read_frame()
+        if f is None: return None
+        if f.get("id") == idn: return f.get("result")
+def df(idn):
+    return {"jsonrpc":"2.0","id":idn,"method":"textDocument/definition",
+            "params":{"textDocument":{"uri":curi},"position":{"line":2,"character":xc}}}
+def at(r):
+    return None if r is None else (r["uri"], r["range"]["start"]["line"])
+
+send({"jsonrpc":"2.0","id":1,"method":"initialize","params":{"rootUri":"file://"+d}})
+result_for(1)
+send({"jsonrpc":"2.0","method":"initialized","params":{}})
+send(df(2)); q1 = at(result_for(2))            # def-on-miss warms the index
+open(hp, "w").write(helper_v2)                 # decl moves to line 5 on disk
+send(df(3)); q2 = at(result_for(3))            # content-hash invalidation
+send(df(4)); q3 = at(result_for(4))            # cache reuse, stable
+send({"jsonrpc":"2.0","id":9,"method":"shutdown"})
+result_for(9)
+send({"jsonrpc":"2.0","method":"exit"})
+p.wait()
+
+failures = 0
+def check(cond, label):
+    global failures
+    print(("PASS  " if cond else "FAIL  ") + label)
+    if not cond: failures += 1
+check(q1 == (huri, 0), "cross-file def resolves (helper.scaly:0), warming the index")
+check(q2 == (huri, 5), "disk change picked up (content-hash invalidation, decl now :5)")
+check(q3 == (huri, 5), "repeated query stable (cache reuse)")
+sys.exit(1 if failures else 0)
+PY
+rc=$?
+if [ $rc -eq 0 ]; then ok "lsp cross-file definition cache"; else bad "lsp cross-file definition cache"; fi
+
 # ---- type-aware completion (variable receivers, lexical) ----
 # A variable receiver `v.` resolves `v`'s declared type lexically (constructor
 # `var v T#(...)`, annotated `v: T`, parameter `(v: T)`, or `this: T`) and then
