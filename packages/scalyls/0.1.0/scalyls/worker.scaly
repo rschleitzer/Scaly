@@ -35,6 +35,7 @@ use scaly.memory.runtime
 use scalyls.rpc
 use scalyls.diagnostics
 use scalyls.symbols
+use scalyls.semantic
 
 ; POSIX process / pipe primitives (libc). Declared here rather than in the
 ; scaly package so no scaly/scalyc source is touched (fixpoint-safe).
@@ -230,6 +231,17 @@ define worker
             return true
         }
 
+        ; semantic type: run the modeler+planner and resolve the type at the
+        ; packed "<line> <char>" position. Returns the raw resolved type name
+        ; (e.g. "int"), or "" on a miss / parse error / unresolved. The full
+        ; pipeline can crash/hang here; the isolation + 8s poll handle it, and
+        ; the server falls back to the lexical hover on an empty reply.
+        guard kind.equals("x")
+        {
+            rpc.write_message_fd(out_fd, semantic.semantic_type_framed#(source, uri, position))
+            return true
+        }
+
         rpc.write_message_fd(out_fd, diagnostics.publish_diagnostics#(uri, source))
         true
     }
@@ -389,6 +401,13 @@ define worker
     ; `[]` if unavailable / crashed / hung.
     function folding#(rp, uri: String, text: String) returns String
         worker.exchange#("o", uri, text, String#(""), String#("[]"))
+
+    ; Semantic type at the packed "<line> <char>" position. `text` is the
+    ; in-memory copy (empty -> worker reads disk). Returns the framed reply
+    ; "1<name>" on a hit, "0" on a miss, or "" if unavailable / crashed / hung
+    ; (the server decodes the tag and falls back to the lexical hover).
+    function semantic_type#(rp, uri: String, text: String, packed: String) returns String
+        worker.exchange#("x", uri, text, packed, String#(""))
 
     ; semanticTokens for `uri` (uri-only, no position). `text` is the in-memory
     ; copy (empty -> worker reads disk). Returns the LSP {"data":[...]} object;

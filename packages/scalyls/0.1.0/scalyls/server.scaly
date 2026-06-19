@@ -376,8 +376,42 @@ define server
         let packed pb.to_string#()
 
         let text docstore.get#(uri)
-        let result worker.hover#(uri, text, packed)
-        rpc.write_message(server.hover_response#(id, result))
+        ; PREFER the planner-resolved type (handles reassigned vars, generic
+        ; element types, pointer/ref inner types, mid-chain calls). The
+        ; semantic query runs the full pipeline in the worker and can
+        ; crash/hang; on an empty/miss reply FALL BACK to the lexical hover
+        ; walk (a separate worker round-trip, so a pipeline crash here never
+        ; costs the lexical answer).
+        let sem worker.semantic_type#(uri, text, packed)
+        var value server.semantic_hover_from_framed#(sem)
+        guard value.get_length() = (0 as size_t)
+            set value: worker.hover#(uri, text, packed)
+        rpc.write_message(server.hover_response#(id, value))
+    }
+
+    ; Decode the worker's framed semantic-type reply ("1<name>" hit / "0" miss
+    ; / "" crash) into an LSP hover object, or "" on a miss/crash so the
+    ; caller falls back to the lexical hover.
+    function semantic_hover_from_framed#(rp, framed: String) returns String
+    {
+        guard framed.get_length() = (0 as size_t)
+            return String#("")
+        let tag framed.get(0 as size_t)
+        guard tag <> (0x31 as u8)
+            return String#("")
+        let tname framed.substring(rp, 1 as size_t, framed.get_length() - (1 as size_t))
+        var sb StringBuilder#()
+        sb.append(0x7B as char)                    ; {
+        sb.append(server.key#("contents"))
+        sb.append(0x7B as char)                    ; contents {
+        sb.append(server.key#("kind"))
+        sb.append(json.quote_string#(String#("markdown")))
+        sb.append(0x2C as char)
+        sb.append(server.key#("value"))
+        sb.append(json.quote_string#(tname))
+        sb.append(0x7D as char)                    ; }
+        sb.append(0x7D as char)                    ; }
+        sb.to_string#()
     }
 
     ; definition: like hover, the request carries a uri + {line,character}.

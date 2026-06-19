@@ -1954,6 +1954,151 @@ PY
 rc=$?
 if [ $rc -eq 0 ]; then ok "lsp semanticTokens cross-package"; else bad "lsp semanticTokens cross-package"; fi
 
+# ---- semantic hover: planner-resolved types the lexical walk can't do ----
+# Runs the full modeler+planner in the worker and maps the cursor offset to
+# the innermost planned node's resolved type. Verifies the four lexical-
+# impossible cases (generic element type, call result, pointer/ref inner,
+# mid-chain call), the lexical FALLBACK on a declaration / whitespace, and
+# that a parse-error document still gets a (null) answer without crashing.
+python3 - <<'PY'
+import sys, json, subprocess
+src = ("define Box[T](value: T)\n"
+       "{\n"
+       "    function get(this: Box[T]) returns T\n"
+       "    {\n"
+       "        return value\n"
+       "    }\n"
+       "}\n"
+       "\n"
+       "define Inner(z: int)\n"
+       "{\n"
+       "    function gz(this: Inner) returns int\n"
+       "    {\n"
+       "        return z\n"
+       "    }\n"
+       "}\n"
+       "\n"
+       "define Outer(inner: Inner)\n"
+       "{\n"
+       "    function gi(this: Outer) returns Inner\n"
+       "    {\n"
+       "        return inner\n"
+       "    }\n"
+       "}\n"
+       "\n"
+       "function make() returns int\n"
+       "{\n"
+       "    return 7\n"
+       "}\n"
+       "\n"
+       "function use_it(p: pointer[int], o: Outer) returns int\n"
+       "{\n"
+       "    var b Box[int](5)\n"
+       "    let g b.get()\n"
+       "    let r make()\n"
+       "    let v *p\n"
+       "    let c o.gi().z\n"
+       "    return r\n"
+       "}\n")
+path = "/tmp/lsp_sem_hover.scaly"
+open(path, "w").write(src)
+lines = src.split("\n")
+def loc(unique, token):
+    li = next(i for i, l in enumerate(lines) if unique in l)
+    return li, lines[li].index(token)
+def frame(o):
+    b=json.dumps(o).encode(); return ("Content-Length: %d\r\n\r\n"%len(b)).encode()+b
+def hov(idn, line, char):
+    return frame({"jsonrpc":"2.0","id":idn,"method":"textDocument/hover",
+                  "params":{"textDocument":{"uri":"file://"+path},
+                            "position":{"line":line,"character":char}}})
+# Case positions (located by substring so line/col stay correct on edits).
+g_l, g_c   = loc("let g b.get()", "get")       # generic element type -> int
+mk_l, mk_c = loc("let r make()",  "make")      # call result          -> int
+pt_l, pt_c = loc("let v *p",      "*")         # pointer inner (*p)   -> int
+ch_l, ch_c = loc("let c o.gi().z","gi")        # mid-chain a.f().b    -> int
+de_l, de_c = loc("function make()","make")     # declaration name -> lexical
+inp  = frame({"jsonrpc":"2.0","id":1,"method":"initialize","params":{}})
+inp += frame({"jsonrpc":"2.0","method":"initialized","params":{}})
+inp += hov(2, g_l, g_c)
+inp += hov(3, mk_l, mk_c)
+inp += hov(4, pt_l, pt_c)
+inp += hov(5, ch_l, ch_c)
+inp += hov(6, de_l, de_c)
+inp += frame({"jsonrpc":"2.0","id":7,"method":"shutdown"})
+inp += frame({"jsonrpc":"2.0","method":"exit"})
+out = subprocess.run(["/tmp/scalyls"], input=inp, stdout=subprocess.PIPE).stdout
+frames, d = [], out
+while d:
+    i = d.find(b"\r\n\r\n")
+    if i < 0: break
+    n = int(d[:i].decode().split(":")[1].strip())
+    frames.append(json.loads(d[i+4:i+4+n])); d = d[i+4+n:]
+failures = 0
+def check(cond, label):
+    global failures
+    print(("PASS  " if cond else "FAIL  ") + label)
+    if not cond: failures += 1
+def val(idn):
+    f = next((x for x in frames if x.get("id") == idn), None)
+    r = (f or {}).get("result")
+    if r is None: return None
+    return r.get("contents", {}).get("value")
+check(val(2) == "int", "generic element type b.get() -> int (lexical sees T)")
+check(val(3) == "int", "call result make() -> int")
+check(val(4) == "int", "pointer inner *p -> int")
+check(val(5) == "int", "mid-chain o.gi().z -> int (lexical stops at '(')")
+check(val(6) == "function make", "declaration name falls back to lexical hover")
+sys.exit(1 if failures else 0)
+PY
+rc=$?
+if [ $rc -eq 0 ]; then ok "lsp semantic hover"; else bad "lsp semantic hover"; fi
+
+# ---- semantic hover fallback: parse-error input still answers (no crash) ----
+# A broken document fails the pipeline; the server must still return a valid
+# response (null) and stay alive to answer the next request.
+python3 - <<'PY'
+import sys, json, subprocess
+bad = "/tmp/lsp_sem_bad.scaly"
+open(bad, "w").write("function broken(a: int \n{\n    return a\n")  # missing ')'
+good = "/tmp/lsp_sem_good.scaly"
+open(good, "w").write("function fine(a: int) returns int\n{\n    return a\n}\n")
+def frame(o):
+    b=json.dumps(o).encode(); return ("Content-Length: %d\r\n\r\n"%len(b)).encode()+b
+def hov(idn, p, line, char):
+    return frame({"jsonrpc":"2.0","id":idn,"method":"textDocument/hover",
+                  "params":{"textDocument":{"uri":"file://"+p},
+                            "position":{"line":line,"character":char}}})
+inp  = frame({"jsonrpc":"2.0","id":1,"method":"initialize","params":{}})
+inp += frame({"jsonrpc":"2.0","method":"initialized","params":{}})
+inp += hov(2, bad, 0, 12)                  # parse-error doc -> null, no crash
+inp += hov(3, good, 0, 9)                  # server still alive -> lexical "function fine"
+inp += frame({"jsonrpc":"2.0","id":4,"method":"shutdown"})
+inp += frame({"jsonrpc":"2.0","method":"exit"})
+out = subprocess.run(["/tmp/scalyls"], input=inp, stdout=subprocess.PIPE).stdout
+frames, d = [], out
+while d:
+    i = d.find(b"\r\n\r\n")
+    if i < 0: break
+    n = int(d[:i].decode().split(":")[1].strip())
+    frames.append(json.loads(d[i+4:i+4+n])); d = d[i+4+n:]
+failures = 0
+def check(cond, label):
+    global failures
+    print(("PASS  " if cond else "FAIL  ") + label)
+    if not cond: failures += 1
+def get(idn): return next((x for x in frames if x.get("id") == idn), None)
+f2 = get(2)
+check(f2 is not None and f2.get("result") is None, "parse-error hover -> null (no crash)")
+f3 = get(3)
+v3 = (f3 or {}).get("result", {})
+v3 = v3.get("contents", {}).get("value") if v3 else None
+check(v3 == "function fine", "server alive after parse error -> lexical hover answers")
+sys.exit(1 if failures else 0)
+PY
+rc=$?
+if [ $rc -eq 0 ]; then ok "lsp semantic hover fallback"; else bad "lsp semantic hover fallback"; fi
+
 echo "-----"
 echo "PASS: $pass  FAIL: $fail"
 [ $fail -eq 0 ]
