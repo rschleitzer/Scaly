@@ -633,6 +633,93 @@ PY
 rc=$?
 if [ $rc -eq 0 ]; then ok "lsp rename"; else bad "lsp rename"; fi
 
+# ---- scope-aware references / rename / prepareRename ----
+# References and rename are lexical whole-token scans, but now (1) skip comments
+# and string literals, and (2) confine a local/parameter to its declaring
+# routine (a module/file-wide name still scans the whole file). prepareRename
+# rejects a cursor on a keyword, in a comment, or in a string literal.
+python3 - <<'PY'
+import sys, json, subprocess
+src = ("function alpha() returns int\n"                       # 0
+       "{\n"                                                  # 1
+       "    var x 1            ; mentions x in a comment\n"   # 2
+       "    let y \"x inside a string literal\"\n"            # 3
+       "    return x\n"                                       # 4
+       "}\n"                                                  # 5
+       "\n"                                                   # 6
+       "function beta() returns int\n"                        # 7
+       "{\n"                                                  # 8
+       "    var x 2\n"                                        # 9
+       "    return alpha() + x\n"                             # 10
+       "}\n")                                                 # 11
+path = "/tmp/lsp_scope_test.scaly"
+open(path, "w").write(src)
+def frame(o):
+    b=json.dumps(o).encode(); return ("Content-Length: %d\r\n\r\n"%len(b)).encode()+b
+def rf(idn, line, char):
+    return frame({"jsonrpc":"2.0","id":idn,"method":"textDocument/references",
+                  "params":{"textDocument":{"uri":"file://"+path},
+                            "position":{"line":line,"character":char},
+                            "context":{"includeDeclaration":True}}})
+def pr(idn, line, char):
+    return frame({"jsonrpc":"2.0","id":idn,"method":"textDocument/prepareRename",
+                  "params":{"textDocument":{"uri":"file://"+path},
+                            "position":{"line":line,"character":char}}})
+def rn(idn, line, char, name):
+    return frame({"jsonrpc":"2.0","id":idn,"method":"textDocument/rename",
+                  "params":{"textDocument":{"uri":"file://"+path},
+                            "position":{"line":line,"character":char},"newName":name}})
+inp  = frame({"jsonrpc":"2.0","id":1,"method":"initialize","params":{}})
+inp += frame({"jsonrpc":"2.0","method":"initialized","params":{}})
+inp += rf(2, 2, 8)        # local x in alpha -> 2 (alpha only; not beta/comment/string)
+inp += rf(3, 9, 8)        # local x in beta  -> 2 (beta only)
+inp += rf(4, 0, 9)        # module-wide alpha -> 2 (decl + cross-routine call)
+inp += rn(5, 2, 8, "q")   # rename local x in alpha -> 2 edits (alpha only)
+inp += pr(6, 2, 28)       # prepareRename inside the comment -> null
+inp += pr(7, 3, 14)       # prepareRename inside the string literal -> null
+inp += pr(8, 0, 2)        # prepareRename on keyword `function` -> null
+inp += pr(9, 2, 8)        # prepareRename on local x -> its range
+inp += frame({"jsonrpc":"2.0","id":9,"method":"shutdown"})
+inp += frame({"jsonrpc":"2.0","method":"exit"})
+out = subprocess.run(["/tmp/scalyls"], input=inp, stdout=subprocess.PIPE).stdout
+frames, d = [], out
+while d:
+    i = d.find(b"\r\n\r\n")
+    if i < 0: break
+    n = int(d[:i].decode().split(":")[1].strip())
+    frames.append(json.loads(d[i+4:i+4+n])); d = d[i+4+n:]
+failures = 0
+def check(cond, label):
+    global failures
+    print(("PASS  " if cond else "FAIL  ") + label)
+    if not cond: failures += 1
+def res(idn):
+    f = next((x for x in frames if x.get("id") == idn), None)
+    return (f or {}).get("result")
+def starts(idn):
+    return sorted((x["range"]["start"]["line"], x["range"]["start"]["character"]) for x in (res(idn) or []))
+# (1) local x in alpha: only alpha's two occurrences (decl line 2, use line 4);
+#     NOT beta's x, NOT the `x` in the comment, NOT the `x` in the string.
+check(starts(2) == [(2,8),(4,11)], "local x in alpha -> 2 refs (scoped; no comment/string/beta)")
+# (2) local x in beta: only beta's two occurrences (decl line 9, use line 10).
+check(starts(3) == [(9,8),(10,21)], "local x in beta -> 2 refs (not alpha's x)")
+# (3) module-wide alpha still matches across routines (decl + the call in beta).
+check(starts(4) == [(0,9),(10,11)], "module-wide alpha -> 2 refs across routines")
+# rename a local renames only its own routine's occurrences.
+ed = ((res(5) or {}).get("changes") or {}).get("file://"+path)
+ed_starts = sorted((e["range"]["start"]["line"], e["range"]["start"]["character"]) for e in (ed or []))
+check(ed_starts == [(2,8),(4,11)], "rename local x in alpha -> 2 edits (scoped to alpha)")
+# prepareRename rejects comment / string / keyword.
+check(res(6) is None, "prepareRename inside a comment -> null")
+check(res(7) is None, "prepareRename inside a string literal -> null")
+check(res(8) is None, "prepareRename on a keyword -> null")
+check(res(9) == {"start":{"line":2,"character":8},"end":{"line":2,"character":9}},
+      "prepareRename on a local identifier -> its range")
+sys.exit(1 if failures else 0)
+PY
+rc=$?
+if [ $rc -eq 0 ]; then ok "lsp scope-aware refs/rename"; else bad "lsp scope-aware refs/rename"; fi
+
 # ---- context-aware completion (member-after-`.`, lexical) ----
 # When a `.` precedes the cursor and its receiver names a declared concept,
 # completion returns only that concept's members. A struct receiver yields

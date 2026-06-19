@@ -1572,6 +1572,23 @@ define symbols
         String#("")
     }
 
+    ; One routine-range record "R\t<start>\t<end>\n", emitted for EVERY routine
+    ; (function/procedure/operator/init/method) regardless of whether it has
+    ; parameters, so the enclosing-routine lookup (scope-aware references/rename)
+    ; can find the routine containing any cursor. param_in_scope /
+    ; is_field_decl_offset both skip unknown tags, so adding R is safe for them.
+    function r_record#(rp, start: size_t, end: size_t) returns String
+    {
+        var sb StringBuilder#()
+        sb.append(0x52 as char)                    ; R
+        sb.append(0x09 as char)                    ; tab
+        sb.append(json.format_i64#(start as i64))
+        sb.append(0x09 as char)
+        sb.append(json.format_i64#(end as i64))
+        sb.append(0x0A as char)                    ; newline
+        sb.to_string#()
+    }
+
     ; One field-declaration record "F\t<offset>\n".
     function f_record#(rp, off: size_t) returns String
     {
@@ -1587,16 +1604,24 @@ define symbols
     ; routine target has no name to scope but its params still apply).
     function st_target#(rp, source: String, start: size_t, end: size_t, target: TargetSyntax) returns String
     {
+        var sb StringBuilder#()
+        sb.append(symbols.r_record#(start, end))
         choose target
             when named: NamedSyntax
-                return symbols.param_record#(start, end, symbols.params_set_names#(named.routine.parameters))
+                sb.append(symbols.param_record#(start, end, symbols.params_set_names#(named.routine.parameters)))
             when r: RoutineSyntax
-                return symbols.param_record#(start, end, symbols.params_set_names#(r.parameters))
+                sb.append(symbols.param_record#(start, end, symbols.params_set_names#(r.parameters)))
+        sb.to_string#()
     }
 
     ; The scope record for an init (its `page`/explicit params are colourable).
     function st_init#(rp, source: String, start: size_t, end: size_t, parameters: ref[ParameterSetSyntax]?) returns String
-        symbols.param_record#(start, end, symbols.params_set_names#(parameters))
+    {
+        var sb StringBuilder#()
+        sb.append(symbols.r_record#(start, end))
+        sb.append(symbols.param_record#(start, end, symbols.params_set_names#(parameters)))
+        sb.to_string#()
+    }
 
     ; One structure part -> its field-declaration record (verified against the
     ; declared name so a stray non-name byte never produces a bogus offset).
@@ -1964,6 +1989,82 @@ define symbols
             }
         }
         false
+    }
+
+    ; The innermost routine [start,end) whose range contains `offset`, packed as
+    ; "<start> <end>", or "" when the offset is in no routine. Innermost = the R
+    ; record with the greatest start among those containing the offset (a nested
+    ; routine starts later than its enclosing one). Used by the scope-aware
+    ; references/rename/highlight scan to confine a local/parameter to its
+    ; declaring routine.
+    function enclosing_routine#(rp, table: String, offset: size_t) returns String
+    {
+        let n table.get_length()
+        var i: size_t 0
+        var found false
+        var best_start: size_t 0
+        var best_end: size_t 0
+        while i < n
+        {
+            let tag table.get(i)
+            guard tag = (0x52 as u8)                ; R
+            {
+                set i: i + (2 as size_t)            ; skip 'R' + tab
+                var rstart: size_t 0
+                while i < n
+                {
+                    let c table.get(i)
+                    guard c = (0x09 as u8)
+                        break
+                    set rstart: rstart * (10 as size_t) + ((c - (0x30 as u8)) as size_t)
+                    set i: i + (1 as size_t)
+                }
+                set i: i + (1 as size_t)            ; skip tab
+                var rend: size_t 0
+                while i < n
+                {
+                    let c table.get(i)
+                    guard c = (0x0A as u8)
+                        break
+                    set rend: rend * (10 as size_t) + ((c - (0x30 as u8)) as size_t)
+                    set i: i + (1 as size_t)
+                }
+                set i: i + (1 as size_t)            ; skip newline
+                guard offset >= rstart
+                    guard offset < rend
+                    {
+                        var take false
+                        guard found = false
+                            set take: true
+                        guard rstart >= best_start
+                            set take: true
+                        guard take
+                        {
+                            set found: true
+                            set best_start: rstart
+                            set best_end: rend
+                        }
+                    }
+                continue
+            }
+            ; other record: skip to end of line
+            while i < n
+            {
+                guard table.get(i) = (0x0A as u8)
+                    break
+                set i: i + (1 as size_t)
+            }
+            set i: i + (1 as size_t)
+        }
+        guard found
+        {
+            var sb StringBuilder#()
+            sb.append(json.format_i64#(best_start as i64))
+            sb.append(0x20 as char)                 ; space
+            sb.append(json.format_i64#(best_end as i64))
+            return sb.to_string#()
+        }
+        String#("")
     }
 
     ; True when `off` is the start offset of a declared field/property name.
@@ -6075,7 +6176,123 @@ define symbols
         let name symbols.identifier_at#(source, offset)
         guard name.get_length() = (0 as size_t)
             return String#("[]")
-        symbols.scan_tokens#(source, uri, name, true)
+        let scope_tbl symbols.scope_table#(source)
+        let comp_items symbols.completion_items#(source)
+        let range_packed symbols.scan_scope#(source, scope_tbl, comp_items, name, offset)
+        symbols.scan_tokens#(source, uri, name, true, range_packed)
+    }
+
+    ; True when `c` opens a comment (`;`) or a string/char/fragment literal
+    ; (" ' `). The lexical token scans skip these wholesale so a name inside a
+    ; comment or a string literal is never reported as a reference/rename site.
+    function is_noncode_start(c: u8) returns bool
+    {
+        guard c = (59 as u8)                       ; ;
+            return true
+        symbols.is_string_start(c)
+    }
+
+    ; Given that source[k] opens a comment or a string literal, return the
+    ; offset just past it (so the caller resumes scanning real code). Mirrors
+    ; the semantic_tokens# scanner's comment/string handling: `;` to EOL, a
+    ; `;* ... *;` block (possibly multi-line), or a " ' ` literal (escape-aware:
+    ; a backslash skips the next byte; a newline inside a single-quoted run
+    ; terminates it). Returns k unchanged if source[k] is neither.
+    function skip_noncode(source: String, k: size_t, len: size_t) returns size_t
+    {
+        let c source.get(k)
+        ; comment: `;` to EOL, or `;* ... *;`
+        guard c = (59 as u8)
+        {
+            var is_multi false
+            guard k + 1 < len
+                guard source.get(k + 1) = (42 as u8)
+                    set is_multi: true
+            guard is_multi
+            {
+                var j k + 2
+                while j < len
+                {
+                    guard source.get(j) = (42 as u8)
+                        guard j + 1 < len
+                            guard source.get(j + 1) = (59 as u8)
+                            {
+                                set j: j + 2
+                                return j
+                            }
+                    set j: j + 1
+                }
+                return len
+            }
+            var j2 k + 1
+            while j2 < len
+            {
+                guard source.get(j2) = (10 as u8)
+                    break
+                set j2: j2 + 1
+            }
+            return j2
+        }
+        ; string / char / fragment literal
+        guard symbols.is_string_start(c)
+        {
+            let q c
+            var j k + 1
+            while j < len
+            {
+                let cc source.get(j)
+                guard cc = (10 as u8)
+                    break
+                guard cc = (92 as u8)              ; backslash: skip next byte
+                {
+                    set j: j + 2
+                    continue
+                }
+                guard cc = q
+                {
+                    set j: j + 1                   ; include the closing quote
+                    break
+                }
+                set j: j + 1
+            }
+            guard j > len
+                set j: len
+            return j
+        }
+        k
+    }
+
+    ; True when `offset` falls inside a comment or a string literal (so a
+    ; rename/prepareRename request there is rejected). Linear scan to `offset`.
+    function offset_in_noncode(source: String, offset: size_t) returns bool
+    {
+        let len source.get_length()
+        var k: size_t 0
+        while k < len
+        {
+            guard k > offset
+                break
+            let c source.get(k)
+            guard symbols.is_noncode_start(c)
+            {
+                let nk symbols.skip_noncode(source, k, len)
+                guard offset < nk
+                    return true
+                set k: nk
+                continue
+            }
+            set k: k + 1
+        }
+        false
+    }
+
+    ; True when lo <= off < hi.
+    function in_range(off: size_t, lo: size_t, hi: size_t) returns bool
+    {
+        guard off >= lo
+            guard off < hi
+                return true
+        false
     }
 
     ; Scan `source` for every whole-token occurrence of `name` and build a
@@ -6083,8 +6300,39 @@ define symbols
     ; `want_uri`, for references) or DocumentHighlights ({"range":...} when
     ; not, for documentHighlight). Each occurrence is appended one byte at a
     ; time (the array can be large — see the STRING/JSON NOTE).
-    function scan_tokens#(rp, source: String, uri: String, name: String, want_uri: bool) returns String
+    ;
+    ; Comments and string literals are skipped wholesale, so a name appearing
+    ; inside them is never matched. `range_packed` confines matches to a byte
+    ; range "<rstart> <rend>" (a local/parameter scoped to its declaring
+    ; routine); "" scans the whole file (a module/file-wide name).
+    function scan_tokens#(rp, source: String, uri: String, name: String, want_uri: bool, range_packed: String) returns String
     {
+        var rstart: size_t 0
+        var rend: size_t 0
+        var scoped false
+        guard range_packed.get_length() > (0 as size_t)
+        {
+            set scoped: true
+            var seen_space false
+            var ri: size_t 0
+            let rn range_packed.get_length()
+            while ri < rn
+            {
+                let rc range_packed.get(ri)
+                guard rc = (0x20 as u8)
+                    set seen_space: true
+                guard rc <> (0x20 as u8)
+                {
+                    let digit (rc - (0x30 as u8)) as size_t
+                    guard seen_space = false
+                        set rstart: rstart * (10 as size_t) + digit
+                    guard seen_space
+                        set rend: rend * (10 as size_t) + digit
+                }
+                set ri: ri + 1
+            }
+        }
+
         var sb StringBuilder#()
         sb.append(0x5B as char)                    ; [
         var first true
@@ -6093,6 +6341,11 @@ define symbols
         while k < len
         {
             let c source.get(k)
+            guard symbols.is_noncode_start(c)
+            {
+                set k: symbols.skip_noncode(source, k, len)
+                continue
+            }
             guard symbols.is_ident_byte(c) = false
                 set k: k + 1
             guard symbols.is_ident_byte(c)
@@ -6108,27 +6361,132 @@ define symbols
                 }
                 guard symbols.token_equals(source, k, j, name)
                 {
-                    guard first = false
-                        sb.append(0x2C as char)    ; ,
-                    var piece String#("")
-                    guard want_uri
-                        set piece: symbols.location_span_object#(source, uri, k, j)
-                    guard want_uri = false
-                        set piece: symbols.highlight_object#(source, k, j)
-                    var ci: size_t 0
-                    let cn piece.get_length()
-                    while ci < cn
+                    var ok true
+                    guard scoped
+                        set ok: symbols.in_range(k, rstart, rend)
+                    guard ok
                     {
-                        sb.append(piece.get(ci) as char)
-                        set ci: ci + 1
+                        guard first = false
+                            sb.append(0x2C as char)    ; ,
+                        var piece String#("")
+                        guard want_uri
+                            set piece: symbols.location_span_object#(source, uri, k, j)
+                        guard want_uri = false
+                            set piece: symbols.highlight_object#(source, k, j)
+                        var ci: size_t 0
+                        let cn piece.get_length()
+                        while ci < cn
+                        {
+                            sb.append(piece.get(ci) as char)
+                            set ci: ci + 1
+                        }
+                        set first: false
                     }
-                    set first: false
                 }
                 set k: j
             }
         }
         sb.append(0x5D as char)                    ; ]
         sb.to_string#()
+    }
+
+    ; True when `name` is a declared function / type / operator / namespace /
+    ; module / mutable (any completion item) or a structure field — a name that
+    ; legitimately occurs across routines/scopes, so references/rename must scan
+    ; the whole file rather than confine to one routine. Locals and parameters
+    ; are NOT here, so they get scoped.
+    function name_is_module_wide#(rp, source: String, comp_items: String, scope_tbl: String, name: String) returns bool
+    {
+        guard symbols.name_in_completion#(comp_items, name)
+            return true
+        symbols.name_is_field#(source, scope_tbl, name)
+    }
+
+    ; True when `name` equals the label of any completion item.
+    function name_in_completion#(rp, comp_items: String, name: String) returns bool
+    {
+        let jv json.parse#(comp_items)
+        let count json.array_length(jv)
+        var i: size_t 0
+        while i < count
+        {
+            let item json.array_get(jv, i)
+            let lbl json.as_string#(json.get(item, "label"))
+            guard lbl.equals(name)
+                return true
+            set i: i + (1 as size_t)
+        }
+        false
+    }
+
+    ; True when `name` is the name of a declared field/property, found by
+    ; resolving each F-record offset in the scope table to its identifier token
+    ; and comparing it whole-token to `name`.
+    function name_is_field#(rp, source: String, table: String, name: String) returns bool
+    {
+        let slen source.get_length()
+        let nlen name.get_length()
+        guard nlen = (0 as size_t)
+            return false
+        let n table.get_length()
+        var i: size_t 0
+        while i < n
+        {
+            let tag table.get(i)
+            guard tag = (0x46 as u8)               ; F
+            {
+                set i: i + (2 as size_t)           ; skip 'F' + tab
+                var roff: size_t 0
+                while i < n
+                {
+                    let c table.get(i)
+                    guard c = (0x0A as u8)
+                        break
+                    set roff: roff * (10 as size_t) + ((c - (0x30 as u8)) as size_t)
+                    set i: i + (1 as size_t)
+                }
+                set i: i + (1 as size_t)           ; skip newline
+                guard roff + nlen <= slen
+                    guard symbols.field_name_matches(source, roff, nlen, name)
+                        return true
+                continue
+            }
+            while i < n
+            {
+                guard table.get(i) = (0x0A as u8)
+                    break
+                set i: i + (1 as size_t)
+            }
+            set i: i + (1 as size_t)
+        }
+        false
+    }
+
+    ; True when source[off,off+nlen) equals `name` AND is a whole token (the
+    ; following byte, if any, is not an identifier byte).
+    function field_name_matches(source: String, off: size_t, nlen: size_t, name: String) returns bool
+    {
+        guard symbols.range_equals(source, off, name, 0 as size_t, nlen) = false
+            return false
+        let slen source.get_length()
+        guard off + nlen < slen
+            guard symbols.is_ident_byte(source.get(off + nlen))
+                return false
+        true
+    }
+
+    ; The scan scope for the identifier `name` at `offset`: "" (whole file) for a
+    ; module/file-wide name or a cursor outside any routine, else the enclosing
+    ; routine's "<start> <end>" (a local/parameter is confined to its routine,
+    ; eliminating cross-routine false matches).
+    function scan_scope#(rp, source: String, scope_tbl: String, comp_items: String, name: String, offset: size_t) returns String
+    {
+        let routine symbols.enclosing_routine#(scope_tbl, offset)
+        guard routine.get_length() = (0 as size_t)
+            return String#("")
+        guard symbols.name_is_module_wide#(source, comp_items, scope_tbl, name)
+            return String#("")
+        routine
     }
 
     ; True when source[start,end) equals `name` byte-for-byte.
@@ -6197,7 +6555,10 @@ define symbols
         let name symbols.identifier_at#(source, offset)
         guard name.get_length() = (0 as size_t)
             return String#("[]")
-        symbols.scan_tokens#(source, String#(""), name, false)
+        let scope_tbl symbols.scope_table#(source)
+        let comp_items symbols.completion_items#(source)
+        let range_packed symbols.scan_scope#(source, scope_tbl, comp_items, name, offset)
+        symbols.scan_tokens#(source, String#(""), name, false, range_packed)
     }
 
     ; LSP DocumentHighlight: {"range":{...}} covering the whole token.
@@ -6267,20 +6628,53 @@ define symbols
         let new_name name_sb.to_string#()
 
         let offset symbols.position_to_offset#(source, line, character)
+        guard symbols.offset_in_noncode(source, offset)
+            return String#("")
         let old_name symbols.identifier_at#(source, offset)
         guard old_name.get_length() = (0 as size_t)
             return String#("")
+        guard grammar.is_keyword(old_name)
+            return String#("")
         guard new_name.get_length() = (0 as size_t)
             return String#("")
-        symbols.rename_edits#(source, uri, old_name, new_name)
+        let scope_tbl symbols.scope_table#(source)
+        let comp_items symbols.completion_items#(source)
+        let range_packed symbols.scan_scope#(source, scope_tbl, comp_items, old_name, offset)
+        symbols.rename_edits#(source, uri, old_name, new_name, range_packed)
     }
 
     ; Scan `source` for every whole-token occurrence of `old_name` and build
     ; an LSP WorkspaceEdit replacing each with `new_name`. Each TextEdit is
     ; appended one byte at a time (the array can be large — see the
     ; STRING/JSON NOTE).
-    function rename_edits#(rp, source: String, uri: String, old_name: String, new_name: String) returns String
+    function rename_edits#(rp, source: String, uri: String, old_name: String, new_name: String, range_packed: String) returns String
     {
+        var rstart: size_t 0
+        var rend: size_t 0
+        var scoped false
+        guard range_packed.get_length() > (0 as size_t)
+        {
+            set scoped: true
+            var seen_space false
+            var ri: size_t 0
+            let rcn range_packed.get_length()
+            while ri < rcn
+            {
+                let rc range_packed.get(ri)
+                guard rc = (0x20 as u8)
+                    set seen_space: true
+                guard rc <> (0x20 as u8)
+                {
+                    let digit (rc - (0x30 as u8)) as size_t
+                    guard seen_space = false
+                        set rstart: rstart * (10 as size_t) + digit
+                    guard seen_space
+                        set rend: rend * (10 as size_t) + digit
+                }
+                set ri: ri + 1
+            }
+        }
+
         var sb StringBuilder#()
         sb.append(0x7B as char)                    ; {
         sb.append(symbols.key#("changes"))
@@ -6294,6 +6688,11 @@ define symbols
         while k < len
         {
             let c source.get(k)
+            guard symbols.is_noncode_start(c)
+            {
+                set k: symbols.skip_noncode(source, k, len)
+                continue
+            }
             guard symbols.is_ident_byte(c) = false
                 set k: k + 1
             guard symbols.is_ident_byte(c)
@@ -6307,17 +6706,23 @@ define symbols
                 }
                 guard symbols.token_equals(source, k, j, old_name)
                 {
-                    guard first = false
-                        sb.append(0x2C as char)    ; ,
-                    let piece symbols.text_edit_object#(source, k, j, new_name)
-                    var ci: size_t 0
-                    let cn piece.get_length()
-                    while ci < cn
+                    var ok true
+                    guard scoped
+                        set ok: symbols.in_range(k, rstart, rend)
+                    guard ok
                     {
-                        sb.append(piece.get(ci) as char)
-                        set ci: ci + 1
+                        guard first = false
+                            sb.append(0x2C as char)    ; ,
+                        let piece symbols.text_edit_object#(source, k, j, new_name)
+                        var ci: size_t 0
+                        let cn piece.get_length()
+                        while ci < cn
+                        {
+                            sb.append(piece.get(ci) as char)
+                            set ci: ci + 1
+                        }
+                        set first: false
                     }
-                    set first: false
                 }
                 set k: j
             }
@@ -6369,6 +6774,13 @@ define symbols
         }
 
         let offset symbols.position_to_offset#(source, line, character)
+        guard symbols.offset_in_noncode(source, offset)
+            return String#("")
+        let name symbols.identifier_at#(source, offset)
+        guard name.get_length() = (0 as size_t)
+            return String#("")
+        guard grammar.is_keyword(name)
+            return String#("")
         symbols.identifier_range#(source, offset)
     }
 
