@@ -507,7 +507,21 @@ define server
         let line json.as_i64(json.get(position, "line"))
         let character json.as_i64(json.get(position, "character"))
 
+        ; Prefix the workspace root (captured at initialize) as "<root>\n..." so
+        ; the worker's cross-file walk can fan out from the real root (a use in a
+        ; parent/sibling directory) instead of only the current file's dir tree.
+        ; An empty root (no rootUri given) leaves a bare leading "\n" -> the
+        ; worker falls back to the dir tree (Step 36 behavior).
+        let root docstore.workspace_root#()
         var pb StringBuilder#()
+        var ri: size_t 0
+        let rn root.get_length()
+        while ri < rn
+        {
+            pb.append(root.get(ri) as char)
+            set ri: ri + (1 as size_t)
+        }
+        pb.append(0x0A as char)                    ; \n  (root / position separator)
         pb.append(json.format_i64#(line))
         pb.append(0x20 as char)                    ; space
         pb.append(json.format_i64#(character))
@@ -610,7 +624,19 @@ define server
         let character json.as_i64(json.get(position, "character"))
         let new_name json.as_string#(json.get(params, "newName"))
 
+        ; Prefix the workspace root as "<root>\n<line> <char> <newName>" so the
+        ; worker can fan a module/file-wide rename out across the real root; an
+        ; empty root falls back to the current file's dir tree (Step 36).
+        let root docstore.workspace_root#()
         var pb StringBuilder#()
+        var ri: size_t 0
+        let rn root.get_length()
+        while ri < rn
+        {
+            pb.append(root.get(ri) as char)
+            set ri: ri + (1 as size_t)
+        }
+        pb.append(0x0A as char)                    ; \n  (root / position separator)
         pb.append(json.format_i64#(line))
         pb.append(0x20 as char)                    ; space
         pb.append(json.format_i64#(character))

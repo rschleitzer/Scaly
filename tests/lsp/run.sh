@@ -798,6 +798,92 @@ PY
 rc=$?
 if [ $rc -eq 0 ]; then ok "lsp cross-file refs/rename"; else bad "lsp cross-file refs/rename"; fi
 
+# ---- workspace-root references / rename (across the dir boundary) ----
+# Step 36's walk was rooted at the EDITED file's directory tree, so a symbol
+# declared in a SUBDIRECTORY file and used in a PARENT-directory file was
+# missed. With the workspace root (captured from initialize.rootUri) threaded
+# into the references/rename frames, the walk fans out from the real root and
+# finds the cross-directory use. Without a root it falls back to the dir tree
+# (and so misses it) — proving the root is what closes the gap.
+python3 - <<'PY'
+import sys, json, subprocess, os, tempfile
+d = tempfile.mkdtemp(prefix="lsp_wsroot_")
+sub = os.path.join(d, "sub"); os.makedirs(sub)
+# compute() is DECLARED in the subdirectory, USED in the parent-dir main.scaly.
+lib = ("function compute(n: int) returns int\n"   # 0  decl at char 9
+       "{\n"                                       # 1
+       "    var tmp 0\n"                           # 2
+       "    return n + tmp\n"                      # 3
+       "}\n")                                      # 4
+main = ("function run() returns int\n"            # 0
+        "{\n"                                      # 1
+        "    var tmp 5\n"                          # 2
+        "    return compute(tmp)\n"                # 3  use of compute at char 11
+        "}\n")                                     # 4
+libp  = os.path.join(sub, "lib.scaly")
+mainp = os.path.join(d, "main.scaly")
+open(libp, "w").write(lib); open(mainp, "w").write(main)
+def frame(o):
+    b=json.dumps(o).encode(); return ("Content-Length: %d\r\n\r\n"%len(b)).encode()+b
+def rf(idn, p, line, char):
+    return frame({"jsonrpc":"2.0","id":idn,"method":"textDocument/references",
+                  "params":{"textDocument":{"uri":"file://"+p},
+                            "position":{"line":line,"character":char},
+                            "context":{"includeDeclaration":True}}})
+def rn(idn, p, line, char, name):
+    return frame({"jsonrpc":"2.0","id":idn,"method":"textDocument/rename",
+                  "params":{"textDocument":{"uri":"file://"+p},
+                            "position":{"line":line,"character":char},"newName":name}})
+def session(initparams):
+    inp  = frame({"jsonrpc":"2.0","id":1,"method":"initialize","params":initparams})
+    inp += frame({"jsonrpc":"2.0","method":"initialized","params":{}})
+    inp += rf(2, libp, 0, 9)            # references on `compute` (decl, in sub/)
+    inp += rn(3, mainp, 3, 11, "calc")  # rename `compute` from the parent-dir use
+    inp += frame({"jsonrpc":"2.0","id":9,"method":"shutdown"})
+    inp += frame({"jsonrpc":"2.0","method":"exit"})
+    out = subprocess.run(["/tmp/scalyls"], input=inp, stdout=subprocess.PIPE).stdout
+    frames, b = [], out
+    while b:
+        i = b.find(b"\r\n\r\n")
+        if i < 0: break
+        n = int(b[:i].decode().split(":")[1].strip())
+        frames.append(json.loads(b[i+4:i+4+n])); b = b[i+4+n:]
+    return frames
+def res(frames, idn):
+    f = next((x for x in frames if x.get("id") == idn), None)
+    return (f or {}).get("result")
+def reffiles(frames, idn):
+    return sorted(set(os.path.basename(x["uri"]) for x in (res(frames, idn) or [])))
+def renkeys(frames, idn):
+    ch = (res(frames, idn) or {}).get("changes") or {}
+    return sorted(os.path.basename(k) for k in ch.keys())
+failures = 0
+def check(cond, label):
+    global failures
+    print(("PASS  " if cond else "FAIL  ") + label)
+    if not cond: failures += 1
+
+# (A) rootUri set -> the walk fans out from the root and crosses the dir boundary.
+fa = session({"rootUri":"file://"+d})
+check(reffiles(fa, 2) == ["lib.scaly","main.scaly"],
+      "root set: references of `compute` span sub/lib + parent main")
+check(len(res(fa, 2) or []) == 2, "root set: `compute` -> 2 references across dirs")
+check(renkeys(fa, 3) == ["lib.scaly","main.scaly"],
+      "root set: rename `compute` edits sub/lib + parent main")
+check(sum(len(v) for v in ((res(fa,3) or {}).get('changes') or {}).values()) == 2,
+      "root set: rename `compute` -> 2 edits total")
+
+# (B) no rootUri -> dir-tree fallback (Step 36): the request from sub/lib.scaly
+#     only walks sub/, so the parent-dir use is NOT seen.
+fb = session({})
+check(reffiles(fb, 2) == ["lib.scaly"],
+      "no root: references of `compute` stay in the file's own dir tree (sub/)")
+check(len(res(fb, 2) or []) == 1, "no root: `compute` -> 1 reference (decl only)")
+sys.exit(1 if failures else 0)
+PY
+rc=$?
+if [ $rc -eq 0 ]; then ok "lsp workspace-root refs/rename"; else bad "lsp workspace-root refs/rename"; fi
+
 # ---- context-aware completion (member-after-`.`, lexical) ----
 # When a `.` precedes the cursor and its receiver names a declared concept,
 # completion returns only that concept's members. A struct receiver yields
