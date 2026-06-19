@@ -47,6 +47,7 @@ use scalyls.json
 use scalyls.symindex
 use scalyls.grammar
 use scalyls.nameset
+use scalyls.semantic
 
 use scalyc.compiler.parser
 
@@ -2419,9 +2420,27 @@ define symbols
             let direct symbols.member_completions#(source, receiver)
             guard direct.get_length() > (0 as size_t)
                 return direct
-            ; Case 2: the receiver is a VARIABLE (`p.`, `sb.`, `this.`). Resolve
-            ; its declared type lexically, then list that type's members (looking
-            ; in this file first, then sibling .scaly files in the dir tree).
+            ; Case 2 (semantic): PREFER the planner-resolved receiver type — it
+            ; handles reassigned / call-bound / generic receivers the lexical
+            ; resolve_variable_type# below cannot. Query the type at a use of the
+            ; receiver token; on a hit, list that concept's members. Falls
+            ; through to the lexical cases on a miss / parse error (common while
+            ; the buffer is mid-edit at `receiver.`).
+            let recv_off symbols.receiver_last_offset#(source, offset)
+            guard recv_off < source.get_length()
+            {
+                let stype semantic.receiver_type_at_offset#(source, uri, recv_off)
+                guard stype.get_length() > (0 as size_t)
+                {
+                    let sbase symbols.simple_base_name#(stype)
+                    let smem symbols.members_for_type#(source, uri, sbase)
+                    guard smem.get_length() > (0 as size_t)
+                        return smem
+                }
+            }
+            ; Case 2 (lexical): resolve the receiver's declared type lexically,
+            ; then list that type's members (this file first, then sibling
+            ; .scaly files in the dir tree).
             let tname symbols.resolve_variable_type#(source, receiver)
             guard tname.get_length() > (0 as size_t)
             {
@@ -3301,6 +3320,61 @@ define symbols
                 }
             }
         String#("")
+    }
+
+    ; The byte offset of the LAST character of the `.`-receiver token before
+    ; the cursor (the same token receiver_before_cursor# returns), or `len`
+    ; (the source length, a sentinel) when there is no such receiver. Used to
+    ; query the semantic resolver at a use of the receiver variable.
+    function receiver_last_offset#(rp, source: String, offset: size_t) returns size_t
+    {
+        let len source.get_length()
+        guard len = (0 as size_t)
+            return len
+        var p offset
+        guard p > len
+            set p: len
+        while p > (0 as size_t)
+        {
+            guard symbols.is_ident_byte(source.get(p - (1 as size_t))) = false
+                break
+            set p: p - (1 as size_t)
+        }
+        guard p > (0 as size_t)
+            guard source.get(p - (1 as size_t)) = (0x2E as u8)
+            {
+                let dot p - (1 as size_t)
+                guard dot > (0 as size_t)
+                    guard symbols.is_ident_byte(source.get(dot - (1 as size_t)))
+                        return dot - (1 as size_t)
+            }
+        len
+    }
+
+    ; The base concept name of a possibly-qualified / generic type name:
+    ; everything before the first `[` (generics) and after the last `.`
+    ; (namespace). "scaly.containers.String" -> "String", "Vector[char]" ->
+    ; "Vector". Used to look up the members of a semantically-resolved receiver.
+    function simple_base_name#(rp, name: String) returns String
+    {
+        let n name.get_length()
+        var end n
+        var i: size_t 0
+        while i < end
+        {
+            guard name.get(i) = (0x5B as u8)
+                set end: i
+            set i: i + 1
+        }
+        var start: size_t 0
+        var j: size_t 0
+        while j < end
+        {
+            guard name.get(j) = (0x2E as u8)
+                set start: j + (1 as size_t)
+            set j: j + 1
+        }
+        name.substring(rp, start, end - start)
     }
 
     ; Parse the program and return the member CompletionItem[] of the concept
@@ -7383,6 +7457,14 @@ define symbols
             return String#("")
         guard symbols.is_ident_byte(source.get(after)) = false
             return String#("")
+        ; NOTE: inlay TYPE hints stay LEXICAL. A semantic (planner) attempt was
+        ; evaluated and dropped: stage-0's planner mis-types a binding VALUE for
+        ; the exact shapes the lexical walk can't reach (a mid-chain call
+        ; `let g make_w().unwrap()` collapses to make_w()'s Wrapper, not Point),
+        ; so preferring it would surface a WRONG hint where lexical correctly
+        ; shows none. The lexical inference below is already strong (ctor /
+        ; call-return / chain). Semantic IS used for completion receivers (which
+        ; read the correctly-typed use-site variable, not the binding value).
         ; Read the first identifier token T = [after, te).
         var te after
         while te < len

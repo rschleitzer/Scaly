@@ -2099,6 +2099,79 @@ PY
 rc=$?
 if [ $rc -eq 0 ]; then ok "lsp semantic hover fallback"; else bad "lsp semantic hover fallback"; fi
 
+# ---- semantic completion: planner-resolved variable receiver ----
+# `let g make_w().unwrap()` then `g.` — the receiver g is bound from a method
+# call on a CALL RESULT, which the lexical resolve_variable_type# cannot resolve
+# (its chain capture stops at `(`). The semantic resolver reads g's use-site
+# type (Point) and lists Point's members instead of the flat all-names list.
+python3 - <<'PY'
+import sys, json, subprocess
+src = ("define Point(x: int)\n"
+       "{\n"
+       "    function px(this: Point) returns int { return x }\n"
+       "}\n"
+       "\n"
+       "define Wrapper(p: Point)\n"
+       "{\n"
+       "    function unwrap(this: Wrapper) returns Point\n"
+       "    {\n"
+       "        return p\n"
+       "    }\n"
+       "}\n"
+       "\n"
+       "function make_w() returns Wrapper\n"
+       "{\n"
+       "    return Wrapper(Point(1))\n"
+       "}\n"
+       "\n"
+       "function use_it() returns int\n"
+       "{\n"
+       "    let g make_w().unwrap()\n"
+       "    let z g.px()\n"
+       "    return z\n"
+       "}\n")
+path = "/tmp/lsp_sem_completion.scaly"
+open(path, "w").write(src)
+uri = "file://" + path
+lines = src.split("\n")
+zl = next(i for i, l in enumerate(lines) if "let z g.px" in l)
+zc = lines[zl].index("px")
+def frame(o):
+    b=json.dumps(o).encode(); return ("Content-Length: %d\r\n\r\n"%len(b)).encode()+b
+def didopen():
+    return frame({"jsonrpc":"2.0","method":"textDocument/didOpen",
+                  "params":{"textDocument":{"uri":uri,"languageId":"scaly","version":1,"text":src}}})
+def compl(idn, line, char):
+    return frame({"jsonrpc":"2.0","id":idn,"method":"textDocument/completion",
+                  "params":{"textDocument":{"uri":uri},"position":{"line":line,"character":char}}})
+inp  = frame({"jsonrpc":"2.0","id":1,"method":"initialize","params":{}})
+inp += frame({"jsonrpc":"2.0","method":"initialized","params":{}})
+inp += didopen()
+inp += compl(2, zl, zc)        # completion inside g.px -> Point's members
+inp += frame({"jsonrpc":"2.0","id":3,"method":"shutdown"})
+inp += frame({"jsonrpc":"2.0","method":"exit"})
+out = subprocess.run(["/tmp/scalyls"], input=inp, stdout=subprocess.PIPE).stdout
+frames, d = [], out
+while d:
+    i = d.find(b"\r\n\r\n")
+    if i < 0: break
+    n = int(d[:i].decode().split(":")[1].strip())
+    frames.append(json.loads(d[i+4:i+4+n])); d = d[i+4+n:]
+failures = 0
+def check(cond, label):
+    global failures
+    print(("PASS  " if cond else "FAIL  ") + label)
+    if not cond: failures += 1
+f = next((x for x in frames if x.get("id") == 2), None)
+items = (f or {}).get("result") or []
+labels = [c.get("label") for c in items]
+check("px" in labels, "semantic receiver g (= make_w().unwrap()) lists Point member px")
+check("use_it" not in labels, "not the flat fallback (top-level use_it absent)")
+sys.exit(1 if failures else 0)
+PY
+rc=$?
+if [ $rc -eq 0 ]; then ok "lsp semantic completion"; else bad "lsp semantic completion"; fi
+
 echo "-----"
 echo "PASS: $pass  FAIL: $fail"
 [ $fail -eq 0 ]
