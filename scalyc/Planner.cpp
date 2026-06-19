@@ -2296,40 +2296,6 @@ std::vector<PlannedType> Planner::extractArgTypes(const PlannedOperand &ArgsOp) 
     return ArgTypes;
 }
 
-PlannedCall Planner::createMethodCall(
-    const MethodMatch &Match,
-    PlannedOperand InstanceOp,
-    const PlannedOperand &ArgsOp,
-    Span Loc) {
-
-    PlannedCall Call;
-    Call.Loc = Loc;
-    Call.Name = Match.Method ? Match.Method->Name : "";
-    Call.MangledName = Match.MangledName;
-    Call.IsIntrinsic = false;
-    Call.IsOperator = false;
-    Call.CanThrow = Match.CanThrow;
-    Call.ThrowsType = Match.ThrowsType;
-    Call.ResultType = Match.ReturnType;
-
-    Call.Args = std::make_shared<std::vector<PlannedOperand>>();
-
-    // First arg is the instance
-    Call.Args->push_back(std::move(InstanceOp));
-
-    // Add tuple elements as additional arguments
-    if (auto *TupleExpr = std::get_if<PlannedTuple>(&ArgsOp.Expr)) {
-        for (const auto &Comp : TupleExpr->Components) {
-            for (const auto &ValOp : Comp.Value) {
-                // Make a copy since we're iterating over const ref
-                Call.Args->push_back(ValOp);
-            }
-        }
-    }
-
-    return Call;
-}
-
 llvm::Expected<PlannedOperand> Planner::generatePageGetThis(Span Loc) {
     // Look up 'this' to get its type
     auto ThisType = lookupLocal("this");

@@ -548,13 +548,6 @@ private:
     // Extract argument types from a planned operand containing a tuple
     std::vector<PlannedType> extractArgTypes(const PlannedOperand &ArgsOp);
 
-    // Create a PlannedCall for a method invocation
-    PlannedCall createMethodCall(
-        const MethodMatch &Match,
-        PlannedOperand InstanceOp,
-        const PlannedOperand &ArgsOp,
-        Span Loc);
-
     // ========== Pattern Detection Helpers ==========
 
     // Check if a name refers to a local variable or property in current struct
