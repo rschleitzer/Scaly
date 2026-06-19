@@ -1,0 +1,39 @@
+{
+  "name": "Scaly",
+  "scopeName": "source.scaly",
+  "patterns": [
+    { "include": "#comments" },
+    { "include": "#strings" },
+    { "include": "#numbers" },
+    { "include": "#keywords" },
+    { "include": "#types" },
+    { "include": "#operators" }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        { "name": "comment.block.scaly", "begin": ";\\*", "end": "\\*;" },
+        { "name": "comment.line.semicolon.scaly", "match": ";.*$" }
+      ]
+    },
+    "strings": {
+      "patterns": [
+        { "name": "string.quoted.double.scaly", "begin": "\"", "end": "\"", "patterns": [ { "name": "constant.character.escape.scaly", "match": "\\\\." } ] },
+        { "name": "string.quoted.single.scaly", "begin": "'", "end": "'", "patterns": [ { "name": "constant.character.escape.scaly", "match": "\\\\." } ] },
+        { "name": "string.quoted.other.scaly", "begin": "`", "end": "`" }
+      ]
+    },
+    "numbers": {
+      "patterns": [ { "name": "constant.numeric.scaly", "match": "\\b[0-9][0-9a-fA-FxX._]*\\b" } ]
+    },
+    "keywords": {
+      "patterns": [ { "name": "keyword.control.scaly", "match": "\\b(alignof|as|break|case|choose|continue|define|deinit|delegate|else|extends|extern|for|function|guard|if|implement|in|init|instruction|intrinsic|is|label|let|loop|macro|match|module|mutable|operator|private|procedure|repeat|return|returns|set|sizeof|throw|throws|trait|try|union|use|var|when|while|package)\\b" } ]
+    },
+    "types": {
+      "patterns": [ { "name": "entity.name.type.scaly", "match": "\\b[A-Z][A-Za-z0-9_]*\\b" } ]
+    },
+    "operators": {
+      "patterns": [ { "name": "keyword.operator.scaly", "match": "[-+*/=%&|\\^~<>]+" } ]
+    }
+  }
+}

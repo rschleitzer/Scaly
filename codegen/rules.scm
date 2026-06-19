@@ -24,6 +24,9 @@
         (file "packages/scalyls/0.1.0/scalyls/grammar.scaly"
             (generate-highlight-scaly)
         )
+        (file "editors/vscode/syntaxes/scaly.tmLanguage.json"
+            (generate-textmate)
+        )
     )
 )
 ]]>

@@ -1,11 +1,20 @@
 <![CDATA[
-;; Generate scalyls/grammar.scaly from scaly.sgm
+;; Generate the scalyls highlighter inputs from scaly.sgm
 ;;
-;; The scalyls semantic-token highlighter needs to know which identifiers are
-;; reserved keywords. Rather than hand-maintaining that list (it would drift as
-;; the language grows), generate it from the grammar's <keyword> elements - the
-;; same single source of truth the parser's keyword set is generated from. Add
-;; a <keyword> to scaly.sgm and the highlighter picks it up on the next ./mkp.
+;; Two artifacts share the grammar's <keyword> elements as their single source
+;; of truth, so new keywords flow into highlighting automatically on ./mkp:
+;;   * scalyls/grammar.scaly       - keyword classifier for LSP semanticTokens
+;;   * editors/vscode/syntaxes/...  - TextMate grammar (instant client-side base)
+;; Add a <keyword> to scaly.sgm and both pick it up.
+
+;; "alignof|as|break|...|package" - the keyword list as a regex alternation,
+;; first keyword bare and the rest prefixed with "|" so there is NO trailing
+;; pipe (a trailing "|" would make the group match the empty string everywhere).
+(define (keyword-alternation)
+    (let ((kws (node-list->list (select-elements (children (current-node)) "keyword"))))
+        (apply string-append
+            (cons (id (car kws))
+                (map (lambda (kw) (string-append "|" (id kw))) (cdr kws))))))
 
 (define (generate-highlight-scaly) ($
 "; grammar.scaly - Generated from scaly.sgm
@@ -28,6 +37,56 @@ define grammar
 "   )))
 "        false
     }
+}
+"
+))
+
+;; TextMate grammar (.tmLanguage.json) - the always-on, server-independent base
+;; layer VS Code paints before/around the LSP semantic tokens. Token classes
+;; mirror the lexer + the semanticTokens scan: comments (; line and ;* *; block),
+;; strings (" ' `), numbers, keywords (grammar-derived), uppercase-initial types,
+;; and operator runs. Only the keyword alternation is generated; the rest is a
+;; stable template. Heavy escaping: a regex backslash is \\ in the JSON file,
+;; i.e. \\\\ here; a JSON quote is \" in the file, i.e. \\\" here.
+(define (generate-textmate) ($
+"{
+  \"name\": \"Scaly\",
+  \"scopeName\": \"source.scaly\",
+  \"patterns\": [
+    { \"include\": \"#comments\" },
+    { \"include\": \"#strings\" },
+    { \"include\": \"#numbers\" },
+    { \"include\": \"#keywords\" },
+    { \"include\": \"#types\" },
+    { \"include\": \"#operators\" }
+  ],
+  \"repository\": {
+    \"comments\": {
+      \"patterns\": [
+        { \"name\": \"comment.block.scaly\", \"begin\": \";\\\\*\", \"end\": \"\\\\*;\" },
+        { \"name\": \"comment.line.semicolon.scaly\", \"match\": \";.*$\" }
+      ]
+    },
+    \"strings\": {
+      \"patterns\": [
+        { \"name\": \"string.quoted.double.scaly\", \"begin\": \"\\\"\", \"end\": \"\\\"\", \"patterns\": [ { \"name\": \"constant.character.escape.scaly\", \"match\": \"\\\\\\\\.\" } ] },
+        { \"name\": \"string.quoted.single.scaly\", \"begin\": \"'\", \"end\": \"'\", \"patterns\": [ { \"name\": \"constant.character.escape.scaly\", \"match\": \"\\\\\\\\.\" } ] },
+        { \"name\": \"string.quoted.other.scaly\", \"begin\": \"`\", \"end\": \"`\" }
+      ]
+    },
+    \"numbers\": {
+      \"patterns\": [ { \"name\": \"constant.numeric.scaly\", \"match\": \"\\\\b[0-9][0-9a-fA-FxX._]*\\\\b\" } ]
+    },
+    \"keywords\": {
+      \"patterns\": [ { \"name\": \"keyword.control.scaly\", \"match\": \"\\\\b(" (keyword-alternation) ")\\\\b\" } ]
+    },
+    \"types\": {
+      \"patterns\": [ { \"name\": \"entity.name.type.scaly\", \"match\": \"\\\\b[A-Z][A-Za-z0-9_]*\\\\b\" } ]
+    },
+    \"operators\": {
+      \"patterns\": [ { \"name\": \"keyword.operator.scaly\", \"match\": \"[-+*/=%&|\\\\^~<>]+\" } ]
+    }
+  }
 }
 "
 ))

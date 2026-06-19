@@ -29,6 +29,13 @@
         "configuration": "./language-configuration.json"
       }
     ],
+    "grammars": [
+      {
+        "language": "scaly",
+        "scopeName": "source.scaly",
+        "path": "./syntaxes/scaly.tmLanguage.json"
+      }
+    ],
     "commands": [
       {
         "command": "scaly.restartServer",
