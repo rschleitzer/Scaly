@@ -929,6 +929,16 @@ define symbols
         sb.append(symbols.key#("data"))            ; "data":
         sb.append(0x5B as char)                    ; [
 
+        ; Semantic name tables: reuse completion_items# (one parse + walk) to
+        ; harvest declared function/method names (CompletionItemKind 2/3) and
+        ; type names (struct 22 / enum-union 13), plus the lowercase primitives.
+        ; An identifier USE matching one of these is coloured by its declared
+        ; kind, not just its shape.
+        let comp_items symbols.completion_items#(source)
+        let fn_list symbols.names_from_items#(comp_items, 2 as i64, 3 as i64)
+        let ty_list symbols.names_from_items#(comp_items, 22 as i64, 13 as i64)
+        let prim_list symbols.primitive_type_list#()
+
         let n source.get_length()
         var i: size_t 0
         var line: size_t 0
@@ -1111,11 +1121,18 @@ define symbols
                 let word symbols.substring#(source, i, j)
                 var t: i64 (3)                     ; variable
                 guard symbols.is_upper(c)
-                    set t: 1 as i64                ; uppercase -> type
+                    set t: 1 as i64                ; lexical: uppercase -> type
                 guard pending = (1 as i64)
-                    set t: 1 as i64                ; type-name (after define/...)
+                    set t: 1 as i64                ; after define/union/... -> type
                 guard pending = (2 as i64)
-                    set t: 2 as i64                ; function-name
+                    set t: 2 as i64                ; after function/procedure -> function
+                ; semantic overrides: resolve the USE to its declared kind
+                guard symbols.name_set_contains(prim_list, source, i, j)
+                    set t: 1 as i64                ; primitive/builtin type
+                guard symbols.name_set_contains(ty_list, source, i, j)
+                    set t: 1 as i64                ; declared type (this file)
+                guard symbols.name_set_contains(fn_list, source, i, j)
+                    set t: 2 as i64                ; declared function/method (this file)
                 guard grammar.is_keyword(word)
                     set t: 0 as i64                ; keyword wins (grammar-derived)
                 set tok_type: t
@@ -1292,6 +1309,130 @@ define symbols
         guard c = (96 as u8)
             return true
         false
+    }
+
+    ; ----- semanticTokens: declared-name resolution -----
+    ; The lexical scan colours by shape; these let it colour by MEANING — an
+    ; identifier USE gets its declared kind (a function call -> function, a
+    ; type reference -> type), which a regex/shape pass cannot do. The declared
+    ; names are harvested by REUSING completion_items# (which already classifies
+    ; every declared name by CompletionItemKind), so no walk is duplicated.
+
+    ; Extract a newline-delimited, newline-bracketed list of the labels in a
+    ; completion-items JSON array whose kind is k1 or k2. ("\nadd\nfoo\n")
+    function names_from_items#(rp, items_json: String, k1: i64, k2: i64) returns String
+    {
+        var sb StringBuilder#()
+        sb.append(0x0A as char)                    ; leading newline
+        let jv json.parse#(items_json)
+        let count json.array_length(jv)
+        var i: size_t 0
+        while i < count
+        {
+            let item json.array_get(jv, i)
+            let kind json.as_i64(json.get(item, "kind"))
+            guard kind = k1
+            {
+                sb.append(json.as_string#(json.get(item, "label")))
+                sb.append(0x0A as char)
+            }
+            guard kind = k2
+            {
+                sb.append(json.as_string#(json.get(item, "label")))
+                sb.append(0x0A as char)
+            }
+            set i: i + 1
+        }
+        sb.to_string#()
+    }
+
+    ; The lowercase primitive/builtin type names (uppercase types are caught
+    ; lexically). Newline-bracketed, like names_from_items#. Built with byte
+    ; appends (string-literal escapes are not decoded, so no "\n" literals).
+    function primitive_type_list#(rp) returns String
+    {
+        var sb StringBuilder#()
+        sb.append(0x0A as char)
+        sb.append("int")
+        sb.append(0x0A as char)
+        sb.append("bool")
+        sb.append(0x0A as char)
+        sb.append("char")
+        sb.append(0x0A as char)
+        sb.append("void")
+        sb.append(0x0A as char)
+        sb.append("float")
+        sb.append(0x0A as char)
+        sb.append("double")
+        sb.append(0x0A as char)
+        sb.append("size_t")
+        sb.append(0x0A as char)
+        sb.append("u8")
+        sb.append(0x0A as char)
+        sb.append("u16")
+        sb.append(0x0A as char)
+        sb.append("u32")
+        sb.append(0x0A as char)
+        sb.append("u64")
+        sb.append(0x0A as char)
+        sb.append("i8")
+        sb.append(0x0A as char)
+        sb.append("i16")
+        sb.append(0x0A as char)
+        sb.append("i32")
+        sb.append(0x0A as char)
+        sb.append("i64")
+        sb.append(0x0A as char)
+        sb.append("pointer")
+        sb.append(0x0A as char)
+        sb.append("ref")
+        sb.append(0x0A as char)
+        sb.to_string#()
+    }
+
+    ; True when source[tstart,tend) exactly equals one newline-delimited
+    ; segment of `list` (a names_from_items#/primitive_type_list# result). No
+    ; allocation per lookup — compares bytes in place.
+    function name_set_contains(list: String, source: String, tstart: size_t, tend: size_t) returns bool
+    {
+        let tlen tend - tstart
+        let llen list.get_length()
+        var i: size_t 0
+        while i < llen
+        {
+            guard list.get(i) = (10 as u8)
+            {
+                set i: i + 1
+                continue
+            }
+            var j i
+            while j < llen
+            {
+                guard list.get(j) = (10 as u8)
+                    break
+                set j: j + 1
+            }
+            guard (j - i) = tlen
+                guard symbols.range_equals(list, i, source, tstart, tlen)
+                    return true
+            set i: j
+        }
+        false
+    }
+
+    ; Byte-equality of a[astart,astart+len) and b[bstart,bstart+len).
+    function range_equals(a: String, astart: size_t, b: String, bstart: size_t, len: size_t) returns bool
+    {
+        var k: size_t 0
+        while k < len
+        {
+            let ca a.get(astart + k)
+            let cb b.get(bstart + k)
+            guard ca <> cb
+                return false
+            set k: k + 1
+        }
+        true
     }
 
     ; ====================================================================

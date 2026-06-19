@@ -1303,7 +1303,11 @@ src = ("function add(a: int) returns int\n"   # 0
        ")\n"                                   # 9
        "{\n"                                   # 10
        "    let name \"hi\"\n"                 # 11
-       "}\n")                                  # 12
+       "}\n"                                   # 12
+       "function main() returns int\n"        # 13
+       "{\n"                                   # 14
+       "    return add(7)\n"                   # 15  <- `add` is a USE here
+       "}\n")                                  # 16
 path = "/tmp/lsp_sem_test.scaly"
 open(path, "w").write(src)
 def frame(o):
@@ -1350,6 +1354,12 @@ check(has("function","keyword") and has("define","keyword") and has("returns","k
       and has("let","keyword"), "keywords classified (grammar-derived)")
 check(has("add","function"), "identifier after `function` -> function")
 check(has("Point","type"), "identifier after `define` -> type")
+check(has("int","type"), "primitive `int` -> type (semantic, lowercase)")
+# `add` used at a call site (line 15) resolves to function, not variable -
+# semantic resolution a regex/shape pass cannot do.
+add_uses = [t for t in toks if t[0] == 15 and t[2] == "add"]
+check(len(add_uses) == 1 and add_uses[0][3] == "function",
+      "function used at a call site -> function (declared-kind resolution)")
 check(has("+","operator"), "operator token")
 check(has("42","number"), "number token")
 check(has('"hi"',"string"), "string literal token")
