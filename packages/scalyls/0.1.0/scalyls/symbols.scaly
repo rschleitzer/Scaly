@@ -6336,6 +6336,386 @@ define symbols
         false
     }
 
+    ; ----- shadow exclusion: same-named locals across files (Step 38) -----
+    ; A module/file-wide name N is scanned across every file (references/rename
+    ; fan-out). But a routine in some file may bind N LOCALLY (as a parameter or
+    ; via `let N`/`var N`), in which case every occurrence of N inside that
+    ; routine refers to the local, never the module-wide symbol. Renaming those
+    ; would corrupt unrelated code. So before scanning a file for N we compute
+    ; its SHADOW RANGES — the byte spans of routines that bind N locally — and
+    ; the token scan skips any occurrence whose start falls in a shadow range.
+    ; The whole routine is skipped (the safe direction: never rename into a
+    ; routine that owns a same-named local; missing a real ref is the lesser
+    ; harm than corrupting an unrelated local). Detection is purely lexical /
+    ; parse-based (no planner — the Step 34/35 lesson): routine ranges come from
+    ; one `scope_table#` parse, params from its P records, `let`/`var` locals
+    ; from a lexical sub-scan of each routine range. A cheap byte pre-gate
+    ; (`has_local_binding_candidate`) skips the parse for the common file that
+    ; cannot bind N at all. Residual limit: a `when`/`for`-pattern binding of N
+    ; (not `let`/`var`/param) is not detected, so such a routine is NOT skipped.
+
+    ; True when source[k,j) is the keyword `let` or `var` (byte compare, no
+    ; allocation — usable from a non-# scanner).
+    function token_is_decl_kw(source: String, k: size_t, j: size_t) returns bool
+    {
+        guard (j - k) <> (3 as size_t)
+            return false
+        let c0 source.get(k)
+        let c1 source.get(k + (1 as size_t))
+        let c2 source.get(k + (2 as size_t))
+        guard c0 = (0x6C as u8)                     ; 'l'
+            guard c1 = (0x65 as u8)                 ; 'e'
+                guard c2 = (0x74 as u8)             ; 't'
+                    return true
+        guard c0 = (0x76 as u8)                     ; 'v'
+            guard c1 = (0x61 as u8)                 ; 'a'
+                guard c2 = (0x72 as u8)             ; 'r'
+                    return true
+        false
+    }
+
+    ; True when `name` is bound as a local within the byte range [lo,hi): it
+    ; occurs as a whole token either right after a `let`/`var` keyword OR
+    ; immediately followed (past spaces/tabs) by a `:` (a parameter `name: T`, a
+    ; `set name:` target, a `when name:` pattern, etc.). Comments/strings are
+    ; skipped. The colon form over-approximates in the SAFE direction (a stray
+    ; `name:` only causes a routine to be skipped, never an unrelated rename).
+    function range_binds_name(source: String, name: String, lo: size_t, hi: size_t) returns bool
+    {
+        let len source.get_length()
+        var bound hi
+        guard bound > len
+            set bound: len
+        var prev_is_decl false
+        var k lo
+        while k < bound
+        {
+            let c source.get(k)
+            guard symbols.is_noncode_start(c)
+            {
+                set k: symbols.skip_noncode(source, k, len)
+                continue
+            }
+            guard symbols.is_ident_byte(c) = false
+            {
+                set k: k + (1 as size_t)
+                continue
+            }
+            var j k
+            while j < len
+            {
+                guard symbols.is_ident_byte(source.get(j)) = false
+                    break
+                set j: j + (1 as size_t)
+            }
+            guard symbols.token_equals(source, k, j, name)
+            {
+                guard prev_is_decl
+                    return true
+                var p j
+                while p < len
+                {
+                    let pc source.get(p)
+                    guard pc = (0x20 as u8)
+                    {
+                        set p: p + (1 as size_t)
+                        continue
+                    }
+                    guard pc = (0x09 as u8)
+                    {
+                        set p: p + (1 as size_t)
+                        continue
+                    }
+                    break
+                }
+                guard p < len
+                    guard source.get(p) = (0x3A as u8)    ; ':'
+                        return true
+            }
+            set prev_is_decl: symbols.token_is_decl_kw(source, k, j)
+            set k: j
+        }
+        false
+    }
+
+    ; Cheap whole-file pre-gate: could `source` bind `name` locally anywhere? If
+    ; false the file cannot shadow `name`, so the routine-boundary scan in
+    ; `shadow_ranges#` is skipped entirely.
+    function has_local_binding_candidate(source: String, name: String) returns bool
+    {
+        symbols.range_binds_name(source, name, 0 as size_t, source.get_length())
+    }
+
+    ; Given `open_pos` at a `{`, return the offset just past its matching `}`
+    ; (or `len` if unbalanced). Braces inside comments/strings are skipped.
+    function match_brace_end(source: String, open_pos: size_t, len: size_t) returns size_t
+    {
+        var depth: int 0
+        var p open_pos
+        while p < len
+        {
+            let c source.get(p)
+            guard symbols.is_noncode_start(c)
+            {
+                set p: symbols.skip_noncode(source, p, len)
+                continue
+            }
+            guard c = (0x7B as u8)                  ; {
+            {
+                set depth: depth + 1
+                set p: p + (1 as size_t)
+                continue
+            }
+            guard c = (0x7D as u8)                  ; }
+            {
+                set depth: depth - 1
+                guard depth <= 0
+                    return p + (1 as size_t)
+                set p: p + (1 as size_t)
+                continue
+            }
+            set p: p + (1 as size_t)
+        }
+        len
+    }
+
+    ; Given the byte just after a routine keyword (function/procedure/operator/
+    ; init/deinit), return the routine's end offset (exclusive): the byte after
+    ; its closing `}` for a brace body, or the end of its single-expression line
+    ; for a braceless body. ()/[] depth is tracked so a `{` or end-of-signature
+    ; newline is only acted on at depth 0; a `returns` clause continuing on the
+    ; next line is not mistaken for a single-line body; comments/strings skipped.
+    function routine_body_end(source: String, after_kw: size_t, len: size_t) returns size_t
+    {
+        var depth: int 0
+        var p after_kw
+        while p < len
+        {
+            let c source.get(p)
+            guard symbols.is_noncode_start(c)
+            {
+                set p: symbols.skip_noncode(source, p, len)
+                continue
+            }
+            guard c = (0x28 as u8)                  ; (
+            {
+                set depth: depth + 1
+                set p: p + (1 as size_t)
+                continue
+            }
+            guard c = (0x5B as u8)                  ; [
+            {
+                set depth: depth + 1
+                set p: p + (1 as size_t)
+                continue
+            }
+            guard c = (0x29 as u8)                  ; )
+            {
+                set depth: depth - 1
+                set p: p + (1 as size_t)
+                continue
+            }
+            guard c = (0x5D as u8)                  ; ]
+            {
+                set depth: depth - 1
+                set p: p + (1 as size_t)
+                continue
+            }
+            guard depth <= 0
+            {
+                guard c = (0x7B as u8)              ; { -> brace body
+                    return symbols.match_brace_end(source, p, len)
+                guard c = (0x0A as u8)              ; newline at depth 0 = sig end
+                {
+                    var q p + (1 as size_t)
+                    while q < len
+                    {
+                        let qc source.get(q)
+                        guard symbols.is_noncode_start(qc)
+                        {
+                            set q: symbols.skip_noncode(source, q, len)
+                            continue
+                        }
+                        guard qc = (0x20 as u8)
+                        {
+                            set q: q + (1 as size_t)
+                            continue
+                        }
+                        guard qc = (0x09 as u8)
+                        {
+                            set q: q + (1 as size_t)
+                            continue
+                        }
+                        guard qc = (0x0A as u8)
+                        {
+                            set q: q + (1 as size_t)
+                            continue
+                        }
+                        break
+                    }
+                    guard q < len
+                        guard source.get(q) = (0x7B as u8)    ; brace body next line
+                            return symbols.match_brace_end(source, q, len)
+                    ; a `returns` clause on the next line is still the signature
+                    guard q + (7 as size_t) <= len
+                        guard symbols.token_is_returns(source, q)
+                        {
+                            set p: q
+                            continue
+                        }
+                    ; braceless single-line body: ends at the next newline
+                    var e q
+                    while e < len
+                    {
+                        guard source.get(e) = (0x0A as u8)
+                            break
+                        set e: e + (1 as size_t)
+                    }
+                    return e
+                }
+            }
+            set p: p + (1 as size_t)
+        }
+        len
+    }
+
+    ; True when source[q..q+7) is the whole keyword `returns` (followed by a
+    ; non-identifier byte). No allocation.
+    function token_is_returns(source: String, q: size_t) returns bool
+    {
+        let len source.get_length()
+        guard q + (7 as size_t) > len
+            return false
+        guard source.get(q) = (0x72 as u8)          ; r
+            guard source.get(q + (1 as size_t)) = (0x65 as u8)    ; e
+                guard source.get(q + (2 as size_t)) = (0x74 as u8); t
+                    guard source.get(q + (3 as size_t)) = (0x75 as u8) ; u
+                        guard source.get(q + (4 as size_t)) = (0x72 as u8) ; r
+                            guard source.get(q + (5 as size_t)) = (0x6E as u8) ; n
+                                guard source.get(q + (6 as size_t)) = (0x73 as u8) ; s
+                                {
+                                    guard q + (7 as size_t) = len
+                                        return true
+                                    guard symbols.is_ident_byte(source.get(q + (7 as size_t))) = false
+                                        return true
+                                    return false
+                                }
+        false
+    }
+
+    ; The shadow ranges of `name` in `source`: a newline-terminated list of
+    ; "<start> <end>" routine byte spans where `name` is bound as a parameter or
+    ; a `let`/`var` local. "" when the file binds `name` nowhere (the common
+    ; case — pre-gated by `has_local_binding_candidate`). PURELY LEXICAL: routine
+    ; boundaries come from a byte scan (keyword + brace matching / single-line
+    ; body), NOT a parse — one parse of a large file is ~seconds and would blow
+    ; the worker budget when fanned out over many files (s38 measurement).
+    function shadow_ranges#(rp, source: String, name: String) returns String
+    {
+        let len source.get_length()
+        guard symbols.range_binds_name(source, name, 0 as size_t, len) = false
+            return String#("")
+        let kw_function String#("function")
+        let kw_procedure String#("procedure")
+        let kw_operator String#("operator")
+        let kw_init String#("init")
+        let kw_deinit String#("deinit")
+        var sb StringBuilder#()
+        var k: size_t 0
+        while k < len
+        {
+            let c source.get(k)
+            guard symbols.is_noncode_start(c)
+            {
+                set k: symbols.skip_noncode(source, k, len)
+                continue
+            }
+            guard symbols.is_ident_byte(c) = false
+            {
+                set k: k + (1 as size_t)
+                continue
+            }
+            var j k
+            while j < len
+            {
+                guard symbols.is_ident_byte(source.get(j)) = false
+                    break
+                set j: j + (1 as size_t)
+            }
+            var is_kw false
+            guard symbols.token_equals(source, k, j, kw_function)
+                set is_kw: true
+            guard is_kw = false
+                guard symbols.token_equals(source, k, j, kw_procedure)
+                    set is_kw: true
+            guard is_kw = false
+                guard symbols.token_equals(source, k, j, kw_operator)
+                    set is_kw: true
+            guard is_kw = false
+                guard symbols.token_equals(source, k, j, kw_init)
+                    set is_kw: true
+            guard is_kw = false
+                guard symbols.token_equals(source, k, j, kw_deinit)
+                    set is_kw: true
+            guard is_kw
+            {
+                let rend symbols.routine_body_end(source, j, len)
+                guard symbols.range_binds_name(source, name, k, rend)
+                {
+                    sb.append(json.format_i64#(k as i64))
+                    sb.append(0x20 as char)         ; space
+                    sb.append(json.format_i64#(rend as i64))
+                    sb.append(0x0A as char)         ; newline
+                }
+                ; routines don't nest in a body -> resume past this routine
+                guard rend > j
+                    set k: rend
+                guard rend <= j
+                    set k: j
+                continue
+            }
+            set k: j
+        }
+        sb.to_string#()
+    }
+
+    ; True when `off` falls inside any shadow range of `shadow_packed` (the
+    ; newline-terminated "<start> <end>" list from shadow_ranges#).
+    function in_shadow(shadow_packed: String, off: size_t) returns bool
+    {
+        let n shadow_packed.get_length()
+        var i: size_t 0
+        while i < n
+        {
+            var rstart: size_t 0
+            var rend: size_t 0
+            var seen_space false
+            while i < n
+            {
+                let c shadow_packed.get(i)
+                guard c = (0x0A as u8)
+                {
+                    set i: i + (1 as size_t)
+                    break
+                }
+                guard c = (0x20 as u8)
+                    set seen_space: true
+                guard c <> (0x20 as u8)
+                {
+                    let digit (c - (0x30 as u8)) as size_t
+                    guard seen_space = false
+                        set rstart: rstart * (10 as size_t) + digit
+                    guard seen_space
+                        set rend: rend * (10 as size_t) + digit
+                }
+                set i: i + (1 as size_t)
+            }
+            guard symbols.in_range(off, rstart, rend)
+                return true
+        }
+        false
+    }
+
     ; Scan `source` for every whole-token occurrence of `name` and build the
     ; COMMA-JOINED fragment (no brackets, no leading/trailing comma) of either
     ; LSP Locations ({"uri":...,"range":...} when `want_uri`, for references) or
@@ -6346,8 +6726,12 @@ define symbols
     ; Comments and string literals are skipped wholesale, so a name appearing
     ; inside them is never matched. `range_packed` confines matches to a byte
     ; range "<rstart> <rend>" (a local/parameter scoped to its declaring
-    ; routine); "" scans the whole file (a module/file-wide name).
-    function scan_fragment#(rp, source: String, uri: String, name: String, want_uri: bool, range_packed: String) returns String
+    ; routine); "" scans the whole file (a module/file-wide name). `shadow_packed`
+    ; (newline-terminated "<start> <end>" routine spans, "" when none) is applied
+    ; on the whole-file path: a match inside a routine that binds `name` locally
+    ; (a same-named parameter / `let`/`var` local) is skipped, so a module-wide
+    ; rename never touches an unrelated same-named local in any file.
+    function scan_fragment#(rp, source: String, uri: String, name: String, want_uri: bool, range_packed: String, shadow_packed: String) returns String
     {
         var rstart: size_t 0
         var rend: size_t 0
@@ -6406,6 +6790,9 @@ define symbols
                     guard scoped
                         set ok: symbols.in_range(k, rstart, rend)
                     guard ok
+                        guard symbols.in_shadow(shadow_packed, k)
+                            set ok: false
+                    guard ok
                     {
                         guard first = false
                             sb.append(0x2C as char)    ; ,
@@ -6433,7 +6820,9 @@ define symbols
     ; The single-file JSON array `[ <fragment> ]` of Locations / Highlights.
     function scan_tokens#(rp, source: String, uri: String, name: String, want_uri: bool, range_packed: String) returns String
     {
-        let frag symbols.scan_fragment#(source, uri, name, want_uri, range_packed)
+        ; Single-file / scoped path (a local confined to its routine, or
+        ; documentHighlight): no shadow exclusion needed.
+        let frag symbols.scan_fragment#(source, uri, name, want_uri, range_packed, String#(""))
         var sb StringBuilder#()
         sb.append(0x5B as char)                    ; [
         var i: size_t 0
@@ -6565,8 +6954,10 @@ define symbols
         sb.append(0x5B as char)                    ; [
         var first true
 
-        ; (1) the current file (in-memory text, whole-file scan).
-        let cur symbols.scan_fragment#(source, uri, name, true, String#(""))
+        ; (1) the current file (in-memory text, whole-file scan). Skip any
+        ; routine that binds `name` as a same-named local/parameter (shadow).
+        let cur_shadow symbols.shadow_ranges#(source, name)
+        let cur symbols.scan_fragment#(source, uri, name, true, String#(""), cur_shadow)
         guard cur.get_length() > (0 as size_t)
         {
             var ci: size_t 0
@@ -6614,7 +7005,8 @@ define symbols
                             {
                                 let fsrc File.read_to_string#(fpath)
                                 let furi symbols.path_to_uri#(fpath)
-                                let frag symbols.scan_fragment#(fsrc, furi, name, true, String#(""))
+                                let fshadow symbols.shadow_ranges#(fsrc, name)
+                                let frag symbols.scan_fragment#(fsrc, furi, name, true, String#(""), fshadow)
                                 guard frag.get_length() > (0 as size_t)
                                 {
                                     guard first = false
@@ -6949,9 +7341,11 @@ define symbols
     ; Scan `source` for every whole-token occurrence of `old_name` and build the
     ; COMMA-JOINED fragment (no brackets) of LSP TextEdits replacing each with
     ; `new_name`. Comments and string literals are skipped; `range_packed`
-    ; confines matches to a routine range ("" = whole file). Each TextEdit is
-    ; appended one byte at a time (the array can be large).
-    function edits_fragment#(rp, source: String, old_name: String, new_name: String, range_packed: String) returns String
+    ; confines matches to a routine range ("" = whole file). `shadow_packed` (see
+    ; scan_fragment#) skips occurrences inside a routine that binds `old_name`
+    ; locally, so a module-wide rename never rewrites an unrelated same-named
+    ; local. Each TextEdit is appended one byte at a time (the array can be large).
+    function edits_fragment#(rp, source: String, old_name: String, new_name: String, range_packed: String, shadow_packed: String) returns String
     {
         var rstart: size_t 0
         var rend: size_t 0
@@ -7008,6 +7402,9 @@ define symbols
                     guard scoped
                         set ok: symbols.in_range(k, rstart, rend)
                     guard ok
+                        guard symbols.in_shadow(shadow_packed, k)
+                            set ok: false
+                    guard ok
                     {
                         guard first = false
                             sb.append(0x2C as char)    ; ,
@@ -7031,7 +7428,8 @@ define symbols
     ; Single-file WorkspaceEdit {"changes":{"<uri>":[ <edits_fragment> ]}}.
     function rename_edits#(rp, source: String, uri: String, old_name: String, new_name: String, range_packed: String) returns String
     {
-        let frag symbols.edits_fragment#(source, old_name, new_name, range_packed)
+        ; Single-file scoped path (a local confined to its routine): no shadow.
+        let frag symbols.edits_fragment#(source, old_name, new_name, range_packed, String#(""))
         var sb StringBuilder#()
         sb.append(0x7B as char)                    ; {
         sb.append(symbols.key#("changes"))
@@ -7070,8 +7468,10 @@ define symbols
         sb.append(0x7B as char)                    ; { (changes object)
         var first true
 
-        ; (1) the current file.
-        let cur symbols.edits_fragment#(source, old_name, new_name, String#(""))
+        ; (1) the current file. Skip any routine that binds `old_name` as a
+        ; same-named local/parameter (shadow).
+        let cur_shadow symbols.shadow_ranges#(source, old_name)
+        let cur symbols.edits_fragment#(source, old_name, new_name, String#(""), cur_shadow)
         guard cur.get_length() > (0 as size_t)
         {
             sb.append(json.quote_string#(uri))
@@ -7122,7 +7522,8 @@ define symbols
                             guard File.exists(fpath)
                             {
                                 let fsrc File.read_to_string#(fpath)
-                                let frag symbols.edits_fragment#(fsrc, old_name, new_name, String#(""))
+                                let fshadow symbols.shadow_ranges#(fsrc, old_name)
+                                let frag symbols.edits_fragment#(fsrc, old_name, new_name, String#(""), fshadow)
                                 guard frag.get_length() > (0 as size_t)
                                 {
                                     guard first = false

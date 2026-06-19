@@ -884,6 +884,108 @@ PY
 rc=$?
 if [ $rc -eq 0 ]; then ok "lsp workspace-root refs/rename"; else bad "lsp workspace-root refs/rename"; fi
 
+# ---- shadowed-local rename (cross-file scope safety, Step 38) ----
+# A module-wide name is scanned across every file in the workspace. But another
+# file may bind that name LOCALLY (a `let`/`var` local or a parameter), and
+# every occurrence inside such a routine refers to the local, not the global.
+# The cross-file scan now SKIPS any routine that binds the name locally, so a
+# global rename never corrupts an unrelated same-named local. Detection is
+# purely lexical (routine boundaries by brace matching, bindings by token scan)
+# — no parse, so it stays cheap when fanned out over many files.
+python3 - <<'PY'
+import sys, json, subprocess, os, tempfile
+d = tempfile.mkdtemp(prefix="lsp_shadow_")
+# File A declares the module-wide function `compute` and uses it.
+a = ("function compute(n: int) returns int\n"      # 0  decl, char 9
+     "{\n"                                          # 1
+     "    return n + 1\n"                           # 2
+     "}\n"                                          # 3
+     "function use_a(m: int) returns int\n"         # 4
+     "{\n"                                          # 5
+     "    return compute(m)\n"                      # 6  real use, char 11
+     "}\n")                                         # 7
+# File B has (1) an unrelated LOCAL `var compute` in one routine, (2) a routine
+# whose PARAMETER is named `compute`, and (3) a real call to the global compute.
+b = ("function with_local(x: int) returns int\n"   # 0
+     "{\n"                                          # 1
+     "    var compute 7\n"                          # 2  LOCAL decl, char 8 -> must NOT rename
+     "    return compute + x\n"                     # 3  local use, char 11 -> must NOT rename
+     "}\n"                                          # 4
+     "function with_param(compute: int) returns int\n"  # 5  PARAM, char 20 -> must NOT rename
+     "{\n"                                          # 6
+     "    return compute * 2\n"                     # 7  param use, char 11 -> must NOT rename
+     "}\n"                                          # 8
+     "function with_call(z: int) returns int\n"     # 9
+     "{\n"                                          # 10
+     "    return compute(z)\n"                      # 11 real use, char 11 -> MUST rename
+     "}\n")                                         # 12
+ap = os.path.join(d, "a.scaly"); bp = os.path.join(d, "b.scaly")
+open(ap,"w").write(a); open(bp,"w").write(b)
+def frame(o):
+    s=json.dumps(o).encode(); return ("Content-Length: %d\r\n\r\n"%len(s)).encode()+s
+def rf(idn, p, line, char):
+    return frame({"jsonrpc":"2.0","id":idn,"method":"textDocument/references",
+                  "params":{"textDocument":{"uri":"file://"+p},
+                            "position":{"line":line,"character":char},
+                            "context":{"includeDeclaration":True}}})
+def rn(idn, p, line, char, name):
+    return frame({"jsonrpc":"2.0","id":idn,"method":"textDocument/rename",
+                  "params":{"textDocument":{"uri":"file://"+p},
+                            "position":{"line":line,"character":char},"newName":name}})
+inp  = frame({"jsonrpc":"2.0","id":1,"method":"initialize","params":{"rootUri":"file://"+d}})
+inp += frame({"jsonrpc":"2.0","method":"initialized","params":{}})
+inp += rf(2, ap, 0, 9)               # references on `compute` (decl in A)
+inp += rn(3, ap, 0, 9, "calc")       # rename `compute` (the global) from A
+inp += rn(4, bp, 0, 9, "renamed_local")  # rename the LOCAL `with_local` fn -> sanity: a real local rename still works
+inp += frame({"jsonrpc":"2.0","id":9,"method":"shutdown"})
+inp += frame({"jsonrpc":"2.0","method":"exit"})
+out = subprocess.run(["/tmp/scalyls"], input=inp, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL).stdout
+frames, raw = [], out
+while raw:
+    i = raw.find(b"\r\n\r\n")
+    if i < 0: break
+    n = int(raw[:i].decode().split(":")[1].strip())
+    frames.append(json.loads(raw[i+4:i+4+n])); raw = raw[i+4+n:]
+failures = 0
+def check(cond, label):
+    global failures
+    print(("PASS  " if cond else "FAIL  ") + label)
+    if not cond: failures += 1
+def res(idn):
+    f = next((x for x in frames if x.get("id") == idn), None)
+    return (f or {}).get("result")
+def reflocs(idn):
+    return sorted((os.path.basename(x["uri"]), x["range"]["start"]["line"], x["range"]["start"]["character"])
+                  for x in (res(idn) or []))
+
+# (1) references of the global `compute`: decl + the two REAL uses (a.scaly:6,
+#     b.scaly:11). The local var, its use, the param, and the param use are all
+#     EXCLUDED.
+locs = reflocs(2)
+check(locs == [("a.scaly",0,9), ("a.scaly",6,11), ("b.scaly",11,11)],
+      "references of global `compute` = decl + 2 real uses, no shadowed local/param")
+
+# (2) rename the global `compute` -> edits ONLY the decl + the two real uses.
+ch = (res(3) or {}).get("changes") or {}
+edits = sorted((os.path.basename(u), e["range"]["start"]["line"], e["range"]["start"]["character"])
+               for u,vs in ch.items() for e in vs)
+check(edits == [("a.scaly",0,9), ("a.scaly",6,11), ("b.scaly",11,11)],
+      "rename global `compute` edits decl + 2 real uses only (local/param untouched)")
+# explicit: the shadowed sites are NOT in the edit set.
+shadow_sites = {("b.scaly",2,8),("b.scaly",3,11),("b.scaly",5,20),("b.scaly",7,11)}
+check(not (set(edits) & shadow_sites),
+      "no edit touches the same-named local (b:2,3) or parameter (b:5,7)")
+
+# (3) sanity: a genuine local-vs-global is independent — renaming the function
+#     `with_local` (a real module-wide name) still edits its own decl.
+ch4 = (res(4) or {}).get("changes") or {}
+n4 = sum(len(v) for v in ch4.values())
+check(n4 == 1, "control: rename function `with_local` -> 1 edit (its decl)")
+sys.exit(1 if failures else 0)
+PY
+rc=$?
+if [ $rc -eq 0 ]; then ok "lsp shadowed-local rename"; else bad "lsp shadowed-local rename"; fi
+
 # ---- context-aware completion (member-after-`.`, lexical) ----
 # When a `.` precedes the cursor and its receiver names a declared concept,
 # completion returns only that concept's members. A struct receiver yields
