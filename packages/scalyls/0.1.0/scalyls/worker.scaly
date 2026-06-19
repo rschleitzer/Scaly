@@ -206,6 +206,14 @@ define worker
             return true
         }
 
+        ; inlayHint: parameter-name hints for call sites in the packed
+        ; "<sl> <sc> <el> <ec>" range.
+        guard kind.equals("y")
+        {
+            rpc.write_message_fd(out_fd, symbols.inlay_hints_packed#(source, uri, position))
+            return true
+        }
+
         ; foldingRange: collapsible regions of the resolved source (uri-only,
         ; no position).
         guard kind.equals("o")
@@ -369,6 +377,12 @@ define worker
     ; SignatureHelp, or "" if unavailable / cursor not inside a known call.
     function signature_help#(rp, uri: String, text: String, packed: String) returns String
         worker.exchange#("f", uri, text, packed, String#(""))
+
+    ; inlayHint for `uri` over the packed "<sl> <sc> <el> <ec>" range. `text` is
+    ; the in-memory copy (empty -> worker reads disk). Returns the LSP
+    ; InlayHint[] array; `[]` if unavailable / crashed / hung.
+    function inlay_hints#(rp, uri: String, text: String, packed: String) returns String
+        worker.exchange#("y", uri, text, packed, String#("[]"))
 
     ; foldingRange for `uri` (uri-only, no position). `text` is the in-memory
     ; copy (empty -> worker reads disk). Returns the LSP FoldingRange[] array;

@@ -1035,6 +1035,64 @@ PY
 rc=$?
 if [ $rc -eq 0 ]; then ok "lsp cross-file signatureHelp+completion cache"; else bad "lsp cross-file signatureHelp+completion cache"; fi
 
+# ---- inlayHint: parameter-name hints at call sites ----
+# At each call site within the requested range, label each argument with the
+# callee's parameter name (resolved via the signatureHelp machinery — intra-file
+# + symindex cross-file, leading `this` dropped). Definitions (function/
+# procedure/operator/define) are NOT hinted. One file: a top-level function, a
+# method `put(this, slot, item)`, and a caller that calls both.
+python3 - <<'PY'
+import sys, json, subprocess, os, tempfile
+d = tempfile.mkdtemp(prefix="lsp_inlay_")
+cp = os.path.join(d, "main.scaly")
+main = ("function helper(aa: int) returns int\n{\n    return aa\n}\n"
+        "define Bag\n(\n    n: int\n)\n{\n    procedure put(this: Bag, slot: int, item: int)\n    {\n        return\n    }\n}\n"
+        "function caller(b: Bag) returns int\n{\n    let r helper(7)\n    b.put(3, 4)\n    return r\n}\n")
+open(cp, "w").write(main)
+curi = "file://"+cp
+def frame(o):
+    b = json.dumps(o).encode(); return ("Content-Length: %d\r\n\r\n" % len(b)).encode() + b
+def ih(idn, sl, el):
+    return frame({"jsonrpc":"2.0","id":idn,"method":"textDocument/inlayHint","params":{
+        "textDocument":{"uri":curi},"range":{"start":{"line":sl,"character":0},"end":{"line":el,"character":0}}}})
+inp  = frame({"jsonrpc":"2.0","id":1,"method":"initialize","params":{"rootUri":"file://"+d}})
+inp += frame({"jsonrpc":"2.0","method":"initialized","params":{}})
+inp += ih(2, 0, 30)        # whole document
+inp += ih(3, 17, 18)       # narrow range: only the `b.put(3, 4)` line (17)
+inp += frame({"jsonrpc":"2.0","id":9,"method":"shutdown"})
+inp += frame({"jsonrpc":"2.0","method":"exit"})
+out = subprocess.run(["/tmp/scalyls"], input=inp, stdout=subprocess.PIPE).stdout
+frames, dd = [], out
+while dd:
+    i = dd.find(b"\r\n\r\n")
+    if i < 0: break
+    n = int(dd[:i].decode().split(":")[1].strip())
+    frames.append(json.loads(dd[i+4:i+4+n])); dd = dd[i+4+n:]
+failures = 0
+def check(cond, label):
+    global failures
+    print(("PASS  " if cond else "FAIL  ") + label)
+    if not cond: failures += 1
+def result(idn): return next((x for x in frames if x.get("id") == idn), {}).get("result")
+caps = (result(1) or {}).get("capabilities", {})
+check(caps.get("inlayHintProvider") is True, "initialize advertises inlayHintProvider")
+whole = result(2)
+pairs = [(h["label"], h["position"]["line"], h.get("kind")) for h in (whole or [])]
+labels = [p[0] for p in pairs]
+check(("aa:", 16, 2) in pairs, "intra-file call helper(7) -> hint `aa:` on the call line (kind 2)")
+check(("slot:", 17, 2) in pairs, "method call b.put(3,4) -> `slot:` (this dropped)")
+check(("item:", 17, 2) in pairs, "method call b.put(3,4) -> `item:`")
+check("this:" not in labels, "the dropped `this` is never shown as a hint")
+check(len(pairs) == 3, "definitions (function/procedure params) are NOT hinted (exactly 3 call hints)")
+check(all(h.get("paddingRight") is True for h in (whole or [])), "hints set paddingRight")
+narrow = result(3)
+nlabels = sorted(h["label"] for h in (narrow or []))
+check(nlabels == ["item:", "slot:"], "narrow range hints only the in-range call (excludes helper on line 16)")
+sys.exit(1 if failures else 0)
+PY
+rc=$?
+if [ $rc -eq 0 ]; then ok "lsp inlayHint"; else bad "lsp inlayHint"; fi
+
 # ---- type-aware completion (variable receivers, lexical) ----
 # A variable receiver `v.` resolves `v`'s declared type lexically (constructor
 # `var v T#(...)`, annotated `v: T`, parameter `(v: T)`, or `this: T`) and then

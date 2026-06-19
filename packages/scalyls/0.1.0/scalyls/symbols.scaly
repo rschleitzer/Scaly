@@ -6002,6 +6002,333 @@ define symbols
         commas
     }
 
+    ; ====================================================================
+    ; textDocument/inlayHint (parameter-name hints, parse/lexical)
+    ;
+    ; At each call site `callee(arg0, arg1, …)` within the requested range,
+    ; label each argument with the callee's corresponding parameter name —
+    ; `f(⟨key:⟩ a, ⟨value:⟩ b)`. The parameter names are resolved by reusing the
+    ; signatureHelp machinery (find_signature# intra-file, then the symindex-
+    ; backed find_signature_in_workspace# cross-file), so a leading `this` is
+    ; dropped the same way and the names match the signature labels.
+    ;
+    ; The request packs the visible range as "<sl> <sc> <el> <ec>" (4 ints). Only
+    ; call sites overlapping the range are processed (each triggers a sig
+    ; resolution, so honoring the range bounds the cost). LIMITS (lexical): the
+    ; callee is matched by NAME (no receiver-type resolution); constructor calls
+    ; `Foo#(`/`Foo$(` (sigil before `(`) and `function`/`procedure`/`operator`/
+    ; `define` DEFINITIONS are skipped; nameless (bare-type) parameters emit no
+    ; hint. Result is the LSP InlayHint[] array, appended byte-at-a-time.
+    ; ====================================================================
+
+    function inlay_hints_packed#(rp, source: String, uri: String, packed: String) returns String
+    {
+        var sl: size_t 0
+        var sc: size_t 0
+        var el: size_t 0
+        var ec: size_t 0
+        var field: size_t 0
+        var i: size_t 0
+        let pn packed.get_length()
+        while i < pn
+        {
+            let c packed.get(i)
+            guard c = (0x20 as u8)
+            {
+                set field: field + (1 as size_t)
+                set i: i + (1 as size_t)
+                continue
+            }
+            let digit (c - (0x30 as u8)) as size_t
+            guard field = (0 as size_t)
+                set sl: sl * (10 as size_t) + digit
+            guard field = (1 as size_t)
+                set sc: sc * (10 as size_t) + digit
+            guard field = (2 as size_t)
+                set el: el * (10 as size_t) + digit
+            guard field = (3 as size_t)
+                set ec: ec * (10 as size_t) + digit
+            set i: i + (1 as size_t)
+        }
+        let range_start symbols.position_to_offset#(source, sl, sc)
+        let range_end symbols.position_to_offset#(source, el, ec)
+
+        var sb StringBuilder#()
+        sb.append(0x5B as char)                    ; [
+        var first true
+        let len source.get_length()
+        var k: size_t 0
+        while k < len
+        {
+            let c source.get(k)
+            guard symbols.is_ident_byte(c) = false
+            {
+                set k: k + (1 as size_t)
+                continue
+            }
+            var j k
+            while j < len
+            {
+                guard symbols.is_ident_byte(source.get(j)) = false
+                    break
+                set j: j + (1 as size_t)
+            }
+            ; A call iff the token is immediately followed by `(` and the site
+            ; overlaps the requested range.
+            guard j < len
+                guard source.get(j) = (0x28 as u8)
+                    guard j >= range_start
+                        guard k <= range_end
+                        {
+                            let callee symbols.substring#(source, k, j)
+                            guard grammar.is_keyword(callee) = false
+                                guard symbols.preceded_by_def_keyword#(source, k) = false
+                                {
+                                    let names symbols.call_param_names#(source, uri, callee)
+                                    guard names.get_length() > (0 as size_t)
+                                    {
+                                        let frag symbols.call_arg_hints#(source, j, names, range_start, range_end)
+                                        guard frag.get_length() > (0 as size_t)
+                                        {
+                                            guard first = false
+                                                sb.append(0x2C as char)
+                                            var fi: size_t 0
+                                            let fn frag.get_length()
+                                            while fi < fn
+                                            {
+                                                sb.append(frag.get(fi) as char)
+                                                set fi: fi + (1 as size_t)
+                                            }
+                                            set first: false
+                                        }
+                                    }
+                                }
+                        }
+            set k: j
+        }
+        sb.append(0x5D as char)                    ; ]
+        sb.to_string#()
+    }
+
+    ; True when the identifier starting at `name_start` is the name in a routine
+    ; DEFINITION (`function`/`procedure`/`operator`) or a `define` — i.e. the
+    ; preceding non-whitespace token is one of those keywords. Such a `name(` is
+    ; a declaration's parameter list, not a call, and must not get hints.
+    function preceded_by_def_keyword#(rp, source: String, name_start: size_t) returns bool
+    {
+        var e name_start
+        while e > (0 as size_t)
+        {
+            let c source.get(e - (1 as size_t))
+            guard symbols.is_ws_byte(c) = false
+                break
+            set e: e - (1 as size_t)
+        }
+        guard e = (0 as size_t)
+            return false
+        guard symbols.is_ident_byte(source.get(e - (1 as size_t))) = false
+            return false
+        var s e
+        while s > (0 as size_t)
+        {
+            guard symbols.is_ident_byte(source.get(s - (1 as size_t))) = false
+                break
+            set s: s - (1 as size_t)
+        }
+        let kwf String#("function")
+        guard symbols.token_equals(source, s, e, kwf)
+            return true
+        let kwp String#("procedure")
+        guard symbols.token_equals(source, s, e, kwp)
+            return true
+        let kwo String#("operator")
+        guard symbols.token_equals(source, s, e, kwo)
+            return true
+        let kwd String#("define")
+        guard symbols.token_equals(source, s, e, kwd)
+            return true
+        false
+    }
+
+    ; The callee's parameter NAMES (0x1F-joined) for inlay hints: resolve its
+    ; SignatureHelp (intra-file, then cross-file via the symindex), then strip
+    ; each parameter label "name: Type" to just "name" (a nameless bare-type
+    ; parameter yields an empty segment). "" when the callee is unresolved or
+    ; has no parameters (a zero-arg call has no arguments to label anyway).
+    function call_param_names#(rp, source: String, uri: String, callee: String) returns String
+    {
+        var sig symbols.find_signature#(source, callee, 0 as size_t)
+        guard sig.get_length() = (0 as size_t)
+            set sig: symbols.find_signature_in_workspace#(uri, callee, 0 as size_t)
+        guard sig.get_length() = (0 as size_t)
+            return String#("")
+        let v json.parse#(sig)
+        let sigs json.get(v, "signatures")
+        let sig0 json.array_get(sigs, 0 as size_t)
+        let params json.get(sig0, "parameters")
+        let np json.array_length(params)
+        var sb StringBuilder#()
+        var i: size_t 0
+        while i < np
+        {
+            let p json.array_get(params, i)
+            let plabel json.as_string#(json.get(p, "label"))
+            var nlen: size_t 0
+            let ll plabel.get_length()
+            var ci: size_t 0
+            while ci < ll
+            {
+                guard plabel.get(ci) = (0x3A as u8)         ; :
+                {
+                    set nlen: ci
+                    break
+                }
+                set ci: ci + (1 as size_t)
+            }
+            guard i > (0 as size_t)
+                sb.append(0x1F as char)
+            var ni: size_t 0
+            while ni < nlen
+            {
+                sb.append(plabel.get(ni) as char)
+                set ni: ni + (1 as size_t)
+            }
+            set i: i + (1 as size_t)
+        }
+        sb.to_string#()
+    }
+
+    ; Scan a call's argument list (from the `(` at `paren_pos`) and emit a
+    ; comma-joined InlayHint fragment: one parameter-name hint per depth-0
+    ; argument whose start offset lies within [range_start, range_end] and whose
+    ; parameter (by position) has a name. Nested `()`/`[]` are skipped; the scan
+    ; stops at the matching `)`.
+    function call_arg_hints#(rp, source: String, paren_pos: size_t, names: String, range_start: size_t, range_end: size_t) returns String
+    {
+        var sb StringBuilder#()
+        var first true
+        let len source.get_length()
+        var depth: size_t 0
+        var arg_index: size_t 0
+        var expecting true
+        var a paren_pos + (1 as size_t)
+        var scanning true
+        while scanning
+        {
+            guard a >= len
+                set scanning: false
+            guard a < len
+            {
+                let ac source.get(a)
+                guard ac = (0x28 as u8)
+                    set depth: depth + (1 as size_t)
+                guard ac = (0x5B as u8)
+                    set depth: depth + (1 as size_t)
+                guard ac = (0x29 as u8)
+                {
+                    guard depth = (0 as size_t)
+                        set scanning: false
+                    guard depth > (0 as size_t)
+                        set depth: depth - (1 as size_t)
+                }
+                guard ac = (0x5D as u8)
+                    guard depth > (0 as size_t)
+                        set depth: depth - (1 as size_t)
+                guard scanning
+                {
+                    guard ac = (0x2C as u8)
+                        guard depth = (0 as size_t)
+                        {
+                            set arg_index: arg_index + (1 as size_t)
+                            set expecting: true
+                            set a: a + (1 as size_t)
+                            continue
+                        }
+                    guard expecting
+                        guard symbols.is_ws_byte(ac) = false
+                        {
+                            let pname symbols.nth_field#(names, arg_index)
+                            guard pname.get_length() > (0 as size_t)
+                                guard a >= range_start
+                                    guard a <= range_end
+                                    {
+                                        guard first = false
+                                            sb.append(0x2C as char)
+                                        let hint symbols.inlay_hint_object#(source, a, pname)
+                                        var hi: size_t 0
+                                        let hn hint.get_length()
+                                        while hi < hn
+                                        {
+                                            sb.append(hint.get(hi) as char)
+                                            set hi: hi + (1 as size_t)
+                                        }
+                                        set first: false
+                                    }
+                            set expecting: false
+                        }
+                    set a: a + (1 as size_t)
+                }
+            }
+        }
+        sb.to_string#()
+    }
+
+    ; The k-th 0x1F-separated field of `s` (0-based), or "" when out of range.
+    ; (The separator is hardcoded — a u8 parameter adjacent to the size_t `k`
+    ; triggers stage-0's adjacent-param mis-widening, truncating `k` to i8.)
+    function nth_field#(rp, s: String, k: size_t) returns String
+    {
+        var idx: size_t 0
+        var seg_start: size_t 0
+        let n s.get_length()
+        var i: size_t 0
+        while i < n
+        {
+            guard s.get(i) = (0x1F as u8)
+            {
+                guard idx = k
+                    return symbols.substring#(s, seg_start, i)
+                set idx: idx + (1 as size_t)
+                set seg_start: i + (1 as size_t)
+            }
+            set i: i + (1 as size_t)
+        }
+        guard idx = k
+            return symbols.substring#(s, seg_start, n)
+        String#("")
+    }
+
+    ; One LSP InlayHint: a Parameter-kind (2) hint "<name>:" at `offset`, with a
+    ; trailing space (paddingRight) before the argument text.
+    function inlay_hint_object#(rp, source: String, offset: size_t, name: String) returns String
+    {
+        var lbl StringBuilder#()
+        var i: size_t 0
+        let nn name.get_length()
+        while i < nn
+        {
+            lbl.append(name.get(i) as char)
+            set i: i + (1 as size_t)
+        }
+        lbl.append(0x3A as char)                   ; :
+        let lbl_str lbl.to_string#()
+        var sb StringBuilder#()
+        sb.append(0x7B as char)                    ; {
+        sb.append(symbols.key#("position"))
+        sb.append(symbols.offset_to_pos#(source, offset))
+        sb.append(0x2C as char)
+        sb.append(symbols.key#("label"))
+        sb.append(json.quote_string#(lbl_str))
+        sb.append(0x2C as char)
+        sb.append(symbols.key#("kind"))
+        sb.append("2")                             ; InlayHintKind.Parameter
+        sb.append(0x2C as char)
+        sb.append(symbols.key#("paddingRight"))
+        sb.append("true")
+        sb.append(0x7D as char)                    ; }
+        sb.to_string#()
+    }
+
     ; Parse the program and return the SignatureHelp for the first function /
     ; procedure / operator / method named `name`, or "" on no match / parse error.
     function find_signature#(rp, source: String, name: String, active: size_t) returns String

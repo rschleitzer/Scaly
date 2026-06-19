@@ -200,6 +200,13 @@ define server
             return
         }
 
+        guard method.equals("textDocument/inlayHint")
+        {
+            guard has_id
+                server.handle_inlay_hint(msg, id)
+            return
+        }
+
         guard method.equals("workspace/symbol")
         {
             guard has_id
@@ -418,6 +425,38 @@ define server
         let text docstore.get#(uri)
         let result worker.signature_help#(uri, text, packed)
         rpc.write_message(server.hover_response#(id, result))
+    }
+
+    ; inlayHint: the request carries a uri + a {start,end} range. Pack the range
+    ; as "<sl> <sc> <el> <ec>" and hand it to the worker, which resolves each
+    ; in-range call site's parameter names. The result is an InlayHint[] array
+    ; (can be large -> document_symbol_response# appends it byte-at-a-time).
+    function handle_inlay_hint(msg: JsonValue, id: i64)
+    {
+        let params json.get(msg, "params")
+        let doc json.get(params, "textDocument")
+        let uri json.as_string#(json.get(doc, "uri"))
+        let range json.get(params, "range")
+        let start json.get(range, "start")
+        let end_ json.get(range, "end")
+        let sl json.as_i64(json.get(start, "line"))
+        let sc json.as_i64(json.get(start, "character"))
+        let el json.as_i64(json.get(end_, "line"))
+        let ec json.as_i64(json.get(end_, "character"))
+
+        var pb StringBuilder#()
+        pb.append(json.format_i64#(sl))
+        pb.append(0x20 as char)
+        pb.append(json.format_i64#(sc))
+        pb.append(0x20 as char)
+        pb.append(json.format_i64#(el))
+        pb.append(0x20 as char)
+        pb.append(json.format_i64#(ec))
+        let packed pb.to_string#()
+
+        let text docstore.get#(uri)
+        let result worker.inlay_hints#(uri, text, packed)
+        rpc.write_message(server.document_symbol_response#(id, result))
     }
 
     ; references: the request carries a uri + {line,character} + a
@@ -741,6 +780,9 @@ define server
         sb.append(0x7D as char)                    ; } semanticTokensProvider
         sb.append(0x2C as char)
         sb.append(server.key#("workspaceSymbolProvider"))
+        sb.append("true")
+        sb.append(0x2C as char)
+        sb.append(server.key#("inlayHintProvider"))
         sb.append("true")
         sb.append(0x7D as char)                    ; } capabilities
         sb.append(0x2C as char)
