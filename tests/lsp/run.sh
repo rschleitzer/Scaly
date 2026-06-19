@@ -1161,6 +1161,81 @@ PY
 rc=$?
 if [ $rc -eq 0 ]; then ok "lsp inlayHint types"; else bad "lsp inlayHint types"; fi
 
+# ---- cross-file type-hint inference via the symindex (Step 32) ----
+# A `let r foo()` whose callee `foo` is declared in a SIBLING file now resolves
+# its return type from the SAME content-hash-cached ws blobs (each routine
+# record carries a 4th rettype field) instead of re-parsing the sibling per
+# request. This interleaves I/O to prove the cache + invalidation: a cross-file
+# return-type binding warms the index (-> `: Alpha`); a disk edit changing the
+# sibling's return type (Alpha -> Beta) is picked up on the next identical query
+# (content-hash invalidation); a repeated query is stable from the cache.
+python3 - <<'PY'
+import sys, json, subprocess, os, tempfile
+d = tempfile.mkdtemp(prefix="lsp_ihtypecache_")
+tp = os.path.join(d, "types.scaly")
+mp = os.path.join(d, "main.scaly")
+alpha = ("define Alpha\n(\n    a: int\n)\n{\n"
+         "    function ax(this: Alpha) returns int\n    {\n        return a\n    }\n}\n")
+beta = ("define Beta\n(\n    b: int\n)\n{\n"
+        "    function bx(this: Beta) returns int\n    {\n        return b\n    }\n}\n")
+types_v1 = alpha + beta + "function make_thing(v: int) returns Alpha\n{\n    return Alpha#(v)\n}\n"
+types_v2 = alpha + beta + "function make_thing(v: int) returns Beta\n{\n    return Beta#(v)\n}\n"
+main = ("function run(g: int) returns int\n{\n"          # 0,1
+        "    let r make_thing(5)\n"                       # 2  call -> cross-file return type
+        "    return r.ax()\n}\n")                         # 3
+open(tp, "w").write(types_v1)
+open(mp, "w").write(main)
+muri = "file://"+mp
+def frame(o):
+    s = json.dumps(o).encode(); return ("Content-Length: %d\r\n\r\n" % len(s)).encode() + s
+p = subprocess.Popen(["/tmp/scalyls"], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+def send(o):
+    p.stdin.write(frame(o)); p.stdin.flush()
+def read_frame():
+    hdr = b""
+    while b"\r\n\r\n" not in hdr:
+        ch = p.stdout.read(1)
+        if not ch: return None
+        hdr += ch
+    n = int(hdr.split(b"\r\n")[0].split(b":")[1].strip())
+    return json.loads(p.stdout.read(n))
+def result_for(idn):
+    while True:
+        f = read_frame()
+        if f is None: return None
+        if f.get("id") == idn: return f.get("result")
+def ih(idn):
+    return {"jsonrpc":"2.0","id":idn,"method":"textDocument/inlayHint","params":{
+        "textDocument":{"uri":muri},"range":{"start":{"line":2,"character":0},"end":{"line":3,"character":0}}}}
+def type_hint(r):
+    for h in (r or []):
+        if h.get("kind") == 1 and h["position"]["line"] == 2:
+            return h["label"]
+    return None
+send({"jsonrpc":"2.0","id":1,"method":"initialize","params":{"rootUri":"file://"+d}})
+result_for(1)
+send({"jsonrpc":"2.0","method":"initialized","params":{}})
+send(ih(2)); t1 = type_hint(result_for(2))            # warm index -> : Alpha
+open(tp, "w").write(types_v2)                          # change return type on disk
+send(ih(3)); t2 = type_hint(result_for(3))            # invalidation -> : Beta
+send(ih(4)); t3 = type_hint(result_for(4))            # cache reuse -> : Beta (stable)
+send({"jsonrpc":"2.0","id":9,"method":"shutdown"})
+result_for(9)
+send({"jsonrpc":"2.0","method":"exit"})
+p.wait()
+failures = 0
+def check(cond, label):
+    global failures
+    print(("PASS  " if cond else "FAIL  ") + label)
+    if not cond: failures += 1
+check(t1 == ": Alpha", "cross-file type-hint resolves from cache, warming the index (: Alpha)")
+check(t2 == ": Beta", "return-type disk change picked up (content-hash invalidation: : Beta)")
+check(t3 == ": Beta", "repeated query stable from cache (: Beta)")
+sys.exit(1 if failures else 0)
+PY
+rc=$?
+if [ $rc -eq 0 ]; then ok "lsp cross-file type-hint cache"; else bad "lsp cross-file type-hint cache"; fi
+
 # ---- type-aware completion (variable receivers, lexical) ----
 # A variable receiver `v.` resolves `v`'s declared type lexically (constructor
 # `var v T#(...)`, annotated `v: T`, parameter `(v: T)`, or `this: T`) and then

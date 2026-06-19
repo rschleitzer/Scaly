@@ -4362,6 +4362,7 @@ define symbols
             {
                 var tab1: size_t i
                 var tab2: size_t i
+                var tab3: size_t i
                 var ntabs: size_t 0
                 var t: size_t rec_start
                 while t < i
@@ -4372,11 +4373,13 @@ define symbols
                             set tab1: t
                         guard ntabs = (1 as size_t)
                             set tab2: t
+                        guard ntabs = (2 as size_t)
+                            set tab3: t
                         set ntabs: ntabs + (1 as size_t)
                     }
                     set t: t + (1 as size_t)
                 }
-                guard ntabs >= (2 as size_t)
+                guard ntabs >= (3 as size_t)
                     guard tab1 - rec_start = nm_len
                     {
                         var matched true
@@ -4392,14 +4395,17 @@ define symbols
                         }
                         guard matched
                         {
+                            ; detail = [tab2+1, tab3) — bounded at the THIRD tab
+                            ; (Step 32 added a 4th rettype field), NOT the LF, so
+                            ; the rettype never bleeds into the "S"/"M" payload.
                             let dstart tab2 + (1 as size_t)
-                            guard dstart < i
+                            guard dstart < tab3
                                 guard blob.get(dstart) = tag
                                 {
                                     var sb StringBuilder#()
                                     sb.append(0x59 as char)    ; Y sentinel
                                     var d dstart + (1 as size_t)
-                                    while d < i
+                                    while d < tab3
                                     {
                                         sb.append(blob.get(d) as char)
                                         set d: d + (1 as size_t)
@@ -4452,6 +4458,258 @@ define symbols
             return sb.to_string#()
         }
         String#("")
+    }
+
+    ; ====================================================================
+    ; Cross-file type-hint inference from the cached ws blob (Step 32)
+    ;
+    ; inlayHint TYPE inference (infer_binding_type# / concept_or_return_type#)
+    ; resolves "is NAME a concept?" and "what does routine NAME return?" — the
+    ; two cross-file questions a binding initializer poses. Before Step 32 the
+    ; intra-MISS fallback re-parsed each sibling/package file per request
+    ; (members_for_type# / function_return_type_ws#). These readers answer both
+    ; from the SAME content-hash-cached ws blobs the rest of the server shares
+    ; (workspace/symbol + def + sig + member + semanticTokens) — no re-parse.
+    ; The 4th rettype field that ws_item# now emits carries the routine return
+    ; base; concept-ness is read from the json `"kind":` (23 struct / 10 enum).
+    ; Both readers use EXACT name match (range_equals), NOT name_matches (the
+    ; case-insensitive substring used by workspace/symbol filtering).
+    ; ====================================================================
+
+    ; The 4th (rettype) field of the FIRST record in `blob` whose name EXACTLY
+    ; equals `name`, "" on no match (or a routine that returns nothing — same
+    ; "" → no hint). Records are `name<TAB>{json}<TAB>detail<TAB>rettype<LF>`;
+    ; rettype = [tab3+1, i). Mirrors def_from_ws_blob#'s exact-name walk.
+    function return_type_from_ws_blob#(rp, blob: String, name: String) returns String
+    {
+        let nm_len name.get_length()
+        let n blob.get_length()
+        var rec_start: size_t 0
+        var i: size_t 0
+        while i < n
+        {
+            guard blob.get(i) = (10 as u8)             ; record terminator
+            {
+                var tab1: size_t i
+                var tab3: size_t i
+                var ntabs: size_t 0
+                var t: size_t rec_start
+                while t < i
+                {
+                    guard blob.get(t) = (9 as u8)
+                    {
+                        guard ntabs = (0 as size_t)
+                            set tab1: t
+                        guard ntabs = (2 as size_t)
+                            set tab3: t
+                        set ntabs: ntabs + (1 as size_t)
+                    }
+                    set t: t + (1 as size_t)
+                }
+                guard ntabs >= (3 as size_t)
+                    guard tab1 - rec_start = nm_len
+                        guard symbols.range_equals(blob, rec_start, name, 0 as size_t, nm_len)
+                            return symbols.substring#(blob, tab3 + (1 as size_t), i)
+                set rec_start: i + (1 as size_t)
+            }
+            set i: i + (1 as size_t)
+        }
+        String#("")
+    }
+
+    ; True when the FIRST record in `blob` whose name EXACTLY equals `name` is a
+    ; concept — its json `"kind":` is 23 (struct) or 10 (enum/union). The first
+    ; `"kind":` in a record is always the json's (it precedes the detail field's
+    ; completion-item kinds), so the scan stops at it. Mirrors
+    ; tagged_names_from_ws_blob#'s kind extraction + def_from_ws_blob#'s exact
+    ; name match.
+    function concept_in_ws_blob#(rp, blob: String, name: String) returns bool
+    {
+        var needle StringBuilder#()
+        needle.append(0x22 as char)                ; "
+        needle.append("kind")
+        needle.append(0x22 as char)                ; "
+        needle.append(0x3A as char)                ; :
+        let kind_needle needle.to_string#()
+        let kn kind_needle.get_length()
+
+        let nm_len name.get_length()
+        let n blob.get_length()
+        var rec_start: size_t 0
+        var i: size_t 0
+        while i < n
+        {
+            guard blob.get(i) = (10 as u8)             ; record terminator
+            {
+                ; name = [rec_start, tab)
+                var tab rec_start
+                while tab < i
+                {
+                    guard blob.get(tab) = (9 as u8)
+                        break
+                    set tab: tab + (1 as size_t)
+                }
+                guard tab - rec_start = nm_len
+                    guard symbols.range_equals(blob, rec_start, name, 0 as size_t, nm_len)
+                    {
+                        ; first "kind": in [tab, i) is the json's
+                        var kind: i64 (0 - 1)
+                        var s tab
+                        while s + kn <= i
+                        {
+                            guard symbols.matches_at(blob, s, kind_needle)
+                            {
+                                var j s + kn
+                                var v: i64 0
+                                while j < i
+                                {
+                                    let c blob.get(j)
+                                    guard c >= (0x30 as u8)
+                                        guard c <= (0x39 as u8)
+                                        {
+                                            set v: v * (10 as i64) + ((c - (0x30 as u8)) as i64)
+                                            set j: j + (1 as size_t)
+                                            continue
+                                        }
+                                    break
+                                }
+                                set kind: v
+                                set s: i                   ; stop scanning
+                            }
+                            set s: s + (1 as size_t)
+                        }
+                        guard kind = (23 as i64)
+                            return true
+                        guard kind = (10 as i64)
+                            return true
+                        return false
+                    }
+                set rec_start: i + (1 as size_t)
+            }
+            set i: i + (1 as size_t)
+        }
+        false
+    }
+
+    ; Is there a concept named `name` anywhere in the workspace? Mirrors
+    ; find_definition_in_workspace#: the current file's directory tree, then ON A
+    ; MISS the package dependency tree. Reads CACHED ws blobs via the symindex.
+    function concept_in_workspace#(rp, uri: String, name: String) returns bool
+    {
+        let path symbols.uri_to_path#(uri)
+        let dir symbols.dir_of#(path)
+        guard symbols.concept_in_dir#(dir, path, name)
+            return true
+        let pkg symbols.package_search_dir#(path)
+        guard pkg.get_length() > (0 as size_t)
+            guard pkg.equals(dir) = false
+                return symbols.concept_in_dir#(pkg, path, name)
+        false
+    }
+
+    ; Scan the .scaly files under `dir` (skipping self_path) for a concept named
+    ; `name`, reading each file's CACHED ws blob (symindex.valid → get_blob#,
+    ; else workspace_symbols_in_file# + put). Structured exactly like
+    ; find_definition_in_dir#.
+    function concept_in_dir#(rp, dir: String, self_path: String, name: String) returns bool
+    {
+        guard dir.get_length() = (0 as size_t)
+            return false
+        let listing symbols.list_scaly_files#(dir)
+        var found false
+        var line_start: size_t 0
+        let n listing.get_length()
+        var i: size_t 0
+        while i < n
+        {
+            guard listing.get(i) = (10 as char)
+            {
+                guard found = false
+                {
+                    let fpath symbols.substring#(listing, line_start, i)
+                    guard fpath.get_length() > (0 as size_t)
+                        guard fpath.equals(self_path) = false
+                            guard File.exists(fpath)
+                            {
+                                let fsrc File.read_to_string#(fpath)
+                                let chash fsrc.hash()
+                                var blob String#("")
+                                guard symindex.valid(fpath, chash)
+                                    set blob: symindex.get_blob#(fpath)
+                                guard symindex.valid(fpath, chash) = false
+                                {
+                                    let furi symbols.path_to_uri#(fpath)
+                                    set blob: symbols.workspace_symbols_in_file#(fsrc, furi)
+                                    symindex.put(fpath, chash, blob)
+                                }
+                                guard symbols.concept_in_ws_blob#(blob, name)
+                                    set found: true
+                            }
+                }
+                set line_start: i + (1 as size_t)
+            }
+            set i: i + (1 as size_t)
+        }
+        found
+    }
+
+    ; The return-type base of the routine named `name` anywhere in the workspace
+    ; (dir tree, then package tree), "" when found nowhere / void. Reads CACHED
+    ; ws blobs via the symindex; structured like function_return_type_ws# but
+    ; cache-served (no per-file re-parse).
+    function return_type_in_workspace#(rp, uri: String, name: String) returns String
+    {
+        let path symbols.uri_to_path#(uri)
+        let dir symbols.dir_of#(path)
+        let here symbols.return_type_in_dir#(dir, path, name)
+        guard here.get_length() > (0 as size_t)
+            return here
+        let pkg symbols.package_search_dir#(path)
+        guard pkg.get_length() > (0 as size_t)
+            guard pkg.equals(dir) = false
+                return symbols.return_type_in_dir#(pkg, path, name)
+        String#("")
+    }
+
+    function return_type_in_dir#(rp, dir: String, self_path: String, name: String) returns String
+    {
+        guard dir.get_length() = (0 as size_t)
+            return String#("")
+        let listing symbols.list_scaly_files#(dir)
+        var result String#("")
+        var line_start: size_t 0
+        let n listing.get_length()
+        var i: size_t 0
+        while i < n
+        {
+            guard listing.get(i) = (10 as char)
+            {
+                guard result.get_length() = (0 as size_t)
+                {
+                    let fpath symbols.substring#(listing, line_start, i)
+                    guard fpath.get_length() > (0 as size_t)
+                        guard fpath.equals(self_path) = false
+                            guard File.exists(fpath)
+                            {
+                                let fsrc File.read_to_string#(fpath)
+                                let chash fsrc.hash()
+                                var blob String#("")
+                                guard symindex.valid(fpath, chash)
+                                    set blob: symindex.get_blob#(fpath)
+                                guard symindex.valid(fpath, chash) = false
+                                {
+                                    let furi symbols.path_to_uri#(fpath)
+                                    set blob: symbols.workspace_symbols_in_file#(fsrc, furi)
+                                    symindex.put(fpath, chash, blob)
+                                }
+                                set result: symbols.return_type_from_ws_blob#(blob, name)
+                            }
+                }
+                set line_start: i + (1 as size_t)
+            }
+            set i: i + (1 as size_t)
+        }
+        result
     }
 
     ; ====================================================================
@@ -5051,17 +5309,17 @@ define symbols
     {
         choose decl
             when f: FunctionSyntax
-                return symbols.ws_item#(source, uri, symbols.target_name#(f.target), 12 as i64, f.start, f.end, symbols.routine_param_detail#(source, f.target))
+                return symbols.ws_item#(source, uri, symbols.target_name#(f.target), 12 as i64, f.start, f.end, symbols.routine_param_detail#(source, f.target), symbols.target_return_field#(f.target))
             when pr: ProcedureSyntax
-                return symbols.ws_item#(source, uri, symbols.target_name#(pr.target), 12 as i64, pr.start, pr.end, symbols.routine_param_detail#(source, pr.target))
+                return symbols.ws_item#(source, uri, symbols.target_name#(pr.target), 12 as i64, pr.start, pr.end, symbols.routine_param_detail#(source, pr.target), symbols.target_return_field#(pr.target))
             when o: OperatorSyntax
-                return symbols.ws_item#(source, uri, symbols.target_name#(o.target), 25 as i64, o.start, o.end, symbols.routine_param_detail#(source, o.target))
+                return symbols.ws_item#(source, uri, symbols.target_name#(o.target), 25 as i64, o.start, o.end, symbols.routine_param_detail#(source, o.target), symbols.target_return_field#(o.target))
             when def: DefinitionSyntax
                 return symbols.ws_definition#(source, uri, def)
             when m: ModuleSyntax
-                return symbols.ws_item#(source, uri, String#(m.name), 2 as i64, m.start, m.end, String#(""))
+                return symbols.ws_item#(source, uri, String#(m.name), 2 as i64, m.start, m.end, String#(""), String#(""))
             when mut: MutableSyntax
-                return symbols.ws_item#(source, uri, String#(mut.binding.name), 13 as i64, mut.start, mut.end, String#(""))
+                return symbols.ws_item#(source, uri, String#(mut.binding.name), 13 as i64, mut.start, mut.end, String#(""), String#(""))
             when priv: PrivateSyntax
                 return symbols.ws_export#(source, uri, priv.export_)
             when e: EmptySyntax
@@ -5081,17 +5339,17 @@ define symbols
     {
         choose export_
             when f: FunctionSyntax
-                return symbols.ws_item#(source, uri, symbols.target_name#(f.target), 12 as i64, f.start, f.end, symbols.routine_param_detail#(source, f.target))
+                return symbols.ws_item#(source, uri, symbols.target_name#(f.target), 12 as i64, f.start, f.end, symbols.routine_param_detail#(source, f.target), symbols.target_return_field#(f.target))
             when pr: ProcedureSyntax
-                return symbols.ws_item#(source, uri, symbols.target_name#(pr.target), 12 as i64, pr.start, pr.end, symbols.routine_param_detail#(source, pr.target))
+                return symbols.ws_item#(source, uri, symbols.target_name#(pr.target), 12 as i64, pr.start, pr.end, symbols.routine_param_detail#(source, pr.target), symbols.target_return_field#(pr.target))
             when o: OperatorSyntax
-                return symbols.ws_item#(source, uri, symbols.target_name#(o.target), 25 as i64, o.start, o.end, symbols.routine_param_detail#(source, o.target))
+                return symbols.ws_item#(source, uri, symbols.target_name#(o.target), 25 as i64, o.start, o.end, symbols.routine_param_detail#(source, o.target), symbols.target_return_field#(o.target))
             when def: DefinitionSyntax
                 return symbols.ws_definition#(source, uri, def)
             when t: TraitSyntax
                 return String#("")
             when m: ModuleSyntax
-                return symbols.ws_item#(source, uri, String#(m.name), 2 as i64, m.start, m.end, String#(""))
+                return symbols.ws_item#(source, uri, String#(m.name), 2 as i64, m.start, m.end, String#(""), String#(""))
     }
 
     ; A `define X` -> its own item (struct/namespace/union/…) joined with its
@@ -5122,7 +5380,7 @@ define symbols
                 set kind: (12 as i64)
             when ic: IntrinsicSyntax
                 set kind: (23 as i64)
-        let own symbols.ws_item#(source, uri, def.name, kind, def.start, def.end, symbols.concept_member_detail#(source, def))
+        let own symbols.ws_item#(source, uri, def.name, kind, def.start, def.end, symbols.concept_member_detail#(source, def), String#(""))
         symbols.join_fragments#(own, children)
     }
 
@@ -5164,15 +5422,15 @@ define symbols
     {
         choose member
             when f: FunctionSyntax
-                return symbols.ws_item#(source, uri, symbols.target_name#(f.target), 6 as i64, f.start, f.end, symbols.routine_param_detail#(source, f.target))
+                return symbols.ws_item#(source, uri, symbols.target_name#(f.target), 6 as i64, f.start, f.end, symbols.routine_param_detail#(source, f.target), symbols.target_return_field#(f.target))
             when pr: ProcedureSyntax
-                return symbols.ws_item#(source, uri, symbols.target_name#(pr.target), 6 as i64, pr.start, pr.end, symbols.routine_param_detail#(source, pr.target))
+                return symbols.ws_item#(source, uri, symbols.target_name#(pr.target), 6 as i64, pr.start, pr.end, symbols.routine_param_detail#(source, pr.target), symbols.target_return_field#(pr.target))
             when o: OperatorSyntax
-                return symbols.ws_item#(source, uri, symbols.target_name#(o.target), 25 as i64, o.start, o.end, symbols.routine_param_detail#(source, o.target))
+                return symbols.ws_item#(source, uri, symbols.target_name#(o.target), 25 as i64, o.start, o.end, symbols.routine_param_detail#(source, o.target), symbols.target_return_field#(o.target))
             when ini: InitSyntax
-                return symbols.ws_item#(source, uri, String#("init"), 9 as i64, ini.start, ini.end, String#(""))
+                return symbols.ws_item#(source, uri, String#("init"), 9 as i64, ini.start, ini.end, String#(""), String#(""))
             when dei: DeInitSyntax
-                return symbols.ws_item#(source, uri, String#("deinit"), 9 as i64, dei.start, dei.end, String#(""))
+                return symbols.ws_item#(source, uri, String#("deinit"), 9 as i64, dei.start, dei.end, String#(""), String#(""))
             when def: DefinitionSyntax
                 return symbols.ws_definition#(source, uri, def)
             when e: EmptySyntax
@@ -5184,7 +5442,7 @@ define symbols
             when mac: MacroSyntax
                 return String#("")
             when m: ModuleSyntax
-                return symbols.ws_item#(source, uri, String#(m.name), 2 as i64, m.start, m.end, String#(""))
+                return symbols.ws_item#(source, uri, String#(m.name), 2 as i64, m.start, m.end, String#(""), String#(""))
     }
 
     ; Nested declarations of a namespace -> a concatenated record fragment.
@@ -5231,7 +5489,7 @@ define symbols
                 let vptr variants.get(i)
                 guard vptr <> null
                 {
-                    let vitem symbols.ws_item#(source, uri, String#(vptr.name), 22 as i64, vptr.start, vptr.end, String#(""))
+                    let vitem symbols.ws_item#(source, uri, String#(vptr.name), 22 as i64, vptr.start, vptr.end, String#(""), String#(""))
                     var ci: size_t 0
                     let cn vitem.get_length()
                     while ci < cn
@@ -5329,16 +5587,21 @@ define symbols
     }
 
     ; One tagged symbol record
-    ; `name <0x09> {"name","kind","location"} <0x09> detail <0x0A>`.
+    ; `name <0x09> {"name","kind","location"} <0x09> detail <0x09> rettype <0x0A>`.
     ; UNFILTERED (query-independent, so it can be cached); filter_ws_blob# does
-    ; the name match later AND drops the detail field (bounding at the SECOND
-    ; tab) so workspace/symbol output stays byte-identical. A SymbolInformation
-    ; JSON object never contains a raw tab or newline (json.quote_string#
-    ; escapes them), and the detail field (param labels / completion items)
-    ; likewise has no raw tab/newline, so the two delimiters are unambiguous.
-    ; `detail` is "S<labels>" for routines, "M<members>" for `define`s, "" else
-    ; (built by routine_param_detail# / concept_member_detail#).
-    function ws_item#(rp, source: String, uri: String, name: String, kind: i64, start: size_t, end: size_t, detail: String) returns String
+    ; the name match later AND drops the detail+rettype fields (bounding at the
+    ; SECOND tab) so workspace/symbol output stays byte-identical. A
+    ; SymbolInformation JSON object never contains a raw tab or newline
+    ; (json.quote_string# escapes them); the detail field (param labels /
+    ; completion items) likewise has no raw tab/newline; and the rettype field
+    ; (Step 32) is a bare return-type base identifier (no tab/newline) — so all
+    ; three delimiters are unambiguous. `detail` is "S<labels>" for routines,
+    ; "M<members>" for `define`s, "" else (routine_param_detail# /
+    ; concept_member_detail#). `rettype` is the routine's return-type base
+    ; (target_return_field#), "" for non-routines / a routine that returns
+    ; nothing — it backs cache-served cross-file type-hint inference
+    ; (return_type_from_ws_blob#).
+    function ws_item#(rp, source: String, uri: String, name: String, kind: i64, start: size_t, end: size_t, detail: String, rettype: String) returns String
     {
         var sb StringBuilder#()
         var ni: size_t 0
@@ -5367,8 +5630,28 @@ define symbols
             sb.append(detail.get(di) as char)
             set di: di + (1 as size_t)
         }
+        sb.append(0x09 as char)                    ; tab: detail / rettype separator
+        var ri: size_t 0
+        let rl rettype.get_length()
+        while ri < rl
+        {
+            sb.append(rettype.get(ri) as char)
+            set ri: ri + (1 as size_t)
+        }
         sb.append(0x0A as char)                    ; newline: record terminator
         sb.to_string#()
+    }
+
+    ; The ws-blob RETTYPE field (Step 32): a routine target's return-type base
+    ; name (target's NamedSyntax routine returns_), "" for an anonymous routine
+    ; or one that returns nothing. Non-routine declarations pass "" directly.
+    function target_return_field#(rp, target: TargetSyntax) returns String
+    {
+        choose target
+            when named: NamedSyntax
+                return symbols.routine_return_base#(named.routine)
+            when r: RoutineSyntax
+                return String#("")
     }
 
     ; Concatenate two tagged-record fragments (records are newline-terminated,
@@ -6922,12 +7205,11 @@ define symbols
                     return tname
                 ; A lowercase intra-miss is a variable index (`vec[i]`), not a
                 ; generic type ctor — skip the cross-file concept parse.
+                ; cross-file concept check is cache-served (Step 32), not a
+                ; per-request re-parse via members_for_type#.
                 guard symbols.is_upper(source.get(after))
-                {
-                    let mem symbols.members_for_type#(source, uri, tname)
-                    guard mem.get_length() > (0 as size_t)
+                    guard symbols.concept_in_workspace#(uri, tname)
                         return tname
-                }
                 return String#("")
             }
         }
@@ -6957,10 +7239,12 @@ define symbols
                 return String#("")
             return mrt
         }
-        let mem symbols.members_for_type#(source, uri, name)
-        guard mem.get_length() > (0 as size_t)
+        ; Intra-map miss: consult the SAME content-hash-cached ws blobs the rest
+        ; of the server shares (Step 32) instead of re-parsing each sibling /
+        ; package file (the old members_for_type# / function_return_type_ws#).
+        guard symbols.concept_in_workspace#(uri, name)
             return name
-        let rt symbols.function_return_type_ws#(source, uri, name)
+        let rt symbols.return_type_in_workspace#(uri, name)
         guard symbols.is_primitive_type_name#(rt)
             return String#("")
         rt
