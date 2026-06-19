@@ -1227,6 +1227,60 @@ PY
 rc=$?
 if [ $rc -eq 0 ]; then ok "lsp real type-aware completion"; else bad "lsp real type-aware completion"; fi
 
+# ---- foldingRange: collapsible regions for a file on disk ----
+# Parse-only: every multi-line declaration with a body yields one FoldingRange
+# {startLine,endLine}. The request carries only a uri, so the worker re-reads
+# the file. Exercises a top-level function, a struct with a nested method
+# (nested fold), a union (folds to the closing paren), a single-line mutable
+# (NOT folded), and confirms endLine lands on the closing brace (not the next
+# token's line, despite the syntax-node end-offset overshoot).
+python3 - <<'PY'
+import sys, json, subprocess
+src = ("function add(a: int, b: int) returns int\n{\n    return a + b\n}\n\n"   # 0..3
+       "mutable counter: int 0\n\n"                                            # 5 (single-line)
+       "define Point\n(\n    x: int\n)\n{\n"                                    # 7.. open at 11
+       "    function get_x(this: Point) returns int\n    {\n        return x\n    }\n}\n\n"  # 12..16
+       "define Shape union (\n    Circle: int\n    Square: int\n)\n")          # 18..21
+path = "/tmp/lsp_fold_test.scaly"
+open(path, "w").write(src)
+def frame(o):
+    b=json.dumps(o).encode(); return ("Content-Length: %d\r\n\r\n"%len(b)).encode()+b
+inp  = frame({"jsonrpc":"2.0","id":1,"method":"initialize","params":{}})
+inp += frame({"jsonrpc":"2.0","method":"initialized","params":{}})
+inp += frame({"jsonrpc":"2.0","id":2,"method":"textDocument/foldingRange",
+              "params":{"textDocument":{"uri":"file://"+path}}})
+inp += frame({"jsonrpc":"2.0","id":9,"method":"shutdown"})
+inp += frame({"jsonrpc":"2.0","method":"exit"})
+out = subprocess.run(["/tmp/scalyls"], input=inp, stdout=subprocess.PIPE).stdout
+frames, d = [], out
+while d:
+    i = d.find(b"\r\n\r\n")
+    if i < 0: break
+    n = int(d[:i].decode().split(":")[1].strip())
+    frames.append(json.loads(d[i+4:i+4+n])); d = d[i+4+n:]
+failures = 0
+def check(cond, label):
+    global failures
+    print(("PASS  " if cond else "FAIL  ") + label)
+    if not cond: failures += 1
+caps = frames[0]["result"]["capabilities"]
+check(caps.get("foldingRangeProvider") is True, "initialize advertises foldingRangeProvider")
+r = next((f for f in frames if f.get("id") == 2), None)
+ranges = (r or {}).get("result")
+check(isinstance(ranges, list), "foldingRange -> array result")
+ranges = ranges or []
+pairs = [(x["startLine"], x["endLine"]) for x in ranges]
+check((0,3) in pairs, "function folds from signature to closing brace (0..3)")
+check((7,16) in pairs, "struct folds whole body to closing brace (7..16)")
+check((12,15) in pairs, "nested method folds inside the struct (12..15)")
+check((18,21) in pairs, "union folds to its closing paren (18..21)")
+check(all(s != 5 for (s,e) in pairs), "single-line mutable is not folded")
+check(all(e > s for (s,e) in pairs), "every range spans more than one line")
+sys.exit(1 if failures else 0)
+PY
+rc=$?
+if [ $rc -eq 0 ]; then ok "lsp foldingRange"; else bad "lsp foldingRange"; fi
+
 echo "-----"
 echo "PASS: $pass  FAIL: $fail"
 [ $fail -eq 0 ]

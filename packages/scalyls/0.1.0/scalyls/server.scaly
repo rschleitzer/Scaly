@@ -186,6 +186,13 @@ define server
             return
         }
 
+        guard method.equals("textDocument/foldingRange")
+        {
+            guard has_id
+                server.handle_folding_range(msg, id)
+            return
+        }
+
         guard method.equals("workspace/symbol")
         {
             guard has_id
@@ -303,6 +310,21 @@ define server
         ; unsaved edits.
         let text docstore.get#(uri)
         let result worker.symbols#(uri, text)
+        rpc.write_message(server.document_symbol_response#(id, result))
+    }
+
+    ; foldingRange: collapsible regions of the document. Like documentSymbol
+    ; the request carries only a uri, so the worker re-reads the file (falling
+    ; back from the in-memory copy). The result is the FoldingRange[] array
+    ; wrapped in a Response envelope; it can be large, so document_symbol_response#
+    ; (byte-at-a-time) builds it.
+    function handle_folding_range(msg: JsonValue, id: i64)
+    {
+        let params json.get(msg, "params")
+        let doc json.get(params, "textDocument")
+        let uri json.as_string#(json.get(doc, "uri"))
+        let text docstore.get#(uri)
+        let result worker.folding#(uri, text)
         rpc.write_message(server.document_symbol_response#(id, result))
     }
 
@@ -653,6 +675,9 @@ define server
         sb.append(0x22 as char)                    ; "
         sb.append(0x5D as char)                    ; ]
         sb.append(0x7D as char)                    ; }
+        sb.append(0x2C as char)
+        sb.append(server.key#("foldingRangeProvider"))
+        sb.append("true")
         sb.append(0x2C as char)
         sb.append(server.key#("workspaceSymbolProvider"))
         sb.append("true")

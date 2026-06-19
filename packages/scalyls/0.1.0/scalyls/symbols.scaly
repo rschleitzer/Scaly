@@ -521,6 +521,384 @@ define symbols
     }
 
     ; ====================================================================
+    ; textDocument/foldingRange (parse-only)
+    ;
+    ; Collapsible regions of the document: every multi-line declaration that
+    ; has a body — top-level functions / procedures / operators, `define`
+    ; classes / namespaces / unions (and their members recursively) — yields
+    ; one LSP FoldingRange {"startLine":L,"endLine":L} (both 0-based). The
+    ; result is the FLAT JSON array `[ <range>... ]` (FoldingRange[] is flat;
+    ; ranges nest implicitly by line containment). The parent wraps it in a
+    ; Response envelope. Same parse-tree walk as documentSymbol/completion,
+    ; flattened into comma-joined fragments (callers join non-empty fragments
+    ; with one comma). Single-line declarations produce "" and are dropped.
+    ;
+    ; END-OFFSET NOTE: a syntax node's `end` runs to the START of the next
+    ; token (trailing trivia included), so converting it straight to a line
+    ; would over-fold past the closing `}` into the blank line / next decl.
+    ; fold_range# backs `end` up over trailing whitespace (last_real_offset)
+    ; so endLine lands on the closing-brace line. Statement-level folds
+    ; (if/while bodies) are NOT emitted — the walk stops at routine bodies.
+    ; ====================================================================
+
+    function folding_ranges#(rp, source: String) returns String
+    {
+        var sb StringBuilder#()
+        sb.append(0x5B as char)                    ; [
+
+        var p parser.Parser$(source)
+        choose p.parse_program#()
+            when err: Error {}
+            when program: Success
+            {
+                let file program.file
+                guard file.declarations <> null
+                {
+                    let decls (*file.declarations)
+                    var first true
+                    var i: size_t 0
+                    while i < decls.length
+                    {
+                        let dptr decls.get(i)
+                        guard dptr <> null
+                        {
+                            let d (*dptr)
+                            let frag symbols.fold_decl#(source, d)
+                            guard frag.get_length() > (0 as size_t)
+                            {
+                                guard first = false
+                                    sb.append(0x2C as char)
+                                var ci: size_t 0
+                                let cn frag.get_length()
+                                while ci < cn
+                                {
+                                    sb.append(frag.get(ci) as char)
+                                    set ci: ci + 1
+                                }
+                                set first: false
+                            }
+                        }
+                        set i: i + 1
+                    }
+                }
+            }
+
+        sb.append(0x5D as char)                    ; ]
+        sb.to_string#()
+    }
+
+    ; One top-level declaration -> a fragment (its own range, plus the bodies
+    ; of a definition's members). "" for use/package/empty/trait/macro/mutable.
+    function fold_decl#(rp, source: String, decl: DeclarationSyntax) returns String
+    {
+        choose decl
+            when f: FunctionSyntax
+                return symbols.fold_range#(source, f.start, f.end)
+            when pr: ProcedureSyntax
+                return symbols.fold_range#(source, pr.start, pr.end)
+            when o: OperatorSyntax
+                return symbols.fold_range#(source, o.start, o.end)
+            when def: DefinitionSyntax
+                return symbols.fold_definition#(source, def)
+            when m: ModuleSyntax
+                return symbols.fold_range#(source, m.start, m.end)
+            when mut: MutableSyntax
+                return String#("")
+            when priv: PrivateSyntax
+                return symbols.fold_export#(source, priv.export_)
+            when e: EmptySyntax
+                return String#("")
+            when pkg: PackageSyntax
+                return String#("")
+            when u: UseSyntax
+                return String#("")
+            when t: TraitSyntax
+                return String#("")
+            when mac: MacroSyntax
+                return String#("")
+    }
+
+    ; A `private` declaration unwraps to its exported construct.
+    function fold_export#(rp, source: String, export_: ExportSyntax) returns String
+    {
+        choose export_
+            when f: FunctionSyntax
+                return symbols.fold_range#(source, f.start, f.end)
+            when pr: ProcedureSyntax
+                return symbols.fold_range#(source, pr.start, pr.end)
+            when o: OperatorSyntax
+                return symbols.fold_range#(source, o.start, o.end)
+            when def: DefinitionSyntax
+                return symbols.fold_definition#(source, def)
+            when t: TraitSyntax
+                return String#("")
+            when m: ModuleSyntax
+                return symbols.fold_range#(source, m.start, m.end)
+    }
+
+    ; A `define X` -> its own range followed by its members' ranges.
+    function fold_definition#(rp, source: String, def: DefinitionSyntax) returns String
+    {
+        var members String#("")
+        choose def.concept_
+            when c: ClassSyntax
+                set members: symbols.fold_body#(source, c.body)
+            when n: NamespaceSyntax
+                set members: symbols.fold_namespace#(source, n)
+            when un: UnionSyntax
+                set members: symbols.fold_union#(source, un)
+            when cn: ConstantSyntax {}
+            when dl: DelegateSyntax {}
+            when ic: IntrinsicSyntax {}
+        let own symbols.fold_range#(source, def.start, def.end)
+        symbols.join_two#(own, members)
+    }
+
+    ; Members of a class body -> a comma-joined fragment (no brackets).
+    function fold_body#(rp, source: String, body: ref[BodySyntax]?) returns String
+    {
+        var sb StringBuilder#()
+        var first true
+        guard body <> null
+        {
+            let b (*body)
+            guard b.members <> null
+            {
+                let members (*b.members)
+                var i: size_t 0
+                while i < members.length
+                {
+                    let mptr members.get(i)
+                    guard mptr <> null
+                    {
+                        let m (*mptr)
+                        let frag symbols.fold_member#(source, m)
+                        guard frag.get_length() > (0 as size_t)
+                        {
+                            guard first = false
+                                sb.append(0x2C as char)
+                            var ci: size_t 0
+                            let cn frag.get_length()
+                            while ci < cn
+                            {
+                                sb.append(frag.get(ci) as char)
+                                set ci: ci + 1
+                            }
+                            set first: false
+                        }
+                    }
+                    set i: i + 1
+                }
+            }
+        }
+        sb.to_string#()
+    }
+
+    ; One class/union member -> its range, "", or a nested definition fragment.
+    function fold_member#(rp, source: String, member: MemberSyntax) returns String
+    {
+        choose member
+            when f: FunctionSyntax
+                return symbols.fold_range#(source, f.start, f.end)
+            when pr: ProcedureSyntax
+                return symbols.fold_range#(source, pr.start, pr.end)
+            when o: OperatorSyntax
+                return symbols.fold_range#(source, o.start, o.end)
+            when ini: InitSyntax
+                return symbols.fold_range#(source, ini.start, ini.end)
+            when dei: DeInitSyntax
+                return symbols.fold_range#(source, dei.start, dei.end)
+            when def: DefinitionSyntax
+                return symbols.fold_definition#(source, def)
+            when e: EmptySyntax
+                return String#("")
+            when im: ImplementSyntax
+                return String#("")
+            when t: TraitSyntax
+                return String#("")
+            when mac: MacroSyntax
+                return String#("")
+            when m: ModuleSyntax
+                return symbols.fold_range#(source, m.start, m.end)
+    }
+
+    ; Nested declarations of a namespace -> a comma-joined fragment.
+    function fold_namespace#(rp, source: String, ns: NamespaceSyntax) returns String
+    {
+        var sb StringBuilder#()
+        var first true
+        guard ns.declarations <> null
+        {
+            let decls (*ns.declarations)
+            var i: size_t 0
+            while i < decls.length
+            {
+                let dptr decls.get(i)
+                guard dptr <> null
+                {
+                    let d (*dptr)
+                    let frag symbols.fold_decl#(source, d)
+                    guard frag.get_length() > (0 as size_t)
+                    {
+                        guard first = false
+                            sb.append(0x2C as char)
+                        var ci: size_t 0
+                        let cn frag.get_length()
+                        while ci < cn
+                        {
+                            sb.append(frag.get(ci) as char)
+                            set ci: ci + 1
+                        }
+                        set first: false
+                    }
+                }
+                set i: i + 1
+            }
+        }
+        sb.to_string#()
+    }
+
+    ; Body members of a union -> a comma-joined fragment. Variants are
+    ; single-line and never fold, so only the union's methods contribute.
+    function fold_union#(rp, source: String, un: UnionSyntax) returns String
+    {
+        var sb StringBuilder#()
+        var first true
+        guard un.body <> null
+        {
+            let b (*un.body)
+            guard b.members <> null
+            {
+                let members (*b.members)
+                var j: size_t 0
+                while j < members.length
+                {
+                    let mptr members.get(j)
+                    guard mptr <> null
+                    {
+                        let m (*mptr)
+                        let frag symbols.fold_member#(source, m)
+                        guard frag.get_length() > (0 as size_t)
+                        {
+                            guard first = false
+                                sb.append(0x2C as char)
+                            var ci: size_t 0
+                            let cn frag.get_length()
+                            while ci < cn
+                            {
+                                sb.append(frag.get(ci) as char)
+                                set ci: ci + 1
+                            }
+                            set first: false
+                        }
+                    }
+                    set j: j + 1
+                }
+            }
+        }
+        sb.to_string#()
+    }
+
+    ; A FoldingRange {"startLine":L,"endLine":L}, or "" for a single-line
+    ; (non-foldable) declaration. `end` is backed up over trailing whitespace
+    ; so endLine is the closing-brace line, not the next token's line.
+    function fold_range#(rp, source: String, start: size_t, end: size_t) returns String
+    {
+        let start_line symbols.line_at(source, start)
+        let real_end symbols.last_real_offset(source, end)
+        let end_line symbols.line_at(source, real_end)
+        guard end_line <= start_line
+            return String#("")
+        var sb StringBuilder#()
+        sb.append(0x7B as char)                    ; {
+        sb.append(symbols.key#("startLine"))
+        sb.append(json.format_i64#(start_line as i64))
+        sb.append(0x2C as char)
+        sb.append(symbols.key#("endLine"))
+        sb.append(json.format_i64#(end_line as i64))
+        sb.append(0x7D as char)                    ; }
+        sb.to_string#()
+    }
+
+    ; Join two comma-joined fragments with a comma, dropping empties.
+    function join_two#(rp, a: String, b: String) returns String
+    {
+        guard a.get_length() = (0 as size_t)
+            return b
+        guard b.get_length() = (0 as size_t)
+            return a
+        var sb StringBuilder#()
+        var ai: size_t 0
+        let an a.get_length()
+        while ai < an
+        {
+            sb.append(a.get(ai) as char)
+            set ai: ai + 1
+        }
+        sb.append(0x2C as char)
+        var bi: size_t 0
+        let bn b.get_length()
+        while bi < bn
+        {
+            sb.append(b.get(bi) as char)
+            set bi: bi + 1
+        }
+        sb.to_string#()
+    }
+
+    ; 0-based line number of a byte offset (count LFs before it). Mirrors
+    ; offset_to_pos#'s line walk; numeric LF compare (10), never "\n".
+    function line_at(source: String, offset: size_t) returns size_t
+    {
+        var line: size_t 0
+        let src_len source.get_length()
+        var target offset
+        guard target > src_len
+            set target: src_len
+        var off: size_t 0
+        while off < target
+        {
+            let c source.get(off)
+            guard c = (10 as char)
+                set line: line + 1
+            set off: off + 1
+        }
+        line
+    }
+
+    ; Back `end` up over trailing whitespace so it points just past the last
+    ; real character (the closing `}`), not into the next token's leading trivia.
+    function last_real_offset(source: String, end: size_t) returns size_t
+    {
+        let src_len source.get_length()
+        var e end
+        guard e > src_len
+            set e: src_len
+        while e > (0 as size_t)
+        {
+            let c source.get(e - 1)
+            guard symbols.is_ws_byte(c) = false
+                return e
+            set e: e - 1
+        }
+        e
+    }
+
+    ; ASCII whitespace: space, tab, LF, CR.
+    function is_ws_byte(c: u8) returns bool
+    {
+        guard c = (32 as u8)
+            return true
+        guard c = (9 as u8)
+            return true
+        guard c = (10 as u8)
+            return true
+        guard c = (13 as u8)
+            return true
+        false
+    }
+
+    ; ====================================================================
     ; textDocument/completion (parse-only)
     ;
     ; Collect every declared name in the file — top-level functions /
