@@ -21,6 +21,9 @@
         (file "packages/scalyc/0.1.0/scalyc/compiler/parser.scaly"
             (generate-parser-scaly)
         )
+        (file "packages/scalyls/0.1.0/scalyls/grammar.scaly"
+            (generate-highlight-scaly)
+        )
     )
 )
 ]]>

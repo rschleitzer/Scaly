@@ -45,6 +45,7 @@ use scaly.memory.runtime
 use scaly.memory.root_pages.getenv
 use scalyls.json
 use scalyls.symindex
+use scalyls.grammar
 
 use scalyc.compiler.parser
 
@@ -894,6 +895,401 @@ define symbols
         guard c = (10 as u8)
             return true
         guard c = (13 as u8)
+            return true
+        false
+    }
+
+    ; ====================================================================
+    ; textDocument/semanticTokens/full (lexical)
+    ;
+    ; A single raw byte scan classifies every token into the legend below and
+    ; emits the LSP delta-encoded `data` array. Legend (token-type indices):
+    ;   0 keyword  1 type  2 function  3 variable  4 operator  5 string
+    ;   6 number   7 comment
+    ; No modifiers. Classification is LEXICAL (no parser): keywords via the
+    ; parser's keyword set; the identifier right after `function`/`procedure`
+    ; -> function, after `define`/`union`/`trait`/`module` -> type; any other
+    ; identifier -> type if it starts uppercase, else variable. Operators are
+    ; runs of + - * / = % & | ^ ~ < > (mirrors lexer scan_operator); strings
+    ; are " " / ' ' / ` ` ; numbers start with a digit; comments are `;` to EOL
+    ; and `;* ... *;` (split into one token per line — LSP tokens are
+    ; single-line). The result is {"data":[...]}; the server wraps it in a
+    ; Response (the data array can be large -> byte-at-a-time wrapper).
+    ;
+    ; ENCODING: each token is 5 ints [dLine, dStartChar, length, type, 0],
+    ; delta-encoded against the previous token (dStartChar absolute when
+    ; dLine>0). All JSON uses quote BYTES (0x22) — string-literal escapes are
+    ; NOT decoded by the lexer, so a `\"` in a literal would land raw.
+    ; ====================================================================
+
+    function semantic_tokens#(rp, source: String) returns String
+    {
+        var sb StringBuilder#()
+        sb.append(0x7B as char)                    ; {
+        sb.append(symbols.key#("data"))            ; "data":
+        sb.append(0x5B as char)                    ; [
+
+        let n source.get_length()
+        var i: size_t 0
+        var line: size_t 0
+        var col: size_t 0
+        var prev_line: size_t 0
+        var prev_col: size_t 0
+        var first true
+        var pending: i64 (0 - 1)                   ; -1 none, 1 type-name, 2 fn-name
+
+        while i < n
+        {
+            let c source.get(i)
+
+            ; newline (does NOT reset pending — whitespace between `function`
+            ; and the name must keep the pending classification)
+            guard c = (10 as u8)
+            {
+                set line: line + 1
+                set col: 0 as size_t
+                set i: i + 1
+                continue
+            }
+
+            ; space / tab / CR (also keeps pending)
+            guard symbols.is_ws_byte(c)
+            {
+                set col: col + 1
+                set i: i + 1
+                continue
+            }
+
+            ; comment: `;` to EOL, or `;* ... *;` (possibly multi-line)
+            guard c = (59 as u8)
+            {
+                var is_multi false
+                guard i + 1 < n
+                    guard source.get(i + 1) = (42 as u8)
+                        set is_multi: true
+
+                guard is_multi
+                {
+                    var seg_col col
+                    var seg_line line
+                    var k i
+                    var done false
+                    while k < n
+                    {
+                        guard done
+                            break
+                        let cc source.get(k)
+                        guard cc = (10 as u8)
+                        {
+                            let seglen col - seg_col
+                            guard seglen > (0 as size_t)
+                            {
+                                guard first = false
+                                    sb.append(0x2C as char)
+                                sb.append(symbols.encode_token#(prev_line, prev_col, seg_line, seg_col, seglen, 7 as i64))
+                                set prev_line: seg_line
+                                set prev_col: seg_col
+                                set first: false
+                            }
+                            set line: line + 1
+                            set col: 0 as size_t
+                            set k: k + 1
+                            set seg_line: line
+                            set seg_col: 0 as size_t
+                            continue
+                        }
+                        guard cc = (42 as u8)
+                            guard k + 1 < n
+                                guard source.get(k + 1) = (59 as u8)
+                                {
+                                    set col: col + 2
+                                    set k: k + 2
+                                    set done: true
+                                    continue
+                                }
+                        set col: col + 1
+                        set k: k + 1
+                    }
+                    let seglen col - seg_col
+                    guard seglen > (0 as size_t)
+                    {
+                        guard first = false
+                            sb.append(0x2C as char)
+                        sb.append(symbols.encode_token#(prev_line, prev_col, seg_line, seg_col, seglen, 7 as i64))
+                        set prev_line: seg_line
+                        set prev_col: seg_col
+                        set first: false
+                    }
+                    set i: k
+                    set pending: 0 - 1
+                    continue
+                }
+
+                ; single-line comment: from i to the next newline
+                var j i
+                while j < n
+                {
+                    guard source.get(j) = (10 as u8)
+                        break
+                    set j: j + 1
+                }
+                let clen j - i
+                guard first = false
+                    sb.append(0x2C as char)
+                sb.append(symbols.encode_token#(prev_line, prev_col, line, col, clen, 7 as i64))
+                set prev_line: line
+                set prev_col: col
+                set first: false
+                set col: col + clen
+                set i: j
+                set pending: 0 - 1
+                continue
+            }
+
+            ; A single-line token from here. Classify [i, j) -> tok_type/tlen.
+            var tok_type: i64 (0 - 1)
+            var tlen: size_t 0
+            let start_col col
+
+            ; string literal " (34) / string identifier ' (39) / fragment ` (96)
+            guard symbols.is_string_start(c)
+            {
+                let q c
+                var j i + 1
+                while j < n
+                {
+                    let cc source.get(j)
+                    guard cc = (10 as u8)
+                        break
+                    guard cc = (92 as u8)          ; backslash escape: skip next
+                    {
+                        set j: j + 2
+                        continue
+                    }
+                    guard cc = q
+                    {
+                        set j: j + 1               ; include the closing quote
+                        break
+                    }
+                    set j: j + 1
+                }
+                guard j > n
+                    set j: n
+                set tlen: j - i
+                set tok_type: 5 as i64                 ; string
+                set pending: 0 - 1
+            }
+
+            ; number: starts with a digit
+            guard symbols.is_digit(c)
+            {
+                var j i + 1
+                while j < n
+                {
+                    let cc source.get(j)
+                    guard symbols.is_num_byte(cc) = false
+                        break
+                    set j: j + 1
+                }
+                set tlen: j - i
+                set tok_type: 6 as i64                 ; number
+                set pending: 0 - 1
+            }
+
+            ; identifier: starts with a letter
+            guard symbols.is_letter(c)
+            {
+                var j i + 1
+                while j < n
+                {
+                    let cc source.get(j)
+                    guard symbols.is_ident_byte(cc) = false
+                        break
+                    set j: j + 1
+                }
+                set tlen: j - i
+                let word symbols.substring#(source, i, j)
+                var t: i64 (3)                     ; variable
+                guard symbols.is_upper(c)
+                    set t: 1 as i64                ; uppercase -> type
+                guard pending = (1 as i64)
+                    set t: 1 as i64                ; type-name (after define/...)
+                guard pending = (2 as i64)
+                    set t: 2 as i64                ; function-name
+                guard grammar.is_keyword(word)
+                    set t: 0 as i64                ; keyword wins (grammar-derived)
+                set tok_type: t
+                ; set pending for the NEXT identifier off this keyword, else clear
+                guard t = (0 as i64)
+                {
+                    var np: i64 (0 - 1)
+                    guard word.equals("function")
+                        set np: 2 as i64
+                    guard word.equals("procedure")
+                        set np: 2 as i64
+                    guard word.equals("define")
+                        set np: 1 as i64
+                    guard word.equals("union")
+                        set np: 1 as i64
+                    guard word.equals("trait")
+                        set np: 1 as i64
+                    guard word.equals("module")
+                        set np: 1 as i64
+                    set pending: np
+                }
+                guard t <> (0 as i64)
+                    set pending: 0 - 1
+            }
+
+            ; operator: a run of + - * / = % & | ^ ~ < >
+            guard symbols.is_op_char(c)
+            {
+                var j i + 1
+                while j < n
+                {
+                    let cc source.get(j)
+                    guard symbols.is_op_char(cc) = false
+                        break
+                    set j: j + 1
+                }
+                set tlen: j - i
+                set tok_type: 4 as i64
+                set pending: 0 - 1
+            }
+
+            ; Emit the single-line token (if one was classified).
+            guard tok_type >= (0 as i64)
+            {
+                guard first = false
+                    sb.append(0x2C as char)
+                sb.append(symbols.encode_token#(prev_line, prev_col, line, start_col, tlen, tok_type))
+                set prev_line: line
+                set prev_col: start_col
+                set first: false
+                set col: col + tlen
+                set i: i + tlen
+                continue
+            }
+
+            ; other punctuation / unknown: skip one char
+            set col: col + 1
+            set i: i + 1
+            set pending: 0 - 1
+        }
+
+        sb.append(0x5D as char)                    ; ]
+        sb.append(0x7D as char)                    ; }
+        sb.to_string#()
+    }
+
+    ; One delta-encoded semantic token: "dLine,dStartChar,length,type,0".
+    function encode_token#(rp, prev_line: size_t, prev_col: size_t, tline: size_t, tcol: size_t, tlen: size_t, ttype: i64) returns String
+    {
+        let dline tline - prev_line
+        var dcol tcol
+        guard dline = (0 as size_t)
+            set dcol: tcol - prev_col
+        var sb StringBuilder#()
+        sb.append(json.format_i64#(dline as i64))
+        sb.append(0x2C as char)
+        sb.append(json.format_i64#(dcol as i64))
+        sb.append(0x2C as char)
+        sb.append(json.format_i64#(tlen as i64))
+        sb.append(0x2C as char)
+        sb.append(json.format_i64#(ttype))
+        sb.append(0x2C as char)
+        sb.append(0x30 as char)                    ; 0 (no modifiers)
+        sb.to_string#()
+    }
+
+    function is_letter(c: u8) returns bool
+    {
+        guard c >= (65 as u8)
+            guard c <= (90 as u8)
+                return true
+        guard c >= (97 as u8)
+            guard c <= (122 as u8)
+                return true
+        false
+    }
+
+    function is_upper(c: u8) returns bool
+    {
+        guard c >= (65 as u8)
+            guard c <= (90 as u8)
+                return true
+        false
+    }
+
+    function is_digit(c: u8) returns bool
+    {
+        guard c >= (48 as u8)
+            guard c <= (57 as u8)
+                return true
+        false
+    }
+
+    ; Bytes that continue a numeric literal: digits, hex letters, x/X, ., _.
+    function is_num_byte(c: u8) returns bool
+    {
+        guard c >= (48 as u8)
+            guard c <= (57 as u8)
+                return true
+        guard c >= (65 as u8)
+            guard c <= (70 as u8)
+                return true
+        guard c >= (97 as u8)
+            guard c <= (102 as u8)
+                return true
+        guard c = (120 as u8)
+            return true
+        guard c = (88 as u8)
+            return true
+        guard c = (46 as u8)
+            return true
+        guard c = (95 as u8)
+            return true
+        false
+    }
+
+    ; Operator chars: + - * / = % & | ^ ~ < > (lexer scan_operator set + ^).
+    function is_op_char(c: u8) returns bool
+    {
+        guard c = (43 as u8)
+            return true
+        guard c = (45 as u8)
+            return true
+        guard c = (42 as u8)
+            return true
+        guard c = (47 as u8)
+            return true
+        guard c = (61 as u8)
+            return true
+        guard c = (37 as u8)
+            return true
+        guard c = (38 as u8)
+            return true
+        guard c = (124 as u8)
+            return true
+        guard c = (94 as u8)
+            return true
+        guard c = (126 as u8)
+            return true
+        guard c = (60 as u8)
+            return true
+        guard c = (62 as u8)
+            return true
+        false
+    }
+
+    ; Quote bytes that open a string: " (34), ' (39), ` (96).
+    function is_string_start(c: u8) returns bool
+    {
+        guard c = (34 as u8)
+            return true
+        guard c = (39 as u8)
+            return true
+        guard c = (96 as u8)
             return true
         false
     }

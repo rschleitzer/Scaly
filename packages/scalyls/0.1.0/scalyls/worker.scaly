@@ -82,7 +82,7 @@ define worker
     ; messages — a kind tag ("d" diagnostics / "s" documentSymbol / "c"
     ; completion / "h" hover / "g" definition / "r" references / "l"
     ; documentHighlight / "n" rename / "p" prepareRename / "f" signatureHelp /
-    ; "w" workspace/symbol / "o" foldingRange), the uri, the raw
+    ; "w" workspace/symbol / "o" foldingRange / "t" semanticTokens), the uri, the raw
     ; document text (the parent's in-memory copy; empty = unknown), then a
     ; packed cursor position ("<line> <char>", or "<line> <char> <newName>"
     ; for rename; empty for d/s) — and the reply is one framed payload. Raw framing avoids round-tripping arbitrary
@@ -211,6 +211,14 @@ define worker
         guard kind.equals("o")
         {
             rpc.write_message_fd(out_fd, symbols.folding_ranges#(source))
+            return true
+        }
+
+        ; semanticTokens: delta-encoded token classification of the source
+        ; (uri-only, no position).
+        guard kind.equals("t")
+        {
+            rpc.write_message_fd(out_fd, symbols.semantic_tokens#(source))
             return true
         }
 
@@ -367,6 +375,24 @@ define worker
     ; `[]` if unavailable / crashed / hung.
     function folding#(rp, uri: String, text: String) returns String
         worker.exchange#("o", uri, text, String#(""), String#("[]"))
+
+    ; semanticTokens for `uri` (uri-only, no position). `text` is the in-memory
+    ; copy (empty -> worker reads disk). Returns the LSP {"data":[...]} object;
+    ; an empty-data object if unavailable / crashed / hung. The fallback is
+    ; built with quote BYTES (string-literal escapes are not decoded).
+    function semantic_tokens#(rp, uri: String, text: String) returns String
+    {
+        var fb StringBuilder#()
+        fb.append(0x7B as char)                    ; {
+        fb.append(0x22 as char)                    ; "
+        fb.append("data")
+        fb.append(0x22 as char)                    ; "
+        fb.append(0x3A as char)                    ; :
+        fb.append(0x5B as char)                    ; [
+        fb.append(0x5D as char)                    ; ]
+        fb.append(0x7D as char)                    ; }
+        worker.exchange#("t", uri, text, String#(""), fb.to_string#())
+    }
 
     ; workspace/symbol: search every .scaly file under `root` for declarations
     ; matching `query`. `root` rides in the uri frame, `query` in the position

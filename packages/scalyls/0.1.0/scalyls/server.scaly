@@ -193,6 +193,13 @@ define server
             return
         }
 
+        guard method.equals("textDocument/semanticTokens/full")
+        {
+            guard has_id
+                server.handle_semantic_tokens(msg, id)
+            return
+        }
+
         guard method.equals("workspace/symbol")
         {
             guard has_id
@@ -325,6 +332,20 @@ define server
         let uri json.as_string#(json.get(doc, "uri"))
         let text docstore.get#(uri)
         let result worker.folding#(uri, text)
+        rpc.write_message(server.document_symbol_response#(id, result))
+    }
+
+    ; semanticTokens/full: whole-document token classification for syntax
+    ; highlighting. Like documentSymbol the request carries only a uri. The
+    ; result is {"data":[...]} (delta-encoded ints) wrapped in a Response; the
+    ; data array can be large, so document_symbol_response# (byte-at-a-time).
+    function handle_semantic_tokens(msg: JsonValue, id: i64)
+    {
+        let params json.get(msg, "params")
+        let doc json.get(params, "textDocument")
+        let uri json.as_string#(json.get(doc, "uri"))
+        let text docstore.get#(uri)
+        let result worker.semantic_tokens#(uri, text)
         rpc.write_message(server.document_symbol_response#(id, result))
     }
 
@@ -678,6 +699,42 @@ define server
         sb.append(0x2C as char)
         sb.append(server.key#("foldingRangeProvider"))
         sb.append("true")
+        sb.append(0x2C as char)
+        ; semanticTokensProvider: legend (token types, no modifiers) + full.
+        ; The token-type order MUST match symbols.semantic_tokens#'s indices:
+        ;   0 keyword 1 type 2 function 3 variable 4 operator 5 string
+        ;   6 number  7 comment
+        sb.append(server.key#("semanticTokensProvider"))
+        sb.append(0x7B as char)                    ; {
+        sb.append(server.key#("legend"))
+        sb.append(0x7B as char)                    ; legend {
+        sb.append(server.key#("tokenTypes"))
+        sb.append(0x5B as char)                    ; [
+        sb.append(server.quoted#("keyword"))
+        sb.append(0x2C as char)
+        sb.append(server.quoted#("type"))
+        sb.append(0x2C as char)
+        sb.append(server.quoted#("function"))
+        sb.append(0x2C as char)
+        sb.append(server.quoted#("variable"))
+        sb.append(0x2C as char)
+        sb.append(server.quoted#("operator"))
+        sb.append(0x2C as char)
+        sb.append(server.quoted#("string"))
+        sb.append(0x2C as char)
+        sb.append(server.quoted#("number"))
+        sb.append(0x2C as char)
+        sb.append(server.quoted#("comment"))
+        sb.append(0x5D as char)                    ; ]
+        sb.append(0x2C as char)
+        sb.append(server.key#("tokenModifiers"))
+        sb.append(0x5B as char)                    ; [
+        sb.append(0x5D as char)                    ; ]
+        sb.append(0x7D as char)                    ; } legend
+        sb.append(0x2C as char)
+        sb.append(server.key#("full"))
+        sb.append("true")
+        sb.append(0x7D as char)                    ; } semanticTokensProvider
         sb.append(0x2C as char)
         sb.append(server.key#("workspaceSymbolProvider"))
         sb.append("true")

@@ -24,6 +24,10 @@ define scalyls
     ; symbol blobs so workspace/symbol re-parses only changed files.
     module symindex
 
+    ; Grammar-derived keyword classification for semantic highlighting,
+    ; generated from scaly.sgm <keyword> elements by ./mkp.
+    module grammar
+
     ; documentSymbol: text -> parse -> DocumentSymbol[] outline tree.
     module symbols
 

@@ -5,6 +5,7 @@
 <!ENTITY syntax-scaly SYSTEM "syntax-scaly.scm" >
 <!ENTITY parser       SYSTEM "parser.scm"       >
 <!ENTITY parser-scaly SYSTEM "parser-scaly.scm" >
+<!ENTITY highlight-scaly SYSTEM "highlight-scaly.scm" >
 <!ENTITY rules        SYSTEM "rules.scm"        >
 ]>
 
@@ -17,6 +18,7 @@
 &syntax-scaly;
 &parser;
 &parser-scaly;
+&highlight-scaly;
 &rules;
 
 </STYLE-SPECIFICATION>
