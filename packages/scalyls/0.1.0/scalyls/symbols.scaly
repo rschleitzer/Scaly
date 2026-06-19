@@ -923,7 +923,7 @@ define symbols
     ; NOT decoded by the lexer, so a `\"` in a literal would land raw.
     ; ====================================================================
 
-    function semantic_tokens#(rp, source: String) returns String
+    function semantic_tokens#(rp, source: String, uri: String) returns String
     {
         var sb StringBuilder#()
         sb.append(0x7B as char)                    ; {
@@ -939,6 +939,23 @@ define symbols
         let fn_list symbols.names_from_items#(comp_items, 2 as i64, 3 as i64)
         let ty_list symbols.names_from_items#(comp_items, 22 as i64, 13 as i64)
         let prim_list symbols.primitive_type_list#()
+
+        ; Cross-file name tables: function/method + struct/enum names harvested
+        ; from the current file's directory tree via the symindex cache. "" (no
+        ; workspace context) -> empty lists -> identical to the intra-file path.
+        ; GATED on file size: the membership test (name_set_contains) is a linear
+        ; scan, so the cost is O(identifiers x cross-list-bytes); for the huge
+        ; compiler files (10k+ lines) that exceeds the 8s worker budget. Files
+        ; above the threshold stay intra-file-only (the pre-cross-file behaviour,
+        ; fast). The proper scaling fix is a hashed name set (deferred).
+        var xfn_list String#("")
+        var xty_list String#("")
+        guard source.get_length() <= (96000 as size_t)
+        {
+            let xname_blob symbols.workspace_name_blob#(uri)
+            set xfn_list: symbols.tagged_name_list#(xname_blob, 0x46 as u8)  ; F
+            set xty_list: symbols.tagged_name_list#(xname_blob, 0x54 as u8)  ; T
+        }
 
         ; Scope-aware tables: routine [start,end)+param-names and field-decl
         ; offsets, both from ONE more parse. param_in_scope / is_field_decl_offset
@@ -1143,6 +1160,10 @@ define symbols
                     set t: 1 as i64                ; declared type (this file)
                 guard symbols.name_set_contains(fn_list, source, i, j)
                     set t: 2 as i64                ; declared function/method (this file)
+                guard symbols.name_set_contains(xty_list, source, i, j)
+                    set t: 1 as i64                ; declared type (cross-file workspace)
+                guard symbols.name_set_contains(xfn_list, source, i, j)
+                    set t: 2 as i64                ; declared function/method (cross-file)
                 ; parameter: in scope of the enclosing routine (above function)
                 guard symbols.param_in_scope(scope_tbl, source, i, j, i)
                     set t: 8 as i64
@@ -4218,6 +4239,213 @@ define symbols
             set i: i + (1 as size_t)
         }
         result
+    }
+
+    ; ====================================================================
+    ; Cross-file semantic-token name resolution
+    ;
+    ; semantic_tokens#'s declared-kind resolution (fn_list/ty_list from
+    ; completion_items#) colours an identifier USE by its kind only when the
+    ; declaration is in the SAME file. This harvests function/method and
+    ; struct/enum names from the rest of the workspace so a call to a cross-file
+    ; function colours as function and a cross-file type reference as type. It
+    ; reuses the persistent symindex — the SAME content-hash-cached ws symbol
+    ; blobs workspace/symbol builds (parse-once, shared) — extracting names by
+    ; SymbolKind: function/method (12/6) -> tag "F", struct/enum (23/10) ->
+    ; tag "T". The result is a blob of tagged lines "F<TAB>name<LF>" /
+    ; "T<TAB>name<LF>"; semantic_tokens# splits it into two newline-bracketed
+    ; name lists via tagged_name_list#. "" when there is no workspace context,
+    ; so a scratch file with no siblings behaves exactly as the intra-file path.
+    ; Mirrors find_definition_in_workspace#: current file's dir tree, then the
+    ; package tree (stdlib String / Vector / Page, …).
+    ; ====================================================================
+
+    function workspace_name_blob#(rp, uri: String) returns String
+    {
+        guard uri.get_length() > (0 as size_t)
+        {
+            let path symbols.uri_to_path#(uri)
+            let dir symbols.dir_of#(path)
+            var sb StringBuilder#()
+            let here symbols.workspace_names_in_dir#(dir, path)
+            var hi: size_t 0
+            let hn here.get_length()
+            while hi < hn
+            {
+                sb.append(here.get(hi) as char)
+                set hi: hi + (1 as size_t)
+            }
+            return sb.to_string#()
+        }
+        String#("")
+    }
+
+    ; Harvest tagged function/type names from every .scaly file under `dir`
+    ; (recursively) except `self_path` (the current file — its declarations are
+    ; already in the intra-file lists). Reuses the symindex (parse-once, content
+    ; hashed), so a query reuses the cached ws blob whenever the file is
+    ; unchanged. Each file contributes its tagged-name fragment.
+    function workspace_names_in_dir#(rp, dir: String, self_path: String) returns String
+    {
+        guard dir.get_length() = (0 as size_t)
+            return String#("")
+        let listing symbols.list_scaly_files#(dir)
+
+        var sb StringBuilder#()
+        var line_start: size_t 0
+        let n listing.get_length()
+        var i: size_t 0
+        while i < n
+        {
+            guard listing.get(i) = (10 as char)
+            {
+                let fpath symbols.substring#(listing, line_start, i)
+                guard fpath.get_length() > (0 as size_t)
+                    guard fpath.equals(self_path) = false
+                        guard File.exists(fpath)
+                        {
+                            let fsrc File.read_to_string#(fpath)
+                            let chash fsrc.hash()
+                            var blob String#("")
+                            guard symindex.valid(fpath, chash)
+                                set blob: symindex.get_blob#(fpath)
+                            guard symindex.valid(fpath, chash) = false
+                            {
+                                let furi symbols.path_to_uri#(fpath)
+                                set blob: symbols.workspace_symbols_in_file#(fsrc, furi)
+                                symindex.put(fpath, chash, blob)
+                            }
+                            let frag symbols.tagged_names_from_ws_blob#(blob)
+                            var ci: size_t 0
+                            let cn frag.get_length()
+                            while ci < cn
+                            {
+                                sb.append(frag.get(ci) as char)
+                                set ci: ci + (1 as size_t)
+                            }
+                        }
+                set line_start: i + (1 as size_t)
+            }
+            set i: i + (1 as size_t)
+        }
+        sb.to_string#()
+    }
+
+    ; Walk a cached ws symbol blob (records "name<TAB>{json}<LF>") and emit a
+    ; tagged-name line per function/method (SymbolKind 12/6 -> "F") and struct/
+    ; enum (23/10 -> "T"). Other kinds (namespaces, variables, constructors,
+    ; operators, modules) are skipped — they match the intra-file path, where
+    ; only completion kinds 2/3 (fn) and 22/13 (type) feed the lists.
+    function tagged_names_from_ws_blob#(rp, blob: String) returns String
+    {
+        var sb StringBuilder#()
+        var needle StringBuilder#()
+        needle.append(0x22 as char)                ; "
+        needle.append("kind")
+        needle.append(0x22 as char)                ; "
+        needle.append(0x3A as char)                ; :
+        let kind_needle needle.to_string#()
+        let kn kind_needle.get_length()
+
+        let n blob.get_length()
+        var rec_start: size_t 0
+        var i: size_t 0
+        while i < n
+        {
+            guard blob.get(i) = (10 as u8)             ; record terminator
+            {
+                ; name = [rec_start, tab)
+                var tab rec_start
+                while tab < i
+                {
+                    guard blob.get(tab) = (9 as u8)
+                        break
+                    set tab: tab + (1 as size_t)
+                }
+                ; kind: find the "kind": needle in the json part [tab, i)
+                var kind: i64 (0 - 1)
+                var s tab
+                while s + kn <= i
+                {
+                    guard symbols.matches_at(blob, s, kind_needle)
+                    {
+                        var j s + kn
+                        var v: i64 0
+                        while j < i
+                        {
+                            let c blob.get(j)
+                            guard c >= (0x30 as u8)
+                                guard c <= (0x39 as u8)
+                                {
+                                    set v: v * (10 as i64) + ((c - (0x30 as u8)) as i64)
+                                    set j: j + (1 as size_t)
+                                    continue
+                                }
+                            break
+                        }
+                        set kind: v
+                        set s: i                       ; stop scanning
+                    }
+                    set s: s + (1 as size_t)
+                }
+                var tagb: size_t 0
+                guard kind = (12 as i64)
+                    set tagb: 0x46 as size_t           ; F: function
+                guard kind = (6 as i64)
+                    set tagb: 0x46 as size_t           ; F: method
+                guard kind = (23 as i64)
+                    set tagb: 0x54 as size_t           ; T: struct
+                guard kind = (10 as i64)
+                    set tagb: 0x54 as size_t           ; T: enum/union
+                guard tagb > (0 as size_t)
+                {
+                    sb.append(tagb as char)
+                    sb.append(0x09 as char)
+                    var k rec_start
+                    while k < tab
+                    {
+                        sb.append(blob.get(k) as char)
+                        set k: k + (1 as size_t)
+                    }
+                    sb.append(0x0A as char)
+                }
+                set rec_start: i + (1 as size_t)
+            }
+            set i: i + (1 as size_t)
+        }
+        sb.to_string#()
+    }
+
+    ; Extract the names tagged `tag` ("F"/"T") from a workspace_name_blob# into a
+    ; newline-bracketed list ("\nname\n..\n"), the shape name_set_contains reads.
+    function tagged_name_list#(rp, blob: String, tag: u8) returns String
+    {
+        var sb StringBuilder#()
+        sb.append(0x0A as char)                        ; leading newline
+        let n blob.get_length()
+        var line_start: size_t 0
+        var i: size_t 0
+        while i < n
+        {
+            guard blob.get(i) = (10 as u8)
+            {
+                guard i > line_start + (1 as size_t)
+                    guard blob.get(line_start) = tag
+                        guard blob.get(line_start + (1 as size_t)) = (9 as u8)
+                        {
+                            var k line_start + (2 as size_t)
+                            while k < i
+                            {
+                                sb.append(blob.get(k) as char)
+                                set k: k + (1 as size_t)
+                            }
+                            sb.append(0x0A as char)
+                        }
+                set line_start: i + (1 as size_t)
+            }
+            set i: i + (1 as size_t)
+        }
+        sb.to_string#()
     }
 
     ; ====================================================================

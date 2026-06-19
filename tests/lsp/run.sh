@@ -1290,7 +1290,7 @@ if [ $rc -eq 0 ]; then ok "lsp foldingRange"; else bad "lsp foldingRange"; fi
 # operators, numbers, strings, a single-line comment, and a `;* ... *;`
 # multi-line comment (split into one token per line).
 python3 - <<'PY'
-import sys, json, subprocess
+import sys, json, subprocess, os, tempfile
 src = ("function add(a: int) returns int\n"      # 0
        "{\n"                                      # 1
        "    return a + 42   ; sum\n"              # 2
@@ -1312,7 +1312,10 @@ src = ("function add(a: int) returns int\n"      # 0
        "    let s \"hi\"\n"                       # 18
        "    return add(p.x)\n"                    # 19 <- `add` USE, `p` param, `x` after-dot
        "}\n")                                     # 20
-path = "/tmp/lsp_sem_test.scaly"
+# Isolated dir so the cross-file name harvest (dir-tree scan) sees only this
+# file (skipped as the current file) -> no cross-file names leak in here.
+d = tempfile.mkdtemp(prefix="lsp_sem_")
+path = os.path.join(d, "m.scaly")
 open(path, "w").write(src)
 def frame(o):
     b=json.dumps(o).encode(); return ("Content-Length: %d\r\n\r\n"%len(b)).encode()+b
@@ -1404,6 +1407,69 @@ sys.exit(1 if failures else 0)
 PY
 rc=$?
 if [ $rc -eq 0 ]; then ok "lsp semanticTokens"; else bad "lsp semanticTokens"; fi
+
+# ---- semanticTokens: cross-file declared-kind resolution ----
+# An identifier USE resolves to function/type by its DECLARATION even when the
+# declaration lives in a SIBLING file (harvested via the symindex). Both probe
+# names are LOWERCASE, so without cross-file resolution they would fall to the
+# shape default (variable); getting function/type proves the cross-file walk.
+python3 - <<'PY'
+import sys, json, subprocess, os, tempfile
+d = tempfile.mkdtemp(prefix="lsp_semx_")
+lib = ("function compute(n: int) returns int\n{\n    return n + 1\n}\n\n"
+       "define widget\n(\n    g: int\n)\n{\n}\n")
+main = ("function run(x: int) returns int\n"   # 0
+        "{\n"                                   # 1
+        "    let w widget(x)\n"                 # 2  <- `widget` type (cross-file)
+        "    return compute(x)\n"               # 3  <- `compute` function (cross-file)
+        "}\n")                                  # 4
+lp = os.path.join(d, "lib.scaly");  open(lp, "w").write(lib)
+mp = os.path.join(d, "main.scaly"); open(mp, "w").write(main)
+muri = "file://"+mp
+def frame(o):
+    b=json.dumps(o).encode(); return ("Content-Length: %d\r\n\r\n"%len(b)).encode()+b
+inp  = frame({"jsonrpc":"2.0","id":1,"method":"initialize","params":{}})
+inp += frame({"jsonrpc":"2.0","method":"initialized","params":{}})
+inp += frame({"jsonrpc":"2.0","method":"textDocument/didOpen",
+              "params":{"textDocument":{"uri":muri,"languageId":"scaly","version":1,"text":main}}})
+inp += frame({"jsonrpc":"2.0","id":2,"method":"textDocument/semanticTokens/full",
+              "params":{"textDocument":{"uri":muri}}})
+inp += frame({"jsonrpc":"2.0","id":9,"method":"shutdown"})
+inp += frame({"jsonrpc":"2.0","method":"exit"})
+out = subprocess.run(["/tmp/scalyls"], input=inp, stdout=subprocess.PIPE).stdout
+frames, dd = [], out
+while dd:
+    i = dd.find(b"\r\n\r\n")
+    if i < 0: break
+    n = int(dd[:i].decode().split(":")[1].strip())
+    frames.append(json.loads(dd[i+4:i+4+n])); dd = dd[i+4+n:]
+failures = 0
+def check(cond, label):
+    global failures
+    print(("PASS  " if cond else "FAIL  ") + label)
+    if not cond: failures += 1
+r = next((f for f in frames if f.get("id") == 2), None)
+data = (r or {}).get("result",{}).get("data") or []
+TYPES = ["keyword","type","function","variable","operator","string","number","comment","parameter","property"]
+lines = main.split("\n"); line = col = 0; toks = []
+for k in range(0, len(data), 5):
+    dl, dc, ln, ty, mod = data[k:k+5]
+    if dl > 0: line += dl; col = dc
+    else:      col += dc
+    toks.append((line, col, lines[line][col:col+ln], TYPES[ty]))
+w_uses = [t for t in toks if t[0] == 2 and t[2] == "widget"]
+c_uses = [t for t in toks if t[0] == 3 and t[2] == "compute"]
+check(len(w_uses) == 1 and w_uses[0][3] == "type",
+      "cross-file type use `widget` -> type (lowercase, sibling file)")
+check(len(c_uses) == 1 and c_uses[0][3] == "function",
+      "cross-file function use `compute` -> function (lowercase, sibling file)")
+# the local `w` must stay variable (no cross-file confusion).
+w_local = [t for t in toks if t[0] == 2 and t[2] == "w"]
+check(len(w_local) == 1 and w_local[0][3] == "variable", "local `w` stays variable")
+sys.exit(1 if failures else 0)
+PY
+rc=$?
+if [ $rc -eq 0 ]; then ok "lsp semanticTokens cross-file"; else bad "lsp semanticTokens cross-file"; fi
 
 echo "-----"
 echo "PASS: $pass  FAIL: $fail"

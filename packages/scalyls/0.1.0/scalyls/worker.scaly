@@ -218,7 +218,7 @@ define worker
         ; (uri-only, no position).
         guard kind.equals("t")
         {
-            rpc.write_message_fd(out_fd, symbols.semantic_tokens#(source))
+            rpc.write_message_fd(out_fd, symbols.semantic_tokens#(source, uri))
             return true
         }
 
