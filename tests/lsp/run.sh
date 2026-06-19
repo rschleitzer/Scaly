@@ -1236,6 +1236,80 @@ PY
 rc=$?
 if [ $rc -eq 0 ]; then ok "lsp cross-file type-hint cache"; else bad "lsp cross-file type-hint cache"; fi
 
+# ---- cross-file chain-segment resolution via the symindex (Step 33) ----
+# A field-access chain `r.origin` whose intermediate type lives in a SIBLING
+# file now resolves the segment type from the SAME content-hash-cached ws blobs
+# (each `define` record carries a 5th membertypes field = its 0x1F-joined
+# member-name/type pairs) instead of re-parsing the sibling per segment per
+# request. Interleaved I/O proves cache + invalidation: `let p r.origin` (r:
+# Rect param, Rect.origin: Point in the sibling) -> `: Point`; a disk edit
+# changing Rect.origin's type Point -> Coord is picked up (content-hash
+# invalidation); a repeated query is stable from the cache.
+python3 - <<'PY'
+import sys, json, subprocess, os, tempfile
+d = tempfile.mkdtemp(prefix="lsp_chaincache_")
+tp = os.path.join(d, "types.scaly"); mp = os.path.join(d, "main.scaly")
+point = ("define Point\n(\n    x: int\n    y: int\n)\n{\n    function px(this: Point) returns int\n    {\n        return x\n    }\n}\n")
+coord = ("define Coord\n(\n    u: int\n)\n{\n    function cu(this: Coord) returns int\n    {\n        return u\n    }\n}\n")
+rect_v1 = ("define Rect\n(\n    origin: Point\n    w: int\n)\n{\n    function area(this: Rect) returns int\n    {\n        return w\n    }\n}\n")
+rect_v2 = ("define Rect\n(\n    origin: Coord\n    w: int\n)\n{\n    function area(this: Rect) returns int\n    {\n        return w\n    }\n}\n")
+types_v1 = point + coord + rect_v1
+types_v2 = point + coord + rect_v2
+main = ("function run(r: Rect) returns int\n{\n"   # 0,1
+        "    let p r.origin\n"                     # 2 chain r.origin
+        "    return p.px()\n}\n")                  # 3
+open(tp, "w").write(types_v1); open(mp, "w").write(main)
+muri = "file://"+mp
+def frame(o):
+    s = json.dumps(o).encode(); return ("Content-Length: %d\r\n\r\n" % len(s)).encode() + s
+p = subprocess.Popen(["/tmp/scalyls"], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+def send(o):
+    p.stdin.write(frame(o)); p.stdin.flush()
+def read_frame():
+    hdr = b""
+    while b"\r\n\r\n" not in hdr:
+        ch = p.stdout.read(1)
+        if not ch: return None
+        hdr += ch
+    n = int(hdr.split(b"\r\n")[0].split(b":")[1].strip())
+    return json.loads(p.stdout.read(n))
+def result_for(idn):
+    while True:
+        f = read_frame()
+        if f is None: return None
+        if f.get("id") == idn: return f.get("result")
+def ih(idn):
+    return {"jsonrpc":"2.0","id":idn,"method":"textDocument/inlayHint","params":{
+        "textDocument":{"uri":muri},"range":{"start":{"line":2,"character":0},"end":{"line":3,"character":0}}}}
+def th(r):
+    for h in (r or []):
+        if h.get("kind") == 1 and h["position"]["line"] == 2:
+            return h["label"]
+    return None
+send({"jsonrpc":"2.0","id":1,"method":"initialize","params":{"rootUri":"file://"+d}})
+result_for(1)
+send({"jsonrpc":"2.0","method":"initialized","params":{}})
+send(ih(2)); t1 = th(result_for(2))          # warm index -> : Point
+open(tp, "w").write(types_v2)                 # Rect.origin: Point -> Coord on disk
+send(ih(3)); t2 = th(result_for(3))          # invalidation -> : Coord
+send(ih(4)); t3 = th(result_for(4))          # cache reuse -> : Coord (stable)
+send({"jsonrpc":"2.0","id":9,"method":"shutdown"})
+result_for(9)
+send({"jsonrpc":"2.0","method":"exit"})
+p.wait()
+failures = 0
+def check(cond, label):
+    global failures
+    print(("PASS  " if cond else "FAIL  ") + label)
+    if not cond: failures += 1
+check(t1 == ": Point", "cross-file chain `r.origin` resolves the field type from cache (: Point)")
+check(t2 == ": Coord", "chain segment-type disk change picked up (content-hash invalidation: : Coord)")
+check(t3 == ": Coord", "repeated chain query stable from cache (: Coord)")
+sys.exit(1 if failures else 0)
+PY
+rc=$?
+if [ $rc -eq 0 ]; then ok "lsp cross-file chain-segment cache"; else bad "lsp cross-file chain-segment cache"; fi
+
 # ---- type-aware completion (variable receivers, lexical) ----
 # A variable receiver `v.` resolves `v`'s declared type lexically (constructor
 # `var v T#(...)`, annotated `v: T`, parameter `(v: T)`, or `this: T`) and then
