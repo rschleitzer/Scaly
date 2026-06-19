@@ -104,6 +104,10 @@ private:
         PlannedType Type;
         bool IsMutable;
         bool IsOnPage;  // true if allocated with $, #, or ^name (not stack)
+        bool IsParameter = false;  // true for function/init params + `this`/page/
+                                   // region receivers (frame-EXTERNAL: a struct/
+                                   // pointer param's `.field` writes into the
+                                   // caller's object). Used by the escape checker.
     };
 
     // Scope stack for local variables
@@ -375,7 +379,12 @@ private:
 
     void pushScope();
     void popScope();
-    void defineLocal(llvm::StringRef Name, const PlannedType &Type, bool IsMutable = false, bool IsOnPage = false);
+    void defineLocal(llvm::StringRef Name, const PlannedType &Type, bool IsMutable = false, bool IsOnPage = false, bool IsParameter = false);
+    // Define a function/init parameter (or `this`/page/region receiver). Same as
+    // defineLocal but marks the binding frame-EXTERNAL for the escape checker.
+    void defineParameter(llvm::StringRef Name, const PlannedType &Type) {
+        defineLocal(Name, Type, false, false, true);
+    }
     std::optional<PlannedType> lookupLocal(llvm::StringRef Name);
     std::optional<LocalBinding> lookupLocalBinding(llvm::StringRef Name);
 

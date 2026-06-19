@@ -1,0 +1,22 @@
+; ESCAPE (negative): storing a $-local-page ref into `this.field` is a
+; use-after-free — `this` is a pointer to the CALLER's object, which outlives
+; this procedure's local page. Must be REJECTED ("escapes via store").
+define Box
+(
+    v: int
+)
+define Holder
+(
+    b: pointer[Box]
+)
+
+procedure stash(this: Holder)
+{
+    let bx Box$(5)
+    set this.b: &bx
+}
+
+function main() returns int
+{
+    return 0
+}

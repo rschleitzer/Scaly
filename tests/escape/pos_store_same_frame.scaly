@@ -1,0 +1,21 @@
+; OK (positive control): storing a $-local-page ref into a SAME-FRAME local
+; struct's field is fine — the struct (`h`) and the pointee (`bx`) die together
+; at function exit; nothing escapes. Must COMPILE (no false positive — `h` is a
+; local var, NOT a parameter, so its `.field` is frame-local).
+define Box
+(
+    v: int
+)
+define Holder
+(
+    b: pointer[Box]
+)
+
+function build() returns int
+{
+    let bx0 Box$(1)
+    var h Holder(&bx0)
+    let bx Box$(7)
+    set h.b: &bx
+    return (*h.b).v
+}

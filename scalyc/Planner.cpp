@@ -744,9 +744,9 @@ void Planner::popScope() {
     }
 }
 
-void Planner::defineLocal(llvm::StringRef Name, const PlannedType &Type, bool IsMutable, bool IsOnPage) {
+void Planner::defineLocal(llvm::StringRef Name, const PlannedType &Type, bool IsMutable, bool IsOnPage, bool IsParameter) {
     if (!Scopes.empty()) {
-        Scopes.back()[Name.str()] = LocalBinding{Type, IsMutable, IsOnPage};
+        Scopes.back()[Name.str()] = LocalBinding{Type, IsMutable, IsOnPage, IsParameter};
     }
 }
 
@@ -10971,6 +10971,33 @@ llvm::Expected<PlannedAction> Planner::planAction(const Action &Act) {
     }
     Result.ResultType = std::move(*SeqType);
 
+    // Escape checker (RBMM blocker C), STORE vector: storing a ref/pointer into
+    // a Local ($) page into FRAME-EXTERNAL memory is a use-after-free once the
+    // local page is freed at scope exit. Frame-external = a parameter/receiver's
+    // field (`this.field`/`param.field` writes into the CALLER's object — a
+    // param is passed by pointer), a module global, or through a pointer deref.
+    // A same-frame local's field (`var`/`let` .field) dies WITH the ref, and a
+    // bare local reassignment is a same-frame slot — both safe.
+    if (isReferenceToLocalPage(Result.ResultType) && !Result.Target.empty()) {
+        const auto &T = Result.Target[0];
+        bool hasMember = T.MemberAccess && !T.MemberAccess->empty();
+        bool external = false;
+        if (auto *V = std::get_if<PlannedVariable>(&T.Expr)) {
+            if (hasMember) {
+                auto B = lookupLocalBinding(V->Name);
+                external = B && B->IsParameter;
+            }
+        } else if (std::holds_alternative<PlannedGlobalRef>(T.Expr)) {
+            external = true;
+        } else if (std::holds_alternative<PlannedCall>(T.Expr)) {
+            external = true;  // store through a pointer deref *(...)
+        }
+        if (external) {
+            Span Loc = Result.Source.empty() ? Span{} : Result.Source[0].Loc;
+            return makeEscapingReferenceError(File, Loc, "store");
+        }
+    }
+
     return Result;
 }
 
@@ -11843,7 +11870,7 @@ llvm::Expected<PlannedFunction> Planner::planFunction(const Function &Func,
         PageType.MangledName = "N4scaly6memory4PageE";
         PagePtrType.Generics.push_back(PageType);
 
-        defineLocal(*Result.PageParameter, PagePtrType, false);
+        defineParameter(*Result.PageParameter, PagePtrType);
     }
 
     // If function has a ReferenceLifetime, add implicit region parameter
@@ -11874,8 +11901,8 @@ llvm::Expected<PlannedFunction> Planner::planFunction(const Function &Func,
         // Add to scope so code inside the function can reference it
         // Define both _rp (the actual parameter name) and rp (the lifetime name)
         // so that code can reference the region using either form
-        defineLocal(RegionParamName, PtrPageType);
-        defineLocal(RefLife->Location, PtrPageType);
+        defineParameter(RegionParamName, PtrPageType);
+        defineParameter(RefLife->Location, PtrPageType);
     }
 
     // Plan input parameters
@@ -11920,9 +11947,9 @@ llvm::Expected<PlannedFunction> Planner::planFunction(const Function &Func,
         if (Result.Input.back().Name && Result.Input.back().ItemType) {
             if (IsThisParam) {
                 // Use pointer[T] type for 'this' in scope
-                defineLocal(*Result.Input.back().Name, ScopeType);
+                defineParameter(*Result.Input.back().Name, ScopeType);
             } else {
-                defineLocal(*Result.Input.back().Name, *Result.Input.back().ItemType);
+                defineParameter(*Result.Input.back().Name, *Result.Input.back().ItemType);
             }
         }
     }
@@ -12063,7 +12090,7 @@ llvm::Expected<PlannedOperator> Planner::planOperator(const Operator &Op,
         ThisPtrType.Name = "pointer";
         ThisPtrType.MangledName = "P" + Parent->MangledName;
         ThisPtrType.Generics.push_back(*Parent);
-        defineLocal("this", ThisPtrType);
+        defineParameter("this", ThisPtrType);
     }
 
     // Plan input parameters
@@ -12103,9 +12130,9 @@ llvm::Expected<PlannedOperator> Planner::planOperator(const Operator &Op,
         // Add parameter to scope
         if (Result.Input.back().Name && Result.Input.back().ItemType) {
             if (IsThisParam) {
-                defineLocal(*Result.Input.back().Name, ScopeType);
+                defineParameter(*Result.Input.back().Name, ScopeType);
             } else {
-                defineLocal(*Result.Input.back().Name, *Result.Input.back().ItemType);
+                defineParameter(*Result.Input.back().Name, *Result.Input.back().ItemType);
             }
         }
     }
@@ -12182,7 +12209,7 @@ llvm::Expected<PlannedInitializer> Planner::planInitializer(const Initializer &I
         PageType.MangledName = "N4scaly6memory4PageE";
         PagePtrType.Generics.push_back(PageType);
 
-        defineLocal(*Init.PageParameter, PagePtrType, false);
+        defineParameter(*Init.PageParameter, PagePtrType);
     }
 
     // Plan input parameters
@@ -12196,7 +12223,7 @@ llvm::Expected<PlannedInitializer> Planner::planInitializer(const Initializer &I
         Params.push_back(std::move(*PlannedParam));
 
         if (Params.back().Name && Params.back().ItemType) {
-            defineLocal(*Params.back().Name, *Params.back().ItemType);
+            defineParameter(*Params.back().Name, *Params.back().ItemType);
         }
     }
     Result.Input = std::move(Params);
@@ -12210,7 +12237,7 @@ llvm::Expected<PlannedInitializer> Planner::planInitializer(const Initializer &I
     ThisPtrType.Name = "pointer";
     ThisPtrType.MangledName = "P" + Parent.MangledName;
     ThisPtrType.Generics.push_back(Parent);
-    defineLocal("this", ThisPtrType, false);
+    defineParameter("this", ThisPtrType);
 
     // Plan implementation (initializer body)
     auto PlannedImpl = planImplementation(Init.Impl);
@@ -12275,7 +12302,7 @@ llvm::Expected<PlannedDeInitializer> Planner::planDeInitializer(
     ThisPtrType.Name = "pointer";
     ThisPtrType.MangledName = "P" + Parent.MangledName;
     ThisPtrType.Generics.push_back(Parent);
-    defineLocal("this", ThisPtrType, false);  // 'this' is immutable in deinitializers
+    defineParameter("this", ThisPtrType);  // 'this' is immutable in deinitializers
 
     // Plan implementation (deinitializer body)
     auto PlannedImpl = planImplementation(DeInit.Impl);

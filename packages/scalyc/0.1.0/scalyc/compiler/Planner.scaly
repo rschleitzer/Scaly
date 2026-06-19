@@ -158,6 +158,7 @@ define LocalBinding
     binding_type: scalyc.compiler.Plan.PlannedType
     is_mutable: bool
     is_on_page: bool
+    is_parameter: bool
 )
 
 ; One HARD diagnostic: a construct the planner could not resolve and that
@@ -438,7 +439,22 @@ define Planner
             scope_bindings.add(
                 KeyValuePair[String, LocalBinding](
                     name,
-                    LocalBinding(t, is_mutable, is_on_page)
+                    LocalBinding(t, is_mutable, is_on_page, false)
+                )
+            )
+        }
+
+        ; Define a function/init/operator parameter (or `this`/page receiver).
+        ; Like define_local but marks the binding frame-EXTERNAL for the escape
+        ; checker: a struct/pointer parameter is passed by pointer, so writing
+        ; `param.field` stores into the CALLER's object (which outlives this
+        ; frame's local page). Mirrors Planner.cpp::defineParameter.
+        function define_parameter(this: Planner, name: String, t: PlannedType)
+        {
+            scope_bindings.add(
+                KeyValuePair[String, LocalBinding](
+                    name,
+                    LocalBinding(t, false, false, true)
                 )
             )
         }
@@ -8785,7 +8801,7 @@ define Planner
                     guard it.name <> null
                     {
                         let n (*it.name)
-                        this.define_local(n, param_type, false, false)
+                        this.define_parameter(n, param_type)
                     }
                 }
                 set i: i + 1
@@ -10603,6 +10619,44 @@ define Planner
                     set action_loc: (*first_op_ptr).loc
             }
 
+            ; STORE vector: a ref/pointer into a Local ($) page stored into
+            ; FRAME-EXTERNAL memory is a use-after-free. Frame-external = a
+            ; parameter/receiver's field (`this.field`/`param.field` writes into
+            ; the CALLER's object), a module global, or through a pointer deref.
+            ; A same-frame local's field (`var`/`let`) dies WITH the ref -> safe.
+            ; Mirrors Planner.cpp planAction store check.
+            guard a.target.length > 0
+                guard Planner.is_reference_to_local_page(planned_source_collapsed.result_type)
+                {
+                    var has_member false
+                    guard planned_target_collapsed.member_access <> null
+                    {
+                        let ma (*planned_target_collapsed.member_access)
+                        guard ma.length > (0 as size_t)
+                            set has_member: true
+                    }
+                    var external false
+                    choose planned_target_collapsed.expr
+                        when v: Variable
+                        {
+                            guard has_member
+                            {
+                                let lb this.lookup_local_binding(v.name)
+                                guard lb <> null
+                                    guard lb.is_parameter
+                                        set external: true
+                            }
+                        }
+                        when g: GlobalRef
+                            set external: true
+                        when c: Call
+                            set external: true
+                        else
+                            0
+                    guard external
+                        this.add_diagnostic(action_loc, String^rp("reference into a local ($) page escapes via store - allocate the target with '#' (caller page) or '^name' (region) so it outlives the use"))
+                }
+
             PlannedAction(
                 action_loc,
                 &source_holder,
@@ -11070,10 +11124,10 @@ define Planner
                             guard n.equals(String$("this"))
                             {
                                 let ptr_t Planner.make_pointer_type#(t)
-                                this.define_local(n, ptr_t, false, false)
+                                this.define_parameter(n, ptr_t)
                             }
                             guard n.equals(String$("this")) = false
-                                this.define_local(n, t, false, false)
+                                this.define_parameter(n, t)
                         }
                     }
                 }
@@ -11104,7 +11158,7 @@ define Planner
                     null
                 )
                 let pp_ptr_ty Planner.make_pointer_type#(pp_page_ty)
-                this.define_local(pp_name, pp_ptr_ty, false, false)
+                this.define_parameter(pp_name, pp_ptr_ty)
             }
 
             var return_type: ref[PlannedType]? null
@@ -11283,7 +11337,7 @@ define Planner
                     null
                 )
                 let page_ptr_ty Planner.make_pointer_type#(page_struct_ty)
-                this.define_local((*ini.page_parameter), page_ptr_ty, false, false)
+                this.define_parameter((*ini.page_parameter), page_ptr_ty)
             }
 
             var i: size_t 0
@@ -11299,7 +11353,7 @@ define Planner
                         {
                             let n (*item.name)
                             let t (*item.item_type)
-                            this.define_local(n, t, false, false)
+                            this.define_parameter(n, t)
                         }
                     }
                 }
@@ -11314,7 +11368,7 @@ define Planner
             {
                 let p (*parent)
                 let this_ptr_ty Planner.make_pointer_type#(p)
-                this.define_local(String$("this"), this_ptr_ty, false, false)
+                this.define_parameter(String$("this"), this_ptr_ty)
             }
 
             let planned_impl this.plan_implementation#(ini.implementation)
@@ -11513,7 +11567,7 @@ define Planner
                         {
                             let n (*item.name)
                             let t (*item.item_type)
-                            this.define_local(n, t, false, false)
+                            this.define_parameter(n, t)
                         }
                     }
                 }
