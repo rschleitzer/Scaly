@@ -1,0 +1,14 @@
+; OK (positive control): returning a pointer PARAMETER is fine — its pointee
+; lives in the caller, not this function's local page. Must COMPILE (no false
+; positive from the escape checker).
+function passthrough(p: pointer[int]) returns pointer[int]
+{
+    return p
+}
+
+function main() returns int
+{
+    var x int 7
+    let q passthrough(&x)
+    return (*q)
+}

@@ -143,6 +143,18 @@ std::string LocalReturnError::toString() const {
     return OS.str();
 }
 
+std::string EscapingReferenceError::toString() const {
+    std::string Source = readFileForError(File);
+    std::ostringstream OS;
+    OS << formatErrorHeader(File, Source, Loc.Start);
+    OS << "reference into a local ($) page escapes via " << Via
+       << " - allocate the target with '#' (caller page) or '^name' (region) "
+          "so it outlives the use\n";
+    if (!Source.empty())
+        OS << buildHintLines(Source, Loc.Start, Loc.End);
+    return OS.str();
+}
+
 void PlannerError::log(llvm::raw_ostream &OS) const {
     std::visit([&OS](const auto &E) { OS << E.toString(); }, Err);
 }

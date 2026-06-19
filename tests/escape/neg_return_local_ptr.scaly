@@ -1,0 +1,19 @@
+; ESCAPE (negative): returning a pointer to a $-local-page object is a
+; use-after-free once the local page is freed at function exit. The escape
+; checker must REJECT this (rc != 0, "escapes via return").
+define Box
+(
+    v: int
+)
+
+function leak() returns pointer[Box]
+{
+    let b Box$(5)
+    return &b
+}
+
+function main() returns int
+{
+    let p leak()
+    return (*p).v
+}

@@ -124,6 +124,18 @@ struct LocalReturnError {
     std::string toString() const;
 };
 
+// A reference (ref[T]/pointer[T]) into a Local ($) page escapes its scope —
+// returned, or stored into longer-lived memory — a use-after-free once the
+// local page is freed at scope exit. Fix: allocate the pointee with a lifetime
+// that outlives the use ('#' caller page, or '^name' region).
+struct EscapingReferenceError {
+    std::string File;
+    Span Loc;
+    std::string Via;   // how it escapes: "return" / "store"
+
+    std::string toString() const;
+};
+
 // Aggregate planner error type
 using PlannerErrorVariant = std::variant<
     UndefinedTypeError,
@@ -137,7 +149,8 @@ using PlannerErrorVariant = std::variant<
     AmbiguousOverloadError,
     NoMatchingOverloadError,
     StackLifetimeError,
-    LocalReturnError
+    LocalReturnError,
+    EscapingReferenceError
 >;
 
 // LLVM-style error class
@@ -206,6 +219,11 @@ inline llvm::Error makeInfiniteTypeError(llvm::StringRef File, Span Loc,
 inline llvm::Error makePlannerNotImplementedError(llvm::StringRef File, Span Loc,
                                                    llvm::StringRef Feature) {
     return makePlannerError(PlannerNotImplementedError{File.str(), Loc, Feature.str()});
+}
+
+inline llvm::Error makeEscapingReferenceError(llvm::StringRef File, Span Loc,
+                                              llvm::StringRef Via) {
+    return makePlannerError(EscapingReferenceError{File.str(), Loc, Via.str()});
 }
 
 inline llvm::Error makeAmbiguousOverloadError(llvm::StringRef File, Span Loc,

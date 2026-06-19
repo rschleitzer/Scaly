@@ -23,6 +23,19 @@ static bool isOnPageLifetime(const Lifetime &Life) {
     return !std::holds_alternative<UnspecifiedLifetime>(Life);
 }
 
+// Escape-checker (RBMM blocker C): a reference must not outlive its page. A
+// returned/stored ref[T]/pointer[T] whose POINTEE lives on a Local ($) page is
+// a use-after-free once that page is freed at scope exit. The `&` operator and
+// resolveType keep the pointee (with its Life) in Generics[0]; Call (#) and
+// Reference (^name) pointees outlive the function and are fine — only Local is
+// the error. PROBE MODE (measurement): prints to stderr, does not fail.
+static bool isReferenceToLocalPage(const PlannedType &T) {
+    bool IsRefLike = (T.Name == "pointer" || T.Name == "ref");
+    if (!IsRefLike) return false;
+    if (T.Generics.empty()) return false;
+    return std::holds_alternative<LocalLifetime>(T.Generics[0].Life);
+}
+
 // ============================================================================
 // Helper: Decode UTF-8 string to single Unicode code point
 // Returns the code point, or -1 if invalid (empty, multiple code points, or malformed)
@@ -10702,6 +10715,9 @@ llvm::Expected<PlannedStatement> Planner::planStatement(const Statement &Stmt) {
             auto CollapsedResult = collapseOperandSequence(std::move(*PlannedResult));
             if (!CollapsedResult) {
                 return CollapsedResult.takeError();
+            }
+            if (isReferenceToLocalPage(CollapsedResult->ResultType)) {
+                return makeEscapingReferenceError(File, S->Loc, "return");
             }
             PR.Result.push_back(std::move(*CollapsedResult));
         }

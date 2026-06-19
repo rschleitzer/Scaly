@@ -1,0 +1,39 @@
+#!/bin/bash
+# Escape-checker negative/positive suite (RBMM blocker C).
+#
+# neg_*.scaly  : a reference into a Local ($) page escapes -> compiler MUST
+#                reject (rc != 0) with an "escapes" diagnostic.
+# pos_*.scaly  : a valid reference return (param / caller-page) -> MUST compile.
+#
+# Both the C++ stage-0 and a self-hosted stage binary must agree. Compile-only
+# (-c --no-prelude); rejection happens during planning, before any link/run.
+#
+# Usage: tests/escape/run.sh [compiler]   (default /tmp/scalyc_stage2)
+cd "$(dirname "$0")/../.." || exit 1
+CC=${1:-/tmp/scalyc_stage2}
+pass=0; fail=0; failures=()
+
+for f in tests/escape/neg_*.scaly; do
+  [ -e "$f" ] || continue
+  t=$(basename "$f" .scaly)
+  out=$( ( ulimit -s 65520; "$CC" -c --no-prelude -o /tmp/esc_$t.o "$f" ) 2>&1 ); rc=$?
+  if [ $rc -ne 0 ] && echo "$out" | grep -q "escapes"; then
+    pass=$((pass+1))
+  else
+    fail=$((fail+1)); failures+=("$t: expected rejection, got rc=$rc")
+  fi
+done
+
+for f in tests/escape/pos_*.scaly; do
+  [ -e "$f" ] || continue
+  t=$(basename "$f" .scaly)
+  out=$( ( ulimit -s 65520; "$CC" -c --no-prelude -o /tmp/esc_$t.o "$f" ) 2>&1 ); rc=$?
+  if [ $rc -eq 0 ]; then
+    pass=$((pass+1))
+  else
+    fail=$((fail+1)); failures+=("$t: expected compile, got rc=$rc: $out")
+  fi
+done
+
+echo "escape: $pass PASS, $fail FAIL ${failures[*]}"
+[ $fail -eq 0 ]
