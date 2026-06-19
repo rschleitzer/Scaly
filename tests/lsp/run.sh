@@ -951,6 +951,90 @@ PY
 rc=$?
 if [ $rc -eq 0 ]; then ok "lsp cross-file definition cache"; else bad "lsp cross-file definition cache"; fi
 
+# ---- cross-file signatureHelp + member completion via symindex (Step 29) ----
+# The Step-29 follow-up: cross-file signatureHelp and member completion now read
+# the SAME content-hash-cached ws blobs (each routine record carries an
+# "S"-tagged param-label detail; each `define` record an "M"-tagged member
+# fragment) instead of re-parsing each sibling per request. This interleaves I/O
+# to prove the cache + invalidation for BOTH: a cross-file sig and member-list
+# query warm the index; a disk edit to the target file (adds a param + a method)
+# is picked up on the second identical query (content-hash invalidation).
+python3 - <<'PY'
+import sys, json, subprocess, os, tempfile
+d = tempfile.mkdtemp(prefix="lsp_xsigmem_")
+hp = os.path.join(d, "helper.scaly")
+cp = os.path.join(d, "caller.scaly")
+widget = ("define XWidget\n(\n    w: int\n)\n{\n"
+          "    function area(this: XWidget) returns int\n    {\n        return w\n    }\n")
+helper_v1 = ("function xfn_target(alpha: int) returns int\n{\n    return alpha\n}\n\n"
+             + widget + "}\n")
+helper_v2 = ("function xfn_target(alpha: int, beta: int) returns int\n{\n    return alpha\n}\n\n"
+             + widget
+             + "    function perimeter(this: XWidget) returns int\n    {\n        return w\n    }\n}\n")
+caller = ("function caller(g: XWidget) returns int\n{\n    let v xfn_target(0)\n"
+          "    XWidget.x\n    return v\n}\n")
+open(hp, "w").write(helper_v1)
+open(cp, "w").write(caller)
+curi = "file://"+cp
+sig_col = caller.split("\n")[2].index("(") + 1        # inside xfn_target(|0)
+mem_col = caller.split("\n")[3].index(".") + 1        # after XWidget.|
+def frame(o):
+    s = json.dumps(o).encode(); return ("Content-Length: %d\r\n\r\n" % len(s)).encode() + s
+p = subprocess.Popen(["/tmp/scalyls"], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+def send(o):
+    p.stdin.write(frame(o)); p.stdin.flush()
+def read_frame():
+    hdr = b""
+    while b"\r\n\r\n" not in hdr:
+        ch = p.stdout.read(1)
+        if not ch: return None
+        hdr += ch
+    n = int(hdr.split(b"\r\n")[0].split(b":")[1].strip())
+    return json.loads(p.stdout.read(n))
+def result_for(idn):
+    while True:
+        f = read_frame()
+        if f is None: return None
+        if f.get("id") == idn: return f.get("result")
+def sig(idn):
+    return {"jsonrpc":"2.0","id":idn,"method":"textDocument/signatureHelp",
+            "params":{"textDocument":{"uri":curi},"position":{"line":2,"character":sig_col}}}
+def comp(idn):
+    return {"jsonrpc":"2.0","id":idn,"method":"textDocument/completion",
+            "params":{"textDocument":{"uri":curi},"position":{"line":3,"character":mem_col}}}
+def sig_label(r): return (r or {}).get("signatures",[{}])[0].get("label")
+def comp_labels(r): return [it["label"] for it in r] if isinstance(r, list) else None
+
+send({"jsonrpc":"2.0","id":1,"method":"initialize","params":{"rootUri":"file://"+d}})
+result_for(1)
+send({"jsonrpc":"2.0","method":"initialized","params":{}})
+send(sig(2));  s1 = sig_label(result_for(2))          # warm index
+send(comp(3)); m1 = comp_labels(result_for(3))
+open(hp, "w").write(helper_v2)                         # +param, +method on disk
+send(sig(4));  s2 = sig_label(result_for(4))          # invalidation
+send(comp(5)); m2 = comp_labels(result_for(5))
+send({"jsonrpc":"2.0","id":9,"method":"shutdown"})
+result_for(9)
+send({"jsonrpc":"2.0","method":"exit"})
+p.wait()
+
+failures = 0
+def check(cond, label):
+    global failures
+    print(("PASS  " if cond else "FAIL  ") + label)
+    if not cond: failures += 1
+check(s1 == "xfn_target(alpha: int)", "cross-file sig resolves from cache, warming the index")
+check(m1 is not None and "area" in m1 and "perimeter" not in m1,
+      "cross-file members resolve from cache (area, no perimeter yet)")
+check(s2 == "xfn_target(alpha: int, beta: int)",
+      "sig disk change picked up (content-hash invalidation: +beta)")
+check(m2 is not None and "area" in m2 and "perimeter" in m2,
+      "members disk change picked up (content-hash invalidation: +perimeter)")
+sys.exit(1 if failures else 0)
+PY
+rc=$?
+if [ $rc -eq 0 ]; then ok "lsp cross-file signatureHelp+completion cache"; else bad "lsp cross-file signatureHelp+completion cache"; fi
+
 # ---- type-aware completion (variable receivers, lexical) ----
 # A variable receiver `v.` resolves `v`'s declared type lexically (constructor
 # `var v T#(...)`, annotated `v: T`, parameter `(v: T)`, or `this: T`) and then

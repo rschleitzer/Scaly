@@ -2481,6 +2481,12 @@ define symbols
 
     ; Enumerate the .scaly files under `dir` (recursively, skipping self_path)
     ; and return the members of the first concept named `type_name`. "" if none.
+    ;
+    ; Step 29 follow-up: query the persistent symindex instead of re-parsing each
+    ; file with member_completions#. Each cached ws record carries an "M"-tagged
+    ; detail field = the concept's bracketless member-completion fragment, so the
+    ; member list is rebuilt from the cache (members_from_ws_blob#) — no re-parse,
+    ; shared with workspace/symbol + cross-file definition + semanticTokens.
     function member_completions_in_dir#(rp, dir: String, self_path: String, type_name: String) returns String
     {
         guard dir.get_length() = (0 as size_t)
@@ -2503,7 +2509,17 @@ define symbols
                             guard File.exists(fpath)
                             {
                                 let fsrc File.read_to_string#(fpath)
-                                set result: symbols.member_completions#(fsrc, type_name)
+                                let chash fsrc.hash()
+                                var blob String#("")
+                                guard symindex.valid(fpath, chash)
+                                    set blob: symindex.get_blob#(fpath)
+                                guard symindex.valid(fpath, chash) = false
+                                {
+                                    let furi symbols.path_to_uri#(fpath)
+                                    set blob: symbols.workspace_symbols_in_file#(fsrc, furi)
+                                    symindex.put(fpath, chash, blob)
+                                }
+                                set result: symbols.members_from_ws_blob#(blob, type_name)
                             }
                 }
                 set line_start: i + (1 as size_t)
@@ -4325,6 +4341,119 @@ define symbols
         String#("")
     }
 
+    ; Find the first record in a cached ws blob whose name EXACTLY equals `name`
+    ; AND whose DETAIL field is tagged `tag` ('S'/'M'), and return "Y" + the
+    ; payload after the tag byte; "" when there is no such record. The leading
+    ; "Y" sentinel distinguishes a found-but-empty payload (a zero-arg routine's
+    ; "S" detail / a fieldless concept's "M" detail) from a genuine miss.
+    ; Records are `name<TAB>{json}<TAB>detail<LF>`: tab1 = name/json sep, tab2 =
+    ; json/detail sep, detail = [tab2+1, i). A record whose detail is empty or a
+    ; different tag is skipped (so a name shared by a routine and a type resolves
+    ; to the right record for each query).
+    function detail_payload#(rp, blob: String, name: String, tag: u8) returns String
+    {
+        let nm_len name.get_length()
+        let n blob.get_length()
+        var rec_start: size_t 0
+        var i: size_t 0
+        while i < n
+        {
+            guard blob.get(i) = (10 as u8)             ; record terminator
+            {
+                var tab1: size_t i
+                var tab2: size_t i
+                var ntabs: size_t 0
+                var t: size_t rec_start
+                while t < i
+                {
+                    guard blob.get(t) = (9 as u8)
+                    {
+                        guard ntabs = (0 as size_t)
+                            set tab1: t
+                        guard ntabs = (1 as size_t)
+                            set tab2: t
+                        set ntabs: ntabs + (1 as size_t)
+                    }
+                    set t: t + (1 as size_t)
+                }
+                guard ntabs >= (2 as size_t)
+                    guard tab1 - rec_start = nm_len
+                    {
+                        var matched true
+                        var k: size_t 0
+                        while k < nm_len
+                        {
+                            guard blob.get(rec_start + k) <> name.get(k)
+                            {
+                                set matched: false
+                                break
+                            }
+                            set k: k + (1 as size_t)
+                        }
+                        guard matched
+                        {
+                            let dstart tab2 + (1 as size_t)
+                            guard dstart < i
+                                guard blob.get(dstart) = tag
+                                {
+                                    var sb StringBuilder#()
+                                    sb.append(0x59 as char)    ; Y sentinel
+                                    var d dstart + (1 as size_t)
+                                    while d < i
+                                    {
+                                        sb.append(blob.get(d) as char)
+                                        set d: d + (1 as size_t)
+                                    }
+                                    return sb.to_string#()
+                                }
+                        }
+                    }
+                set rec_start: i + (1 as size_t)
+            }
+            set i: i + (1 as size_t)
+        }
+        String#("")
+    }
+
+    ; Cross-file signatureHelp from a cached ws blob: the routine named `name`'s
+    ; "S"-tagged detail (0x1F-joined param labels) rebuilt into a SignatureHelp
+    ; via build_signature_from_labels#. "" on no match.
+    function sig_from_ws_blob#(rp, blob: String, name: String, active: size_t) returns String
+    {
+        let r symbols.detail_payload#(blob, name, 0x53 as u8)
+        guard r.get_length() > (0 as size_t)
+        {
+            let labels symbols.substring#(r, 1 as size_t, r.get_length())
+            return symbols.build_signature_from_labels#(name, labels, active)
+        }
+        String#("")
+    }
+
+    ; Cross-file member completion from a cached ws blob: the concept named
+    ; `name`'s "M"-tagged detail (bracketless completion items) wrapped in
+    ; [...]. "" on no match (so the caller falls back), "[...]" / "[]" on a
+    ; found concept (matching mem_definition#).
+    function members_from_ws_blob#(rp, blob: String, name: String) returns String
+    {
+        let r symbols.detail_payload#(blob, name, 0x4D as u8)
+        guard r.get_length() > (0 as size_t)
+        {
+            let frag symbols.substring#(r, 1 as size_t, r.get_length())
+            var sb StringBuilder#()
+            sb.append(0x5B as char)                    ; [
+            var d: size_t 0
+            let de frag.get_length()
+            while d < de
+            {
+                sb.append(frag.get(d) as char)
+                set d: d + (1 as size_t)
+            }
+            sb.append(0x5D as char)                    ; ]
+            return sb.to_string#()
+        }
+        String#("")
+    }
+
     ; ====================================================================
     ; Cross-file semantic-token name resolution
     ;
@@ -4870,26 +4999,33 @@ define symbols
         {
             guard blob.get(i) = (10 as char)       ; record terminator
             {
-                var tab: size_t rec_start
-                var found_tab false
+                ; tab1 = name/json separator, tab2 = json/detail separator.
+                ; Emit only the json part [tab1+1, tab2) so the detail field
+                ; (Step 29 follow-up) never reaches workspace/symbol output —
+                ; keeping it byte-identical.
+                var tab1: size_t i
+                var tab2: size_t i
+                var ntabs: size_t 0
                 var t: size_t rec_start
                 while t < i
                 {
-                    guard found_tab = false
-                        guard blob.get(t) = (9 as char)
-                        {
-                            set tab: t
-                            set found_tab: true
-                        }
+                    guard blob.get(t) = (9 as char)
+                    {
+                        guard ntabs = (0 as size_t)
+                            set tab1: t
+                        guard ntabs = (1 as size_t)
+                            set tab2: t
+                        set ntabs: ntabs + (1 as size_t)
+                    }
                     set t: t + (1 as size_t)
                 }
-                guard found_tab
+                guard ntabs >= (1 as size_t)
                 {
-                    let name symbols.substring#(blob, rec_start, tab)
+                    let name symbols.substring#(blob, rec_start, tab1)
                     guard symbols.name_matches(name, query)
                     {
-                        let jstart tab + (1 as size_t)
-                        let jobj symbols.substring#(blob, jstart, i)
+                        let jstart tab1 + (1 as size_t)
+                        let jobj symbols.substring#(blob, jstart, tab2)
                         guard first = false
                             sb.append(0x2C as char)
                         var ci: size_t 0
@@ -4915,17 +5051,17 @@ define symbols
     {
         choose decl
             when f: FunctionSyntax
-                return symbols.ws_item#(source, uri, symbols.target_name#(f.target), 12 as i64, f.start, f.end)
+                return symbols.ws_item#(source, uri, symbols.target_name#(f.target), 12 as i64, f.start, f.end, symbols.routine_param_detail#(source, f.target))
             when pr: ProcedureSyntax
-                return symbols.ws_item#(source, uri, symbols.target_name#(pr.target), 12 as i64, pr.start, pr.end)
+                return symbols.ws_item#(source, uri, symbols.target_name#(pr.target), 12 as i64, pr.start, pr.end, symbols.routine_param_detail#(source, pr.target))
             when o: OperatorSyntax
-                return symbols.ws_item#(source, uri, symbols.target_name#(o.target), 25 as i64, o.start, o.end)
+                return symbols.ws_item#(source, uri, symbols.target_name#(o.target), 25 as i64, o.start, o.end, symbols.routine_param_detail#(source, o.target))
             when def: DefinitionSyntax
                 return symbols.ws_definition#(source, uri, def)
             when m: ModuleSyntax
-                return symbols.ws_item#(source, uri, String#(m.name), 2 as i64, m.start, m.end)
+                return symbols.ws_item#(source, uri, String#(m.name), 2 as i64, m.start, m.end, String#(""))
             when mut: MutableSyntax
-                return symbols.ws_item#(source, uri, String#(mut.binding.name), 13 as i64, mut.start, mut.end)
+                return symbols.ws_item#(source, uri, String#(mut.binding.name), 13 as i64, mut.start, mut.end, String#(""))
             when priv: PrivateSyntax
                 return symbols.ws_export#(source, uri, priv.export_)
             when e: EmptySyntax
@@ -4945,17 +5081,17 @@ define symbols
     {
         choose export_
             when f: FunctionSyntax
-                return symbols.ws_item#(source, uri, symbols.target_name#(f.target), 12 as i64, f.start, f.end)
+                return symbols.ws_item#(source, uri, symbols.target_name#(f.target), 12 as i64, f.start, f.end, symbols.routine_param_detail#(source, f.target))
             when pr: ProcedureSyntax
-                return symbols.ws_item#(source, uri, symbols.target_name#(pr.target), 12 as i64, pr.start, pr.end)
+                return symbols.ws_item#(source, uri, symbols.target_name#(pr.target), 12 as i64, pr.start, pr.end, symbols.routine_param_detail#(source, pr.target))
             when o: OperatorSyntax
-                return symbols.ws_item#(source, uri, symbols.target_name#(o.target), 25 as i64, o.start, o.end)
+                return symbols.ws_item#(source, uri, symbols.target_name#(o.target), 25 as i64, o.start, o.end, symbols.routine_param_detail#(source, o.target))
             when def: DefinitionSyntax
                 return symbols.ws_definition#(source, uri, def)
             when t: TraitSyntax
                 return String#("")
             when m: ModuleSyntax
-                return symbols.ws_item#(source, uri, String#(m.name), 2 as i64, m.start, m.end)
+                return symbols.ws_item#(source, uri, String#(m.name), 2 as i64, m.start, m.end, String#(""))
     }
 
     ; A `define X` -> its own item (struct/namespace/union/…) joined with its
@@ -4986,7 +5122,7 @@ define symbols
                 set kind: (12 as i64)
             when ic: IntrinsicSyntax
                 set kind: (23 as i64)
-        let own symbols.ws_item#(source, uri, def.name, kind, def.start, def.end)
+        let own symbols.ws_item#(source, uri, def.name, kind, def.start, def.end, symbols.concept_member_detail#(source, def))
         symbols.join_fragments#(own, children)
     }
 
@@ -5028,15 +5164,15 @@ define symbols
     {
         choose member
             when f: FunctionSyntax
-                return symbols.ws_item#(source, uri, symbols.target_name#(f.target), 6 as i64, f.start, f.end)
+                return symbols.ws_item#(source, uri, symbols.target_name#(f.target), 6 as i64, f.start, f.end, symbols.routine_param_detail#(source, f.target))
             when pr: ProcedureSyntax
-                return symbols.ws_item#(source, uri, symbols.target_name#(pr.target), 6 as i64, pr.start, pr.end)
+                return symbols.ws_item#(source, uri, symbols.target_name#(pr.target), 6 as i64, pr.start, pr.end, symbols.routine_param_detail#(source, pr.target))
             when o: OperatorSyntax
-                return symbols.ws_item#(source, uri, symbols.target_name#(o.target), 25 as i64, o.start, o.end)
+                return symbols.ws_item#(source, uri, symbols.target_name#(o.target), 25 as i64, o.start, o.end, symbols.routine_param_detail#(source, o.target))
             when ini: InitSyntax
-                return symbols.ws_item#(source, uri, String#("init"), 9 as i64, ini.start, ini.end)
+                return symbols.ws_item#(source, uri, String#("init"), 9 as i64, ini.start, ini.end, String#(""))
             when dei: DeInitSyntax
-                return symbols.ws_item#(source, uri, String#("deinit"), 9 as i64, dei.start, dei.end)
+                return symbols.ws_item#(source, uri, String#("deinit"), 9 as i64, dei.start, dei.end, String#(""))
             when def: DefinitionSyntax
                 return symbols.ws_definition#(source, uri, def)
             when e: EmptySyntax
@@ -5048,7 +5184,7 @@ define symbols
             when mac: MacroSyntax
                 return String#("")
             when m: ModuleSyntax
-                return symbols.ws_item#(source, uri, String#(m.name), 2 as i64, m.start, m.end)
+                return symbols.ws_item#(source, uri, String#(m.name), 2 as i64, m.start, m.end, String#(""))
     }
 
     ; Nested declarations of a namespace -> a concatenated record fragment.
@@ -5095,7 +5231,7 @@ define symbols
                 let vptr variants.get(i)
                 guard vptr <> null
                 {
-                    let vitem symbols.ws_item#(source, uri, String#(vptr.name), 22 as i64, vptr.start, vptr.end)
+                    let vitem symbols.ws_item#(source, uri, String#(vptr.name), 22 as i64, vptr.start, vptr.end, String#(""))
                     var ci: size_t 0
                     let cn vitem.get_length()
                     while ci < cn
@@ -5136,12 +5272,73 @@ define symbols
         sb.to_string#()
     }
 
-    ; One tagged symbol record `name <0x09> {"name","kind","location"} <0x0A>`.
+    ; The ws-blob DETAIL field of a routine: "S" + its 0x1F-joined param labels
+    ; (Step 29 follow-up). Lets cross-file signatureHelp rebuild a SignatureHelp
+    ; from the cached blob without re-parsing. A zero-arg routine yields "S"
+    ; alone (still non-empty, so it is distinguishable from a non-routine's empty
+    ; detail). An anonymous RoutineSyntax target -> "".
+    function routine_param_detail#(rp, source: String, target: TargetSyntax) returns String
+    {
+        choose target
+            when named: NamedSyntax
+            {
+                var sb StringBuilder#()
+                sb.append(0x53 as char)            ; S
+                let labels symbols.signature_param_labels#(source, named.routine)
+                var i: size_t 0
+                let ln labels.get_length()
+                while i < ln
+                {
+                    sb.append(labels.get(i) as char)
+                    set i: i + (1 as size_t)
+                }
+                return sb.to_string#()
+            }
+            when r: RoutineSyntax
+                return String#("")
+    }
+
+    ; The ws-blob DETAIL field of a `define X`: "M" + its member completion
+    ; fragment (the bracketless comma-joined {label,kind} items mem_definition#
+    ; wraps in [...]). Lets cross-file member completion rebuild the member list
+    ; from the cached blob without re-parsing. An empty/fieldless concept yields
+    ; "M" alone -> members_from_ws_blob# wraps it as "[]" (found-but-empty,
+    ; matching mem_definition#).
+    function concept_member_detail#(rp, source: String, def: DefinitionSyntax) returns String
+    {
+        var members String#("")
+        choose def.concept_
+            when c: ClassSyntax
+                set members: symbols.completion_body#(source, c.body)
+            when n: NamespaceSyntax
+                set members: symbols.completion_namespace#(source, n)
+            when un: UnionSyntax
+                set members: symbols.completion_union#(source, un)
+            else
+                0
+        var sb StringBuilder#()
+        sb.append(0x4D as char)                    ; M
+        var i: size_t 0
+        let ln members.get_length()
+        while i < ln
+        {
+            sb.append(members.get(i) as char)
+            set i: i + (1 as size_t)
+        }
+        sb.to_string#()
+    }
+
+    ; One tagged symbol record
+    ; `name <0x09> {"name","kind","location"} <0x09> detail <0x0A>`.
     ; UNFILTERED (query-independent, so it can be cached); filter_ws_blob# does
-    ; the name match later. A SymbolInformation JSON object never contains a raw
-    ; tab or newline (json.quote_string# escapes them), so the delimiters are
-    ; unambiguous.
-    function ws_item#(rp, source: String, uri: String, name: String, kind: i64, start: size_t, end: size_t) returns String
+    ; the name match later AND drops the detail field (bounding at the SECOND
+    ; tab) so workspace/symbol output stays byte-identical. A SymbolInformation
+    ; JSON object never contains a raw tab or newline (json.quote_string#
+    ; escapes them), and the detail field (param labels / completion items)
+    ; likewise has no raw tab/newline, so the two delimiters are unambiguous.
+    ; `detail` is "S<labels>" for routines, "M<members>" for `define`s, "" else
+    ; (built by routine_param_detail# / concept_member_detail#).
+    function ws_item#(rp, source: String, uri: String, name: String, kind: i64, start: size_t, end: size_t, detail: String) returns String
     {
         var sb StringBuilder#()
         var ni: size_t 0
@@ -5162,6 +5359,14 @@ define symbols
         sb.append(symbols.key#("location"))
         sb.append(symbols.location_span_object#(source, uri, start, end))
         sb.append(0x7D as char)                    ; }
+        sb.append(0x09 as char)                    ; tab: json / detail separator
+        var di: size_t 0
+        let dl detail.get_length()
+        while di < dl
+        {
+            sb.append(detail.get(di) as char)
+            set di: di + (1 as size_t)
+        }
         sb.append(0x0A as char)                    ; newline: record terminator
         sb.to_string#()
     }
@@ -6150,6 +6355,195 @@ define symbols
         sb.to_string#()
     }
 
+    ; The reconstructed parameter labels of a routine joined by 0x1F (unit
+    ; separator — never appears in a label, so an internal generic comma like
+    ; `Map[String, int]` is preserved within a single label). Drops a leading
+    ; `this` receiver. This is the param-label source of truth shared by the
+    ; cross-file path: routine_param_detail# stores it in the ws blob and
+    ; build_signature_from_labels# rebuilds the SignatureHelp from it (the
+    ; intra-file build_signature# still builds its labels inline — kept untouched
+    ; so the proven intra-file path is zero-risk; the two formats must match, and
+    ; the cross-file LSP test asserts they do).
+    function signature_param_labels#(rp, source: String, routine: RoutineSyntax) returns String
+    {
+        var sb StringBuilder#()
+        var first true
+        guard routine.parameters <> null
+        {
+            let ps (*routine.parameters)
+            choose ps
+                when params: ParametersSyntax
+                {
+                    guard params.items <> null
+                    {
+                        let items (*params.items)
+                        var i: size_t 0
+                        guard items.length > (0 as size_t)
+                        {
+                            let i0 items.get(0 as size_t)
+                            guard i0 <> null
+                            {
+                                let it0 (*i0)
+                                let kw_this String#("this")
+                                guard it0.name.equals(kw_this)
+                                    set i: 1 as size_t
+                            }
+                        }
+                        while i < items.length
+                        {
+                            let iptr items.get(i)
+                            guard iptr <> null
+                            {
+                                let it (*iptr)
+                                let ptext symbols.param_label#(source, it)
+                                guard ptext.get_length() > (0 as size_t)
+                                {
+                                    guard first = false
+                                        sb.append(0x1F as char)
+                                    var li: size_t 0
+                                    let ll ptext.get_length()
+                                    while li < ll
+                                    {
+                                        sb.append(ptext.get(li) as char)
+                                        set li: li + (1 as size_t)
+                                    }
+                                    set first: false
+                                }
+                            }
+                            set i: i + (1 as size_t)
+                        }
+                    }
+                }
+                when ty: TypeSyntax
+                {
+                    let ptext symbols.type_text#(source, ty)
+                    guard ptext.get_length() > (0 as size_t)
+                    {
+                        var li: size_t 0
+                        let ll ptext.get_length()
+                        while li < ll
+                        {
+                            sb.append(ptext.get(li) as char)
+                            set li: li + (1 as size_t)
+                        }
+                    }
+                }
+        }
+        sb.to_string#()
+    }
+
+    ; Rebuild a SignatureHelp from a routine name + its 0x1F-joined param labels
+    ; (as stored in the ws blob by routine_param_detail#) + the request's active
+    ; parameter index. Mirrors build_signature#'s label/array assembly so the
+    ; cross-file result is byte-identical to the intra-file one.
+    function build_signature_from_labels#(rp, name: String, labels: String, active: size_t) returns String
+    {
+        var sig_label StringBuilder#()
+        var arr StringBuilder#()
+        var count: size_t 0
+
+        var ni: size_t 0
+        let nl name.get_length()
+        while ni < nl
+        {
+            sig_label.append(name.get(ni) as char)
+            set ni: ni + (1 as size_t)
+        }
+        sig_label.append(0x28 as char)                 ; (
+
+        ; Append a trailing 0x1F so every segment (incl. the last) ends with a
+        ; separator and the split loop flushes uniformly.
+        var first true
+        let ln labels.get_length()
+        guard ln > (0 as size_t)
+        {
+            var work StringBuilder#()
+            var wi: size_t 0
+            while wi < ln
+            {
+                work.append(labels.get(wi) as char)
+                set wi: wi + (1 as size_t)
+            }
+            work.append(0x1F as char)
+            let ws work.to_string#()
+            let wn ws.get_length()
+            var seg_start: size_t 0
+            var i: size_t 0
+            while i < wn
+            {
+                guard ws.get(i) = (0x1F as u8)
+                {
+                    let ptext symbols.substring#(ws, seg_start, i)
+                    guard first = false
+                    {
+                        sig_label.append(0x2C as char)
+                        sig_label.append(0x20 as char)
+                        arr.append(0x2C as char)
+                    }
+                    var li: size_t 0
+                    let ll ptext.get_length()
+                    while li < ll
+                    {
+                        sig_label.append(ptext.get(li) as char)
+                        set li: li + (1 as size_t)
+                    }
+                    let item_obj symbols.param_item#(ptext)
+                    var ai: size_t 0
+                    let al item_obj.get_length()
+                    while ai < al
+                    {
+                        arr.append(item_obj.get(ai) as char)
+                        set ai: ai + (1 as size_t)
+                    }
+                    set first: false
+                    set count: count + (1 as size_t)
+                    set seg_start: i + (1 as size_t)
+                }
+                set i: i + (1 as size_t)
+            }
+        }
+        sig_label.append(0x29 as char)                 ; )
+
+        var act active
+        guard count > (0 as size_t)
+            guard act >= count
+                set act: count - (1 as size_t)
+        guard count = (0 as size_t)
+            set act: (0 as size_t)
+
+        let sig_label_str sig_label.to_string#()
+        let arr_str arr.to_string#()
+
+        var sb StringBuilder#()
+        sb.append(0x7B as char)
+        sb.append(symbols.key#("signatures"))
+        sb.append(0x5B as char)                        ; [
+        sb.append(0x7B as char)                        ; {
+        sb.append(symbols.key#("label"))
+        sb.append(json.quote_string#(sig_label_str))
+        sb.append(0x2C as char)
+        sb.append(symbols.key#("parameters"))
+        sb.append(0x5B as char)                        ; [
+        var pi: size_t 0
+        let pl arr_str.get_length()
+        while pi < pl
+        {
+            sb.append(arr_str.get(pi) as char)
+            set pi: pi + (1 as size_t)
+        }
+        sb.append(0x5D as char)                        ; ]
+        sb.append(0x7D as char)                        ; }
+        sb.append(0x5D as char)                        ; ]
+        sb.append(0x2C as char)
+        sb.append(symbols.key#("activeSignature"))
+        sb.append(0x30 as char)                        ; 0
+        sb.append(0x2C as char)
+        sb.append(symbols.key#("activeParameter"))
+        sb.append(json.format_i64#(act as i64))
+        sb.append(0x7D as char)
+        sb.to_string#()
+    }
+
     ; The label for one parameter: "name" or "name: Type". Reconstructed from
     ; the clean ItemSyntax.name + a recursive render of the annotation's type
     ; (NOT source spans — the lexer reads one token ahead, so every syntax-node
@@ -6294,6 +6688,12 @@ define symbols
 
     ; Enumerate the .scaly files under `dir` (recursively) and return the first
     ; routine named `name`'s SignatureHelp (skipping `self_path`). "" if none.
+    ;
+    ; Step 29 follow-up: query the persistent symindex instead of re-parsing each
+    ; file with find_signature#. Each cached ws record carries an "S"-tagged
+    ; detail field = the routine's 0x1F-joined param labels, so the SignatureHelp
+    ; is rebuilt from the cache (sig_from_ws_blob#) — no re-parse, shared with
+    ; workspace/symbol + cross-file definition + member completion.
     function find_signature_in_dir#(rp, dir: String, self_path: String, name: String, active: size_t) returns String
     {
         guard dir.get_length() = (0 as size_t)
@@ -6316,7 +6716,17 @@ define symbols
                             guard File.exists(fpath)
                             {
                                 let fsrc File.read_to_string#(fpath)
-                                set result: symbols.find_signature#(fsrc, name, active)
+                                let chash fsrc.hash()
+                                var blob String#("")
+                                guard symindex.valid(fpath, chash)
+                                    set blob: symindex.get_blob#(fpath)
+                                guard symindex.valid(fpath, chash) = false
+                                {
+                                    let furi symbols.path_to_uri#(fpath)
+                                    set blob: symbols.workspace_symbols_in_file#(fsrc, furi)
+                                    symindex.put(fpath, chash, blob)
+                                }
+                                set result: symbols.sig_from_ws_blob#(blob, name, active)
                             }
                 }
                 set line_start: i + (1 as size_t)
