@@ -720,6 +720,84 @@ PY
 rc=$?
 if [ $rc -eq 0 ]; then ok "lsp scope-aware refs/rename"; else bad "lsp scope-aware refs/rename"; fi
 
+# ---- cross-file references / rename ----
+# A module/file-wide name (a function declared in one file, used in another) now
+# resolves references AND renames across every .scaly file in the directory tree
+# — each carrying its own uri. A local stays single-file. Uses a private mkdtemp
+# dir so the dir-tree walk sees only these two files.
+python3 - <<'PY'
+import sys, json, subprocess, os, tempfile
+d = tempfile.mkdtemp(prefix="lsp_xfile_")
+lib = ("function compute(n: int) returns int\n"   # 0
+       "{\n"                                       # 1
+       "    var tmp 0          ; tmp here\n"       # 2
+       "    return n + tmp\n"                      # 3
+       "}\n")                                      # 4
+main = ("function run() returns int\n"            # 0
+        "{\n"                                      # 1
+        "    var tmp 5\n"                          # 2
+        "    return compute(tmp)\n"                # 3
+        "}\n")                                     # 4
+libp  = os.path.join(d, "lib.scaly")
+mainp = os.path.join(d, "main.scaly")
+open(libp, "w").write(lib); open(mainp, "w").write(main)
+def frame(o):
+    b=json.dumps(o).encode(); return ("Content-Length: %d\r\n\r\n"%len(b)).encode()+b
+def rf(idn, p, line, char):
+    return frame({"jsonrpc":"2.0","id":idn,"method":"textDocument/references",
+                  "params":{"textDocument":{"uri":"file://"+p},
+                            "position":{"line":line,"character":char},
+                            "context":{"includeDeclaration":True}}})
+def rn(idn, p, line, char, name):
+    return frame({"jsonrpc":"2.0","id":idn,"method":"textDocument/rename",
+                  "params":{"textDocument":{"uri":"file://"+p},
+                            "position":{"line":line,"character":char},"newName":name}})
+inp  = frame({"jsonrpc":"2.0","id":1,"method":"initialize","params":{}})
+inp += frame({"jsonrpc":"2.0","method":"initialized","params":{}})
+inp += rf(2, libp, 0, 9)         # references on `compute` (decl) -> decl (lib) + use (main)
+inp += rf(3, libp, 2, 8)         # references on local `tmp` in lib -> lib only (2)
+inp += rn(4, mainp, 3, 11, "calc")  # rename `compute` from main (used here) -> both files
+inp += rn(5, mainp, 2, 8, "t2")     # rename local `tmp` in main -> main only
+inp += frame({"jsonrpc":"2.0","id":9,"method":"shutdown"})
+inp += frame({"jsonrpc":"2.0","method":"exit"})
+out = subprocess.run(["/tmp/scalyls"], input=inp, stdout=subprocess.PIPE).stdout
+frames, b = [], out
+while b:
+    i = b.find(b"\r\n\r\n")
+    if i < 0: break
+    n = int(b[:i].decode().split(":")[1].strip())
+    frames.append(json.loads(b[i+4:i+4+n])); b = b[i+4+n:]
+failures = 0
+def check(cond, label):
+    global failures
+    print(("PASS  " if cond else "FAIL  ") + label)
+    if not cond: failures += 1
+def res(idn):
+    f = next((x for x in frames if x.get("id") == idn), None)
+    return (f or {}).get("result")
+def files(idn):
+    return sorted(set(os.path.basename(x["uri"]) for x in (res(idn) or [])))
+# (1) references of a cross-file function span both files.
+check(files(2) == ["lib.scaly","main.scaly"], "references of `compute` span lib + main")
+check(len(res(2) or []) == 2, "`compute` -> 2 references (decl + cross-file use)")
+# (2) a local does not leak across files.
+check(files(3) == ["lib.scaly"], "local `tmp` references stay in lib.scaly")
+check(len(res(3) or []) == 2, "local `tmp` -> 2 references (decl + use)")
+# (3) rename of a cross-file name (invoked from the using file) edits both files.
+ch = (res(4) or {}).get("changes") or {}
+keys = sorted(os.path.basename(k) for k in ch.keys())
+check(keys == ["lib.scaly","main.scaly"], "rename `compute` edits lib + main")
+check(sum(len(v) for v in ch.values()) == 2, "rename `compute` -> 2 edits total")
+# (4) renaming a local edits only its own file.
+ch5 = (res(5) or {}).get("changes") or {}
+check(sorted(os.path.basename(k) for k in ch5.keys()) == ["main.scaly"],
+      "rename local `tmp` stays in main.scaly")
+check(sum(len(v) for v in ch5.values()) == 2, "rename local `tmp` -> 2 edits")
+sys.exit(1 if failures else 0)
+PY
+rc=$?
+if [ $rc -eq 0 ]; then ok "lsp cross-file refs/rename"; else bad "lsp cross-file refs/rename"; fi
+
 # ---- context-aware completion (member-after-`.`, lexical) ----
 # When a `.` precedes the cursor and its receiver names a declared concept,
 # completion returns only that concept's members. A struct receiver yields
