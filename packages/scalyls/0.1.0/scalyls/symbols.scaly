@@ -94,6 +94,7 @@ use scalyc.compiler.Syntax.DeInitSyntax
 use scalyc.compiler.Syntax.ImplementSyntax
 use scalyc.compiler.Syntax.VariantSyntax
 use scalyc.compiler.Syntax.ParametersSyntax
+use scalyc.compiler.Syntax.ParameterSetSyntax
 use scalyc.compiler.Syntax.ItemSyntax
 use scalyc.compiler.Syntax.TypeSyntax
 use scalyc.compiler.Syntax.TypeAnnotationSyntax
@@ -939,6 +940,11 @@ define symbols
         let ty_list symbols.names_from_items#(comp_items, 22 as i64, 13 as i64)
         let prim_list symbols.primitive_type_list#()
 
+        ; Scope-aware tables: routine [start,end)+param-names and field-decl
+        ; offsets, both from ONE more parse. param_in_scope / is_field_decl_offset
+        ; query this per identifier; the after-dot property case uses prev_was_dot.
+        let scope_tbl symbols.scope_table#(source)
+
         let n source.get_length()
         var i: size_t 0
         var line: size_t 0
@@ -947,6 +953,7 @@ define symbols
         var prev_col: size_t 0
         var first true
         var pending: i64 (0 - 1)                   ; -1 none, 1 type-name, 2 fn-name
+        var prev_was_dot false                     ; previous emitted token was `.`
 
         while i < n
         {
@@ -1032,6 +1039,7 @@ define symbols
                     }
                     set i: k
                     set pending: 0 - 1
+                    set prev_was_dot: false
                     continue
                 }
 
@@ -1053,6 +1061,7 @@ define symbols
                 set col: col + clen
                 set i: j
                 set pending: 0 - 1
+                set prev_was_dot: false
                 continue
             }
 
@@ -1119,6 +1128,7 @@ define symbols
                 }
                 set tlen: j - i
                 let word symbols.substring#(source, i, j)
+                let after_dot prev_was_dot
                 var t: i64 (3)                     ; variable
                 guard symbols.is_upper(c)
                     set t: 1 as i64                ; lexical: uppercase -> type
@@ -1133,6 +1143,20 @@ define symbols
                     set t: 1 as i64                ; declared type (this file)
                 guard symbols.name_set_contains(fn_list, source, i, j)
                     set t: 2 as i64                ; declared function/method (this file)
+                ; parameter: in scope of the enclosing routine (above function)
+                guard symbols.param_in_scope(scope_tbl, source, i, j, i)
+                    set t: 8 as i64
+                ; property (a): a field/property name at its declaration site
+                guard symbols.is_field_decl_offset(scope_tbl, i)
+                    set t: 9 as i64
+                ; property (b): an after-`.` member access not resolved as a
+                ; function/method or type (Type.method / ns.fn keep their kind)
+                guard after_dot
+                {
+                    guard t <> (1 as i64)
+                        guard t <> (2 as i64)
+                            set t: 9 as i64
+                }
                 guard grammar.is_keyword(word)
                     set t: 0 as i64                ; keyword wins (grammar-derived)
                 set tok_type: t
@@ -1185,10 +1209,16 @@ define symbols
                 set first: false
                 set col: col + tlen
                 set i: i + tlen
+                set prev_was_dot: false
                 continue
             }
 
-            ; other punctuation / unknown: skip one char
+            ; other punctuation / unknown: skip one char. A `.` arms the
+            ; after-dot property classification for the next identifier.
+            var is_dot false
+            guard c = (0x2E as u8)
+                set is_dot: true
+            set prev_was_dot: is_dot
             set col: col + 1
             set i: i + 1
             set pending: 0 - 1
@@ -1433,6 +1463,547 @@ define symbols
             set k: k + 1
         }
         true
+    }
+
+    ; ----- semanticTokens: scope-aware parameters + declared fields -----
+    ; These refine the declared-NAME resolution (which is file-global, like
+    ; fn_list/ty_list) with two POSITION-aware classes that a name set cannot
+    ; express:
+    ;   - parameter: an identifier inside the routine whose parameter list
+    ;     names it (scope-aware — `x` only colours inside its own routine).
+    ;   - property (declaration): a field/property NAME at its declaration
+    ;     site in a `define X (fields)` structure.
+    ; Both come from ONE parse via `scope_table#`, which returns a blob of
+    ; TAB/LF-delimited tagged records (no aggregate-through-param mutation —
+    ; each walker RETURNS a record fragment, mirroring names_from_items#):
+    ;   "P" <TAB> start <TAB> end <TAB> "name1 name2 ..." <LF>   (routine scope)
+    ;   "F" <TAB> offset <LF>                                    (field decl)
+    ; semantic_tokens# builds the table once, then `param_in_scope` /
+    ; `is_field_decl_offset` query it per identifier token. The after-dot
+    ; property case needs no table (it tracks the previous emitted token).
+
+    ; First letter byte at or after `from` (the real name token start; a
+    ; PartSyntax/PropertySyntax `start` is `previous_position`, just before the
+    ; name, so trailing trivia / a leading `(`/`,` precede the letter).
+    function name_offset_at(source: String, from: size_t) returns size_t
+    {
+        let n source.get_length()
+        var i from
+        while i < n
+        {
+            guard symbols.is_letter(source.get(i))
+                break
+            set i: i + 1
+        }
+        i
+    }
+
+    ; The parameter names of a parameter set, space-joined (with a trailing
+    ; space). A leading `this` receiver is dropped (it is never written as an
+    ; argument). A bare-type parameter set carries no names.
+    function params_set_names#(rp, parameters: ref[ParameterSetSyntax]?) returns String
+    {
+        var sb StringBuilder#()
+        guard parameters <> null
+        {
+            let ps (*parameters)
+            choose ps
+                when params: ParametersSyntax
+                {
+                    guard params.items <> null
+                    {
+                        let items (*params.items)
+                        var i: size_t 0
+                        guard items.length > (0 as size_t)
+                        {
+                            let i0 items.get(0 as size_t)
+                            guard i0 <> null
+                            {
+                                let it0 (*i0)
+                                let kw_this String#("this")
+                                guard it0.name.equals(kw_this)
+                                    set i: 1 as size_t
+                            }
+                        }
+                        while i < items.length
+                        {
+                            let iptr items.get(i)
+                            guard iptr <> null
+                            {
+                                let it (*iptr)
+                                var k: size_t 0
+                                let nn it.name.get_length()
+                                while k < nn
+                                {
+                                    sb.append(it.name.get(k) as char)
+                                    set k: k + (1 as size_t)
+                                }
+                                sb.append(0x20 as char)
+                            }
+                            set i: i + (1 as size_t)
+                        }
+                    }
+                }
+                when ty: TypeSyntax {}
+        }
+        sb.to_string#()
+    }
+
+    ; One routine-scope record "P\t<start>\t<end>\t<names>\n", or "" when the
+    ; routine has no (non-this) parameters.
+    function param_record#(rp, start: size_t, end: size_t, names: String) returns String
+    {
+        guard names.get_length() > (0 as size_t)
+        {
+            var sb StringBuilder#()
+            sb.append(0x50 as char)                ; P
+            sb.append(0x09 as char)                ; tab
+            sb.append(json.format_i64#(start as i64))
+            sb.append(0x09 as char)
+            sb.append(json.format_i64#(end as i64))
+            sb.append(0x09 as char)
+            var k: size_t 0
+            let nn names.get_length()
+            while k < nn
+            {
+                sb.append(names.get(k) as char)
+                set k: k + (1 as size_t)
+            }
+            sb.append(0x0A as char)                ; newline
+            return sb.to_string#()
+        }
+        String#("")
+    }
+
+    ; One field-declaration record "F\t<offset>\n".
+    function f_record#(rp, off: size_t) returns String
+    {
+        var sb StringBuilder#()
+        sb.append(0x46 as char)                    ; F
+        sb.append(0x09 as char)                    ; tab
+        sb.append(json.format_i64#(off as i64))
+        sb.append(0x0A as char)                    ; newline
+        sb.to_string#()
+    }
+
+    ; The scope record for a routine target (named -> its routine; an anonymous
+    ; routine target has no name to scope but its params still apply).
+    function st_target#(rp, source: String, start: size_t, end: size_t, target: TargetSyntax) returns String
+    {
+        choose target
+            when named: NamedSyntax
+                return symbols.param_record#(start, end, symbols.params_set_names#(named.routine.parameters))
+            when r: RoutineSyntax
+                return symbols.param_record#(start, end, symbols.params_set_names#(r.parameters))
+    }
+
+    ; The scope record for an init (its `page`/explicit params are colourable).
+    function st_init#(rp, source: String, start: size_t, end: size_t, parameters: ref[ParameterSetSyntax]?) returns String
+        symbols.param_record#(start, end, symbols.params_set_names#(parameters))
+
+    ; One structure part -> its field-declaration record (verified against the
+    ; declared name so a stray non-name byte never produces a bogus offset).
+    function field_record#(rp, source: String, part: PartSyntax) returns String
+    {
+        choose part
+            when fld: Field
+            {
+                let prop fld.property
+                let off symbols.name_offset_at(source, prop.start)
+                let nlen prop.name.get_length()
+                guard off + nlen <= source.get_length()
+                    guard symbols.range_equals(source, off, prop.name, 0 as size_t, nlen)
+                        return symbols.f_record#(off)
+                return String#("")
+            }
+            when prop2: Property
+            {
+                let off symbols.name_offset_at(source, prop2.start)
+                let nlen prop2.name.get_length()
+                guard off + nlen <= source.get_length()
+                    guard symbols.range_equals(source, off, prop2.name, 0 as size_t, nlen)
+                        return symbols.f_record#(off)
+                return String#("")
+            }
+    }
+
+    ; Top-level declaration -> its scope/field records (concatenated, each
+    ; newline-terminated, so plain concatenation needs no separator).
+    function st_decl#(rp, source: String, decl: DeclarationSyntax) returns String
+    {
+        choose decl
+            when f: FunctionSyntax
+                return symbols.st_target#(source, f.start, f.end, f.target)
+            when pr: ProcedureSyntax
+                return symbols.st_target#(source, pr.start, pr.end, pr.target)
+            when o: OperatorSyntax
+                return symbols.st_target#(source, o.start, o.end, o.target)
+            when def: DefinitionSyntax
+                return symbols.st_definition#(source, def)
+            when m: ModuleSyntax
+                return String#("")
+            when mut: MutableSyntax
+                return String#("")
+            when priv: PrivateSyntax
+                return symbols.st_export#(source, priv.export_)
+            when e: EmptySyntax
+                return String#("")
+            when pkg: PackageSyntax
+                return String#("")
+            when u: UseSyntax
+                return String#("")
+            when t: TraitSyntax
+                return String#("")
+            when mac: MacroSyntax
+                return String#("")
+    }
+
+    ; A `private` declaration unwraps to its exported construct.
+    function st_export#(rp, source: String, export_: ExportSyntax) returns String
+    {
+        choose export_
+            when f: FunctionSyntax
+                return symbols.st_target#(source, f.start, f.end, f.target)
+            when pr: ProcedureSyntax
+                return symbols.st_target#(source, pr.start, pr.end, pr.target)
+            when o: OperatorSyntax
+                return symbols.st_target#(source, o.start, o.end, o.target)
+            when def: DefinitionSyntax
+                return symbols.st_definition#(source, def)
+            when t: TraitSyntax
+                return String#("")
+            when m: ModuleSyntax
+                return String#("")
+    }
+
+    ; A `define X` -> field records (class structure) + member scope records.
+    function st_definition#(rp, source: String, def: DefinitionSyntax) returns String
+    {
+        choose def.concept_
+            when c: ClassSyntax
+                return symbols.st_class#(source, c)
+            when n: NamespaceSyntax
+                return symbols.st_namespace#(source, n)
+            when un: UnionSyntax
+                return symbols.st_union#(source, un)
+            when cn: ConstantSyntax
+                return String#("")
+            when dl: DelegateSyntax
+                return String#("")
+            when ic: IntrinsicSyntax
+                return String#("")
+    }
+
+    ; Class: field declarations from the structure parts, then body members.
+    function st_class#(rp, source: String, c: ClassSyntax) returns String
+    {
+        var sb StringBuilder#()
+        let st c.structure
+        guard st.parts <> null
+        {
+            let parts (*st.parts)
+            var i: size_t 0
+            while i < parts.length
+            {
+                let pptr parts.get(i)
+                guard pptr <> null
+                {
+                    let part (*pptr)
+                    let frag symbols.field_record#(source, part)
+                    var ci: size_t 0
+                    let cn frag.get_length()
+                    while ci < cn
+                    {
+                        sb.append(frag.get(ci) as char)
+                        set ci: ci + (1 as size_t)
+                    }
+                }
+                set i: i + (1 as size_t)
+            }
+        }
+        let bodyfrag symbols.st_body#(source, c.body)
+        var bi: size_t 0
+        let bn bodyfrag.get_length()
+        while bi < bn
+        {
+            sb.append(bodyfrag.get(bi) as char)
+            set bi: bi + (1 as size_t)
+        }
+        sb.to_string#()
+    }
+
+    ; Members of a class/union body -> concatenated scope/field records.
+    function st_body#(rp, source: String, body: ref[BodySyntax]?) returns String
+    {
+        var sb StringBuilder#()
+        guard body <> null
+        {
+            let b (*body)
+            guard b.members <> null
+            {
+                let members (*b.members)
+                var i: size_t 0
+                while i < members.length
+                {
+                    let mptr members.get(i)
+                    guard mptr <> null
+                    {
+                        let m (*mptr)
+                        let frag symbols.st_member#(source, m)
+                        var ci: size_t 0
+                        let cn frag.get_length()
+                        while ci < cn
+                        {
+                            sb.append(frag.get(ci) as char)
+                            set ci: ci + (1 as size_t)
+                        }
+                    }
+                    set i: i + (1 as size_t)
+                }
+            }
+        }
+        sb.to_string#()
+    }
+
+    ; One class/union member -> its scope/field records.
+    function st_member#(rp, source: String, member: MemberSyntax) returns String
+    {
+        choose member
+            when f: FunctionSyntax
+                return symbols.st_target#(source, f.start, f.end, f.target)
+            when pr: ProcedureSyntax
+                return symbols.st_target#(source, pr.start, pr.end, pr.target)
+            when o: OperatorSyntax
+                return symbols.st_target#(source, o.start, o.end, o.target)
+            when ini: InitSyntax
+                return symbols.st_init#(source, ini.start, ini.end, ini.parameters)
+            when dei: DeInitSyntax
+                return String#("")
+            when def: DefinitionSyntax
+                return symbols.st_definition#(source, def)
+            when e: EmptySyntax
+                return String#("")
+            when im: ImplementSyntax
+                return String#("")
+            when t: TraitSyntax
+                return String#("")
+            when mac: MacroSyntax
+                return String#("")
+            when m: ModuleSyntax
+                return String#("")
+    }
+
+    ; Nested declarations of a namespace -> concatenated records.
+    function st_namespace#(rp, source: String, ns: NamespaceSyntax) returns String
+    {
+        var sb StringBuilder#()
+        guard ns.declarations <> null
+        {
+            let decls (*ns.declarations)
+            var i: size_t 0
+            while i < decls.length
+            {
+                let dptr decls.get(i)
+                guard dptr <> null
+                {
+                    let d (*dptr)
+                    let frag symbols.st_decl#(source, d)
+                    var ci: size_t 0
+                    let cn frag.get_length()
+                    while ci < cn
+                    {
+                        sb.append(frag.get(ci) as char)
+                        set ci: ci + (1 as size_t)
+                    }
+                }
+                set i: i + (1 as size_t)
+            }
+        }
+        sb.to_string#()
+    }
+
+    ; A union -> its body members' records (variants carry no params/fields).
+    function st_union#(rp, source: String, un: UnionSyntax) returns String
+    {
+        var result String#("")
+        guard un.body <> null
+            set result: symbols.st_body#(source, un.body)
+        result
+    }
+
+    ; Build the whole scope/field table from one parse of the program.
+    function scope_table#(rp, source: String) returns String
+    {
+        var sb StringBuilder#()
+        var p parser.Parser$(source)
+        choose p.parse_program#()
+            when err: Error {}
+            when program: Success
+            {
+                let file program.file
+                guard file.declarations <> null
+                {
+                    let decls (*file.declarations)
+                    var i: size_t 0
+                    while i < decls.length
+                    {
+                        let dptr decls.get(i)
+                        guard dptr <> null
+                        {
+                            let d (*dptr)
+                            let frag symbols.st_decl#(source, d)
+                            var ci: size_t 0
+                            let cn frag.get_length()
+                            while ci < cn
+                            {
+                                sb.append(frag.get(ci) as char)
+                                set ci: ci + (1 as size_t)
+                            }
+                        }
+                        set i: i + (1 as size_t)
+                    }
+                }
+            }
+        sb.to_string#()
+    }
+
+    ; True when the token source[tstart,tend) names a parameter of the INNERMOST
+    ; routine whose [start,end) byte range contains `offset`. Innermost = the
+    ; containing P record with the greatest start (nested routines start later).
+    function param_in_scope(table: String, source: String, tstart: size_t, tend: size_t, offset: size_t) returns bool
+    {
+        let tlen tend - tstart
+        let n table.get_length()
+        var i: size_t 0
+        var found false
+        var best_start: size_t 0
+        var best_name_start: size_t 0
+        var best_name_end: size_t 0
+        while i < n
+        {
+            let tag table.get(i)
+            guard tag = (0x50 as u8)
+            {
+                set i: i + (2 as size_t)            ; skip 'P' + tab
+                var rstart: size_t 0
+                while i < n
+                {
+                    let c table.get(i)
+                    guard c = (0x09 as u8)
+                        break
+                    set rstart: rstart * (10 as size_t) + ((c - (0x30 as u8)) as size_t)
+                    set i: i + (1 as size_t)
+                }
+                set i: i + (1 as size_t)            ; skip tab
+                var rend: size_t 0
+                while i < n
+                {
+                    let c table.get(i)
+                    guard c = (0x09 as u8)
+                        break
+                    set rend: rend * (10 as size_t) + ((c - (0x30 as u8)) as size_t)
+                    set i: i + (1 as size_t)
+                }
+                set i: i + (1 as size_t)            ; skip tab
+                let name_start i
+                while i < n
+                {
+                    guard table.get(i) = (0x0A as u8)
+                        break
+                    set i: i + (1 as size_t)
+                }
+                let name_end i
+                set i: i + (1 as size_t)            ; skip newline
+                guard offset >= rstart
+                {
+                    guard offset < rend
+                    {
+                        var take false
+                        guard found = false
+                            set take: true
+                        guard rstart >= best_start
+                            set take: true
+                        guard take
+                        {
+                            set found: true
+                            set best_start: rstart
+                            set best_name_start: name_start
+                            set best_name_end: name_end
+                        }
+                    }
+                }
+                continue
+            }
+            ; other (F) record: skip to end of line
+            while i < n
+            {
+                guard table.get(i) = (0x0A as u8)
+                    break
+                set i: i + (1 as size_t)
+            }
+            set i: i + (1 as size_t)
+        }
+        guard found
+        {
+            var k best_name_start
+            while k < best_name_end
+            {
+                guard table.get(k) = (0x20 as u8)
+                {
+                    set k: k + (1 as size_t)
+                    continue
+                }
+                var j k
+                while j < best_name_end
+                {
+                    guard table.get(j) = (0x20 as u8)
+                        break
+                    set j: j + (1 as size_t)
+                }
+                guard (j - k) = tlen
+                    guard symbols.range_equals(table, k, source, tstart, tlen)
+                        return true
+                set k: j
+            }
+        }
+        false
+    }
+
+    ; True when `off` is the start offset of a declared field/property name.
+    function is_field_decl_offset(table: String, off: size_t) returns bool
+    {
+        let n table.get_length()
+        var i: size_t 0
+        while i < n
+        {
+            let tag table.get(i)
+            guard tag = (0x46 as u8)
+            {
+                set i: i + (2 as size_t)            ; skip 'F' + tab
+                var roff: size_t 0
+                while i < n
+                {
+                    let c table.get(i)
+                    guard c = (0x0A as u8)
+                        break
+                    set roff: roff * (10 as size_t) + ((c - (0x30 as u8)) as size_t)
+                    set i: i + (1 as size_t)
+                }
+                set i: i + (1 as size_t)            ; skip newline
+                guard roff = off
+                    return true
+                continue
+            }
+            ; other (P) record: skip to end of line
+            while i < n
+            {
+                guard table.get(i) = (0x0A as u8)
+                    break
+                set i: i + (1 as size_t)
+            }
+            set i: i + (1 as size_t)
+        }
+        false
     }
 
     ; ====================================================================

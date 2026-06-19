@@ -1291,23 +1291,27 @@ if [ $rc -eq 0 ]; then ok "lsp foldingRange"; else bad "lsp foldingRange"; fi
 # multi-line comment (split into one token per line).
 python3 - <<'PY'
 import sys, json, subprocess
-src = ("function add(a: int) returns int\n"   # 0
-       "{\n"                                   # 1
-       "    return a + 42   ; sum\n"           # 2
-       "}\n"                                   # 3
-       ";* block\n"                            # 4
-       "   comment *;\n"                       # 5
-       "define Point\n"                        # 6
-       "(\n"                                   # 7
-       "    x: int\n"                          # 8
-       ")\n"                                   # 9
-       "{\n"                                   # 10
-       "    let name \"hi\"\n"                 # 11
-       "}\n"                                   # 12
-       "function main() returns int\n"        # 13
-       "{\n"                                   # 14
-       "    return add(7)\n"                   # 15  <- `add` is a USE here
-       "}\n")                                  # 16
+src = ("function add(a: int) returns int\n"      # 0
+       "{\n"                                      # 1
+       "    return a + 42   ; sum\n"              # 2
+       "}\n"                                      # 3
+       ";* block\n"                               # 4
+       "   comment *;\n"                          # 5
+       "define Point\n"                           # 6
+       "(\n"                                      # 7
+       "    x: int\n"                             # 8
+       ")\n"                                      # 9
+       "{\n"                                      # 10
+       "    function get_x(pt: Point) returns int\n"  # 11 <- method param `pt`
+       "    {\n"                                  # 12
+       "        return pt.x\n"                    # 13 <- `pt` param, `x` after-dot
+       "    }\n"                                  # 14
+       "}\n"                                      # 15
+       "function main(p: Point) returns int\n"    # 16 <- param `p`
+       "{\n"                                      # 17
+       "    let s \"hi\"\n"                       # 18
+       "    return add(p.x)\n"                    # 19 <- `add` USE, `p` param, `x` after-dot
+       "}\n")                                     # 20
 path = "/tmp/lsp_sem_test.scaly"
 open(path, "w").write(src)
 def frame(o):
@@ -1332,7 +1336,7 @@ def check(cond, label):
     if not cond: failures += 1
 caps = frames[0]["result"]["capabilities"]
 stp = caps.get("semanticTokensProvider")
-TYPES = ["keyword","type","function","variable","operator","string","number","comment"]
+TYPES = ["keyword","type","function","variable","operator","string","number","comment","parameter","property"]
 check(isinstance(stp, dict) and stp.get("legend",{}).get("tokenTypes") == TYPES,
       "advertises semanticTokensProvider with the token-type legend")
 check(stp.get("full") is True, "semanticTokens full:true")
@@ -1355,9 +1359,9 @@ check(has("function","keyword") and has("define","keyword") and has("returns","k
 check(has("add","function"), "identifier after `function` -> function")
 check(has("Point","type"), "identifier after `define` -> type")
 check(has("int","type"), "primitive `int` -> type (semantic, lowercase)")
-# `add` used at a call site (line 15) resolves to function, not variable -
+# `add` used at a call site (line 19) resolves to function, not variable -
 # semantic resolution a regex/shape pass cannot do.
-add_uses = [t for t in toks if t[0] == 15 and t[2] == "add"]
+add_uses = [t for t in toks if t[0] == 19 and t[2] == "add"]
 check(len(add_uses) == 1 and add_uses[0][3] == "function",
       "function used at a call site -> function (declared-kind resolution)")
 check(has("+","operator"), "operator token")
@@ -1368,6 +1372,34 @@ check(has("; sum","comment"), "single-line comment token")
 seg4 = [t for t in toks if t[0] == 4 and t[3] == "comment"]
 seg5 = [t for t in toks if t[0] == 5 and t[3] == "comment"]
 check(len(seg4) == 1 and len(seg5) == 1, "multi-line comment split into one token per line")
+# parameter (scope-aware): `a` in add's signature AND its use in add's body.
+a_decl = [t for t in toks if t[0] == 0 and t[2] == "a"]
+a_use  = [t for t in toks if t[0] == 2 and t[2] == "a"]
+check(len(a_decl) == 1 and a_decl[0][3] == "parameter", "param `a` at its declaration -> parameter")
+check(len(a_use) == 1 and a_use[0][3] == "parameter", "param `a` used in its routine body -> parameter")
+# scope-aware: parameter tokens appear ONLY where a param is in scope -
+# `a` (add: 0,2), `pt` (get_x: 11,13), `p` (main: 16,19). No stray leakage.
+params_outside = [t for t in toks if t[3] == "parameter" and t[0] not in (0, 2, 11, 13, 16, 19)]
+check(params_outside == [], "parameter colouring is scoped to its own routine")
+# property (a): field name `x` at its declaration in `define Point (x: int)`.
+x_decl = [t for t in toks if t[0] == 8 and t[2] == "x"]
+check(len(x_decl) == 1 and x_decl[0][3] == "property", "field `x` at its declaration -> property")
+# parameter inside a method body: `pt` in get_x's signature AND `pt.x` body use.
+pt_decl = [t for t in toks if t[0] == 11 and t[2] == "pt"]
+pt_use  = [t for t in toks if t[0] == 13 and t[2] == "pt"]
+check(len(pt_decl) == 1 and pt_decl[0][3] == "parameter", "method param `pt` at its declaration -> parameter")
+check(len(pt_use) == 1 and pt_use[0][3] == "parameter", "method param `pt` used in its body -> parameter")
+# parameter in main: `p` both in its signature and its body.
+p_decl = [t for t in toks if t[0] == 16 and t[2] == "p"]
+p_use  = [t for t in toks if t[0] == 19 and t[2] == "p"]
+check(len(p_decl) == 1 and p_decl[0][3] == "parameter", "param `p` at its declaration -> parameter")
+check(len(p_use) == 1 and p_use[0][3] == "parameter", "param `p` used in its routine body -> parameter")
+# property (b): `x` after the `.` in `pt.x` and `p.x` -> property (member access).
+x_acc13 = [t for t in toks if t[0] == 13 and t[2] == "x"]
+x_acc19 = [t for t in toks if t[0] == 19 and t[2] == "x"]
+check(len(x_acc13) == 1 and x_acc13[0][3] == "property", "after-dot member access `pt.x` -> property")
+x_acc = x_acc19
+check(len(x_acc) == 1 and x_acc[0][3] == "property", "after-dot member access `p.x` -> property")
 sys.exit(1 if failures else 0)
 PY
 rc=$?
