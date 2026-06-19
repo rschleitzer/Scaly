@@ -46,6 +46,7 @@ use scaly.memory.root_pages.getenv
 use scalyls.json
 use scalyls.symindex
 use scalyls.grammar
+use scalyls.nameset
 
 use scalyc.compiler.parser
 
@@ -941,21 +942,30 @@ define symbols
         let prim_list symbols.primitive_type_list#()
 
         ; Cross-file name tables: function/method + struct/enum names harvested
-        ; from the current file's directory tree via the symindex cache. "" (no
+        ; from the current file's directory tree AND the package dependency tree
+        ; (stdlib String/Vector/Page, …) via the symindex cache. "" (no
         ; workspace context) -> empty lists -> identical to the intra-file path.
-        ; GATED on file size: the membership test (name_set_contains) is a linear
-        ; scan, so the cost is O(identifiers x cross-list-bytes); for the huge
-        ; compiler files (10k+ lines) that exceeds the 8s worker budget. Files
-        ; above the threshold stay intra-file-only (the pre-cross-file behaviour,
-        ; fast). The proper scaling fix is a hashed name set (deferred).
-        var xfn_list String#("")
-        var xty_list String#("")
-        guard source.get_length() <= (96000 as size_t)
-        {
-            let xname_blob symbols.workspace_name_blob#(uri)
-            set xfn_list: symbols.tagged_name_list#(xname_blob, 0x46 as u8)  ; F
-            set xty_list: symbols.tagged_name_list#(xname_blob, 0x54 as u8)  ; T
-        }
+        ; No file-size gate: lookups go through the O(1) hash table below, so the
+        ; per-identifier cost no longer scales with the list bytes (the Step 27
+        ; gate is removed; the harvest cost is bounded by the content-hashed
+        ; symindex regardless of the current file's size).
+        let xname_blob symbols.workspace_name_blob#(uri)
+        let xfn_list symbols.tagged_name_list#(xname_blob, 0x46 as u8)  ; F
+        let xty_list symbols.tagged_name_list#(xname_blob, 0x54 as u8)  ; T
+
+        ; One hashed name->token-kind table from the five lists. Type lists
+        ; (primitives, intra-file types, cross-file types) -> token type 1;
+        ; function lists (intra-file + cross-file) -> 2. A name that is both
+        ; resolves to function (insert only raises a slot's kind). The table
+        ; borrows the lists' buffers (alive for this function) and is freed
+        ; before return.
+        let ns_cap (NS_CAP as size_t)
+        let ns_slots nameset.create(ns_cap)
+        nameset.insert_name_list(ns_slots, ns_cap, prim_list, 1 as i64)
+        nameset.insert_name_list(ns_slots, ns_cap, ty_list, 1 as i64)
+        nameset.insert_name_list(ns_slots, ns_cap, xty_list, 1 as i64)
+        nameset.insert_name_list(ns_slots, ns_cap, fn_list, 2 as i64)
+        nameset.insert_name_list(ns_slots, ns_cap, xfn_list, 2 as i64)
 
         ; Scope-aware tables: routine [start,end)+param-names and field-decl
         ; offsets, both from ONE more parse. param_in_scope / is_field_decl_offset
@@ -1153,17 +1163,11 @@ define symbols
                     set t: 1 as i64                ; after define/union/... -> type
                 guard pending = (2 as i64)
                     set t: 2 as i64                ; after function/procedure -> function
-                ; semantic overrides: resolve the USE to its declared kind
-                guard symbols.name_set_contains(prim_list, source, i, j)
-                    set t: 1 as i64                ; primitive/builtin type
-                guard symbols.name_set_contains(ty_list, source, i, j)
-                    set t: 1 as i64                ; declared type (this file)
-                guard symbols.name_set_contains(fn_list, source, i, j)
-                    set t: 2 as i64                ; declared function/method (this file)
-                guard symbols.name_set_contains(xty_list, source, i, j)
-                    set t: 1 as i64                ; declared type (cross-file workspace)
-                guard symbols.name_set_contains(xfn_list, source, i, j)
-                    set t: 2 as i64                ; declared function/method (cross-file)
+                ; semantic override: resolve the USE to its declared kind via
+                ; the hashed name set (1 type / 2 function, function wins).
+                let nk nameset.lookup(ns_slots, ns_cap, source, i, j)
+                guard nk >= (0 as i64)
+                    set t: nk
                 ; parameter: in scope of the enclosing routine (above function)
                 guard symbols.param_in_scope(scope_tbl, source, i, j, i)
                     set t: 8 as i64
@@ -1247,6 +1251,7 @@ define symbols
 
         sb.append(0x5D as char)                    ; ]
         sb.append(0x7D as char)                    ; }
+        nameset.destroy(ns_slots)
         sb.to_string#()
     }
 
@@ -1439,36 +1444,6 @@ define symbols
         sb.append("ref")
         sb.append(0x0A as char)
         sb.to_string#()
-    }
-
-    ; True when source[tstart,tend) exactly equals one newline-delimited
-    ; segment of `list` (a names_from_items#/primitive_type_list# result). No
-    ; allocation per lookup — compares bytes in place.
-    function name_set_contains(list: String, source: String, tstart: size_t, tend: size_t) returns bool
-    {
-        let tlen tend - tstart
-        let llen list.get_length()
-        var i: size_t 0
-        while i < llen
-        {
-            guard list.get(i) = (10 as u8)
-            {
-                set i: i + 1
-                continue
-            }
-            var j i
-            while j < llen
-            {
-                guard list.get(j) = (10 as u8)
-                    break
-                set j: j + 1
-            }
-            guard (j - i) = tlen
-                guard symbols.range_equals(list, i, source, tstart, tlen)
-                    return true
-            set i: j
-        }
-        false
     }
 
     ; Byte-equality of a[astart,astart+len) and b[bstart,bstart+len).
@@ -4267,6 +4242,7 @@ define symbols
             let path symbols.uri_to_path#(uri)
             let dir symbols.dir_of#(path)
             var sb StringBuilder#()
+            ; (1) the current file's directory tree (project-local, fast).
             let here symbols.workspace_names_in_dir#(dir, path)
             var hi: size_t 0
             let hn here.get_length()
@@ -4275,6 +4251,24 @@ define symbols
                 sb.append(here.get(hi) as char)
                 set hi: hi + (1 as size_t)
             }
+            ; (2) the package dependency tree (stdlib String/Vector/Page, …).
+            ; Aggregated, not first-match: a file uses names from both. Skipped
+            ; when it would re-scan the same dir. Duplicate names are harmless —
+            ; the hash set dedups. Re-enabled in Step 28 (the O(1) lookup makes
+            ; the larger name set affordable; the symindex caches the parse).
+            let pkg symbols.package_search_dir#(path)
+            guard pkg.get_length() > (0 as size_t)
+                guard pkg.equals(dir) = false
+                {
+                    let there symbols.workspace_names_in_dir#(pkg, path)
+                    var ti: size_t 0
+                    let tn there.get_length()
+                    while ti < tn
+                    {
+                        sb.append(there.get(ti) as char)
+                        set ti: ti + (1 as size_t)
+                    }
+                }
             return sb.to_string#()
         }
         String#("")

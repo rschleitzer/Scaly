@@ -1,0 +1,229 @@
+; nameset.scaly - O(1) hashed name->token-kind set for semanticTokens.
+;
+; semantic_tokens# colours an identifier USE by its declared kind by testing
+; it against several name lists: the lowercase primitives, the intra-file
+; function/type names (from completion_items#), and the cross-file function/
+; type names (from the workspace symindex). The old membership test was a
+; LINEAR newline-list scan, so the per-request cost was O(identifiers x total
+; list bytes) — the bottleneck that forced Step 27's two band-aids (cross-file
+; harvest dir-tree-only + skipped above 96000 bytes).
+;
+; This replaces the five separate lists with ONE per-request open-addressing
+; hash table mapping a name -> the token type to colour it (1 = type, 2 =
+; function). Per-identifier lookup is O(token length) instead of O(list bytes),
+; which removes the size gate, speeds the intra-file path, and lets the
+; cross-package stdlib scan back in.
+;
+; PRIORITY: a name that is both a type and a function resolves to FUNCTION.
+; insert() only ever raises a slot's kind (function 2 > type 1), so insertion
+; order is irrelevant and function always wins.
+;
+; MEMORY MODEL: unlike docstore/symindex, the table is NOT persistent — it
+; lives only for one semantic_tokens# call. The slot array is a single libc
+; malloc'd block, freed before the function returns (nameset.destroy). Slots
+; BORROW: each stores a raw pointer into a name list's byte buffer (the lists
+; are let-bound Strings alive for the whole function), so there is no per-name
+; allocation. Only the slot array is malloc'd.
+;
+; CONTROL-FLOW NOTE: `guard COND STMT` runs STMT when COND is TRUE (no else).
+; One statement per line (`;` starts a comment, not a separator).
+
+use scaly.containers.String
+use scaly.memory.runtime
+
+; libc allocator (free comes from scaly.memory.runtime; malloc is declared
+; locally — fixpoint-safe, no scaly/scalyc source is touched).
+function malloc(size: size_t) returns pointer[void] extern
+
+; Slot count: a power of two so the probe mask is cap-1. Sized for the whole
+; packages/ tree (a few thousand distinct fn/type names across stdlib + the
+; self-hosted compiler) with a low load factor. On overflow insert silently
+; drops a name (it then colours by shape, not a crash).
+define NS_CAP int 32768
+
+; One table slot: a BORROWED pointer/length into a name list's buffer, the
+; token type to colour the name (1 type / 2 function), and a `used` flag.
+define NameSlot
+(
+    name_ptr: pointer[u8]
+    name_len: size_t
+    kind:     i64
+    used:     bool
+)
+
+define nameset
+{
+    ; FNV-1a over p[0,len). `//` is XOR (mirrors scaly.containers.hashing.hash);
+    ; used for BOTH insert (name bytes) and lookup (source bytes) so equal byte
+    ; sequences hash identically.
+    function hash_ptr(p: pointer[u8], len: size_t) returns size_t
+    {
+        var h: size_t 0xcbf29ce484222325
+        var prime: size_t 0x100000001b3
+        var i: size_t 0
+        while i < len
+        {
+            let value *(p + i)
+            set h: h // value
+            set h: h * prime
+            set i: i + (1 as size_t)
+        }
+        h
+    }
+
+    ; FNV-1a over the byte range s[start,end). Hashes the logical content (after
+    ; the String's varint length prefix) via get_buffer, no per-call allocation.
+    function hash_range(s: String, start: size_t, end: size_t) returns size_t
+    {
+        let b s.get_buffer()
+        guard b = null
+            return 0xcbf29ce484222325
+        nameset.hash_ptr(b + start, end - start)
+    }
+
+    ; Byte-equality of a[0,len) and b[0,len) over two raw pointers.
+    function eq_ptr(a: pointer[u8], b: pointer[u8], len: size_t) returns bool
+    {
+        var k: size_t 0
+        while k < len
+        {
+            guard *(a + k) <> *(b + k)
+                return false
+            set k: k + (1 as size_t)
+        }
+        true
+    }
+
+    ; Allocate + zero a slot array of `cap` entries. null on malloc failure
+    ; (callers then treat every name as absent — colours by shape).
+    function create(cap: size_t) returns pointer[NameSlot]
+    {
+        let bytes cap * sizeof NameSlot
+        let slots malloc(bytes) as pointer[NameSlot]
+        guard slots = null
+            return null
+        var i: size_t 0
+        while i < cap
+        {
+            let s slots + i
+            set s.used: false
+            set s.name_ptr: null
+            set s.name_len: 0 as size_t
+            set s.kind: 0 - 1
+            set i: i + (1 as size_t)
+        }
+        slots
+    }
+
+    procedure destroy(slots: pointer[NameSlot])
+    {
+        guard slots <> null
+            free(slots as pointer[void])
+    }
+
+    ; Insert (or raise the kind of) the name at name_ptr[0,name_len) with the
+    ; precomputed hash `h`. Open addressing, linear probe. An existing entry for
+    ; the same name is only ever raised (kind 2 function > 1 type), so function
+    ; wins regardless of order. A full table drops the name silently.
+    procedure insert(slots: pointer[NameSlot], cap: size_t, name_ptr: pointer[u8], name_len: size_t, h: size_t, kind: i64)
+    {
+        guard name_len > (0 as size_t)
+        {
+            let mask cap - (1 as size_t)
+            var idx h & mask
+            var probes: size_t 0
+            while probes < cap
+            {
+                let s slots + idx
+                guard s.used = false
+                {
+                    set s.name_ptr: name_ptr
+                    set s.name_len: name_len
+                    set s.kind: kind
+                    set s.used: true
+                    return
+                }
+                guard s.name_len = name_len
+                    guard nameset.eq_ptr(s.name_ptr, name_ptr, name_len)
+                    {
+                        guard kind > s.kind
+                            set s.kind: kind
+                        return
+                    }
+                set idx: (idx + (1 as size_t)) & mask
+                set probes: probes + (1 as size_t)
+            }
+        }
+    }
+
+    ; Insert every newline-delimited segment of `list` (a names_from_items# /
+    ; primitive_type_list# / tagged_name_list# result) with the given kind. Slots
+    ; borrow the list's buffer, so `list` must outlive the table.
+    procedure insert_name_list(slots: pointer[NameSlot], cap: size_t, list: String, kind: i64)
+    {
+        let llen list.get_length()
+        guard llen > (0 as size_t)
+        {
+            let base list.get_buffer()
+            guard base <> null
+            {
+                var i: size_t 0
+                while i < llen
+                {
+                    guard list.get(i) = (10 as u8)
+                    {
+                        set i: i + (1 as size_t)
+                        continue
+                    }
+                    var j i
+                    while j < llen
+                    {
+                        guard list.get(j) = (10 as u8)
+                            break
+                        set j: j + (1 as size_t)
+                    }
+                    let seglen j - i
+                    guard seglen > (0 as size_t)
+                    {
+                        let h nameset.hash_ptr(base + i, seglen)
+                        nameset.insert(slots, cap, base + i, seglen, h, kind)
+                    }
+                    set i: j
+                }
+            }
+        }
+    }
+
+    ; The token kind for source[start,end), or -1 if the name is not in the set.
+    function lookup(slots: pointer[NameSlot], cap: size_t, source: String, start: size_t, end: size_t) returns i64
+    {
+        guard slots <> null
+        {
+            let tlen end - start
+            guard tlen > (0 as size_t)
+            {
+                let sbuf source.get_buffer()
+                guard sbuf <> null
+                {
+                    let sp sbuf + start
+                    let h nameset.hash_ptr(sp, tlen)
+                    let mask cap - (1 as size_t)
+                    var idx h & mask
+                    var probes: size_t 0
+                    while probes < cap
+                    {
+                        let s slots + idx
+                        guard s.used = false
+                            return (0 - 1) as i64
+                        guard s.name_len = tlen
+                            guard nameset.eq_ptr(s.name_ptr, sp, tlen)
+                                return s.kind
+                        set idx: (idx + (1 as size_t)) & mask
+                        set probes: probes + (1 as size_t)
+                    }
+                }
+            }
+        }
+        (0 - 1) as i64
+    }
+}

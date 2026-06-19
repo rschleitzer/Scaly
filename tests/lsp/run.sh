@@ -1471,6 +1471,61 @@ PY
 rc=$?
 if [ $rc -eq 0 ]; then ok "lsp semanticTokens cross-file"; else bad "lsp semanticTokens cross-file"; fi
 
+# ---- semanticTokens: cross-package declared-kind resolution ----
+# Step 28: the hashed name set removed the size gate AND re-enabled the package
+# tree scan, so a USE of a stdlib symbol now resolves to its declared kind. The
+# doc lives in a /tmp dir NOT under packages/, so the only way `is_prime` (a
+# LOWERCASE top-level function in packages/scaly/.../hashing.scaly) can colour
+# as `function` is the cross-package harvest. SCALY_HOME points at the repo.
+SCALY_HOME="$(pwd)" python3 - <<'PY'
+import sys, json, subprocess, os, tempfile
+d = tempfile.mkdtemp(prefix="lsp_semp_")
+main = ("function run(n: size_t) returns bool\n"  # 0
+        "{\n"                                     # 1
+        "    return is_prime(n)\n"                # 2  <- `is_prime` fn (cross-package)
+        "}\n")                                    # 3
+mp = os.path.join(d, "main.scaly"); open(mp, "w").write(main)
+muri = "file://"+mp
+def frame(o):
+    b=json.dumps(o).encode(); return ("Content-Length: %d\r\n\r\n"%len(b)).encode()+b
+inp  = frame({"jsonrpc":"2.0","id":1,"method":"initialize","params":{}})
+inp += frame({"jsonrpc":"2.0","method":"initialized","params":{}})
+inp += frame({"jsonrpc":"2.0","method":"textDocument/didOpen",
+              "params":{"textDocument":{"uri":muri,"languageId":"scaly","version":1,"text":main}}})
+inp += frame({"jsonrpc":"2.0","id":2,"method":"textDocument/semanticTokens/full",
+              "params":{"textDocument":{"uri":muri}}})
+inp += frame({"jsonrpc":"2.0","id":9,"method":"shutdown"})
+inp += frame({"jsonrpc":"2.0","method":"exit"})
+out = subprocess.run(["/tmp/scalyls"], input=inp, stdout=subprocess.PIPE,
+                     env={**os.environ, "SCALY_HOME": os.getcwd()}).stdout
+frames, dd = [], out
+while dd:
+    i = dd.find(b"\r\n\r\n")
+    if i < 0: break
+    n = int(dd[:i].decode().split(":")[1].strip())
+    frames.append(json.loads(dd[i+4:i+4+n])); dd = dd[i+4+n:]
+failures = 0
+def check(cond, label):
+    global failures
+    print(("PASS  " if cond else "FAIL  ") + label)
+    if not cond: failures += 1
+r = next((f for f in frames if f.get("id") == 2), None)
+data = (r or {}).get("result",{}).get("data") or []
+TYPES = ["keyword","type","function","variable","operator","string","number","comment","parameter","property"]
+lines = main.split("\n"); line = col = 0; toks = []
+for k in range(0, len(data), 5):
+    dl, dc, ln, ty, mod = data[k:k+5]
+    if dl > 0: line += dl; col = dc
+    else:      col += dc
+    toks.append((line, col, lines[line][col:col+ln], TYPES[ty]))
+ip = [t for t in toks if t[0] == 2 and t[2] == "is_prime"]
+check(len(ip) == 1 and ip[0][3] == "function",
+      "cross-package fn use `is_prime` -> function (stdlib, packages/ tree)")
+sys.exit(1 if failures else 0)
+PY
+rc=$?
+if [ $rc -eq 0 ]; then ok "lsp semanticTokens cross-package"; else bad "lsp semanticTokens cross-package"; fi
+
 echo "-----"
 echo "PASS: $pass  FAIL: $fail"
 [ $fail -eq 0 ]

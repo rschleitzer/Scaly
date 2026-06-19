@@ -28,6 +28,10 @@ define scalyls
     ; generated from scaly.sgm <keyword> elements by ./mkp.
     module grammar
 
+    ; O(1) hashed name->token-kind set backing semanticTokens declared-kind
+    ; resolution (replaces the linear name-list scan).
+    module nameset
+
     ; documentSymbol: text -> parse -> DocumentSymbol[] outline tree.
     module symbols
 
