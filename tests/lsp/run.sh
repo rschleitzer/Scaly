@@ -1093,6 +1093,74 @@ PY
 rc=$?
 if [ $rc -eq 0 ]; then ok "lsp inlayHint"; else bad "lsp inlayHint"; fi
 
+# ---- inlayHint: TYPE hints on untyped let/var bindings ----
+# A `let NAME EXPR` / `var NAME EXPR` with no `: T` annotation gets an inferred
+# `: Type` hint (kind 1, paddingLeft) after the name: a constructor `Foo#(`/`$(`
+# -> Foo; a call `foo(..)` -> foo's return type (cross-file resolved); a bare var
+# -> its type. Annotated bindings, literals, and primitive-typed results get NO
+# hint. Type hints (kind 1) and the param hints (kind 2) coexist on the same line.
+# Two files in a temp dir: Point + make_point/make_count live in types.scaly.
+python3 - <<'PY'
+import sys, json, subprocess, os, tempfile
+d = tempfile.mkdtemp(prefix="lsp_ihtype_")
+types = ("define Point\n(\n    x: int\n    y: int\n)\n{\n"
+         "    function px(this: Point) returns int\n    {\n        return x\n    }\n}\n"
+         "function make_point(v: int) returns Point\n{\n    return Point#(v, v)\n}\n"
+         "function make_count() returns int\n{\n    return 0\n}\n")
+main = ("function run(g: Point) returns int\n{\n"          # 0,1
+        "    let p Point#(1, 2)\n"                          # 2  ctor -> : Point
+        "    let r make_point(5)\n"                         # 3  call -> : Point (+ param v:)
+        "    let c make_count()\n"                          # 4  call -> int (primitive) -> NO
+        "    let n 5\n"                                      # 5  literal -> NO
+        "    let s p\n"                                      # 6  bare var p -> : Point
+        "    let w: int 7\n"                                 # 7  annotated -> NO
+        "    return p.px() + r.px() + c + w + n\n}\n")       # 8,9
+tp = os.path.join(d, "types.scaly"); open(tp, "w").write(types)
+mp = os.path.join(d, "main.scaly");  open(mp, "w").write(main)
+muri = "file://"+mp
+def frame(o):
+    b = json.dumps(o).encode(); return ("Content-Length: %d\r\n\r\n" % len(b)).encode() + b
+def ih(idn, sl, el):
+    return frame({"jsonrpc":"2.0","id":idn,"method":"textDocument/inlayHint","params":{
+        "textDocument":{"uri":muri},"range":{"start":{"line":sl,"character":0},"end":{"line":el,"character":0}}}})
+inp  = frame({"jsonrpc":"2.0","id":1,"method":"initialize","params":{"rootUri":"file://"+d}})
+inp += frame({"jsonrpc":"2.0","method":"initialized","params":{}})
+inp += ih(2, 0, 30)
+inp += frame({"jsonrpc":"2.0","id":9,"method":"shutdown"})
+inp += frame({"jsonrpc":"2.0","method":"exit"})
+out = subprocess.run(["/tmp/scalyls"], input=inp, stdout=subprocess.PIPE,
+    env=dict(os.environ, SCALY_HOME=d)).stdout
+frames, dd = [], out
+while dd:
+    i = dd.find(b"\r\n\r\n")
+    if i < 0: break
+    n = int(dd[:i].decode().split(":")[1].strip())
+    frames.append(json.loads(dd[i+4:i+4+n])); dd = dd[i+4+n:]
+failures = 0
+def check(cond, label):
+    global failures
+    print(("PASS  " if cond else "FAIL  ") + label)
+    if not cond: failures += 1
+def result(idn): return next((x for x in frames if x.get("id") == idn), {}).get("result")
+whole = result(2) or []
+tlines = [h["position"]["line"] for h in whole if h.get("kind") == 1]
+def thint(line): return next((h for h in whole if h.get("kind")==1 and h["position"]["line"]==line), None)
+check(thint(2) is not None and thint(2)["label"] == ": Point", "ctor `let p Point#()` -> `: Point` (kind 1)")
+check(thint(3) is not None and thint(3)["label"] == ": Point", "call `let r make_point()` -> `: Point` (cross-file return type)")
+check(thint(6) is not None and thint(6)["label"] == ": Point", "bare var `let s p` -> `: Point`")
+check(4 not in tlines, "call returning primitive (`let c make_count()`) -> NO type hint")
+check(5 not in tlines, "literal `let n 5` -> NO type hint")
+check(7 not in tlines, "annotated `let w: int 7` -> NO type hint")
+check(all(h.get("paddingLeft") is True for h in whole if h.get("kind")==1), "type hints set paddingLeft")
+phints = [(h["label"], h["position"]["line"]) for h in whole if h.get("kind") == 2]
+check(("v:", 3) in phints, "param hint `v:` on make_point(5) coexists with the type hint on `r`")
+check(all(h.get("paddingRight") is True for h in whole if h.get("kind")==2), "param hints set paddingRight")
+check(all(h.get("kind") in (1, 2) for h in whole), "every hint is kind 1 (type) or 2 (param)")
+sys.exit(1 if failures else 0)
+PY
+rc=$?
+if [ $rc -eq 0 ]; then ok "lsp inlayHint types"; else bad "lsp inlayHint types"; fi
+
 # ---- type-aware completion (variable receivers, lexical) ----
 # A variable receiver `v.` resolves `v`'s declared type lexically (constructor
 # `var v T#(...)`, annotated `v: T`, parameter `(v: T)`, or `this: T`) and then

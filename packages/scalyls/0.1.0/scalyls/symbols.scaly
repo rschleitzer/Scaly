@@ -6013,13 +6013,427 @@ define symbols
     ; dropped the same way and the names match the signature labels.
     ;
     ; The request packs the visible range as "<sl> <sc> <el> <ec>" (4 ints). Only
-    ; call sites overlapping the range are processed (each triggers a sig
-    ; resolution, so honoring the range bounds the cost). LIMITS (lexical): the
-    ; callee is matched by NAME (no receiver-type resolution); constructor calls
-    ; `Foo#(`/`Foo$(` (sigil before `(`) and `function`/`procedure`/`operator`/
-    ; `define` DEFINITIONS are skipped; nameless (bare-type) parameters emit no
-    ; hint. Result is the LSP InlayHint[] array, appended byte-at-a-time.
+    ; call sites overlapping the range are processed. Type hints additionally
+    ; ride this scan (see below). LIMITS (lexical): the callee is matched by NAME
+    ; (no receiver-type resolution); constructor calls `Foo#(`/`Foo$(` (sigil
+    ; before `(`) and `function`/`procedure`/`operator`/`define` DEFINITIONS are
+    ; skipped; nameless (bare-type) parameters emit no hint. Result is the LSP
+    ; InlayHint[] array, appended byte-at-a-time.
+    ;
+    ; PERF: a wide range can hold dozens of sites; resolving each by re-parsing
+    ; the source (find_signature#/function_return_type#/members_for_type#) is
+    ; O(sites x parse) and blows the worker's 8s budget on a big file. So
+    ; inlay_hints_packed# builds a single-parse intra-file resolution map ONCE
+    ; (binding_map#) and the per-site param-name / type inference consult it
+    ; first, falling back to the cross-file path (symindex-cached for params)
+    ; only on an intra-file miss.
     ; ====================================================================
+
+    ; ----- single-parse intra-file resolution map (for inlay hints) -----
+    ; binding_map# does ONE parse and emits a record per declaration:
+    ;   R <0x09> name <0x09> param-labels(0x1F-joined, this-dropped) <0x09> rettype <0x0A>
+    ;   C <0x09> name <0x0A>                                  (a `define` concept)
+    ; Param labels / return-type bases / names contain no raw tab or newline, so
+    ; the delimiters are unambiguous. The lookups scan this small blob (one record
+    ; per decl, not per byte). Mirrors the scope_table# / frt_* walk 1:1.
+
+    function bm_routine_record#(rp, source: String, name: String, routine: RoutineSyntax) returns String
+    {
+        var sb StringBuilder#()
+        sb.append(0x52 as char)                    ; R
+        sb.append(0x09 as char)
+        var ni: size_t 0
+        let nl name.get_length()
+        while ni < nl
+        {
+            sb.append(name.get(ni) as char)
+            set ni: ni + (1 as size_t)
+        }
+        sb.append(0x09 as char)
+        let labels symbols.signature_param_labels#(source, routine)
+        var li: size_t 0
+        let ll labels.get_length()
+        while li < ll
+        {
+            sb.append(labels.get(li) as char)
+            set li: li + (1 as size_t)
+        }
+        sb.append(0x09 as char)
+        let rt symbols.routine_return_base#(routine)
+        var ri: size_t 0
+        let rl rt.get_length()
+        while ri < rl
+        {
+            sb.append(rt.get(ri) as char)
+            set ri: ri + (1 as size_t)
+        }
+        sb.append(0x0A as char)
+        sb.to_string#()
+    }
+
+    function bm_concept_record#(rp, name: String) returns String
+    {
+        var sb StringBuilder#()
+        sb.append(0x43 as char)                    ; C
+        sb.append(0x09 as char)
+        var i: size_t 0
+        let nl name.get_length()
+        while i < nl
+        {
+            sb.append(name.get(i) as char)
+            set i: i + (1 as size_t)
+        }
+        sb.append(0x0A as char)
+        sb.to_string#()
+    }
+
+    function bm_target#(rp, source: String, target: TargetSyntax) returns String
+    {
+        choose target
+            when named: NamedSyntax
+                return symbols.bm_routine_record#(source, String#(named.name), named.routine)
+            when r: RoutineSyntax
+                return String#("")
+    }
+
+    function bm_decl#(rp, source: String, decl: DeclarationSyntax) returns String
+    {
+        choose decl
+            when f: FunctionSyntax
+                return symbols.bm_target#(source, f.target)
+            when pr: ProcedureSyntax
+                return symbols.bm_target#(source, pr.target)
+            when o: OperatorSyntax
+                return symbols.bm_target#(source, o.target)
+            when def: DefinitionSyntax
+                return symbols.bm_definition#(source, def)
+            when priv: PrivateSyntax
+                return symbols.bm_export#(source, priv.export_)
+            else
+                return String#("")
+    }
+
+    function bm_export#(rp, source: String, export_: ExportSyntax) returns String
+    {
+        choose export_
+            when f: FunctionSyntax
+                return symbols.bm_target#(source, f.target)
+            when pr: ProcedureSyntax
+                return symbols.bm_target#(source, pr.target)
+            when o: OperatorSyntax
+                return symbols.bm_target#(source, o.target)
+            when def: DefinitionSyntax
+                return symbols.bm_definition#(source, def)
+            else
+                return String#("")
+    }
+
+    function bm_definition#(rp, source: String, def: DefinitionSyntax) returns String
+    {
+        var sb StringBuilder#()
+        let crec symbols.bm_concept_record#(def.name)
+        var ci: size_t 0
+        let cn crec.get_length()
+        while ci < cn
+        {
+            sb.append(crec.get(ci) as char)
+            set ci: ci + (1 as size_t)
+        }
+        var members String#("")
+        choose def.concept_
+            when c: ClassSyntax
+                set members: symbols.bm_body#(source, c.body)
+            when n: NamespaceSyntax
+                set members: symbols.bm_namespace#(source, n)
+            when un: UnionSyntax
+                set members: symbols.bm_body#(source, un.body)
+            else
+                0
+        var mi: size_t 0
+        let mn members.get_length()
+        while mi < mn
+        {
+            sb.append(members.get(mi) as char)
+            set mi: mi + (1 as size_t)
+        }
+        sb.to_string#()
+    }
+
+    function bm_body#(rp, source: String, body: ref[BodySyntax]?) returns String
+    {
+        var sb StringBuilder#()
+        guard body <> null
+        {
+            let b (*body)
+            guard b.members <> null
+            {
+                let members (*b.members)
+                var i: size_t 0
+                while i < members.length
+                {
+                    let mptr members.get(i)
+                    guard mptr <> null
+                    {
+                        let m (*mptr)
+                        let frag symbols.bm_member#(source, m)
+                        var ci: size_t 0
+                        let cn frag.get_length()
+                        while ci < cn
+                        {
+                            sb.append(frag.get(ci) as char)
+                            set ci: ci + (1 as size_t)
+                        }
+                    }
+                    set i: i + (1 as size_t)
+                }
+            }
+        }
+        sb.to_string#()
+    }
+
+    function bm_member#(rp, source: String, member: MemberSyntax) returns String
+    {
+        choose member
+            when f: FunctionSyntax
+                return symbols.bm_target#(source, f.target)
+            when pr: ProcedureSyntax
+                return symbols.bm_target#(source, pr.target)
+            when o: OperatorSyntax
+                return symbols.bm_target#(source, o.target)
+            when def: DefinitionSyntax
+                return symbols.bm_definition#(source, def)
+            else
+                return String#("")
+    }
+
+    function bm_namespace#(rp, source: String, ns: NamespaceSyntax) returns String
+    {
+        var sb StringBuilder#()
+        guard ns.declarations <> null
+        {
+            let decls (*ns.declarations)
+            var i: size_t 0
+            while i < decls.length
+            {
+                let dptr decls.get(i)
+                guard dptr <> null
+                {
+                    let d (*dptr)
+                    let frag symbols.bm_decl#(source, d)
+                    var ci: size_t 0
+                    let cn frag.get_length()
+                    while ci < cn
+                    {
+                        sb.append(frag.get(ci) as char)
+                        set ci: ci + (1 as size_t)
+                    }
+                }
+                set i: i + (1 as size_t)
+            }
+        }
+        sb.to_string#()
+    }
+
+    function binding_map#(rp, source: String) returns String
+    {
+        var sb StringBuilder#()
+        var p parser.Parser$(source)
+        choose p.parse_program#()
+            when err: Error {}
+            when program: Success
+            {
+                let file program.file
+                guard file.declarations <> null
+                {
+                    let decls (*file.declarations)
+                    var i: size_t 0
+                    while i < decls.length
+                    {
+                        let dptr decls.get(i)
+                        guard dptr <> null
+                        {
+                            let d (*dptr)
+                            let frag symbols.bm_decl#(source, d)
+                            var ci: size_t 0
+                            let cn frag.get_length()
+                            while ci < cn
+                            {
+                                sb.append(frag.get(ci) as char)
+                                set ci: ci + (1 as size_t)
+                            }
+                        }
+                        set i: i + (1 as size_t)
+                    }
+                }
+            }
+        sb.to_string#()
+    }
+
+    ; The "Y"-prefixed 0x1F-joined param labels of the FIRST routine named `name`
+    ; in the map, or "" on no match. "Y" alone = found-but-zero-arg.
+    function map_labels#(rp, map: String, name: String) returns String
+    {
+        let mn map.get_length()
+        let nl name.get_length()
+        var rs: size_t 0
+        while rs < mn
+        {
+            var re rs
+            while re < mn
+            {
+                guard map.get(re) = (0x0A as u8)
+                    break
+                set re: re + (1 as size_t)
+            }
+            guard map.get(rs) = (0x52 as u8)           ; R
+            {
+                let nstart rs + (2 as size_t)
+                var t2 nstart
+                while t2 < re
+                {
+                    guard map.get(t2) = (0x09 as u8)
+                        break
+                    set t2: t2 + (1 as size_t)
+                }
+                guard (t2 - nstart) = nl
+                    guard symbols.range_equals(map, nstart, name, 0 as size_t, nl)
+                    {
+                        var t3 t2 + (1 as size_t)
+                        while t3 < re
+                        {
+                            guard map.get(t3) = (0x09 as u8)
+                                break
+                            set t3: t3 + (1 as size_t)
+                        }
+                        var sb StringBuilder#()
+                        sb.append(0x59 as char)        ; Y
+                        var li t2 + (1 as size_t)
+                        while li < t3
+                        {
+                            sb.append(map.get(li) as char)
+                            set li: li + (1 as size_t)
+                        }
+                        return sb.to_string#()
+                    }
+            }
+            set rs: re + (1 as size_t)
+        }
+        String#("")
+    }
+
+    ; The return-type base of the FIRST routine named `name` in the map, or "".
+    ; ("" also when the routine returns nothing — same no-hint outcome.)
+    function map_return_type#(rp, map: String, name: String) returns String
+    {
+        let mn map.get_length()
+        let nl name.get_length()
+        var rs: size_t 0
+        while rs < mn
+        {
+            var re rs
+            while re < mn
+            {
+                guard map.get(re) = (0x0A as u8)
+                    break
+                set re: re + (1 as size_t)
+            }
+            guard map.get(rs) = (0x52 as u8)           ; R
+            {
+                let nstart rs + (2 as size_t)
+                var t2 nstart
+                while t2 < re
+                {
+                    guard map.get(t2) = (0x09 as u8)
+                        break
+                    set t2: t2 + (1 as size_t)
+                }
+                guard (t2 - nstart) = nl
+                    guard symbols.range_equals(map, nstart, name, 0 as size_t, nl)
+                    {
+                        var t3 t2 + (1 as size_t)
+                        while t3 < re
+                        {
+                            guard map.get(t3) = (0x09 as u8)
+                                break
+                            set t3: t3 + (1 as size_t)
+                        }
+                        return symbols.substring#(map, t3 + (1 as size_t), re)
+                    }
+            }
+            set rs: re + (1 as size_t)
+        }
+        String#("")
+    }
+
+    ; True when the map carries a concept (`define`) named `name`.
+    function map_is_concept#(rp, map: String, name: String) returns bool
+    {
+        let mn map.get_length()
+        let nl name.get_length()
+        var rs: size_t 0
+        while rs < mn
+        {
+            var re rs
+            while re < mn
+            {
+                guard map.get(re) = (0x0A as u8)
+                    break
+                set re: re + (1 as size_t)
+            }
+            guard map.get(rs) = (0x43 as u8)           ; C
+            {
+                let nstart rs + (2 as size_t)
+                guard (re - nstart) = nl
+                    guard symbols.range_equals(map, nstart, name, 0 as size_t, nl)
+                        return true
+            }
+            set rs: re + (1 as size_t)
+        }
+        false
+    }
+
+    ; Strip a "Y"-prefixed 0x1F-joined "name: Type" label list to a 0x1F-joined
+    ; list of bare parameter NAMES, preserving positional alignment (one field
+    ; per parameter, even when nameless).
+    function names_from_labels#(rp, payload: String) returns String
+    {
+        var sb StringBuilder#()
+        var first true
+        let pn payload.get_length()
+        var seg_start: size_t 1                    ; skip the "Y" sentinel
+        var i: size_t 1
+        while i <= pn
+        {
+            var at_delim false
+            guard i = pn
+                set at_delim: true
+            guard i < pn
+                guard payload.get(i) = (0x1F as u8)
+                    set at_delim: true
+            guard at_delim
+            {
+                guard first = false
+                    sb.append(0x1F as char)
+                var ce seg_start
+                while ce < i
+                {
+                    guard payload.get(ce) = (0x3A as u8)
+                        break
+                    set ce: ce + (1 as size_t)
+                }
+                var ni seg_start
+                while ni < ce
+                {
+                    sb.append(payload.get(ni) as char)
+                    set ni: ni + (1 as size_t)
+                }
+                set first: false
+                set seg_start: i + (1 as size_t)
+            }
+            set i: i + (1 as size_t)
+        }
+        sb.to_string#()
+    }
 
     function inlay_hints_packed#(rp, source: String, uri: String, packed: String) returns String
     {
@@ -6053,10 +6467,16 @@ define symbols
         let range_start symbols.position_to_offset#(source, sl, sc)
         let range_end symbols.position_to_offset#(source, el, ec)
 
+        ; One parse: the intra-file resolution map shared by every site below.
+        let map symbols.binding_map#(source)
+
         var sb StringBuilder#()
         sb.append(0x5B as char)                    ; [
         var first true
         let len source.get_length()
+        let kw_let String#("let")
+        let kw_var String#("var")
+        var binding_pending false
         var k: size_t 0
         while k < len
         {
@@ -6073,6 +6493,39 @@ define symbols
                     break
                 set j: j + (1 as size_t)
             }
+            ; A `let`/`var` binding NAME (the token right after the keyword): emit a
+            ; Type hint just after the name when its type can be inferred and the
+            ; site is in range. Annotated / literal / unresolvable bindings -> none.
+            guard binding_pending
+            {
+                set binding_pending: false
+                guard k >= range_start
+                    guard k <= range_end
+                    {
+                        let bt symbols.infer_binding_type#(source, uri, j, map)
+                        guard bt.get_length() > (0 as size_t)
+                        {
+                            guard first = false
+                                sb.append(0x2C as char)
+                            let th symbols.inlay_type_hint_object#(source, j, bt)
+                            var ti: size_t 0
+                            let tn th.get_length()
+                            while ti < tn
+                            {
+                                sb.append(th.get(ti) as char)
+                                set ti: ti + (1 as size_t)
+                            }
+                            set first: false
+                        }
+                    }
+                set k: j
+                continue
+            }
+            ; Arm the binding scan when this token is the `let`/`var` keyword.
+            guard symbols.token_equals(source, k, j, kw_let)
+                set binding_pending: true
+            guard symbols.token_equals(source, k, j, kw_var)
+                set binding_pending: true
             ; A call iff the token is immediately followed by `(` and the site
             ; overlaps the requested range.
             guard j < len
@@ -6084,7 +6537,7 @@ define symbols
                             guard grammar.is_keyword(callee) = false
                                 guard symbols.preceded_by_def_keyword#(source, k) = false
                                 {
-                                    let names symbols.call_param_names#(source, uri, callee)
+                                    let names symbols.call_param_names#(source, uri, callee, map)
                                     guard names.get_length() > (0 as size_t)
                                     {
                                         let frag symbols.call_arg_hints#(source, j, names, range_start, range_end)
@@ -6155,11 +6608,14 @@ define symbols
     ; each parameter label "name: Type" to just "name" (a nameless bare-type
     ; parameter yields an empty segment). "" when the callee is unresolved or
     ; has no parameters (a zero-arg call has no arguments to label anyway).
-    function call_param_names#(rp, source: String, uri: String, callee: String) returns String
+    function call_param_names#(rp, source: String, uri: String, callee: String, map: String) returns String
     {
-        var sig symbols.find_signature#(source, callee, 0 as size_t)
-        guard sig.get_length() = (0 as size_t)
-            set sig: symbols.find_signature_in_workspace#(uri, callee, 0 as size_t)
+        ; Intra-file: the single-parse map carries the routine's labels directly.
+        let mlabels symbols.map_labels#(map, callee)
+        guard mlabels.get_length() > (0 as size_t)
+            return symbols.names_from_labels#(mlabels)
+        ; Cross-file: the symindex-cached signature path.
+        var sig symbols.find_signature_in_workspace#(uri, callee, 0 as size_t)
         guard sig.get_length() = (0 as size_t)
             return String#("")
         let v json.parse#(sig)
@@ -6327,6 +6783,187 @@ define symbols
         sb.append("true")
         sb.append(0x7D as char)                    ; }
         sb.to_string#()
+    }
+
+    ; One LSP InlayHint: a Type-kind (1) hint ": <type>" at `offset` (just after
+    ; the binding NAME), with a leading space (paddingLeft) after the name.
+    function inlay_type_hint_object#(rp, source: String, offset: size_t, type_name: String) returns String
+    {
+        var lbl StringBuilder#()
+        lbl.append(0x3A as char)                   ; :
+        lbl.append(0x20 as char)                   ; (space)
+        var i: size_t 0
+        let nn type_name.get_length()
+        while i < nn
+        {
+            lbl.append(type_name.get(i) as char)
+            set i: i + (1 as size_t)
+        }
+        let lbl_str lbl.to_string#()
+        var sb StringBuilder#()
+        sb.append(0x7B as char)                    ; {
+        sb.append(symbols.key#("position"))
+        sb.append(symbols.offset_to_pos#(source, offset))
+        sb.append(0x2C as char)
+        sb.append(symbols.key#("label"))
+        sb.append(json.quote_string#(lbl_str))
+        sb.append(0x2C as char)
+        sb.append(symbols.key#("kind"))
+        sb.append("1")                             ; InlayHintKind.Type
+        sb.append(0x2C as char)
+        sb.append(symbols.key#("paddingLeft"))
+        sb.append("true")
+        sb.append(0x7D as char)                    ; }
+        sb.to_string#()
+    }
+
+    ; True when `name` is a primitive / wrapper builtin (int/bool/.../pointer/ref)
+    ; — these get NO type hint (a `pointer`/`ref` wrapper base is also dropped per
+    ; the type-graph limits). Scans the `\n`-bracketed primitive_type_list#.
+    function is_primitive_type_name#(rp, name: String) returns bool
+    {
+        let list symbols.primitive_type_list#()
+        let nl name.get_length()
+        guard nl = (0 as size_t)
+            return false
+        let ll list.get_length()
+        var i: size_t 0
+        while i < ll
+        {
+            guard list.get(i) = (0x0A as u8)
+            {
+                var e i + (1 as size_t)
+                while e < ll
+                {
+                    guard list.get(e) = (0x0A as u8)
+                        break
+                    set e: e + (1 as size_t)
+                }
+                guard (e - (i + (1 as size_t))) = nl
+                    guard symbols.range_equals(list, i + (1 as size_t), name, 0 as size_t, nl)
+                        return true
+            }
+            set i: i + (1 as size_t)
+        }
+        false
+    }
+
+    ; Infer the declared type (base concept name) of a `let`/`var` binding whose
+    ; NAME identifier ends at `name_end`, for a Type inlay hint. "" (no hint) when
+    ; the binding is annotated (`: T`), the initializer is a literal/operator, or
+    ; the type can't be resolved (including a primitive result). Reuses the
+    ; Step-17/22 resolvers — no new inference:
+    ;   constructor `T#(`/`T$(`/`T^p(`/`T[..]` -> T
+    ;   call / ctor-call `T(..)`  -> T if T is a concept, else T's return type
+    ;   field chain `a.b.c`       -> resolve_chain_type#
+    ;   bare variable `other`     -> resolve_variable_type#
+    function infer_binding_type#(rp, source: String, uri: String, name_end: size_t, map: String) returns String
+    {
+        let len source.get_length()
+        let after symbols.skip_ws(source, name_end, len)
+        ; Annotated binding `NAME: T` -> the user already sees the type. No hint.
+        guard after < len
+            guard source.get(after) = (0x3A as u8)
+                return String#("")
+        ; The initializer must start with an identifier (a literal / `(` / prefix
+        ; operator is not a resolvable type token).
+        guard after >= len
+            return String#("")
+        guard symbols.is_ident_byte(source.get(after)) = false
+            return String#("")
+        ; Read the first identifier token T = [after, te).
+        var te after
+        while te < len
+        {
+            guard symbols.is_ident_byte(source.get(te)) = false
+                break
+            set te: te + (1 as size_t)
+        }
+        ; Field-access chain `a.b.c` (or `a.b.c()`): follow the type graph.
+        guard te < len
+            guard source.get(te) = (0x2E as u8)
+            {
+                var ce te
+                while ce < len
+                {
+                    let cc source.get(ce)
+                    guard symbols.is_ident_byte(cc) = false
+                        guard cc <> (0x2E as u8)
+                            break
+                    set ce: ce + (1 as size_t)
+                }
+                let chain symbols.substring#(source, after, ce)
+                let ct symbols.resolve_chain_type#(source, uri, chain)
+                guard symbols.is_primitive_type_name#(ct)
+                    return String#("")
+                return ct
+            }
+        let tname symbols.substring#(source, after, te)
+        guard te < len
+        {
+            let sig source.get(te)
+            ; Lifetime sigils ($ # ^) unambiguously mean construction -> T.
+            guard sig = (0x24 as u8)
+                return tname
+            guard sig = (0x23 as u8)
+                return tname
+            guard sig = (0x5E as u8)
+                return tname
+            ; `T(..)` (ctor-or-call) and `T[..]` (generic ctor or index): T is the
+            ; type only if it names a concept; otherwise `T(..)` is a function call
+            ; (use its return type) and `T[..]` is an index (can't infer -> "").
+            ; The intra-file map answers concept/return-type with no extra parse;
+            ; only an intra-miss touches the cross-file (re-parsing) path.
+            guard sig = (0x28 as u8)
+                return symbols.concept_or_return_type#(source, uri, tname, map)
+            guard sig = (0x5B as u8)
+            {
+                guard symbols.map_is_concept#(map, tname)
+                    return tname
+                ; A lowercase intra-miss is a variable index (`vec[i]`), not a
+                ; generic type ctor — skip the cross-file concept parse.
+                guard symbols.is_upper(source.get(after))
+                {
+                    let mem symbols.members_for_type#(source, uri, tname)
+                    guard mem.get_length() > (0 as size_t)
+                        return tname
+                }
+                return String#("")
+            }
+        }
+        ; Bare identifier initializer (`let alias other`): resolve the variable's
+        ; declared type, then disambiguate (a var bound from a call resolves to
+        ; the callee NAME, whose return type is the real type).
+        let vt symbols.resolve_variable_type#(source, tname)
+        guard vt.get_length() = (0 as size_t)
+            return String#("")
+        symbols.concept_or_return_type#(source, uri, vt, map)
+    }
+
+    ; Resolve a NAME that is either a concept (-> itself) or a routine (-> its
+    ; return-type base) to a displayable type, "" otherwise (incl. a primitive
+    ; result). The intra-file map answers with no extra parse; an intra-miss
+    ; falls back to the cross-file (re-parsing) workspace path.
+    function concept_or_return_type#(rp, source: String, uri: String, name: String, map: String) returns String
+    {
+        guard name.get_length() = (0 as size_t)
+            return String#("")
+        guard symbols.map_is_concept#(map, name)
+            return name
+        let mrt symbols.map_return_type#(map, name)
+        guard mrt.get_length() > (0 as size_t)
+        {
+            guard symbols.is_primitive_type_name#(mrt)
+                return String#("")
+            return mrt
+        }
+        let mem symbols.members_for_type#(source, uri, name)
+        guard mem.get_length() > (0 as size_t)
+            return name
+        let rt symbols.function_return_type_ws#(source, uri, name)
+        guard symbols.is_primitive_type_name#(rt)
+            return String#("")
+        rt
     }
 
     ; Parse the program and return the SignatureHelp for the first function /
