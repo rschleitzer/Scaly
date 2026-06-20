@@ -36,6 +36,20 @@ static bool isReferenceToLocalPage(const PlannedType &T) {
     return std::holds_alternative<LocalLifetime>(T.Generics[0].Life);
 }
 
+// Design-B step 1: a value-returning init# method (RequiresPageParam) produces a
+// VALUE whose internal pointers live on the call-site-designated page. Stamp that
+// lifetime onto the result type's .Life so the escape checker can see a $-local
+// value escape — mirroring how constructor constructions get .Life from
+// resolveType(TypeExpr). Method-dispatch paths set ResultType = MethodMatch->
+// ReturnType (the declared type, Life=Unspecified) and route the call-site
+// lifetime to Call.Life (page selection) ONLY; this re-stamps the result type.
+// No-op for Unspecified (no $/#/^ suffix). The Emitter reads Call.Life for page
+// selection, NOT this, so codegen is unchanged (fixpoint-safe).
+static void stampValueResultLifetime(PlannedType &RT, const Lifetime &L) {
+    if (std::holds_alternative<UnspecifiedLifetime>(L)) return;
+    RT.Life = L;
+}
+
 // ============================================================================
 // Helper: Decode UTF-8 string to single Unicode code point
 // Returns the code point, or -1 if invalid (empty, multiple code points, or malformed)
@@ -2473,6 +2487,8 @@ llvm::Expected<Planner::MethodCallResult> Planner::processChainedMethodCalls(
                     ChainedCall.CanThrow = ChainedMethodMatch->CanThrow;
                     ChainedCall.ThrowsType = ChainedMethodMatch->ThrowsType;
                     ChainedCall.ResultType = ChainedMethodMatch->ReturnType;
+                    if (ChainedMethodMatch->RequiresPageParam)
+                        stampValueResultLifetime(ChainedCall.ResultType, ChainLifetime);
 
                     ChainedCall.Args = std::make_shared<std::vector<PlannedOperand>>();
 
@@ -2529,6 +2545,8 @@ llvm::Expected<Planner::MethodCallResult> Planner::processChainedMethodCalls(
                     Result.CallOp = PlannedOperand();
                     Result.CallOp.Loc = ChainedArgsOp.Loc;
                     Result.CallOp.ResultType = ChainedMethodMatch->ReturnType;
+                    if (ChainedMethodMatch->RequiresPageParam)
+                        stampValueResultLifetime(Result.CallOp.ResultType, ChainLifetime);
                     Result.CallOp.Expr = std::move(ChainedCall);
 
                     // Advance past the lifetime marker (if any) and the args
@@ -7483,6 +7501,7 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                             if (MethodMatch->RequiresPageParam) {
                                 Call.RequiresPageParam = true;
                                 Call.Life = CallLifeRef;
+                                stampValueResultLifetime(Call.ResultType, CallLifeRef);
 
                                 if (auto* RefLife = std::get_if<ReferenceLifetime>(&CallLifeRef)) {
                                     // ^name - pass explicit page as first argument
@@ -7586,6 +7605,8 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                             CallOp.Loc = Op.Loc;
                             CallOp.Expr = std::move(Call);
                             CallOp.ResultType = MethodMatch->ReturnType;
+                            if (MethodMatch->RequiresPageParam)
+                                stampValueResultLifetime(CallOp.ResultType, CallLifeRef);
 
                             // Handle chained method calls: expr.method1().method2().method3()
                             // Start from ArgsIndex (which accounts for optional lifetime operand)
@@ -8080,6 +8101,7 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                     if (MethodMatch->RequiresPageParam) {
                         Call.RequiresPageParam = true;
                         Call.Life = MethodCallLifeRef;
+                        stampValueResultLifetime(Call.ResultType, MethodCallLifeRef);
 
                         if (auto* RefLife = std::get_if<ReferenceLifetime>(&MethodCallLifeRef)) {
                             // ^name - pass explicit page as first argument
@@ -8180,6 +8202,8 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                     CallOp.Loc = Op.Loc;
                     CallOp.Expr = std::move(Call);
                     CallOp.ResultType = MethodMatch->ReturnType;
+                    if (MethodMatch->RequiresPageParam)
+                        stampValueResultLifetime(CallOp.ResultType, MethodCallLifeRef);
 
                     // Handle chained method calls: expr.method1().method2().method3()
                     // Start from MethodArgsIndex (which accounts for optional lifetime operand)
