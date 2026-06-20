@@ -1972,6 +1972,71 @@ define Planner
         ; types_compatible (false) for parameter/argument comparison.
         ; 'this' parameters are skipped implicitly.
         ; ================================================================
+        ; Pure match predicate for overload resolution passes 1 (exact) and
+        ; 2 (compatible). NON-`#` on purpose: a #-subcall like plan_type#
+        ; allocates on THIS function's local page (not the caller's rp), so
+        ; the candidate parameter types planned only to compare against the
+        ; args are reclaimed when this returns — instead of accumulating on
+        ; the persistent region for every losing candidate of every call
+        ; (the dominant transient in -c, measured ~1.2-1.9 MB/LOC of planner
+        ; allocation). resolve_function_call# rebuilds the WINNER on rp via
+        ; check_function_match#; only the winner's types persist. Mirrors
+        ; check_function_match#'s arity + per-param comparison exactly so the
+        ; rebuild always agrees. plan_type# is side-effect-free (no
+        ; instantiation — pass 3 keeps using check_function_match# directly).
+        function candidate_matches(
+            this: Planner,
+            f: Function,
+            arg_types: Vector[PlannedType],
+            exact_only: bool
+        ) returns bool
+        {
+            var param_start: size_t 0
+            guard f.input.length > 0
+            {
+                let first_ptr f.input.get(0)
+                guard first_ptr <> null
+                {
+                    guard first_ptr.name <> null
+                    {
+                        let fname (*first_ptr.name)
+                        guard fname.equals(String$("this"))
+                            set param_start: 1
+                    }
+                }
+            }
+
+            let expected_arity f.input.length - param_start
+            guard expected_arity <> arg_types.length
+                return false
+
+            var j: size_t 0
+            while j < arg_types.length
+            {
+                let p_ptr f.input.get(j + param_start)
+                let a_ptr arg_types.get(j)
+                guard p_ptr = null
+                    return false
+                guard a_ptr = null
+                    return false
+                guard p_ptr.type <> null
+                {
+                    let p_type (*p_ptr.type)
+                    let planned_p this.plan_type#(p_type)
+                    let arg (*a_ptr)
+                    var ok: bool false
+                    guard exact_only
+                        set ok: Planner.types_equal(planned_p, arg)
+                    guard exact_only = false
+                        set ok: Planner.types_compatible(planned_p, arg)
+                    guard ok = false
+                        return false
+                }
+                set j: j + 1
+            }
+            true
+        }
+
         function check_function_match#(
             rp,
             this: Planner,
@@ -2320,9 +2385,8 @@ define Planner
                 guard f_ptr <> null
                 {
                     let f (*f_ptr)
-                    let m this.check_function_match#(f, arg_types, true)
-                    guard m <> null
-                        return m
+                    guard this.candidate_matches(f, arg_types, true)
+                        return this.check_function_match#(f, arg_types, true)
                 }
                 set i: i + 1
             }
@@ -2335,9 +2399,8 @@ define Planner
                 guard f_ptr <> null
                 {
                     let f (*f_ptr)
-                    let m this.check_function_match#(f, arg_types, false)
-                    guard m <> null
-                        return m
+                    guard this.candidate_matches(f, arg_types, false)
+                        return this.check_function_match#(f, arg_types, false)
                 }
                 set k: k + 1
             }
