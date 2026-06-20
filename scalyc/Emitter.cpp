@@ -3795,7 +3795,13 @@ llvm::Expected<llvm::Value*> Emitter::emitCall(const PlannedCall &Call) {
     }
     if (Call.RequiresPageParam) {
         if (std::holds_alternative<LocalLifetime>(Call.Life)) {
-            FuncPageArg = CurrentRegion.LocalPage;
+            // $ on a plain call (design-B item 2, THE LEVER): route the result
+            // to THIS function's local page (force-create it on demand), not the
+            // caller's rp. The local page is fully torn down at function exit
+            // (always-free-local), so the transient is reclaimed. Safe because
+            // the escape checker (item 3) rejects any $-call whose result
+            // escapes via return/store/storing-callee.
+            FuncPageArg = getOrCreateLocalPage();
         } else if (std::holds_alternative<CallLifetime>(Call.Life)) {
             // Use ReturnPage (caller's rp) if available, otherwise fall back to LocalPage
             FuncPageArg = CurrentRegion.ReturnPage;

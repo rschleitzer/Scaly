@@ -5118,16 +5118,27 @@ define Emitter
             ; on exit, corrupting the structure once the local page is reused.
             var ref_name2: String String$("")
             var has_ref2: bool false
+            var has_local2: bool false
             choose call.life
                 when r: Lifetime.Reference
                 {
                     set has_ref2: true
                     set ref_name2: r.location
                 }
+                when l: Lifetime.Local
+                    set has_local2: true
                 else
                     0
             guard has_ref2
                 set page_arg: resolve_reference_page(ref_name2)
+            ; design-B item 2 (THE LEVER): a `$` on a plain call routes the result
+            ; to THIS function's local page (force-created on demand), not the
+            ; caller's rp. The local page is fully torn down at function exit
+            ; (always-free-local), so the transient is reclaimed. Safe because the
+            ; escape checker (item 3) rejects any $-call whose result escapes.
+            ; Mirrors stage-0 Emitter.cpp FuncPageArg LocalLifetime arm.
+            guard has_local2
+                set page_arg: get_or_create_local_page()
             ; Otherwise (or if the named var wasn't in scope): the caller's rp,
             ; else this function's single local root page (released on exit).
             guard page_arg.handle = null
