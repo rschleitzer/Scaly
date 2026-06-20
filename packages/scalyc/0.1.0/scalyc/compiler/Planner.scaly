@@ -5312,6 +5312,21 @@ define Planner
                             }
                             else
                                 0
+                        ; Design-B step 1 (mirror of stage-0 stampValueResultLifetime):
+                        ; a value-returning init# method (requires_page_param)
+                        ; produces a value whose internal pointers live on the
+                        ; call-site page. Stamp call_life onto the result type so
+                        ; the escape checker can see a $-local value escape. The
+                        ; emitter reads call.life for page selection, not
+                        ; result_type.life, so this is codegen-neutral.
+                        guard call_requires_page
+                        {
+                            choose call_life
+                                when u: Unspecified
+                                    0
+                                else
+                                    set rt: PlannedType(rt.loc, rt.name, rt.mangled_name, rt.generics, call_life, rt.origin, rt.array_size, rt.variable)
+                        }
                         let call PlannedCall(
                             result.loc,
                             fn_name,
