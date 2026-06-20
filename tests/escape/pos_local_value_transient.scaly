@@ -1,0 +1,18 @@
+; OK (positive control, design-B item 3): a $-local VALUE used only WITHIN its
+; own frame and NOT returned/stored externally is fine — it dies with the local
+; page. Must COMPILE (no false positive from the broadened value-escape check).
+define Box
+(
+    v: int
+)
+
+function use_local() returns int
+{
+    let b Box$(5)
+    return b.v
+}
+
+function main() returns int
+{
+    return use_local()
+}

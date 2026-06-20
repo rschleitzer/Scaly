@@ -1,0 +1,22 @@
+; ESCAPE (negative, design-B item 3): returning a VALUE whose own lifetime is
+; Local ($) is a use-after-free. Box stands in for String$()/Vector$() — a value
+; type whose $ construction lives on the function's local page; returning it by
+; copy still hands the caller an object (and any internal pointers) on a page
+; that is freed at function exit. The escape checker must REJECT this (rc != 0,
+; "escapes via return"). The fix is to allocate with '#' (caller page).
+define Box
+(
+    v: int
+)
+
+function leak() returns Box
+{
+    let b Box$(5)
+    return b
+}
+
+function main() returns int
+{
+    let p leak()
+    return p.v
+}

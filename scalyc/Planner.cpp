@@ -23,17 +23,22 @@ static bool isOnPageLifetime(const Lifetime &Life) {
     return !std::holds_alternative<UnspecifiedLifetime>(Life);
 }
 
-// Escape-checker (RBMM blocker C): a reference must not outlive its page. A
-// returned/stored ref[T]/pointer[T] whose POINTEE lives on a Local ($) page is
-// a use-after-free once that page is freed at scope exit. The `&` operator and
-// resolveType keep the pointee (with its Life) in Generics[0]; Call (#) and
-// Reference (^name) pointees outlive the function and are fine — only Local is
-// the error. PROBE MODE (measurement): prints to stderr, does not fail.
+// Escape-checker (RBMM blocker C): a reference must not outlive its page. Two
+// shapes escape when returned/stored/passed-to-a-storing-callee:
+//  (1) a ref[T]/pointer[T] whose POINTEE lives on a Local ($) page — the `&`
+//      operator and resolveType keep the pointee (with its Life) in Generics[0];
+//  (2) a VALUE whose OWN .Life is Local (design-B item 3) — String$()/Vector$()
+//      etc. carry an internal `data` pointer into the local page, so returning
+//      the value by copy still hands out a dangling internal pointer once the
+//      page is freed at scope exit.
+// Call (#) and Reference (^name) lifetimes outlive the function and are fine —
+// only Local is the error.
 static bool isReferenceToLocalPage(const PlannedType &T) {
+    if (std::holds_alternative<LocalLifetime>(T.Life)) return true;  // (2)
     bool IsRefLike = (T.Name == "pointer" || T.Name == "ref");
     if (!IsRefLike) return false;
     if (T.Generics.empty()) return false;
-    return std::holds_alternative<LocalLifetime>(T.Generics[0].Life);
+    return std::holds_alternative<LocalLifetime>(T.Generics[0].Life);  // (1)
 }
 
 // Design-B step 1: a value-returning init# method (RequiresPageParam) produces a
