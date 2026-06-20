@@ -318,6 +318,18 @@ void Emitter::declareRuntimeFunctions() {
             ReleaseRootSym, *Module);
         FunctionCache[ReleaseRootSym] = PageReleaseRootPage;
     }
+    // scaly_release_root_page_full(ptr) — full teardown (gated
+    // deallocate_extensions + release) emitted at every function exit.
+    // Defined in Scaly in scaly/memory/root_pages.scaly.
+    const char *ReleaseRootFullSym = "_Z28scaly_release_root_page_fullP4Page";
+    if (auto It = FunctionCache.find(ReleaseRootFullSym); It != FunctionCache.end()) {
+        PageReleaseRootPageFull = It->second;
+    } else if (!PageReleaseRootPageFull) {
+        PageReleaseRootPageFull = llvm::Function::Create(
+            ReleaseRootTy, llvm::GlobalValue::ExternalLinkage,
+            ReleaseRootFullSym, *Module);
+        FunctionCache[ReleaseRootFullSym] = PageReleaseRootPageFull;
+    }
 
     // scaly_trace_push(name) / scaly_trace_pop(name) — diagnostic hooks
     // used by emitRootTrace to tag each StackBucket push/pop with the
@@ -455,6 +467,22 @@ void Emitter::emitRBMMStubs() {
         llvm::IRBuilder<> B(Entry);
         if (Free) {
             B.CreateCall(Free, {PageReleaseRootPage->getArg(0)});
+        }
+        B.CreateRetVoid();
+    }
+    // scaly_release_root_page_full — full teardown. In stub-land
+    // deallocate_extensions is a no-op and pages are leaked/freed wholesale,
+    // so this just forwards to deallocate_extensions then release_root_page
+    // (no gate needed: the stub bodies are straight-line, no recursion).
+    if (PageReleaseRootPageFull && PageReleaseRootPageFull->isDeclaration()) {
+        auto *Entry = llvm::BasicBlock::Create(*Context, "entry", PageReleaseRootPageFull);
+        llvm::IRBuilder<> B(Entry);
+        llvm::Value *Arg = PageReleaseRootPageFull->getArg(0);
+        if (PageDeallocateExtensions) {
+            B.CreateCall(PageDeallocateExtensions, {Arg});
+        }
+        if (PageReleaseRootPage) {
+            B.CreateCall(PageReleaseRootPage, {Arg});
         }
         B.CreateRetVoid();
     }
@@ -1482,26 +1510,9 @@ llvm::Error Emitter::emitFunctionBody(const PlannedFunction &Func,
     // Only call deallocate_extensions if the page was actually used for allocations
     auto CleanupLocalPage = [this]() {
         if (CurrentRegion.LocalPage && PageType) {
-            // Clean up if the page was used for allocations (next_object moved
-            // off page+1) OR it owns an extension chain / exclusive pages — a
-            // page can own extensions without advancing its own bump pointer.
-            // This avoids infinite recursion: deallocate_extensions -> get_iterator -> deallocate_extensions
-            llvm::Value *WasUsed = emitPageNeedsCleanup(*Builder, CurrentRegion.LocalPage);
-
-            llvm::BasicBlock *CleanupBlock = llvm::BasicBlock::Create(*Context, "cleanup", CurrentFunction);
-            llvm::BasicBlock *SkipCleanupBlock = llvm::BasicBlock::Create(*Context, "skip_cleanup", CurrentFunction);
-            Builder->CreateCondBr(WasUsed, CleanupBlock, SkipCleanupBlock);
-
-            Builder->SetInsertPoint(CleanupBlock);
-            Builder->CreateCall(PageDeallocateExtensions, {CurrentRegion.LocalPage});
-            Builder->CreateBr(SkipCleanupBlock);
-
-            Builder->SetInsertPoint(SkipCleanupBlock);
-            // Return the root page to the StackBucket.
-            if (PageReleaseRootPage) {
-                emitRootTrace(/*IsPop=*/true);
-                Builder->CreateCall(PageReleaseRootPage, {CurrentRegion.LocalPage});
-            }
+            // Full teardown via the runtime helper (gates deallocate_extensions
+            // on the page-used predicate, then releases the StackBucket slot).
+            emitReleaseLocalPageFull(CurrentRegion.LocalPage);
         }
     };
 
@@ -1784,24 +1795,7 @@ llvm::Error Emitter::emitInitializerBody(const PlannedStructure &Struct,
     // Clean up local page before return if allocated
     if (Init.NeedsLocalPage && CurrentRegion.LocalPage && PageType) {
         if (!Builder->GetInsertBlock()->getTerminator()) {
-            // Clean up if used OR owning an extension chain / exclusive pages.
-            llvm::Value *WasUsed = emitPageNeedsCleanup(*Builder, CurrentRegion.LocalPage);
-
-            llvm::BasicBlock *CleanupBlock = llvm::BasicBlock::Create(*Context, "cleanup", CurrentFunction);
-            llvm::BasicBlock *ContinueBlock = llvm::BasicBlock::Create(*Context, "continue", CurrentFunction);
-            Builder->CreateCondBr(WasUsed, CleanupBlock, ContinueBlock);
-
-            Builder->SetInsertPoint(CleanupBlock);
-            if (PageDeallocateExtensions) {
-                Builder->CreateCall(PageDeallocateExtensions, {CurrentRegion.LocalPage});
-            }
-            Builder->CreateBr(ContinueBlock);
-
-            Builder->SetInsertPoint(ContinueBlock);
-            if (PageReleaseRootPage) {
-                emitRootTrace(/*IsPop=*/true);
-                Builder->CreateCall(PageReleaseRootPage, {CurrentRegion.LocalPage});
-            }
+            emitReleaseLocalPageFull(CurrentRegion.LocalPage);
         }
     }
 
@@ -2483,28 +2477,11 @@ llvm::Error Emitter::emitReturn(const PlannedReturn &Return) {
     // Emit block-scoped cleanups for all pending blocks
     emitBlockCleanups(0);
 
-    // Clean up local page before returning
-    // Only call deallocate_extensions if the page was actually used for allocations
+    // Clean up local page before returning — full teardown via the runtime
+    // helper (gates deallocate_extensions on the page-used predicate, then
+    // releases the StackBucket slot).
     if (CurrentRegion.LocalPage) {
-        // Clean up if the page was used (next_object moved off page+1) OR it
-        // owns an extension chain / exclusive pages — a page can own extensions
-        // without advancing its own bump pointer.
-        // This avoids infinite recursion: deallocate_extensions -> get_iterator -> deallocate_extensions
-        llvm::Value *WasUsed = emitPageNeedsCleanup(*Builder, CurrentRegion.LocalPage);
-
-        llvm::BasicBlock *CleanupBlock = llvm::BasicBlock::Create(*Context, "cleanup", CurrentFunction);
-        llvm::BasicBlock *ContinueBlock = llvm::BasicBlock::Create(*Context, "continue", CurrentFunction);
-        Builder->CreateCondBr(WasUsed, CleanupBlock, ContinueBlock);
-
-        Builder->SetInsertPoint(CleanupBlock);
-        Builder->CreateCall(PageDeallocateExtensions, {CurrentRegion.LocalPage});
-        Builder->CreateBr(ContinueBlock);
-
-        Builder->SetInsertPoint(ContinueBlock);
-        if (PageReleaseRootPage) {
-            emitRootTrace(/*IsPop=*/true);
-            Builder->CreateCall(PageReleaseRootPage, {CurrentRegion.LocalPage});
-        }
+        emitReleaseLocalPageFull(CurrentRegion.LocalPage);
     }
 
     // Check if function uses sret (struct return via first parameter)
@@ -6786,24 +6763,12 @@ void Emitter::patchPriorReturnsForLocalPage(llvm::Value *LocalPage) {
         }
         if (AlreadyReleased) continue;
 
-        // Mirror the emitReturn cleanup: call deallocate_extensions if the
-        // page's bump pointer has moved OR it owns an extension chain /
-        // exclusive pages (avoids recursion into deallocate_extensions on a
-        // genuinely fresh page).
-        llvm::IRBuilder<> B(Ret);
-        llvm::Value *WasUsed = emitPageNeedsCleanup(B, LocalPage);
-
-        llvm::Instruction *ThenTerm = llvm::SplitBlockAndInsertIfThen(
-            WasUsed, Ret, /*Unreachable=*/false);
-        {
-            llvm::IRBuilder<> ThenB(ThenTerm);
-            if (PageDeallocateExtensions) {
-                ThenB.CreateCall(PageDeallocateExtensions, {LocalPage});
-            }
-        }
-
-        // After the if-then reconverges, insert the unconditional release
-        // right before the ret.
+        // These rets were emitted on paths that reached an early return
+        // BEFORE the local page was first allocated (lazily, at the first
+        // allocation site). At runtime the page is fresh on those paths —
+        // nothing was allocated on it — so a bare release is correct (a full
+        // teardown's gate would be false anyway). Mirrors the self-hosted
+        // Emitter.scaly::patch_prior_returns, which also emits a bare release.
         llvm::IRBuilder<> PreRet(Ret);
         if (TraceRootPop) {
             if (!TraceName) {
@@ -6819,29 +6784,17 @@ void Emitter::patchPriorReturnsForLocalPage(llvm::Value *LocalPage) {
     }
 }
 
-llvm::Value *Emitter::emitPageNeedsCleanup(llvm::IRBuilder<> &B, llvm::Value *Page) {
-    llvm::Type *PtrTy = B.getPtrTy();
-    llvm::Value *NullPtr = llvm::ConstantPointerNull::get(B.getPtrTy());
-
-    // Own bump pointer moved: next_object != page + 1.
-    llvm::Value *NextObjectPtr = B.CreateStructGEP(PageType, Page, 0, "next_object_ptr");
-    llvm::Value *NextObject = B.CreateLoad(PtrTy, NextObjectPtr, "next_object");
-    llvm::Value *PagePlus1 = B.CreateGEP(PageType, Page,
-        llvm::ConstantInt::get(llvm::Type::getInt64Ty(*Context), 1), "page_plus_1");
-    llvm::Value *WasUsed = B.CreateICmpNE(NextObject, PagePlus1, "page_was_used");
-
-    // Owns an extension chain: next_page != null.
-    llvm::Value *NextPagePtr = B.CreateStructGEP(PageType, Page, 2, "next_page_ptr");
-    llvm::Value *NextPage = B.CreateLoad(PtrTy, NextPagePtr, "next_page");
-    llvm::Value *HasNextPage = B.CreateICmpNE(NextPage, NullPtr, "has_next_page");
-
-    // Owns exclusive pages: exclusive_pages.head != null. PageList's head is
-    // its first (only) field, so field 3 of Page coincides with head's address.
-    llvm::Value *ExclHeadPtr = B.CreateStructGEP(PageType, Page, 3, "excl_head_ptr");
-    llvm::Value *ExclHead = B.CreateLoad(PtrTy, ExclHeadPtr, "excl_head");
-    llvm::Value *HasExcl = B.CreateICmpNE(ExclHead, NullPtr, "has_excl");
-
-    return B.CreateOr(B.CreateOr(WasUsed, HasNextPage), HasExcl, "page_needs_cleanup");
+void Emitter::emitReleaseLocalPageFull(llvm::Value *LocalPage) {
+    // Trace pop (balances the push emitted by getOrCreateLocalPage), then a
+    // single call to the runtime full-teardown helper. The helper gates
+    // deallocate_extensions on the page-used predicate internally and then
+    // releases the StackBucket root slot — so the gate IR is no longer built
+    // inline here (matching Emitter.scaly, which emits the same call; the
+    // self-hosted port of the inline gate tripped a stage-0 backend
+    // miscompile, see Emitter.scaly::emit_release_local_page).
+    if (!PageReleaseRootPageFull) return;
+    emitRootTrace(/*IsPop=*/true);
+    Builder->CreateCall(PageReleaseRootPageFull, {LocalPage});
 }
 
 llvm::BasicBlock *Emitter::createBlock(llvm::StringRef Name) {
