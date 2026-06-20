@@ -1330,12 +1330,46 @@ define Emitter
             LLVMPositionBuilderAtEnd(builder, saved_block)
     }
 
+    ; Look up or declare scaly_release_root_page_full(ptr) -> void — the
+    ; runtime full-teardown entry point (root_pages.scaly). It gates
+    ; deallocate_extensions internally on the page-used predicate, then
+    ; releases the StackBucket root slot.
+    function get_release_root_page_full_fn(this) returns LLVMValueRef
+    {
+        var rel_fn lookup_function_cache(String$("_Z28scaly_release_root_page_fullP4Page"))
+        guard rel_fn.handle = null
+            set rel_fn: LLVMGetNamedFunction(llvm_module, "_Z28scaly_release_root_page_fullP4Page")
+        guard rel_fn.handle = null
+        {
+            let void_ty LLVMVoidTypeInContext(context)
+            let ptr_ty LLVMPointerTypeInContext(context, 0)
+            var ptys Vector[LLVMTypeRef]#(1)
+            ptys.put(0, ptr_ty)
+            let fty LLVMFunctionType(void_ty, ptys.data, 1, 0)
+            set rel_fn: LLVMAddFunction(llvm_module, "_Z28scaly_release_root_page_fullP4Page", fty)
+            LLVMSetLinkage(rel_fn, LLVMLinkage.External())
+            cache_function(String$("_Z28scaly_release_root_page_fullP4Page"), rel_fn)
+        }
+        rel_fn
+    }
+
     ; Release function_local_page at the current builder position (just
-    ; before the caller emits a terminating return/throw). Calls
-    ; deallocate_extensions(page) only when the page was actually used
-    ; (next_object moved off page+1) — a fresh page skips it, which also
-    ; breaks deallocate_extensions' own self-recursion (its for-loop's
-    ; iterator page is always fresh). Mirrors stage-0 emitReturn's cleanup.
+    ; before the caller emits a terminating return/throw). Full teardown
+    ; (the blocker-C invariant 1, "always free local regions at scope
+    ; exit"): a local ($) region is ALWAYS freed — the emitted call to
+    ; scaly_release_root_page_full frees the owned extension chain +
+    ; exclusive pages (gated on the page-used predicate, see root_pages.scaly)
+    ; then returns the StackBucket root slot. The escape checker (return /
+    ; store / call vectors) guarantees no escaping reference lives on this
+    ; page, so the unconditional free is not a use-after-free.
+    ;
+    ; The gate + teardown live in the RUNTIME helper, not inline here:
+    ; building the gate IR in the emitter (GEP into the Page struct) tripped
+    ; a stage-0 backend miscompile of the huge Emitter whole-struct load
+    ; feeding the GEP type (the page_needs_cleanup version SIGSEGV'd in
+    ; GetElementPtrInst::Create with a null PointeeType). Emitting a single
+    ; call sidesteps it; stage-0's own emitter keeps its inline gate
+    ; (Emitter.cpp CleanupLocalPage) — same runtime behaviour either way.
     procedure emit_release_local_page(this)
     {
         ; Nothing to release when this function never allocated a local page.
@@ -1347,14 +1381,7 @@ define Emitter
         let ptr_ty LLVMPointerTypeInContext(context, 0)
         let void_ty LLVMVoidTypeInContext(context)
 
-        ; scaly_release_root_page(page). Returns the StackBucket root page,
-        ; fixing the leak. Note: we deliberately do NOT call
-        ; deallocate_extensions here — the transient #/$/for allocations on a
-        ; function-local page fit in the single root page (no extension
-        ; chain), and calling deallocate_extensions would risk a runtime
-        ; self-recursion when the scaly package's own deallocate_extensions
-        ; (which itself takes a local page for its for-loop) is compiled.
-        let rel_fn get_release_root_page_fn()
+        let rel_fn get_release_root_page_full_fn()
         var r_ptys Vector[LLVMTypeRef]#(1)
         r_ptys.put(0, ptr_ty)
         let r_fty LLVMFunctionType(void_ty, r_ptys.data, 1, 0)

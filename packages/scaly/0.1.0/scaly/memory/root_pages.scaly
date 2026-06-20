@@ -324,6 +324,41 @@ procedure scaly_release_root_page(p: pointer[Page])
     set stack_top: last_usable_page(bucket.prev)
 }
 
+; Full teardown of a function-local root page at scope exit (the blocker-C
+; "always free local regions" invariant). Frees the page's owned extension
+; chain + exclusive pages when it was actually used, then returns the
+; StackBucket root slot via scaly_release_root_page.
+;
+; The gate is load-bearing for TERMINATION, not just efficiency: the emitter
+; calls this from EVERY non-# function's epilogue, including
+; deallocate_extensions' own (its for-loop acquires a fresh local page). A
+; fresh page — bump pointer still at the header, no chain, no exclusive pages
+; — skips deallocate_extensions, so the cycle deallocate_extensions ->
+; epilogue -> release_full -> deallocate_extensions bottoms out immediately.
+; This function is allocation-free (no $/#/for-in) so it never acquires its
+; own local page (see the header note on allocator-path functions).
+;
+; The escape checker (return/store/call vectors) guarantees no escaping
+; reference lives on a local page, so the unconditional release is not a
+; use-after-free. Mirrors stage-0's emitReturn CleanupLocalPage
+; (emitPageNeedsCleanup gate + deallocate_extensions + release).
+procedure scaly_release_root_page_full(p: pointer[Page])
+{
+    guard p = null
+        return
+    let fresh_next (p as size_t + sizeof Page) as pointer[void]
+    var used false
+    guard p.next_object <> fresh_next
+        set used: true
+    guard p.next_page <> null
+        set used: true
+    guard p.exclusive_pages.head <> null
+        set used: true
+    guard used
+        p.deallocate_extensions()
+    scaly_release_root_page(p)
+}
+
 ; --------------------------------------------------------------------------
 ; HeapBucket: extension and exclusive pages
 ; --------------------------------------------------------------------------
