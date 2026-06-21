@@ -35,5 +35,15 @@ for f in tests/escape/pos_*.scaly; do
   fi
 done
 
+# Multi-file diagnostic LOCATION: the escape is in mfloc_helper.scaly (a
+# sub-module of mfloc_main.scaly). The diagnostic must name the HELPER file at
+# its real line (13), not the entry file. Guards per-diagnostic file tracking.
+out=$( ( ulimit -s 65520; "$CC" -c --no-prelude -o /tmp/esc_mfloc.o tests/escape/mfloc_main.scaly ) 2>&1 ); rc=$?
+if [ $rc -ne 0 ] && echo "$out" | grep -q "mfloc_helper.scaly:13:.*escapes"; then
+  pass=$((pass+1))
+else
+  fail=$((fail+1)); failures+=("mfloc: expected mfloc_helper.scaly:13 escape, got rc=$rc: $out")
+fi
+
 echo "escape: $pass PASS, $fail FAIL ${failures[*]}"
 [ $fail -eq 0 ]

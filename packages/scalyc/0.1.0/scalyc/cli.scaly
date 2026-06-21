@@ -650,9 +650,21 @@ define cli
             let d_ptr planner.diagnostics.get(di)
             guard d_ptr <> null
             {
+                ; The diagnostic's byte offset is relative to ITS OWN source
+                ; file (a sub-module lives in its own file). Format against
+                ; that file, falling back to the entry file/source when the
+                ; diagnostic carries no file (e.g. a post-pass check with no
+                ; current-module context). Mirrors stage-0's per-error File.
+                var dpath: String file_path
+                var dsrc: String source
+                guard d_ptr.file.get_length() > 0
+                {
+                    set dpath: d_ptr.file
+                    set dsrc: File.read_to_string$(d_ptr.file)
+                }
                 var line: size_t 1
                 var col: size_t 1
-                let src_len source.get_length()
+                let src_len dsrc.get_length()
                 var target d_ptr.start
                 guard target > src_len
                     set target: src_len
@@ -662,7 +674,7 @@ define cli
                     ; Numeric LF compare: `"\n" as char` compiles to a
                     ; never-true comparison under stage-1 (escape handling
                     ; in char-cast literals); 10 works in every stage.
-                    let c source.get(off)
+                    let c dsrc.get(off)
                     if c = (10 as char)
                     {
                         set line: line + 1
@@ -675,7 +687,7 @@ define cli
                     set off: off + 1
                 }
                 var msg StringBuilder#()
-                msg.append(file_path)
+                msg.append(dpath)
                 msg.append(":")
                 msg.append(cli.format_size#(line))
                 msg.append(":")

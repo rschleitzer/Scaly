@@ -171,6 +171,12 @@ define PlannerDiagnostic
 (
     start: size_t
     message: String
+    ; Source file the `start` byte offset is relative to. Multi-file
+    ; compiles put each module's nodes in their own file's coordinate
+    ; space, so a diagnostic must carry its file or cli.run formats the
+    ; offset against the wrong (entry) file. Mirrors stage-0's per-error
+    ; File capture (Planner.cpp planModule's `File = Mod.File`).
+    file: String
 )
 
 ; Escape checker (RBMM blocker C), Vector 3: pass-to-storing-callee.
@@ -932,7 +938,7 @@ define Planner
         ; dropped from the IR — cli.run fails the compile on these.
         function add_diagnostic(this: Planner, loc: Span, message: String)
         {
-            diagnostics.add(PlannerDiagnostic(loc.start, message))
+            diagnostics.add(PlannerDiagnostic(loc.start, message, this.file))
         }
 
         function has_diagnostics(this: Planner) returns bool
@@ -13341,6 +13347,15 @@ define Planner
         ; when B is defined later in the same module.
         function plan_module#(rp, this: Planner, m: Module) returns PlannedModule
         {
+            ; Track the current source file for diagnostics (mirrors stage-0
+            ; planModule: `OldFile = File; if (!Mod.File.empty()) File = Mod.File`).
+            ; Sub-modules live in their own files; without this every escape /
+            ; hard diagnostic from a sub-module is formatted against the entry
+            ; file and reports a bogus line. Restored at the single return below.
+            let saved_file this.file
+            guard m.file.get_length() > 0
+                set this.file: String^this(m.file)
+
             ; Propagate this module's Use clauses into program_use_aliases
             ; so the dotted-call extern-decl gate fires for prefixes
             ; imported from sub-modules (e.g. cli.scaly's `use scaly.io.Console`
@@ -13426,6 +13441,8 @@ define Planner
             var concs_holder Vector[PlannedConcept]^rp(pl_concepts)
             var funcs_holder Vector[PlannedFunction]^rp(functions)
             var ops_holder Vector[PlannedOperator]^rp(operators)
+
+            set this.file: saved_file
 
             PlannedModule(
                 m.file,

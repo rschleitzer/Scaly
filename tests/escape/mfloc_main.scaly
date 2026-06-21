@@ -1,0 +1,9 @@
+; Multi-file diagnostic-location regression: the escape lives in
+; mfloc_helper.scaly (a sub-module), so the diagnostic must name THAT file with
+; the correct line, not the entry file. Guards the per-diagnostic file tracking.
+module mfloc_helper
+
+function main() returns int
+{
+    return 0
+}
