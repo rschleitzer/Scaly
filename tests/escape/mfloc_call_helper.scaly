@@ -1,0 +1,24 @@
+; Helper module for the multi-file Vector-3 (pass-to-storing-callee) diagnostic
+; location regression (mfloc_call_main). leak_call passes a $-local-page ref to
+; a callee that STORES it frame-external, so the interprocedural escape check
+; must report THIS file at the c.stash call line, not the entry file. Not a
+; neg_/pos_ test — the runner globs those, so this file is only compiled
+; transitively via `module mfloc_call_helper`.
+define Box
+(
+    v: int
+)
+define Holder
+(
+    b: pointer[Box]
+)
+{
+    procedure stash(this, p: pointer[Box])
+        set this.b: p
+}
+
+procedure leak_call(c: Holder)
+{
+    let bx Box$(5)
+    c.stash(&bx)
+}

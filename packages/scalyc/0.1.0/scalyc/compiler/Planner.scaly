@@ -4282,7 +4282,8 @@ define Planner
                                                 null,
                                                 false,
                                                 mm.can_throw,
-                                                null
+                                                null,
+                                                this.file
                                             ))
                                         }
                                         set match_ref: mm_ref
@@ -4422,7 +4423,8 @@ define Planner
                                                         null,
                                                         false,
                                                         mm3.can_throw,
-                                                        null
+                                                        null,
+                                                        this.file
                                                     ))
                                                 }
 
@@ -4825,7 +4827,8 @@ define Planner
                                                     null,
                                                     false,
                                                     mm.can_throw,
-                                                    null
+                                                    null,
+                                                    this.file
                                                 ))
                                             }
                                         }
@@ -5006,7 +5009,8 @@ define Planner
                                                     null,
                                                     false,
                                                     s_can_throw,
-                                                    null
+                                                    null,
+                                                    this.file
                                                 ))
                                             }
                                         }
@@ -11130,6 +11134,13 @@ define Planner
                 }
                 guard violates
                 {
+                    ; The post-pass runs after plan_module# restored this.file,
+                    ; so set it to the calling function's own file (re-fetched
+                    ; via escape_fn_index) before reporting — else the offset is
+                    ; formatted against the stale entry file.
+                    let cur_fn instantiated_functions.get(escape_fn_index)
+                    guard cur_fn <> null
+                        set this.file: String^this(cur_fn.file)
                     this.add_diagnostic(call.loc, String^this("reference into a local ($) page escapes via call - the callee stores it into memory that outlives this frame; allocate with '#' (caller page) or '^name' (region)"))
                     set escape_found: true
                 }
@@ -12024,7 +12035,8 @@ define Planner
                 null,
                 needs_local_page,
                 can_throw,
-                null
+                null,
+                this.file
             )
             this.record_function(result)
             result
@@ -12219,7 +12231,8 @@ define Planner
                             null,
                             false,
                             false,
-                            null
+                            null,
+                            this.file
                         )
                         this.record_function(synth_fn)
                     }

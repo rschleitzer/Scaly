@@ -493,6 +493,11 @@ define PlannedFunction
     needs_local_page: bool
     can_throw: bool
     scheme: ref[TypeScheme]?
+    ; Source file of this function's module. The interprocedural escape
+    ; check (check_interprocedural_escapes) runs as a post-pass after
+    ; plan_module# has restored this.file, so a Vector-3 "escapes via call"
+    ; diagnostic must use the function's OWN file, not the stale entry file.
+    file: String
 )
 
 define PlannedInitializer

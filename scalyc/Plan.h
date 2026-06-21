@@ -546,6 +546,11 @@ struct PlannedFunction {
     std::shared_ptr<InstantiationInfo> Origin;
     bool NeedsLocalPage = false;  // True if function body uses $ allocations
     bool CanThrow = false;        // True if function has Throws annotation
+    std::string File;             // Source file of this function's module — the
+                                  // interprocedural escape check runs as a
+                                  // post-pass after planModule restores File,
+                                  // so a Vector-3 diagnostic must use the
+                                  // function's own File, not the stale one.
 
     // For polymorphic functions: the type scheme before instantiation
     std::shared_ptr<TypeScheme> Scheme;

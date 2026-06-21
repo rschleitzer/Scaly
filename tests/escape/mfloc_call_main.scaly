@@ -1,0 +1,11 @@
+; Multi-file Vector-3 diagnostic-location regression: the pass-to-storing-callee
+; escape lives in mfloc_call_helper.scaly (a sub-module), so the interprocedural
+; escape check (a post-pass, after plan_module# restored the current file) must
+; name THAT file at the c.stash line, not the entry file. Guards per-function
+; file tracking on PlannedFunction.
+module mfloc_call_helper
+
+function main() returns int
+{
+    return 0
+}

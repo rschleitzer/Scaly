@@ -45,5 +45,17 @@ else
   fail=$((fail+1)); failures+=("mfloc: expected mfloc_helper.scaly:13 escape, got rc=$rc: $out")
 fi
 
+# Multi-file Vector-3 (pass-to-storing-callee) diagnostic LOCATION: the escape
+# lives in mfloc_call_helper.scaly's leak_call (c.stash(&bx), line 23). The
+# interprocedural check is a post-pass that runs after the current file is
+# restored, so it must name the HELPER file via PlannedFunction.file, not the
+# entry file. Guards per-function file tracking.
+out=$( ( ulimit -s 65520; "$CC" -c --no-prelude -o /tmp/esc_mfloc_call.o tests/escape/mfloc_call_main.scaly ) 2>&1 ); rc=$?
+if [ $rc -ne 0 ] && echo "$out" | grep -q "mfloc_call_helper.scaly:23:.*escapes"; then
+  pass=$((pass+1))
+else
+  fail=$((fail+1)); failures+=("mfloc_call: expected mfloc_call_helper.scaly:23 escape, got rc=$rc: $out")
+fi
+
 echo "escape: $pass PASS, $fail FAIL ${failures[*]}"
 [ $fail -eq 0 ]

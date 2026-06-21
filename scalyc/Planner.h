@@ -164,8 +164,10 @@ private:
     int EscapeWalkMode = 0;                 // 0 = collect summary, 1 = check calls
     std::set<std::string> EscapeFnParams;   // current function's parameter names
     std::string EscapeFnMangled;            // current function's mangled name
+    std::string EscapeCurrentFile;          // current function's source file
     bool EscapeFound = false;               // a violation was detected (check mode)
     Span EscapeLoc;                         // location of the violation
+    std::string EscapeFile;                 // source file of the violation
 
     // Recursion depth tracking for stack overflow prevention
     // Note: Each planning frame is ~200KB due to std::variant and locals
@@ -403,7 +405,8 @@ private:
     void escapeWalkFunction(const std::string &Mangled,
                             const std::vector<PlannedItem> &Input,
                             const std::optional<std::string> &PageParam,
-                            const PlannedImplementation &Impl);
+                            const PlannedImplementation &Impl,
+                            const std::string &FnFile);
     void escapeWalkImpl(const PlannedImplementation &Impl);
     void escapeWalkAction(const PlannedAction &Act);
     void escapeWalkStatement(const std::shared_ptr<PlannedStatement> &Stmt);

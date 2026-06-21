@@ -11838,6 +11838,7 @@ llvm::Expected<PlannedFunction> Planner::planFunction(const Function &Func,
     Result.Name = Func.Name;
     Result.Life = Func.Life;
     Result.PageParameter = Func.PageParameter;
+    Result.File = File;  // module file for post-pass escape diagnostics
 
     // Implicit return page: functions returning class types (struct/union) get an
     // automatic rp parameter for # allocations in the body.
@@ -13506,6 +13507,7 @@ void Planner::escapeHandleCall(const PlannedCall &Call) {
             if (violates) {
                 EscapeFound = true;
                 EscapeLoc = Call.Loc;
+                EscapeFile = EscapeCurrentFile;
                 return;
             }
         }
@@ -13601,8 +13603,10 @@ void Planner::escapeWalkImpl(const PlannedImplementation &Impl) {
 void Planner::escapeWalkFunction(const std::string &Mangled,
                                  const std::vector<PlannedItem> &Input,
                                  const std::optional<std::string> &PageParam,
-                                 const PlannedImplementation &Impl) {
+                                 const PlannedImplementation &Impl,
+                                 const std::string &FnFile) {
     EscapeFnMangled = Mangled;
+    EscapeCurrentFile = FnFile;
     EscapeFnParams.clear();
     for (const auto &P : Input)
         if (P.Name) EscapeFnParams.insert(*P.Name);
@@ -13623,15 +13627,15 @@ llvm::Error Planner::checkInterproceduralEscapes() {
     // Pass 0: build the escape summary.
     EscapeWalkMode = 0;
     for (const auto &[Name, F] : InstantiatedFunctions)
-        escapeWalkFunction(F.MangledName, F.Input, F.PageParameter, F.Impl);
+        escapeWalkFunction(F.MangledName, F.Input, F.PageParameter, F.Impl, F.File);
 
     // Pass 1: check every call against the summary.
     EscapeWalkMode = 1;
     EscapeFound = false;
     for (const auto &[Name, F] : InstantiatedFunctions) {
-        escapeWalkFunction(F.MangledName, F.Input, F.PageParameter, F.Impl);
+        escapeWalkFunction(F.MangledName, F.Input, F.PageParameter, F.Impl, F.File);
         if (EscapeFound)
-            return makeEscapingReferenceError(File, EscapeLoc, "call");
+            return makeEscapingReferenceError(EscapeFile, EscapeLoc, "call");
     }
     return llvm::Error::success();
 }
