@@ -4673,11 +4673,15 @@ define Emitter
         ; Decide allocation strategy based on call.life. Lifetime.Reference
         ; (^name) reads the page from the named local variable.
         var is_region_alloc: bool false
+        var is_local_alloc: bool false
         var ref_name: String String$("")
         var has_ref_name: bool false
         choose call.life
             when l: Lifetime.Local
+            {
                 set is_region_alloc: true
+                set is_local_alloc: true
+            }
             when c: Lifetime.Call
                 set is_region_alloc: true
             when r: Lifetime.Reference
@@ -4693,17 +4697,33 @@ define Emitter
         var page_arg: LLVMValueRef LLVMValueRef(null)
         guard is_region_alloc
         {
-            guard has_ref_name
-                set page_arg: resolve_reference_page(ref_name)
-            guard has_ref_name = false
+            ; A `$` (Lifetime.Local) construction allocates on THIS function's
+            ; local page (released on exit by always-free-local), NEVER the
+            ; caller's rp. Mirrors stage-0 Emitter.cpp:3680-3682. Without this,
+            ; a `$` allocation inside a `#` function (which has `rp` in scope)
+            ; fell through to the rp branch below and leaked onto the caller's
+            ; persistent page — the stage-2 transient-leak driver (2.4x RSS vs
+            ; stage-1: $ builders/Vectors/StringBuilders in the hot # planner
+            ; functions never freed). The escape checker guarantees a `$` value
+            ; that escapes is a compile error, so routing to the local page is
+            ; safe. (Item-2's LEVER fixed the analogous CALL path at ~line 5140;
+            ; constructions were missed.)
+            guard is_local_alloc
+                set page_arg: get_or_create_local_page()
+            guard is_local_alloc = false
             {
-                let rp_val lookup_variable(String$("rp"))
-                guard rp_val.handle <> null
-                    set page_arg: rp_val
-                ; s196: non-# caller — reuse this function's single local
-                ; root page (released on exit) instead of leaking a fresh one.
-                guard page_arg.handle = null
-                    set page_arg: get_or_create_local_page()
+                guard has_ref_name
+                    set page_arg: resolve_reference_page(ref_name)
+                guard has_ref_name = false
+                {
+                    let rp_val lookup_variable(String$("rp"))
+                    guard rp_val.handle <> null
+                        set page_arg: rp_val
+                    ; s196: non-# caller — reuse this function's single local
+                    ; root page (released on exit) instead of leaking a fresh one.
+                    guard page_arg.handle = null
+                        set page_arg: get_or_create_local_page()
+                }
             }
             guard page_arg.handle = null
                 return LLVMValueRef(null)
