@@ -47,6 +47,7 @@ use scalyc.compiler.Model.Operand
 use scalyc.compiler.Model.Expression
 use scaly.containers.Array
 
+use scalyc.compiler.ConceptIndex.ConceptIndex
 use scalyc.compiler.Plan.Plan
 use scalyc.compiler.Plan.PlannedType
 use scalyc.compiler.Plan.PlannedItem
@@ -281,6 +282,13 @@ define Planner
         ; by lookup_concept during type resolution and method dispatch.
         concepts: Array[KeyValuePair[String, Concept]]
 
+        ; O(1) name -> index map over `concepts`, maintained in lockstep at the
+        ; single register_concept insertion site. Replaces lookup_concept's
+        ; backward linear scan (the hottest planner function). Stores indices,
+        ; not pointers, because `concepts` reallocates as it grows. Concrete,
+        ; malloc'd, open-addressing — sidesteps the s188 RBMM-HashMap bug.
+        concept_index: ConceptIndex
+
         ; Instantiation caches. Every PlannedStructure / PlannedUnion /
         ; PlannedFunction / PlannedGlobal a call into the planner
         ; produces is appended here so the final Plan can carry the
@@ -410,6 +418,7 @@ define Planner
             set constraints: Array[TypeConstraint]^page()
             set solution: Array[KeyValuePair[size_t, PlannedType]]^page()
             set concepts: Array[KeyValuePair[String, Concept]]^page()
+            set concept_index: ConceptIndex.create(65536 as size_t)
             set instantiated_structures: Array[PlannedStructure]^page()
             set instantiated_unions: Array[scalyc.compiler.Plan.PlannedUnion]^page()
             set instantiated_functions: Array[PlannedFunction]^page()
@@ -573,33 +582,32 @@ define Planner
         function register_concept(this: Planner, c: Concept)
         {
             concepts.add(KeyValuePair[String, Concept](c.name, c))
+            ; Maintain the O(1) index in lockstep. insert OVERWRITES on a
+            ; duplicate key so the LAST-registered index wins — matching
+            ; lookup_concept's backward-scan semantics (s95). This is the ONLY
+            ; mutation site of `concepts` (the .add's elsewhere are to LOCAL
+            ; shadowed PlannedConcept arrays), so the index stays correct even
+            ; when lazy instantiation registers concepts during planning.
+            concept_index.insert(c.name, concepts.length - 1)
         }
 
         function lookup_concept(this: Planner, name: String) returns ref[Concept]?
         {
-            ; Scan backward so the most-recently-registered concept wins.
-            ; `define Planner { struct Planner ( ... ) ... }` registers
-            ; the outer Namespace concept first, then the inner Structure
-            ; concept under the same name. Stage-0 uses a std::map keyed
-            ; by name where the second insert overwrites the first; stage-1
-            ; uses a Vector and previously linear-scanned forward, returning
-            ; the OUTER Namespace and breaking find_initializer# /
-            ; lookup_property / lookup_method# / is_struct_ctor — which
-            ; all `choose c.definition when s: Structure ...` and fall
-            ; through to else when handed a Namespace concept. Reverse
-            ; scan = stage-0-faithful last-write-wins. (s95)
-            guard concepts.length = 0
-                return null
-            var i: size_t concepts.length
-            while i > 0
+            ; O(1) hashed lookup over concept_index, which returns the LAST
+            ; index registered for `name` (insert overwrites on duplicate key).
+            ; This is the stage-0-faithful last-write-wins semantics the old
+            ; backward linear scan provided: `define Planner { struct Planner
+            ; ( ... ) ... }` registers the outer Namespace concept first, then
+            ; the inner Structure under the same name, and downstream
+            ; find_initializer# / lookup_property / lookup_method# /
+            ; is_struct_ctor all `choose c.definition when s: Structure ...`
+            ; and need the LATER (Structure) entry. (s95)
+            let idx concept_index.lookup(name)
+            guard idx >= 0
             {
-                set i: i - 1
-                let kvp_ptr concepts.get(i)
+                let kvp_ptr concepts.get(idx as size_t)
                 guard kvp_ptr <> null
-                {
-                    guard kvp_ptr.key.equals(name)
-                        return &kvp_ptr.value
-                }
+                    return &kvp_ptr.value
             }
             null
         }
@@ -615,6 +623,10 @@ define Planner
         ; holds the Namespace for the colliding name.
         function lookup_namespace_concept(this: Planner, name: String) returns ref[Concept]?
         {
+            ; Stays a backward linear scan: it filters by definition == Namespace,
+            ; so concept_index's single last-index-per-name can't serve it (the
+            ; last entry for a name may be a Structure). A future multi-index
+            ; (name -> all indices) could serve this.
             guard concepts.length = 0
                 return null
             var i: size_t concepts.length
@@ -5188,7 +5200,10 @@ define Planner
                         ;     it too). First matching union wins. The
                         ;     scan is O(concepts^2) but only runs after
                         ;     resolution failure — never on a clean
-                        ;     self-compile.
+                        ;     self-compile. (Out of scope for the concept_index
+                        ;     Step-1 speedup: it scans variant names, not
+                        ;     concept names; a future multi-index could serve
+                        ;     it.)
                         ; (b) otherwise a HARD diagnostic with source
                         ;     position; cli.run prints it and fails the
                         ;     compile instead of emitting truncated IR.
@@ -13056,6 +13071,10 @@ define Planner
                 let planned this.plan_module#(sub)
             }
             guard sub.name.equals("Plan")
+            {
+                let planned this.plan_module#(sub)
+            }
+            guard sub.name.equals("ConceptIndex")
             {
                 let planned this.plan_module#(sub)
             }

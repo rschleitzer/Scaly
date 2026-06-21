@@ -9,6 +9,7 @@ define compiler
     module Model
     module Modeler
     module Plan
+    module ConceptIndex  ; O(1) concept-name -> registry-index map (used by Planner)
     module Planner
     module LLVM
     module Emitter

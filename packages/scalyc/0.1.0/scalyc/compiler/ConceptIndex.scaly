@@ -1,0 +1,132 @@
+; ConceptIndex.scaly - O(1) hashed concept-name -> registry-index map for the
+; self-hosted Planner.
+;
+; Planner::lookup_concept used to BACKWARD-LINEAR-SCAN the concepts registry
+; (Array[KeyValuePair[String, Concept]]) on every type-resolution / method
+; dispatch — the sample-confirmed hottest planner function, O(n^2) over a whole
+; -c scalyc compile. Stage-0 (C++) uses a std::map and is fast; the self-hosted
+; Planner deliberately used linear Arrays because the RBMM HashMap[String,X] has
+; the s188 reallocate->page bug. This module sidesteps that bug the same way
+; scalyls/nameset.scaly does: a CONCRETE (non-generic), malloc'd, open-addressing
+; string hash that runs reliably self-hosted.
+;
+; It maps a concept NAME -> the size_t INDEX into the Planner's `concepts` Array.
+; Indices (not pointers) are stored because the Array reallocates as it grows;
+; indices survive reallocation, pointers don't. lookup_concept re-derives the
+; ref via concepts.get(idx).
+;
+; LAST-WRITE-WINS is load-bearing (s95): `define Planner { struct Planner(...) }`
+; registers the outer Namespace concept then the inner Structure under one name,
+; and downstream `choose c.definition when s: Structure` needs the LATER one. The
+; old backward linear scan returned the most-recently-registered entry; insert()
+; here OVERWRITES the stored index on a duplicate key to match.
+;
+; NOTE: lookup_namespace_concept and the s185 variant-tag scan still need the
+; full backward scan (they filter by definition kind, which a single last-index
+; map can't serve) — they keep their linear scans. A future multi-index could
+; serve them.
+;
+; CONTROL-FLOW NOTE: `guard COND STMT` runs STMT when COND is TRUE (no else).
+
+use scaly.containers.String
+
+; libc allocator. malloc declared locally (fixpoint-safe — touches no scaly
+; source); the table is leaked at process exit (one table per compile).
+function malloc(size: size_t) returns pointer[void] extern
+
+; Slot count: a power of two so the probe mask is cap-1. Generous for the whole
+; cross-package scalyc concept set (low thousands) at a low load factor. On a
+; full table insert exits LOUDLY rather than silently corrupting.
+define CONCEPT_INDEX_CAP int 65536
+
+; One table slot: the concept name (stored by value — the String's data buffer
+; lives on the Planner's page for the whole compile, so the copy stays valid),
+; the registry index, and a `used` flag.
+define ConceptSlot
+(
+    name:  String
+    index: size_t
+    used:  bool
+)
+
+define ConceptIndex (slots: pointer[ConceptSlot](null), cap: size_t(0))
+{
+    ; Allocate + initialise a table of `cap` slots. Exits loudly on malloc
+    ; failure (the Planner cannot proceed without its concept index).
+    function create(cap: size_t) returns ConceptIndex
+    {
+        let bytes cap * sizeof ConceptSlot
+        let slots malloc(bytes) as pointer[ConceptSlot]
+        guard slots = null
+        {
+            scaly_eputs("ConceptIndex: malloc failed\n")
+            exit(14)
+        }
+        var i: size_t 0
+        while i < cap
+        {
+            let s slots + i
+            set s.used: false
+            set s.index: 0 as size_t
+            set i: i + (1 as size_t)
+        }
+        ConceptIndex(slots, cap)
+    }
+
+    ; Insert (or OVERWRITE) the index for `name`. Open addressing, linear probe.
+    ; A duplicate key overwrites the stored index (last-write-wins, s95). A full
+    ; table exits loudly.
+    procedure insert(this: ConceptIndex, name: String, index: size_t)
+    {
+        guard slots <> null
+        {
+            let h name.hash()
+            let mask cap - (1 as size_t)
+            var idx h & mask
+            var probes: size_t 0
+            while probes < cap
+            {
+                let s slots + idx
+                guard s.used = false
+                {
+                    set s.name: name
+                    set s.index: index
+                    set s.used: true
+                    return
+                }
+                guard s.name.equals(name)
+                {
+                    set s.index: index
+                    return
+                }
+                set idx: (idx + (1 as size_t)) & mask
+                set probes: probes + (1 as size_t)
+            }
+            scaly_eputs("ConceptIndex: table full\n")
+            exit(14)
+        }
+    }
+
+    ; The registry index for `name`, or -1 if absent.
+    function lookup(this: ConceptIndex, name: String) returns i64
+    {
+        guard slots <> null
+        {
+            let h name.hash()
+            let mask cap - (1 as size_t)
+            var idx h & mask
+            var probes: size_t 0
+            while probes < cap
+            {
+                let s slots + idx
+                guard s.used = false
+                    return (0 - 1) as i64
+                guard s.name.equals(name)
+                    return s.index as i64
+                set idx: (idx + (1 as size_t)) & mask
+                set probes: probes + (1 as size_t)
+            }
+        }
+        (0 - 1) as i64
+    }
+}
