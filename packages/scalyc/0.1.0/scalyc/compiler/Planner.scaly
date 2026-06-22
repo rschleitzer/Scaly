@@ -48,6 +48,7 @@ use scalyc.compiler.Model.Expression
 use scaly.containers.Array
 
 use scalyc.compiler.ConceptIndex.ConceptIndex
+use scalyc.compiler.FunctionIndex.FunctionIndex
 use scalyc.compiler.Plan.Plan
 use scalyc.compiler.Plan.PlannedType
 use scalyc.compiler.Plan.PlannedItem
@@ -333,9 +334,20 @@ define Planner
         ; lookup_functions returns all matches.
         model_functions: Array[KeyValuePair[String, Function]]
 
+        ; O(1) name -> ordered registry-index chain over model_functions,
+        ; maintained in lockstep at the single register_function add site.
+        ; Replaces lookup_functions / is_function's O(n) linear scan (O(n^2)
+        ; over a -c scalyc compile). Walks in insertion order -> identical
+        ; overload-resolution input -> identical Plan -> identical IR.
+        model_function_index: FunctionIndex
+
         ; Operator registry (same shape as model_functions; separate
         ; keyspace because an operator is identified by its symbol).
         model_operators: Array[KeyValuePair[String, Operator]]
+
+        ; O(1) name -> ordered registry-index chain over model_operators,
+        ; maintained in lockstep at the single register_operator add site.
+        model_operator_index: FunctionIndex
 
         ; Package search paths (e.g. "packages", user -I paths). Probed
         ; by load_package_on_demand when a package isn't already in
@@ -441,7 +453,9 @@ define Planner
             set instantiating_structures: Array[String]^page()
             set instantiating_methods: Array[String]^page()
             set model_functions: Array[KeyValuePair[String, Function]]^page()
+            set model_function_index: FunctionIndex.create#(65536 as size_t, 262144 as size_t)
             set model_operators: Array[KeyValuePair[String, Operator]]^page()
+            set model_operator_index: FunctionIndex.create#(65536 as size_t, 262144 as size_t)
             set search_paths: Array[String]^page()
             set loaded_packages: Array[KeyValuePair[String, Module]]^page()
             set loaded_module_paths: Array[KeyValuePair[String, Module]]^page()
@@ -1090,11 +1104,13 @@ define Planner
         function register_function(this: Planner, f: Function)
         {
             model_functions.add(KeyValuePair[String, Function](f.name, f))
+            model_function_index.insert(f.name, model_functions.length - 1)
         }
 
         function register_operator(this: Planner, o: Operator)
         {
             model_operators.add(KeyValuePair[String, Operator](o.name, o))
+            model_operator_index.insert(o.name, model_operators.length - 1)
         }
 
         ; lookup_functions: return every Function in the registry whose
@@ -1103,16 +1119,13 @@ define Planner
         function lookup_functions#(rp, this: Planner, name: String) returns Vector[Function]
         {
             var matches Array[Function]$()
-            var i: size_t 0
-            while i < model_functions.length
+            var cur model_function_index.lookup_head(name)
+            while cur <> (0 - 1) as i64
             {
-                let kvp_ptr model_functions.get(i)
+                let kvp_ptr model_functions.get(cur as size_t)
                 guard kvp_ptr <> null
-                {
-                    guard kvp_ptr.key.equals(name)
-                        matches.add(kvp_ptr.value)
-                }
-                set i: i + 1
+                    matches.add(kvp_ptr.value)
+                set cur: model_function_index.next_of(cur as size_t)
             }
             Vector[Function]^rp(matches)
         }
@@ -1120,34 +1133,20 @@ define Planner
         function lookup_operators#(rp, this: Planner, name: String) returns Vector[Operator]
         {
             var matches Array[Operator]$()
-            var i: size_t 0
-            while i < model_operators.length
+            var cur model_operator_index.lookup_head(name)
+            while cur <> (0 - 1) as i64
             {
-                let kvp_ptr model_operators.get(i)
+                let kvp_ptr model_operators.get(cur as size_t)
                 guard kvp_ptr <> null
-                {
-                    guard kvp_ptr.key.equals(name)
-                        matches.add(kvp_ptr.value)
-                }
-                set i: i + 1
+                    matches.add(kvp_ptr.value)
+                set cur: model_operator_index.next_of(cur as size_t)
             }
             Vector[Operator]^rp(matches)
         }
 
         function is_function(this: Planner, name: String) returns bool
         {
-            var i: size_t 0
-            while i < model_functions.length
-            {
-                let kvp_ptr model_functions.get(i)
-                guard kvp_ptr <> null
-                {
-                    guard kvp_ptr.key.equals(name)
-                        return true
-                }
-                set i: i + 1
-            }
-            false
+            model_function_index.lookup_head(name) <> (0 - 1) as i64
         }
 
         ; ================================================================
@@ -13248,6 +13247,10 @@ define Planner
                 let planned this.plan_module#(sub)
             }
             guard sub.name.equals("ConceptIndex")
+            {
+                let planned this.plan_module#(sub)
+            }
+            guard sub.name.equals("FunctionIndex")
             {
                 let planned this.plan_module#(sub)
             }

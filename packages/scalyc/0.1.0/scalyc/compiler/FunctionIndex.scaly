@@ -1,0 +1,170 @@
+; FunctionIndex.scaly - O(1) hashed name -> ORDERED list of registry indices
+; for the self-hosted Planner's model_functions / model_operators lookup.
+;
+; lookup_functions / lookup_operators return EVERY registry entry whose name
+; matches, in INSERTION ORDER (overloads — the caller picks by argument-type
+; compatibility). is_function tests membership. All three were O(n) linear
+; scans over the registry on every call resolution -> O(n^2) over a -c scalyc
+; compile (sample-confirmed: lookup_functions hot, String::equals the heaviest
+; leaf). ConceptIndex (single last/first index per name) cannot serve a
+; multi-value ordered lookup, so this is a separate structure.
+;
+; Intrusive chain: an open-addressing slot table maps name -> {head, tail}
+; indices into the registry; a parallel `next` array chains siblings in
+; insertion order (append at tail). lookup walks head -> next -> ... so the
+; emitted sequence is byte-identical to the old linear scan's match order ->
+; identical overload resolution -> identical Plan -> identical IR
+; (fixpoint-safe). Concrete (non-generic), malloc'd, open-addressing — the same
+; s188 RBMM-HashMap-bug avoidance ConceptIndex / scalyls/nameset.scaly use.
+;
+; Indices (not pointers) are stored because the registry Array reallocates as
+; it grows; indices survive reallocation, pointers don't.
+;
+; CONTROL-FLOW NOTE: `guard COND STMT` runs STMT when COND is TRUE (no else).
+
+use scaly.containers.String
+
+; libc allocator. malloc declared locally (fixpoint-safe — touches no scaly
+; source); the tables are leaked at process exit (one set per compile).
+function malloc(size: size_t) returns pointer[void] extern
+
+; Slot count: a power of two so the probe mask is cap-1. Generous for the
+; registry's distinct-name set (low thousands) at a low load factor.
+define FUNCTION_INDEX_CAP int 65536
+
+; Max registry entries the chain can address. Sized like function_name_index;
+; a registry append past this exits LOUDLY rather than corrupting.
+define FUNCTION_ENTRY_CAP int 262144
+
+; One table slot: the registry name (stored by value — the String's data buffer
+; lives on the Planner's page for the whole compile, so the copy stays valid),
+; the head and tail registry indices of the insertion-ordered chain, and a
+; `used` flag.
+define FnSlot
+(
+    name: String
+    head: size_t
+    tail: size_t
+    used: bool
+)
+
+define FunctionIndex
+(
+    slots:     pointer[FnSlot](null)
+    next:      pointer[size_t](null)
+    cap:       size_t(0)
+    entry_cap: size_t(0)
+)
+{
+    ; Allocate + initialise a slot table of `cap` slots and a `next` chain of
+    ; `entry_cap` entries. Exits loudly on malloc failure.
+    function create(cap: size_t, entry_cap: size_t) returns FunctionIndex
+    {
+        let bytes cap * sizeof FnSlot
+        let slots malloc(bytes) as pointer[FnSlot]
+        guard slots = null
+        {
+            scaly_eputs("FunctionIndex: malloc failed\n")
+            exit(14)
+        }
+        var i: size_t 0
+        while i < cap
+        {
+            let s slots + i
+            set s.used: false
+            set s.head: 0 as size_t
+            set s.tail: 0 as size_t
+            set i: i + (1 as size_t)
+        }
+        let nbytes entry_cap * sizeof size_t
+        let next malloc(nbytes) as pointer[size_t]
+        guard next = null
+        {
+            scaly_eputs("FunctionIndex: malloc failed\n")
+            exit(14)
+        }
+        FunctionIndex(slots, next, cap, entry_cap)
+    }
+
+    ; Append `index` to `name`'s insertion-ordered chain. A new name starts a
+    ; one-element chain; an existing name links `index` after the current tail.
+    ; `next[index]` is set to the sentinel (entry_cap) so the chain terminates.
+    procedure insert(this: FunctionIndex, name: String, index: size_t)
+    {
+        guard slots <> null
+        {
+        guard next <> null
+        {
+            guard index >= entry_cap
+            {
+                scaly_eputs("FunctionIndex: entry overflow\n")
+                exit(14)
+            }
+            set *(next + index): entry_cap
+            let h name.hash()
+            let mask cap - (1 as size_t)
+            var idx h & mask
+            var probes: size_t 0
+            while probes < cap
+            {
+                let s slots + idx
+                guard s.used = false
+                {
+                    set s.name: name
+                    set s.head: index
+                    set s.tail: index
+                    set s.used: true
+                    return
+                }
+                guard s.name.equals(name)
+                {
+                    set *(next + s.tail): index
+                    set s.tail: index
+                    return
+                }
+                set idx: (idx + (1 as size_t)) & mask
+                set probes: probes + (1 as size_t)
+            }
+            scaly_eputs("FunctionIndex: table full\n")
+            exit(14)
+        }
+        }
+    }
+
+    ; The head (first-inserted) registry index for `name`, or -1 if absent.
+    function lookup_head(this: FunctionIndex, name: String) returns i64
+    {
+        guard slots <> null
+        {
+            let h name.hash()
+            let mask cap - (1 as size_t)
+            var idx h & mask
+            var probes: size_t 0
+            while probes < cap
+            {
+                let s slots + idx
+                guard s.used = false
+                    return (0 - 1) as i64
+                guard s.name.equals(name)
+                    return s.head as i64
+                set idx: (idx + (1 as size_t)) & mask
+                set probes: probes + (1 as size_t)
+            }
+        }
+        (0 - 1) as i64
+    }
+
+    ; The next sibling registry index after entry `i` in insertion order, or -1
+    ; at the end of the chain (sentinel == entry_cap).
+    function next_of(this: FunctionIndex, i: size_t) returns i64
+    {
+        guard next <> null
+        {
+            let n *(next + i)
+            guard n >= entry_cap
+                return (0 - 1) as i64
+            return n as i64
+        }
+        (0 - 1) as i64
+    }
+}
