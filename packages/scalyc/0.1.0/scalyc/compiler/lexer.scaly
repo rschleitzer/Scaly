@@ -114,7 +114,7 @@ define lexer
             ; Identifier: starts with letter
             guard ((c >= 97) && (c <= 122)) || ((c >= 65) && (c <= 90))  ; a-z, A-Z
             {
-                set token: scan_identifier()
+                set token: scan_identifier#()
                 skip_whitespace(false)
                 return
             }
@@ -122,7 +122,7 @@ define lexer
             ; Number: starts with 1-9
             guard (c >= 49) && (c <= 57)  ; '1'-'9'
             {
-                set token: scan_integer_literal(current, 0)
+                set token: scan_integer_literal#(current, 0)
                 skip_whitespace(false)
                 return
             }
@@ -130,7 +130,7 @@ define lexer
             ; Operators: + - * / = % & | ~ < >
             guard (c = 43) || (c = 45) || (c = 42) || (c = 47) || (c = 61) || (c = 37) || (c = 38) || (c = 124) || (c = 126) || (c = 60) || (c = 62)
             {
-                set token: scan_operator()
+                set token: scan_operator#()
                 skip_whitespace(false)
                 return
             }
@@ -156,7 +156,7 @@ define lexer
             ; Newline
             guard c = 10  ; '\n'
             {
-                set token: scan_line_feed()
+                set token: scan_line_feed#()
                 skip_whitespace(false)
                 return
             }
@@ -173,7 +173,7 @@ define lexer
             ; Numeric literal starting with 0
             guard c = 48  ; '0'
             {
-                set token: scan_numeric_literal()
+                set token: scan_numeric_literal#()
                 skip_whitespace(false)
                 return
             }
@@ -182,7 +182,7 @@ define lexer
             guard c = 64  ; '@'
             {
                 read_character()
-                set token: scan_attribute()
+                set token: scan_attribute#()
                 skip_whitespace(false)
                 return
             }
@@ -190,7 +190,7 @@ define lexer
             ; String literal
             guard c = 34  ; '"'
             {
-                set token: scan_string_literal()
+                set token: scan_string_literal#()
                 skip_whitespace(false)
                 return
             }
@@ -198,7 +198,7 @@ define lexer
             ; String identifier (freeform identifier)
             guard c = 39  ; '\''
             {
-                set token: scan_string_identifier()
+                set token: scan_string_identifier#()
                 skip_whitespace(false)
                 return
             }
@@ -206,7 +206,7 @@ define lexer
             ; Fragment literal
             guard c = 96  ; '`'
             {
-                set token: scan_fragment_literal()
+                set token: scan_fragment_literal#()
                 skip_whitespace(false)
                 return
             }
@@ -499,19 +499,19 @@ define lexer
             let c *current
 
             guard (c >= 48) && (c <= 57)  ; '0'-'9'
-                return scan_integer_literal(start, length)
+                return scan_integer_literal#(start, length)
 
             guard c = 46  ; '.'
-                return scan_fraction(start, length)
+                return scan_fraction#(start, length)
 
             guard (c = 69) || (c = 101)  ; 'E' or 'e'
-                return scan_exponent(start, length)
+                return scan_exponent#(start, length)
 
             guard c = 120  ; 'x'
-                return scan_hex_literal(start, length)
+                return scan_hex_literal#(start, length)
 
             guard c = 66  ; 'B'
-                return scan_boolean_literal()
+                return scan_boolean_literal#()
 
             return Token.Literal(LiteralToken(Literal.Integer(IntegerLiteral(String^this(start, length)))))
         }
@@ -534,10 +534,10 @@ define lexer
                     continue
 
                 guard c = 46  ; '.'
-                    return scan_fraction(start, length)
+                    return scan_fraction#(start, length)
 
                 guard (c = 69) || (c = 101)  ; 'E' or 'e'
-                    return scan_exponent(start, length)
+                    return scan_exponent#(start, length)
 
                 return Token.Literal(LiteralToken(Literal.Integer(IntegerLiteral(String^this(start, length)))))
             }
@@ -561,7 +561,7 @@ define lexer
                     continue
 
                 guard (c = 69) || (c = 101)  ; 'E' or 'e'
-                    return scan_exponent(start, length)
+                    return scan_exponent#(start, length)
 
                 return Token.Literal(LiteralToken(Literal.FloatingPoint(FloatingPointLiteral(String^this(start, length)))))
             }

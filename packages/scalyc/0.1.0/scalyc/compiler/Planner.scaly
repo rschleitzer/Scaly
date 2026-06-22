@@ -424,7 +424,7 @@ define Planner
             set constraints: Array[TypeConstraint]^page()
             set solution: Array[KeyValuePair[size_t, PlannedType]]^page()
             set concepts: Array[KeyValuePair[String, Concept]]^page()
-            set concept_index: ConceptIndex.create(65536 as size_t)
+            set concept_index: ConceptIndex.create#(65536 as size_t)
             set instantiated_structures: Array[PlannedStructure]^page()
             set instantiated_unions: Array[scalyc.compiler.Plan.PlannedUnion]^page()
             set instantiated_functions: Array[PlannedFunction]^page()
@@ -5337,6 +5337,28 @@ define Planner
                             }
                             else
                                 0
+                        ; Design-B "default-to-local" flip (NARROWED): an
+                        ; un-sigiled heap-returning call defaults to the caller's
+                        ; rp, which makes its result outlive the call
+                        ; automatically (the inverse of Ralf's intent that rp be
+                        ; used only DELIBERATELY via #/^rp). Flip the default to
+                        ; THIS function's local page so transient scratch is
+                        ; reclaimed at exit; the escape checker then forces a #
+                        ; wherever the result actually escapes. ONLY for calls
+                        ; whose result genuinely owns guts on the passed page
+                        ; (result_owns_page_guts) — borrows/handles (pointer/ref,
+                        ; ref[T]?, LLVM* wrappers) point elsewhere, so stamping
+                        ; them Local is a false escape (the coarse
+                        ; call_requires_page gate alone over-stamps them).
+                        guard call_requires_page
+                        {
+                            choose call_life
+                                when u: Unspecified
+                                    guard Planner.result_owns_page_guts(rt)
+                                        set call_life: Lifetime.Local(scalyc.compiler.Model.Local(Span(0, 0)))
+                                else
+                                    0
+                        }
                         ; Design-B step 1 (mirror of stage-0 stampValueResultLifetime):
                         ; a value-returning init# method (requires_page_param)
                         ; produces a value whose internal pointers live on the
@@ -10891,6 +10913,45 @@ define Planner
             false
         }
 
+        ; True when a call's RESULT genuinely owns heap guts allocated on the
+        ; passed page — i.e. the only return shape the default-to-local flip
+        ; should stamp Local. Borrows/handles are EXCLUDED: pointer[T]/ref[T]
+        ; (and ref[T]?/pointer[T]? under NPO, which resolve to name "ref"/
+        ; "pointer") point into memory the callee already owns elsewhere, and
+        ; extern LLVM-C wrapper structs (LLVMValueRef/TypeRef/MetadataRef/...)
+        ; wrap LLVM-context-owned memory, not a Scaly page. Stamping any of
+        ; these Local is a false escape (the flip's coarse `call_requires_page`
+        ; gate fired on every class/union/wrapper return).
+        function result_owns_page_guts(t: PlannedType) returns bool
+        {
+            guard Planner.is_reference_like(t)
+                return false
+            guard t.name.starts_with("LLVM")
+                return false
+            ; ref[T]?/pointer[T]? are modeled as Option[ref[T]]/Option[pointer[T]]
+            ; (Modeler.handle_type# wraps an optional in Option[..]); under NPO
+            ; that is a nullable borrow — exclude when the Option's inner is
+            ; reference-like. Option[value] (e.g. String?) DOES own guts -> keep.
+            guard t.name.equals("Option")
+            {
+                guard t.generics <> null
+                {
+                    let gens (*t.generics)
+                    guard gens.length > (0 as size_t)
+                    {
+                        let inner_ptr gens.get(0)
+                        guard inner_ptr <> null
+                        {
+                            let inner (*inner_ptr)
+                            guard Planner.is_reference_like(inner)
+                                return false
+                        }
+                    }
+                }
+            }
+            true
+        }
+
         ; Index of a parameter named `name` in the CURRENT function's Input
         ; (re-fetched via escape_fn_index), or -1. Excludes the page param
         ; (which is not part of the arg<->param mapping), matching the C++
@@ -12795,7 +12856,7 @@ define Planner
             ; Module-level mutable globals (stack_head etc.) keep their bare
             ; name as the LLVM symbol, matching stage-0 (@stack_head). Const
             ; defines stay Itanium-length-prefixed via encode_name (s189).
-            var mangled Planner.encode_name(name)
+            var mangled Planner.encode_name#(name)
             guard g.is_mutable
                 set mangled: String^rp(name)
             let result PlannedGlobal(
