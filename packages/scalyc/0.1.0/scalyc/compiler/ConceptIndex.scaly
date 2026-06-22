@@ -107,6 +107,38 @@ define ConceptIndex (slots: pointer[ConceptSlot](null), cap: size_t(0))
         }
     }
 
+    ; Insert the index for `name` ONLY IF the key is absent (FIRST-write-wins).
+    ; Used by the Emitter caches, whose linear scans return the FIRST matching
+    ; entry (unlike the Planner's last-write-wins concept registry). A full
+    ; table exits loudly.
+    procedure insert_if_absent(this: ConceptIndex, name: String, index: size_t)
+    {
+        guard slots <> null
+        {
+            let h name.hash()
+            let mask cap - (1 as size_t)
+            var idx h & mask
+            var probes: size_t 0
+            while probes < cap
+            {
+                let s slots + idx
+                guard s.used = false
+                {
+                    set s.name: name
+                    set s.index: index
+                    set s.used: true
+                    return
+                }
+                guard s.name.equals(name)
+                    return
+                set idx: (idx + (1 as size_t)) & mask
+                set probes: probes + (1 as size_t)
+            }
+            scaly_eputs("ConceptIndex: table full\n")
+            exit(14)
+        }
+    }
+
     ; The registry index for `name`, or -1 if absent.
     function lookup(this: ConceptIndex, name: String) returns i64
     {

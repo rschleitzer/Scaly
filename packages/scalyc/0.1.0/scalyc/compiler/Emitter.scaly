@@ -201,6 +201,7 @@ use scaly.scalyc.parser.Parser
 use scaly.scalyc.parser.ParserError
 use scalyc.compiler.Modeler
 use scaly.compiler.Planner.Planner
+use scalyc.compiler.ConceptIndex.ConceptIndex
 
 define Emitter
 {
@@ -355,6 +356,18 @@ define Emitter
     ; Function cache: mangled name -> LLVM function
     function_cache_names: ref[Array[String]]?
     function_cache_funcs: ref[Array[LLVMValueRef]]?
+    ; O(1) name -> cache-array-index maps shadowing the three hot caches
+    ; above. The caches' linear scans were ~87% of self-compile time (the
+    ; time analog of the Planner's lookup_concept, fixed by ConceptIndex).
+    ; FIRST-write-wins (insert_if_absent) + only registered for NON-NULL
+    ; entries, so the mapped index always names the FIRST non-null entry —
+    ; reproducing the linear scan's "first non-null match" exactly. Stores
+    ; indices, not pointers (the arrays reallocate). Fixed generous caps
+    ; (measured scalyc self-compile: func <=32K, type 8-32K, struct <=8K);
+    ; exit(14) on overflow is a loud backstop for larger programs.
+    type_index: ConceptIndex
+    struct_index: ConceptIndex
+    function_index: ConceptIndex
     ; s180: throws Result-wrapper cache: callee mangled name -> wrapper
     ; type. Keyed per callee so emit_function_decl and emit_call always
     ; build the IDENTICAL wrapper even when their value_ty provenance
@@ -446,6 +459,9 @@ define Emitter
         set di_type_cache_types: Array[LLVMMetadataRef]^page()
         set function_cache_names: Array[String]^page()
         set function_cache_funcs: Array[LLVMValueRef]^page()
+        set type_index: ConceptIndex.create#(131072 as size_t)
+        set struct_index: ConceptIndex.create#(131072 as size_t)
+        set function_index: ConceptIndex.create#(262144 as size_t)
         set throws_result_names: Array[String]^page()
         set throws_result_types: Array[LLVMTypeRef]^page()
         set intrinsic_type_names: Array[String]^page()
@@ -1075,25 +1091,23 @@ define Emitter
 
     function lookup_type_cache(this, name: String) returns LLVMTypeRef
     {
-        var i 0
-        for n in type_cache_names
+        let ir type_index.lookup(name)
+        guard ir >= 0
         {
-            guard n.equals(name)
-            {
-                let t type_cache_types.get(i)
-                guard t <> null
-                    return t
-
-            }
-            set i: i + 1
+            let t type_cache_types.get(ir as size_t)
+            guard t <> null
+                return t
         }
         LLVMTypeRef(null)
     }
 
     procedure cache_type(this, name: String, llvm_type: LLVMTypeRef)
     {
+        let entry_idx type_cache_names.length
         type_cache_names.add(name)
         type_cache_types.add(llvm_type)
+        guard llvm_type.handle <> null
+            type_index.insert_if_absent(name, entry_idx)
     }
 
     ; ========================================================================
@@ -1102,25 +1116,23 @@ define Emitter
 
     function lookup_struct_cache(this, name: String) returns LLVMTypeRef
     {
-        var i 0
-        for n in struct_cache_names
+        let ir struct_index.lookup(name)
+        guard ir >= 0
         {
-            guard n.equals(name)
-            {
-                let t struct_cache_types.get(i)
-                guard t <> null
-                    return t
-
-            }
-            set i: i + 1
+            let t struct_cache_types.get(ir as size_t)
+            guard t <> null
+                return t
         }
         LLVMTypeRef(null)
     }
 
     procedure cache_struct(this, name: String, llvm_type: LLVMTypeRef)
     {
+        let entry_idx struct_cache_names.length
         struct_cache_names.add(name)
         struct_cache_types.add(llvm_type)
+        guard llvm_type.handle <> null
+            struct_index.insert_if_absent(name, entry_idx)
     }
 
     ; s138: Hoist alloca into the current function's entry block, mirroring
@@ -1754,25 +1766,23 @@ define Emitter
 
     function lookup_function_cache(this, mangled_name: String) returns LLVMValueRef
     {
-        var i 0
-        for n in function_cache_names
+        let ir function_index.lookup(mangled_name)
+        guard ir >= 0
         {
-            guard n.equals(mangled_name)
-            {
-                let f function_cache_funcs.get(i)
-                guard f <> null
-                    return f
-
-            }
-            set i: i + 1
+            let f function_cache_funcs.get(ir as size_t)
+            guard f <> null
+                return f
         }
         LLVMValueRef(null)
     }
 
     procedure cache_function(this, mangled_name: String, llvm_func: LLVMValueRef)
     {
+        let entry_idx function_cache_names.length
         function_cache_names.add(mangled_name)
         function_cache_funcs.add(llvm_func)
+        guard llvm_func.handle <> null
+            function_index.insert_if_absent(mangled_name, entry_idx)
     }
 
     ; ========================================================================
