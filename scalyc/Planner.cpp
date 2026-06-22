@@ -55,6 +55,34 @@ static void stampValueResultLifetime(PlannedType &RT, const Lifetime &L) {
     RT.Life = L;
 }
 
+// Design-B default-to-local flip (mirror of Planner.scaly::result_owns_page_guts):
+// only a call whose RESULT genuinely owns heap guts on the passed page should be
+// defaulted to the local page. Borrows/handles are excluded — pointer[T]/ref[T]
+// (and ref[T]?/pointer[T]? = Option[ref/pointer]) point into memory the callee
+// already owns elsewhere, and extern LLVM-C wrapper structs (LLVMValueRef/TypeRef/
+// MetadataRef/...) wrap LLVM-context-owned memory, not a Scaly page.
+static bool resultOwnsPageGuts(const PlannedType &T) {
+    if (T.Name == "pointer" || T.Name == "ref") return false;
+    if (T.Name.rfind("LLVM", 0) == 0) return false;  // starts_with("LLVM")
+    if (T.Name == "Option" && !T.Generics.empty()) {
+        const std::string &In = T.Generics[0].Name;
+        if (In == "pointer" || In == "ref") return false;
+    }
+    return true;
+}
+
+// Design-B "default-to-local" flip (mirror of the Planner.scaly collapse_operand_
+// sequence# stamp): an un-sigiled (Unspecified) call to a page-requiring callee
+// whose result owns page guts defaults to THIS function's local page instead of
+// the caller's rp, so transient scratch is reclaimed at exit; the escape checker
+// then forces a # where the result escapes. Returns the (possibly flipped)
+// call-site lifetime. Call only at page-requiring call sites.
+static Lifetime defaultCallLifeToLocal(const Lifetime &L, const PlannedType &RT) {
+    if (std::holds_alternative<UnspecifiedLifetime>(L) && resultOwnsPageGuts(RT))
+        return LocalLifetime{Span{0, 0}};
+    return L;
+}
+
 // ============================================================================
 // Helper: Decode UTF-8 string to single Unicode code point
 // Returns the code point, or -1 if invalid (empty, multiple code points, or malformed)
@@ -2492,8 +2520,11 @@ llvm::Expected<Planner::MethodCallResult> Planner::processChainedMethodCalls(
                     ChainedCall.CanThrow = ChainedMethodMatch->CanThrow;
                     ChainedCall.ThrowsType = ChainedMethodMatch->ThrowsType;
                     ChainedCall.ResultType = ChainedMethodMatch->ReturnType;
+                    Lifetime ChainLifeEff = ChainedMethodMatch->RequiresPageParam
+                        ? defaultCallLifeToLocal(ChainLifetime, ChainedCall.ResultType)
+                        : ChainLifetime;
                     if (ChainedMethodMatch->RequiresPageParam)
-                        stampValueResultLifetime(ChainedCall.ResultType, ChainLifetime);
+                        stampValueResultLifetime(ChainedCall.ResultType, ChainLifeEff);
 
                     ChainedCall.Args = std::make_shared<std::vector<PlannedOperand>>();
 
@@ -2504,9 +2535,9 @@ llvm::Expected<Planner::MethodCallResult> Planner::processChainedMethodCalls(
                     // Life, so just set the flag and record local-allocation.
                     if (ChainedMethodMatch->RequiresPageParam) {
                         ChainedCall.RequiresPageParam = true;
-                        ChainedCall.Life = ChainLifetime;
+                        ChainedCall.Life = ChainLifeEff;
 
-                        if (auto* RefLife = std::get_if<ReferenceLifetime>(&ChainLifetime)) {
+                        if (auto* RefLife = std::get_if<ReferenceLifetime>(&ChainLifeEff)) {
                             if (RefLife->Location == "this") {
                                 auto PageGetResult = generatePageGetThis(RefLife->Loc);
                                 if (!PageGetResult) {
@@ -2551,7 +2582,7 @@ llvm::Expected<Planner::MethodCallResult> Planner::processChainedMethodCalls(
                     Result.CallOp.Loc = ChainedArgsOp.Loc;
                     Result.CallOp.ResultType = ChainedMethodMatch->ReturnType;
                     if (ChainedMethodMatch->RequiresPageParam)
-                        stampValueResultLifetime(Result.CallOp.ResultType, ChainLifetime);
+                        stampValueResultLifetime(Result.CallOp.ResultType, ChainLifeEff);
                     Result.CallOp.Expr = std::move(ChainedCall);
 
                     // Advance past the lifetime marker (if any) and the args
@@ -7503,12 +7534,15 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                             // Handle function# page parameter for method calls
                             // Use MethodLifetime if we detected a lifetime marker between method and args
                             const Lifetime& CallLifeRef = HasLifetimeThenArgs ? MethodLifetime : TypeExpr->Life;
+                            Lifetime CallLifeEff = MethodMatch->RequiresPageParam
+                                ? defaultCallLifeToLocal(CallLifeRef, Call.ResultType)
+                                : CallLifeRef;
                             if (MethodMatch->RequiresPageParam) {
                                 Call.RequiresPageParam = true;
-                                Call.Life = CallLifeRef;
-                                stampValueResultLifetime(Call.ResultType, CallLifeRef);
+                                Call.Life = CallLifeEff;
+                                stampValueResultLifetime(Call.ResultType, CallLifeEff);
 
-                                if (auto* RefLife = std::get_if<ReferenceLifetime>(&CallLifeRef)) {
+                                if (auto* RefLife = std::get_if<ReferenceLifetime>(&CallLifeEff)) {
                                     // ^name - pass explicit page as first argument
                                     // Special case: ^this generates Page.get(this)
                                     if (RefLife->Location == "this") {
@@ -7543,8 +7577,8 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                                 // For # lifetime, Emitter uses ReturnPage (rp)
                                 // For $ lifetime, Emitter uses LocalPage
                                 // Both need LocalPage as fallback if ReturnPage is not available
-                                else if (std::holds_alternative<LocalLifetime>(CallLifeRef) ||
-                                         std::holds_alternative<CallLifetime>(CallLifeRef)) {
+                                else if (std::holds_alternative<LocalLifetime>(CallLifeEff) ||
+                                         std::holds_alternative<CallLifetime>(CallLifeEff)) {
                                     // Track that we need local page allocation
                                     CurrentFunctionUsesLocalLifetime = true;
                                     if (!ScopeInfoStack.empty()) {
@@ -7611,7 +7645,7 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                             CallOp.Expr = std::move(Call);
                             CallOp.ResultType = MethodMatch->ReturnType;
                             if (MethodMatch->RequiresPageParam)
-                                stampValueResultLifetime(CallOp.ResultType, CallLifeRef);
+                                stampValueResultLifetime(CallOp.ResultType, CallLifeEff);
 
                             // Handle chained method calls: expr.method1().method2().method3()
                             // Start from ArgsIndex (which accounts for optional lifetime operand)
@@ -8103,12 +8137,15 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                     // Handle function# page parameter for method calls
                     // Use MethodAccessLifetime if we detected a lifetime marker between method and args
                     const Lifetime& MethodCallLifeRef = HasLifetimeThenArgsMemberAccess ? MethodAccessLifetime : MethodType.Life;
+                    Lifetime MethodCallLifeEff = MethodMatch->RequiresPageParam
+                        ? defaultCallLifeToLocal(MethodCallLifeRef, Call.ResultType)
+                        : MethodCallLifeRef;
                     if (MethodMatch->RequiresPageParam) {
                         Call.RequiresPageParam = true;
-                        Call.Life = MethodCallLifeRef;
-                        stampValueResultLifetime(Call.ResultType, MethodCallLifeRef);
+                        Call.Life = MethodCallLifeEff;
+                        stampValueResultLifetime(Call.ResultType, MethodCallLifeEff);
 
-                        if (auto* RefLife = std::get_if<ReferenceLifetime>(&MethodCallLifeRef)) {
+                        if (auto* RefLife = std::get_if<ReferenceLifetime>(&MethodCallLifeEff)) {
                             // ^name - pass explicit page as first argument
                             // Special case: ^this generates Page.get(this)
                             if (RefLife->Location == "this") {
@@ -8142,8 +8179,8 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                         // For # lifetime, Emitter uses ReturnPage (rp)
                         // For $ lifetime, Emitter uses LocalPage
                         // Both need LocalPage as fallback if ReturnPage is not available
-                        else if (std::holds_alternative<LocalLifetime>(MethodCallLifeRef) ||
-                                 std::holds_alternative<CallLifetime>(MethodCallLifeRef)) {
+                        else if (std::holds_alternative<LocalLifetime>(MethodCallLifeEff) ||
+                                 std::holds_alternative<CallLifetime>(MethodCallLifeEff)) {
                             // Track that we need local page allocation
                             CurrentFunctionUsesLocalLifetime = true;
                             if (!ScopeInfoStack.empty()) {
@@ -8208,7 +8245,7 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                     CallOp.Expr = std::move(Call);
                     CallOp.ResultType = MethodMatch->ReturnType;
                     if (MethodMatch->RequiresPageParam)
-                        stampValueResultLifetime(CallOp.ResultType, MethodCallLifeRef);
+                        stampValueResultLifetime(CallOp.ResultType, MethodCallLifeEff);
 
                     // Handle chained method calls: expr.method1().method2().method3()
                     // Start from MethodArgsIndex (which accounts for optional lifetime operand)
@@ -9896,9 +9933,11 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                         if (MatchedFunc && (MatchedFunc->PageParameter || needsImplicitReturnPage(*MatchedFunc))) {
                             // Function requires a page parameter - check call site lifetime
                             Call.RequiresPageParam = true;
-                            Call.Life = FuncCallLifetime;
+                            Lifetime FuncCallLifeEff = defaultCallLifeToLocal(FuncCallLifetime, Call.ResultType);
+                            Call.Life = FuncCallLifeEff;
+                            stampValueResultLifetime(Call.ResultType, FuncCallLifeEff);
 
-                            if (auto* RefLife = std::get_if<ReferenceLifetime>(&FuncCallLifetime)) {
+                            if (auto* RefLife = std::get_if<ReferenceLifetime>(&FuncCallLifeEff)) {
                                 // ^name - pass explicit page as first argument
                                 // Special case: ^this generates Page.get(this)
                                 if (RefLife->Location == "this") {
@@ -9933,8 +9972,8 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
                             // For # lifetime, Emitter uses ReturnPage (rp)
                             // For $ lifetime, Emitter uses LocalPage
                             // Both need LocalPage as fallback if ReturnPage is not available
-                            else if (std::holds_alternative<LocalLifetime>(FuncCallLifetime) ||
-                                     std::holds_alternative<CallLifetime>(FuncCallLifetime)) {
+                            else if (std::holds_alternative<LocalLifetime>(FuncCallLifeEff) ||
+                                     std::holds_alternative<CallLifetime>(FuncCallLifeEff)) {
                                 // Track that we need local page allocation
                                 CurrentFunctionUsesLocalLifetime = true;
                                 if (!ScopeInfoStack.empty()) {
