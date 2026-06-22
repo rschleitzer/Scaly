@@ -2585,7 +2585,8 @@ define Planner
                 &args_holder,
                 result_type,
                 Lifetime.Unspecified(Unspecified()),
-                null
+                null,
+                false
             )
         }
 
@@ -2672,6 +2673,94 @@ define Planner
                     }
                 }
                 return (*only_ptr)
+            }
+
+            ; Indirect call through a function pointer (Phase-1 JIT): `f()`
+            ; where f is a local binding of type pointer[void] and `()` is
+            ; empty. The self-hosted JIT (cli --run) invokes an ORC-resolved
+            ; address this way. No existing construct calls a pointer[void]
+            ; local (it would be a hard "function not found"), so this can't
+            ; shadow real code. Returns i64. Mirrors stage-0's planOperands
+            ; indirect-call intercept (Planner.cpp).
+            guard ops.length = 2
+            {
+                let ic_head_ptr ops.get(0)
+                let ic_tail_ptr ops.get(1)
+                guard ic_head_ptr <> null
+                {
+                    guard ic_tail_ptr <> null
+                    {
+                        let ic_head (*ic_head_ptr)
+                        let ic_tail (*ic_tail_ptr)
+                        var ic_is_empty_tuple: bool false
+                        choose ic_tail.expr
+                            when t: PlannedTuple
+                            {
+                                guard t.components = null
+                                    set ic_is_empty_tuple: true
+                                guard t.components <> null
+                                {
+                                    guard (*t.components).length = 0
+                                        set ic_is_empty_tuple: true
+                                }
+                            }
+                            else
+                                0
+                        var ic_is_void_ptr: bool false
+                        choose ic_head.expr
+                            when v: Variable
+                            {
+                                let vt v.variable_type
+                                guard vt.name.equals(String$("pointer"))
+                                {
+                                    guard vt.generics <> null
+                                    {
+                                        guard (*vt.generics).length = 1
+                                        {
+                                            let g0_ptr (*vt.generics).get(0)
+                                            guard g0_ptr <> null
+                                            {
+                                                guard (*g0_ptr).name.equals(String$("void"))
+                                                    set ic_is_void_ptr: true
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            else
+                                0
+                        guard ic_is_empty_tuple
+                        {
+                            guard ic_is_void_ptr
+                            {
+                                let i64_ty Planner.make_i64_type#()
+                                var ic_args Vector[PlannedOperand]^rp(1)
+                                ic_args.put(0, ic_head)
+                                var ic_args_holder Vector[PlannedOperand]^rp(ic_args)
+                                let ic_call PlannedCall(
+                                    ic_head.loc,
+                                    String^rp("__jit_indirect"),
+                                    String^rp(""),
+                                    false,
+                                    false,
+                                    false,
+                                    false,
+                                    &ic_args_holder,
+                                    i64_ty,
+                                    Lifetime.Unspecified(Unspecified()),
+                                    null,
+                                    true
+                                )
+                                return PlannedOperand(
+                                    ic_head.loc,
+                                    PlannedExpression.Call(ic_call),
+                                    null,
+                                    i64_ty
+                                )
+                            }
+                        }
+                    }
+                }
             }
 
             ; s107: pre-pass — combine `Type + Matrix` into a generic
@@ -3466,7 +3555,8 @@ define Planner
                             &args_holder_p,
                             rt,
                             Lifetime.Unspecified(Unspecified()),
-                            null
+                            null,
+                            false
                         )
                         let prefix_op PlannedOperand(
                             result.loc,
@@ -3833,7 +3923,8 @@ define Planner
                                         &ctor_args_vec,
                                         ctor_struct_type,
                                         ctor_struct_type.life,
-                                        null
+                                        null,
+                                        false
                                     )
                                     set result: this.rebind_trailing_chain#(PlannedOperand(
                                         second.loc,
@@ -5385,7 +5476,8 @@ define Planner
                             &call_args_holder,
                             rt,
                             call_life,
-                            call_throws_ty
+                            call_throws_ty,
+                            false
                         )
                         set result: PlannedOperand(
                             result.loc,
@@ -6161,7 +6253,8 @@ define Planner
                         &two_args_holder,
                         combined_type,
                         Lifetime.Unspecified(Unspecified()),
-                        null
+                        null,
+                        false
                     )
                     set result: PlannedOperand(
                         result.loc,
@@ -15427,6 +15520,9 @@ define Planner
 
     function make_int_type#(rp) returns PlannedType
         Planner.make_primitive_type#("int", "i")
+
+    function make_i64_type#(rp) returns PlannedType
+        Planner.make_primitive_type#("i64", "x")
 
     function make_char_type#(rp) returns PlannedType
         Planner.make_primitive_type#("char", "c")

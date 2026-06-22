@@ -197,6 +197,28 @@ use scaly.compiler.LLVM.LLVMIsAICmpInst
 use scaly.compiler.LLVM.LLVMIsAGetElementPtrInst
 use scaly.compiler.LLVM.LLVMBuildMemCpy
 use scaly.compiler.LLVM.LLVMGetLastInstruction
+; ORC LLJIT — self-hosted `--run` (in-process JIT) support.
+use scaly.compiler.LLVM.LLVMOrcLLJITRef
+use scaly.compiler.LLVM.LLVMOrcLLJITBuilderRef
+use scaly.compiler.LLVM.LLVMOrcJITDylibRef
+use scaly.compiler.LLVM.LLVMOrcThreadSafeContextRef
+use scaly.compiler.LLVM.LLVMOrcThreadSafeModuleRef
+use scaly.compiler.LLVM.LLVMOrcDefinitionGeneratorRef
+use scaly.compiler.LLVM.LLVMErrorRef
+use scaly.compiler.LLVM.LLVMOrcCreateNewThreadSafeContext
+use scaly.compiler.LLVM.LLVMOrcThreadSafeContextGetContext
+use scaly.compiler.LLVM.LLVMOrcCreateNewThreadSafeModule
+use scaly.compiler.LLVM.LLVMOrcCreateLLJIT
+use scaly.compiler.LLVM.LLVMOrcLLJITGetMainJITDylib
+use scaly.compiler.LLVM.LLVMOrcLLJITGetGlobalPrefix
+use scaly.compiler.LLVM.LLVMOrcCreateDynamicLibrarySearchGeneratorForProcess
+use scaly.compiler.LLVM.LLVMOrcJITDylibAddGenerator
+use scaly.compiler.LLVM.LLVMOrcLLJITAddLLVMIRModule
+use scaly.compiler.LLVM.LLVMOrcLLJITLookup
+use scaly.compiler.LLVM.LLVMGetErrorMessage
+use scaly.compiler.LLVM.LLVMConsumeError
+use scaly.compiler.LLVM.LLVMDisposeErrorMessage
+use scaly.io.Console
 use scaly.scalyc.parser.Parser
 use scaly.scalyc.parser.ParserError
 use scalyc.compiler.Modeler
@@ -328,6 +350,13 @@ define Emitter
     config: EmitterConfig
     ; LLVM handles
     context: LLVMContextRef
+    ; JIT mode: when has_external_context is true, initialize() adopts
+    ; external_context (the LLVMContext owned by an ORC ThreadSafeContext)
+    ; instead of creating its own, so the emitted module can be wrapped into a
+    ; ThreadSafeModule without crashing addIRModule. Off for the normal
+    ; -S/-c/-o path (byte-identical emission preserved).
+    external_context: LLVMContextRef
+    has_external_context: bool
     llvm_module: LLVMModuleRef
     builder: LLVMBuilderRef
     ; Debug info (DWARF) — populated only when config.emit_debug_info.
@@ -449,6 +478,8 @@ define Emitter
     {
         set config: cfg
         set context: LLVMContextRef(null)
+        set external_context: LLVMContextRef(null)
+        set has_external_context: false
         set llvm_module: LLVMModuleRef(null)
         set builder: LLVMBuilderRef(null)
         set di_builder: LLVMDIBuilderRef(null)
@@ -506,8 +537,11 @@ define Emitter
     ; Initialize the emitter (create LLVM context, builder, etc.)
     procedure initialize(this, module_name: String)
     {
-        ; Create LLVM context
-        set context: LLVMContextCreate()
+        ; Create LLVM context (or adopt the JIT ThreadSafeContext's context).
+        if has_external_context
+            set context: external_context
+        else
+            set context: LLVMContextCreate()
 
         ; Create module. Use to_c_string#, not c_data — the latter
         ; returns a pointer into the String's varint-prefixed buffer
@@ -4073,6 +4107,172 @@ define Emitter
     }
 
     ; ========================================================================
+    ; ORC LLJIT (in-process JIT) — self-hosted `--run` mode
+    ; ========================================================================
+
+    ; JIT-only: stub every declared-only Scaly-mangled (_Z...) function with a
+    ; trivial return. Functions from loaded modules reference stdlib symbols
+    ; the JIT module doesn't fully define; these stubs prevent JIT link
+    ; failures for functions declared but never reached at runtime. C functions
+    ; (libc / LLVM-C) keep their declarations — the process symbol generator
+    ; resolves them from the host. Mirrors stage-0 jitExecuteIntFunction's stub
+    ; pass (Emitter.cpp). Only _Z names (s17 lesson: never stub LLVM*/libc).
+    procedure emit_jit_stubs(this)
+    {
+        var func LLVMGetFirstFunction(llvm_module)
+        while func.handle <> null
+        {
+            guard LLVMIsDeclaration(func) <> 0
+            {
+                var name_len: size_t 0
+                let name_ptr LLVMGetValueName2(func, &name_len)
+                guard name_ptr <> null
+                {
+                    guard name_len > 2
+                    {
+                        var is_scaly_mangled: bool false
+                        guard (*(name_ptr + 0)) = 95
+                        {
+                            guard (*(name_ptr + 1)) = 90
+                                set is_scaly_mangled: true
+                        }
+                        guard is_scaly_mangled
+                        {
+                            let saved_block LLVMGetInsertBlock(builder)
+                            let block LLVMAppendBasicBlockInContext(context, func, "jitstub")
+                            LLVMPositionBuilderAtEnd(builder, block)
+                            let func_ty LLVMGlobalGetValueType(func)
+                            let ret_ty LLVMGetReturnType(func_ty)
+                            guard LLVMGetTypeKind(ret_ty) = LLVMTypeKind.Void()
+                                LLVMBuildRetVoid(builder)
+                            guard LLVMGetTypeKind(ret_ty) <> LLVMTypeKind.Void()
+                            {
+                                let zero LLVMConstNull(ret_ty)
+                                LLVMBuildRet(builder, zero)
+                            }
+                            guard saved_block.handle <> null
+                                LLVMPositionBuilderAtEnd(builder, saved_block)
+                        }
+                    }
+                }
+            }
+            set func: LLVMGetNextFunction(func)
+        }
+    }
+
+    ; Print an ORC/LLVM error (a non-null LLVMErrorRef) and consume it.
+    ; LLVMGetErrorMessage itself consumes the error and yields a C string the
+    ; caller must dispose; do NOT also call LLVMConsumeError.
+    procedure report_jit_error(this, err: LLVMErrorRef, ctx: pointer[const_char])
+    {
+        Console.println(ctx)
+        let msg LLVMGetErrorMessage(err)
+        guard msg <> null
+        {
+            Console.println(msg as pointer[const_char])
+            LLVMDisposeErrorMessage(msg)
+        }
+    }
+
+    ; Build the module in the ORC ThreadSafeContext's context, then JIT-execute
+    ; the named function and return its i64 result. The whole pipeline (TSC →
+    ; emit → LLJIT → lookup → indirect call) lives here so cli just hands off
+    ; the plan + target. Returns 127 on any JIT setup failure.
+    ;
+    ; tsc is created and used entirely within this one function: a
+    ; ThreadSafeContext handle passed across a function boundary would hit
+    ; the s34 single-ptr-struct param ABI bug (the callee binds the param to
+    ; the caller's stack slot, not the handle), giving the ThreadSafeModule a
+    ; garbage context whose recursive_mutex traps EINVAL in addIRModule.
+    function jit_run(this, plan: Plan, module_name: String, fn_mangled: String) returns i64
+    {
+        let tsc LLVMOrcCreateNewThreadSafeContext()
+        let jit_ctx LLVMOrcThreadSafeContextGetContext(tsc)
+        set external_context: jit_ctx
+        set has_external_context: true
+
+        let ok emit(plan, module_name)
+        guard ok = false
+        {
+            Console.println("JIT: emission failed")
+            return 127
+        }
+
+        ; The JIT needs the host target backend registered (detectHost + codegen).
+        ; The -c/-o path inits these in write_object_to_file, which --run bypasses;
+        ; the per-target initializers are idempotent. Same set as that path.
+        LLVMInitializeAArch64TargetInfo()
+        LLVMInitializeAArch64Target()
+        LLVMInitializeAArch64TargetMC()
+        LLVMInitializeAArch64AsmPrinter()
+        LLVMInitializeX86TargetInfo()
+        LLVMInitializeX86Target()
+        LLVMInitializeX86TargetMC()
+        LLVMInitializeX86AsmPrinter()
+
+        ; Stub declared-only Scaly symbols so JIT linking can't fail on them.
+        emit_jit_stubs()
+
+        let valid verify_module()
+        guard valid = false
+        {
+            Console.println("JIT: module verification failed")
+            return 127
+        }
+
+        ; Wrap the module into a ThreadSafeModule (consumes the module).
+        ; Bind the field to a local first: an implicit-this field as a
+        ; multi-arg call argument is unresolvable here (s185 pattern).
+        let jit_module llvm_module
+        let tsm LLVMOrcCreateNewThreadSafeModule(jit_module, tsc)
+
+        ; Create the LLJIT (default builder = host target machine).
+        var jit LLVMOrcLLJITRef(null)
+        let create_err LLVMOrcCreateLLJIT(&jit, LLVMOrcLLJITBuilderRef(null))
+        guard create_err.handle <> null
+        {
+            report_jit_error(create_err, "JIT: could not create LLJIT")
+            return 127
+        }
+
+        ; Resolve libc symbols (malloc/free/write/exit/...) from the host.
+        let jd LLVMOrcLLJITGetMainJITDylib(jit)
+        let prefix LLVMOrcLLJITGetGlobalPrefix(jit)
+        var gen LLVMOrcDefinitionGeneratorRef(null)
+        let gen_err LLVMOrcCreateDynamicLibrarySearchGeneratorForProcess(&gen, prefix, null as pointer[void], null as pointer[void])
+        guard gen_err.handle <> null
+        {
+            report_jit_error(gen_err, "JIT: could not create process generator")
+            return 127
+        }
+        LLVMOrcJITDylibAddGenerator(jd, gen)
+
+        ; Add the module to the JIT.
+        let add_err LLVMOrcLLJITAddLLVMIRModule(jit, jd, tsm)
+        guard add_err.handle <> null
+        {
+            report_jit_error(add_err, "JIT: could not add module")
+            return 127
+        }
+
+        ; Look up the target function's address (ORC applies the global prefix).
+        var addr: u64 0
+        let lookup_err LLVMOrcLLJITLookup(jit, &addr, fn_mangled.to_c_string#())
+        guard lookup_err.handle <> null
+        {
+            report_jit_error(lookup_err, "JIT: symbol lookup failed")
+            return 127
+        }
+
+        ; Indirect-call the resolved address as i64() (the language feature
+        ; added for this: a call on a pointer[void] local lowers to an
+        ; indirect LLVMBuildCall2 in emit_call).
+        let entry addr as pointer[void]
+        let result entry()
+        result
+    }
+
+    ; ========================================================================
     ; Module Output
     ; ========================================================================
 
@@ -4937,6 +5137,30 @@ define Emitter
     ; Emit a function/operator call
     function emit_call(this, call: PlannedCall) returns LLVMValueRef
     {
+        ; Indirect call through a function pointer value (Phase-1 JIT). args[0]
+        ; is the callee pointer; the signature is i64() (zero-arg, returns i64).
+        ; Used by jit_execute_int to invoke an ORC-resolved address. Mirrors
+        ; stage-0 emitCall's IsIndirect branch.
+        guard call.is_indirect
+        {
+            guard call.args <> null
+            {
+                let ic_args (*call.args)
+                guard ic_args.length > 0
+                {
+                    let callee_ptr ic_args.get(0)
+                    guard callee_ptr <> null
+                    {
+                        let callee_val emit_operand(*callee_ptr)
+                        let i64_ty LLVMInt64TypeInContext(context)
+                        let fn_ty LLVMFunctionType(i64_ty, null as pointer[LLVMTypeRef], 0, 0)
+                        return LLVMBuildCall2(builder, fn_ty, callee_val, null as pointer[LLVMValueRef], 0, "jit.call")
+                    }
+                }
+            }
+            return LLVMValueRef(null)
+        }
+
         ; Check if this is an intrinsic operator
         guard call.is_intrinsic
         {

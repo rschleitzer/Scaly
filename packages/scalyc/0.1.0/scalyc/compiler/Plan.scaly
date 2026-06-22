@@ -354,6 +354,9 @@ define PlannedCall
     result_type: PlannedType
     life: Lifetime              ; For constructors: allocation lifetime
     throws_type: ref[PlannedType]?  ; s149: throws error type for Result-wrapper sret
+    is_indirect: bool           ; Indirect call through a function pointer value
+                                ; (Phase-1 JIT: zero-arg, returns i64). args[0]
+                                ; is the callee pointer; no other args.
 )
 
 ; ============================================================================

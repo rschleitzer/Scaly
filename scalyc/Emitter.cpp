@@ -3267,6 +3267,17 @@ llvm::Expected<llvm::Value*> Emitter::emitExpression(const PlannedExpression &Ex
 }
 
 llvm::Expected<llvm::Value*> Emitter::emitCall(const PlannedCall &Call) {
+    // Indirect call through a function pointer value (Phase-1 JIT). Args[0]
+    // is the callee pointer; the signature is i64() (zero-arg, returns i64).
+    if (Call.IsIndirect) {
+        auto CalleeVal = emitOperand((*Call.Args)[0]);
+        if (!CalleeVal)
+            return CalleeVal.takeError();
+        auto *FnTy = llvm::FunctionType::get(
+            llvm::Type::getInt64Ty(*Context), {}, false);
+        return Builder->CreateCall(FnTy, *CalleeVal, {}, "jit.call");
+    }
+
     // Short-circuit evaluation for && and ||
     // Both operands must NOT be eagerly evaluated; the right operand
     // is only evaluated when the left operand doesn't determine the result.

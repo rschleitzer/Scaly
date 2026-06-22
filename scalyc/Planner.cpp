@@ -7448,6 +7448,56 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
     for (size_t i = 0; i < ProcessedOps.size(); ++i) {
         const auto &Op = ProcessedOps[i];
 
+        // Indirect call through a function pointer (Phase-1 JIT): `f()` where
+        // `f` is a local binding of type pointer[void] and `()` is empty. The
+        // self-hosted JIT (cli --run) invokes an ORC-resolved address this way.
+        // No existing construct calls a pointer[void] local (it would be a hard
+        // "function not found"), so this intercept can't shadow real code. The
+        // call returns i64 (the wrapper/target signature for Phase 1).
+        if (i + 1 < ProcessedOps.size()) {
+            if (auto* CalleeType = std::get_if<Type>(&Op.Expr)) {
+                if (CalleeType->Name.size() == 1 &&
+                    (!CalleeType->Generics || CalleeType->Generics->empty()) &&
+                    (!Op.MemberAccess || Op.MemberAccess->empty())) {
+                    if (auto* ArgsTuple = std::get_if<Tuple>(&ProcessedOps[i + 1].Expr)) {
+                        auto LB = lookupLocalBinding(CalleeType->Name[0]);
+                        bool IsVoidPtr = LB && LB->Type.Name == "pointer" &&
+                                         LB->Type.Generics.size() == 1 &&
+                                         LB->Type.Generics[0].Name == "void";
+                        if (ArgsTuple->Components.empty() && IsVoidPtr) {
+                            PlannedType I64;
+                            I64.Name = "i64";
+                            I64.MangledName = "x";
+
+                            PlannedOperand CalleeOp;
+                            CalleeOp.Loc = Op.Loc;
+                            CalleeOp.ResultType = LB->Type;
+                            CalleeOp.Expr = PlannedVariable{Op.Loc, CalleeType->Name[0],
+                                                            LB->Type, LB->IsMutable};
+
+                            PlannedCall Call;
+                            Call.Loc = Op.Loc;
+                            Call.Name = CalleeType->Name[0];
+                            Call.IsIntrinsic = false;
+                            Call.IsOperator = false;
+                            Call.IsIndirect = true;
+                            Call.ResultType = I64;
+                            Call.Args = std::make_shared<std::vector<PlannedOperand>>();
+                            Call.Args->push_back(std::move(CalleeOp));
+
+                            PlannedOperand CallOp;
+                            CallOp.Loc = Op.Loc;
+                            CallOp.ResultType = I64;
+                            CallOp.Expr = std::move(Call);
+                            Result.push_back(std::move(CallOp));
+                            i++;  // skip the args tuple
+                            continue;
+                        }
+                    }
+                }
+            }
+        }
+
         // Check for method call pattern: variable.method followed by Tuple
         // e.g., p.distance() where p is a variable of struct type
         if (i + 1 < ProcessedOps.size()) {

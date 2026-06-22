@@ -655,3 +655,55 @@ function LLVMDIBuilderCreatePointerType(builder: LLVMDIBuilderRef, pointee_ty: L
 function LLVMDIBuilderCreateReplaceableCompositeType(builder: LLVMDIBuilderRef, tag: i32, name: pointer[const_char], name_len: size_t, scope: LLVMMetadataRef, file: LLVMMetadataRef, line: i32, runtime_lang: i32, size_in_bits: size_t, align_in_bits: i32, flags: i32, unique_id: pointer[const_char], unique_id_len: size_t) returns LLVMMetadataRef extern
 procedure LLVMMetadataReplaceAllUsesWith(temp_target: LLVMMetadataRef, replacement: LLVMMetadataRef) extern
 
+; ============================================================================
+; ORC LLJIT (in-process JIT) — used by the self-hosted `--run` mode
+; ============================================================================
+;
+; Mirrors the LLVM-C OrcEE / Orc.h API. Each handle is a single-ptr opaque
+; wrapper (like LLVMContextRef etc.); LLVMOrcExecutorAddress is a bare u64
+; (a runtime code address, NOT a struct). LLVMErrorRef is the LLVM-C error
+; handle: a NULL handle means SUCCESS; a non-null handle is an error whose
+; message is read with LLVMGetErrorMessage and which MUST be consumed with
+; LLVMConsumeError (else leak/abort). See Emitter.jit_execute_int.
+
+define LLVMOrcLLJITRef(handle: pointer[void])
+define LLVMOrcLLJITBuilderRef(handle: pointer[void])
+define LLVMOrcJITDylibRef(handle: pointer[void])
+define LLVMOrcThreadSafeContextRef(handle: pointer[void])
+define LLVMOrcThreadSafeModuleRef(handle: pointer[void])
+define LLVMOrcDefinitionGeneratorRef(handle: pointer[void])
+define LLVMErrorRef(handle: pointer[void])
+
+; ThreadSafeContext: the module being JITted MUST be built in the LLVMContext
+; owned by the ThreadSafeContext, otherwise addIRModule crashes. So we create
+; the TSC first, take its underlying LLVMContextRef as the emitter's context,
+; build the module, then wrap it back into a ThreadSafeModule.
+function LLVMOrcCreateNewThreadSafeContext() returns LLVMOrcThreadSafeContextRef extern
+function LLVMOrcThreadSafeContextGetContext(tsc: LLVMOrcThreadSafeContextRef) returns LLVMContextRef extern
+function LLVMOrcCreateNewThreadSafeModule(m: LLVMModuleRef, tsc: LLVMOrcThreadSafeContextRef) returns LLVMOrcThreadSafeModuleRef extern
+
+; LLJIT lifecycle. Pass a null builder handle to LLVMOrcCreateLLJIT for the
+; default builder (host target machine, -O2 codegen). Returns LLVMErrorRef.
+function LLVMOrcCreateLLJIT(result: pointer[LLVMOrcLLJITRef], builder: LLVMOrcLLJITBuilderRef) returns LLVMErrorRef extern
+function LLVMOrcLLJITGetMainJITDylib(j: LLVMOrcLLJITRef) returns LLVMOrcJITDylibRef extern
+function LLVMOrcLLJITGetGlobalPrefix(j: LLVMOrcLLJITRef) returns char extern
+
+; Process-symbol generator: resolves libc symbols (malloc/free/write/
+; aligned_alloc/exit) referenced by the JITted RBMM runtime against the host
+; process. filter/filter_ctx are null (accept all). Returns LLVMErrorRef.
+function LLVMOrcCreateDynamicLibrarySearchGeneratorForProcess(result: pointer[LLVMOrcDefinitionGeneratorRef], global_prefix: char, filter: pointer[void], filter_ctx: pointer[void]) returns LLVMErrorRef extern
+procedure LLVMOrcJITDylibAddGenerator(jd: LLVMOrcJITDylibRef, g: LLVMOrcDefinitionGeneratorRef) extern
+
+; Add the module (consumes the ThreadSafeModule) + look up a symbol. Lookup
+; writes the resolved address into *result; pass the IR symbol name WITHOUT a
+; leading global prefix (ORC applies the prefix itself). Returns LLVMErrorRef.
+function LLVMOrcLLJITAddLLVMIRModule(j: LLVMOrcLLJITRef, jd: LLVMOrcJITDylibRef, tsm: LLVMOrcThreadSafeModuleRef) returns LLVMErrorRef extern
+; LLVMOrcExecutorAddress is a bare u64 (a runtime code address), so the
+; result is pointer[u64], NOT a wrapper-struct pointer.
+function LLVMOrcLLJITLookup(j: LLVMOrcLLJITRef, result: pointer[u64], name: pointer[const_char]) returns LLVMErrorRef extern
+
+; Error handling. A null LLVMErrorRef handle = success.
+function LLVMGetErrorMessage(e: LLVMErrorRef) returns pointer[char] extern
+procedure LLVMConsumeError(e: LLVMErrorRef) extern
+procedure LLVMDisposeErrorMessage(msg: pointer[char]) extern
+

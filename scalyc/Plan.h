@@ -403,6 +403,9 @@ struct PlannedCall {
     PlannedType ResultType;     // Return type
     std::shared_ptr<PlannedType> ThrowsType;  // Exception type (if CanThrow is true)
     Lifetime Life;              // For constructors: allocation lifetime ($, #, ^name, or none=stack)
+    bool IsIndirect = false;    // Indirect call through a function pointer value
+                                // (Phase-1 JIT: zero-arg, returns i64). Args[0]
+                                // is the callee pointer; no other args.
 };
 
 // ============================================================================

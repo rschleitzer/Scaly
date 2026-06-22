@@ -55,6 +55,8 @@ define Options
     no_prelude: bool        ; --no-prelude: skip auto-loading prelude
     no_tests: bool          ; --no-tests: omit test/test_* functions (seed build)
     debug: bool             ; -g: emit DWARF debug info
+    run_mode: bool          ; --run <fn>: JIT-compile and execute <fn> in-process
+    run_function: String    ; the function name to JIT-run
     error_message: String
     library_paths: Array[String]    ; -L<path> entries (no leading -L)
     libraries: Array[String]        ; -l<name> entries (no leading -l)
@@ -76,6 +78,8 @@ define Options
         set no_prelude: false
         set no_tests: false
         set debug: false
+        set run_mode: false
+        set run_function: String()
         set error_message: String()
         set library_paths: Array[String]()
         set libraries: Array[String]()
@@ -169,6 +173,21 @@ define cli
                         set opts.error_message: String#("-o requires a filename")
                     }
                 }
+                else if arg.equals(String$("--run"))
+                {
+                    ; JIT mode - next argument is the function name to execute
+                    set i: i + 1
+                    if i < argc
+                    {
+                        let fn_ptr *(argv + i)
+                        set opts.run_function: String#(fn_ptr)
+                        set opts.run_mode: true
+                    }
+                    else
+                    {
+                        set opts.error_message: String#("--run requires a function name")
+                    }
+                }
                 else if arg.starts_with(String$("-L")) & arg.get_length() > 2
                 {
                     ; Library search path: -L<path> (prefix-form, like clang).
@@ -231,6 +250,7 @@ define cli
         Console.println("  --plan         Run planner (type resolution)")
         Console.println("  --no-prelude   Skip auto-loading prelude module")
         Console.println("  --no-tests     Omit test/test_* functions (seed build)")
+        Console.println("  --run <fn>     JIT-compile and run <fn> in-process")
     }
 
     ; Resolve the runtime static archive the linker pulls in. When SCALY_HOME
@@ -412,6 +432,41 @@ define cli
         {
             Console.println("Planning completed successfully")
             return 0
+        }
+
+        ; ================================================================
+        ; --run: JIT-compile and execute a function in-process (Phase 1:
+        ; zero-arg, int-returning). The function's i64 return becomes the
+        ; process exit code. Prelude stays ON (the JIT module carries the
+        ; RBMM runtime; libc is resolved by the ORC process generator).
+        ; ================================================================
+        guard opts.run_mode
+        {
+            ; Find the mangled name of the requested function in the plan
+            ; (mirrors ModuleTests.cpp's name->MangledName scan).
+            var target_mangled String$("")
+            guard plan.functions <> null
+            {
+                for f in plan.functions
+                {
+                    guard f.name.equals(opts.run_function)
+                    {
+                        guard target_mangled.get_length() = 0
+                            set target_mangled: f.mangled_name
+                    }
+                }
+            }
+            guard target_mangled.get_length() = 0
+            {
+                Console.println("Error: --run function not found")
+                return 10
+            }
+
+            var jit_config EmitterConfig$()
+            set jit_config.emit_debug_info: false
+            var jit_emitter Emitter.Emitter$(jit_config)
+            let jit_rc jit_emitter.jit_run(plan, program_name, target_mangled)
+            return jit_rc as int
         }
 
         ; ================================================================
