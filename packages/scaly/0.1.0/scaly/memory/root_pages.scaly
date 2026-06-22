@@ -224,29 +224,56 @@ function create_heap_bucket() returns pointer[HeapBucketHeader]
 
 ; --------------------------------------------------------------------------
 ; Count trailing zeros in a u64 (for the HeapBucket bitmap scan). Caller
-; must ensure x != 0. A linear shift-loop instead of the De Bruijn table:
-; the table would be an i32[] module-global array constant, which stage-1's
-; planner emits as an external declaration with no body (the unported
-; Planner.cpp:6193 array-global gap) — the seed would fail to link. The
-; loop costs at most 63 iterations and runs only on heap-bucket allocation.
+; must ensure x != 0. A branchless BINARY SEARCH for the lowest set bit:
+; 6 halving steps instead of up to 63 shift iterations. Table-free (no
+; De Bruijn i32[] module-global array, which stage-1's planner emits as a
+; bodiless external declaration — the unported Planner.cpp:6193 array-global
+; gap — so the seed would fail to link). Behaviour-identical to the old
+; shift-loop: returns the index of the lowest set bit.
+;
+; This matters: scaly_alloc_page clears the lowest free bit each allocation,
+; so a sequentially-filling bucket drove the old shift-loop toward ~31
+; iterations average (O(n^2) per bucket fill). The binary search is a fixed
+; 6 steps regardless of slot — the hot path under default-to-local transient
+; page churn.
 ; --------------------------------------------------------------------------
 
 function ctz_u64(x: u64) returns i32
 {
-    ; count is i64 throughout: `set count: count + 1` widens int arithmetic
-    ; to i64, and an i32 slot would get an 8-byte store clobbering the
-    ; adjacent `v` slot (observed corrupting heap-bucket slot selection
-    ; under stage-1's allocation pattern, s189). Cast to i32 only at return.
-    var count 0 as i64
+    ; `n` is i64 throughout: `set n: n + K` widens int arithmetic to i64,
+    ; and an i32 slot would get an 8-byte store clobbering the adjacent `v`
+    ; slot (observed corrupting heap-bucket slot selection under stage-1's
+    ; allocation pattern, s189). Cast to i32 only at return.
+    var n 0 as i64
     var v x
-    while count < 64 as i64
+    guard (v & (0xFFFFFFFF as u64)) = (0 as u64)
     {
-        guard (v & (1 as u64)) <> (0 as u64)
-            return count as i32
-        set count: count + 1
-        set v: v >> (1 as u64)
+        set n: n + 32
+        set v: v >> (32 as u64)
     }
-    count as i32
+    guard (v & (0xFFFF as u64)) = (0 as u64)
+    {
+        set n: n + 16
+        set v: v >> (16 as u64)
+    }
+    guard (v & (0xFF as u64)) = (0 as u64)
+    {
+        set n: n + 8
+        set v: v >> (8 as u64)
+    }
+    guard (v & (0xF as u64)) = (0 as u64)
+    {
+        set n: n + 4
+        set v: v >> (4 as u64)
+    }
+    guard (v & (0x3 as u64)) = (0 as u64)
+    {
+        set n: n + 2
+        set v: v >> (2 as u64)
+    }
+    guard (v & (0x1 as u64)) = (0 as u64)
+        set n: n + 1
+    n as i32
 }
 
 ; --------------------------------------------------------------------------
