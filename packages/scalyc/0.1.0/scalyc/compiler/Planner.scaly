@@ -302,6 +302,14 @@ define Planner
         instantiated_structures: Array[PlannedStructure]
         instantiated_unions: Array[scalyc.compiler.Plan.PlannedUnion]
         instantiated_functions: Array[PlannedFunction]
+        ; O(1) membership index over instantiated_functions' mangled names,
+        ; maintained in lockstep at the single record_function add site.
+        ; has_recorded_function was an O(n) linear scan called from 4 hot
+        ; collapse_operand_sequence call-resolution sites -> O(n^2) over a
+        ; -c scalyc compile (same pattern as lookup_concept / the emitter
+        ; caches). lookup(mangled) >= 0 means present. Pure membership ->
+        ; same bool -> identical Plan -> identical IR (fixpoint-safe).
+        function_name_index: ConceptIndex
         instantiated_globals: Array[PlannedGlobal]
 
         ; s116: cycle detection for instantiate_generic#. Holds the
@@ -428,6 +436,7 @@ define Planner
             set instantiated_structures: Array[PlannedStructure]^page()
             set instantiated_unions: Array[scalyc.compiler.Plan.PlannedUnion]^page()
             set instantiated_functions: Array[PlannedFunction]^page()
+            set function_name_index: ConceptIndex.create#(262144 as size_t)
             set instantiated_globals: Array[PlannedGlobal]^page()
             set instantiating_structures: Array[String]^page()
             set instantiating_methods: Array[String]^page()
@@ -713,7 +722,9 @@ define Planner
 
         function record_function(this: Planner, f: PlannedFunction)
         {
+            let entry_idx instantiated_functions.length
             instantiated_functions.add(f)
+            function_name_index.insert_if_absent(f.mangled_name, entry_idx)
         }
 
         ; Has a function with this mangled name already been recorded in
@@ -722,18 +733,7 @@ define Planner
         ; that was already planned (or already extern-declared).
         function has_recorded_function(this: Planner, mangled: String) returns bool
         {
-            var i: size_t 0
-            while i < instantiated_functions.length
-            {
-                let f_ptr instantiated_functions.get(i)
-                guard f_ptr <> null
-                {
-                    guard f_ptr.mangled_name.equals(mangled)
-                        return true
-                }
-                set i: i + 1
-            }
-            false
+            function_name_index.lookup(mangled) >= 0
         }
 
         function record_global(this: Planner, g: PlannedGlobal)
