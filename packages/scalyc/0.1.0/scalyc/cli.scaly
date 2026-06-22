@@ -57,6 +57,7 @@ define Options
     debug: bool             ; -g: emit DWARF debug info
     run_mode: bool          ; --run <fn>: JIT-compile and execute <fn> in-process
     run_function: String    ; the function name to JIT-run
+    jit_program: bool       ; --jit: JIT-compile and run the whole program (top-level main)
     error_message: String
     library_paths: Array[String]    ; -L<path> entries (no leading -L)
     libraries: Array[String]        ; -l<name> entries (no leading -l)
@@ -80,6 +81,7 @@ define Options
         set debug: false
         set run_mode: false
         set run_function: String()
+        set jit_program: false
         set error_message: String()
         set library_paths: Array[String]()
         set libraries: Array[String]()
@@ -158,6 +160,10 @@ define cli
                 else if arg.equals(String$("--no-tests"))
                 {
                     set opts.no_tests: true
+                }
+                else if arg.equals(String$("--jit"))
+                {
+                    set opts.jit_program: true
                 }
                 else if arg.equals(String$("-o"))
                 {
@@ -251,6 +257,7 @@ define cli
         Console.println("  --no-prelude   Skip auto-loading prelude module")
         Console.println("  --no-tests     Omit test/test_* functions (seed build)")
         Console.println("  --run <fn>     JIT-compile and run <fn> in-process")
+        Console.println("  --jit          JIT-compile and run the whole program")
     }
 
     ; Resolve the runtime static archive the linker pulls in. When SCALY_HOME
@@ -467,6 +474,21 @@ define cli
             var jit_emitter Emitter.Emitter$(jit_config)
             let jit_rc jit_emitter.jit_run(plan, program_name, target_mangled)
             return jit_rc as int
+        }
+
+        ; ================================================================
+        ; --jit: JIT-compile and run the whole program in-process. emit()
+        ; synthesizes an @main from the top-level statements; we JIT-look up
+        ; "main" and call it (its return is the exit code). Used to run the
+        ; literate/semantic test corpus through the self-hosted JIT (Phase 2).
+        ; ================================================================
+        guard opts.jit_program
+        {
+            var prog_config EmitterConfig$()
+            set prog_config.emit_debug_info: false
+            var prog_emitter Emitter.Emitter$(prog_config)
+            let prog_rc prog_emitter.jit_run(plan, program_name, String$("main"))
+            return prog_rc as int
         }
 
         ; ================================================================
