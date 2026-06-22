@@ -672,6 +672,7 @@ define LLVMOrcJITDylibRef(handle: pointer[void])
 define LLVMOrcThreadSafeContextRef(handle: pointer[void])
 define LLVMOrcThreadSafeModuleRef(handle: pointer[void])
 define LLVMOrcDefinitionGeneratorRef(handle: pointer[void])
+define LLVMOrcJITTargetMachineBuilderRef(handle: pointer[void])
 define LLVMErrorRef(handle: pointer[void])
 
 ; ThreadSafeContext: the module being JITted MUST be built in the LLVMContext
@@ -685,6 +686,15 @@ function LLVMOrcCreateNewThreadSafeModule(m: LLVMModuleRef, tsc: LLVMOrcThreadSa
 ; LLJIT lifecycle. Pass a null builder handle to LLVMOrcCreateLLJIT for the
 ; default builder (host target machine, -O2 codegen). Returns LLVMErrorRef.
 function LLVMOrcCreateLLJIT(result: pointer[LLVMOrcLLJITRef], builder: LLVMOrcLLJITBuilderRef) returns LLVMErrorRef extern
+
+; -O0 JIT: the default builder (null) uses -O2 codegen. To force a codegen
+; opt level, build an LLJITBuilder around a JITTargetMachineBuilder made from
+; an explicit TargetMachine (LLVMCreateTargetMachine with level = None = 0).
+; CreateFromTargetMachine consumes the TM; SetJITTargetMachineBuilder consumes
+; the JTMB; CreateLLJIT consumes the builder.
+function LLVMOrcCreateLLJITBuilder() returns LLVMOrcLLJITBuilderRef extern
+function LLVMOrcJITTargetMachineBuilderCreateFromTargetMachine(tm: LLVMTargetMachineRef) returns LLVMOrcJITTargetMachineBuilderRef extern
+procedure LLVMOrcLLJITBuilderSetJITTargetMachineBuilder(builder: LLVMOrcLLJITBuilderRef, jtmb: LLVMOrcJITTargetMachineBuilderRef) extern
 function LLVMOrcLLJITGetMainJITDylib(j: LLVMOrcLLJITRef) returns LLVMOrcJITDylibRef extern
 function LLVMOrcLLJITGetGlobalPrefix(j: LLVMOrcLLJITRef) returns char extern
 

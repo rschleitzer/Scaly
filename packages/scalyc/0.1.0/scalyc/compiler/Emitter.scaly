@@ -204,8 +204,12 @@ use scaly.compiler.LLVM.LLVMOrcJITDylibRef
 use scaly.compiler.LLVM.LLVMOrcThreadSafeContextRef
 use scaly.compiler.LLVM.LLVMOrcThreadSafeModuleRef
 use scaly.compiler.LLVM.LLVMOrcDefinitionGeneratorRef
+use scaly.compiler.LLVM.LLVMOrcJITTargetMachineBuilderRef
 use scaly.compiler.LLVM.LLVMErrorRef
 use scaly.compiler.LLVM.LLVMOrcCreateNewThreadSafeContext
+use scaly.compiler.LLVM.LLVMOrcCreateLLJITBuilder
+use scaly.compiler.LLVM.LLVMOrcJITTargetMachineBuilderCreateFromTargetMachine
+use scaly.compiler.LLVM.LLVMOrcLLJITBuilderSetJITTargetMachineBuilder
 use scaly.compiler.LLVM.LLVMOrcThreadSafeContextGetContext
 use scaly.compiler.LLVM.LLVMOrcCreateNewThreadSafeModule
 use scaly.compiler.LLVM.LLVMOrcCreateLLJIT
@@ -4226,9 +4230,31 @@ define Emitter
         let jit_module llvm_module
         let tsm LLVMOrcCreateNewThreadSafeModule(jit_module, tsc)
 
-        ; Create the LLJIT (default builder = host target machine).
+        ; Create the LLJIT with -O0 codegen. The default (null) builder uses
+        ; -O2; for fast JIT-test turnaround we build an LLJITBuilder around a
+        ; TargetMachine created at opt level None (mirrors stage-0's
+        ; setCodeGenOptLevel(None)). Falls back to the default builder if the
+        ; host target can't be resolved. Reloc PIC(2), CodeModel default(0),
+        ; same as write_object_to_file.
         var jit LLVMOrcLLJITRef(null)
-        let create_err LLVMOrcCreateLLJIT(&jit, LLVMOrcLLJITBuilderRef(null))
+        var jit_builder LLVMOrcLLJITBuilderRef(null)
+        let jit_triple LLVMGetDefaultTargetTriple()
+        guard jit_triple <> null
+        {
+            var jit_target LLVMTargetRef(null)
+            let tlookup LLVMGetTargetFromTriple(jit_triple as pointer[const_char], &jit_target, null as pointer[pointer[char]])
+            guard tlookup = 0
+            {
+                let jit_tm LLVMCreateTargetMachine(jit_target, jit_triple as pointer[const_char], "generic" as pointer[const_char], "" as pointer[const_char], 0, 2, 0)
+                guard jit_tm.handle <> null
+                {
+                    let jtmb LLVMOrcJITTargetMachineBuilderCreateFromTargetMachine(jit_tm)
+                    set jit_builder: LLVMOrcCreateLLJITBuilder()
+                    LLVMOrcLLJITBuilderSetJITTargetMachineBuilder(jit_builder, jtmb)
+                }
+            }
+        }
+        let create_err LLVMOrcCreateLLJIT(&jit, jit_builder)
         guard create_err.handle <> null
         {
             report_jit_error(create_err, "JIT: could not create LLJIT")
