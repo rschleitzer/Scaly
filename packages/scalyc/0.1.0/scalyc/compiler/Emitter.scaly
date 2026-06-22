@@ -368,6 +368,13 @@ define Emitter
     type_index: ConceptIndex
     struct_index: ConceptIndex
     function_index: ConceptIndex
+    ; -g only: same O(1) index over di_type_cache. The cache adds a NON-NULL
+    ; forward decl at `idx`, then RAUW-overwrites that slot via put(idx,final);
+    ; the name->idx mapping is stable across the put, so get(idx) returns the
+    ; current slot value (fwd during member build, final after). Each mangled
+    ; name is added exactly once (lookup_di_cache early-return + forward-decl
+    ; guard against recursive re-add), so insert_if_absent == first-non-null.
+    di_index: ConceptIndex
     ; s180: throws Result-wrapper cache: callee mangled name -> wrapper
     ; type. Keyed per callee so emit_function_decl and emit_call always
     ; build the IDENTICAL wrapper even when their value_ty provenance
@@ -462,6 +469,7 @@ define Emitter
         set type_index: ConceptIndex.create#(131072 as size_t)
         set struct_index: ConceptIndex.create#(131072 as size_t)
         set function_index: ConceptIndex.create#(262144 as size_t)
+        set di_index: ConceptIndex.create#(131072 as size_t)
         set throws_result_names: Array[String]^page()
         set throws_result_types: Array[LLVMTypeRef]^page()
         set intrinsic_type_names: Array[String]^page()
@@ -638,16 +646,12 @@ define Emitter
 
     function lookup_di_cache(this, name: String) returns LLVMMetadataRef
     {
-        var i 0
-        for n in di_type_cache_names
+        let ir di_index.lookup(name)
+        guard ir >= 0
         {
-            guard n.equals(name)
-            {
-                let t di_type_cache_types.get(i)
-                guard t <> null
-                    return t
-            }
-            set i: i + 1
+            let t di_type_cache_types.get(ir as size_t)
+            guard t <> null
+                return t
         }
         LLVMMetadataRef(null)
     }
@@ -859,6 +863,8 @@ define Emitter
         let idx di_type_cache_names.length
         di_type_cache_names.add(s.mangled_name)
         di_type_cache_types.add(fwd)
+        guard fwd.handle <> null
+            di_index.insert_if_absent(s.mangled_name, idx)
 
         var members_ptr (null as pointer[LLVMMetadataRef])
         var added: size_t 0
@@ -923,6 +929,8 @@ define Emitter
         let idx di_type_cache_names.length
         di_type_cache_names.add(u.mangled_name)
         di_type_cache_types.add(fwd)
+        guard fwd.handle <> null
+            di_index.insert_if_absent(u.mangled_name, idx)
 
         ; Tag: 1 byte for <=256 variants, else 4 (mirrors compute_union_size).
         var tag_size: size_t 1
