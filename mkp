@@ -1,6 +1,34 @@
 #!/bin/bash
 set -e
 
+# Content-stable codegen. openjade rewrites every generated file on each run
+# with a fresh mtime even when the output is byte-identical to what was there.
+# That forces ninja to recompile the large generated Parser.cpp (+ everything
+# depending on the regenerated headers) on EVERY build.sh — the dominant cost
+# of an incremental bootstrap. To avoid it we snapshot the generated files
+# first, then after generation restore any file whose content is unchanged
+# (which puts back its old mtime), so ninja only rebuilds what truly changed.
+# A genuine grammar/literate-test edit changes the bytes -> the new file (new
+# mtime) stays and is rebuilt as before.
+
+GENERATED=(
+    scalyc/Parser.cpp scalyc/Parser.h scalyc/Syntax.h scalyc/SyntaxDump.h
+    scalyc/ExpressionTests.cpp scalyc/ExpressionTests.h
+    scalyc/DefinitionTests.cpp scalyc/DefinitionTests.h
+    scalyc/ChooseTests.cpp scalyc/ChooseTests.h
+    scalyc/ControlFlowTests.cpp scalyc/ControlFlowTests.h
+    docs/scaly/generated-expressions.xml
+    docs/scaly/generated-definitions.xml
+    docs/scaly/generated-choose.xml
+    docs/scaly/generated-controlflow.xml
+)
+
+SNAP=$(mktemp -d)
+snap_name() { echo "$1" | tr / _; }
+for f in "${GENERATED[@]}"; do
+    [ -f "$f" ] && cp -p "$f" "$SNAP/$(snap_name "$f")"
+done
+
 # Generate Parser.cpp, Syntax.h from grammar
 openjade -G -t sgml -d codegen/scaly.dsl scaly.sgm
 
@@ -9,3 +37,13 @@ openjade -G -t sgml -d codegen/test-expressions.dsl tests/expressions.sgm
 openjade -G -t sgml -d codegen/test-definitions.dsl tests/definitions.sgm
 openjade -G -t sgml -d codegen/test-choose.dsl tests/choose.sgm
 openjade -G -t sgml -d codegen/test-controlflow.dsl tests/controlflow.sgm
+
+# Restore byte-identical files to their pre-generation mtime so ninja skips
+# them; leave genuinely-changed files (new content + new mtime) in place.
+for f in "${GENERATED[@]}"; do
+    b="$SNAP/$(snap_name "$f")"
+    if [ -f "$b" ] && [ -f "$f" ] && cmp -s "$f" "$b"; then
+        mv "$b" "$f"
+    fi
+done
+rm -rf "$SNAP"
