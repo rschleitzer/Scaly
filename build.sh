@@ -20,9 +20,16 @@ if [ -z "$LLVM_DIR" ]; then
     fi
 fi
 
-CMAKE_ARGS=""
+# Optimize the C++ stage-0 by default (RelWithDebInfo = -O2 -g -DNDEBUG).
+# An unoptimized (-O0) stage-0 compiles the scalyc package ~3x slower — the
+# bootstrap's stage-0 -> stage1 step takes ~6.9s vs ~2.5s — and self-hosting
+# work rarely touches the C++ stage-0, so the one-time optimize cost pays
+# back on every bootstrap. Override with CMAKE_BUILD_TYPE=Debug to step
+# through the C++ compiler itself.
+BUILD_TYPE="${CMAKE_BUILD_TYPE:-RelWithDebInfo}"
+CMAKE_ARGS="-DCMAKE_BUILD_TYPE=$BUILD_TYPE"
 if [ -n "$LLVM_DIR" ]; then
-    CMAKE_ARGS="-DLLVM_DIR=$LLVM_DIR"
+    CMAKE_ARGS="$CMAKE_ARGS -DLLVM_DIR=$LLVM_DIR"
 fi
 
 # Use Ninja if available (faster), otherwise Make
