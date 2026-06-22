@@ -318,6 +318,10 @@ static bool runMultiPackageTests(
 // AOT Test Runner
 // ============================================================================
 
+#if 0
+// Retired from --test (s198): the AOT corpus now runs via
+// tools/aot_corpus.sh against the self-hosted stage binary. Kept here under
+// `#if 0` as a reference for the old in-harness AOT runner.
 // Parse expected output from test file comments
 // Format: "; Expected: <expected output>"
 static std::string parseExpectedOutput(llvm::StringRef Source) {
@@ -499,6 +503,8 @@ static bool runAotTests() {
     return AllPassed;
 }
 
+#endif  // retired AOT-in-harness runner (s198)
+
 // ============================================================================
 // Main Test Runner
 // ============================================================================
@@ -525,8 +531,8 @@ bool runModuleTests() {
         {"Module: scalyc.test()", "scalyc.test"},
     });
 
-    // Run AOT compilation tests
-    runAotTests();
+    // The AOT corpus (runAotTests) was retired from --test (s198) — it now
+    // runs via tools/aot_corpus.sh against the self-hosted stage binary.
 
     llvm::outs() << "\nModule tests: " << TestsPassed << " passed, "
                  << TestsFailed << " failed\n";

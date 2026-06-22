@@ -18,12 +18,9 @@
 <![CDATA[
 (element suite
     (sosofo-append
-        (file "scalyc/ExpressionTests.h"
-            (generate-tests-h "Expression")
-        )
-        (file "scalyc/ExpressionTests.cpp"
-            (generate-tests-cpp "Expression")
-        )
+        ; C++ ExpressionTests.{h,cpp} retired from --test (s198): the literate
+        ; suite now runs through the self-hosted in-process JIT via
+        ; tests/selfhosted/run.sh (generate-selfhosted-tests below).
         (file "docs/scaly/generated-expressions.xml"
             (generate-testdoc)
         )

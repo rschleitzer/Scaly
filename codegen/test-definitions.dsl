@@ -18,12 +18,9 @@
 <![CDATA[
 (element suite
     (sosofo-append
-        (file "scalyc/DefinitionTests.h"
-            (generate-tests-h "Definition")
-        )
-        (file "scalyc/DefinitionTests.cpp"
-            (generate-tests-cpp "Definition")
-        )
+        ; C++ DefinitionTests.{h,cpp} retired from --test (s198): the literate
+        ; suite now runs through the self-hosted in-process JIT via
+        ; tests/selfhosted/run.sh (generate-selfhosted-tests below).
         (file "docs/scaly/generated-definitions.xml"
             (generate-testdoc)
         )

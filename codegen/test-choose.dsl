@@ -18,12 +18,9 @@
 <![CDATA[
 (element suite
     (sosofo-append
-        (file "scalyc/ChooseTests.h"
-            (generate-tests-h "Choose")
-        )
-        (file "scalyc/ChooseTests.cpp"
-            (generate-tests-cpp "Choose")
-        )
+        ; C++ ChooseTests.{h,cpp} retired from --test (s198): the literate
+        ; suite now runs through the self-hosted in-process JIT via
+        ; tests/selfhosted/run.sh (generate-selfhosted-tests below).
         (file "docs/scaly/generated-choose.xml"
             (generate-testdoc)
         )

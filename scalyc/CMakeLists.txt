@@ -54,15 +54,9 @@ set(SOURCES
     EmitterTests.cpp
     ModuleTests.h
     ModuleTests.cpp
-    # Generated test files
-    ExpressionTests.h
-    ExpressionTests.cpp
-    DefinitionTests.h
-    DefinitionTests.cpp
-    ChooseTests.h
-    ChooseTests.cpp
-    ControlFlowTests.h
-    ControlFlowTests.cpp
+    # Generated literate-test suites (Expression/Definition/Choose/ControlFlow)
+    # retired from --test (s198) — they run via the self-hosted in-process JIT
+    # (tests/selfhosted/run.sh). No longer generated or compiled.
 )
 
 add_executable(scalyc ${SOURCES})

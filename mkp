@@ -13,10 +13,6 @@ set -e
 
 GENERATED=(
     scalyc/Parser.cpp scalyc/Parser.h scalyc/Syntax.h scalyc/SyntaxDump.h
-    scalyc/ExpressionTests.cpp scalyc/ExpressionTests.h
-    scalyc/DefinitionTests.cpp scalyc/DefinitionTests.h
-    scalyc/ChooseTests.cpp scalyc/ChooseTests.h
-    scalyc/ControlFlowTests.cpp scalyc/ControlFlowTests.h
     docs/scaly/generated-expressions.xml
     docs/scaly/generated-definitions.xml
     docs/scaly/generated-choose.xml

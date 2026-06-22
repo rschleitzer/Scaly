@@ -18,12 +18,9 @@
 <![CDATA[
 (element suite
     (sosofo-append
-        (file "scalyc/ControlFlowTests.h"
-            (generate-tests-h "ControlFlow")
-        )
-        (file "scalyc/ControlFlowTests.cpp"
-            (generate-tests-cpp "ControlFlow")
-        )
+        ; C++ ControlFlowTests.{h,cpp} retired from --test (s198): the literate
+        ; suite now runs through the self-hosted in-process JIT via
+        ; tests/selfhosted/run.sh (generate-selfhosted-tests below).
         (file "docs/scaly/generated-controlflow.xml"
             (generate-testdoc)
         )

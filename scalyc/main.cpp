@@ -7,11 +7,8 @@
 #include "Emitter.h"
 #include "EmitterTests.h"
 #include "ModuleTests.h"
-// Generated test headers
-#include "ExpressionTests.h"
-#include "DefinitionTests.h"
-#include "ChooseTests.h"
-#include "ControlFlowTests.h"
+// Literate-test suites (Expression/Definition/Choose/ControlFlow) retired from
+// --test (s198) — now run via the self-hosted JIT (tests/selfhosted/run.sh).
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/MemoryBuffer.h"
@@ -747,19 +744,11 @@ int main(int argc, char **argv) {
         AllPassed &= scaly::runEmitterTests();
         std::cout << std::endl << std::flush;
         llvm::outs().flush();
-        // Generated literate tests
-        AllPassed &= scaly::runExpressionTests();
-        std::cout << std::endl << std::flush;
-        llvm::outs().flush();
-        AllPassed &= scaly::runDefinitionTests();
-        std::cout << std::endl << std::flush;
-        llvm::outs().flush();
-        AllPassed &= scaly::runChooseTests();
-        std::cout << std::endl << std::flush;
-        llvm::outs().flush();
-        AllPassed &= scaly::runControlFlowTests();
-        std::cout << std::endl << std::flush;
-        llvm::outs().flush();
+        // The generated literate suites (Expression/Definition/Choose/
+        // ControlFlow) were retired from --test (s198): they now run through
+        // the self-hosted in-process JIT via tests/selfhosted/run.sh. --test
+        // keeps the stage-0-internal Lexer/Emitter unit tests and the
+        // scaly.test()/scalyc.test() package suites (runModuleTests).
         AllPassed &= scaly::runModuleTests();
         return AllPassed ? 0 : 1;
     }
