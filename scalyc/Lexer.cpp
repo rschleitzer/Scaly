@@ -135,7 +135,19 @@ Token Lexer::scanLineFeed() {
         if (Current_ == nullptr) {
             return ColonToken{};
         }
-        // Skip comment-only lines (comments remain transparent)
+        // Collapse consecutive linefeeds — including the trailing \n that
+        // skipWhitespace leaves after a skipped comment line — into a single
+        // separator. A comment at the end of a regular code line (or on its
+        // own line) must yield exactly the one line break the physical newline
+        // would produce; without this collapse a comment line emitted a second
+        // ColonToken that broke e.g. `while cond` from its `{` body.
+        if (*Current_ == '\n') {
+            readCharacter();
+            continue;
+        }
+        // Skip comment lines and keep collapsing (skipWhitespace already
+        // consumes ';' comments, so this is a defensive mirror of the Scaly
+        // lexer's scan_line_feed).
         if (*Current_ == ';') {
             readCharacter();
             if (Current_ != nullptr && *Current_ == '*') {
@@ -143,15 +155,9 @@ Token Lexer::scanLineFeed() {
                 handleMultiLineComment();
             } else {
                 handleSingleLineComment();
-                // handleSingleLineComment stops at \n without consuming it
-                // Consume the trailing \n so the comment line is transparent
-                if (Current_ != nullptr && *Current_ == '\n') {
-                    readCharacter();
-                }
             }
             continue;
         }
-        // Blank lines are NOT collapsed - each \n produces its own ColonToken
         return ColonToken{};
     }
 }

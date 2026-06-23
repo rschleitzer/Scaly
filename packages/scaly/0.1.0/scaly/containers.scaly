@@ -275,22 +275,22 @@ define containers
             ; verify pass looks up exactly the keys the build pass inserted.
             {
                 ; To restore the full stress range, swap each commented line
-                ; with the active line directly below it (move the ';').
+                ; with the active line directly above it (move the ';').
                 var i: char = "A" as char
-                ; while i <= "Z" as char
                 while i <= "C" as char
+                ; while i <= "Z" as char
                 {
                     var j: char = "a" as char
-                    ; while j <= "z" as char
                     while j <= "c" as char
+                    ; while j <= "z" as char
                     {
                         var k: char = "0" as char
-                        ; while k <= "9" as char
                         while k <= "2" as char
+                        ; while k <= "9" as char
                         {
                             var l: char = "!" as char
-                            ; while l <= "/" as char
                             while l <= "#" as char
+                            ; while l <= "/" as char
                             {
                                 var sb StringBuilder$(i)
                                 sb.append(j)
@@ -314,20 +314,20 @@ define containers
             {
                 ; Verify pass — keep these bounds identical to the build pass.
                 var i: char = "A" as char
-                ; while i <= "Z" as char
                 while i <= "C" as char
+                ; while i <= "Z" as char
                 {
                     var j: char = "a" as char
-                    ; while j <= "z" as char
                     while j <= "c" as char
+                    ; while j <= "z" as char
                     {
                         var k: char = "0" as char
-                        ; while k <= "9" as char
                         while k <= "2" as char
+                        ; while k <= "9" as char
                         {
                             var l: char = "!" as char
-                            ; while l <= "/" as char
                             while l <= "#" as char
+                            ; while l <= "/" as char
                             {
                                 var sb StringBuilder$(i)
                                 sb.append(j)
