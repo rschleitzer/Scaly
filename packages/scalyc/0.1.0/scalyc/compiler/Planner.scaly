@@ -10220,6 +10220,17 @@ define Planner
                                     ; binary loop can build the call.
                                     if Planner.get_operator_precedence(ty.name) > 0
                                         set should_collapse: true
+                                    ; A declared text-named operator (e.g.
+                                    ; `'minus'`) is neither operator-shaped nor
+                                    ; in the precedence table, but still sits in
+                                    ; operator position — collapse so a
+                                    ; parenthesized `(a 'op' b)` (e.g. a binding
+                                    ; init or the literate-test wrapper) folds
+                                    ; into the call instead of dropping to its
+                                    ; RHS. Stage-0 collapses unconditionally
+                                    ; (Planner.cpp:10506).
+                                    if this.is_operator(ty.name)
+                                        set should_collapse: true
                                 }
                                 else
                                     0

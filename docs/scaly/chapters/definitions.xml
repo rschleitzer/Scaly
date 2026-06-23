@@ -7,6 +7,69 @@
       Types can have properties, methods, and nested definitions.</para>
   </section>
 
+  <section xml:id="def-functions-operators">
+    <title>Functions, Procedures, and Operators</title>
+    <para>A routine is introduced by one of three keywords, and that keyword —
+      not the spelling of the name — decides how the routine behaves:</para>
+    <itemizedlist>
+      <listitem>
+        <para><emphasis>function</emphasis> declares a pure function: its inputs
+          are borrowed and immutable, and it returns a result without side
+          effects. A function is applied prefix, by writing its name before a
+          parenthesized argument list.</para>
+      </listitem>
+      <listitem>
+        <para><emphasis>procedure</emphasis> declares a routine that may mutate
+          its inputs and have side effects (builders, I/O).</para>
+      </listitem>
+      <listitem>
+        <para><emphasis>operator</emphasis> declares an operator: a pure routine
+          applied infix between its two operands (or prefix, for a unary
+          operator).</para>
+      </listitem>
+    </itemizedlist>
+
+    <para>The three identifier forms from the lexical chapter — alphanumeric,
+      operator-character, and single-quoted string identifiers — are
+      interchangeable as names here. A function may be named with operator
+      characters, and an operator may be named with letters or a quoted string;
+      what makes one a function and the other an operator is the declaration
+      keyword, never the first character of the name.</para>
+
+    <programlisting>
+function 'add seven'(n: int) returns int      ; string-named function
+    n + 7
+
+function ++(n: int) returns int               ; operator-char-named function
+    n + 1
+
+let a 'add seven'(35)                          ; applied prefix -> 42
+let b ++(41)                                   ; applied prefix -> 42
+    </programlisting>
+
+    <para>Operators may be declared at the top level, not only as members of a
+      type. Like functions, they accept any of the three name forms:</para>
+
+    <programlisting>
+operator &lt;+&gt;(left: int, right: int) returns int    ; operator-char name
+    left + right
+
+operator 'divided by'(left: int, right: int) returns int   ; quoted name
+    left / right
+
+let c 40 &lt;+&gt; 2              ; infix -&gt; 42
+let d 84 'divided by' 2     ; infix -> 42
+    </programlisting>
+
+    <para>Built-in arithmetic, comparison, and logical operators carry their
+      usual precedences. A custom operator with a text or single-quoted name
+      binds most weakly of all — at the same level as <literal>||</literal> —
+      so the built-in arithmetic in an expression combines before it. For
+      example, given the <literal>'minus'</literal> operator above,
+      <literal>20 'minus' 3 + 5</literal> parses as
+      <literal>20 'minus' (3 + 5)</literal> and yields <literal>12</literal>.</para>
+  </section>
+
   &generated-definitions;
 
 </chapter>

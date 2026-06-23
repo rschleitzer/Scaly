@@ -32,6 +32,39 @@ Err("error")<expect>{"_type":"Result","_variant":"Err","value":"error"}
         <test id = option-some-value program = program><input>define Option union(Some: int, None)
 Option.Some(5).value<expect>5
 
+    <tests id = function-names title = "Function Names">
+        <prose>A routine's role is set by its declaration keyword, not by how its
+        name is spelled. A function may be named with ordinary letters, with a
+        single-quoted string identifier (which may contain spaces), or with
+        operator characters — in every case it is an ordinary function, applied
+        by writing its name before a parenthesized argument.
+        <test id = function-quoted-name program = program><input>function 'add seven'(n: int) returns int
+    n + 7
+'add seven'(35)<expect>42
+        <test id = function-operator-char-name program = program><input>function ++(n: int) returns int
+    n + 1
+++(41)<expect>42
+
+    <tests id = operator-definitions title = "Operator Definitions">
+        <prose>The operator keyword declares an operator, applied infix between
+        its two operands. Like functions, operators may be named with operator
+        characters or with a text or single-quoted name. Operators may be
+        declared at the top level, not only inside a type. A text-named operator
+        binds more weakly than the built-in arithmetic operators, so the
+        arithmetic combines first.
+        <test id = operator-symbolic program = program><input>operator <+>(left: int, right: int) returns int
+    left + right
+40 <+> 2<expect>42
+        <test id = operator-text-name program = program><input>operator 'plus'(left: int, right: int) returns int
+    left + right
+40 'plus' 2<expect>42
+        <test id = operator-quoted-name program = program><input>operator 'divided by'(left: int, right: int) returns int
+    left / right
+84 'divided by' 2<expect>42
+        <test id = operator-precedence program = program><input>operator 'minus'(left: int, right: int) returns int
+    left - right
+20 'minus' 3 + 5<expect>12
+
 </category>
 
 </suite>

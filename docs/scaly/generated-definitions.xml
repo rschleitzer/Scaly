@@ -93,6 +93,97 @@ Err("error")</programlisting></entry>
               <entry><programlisting>define Option union(Some: int, None)
 Option.Some(5).value</programlisting></entry>
               <entry><literal>5
+
+    </literal></entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </informaltable>
+    </section>
+
+    <section xml:id='tests-FUNCTION-NAMES'>
+      <title>Function Names</title>
+      <para>A routine's role is set by its declaration keyword, not by how its
+        name is spelled. A function may be named with ordinary letters, with a
+        single-quoted string identifier (which may contain spaces), or with
+        operator characters — in every case it is an ordinary function, applied
+        by writing its name before a parenthesized argument.</para>
+      <informaltable frame='none'>
+        <tgroup cols='2'>
+          <colspec colwidth='1*'/>
+          <colspec colwidth='1*'/>
+          <thead>
+            <row>
+              <entry>Input</entry>
+              <entry>Result</entry>
+            </row>
+          </thead>
+          <tbody>
+            <row>
+              <entry><programlisting>function 'add seven'(n: int) returns int
+    n + 7
+'add seven'(35)</programlisting></entry>
+              <entry><literal>42
+        </literal></entry>
+            </row>
+            <row>
+              <entry><programlisting>function ++(n: int) returns int
+    n + 1
+++(41)</programlisting></entry>
+              <entry><literal>42
+
+    </literal></entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </informaltable>
+    </section>
+
+    <section xml:id='tests-OPERATOR-DEFINITIONS'>
+      <title>Operator Definitions</title>
+      <para>The operator keyword declares an operator, applied infix between
+        its two operands. Like functions, operators may be named with operator
+        characters or with a text or single-quoted name. Operators may be
+        declared at the top level, not only inside a type. A text-named operator
+        binds more weakly than the built-in arithmetic operators, so the
+        arithmetic combines first.</para>
+      <informaltable frame='none'>
+        <tgroup cols='2'>
+          <colspec colwidth='1*'/>
+          <colspec colwidth='1*'/>
+          <thead>
+            <row>
+              <entry>Input</entry>
+              <entry>Result</entry>
+            </row>
+          </thead>
+          <tbody>
+            <row>
+              <entry><programlisting>operator &lt;+&gt;(left: int, right: int) returns int
+    left + right
+40 &lt;+&gt; 2</programlisting></entry>
+              <entry><literal>42
+        </literal></entry>
+            </row>
+            <row>
+              <entry><programlisting>operator 'plus'(left: int, right: int) returns int
+    left + right
+40 'plus' 2</programlisting></entry>
+              <entry><literal>42
+        </literal></entry>
+            </row>
+            <row>
+              <entry><programlisting>operator 'divided by'(left: int, right: int) returns int
+    left / right
+84 'divided by' 2</programlisting></entry>
+              <entry><literal>42
+        </literal></entry>
+            </row>
+            <row>
+              <entry><programlisting>operator 'minus'(left: int, right: int) returns int
+    left - right
+20 'minus' 3 + 5</programlisting></entry>
+              <entry><literal>12
 </literal></entry>
             </row>
           </tbody>
