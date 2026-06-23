@@ -25,7 +25,7 @@
 ; are let-bound Strings alive for the whole function), so there is no per-name
 ; allocation. Only the slot array is malloc'd.
 ;
-; CONTROL-FLOW NOTE: `guard COND STMT` runs STMT when COND is TRUE (no else).
+; CONTROL-FLOW NOTE: `if COND STMT` runs STMT when COND is TRUE (no else).
 ; One statement per line (`;` starts a comment, not a separator).
 
 use scaly.containers.String
@@ -76,7 +76,7 @@ define nameset
     function hash_range(s: String, start: size_t, end: size_t) returns size_t
     {
         let b s.get_buffer()
-        guard b = null
+        if b = null
             return 0xcbf29ce484222325
         nameset.hash_ptr(b + start, end - start)
     }
@@ -87,7 +87,7 @@ define nameset
         var k: size_t 0
         while k < len
         {
-            guard *(a + k) <> *(b + k)
+            if *(a + k) <> *(b + k)
                 return false
             set k: k + (1 as size_t)
         }
@@ -100,7 +100,7 @@ define nameset
     {
         let bytes cap * sizeof NameSlot
         let slots malloc(bytes) as pointer[NameSlot]
-        guard slots = null
+        if slots = null
             return null
         var i: size_t 0
         while i < cap
@@ -117,7 +117,7 @@ define nameset
 
     procedure destroy(slots: pointer[NameSlot])
     {
-        guard slots <> null
+        if slots <> null
             free(slots as pointer[void])
     }
 
@@ -127,7 +127,7 @@ define nameset
     ; wins regardless of order. A full table drops the name silently.
     procedure insert(slots: pointer[NameSlot], cap: size_t, name_ptr: pointer[u8], name_len: size_t, h: size_t, kind: i64)
     {
-        guard name_len > (0 as size_t)
+        if name_len > (0 as size_t)
         {
             let mask cap - (1 as size_t)
             var idx h & mask
@@ -135,7 +135,7 @@ define nameset
             while probes < cap
             {
                 let s slots + idx
-                guard s.used = false
+                if s.used = false
                 {
                     set s.name_ptr: name_ptr
                     set s.name_len: name_len
@@ -143,10 +143,10 @@ define nameset
                     set s.used: true
                     return
                 }
-                guard s.name_len = name_len
-                    guard nameset.eq_ptr(s.name_ptr, name_ptr, name_len)
+                if s.name_len = name_len
+                    if nameset.eq_ptr(s.name_ptr, name_ptr, name_len)
                     {
-                        guard kind > s.kind
+                        if kind > s.kind
                             set s.kind: kind
                         return
                     }
@@ -162,15 +162,15 @@ define nameset
     procedure insert_name_list(slots: pointer[NameSlot], cap: size_t, list: String, kind: i64)
     {
         let llen list.get_length()
-        guard llen > (0 as size_t)
+        if llen > (0 as size_t)
         {
             let base list.get_buffer()
-            guard base <> null
+            if base <> null
             {
                 var i: size_t 0
                 while i < llen
                 {
-                    guard list.get(i) = (10 as u8)
+                    if list.get(i) = (10 as u8)
                     {
                         set i: i + (1 as size_t)
                         continue
@@ -178,12 +178,12 @@ define nameset
                     var j i
                     while j < llen
                     {
-                        guard list.get(j) = (10 as u8)
+                        if list.get(j) = (10 as u8)
                             break
                         set j: j + (1 as size_t)
                     }
                     let seglen j - i
-                    guard seglen > (0 as size_t)
+                    if seglen > (0 as size_t)
                     {
                         let h nameset.hash_ptr(base + i, seglen)
                         nameset.insert(slots, cap, base + i, seglen, h, kind)
@@ -197,13 +197,13 @@ define nameset
     ; The token kind for source[start,end), or -1 if the name is not in the set.
     function lookup(slots: pointer[NameSlot], cap: size_t, source: String, start: size_t, end: size_t) returns i64
     {
-        guard slots <> null
+        if slots <> null
         {
             let tlen end - start
-            guard tlen > (0 as size_t)
+            if tlen > (0 as size_t)
             {
                 let sbuf source.get_buffer()
-                guard sbuf <> null
+                if sbuf <> null
                 {
                     let sp sbuf + start
                     let h nameset.hash_ptr(sp, tlen)
@@ -213,10 +213,10 @@ define nameset
                     while probes < cap
                     {
                         let s slots + idx
-                        guard s.used = false
+                        if s.used = false
                             return (0 - 1) as i64
-                        guard s.name_len = tlen
-                            guard nameset.eq_ptr(s.name_ptr, sp, tlen)
+                        if s.name_len = tlen
+                            if nameset.eq_ptr(s.name_ptr, sp, tlen)
                                 return s.kind
                         set idx: (idx + (1 as size_t)) & mask
                         set probes: probes + (1 as size_t)

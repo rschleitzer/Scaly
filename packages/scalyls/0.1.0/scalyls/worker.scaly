@@ -23,7 +23,7 @@
 ; request: the pipeline is stateless per document, and the page leak that
 ; would have made a long-lived worker grow without bound is fixed.
 ;
-; CONTROL-FLOW NOTE: `guard COND STMT` runs STMT when COND is TRUE (no
+; CONTROL-FLOW NOTE: `if COND STMT` runs STMT when COND is TRUE (no
 ; else). One statement per line. CR/LF are numeric bytes (rpc handles the
 ; framing); quotes are 0x22 bytes.
 
@@ -112,7 +112,7 @@ define worker
     function serve_one(in_fd: int, out_fd: int) returns bool
     {
         let kind rpc.read_message_fd#(in_fd)
-        guard kind.get_length() = (0 as size_t)
+        if kind.get_length() = (0 as size_t)
             return false
 
         let uri rpc.read_message_fd#(in_fd)
@@ -123,7 +123,7 @@ define worker
         ; `position` the query; there is no single document. Handle it before
         ; the per-document source resolution below (which would try to read the
         ; root directory as a file).
-        guard kind.equals("w")
+        if kind.equals("w")
         {
             rpc.write_message_fd(out_fd, symbols.workspace_symbols#(uri, position))
             return true
@@ -134,11 +134,11 @@ define worker
         ; the parent has no buffer for this uri (empty doctext frame).
         let path diagnostics.strip_uri#(uri)
         var source doctext
-        guard source.get_length() = (0 as size_t)
+        if source.get_length() = (0 as size_t)
             set source: File.read_to_string#(path)
 
         ; documentSymbol: outline of the resolved source.
-        guard kind.equals("s")
+        if kind.equals("s")
         {
             rpc.write_message_fd(out_fd, symbols.document_symbols#(source))
             return true
@@ -147,14 +147,14 @@ define worker
         ; completion: when a `.` precedes the cursor and its receiver names a
         ; declared concept, the members of that concept; otherwise the flat
         ; all-names list (the editor prefix-filters either way).
-        guard kind.equals("c")
+        if kind.equals("c")
         {
             rpc.write_message_fd(out_fd, symbols.completion_packed#(source, uri, position))
             return true
         }
 
         ; hover: symbol under the packed "<line> <char>" cursor position.
-        guard kind.equals("h")
+        if kind.equals("h")
         {
             rpc.write_message_fd(out_fd, symbols.hover_packed#(source, position))
             return true
@@ -163,7 +163,7 @@ define worker
         ; definition: declaration for the identifier at the cursor. Searches
         ; the current file first (result Location refers back to `uri`), then
         ; sibling .scaly files in the same directory tree (cross-file).
-        guard kind.equals("g")
+        if kind.equals("g")
         {
             rpc.write_message_fd(out_fd, symbols.definition_workspace_packed#(source, uri, position))
             return true
@@ -171,14 +171,14 @@ define worker
 
         ; references: all occurrences of the identifier at the cursor; the
         ; result Locations refer back to `uri`.
-        guard kind.equals("r")
+        if kind.equals("r")
         {
             rpc.write_message_fd(out_fd, symbols.references_packed#(source, uri, position))
             return true
         }
 
         ; documentHighlight: occurrences in the current document (range-only).
-        guard kind.equals("l")
+        if kind.equals("l")
         {
             rpc.write_message_fd(out_fd, symbols.highlights_packed#(source, position))
             return true
@@ -187,21 +187,21 @@ define worker
         ; rename: rewrite every occurrence of the identifier at the cursor to
         ; the new name (packed as "<line> <char> <newName>"); the result
         ; WorkspaceEdit refers back to `uri`.
-        guard kind.equals("n")
+        if kind.equals("n")
         {
             rpc.write_message_fd(out_fd, symbols.rename_packed#(source, uri, position))
             return true
         }
 
         ; prepareRename: the range of the renameable identifier at the cursor.
-        guard kind.equals("p")
+        if kind.equals("p")
         {
             rpc.write_message_fd(out_fd, symbols.prepare_rename_packed#(source, position))
             return true
         }
 
         ; signatureHelp: the parameter list of the call enclosing the cursor.
-        guard kind.equals("f")
+        if kind.equals("f")
         {
             rpc.write_message_fd(out_fd, symbols.signature_packed#(source, uri, position))
             return true
@@ -209,7 +209,7 @@ define worker
 
         ; inlayHint: parameter-name hints for call sites in the packed
         ; "<sl> <sc> <el> <ec>" range.
-        guard kind.equals("y")
+        if kind.equals("y")
         {
             rpc.write_message_fd(out_fd, symbols.inlay_hints_packed#(source, uri, position))
             return true
@@ -217,7 +217,7 @@ define worker
 
         ; foldingRange: collapsible regions of the resolved source (uri-only,
         ; no position).
-        guard kind.equals("o")
+        if kind.equals("o")
         {
             rpc.write_message_fd(out_fd, symbols.folding_ranges#(source))
             return true
@@ -225,7 +225,7 @@ define worker
 
         ; semanticTokens: delta-encoded token classification of the source
         ; (uri-only, no position).
-        guard kind.equals("t")
+        if kind.equals("t")
         {
             rpc.write_message_fd(out_fd, symbols.semantic_tokens#(source, uri))
             return true
@@ -236,7 +236,7 @@ define worker
         ; (e.g. "int"), or "" on a miss / parse error / unresolved. The full
         ; pipeline can crash/hang here; the isolation + 8s poll handle it, and
         ; the server falls back to the lexical hover on an empty reply.
-        guard kind.equals("x")
+        if kind.equals("x")
         {
             rpc.write_message_fd(out_fd, semantic.semantic_type_framed#(source, uri, position))
             return true
@@ -262,14 +262,14 @@ define worker
         signal(SIGPIPE, 1 as pointer[void])  ; SIG_IGN
 
         var p2c i32[2]                       ; parent -> child
-        guard pipe(p2c as pointer[i32]) <> 0
+        if pipe(p2c as pointer[i32]) <> 0
             return
         var c2p i32[2]                       ; child -> parent
-        guard pipe(c2p as pointer[i32]) <> 0
+        if pipe(c2p as pointer[i32]) <> 0
             return
 
         let pid fork()
-        guard pid = 0
+        if pid = 0
         {
             ; Child: keep p2c read end + c2p write end; drop the others.
             ; CRUCIAL: also drop the inherited editor stdin/stdout (fd 0/1).
@@ -285,7 +285,7 @@ define worker
             exit(rc)
             return
         }
-        guard pid < 0                        ; fork failed
+        if pid < 0                        ; fork failed
         {
             close(*(p2c + 0))
             close(*(p2c + 1))
@@ -304,7 +304,7 @@ define worker
 
     procedure ensure()
     {
-        guard worker_pid <= 0
+        if worker_pid <= 0
             worker.spawn()
     }
 
@@ -312,15 +312,15 @@ define worker
     ; the "no worker" condition so the next analyze re-spawns.
     procedure shutdown()
     {
-        guard worker_pid > 0
+        if worker_pid > 0
         {
             kill(worker_pid, SIGKILL)
             var status int 0
             waitpid(worker_pid, &status, 0)
         }
-        guard worker_in > 0
+        if worker_in > 0
             close(worker_in)
-        guard worker_out > 0
+        if worker_out > 0
             close(worker_out)
         set worker_pid: 0
         set worker_in:  0
@@ -448,7 +448,7 @@ define worker
             set attempts: attempts + 1
             worker.ensure()
             ; No live worker (spawn failed): nothing to do -> fallback.
-            guard worker_pid <= 0
+            if worker_pid <= 0
                 return fallback
 
             ; Send the request as four raw frames: kind, uri, doc text,
@@ -465,7 +465,7 @@ define worker
 
             ; poll == 0 (timeout) or < 0 (error): the pipeline hung. Kill it
             ; and give up — retrying would just hang again.
-            guard pr <= 0
+            if pr <= 0
             {
                 worker.shutdown()
                 return fallback
@@ -473,7 +473,7 @@ define worker
 
             let resp rpc.read_message_fd#(worker_out)
             ; Non-empty = a real answer.
-            guard resp.get_length() > (0 as size_t)
+            if resp.get_length() > (0 as size_t)
                 return resp
 
             ; Empty = the worker crashed mid-request (its write end closed).

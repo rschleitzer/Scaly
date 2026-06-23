@@ -269,10 +269,10 @@ define cli
     function runtime_archive_path#(rp) returns String
     {
         let home getenv("SCALY_HOME")
-        guard home = null
+        if home = null
             return String^rp("/tmp/libscaly.a")
         var home_str String$(home)
-        guard home_str.get_length() = 0
+        if home_str.get_length() = 0
             return String^rp("/tmp/libscaly.a")
         var sb StringBuilder$()
         sb.append(home_str)
@@ -288,12 +288,12 @@ define cli
     function link_compiler#(rp) returns String
     {
         var name getenv("SCALY_CC")
-        guard name = null
+        if name = null
             set name: getenv("CC")
-        guard name = null
+        if name = null
             return String^rp("clang")
         var s String$(name)
-        guard s.get_length() = 0
+        if s.get_length() = 0
             return String^rp("clang")
         String^rp(name)
     }
@@ -302,27 +302,27 @@ define cli
     ; Returns 0 on success, non-zero on error
     function run#(opts: Options) returns int
     {
-        guard opts.show_help
+        if opts.show_help
         {
             print_usage()
             return 0
         }
 
-        guard opts.has_error()
+        if opts.has_error()
         {
             Console.println("Error: ")
             ; TODO: print error message
             return 1
         }
 
-        guard opts.has_input() = false
+        if opts.has_input() = false
         {
             Console.println("Error: No input file specified")
             print_usage()
             return 1
         }
 
-        guard opts.verbose
+        if opts.verbose
         {
             Console.println("Compiling: ")
             ; TODO: print input file
@@ -330,13 +330,13 @@ define cli
 
         ; Read the source file
         var source File.read_to_string$(opts.input_file)
-        guard source.get_length() = 0
+        if source.get_length() = 0
         {
             Console.println("Error: Could not read input file")
             return 1
         }
 
-        guard opts.verbose
+        if opts.verbose
             Console.println("Read source file successfully")
 
         ; ================================================================
@@ -345,7 +345,7 @@ define cli
 
         var p parser.Parser$(source)
 
-        guard opts.lex_only
+        if opts.lex_only
         {
             ; Just tokenize and print tokens
             Console.println("Tokens:")
@@ -381,10 +381,10 @@ define cli
                 set syntax: program
             }
 
-        guard opts.verbose
+        if opts.verbose
             Console.println("Parsing completed successfully")
 
-        guard opts.parse_only
+        if opts.parse_only
         {
             Console.println("Parse successful")
             return 0
@@ -399,10 +399,10 @@ define cli
 
         let model Modeler.build_program#(opts.input_file, program_name, syntax, opts.no_prelude = false)
 
-        guard opts.verbose
+        if opts.verbose
             Console.println("Model built successfully")
 
-        guard opts.model_only
+        if opts.model_only
         {
             Console.println("Model built successfully")
             return 0
@@ -416,7 +416,7 @@ define cli
         cli.register_packages(&planner, &model)
         let plan planner.plan_program(model)
 
-        guard plan = null
+        if plan = null
         {
             Console.println("Planner error")
             return 4
@@ -426,16 +426,16 @@ define cli
         ; planner could not resolve and the emitter would silently
         ; drop. Print each with file:line:col and fail the compile,
         ; mirroring stage-0's error behavior.
-        guard planner.has_diagnostics()
+        if planner.has_diagnostics()
         {
             cli.print_diagnostics#(&planner, opts.input_file, source)
             return 4
         }
 
-        guard opts.verbose
+        if opts.verbose
             Console.println("Planning completed successfully")
 
-        guard opts.plan_only
+        if opts.plan_only
         {
             Console.println("Planning completed successfully")
             return 0
@@ -447,23 +447,23 @@ define cli
         ; process exit code. Prelude stays ON (the JIT module carries the
         ; RBMM runtime; libc is resolved by the ORC process generator).
         ; ================================================================
-        guard opts.run_mode
+        if opts.run_mode
         {
             ; Find the mangled name of the requested function in the plan
             ; (mirrors ModuleTests.cpp's name->MangledName scan).
             var target_mangled String$("")
-            guard plan.functions <> null
+            if plan.functions <> null
             {
                 for f in plan.functions
                 {
-                    guard f.name.equals(opts.run_function)
+                    if f.name.equals(opts.run_function)
                     {
-                        guard target_mangled.get_length() = 0
+                        if target_mangled.get_length() = 0
                             set target_mangled: f.mangled_name
                     }
                 }
             }
-            guard target_mangled.get_length() = 0
+            if target_mangled.get_length() = 0
             {
                 Console.println("Error: --run function not found")
                 return 10
@@ -482,7 +482,7 @@ define cli
         ; "main" and call it (its return is the exit code). Used to run the
         ; literate/semantic test corpus through the self-hosted JIT (Phase 2).
         ; ================================================================
-        guard opts.jit_program
+        if opts.jit_program
         {
             var prog_config EmitterConfig$()
             set prog_config.emit_debug_info: false
@@ -500,28 +500,28 @@ define cli
         set config.skip_tests: opts.no_tests
 
         var emitter Emitter.Emitter$(config)
-        guard opts.debug
+        if opts.debug
             emitter.set_debug_source(opts.input_file, source)
         let emit_result emitter.emit(plan, program_name)
 
-        guard emit_result = false
+        if emit_result = false
         {
             Console.println("Emitter error")
             return 5
         }
 
-        guard opts.verbose
+        if opts.verbose
             Console.println("Code generation completed successfully")
 
-        guard opts.emit_ir
+        if opts.emit_ir
         {
-            guard opts.output_file.get_length() = 0
+            if opts.output_file.get_length() = 0
             {
                 Console.println("Error: -S requires -o <file>")
                 return 6
             }
             let ir_ok emitter.write_module_to_file(opts.output_file)
-            guard ir_ok = false
+            if ir_ok = false
             {
                 Console.println("Error: Could not write IR file")
                 return 6
@@ -531,15 +531,15 @@ define cli
 
         ; -c: compile only (write object file, no link). Mirrors stage-0
         ; main.cpp's CompileOnly branch.
-        guard opts.compile_only
+        if opts.compile_only
         {
-            guard opts.output_file.get_length() = 0
+            if opts.output_file.get_length() = 0
             {
                 Console.println("Error: -c requires -o <file>")
                 return 6
             }
             let obj_ok emitter.write_object_to_file(opts.output_file)
-            guard obj_ok = false
+            if obj_ok = false
             {
                 Console.println("Error: Could not write object file")
                 return 8
@@ -547,7 +547,7 @@ define cli
             return 0
         }
 
-        guard opts.output_file.get_length() = 0
+        if opts.output_file.get_length() = 0
         {
             Console.println("Error: -o <file> required for linking")
             return 7
@@ -556,7 +556,7 @@ define cli
         ; Emit object file to fixed temp path, link with clang, then unlink temp.
         var tmp_obj String#("/tmp/scalyc_out.o")
         let obj_ok emitter.write_object_to_file(tmp_obj)
-        guard obj_ok = false
+        if obj_ok = false
         {
             Console.println("Error: Could not write object file")
             return 8
@@ -588,7 +588,7 @@ define cli
         while ei < opts.extra_objects.length
         {
             let e_ptr opts.extra_objects.get(ei)
-            guard e_ptr <> null
+            if e_ptr <> null
             {
                 cmd_builder.append(" ")
                 cmd_builder.append((*e_ptr))
@@ -601,7 +601,7 @@ define cli
         while li < opts.library_paths.length
         {
             let l_ptr opts.library_paths.get(li)
-            guard l_ptr <> null
+            if l_ptr <> null
             {
                 cmd_builder.append(" -L")
                 cmd_builder.append((*l_ptr))
@@ -614,7 +614,7 @@ define cli
         while bi < opts.libraries.length
         {
             let b_ptr opts.libraries.get(bi)
-            guard b_ptr <> null
+            if b_ptr <> null
             {
                 cmd_builder.append(" -l")
                 cmd_builder.append((*b_ptr))
@@ -632,8 +632,8 @@ define cli
         ; needs a standalone .dSYM next to the binary. Run dsymutil while the
         ; .o still exists. Harmless elsewhere — on ELF the executable already
         ; carries DWARF, and an absent dsymutil just fails into 2>/dev/null.
-        guard opts.debug
-            guard link_rc = 0
+        if opts.debug
+            if link_rc = 0
             {
                 var dsym_builder StringBuilder#()
                 dsym_builder.append("dsymutil ")
@@ -645,7 +645,7 @@ define cli
 
         let unlink_rc unlink(tmp_obj.c_data())
 
-        guard link_rc <> 0
+        if link_rc <> 0
         {
             Console.println("Error: Linker failed")
             return 9
@@ -668,7 +668,7 @@ define cli
         while i < model.packages.length
         {
             let pkg_ptr model.packages.get(i)
-            guard pkg_ptr <> null
+            if pkg_ptr <> null
             {
                 planner.register_loaded_package(pkg_ptr.name, *pkg_ptr)
                 planner.register_module_concepts(*pkg_ptr)
@@ -692,7 +692,7 @@ define cli
         var col: size_t 1
         let src_len source.get_length()
         var target offset
-        guard target > src_len
+        if target > src_len
             set target: src_len
         var off: size_t 0
         while off < target
@@ -725,7 +725,7 @@ define cli
         while di < planner.diagnostics.length
         {
             let d_ptr planner.diagnostics.get(di)
-            guard d_ptr <> null
+            if d_ptr <> null
             {
                 ; The diagnostic's byte offset is relative to ITS OWN source
                 ; file (a sub-module lives in its own file). Format against
@@ -734,7 +734,7 @@ define cli
                 ; current-module context). Mirrors stage-0's per-error File.
                 var dpath: String file_path
                 var dsrc: String source
-                guard d_ptr.file.get_length() > 0
+                if d_ptr.file.get_length() > 0
                 {
                     set dpath: d_ptr.file
                     set dsrc: File.read_to_string$(d_ptr.file)
@@ -743,7 +743,7 @@ define cli
                 var col: size_t 1
                 let src_len dsrc.get_length()
                 var target d_ptr.start
-                guard target > src_len
+                if target > src_len
                     set target: src_len
                 var off: size_t 0
                 while off < target
@@ -783,7 +783,7 @@ define cli
     ; risk under stage-1.
     function format_size#(n: size_t) returns String
     {
-        guard n = 0
+        if n = 0
             return String#("0")
         var value n
         var digits Array[char]$()
@@ -799,7 +799,7 @@ define cli
         {
             set i: i - 1
             let d digits.get(i)
-            guard d <> null
+            if d <> null
                 sb.append(*d)
         }
         sb.to_string#()
@@ -813,10 +813,10 @@ define cli
         while i < file_path.get_length() as int
         {
             let c file_path.get(i as size_t)
-            guard c = "/" as char
+            if c = "/" as char
                 set start: i + 1
 
-            guard c = "\\" as char
+            if c = "\\" as char
                 set start: i + 1
 
             set i: i + 1
@@ -828,7 +828,7 @@ define cli
         while i >= start
         {
             let c file_path.get(i as size_t)
-            guard c = "." as char
+            if c = "." as char
             {
                 set end: i
                 ; break - just use assignment for now
@@ -838,7 +838,7 @@ define cli
         }
 
         ; Extract substring
-        guard end <= start
+        if end <= start
             return file_path
 
         file_path.substring(rp, start as size_t, (end - start) as size_t)
@@ -856,37 +856,37 @@ define cli
     {
         ; Test 1: Check Options initialization
         var opts Options$()
-        guard opts.has_input()
+        if opts.has_input()
             return -1
 
-        guard opts.has_error()
+        if opts.has_error()
             return -2
 
-        guard opts.verbose
+        if opts.verbose
             return -3
 
-        guard opts.show_help
+        if opts.show_help
             return -4
 
         ; Test 2: Test extract_program_name
         var path1 String$("/path/to/hello.scaly")
         var name1 cli.extract_program_name#(path1)
-        guard name1.equals(String$("hello")) = false
+        if name1.equals(String$("hello")) = false
             return -10
 
         var path2 String$("simple.scaly")
         var name2 cli.extract_program_name#(path2)
-        guard name2.equals(String$("simple")) = false
+        if name2.equals(String$("simple")) = false
             return -11
 
         ; Test 3: Test pipeline on a minimal program
         var result cli.test_pipeline#()
-        guard result <> 0
+        if result <> 0
             return result - 100
 
         ; Test 4: Test pipeline on hello.scaly from disk
         set result: cli.test_hello_scaly#()
-        guard result <> 0
+        if result <> 0
             return result - 200
 
         ; All tests passed
@@ -901,7 +901,7 @@ define cli
 
         ; Read the file
         var source File.read_to_string$(file_path)
-        guard source.get_length() = 0
+        if source.get_length() = 0
             return -1  ; Could not read file
 
         ; Stage 1: Parse
@@ -924,7 +924,7 @@ define cli
         ; Stage 3: Plan
         var planner Planner.Planner$(file_path)
         let plan planner.plan_program(model)
-        guard plan = null
+        if plan = null
             return -3  ; Planning failed
 
         ; Stage 4: Emit
@@ -932,7 +932,7 @@ define cli
         set config.emit_debug_info: false
         var emitter Emitter.Emitter$(config)
         let emit_result emitter.emit(plan, program_name)
-        guard emit_result = false
+        if emit_result = false
             return -4  ; Emission failed
 
         ; Successfully compiled hello.scaly!
@@ -966,7 +966,7 @@ define cli
         ; Stage 3: Plan
         var planner Planner.Planner$(file_name)
         let plan planner.plan_program(model)
-        guard plan = null
+        if plan = null
             return -3  ; Planning failed
 
         ; Stage 4: Emit (just verify it doesn't crash)
@@ -974,7 +974,7 @@ define cli
         set config.emit_debug_info: false
         var emitter Emitter.Emitter$(config)
         let emit_result emitter.emit(plan, program_name)
-        guard emit_result = false
+        if emit_result = false
             return -4  ; Emission failed
 
         ; All pipeline stages passed

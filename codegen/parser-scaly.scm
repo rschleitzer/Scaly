@@ -170,7 +170,7 @@ define Parser
                             throw ParserError.Invalid(i)
                         when d: Different
                         {
-                            guard acc.head = null
+                            if acc.head = null
                                 throw err
                             set parsing: false
                         }
@@ -293,7 +293,7 @@ define Parser
                         (("keyword")
                             ($
 "
-        guard ~lexer.parse_keyword#(String#(\""(id (element-with-id (link content)))"\"))"
+        if ~lexer.parse_keyword#(String#(\""(id (element-with-id (link content)))"\"))"
                                 (if (equal? 1 (child-number content))
                                     (if (peek? syntax)
                                         "
@@ -321,7 +321,7 @@ define Parser
                                 ;; Required punctuation
                                 ($
 "
-        guard ~lexer.parse_punctuation#("(punct-const-name (value (element-with-id (link content))))")"
+        if ~lexer.parse_punctuation#("(punct-const-name (value (element-with-id (link content))))")"
                                     (if (equal? 1 (child-number content))
                                         "
             throw ParserError.Different(DifferentSyntax())
@@ -343,7 +343,7 @@ define Parser
                                 ;; Required colon
                                 ($
 "
-        guard ~lexer.parse_colon#()"
+        if ~lexer.parse_colon#()"
                                     (if (equal? 1 (child-number content))
                                         "
             throw ParserError.Different(DifferentSyntax())
@@ -359,7 +359,7 @@ define Parser
                             ($
 "
         let " prop " lexer.parse_identifier#(keywords)
-        guard " prop ".length() = 0"
+        if " prop ".length() = 0"
                                 (if (equal? 1 (child-number content))
                                     "
             throw ParserError.Different(DifferentSyntax())
@@ -374,7 +374,7 @@ define Parser
                             ($
 "
         let " prop " lexer.parse_attribute#()
-        guard " prop ".length() = 0"
+        if " prop ".length() = 0"
                                 (if (equal? 1 (child-number content))
                                     "
             throw ParserError.Different(DifferentSyntax())
@@ -419,7 +419,7 @@ function test() returns int
             return 1
         when literal: Success
         {
-            guard ~parser.is_at_end()
+            if ~parser.is_at_end()
                 return 2
         }
 
@@ -430,7 +430,7 @@ function test() returns int
             return 3
         when name: Success
         {
-            guard ~parser.is_at_end()
+            if ~parser.is_at_end()
                 return 4
         }
 
@@ -441,7 +441,7 @@ function test() returns int
             return 5
         when func: Success
         {
-            guard ~parser.is_at_end()
+            if ~parser.is_at_end()
                 return 6
         }
 
@@ -452,7 +452,7 @@ function test() returns int
             return 7
         when def: Success
         {
-            guard ~parser.is_at_end()
+            if ~parser.is_at_end()
                 return 8
         }
 
@@ -463,7 +463,7 @@ function test() returns int
             return 9
         when def: Success
         {
-            guard ~parser.is_at_end()
+            if ~parser.is_at_end()
                 return 10
         }
 
@@ -474,7 +474,7 @@ function test() returns int
             return 11
         when def: Success
         {
-            guard ~parser.is_at_end()
+            if ~parser.is_at_end()
                 return 12
         }
 

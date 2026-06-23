@@ -12,12 +12,12 @@ define hashing
 ; String::hash calls hash) instead of declare-only → undefined at link.
 function is_prime(candidate: size_t) returns bool
 {
-    guard (candidate & 1) <> 0
+    if (candidate & 1) <> 0
     {
         var divisor: size_t 3
         while divisor * divisor <= candidate
         {
-            guard (candidate % divisor) = 0
+            if (candidate % divisor) = 0
                 return false
 
             set divisor: divisor + 2
@@ -40,7 +40,7 @@ function get_prime(size: size_t) returns size_t
     var i size | 1
     while i < SIZE_MAX
     {
-        guard is_prime(i)
+        if is_prime(i)
             return i
 
         set i: i + 2

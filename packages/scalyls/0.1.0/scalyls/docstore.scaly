@@ -20,7 +20,7 @@
 ; The store lives ONLY in the parent. The worker (a forked child) receives the
 ; text over its request pipe, so it never touches this module.
 ;
-; CONTROL-FLOW NOTE: `guard COND STMT` runs STMT when COND is TRUE (no else).
+; CONTROL-FLOW NOTE: `if COND STMT` runs STMT when COND is TRUE (no else).
 ; One statement per line (`;` starts a comment, not a separator).
 
 use scaly.containers.String
@@ -61,16 +61,16 @@ define docstore
     ; freeing any previous one. Empty path leaves it null.
     procedure set_workspace_root(path: String)
     {
-        guard ws_root_data <> null
+        if ws_root_data <> null
             free(ws_root_data as pointer[void])
         set ws_root_data: null
         set ws_root_len: 0 as size_t
 
         let len path.get_length()
-        guard len > (0 as size_t)
+        if len > (0 as size_t)
         {
             let dst malloc(len) as pointer[u8]
-            guard dst <> null
+            if dst <> null
             {
                 memcpy(dst as pointer[void], path.get_buffer() as pointer[void], len)
                 set ws_root_data: dst
@@ -83,7 +83,7 @@ define docstore
     ; initialize provided none.
     function workspace_root#(rp) returns String
     {
-        guard ws_root_data <> null
+        if ws_root_data <> null
             return String#(ws_root_data as pointer[const_char], ws_root_len)
         String#("")
     }
@@ -92,11 +92,11 @@ define docstore
     ; reading the file from disk.
     procedure ensure()
     {
-        guard doc_slots = null
+        if doc_slots = null
         {
             let bytes (DOC_CAP as size_t) * sizeof DocSlot
             set doc_slots: malloc(bytes) as pointer[DocSlot]
-            guard doc_slots = null
+            if doc_slots = null
                 return
 
             var i 0
@@ -117,16 +117,16 @@ define docstore
     ; over each stored uri (on this function's local page) for the compare.
     function find(uri: String) returns int
     {
-        guard doc_slots <> null
+        if doc_slots <> null
         {
             var i 0
             while i < DOC_CAP
             {
                 let s doc_slots + i
-                guard s.used
+                if s.used
                 {
                     let su String#(s.uri_data as pointer[const_char], s.uri_len)
-                    guard su.equals(uri)
+                    if su.equals(uri)
                         return i
                 }
                 set i: i + 1
@@ -139,16 +139,16 @@ define docstore
     ; bytes, freeing the previous copy. An empty text leaves text_data null.
     procedure set_text(s: pointer[DocSlot], text: String)
     {
-        guard s.text_data <> null
+        if s.text_data <> null
             free(s.text_data as pointer[void])
         set s.text_data: null
         set s.text_len: 0 as size_t
 
         let len text.get_length()
-        guard len > (0 as size_t)
+        if len > (0 as size_t)
         {
             let dst malloc(len) as pointer[u8]
-            guard dst <> null
+            if dst <> null
             {
                 memcpy(dst as pointer[void], text.get_buffer() as pointer[void], len)
                 set s.text_data: dst
@@ -161,16 +161,16 @@ define docstore
     ; freeing any previous copy (slots are reused after didClose).
     procedure set_uri(s: pointer[DocSlot], uri: String)
     {
-        guard s.uri_data <> null
+        if s.uri_data <> null
             free(s.uri_data as pointer[void])
         set s.uri_data: null
         set s.uri_len: 0 as size_t
 
         let len uri.get_length()
-        guard len > (0 as size_t)
+        if len > (0 as size_t)
         {
             let dst malloc(len) as pointer[u8]
-            guard dst <> null
+            if dst <> null
             {
                 memcpy(dst as pointer[void], uri.get_buffer() as pointer[void], len)
                 set s.uri_data: dst
@@ -184,11 +184,11 @@ define docstore
     procedure put(uri: String, text: String)
     {
         docstore.ensure()
-        guard doc_slots = null
+        if doc_slots = null
             return
 
         let idx docstore.find(uri)
-        guard idx >= 0
+        if idx >= 0
         {
             let s doc_slots + idx
             docstore.set_text(s, text)
@@ -200,7 +200,7 @@ define docstore
         while i < DOC_CAP
         {
             let s doc_slots + i
-            guard s.used = false
+            if s.used = false
             {
                 docstore.set_uri(s, uri)
                 docstore.set_text(s, text)
@@ -216,12 +216,12 @@ define docstore
     procedure remove(uri: String)
     {
         let idx docstore.find(uri)
-        guard idx >= 0
+        if idx >= 0
         {
             let s doc_slots + idx
-            guard s.text_data <> null
+            if s.text_data <> null
                 free(s.text_data as pointer[void])
-            guard s.uri_data <> null
+            if s.uri_data <> null
                 free(s.uri_data as pointer[void])
             set s.text_data: null
             set s.text_len: 0 as size_t
@@ -236,10 +236,10 @@ define docstore
     function get#(rp, uri: String) returns String
     {
         let idx docstore.find(uri)
-        guard idx >= 0
+        if idx >= 0
         {
             let s doc_slots + idx
-            guard s.text_data <> null
+            if s.text_data <> null
                 return String#(s.text_data as pointer[const_char], s.text_len)
         }
         String#("")

@@ -11,7 +11,7 @@ define memory
     function test_page_allocate() returns int
     {
         var page Page.allocate_page()
-        guard page = null
+        if page = null
             return -1
 
         page.deallocate_extensions()
@@ -22,15 +22,15 @@ define memory
     function test_page_allocate_int() returns int
     {
         var page Page.allocate_page()
-        guard page = null
+        if page = null
             return -2
 
         let ptr page.allocate(sizeof int, alignof int) as pointer[int]
-        guard ptr = null
+        if ptr = null
             return -3
 
         set *ptr: 42
-        guard *ptr <> 42
+        if *ptr <> 42
             return -4
 
         page.deallocate_extensions()
@@ -41,7 +41,7 @@ define memory
     function test_page_multiple_allocs() returns int
     {
         var page Page.allocate_page()
-        guard page = null
+        if page = null
             return -5
 
         let p1 page.allocate(sizeof int, alignof int) as pointer[int]
@@ -50,13 +50,13 @@ define memory
         set *p1: 1
         set *p2: 2
         set *p3: 3
-        guard *p1 <> 1
+        if *p1 <> 1
             return -6
 
-        guard *p2 <> 2
+        if *p2 <> 2
             return -7
 
-        guard *p3 <> 3
+        if *p3 <> 3
             return -8
 
         page.deallocate_extensions()
@@ -67,12 +67,12 @@ define memory
     function test_page_get() returns int
     {
         var page Page.allocate_page()
-        guard page = null
+        if page = null
             return -9
 
         let ptr page.allocate(sizeof int, alignof int) as pointer[int]
         let retrieved_page Page.get(ptr as pointer[void])
-        guard retrieved_page <> page
+        if retrieved_page <> page
             return -10
 
         page.deallocate_extensions()
@@ -83,19 +83,19 @@ define memory
     function test() returns int
     {
         var result test_page_allocate()
-        guard result <> 0
+        if result <> 0
             return result
 
         set result: test_page_allocate_int()
-        guard result <> 0
+        if result <> 0
             return result
 
         set result: test_page_multiple_allocs()
-        guard result <> 0
+        if result <> 0
             return result
 
         set result: test_page_get()
-        guard result <> 0
+        if result <> 0
             return result
 
         0

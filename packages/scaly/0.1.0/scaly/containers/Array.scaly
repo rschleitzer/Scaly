@@ -14,10 +14,10 @@ define ArrayIterator[T]
 
     function next(this: ArrayIterator[T]) returns pointer[T]
     {
-        guard array = null
+        if array = null
             return null
 
-        guard position = array.length
+        if position = array.length
             return null
 
         set position: position + 1
@@ -65,7 +65,7 @@ define Array[T]
 
     function get_buffer(this: Array[T]) returns pointer[T]
     {
-        guard vector = null
+        if vector = null
             return null
 
         return vector.data
@@ -76,7 +76,7 @@ define Array[T]
 
     function get_capacity(this: Array[T]) returns size_t
     {
-        guard vector = null
+        if vector = null
             return 0
 
         return vector.length
@@ -84,7 +84,7 @@ define Array[T]
 
     function add(this: Array[T], item: T)
     {
-        guard (vector = null) || (length = vector.length)
+        if (vector = null) || (length = vector.length)
             this.reallocate()
 
         let location vector.data + length
@@ -99,14 +99,14 @@ define Array[T]
         ; Unsigned-wraparound check: items.length > 0 should grow the
         ; total. If new_length wraps below the existing length we'd
         ; under-size the allocation below and OOB-write the memcpy.
-        guard new_length < length
+        if new_length < length
             exit(14)
 
         let size sizeof T
-        guard (vector = null) || (new_length > vector.length)
+        if (vector = null) || (new_length > vector.length)
             this.reallocate()
 
-        guard new_length > vector.length
+        if new_length > vector.length
         {
             ; Manual grow when one reallocate() doubling wasn't enough.
             ; Allocate for new_length items, copy the live `length`
@@ -115,7 +115,7 @@ define Array[T]
             var own_page Page.get(this as pointer[void])
             let data own_page.allocate(new_length * size, alignof T) as pointer[T]
             let bytes_to_copy length * size
-            guard length > 0
+            if length > 0
                 memcpy(data, vector.data, bytes_to_copy)
 
             let old_exclusive_page Page.get(vector.data as pointer[void])
@@ -124,7 +124,7 @@ define Array[T]
             set vector.length: new_length
         }
 
-        guard items.length > 0
+        if items.length > 0
             memcpy(vector.data + length * size, items.data, items.length * size)
 
         set length: length + items.length
@@ -132,7 +132,7 @@ define Array[T]
 
     function get(this: Array[T], i: size_t) returns ref[T]?
     {
-        guard i >= length
+        if i >= length
             return null
 
         vector.data + i
@@ -143,7 +143,7 @@ define Array[T]
     ; length is a caller bug, so it traps.
     function put(this: Array[T], i: size_t, item: T)
     {
-        guard i >= length
+        if i >= length
         {
             scaly_eputs("Array.put: index out of bounds")
             scaly_eputnl()
@@ -159,7 +159,7 @@ define Array[T]
     operator [](this: Array[T], i: size_t) returns ref[T]?
     {
         ; `i >= length` avoids the `i + 1` overflow at SIZE_MAX.
-        guard i >= length
+        if i >= length
             return null
 
         vector.data + i

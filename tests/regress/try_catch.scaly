@@ -18,7 +18,7 @@ define TErr union (Bad: Detail)
 ; Scalar-returning throws: throws Bad on b=0, else returns b+100.
 function step(b: int) returns int throws TErr
 {
-    guard b = 0
+    if b = 0
         throw TErr.Bad(Detail(7))
     return b + 100
 }

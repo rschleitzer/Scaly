@@ -28,10 +28,10 @@ define containers
         var vector Vector[int]$(2)
         set *(vector.get(0)): 1
         vector.put(1, 2)
-        guard *(vector.get(0)) <> 1
+        if *(vector.get(0)) <> 1
             return -1
 
-        guard *(vector[1]) <> 2
+        if *(vector[1]) <> 2
             return -2
 
         0
@@ -57,7 +57,7 @@ define containers
             var i: int 1
             while i <= huge_number
             {
-                guard *(buffer + i - 1) <> i
+                if *(buffer + i - 1) <> i
                     return -6
 
                 set i: i + 1
@@ -70,7 +70,7 @@ define containers
     {
         var s String$("Hello world!")
         let length s.get_length()
-        guard length <> 12
+        if length <> 12
             return -100
 
         0
@@ -80,20 +80,20 @@ define containers
     {
         var string String$("Hello world!")
         let length string.get_length()
-        guard length <> 12
+        if length <> 12
             return -7
 
         var long_string String$("1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890")
-        guard long_string.get_length() <> 130
+        if long_string.get_length() <> 130
             return -8
 
         var semi String$(";")
         var dot String$(".")
-        guard semi.equals(dot)
+        if semi.equals(dot)
             return -9
 
         var semi2 String$(";")
-        guard semi.equals(semi2) <> true
+        if semi.equals(semi2) <> true
             return -10
 
         0
@@ -103,31 +103,31 @@ define containers
     {
         var string_builder StringBuilder$()
         let length string_builder.get_length()
-        guard length <> 0
+        if length <> 0
             return -11
 
         string_builder.append("a" as char)
         string_builder.append("b" as char)
         string_builder.append("c" as char)
-        guard string_builder.to_string$().equals("abc") = false
+        if string_builder.to_string$().equals("abc") = false
             return -12
 
-        guard string_builder.get_length() <> 3
+        if string_builder.get_length() <> 3
             return -13
 
         var string_builder2 StringBuilder$("d" as char)
         string_builder2.append("e" as char)
         string_builder2.append("f" as char)
         string_builder2.append("g" as char)
-        guard string_builder2.to_string$().equals("defg") = false
+        if string_builder2.to_string$().equals("defg") = false
             return -14
 
-        guard string_builder2.get_length() <> 4
+        if string_builder2.get_length() <> 4
             return -15
 
         var string_builder3 StringBuilder$("hijk")
         string_builder3.append("lmno")
-        guard string_builder3.to_string$().equals("hijklmno") = false
+        if string_builder3.to_string$().equals("hijklmno") = false
             return -16
 
         0
@@ -153,10 +153,10 @@ define containers
             while i >= 1
             {
                 let p iterator.next()
-                guard p = null
+                if p = null
                     return -17
 
-                guard *p <> i
+                if *p <> i
                     return -18
 
                 set i: i - 1
@@ -173,29 +173,29 @@ define containers
         array.add(String$("typedef"))
         let vector Vector[String]$(*array)
         var keywords_builder HashSetBuilder[String]$(vector)
-        guard keywords_builder.contains(String$("using")) = false
+        if keywords_builder.contains(String$("using")) = false
             return -19
 
-        guard keywords_builder.contains(String$("namespace")) = false
+        if keywords_builder.contains(String$("namespace")) = false
             return -20
 
-        guard keywords_builder.contains(String$("typedef")) = false
+        if keywords_builder.contains(String$("typedef")) = false
             return -21
 
-        guard keywords_builder.contains(String$("nix"))
+        if keywords_builder.contains(String$("nix"))
             return -22
 
         var keywords HashSet[String]$(*keywords_builder)
-        guard keywords.contains(String$("using")) = false
+        if keywords.contains(String$("using")) = false
             return -23
 
-        guard keywords.contains(String$("namespace")) = false
+        if keywords.contains(String$("namespace")) = false
             return -24
 
-        guard keywords.contains(String$("typedef")) = false
+        if keywords.contains(String$("typedef")) = false
             return -25
 
-        guard keywords.contains(String$("nix"))
+        if keywords.contains(String$("nix"))
             return -26
 
         0
@@ -210,53 +210,53 @@ define containers
             array.add(KeyValuePair[String, int](String$("typedef"), 3))
             let vector Vector[KeyValuePair[String, int]]$(*array)
             var keywords_builder HashMapBuilder[String, int]$(vector)
-            guard keywords_builder.contains(String$("using")) = false
+            if keywords_builder.contains(String$("using")) = false
                 return -27
 
-            guard keywords_builder.contains(String$("namespace")) = false
+            if keywords_builder.contains(String$("namespace")) = false
                 return -28
 
-            guard keywords_builder.contains(String$("typedef")) = false
+            if keywords_builder.contains(String$("typedef")) = false
                 return -29
 
-            guard keywords_builder.contains(String$("nix"))
+            if keywords_builder.contains(String$("nix"))
                 return -30
 
-            guard *(*keywords_builder)[String$("using")] <> 1
+            if *(*keywords_builder)[String$("using")] <> 1
                 return -31
 
-            guard *(*keywords_builder)[String$("namespace")] <> 2
+            if *(*keywords_builder)[String$("namespace")] <> 2
                 return -32
 
-            guard *(*keywords_builder)[String$("typedef")] <> 3
+            if *(*keywords_builder)[String$("typedef")] <> 3
                 return -33
 
-            guard (*keywords_builder)[String$("nix")] <> null
+            if (*keywords_builder)[String$("nix")] <> null
                 return -34
 
             var keywords HashMap[String, int]$(*keywords_builder)
-            guard keywords.contains(String$("using")) = false
+            if keywords.contains(String$("using")) = false
                 return -35
 
-            guard keywords.contains(String$("namespace")) = false
+            if keywords.contains(String$("namespace")) = false
                 return -36
 
-            guard keywords.contains(String$("typedef")) = false
+            if keywords.contains(String$("typedef")) = false
                 return -37
 
-            guard keywords.contains(String$("nix"))
+            if keywords.contains(String$("nix"))
                 return -38
 
-            guard *keywords[String$("using")] <> 1
+            if *keywords[String$("using")] <> 1
                 return -39
 
-            guard *keywords[String$("namespace")] <> 2
+            if *keywords[String$("namespace")] <> 2
                 return -40
 
-            guard *keywords[String$("typedef")] <> 3
+            if *keywords[String$("typedef")] <> 3
                 return -41
 
-            guard keywords[String$("nix")] <> null
+            if keywords[String$("nix")] <> null
                 return -42
 
         }
@@ -334,13 +334,13 @@ define containers
                                 sb.append(k)
                                 sb.append(l)
                                 let theString sb.to_string$()
-                                guard hash_set.contains(theString) = false
+                                if hash_set.contains(theString) = false
                                     return -43
 
-                                guard map.contains(theString) = false
+                                if map.contains(theString) = false
                                     return -44
 
-                                guard *(*map)[theString] <> (i * j * k * l) as size_t
+                                if *(*map)[theString] <> (i * j * k * l) as size_t
                                     return -45
 
                                 set l: l + 1
@@ -367,53 +367,53 @@ define containers
         set *vector.get(4): 50
 
         let slice vector.as_slice()
-        guard slice.length <> 5
+        if slice.length <> 5
             return -50
 
-        guard *slice[0] <> 10
+        if *slice[0] <> 10
             return -51
 
-        guard *slice[4] <> 50
+        if *slice[4] <> 50
             return -52
 
         ; Test sub-slice
         let sub slice.subslice(1, 4)
-        guard sub.length <> 3
+        if sub.length <> 3
             return -53
 
-        guard *sub[0] <> 20
+        if *sub[0] <> 20
             return -54
 
-        guard *sub[2] <> 40
+        if *sub[2] <> 40
             return -55
 
         ; Test String slice
         var s String$("Hello")
         let str_slice s.as_slice()
-        guard str_slice.length <> 5
+        if str_slice.length <> 5
             return -56
 
-        guard *str_slice[0] <> "H" as char
+        if *str_slice[0] <> "H" as char
             return -57
 
-        guard *str_slice[4] <> "o" as char
+        if *str_slice[4] <> "o" as char
             return -58
 
         ; Test slice equality
         var s2 String$("Hello")
         let str_slice2 s2.as_slice()
-        guard str_slice == str_slice2 = false
+        if str_slice == str_slice2 = false
             return -59
 
         ; Test triple chained method calls: as_slice().subslice().subslice()
         let triple_chain vector.as_slice().subslice(0, 4).subslice(1, 3)
-        guard triple_chain.length <> 2
+        if triple_chain.length <> 2
             return -60
 
-        guard *triple_chain[0] <> 20
+        if *triple_chain[0] <> 20
             return -61
 
-        guard *triple_chain[1] <> 30
+        if *triple_chain[1] <> 30
             return -62
 
         0
@@ -422,54 +422,54 @@ define containers
     function test() returns int
     {
         var result test_slice()
-        guard result <> 0
+        if result <> 0
             return result
 
         set result: test_string_simple()
-        guard result <> 0
+        if result <> 0
             return result
 
         set result: test_vector()
-        guard result <> 0
+        if result <> 0
             return result
 
         set result: test_array()
-        guard result <> 0
+        if result <> 0
             return result
 
         set result: test_string()
-        guard result <> 0
+        if result <> 0
             return result
 
         set result: test_string_builder()
-        guard result <> 0
+        if result <> 0
             return result
 
         set result: test_list()
-        guard result <> 0
+        if result <> 0
             return result
 
         set result: test_hash_set()
-        guard result <> 0
+        if result <> 0
             return result
 
         set result: test_hash_map()
-        guard result <> 0
+        if result <> 0
             return result
 
         ; TODO: test_result() and test_option() need union variant construction
         ; set result: test_result()
-        ; guard result <> 0
+        ; if result <> 0
         ; {
         ;     return result
         ; }
         ; set result: test_option()
-        ; guard result <> 0
+        ; if result <> 0
         ; {
         ;     return result
         ; }
         set result: test_string_operations()
-        guard result <> 0
+        if result <> 0
             return result
 
         0
@@ -480,74 +480,74 @@ define containers
         var s String$("Hello, World!")
 
         ; Test contains(char)
-        guard s.contains("H" as char) = false
+        if s.contains("H" as char) = false
             return -200
 
-        guard s.contains("d" as char) = false
+        if s.contains("d" as char) = false
             return -201
 
-        guard s.contains("X" as char)
+        if s.contains("X" as char)
             return -202
 
         ; Test contains(String)
         var hello String$("Hello")
-        guard s.contains(hello) = false
+        if s.contains(hello) = false
             return -203
 
         var world String$("World")
-        guard s.contains(world) = false
+        if s.contains(world) = false
             return -204
 
         var foo String$("foo")
-        guard s.contains(foo)
+        if s.contains(foo)
             return -205
 
         ; Test starts_with
-        guard s.starts_with(hello) = false
+        if s.starts_with(hello) = false
             return -206
 
-        guard s.starts_with("Hello")= false
+        if s.starts_with("Hello")= false
             return -207
 
-        guard s.starts_with(world)
+        if s.starts_with(world)
             return -208
 
-        guard s.starts_with("World")
+        if s.starts_with("World")
             return -209
 
         ; Test ends_with
-        guard s.ends_with("!") = false
+        if s.ends_with("!") = false
             return -210
 
         var exclaim String$("!")
-        guard s.ends_with(exclaim) = false
+        if s.ends_with(exclaim) = false
             return -211
 
         var ending String$("World!")
-        guard s.ends_with(ending) = false
+        if s.ends_with(ending) = false
             return -212
 
-        guard s.ends_with(hello)
+        if s.ends_with(hello)
             return -213
 
         ; Test index_of
-        guard s.index_of("H" as char) <> 0
+        if s.index_of("H" as char) <> 0
             return -214
 
-        guard s.index_of("," as char) <> 5
+        if s.index_of("," as char) <> 5
             return -215
 
-        guard s.index_of("!" as char) <> 12
+        if s.index_of("!" as char) <> 12
             return -216
 
-        guard s.index_of("X" as char) <> -1
+        if s.index_of("X" as char) <> -1
             return -217
 
         ; Test index_of with start offset
-        guard s.index_of("o" as char, 0) <> 4
+        if s.index_of("o" as char, 0) <> 4
             return -218
 
-        guard s.index_of("o" as char, 5) <> 8
+        if s.index_of("o" as char, 5) <> 8
             return -219
 
         0
@@ -557,30 +557,30 @@ define containers
     {
         ; Test Option.Some construction
         let some_val Option[int].Some(42)
-        guard some_val.is_some() = false
+        if some_val.is_some() = false
             return -300
 
-        guard some_val.is_none()
+        if some_val.is_none()
             return -301
 
         ; Test Option.None construction
         let none_val Option[int].None
-        guard none_val.is_none() = false
+        if none_val.is_none() = false
             return -302
 
-        guard none_val.is_some()
+        if none_val.is_some()
             return -303
 
         ; Test unwrap_or
-        guard some_val.unwrap_or(0) <> 42
+        if some_val.unwrap_or(0) <> 42
             return -304
 
-        guard none_val.unwrap_or(99) <> 99
+        if none_val.unwrap_or(99) <> 99
             return -305
 
         ; Test with pointer type (should use NPO directly)
         let some_ptr Option[pointer[int]].Some(null)
-        guard some_ptr.is_some() = false
+        if some_ptr.is_some() = false
             return -306
 
         0
@@ -590,33 +590,33 @@ define containers
     {
         ; Test Result.Ok construction
         let ok_result Result[int, bool].Ok(42)
-        guard ok_result.is_ok() = false
+        if ok_result.is_ok() = false
             return -100
 
-        guard ok_result.is_error()
+        if ok_result.is_error()
             return -101
 
-        guard ok_result.unwrap() <> 42
+        if ok_result.unwrap() <> 42
             return -102
 
         ; Test Result.Error construction
         let err_result Result[int, bool].Error(true)
-        guard err_result.is_error() = false
+        if err_result.is_error() = false
             return -103
 
-        guard err_result.is_ok()
+        if err_result.is_ok()
             return -104
 
-        guard err_result.unwrap_error() <> true
+        if err_result.unwrap_error() <> true
             return -105
 
         ; Test unwrap_or
         let ok2 Result[int, bool].Ok(10)
-        guard ok2.unwrap_or(99) <> 10
+        if ok2.unwrap_or(99) <> 10
             return -106
 
         let err2 Result[int, bool].Error(false)
-        guard err2.unwrap_or(99) <> 99
+        if err2.unwrap_or(99) <> 99
             return -107
 
         0

@@ -239,7 +239,7 @@ define Parser
                             throw ParserError.Invalid(i)
                         when d: Different
                         {
-                            guard acc.head = null
+                            if acc.head = null
                                 throw err
                             set parsing: false
                         }
@@ -379,7 +379,7 @@ define Parser
     {
         let start lexer.previous_position
 
-        guard ~lexer.parse_keyword#(String#("private"))
+        if ~lexer.parse_keyword#(String#("private"))
             throw ParserError.Different(DifferentSyntax())
 
         let export__start lexer.position
@@ -484,7 +484,7 @@ define Parser
                             throw ParserError.Invalid(i)
                         when d: Different
                         {
-                            guard acc.head = null
+                            if acc.head = null
                                 throw err
                             set parsing: false
                         }
@@ -614,11 +614,11 @@ define Parser
     {
         let start lexer.previous_position
 
-        guard ~lexer.parse_keyword#(String#("define"))
+        if ~lexer.parse_keyword#(String#("define"))
             throw ParserError.Different(DifferentSyntax())
 
         let name lexer.parse_identifier#(keywords)
-        guard name.length() = 0
+        if name.length() = 0
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#("expected identifier")))
 
         let parameters_start lexer.position
@@ -671,7 +671,7 @@ define Parser
     {
         let start lexer.previous_position
 
-        guard ~lexer.parse_punctuation#(ParserConstants.CHAR_LBRACKET())
+        if ~lexer.parse_punctuation#(ParserConstants.CHAR_LBRACKET())
             throw ParserError.Different(DifferentSyntax())
 
         let parameters_start lexer.position
@@ -688,7 +688,7 @@ define Parser
             when success: Success
                 set parameters: success
 
-        guard ~lexer.parse_punctuation#(ParserConstants.CHAR_RBRACKET())
+        if ~lexer.parse_punctuation#(ParserConstants.CHAR_RBRACKET())
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#("expected ']'")))
 
         let end lexer.position
@@ -714,7 +714,7 @@ define Parser
                             throw ParserError.Invalid(i)
                         when d: Different
                         {
-                            guard acc.head = null
+                            if acc.head = null
                                 throw err
                             set parsing: false
                         }
@@ -730,7 +730,7 @@ define Parser
         let start lexer.previous_position
 
         let name lexer.parse_identifier#(keywords)
-        guard name.length() = 0
+        if name.length() = 0
             throw ParserError.Different(DifferentSyntax())
 
         let attributes_start lexer.position
@@ -853,7 +853,7 @@ define Parser
     {
         let start lexer.previous_position
 
-        guard ~lexer.parse_punctuation#(ParserConstants.CHAR_LBRACE())
+        if ~lexer.parse_punctuation#(ParserConstants.CHAR_LBRACE())
             throw ParserError.Different(DifferentSyntax())
 
         let uses_start lexer.position
@@ -882,7 +882,7 @@ define Parser
             when success: Success
                 set members: success
 
-        guard ~lexer.parse_punctuation#(ParserConstants.CHAR_RBRACE())
+        if ~lexer.parse_punctuation#(ParserConstants.CHAR_RBRACE())
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#("expected '}'")))
 
         let end lexer.position
@@ -894,7 +894,7 @@ define Parser
     {
         let start lexer.previous_position
 
-        guard ~lexer.parse_punctuation#(ParserConstants.CHAR_LBRACE())
+        if ~lexer.parse_punctuation#(ParserConstants.CHAR_LBRACE())
             throw ParserError.Different(DifferentSyntax())
 
         let uses_start lexer.position
@@ -923,7 +923,7 @@ define Parser
             when success: Success
                 set declarations: success
 
-        guard ~lexer.parse_punctuation#(ParserConstants.CHAR_RBRACE())
+        if ~lexer.parse_punctuation#(ParserConstants.CHAR_RBRACE())
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#("expected '}'")))
 
         let end lexer.position
@@ -935,12 +935,12 @@ define Parser
     {
         let start lexer.previous_position
 
-        guard ~lexer.parse_keyword#(String#("union"))
+        if ~lexer.parse_keyword#(String#("union"))
             throw ParserError.Different(DifferentSyntax())
 
         lexer.parse_colon#()
 
-        guard ~lexer.parse_punctuation#(ParserConstants.CHAR_LPAREN())
+        if ~lexer.parse_punctuation#(ParserConstants.CHAR_LPAREN())
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#("expected '('")))
 
         let variants_start lexer.position
@@ -957,7 +957,7 @@ define Parser
             when success: Success
                 set variants: success
 
-        guard ~lexer.parse_punctuation#(ParserConstants.CHAR_RPAREN())
+        if ~lexer.parse_punctuation#(ParserConstants.CHAR_RPAREN())
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#("expected ')'")))
 
         lexer.parse_colon#()
@@ -997,7 +997,7 @@ define Parser
                             throw ParserError.Invalid(i)
                         when d: Different
                         {
-                            guard acc.head = null
+                            if acc.head = null
                                 throw err
                             set parsing: false
                         }
@@ -1013,7 +1013,7 @@ define Parser
         let start lexer.previous_position
 
         let name lexer.parse_identifier#(keywords)
-        guard name.length() = 0
+        if name.length() = 0
             throw ParserError.Different(DifferentSyntax())
 
         let attributes_start lexer.position
@@ -1084,7 +1084,7 @@ define Parser
     {
         let start lexer.previous_position
 
-        guard ~lexer.parse_keyword#(String#("delegate"))
+        if ~lexer.parse_keyword#(String#("delegate"))
             throw ParserError.Different(DifferentSyntax())
 
         let parameters_start lexer.position
@@ -1145,7 +1145,7 @@ define Parser
     {
         let start lexer.previous_position
 
-        guard ~lexer.parse_punctuation#(ParserConstants.CHAR_LBRACKET())
+        if ~lexer.parse_punctuation#(ParserConstants.CHAR_LBRACKET())
             throw ParserError.Different(DifferentSyntax())
 
         let generics_start lexer.position
@@ -1161,7 +1161,7 @@ define Parser
             when success: Success
                 set generics: success
 
-        guard ~lexer.parse_punctuation#(ParserConstants.CHAR_RBRACKET())
+        if ~lexer.parse_punctuation#(ParserConstants.CHAR_RBRACKET())
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#("expected ']'")))
 
         let end lexer.position
@@ -1187,7 +1187,7 @@ define Parser
                             throw ParserError.Invalid(i)
                         when d: Different
                         {
-                            guard acc.head = null
+                            if acc.head = null
                                 throw err
                             set parsing: false
                         }
@@ -1221,7 +1221,7 @@ define Parser
     {
         let start lexer.previous_position
 
-        guard ~lexer.parse_punctuation#(ParserConstants.CHAR_QUESTION())
+        if ~lexer.parse_punctuation#(ParserConstants.CHAR_QUESTION())
             throw ParserError.Different(DifferentSyntax())
 
         let end lexer.position
@@ -1258,7 +1258,7 @@ define Parser
     {
         let start lexer.previous_position
 
-        guard ~lexer.parse_punctuation#(ParserConstants.CHAR_LPAREN())
+        if ~lexer.parse_punctuation#(ParserConstants.CHAR_LPAREN())
             throw ParserError.Different(DifferentSyntax())
 
         let items_start lexer.position
@@ -1274,7 +1274,7 @@ define Parser
             when success: Success
                 set items: success
 
-        guard ~lexer.parse_punctuation#(ParserConstants.CHAR_RPAREN())
+        if ~lexer.parse_punctuation#(ParserConstants.CHAR_RPAREN())
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#("expected ')'")))
 
         let end lexer.position
@@ -1300,7 +1300,7 @@ define Parser
                             throw ParserError.Invalid(i)
                         when d: Different
                         {
-                            guard acc.head = null
+                            if acc.head = null
                                 throw err
                             set parsing: false
                         }
@@ -1316,7 +1316,7 @@ define Parser
         let start lexer.previous_position
 
         let name lexer.parse_identifier#(keywords)
-        guard name.length() = 0
+        if name.length() = 0
             throw ParserError.Different(DifferentSyntax())
 
         let annotation_start lexer.position
@@ -1357,7 +1357,7 @@ define Parser
     {
         let start lexer.previous_position
 
-        guard ~lexer.parse_keyword#(String#("returns"))
+        if ~lexer.parse_keyword#(String#("returns"))
             throw ParserError.Different(DifferentSyntax())
 
         let type_start lexer.position
@@ -1396,7 +1396,7 @@ define Parser
     {
         let start lexer.previous_position
 
-        guard ~lexer.parse_keyword#(String#("throws"))
+        if ~lexer.parse_keyword#(String#("throws"))
             throw ParserError.Different(DifferentSyntax())
 
         let type_start lexer.position
@@ -1449,7 +1449,7 @@ define Parser
                             throw ParserError.Invalid(i)
                         when d: Different
                         {
-                            guard acc.head = null
+                            if acc.head = null
                                 throw err
                             set parsing: false
                         }
@@ -1464,7 +1464,7 @@ define Parser
     {
         let start lexer.previous_position
 
-        guard ~lexer.parse_keyword#(String#("use"))
+        if ~lexer.parse_keyword#(String#("use"))
             throw ParserError.Different(DifferentSyntax())
 
         let name_start lexer.position
@@ -1492,7 +1492,7 @@ define Parser
     {
         let start lexer.previous_position
 
-        guard ~lexer.parse_keyword#(String#("implement"))
+        if ~lexer.parse_keyword#(String#("implement"))
             throw ParserError.Different(DifferentSyntax())
 
         let type_start lexer.position
@@ -1524,7 +1524,7 @@ define Parser
 
         lexer.parse_colon#()
 
-        guard ~lexer.parse_punctuation#(ParserConstants.CHAR_LBRACE())
+        if ~lexer.parse_punctuation#(ParserConstants.CHAR_LBRACE())
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#("expected '{'")))
 
         let uses_start lexer.position
@@ -1553,7 +1553,7 @@ define Parser
             when success: Success
                 set methods: success
 
-        guard ~lexer.parse_punctuation#(ParserConstants.CHAR_RBRACE())
+        if ~lexer.parse_punctuation#(ParserConstants.CHAR_RBRACE())
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#("expected '}'")))
 
         let end lexer.position
@@ -1565,7 +1565,7 @@ define Parser
     {
         let start lexer.previous_position
 
-        guard ~lexer.parse_keyword#(String#("trait"))
+        if ~lexer.parse_keyword#(String#("trait"))
             throw ParserError.Different(DifferentSyntax())
 
         let name_start lexer.position
@@ -1607,7 +1607,7 @@ define Parser
             when success: Success
                 set attributes: success
 
-        guard ~lexer.parse_punctuation#(ParserConstants.CHAR_LBRACE())
+        if ~lexer.parse_punctuation#(ParserConstants.CHAR_LBRACE())
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#("expected '{'")))
 
         let uses_start lexer.position
@@ -1636,7 +1636,7 @@ define Parser
             when success: Success
                 set functions: success
 
-        guard ~lexer.parse_punctuation#(ParserConstants.CHAR_RBRACE())
+        if ~lexer.parse_punctuation#(ParserConstants.CHAR_RBRACE())
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#("expected '}'")))
 
         let end lexer.position
@@ -1662,7 +1662,7 @@ define Parser
                             throw ParserError.Invalid(i)
                         when d: Different
                         {
-                            guard acc.head = null
+                            if acc.head = null
                                 throw err
                             set parsing: false
                         }
@@ -1726,7 +1726,7 @@ define Parser
                             throw ParserError.Invalid(i)
                         when d: Different
                         {
-                            guard acc.head = null
+                            if acc.head = null
                                 throw err
                             set parsing: false
                         }
@@ -1741,7 +1741,7 @@ define Parser
     {
         let start lexer.previous_position
 
-        guard ~lexer.parse_keyword#(String#("init"))
+        if ~lexer.parse_keyword#(String#("init"))
             throw ParserError.Different(DifferentSyntax())
 
         let lifetime_start lexer.position
@@ -1795,7 +1795,7 @@ define Parser
     {
         let start lexer.previous_position
 
-        guard ~lexer.parse_keyword#(String#("deinit"))
+        if ~lexer.parse_keyword#(String#("deinit"))
             throw ParserError.Different(DifferentSyntax())
 
         lexer.parse_colon#()
@@ -1825,7 +1825,7 @@ define Parser
     {
         let start lexer.previous_position
 
-        guard ~lexer.parse_keyword#(String#("function"))
+        if ~lexer.parse_keyword#(String#("function"))
             throw ParserError.Different(DifferentSyntax())
 
         let target_start lexer.position
@@ -1851,7 +1851,7 @@ define Parser
     {
         let start lexer.previous_position
 
-        guard ~lexer.parse_keyword#(String#("procedure"))
+        if ~lexer.parse_keyword#(String#("procedure"))
             throw ParserError.Different(DifferentSyntax())
 
         let target_start lexer.position
@@ -1877,7 +1877,7 @@ define Parser
     {
         let start lexer.previous_position
 
-        guard ~lexer.parse_keyword#(String#("operator"))
+        if ~lexer.parse_keyword#(String#("operator"))
             throw ParserError.Different(DifferentSyntax())
 
         let target_start lexer.position
@@ -1929,7 +1929,7 @@ define Parser
         let start lexer.previous_position
 
         let name lexer.parse_identifier#(keywords)
-        guard name.length() = 0
+        if name.length() = 0
             throw ParserError.Different(DifferentSyntax())
 
         let routine_start lexer.position
@@ -2100,7 +2100,7 @@ define Parser
     {
         let start lexer.previous_position
 
-        guard ~lexer.parse_keyword#(String#("extern"))
+        if ~lexer.parse_keyword#(String#("extern"))
             throw ParserError.Different(DifferentSyntax())
 
         let end lexer.position
@@ -2112,7 +2112,7 @@ define Parser
     {
         let start lexer.previous_position
 
-        guard ~lexer.parse_keyword#(String#("instruction"))
+        if ~lexer.parse_keyword#(String#("instruction"))
             throw ParserError.Different(DifferentSyntax())
 
         let end lexer.position
@@ -2124,7 +2124,7 @@ define Parser
     {
         let start lexer.previous_position
 
-        guard ~lexer.parse_keyword#(String#("intrinsic"))
+        if ~lexer.parse_keyword#(String#("intrinsic"))
             throw ParserError.Different(DifferentSyntax())
 
         let end lexer.position
@@ -2136,7 +2136,7 @@ define Parser
     {
         let start lexer.previous_position
 
-        guard ~lexer.parse_keyword#(String#("extends"))
+        if ~lexer.parse_keyword#(String#("extends"))
             throw ParserError.Different(DifferentSyntax())
 
         let extensions_start lexer.position
@@ -2175,7 +2175,7 @@ define Parser
                             throw ParserError.Invalid(i)
                         when d: Different
                         {
-                            guard acc.head = null
+                            if acc.head = null
                                 throw err
                             set parsing: false
                         }
@@ -2209,11 +2209,11 @@ define Parser
     {
         let start lexer.previous_position
 
-        guard ~lexer.parse_keyword#(String#("macro"))
+        if ~lexer.parse_keyword#(String#("macro"))
             throw ParserError.Different(DifferentSyntax())
 
         let name lexer.parse_identifier#(keywords)
-        guard name.length() = 0
+        if name.length() = 0
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#("expected identifier")))
 
         let model_start lexer.position
@@ -2267,7 +2267,7 @@ define Parser
                             throw ParserError.Invalid(i)
                         when d: Different
                         {
-                            guard acc.head = null
+                            if acc.head = null
                                 throw err
                             set parsing: false
                         }
@@ -2283,7 +2283,7 @@ define Parser
         let start lexer.previous_position
 
         let name lexer.parse_attribute#()
-        guard name.length() = 0
+        if name.length() = 0
             throw ParserError.Different(DifferentSyntax())
 
         let model_start lexer.position
@@ -2354,11 +2354,11 @@ define Parser
     {
         let start lexer.previous_position
 
-        guard ~lexer.parse_keyword#(String#("module"))
+        if ~lexer.parse_keyword#(String#("module"))
             throw ParserError.Different(DifferentSyntax())
 
         let name lexer.parse_identifier#(keywords)
-        guard name.length() = 0
+        if name.length() = 0
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#("expected identifier")))
 
         let end lexer.position
@@ -2384,7 +2384,7 @@ define Parser
                             throw ParserError.Invalid(i)
                         when d: Different
                         {
-                            guard acc.head = null
+                            if acc.head = null
                                 throw err
                             set parsing: false
                         }
@@ -2399,7 +2399,7 @@ define Parser
     {
         let start lexer.previous_position
 
-        guard ~lexer.parse_keyword#(String#("package"))
+        if ~lexer.parse_keyword#(String#("package"))
             throw ParserError.Different(DifferentSyntax())
 
         let name_start lexer.position
@@ -2446,7 +2446,7 @@ define Parser
             when success: Success
                 set majorMinor: success
 
-        guard ~lexer.parse_punctuation#(ParserConstants.CHAR_DOT())
+        if ~lexer.parse_punctuation#(ParserConstants.CHAR_DOT())
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#("expected '.'")))
 
         var patch: Literal
@@ -2465,7 +2465,7 @@ define Parser
     {
         let start lexer.previous_position
 
-        guard ~lexer.parse_punctuation#(ParserConstants.CHAR_LPAREN())
+        if ~lexer.parse_punctuation#(ParserConstants.CHAR_LPAREN())
             throw ParserError.Different(DifferentSyntax())
 
         let operands_start lexer.position
@@ -2482,7 +2482,7 @@ define Parser
             when success: Success
                 set operands: success
 
-        guard ~lexer.parse_punctuation#(ParserConstants.CHAR_RPAREN())
+        if ~lexer.parse_punctuation#(ParserConstants.CHAR_RPAREN())
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#("expected ')'")))
 
         let end lexer.position
@@ -2508,7 +2508,7 @@ define Parser
                             throw ParserError.Invalid(i)
                         when d: Different
                         {
-                            guard acc.head = null
+                            if acc.head = null
                                 throw err
                             set parsing: false
                         }
@@ -2567,7 +2567,7 @@ define Parser
                             throw ParserError.Invalid(i)
                         when d: Different
                         {
-                            guard acc.head = null
+                            if acc.head = null
                                 throw err
                             set parsing: false
                         }
@@ -2582,7 +2582,7 @@ define Parser
     {
         let start lexer.previous_position
 
-        guard ~lexer.parse_punctuation#(ParserConstants.CHAR_DOT())
+        if ~lexer.parse_punctuation#(ParserConstants.CHAR_DOT())
             throw ParserError.Different(DifferentSyntax())
 
         let name_start lexer.position
@@ -2819,7 +2819,7 @@ define Parser
     {
         let start lexer.previous_position
 
-        guard ~lexer.parse_punctuation#(ParserConstants.CHAR_LPAREN())
+        if ~lexer.parse_punctuation#(ParserConstants.CHAR_LPAREN())
             throw ParserError.Different(DifferentSyntax())
 
         let components_start lexer.position
@@ -2835,7 +2835,7 @@ define Parser
             when success: Success
                 set components: success
 
-        guard ~lexer.parse_punctuation#(ParserConstants.CHAR_RPAREN())
+        if ~lexer.parse_punctuation#(ParserConstants.CHAR_RPAREN())
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#("expected ')'")))
 
         let end lexer.position
@@ -2861,7 +2861,7 @@ define Parser
                             throw ParserError.Invalid(i)
                         when d: Different
                         {
-                            guard acc.head = null
+                            if acc.head = null
                                 throw err
                             set parsing: false
                         }
@@ -2920,7 +2920,7 @@ define Parser
     {
         let start lexer.previous_position
 
-        guard ~lexer.parse_colon#()
+        if ~lexer.parse_colon#()
             throw ParserError.Different(DifferentSyntax())
 
         let value_start lexer.position
@@ -2959,7 +2959,7 @@ define Parser
     {
         let start lexer.previous_position
 
-        guard ~lexer.parse_punctuation#(ParserConstants.CHAR_LBRACKET())
+        if ~lexer.parse_punctuation#(ParserConstants.CHAR_LBRACKET())
             throw ParserError.Different(DifferentSyntax())
 
         let elements_start lexer.position
@@ -2976,7 +2976,7 @@ define Parser
             when success: Success
                 set elements: success
 
-        guard ~lexer.parse_punctuation#(ParserConstants.CHAR_RBRACKET())
+        if ~lexer.parse_punctuation#(ParserConstants.CHAR_RBRACKET())
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#("expected ']'")))
 
         let lifetime_start lexer.position
@@ -3014,7 +3014,7 @@ define Parser
                             throw ParserError.Invalid(i)
                         when d: Different
                         {
-                            guard acc.head = null
+                            if acc.head = null
                                 throw err
                             set parsing: false
                         }
@@ -3061,7 +3061,7 @@ define Parser
     {
         let start lexer.previous_position
 
-        guard ~lexer.parse_keyword#(String#("if"))
+        if ~lexer.parse_keyword#(String#("if"))
             throw ParserError.Different(DifferentSyntax())
 
         let condition_start lexer.position
@@ -3078,7 +3078,7 @@ define Parser
             when success: Success
                 set condition: success
 
-        guard ~lexer.parse_colon#()
+        if ~lexer.parse_colon#()
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#("expected colon or newline")))
 
         let consequent_start lexer.position
@@ -3135,7 +3135,7 @@ define Parser
         var snapshot lexer.save_state()
         lexer.parse_colon#()
 
-        guard ~lexer.parse_keyword#(String#("else"))
+        if ~lexer.parse_keyword#(String#("else"))
         {
             lexer.restore_state(snapshot)
             throw ParserError.Different(DifferentSyntax())
@@ -3166,7 +3166,7 @@ define Parser
     {
         let start lexer.previous_position
 
-        guard ~lexer.parse_keyword#(String#("match"))
+        if ~lexer.parse_keyword#(String#("match"))
             throw ParserError.Different(DifferentSyntax())
 
         let scrutinee_start lexer.position
@@ -3183,7 +3183,7 @@ define Parser
             when success: Success
                 set scrutinee: success
 
-        guard ~lexer.parse_colon#()
+        if ~lexer.parse_colon#()
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#("expected colon or newline")))
 
         let branches_start lexer.position
@@ -3235,7 +3235,7 @@ define Parser
                             throw ParserError.Invalid(i)
                         when d: Different
                         {
-                            guard acc.head = null
+                            if acc.head = null
                                 throw err
                             set parsing: false
                         }
@@ -3258,7 +3258,7 @@ define Parser
             when success: Success
                 set cases: success
 
-        guard ~lexer.parse_colon#()
+        if ~lexer.parse_colon#()
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#("expected colon or newline")))
 
         let consequent_start lexer.position
@@ -3298,7 +3298,7 @@ define Parser
                             throw ParserError.Invalid(i)
                         when d: Different
                         {
-                            guard acc.head = null
+                            if acc.head = null
                                 throw err
                             set parsing: false
                         }
@@ -3313,7 +3313,7 @@ define Parser
     {
         let start lexer.previous_position
 
-        guard ~lexer.parse_keyword#(String#("case"))
+        if ~lexer.parse_keyword#(String#("case"))
             throw ParserError.Different(DifferentSyntax())
 
         let condition_start lexer.position
@@ -3339,7 +3339,7 @@ define Parser
     {
         let start lexer.previous_position
 
-        guard ~lexer.parse_keyword#(String#("while"))
+        if ~lexer.parse_keyword#(String#("while"))
             throw ParserError.Different(DifferentSyntax())
 
         let condition_start lexer.position
@@ -3356,7 +3356,7 @@ define Parser
             when success: Success
                 set condition: success
 
-        guard ~lexer.parse_colon#()
+        if ~lexer.parse_colon#()
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#("expected colon or newline")))
 
         let name_start lexer.position
@@ -3394,7 +3394,7 @@ define Parser
     {
         let start lexer.previous_position
 
-        guard ~lexer.parse_keyword#(String#("choose"))
+        if ~lexer.parse_keyword#(String#("choose"))
             throw ParserError.Different(DifferentSyntax())
 
         let condition_start lexer.position
@@ -3411,7 +3411,7 @@ define Parser
             when success: Success
                 set condition: success
 
-        guard ~lexer.parse_colon#()
+        if ~lexer.parse_colon#()
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#("expected colon or newline")))
 
         let cases_start lexer.position
@@ -3448,7 +3448,7 @@ define Parser
     {
         let start lexer.previous_position
 
-        guard ~lexer.parse_keyword#(String#("try"))
+        if ~lexer.parse_keyword#(String#("try"))
             throw ParserError.Different(DifferentSyntax())
 
         let lifetime_start lexer.position
@@ -3477,7 +3477,7 @@ define Parser
             when success: Success
                 set condition: success
 
-        guard ~lexer.parse_colon#()
+        if ~lexer.parse_colon#()
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#("expected colon or newline")))
 
         let cases_start lexer.position
@@ -3553,7 +3553,7 @@ define Parser
                             throw ParserError.Invalid(i)
                         when d: Different
                         {
-                            guard acc.head = null
+                            if acc.head = null
                                 throw err
                             set parsing: false
                         }
@@ -3568,14 +3568,14 @@ define Parser
     {
         let start lexer.previous_position
 
-        guard ~lexer.parse_keyword#(String#("when"))
+        if ~lexer.parse_keyword#(String#("when"))
             throw ParserError.Different(DifferentSyntax())
 
         let name lexer.parse_identifier#(keywords)
-        guard name.length() = 0
+        if name.length() = 0
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#("expected identifier")))
 
-        guard ~lexer.parse_colon#()
+        if ~lexer.parse_colon#()
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#("expected colon or newline")))
 
         let variant_start lexer.position
@@ -3633,7 +3633,7 @@ define Parser
                             throw ParserError.Invalid(i)
                         when d: Different
                         {
-                            guard acc.head = null
+                            if acc.head = null
                                 throw err
                             set parsing: false
                         }
@@ -3763,7 +3763,7 @@ define Parser
     {
         let start lexer.previous_position
 
-        guard ~lexer.parse_keyword#(String#("guard"))
+        if ~lexer.parse_keyword#(String#("guard"))
             throw ParserError.Different(DifferentSyntax())
 
         let condition_start lexer.position
@@ -3780,7 +3780,7 @@ define Parser
             when success: Success
                 set condition: success
 
-        guard ~lexer.parse_colon#()
+        if ~lexer.parse_colon#()
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#("expected colon or newline")))
 
         let statement_start lexer.position
@@ -3806,7 +3806,7 @@ define Parser
     {
         let start lexer.previous_position
 
-        guard ~lexer.parse_keyword#(String#("let"))
+        if ~lexer.parse_keyword#(String#("let"))
             throw ParserError.Different(DifferentSyntax())
 
         let binding_start lexer.position
@@ -3832,7 +3832,7 @@ define Parser
     {
         let start lexer.previous_position
 
-        guard ~lexer.parse_keyword#(String#("var"))
+        if ~lexer.parse_keyword#(String#("var"))
             throw ParserError.Different(DifferentSyntax())
 
         let binding_start lexer.position
@@ -3858,7 +3858,7 @@ define Parser
     {
         let start lexer.previous_position
 
-        guard ~lexer.parse_keyword#(String#("mutable"))
+        if ~lexer.parse_keyword#(String#("mutable"))
             throw ParserError.Different(DifferentSyntax())
 
         let binding_start lexer.position
@@ -3885,7 +3885,7 @@ define Parser
         let start lexer.previous_position
 
         let name lexer.parse_identifier#(keywords)
-        guard name.length() = 0
+        if name.length() = 0
             throw ParserError.Different(DifferentSyntax())
 
         let annotation_start lexer.position
@@ -3922,7 +3922,7 @@ define Parser
     {
         let start lexer.previous_position
 
-        guard ~lexer.parse_colon#()
+        if ~lexer.parse_colon#()
             throw ParserError.Different(DifferentSyntax())
 
         let spec_start lexer.position
@@ -3962,7 +3962,7 @@ define Parser
                             throw ParserError.Invalid(i)
                         when d: Different
                         {
-                            guard acc.head = null
+                            if acc.head = null
                                 throw err
                             set parsing: false
                         }
@@ -4012,7 +4012,7 @@ define Parser
     {
         let start lexer.previous_position
 
-        guard ~lexer.parse_punctuation#(ParserConstants.CHAR_LBRACKET())
+        if ~lexer.parse_punctuation#(ParserConstants.CHAR_LBRACKET())
             throw ParserError.Different(DifferentSyntax())
 
         let members_start lexer.position
@@ -4028,7 +4028,7 @@ define Parser
             when success: Success
                 set members: success
 
-        guard ~lexer.parse_punctuation#(ParserConstants.CHAR_RBRACKET())
+        if ~lexer.parse_punctuation#(ParserConstants.CHAR_RBRACKET())
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#("expected ']'")))
 
         let end lexer.position
@@ -4040,7 +4040,7 @@ define Parser
     {
         let start lexer.previous_position
 
-        guard ~lexer.parse_punctuation#(ParserConstants.CHAR_LPAREN())
+        if ~lexer.parse_punctuation#(ParserConstants.CHAR_LPAREN())
             throw ParserError.Different(DifferentSyntax())
 
         let parts_start lexer.position
@@ -4056,7 +4056,7 @@ define Parser
             when success: Success
                 set parts: success
 
-        guard ~lexer.parse_punctuation#(ParserConstants.CHAR_RPAREN())
+        if ~lexer.parse_punctuation#(ParserConstants.CHAR_RPAREN())
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#("expected ')'")))
 
         let end lexer.position
@@ -4082,7 +4082,7 @@ define Parser
                             throw ParserError.Invalid(i)
                         when d: Different
                         {
-                            guard acc.head = null
+                            if acc.head = null
                                 throw err
                             set parsing: false
                         }
@@ -4122,7 +4122,7 @@ define Parser
     {
         let start lexer.previous_position
 
-        guard ~lexer.parse_keyword#(String#("private"))
+        if ~lexer.parse_keyword#(String#("private"))
             throw ParserError.Different(DifferentSyntax())
 
         let property_start lexer.position
@@ -4162,7 +4162,7 @@ define Parser
                             throw ParserError.Invalid(i)
                         when d: Different
                         {
-                            guard acc.head = null
+                            if acc.head = null
                                 throw err
                             set parsing: false
                         }
@@ -4178,7 +4178,7 @@ define Parser
         let start lexer.previous_position
 
         let name lexer.parse_identifier#(keywords)
-        guard name.length() = 0
+        if name.length() = 0
             throw ParserError.Different(DifferentSyntax())
 
         let annotation_start lexer.position
@@ -4233,7 +4233,7 @@ define Parser
     {
         let start lexer.previous_position
 
-        guard ~lexer.parse_colon#()
+        if ~lexer.parse_colon#()
             throw ParserError.Different(DifferentSyntax())
 
         let type_start lexer.position
@@ -4259,7 +4259,7 @@ define Parser
     {
         let start lexer.previous_position
 
-        guard ~lexer.parse_keyword#(String#("continue"))
+        if ~lexer.parse_keyword#(String#("continue"))
             throw ParserError.Different(DifferentSyntax())
 
         let name_start lexer.position
@@ -4283,7 +4283,7 @@ define Parser
     {
         let start lexer.previous_position
 
-        guard ~lexer.parse_keyword#(String#("break"))
+        if ~lexer.parse_keyword#(String#("break"))
             throw ParserError.Different(DifferentSyntax())
 
         let name_start lexer.position
@@ -4320,11 +4320,11 @@ define Parser
     {
         let start lexer.previous_position
 
-        guard ~lexer.parse_keyword#(String#("loop"))
+        if ~lexer.parse_keyword#(String#("loop"))
             throw ParserError.Different(DifferentSyntax())
 
         let name lexer.parse_identifier#(keywords)
-        guard name.length() = 0
+        if name.length() = 0
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#("expected identifier")))
 
         let end lexer.position
@@ -4336,7 +4336,7 @@ define Parser
     {
         let start lexer.previous_position
 
-        guard ~lexer.parse_keyword#(String#("return"))
+        if ~lexer.parse_keyword#(String#("return"))
             throw ParserError.Different(DifferentSyntax())
 
         let result_start lexer.position
@@ -4361,7 +4361,7 @@ define Parser
     {
         let start lexer.previous_position
 
-        guard ~lexer.parse_keyword#(String#("throw"))
+        if ~lexer.parse_keyword#(String#("throw"))
             throw ParserError.Different(DifferentSyntax())
 
         let result_start lexer.position
@@ -4386,7 +4386,7 @@ define Parser
     {
         let start lexer.previous_position
 
-        guard ~lexer.parse_punctuation#(ParserConstants.CHAR_BACKSLASH())
+        if ~lexer.parse_punctuation#(ParserConstants.CHAR_BACKSLASH())
             throw ParserError.Different(DifferentSyntax())
 
         let input_start lexer.position
@@ -4403,7 +4403,7 @@ define Parser
             when success: Success
                 set input: success
 
-        guard ~lexer.parse_colon#()
+        if ~lexer.parse_colon#()
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#("expected colon or newline")))
 
         let block_start lexer.position
@@ -4429,11 +4429,11 @@ define Parser
     {
         let start lexer.previous_position
 
-        guard ~lexer.parse_keyword#(String#("for"))
+        if ~lexer.parse_keyword#(String#("for"))
             throw ParserError.Different(DifferentSyntax())
 
         let variable lexer.parse_identifier#(keywords)
-        guard variable.length() = 0
+        if variable.length() = 0
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#("expected identifier")))
 
         let annotation_start lexer.position
@@ -4448,7 +4448,7 @@ define Parser
             when success: Success
                 set annotation: TypeAnnotationSyntax#(success.start, success.end, success.type)
 
-        guard ~lexer.parse_keyword#(String#("in"))
+        if ~lexer.parse_keyword#(String#("in"))
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#("expected 'in'")))
 
         let operation_start lexer.position
@@ -4465,7 +4465,7 @@ define Parser
             when success: Success
                 set operation: success
 
-        guard ~lexer.parse_colon#()
+        if ~lexer.parse_colon#()
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#("expected colon or newline")))
 
         let name_start lexer.position
@@ -4503,11 +4503,11 @@ define Parser
     {
         let start lexer.previous_position
 
-        guard ~lexer.parse_keyword#(String#("label"))
+        if ~lexer.parse_keyword#(String#("label"))
             throw ParserError.Different(DifferentSyntax())
 
         let name lexer.parse_identifier#(keywords)
-        guard name.length() = 0
+        if name.length() = 0
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#("expected identifier")))
 
         let end lexer.position
@@ -4519,7 +4519,7 @@ define Parser
     {
         let start lexer.previous_position
 
-        guard ~lexer.parse_keyword#(String#("repeat"))
+        if ~lexer.parse_keyword#(String#("repeat"))
             throw ParserError.Different(DifferentSyntax())
 
         let name_start lexer.position
@@ -4571,7 +4571,7 @@ define Parser
                             throw ParserError.Invalid(i)
                         when d: Different
                         {
-                            guard acc.head = null
+                            if acc.head = null
                                 throw err
                             set parsing: false
                         }
@@ -4638,7 +4638,7 @@ define Parser
     {
         let start lexer.previous_position
 
-        guard ~lexer.parse_keyword#(String#("set"))
+        if ~lexer.parse_keyword#(String#("set"))
             throw ParserError.Different(DifferentSyntax())
 
         let target_start lexer.position
@@ -4655,7 +4655,7 @@ define Parser
             when success: Success
                 set target: success
 
-        guard ~lexer.parse_colon#()
+        if ~lexer.parse_colon#()
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#("expected colon or newline")))
 
         let source_start lexer.position
@@ -4681,7 +4681,7 @@ define Parser
     {
         let start lexer.previous_position
 
-        guard ~lexer.parse_punctuation#(ParserConstants.CHAR_LBRACE())
+        if ~lexer.parse_punctuation#(ParserConstants.CHAR_LBRACE())
             throw ParserError.Different(DifferentSyntax())
 
         let uses_start lexer.position
@@ -4710,7 +4710,7 @@ define Parser
             when success: Success
                 set statements: success
 
-        guard ~lexer.parse_punctuation#(ParserConstants.CHAR_RBRACE())
+        if ~lexer.parse_punctuation#(ParserConstants.CHAR_RBRACE())
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#("expected '}'")))
 
         let end lexer.position
@@ -4722,7 +4722,7 @@ define Parser
     {
         let start lexer.previous_position
 
-        guard ~lexer.parse_keyword#(String#("sizeof"))
+        if ~lexer.parse_keyword#(String#("sizeof"))
             throw ParserError.Different(DifferentSyntax())
 
         let type_start lexer.position
@@ -4748,7 +4748,7 @@ define Parser
     {
         let start lexer.previous_position
 
-        guard ~lexer.parse_keyword#(String#("alignof"))
+        if ~lexer.parse_keyword#(String#("alignof"))
             throw ParserError.Different(DifferentSyntax())
 
         let type_start lexer.position
@@ -4774,7 +4774,7 @@ define Parser
     {
         let start lexer.previous_position
 
-        guard ~lexer.parse_keyword#(String#("is"))
+        if ~lexer.parse_keyword#(String#("is"))
             throw ParserError.Different(DifferentSyntax())
 
         let name_start lexer.position
@@ -4800,7 +4800,7 @@ define Parser
     {
         let start lexer.previous_position
 
-        guard ~lexer.parse_keyword#(String#("as"))
+        if ~lexer.parse_keyword#(String#("as"))
             throw ParserError.Different(DifferentSyntax())
 
         let type_start lexer.position
@@ -4840,7 +4840,7 @@ define Parser
                             throw ParserError.Invalid(i)
                         when d: Different
                         {
-                            guard acc.head = null
+                            if acc.head = null
                                 throw err
                             set parsing: false
                         }
@@ -4909,7 +4909,7 @@ define Parser
         let start lexer.previous_position
 
         let name lexer.parse_identifier#(keywords)
-        guard name.length() = 0
+        if name.length() = 0
             throw ParserError.Different(DifferentSyntax())
 
         let extensions_start lexer.position
@@ -4948,7 +4948,7 @@ define Parser
                             throw ParserError.Invalid(i)
                         when d: Different
                         {
-                            guard acc.head = null
+                            if acc.head = null
                                 throw err
                             set parsing: false
                         }
@@ -4963,11 +4963,11 @@ define Parser
     {
         let start lexer.previous_position
 
-        guard ~lexer.parse_punctuation#(ParserConstants.CHAR_DOT())
+        if ~lexer.parse_punctuation#(ParserConstants.CHAR_DOT())
             throw ParserError.Different(DifferentSyntax())
 
         let name lexer.parse_identifier#(keywords)
-        guard name.length() = 0
+        if name.length() = 0
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#("expected identifier")))
 
         let end lexer.position
@@ -5024,7 +5024,7 @@ define Parser
     {
         let start lexer.previous_position
 
-        guard ~lexer.parse_punctuation#(ParserConstants.CHAR_HASH())
+        if ~lexer.parse_punctuation#(ParserConstants.CHAR_HASH())
             throw ParserError.Different(DifferentSyntax())
 
         let end lexer.position
@@ -5036,7 +5036,7 @@ define Parser
     {
         let start lexer.previous_position
 
-        guard ~lexer.parse_punctuation#(ParserConstants.CHAR_DOLLAR())
+        if ~lexer.parse_punctuation#(ParserConstants.CHAR_DOLLAR())
             throw ParserError.Different(DifferentSyntax())
 
         let end lexer.position
@@ -5048,11 +5048,11 @@ define Parser
     {
         let start lexer.previous_position
 
-        guard ~lexer.parse_punctuation#(ParserConstants.CHAR_CARET())
+        if ~lexer.parse_punctuation#(ParserConstants.CHAR_CARET())
             throw ParserError.Different(DifferentSyntax())
 
         let location lexer.parse_identifier#(keywords)
-        guard location.length() = 0
+        if location.length() = 0
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#("expected identifier")))
 
         let end lexer.position
@@ -5064,7 +5064,7 @@ define Parser
     {
         let start lexer.previous_position
 
-        guard ~lexer.parse_punctuation#(ParserConstants.CHAR_EXCL())
+        if ~lexer.parse_punctuation#(ParserConstants.CHAR_EXCL())
             throw ParserError.Different(DifferentSyntax())
 
         let end lexer.position
@@ -5076,7 +5076,7 @@ define Parser
     {
         let start lexer.previous_position
 
-        guard ~lexer.parse_colon#()
+        if ~lexer.parse_colon#()
             throw ParserError.Different(DifferentSyntax())
 
         let end lexer.position
@@ -5097,7 +5097,7 @@ function test() returns int
             return 1
         when literal: Success
         {
-            guard ~parser.is_at_end()
+            if ~parser.is_at_end()
                 return 2
         }
 
@@ -5108,7 +5108,7 @@ function test() returns int
             return 3
         when name: Success
         {
-            guard ~parser.is_at_end()
+            if ~parser.is_at_end()
                 return 4
         }
 
@@ -5119,7 +5119,7 @@ function test() returns int
             return 5
         when func: Success
         {
-            guard ~parser.is_at_end()
+            if ~parser.is_at_end()
                 return 6
         }
 
@@ -5130,7 +5130,7 @@ function test() returns int
             return 7
         when def: Success
         {
-            guard ~parser.is_at_end()
+            if ~parser.is_at_end()
                 return 8
         }
 
@@ -5141,7 +5141,7 @@ function test() returns int
             return 9
         when def: Success
         {
-            guard ~parser.is_at_end()
+            if ~parser.is_at_end()
                 return 10
         }
 
@@ -5152,7 +5152,7 @@ function test() returns int
             return 11
         when def: Success
         {
-            guard ~parser.is_at_end()
+            if ~parser.is_at_end()
                 return 12
         }
 

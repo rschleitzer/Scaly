@@ -21,7 +21,7 @@
 ; place; nested pieces come from String-returning helpers (a StringBuilder
 ; passed to a callee to mutate does not propagate). Quotes are 0x22 bytes.
 ;
-; CONTROL-FLOW NOTE: `guard COND STMT` runs STMT when COND is TRUE (no
+; CONTROL-FLOW NOTE: `if COND STMT` runs STMT when COND is TRUE (no
 ; else). One statement per line. `choose *ptr` does not parse — bind the
 ; deref to a local first.
 
@@ -94,9 +94,9 @@ define diagnostics
                 while di < planner.diagnostics.length
                 {
                     let dp planner.diagnostics.get(di)
-                    guard dp <> null
+                    if dp <> null
                     {
-                        guard first = false
+                        if first = false
                             sb.append(0x2C as char)
 
                         sb.append(diagnostics.diag_object#(text, dp.start, dp.message))
@@ -147,7 +147,7 @@ define diagnostics
         while i < model.packages.length
         {
             let pkg_ptr model.packages.get(i)
-            guard pkg_ptr <> null
+            if pkg_ptr <> null
             {
                 planner.register_loaded_package(pkg_ptr.name, *pkg_ptr)
                 planner.register_module_concepts(*pkg_ptr)
@@ -166,7 +166,7 @@ define diagnostics
         var col: size_t 0
         let src_len source.get_length()
         var target offset
-        guard target > src_len
+        if target > src_len
             set target: src_len
         var off: size_t 0
         while off < target
@@ -221,9 +221,9 @@ define diagnostics
     ; Non-file URIs are returned unchanged.
     function strip_uri#(rp, uri: String) returns String
     {
-        ; `guard COND STMT` runs STMT when COND is TRUE: strip the prefix on
+        ; `if COND STMT` runs STMT when COND is TRUE: strip the prefix on
         ; a file:// URI, otherwise fall through and return it unchanged.
-        guard uri.starts_with("file://")
+        if uri.starts_with("file://")
         {
             ; 7 == length of "file://"
             let len uri.get_length()

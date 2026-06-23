@@ -8,7 +8,7 @@ define HashMapIterator[K, V]
     {
         set slot_iterator: VectorIterator[Vector[KeyValuePair[K, V]]](hash_map.slots)
         let first_slot slot_iterator.next()
-        guard first_slot <> null
+        if first_slot <> null
             set element_iterator: VectorIterator[KeyValuePair[K, V]](first_slot)
 
     }
@@ -18,11 +18,11 @@ define HashMapIterator[K, V]
         while true
         {
             let ret element_iterator.next()
-            guard ret <> null
+            if ret <> null
                 return &ret.value
 
             let next_slot slot_iterator.next()
-            guard next_slot = null
+            if next_slot = null
                 return null
 
             set element_iterator: VectorIterator[KeyValuePair[K, V]](next_slot)
@@ -37,7 +37,7 @@ define HashMap[K, V]
 {
     init# (rp, hash_map_builder: HashMapBuilder[K, V])
     {
-        guard hash_map_builder.length = 0
+        if hash_map_builder.length = 0
         {
             set slots: null
             return
@@ -49,14 +49,14 @@ define HashMap[K, V]
         while i < length
         {
             let slot_ptr hash_map_builder.slots.get_ptr(i)
-            guard slot_ptr <> null
+            if slot_ptr <> null
             {
                 var array Array[KeyValuePair[K, V]]$()
                 var list_iterator ListIterator[Slot[KeyValuePair[K, V]]](slot_ptr.head)
                 while let item list_iterator.next()
                     array.add(item.value)
 
-                guard array.length > 0
+                if array.length > 0
                     slots.put(i, Vector[KeyValuePair[K, V]]^rp(*array))
             }
 
@@ -66,13 +66,13 @@ define HashMap[K, V]
 
     function contains(this: HashMap[K, V], key: K) returns bool
     {
-        guard slots = null
+        if slots = null
             return false
 
         let hash key.hash()
         let slot_number hash % slots.length
         let slot_ref slots.get_ptr(slot_number)
-        guard slot_ref = null
+        if slot_ref = null
             return false
 
         let slot *slot_ref
@@ -81,9 +81,9 @@ define HashMap[K, V]
         while i < length
         {
             let item slot.get_ptr(i)
-            guard item <> null
+            if item <> null
             {
-                guard key.equals(item.key)
+                if key.equals(item.key)
                     return true
 
             }
@@ -101,13 +101,13 @@ define HashMap[K, V]
 
     function get(this: HashMap[K, V], key: K) returns ref[V]?
     {
-        guard slots = null
+        if slots = null
             return null
 
         let hash key.hash()
         let slot_number hash % slots.length
         let slot_ref slots.get_ptr(slot_number)
-        guard slot_ref = null
+        if slot_ref = null
             return null
 
         let slot *slot_ref
@@ -116,9 +116,9 @@ define HashMap[K, V]
         while i < length
         {
             let item slot.get_ptr(i)
-            guard item <> null
+            if item <> null
             {
-                guard key.equals(item.key)
+                if key.equals(item.key)
                     return &item.value
 
             }

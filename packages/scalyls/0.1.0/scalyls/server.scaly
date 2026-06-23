@@ -22,7 +22,7 @@
 ; passed-in builder. Double quotes are injected as 0x22 bytes (the lexer
 ; does not decode `\"` reliably — same class as the CR/LF escape issue).
 ;
-; CONTROL-FLOW NOTE: `guard COND STMT` runs STMT when COND is TRUE (no
+; CONTROL-FLOW NOTE: `if COND STMT` runs STMT when COND is TRUE (no
 ; else). One statement per line (`;` starts a comment, not a separator).
 
 use scaly.containers.String
@@ -60,7 +60,7 @@ define server
     function process_one() returns bool
     {
         let body rpc.read_message#()
-        guard body.get_length() = (0 as size_t)
+        if body.get_length() = (0 as size_t)
             return false
 
         server.handle_message(body)
@@ -76,140 +76,140 @@ define server
 
         ; An `id` field marks a Request (needs a Response). Notifications
         ; carry no id. A comparison result bound straight to a `let`
-        ; mis-plans under stage-0, so latch has_id via a guard instead.
+        ; mis-plans under stage-0, so latch has_id via a if instead.
         let id_val json.get(msg, "id")
         var has_id true
-        guard json.is_null(id_val)
+        if json.is_null(id_val)
             set has_id: false
         let id json.as_i64(id_val)
 
-        guard method.equals("initialize")
+        if method.equals("initialize")
         {
             ; Capture the workspace root (workspace/symbol carries no uri).
             server.capture_workspace_root(msg)
-            guard has_id
+            if has_id
                 rpc.write_message(server.initialize_response#(id))
             return
         }
 
-        guard method.equals("shutdown")
+        if method.equals("shutdown")
         {
-            guard has_id
+            if has_id
                 rpc.write_message(server.null_result_response#(id))
             return
         }
 
-        guard method.equals("exit")
+        if method.equals("exit")
         {
             exit(0)
             return
         }
 
-        guard method.equals("textDocument/didOpen")
+        if method.equals("textDocument/didOpen")
         {
             server.handle_did_open(msg)
             return
         }
 
-        guard method.equals("textDocument/didChange")
+        if method.equals("textDocument/didChange")
         {
             server.handle_did_change(msg)
             return
         }
 
-        guard method.equals("textDocument/didClose")
+        if method.equals("textDocument/didClose")
         {
             server.handle_did_close(msg)
             return
         }
 
-        guard method.equals("textDocument/documentSymbol")
+        if method.equals("textDocument/documentSymbol")
         {
-            guard has_id
+            if has_id
                 server.handle_document_symbol(msg, id)
             return
         }
 
-        guard method.equals("textDocument/hover")
+        if method.equals("textDocument/hover")
         {
-            guard has_id
+            if has_id
                 server.handle_hover(msg, id)
             return
         }
 
-        guard method.equals("textDocument/definition")
+        if method.equals("textDocument/definition")
         {
-            guard has_id
+            if has_id
                 server.handle_definition(msg, id)
             return
         }
 
-        guard method.equals("textDocument/references")
+        if method.equals("textDocument/references")
         {
-            guard has_id
+            if has_id
                 server.handle_references(msg, id)
             return
         }
 
-        guard method.equals("textDocument/documentHighlight")
+        if method.equals("textDocument/documentHighlight")
         {
-            guard has_id
+            if has_id
                 server.handle_document_highlight(msg, id)
             return
         }
 
-        guard method.equals("textDocument/completion")
+        if method.equals("textDocument/completion")
         {
-            guard has_id
+            if has_id
                 server.handle_completion(msg, id)
             return
         }
 
-        guard method.equals("textDocument/prepareRename")
+        if method.equals("textDocument/prepareRename")
         {
-            guard has_id
+            if has_id
                 server.handle_prepare_rename(msg, id)
             return
         }
 
-        guard method.equals("textDocument/rename")
+        if method.equals("textDocument/rename")
         {
-            guard has_id
+            if has_id
                 server.handle_rename(msg, id)
             return
         }
 
-        guard method.equals("textDocument/signatureHelp")
+        if method.equals("textDocument/signatureHelp")
         {
-            guard has_id
+            if has_id
                 server.handle_signature_help(msg, id)
             return
         }
 
-        guard method.equals("textDocument/foldingRange")
+        if method.equals("textDocument/foldingRange")
         {
-            guard has_id
+            if has_id
                 server.handle_folding_range(msg, id)
             return
         }
 
-        guard method.equals("textDocument/semanticTokens/full")
+        if method.equals("textDocument/semanticTokens/full")
         {
-            guard has_id
+            if has_id
                 server.handle_semantic_tokens(msg, id)
             return
         }
 
-        guard method.equals("textDocument/inlayHint")
+        if method.equals("textDocument/inlayHint")
         {
-            guard has_id
+            if has_id
                 server.handle_inlay_hint(msg, id)
             return
         }
 
-        guard method.equals("workspace/symbol")
+        if method.equals("workspace/symbol")
         {
-            guard has_id
+            if has_id
                 server.handle_workspace_symbol(msg, id)
             return
         }
@@ -247,7 +247,7 @@ define server
         ; from the current stored buffer, to rebuild the whole document.
         let changes json.get(params, "contentChanges")
         let n json.array_length(changes)
-        guard n = (0 as size_t)
+        if n = (0 as size_t)
             return
 
         var text docstore.get#(uri)
@@ -275,7 +275,7 @@ define server
         let range json.get(change, "range")
         let new_text json.as_string#(json.get(change, "text"))
 
-        guard json.is_null(range)
+        if json.is_null(range)
             return new_text
 
         let start json.get(range, "start")
@@ -384,7 +384,7 @@ define server
         ; costs the lexical answer).
         let sem worker.semantic_type#(uri, text, packed)
         var value server.semantic_hover_from_framed#(sem)
-        guard value.get_length() = (0 as size_t)
+        if value.get_length() = (0 as size_t)
             set value: worker.hover#(uri, text, packed)
         rpc.write_message(server.hover_response#(id, value))
     }
@@ -394,10 +394,10 @@ define server
     ; caller falls back to the lexical hover.
     function semantic_hover_from_framed#(rp, framed: String) returns String
     {
-        guard framed.get_length() = (0 as size_t)
+        if framed.get_length() = (0 as size_t)
             return String#("")
         let tag framed.get(0 as size_t)
-        guard tag <> (0x31 as u8)
+        if tag <> (0x31 as u8)
             return String#("")
         let tname framed.substring(rp, 1 as size_t, framed.get_length() - (1 as size_t))
         var sb StringBuilder#()
@@ -656,9 +656,9 @@ define server
         let result worker.rename#(uri, text, packed)
         ; Empty -> not renameable / worker unavailable -> null. A real
         ; WorkspaceEdit can be large, so wrap it byte-at-a-time.
-        guard result.get_length() = (0 as size_t)
+        if result.get_length() = (0 as size_t)
             rpc.write_message(server.null_result_response#(id))
-        guard result.get_length() > (0 as size_t)
+        if result.get_length() > (0 as size_t)
             rpc.write_message(server.document_symbol_response#(id, result))
     }
 
@@ -683,22 +683,22 @@ define server
         let params json.get(msg, "params")
 
         let root_uri_val json.get(params, "rootUri")
-        guard json.is_null(root_uri_val) = false
+        if json.is_null(root_uri_val) = false
         {
             docstore.set_workspace_root(symbols.uri_to_path#(json.as_string#(root_uri_val)))
             return
         }
 
         let root_path_val json.get(params, "rootPath")
-        guard json.is_null(root_path_val) = false
+        if json.is_null(root_path_val) = false
         {
             docstore.set_workspace_root(json.as_string#(root_path_val))
             return
         }
 
         let folders json.get(params, "workspaceFolders")
-        guard json.is_null(folders) = false
-            guard json.array_length(folders) > (0 as size_t)
+        if json.is_null(folders) = false
+            if json.array_length(folders) > (0 as size_t)
             {
                 let f0 json.array_get(folders, 0 as size_t)
                 docstore.set_workspace_root(symbols.uri_to_path#(json.as_string#(json.get(f0, "uri"))))
@@ -922,9 +922,9 @@ define server
         sb.append(json.format_i64#(id))
         sb.append(0x2C as char)
         sb.append(server.key#("result"))
-        guard result.get_length() = (0 as size_t)
+        if result.get_length() = (0 as size_t)
             sb.append("null")
-        guard result.get_length() > (0 as size_t)
+        if result.get_length() > (0 as size_t)
             sb.append(result)
         sb.append(0x7D as char)
         sb.to_string#()
@@ -945,9 +945,9 @@ define server
         sb.append(json.format_i64#(id))
         sb.append(0x2C as char)
         sb.append(server.key#("result"))
-        guard result.get_length() = (0 as size_t)
+        if result.get_length() = (0 as size_t)
             sb.append("null")
-        guard result.get_length() > (0 as size_t)
+        if result.get_length() > (0 as size_t)
             sb.append(result)
         sb.append(0x7D as char)
         sb.to_string#()

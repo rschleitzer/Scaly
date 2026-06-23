@@ -28,7 +28,7 @@ define Parser
 {
     function do_advance#(rp, this) returns bool
     {
-        guard lexer.token_is_zero()
+        if lexer.token_is_zero()
             lexer.advance#()
 
         lexer.is_at_end()

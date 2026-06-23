@@ -11,7 +11,7 @@
 ; and bulk for the body. No JSON is interpreted here — the body String is
 ; handed to scalyls.json by the caller.
 ;
-; CONTROL-FLOW NOTE: `guard COND STMT` runs STMT when COND is TRUE (no
+; CONTROL-FLOW NOTE: `if COND STMT` runs STMT when COND is TRUE (no
 ; else); branching uses if/else. CR (13) and LF (10) are emitted as
 ; numeric bytes, never "\r"/"\n" literals (the lexer stores those raw as
 ; backslash+letter — s185 escape class).
@@ -37,7 +37,7 @@ define rpc
         ; Read the byte back THROUGH the pointer: `read` wrote it via cp,
         ; and stage-0 does not reload an escaped local (`c as int` returns
         ; the stale pre-read value), so deref cp to force a memory load.
-        guard n = (1 as size_t)
+        if n = (1 as size_t)
             return (*cp) as int
 
         -1
@@ -52,10 +52,10 @@ define rpc
             let dst (buf as pointer[u8] + total) as pointer[void]
             let got read(STDIN_FD, dst, n - total)
 
-            guard got = (0 as size_t)          ; EOF
+            if got = (0 as size_t)          ; EOF
                 return
 
-            guard got > (n - total)            ; (size_t)-1 error wraps high
+            if got > (n - total)            ; (size_t)-1 error wraps high
                 return
 
             set total: total + got
@@ -77,32 +77,32 @@ define rpc
             while true
             {
                 let b rpc.read_byte()
-                guard b < 0                    ; EOF mid-stream
+                if b < 0                    ; EOF mid-stream
                 {
                     set eof: true
                     break
                 }
 
-                guard b = 10                   ; LF terminates the line
+                if b = 10                   ; LF terminates the line
                     break
 
-                guard b <> 13                  ; drop CR, keep the rest
+                if b <> 13                  ; drop CR, keep the rest
                     line.append(b as char)
             }
 
-            guard eof
+            if eof
                 return String()
 
             let line_str line.to_string$()
-            guard line_str.get_length() = (0 as size_t)   ; blank -> headers done
+            if line_str.get_length() = (0 as size_t)   ; blank -> headers done
                 break
 
-            guard line_str.starts_with("Content-Length:")
+            if line_str.starts_with("Content-Length:")
                 set content_length: rpc.parse_header_size(line_str)
         }
 
         ; ---- body ----
-        guard content_length = (0 as size_t)
+        if content_length = (0 as size_t)
             return String()
 
         var body String^rp(content_length)
@@ -115,7 +115,7 @@ define rpc
     function parse_header_size(line: String) returns size_t
     {
         let colon line.index_of(0x3A as u8)    ; ':'
-        guard colon < 0
+        if colon < 0
             return 0 as size_t
 
         var i (colon + 1) as size_t
@@ -158,7 +158,7 @@ define rpc
     function write_all(s: String)
     {
         let len s.get_length()
-        guard len = (0 as size_t)
+        if len = (0 as size_t)
             return
 
         let buf s.get_buffer()
@@ -168,10 +168,10 @@ define rpc
             let dst (buf + total) as pointer[void]
             let w write(STDOUT_FD, dst, len - total)
 
-            guard w = (0 as size_t)
+            if w = (0 as size_t)
                 return
 
-            guard w > (len - total)        ; (size_t)-1 error wraps high
+            if w > (len - total)        ; (size_t)-1 error wraps high
                 return
 
             set total: total + w
@@ -180,7 +180,7 @@ define rpc
 
     function format_size#(rp, n: size_t) returns String
     {
-        guard n = (0 as size_t)
+        if n = (0 as size_t)
             return String#("0")
 
         var sb StringBuilder#()
@@ -198,7 +198,7 @@ define rpc
         {
             set i: i - 1
             let d digits.get(i)
-            guard d <> null
+            if d <> null
                 sb.append(*d)
         }
         sb.to_string#()
@@ -216,7 +216,7 @@ define rpc
         var c: u8 0
         let cp &c
         let n read(fd, cp as pointer[void], 1 as size_t)
-        guard n = (1 as size_t)
+        if n = (1 as size_t)
             return (*cp) as int
 
         -1
@@ -230,10 +230,10 @@ define rpc
             let dst (buf as pointer[u8] + total) as pointer[void]
             let got read(fd, dst, n - total)
 
-            guard got = (0 as size_t)
+            if got = (0 as size_t)
                 return
 
-            guard got > (n - total)
+            if got > (n - total)
                 return
 
             set total: total + got
@@ -252,31 +252,31 @@ define rpc
             while true
             {
                 let b rpc.read_byte_fd(fd)
-                guard b < 0
+                if b < 0
                 {
                     set eof: true
                     break
                 }
 
-                guard b = 10
+                if b = 10
                     break
 
-                guard b <> 13
+                if b <> 13
                     line.append(b as char)
             }
 
-            guard eof
+            if eof
                 return String()
 
             let line_str line.to_string$()
-            guard line_str.get_length() = (0 as size_t)
+            if line_str.get_length() = (0 as size_t)
                 break
 
-            guard line_str.starts_with("Content-Length:")
+            if line_str.starts_with("Content-Length:")
                 set content_length: rpc.parse_header_size(line_str)
         }
 
-        guard content_length = (0 as size_t)
+        if content_length = (0 as size_t)
             return String()
 
         var body String^rp(content_length)
@@ -288,7 +288,7 @@ define rpc
     function write_all_fd(fd: int, s: String)
     {
         let len s.get_length()
-        guard len = (0 as size_t)
+        if len = (0 as size_t)
             return
 
         let buf s.get_buffer()
@@ -298,10 +298,10 @@ define rpc
             let dst (buf + total) as pointer[void]
             let w write(fd, dst, len - total)
 
-            guard w = (0 as size_t)
+            if w = (0 as size_t)
                 return
 
-            guard w > (len - total)
+            if w > (len - total)
                 return
 
             set total: total + w

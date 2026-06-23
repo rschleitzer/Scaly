@@ -21,7 +21,7 @@ define Err union (
 ; Scalar-returning throws: throws on b=0, else returns 42.
 function scalar_step(b: int) returns int throws Err
 {
-    guard b = 0
+    if b = 0
         throw Err.Bad(Detail(1, 2, 3))
     return b + 41
 }

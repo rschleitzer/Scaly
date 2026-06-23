@@ -14,7 +14,7 @@ function run()
     while true
     {
         let body rpc.read_message#()
-        guard body.get_length() = (0 as size_t)
+        if body.get_length() = (0 as size_t)
             return
 
         rpc.write_message(body)

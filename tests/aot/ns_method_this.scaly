@@ -23,9 +23,9 @@ define ops
 function check() returns int
 {
     let b ops.make()
-    guard ops.get_value(b) <> 7
+    if ops.get_value(b) <> 7
         return 1
-    guard ops.is_seven(b) = false
+    if ops.is_seven(b) = false
         return 2
     0
 }

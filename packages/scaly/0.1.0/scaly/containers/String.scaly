@@ -45,7 +45,7 @@ define String (data: pointer[u8](null))
 
     init#(page, other: pointer[const_char], length: size_t)
     {
-        guard length = (0 as size_t)
+        if length = (0 as size_t)
         {
             set data: null
             return
@@ -96,7 +96,7 @@ define String (data: pointer[u8](null))
             set wi: wi + (1 as size_t)
         }
         set *(data + wi): wrest as u8
-        guard other.length > 0
+        if other.length > 0
             memcpy((data + counter + (1 as size_t)) as pointer[void], other.data, other.length)
         set *(data + overall_length): (0 as u8)
 
@@ -105,7 +105,7 @@ define String (data: pointer[u8](null))
     init#(page, c_string: pointer[const_char])
     {
         let length strlen(c_string)
-        guard length = (0 as size_t)
+        if length = (0 as size_t)
         {
             set data: null
             return
@@ -136,7 +136,7 @@ define String (data: pointer[u8](null))
 
     init#(page, other: String)
     {
-        guard other.data = null
+        if other.data = null
         {
             set data: null
             return
@@ -147,7 +147,7 @@ define String (data: pointer[u8](null))
         var index 0
         while true
         {
-            guard bit_count = (PACKED_SIZE * 7) as size_t
+            if bit_count = (PACKED_SIZE * 7) as size_t
             {
                 ; Bad string length
                 exit(12)
@@ -155,7 +155,7 @@ define String (data: pointer[u8](null))
 
             let byte *(other.data + index)
             set length: length | ((byte & (0x7F as u8)) as size_t) << bit_count
-            guard (byte & (0x80 as u8)) = (0 as u8)
+            if (byte & (0x80 as u8)) = (0 as u8)
                 break
 
             set bit_count: bit_count + (7 as size_t)
@@ -177,7 +177,7 @@ define String (data: pointer[u8](null))
 
     function get_buffer(this: String) returns pointer[u8]
     {
-        guard data = null
+        if data = null
             return null
 
         var length: size_t 0
@@ -185,12 +185,12 @@ define String (data: pointer[u8](null))
         var index: size_t 0
         while true
         {
-            guard bit_count = (PACKED_SIZE * 7) as size_t
+            if bit_count = (PACKED_SIZE * 7) as size_t
                 exit(11)
 
             var byte: u8 *(data + index)
             set length: length | ((byte & (0x7F as u8)) as size_t) << bit_count
-            guard (byte & (0x80 as u8)) = (0 as u8)
+            if (byte & (0x80 as u8)) = (0 as u8)
                 break
 
             set bit_count: bit_count + (7 as size_t)
@@ -209,16 +209,16 @@ define String (data: pointer[u8](null))
         var length: size_t 0
         var bit_count: size_t 0
         var index: size_t 0
-        guard data <> null
+        if data <> null
         {
             while true
             {
-                guard bit_count = (PACKED_SIZE * 7) as size_t
+                if bit_count = (PACKED_SIZE * 7) as size_t
                     exit(11)
 
                 var byte: u8 *(data + index)
                 set length: length | ((byte & (0x7F as u8)) as size_t) << bit_count
-                guard (byte & (0x80 as u8)) = (0 as u8)
+                if (byte & (0x80 as u8)) = (0 as u8)
                     break
 
                 set bit_count: bit_count + (7 as size_t)
@@ -227,7 +227,7 @@ define String (data: pointer[u8](null))
         }
 
         var dest page.allocate(length + (1 as size_t), (1 as size_t))
-        guard data <> null
+        if data <> null
             memcpy(dest, data + index + (1 as size_t), length)
 
         ; NUL terminator at offset `length` (last byte of the length+1
@@ -240,7 +240,7 @@ define String (data: pointer[u8](null))
 
     function get_length(this: String) returns size_t
     {
-        guard data = null
+        if data = null
             return 0
 
         var result: size_t 0
@@ -248,12 +248,12 @@ define String (data: pointer[u8](null))
         var index: size_t 0
         while true
         {
-            guard bit_count = (PACKED_SIZE * 7) as size_t
+            if bit_count = (PACKED_SIZE * 7) as size_t
                 exit(11)
 
             var byte: u8 *(data + index)
             set result: result | (((byte & (0x7F as u8)) as size_t)) << bit_count
-            guard (byte & (0x80 as u8)) = (0 as u8)
+            if (byte & (0x80 as u8)) = (0 as u8)
                 break
 
             set bit_count: bit_count + (7 as size_t)
@@ -265,10 +265,10 @@ define String (data: pointer[u8](null))
     function get(this: String, index: size_t) returns u8
     {
         let buffer get_buffer()
-        guard buffer = null
+        if buffer = null
             return (0 as u8)
 
-        guard index >= get_length()
+        if index >= get_length()
             return (0 as u8)
 
         *(buffer + index)
@@ -284,17 +284,17 @@ define String (data: pointer[u8](null))
     {
         var length: size_t 0
         var index: size_t 0
-        guard data <> null
+        if data <> null
         {
             var bit_count: size_t 0
             while true
             {
-                guard bit_count = (PACKED_SIZE * 7) as size_t
+                if bit_count = (PACKED_SIZE * 7) as size_t
                     exit(11)
 
                 var byte: u8 *(data + index)
                 set length: length | (((byte & (0x7F as u8)) as size_t)) << bit_count
-                guard (byte & (0x80 as u8)) = (0 as u8)
+                if (byte & (0x80 as u8)) = (0 as u8)
                     break
 
                 set bit_count: bit_count + (7 as size_t)
@@ -302,10 +302,10 @@ define String (data: pointer[u8](null))
             }
         }
 
-        guard length <> other.get_length()
+        if length <> other.get_length()
             return false
 
-        guard data = null
+        if data = null
             return true
 
         memcmp(data + index + (1 as size_t), other.data + index + (1 as size_t), length) = 0
@@ -315,17 +315,17 @@ define String (data: pointer[u8](null))
     {
         var length: size_t 0
         var index: size_t 0
-        guard data <> null
+        if data <> null
         {
             var bit_count: size_t 0
             while true
             {
-                guard bit_count = (PACKED_SIZE * 7) as size_t
+                if bit_count = (PACKED_SIZE * 7) as size_t
                     exit(13)
 
                 var byte: u8 *(data + index)
                 set length: length | (((byte & (0x7F as u8)) as size_t)) << bit_count
-                guard (byte & (0x80 as u8)) = (0 as u8)
+                if (byte & (0x80 as u8)) = (0 as u8)
                     break
 
                 set bit_count: bit_count + (7 as size_t)
@@ -333,10 +333,10 @@ define String (data: pointer[u8](null))
             }
         }
 
-        guard length <> strlen(other)
+        if length <> strlen(other)
             return false
 
-        guard data = null
+        if data = null
             return true
 
         memcmp(data + index + (1 as size_t), other, length) = 0
@@ -349,19 +349,19 @@ define String (data: pointer[u8](null))
         var index: size_t 0
         while true
         {
-            guard bit_count = (PACKED_SIZE * 7) as size_t
+            if bit_count = (PACKED_SIZE * 7) as size_t
                 exit(11)
 
             var byte: u8 *(data + index)
             set length: length | (((byte & (0x7F as u8)) as size_t)) << bit_count
-            guard (byte & (0x80 as u8)) = (0 as u8)
+            if (byte & (0x80 as u8)) = (0 as u8)
                 break
 
             set bit_count: bit_count + (7 as size_t)
             set index: index + (1 as size_t)
         }
 
-        guard length <> other.length
+        if length <> other.length
             return false
 
         memcmp(data + index + (1 as size_t), other.data, length) = 0
@@ -372,7 +372,7 @@ define String (data: pointer[u8](null))
         ; Empty strings (data null) are legal and must hash like a
         ; zero-length buffer — equals() treats them as equal to any
         ; other empty string, so the hashes must agree too.
-        guard data = null
+        if data = null
             return hashing.hash(null as pointer[char], 0)
 
         var length: size_t 0
@@ -380,12 +380,12 @@ define String (data: pointer[u8](null))
         var index: size_t 0
         while true
         {
-            guard bit_count = (PACKED_SIZE * 7) as size_t
+            if bit_count = (PACKED_SIZE * 7) as size_t
                 exit(11)
 
             var byte: u8 *(data + index)
             set length: length | (((byte & (0x7F as u8)) as size_t)) << bit_count
-            guard (byte & (0x80 as u8)) = (0 as u8)
+            if (byte & (0x80 as u8)) = (0 as u8)
                 break
 
             set bit_count: bit_count + (7 as size_t)
@@ -401,7 +401,7 @@ define String (data: pointer[u8](null))
     ; Get a non-owning slice view of the string data
     function as_slice(this: String) returns Slice[u8]
     {
-        guard data = null
+        if data = null
             return Slice[u8]()
 
         ; Decode length and find where actual chars start
@@ -410,12 +410,12 @@ define String (data: pointer[u8](null))
         var index: size_t 0
         while true
         {
-            guard bit_count = (PACKED_SIZE * 7) as size_t
+            if bit_count = (PACKED_SIZE * 7) as size_t
                 exit(11)
 
             var byte: u8 *(data + index)
             set string_length: string_length | (((byte & (0x7F as u8)) as size_t)) << bit_count
-            guard (byte & (0x80 as u8)) = (0 as u8)
+            if (byte & (0x80 as u8)) = (0 as u8)
                 break
 
             set bit_count: bit_count + (7 as size_t)
@@ -429,14 +429,14 @@ define String (data: pointer[u8](null))
     function contains(this: String, c: u8) returns bool
     {
         let buf get_buffer()
-        guard buf = null
+        if buf = null
             return false
 
         let len get_length()
         var i: size_t 0
         while i < len
         {
-            guard *(buf + i) = c
+            if *(buf + i) = c
                 return true
 
             set i: i + 1
@@ -449,10 +449,10 @@ define String (data: pointer[u8](null))
     {
         let this_len get_length()
         let other_len other.get_length()
-        guard other_len = 0
+        if other_len = 0
             return true
 
-        guard other_len > this_len
+        if other_len > this_len
             return false
 
         let buf get_buffer()
@@ -460,7 +460,7 @@ define String (data: pointer[u8](null))
         var i: size_t 0
         while i <= this_len - other_len
         {
-            guard memcmp(buf + i, other_buf, other_len) = 0
+            if memcmp(buf + i, other_buf, other_len) = 0
                 return true
 
             set i: i + 1
@@ -473,10 +473,10 @@ define String (data: pointer[u8](null))
     {
         let this_len get_length()
         let prefix_len prefix.get_length()
-        guard prefix_len > this_len
+        if prefix_len > this_len
             return false
 
-        guard prefix_len = 0
+        if prefix_len = 0
             return true
 
         let buf get_buffer()
@@ -489,10 +489,10 @@ define String (data: pointer[u8](null))
     {
         let this_len get_length()
         let prefix_len strlen(prefix)
-        guard prefix_len > this_len
+        if prefix_len > this_len
             return false
 
-        guard prefix_len = 0
+        if prefix_len = 0
             return true
 
         let buf get_buffer()
@@ -504,10 +504,10 @@ define String (data: pointer[u8](null))
     {
         let this_len get_length()
         let suffix_len suffix.get_length()
-        guard suffix_len > this_len
+        if suffix_len > this_len
             return false
 
-        guard suffix_len = 0
+        if suffix_len = 0
             return true
 
         let buf get_buffer()
@@ -520,10 +520,10 @@ define String (data: pointer[u8](null))
     {
         let this_len get_length()
         let suffix_len strlen(suffix)
-        guard suffix_len > this_len
+        if suffix_len > this_len
             return false
 
-        guard suffix_len = 0
+        if suffix_len = 0
             return true
 
         let buf get_buffer()
@@ -534,14 +534,14 @@ define String (data: pointer[u8](null))
     function index_of(this: String, c: u8) returns int
     {
         let buf get_buffer()
-        guard buf = null
+        if buf = null
             return -1
 
         let len get_length()
         var i: size_t 0
         while i < len
         {
-            guard *(buf + i) = c
+            if *(buf + i) = c
                 return i as int
 
             set i: i + 1
@@ -553,17 +553,17 @@ define String (data: pointer[u8](null))
     function index_of(this: String, c: u8, start: size_t) returns int
     {
         let buf get_buffer()
-        guard buf = null
+        if buf = null
             return -1
 
         let len get_length()
-        guard start >= len
+        if start >= len
             return -1
 
         var i start
         while i < len
         {
-            guard *(buf + i) = c
+            if *(buf + i) = c
                 return i as int
 
             set i: i + 1
@@ -575,20 +575,20 @@ define String (data: pointer[u8](null))
     function last_index_of(this: String, c: u8) returns int
     {
         let buf get_buffer()
-        guard buf = null
+        if buf = null
             return -1
 
         let len get_length()
-        guard len = 0
+        if len = 0
             return -1
 
         var i len - 1
         while i >= 0
         {
-            guard *(buf + i) = c
+            if *(buf + i) = c
                 return i as int
 
-            guard i = 0
+            if i = 0
                 break
 
             set i: i - 1

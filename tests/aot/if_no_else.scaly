@@ -2,7 +2,7 @@
 ; - a true  no-else if runs its consequent
 ; - a false no-else if is skipped (no alternative needed)
 ; - a statement after a brace-less consequent must NOT be slurped into the
-;   if's operation (the historical reason guard existed)
+;   if's operation (the historical reason the guard statement existed)
 ; Expected: 42
 
 function compute() returns int

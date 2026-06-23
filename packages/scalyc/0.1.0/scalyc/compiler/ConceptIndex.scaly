@@ -26,7 +26,7 @@
 ; map can't serve) — they keep their linear scans. A future multi-index could
 ; serve them.
 ;
-; CONTROL-FLOW NOTE: `guard COND STMT` runs STMT when COND is TRUE (no else).
+; CONTROL-FLOW NOTE: `if COND STMT` runs STMT when COND is TRUE (no else).
 
 use scaly.containers.String
 
@@ -57,7 +57,7 @@ define ConceptIndex (slots: pointer[ConceptSlot](null), cap: size_t(0))
     {
         let bytes cap * sizeof ConceptSlot
         let slots malloc(bytes) as pointer[ConceptSlot]
-        guard slots = null
+        if slots = null
         {
             scaly_eputs("ConceptIndex: malloc failed\n")
             exit(14)
@@ -78,7 +78,7 @@ define ConceptIndex (slots: pointer[ConceptSlot](null), cap: size_t(0))
     ; table exits loudly.
     procedure insert(this: ConceptIndex, name: String, index: size_t)
     {
-        guard slots <> null
+        if slots <> null
         {
             let h name.hash()
             let mask cap - (1 as size_t)
@@ -87,14 +87,14 @@ define ConceptIndex (slots: pointer[ConceptSlot](null), cap: size_t(0))
             while probes < cap
             {
                 let s slots + idx
-                guard s.used = false
+                if s.used = false
                 {
                     set s.name: name
                     set s.index: index
                     set s.used: true
                     return
                 }
-                guard s.name.equals(name)
+                if s.name.equals(name)
                 {
                     set s.index: index
                     return
@@ -113,7 +113,7 @@ define ConceptIndex (slots: pointer[ConceptSlot](null), cap: size_t(0))
     ; table exits loudly.
     procedure insert_if_absent(this: ConceptIndex, name: String, index: size_t)
     {
-        guard slots <> null
+        if slots <> null
         {
             let h name.hash()
             let mask cap - (1 as size_t)
@@ -122,14 +122,14 @@ define ConceptIndex (slots: pointer[ConceptSlot](null), cap: size_t(0))
             while probes < cap
             {
                 let s slots + idx
-                guard s.used = false
+                if s.used = false
                 {
                     set s.name: name
                     set s.index: index
                     set s.used: true
                     return
                 }
-                guard s.name.equals(name)
+                if s.name.equals(name)
                     return
                 set idx: (idx + (1 as size_t)) & mask
                 set probes: probes + (1 as size_t)
@@ -142,7 +142,7 @@ define ConceptIndex (slots: pointer[ConceptSlot](null), cap: size_t(0))
     ; The registry index for `name`, or -1 if absent.
     function lookup(this: ConceptIndex, name: String) returns i64
     {
-        guard slots <> null
+        if slots <> null
         {
             let h name.hash()
             let mask cap - (1 as size_t)
@@ -151,9 +151,9 @@ define ConceptIndex (slots: pointer[ConceptSlot](null), cap: size_t(0))
             while probes < cap
             {
                 let s slots + idx
-                guard s.used = false
+                if s.used = false
                     return (0 - 1) as i64
-                guard s.name.equals(name)
+                if s.name.equals(name)
                     return s.index as i64
                 set idx: (idx + (1 as size_t)) & mask
                 set probes: probes + (1 as size_t)

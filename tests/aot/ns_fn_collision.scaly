@@ -12,7 +12,7 @@ define NS
 
 function check() returns int
 {
-    guard NS.Thing() <> 42
+    if NS.Thing() <> 42
         return 1
     0
 }

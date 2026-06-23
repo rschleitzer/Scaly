@@ -32,7 +32,7 @@
 ; happens and which is persistent across requests. A worker crash + respawn
 ; simply starts with an empty index that refills lazily.
 ;
-; CONTROL-FLOW NOTE: `guard COND STMT` runs STMT when COND is TRUE (no else).
+; CONTROL-FLOW NOTE: `if COND STMT` runs STMT when COND is TRUE (no else).
 ; One statement per line (`;` starts a comment, not a separator).
 
 use scaly.containers.String
@@ -69,11 +69,11 @@ define symindex
     ; leaves idx_slots null; callers then treat every file as a cache miss.
     procedure ensure()
     {
-        guard idx_slots = null
+        if idx_slots = null
         {
             let bytes (IDX_CAP as size_t) * sizeof IdxSlot
             set idx_slots: malloc(bytes) as pointer[IdxSlot]
-            guard idx_slots = null
+            if idx_slots = null
                 return
 
             var i 0
@@ -94,16 +94,16 @@ define symindex
     ; Index of the live slot whose path matches, or -1.
     function find(path: String) returns int
     {
-        guard idx_slots <> null
+        if idx_slots <> null
         {
             var i 0
             while i < IDX_CAP
             {
                 let s idx_slots + i
-                guard s.used
+                if s.used
                 {
                     let sp String#(s.path_data as pointer[const_char], s.path_len)
-                    guard sp.equals(path)
+                    if sp.equals(path)
                         return i
                 }
                 set i: i + 1
@@ -117,10 +117,10 @@ define symindex
     function valid(path: String, chash: size_t) returns bool
     {
         let idx symindex.find(path)
-        guard idx >= 0
+        if idx >= 0
         {
             let s idx_slots + idx
-            guard s.chash = chash
+            if s.chash = chash
                 return true
         }
         false
@@ -132,10 +132,10 @@ define symindex
     function get_blob#(rp, path: String) returns String
     {
         let idx symindex.find(path)
-        guard idx >= 0
+        if idx >= 0
         {
             let s idx_slots + idx
-            guard s.blob_data <> null
+            if s.blob_data <> null
                 return String#(s.blob_data as pointer[const_char], s.blob_len)
         }
         String#("")
@@ -145,16 +145,16 @@ define symindex
     ; freeing the previous copy. An empty blob leaves blob_data null.
     procedure set_blob(s: pointer[IdxSlot], blob: String)
     {
-        guard s.blob_data <> null
+        if s.blob_data <> null
             free(s.blob_data as pointer[void])
         set s.blob_data: null
         set s.blob_len: 0 as size_t
 
         let len blob.get_length()
-        guard len > (0 as size_t)
+        if len > (0 as size_t)
         {
             let dst malloc(len) as pointer[u8]
-            guard dst <> null
+            if dst <> null
             {
                 memcpy(dst as pointer[void], blob.get_buffer() as pointer[void], len)
                 set s.blob_data: dst
@@ -167,16 +167,16 @@ define symindex
     ; any previous copy (slots are reused after overflow eviction).
     procedure set_path(s: pointer[IdxSlot], path: String)
     {
-        guard s.path_data <> null
+        if s.path_data <> null
             free(s.path_data as pointer[void])
         set s.path_data: null
         set s.path_len: 0 as size_t
 
         let len path.get_length()
-        guard len > (0 as size_t)
+        if len > (0 as size_t)
         {
             let dst malloc(len) as pointer[u8]
-            guard dst <> null
+            if dst <> null
             {
                 memcpy(dst as pointer[void], path.get_buffer() as pointer[void], len)
                 set s.path_data: dst
@@ -190,11 +190,11 @@ define symindex
     procedure put(path: String, chash: size_t, blob: String)
     {
         symindex.ensure()
-        guard idx_slots = null
+        if idx_slots = null
             return
 
         let idx symindex.find(path)
-        guard idx >= 0
+        if idx >= 0
         {
             let s idx_slots + idx
             symindex.set_blob(s, blob)
@@ -207,7 +207,7 @@ define symindex
         while i < IDX_CAP
         {
             let s idx_slots + i
-            guard s.used = false
+            if s.used = false
             {
                 symindex.set_path(s, path)
                 symindex.set_blob(s, blob)

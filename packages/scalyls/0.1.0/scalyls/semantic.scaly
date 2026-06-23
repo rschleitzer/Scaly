@@ -38,7 +38,7 @@
 ; crash-isolated worker as diagnostics; the server / lexical resolvers fall
 ; back on a miss / crash.
 ;
-; CONTROL-FLOW NOTE: `guard COND STMT` runs STMT when COND is TRUE (no else).
+; CONTROL-FLOW NOTE: `if COND STMT` runs STMT when COND is TRUE (no else).
 ; One statement per line. Plan unions are matched by VARIANT TAG NAME
 ; (`when c: Call` binds the PlannedCall payload) — NOT by payload type
 ; (unlike the Syntax unions in symbols.scaly). In a choose returning a value,
@@ -114,14 +114,14 @@ define semantic
         while i < n
         {
             let c packed.get(i)
-            guard c = (0x20 as u8)
+            if c = (0x20 as u8)
                 set seen_space: true
-            guard c <> (0x20 as u8)
+            if c <> (0x20 as u8)
             {
                 let digit (c - (0x30 as u8)) as size_t
-                guard seen_space = false
+                if seen_space = false
                     set line: line * (10 as size_t) + digit
-                guard seen_space
+                if seen_space
                     set character: character * (10 as size_t) + digit
             }
             set i: i + 1
@@ -133,16 +133,16 @@ define semantic
         ; reporting a body expression's type for a cursor on inter-token
         ; whitespace.
         let len source.get_length()
-        guard offset >= len
+        if offset >= len
             return String#("")
         let b source.get(offset)
-        guard b = (0x20 as u8)
+        if b = (0x20 as u8)
             return String#("")
-        guard b = (0x09 as u8)
+        if b = (0x09 as u8)
             return String#("")
-        guard b = (0x0A as u8)
+        if b = (0x0A as u8)
             return String#("")
-        guard b = (0x0D as u8)
+        if b = (0x0D as u8)
             return String#("")
         let path diagnostics.strip_uri#(uri)
         semantic.resolve_at#(source, path, 0 as size_t, offset)
@@ -156,7 +156,7 @@ define semantic
     {
         let ty semantic.semantic_type_packed#(source, uri, packed)
         var sb StringBuilder#()
-        guard ty.get_length() > (0 as size_t)
+        if ty.get_length() > (0 as size_t)
         {
             sb.append(0x31 as char)                ; '1' = hit
             sb.append(ty)
@@ -190,11 +190,11 @@ define semantic
                 var planner Planner.Planner$(path)
                 diagnostics.register_packages(&planner, &model)
                 let plan planner.plan_program(model)
-                guard plan <> null
+                if plan <> null
                 {
                     let pl (*plan)
                     let rr semantic.walk_plan#(pl, mode, offset)
-                    guard rr.found
+                    if rr.found
                         set result: String#(rr.type_name)
                 }
             }
@@ -211,20 +211,20 @@ define semantic
         var cur_line: size_t 0
         while cur_line < line
         {
-            guard off >= len
+            if off >= len
                 return off
             let c source.get(off)
             set off: off + 1
-            guard c = (10 as char)
+            if c = (10 as char)
                 set cur_line: cur_line + 1
         }
         var col: size_t 0
         while col < character
         {
-            guard off >= len
+            if off >= len
                 return off
             let c source.get(off)
-            guard c = (10 as char)
+            if c = (10 as char)
                 return off
             set off: off + 1
             set col: col + 1
@@ -242,21 +242,21 @@ define semantic
     {
         var result semantic.none#()
 
-        guard plan.statements <> null
+        if plan.statements <> null
             set result: semantic.walk_statements#(*plan.statements, mode, offset)
 
-        guard result.found = false
+        if result.found = false
         {
-            guard plan.functions <> null
+            if plan.functions <> null
             {
                 let fns (*plan.functions)
                 var i: size_t 0
                 while i < fns.length
                 {
-                    guard result.found = false
+                    if result.found = false
                     {
                         let fp fns.get(i)
-                        guard fp <> null
+                        if fp <> null
                             set result: semantic.walk_impl#((*fp).impl, mode, offset)
                     }
                     set i: i + 1
@@ -264,18 +264,18 @@ define semantic
             }
         }
 
-        guard result.found = false
+        if result.found = false
         {
-            guard plan.structures <> null
+            if plan.structures <> null
             {
                 let sts (*plan.structures)
                 var i: size_t 0
                 while i < sts.length
                 {
-                    guard result.found = false
+                    if result.found = false
                     {
                         let sp sts.get(i)
-                        guard sp <> null
+                        if sp <> null
                             set result: semantic.walk_structure#(*sp, mode, offset)
                     }
                     set i: i + 1
@@ -283,18 +283,18 @@ define semantic
             }
         }
 
-        guard result.found = false
+        if result.found = false
         {
-            guard plan.unions <> null
+            if plan.unions <> null
             {
                 let uns (*plan.unions)
                 var i: size_t 0
                 while i < uns.length
                 {
-                    guard result.found = false
+                    if result.found = false
                     {
                         let up uns.get(i)
-                        guard up <> null
+                        if up <> null
                             set result: semantic.walk_union#(*up, mode, offset)
                     }
                     set i: i + 1
@@ -302,21 +302,21 @@ define semantic
             }
         }
 
-        guard result.found = false
+        if result.found = false
         {
-            guard plan.globals <> null
+            if plan.globals <> null
             {
                 let gls (*plan.globals)
                 var i: size_t 0
                 while i < gls.length
                 {
-                    guard result.found = false
+                    if result.found = false
                     {
                         let gp gls.get(i)
-                        guard gp <> null
+                        if gp <> null
                         {
                             let g (*gp)
-                            guard g.value <> null
+                            if g.value <> null
                                 set result: semantic.walk_operands#(*g.value, mode, offset)
                         }
                     }
@@ -332,34 +332,34 @@ define semantic
     {
         var result semantic.none#()
 
-        guard st.methods <> null
+        if st.methods <> null
         {
             let ms (*st.methods)
             var i: size_t 0
             while i < ms.length
             {
-                guard result.found = false
+                if result.found = false
                 {
                     let mp ms.get(i)
-                    guard mp <> null
+                    if mp <> null
                         set result: semantic.walk_impl#((*mp).impl, mode, offset)
                 }
                 set i: i + 1
             }
         }
 
-        guard result.found = false
+        if result.found = false
         {
-            guard st.initializers <> null
+            if st.initializers <> null
             {
                 let inits (*st.initializers)
                 var i: size_t 0
                 while i < inits.length
                 {
-                    guard result.found = false
+                    if result.found = false
                     {
                         let ip inits.get(i)
-                        guard ip <> null
+                        if ip <> null
                             set result: semantic.walk_impl#((*ip).impl, mode, offset)
                     }
                     set i: i + 1
@@ -367,18 +367,18 @@ define semantic
             }
         }
 
-        guard result.found = false
+        if result.found = false
         {
-            guard st.operators <> null
+            if st.operators <> null
             {
                 let ops (*st.operators)
                 var i: size_t 0
                 while i < ops.length
                 {
-                    guard result.found = false
+                    if result.found = false
                     {
                         let op ops.get(i)
-                        guard op <> null
+                        if op <> null
                             set result: semantic.walk_impl#((*op).impl, mode, offset)
                     }
                     set i: i + 1
@@ -386,9 +386,9 @@ define semantic
             }
         }
 
-        guard result.found = false
+        if result.found = false
         {
-            guard st.deinitializer <> null
+            if st.deinitializer <> null
                 set result: semantic.walk_impl#((*st.deinitializer).impl, mode, offset)
         }
 
@@ -399,34 +399,34 @@ define semantic
     {
         var result semantic.none#()
 
-        guard un.methods <> null
+        if un.methods <> null
         {
             let ms (*un.methods)
             var i: size_t 0
             while i < ms.length
             {
-                guard result.found = false
+                if result.found = false
                 {
                     let mp ms.get(i)
-                    guard mp <> null
+                    if mp <> null
                         set result: semantic.walk_impl#((*mp).impl, mode, offset)
                 }
                 set i: i + 1
             }
         }
 
-        guard result.found = false
+        if result.found = false
         {
-            guard un.operators <> null
+            if un.operators <> null
             {
                 let ops (*un.operators)
                 var i: size_t 0
                 while i < ops.length
                 {
-                    guard result.found = false
+                    if result.found = false
                     {
                         let op ops.get(i)
-                        guard op <> null
+                        if op <> null
                             set result: semantic.walk_impl#((*op).impl, mode, offset)
                     }
                     set i: i + 1
@@ -453,11 +453,11 @@ define semantic
     function walk_action#(rp, act: PlannedAction, mode: size_t, offset: size_t) returns ResolveResult
     {
         var result semantic.none#()
-        guard act.source <> null
+        if act.source <> null
             set result: semantic.walk_operands#(*act.source, mode, offset)
-        guard result.found = false
+        if result.found = false
         {
-            guard act.target <> null
+            if act.target <> null
                 set result: semantic.walk_operands#(*act.target, mode, offset)
         }
         result
@@ -472,10 +472,10 @@ define semantic
         var i: size_t 0
         while i < stmts.length
         {
-            guard result.found = false
+            if result.found = false
             {
                 let sp stmts.get(i)
-                guard sp <> null
+                if sp <> null
                     set result: semantic.walk_statement#(*sp, mode, offset)
             }
             set i: i + 1
@@ -502,20 +502,20 @@ define semantic
 
     function walk_binding#(rp, bnd: PlannedBinding, mode: size_t, offset: size_t) returns ResolveResult
     {
-        guard bnd.operation <> null
+        if bnd.operation <> null
         {
             let r semantic.walk_operands#(*bnd.operation, mode, offset)
-            guard r.found
+            if r.found
                 return r
         }
         ; Cursor on the binding NAME -> the binding item's inferred type.
         let bi bnd.binding_item
-        guard bi.item_type <> null
+        if bi.item_type <> null
         {
-            guard semantic.contains#(bi.loc, offset)
+            if semantic.contains#(bi.loc, offset)
             {
                 let tn semantic.type_name#(*bi.item_type)
-                guard tn.get_length() > (0 as size_t)
+                if tn.get_length() > (0 as size_t)
                     return ResolveResult(true, bi.loc.end - bi.loc.start, tn)
             }
         }
@@ -531,10 +531,10 @@ define semantic
         var i: size_t 0
         while i < ops.length
         {
-            guard result.found = false
+            if result.found = false
             {
                 let op ops.get(i)
-                guard op <> null
+                if op <> null
                     set result: semantic.walk_operand#(*op, mode, offset)
             }
             set i: i + 1
@@ -544,7 +544,7 @@ define semantic
 
     function walk_operands_opt#(rp, opt: ref[Vector[PlannedOperand]]?, mode: size_t, offset: size_t) returns ResolveResult
     {
-        guard opt <> null
+        if opt <> null
             return semantic.walk_operands#(*opt, mode, offset)
         semantic.none#()
     }
@@ -552,44 +552,44 @@ define semantic
     function walk_operand#(rp, op: PlannedOperand, mode: size_t, offset: size_t) returns ResolveResult
     {
         ; Prune: children spans nest inside the operand's span.
-        guard semantic.contains#(op.loc, offset) = false
+        if semantic.contains#(op.loc, offset) = false
             return semantic.none#()
         let self_width op.loc.end - op.loc.start
         let child semantic.walk_expr#(op.expr, mode, offset)
         ; RECEIVER mode (completion): the innermost expression's OWN base type
         ; (ignoring member access / the enclosing call) — `g.member` reports
         ; g's type, not the member-access result.
-        guard mode = (2 as size_t)
+        if mode = (2 as size_t)
         {
-            guard child.found
+            if child.found
                 return child
             let bt semantic.expr_type#(op.expr, op.result_type)
-            guard bt.get_length() > (0 as size_t)
+            if bt.get_length() > (0 as size_t)
                 return ResolveResult(true, self_width, bt)
             return semantic.none#()
         }
         let self_type semantic.operand_final_type#(op)
         ; A strictly-tighter deeper match wins (genuine nesting f(g(x))).
-        guard child.found
+        if child.found
         {
-            guard child.width < self_width
+            if child.width < self_width
                 return child
         }
         ; Otherwise this operand, when it has a usable (non-void) type. On an
         ; equal-width tie this beats the deeper match — the call over its
         ; same-span receiver.
-        guard self_type.get_length() > (0 as size_t)
+        if self_type.get_length() > (0 as size_t)
             return ResolveResult(true, self_width, self_type)
         ; This operand has no usable type (a void block wrapper): defer to the
         ; deeper match even at equal width.
-        guard child.found
+        if child.found
             return child
         semantic.none#()
     }
 
     function walk_operand_opt#(rp, opt: ref[PlannedOperand]?, mode: size_t, offset: size_t) returns ResolveResult
     {
-        guard opt <> null
+        if opt <> null
             return semantic.walk_operand#(*opt, mode, offset)
         semantic.none#()
     }
@@ -643,7 +643,7 @@ define semantic
 
     function walk_call#(rp, c: PlannedCall, mode: size_t, offset: size_t) returns ResolveResult
     {
-        guard c.args <> null
+        if c.args <> null
             return semantic.walk_operands#(*c.args, mode, offset)
         semantic.none#()
     }
@@ -651,19 +651,19 @@ define semantic
     function walk_tuple#(rp, t: PlannedTuple, mode: size_t, offset: size_t) returns ResolveResult
     {
         var result semantic.none#()
-        guard t.components <> null
+        if t.components <> null
         {
             let comps (*t.components)
             var i: size_t 0
             while i < comps.length
             {
-                guard result.found = false
+                if result.found = false
                 {
                     let cp comps.get(i)
-                    guard cp <> null
+                    if cp <> null
                     {
                         let comp (*cp)
-                        guard comp.value <> null
+                        if comp.value <> null
                             set result: semantic.walk_operands#(*comp.value, mode, offset)
                     }
                 }
@@ -675,7 +675,7 @@ define semantic
 
     function walk_block#(rp, b: PlannedBlock, mode: size_t, offset: size_t) returns ResolveResult
     {
-        guard b.statements <> null
+        if b.statements <> null
             return semantic.walk_statements#(*b.statements, mode, offset)
         semantic.none#()
     }
@@ -683,16 +683,16 @@ define semantic
     function walk_if#(rp, iff: PlannedIf, mode: size_t, offset: size_t) returns ResolveResult
     {
         var result semantic.none#()
-        guard iff.condition <> null
+        if iff.condition <> null
             set result: semantic.walk_operands#(*iff.condition, mode, offset)
-        guard result.found = false
+        if result.found = false
         {
-            guard iff.consequent <> null
+            if iff.consequent <> null
                 set result: semantic.walk_statement#(*iff.consequent, mode, offset)
         }
-        guard result.found = false
+        if result.found = false
         {
-            guard iff.alternative <> null
+            if iff.alternative <> null
                 set result: semantic.walk_statement#(*iff.alternative, mode, offset)
         }
         result
@@ -701,23 +701,23 @@ define semantic
     function walk_match#(rp, m: PlannedMatch, mode: size_t, offset: size_t) returns ResolveResult
     {
         var result semantic.none#()
-        guard m.condition <> null
+        if m.condition <> null
             set result: semantic.walk_operands#(*m.condition, mode, offset)
-        guard result.found = false
+        if result.found = false
         {
-            guard m.branches <> null
+            if m.branches <> null
             {
                 let brs (*m.branches)
                 var i: size_t 0
                 while i < brs.length
                 {
-                    guard result.found = false
+                    if result.found = false
                     {
                         let bp brs.get(i)
-                        guard bp <> null
+                        if bp <> null
                         {
                             let br (*bp)
-                            guard br.consequent <> null
+                            if br.consequent <> null
                                 set result: semantic.walk_statement#(*br.consequent, mode, offset)
                         }
                     }
@@ -725,9 +725,9 @@ define semantic
                 }
             }
         }
-        guard result.found = false
+        if result.found = false
         {
-            guard m.alternative <> null
+            if m.alternative <> null
                 set result: semantic.walk_statement#(*m.alternative, mode, offset)
         }
         result
@@ -736,23 +736,23 @@ define semantic
     function walk_choose#(rp, ch: PlannedChoose, mode: size_t, offset: size_t) returns ResolveResult
     {
         var result semantic.none#()
-        guard ch.condition <> null
+        if ch.condition <> null
             set result: semantic.walk_operands#(*ch.condition, mode, offset)
-        guard result.found = false
+        if result.found = false
         {
-            guard ch.cases <> null
+            if ch.cases <> null
             {
                 let cs (*ch.cases)
                 var i: size_t 0
                 while i < cs.length
                 {
-                    guard result.found = false
+                    if result.found = false
                     {
                         let wp cs.get(i)
-                        guard wp <> null
+                        if wp <> null
                         {
                             let wh (*wp)
-                            guard wh.consequent <> null
+                            if wh.consequent <> null
                                 set result: semantic.walk_statement#(*wh.consequent, mode, offset)
                         }
                     }
@@ -760,9 +760,9 @@ define semantic
                 }
             }
         }
-        guard result.found = false
+        if result.found = false
         {
-            guard ch.alternative <> null
+            if ch.alternative <> null
                 set result: semantic.walk_statement#(*ch.alternative, mode, offset)
         }
         result
@@ -771,9 +771,9 @@ define semantic
     function walk_for#(rp, fr: PlannedFor, mode: size_t, offset: size_t) returns ResolveResult
     {
         var result semantic.none#()
-        guard fr.expr <> null
+        if fr.expr <> null
             set result: semantic.walk_operands#(*fr.expr, mode, offset)
-        guard result.found = false
+        if result.found = false
             set result: semantic.walk_action#(fr.body, mode, offset)
         result
     }
@@ -781,7 +781,7 @@ define semantic
     function walk_while#(rp, wh: PlannedWhile, mode: size_t, offset: size_t) returns ResolveResult
     {
         var result semantic.walk_binding#(wh.cond, mode, offset)
-        guard result.found = false
+        if result.found = false
             set result: semantic.walk_action#(wh.body, mode, offset)
         result
     }
@@ -789,21 +789,21 @@ define semantic
     function walk_try#(rp, tr: PlannedTry, mode: size_t, offset: size_t) returns ResolveResult
     {
         var result semantic.walk_binding#(tr.cond, mode, offset)
-        guard result.found = false
+        if result.found = false
         {
-            guard tr.catches <> null
+            if tr.catches <> null
             {
                 let cs (*tr.catches)
                 var i: size_t 0
                 while i < cs.length
                 {
-                    guard result.found = false
+                    if result.found = false
                     {
                         let wp cs.get(i)
-                        guard wp <> null
+                        if wp <> null
                         {
                             let wh (*wp)
-                            guard wh.consequent <> null
+                            if wh.consequent <> null
                                 set result: semantic.walk_statement#(*wh.consequent, mode, offset)
                         }
                     }
@@ -811,9 +811,9 @@ define semantic
                 }
             }
         }
-        guard result.found = false
+        if result.found = false
         {
-            guard tr.alternative <> null
+            if tr.alternative <> null
                 set result: semantic.walk_statement#(*tr.alternative, mode, offset)
         }
         result
@@ -830,13 +830,13 @@ define semantic
     ; a.f().b yields .b's type), else the expression's own typed field.
     function operand_final_type#(rp, op: PlannedOperand) returns String
     {
-        guard op.member_access <> null
+        if op.member_access <> null
         {
             let ma (*op.member_access)
-            guard ma.length > (0 as size_t)
+            if ma.length > (0 as size_t)
             {
                 let lp ma.get(ma.length - (1 as size_t))
-                guard lp <> null
+                if lp <> null
                     return semantic.type_name#((*lp).result_type)
             }
         }
@@ -867,9 +867,9 @@ define semantic
     ; True when offset is within [loc.start, loc.end).
     function contains#(rp, loc: Span, offset: size_t) returns bool
     {
-        guard offset < loc.start
+        if offset < loc.start
             return false
-        guard offset >= loc.end
+        if offset >= loc.end
             return false
         true
     }
@@ -882,11 +882,11 @@ define semantic
     ; `: T` hint.
     function type_name#(rp, pt: PlannedType) returns String
     {
-        guard pt.variable <> null
+        if pt.variable <> null
             return String#("")
-        guard pt.name.get_length() = (0 as size_t)
+        if pt.name.get_length() = (0 as size_t)
             return String#("")
-        guard pt.name.equals("void")
+        if pt.name.equals("void")
             return String#("")
         String#(pt.name)
     }

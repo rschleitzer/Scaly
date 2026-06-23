@@ -12,99 +12,99 @@ define grammar
     ; True when `word` is a reserved keyword (scaly.sgm <keyword> list).
     function is_keyword(word: String) returns bool
     {
-        guard word.equals("alignof")
+        if word.equals("alignof")
             return true
-        guard word.equals("as")
+        if word.equals("as")
             return true
-        guard word.equals("break")
+        if word.equals("break")
             return true
-        guard word.equals("case")
+        if word.equals("case")
             return true
-        guard word.equals("choose")
+        if word.equals("choose")
             return true
-        guard word.equals("continue")
+        if word.equals("continue")
             return true
-        guard word.equals("define")
+        if word.equals("define")
             return true
-        guard word.equals("deinit")
+        if word.equals("deinit")
             return true
-        guard word.equals("delegate")
+        if word.equals("delegate")
             return true
-        guard word.equals("else")
+        if word.equals("else")
             return true
-        guard word.equals("extends")
+        if word.equals("extends")
             return true
-        guard word.equals("extern")
+        if word.equals("extern")
             return true
-        guard word.equals("for")
+        if word.equals("for")
             return true
-        guard word.equals("function")
+        if word.equals("function")
             return true
-        guard word.equals("guard")
+        if word.equals("guard")
             return true
-        guard word.equals("if")
+        if word.equals("if")
             return true
-        guard word.equals("implement")
+        if word.equals("implement")
             return true
-        guard word.equals("in")
+        if word.equals("in")
             return true
-        guard word.equals("init")
+        if word.equals("init")
             return true
-        guard word.equals("instruction")
+        if word.equals("instruction")
             return true
-        guard word.equals("intrinsic")
+        if word.equals("intrinsic")
             return true
-        guard word.equals("is")
+        if word.equals("is")
             return true
-        guard word.equals("label")
+        if word.equals("label")
             return true
-        guard word.equals("let")
+        if word.equals("let")
             return true
-        guard word.equals("loop")
+        if word.equals("loop")
             return true
-        guard word.equals("macro")
+        if word.equals("macro")
             return true
-        guard word.equals("match")
+        if word.equals("match")
             return true
-        guard word.equals("module")
+        if word.equals("module")
             return true
-        guard word.equals("mutable")
+        if word.equals("mutable")
             return true
-        guard word.equals("operator")
+        if word.equals("operator")
             return true
-        guard word.equals("private")
+        if word.equals("private")
             return true
-        guard word.equals("procedure")
+        if word.equals("procedure")
             return true
-        guard word.equals("repeat")
+        if word.equals("repeat")
             return true
-        guard word.equals("return")
+        if word.equals("return")
             return true
-        guard word.equals("returns")
+        if word.equals("returns")
             return true
-        guard word.equals("set")
+        if word.equals("set")
             return true
-        guard word.equals("sizeof")
+        if word.equals("sizeof")
             return true
-        guard word.equals("throw")
+        if word.equals("throw")
             return true
-        guard word.equals("throws")
+        if word.equals("throws")
             return true
-        guard word.equals("trait")
+        if word.equals("trait")
             return true
-        guard word.equals("try")
+        if word.equals("try")
             return true
-        guard word.equals("union")
+        if word.equals("union")
             return true
-        guard word.equals("use")
+        if word.equals("use")
             return true
-        guard word.equals("var")
+        if word.equals("var")
             return true
-        guard word.equals("when")
+        if word.equals("when")
             return true
-        guard word.equals("while")
+        if word.equals("while")
             return true
-        guard word.equals("package")
+        if word.equals("package")
             return true
         false
     }

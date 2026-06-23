@@ -32,7 +32,7 @@ define grammar
     function is_keyword(word: String) returns bool
     {
 "   (apply-to-selected-children "keyword" (lambda (keyword) ($
-"        guard word.equals(\""(id keyword)"\")
+"        if word.equals(\""(id keyword)"\")
             return true
 "   )))
 "        false

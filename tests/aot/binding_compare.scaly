@@ -14,11 +14,11 @@ function check() returns int
     let x id(5)
 
     let eq x = 5            ; comparison 5 = 5 -> true (pre-fix: eq = x = 5)
-    guard eq = false
+    if eq = false
         return 1
 
     let ne x = 9            ; comparison 5 = 9 -> false (pre-fix: ne = x = 5)
-    guard ne
+    if ne
         return 2
 
     0
