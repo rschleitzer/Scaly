@@ -89,7 +89,6 @@ define Parser
         keywords_builder.add(String#("extern"))
         keywords_builder.add(String#("for"))
         keywords_builder.add(String#("function"))
-        keywords_builder.add(String#("guard"))
         keywords_builder.add(String#("if"))
         keywords_builder.add(String#("implement"))
         keywords_builder.add(String#("in"))
@@ -2656,16 +2655,6 @@ define Parser
             }
             when node: Success
                 return ExpressionSyntax.Block(node)
-        choose parse_guard#()
-            when err: Error
-            {
-                choose err
-                    when i: Invalid
-                        throw ParserError.Invalid(i)
-                    when d: Different {}
-            }
-            when node: Success
-                return ExpressionSyntax.Guard(node)
         choose parse_if#()
             when err: Error
             {
@@ -3706,16 +3695,6 @@ define Parser
             }
             when node: Success
                 return StatementSyntax.Set(node)
-        choose parse_guard#()
-            when err: Error
-            {
-                choose err
-                    when i: Invalid
-                        throw ParserError.Invalid(i)
-                    when d: Different {}
-            }
-            when node: Success
-                return StatementSyntax.Guard(node)
         choose parse_continue#()
             when err: Error
             {
@@ -3757,49 +3736,6 @@ define Parser
             when node: Success
                 return StatementSyntax.Throw(node)
         throw ParserError.Different(DifferentSyntax())
-    }
-
-    function parse_guard#(rp, this: Parser) returns GuardSyntax throws ParserError
-    {
-        let start lexer.previous_position
-
-        if ~lexer.parse_keyword#(String#("guard"))
-            throw ParserError.Different(DifferentSyntax())
-
-        let condition_start lexer.position
-        var condition: ref[Vector[OperandSyntax]]?
-        choose parse_operand_list#()
-            when err: Error
-            {
-                choose err
-                    when d: Different
-                        throw ParserError.Invalid(InvalidSyntax(condition_start, lexer.position, String#("expected Operand")))
-                    when i: Invalid
-                        throw ParserError.Invalid(i)
-            }
-            when success: Success
-                set condition: success
-
-        if ~lexer.parse_colon#()
-            throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#("expected colon or newline")))
-
-        let statement_start lexer.position
-        var statement: StatementSyntax
-        choose parse_statement#()
-            when err: Error
-            {
-                choose err
-                    when d: Different
-                        throw ParserError.Invalid(InvalidSyntax(statement_start, lexer.position, String#("expected Statement")))
-                    when i: Invalid
-                        throw ParserError.Invalid(i)
-            }
-            when success: Success
-                set statement: success
-
-        let end lexer.position
-
-        GuardSyntax(start, end, condition, StatementSyntax#(statement))
     }
 
     function parse_let#(rp, this: Parser) returns LetSyntax throws ParserError

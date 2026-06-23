@@ -75,9 +75,9 @@ define Slice[T](data: pointer[T], length: size_t)
     ; planner resolves NO function call (sibling method or extern
     ; memcmp) from a generic concept's operator body, and since s185
     ; such an unresolvable call is a hard error instead of a silent
-    ; drop. Only intrinsic ops (deref, +, <>) appear here. Multi-
-    ; statement operator bodies must use guard, not if — if-statements
-    ; break the enclosing generic's instantiation under stage-1.
+    ; drop. Only intrinsic ops (deref, +, <>) appear here. Use the
+    ; no-else `if` (statement form) for the early-out — an `if`/`else`
+    ; expression in a generic operator body breaks instantiation.
     operator ==(other: Slice[T]) returns bool
     {
         if length <> other.length

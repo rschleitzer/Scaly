@@ -548,8 +548,6 @@ function handle_expression#(syntax: ExpressionSyntax) returns Expression
             Expression.SizeOf(handle_sizeof#(sizeof_syntax))
         when alignof_syntax: AlignOfSyntax
             Expression.AlignOf(handle_alignof#(alignof_syntax))
-        when guard_syntax: GuardSyntax
-            Expression.If(handle_guard#(guard_syntax))
         when is_syntax: IsSyntax
             Expression.Is(handle_is#(is_syntax))
         when as_syntax: AsSyntax
@@ -961,22 +959,6 @@ function handle_alignof#(syntax: AlignOfSyntax) returns scaly.compiler.Model.Ali
     scaly.compiler.Model.AlignOf(Span(syntax.start, syntax.end), *aligned_type)
 }
 
-; if is desugared to an If with no alternative — the shared emitter
-; path treats `if cond { body }` and `if cond { body }` identically.
-function handle_guard#(syntax: GuardSyntax) returns If
-{
-    let condition handle_operands#(syntax.condition)
-    let cons_stmt handle_command#(*syntax.statement)
-
-    If(
-        Span(syntax.start, syntax.end),
-        condition,
-        null,
-        cons_stmt,
-        null
-    )
-}
-
 function handle_is#(syntax: IsSyntax) returns Is
 {
     ; Count extensions
@@ -1319,7 +1301,6 @@ function is_statement_like_expression(expr: ExpressionSyntax) returns bool
         when w: WhileSyntax true
         when f: ForSyntax true
         when t: TrySyntax true
-        when g: GuardSyntax true
         when r: RepeatSyntax true
         when b: BlockSyntax true
         else false

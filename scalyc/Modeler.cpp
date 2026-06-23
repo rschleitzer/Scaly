@@ -387,11 +387,6 @@ llvm::Expected<Expression> Modeler::handleExpression(
             if (!Blk)
                 return Blk.takeError();
             return std::move(*Blk);
-        } else if constexpr (std::is_same_v<T, GuardSyntax>) {
-            auto GuardResult = handleGuard(E);
-            if (!GuardResult)
-                return GuardResult.takeError();
-            return std::move(*GuardResult);
         } else if constexpr (std::is_same_v<T, IfSyntax>) {
             auto IfResult = handleIf(E);
             if (!IfResult)
@@ -549,7 +544,6 @@ static bool isStatementLikeExpr(const ExpressionSyntax &E) {
            std::holds_alternative<WhileSyntax>(E.Value) ||
            std::holds_alternative<ForSyntax>(E.Value) ||
            std::holds_alternative<TrySyntax>(E.Value) ||
-           std::holds_alternative<GuardSyntax>(E.Value) ||
            std::holds_alternative<RepeatSyntax>(E.Value) ||
            std::holds_alternative<BlockSyntax>(E.Value);
 }
@@ -712,13 +706,6 @@ llvm::Expected<Statement> Modeler::handleStatement(
             if (!Source)
                 return Source.takeError();
             return Action{std::move(*Source), std::move(*Target)};
-        } else if constexpr (std::is_same_v<T, GuardSyntax>) {
-            auto GuardResult = handleGuard(C);
-            if (!GuardResult)
-                return GuardResult.takeError();
-            std::vector<Operand> Ops;
-            Ops.push_back(Operand{Span{C.Start, C.End}, std::move(*GuardResult), {}});
-            return Action{std::move(Ops), {}};
         } else if constexpr (std::is_same_v<T, ContinueSyntax>) {
             auto Cont = handleContinue(C);
             if (!Cont)
@@ -809,24 +796,6 @@ llvm::Expected<Binding> Modeler::handleCondition(
 }
 
 // Control flow handling
-
-llvm::Expected<If> Modeler::handleGuard(const GuardSyntax &Syntax) {
-    auto Cond = handleOperands(Syntax.condition);
-    if (!Cond)
-        return Cond.takeError();
-
-    auto Cons = handleStatement(*Syntax.statement);
-    if (!Cons)
-        return Cons.takeError();
-
-    return If{
-        Span{Syntax.Start, Syntax.End},
-        std::move(*Cond),
-        nullptr,  // Property
-        std::make_unique<Statement>(std::move(*Cons)),
-        nullptr   // No alternative
-    };
-}
 
 llvm::Expected<If> Modeler::handleIf(const IfSyntax &Syntax) {
     auto Cond = handleOperands(Syntax.condition);

@@ -64,7 +64,6 @@ void Parser::initKeywords() {
     Keywords.insert("extern");
     Keywords.insert("for");
     Keywords.insert("function");
-    Keywords.insert("guard");
     Keywords.insert("if");
     Keywords.insert("implement");
     Keywords.insert("in");
@@ -2192,14 +2191,6 @@ llvm::Expected<ExpressionSyntax> Parser::parseExpression() {
             return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
     }
     {
-        auto Result = parseGuard();
-        if (Result)
-            return ExpressionSyntax{std::move(*Result)};
-        std::string ErrMsg = llvm::toString(Result.takeError());
-        if (ErrMsg != "different syntax")
-            return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
-    }
-    {
         auto Result = parseIf();
         if (Result)
             return ExpressionSyntax{std::move(*Result)};
@@ -3035,14 +3026,6 @@ llvm::Expected<StatementSyntax> Parser::parseStatement() {
             return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
     }
     {
-        auto Result = parseGuard();
-        if (Result)
-            return StatementSyntax{std::move(*Result)};
-        std::string ErrMsg = llvm::toString(Result.takeError());
-        if (ErrMsg != "different syntax")
-            return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
-    }
-    {
         auto Result = parseContinue();
         if (Result)
             return StatementSyntax{std::move(*Result)};
@@ -3075,39 +3058,6 @@ llvm::Expected<StatementSyntax> Parser::parseStatement() {
             return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
     }
     return different();
-
-}
-
-llvm::Expected<GuardSyntax> Parser::parseGuard() {
-    size_t Start = Lex.previousPosition();
-
-    if (!Lex.parseKeyword("guard"))
-        return different();
-
-    auto ConditionOrErr = parseOperandList();
-    if (!ConditionOrErr) {
-        std::string ErrMsg = llvm::toString(ConditionOrErr.takeError());
-        if (ErrMsg != "different syntax")
-            return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
-        return invalid(Lex, Start, Lex.position(), "expected Operand");
-    }
-    auto *Condition = *ConditionOrErr;
-
-    if (!Lex.parseColon())
-        return invalid(Lex, Start, Lex.position(), "expected colon or newline");
-
-    auto StatementOrErr = parseStatement();
-    if (!StatementOrErr) {
-        std::string ErrMsg = llvm::toString(StatementOrErr.takeError());
-        if (ErrMsg != "different syntax")
-            return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
-        return invalid(Lex, Start, Lex.position(), "expected Statement");
-    }
-    auto Statement = std::move(*StatementOrErr);
-
-    size_t End = Lex.position();
-
-    return GuardSyntax{Start, End, std::move(Condition), std::make_unique<StatementSyntax>(std::move(Statement))};
 
 }
 

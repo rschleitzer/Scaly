@@ -304,7 +304,6 @@
     <content link = Object
     <content link = Vector
     <content link = Block
-    <content link = Guard
     <content link = If
     <content link = Match
     <content link = Lambda
@@ -422,17 +421,10 @@
     <content link = Var
     <content link = Mutable
     <content link = Set
-    <content link = Guard
     <content link = Continue
     <content link = Break
     <content link = Return
     <content link = Throw
-
-<syntax id = Guard
-    <content link = guard
-    <content link = Operand               multiple          property = condition
-    <content colon
-    <content link = Statement                               property = statement
 
 <syntax id = Let
     <content link = let
@@ -622,7 +614,6 @@
 <keyword id = extern
 <keyword id = for
 <keyword id = function
-<keyword id = guard
 <keyword id = if
 <keyword id = implement
 <keyword id = in

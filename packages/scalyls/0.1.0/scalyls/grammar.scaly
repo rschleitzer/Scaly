@@ -40,8 +40,6 @@ define grammar
             return true
         if word.equals("function")
             return true
-        if word.equals("guard")
-            return true
         if word.equals("if")
             return true
         if word.equals("implement")
