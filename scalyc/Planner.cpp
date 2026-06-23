@@ -7423,19 +7423,36 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
         }
 
         // Flatten current-namespace-qualified function calls: e.g., cli.print_usage() -> print_usage()
-        // Only when inside the named namespace and followed by a Tuple (function call)
-        // Skip if Name[0] is a local variable — that's a method call, not a namespace reference
+        // Only when inside the named namespace, followed by a call argument:
+        // a Tuple (parenful `Ns.fn(x)`) OR a single simple value (parenless
+        // `Ns.fn x`). The parenless arm lets a qualified self-namespace static
+        // call be de-parened — it flattens to the unqualified name so the
+        // namespace-sibling resolution (below) handles it, exactly like the
+        // parenful form. Skip if Name[0] is a local variable (method call).
         if (auto* TypeExpr = std::get_if<Type>(&Op.Expr)) {
             if (TypeExpr->Name.size() == 2 && (!TypeExpr->Generics || TypeExpr->Generics->empty()) &&
-                i + 1 < Ops.size() && std::holds_alternative<Tuple>(Ops[i + 1].Expr) &&
+                i + 1 < Ops.size() &&
                 !CurrentNamespaceName.empty() && TypeExpr->Name[0] == CurrentNamespaceName &&
                 !checkLocalOrProperty(TypeExpr->Name[0]).IsLocal) {
-                Operand FlatOp = Op;
-                Type FlatType = *TypeExpr;
-                FlatType.Name = {TypeExpr->Name[1]};
-                FlatOp.Expr = FlatType;
-                ProcessedOps.push_back(std::move(FlatOp));
-                continue;
+                const auto& NextE = Ops[i + 1].Expr;
+                bool NextIsArg = std::holds_alternative<Tuple>(NextE);
+                if (!NextIsArg && !std::holds_alternative<Matrix>(NextE) &&
+                    !std::holds_alternative<As>(NextE) && !std::holds_alternative<Is>(NextE)) {
+                    if (auto* NT = std::get_if<Type>(&NextE)) {
+                        NextIsArg = !NT->Name.empty() && !NT->Name[0].empty() &&
+                                    !isOperatorName(NT->Name[0]);
+                    } else {
+                        NextIsArg = true;  // Constant / other value operand
+                    }
+                }
+                if (NextIsArg) {
+                    Operand FlatOp = Op;
+                    Type FlatType = *TypeExpr;
+                    FlatType.Name = {TypeExpr->Name[1]};
+                    FlatOp.Expr = FlatType;
+                    ProcessedOps.push_back(std::move(FlatOp));
+                    continue;
+                }
             }
         }
 
