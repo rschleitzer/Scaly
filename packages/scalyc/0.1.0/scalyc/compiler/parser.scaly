@@ -3096,18 +3096,16 @@ define Parser
                 set consequent: success
 
         let alternative_start lexer.position
-        var alternative: ElseSyntax
+        var alternative: ref[ElseSyntax]? null
         choose parse_else#()
             when err: Error
             {
                 choose err
-                    when d: Different
-                        throw ParserError.Invalid(InvalidSyntax(alternative_start, lexer.position, String#("expected Else")))
-                    when i: Invalid
-                        throw ParserError.Invalid(i)
+                    when d: Different {}
+                    when i: Invalid {}
             }
             when success: Success
-                set alternative: success
+                set alternative: ElseSyntax#(success.start, success.end, success.alternative)
 
         let end lexer.position
 
@@ -3126,8 +3124,6 @@ define Parser
             when success: Success
                 set statement: success
 
-        lexer.parse_colon#()
-
         let end lexer.position
 
         ThenSyntax(start, end, statement)
@@ -3136,9 +3132,14 @@ define Parser
     function parse_else#(rp, this: Parser) returns ElseSyntax throws ParserError
     {
         let start lexer.previous_position
+        var snapshot lexer.save_state()
+        lexer.parse_colon#()
 
         guard ~lexer.parse_keyword#(String#("else"))
+        {
+            lexer.restore_state(snapshot)
             throw ParserError.Different(DifferentSyntax())
+        }
 
         lexer.parse_colon#()
 

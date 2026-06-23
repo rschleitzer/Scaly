@@ -415,7 +415,7 @@ define IfSyntax
     end: size_t
     condition: ref[Vector[OperandSyntax]]?
     consequent: ThenSyntax
-    alternative: ElseSyntax
+    alternative: ref[ElseSyntax]?
 )
 
 define ElementSyntax

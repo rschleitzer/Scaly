@@ -76,6 +76,27 @@ public:
     bool parsePunctuation(char C);
     bool parseColon();
 
+    // Backtracking: snapshot the full scan position + pending token, and
+    // restore it later. Used for the speculative else-lookahead in parseIf,
+    // where a separator colon must be un-consumed when no else follows.
+    struct State {
+        const char* Current;
+        Token Token;
+        size_t Position;
+        size_t PreviousPosition;
+        int NestingLevel;
+    };
+    State save() const {
+        return State{Current_, Token_, Position_, PreviousPosition_, NestingLevel_};
+    }
+    void restore(const State& S) {
+        Current_ = S.Current;
+        Token_ = S.Token;
+        Position_ = S.Position;
+        PreviousPosition_ = S.PreviousPosition;
+        NestingLevel_ = S.NestingLevel;
+    }
+
 private:
     llvm::StringRef Source_;
     const char* Current_;

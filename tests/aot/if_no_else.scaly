@@ -1,0 +1,22 @@
+; AOT Test: if without else (the guard replacement).
+; - a true  no-else if runs its consequent
+; - a false no-else if is skipped (no alternative needed)
+; - a statement after a brace-less consequent must NOT be slurped into the
+;   if's operation (the historical reason guard existed)
+; Expected: 42
+
+function compute() returns int
+{
+    var n 0
+    if true
+        set n: n + 40
+    set n: n + 2        ; runs unconditionally — must not be slurped into the if
+    if false
+        set n: n + 100  ; must not run; no else
+    n
+}
+
+if compute() = 42
+    print("42")
+else
+    print("WRONG")

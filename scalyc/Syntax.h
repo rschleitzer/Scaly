@@ -455,7 +455,7 @@ struct IfSyntax {
     size_t End;
     std::vector<OperandSyntax>* condition;
     ThenSyntax consequent;
-    ElseSyntax alternative;
+    ElseSyntax* alternative;
 };
 
 struct ElementSyntax {

@@ -206,7 +206,11 @@ define Parser
             ;; Concrete syntax - parse each field
             ($
 "        let start lexer.previous_position
-"               (apply-to-children-of syntax (lambda (content)
+"               (if (peek? syntax) ($
+"        var snapshot lexer.save_state()
+        lexer.parse_colon#()
+"               ) "")
+                (apply-to-children-of syntax (lambda (content)
                     (case (type content)
                         (("syntax")
                             (if (property content)
@@ -291,9 +295,16 @@ define Parser
 "
         guard ~lexer.parse_keyword#(String#(\""(id (element-with-id (link content)))"\"))"
                                 (if (equal? 1 (child-number content))
-                                    "
+                                    (if (peek? syntax)
+                                        "
+        {
+            lexer.restore_state(snapshot)
             throw ParserError.Different(DifferentSyntax())
+        }
 "
+                                        "
+            throw ParserError.Different(DifferentSyntax())
+")
                                     ($ "
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#(\"expected '"(id (element-with-id (link content)))"'\")))
 ")

@@ -47,6 +47,15 @@ define lexer
         Literal: LiteralToken
     )
 
+    ; Snapshot of the lexer's mutable scan state, for backtracking.
+    define LexerState
+    (
+        current: pointer[char]
+        position: size_t
+        previous_position: size_t
+        token: Token
+    )
+
     ; ========================================================================
     ; Lexer - Tokenizes Scaly source code
     ; ========================================================================
@@ -876,6 +885,20 @@ define lexer
                 else {}
 
             false
+        }
+
+        ; Backtracking: snapshot/restore the scan position + pending token.
+        ; Used by the parser's speculative else-lookahead so a separator colon
+        ; can be un-consumed when no else follows (no-else if).
+        procedure save_state(this) returns LexerState
+            LexerState(current, position, previous_position, token)
+
+        procedure restore_state(this, s: LexerState)
+        {
+            set current: s.current
+            set position: s.position
+            set previous_position: s.previous_position
+            set token: s.token
         }
     }
 

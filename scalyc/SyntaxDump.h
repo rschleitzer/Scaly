@@ -693,8 +693,10 @@ public:
         }
         OS << ","; nl();
         key("consequent"); dump(N.consequent);
-        OS << ","; nl();
-        key("alternative"); dump(N.alternative);
+        if (N.alternative) {
+            OS << ","; nl();
+            key("alternative"); dump(*N.alternative);
+        }
         nl(); Indent--; indent(); OS << "}";
     }
     void dump(const ElementSyntax &N) {

@@ -5,6 +5,7 @@
     id          ID                                  #REQUIRED
     abstract    (abstract|concrete)                 concrete
     multiple    (multiple|single)                   single
+    peek        (peek|nopeek)                       nopeek
 >
 
 <!ELEMENT content - O EMPTY>

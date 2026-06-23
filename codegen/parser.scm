@@ -172,7 +172,11 @@ llvm::Expected<"(id syntax)"Syntax> Parser::parse"(id syntax)"() {
             ;; Concrete syntax - parse each field
             ($
 "    size_t Start = Lex.previousPosition();
-"               (apply-to-children-of syntax (lambda (content)
+"               (if (peek? syntax) ($
+"    auto Snapshot = Lex.save();
+    Lex.parseColon();
+"               ) "")
+                (apply-to-children-of syntax (lambda (content)
                     (case (type content)
                         (("syntax")
                             (if (optional? content)
@@ -231,8 +235,13 @@ llvm::Expected<"(id syntax)"Syntax> Parser::parse"(id syntax)"() {
 "
     if (!Lex.parseKeyword(\""(id (element-with-id (link content)))"\"))"
                                 (if (equal? 1 (child-number content))
-                                    "
-        return different();"
+                                    (if (peek? syntax)
+                                        " {
+        Lex.restore(Snapshot);
+        return different();
+    }"
+                                        "
+        return different();")
                                     ($ "
         return invalid(Lex, Start, Lex.position(), \"expected '"(id (element-with-id (link content)))"'\");")
                                 )

@@ -837,16 +837,21 @@ llvm::Expected<If> Modeler::handleIf(const IfSyntax &Syntax) {
     if (!Cons)
         return Cons.takeError();
 
-    auto AltResult = handleStatement(Syntax.alternative.alternative);
-    if (!AltResult)
-        return AltResult.takeError();
+    // Else is optional: a no-else `if` is if-without-else, identical to a guard.
+    std::unique_ptr<Statement> Alt;
+    if (Syntax.alternative) {
+        auto AltResult = handleStatement(Syntax.alternative->alternative);
+        if (!AltResult)
+            return AltResult.takeError();
+        Alt = std::make_unique<Statement>(std::move(*AltResult));
+    }
 
     return If{
         Span{Syntax.Start, Syntax.End},
         std::move(*Cond),
         nullptr,  // Property
         std::make_unique<Statement>(std::move(*Cons)),
-        std::make_unique<Statement>(std::move(*AltResult))
+        std::move(Alt)
     };
 }
 

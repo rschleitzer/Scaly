@@ -96,6 +96,13 @@
 (define (optional? node)
     (string=? "optional" (attribute-string "optional" node)))
 
+;; A "peek" syntax speculatively consumes a leading separator colon before its
+;; discriminating keyword, snapshotting the lexer first and restoring it if the
+;; keyword is absent. Used for Else so a brace-less consequent's trailing
+;; newline stays a statement separator when no else follows (no-else if).
+(define (peek? node)
+    (string=? "peek" (attribute-string "peek" node)))
+
 (define (syntax? node)
     (string=? "syntax" (type node)))
 

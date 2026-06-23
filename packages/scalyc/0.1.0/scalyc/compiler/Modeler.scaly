@@ -665,14 +665,21 @@ function handle_if#(syntax: IfSyntax) returns If
     let condition handle_operands#(syntax.condition)
     let cons_stmt handle_command#(syntax.consequent.statement)
 
-    let alt_stmt handle_command#(syntax.alternative.alternative)
+    ; Else is optional: a no-else `if` is if-without-else, identical to a guard.
+    var alternative: ref[Statement]? null
+    guard syntax.alternative <> null
+    {
+        let else_syntax (*syntax.alternative)
+        let alt_stmt handle_command#(else_syntax.alternative)
+        set alternative: Statement#(alt_stmt)
+    }
 
     If(
         Span(syntax.start, syntax.end),
         condition,
         null,
         cons_stmt,
-        Statement#(alt_stmt)
+        alternative
     )
 }
 

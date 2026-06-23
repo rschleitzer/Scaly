@@ -354,13 +354,12 @@
     <content link = Operand               multiple          property = condition
     <content colon
     <content link = Then                                    property = consequent
-    <content link = Else                                    property = alternative
+    <content link = Else                           optional property = alternative
 
 <syntax id = Then
     <content link = Statement                               property = statement
-    <content colon                                 optional
 
-<syntax id = Else
+<syntax id = Else                         peek
     <content link = else
     <content colon                                 optional
     <content link = Statement                               property = alternative

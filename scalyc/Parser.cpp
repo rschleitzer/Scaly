@@ -2548,14 +2548,14 @@ llvm::Expected<IfSyntax> Parser::parseIf() {
     }
     auto Consequent = std::move(*ConsequentOrErr);
 
-    auto AlternativeOrErr = parseElse();
-    if (!AlternativeOrErr) {
-        std::string ErrMsg = llvm::toString(AlternativeOrErr.takeError());
-        if (ErrMsg != "different syntax")
-            return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
-        return invalid(Lex, Start, Lex.position(), "expected Else");
+    ElseSyntax* Alternative = nullptr;
+    {
+        auto ParseResult = parseElse();
+        if (ParseResult)
+            Alternative = new ElseSyntax(std::move(*ParseResult));
+        else
+            llvm::consumeError(ParseResult.takeError());
     }
-    auto Alternative = std::move(*AlternativeOrErr);
 
     size_t End = Lex.position();
 
@@ -2571,8 +2571,6 @@ llvm::Expected<ThenSyntax> Parser::parseThen() {
         return StatementOrErr.takeError();
     auto Statement = std::move(*StatementOrErr);
 
-    Lex.parseColon();
-
     size_t End = Lex.position();
 
     return ThenSyntax{Start, End, std::move(Statement)};
@@ -2581,9 +2579,13 @@ llvm::Expected<ThenSyntax> Parser::parseThen() {
 
 llvm::Expected<ElseSyntax> Parser::parseElse() {
     size_t Start = Lex.previousPosition();
+    auto Snapshot = Lex.save();
+    Lex.parseColon();
 
-    if (!Lex.parseKeyword("else"))
+    if (!Lex.parseKeyword("else")) {
+        Lex.restore(Snapshot);
         return different();
+    }
 
     Lex.parseColon();
 
