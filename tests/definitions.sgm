@@ -36,7 +36,7 @@ Option.Some(5).value<expect>5
         <prose>A routine's role is set by its declaration keyword, not by how its
         name is spelled. A function may be named with ordinary letters, with a
         single-quoted string identifier (which may contain spaces), or with
-        operator characters — in every case it is an ordinary function, applied
+        operator characters; in every case it is an ordinary function, applied
         by writing its name before a parenthesized argument.
         <test id = function-quoted-name program = program><input>function 'add seven'(n: int) returns int
     n + 7
