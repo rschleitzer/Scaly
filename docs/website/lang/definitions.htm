@@ -71,7 +71,7 @@ WIDTH="100%"></DIV
 CLASS="chapter"
 ><H1
 ><A
-NAME="AEN1410"
+NAME="AEN1413"
 ></A
 >Chapter 6 Definitions</H1
 ><DIV
@@ -83,12 +83,17 @@ CLASS="TOC"
 ></DT
 ><DT
 ><A
-HREF="definitions.htm#AEN1412"
+HREF="definitions.htm#AEN1415"
 >Overview</A
 ></DT
 ><DT
 ><A
-HREF="definitions.htm#AEN1415"
+HREF="definitions.htm#AEN1418"
+>Functions, Procedures, and Operators</A
+></DT
+><DT
+><A
+HREF="definitions.htm#AEN1441"
 >Definitions</A
 ></DT
 ></DL
@@ -98,7 +103,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN1412"
+NAME="AEN1415"
 >Overview</A
 ></H1
 ><P
@@ -110,7 +115,114 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN1415"
+NAME="AEN1418"
+>Functions, Procedures, and Operators</A
+></H1
+><P
+>A routine is introduced by one of three keywords, and that keyword —
+      not the spelling of the name — decides how the routine behaves:</P
+><P
+></P
+><UL
+><LI
+><P
+><SPAN
+CLASS="emphasis"
+><I
+CLASS="emphasis"
+>function</I
+></SPAN
+> declares a pure function: its inputs
+          are borrowed and immutable, and it returns a result without side
+          effects. A function is applied prefix, by writing its name before a
+          parenthesized argument list.</P
+></LI
+><LI
+><P
+><SPAN
+CLASS="emphasis"
+><I
+CLASS="emphasis"
+>procedure</I
+></SPAN
+> declares a routine that may mutate
+          its inputs and have side effects (builders, I/O).</P
+></LI
+><LI
+><P
+><SPAN
+CLASS="emphasis"
+><I
+CLASS="emphasis"
+>operator</I
+></SPAN
+> declares an operator: a pure routine
+          applied infix between its two operands (or prefix, for a unary
+          operator).</P
+></LI
+></UL
+><P
+>The three identifier forms from the lexical chapter — alphanumeric,
+      operator-character, and single-quoted string identifiers — are
+      interchangeable as names here. A function may be named with operator
+      characters, and an operator may be named with letters or a quoted string;
+      what makes one a function and the other an operator is the declaration
+      keyword, never the first character of the name.</P
+><PRE
+CLASS="programlisting"
+>&#13;function 'add seven'(n: int) returns int      ; string-named function
+    n + 7
+
+function ++(n: int) returns int               ; operator-char-named function
+    n + 1
+
+let a 'add seven'(35)                          ; applied prefix -&#62; 42
+let b ++(41)                                   ; applied prefix -&#62; 42
+    </PRE
+><P
+>Operators may be declared at the top level, not only as members of a
+      type. Like functions, they accept any of the three name forms:</P
+><PRE
+CLASS="programlisting"
+>&#13;operator &#60;+&#62;(left: int, right: int) returns int    ; operator-char name
+    left + right
+
+operator 'divided by'(left: int, right: int) returns int   ; quoted name
+    left / right
+
+let c 40 &#60;+&#62; 2              ; infix -&#62; 42
+let d 84 'divided by' 2     ; infix -&#62; 42
+    </PRE
+><P
+>Built-in arithmetic, comparison, and logical operators carry their
+      usual precedences. A custom operator with a text or single-quoted name
+      binds most weakly of all — at the same level as <TT
+CLASS="literal"
+>||</TT
+> —
+      so the built-in arithmetic in an expression combines before it. For
+      example, given the <TT
+CLASS="literal"
+>'minus'</TT
+> operator above,
+      <TT
+CLASS="literal"
+>20 'minus' 3 + 5</TT
+> parses as
+      <TT
+CLASS="literal"
+>20 'minus' (3 + 5)</TT
+> and yields <TT
+CLASS="literal"
+>12</TT
+>.</P
+></DIV
+><DIV
+CLASS="section"
+><H1
+CLASS="section"
+><A
+NAME="AEN1441"
 >Definitions</A
 ></H1
 ><P
@@ -120,7 +232,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN1418"
+NAME="AEN1444"
 >Structure Definitions</A
 ></H2
 ><P
@@ -130,7 +242,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN1421"
+NAME="AEN1447"
 ></A
 ><TABLE
 BORDER="0"
@@ -217,7 +329,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN1450"
+NAME="AEN1476"
 >Union Definitions</A
 ></H2
 ><P
@@ -227,7 +339,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN1453"
+NAME="AEN1479"
 ></A
 ><TABLE
 BORDER="0"
@@ -311,6 +423,183 @@ Option.Some(5).value</PRE
 ><TT
 CLASS="literal"
 >5
+
+    </TT
+></TD
+></TR
+></TBODY
+></TABLE
+><P
+></P
+></DIV
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN1513"
+>Function Names</A
+></H2
+><P
+>A routine's role is set by its declaration keyword, not by how its
+        name is spelled. A function may be named with ordinary letters, with a
+        single-quoted string identifier (which may contain spaces), or with
+        operator characters — in every case it is an ordinary function, applied
+        by writing its name before a parenthesized argument.</P
+><DIV
+CLASS="informaltable"
+><P
+></P
+><A
+NAME="AEN1516"
+></A
+><TABLE
+BORDER="0"
+FRAME="void"
+CLASS="CALSTABLE"
+><COL
+WIDTH="1*"><COL
+WIDTH="1*"><THEAD
+><TR
+><TH
+>Input</TH
+><TH
+>Result</TH
+></TR
+></THEAD
+><TBODY
+><TR
+><TD
+><PRE
+CLASS="programlisting"
+>function 'add seven'(n: int) returns int
+    n + 7
+'add seven'(35)</PRE
+></TD
+><TD
+><TT
+CLASS="literal"
+>42
+        </TT
+></TD
+></TR
+><TR
+><TD
+><PRE
+CLASS="programlisting"
+>function ++(n: int) returns int
+    n + 1
+++(41)</PRE
+></TD
+><TD
+><TT
+CLASS="literal"
+>42
+
+    </TT
+></TD
+></TR
+></TBODY
+></TABLE
+><P
+></P
+></DIV
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN1535"
+>Operator Definitions</A
+></H2
+><P
+>The operator keyword declares an operator, applied infix between
+        its two operands. Like functions, operators may be named with operator
+        characters or with a text or single-quoted name. Operators may be
+        declared at the top level, not only inside a type. A text-named operator
+        binds more weakly than the built-in arithmetic operators, so the
+        arithmetic combines first.</P
+><DIV
+CLASS="informaltable"
+><P
+></P
+><A
+NAME="AEN1538"
+></A
+><TABLE
+BORDER="0"
+FRAME="void"
+CLASS="CALSTABLE"
+><COL
+WIDTH="1*"><COL
+WIDTH="1*"><THEAD
+><TR
+><TH
+>Input</TH
+><TH
+>Result</TH
+></TR
+></THEAD
+><TBODY
+><TR
+><TD
+><PRE
+CLASS="programlisting"
+>operator &#60;+&#62;(left: int, right: int) returns int
+    left + right
+40 &#60;+&#62; 2</PRE
+></TD
+><TD
+><TT
+CLASS="literal"
+>42
+        </TT
+></TD
+></TR
+><TR
+><TD
+><PRE
+CLASS="programlisting"
+>operator 'plus'(left: int, right: int) returns int
+    left + right
+40 'plus' 2</PRE
+></TD
+><TD
+><TT
+CLASS="literal"
+>42
+        </TT
+></TD
+></TR
+><TR
+><TD
+><PRE
+CLASS="programlisting"
+>operator 'divided by'(left: int, right: int) returns int
+    left / right
+84 'divided by' 2</PRE
+></TD
+><TD
+><TT
+CLASS="literal"
+>42
+        </TT
+></TD
+></TR
+><TR
+><TD
+><PRE
+CLASS="programlisting"
+>operator 'minus'(left: int, right: int) returns int
+    left - right
+20 'minus' 3 + 5</PRE
+></TD
+><TD
+><TT
+CLASS="literal"
+>12
 </TT
 ></TD
 ></TR
