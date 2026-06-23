@@ -3586,6 +3586,117 @@ define Planner
                 else
                     0
 
+            ; Single argument without parentheses: `print "Hello"`,
+            ; `sb.append text`, `Box 5`, `ns.fn x`. Any one-argument routine
+            ; — free function, procedure, method, intrinsic, extern, sibling
+            ; method, or single-arg constructor — applied prefix to ONE plain
+            ; value operand. Synthesize a one-component arg Tuple and recurse
+            ; so the same [head, Tuple] machinery below resolves it. Mirrors
+            ; stage-0 planOperands' parenless single-arg pre-pass.
+            if ops.length = 2
+            {
+                var head_is_callable: bool false
+                if result.member_access = null
+                {
+                    choose result.expr
+                        when ht: PlannedType
+                        {
+                            ; Any non-operator, non-empty name head is
+                            ; callable — matching the parenful [Type, Tuple]
+                            ; gate below, which fires for ANY Type head and
+                            ; lets resolve_function_call# sort out free fn /
+                            ; sibling method / construction.
+                            if ht.name.get_length() > 0
+                            {
+                                if Planner.is_operator_name(ht.name) = false
+                                    set head_is_callable: true
+                            }
+                        }
+                        else
+                            0
+                }
+                if result.member_access <> null
+                {
+                    let ma (*result.member_access)
+                    if ma.length > 0
+                    {
+                        let last_ptr ma.get(ma.length - 1)
+                        if last_ptr <> null
+                        {
+                            if (*last_ptr).is_method
+                                set head_is_callable: true
+                        }
+                    }
+                }
+                if head_is_callable
+                {
+                    let sa_arg_ptr ops.get(1)
+                    if sa_arg_ptr <> null
+                    {
+                        let sa_arg_op (*sa_arg_ptr)
+                        ; Any single value operand is a valid argument
+                        ; (Constant, Variable, GlobalRef, Call, ...).
+                        ; Exclude only the structural operands the [Name, X]
+                        ; machinery already owns: a Tuple (parenful args), a
+                        ; Matrix (generic [T] args), an operator-named Type
+                        ; (infix/prefix operator), an empty-name Type
+                        ; (lifetime marker), or an As/Is operand — `X as Y`
+                        ; is modeled [X, As] and the As consumes the preceding
+                        ; operand, so it is a cast, not a call.
+                        var arg_is_value: bool true
+                        choose sa_arg_op.expr
+                            when at: PlannedType
+                            {
+                                if at.name.get_length() = 0
+                                    set arg_is_value: false
+                                if Planner.is_operator_name(at.name)
+                                    set arg_is_value: false
+                            }
+                            when atp: PlannedTuple
+                                set arg_is_value: false
+                            when amx: scalyc.compiler.Plan.PlannedMatrix
+                                set arg_is_value: false
+                            when aas: scalyc.compiler.Plan.PlannedAs
+                                set arg_is_value: false
+                            when ais: scalyc.compiler.Plan.PlannedIs
+                                set arg_is_value: false
+                            else
+                                0
+                        if arg_is_value
+                        {
+                            var sa_arg_vec Vector[PlannedOperand]^rp(1)
+                            sa_arg_vec.put(0, sa_arg_op)
+                            var sa_comps Vector[PlannedComponent]^rp(1)
+                            sa_comps.put(0, PlannedComponent(
+                                sa_arg_op.loc,
+                                null,
+                                &sa_arg_vec,
+                                null
+                            ))
+                            let sa_tuple PlannedTuple(
+                                sa_arg_op.loc,
+                                &sa_comps,
+                                sa_arg_op.result_type,
+                                false,
+                                Lifetime.Unspecified(Unspecified()),
+                                null
+                            )
+                            let sa_tuple_op PlannedOperand(
+                                sa_arg_op.loc,
+                                PlannedExpression.Tuple(sa_tuple),
+                                null,
+                                sa_arg_op.result_type
+                            )
+                            var sa_arr Array[PlannedOperand]$()
+                            sa_arr.add(result)
+                            sa_arr.add(sa_tuple_op)
+                            var sa_vec Vector[PlannedOperand]^rp(sa_arr)
+                            return this.collapse_operand_sequence#(sa_vec)
+                        }
+                    }
+                }
+            }
+
             ; Call detection: first operand followed by a Tuple. Two
             ; shapes accepted:
             ;   - free function: first operand's expr is a Type (name
@@ -10670,6 +10781,12 @@ define Planner
                     if first_ptr <> null
                     {
                         let first_op (*first_ptr)
+                        ; A type annotation never carries a member-access
+                        ; chain. A first operand WITH a chain is a qualified
+                        ; or method call (`ns.fn y`, `obj.m y`) — don't peel
+                        ; it as a type; let collapse resolve the parenless
+                        ; call.
+                        if first_op.member_access = null
                         choose first_op.expr
                             when ft: PlannedType
                             {
@@ -10700,11 +10817,35 @@ define Planner
                                                 }
                                                 else
                                                     0
+                                            ; Don't peel a callable head: a free
+                                            ; function or unqualified sibling
+                                            ; method (`let t triple 10`, `let p
+                                            ; get x`) is a parenless single-arg
+                                            ; call, NOT a typed binding. A dotted
+                                            ; non-concept name (`let r ns.fn x`)
+                                            ; is likewise a qualified call. A
+                                            ; genuine type head (primitive or
+                                            ; concept) still peels.
+                                            var head_is_call: bool false
+                                            if this.is_function(ft.name)
+                                                set head_is_call: true
+                                            if this.is_namespace_sibling_function(ft.name)
+                                                set head_is_call: true
+                                            if this.has_this_method#(ft.name)
+                                                set head_is_call: true
+                                            if ft.name.last_index_of("." as u8) >= 0
+                                            {
+                                                if this.lookup_concept(ft.name) = null
+                                                    set head_is_call: true
+                                            }
                                             if next_is_continuation = false
                                             {
-                                                set has_peeled_type: true
-                                                set peeled_idx: 1
-                                                peeled_holder.put(0, ft)
+                                                if head_is_call = false
+                                                {
+                                                    set has_peeled_type: true
+                                                    set peeled_idx: 1
+                                                    peeled_holder.put(0, ft)
+                                                }
                                             }
                                         }
                                     }
@@ -13316,6 +13457,41 @@ define Planner
             }
         }
 
+        ; has_this_method: true when `this` is in scope and its struct/
+        ; union type declares a method named `name`. Detects unqualified
+        ; implicit-this sibling METHOD calls in BINDING position
+        ; (`let p get x` inside a method) so s135 doesn't mis-peel the
+        ; method name as a type. A FIELD named `name` is not a method, so
+        ; this stays false for casts like `data as pointer[u8]`.
+        function has_this_method#(rp, this: Planner, name: String) returns bool
+        {
+            let this_ref this.lookup_local(String#("this"))
+            if this_ref = null
+                return false
+            let this_ty (*this_ref)
+            var struct_name String^rp(this_ty.name)
+            if this_ty.generics <> null
+            {
+                var is_ptr_like: bool false
+                if this_ty.name.equals(String$("pointer"))
+                    set is_ptr_like: true
+                if this_ty.name.equals(String$("ref"))
+                    set is_ptr_like: true
+                if is_ptr_like
+                {
+                    let gens (*this_ty.generics)
+                    if gens.length > 0
+                    {
+                        let inner_ptr gens.get(0)
+                        if inner_ptr <> null
+                            set struct_name: String^rp((*inner_ptr).name)
+                    }
+                }
+            }
+            let methods this.lookup_methods#(struct_name, name)
+            methods.length > 0
+        }
+
         ; is_namespace_sibling_function: true iff `name` refers to a
         ; Function defined directly in the currently-active
         ; namespace's members list. Used to decide whether an
@@ -13324,7 +13500,7 @@ define Planner
         ; registry. Returns false whenever no namespace is active.
         function is_namespace_sibling_function(this: Planner, name: String) returns bool
         {
-            if current_namespace <> null
+            if current_namespace = null
                 return false
 
             let ns (*current_namespace)

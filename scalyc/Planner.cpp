@@ -7442,6 +7442,92 @@ llvm::Expected<std::vector<PlannedOperand>> Planner::planOperands(
         ProcessedOps.push_back(Op);
     }
 
+    // ---- Parenless single-argument call pre-pass ----
+    // Rewrite a 2-operand sequence [callableHead, simpleValue] into
+    // [callableHead, Tuple(simpleValue)] so the existing parenful call /
+    // method / sibling / construction / qualified detection below resolves
+    // it unchanged. Mirrors the self-hosted collapseOperandSequence single-
+    // arg block (Planner.scaly). Restricted to size()==2 (the call is the
+    // whole operand sequence) to match the de-paren transform, which only
+    // drops parens where the call spans the entire sequence.
+    if (ProcessedOps.size() == 2) {
+        const Operand& Head = ProcessedOps[0];
+        const Operand& Val = ProcessedOps[1];
+        // Value must be a single simple operand: not a Tuple (parenful args),
+        // a Matrix (generic [T] args), an operator-named Type, or a lifetime
+        // marker (Type with an empty name).
+        bool ValSimple = true;
+        if (std::holds_alternative<Tuple>(Val.Expr)) {
+            ValSimple = false;
+        } else if (std::holds_alternative<Matrix>(Val.Expr)) {
+            ValSimple = false;
+        } else if (std::holds_alternative<As>(Val.Expr)) {
+            // `X as Y` is modeled as [X, As(value=null)]; the As consumes the
+            // preceding operand. NOT a call — leave it for collapse.
+            ValSimple = false;
+        } else if (std::holds_alternative<Is>(Val.Expr)) {
+            ValSimple = false;
+        } else if (auto* VT = std::get_if<Type>(&Val.Expr)) {
+            if (VT->Name.empty() || VT->Name[0].empty()) {
+                ValSimple = false;
+            } else if (isOperatorName(VT->Name[0])) {
+                ValSimple = false;
+            }
+        }
+        bool HeadCallable = false;
+        if (ValSimple) {
+            if (Head.MemberAccess && !Head.MemberAccess->empty()) {
+                // obj.method arg / ns.fn arg — method or qualified call.
+                HeadCallable = true;
+            } else if (auto* HT = std::get_if<Type>(&Head.Expr)) {
+                if (!HT->Name.empty() && !HT->Name[0].empty() &&
+                    !isOperatorName(HT->Name[0]) &&
+                    (!HT->Generics || HT->Generics->empty())) {
+                    std::string FullName;
+                    for (size_t s = 0; s < HT->Name.size(); ++s) {
+                        if (s) FullName += ".";
+                        FullName += HT->Name[s];
+                    }
+                    if (isFunction(FullName)) {
+                        HeadCallable = true;
+                    } else if (lookupConcept(FullName)) {
+                        HeadCallable = true;
+                    } else if (isNamespaceSiblingFunction(FullName)) {
+                        HeadCallable = true;
+                    } else if (HT->Name.size() > 1) {
+                        // Dotted qualified call (ns.fn) that isn't a concept.
+                        HeadCallable = true;
+                    } else {
+                        // Unqualified implicit-this sibling method.
+                        auto ThisB = lookupLocalBinding("this");
+                        if (ThisB) {
+                            PlannedType IT = ThisB->Type;
+                            if ((IT.Name == "pointer" || IT.Name == "ref") &&
+                                !IT.Generics.empty()) {
+                                IT = IT.Generics[0];
+                            }
+                            if (lookupMethod(IT, FullName, Head.Loc)) {
+                                HeadCallable = true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        if (HeadCallable) {
+            Tuple WrapT;
+            WrapT.Loc = Val.Loc;
+            Component WrapC;
+            WrapC.Loc = Val.Loc;
+            WrapC.Value.push_back(ProcessedOps[1]);
+            WrapT.Components.push_back(std::move(WrapC));
+            Operand WrapOp;
+            WrapOp.Loc = Val.Loc;
+            WrapOp.Expr = std::move(WrapT);
+            ProcessedOps[1] = std::move(WrapOp);
+        }
+    }
+
     std::vector<PlannedOperand> Result;
     Result.reserve(ProcessedOps.size());
 

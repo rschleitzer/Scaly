@@ -1,0 +1,19 @@
+; AOT Test: parenless single-arg call for methods and free functions
+; Expected: 30
+
+define Adder(base: int)
+{
+    function plus(this, n: int) returns int
+        this.base + n
+}
+
+function triple(n: int) returns int
+    n * 3
+
+let a Adder(10)
+let s a.plus 20            ; method, no parens
+let t triple 10            ; free function, no parens
+if s = t
+    print "30"             ; extern/free, no parens
+else
+    print "WRONG"

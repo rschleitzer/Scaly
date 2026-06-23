@@ -1,0 +1,3 @@
+; AOT Test: prefix function application without parentheses
+; Expected: Hello, World!
+print "Hello, World!"
