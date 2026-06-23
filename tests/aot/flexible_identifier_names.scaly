@@ -1,0 +1,33 @@
+; AOT Test: single-quoted identifiers as FUNCTION names
+; The lexer accepts single-quoted identifiers ('double', 'inc') —
+; flexible character content delimited by quotes — and they flow through
+; parser/modeler/planner/mangler as ordinary function names, applied
+; prefix both parenful and (per s199) parenless. Verified identical on
+; stage-0 AND the self-hosted compiler.
+;
+; NOT covered (separate, not-yet-supported paths, see is_operator_name's
+; first-char gate in Planner): (a) operator-char-named FUNCTIONS like ++
+; — stage-0 resolves them but the self-hosted planner treats the name as
+; a prefix operator, so the two diverge; (b) custom INFIX operators of
+; any name — free operators are never emitted, text/quoted-named method
+; operators are not recognized infix.
+; Expected: 42
+function 'double'(n: int) returns int
+    n * 2
+
+function 'inc'(n: int) returns int
+    n + 1
+
+function compute(x: int) returns int
+{
+    let a 'double'(x)     ; quoted name, parenful, inside a fn body
+    let b 'inc'(a)        ; quoted name, parenful
+    return b
+}
+
+let r compute(20)        ; 41
+let s 'inc' r            ; quoted name, PARENLESS (s199) -> 42
+if s = 42
+    print("42")
+else
+    print("WRONG")

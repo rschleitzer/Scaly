@@ -349,6 +349,15 @@ define Planner
         ; maintained in lockstep at the single register_operator add site.
         model_operator_index: FunctionIndex
 
+        ; Set by resolve_operator_call# / resolve_prefix_operator_call# to the
+        ; matched operator's intrinsic-ness (true iff its implementation is
+        ; Intrinsic). Read by the operator-call construction in
+        ; collapse_operand_sequence# ONLY when the resolve returned non-null,
+        ; so a user-defined (Action-bodied) operator emits a real call to its
+        ; mangled function instead of being routed to emit_intrinsic_*_op.
+        ; Mirrors stage-0's OperatorMatch.IsIntrinsic (Planner.cpp:3118/4470).
+        resolved_op_is_intrinsic: bool
+
         ; Package search paths (e.g. "packages", user -I paths). Probed
         ; by load_package_on_demand when a package isn't already in
         ; loaded_packages.
@@ -456,6 +465,7 @@ define Planner
             set model_function_index: FunctionIndex.create#(65536 as size_t, 262144 as size_t)
             set model_operators: Array[KeyValuePair[String, Operator]]^page()
             set model_operator_index: FunctionIndex.create#(65536 as size_t, 262144 as size_t)
+            set resolved_op_is_intrinsic: false
             set search_paths: Array[String]^page()
             set loaded_packages: Array[KeyValuePair[String, Module]]^page()
             set loaded_module_paths: Array[KeyValuePair[String, Module]]^page()
@@ -1147,6 +1157,14 @@ define Planner
         function is_function(this: Planner, name: String) returns bool
         {
             model_function_index.lookup_head(name) <> (0 - 1) as i64
+        }
+
+        ; True iff `name` is a declared operator (in the operator-symbol
+        ; registry). Used to give text-named operators a precedence and, in
+        ; stage-0, to recognise them in infix position.
+        function is_operator(this: Planner, name: String) returns bool
+        {
+            model_operator_index.lookup_head(name) <> (0 - 1) as i64
         }
 
         ; ================================================================
@@ -3296,7 +3314,20 @@ define Planner
             choose result.expr
                 when ty: PlannedType
                 {
+                    ; An opchar-named declared FUNCTION (not a declared
+                    ; operator) — e.g. `function ++(n)` — is a function call,
+                    ; not a prefix operator. Skip the prefix-operator path so
+                    ; it falls through to call resolution; stage-0 mangles such
+                    ; a name as a function (`_Z2++i`). The source declares no
+                    ; opchar-named functions, so this is fixpoint-safe.
+                    var ty_is_prefix_op: bool false
                     if Planner.is_operator_name(ty.name)
+                        set ty_is_prefix_op: true
+                    if ty_is_prefix_op
+                        if this.is_function(ty.name)
+                            if this.is_operator(ty.name) = false
+                                set ty_is_prefix_op: false
+                    if ty_is_prefix_op
                     {
                         let prefix_name ty.name
 
@@ -6210,7 +6241,18 @@ define Planner
                     var prec_next: size_t i + 2
                     if rhs_call_consumed
                         set prec_next: i + 3
-                    let current_prec Planner.get_operator_precedence(op_name)
+                    ; A text-named (non-operator-char) declared operator binds
+                    ; weakest — precedence 1, like ||. Gated on NOT
+                    ; is_operator_name so opchar operators (incl. source `==`
+                    ; / `[]`, deliberately left at their table/0 precedence)
+                    ; are unaffected — fixpoint-safe. The source has no
+                    ; text-named operators, so this never fires during
+                    ; self-compile.
+                    var current_prec Planner.get_operator_precedence(op_name)
+                    if current_prec = 0
+                        if Planner.is_operator_name(op_name) = false
+                            if this.is_operator(op_name)
+                                set current_prec: 1
                     if current_prec > 0
                     {
                         if prec_next < ops.length
@@ -6222,9 +6264,19 @@ define Planner
                                 choose next_op.expr
                                     when nty: PlannedType
                                     {
+                                        var next_is_op: bool false
                                         if Planner.is_operator_name(nty.name)
+                                            set next_is_op: true
+                                        if Planner.is_operator_name(nty.name) = false
+                                            if this.is_operator(nty.name)
+                                                set next_is_op: true
+                                        if next_is_op
                                         {
-                                            let next_prec Planner.get_operator_precedence(nty.name)
+                                            var next_prec Planner.get_operator_precedence(nty.name)
+                                            if next_prec = 0
+                                                if Planner.is_operator_name(nty.name) = false
+                                                    if this.is_operator(nty.name)
+                                                        set next_prec: 1
                                             if next_prec > current_prec
                                             {
                                                 var right_arr Array[PlannedOperand]$()
@@ -6350,13 +6402,21 @@ define Planner
                     two_args.put(0, result)
                     two_args.put(1, rhs)
                     var two_args_holder Vector[PlannedOperand]^rp(two_args)
-                    ; Mirrors Planner.cpp:4378-4379 — built-in binary
-                    ; operators on primitive types are intrinsic.
+                    ; Built-in binary operators on primitive types are
+                    ; intrinsic (Planner.cpp:4378-4379). A user-defined
+                    ; operator (resolve returned non-null AND its impl is not
+                    ; Intrinsic) is NOT intrinsic — emit_call then emits a real
+                    ; call to its mangled function. resolved=null keeps the
+                    ; primitive-fallback intrinsic=true. Mirrors stage-0
+                    ; Call.IsIntrinsic = OpMatch->IsIntrinsic (Planner.cpp:4470).
+                    var bin_is_intrinsic: bool true
+                    if resolved <> null
+                        set bin_is_intrinsic: this.resolved_op_is_intrinsic
                     let call PlannedCall(
                         result.loc,
                         op_name,
                         this.mangle_binary_operator#(op_name, result.result_type, rhs.result_type),
-                        true,
+                        bin_is_intrinsic,
                         true,
                         false,
                         false,
@@ -6453,6 +6513,21 @@ define Planner
 
         ; resolve_prefix_operator_call: for unary prefix operators like
         ; `-x` or `!flag`. Two-pass: exact matches first, then compatible.
+        ; True iff an operator's implementation is Intrinsic (built-in
+        ; primitive op, emitted inline by emit_intrinsic_*_op). A user-defined
+        ; operator carries an Action body and must be emitted/called as a real
+        ; function. Mirrors stage-0's holds_alternative<IntrinsicImpl>(Op->Impl).
+        function operator_is_intrinsic(o: Operator) returns bool
+        {
+            var r: bool false
+            choose o.implementation
+                when oi: Intrinsic
+                    set r: true
+                else
+                    0
+            r
+        }
+
         function resolve_prefix_operator_call#(
             rp,
             this: Planner,
@@ -6477,7 +6552,10 @@ define Planner
                     let o (*o_ptr)
                     let rt this.check_operator_match#(o, arg_types, true)
                     if rt <> null
+                    {
+                        set this.resolved_op_is_intrinsic: Planner.operator_is_intrinsic(o)
                         return rt
+                    }
                 }
                 set i: i + 1
             }
@@ -6492,7 +6570,10 @@ define Planner
                     let o (*o_ptr)
                     let rt this.check_operator_match#(o, arg_types, false)
                     if rt <> null
+                    {
+                        set this.resolved_op_is_intrinsic: Planner.operator_is_intrinsic(o)
                         return rt
+                    }
                 }
                 set k: k + 1
             }
@@ -6527,7 +6608,10 @@ define Planner
                     let o (*o_ptr)
                     let rt this.check_operator_match#(o, arg_types, true)
                     if rt <> null
+                    {
+                        set this.resolved_op_is_intrinsic: Planner.operator_is_intrinsic(o)
                         return rt
+                    }
                 }
                 set i: i + 1
             }
@@ -6542,7 +6626,10 @@ define Planner
                     let o (*o_ptr)
                     let rt this.check_operator_match#(o, arg_types, false)
                     if rt <> null
+                    {
+                        set this.resolved_op_is_intrinsic: Planner.operator_is_intrinsic(o)
                         return rt
+                    }
                 }
                 set k: k + 1
             }
@@ -6622,6 +6709,7 @@ define Planner
                                     holder.put(0, Planner.make_void_type#())
 
                                 set type_substitutions.length: saved_len
+                                set this.resolved_op_is_intrinsic: Planner.operator_is_intrinsic(o)
                                 return holder.get 0
                             }
                         }
@@ -13769,7 +13857,69 @@ define Planner
                         }
                         when o: Operator
                         {
-                            operators.add(this.plan_operator#(o, null))
+                            let po this.plan_operator#(o, null)
+                            operators.add po
+                            ; A free (top-level) operator needs a real
+                            ; emitted body. emit() walks instantiated_functions
+                            ; only; struct operators reach it via call-site
+                            ; resolution, but a free operator is planned here
+                            ; and would otherwise never be recorded — the call
+                            ; site (resolve_operator_call#) emits a reference to
+                            ; its OPERATOR-mangled name, so the body must be
+                            ; emitted under that same name. Record an
+                            ; Action-bodied free operator as a PlannedFunction
+                            ; carrying po.mangled_name. Extern/Intrinsic/
+                            ; Instruction operators have no Scaly body to emit.
+                            var op_has_body: bool false
+                            choose o.implementation
+                                when oa: Action
+                                    set op_has_body: true
+                                else
+                                    0
+                            if op_has_body
+                            {
+                                let synth_fn Function(
+                                    o.span,
+                                    o.private_,
+                                    true,
+                                    o.name,
+                                    o.parameters,
+                                    null,
+                                    o.input,
+                                    o.returns_,
+                                    o.throws_,
+                                    Lifetime.Unspecified(Unspecified()),
+                                    o.implementation
+                                )
+                                var op_page_param: ref[String]? null
+                                if Planner.needs_implicit_return_page(synth_fn)
+                                {
+                                    var pp_holder Vector[String]^rp(1)
+                                    pp_holder.put(0, String^rp("rp"))
+                                    set op_page_param: pp_holder.get(0)
+                                }
+                                var op_can_throw: bool false
+                                if po.throws_type <> null
+                                    set op_can_throw: true
+                                this.record_function(PlannedFunction(
+                                    po.loc,
+                                    po.is_private,
+                                    true,
+                                    po.name,
+                                    po.mangled_name,
+                                    op_page_param,
+                                    po.input,
+                                    po.return_type,
+                                    po.throws_type,
+                                    Lifetime.Unspecified(Unspecified()),
+                                    po.impl,
+                                    null,
+                                    false,
+                                    op_can_throw,
+                                    null,
+                                    this.file
+                                ))
+                            }
                             0
                         }
                         when c: Concept

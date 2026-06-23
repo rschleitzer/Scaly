@@ -1,0 +1,18 @@
+; AOT Test: operator-char-named FUNCTIONS
+; A function declared with an operator-char name (++) is a FUNCTION, not a
+; prefix operator: applied with parens it is an ordinary call (mangled as a
+; function, _Z2++i). Recognized by DECLARATION, not first character — the
+; self-hosted compiler now agrees with stage-0 (these previously diverged:
+; stage-2 mis-classified ++ as a prefix operator and dropped the call).
+; Expected: 42
+function ++(n: int) returns int
+    n + 1
+
+function compute(x: int) returns int
+    ++(x)
+
+let r compute(41)
+if r = 42
+    print("42")
+else
+    print("WRONG")

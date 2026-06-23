@@ -1451,6 +1451,10 @@ bool Planner::isFunction(llvm::StringRef Name) {
     return !lookupFunction(Name).empty();
 }
 
+bool Planner::isOperator(llvm::StringRef Name) {
+    return Operators.count(Name.str()) > 0;
+}
+
 bool Planner::isNamespaceSiblingFunction(llvm::StringRef Name) {
     if (CurrentNamespaceName.empty() || !CurrentNamespace) return false;
     for (const auto& Member : CurrentNamespace->Members) {
@@ -1487,6 +1491,10 @@ int Planner::getOperatorPrecedence(llvm::StringRef Op) {
     if (Op == "<<" || Op == ">>") return 8;
     if (Op == "+" || Op == "-") return 9;
     if (Op == "*" || Op == "/" || Op == "%" || Op == "div" || Op == "mod") return 10;
+    // A text-named (non-operator-char) declared operator binds weakest
+    // (precedence 1, like ||). opchar operators keep their table/0 precedence
+    // — the source has no text-named operators, so this is fixpoint-safe.
+    if (!isOperatorName(Op) && isOperator(Op)) return 1;
     return 0;  // Unknown
 }
 
@@ -4383,7 +4391,7 @@ llvm::Expected<PlannedOperand> Planner::collapseOperandSequence(
     while (I < Ops.size()) {
         // Check if current operand is an operator
         if (auto* TypeExpr = std::get_if<PlannedType>(&Ops[I].Expr)) {
-            if (isOperatorName(TypeExpr->Name) && I + 1 < Ops.size()) {
+            if ((isOperatorName(TypeExpr->Name) || isOperator(TypeExpr->Name)) && I + 1 < Ops.size()) {
                 // Binary operator: left op right
                 size_t RightConsumed = 1;
 
@@ -4392,7 +4400,7 @@ llvm::Expected<PlannedOperand> Planner::collapseOperandSequence(
                 int CurrentPrec = getOperatorPrecedence(TypeExpr->Name);
                 if (CurrentPrec > 0 && I + 2 < Ops.size()) {
                     if (auto* NextOp = std::get_if<PlannedType>(&Ops[I + 2].Expr)) {
-                        if (isOperatorName(NextOp->Name)) {
+                        if (isOperatorName(NextOp->Name) || isOperator(NextOp->Name)) {
                             int NextPrec = getOperatorPrecedence(NextOp->Name);
                             if (NextPrec > CurrentPrec) {
                                 // Higher precedence on right - collapse right side first
@@ -13568,6 +13576,47 @@ llvm::Expected<PlannedModule> Planner::planModule(const Module &Mod) {
                 ModuleStack.pop_back();
                 return PlannedOp.takeError();
             }
+
+            // A free (top-level) operator with a real body must be emitted as
+            // a function under its operator-mangled name — the call site emits
+            // a call to it (Call.IsIntrinsic=false). The emitter only walks
+            // Functions / Struct / Union operators, never Result.Operators, so
+            // record it into InstantiatedFunctions like a top-level function.
+            // Extern/Intrinsic/Instruction operators carry no Scaly body.
+            // Mirror of Planner.scaly's plan_module# free-operator recording.
+            if (std::holds_alternative<PlannedAction>(PlannedOp->Impl)) {
+                Function SynthFn;
+                SynthFn.Loc = Op->Loc;
+                SynthFn.Private = Op->Private;
+                SynthFn.Pure = true;
+                SynthFn.Name = Op->Name;
+                SynthFn.Parameters = Op->Parameters;
+                SynthFn.Input = Op->Input;
+                SynthFn.Returns = Op->Returns;
+                SynthFn.Throws = Op->Throws;
+                SynthFn.Life = UnspecifiedLifetime{};
+                SynthFn.Impl = Op->Impl;
+
+                PlannedFunction OpFunc;
+                OpFunc.Loc = PlannedOp->Loc;
+                OpFunc.Private = PlannedOp->Private;
+                OpFunc.Pure = true;
+                OpFunc.Name = PlannedOp->Name;
+                OpFunc.MangledName = PlannedOp->MangledName;
+                if (needsImplicitReturnPage(SynthFn))
+                    OpFunc.PageParameter = "rp";
+                OpFunc.Input = PlannedOp->Input;
+                OpFunc.Returns = PlannedOp->Returns;
+                OpFunc.Throws = PlannedOp->Throws;
+                OpFunc.Life = UnspecifiedLifetime{};
+                OpFunc.Impl = PlannedOp->Impl;
+                OpFunc.Origin = PlannedOp->Origin;
+                OpFunc.CanThrow = static_cast<bool>(PlannedOp->Throws);
+                OpFunc.File = File;
+                OpFunc.Scheme = PlannedOp->Scheme;
+                InstantiatedFunctions[OpFunc.MangledName] = OpFunc;
+            }
+
             Result.Operators.push_back(std::move(*PlannedOp));
 
             // Register in symbol table (supports overloading)

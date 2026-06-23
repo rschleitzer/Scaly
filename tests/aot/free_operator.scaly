@@ -1,0 +1,21 @@
+; AOT Test: free (top-level) operators with a real body
+; A top-level `operator` declaration is emitted as a function under its
+; operator-mangled name and dispatched infix as a real call (not an
+; intrinsic op). Verified identical on stage-0 and the self-hosted
+; compiler. Custom operators bind weakest (see get_operator_precedence).
+; Expected: 42
+operator <+>(left: int, right: int) returns int
+    left + right
+
+operator <*>(left: int, right: int) returns int
+    left * right
+
+function compute(x: int) returns int
+    x <+> 2
+
+let r compute(40)        ; runtime infix call -> 42
+let s 6 <*> 7            ; 42
+if r = 42 && s = 42
+    print("42")
+else
+    print("WRONG")

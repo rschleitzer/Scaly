@@ -455,6 +455,9 @@ private:
     // Check if a name refers to an operator
     bool isOperatorName(llvm::StringRef Name);
 
+    // Check if a name is a declared operator (in the operator-symbol registry)
+    bool isOperator(llvm::StringRef Name);
+
     // Get operator precedence (higher = binds tighter, 0 = unknown)
     int getOperatorPrecedence(llvm::StringRef Op);
 

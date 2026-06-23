@@ -1,0 +1,31 @@
+; AOT Test: text / single-quoted-named binary operators (infix)
+; A binary operator declared with a text name ('minus') or a single-quoted
+; name with spaces ('divided by') is recognized in INFIX position by its
+; DECLARATION (not the first character) and dispatched as a real call. A
+; text-named operator binds weakest — precedence 1, like || — so arithmetic
+; binds tighter: `a 'minus' b + c` parses as `a 'minus' (b + c)`. The space
+; in 'divided by' round-trips through the Itanium mangler and the quoted
+; textual-IR symbol. Verified identical on stage-0 and the self-hosted
+; compiler.
+; Expected: ok
+operator 'divided by'(left: int, right: int) returns int
+    left / right
+
+operator 'minus'(left: int, right: int) returns int
+    left - right
+
+function prec(a: int, b: int, c: int) returns int
+    a 'minus' b + c        ; 20 'minus' (3 + 5) = 12
+
+function dv(a: int, b: int) returns int
+    a 'divided by' b
+
+let p prec(20, 3, 5)       ; 12
+let d dv(84, 2)            ; 42
+if p = 12
+    if d = 42
+        print("ok")
+    else
+        print("WRONG")
+else
+    print("WRONG")
