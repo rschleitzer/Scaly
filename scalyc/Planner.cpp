@@ -4403,19 +4403,38 @@ llvm::Expected<PlannedOperand> Planner::collapseOperandSequence(
                         if (isOperatorName(NextOp->Name) || isOperator(NextOp->Name)) {
                             int NextPrec = getOperatorPrecedence(NextOp->Name);
                             if (NextPrec > CurrentPrec) {
-                                // Higher precedence on right - collapse right side first
+                                // Higher precedence on right - collapse right side first.
+                                // Bound the collapse to the precedence boundary: the first
+                                // LATER operator whose precedence is <= CurrentPrec.
+                                // Collapsing to the end would swallow a following lower-prec
+                                // operator: `a = 0 - 5 && b` (`=`6, `-`9, `&&`2) must stop
+                                // the `=` right side at `&&`, giving `(a = (0-5)) && b`, not
+                                // `a = ((0-5) && b)`. Operators sit every 2 positions from I+2.
+                                size_t Boundary = Ops.size();
+                                for (size_t k = I + 2; k < Ops.size(); k += 2) {
+                                    if (auto* OpK = std::get_if<PlannedType>(&Ops[k].Expr)) {
+                                        int PrecK = getOperatorPrecedence(OpK->Name);
+                                        if (PrecK > 0 && PrecK <= CurrentPrec) {
+                                            Boundary = k;
+                                            break;
+                                        }
+                                    }
+                                }
                                 std::vector<PlannedOperand> RightOps;
-                                for (size_t j = I + 1; j < Ops.size(); ++j) {
+                                for (size_t j = I + 1; j < Boundary; ++j) {
                                     RightOps.push_back(std::move(Ops[j]));
                                 }
                                 auto CollapsedRight = collapseOperandSequence(std::move(RightOps));
                                 if (!CollapsedRight) {
                                     return CollapsedRight.takeError();
                                 }
-                                // Replace Ops[I + 1] with the collapsed result
+                                // Replace Ops[I + 1] with the collapsed result and drop the
+                                // consumed middle [I+2, Boundary), keeping Ops[Boundary..end]
+                                // so the outer loop continues from the lower-prec operator.
                                 Ops[I + 1] = std::move(*CollapsedRight);
-                                // Truncate Ops to remove the consumed elements
-                                Ops.resize(I + 2);
+                                if (Boundary > I + 2) {
+                                    Ops.erase(Ops.begin() + I + 2, Ops.begin() + Boundary);
+                                }
                             }
                         }
                     }

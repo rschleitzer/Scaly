@@ -6023,6 +6023,12 @@ define Planner
                 let rhs_ptr ops.get(i + 1)
                 var consumed_rest: bool false
                 var rhs_call_consumed: bool false
+                ; When the precedence look-ahead climbs, this records the
+                ; operator position the right side stopped at (the precedence
+                ; boundary). ops.length means it ran to the end. Read after the
+                ; call is built to either break (boundary = end) or continue the
+                ; outer loop from the boundary.
+                var climb_to: size_t 0
                 if rhs_ptr <> null
                 {
                     var rhs: PlannedOperand (*rhs_ptr)
@@ -6279,10 +6285,58 @@ define Planner
                                                         set next_prec: 1
                                             if next_prec > current_prec
                                             {
+                                                ; Bound the right-side collapse to
+                                                ; the precedence boundary — the
+                                                ; first LATER operator whose
+                                                ; precedence is <= current_prec.
+                                                ; Collapsing to the end would
+                                                ; swallow a following lower-prec
+                                                ; operator: `a = 0 - 5 && b`
+                                                ; (`=`6, `-`9, `&&`2) must stop the
+                                                ; `=` right side at `&&`, giving
+                                                ; `(a = (0-5)) && b`, not
+                                                ; `a = ((0-5) && b)`. Operators sit
+                                                ; every 2 positions from prec_next.
+                                                var climb_b: size_t ops.length
+                                                var bnd: size_t prec_next
+                                                var found_b: bool false
+                                                while found_b = false
+                                                {
+                                                    if bnd >= ops.length
+                                                        set found_b: true
+                                                    else
+                                                    {
+                                                        let bp ops.get bnd
+                                                        var bnd_prec: int 0
+                                                        if bp <> null
+                                                            choose (*bp).expr
+                                                                when bty: PlannedType
+                                                                {
+                                                                    set bnd_prec: Planner.get_operator_precedence(bty.name)
+                                                                    if bnd_prec = 0
+                                                                        if Planner.is_operator_name(bty.name) = false
+                                                                            if this.is_operator(bty.name)
+                                                                                set bnd_prec: 1
+                                                                }
+                                                                else
+                                                                    0
+                                                        var is_b: bool false
+                                                        if bnd_prec > 0
+                                                            if bnd_prec <= current_prec
+                                                                set is_b: true
+                                                        if is_b
+                                                        {
+                                                            set climb_b: bnd
+                                                            set found_b: true
+                                                        }
+                                                        else
+                                                            set bnd: bnd + 2
+                                                    }
+                                                }
                                                 var right_arr Array[PlannedOperand]$()
                                                 right_arr.add rhs
                                                 var rr: size_t prec_next
-                                                while rr < ops.length
+                                                while rr < climb_b
                                                 {
                                                     let p_ptr ops.get rr
                                                     if p_ptr <> null
@@ -6292,6 +6346,7 @@ define Planner
                                                 var right_vec Vector[PlannedOperand]^rp(right_arr)
                                                 set rhs: this.collapse_operand_sequence#(right_vec)
                                                 set consumed_rest: true
+                                                set climb_to: climb_b
                                             }
                                         }
                                     }
@@ -6434,7 +6489,16 @@ define Planner
                     )
                 }
                 if consumed_rest
-                    break
+                {
+                    ; Whole tail folded into rhs (boundary = end): done.
+                    ; Otherwise the bounded climb stopped at a lower-precedence
+                    ; operator — continue the outer loop from that boundary with
+                    ; the just-built call as the new left side.
+                    if climb_to >= ops.length
+                        break
+                    set i: climb_to
+                    continue
+                }
                 if rhs_call_consumed
                 {
                     set i: i + 3

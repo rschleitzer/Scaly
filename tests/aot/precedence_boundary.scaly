@@ -1,0 +1,30 @@
+; AOT Test: precedence-climbing boundary (the right side of an operator must
+; stop at the first LATER operator of lower-or-equal precedence).
+; `a = 0 - 5 && b = 44` must parse as `(a = (0 - 5)) && (b = 44)`: the `=`
+; (prec 6) right side is just `0 - 5` (`-` prec 9 binds tighter); the `&&`
+; (prec 2) binds looser and must NOT be swallowed into the `=` RHS. So the
+; condition is the AND of both equality clauses.
+; Regression: the climber used to collapse an operator's right side to the
+; END, swallowing the following lower-precedence operator — stage-0 then
+; dropped the left clause, stage-2 over-grouped as `a = ((0-5) && (b=44))`.
+; Expected: ok
+function check(a: int, b: int) returns int
+{
+    if a = 0 - 5 && b = 44
+        return 1
+    return 0
+}
+
+let t1 check(0 - 5, 44)    ; true  && true  -> 1
+let t2 check(99, 44)       ; false && true  -> 0
+let t3 check(0 - 5, 99)    ; true  && false -> 0
+if t1 = 1
+    if t2 = 0
+        if t3 = 0
+            print("ok")
+        else
+            print("WRONG")
+    else
+        print("WRONG")
+else
+    print("WRONG")
