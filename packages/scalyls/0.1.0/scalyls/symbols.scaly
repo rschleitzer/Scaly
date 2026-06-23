@@ -126,7 +126,7 @@ define symbols
                     var i: size_t 0
                     while i < decls.length
                     {
-                        let dptr decls.get(i)
+                        let dptr decls.get i
                         if dptr <> null
                         {
                             let d (*dptr)
@@ -270,7 +270,7 @@ define symbols
                 var i: size_t 0
                 while i < members.length
                 {
-                    let mptr members.get(i)
+                    let mptr members.get i
                     if mptr <> null
                     {
                         let m (*mptr)
@@ -338,7 +338,7 @@ define symbols
             var i: size_t 0
             while i < decls.length
             {
-                let dptr decls.get(i)
+                let dptr decls.get i
                 if dptr <> null
                 {
                     let d (*dptr)
@@ -377,7 +377,7 @@ define symbols
             var i: size_t 0
             while i < variants.length
             {
-                let vptr variants.get(i)
+                let vptr variants.get i
                 if vptr <> null
                 {
                     if first = false
@@ -404,7 +404,7 @@ define symbols
                 var j: size_t 0
                 while j < members.length
                 {
-                    let mptr members.get(j)
+                    let mptr members.get j
                     if mptr <> null
                     {
                         let m (*mptr)
@@ -491,7 +491,7 @@ define symbols
         var off: size_t 0
         while off < target
         {
-            let c source.get(off)
+            let c source.get off
             if c = (10 as char)
             {
                 set line: line + 1
@@ -518,7 +518,7 @@ define symbols
     {
         var sb StringBuilder#()
         sb.append(0x22 as char)
-        sb.append(k)
+        sb.append k
         sb.append(0x22 as char)
         sb.append(0x3A as char)                    ; :
         sb.to_string#()
@@ -563,7 +563,7 @@ define symbols
                     var i: size_t 0
                     while i < decls.length
                     {
-                        let dptr decls.get(i)
+                        let dptr decls.get i
                         if dptr <> null
                         {
                             let d (*dptr)
@@ -672,7 +672,7 @@ define symbols
                 var i: size_t 0
                 while i < members.length
                 {
-                    let mptr members.get(i)
+                    let mptr members.get i
                     if mptr <> null
                     {
                         let m (*mptr)
@@ -737,7 +737,7 @@ define symbols
             var i: size_t 0
             while i < decls.length
             {
-                let dptr decls.get(i)
+                let dptr decls.get i
                 if dptr <> null
                 {
                     let d (*dptr)
@@ -777,7 +777,7 @@ define symbols
                 var j: size_t 0
                 while j < members.length
                 {
-                    let mptr members.get(j)
+                    let mptr members.get j
                     if mptr <> null
                     {
                         let m (*mptr)
@@ -862,7 +862,7 @@ define symbols
         var off: size_t 0
         while off < target
         {
-            let c source.get(off)
+            let c source.get off
             if c = (10 as char)
                 set line: line + 1
             set off: off + 1
@@ -961,7 +961,7 @@ define symbols
         ; borrows the lists' buffers (alive for this function) and is freed
         ; before return.
         let ns_cap (NS_CAP as size_t)
-        let ns_slots nameset.create(ns_cap)
+        let ns_slots nameset.create ns_cap
         nameset.insert_name_list(ns_slots, ns_cap, prim_list, 1 as i64)
         nameset.insert_name_list(ns_slots, ns_cap, ty_list, 1 as i64)
         nameset.insert_name_list(ns_slots, ns_cap, xty_list, 1 as i64)
@@ -985,7 +985,7 @@ define symbols
 
         while i < n
         {
-            let c source.get(i)
+            let c source.get i
 
             ; newline (does NOT reset pending — whitespace between `function`
             ; and the name must keep the pending classification)
@@ -1023,7 +1023,7 @@ define symbols
                     {
                         if done
                             break
-                        let cc source.get(k)
+                        let cc source.get k
                         if cc = (10 as u8)
                         {
                             let seglen col - seg_col
@@ -1105,7 +1105,7 @@ define symbols
                 var j i + 1
                 while j < n
                 {
-                    let cc source.get(j)
+                    let cc source.get j
                     if cc = (10 as u8)
                         break
                     if cc = (92 as u8)          ; backslash escape: skip next
@@ -1133,7 +1133,7 @@ define symbols
                 var j i + 1
                 while j < n
                 {
-                    let cc source.get(j)
+                    let cc source.get j
                     if symbols.is_num_byte(cc) = false
                         break
                     set j: j + 1
@@ -1149,7 +1149,7 @@ define symbols
                 var j i + 1
                 while j < n
                 {
-                    let cc source.get(j)
+                    let cc source.get j
                     if symbols.is_ident_byte(cc) = false
                         break
                     set j: j + 1
@@ -1214,7 +1214,7 @@ define symbols
                 var j i + 1
                 while j < n
                 {
-                    let cc source.get(j)
+                    let cc source.get j
                     if symbols.is_op_char(cc) = false
                         break
                     set j: j + 1
@@ -1252,7 +1252,7 @@ define symbols
 
         sb.append(0x5D as char)                    ; ]
         sb.append(0x7D as char)                    ; }
-        nameset.destroy(ns_slots)
+        nameset.destroy ns_slots
         sb.to_string#()
     }
 
@@ -1382,7 +1382,7 @@ define symbols
         var sb StringBuilder#()
         sb.append(0x0A as char)                    ; leading newline
         let jv json.parse#(items_json)
-        let count json.array_length(jv)
+        let count json.array_length jv
         var i: size_t 0
         while i < count
         {
@@ -1410,39 +1410,39 @@ define symbols
     {
         var sb StringBuilder#()
         sb.append(0x0A as char)
-        sb.append("int")
+        sb.append "int"
         sb.append(0x0A as char)
-        sb.append("bool")
+        sb.append "bool"
         sb.append(0x0A as char)
-        sb.append("char")
+        sb.append "char"
         sb.append(0x0A as char)
-        sb.append("void")
+        sb.append "void"
         sb.append(0x0A as char)
-        sb.append("float")
+        sb.append "float"
         sb.append(0x0A as char)
-        sb.append("double")
+        sb.append "double"
         sb.append(0x0A as char)
-        sb.append("size_t")
+        sb.append "size_t"
         sb.append(0x0A as char)
-        sb.append("u8")
+        sb.append "u8"
         sb.append(0x0A as char)
-        sb.append("u16")
+        sb.append "u16"
         sb.append(0x0A as char)
-        sb.append("u32")
+        sb.append "u32"
         sb.append(0x0A as char)
-        sb.append("u64")
+        sb.append "u64"
         sb.append(0x0A as char)
-        sb.append("i8")
+        sb.append "i8"
         sb.append(0x0A as char)
-        sb.append("i16")
+        sb.append "i16"
         sb.append(0x0A as char)
-        sb.append("i32")
+        sb.append "i32"
         sb.append(0x0A as char)
-        sb.append("i64")
+        sb.append "i64"
         sb.append(0x0A as char)
-        sb.append("pointer")
+        sb.append "pointer"
         sb.append(0x0A as char)
-        sb.append("ref")
+        sb.append "ref"
         sb.append(0x0A as char)
         sb.to_string#()
     }
@@ -1488,7 +1488,7 @@ define symbols
         var i from
         while i < n
         {
-            if symbols.is_letter(source.get(i))
+            if symbols.is_letter(source.get i)
                 break
             set i: i + 1
         }
@@ -1524,7 +1524,7 @@ define symbols
                         }
                         while i < items.length
                         {
-                            let iptr items.get(i)
+                            let iptr items.get i
                             if iptr <> null
                             {
                                 let it (*iptr)
@@ -1727,7 +1727,7 @@ define symbols
             var i: size_t 0
             while i < parts.length
             {
-                let pptr parts.get(i)
+                let pptr parts.get i
                 if pptr <> null
                 {
                     let part (*pptr)
@@ -1767,7 +1767,7 @@ define symbols
                 var i: size_t 0
                 while i < members.length
                 {
-                    let mptr members.get(i)
+                    let mptr members.get i
                     if mptr <> null
                     {
                         let m (*mptr)
@@ -1825,7 +1825,7 @@ define symbols
             var i: size_t 0
             while i < decls.length
             {
-                let dptr decls.get(i)
+                let dptr decls.get i
                 if dptr <> null
                 {
                     let d (*dptr)
@@ -1869,7 +1869,7 @@ define symbols
                     var i: size_t 0
                     while i < decls.length
                     {
-                        let dptr decls.get(i)
+                        let dptr decls.get i
                         if dptr <> null
                         {
                             let d (*dptr)
@@ -1903,14 +1903,14 @@ define symbols
         var best_name_end: size_t 0
         while i < n
         {
-            let tag table.get(i)
+            let tag table.get i
             if tag = (0x50 as u8)
             {
                 set i: i + (2 as size_t)            ; skip 'P' + tab
                 var rstart: size_t 0
                 while i < n
                 {
-                    let c table.get(i)
+                    let c table.get i
                     if c = (0x09 as u8)
                         break
                     set rstart: rstart * (10 as size_t) + ((c - (0x30 as u8)) as size_t)
@@ -1920,7 +1920,7 @@ define symbols
                 var rend: size_t 0
                 while i < n
                 {
-                    let c table.get(i)
+                    let c table.get i
                     if c = (0x09 as u8)
                         break
                     set rend: rend * (10 as size_t) + ((c - (0x30 as u8)) as size_t)
@@ -2006,14 +2006,14 @@ define symbols
         var best_end: size_t 0
         while i < n
         {
-            let tag table.get(i)
+            let tag table.get i
             if tag = (0x52 as u8)                ; R
             {
                 set i: i + (2 as size_t)            ; skip 'R' + tab
                 var rstart: size_t 0
                 while i < n
                 {
-                    let c table.get(i)
+                    let c table.get i
                     if c = (0x09 as u8)
                         break
                     set rstart: rstart * (10 as size_t) + ((c - (0x30 as u8)) as size_t)
@@ -2023,7 +2023,7 @@ define symbols
                 var rend: size_t 0
                 while i < n
                 {
-                    let c table.get(i)
+                    let c table.get i
                     if c = (0x0A as u8)
                         break
                     set rend: rend * (10 as size_t) + ((c - (0x30 as u8)) as size_t)
@@ -2074,14 +2074,14 @@ define symbols
         var i: size_t 0
         while i < n
         {
-            let tag table.get(i)
+            let tag table.get i
             if tag = (0x46 as u8)
             {
                 set i: i + (2 as size_t)            ; skip 'F' + tab
                 var roff: size_t 0
                 while i < n
                 {
-                    let c table.get(i)
+                    let c table.get i
                     if c = (0x0A as u8)
                         break
                     set roff: roff * (10 as size_t) + ((c - (0x30 as u8)) as size_t)
@@ -2145,7 +2145,7 @@ define symbols
                     var i: size_t 0
                     while i < decls.length
                     {
-                        let dptr decls.get(i)
+                        let dptr decls.get i
                         if dptr <> null
                         {
                             let d (*dptr)
@@ -2301,7 +2301,7 @@ define symbols
                 var i: size_t 0
                 while i < members.length
                 {
-                    let mptr members.get(i)
+                    let mptr members.get i
                     if mptr <> null
                     {
                         let m (*mptr)
@@ -2366,7 +2366,7 @@ define symbols
             var i: size_t 0
             while i < decls.length
             {
-                let dptr decls.get(i)
+                let dptr decls.get i
                 if dptr <> null
                 {
                     let d (*dptr)
@@ -2403,7 +2403,7 @@ define symbols
             var i: size_t 0
             while i < variants.length
             {
-                let vptr variants.get(i)
+                let vptr variants.get i
                 if vptr <> null
                 {
                     let vitem symbols.completion_item#(vptr.name, 20 as i64)
@@ -2430,7 +2430,7 @@ define symbols
                 var j: size_t 0
                 while j < members.length
                 {
-                    let mptr members.get(j)
+                    let mptr members.get j
                     if mptr <> null
                     {
                         let m (*mptr)
@@ -2479,7 +2479,7 @@ define symbols
         let pn packed.get_length()
         while i < pn
         {
-            let c packed.get(i)
+            let c packed.get i
             if c = (0x20 as u8)
                 set seen_space: true
             if c <> (0x20 as u8)
@@ -2671,7 +2671,7 @@ define symbols
         {
             if result.get_length() <> (0 as size_t)
                 break
-            let c source.get(k)
+            let c source.get k
             if symbols.is_ident_byte(c) = false
             {
                 if c = (0x28 as u8)
@@ -2690,7 +2690,7 @@ define symbols
                 var j k
                 while j < len
                 {
-                    if symbols.is_ident_byte(source.get(j)) = false
+                    if symbols.is_ident_byte(source.get j) = false
                         break
                     set j: j + (1 as size_t)
                 }
@@ -2753,17 +2753,17 @@ define symbols
         ; Constructor form: `var/let receiver TYPE<sigil>` -> TYPE.
         if is_binding
             if after < len
-                if symbols.is_ident_byte(source.get(after))
+                if symbols.is_ident_byte(source.get after)
                 {
                     var te after
                     while te < len
                     {
-                        if symbols.is_ident_byte(source.get(te)) = false
+                        if symbols.is_ident_byte(source.get te) = false
                             break
                         set te: te + (1 as size_t)
                     }
                     if te < len
-                        if symbols.is_ctor_sigil(source.get(te))
+                        if symbols.is_ctor_sigil(source.get te)
                             return symbols.substring#(source, after, te)
                 }
         String#("")
@@ -2775,7 +2775,7 @@ define symbols
         var p pos
         while p < len
         {
-            let c source.get(p)
+            let c source.get p
             if c <> (0x20 as u8)
                 if c <> (0x09 as u8)
                     break
@@ -2807,12 +2807,12 @@ define symbols
     function read_type_name#(rp, source: String, start: size_t, len: size_t) returns String
     {
         if start < len
-            if symbols.is_ident_byte(source.get(start))
+            if symbols.is_ident_byte(source.get start)
             {
                 var e start
                 while e < len
                 {
-                    if symbols.is_ident_byte(source.get(e)) = false
+                    if symbols.is_ident_byte(source.get e) = false
                         break
                     set e: e + (1 as size_t)
                 }
@@ -2895,7 +2895,7 @@ define symbols
                     {
                         if result.get_length() = (0 as size_t)
                         {
-                            let dptr decls.get(i)
+                            let dptr decls.get i
                             if dptr <> null
                             {
                                 let d (*dptr)
@@ -2963,7 +2963,7 @@ define symbols
             {
                 if result.get_length() = (0 as size_t)
                 {
-                    let dptr decls.get(i)
+                    let dptr decls.get i
                     if dptr <> null
                     {
                         let d (*dptr)
@@ -2989,7 +2989,7 @@ define symbols
             {
                 if result.get_length() = (0 as size_t)
                 {
-                    let pp parts.get(i)
+                    let pp parts.get i
                     if pp <> null
                     {
                         let part (*pp)
@@ -3012,7 +3012,7 @@ define symbols
                 {
                     if result.get_length() = (0 as size_t)
                     {
-                        let mp members.get(j)
+                        let mp members.get j
                         if mp <> null
                         {
                             let m (*mp)
@@ -3144,7 +3144,7 @@ define symbols
                     {
                         if result.get_length() = (0 as size_t)
                         {
-                            let dptr decls.get(i)
+                            let dptr decls.get i
                             if dptr <> null
                             {
                                 let d (*dptr)
@@ -3200,7 +3200,7 @@ define symbols
                     {
                         if result.get_length() = (0 as size_t)
                         {
-                            let dptr decls.get(i)
+                            let dptr decls.get i
                             if dptr <> null
                             {
                                 let d (*dptr)
@@ -3500,7 +3500,7 @@ define symbols
                     {
                         if result.get_length() = (0 as size_t)
                         {
-                            let dptr decls.get(i)
+                            let dptr decls.get i
                             if dptr <> null
                             {
                                 let d (*dptr)
@@ -3615,7 +3615,7 @@ define symbols
             {
                 if result.get_length() = (0 as size_t)
                 {
-                    let dptr decls.get(i)
+                    let dptr decls.get i
                     if dptr <> null
                     {
                         let d (*dptr)
@@ -3652,7 +3652,7 @@ define symbols
         let n packed.get_length()
         while i < n
         {
-            let c packed.get(i)
+            let c packed.get i
             if c = (0x20 as u8)
                 set seen_space: true
             if c <> (0x20 as u8)
@@ -3698,7 +3698,7 @@ define symbols
         {
             if off >= len
                 return off
-            let c source.get(off)
+            let c source.get off
             set off: off + 1
             if c = (10 as char)
                 set cur_line: cur_line + 1
@@ -3708,7 +3708,7 @@ define symbols
         {
             if off >= len
                 return off
-            let c source.get(off)
+            let c source.get off
             if c = (10 as char)
                 return off
             set off: off + 1
@@ -3738,7 +3738,7 @@ define symbols
                     {
                         if result.get_length() = (0 as size_t)
                         {
-                            let dptr decls.get(i)
+                            let dptr decls.get i
                             if dptr <> null
                             {
                                 let d (*dptr)
@@ -3836,9 +3836,9 @@ define symbols
                     when ic2: IntrinsicSyntax
                         set kind: String#("struct")
                 var sb StringBuilder#()
-                sb.append(kind)
+                sb.append kind
                 sb.append(0x20 as char)
-                sb.append(def.name)
+                sb.append def.name
                 return sb.to_string#()
             }
         }
@@ -3860,7 +3860,7 @@ define symbols
                 {
                     if result.get_length() = (0 as size_t)
                     {
-                        let mptr members.get(i)
+                        let mptr members.get i
                         if mptr <> null
                         {
                             let m (*mptr)
@@ -3914,7 +3914,7 @@ define symbols
             {
                 if result.get_length() = (0 as size_t)
                 {
-                    let dptr decls.get(i)
+                    let dptr decls.get i
                     if dptr <> null
                     {
                         let d (*dptr)
@@ -3939,7 +3939,7 @@ define symbols
             {
                 if result.get_length() = (0 as size_t)
                 {
-                    let vptr variants.get(i)
+                    let vptr variants.get i
                     if vptr <> null
                         set result: symbols.hover_leaf#(vptr.start, vptr.end, offset, "case", String#(vptr.name))
                 }
@@ -3959,9 +3959,9 @@ define symbols
             if offset < end
             {
                 var sb StringBuilder#()
-                sb.append(kind)
+                sb.append kind
                 sb.append(0x20 as char)
-                sb.append(name)
+                sb.append name
                 return sb.to_string#()
             }
         String#("")
@@ -3994,7 +3994,7 @@ define symbols
         let n packed.get_length()
         while i < n
         {
-            let c packed.get(i)
+            let c packed.get i
             if c = (0x20 as u8)
                 set seen_space: true
             if c <> (0x20 as u8)
@@ -4045,7 +4045,7 @@ define symbols
             set off: len - (1 as size_t)
 
         var anchor off
-        if symbols.is_ident_byte(source.get(off)) = false
+        if symbols.is_ident_byte(source.get off) = false
         {
             if off = (0 as size_t)
                 return String#("")
@@ -4064,7 +4064,7 @@ define symbols
         var end anchor + (1 as size_t)
         while end < len
         {
-            if symbols.is_ident_byte(source.get(end)) = false
+            if symbols.is_ident_byte(source.get end) = false
                 break
             set end: end + (1 as size_t)
         }
@@ -4099,7 +4099,7 @@ define symbols
                     {
                         if result.get_length() = (0 as size_t)
                         {
-                            let dptr decls.get(i)
+                            let dptr decls.get i
                             if dptr <> null
                             {
                                 let d (*dptr)
@@ -4196,7 +4196,7 @@ define symbols
                 {
                     if result.get_length() = (0 as size_t)
                     {
-                        let mptr members.get(i)
+                        let mptr members.get i
                         if mptr <> null
                         {
                             let m (*mptr)
@@ -4250,7 +4250,7 @@ define symbols
             {
                 if result.get_length() = (0 as size_t)
                 {
-                    let dptr decls.get(i)
+                    let dptr decls.get i
                     if dptr <> null
                     {
                         let d (*dptr)
@@ -4275,7 +4275,7 @@ define symbols
             {
                 if result.get_length() = (0 as size_t)
                 {
-                    let vptr variants.get(i)
+                    let vptr variants.get i
                     if vptr <> null
                         set result: symbols.def_match#(source, uri, String#(vptr.name), name, vptr.start)
                 }
@@ -4348,7 +4348,7 @@ define symbols
         let pn packed.get_length()
         while i < pn
         {
-            let c packed.get(i)
+            let c packed.get i
             if c = (0x20 as u8)
                 set seen_space: true
             if c <> (0x20 as u8)
@@ -4459,7 +4459,7 @@ define symbols
     {
         var needle StringBuilder#()
         needle.append(0x22 as char)                ; "
-        needle.append("location")
+        needle.append "location"
         needle.append(0x22 as char)                ; "
         needle.append(0x3A as char)                ; :
         let loc_needle needle.to_string#()
@@ -4509,7 +4509,7 @@ define symbols
                                 var depth: i64 0
                                 while j < i
                                 {
-                                    let c blob.get(j)
+                                    let c blob.get j
                                     if c = (0x7B as u8)
                                         set depth: depth + (1 as i64)
                                     if c = (0x7D as u8)
@@ -4723,7 +4723,7 @@ define symbols
     {
         var needle StringBuilder#()
         needle.append(0x22 as char)                ; "
-        needle.append("kind")
+        needle.append "kind"
         needle.append(0x22 as char)                ; "
         needle.append(0x3A as char)                ; :
         let kind_needle needle.to_string#()
@@ -4759,7 +4759,7 @@ define symbols
                                 var v: i64 0
                                 while j < i
                                 {
-                                    let c blob.get(j)
+                                    let c blob.get j
                                     if c >= (0x30 as u8)
                                         if c <= (0x39 as u8)
                                         {
@@ -5105,7 +5105,7 @@ define symbols
         var sb StringBuilder#()
         var needle StringBuilder#()
         needle.append(0x22 as char)                ; "
-        needle.append("kind")
+        needle.append "kind"
         needle.append(0x22 as char)                ; "
         needle.append(0x3A as char)                ; :
         let kind_needle needle.to_string#()
@@ -5137,7 +5137,7 @@ define symbols
                         var v: i64 0
                         while j < i
                         {
-                            let c blob.get(j)
+                            let c blob.get j
                             if c >= (0x30 as u8)
                                 if c <= (0x39 as u8)
                                 {
@@ -5229,7 +5229,7 @@ define symbols
     ; Modeler.scaly::scaly_home_base#.
     function scaly_home_base#(rp) returns String
     {
-        let home getenv("SCALY_HOME")
+        let home getenv "SCALY_HOME"
         if home = null
             return String#("")
         var home_str String$(home)
@@ -5263,7 +5263,7 @@ define symbols
                 sb.append(base.get(i) as char)
                 set i: i + (1 as size_t)
             }
-            sb.append("packages")
+            sb.append "packages"
             return sb.to_string#()
         }
         symbols.packages_dir_from_path#(path)
@@ -5304,7 +5304,7 @@ define symbols
     function list_scaly_files#(rp, dir: String) returns String
     {
         var cmd StringBuilder#()
-        cmd.append("find ")
+        cmd.append "find "
         cmd.append(0x27 as char)                   ; '
         var di: size_t 0
         let dn dir.get_length()
@@ -5314,11 +5314,11 @@ define symbols
             set di: di + (1 as size_t)
         }
         cmd.append(0x27 as char)                   ; '
-        cmd.append(" -name ")
+        cmd.append " -name "
         cmd.append(0x27 as char)                   ; '
-        cmd.append("*.scaly")
+        cmd.append "*.scaly"
         cmd.append(0x27 as char)                   ; '
-        cmd.append(" 2>/dev/null")
+        cmd.append " 2>/dev/null"
         let cmd_str cmd.to_string#()
 
         let f popen(cmd_str.to_c_string#(), "r")
@@ -5329,13 +5329,13 @@ define symbols
         var keep true
         while keep
         {
-            let c fgetc(f)
+            let c fgetc f
             if c < (0 as i32)
                 set keep: false
             if c >= (0 as i32)
                 sb.append(c as char)
         }
-        pclose(f)
+        pclose f
         sb.append(0x0A as char)                    ; trailing LF
         sb.to_string#()
     }
@@ -5365,7 +5365,7 @@ define symbols
     function path_to_uri#(rp, path: String) returns String
     {
         var sb StringBuilder#()
-        sb.append("file://")
+        sb.append "file://"
         var i: size_t 0
         let n path.get_length()
         while i < n
@@ -5495,7 +5495,7 @@ define symbols
                     var i: size_t 0
                     while i < decls.length
                     {
-                        let dptr decls.get(i)
+                        let dptr decls.get i
                         if dptr <> null
                         {
                             let d (*dptr)
@@ -5671,7 +5671,7 @@ define symbols
                 var i: size_t 0
                 while i < members.length
                 {
-                    let mptr members.get(i)
+                    let mptr members.get i
                     if mptr <> null
                     {
                         let m (*mptr)
@@ -5729,7 +5729,7 @@ define symbols
             var i: size_t 0
             while i < decls.length
             {
-                let dptr decls.get(i)
+                let dptr decls.get i
                 if dptr <> null
                 {
                     let d (*dptr)
@@ -5760,7 +5760,7 @@ define symbols
             var i: size_t 0
             while i < variants.length
             {
-                let vptr variants.get(i)
+                let vptr variants.get i
                 if vptr <> null
                 {
                     let vitem symbols.ws_item#(source, uri, String#(vptr.name), 22 as i64, vptr.start, vptr.end, String#(""), String#(""), String#(""))
@@ -5784,7 +5784,7 @@ define symbols
                 var j: size_t 0
                 while j < members.length
                 {
-                    let mptr members.get(j)
+                    let mptr members.get j
                     if mptr <> null
                     {
                         let m (*mptr)
@@ -5882,7 +5882,7 @@ define symbols
                     var i: size_t 0
                     while i < parts.length
                     {
-                        let pp parts.get(i)
+                        let pp parts.get i
                         if pp <> null
                         {
                             let part (*pp)
@@ -5907,7 +5907,7 @@ define symbols
                         var j: size_t 0
                         while j < members.length
                         {
-                            let mp members.get(j)
+                            let mp members.get j
                             if mp <> null
                             {
                                 let m (*mp)
@@ -6101,7 +6101,7 @@ define symbols
         var j: size_t 0
         while j < qn
         {
-            if symbols.lower_byte(name.get(start + j)) <> symbols.lower_byte(query.get(j))
+            if symbols.lower_byte(name.get(start + j)) <> symbols.lower_byte(query.get j)
                 return false
             set j: j + (1 as size_t)
         }
@@ -6194,7 +6194,7 @@ define symbols
         let pn pos.get_length()
         while i < pn
         {
-            let c pos.get(i)
+            let c pos.get i
             if c = (0x20 as u8)
                 set seen_space: true
             if c <> (0x20 as u8)
@@ -6230,7 +6230,7 @@ define symbols
     {
         if c = (59 as u8)                       ; ;
             return true
-        symbols.is_string_start(c)
+        symbols.is_string_start c
     }
 
     ; Given that source[k] opens a comment or a string literal, return the
@@ -6241,7 +6241,7 @@ define symbols
     ; terminates it). Returns k unchanged if source[k] is neither.
     function skip_noncode(source: String, k: size_t, len: size_t) returns size_t
     {
-        let c source.get(k)
+        let c source.get k
         ; comment: `;` to EOL, or `;* ... *;`
         if c = (59 as u8)
         {
@@ -6281,7 +6281,7 @@ define symbols
             var j k + 1
             while j < len
             {
-                let cc source.get(j)
+                let cc source.get j
                 if cc = (10 as u8)
                     break
                 if cc = (92 as u8)              ; backslash: skip next byte
@@ -6313,7 +6313,7 @@ define symbols
         {
             if k > offset
                 break
-            let c source.get(k)
+            let c source.get k
             if symbols.is_noncode_start(c)
             {
                 let nk symbols.skip_noncode(source, k, len)
@@ -6360,7 +6360,7 @@ define symbols
     {
         if (j - k) <> (3 as size_t)
             return false
-        let c0 source.get(k)
+        let c0 source.get k
         let c1 source.get(k + (1 as size_t))
         let c2 source.get(k + (2 as size_t))
         if c0 = (0x6C as u8)                     ; 'l'
@@ -6390,7 +6390,7 @@ define symbols
         var k lo
         while k < bound
         {
-            let c source.get(k)
+            let c source.get k
             if symbols.is_noncode_start(c)
             {
                 set k: symbols.skip_noncode(source, k, len)
@@ -6404,7 +6404,7 @@ define symbols
             var j k
             while j < len
             {
-                if symbols.is_ident_byte(source.get(j)) = false
+                if symbols.is_ident_byte(source.get j) = false
                     break
                 set j: j + (1 as size_t)
             }
@@ -6415,7 +6415,7 @@ define symbols
                 var p j
                 while p < len
                 {
-                    let pc source.get(p)
+                    let pc source.get p
                     if pc = (0x20 as u8)
                     {
                         set p: p + (1 as size_t)
@@ -6454,7 +6454,7 @@ define symbols
         var p open_pos
         while p < len
         {
-            let c source.get(p)
+            let c source.get p
             if symbols.is_noncode_start(c)
             {
                 set p: symbols.skip_noncode(source, p, len)
@@ -6491,7 +6491,7 @@ define symbols
         var p after_kw
         while p < len
         {
-            let c source.get(p)
+            let c source.get p
             if symbols.is_noncode_start(c)
             {
                 set p: symbols.skip_noncode(source, p, len)
@@ -6530,7 +6530,7 @@ define symbols
                     var q p + (1 as size_t)
                     while q < len
                     {
-                        let qc source.get(q)
+                        let qc source.get q
                         if symbols.is_noncode_start(qc)
                         {
                             set q: symbols.skip_noncode(source, q, len)
@@ -6624,7 +6624,7 @@ define symbols
         var k: size_t 0
         while k < len
         {
-            let c source.get(k)
+            let c source.get k
             if symbols.is_noncode_start(c)
             {
                 set k: symbols.skip_noncode(source, k, len)
@@ -6638,7 +6638,7 @@ define symbols
             var j k
             while j < len
             {
-                if symbols.is_ident_byte(source.get(j)) = false
+                if symbols.is_ident_byte(source.get j) = false
                     break
                 set j: j + (1 as size_t)
             }
@@ -6692,7 +6692,7 @@ define symbols
             var seen_space false
             while i < n
             {
-                let c shadow_packed.get(i)
+                let c shadow_packed.get i
                 if c = (0x0A as u8)
                 {
                     set i: i + (1 as size_t)
@@ -6744,7 +6744,7 @@ define symbols
             let rn range_packed.get_length()
             while ri < rn
             {
-                let rc range_packed.get(ri)
+                let rc range_packed.get ri
                 if rc = (0x20 as u8)
                     set seen_space: true
                 if rc <> (0x20 as u8)
@@ -6765,7 +6765,7 @@ define symbols
         var k: size_t 0
         while k < len
         {
-            let c source.get(k)
+            let c source.get k
             if symbols.is_noncode_start(c)
             {
                 set k: symbols.skip_noncode(source, k, len)
@@ -6780,7 +6780,7 @@ define symbols
                 var j k
                 while j < len
                 {
-                    if symbols.is_ident_byte(source.get(j)) = false
+                    if symbols.is_ident_byte(source.get j) = false
                         break
                     set j: j + 1
                 }
@@ -7092,7 +7092,7 @@ define symbols
     function name_in_completion#(rp, comp_items: String, name: String) returns bool
     {
         let jv json.parse#(comp_items)
-        let count json.array_length(jv)
+        let count json.array_length jv
         var i: size_t 0
         while i < count
         {
@@ -7118,14 +7118,14 @@ define symbols
         var i: size_t 0
         while i < n
         {
-            let tag table.get(i)
+            let tag table.get i
             if tag = (0x46 as u8)               ; F
             {
                 set i: i + (2 as size_t)           ; skip 'F' + tab
                 var roff: size_t 0
                 while i < n
                 {
-                    let c table.get(i)
+                    let c table.get i
                     if c = (0x0A as u8)
                         break
                     set roff: roff * (10 as size_t) + ((c - (0x30 as u8)) as size_t)
@@ -7223,7 +7223,7 @@ define symbols
         let pn packed.get_length()
         while i < pn
         {
-            let c packed.get(i)
+            let c packed.get i
             if c = (0x20 as u8)
                 set seen_space: true
             if c <> (0x20 as u8)
@@ -7297,7 +7297,7 @@ define symbols
         let pn pos.get_length()
         while i < pn
         {
-            let c pos.get(i)
+            let c pos.get i
             if phase = 2
                 name_sb.append(c as char)
             if phase <> 2
@@ -7358,7 +7358,7 @@ define symbols
             let rcn range_packed.get_length()
             while ri < rcn
             {
-                let rc range_packed.get(ri)
+                let rc range_packed.get ri
                 if rc = (0x20 as u8)
                     set seen_space: true
                 if rc <> (0x20 as u8)
@@ -7379,7 +7379,7 @@ define symbols
         var k: size_t 0
         while k < len
         {
-            let c source.get(k)
+            let c source.get k
             if symbols.is_noncode_start(c)
             {
                 set k: symbols.skip_noncode(source, k, len)
@@ -7392,7 +7392,7 @@ define symbols
                 var j k
                 while j < len
                 {
-                    if symbols.is_ident_byte(source.get(j)) = false
+                    if symbols.is_ident_byte(source.get j) = false
                         break
                     set j: j + 1
                 }
@@ -7580,7 +7580,7 @@ define symbols
         let pn packed.get_length()
         while i < pn
         {
-            let c packed.get(i)
+            let c packed.get i
             if c = (0x20 as u8)
                 set seen_space: true
             if c <> (0x20 as u8)
@@ -7618,7 +7618,7 @@ define symbols
             set off: len - (1 as size_t)
 
         var anchor off
-        if symbols.is_ident_byte(source.get(off)) = false
+        if symbols.is_ident_byte(source.get off) = false
         {
             if off = (0 as size_t)
                 return String#("")
@@ -7637,7 +7637,7 @@ define symbols
         var end anchor + (1 as size_t)
         while end < len
         {
-            if symbols.is_ident_byte(source.get(end)) = false
+            if symbols.is_ident_byte(source.get end) = false
                 break
             set end: end + (1 as size_t)
         }
@@ -7677,7 +7677,7 @@ define symbols
         let pn packed.get_length()
         while i < pn
         {
-            let c packed.get(i)
+            let c packed.get i
             if c = (0x20 as u8)
                 set seen_space: true
             if c <> (0x20 as u8)
@@ -7802,7 +7802,7 @@ define symbols
         var i paren_pos + (1 as size_t)
         while i < end
         {
-            let c source.get(i)
+            let c source.get i
             if c = (0x28 as u8)
                 set depth: depth + (1 as size_t)
             if c = (0x5B as u8)
@@ -7990,7 +7990,7 @@ define symbols
                 var i: size_t 0
                 while i < members.length
                 {
-                    let mptr members.get(i)
+                    let mptr members.get i
                     if mptr <> null
                     {
                         let m (*mptr)
@@ -8034,7 +8034,7 @@ define symbols
             var i: size_t 0
             while i < decls.length
             {
-                let dptr decls.get(i)
+                let dptr decls.get i
                 if dptr <> null
                 {
                     let d (*dptr)
@@ -8068,7 +8068,7 @@ define symbols
                     var i: size_t 0
                     while i < decls.length
                     {
-                        let dptr decls.get(i)
+                        let dptr decls.get i
                         if dptr <> null
                         {
                             let d (*dptr)
@@ -8265,7 +8265,7 @@ define symbols
         let pn packed.get_length()
         while i < pn
         {
-            let c packed.get(i)
+            let c packed.get i
             if c = (0x20 as u8)
             {
                 set field: field + (1 as size_t)
@@ -8299,7 +8299,7 @@ define symbols
         var k: size_t 0
         while k < len
         {
-            let c source.get(k)
+            let c source.get k
             if symbols.is_ident_byte(c) = false
             {
                 set k: k + (1 as size_t)
@@ -8308,7 +8308,7 @@ define symbols
             var j k
             while j < len
             {
-                if symbols.is_ident_byte(source.get(j)) = false
+                if symbols.is_ident_byte(source.get j) = false
                     break
                 set j: j + (1 as size_t)
             }
@@ -8441,7 +8441,7 @@ define symbols
         let sigs json.get(v, "signatures")
         let sig0 json.array_get(sigs, 0 as size_t)
         let params json.get(sig0, "parameters")
-        let np json.array_length(params)
+        let np json.array_length params
         var sb StringBuilder#()
         var i: size_t 0
         while i < np
@@ -8494,7 +8494,7 @@ define symbols
                 set scanning: false
             if a < len
             {
-                let ac source.get(a)
+                let ac source.get a
                 if ac = (0x28 as u8)
                     set depth: depth + (1 as size_t)
                 if ac = (0x5B as u8)
@@ -8596,10 +8596,10 @@ define symbols
         sb.append(json.quote_string#(lbl_str))
         sb.append(0x2C as char)
         sb.append(symbols.key#("kind"))
-        sb.append("2")                             ; InlayHintKind.Parameter
+        sb.append "2"                             ; InlayHintKind.Parameter
         sb.append(0x2C as char)
         sb.append(symbols.key#("paddingRight"))
-        sb.append("true")
+        sb.append "true"
         sb.append(0x7D as char)                    ; }
         sb.to_string#()
     }
@@ -8628,10 +8628,10 @@ define symbols
         sb.append(json.quote_string#(lbl_str))
         sb.append(0x2C as char)
         sb.append(symbols.key#("kind"))
-        sb.append("1")                             ; InlayHintKind.Type
+        sb.append "1"                             ; InlayHintKind.Type
         sb.append(0x2C as char)
         sb.append(symbols.key#("paddingLeft"))
-        sb.append("true")
+        sb.append "true"
         sb.append(0x7D as char)                    ; }
         sb.to_string#()
     }
@@ -8688,7 +8688,7 @@ define symbols
         ; operator is not a resolvable type token).
         if after >= len
             return String#("")
-        if symbols.is_ident_byte(source.get(after)) = false
+        if symbols.is_ident_byte(source.get after) = false
             return String#("")
         ; NOTE: inlay TYPE hints stay LEXICAL. A semantic (planner) attempt was
         ; evaluated and dropped: stage-0's planner mis-types a binding VALUE for
@@ -8702,7 +8702,7 @@ define symbols
         var te after
         while te < len
         {
-            if symbols.is_ident_byte(source.get(te)) = false
+            if symbols.is_ident_byte(source.get te) = false
                 break
             set te: te + (1 as size_t)
         }
@@ -8713,7 +8713,7 @@ define symbols
                 var ce te
                 while ce < len
                 {
-                    let cc source.get(ce)
+                    let cc source.get ce
                     if symbols.is_ident_byte(cc) = false
                         if cc <> (0x2E as u8)
                             break
@@ -8728,7 +8728,7 @@ define symbols
         let tname symbols.substring#(source, after, te)
         if te < len
         {
-            let sig source.get(te)
+            let sig source.get te
             ; Lifetime sigils ($ # ^) unambiguously mean construction -> T.
             if sig = (0x24 as u8)
                 return tname
@@ -8751,7 +8751,7 @@ define symbols
                 ; generic type ctor — skip the cross-file concept parse.
                 ; cross-file concept check is cache-served (Step 32), not a
                 ; per-request re-parse via members_for_type#.
-                if symbols.is_upper(source.get(after))
+                if symbols.is_upper(source.get after)
                     if symbols.concept_in_workspace#(uri, tname)
                         return tname
                 return String#("")
@@ -8814,7 +8814,7 @@ define symbols
                     {
                         if result.get_length() = (0 as size_t)
                         {
-                            let dptr decls.get(i)
+                            let dptr decls.get i
                             if dptr <> null
                             {
                                 let d (*dptr)
@@ -8909,7 +8909,7 @@ define symbols
                 {
                     if result.get_length() = (0 as size_t)
                     {
-                        let mptr members.get(i)
+                        let mptr members.get i
                         if mptr <> null
                         {
                             let m (*mptr)
@@ -8963,7 +8963,7 @@ define symbols
             {
                 if result.get_length() = (0 as size_t)
                 {
-                    let dptr decls.get(i)
+                    let dptr decls.get i
                     if dptr <> null
                     {
                         let d (*dptr)
@@ -9045,7 +9045,7 @@ define symbols
                         }
                         while i < items.length
                         {
-                            let iptr items.get(i)
+                            let iptr items.get i
                             if iptr <> null
                             {
                                 let it (*iptr)
@@ -9183,7 +9183,7 @@ define symbols
                         }
                         while i < items.length
                         {
-                            let iptr items.get(i)
+                            let iptr items.get i
                             if iptr <> null
                             {
                                 let it (*iptr)
@@ -9393,7 +9393,7 @@ define symbols
             var ei: size_t 0
             while ei < exts.length
             {
-                let eptr exts.get(ei)
+                let eptr exts.get ei
                 if eptr <> null
                 {
                     let ex (*eptr)
@@ -9421,7 +9421,7 @@ define symbols
                 var gi: size_t 0
                 while gi < gs.length
                 {
-                    let gptr gs.get(gi)
+                    let gptr gs.get gi
                     if gptr <> null
                     {
                         let ga (*gptr)

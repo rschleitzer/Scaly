@@ -116,7 +116,7 @@ define symindex
     ; — i.e. the cached blob is still valid for the file's current content.
     function valid(path: String, chash: size_t) returns bool
     {
-        let idx symindex.find(path)
+        let idx symindex.find path
         if idx >= 0
         {
             let s idx_slots + idx
@@ -131,7 +131,7 @@ define symindex
     ; cached value (a file with no symbols).
     function get_blob#(rp, path: String) returns String
     {
-        let idx symindex.find(path)
+        let idx symindex.find path
         if idx >= 0
         {
             let s idx_slots + idx
@@ -193,7 +193,7 @@ define symindex
         if idx_slots = null
             return
 
-        let idx symindex.find(path)
+        let idx symindex.find path
         if idx >= 0
         {
             let s idx_slots + idx

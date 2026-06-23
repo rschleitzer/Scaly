@@ -140,7 +140,7 @@ define rpc
         let len body.get_length()
 
         var sb StringBuilder$()
-        sb.append("Content-Length: ")
+        sb.append "Content-Length: "
         ; A StringBuilder mutated across a function boundary does not
         ; propagate (the receiver is copied), so the size is formatted
         ; into its own String and appended by value.
@@ -151,7 +151,7 @@ define rpc
         sb.append(10 as char)              ; LF
 
         rpc.write_all(sb.to_string$())
-        rpc.write_all(body)
+        rpc.write_all body
     }
 
     ; Write every byte of `s` to stdout, retrying short writes.
@@ -189,7 +189,7 @@ define rpc
         while value > (0 as size_t)
         {
             let digit ((value % 10) as char) + (0x30 as char)
-            digits.add(digit)
+            digits.add digit
             set value: value / 10
         }
 
@@ -197,7 +197,7 @@ define rpc
         while i > 0
         {
             set i: i - 1
-            let d digits.get(i)
+            let d digits.get i
             if d <> null
                 sb.append(*d)
         }
@@ -251,7 +251,7 @@ define rpc
 
             while true
             {
-                let b rpc.read_byte_fd(fd)
+                let b rpc.read_byte_fd fd
                 if b < 0
                 {
                     set eof: true
@@ -313,7 +313,7 @@ define rpc
         let len body.get_length()
 
         var sb StringBuilder$()
-        sb.append("Content-Length: ")
+        sb.append "Content-Length: "
         sb.append(rpc.format_size#(len))
         sb.append(13 as char)
         sb.append(10 as char)

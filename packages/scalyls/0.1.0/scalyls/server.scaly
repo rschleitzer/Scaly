@@ -63,7 +63,7 @@ define server
         if body.get_length() = (0 as size_t)
             return false
 
-        server.handle_message(body)
+        server.handle_message body
         true
     }
 
@@ -81,12 +81,12 @@ define server
         var has_id true
         if json.is_null(id_val)
             set has_id: false
-        let id json.as_i64(id_val)
+        let id json.as_i64 id_val
 
         if method.equals("initialize")
         {
             ; Capture the workspace root (workspace/symbol carries no uri).
-            server.capture_workspace_root(msg)
+            server.capture_workspace_root msg
             if has_id
                 rpc.write_message(server.initialize_response#(id))
             return
@@ -101,25 +101,25 @@ define server
 
         if method.equals("exit")
         {
-            exit(0)
+            exit 0
             return
         }
 
         if method.equals("textDocument/didOpen")
         {
-            server.handle_did_open(msg)
+            server.handle_did_open msg
             return
         }
 
         if method.equals("textDocument/didChange")
         {
-            server.handle_did_change(msg)
+            server.handle_did_change msg
             return
         }
 
         if method.equals("textDocument/didClose")
         {
-            server.handle_did_close(msg)
+            server.handle_did_close msg
             return
         }
 
@@ -246,7 +246,7 @@ define server
         ; full-document replacement (no range). Apply them in order, starting
         ; from the current stored buffer, to rebuild the whole document.
         let changes json.get(params, "contentChanges")
-        let n json.array_length(changes)
+        let n json.array_length changes
         if n = (0 as size_t)
             return
 
@@ -713,9 +713,9 @@ define server
         let doc json.get(params, "textDocument")
         let uri json.as_string#(json.get(doc, "uri"))
         ; Drop the in-memory buffer; subsequent requests fall back to disk.
-        docstore.remove(uri)
+        docstore.remove uri
         let payload diagnostics.clear_diagnostics#(uri)
-        rpc.write_message(payload)
+        rpc.write_message payload
     }
 
     ; Diagnostics are computed in a crash-isolated worker subprocess (see
@@ -724,7 +724,7 @@ define server
     function publish_for(uri: String, text: String)
     {
         let payload worker.analyze#(uri, text)
-        rpc.write_message(payload)
+        rpc.write_message payload
     }
 
     ; ====================================================================
@@ -753,19 +753,19 @@ define server
         sb.append(0x32 as char)                    ; 2 = incremental
         sb.append(0x2C as char)
         sb.append(server.key#("documentSymbolProvider"))
-        sb.append("true")
+        sb.append "true"
         sb.append(0x2C as char)
         sb.append(server.key#("hoverProvider"))
-        sb.append("true")
+        sb.append "true"
         sb.append(0x2C as char)
         sb.append(server.key#("definitionProvider"))
-        sb.append("true")
+        sb.append "true"
         sb.append(0x2C as char)
         sb.append(server.key#("referencesProvider"))
-        sb.append("true")
+        sb.append "true"
         sb.append(0x2C as char)
         sb.append(server.key#("documentHighlightProvider"))
-        sb.append("true")
+        sb.append "true"
         sb.append(0x2C as char)
         ; completionProvider must be a CompletionOptions object (not a bool).
         ; Empty {} = no trigger chars; the editor invokes it on word typing.
@@ -778,7 +778,7 @@ define server
         sb.append(server.key#("renameProvider"))
         sb.append(0x7B as char)                    ; {
         sb.append(server.key#("prepareProvider"))
-        sb.append("true")
+        sb.append "true"
         sb.append(0x7D as char)                    ; }
         sb.append(0x2C as char)
         ; signatureHelpProvider with ( and , as trigger / retrigger chars.
@@ -797,7 +797,7 @@ define server
         sb.append(0x7D as char)                    ; }
         sb.append(0x2C as char)
         sb.append(server.key#("foldingRangeProvider"))
-        sb.append("true")
+        sb.append "true"
         sb.append(0x2C as char)
         ; semanticTokensProvider: legend (token types, no modifiers) + full.
         ; The token-type order MUST match symbols.semantic_tokens#'s indices:
@@ -836,14 +836,14 @@ define server
         sb.append(0x7D as char)                    ; } legend
         sb.append(0x2C as char)
         sb.append(server.key#("full"))
-        sb.append("true")
+        sb.append "true"
         sb.append(0x7D as char)                    ; } semanticTokensProvider
         sb.append(0x2C as char)
         sb.append(server.key#("workspaceSymbolProvider"))
-        sb.append("true")
+        sb.append "true"
         sb.append(0x2C as char)
         sb.append(server.key#("inlayHintProvider"))
-        sb.append("true")
+        sb.append "true"
         sb.append(0x7D as char)                    ; } capabilities
         sb.append(0x2C as char)
         sb.append(server.key#("serverInfo"))
@@ -871,7 +871,7 @@ define server
         sb.append(json.format_i64#(id))
         sb.append(0x2C as char)
         sb.append(server.key#("result"))
-        sb.append("null")
+        sb.append "null"
         sb.append(0x7D as char)
         sb.to_string#()
     }
@@ -923,9 +923,9 @@ define server
         sb.append(0x2C as char)
         sb.append(server.key#("result"))
         if result.get_length() = (0 as size_t)
-            sb.append("null")
+            sb.append "null"
         if result.get_length() > (0 as size_t)
-            sb.append(result)
+            sb.append result
         sb.append(0x7D as char)
         sb.to_string#()
     }
@@ -946,9 +946,9 @@ define server
         sb.append(0x2C as char)
         sb.append(server.key#("result"))
         if result.get_length() = (0 as size_t)
-            sb.append("null")
+            sb.append "null"
         if result.get_length() > (0 as size_t)
-            sb.append(result)
+            sb.append result
         sb.append(0x7D as char)
         sb.to_string#()
     }
@@ -958,7 +958,7 @@ define server
     {
         var sb StringBuilder#()
         sb.append(0x22 as char)
-        sb.append(k)
+        sb.append k
         sb.append(0x22 as char)
         sb.append(0x3A as char)                    ; :
         sb.to_string#()
@@ -969,7 +969,7 @@ define server
     {
         var sb StringBuilder#()
         sb.append(0x22 as char)
-        sb.append(s)
+        sb.append s
         sb.append(0x22 as char)
         sb.to_string#()
     }

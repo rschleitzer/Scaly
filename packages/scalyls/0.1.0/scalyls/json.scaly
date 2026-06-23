@@ -73,13 +73,13 @@ define json
         JsonValue.Null(JsonNull())
 
     function bool_value(b: bool) returns JsonValue
-        JsonValue.Bool(b)
+        JsonValue.Bool b
 
     function number_value(n: i64) returns JsonValue
-        JsonValue.Number(n)
+        JsonValue.Number n
 
     function string_value(s: String) returns JsonValue
-        JsonValue.Str(s)
+        JsonValue.Str s
 
     ; ====================================================================
     ; Accessors
@@ -181,8 +181,8 @@ define json
 
     function parse_value#(rp, p: pointer[JsonParser]) returns JsonValue
     {
-        json.skip_ws(p)
-        let c json.peek(p)
+        json.skip_ws p
+        let c json.peek p
         if c = (0 as u8)
         {
             set p.ok: false
@@ -199,16 +199,16 @@ define json
             return JsonValue.Str(json.parse_string#(p))
 
         if json.match_literal(p, "true")
-            return JsonValue.Bool(true)
+            return JsonValue.Bool true
 
         if json.match_literal(p, "false")
-            return JsonValue.Bool(false)
+            return JsonValue.Bool false
 
         if json.match_literal(p, "null")
             return json.null_value()
 
         if json.is_digit(c) || (c = (0x2D as u8))   ; digit or '-'
-            return JsonValue.Number(json.parse_number(p))
+            return JsonValue.Number(json.parse_number p)
 
         set p.ok: false
         json.null_value()
@@ -217,33 +217,33 @@ define json
     function parse_object#(rp, p: pointer[JsonParser]) returns JsonValue
     {
         json.expect(p, 0x7B as u8)         ; '{'
-        json.skip_ws(p)
+        json.skip_ws p
 
         var members List[JsonMember]$()
         var count: size_t 0
 
         if json.peek(p) = (0x7D as u8)     ; empty object '}'
-            json.advance(p)
+            json.advance p
         else
         {
             while true
             {
-                json.skip_ws(p)
+                json.skip_ws p
                 let key json.parse_string#(p)
-                json.skip_ws(p)
+                json.skip_ws p
                 json.expect(p, 0x3A as u8) ; ':'
                 let value json.parse_value#(p)
                 members.add(JsonMember(key, value))
                 set count: count + 1
-                json.skip_ws(p)
+                json.skip_ws p
 
-                let sep json.peek(p)
+                let sep json.peek p
                 if sep <> (0x2C as u8)  ; not ',' -> object ends
                 {
                     json.expect(p, 0x7D as u8)
                     break
                 }
-                json.advance(p)            ; consume ','
+                json.advance p            ; consume ','
             }
         }
 
@@ -265,29 +265,29 @@ define json
     function parse_array#(rp, p: pointer[JsonParser]) returns JsonValue
     {
         json.expect(p, 0x5B as u8)         ; '['
-        json.skip_ws(p)
+        json.skip_ws p
 
         var items List[JsonValue]$()
         var count: size_t 0
 
         if json.peek(p) = (0x5D as u8)     ; empty array ']'
-            json.advance(p)
+            json.advance p
         else
         {
             while true
             {
                 let value json.parse_value#(p)
-                items.add(value)
+                items.add value
                 set count: count + 1
-                json.skip_ws(p)
+                json.skip_ws p
 
-                let sep json.peek(p)
+                let sep json.peek p
                 if sep <> (0x2C as u8)  ; not ',' -> array ends
                 {
                     json.expect(p, 0x5D as u8)
                     break
                 }
-                json.advance(p)            ; consume ','
+                json.advance p            ; consume ','
             }
         }
 
@@ -313,12 +313,12 @@ define json
             return String()
         }
 
-        json.advance(p)                    ; opening quote
+        json.advance p                    ; opening quote
         var sb StringBuilder#()
 
         while true
         {
-            let c json.peek(p)
+            let c json.peek p
             if c = (0 as u8)            ; EOF before close
             {
                 set p.ok: false
@@ -327,21 +327,21 @@ define json
 
             if c = (0x22 as u8)         ; closing quote
             {
-                json.advance(p)
+                json.advance p
                 return sb.to_string#()
             }
 
             if c = (0x5C as u8)            ; backslash escape
             {
-                json.advance(p)            ; consume backslash
-                let e json.peek(p)
-                json.advance(p)            ; consume escape char
+                json.advance p            ; consume backslash
+                let e json.peek p
+                json.advance p            ; consume escape char
                 sb.append(json.decode_escape(p, e))
             }
             else
             {
                 sb.append(c as char)
-                json.advance(p)
+                json.advance p
             }
         }
 
@@ -373,8 +373,8 @@ define json
             var k 0
             while k < 4
             {
-                let h json.peek(p)
-                json.advance(p)
+                let h json.peek p
+                json.advance p
                 set value: (value * 16) + json.hex_value(h)
                 set k: k + 1
             }
@@ -394,22 +394,22 @@ define json
         if json.peek(p) = (0x2D as u8)  ; '-'
         {
             set negative: true
-            json.advance(p)
+            json.advance p
         }
 
         var value: i64 0
-        while json.is_digit(json.peek(p))
+        while json.is_digit(json.peek p)
         {
             set value: (value * 10) + ((json.peek(p) - (0x30 as u8)) as i64)
-            json.advance(p)
+            json.advance p
         }
 
         ; Discard a fractional/exponent part (integer part kept).
         if json.peek(p) = (0x2E as u8)  ; '.'
         {
-            json.advance(p)
-            while json.is_digit(json.peek(p))
-                json.advance(p)
+            json.advance p
+            while json.is_digit(json.peek p)
+                json.advance p
         }
 
         if negative
@@ -427,7 +427,7 @@ define json
         if p.pos >= p.source.get_length()
             return 0 as u8
 
-        p.source.get(p.pos)
+        p.source.get p.pos
     }
 
     function advance(p: pointer[JsonParser])
@@ -436,10 +436,10 @@ define json
     function skip_ws(p: pointer[JsonParser])
     {
         ; space 0x20, tab 0x09, LF 0x0A, CR 0x0D
-        var c json.peek(p)
+        var c json.peek p
         while (c = (0x20 as u8)) || (c = (0x09 as u8)) || (c = (0x0A as u8)) || (c = (0x0D as u8))
         {
-            json.advance(p)
+            json.advance p
             set c: json.peek(p)
         }
     }
@@ -448,7 +448,7 @@ define json
     {
         if json.peek(p) = c
         {
-            json.advance(p)
+            json.advance p
             return
         }
         set p.ok: false
@@ -475,7 +475,7 @@ define json
     ; hit, leaves the cursor untouched and returns false on a miss.
     function match_literal(p: pointer[JsonParser], lit: pointer[const_char]) returns bool
     {
-        let len strlen(lit)
+        let len strlen lit
         var i: size_t 0
         while i < len
         {
@@ -571,7 +571,7 @@ define json
         var i: size_t 0
         while i < len
         {
-            let c s.get(i)
+            let c s.get i
             if c = (0x22 as u8)            ; '"'
             {
                 sb.append(0x5C as char)
@@ -635,7 +635,7 @@ define json
         while value > 0
         {
             let digit ((value % 10) as char) + (0x30 as char)
-            digits.add(digit)
+            digits.add digit
             set value: value / 10
         }
 
@@ -643,7 +643,7 @@ define json
         while i > 0
         {
             set i: i - 1
-            let d digits.get(i)
+            let d digits.get i
             if d <> null
                 sb.append(*d)
         }

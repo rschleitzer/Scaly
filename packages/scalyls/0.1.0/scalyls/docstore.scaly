@@ -187,7 +187,7 @@ define docstore
         if doc_slots = null
             return
 
-        let idx docstore.find(uri)
+        let idx docstore.find uri
         if idx >= 0
         {
             let s doc_slots + idx
@@ -215,7 +215,7 @@ define docstore
     ; Drop the entry for `uri` (didClose), freeing its malloc'd copies.
     procedure remove(uri: String)
     {
-        let idx docstore.find(uri)
+        let idx docstore.find uri
         if idx >= 0
         {
             let s doc_slots + idx
@@ -235,7 +235,7 @@ define docstore
     ; empty String on a miss. The worker treats empty as "read from disk".
     function get#(rp, uri: String) returns String
     {
-        let idx docstore.find(uri)
+        let idx docstore.find uri
         if idx >= 0
         {
             let s doc_slots + idx

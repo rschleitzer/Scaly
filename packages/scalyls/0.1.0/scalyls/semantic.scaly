@@ -113,7 +113,7 @@ define semantic
         let n packed.get_length()
         while i < n
         {
-            let c packed.get(i)
+            let c packed.get i
             if c = (0x20 as u8)
                 set seen_space: true
             if c <> (0x20 as u8)
@@ -135,7 +135,7 @@ define semantic
         let len source.get_length()
         if offset >= len
             return String#("")
-        let b source.get(offset)
+        let b source.get offset
         if b = (0x20 as u8)
             return String#("")
         if b = (0x09 as u8)
@@ -159,7 +159,7 @@ define semantic
         if ty.get_length() > (0 as size_t)
         {
             sb.append(0x31 as char)                ; '1' = hit
-            sb.append(ty)
+            sb.append ty
             return sb.to_string#()
         }
         sb.append(0x30 as char)                    ; '0' = miss
@@ -189,7 +189,7 @@ define semantic
                 let model Modeler.build_program#(path, prog_name, program, true)
                 var planner Planner.Planner$(path)
                 diagnostics.register_packages(&planner, &model)
-                let plan planner.plan_program(model)
+                let plan planner.plan_program model
                 if plan <> null
                 {
                     let pl (*plan)
@@ -213,7 +213,7 @@ define semantic
         {
             if off >= len
                 return off
-            let c source.get(off)
+            let c source.get off
             set off: off + 1
             if c = (10 as char)
                 set cur_line: cur_line + 1
@@ -223,7 +223,7 @@ define semantic
         {
             if off >= len
                 return off
-            let c source.get(off)
+            let c source.get off
             if c = (10 as char)
                 return off
             set off: off + 1
@@ -255,7 +255,7 @@ define semantic
                 {
                     if result.found = false
                     {
-                        let fp fns.get(i)
+                        let fp fns.get i
                         if fp <> null
                             set result: semantic.walk_impl#((*fp).impl, mode, offset)
                     }
@@ -274,7 +274,7 @@ define semantic
                 {
                     if result.found = false
                     {
-                        let sp sts.get(i)
+                        let sp sts.get i
                         if sp <> null
                             set result: semantic.walk_structure#(*sp, mode, offset)
                     }
@@ -293,7 +293,7 @@ define semantic
                 {
                     if result.found = false
                     {
-                        let up uns.get(i)
+                        let up uns.get i
                         if up <> null
                             set result: semantic.walk_union#(*up, mode, offset)
                     }
@@ -312,7 +312,7 @@ define semantic
                 {
                     if result.found = false
                     {
-                        let gp gls.get(i)
+                        let gp gls.get i
                         if gp <> null
                         {
                             let g (*gp)
@@ -340,7 +340,7 @@ define semantic
             {
                 if result.found = false
                 {
-                    let mp ms.get(i)
+                    let mp ms.get i
                     if mp <> null
                         set result: semantic.walk_impl#((*mp).impl, mode, offset)
                 }
@@ -358,7 +358,7 @@ define semantic
                 {
                     if result.found = false
                     {
-                        let ip inits.get(i)
+                        let ip inits.get i
                         if ip <> null
                             set result: semantic.walk_impl#((*ip).impl, mode, offset)
                     }
@@ -377,7 +377,7 @@ define semantic
                 {
                     if result.found = false
                     {
-                        let op ops.get(i)
+                        let op ops.get i
                         if op <> null
                             set result: semantic.walk_impl#((*op).impl, mode, offset)
                     }
@@ -407,7 +407,7 @@ define semantic
             {
                 if result.found = false
                 {
-                    let mp ms.get(i)
+                    let mp ms.get i
                     if mp <> null
                         set result: semantic.walk_impl#((*mp).impl, mode, offset)
                 }
@@ -425,7 +425,7 @@ define semantic
                 {
                     if result.found = false
                     {
-                        let op ops.get(i)
+                        let op ops.get i
                         if op <> null
                             set result: semantic.walk_impl#((*op).impl, mode, offset)
                     }
@@ -474,7 +474,7 @@ define semantic
         {
             if result.found = false
             {
-                let sp stmts.get(i)
+                let sp stmts.get i
                 if sp <> null
                     set result: semantic.walk_statement#(*sp, mode, offset)
             }
@@ -533,7 +533,7 @@ define semantic
         {
             if result.found = false
             {
-                let op ops.get(i)
+                let op ops.get i
                 if op <> null
                     set result: semantic.walk_operand#(*op, mode, offset)
             }
@@ -569,7 +569,7 @@ define semantic
             return semantic.none#()
         }
         let self_type semantic.operand_final_type#(op)
-        ; A strictly-tighter deeper match wins (genuine nesting f(g(x))).
+        ; A strictly-tighter deeper match wins (genuine nesting f(g x)).
         if child.found
         {
             if child.width < self_width
@@ -659,7 +659,7 @@ define semantic
             {
                 if result.found = false
                 {
-                    let cp comps.get(i)
+                    let cp comps.get i
                     if cp <> null
                     {
                         let comp (*cp)
@@ -713,7 +713,7 @@ define semantic
                 {
                     if result.found = false
                     {
-                        let bp brs.get(i)
+                        let bp brs.get i
                         if bp <> null
                         {
                             let br (*bp)
@@ -748,7 +748,7 @@ define semantic
                 {
                     if result.found = false
                     {
-                        let wp cs.get(i)
+                        let wp cs.get i
                         if wp <> null
                         {
                             let wh (*wp)
@@ -799,7 +799,7 @@ define semantic
                 {
                     if result.found = false
                     {
-                        let wp cs.get(i)
+                        let wp cs.get i
                         if wp <> null
                         {
                             let wh (*wp)

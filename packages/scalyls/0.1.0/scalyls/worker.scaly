@@ -277,12 +277,12 @@ define worker
             ; editor's stdout pipe would never see EOF when the parent exits
             ; (the child would still hold a write end) and the client would
             ; hang. stderr (fd 2) stays open for crash output.
-            close(0)
-            close(1)
+            close 0
+            close 1
             close(*(p2c + 1))
             close(*(c2p + 0))
             let rc worker.serve(*(p2c + 0), *(c2p + 1))
-            exit(rc)
+            exit rc
             return
         }
         if pid < 0                        ; fork failed
@@ -319,9 +319,9 @@ define worker
             waitpid(worker_pid, &status, 0)
         }
         if worker_in > 0
-            close(worker_in)
+            close worker_in
         if worker_out > 0
-            close(worker_out)
+            close worker_out
         set worker_pid: 0
         set worker_in:  0
         set worker_out: 0
@@ -418,7 +418,7 @@ define worker
         var fb StringBuilder#()
         fb.append(0x7B as char)                    ; {
         fb.append(0x22 as char)                    ; "
-        fb.append("data")
+        fb.append "data"
         fb.append(0x22 as char)                    ; "
         fb.append(0x3A as char)                    ; :
         fb.append(0x5B as char)                    ; [
