@@ -100,7 +100,7 @@ define Array[T]
         ; total. If new_length wraps below the existing length we'd
         ; under-size the allocation below and OOB-write the memcpy.
         if new_length < length
-            exit(14)
+            exit 14
 
         let size sizeof T
         if (vector = null) || (new_length > vector.length)
@@ -119,7 +119,7 @@ define Array[T]
                 memcpy(data, vector.data, bytes_to_copy)
 
             let old_exclusive_page Page.get(vector.data as pointer[void])
-            own_page.deallocate_exclusive_page(old_exclusive_page)
+            own_page.deallocate_exclusive_page old_exclusive_page
             set vector.data: data
             set vector.length: new_length
         }
@@ -145,9 +145,9 @@ define Array[T]
     {
         if i >= length
         {
-            scaly_eputs("Array.put: index out of bounds")
+            scaly_eputs "Array.put: index out of bounds"
             scaly_eputnl()
-            exit(15)
+            exit 15
         }
 
         set *(vector.data + i): item
@@ -185,7 +185,7 @@ define Array[T]
             let bytes_to_copy vector.length * size
             memcpy(new_vector.data, vector.data, bytes_to_copy)
             let old_exclusive_page Page.get(vector as pointer[void])
-            own_page.deallocate_exclusive_page(old_exclusive_page)
+            own_page.deallocate_exclusive_page old_exclusive_page
             set vector: new_vector
         }
     }

@@ -92,7 +92,7 @@ function scaly_fmt_scratch_ptr() returns pointer[char]
 
 procedure scaly_eputs(s: pointer[const_char])
 {
-    write(2 as int, s as pointer[void], strlen(s))
+    write(2 as int, s as pointer[void], strlen s)
 }
 
 procedure scaly_eputnl()
@@ -198,7 +198,7 @@ function create_stack_bucket(prev: pointer[StackBucketHeader]) returns pointer[S
 {
     let mem aligned_alloc(BUCKET_SIZE as i64, BUCKET_SIZE as i64)
     if mem = null
-        exit(101)
+        exit 101
 
     let sb mem as pointer[StackBucketHeader]
     set sb.prev: prev
@@ -213,7 +213,7 @@ function create_heap_bucket() returns pointer[HeapBucketHeader]
 {
     let mem aligned_alloc(BUCKET_SIZE as i64, BUCKET_SIZE as i64)
     if mem = null
-        exit(102)
+        exit 102
 
     let hb mem as pointer[HeapBucketHeader]
     set hb.prev: null
@@ -289,14 +289,14 @@ function scaly_alloc_root_page() returns pointer[Page]
         if stack_head = null
             set stack_head: create_stack_bucket(null as pointer[StackBucketHeader])
 
-        let p first_usable_page(stack_head)
+        let p first_usable_page stack_head
         set stack_top: p
-        reset_page(p)
+        reset_page p
         return p
     }
 
     ; Regular push: bump to the next page in the current bucket.
-    let bucket stack_bucket_of(stack_top)
+    let bucket stack_bucket_of stack_top
     let next_addr (stack_top as size_t + PAGE_SIZE) as pointer[Page]
 
     if next_addr > last_usable_page(bucket)
@@ -306,14 +306,14 @@ function scaly_alloc_root_page() returns pointer[Page]
         if bucket.next = null
             set bucket.next: create_stack_bucket(bucket)
 
-        let fresh first_usable_page(bucket.next)
+        let fresh first_usable_page bucket.next
         set stack_top: fresh
-        reset_page(fresh)
+        reset_page fresh
         return fresh
     }
 
     set stack_top: next_addr
-    reset_page(next_addr)
+    reset_page next_addr
     next_addr
 }
 
@@ -323,16 +323,16 @@ procedure scaly_release_root_page(p: pointer[Page])
     ; some exit path skipped its release — a real bug.
     if p <> stack_top
     {
-        scaly_eputs("scaly_release_root_page: LIFO violation — release=")
-        scaly_eputp(p)
-        scaly_eputs(" top=")
-        scaly_eputp(stack_top)
+        scaly_eputs "scaly_release_root_page: LIFO violation — release="
+        scaly_eputp p
+        scaly_eputs " top="
+        scaly_eputp stack_top
         scaly_eputnl()
         abort()
     }
 
-    let bucket stack_bucket_of(p)
-    let first first_usable_page(bucket)
+    let bucket stack_bucket_of p
+    let first first_usable_page bucket
 
     if p <> first
     {
@@ -383,7 +383,7 @@ procedure scaly_release_root_page_full(p: pointer[Page])
         set used: true
     if used
         p.deallocate_extensions()
-    scaly_release_root_page(p)
+    scaly_release_root_page p
 }
 
 ; --------------------------------------------------------------------------
@@ -397,12 +397,12 @@ function scaly_alloc_page() returns pointer[Page]
 
     let b heap_head
     ; Invariant: b.bitmap != 0 (we unlink full buckets below).
-    let slot ctz_u64(b.bitmap)
+    let slot ctz_u64 b.bitmap
     set b.bitmap: b.bitmap & ~((1 as u64) << slot)
 
     let page_addr (b as size_t) + ((slot + 1) as size_t) * PAGE_SIZE
     let page page_addr as pointer[Page]
-    reset_page(page)
+    reset_page page
 
     if b.bitmap = 0
     {
@@ -428,7 +428,7 @@ procedure scaly_release_page(p: pointer[Page])
         return
     }
 
-    let b heap_bucket_of(p)
+    let b heap_bucket_of p
     let slot (((p as size_t) - (b as size_t)) / PAGE_SIZE) - (1 as size_t)
 
     let was_full b.bitmap = 0
@@ -464,13 +464,13 @@ procedure scaly_trace_dump()
         {
             let pushes (*e).push_count
             let pops (*e).pop_count
-            scaly_eputs("scaly_trace_root: UNBALANCED ")
+            scaly_eputs "scaly_trace_root: UNBALANCED "
             scaly_eputs((*e).name)
-            scaly_eputs(" push=")
-            scaly_eputi(pushes)
-            scaly_eputs(" pop=")
-            scaly_eputi(pops)
-            scaly_eputs(" leak=")
+            scaly_eputs " push="
+            scaly_eputi pushes
+            scaly_eputs " pop="
+            scaly_eputi pops
+            scaly_eputs " leak="
             scaly_eputi(pushes - pops)
             scaly_eputnl()
             set any: true
@@ -479,7 +479,7 @@ procedure scaly_trace_dump()
     }
     if any
         return
-    scaly_eputs("scaly_trace_root: all root-page push/pop balanced")
+    scaly_eputs "scaly_trace_root: all root-page push/pop balanced"
     scaly_eputnl()
 }
 
@@ -529,7 +529,7 @@ procedure scaly_trace_push(name: pointer[const_char])
     scaly_rt_register_trace()
     if trace_enabled = 0
         return
-    let e scaly_trace_find_or_add(name)
+    let e scaly_trace_find_or_add name
     if e <> null
         set (*e).push_count: (*e).push_count + 1
 }
@@ -539,7 +539,7 @@ procedure scaly_trace_pop(name: pointer[const_char])
     scaly_rt_register_trace()
     if trace_enabled = 0
         return
-    let e scaly_trace_find_or_add(name)
+    let e scaly_trace_find_or_add name
     if e <> null
         set (*e).pop_count: (*e).pop_count + 1
 }

@@ -10,7 +10,7 @@ define HashSetBuilder[T]
         set slots: null
         if vec.length > 0
         {
-            reallocate(vec.length)
+            reallocate vec.length
             var vector_iterator VectorIterator[T](&vec)
             while let element vector_iterator.next()
                 add_internal(*element)
@@ -19,7 +19,7 @@ define HashSetBuilder[T]
 
     function reallocate(this: HashSetBuilder[T], size: size_t)
     {
-        let hash_size hashing.get_prime(size)
+        let hash_size hashing.get_prime size
         let own_page Page.get(this as pointer[void])
         let slots_page own_page.allocate_exclusive_page()
         let new_slots Vector[BuilderList[Slot[T]]]^slots_page(hash_size)
@@ -34,7 +34,7 @@ define HashSetBuilder[T]
                 {
                     let hash_code item.hash_code
                     let slot_number hash_code % new_slots.length
-                    let slot_list new_slots.get_ptr(slot_number)
+                    let slot_list new_slots.get_ptr slot_number
                     slot_list.add^slots_page(*item)
                 }
             }
@@ -49,14 +49,14 @@ define HashSetBuilder[T]
         if slots = null || hash_size > slots.length
             reallocate(length + 1)
 
-        return add_internal(value)
+        return add_internal value
     }
 
     function add_internal(this: HashSetBuilder[T], value: T) returns bool
     {
         let hash_code value.hash()
         let slot_number hash_code % slots.length
-        let slot_list slots.get_ptr(slot_number)
+        let slot_list slots.get_ptr slot_number
         var iterator slot_list.get_iterator()
         while let item iterator.next()
         {
@@ -79,7 +79,7 @@ define HashSetBuilder[T]
 
         let hash value.hash()
         let slot_number hash % slots.length
-        let slot slots.get_ptr(slot_number)
+        let slot slots.get_ptr slot_number
         var iterator slot.get_iterator()
         while let item iterator.next()
         {

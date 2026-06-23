@@ -26,12 +26,12 @@ define Path
             return String^rp(path2)
 
         var path StringBuilder$()
-        path.append(path1)
+        path.append path1
         if path2.get_length() = 0
             return path.to_string^rp()
 
         path.append("/" as char)
-        path.append(path2)
+        path.append path2
         path.to_string^rp()
     }
 }

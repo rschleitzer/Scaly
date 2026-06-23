@@ -3,12 +3,12 @@
 
 function println(msg: pointer[i8]) returns int
 {
-    puts(msg)
+    puts msg
 }
 
 function print(msg: pointer[i8]) returns int
 {
-    puts(msg)
+    puts msg
 }
 
 function puts(s: pointer[i8]) returns int extern

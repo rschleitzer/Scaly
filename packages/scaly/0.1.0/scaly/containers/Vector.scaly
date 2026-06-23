@@ -135,9 +135,9 @@ define Vector[T]
     {
         if i >= length
         {
-            scaly_eputs("Vector.put: index out of bounds")
+            scaly_eputs "Vector.put: index out of bounds"
             scaly_eputnl()
-            exit(15)
+            exit 15
         }
 
         set *(data + i): item

@@ -268,15 +268,15 @@ define cli
     ; before, so those paths are byte-for-byte unchanged.
     function runtime_archive_path#(rp) returns String
     {
-        let home getenv("SCALY_HOME")
+        let home getenv "SCALY_HOME"
         if home = null
             return String^rp("/tmp/libscaly.a")
         var home_str String$(home)
         if home_str.get_length() = 0
             return String^rp("/tmp/libscaly.a")
         var sb StringBuilder$()
-        sb.append(home_str)
-        sb.append("/lib/libscaly.a")
+        sb.append home_str
+        sb.append "/lib/libscaly.a"
         sb.to_string^rp()
     }
 
@@ -287,7 +287,7 @@ define cli
     ; bootstrap / AOT linking is byte-for-byte unchanged.
     function link_compiler#(rp) returns String
     {
-        var name getenv("SCALY_CC")
+        var name getenv "SCALY_CC"
         if name = null
             set name: getenv("CC")
         if name = null
@@ -414,7 +414,7 @@ define cli
 
         var planner Planner.Planner$(opts.input_file)
         cli.register_packages(&planner, &model)
-        let plan planner.plan_program(model)
+        let plan planner.plan_program model
 
         if plan = null
         {
@@ -520,7 +520,7 @@ define cli
                 Console.println("Error: -S requires -o <file>")
                 return 6
             }
-            let ir_ok emitter.write_module_to_file(opts.output_file)
+            let ir_ok emitter.write_module_to_file opts.output_file
             if ir_ok = false
             {
                 Console.println("Error: Could not write IR file")
@@ -538,7 +538,7 @@ define cli
                 Console.println("Error: -c requires -o <file>")
                 return 6
             }
-            let obj_ok emitter.write_object_to_file(opts.output_file)
+            let obj_ok emitter.write_object_to_file opts.output_file
             if obj_ok = false
             {
                 Console.println("Error: Could not write object file")
@@ -555,7 +555,7 @@ define cli
 
         ; Emit object file to fixed temp path, link with clang, then unlink temp.
         var tmp_obj String#("/tmp/scalyc_out.o")
-        let obj_ok emitter.write_object_to_file(tmp_obj)
+        let obj_ok emitter.write_object_to_file tmp_obj
         if obj_ok = false
         {
             Console.println("Error: Could not write object file")
@@ -564,8 +564,8 @@ define cli
 
         var cmd_builder StringBuilder#()
         cmd_builder.append(link_compiler#())
-        cmd_builder.append(" ")
-        cmd_builder.append(tmp_obj)
+        cmd_builder.append " "
+        cmd_builder.append tmp_obj
         ; Append the scaly stdlib static archive. Provides runtime
         ; functions (scaly_alloc_root_page etc.) that stage-1 emits
         ; as declarations only because it can't fully plan
@@ -577,7 +577,7 @@ define cli
         ; user .o's also emit those — `ld` then fails with duplicate
         ; symbols on every AOT test that pulls libscaly.o in for
         ; the runtime (s111).
-        cmd_builder.append(" ")
+        cmd_builder.append " "
         cmd_builder.append(runtime_archive_path#())
 
         ; Forward extra positional .a / .o inputs from the user
@@ -587,10 +587,10 @@ define cli
         var ei: size_t 0
         while ei < opts.extra_objects.length
         {
-            let e_ptr opts.extra_objects.get(ei)
+            let e_ptr opts.extra_objects.get ei
             if e_ptr <> null
             {
-                cmd_builder.append(" ")
+                cmd_builder.append " "
                 cmd_builder.append((*e_ptr))
             }
             set ei: ei + 1
@@ -600,10 +600,10 @@ define cli
         var li: size_t 0
         while li < opts.library_paths.length
         {
-            let l_ptr opts.library_paths.get(li)
+            let l_ptr opts.library_paths.get li
             if l_ptr <> null
             {
-                cmd_builder.append(" -L")
+                cmd_builder.append " -L"
                 cmd_builder.append((*l_ptr))
             }
             set li: li + 1
@@ -613,17 +613,17 @@ define cli
         var bi: size_t 0
         while bi < opts.libraries.length
         {
-            let b_ptr opts.libraries.get(bi)
+            let b_ptr opts.libraries.get bi
             if b_ptr <> null
             {
-                cmd_builder.append(" -l")
+                cmd_builder.append " -l"
                 cmd_builder.append((*b_ptr))
             }
             set bi: bi + 1
         }
 
-        cmd_builder.append(" -o ")
-        cmd_builder.append(opts.output_file)
+        cmd_builder.append " -o "
+        cmd_builder.append opts.output_file
         let cmd_str cmd_builder.to_string#()
         let link_rc system(cmd_str.c_data())
 
@@ -636,9 +636,9 @@ define cli
             if link_rc = 0
             {
                 var dsym_builder StringBuilder#()
-                dsym_builder.append("dsymutil ")
-                dsym_builder.append(opts.output_file)
-                dsym_builder.append(" 2>/dev/null")
+                dsym_builder.append "dsymutil "
+                dsym_builder.append opts.output_file
+                dsym_builder.append " 2>/dev/null"
                 let dsym_str dsym_builder.to_string#()
                 let dsym_rc system(dsym_str.c_data())
             }
@@ -667,7 +667,7 @@ define cli
         var i: size_t 0
         while i < model.packages.length
         {
-            let pkg_ptr model.packages.get(i)
+            let pkg_ptr model.packages.get i
             if pkg_ptr <> null
             {
                 planner.register_loaded_package(pkg_ptr.name, *pkg_ptr)
@@ -697,7 +697,7 @@ define cli
         var off: size_t 0
         while off < target
         {
-            let c source.get(off)
+            let c source.get off
             if c = (10 as char)
             {
                 set line: line + 1
@@ -708,13 +708,13 @@ define cli
             set off: off + 1
         }
         var msg StringBuilder#()
-        msg.append(file_path)
-        msg.append(":")
+        msg.append file_path
+        msg.append ":"
         msg.append(cli.format_size#(line))
-        msg.append(":")
+        msg.append ":"
         msg.append(cli.format_size#(col))
-        msg.append(": ")
-        msg.append(message)
+        msg.append ": "
+        msg.append message
         let msg_str msg.to_string#()
         Console.println(msg_str.to_c_string#())
     }
@@ -724,7 +724,7 @@ define cli
         var di: size_t 0
         while di < planner.diagnostics.length
         {
-            let d_ptr planner.diagnostics.get(di)
+            let d_ptr planner.diagnostics.get di
             if d_ptr <> null
             {
                 ; The diagnostic's byte offset is relative to ITS OWN source
@@ -751,7 +751,7 @@ define cli
                     ; Numeric LF compare: `"\n" as char` compiles to a
                     ; never-true comparison under stage-1 (escape handling
                     ; in char-cast literals); 10 works in every stage.
-                    let c dsrc.get(off)
+                    let c dsrc.get off
                     if c = (10 as char)
                     {
                         set line: line + 1
@@ -764,13 +764,13 @@ define cli
                     set off: off + 1
                 }
                 var msg StringBuilder#()
-                msg.append(dpath)
-                msg.append(":")
+                msg.append dpath
+                msg.append ":"
                 msg.append(cli.format_size#(line))
-                msg.append(":")
+                msg.append ":"
                 msg.append(cli.format_size#(col))
-                msg.append(": error: ")
-                msg.append(d_ptr.message)
+                msg.append ": error: "
+                msg.append d_ptr.message
                 let msg_str msg.to_string#()
                 Console.println(msg_str.to_c_string#())
             }
@@ -790,7 +790,7 @@ define cli
         while value > 0
         {
             let digit ((value % 10) as char) + 48 as char
-            digits.add(digit)
+            digits.add digit
             set value: value / 10
         }
         var sb StringBuilder#()
@@ -798,7 +798,7 @@ define cli
         while i > 0
         {
             set i: i - 1
-            let d digits.get(i)
+            let d digits.get i
             if d <> null
                 sb.append(*d)
         }
@@ -923,7 +923,7 @@ define cli
 
         ; Stage 3: Plan
         var planner Planner.Planner$(file_path)
-        let plan planner.plan_program(model)
+        let plan planner.plan_program model
         if plan = null
             return -3  ; Planning failed
 
@@ -965,7 +965,7 @@ define cli
 
         ; Stage 3: Plan
         var planner Planner.Planner$(file_name)
-        let plan planner.plan_program(model)
+        let plan planner.plan_program model
         if plan = null
             return -3  ; Planning failed
 

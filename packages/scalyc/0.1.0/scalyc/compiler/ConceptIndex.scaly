@@ -59,8 +59,8 @@ define ConceptIndex (slots: pointer[ConceptSlot](null), cap: size_t(0))
         let slots malloc(bytes) as pointer[ConceptSlot]
         if slots = null
         {
-            scaly_eputs("ConceptIndex: malloc failed\n")
-            exit(14)
+            scaly_eputs "ConceptIndex: malloc failed\n"
+            exit 14
         }
         var i: size_t 0
         while i < cap
@@ -102,8 +102,8 @@ define ConceptIndex (slots: pointer[ConceptSlot](null), cap: size_t(0))
                 set idx: (idx + (1 as size_t)) & mask
                 set probes: probes + (1 as size_t)
             }
-            scaly_eputs("ConceptIndex: table full\n")
-            exit(14)
+            scaly_eputs "ConceptIndex: table full\n"
+            exit 14
         }
     }
 
@@ -134,8 +134,8 @@ define ConceptIndex (slots: pointer[ConceptSlot](null), cap: size_t(0))
                 set idx: (idx + (1 as size_t)) & mask
                 set probes: probes + (1 as size_t)
             }
-            scaly_eputs("ConceptIndex: table full\n")
-            exit(14)
+            scaly_eputs "ConceptIndex: table full\n"
+            exit 14
         }
     }
 

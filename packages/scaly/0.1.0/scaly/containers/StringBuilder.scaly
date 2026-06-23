@@ -22,30 +22,30 @@ define StringBuilder
     init# (page, character: char)
     {
         set buffer: Array[char]^page()
-        append(character)
+        append character
     }
 
     init# (page, string: String)
     {
         set buffer: Array[char]^page()
-        append(string)
+        append string
     }
 
     init# (page, c_string: pointer[const_char])
     {
         set buffer: Array[char]^page()
-        append(c_string)
+        append c_string
     }
 
     function append(this: StringBuilder, character: char)
-        buffer.add(character)
+        buffer.add character
 
     function append(this: StringBuilder, string: String)
         buffer.add(Vector[char](string.get_buffer(), string.get_length()))
 
     function append(this: StringBuilder, c_string: pointer[const_char])
     {
-        let length strlen(c_string)
+        let length strlen c_string
         if length = 0
             return
 

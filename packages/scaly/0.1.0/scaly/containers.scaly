@@ -26,9 +26,9 @@ define containers
     function test_vector() returns int
     {
         var vector Vector[int]$(2)
-        set *(vector.get(0)): 1
+        set *(vector.get 0): 1
         vector.put(1, 2)
-        if *(vector.get(0)) <> 1
+        if *(vector.get 0) <> 1
             return -1
 
         if *(vector[1]) <> 2
@@ -47,7 +47,7 @@ define containers
             var i: int 1
             while i <= huge_number
             {
-                array.add(i)
+                array.add i
                 set i: i + 1
             }
         }
@@ -126,7 +126,7 @@ define containers
             return -15
 
         var string_builder3 StringBuilder$("hijk")
-        string_builder3.append("lmno")
+        string_builder3.append "lmno"
         if string_builder3.to_string$().equals("hijklmno") = false
             return -16
 
@@ -142,7 +142,7 @@ define containers
             var i: int 1
             while i <= huge_number
             {
-                list.add(i)
+                list.add i
                 set i: i + 1
             }
         }
@@ -293,9 +293,9 @@ define containers
                             ; while l <= "/" as char
                             {
                                 var sb StringBuilder$(i)
-                                sb.append(j)
-                                sb.append(k)
-                                sb.append(l)
+                                sb.append j
+                                sb.append k
+                                sb.append l
                                 map.add(sb.to_string$(), (i * j * k * l) as size_t)
                                 hash_set.add(sb.to_string$())
 
@@ -330,9 +330,9 @@ define containers
                             ; while l <= "/" as char
                             {
                                 var sb StringBuilder$(i)
-                                sb.append(j)
-                                sb.append(k)
-                                sb.append(l)
+                                sb.append j
+                                sb.append k
+                                sb.append l
                                 let theString sb.to_string$()
                                 if hash_set.contains(theString) = false
                                     return -43

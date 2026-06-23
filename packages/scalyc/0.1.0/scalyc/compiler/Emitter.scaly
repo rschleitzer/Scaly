@@ -328,20 +328,20 @@ define RegionInfo
         {
             if n.equals(name)
             {
-                let val named_region_values.get(i)
+                let val named_region_values.get i
                 if val <> null
                     return val
 
             }
             set i: i + 1
         }
-        LLVMValueRef(null)
+        LLVMValueRef null
     }
 
     procedure add_named_region(this, name: String, value: LLVMValueRef)
     {
-        named_region_names.add(name)
-        named_region_values.add(value)
+        named_region_names.add name
+        named_region_values.add value
     }
 }
 
@@ -618,7 +618,7 @@ define Emitter
         var off: size_t 0
         while off < target
         {
-            let c source_text.get(off)
+            let c source_text.get off
             if c = (10 as char)
             {
                 set line: line + 1
@@ -639,8 +639,8 @@ define Emitter
             return
         if current_di_scope.handle = null
             return
-        let pos compute_debug_pos(span.start)
-        let loc LLVMDIBuilderCreateDebugLocation(context, pos.line, pos.col, current_di_scope, LLVMMetadataRef(null))
+        let pos compute_debug_pos span.start
+        let loc LLVMDIBuilderCreateDebugLocation(context, pos.line, pos.col, current_di_scope, LLVMMetadataRef null)
         LLVMSetCurrentDebugLocation2(builder, loc)
     }
 
@@ -653,7 +653,7 @@ define Emitter
     ; handle. The field read is unaffected.
     procedure set_function_debug_scope(this, func: PlannedFunction)
     {
-        let pos compute_debug_pos(func.loc.start)
+        let pos compute_debug_pos func.loc.start
 
         ; Subroutine type with an empty parameter list: enough for
         ; breakpoints + stepping, not a full signature. A single null
@@ -671,7 +671,7 @@ define Emitter
         set current_di_scope: sp
 
         ; Initial location at the function line covers prologue calls.
-        let loc LLVMDIBuilderCreateDebugLocation(context, pos.line, pos.col, sp, LLVMMetadataRef(null))
+        let loc LLVMDIBuilderCreateDebugLocation(context, pos.line, pos.col, sp, LLVMMetadataRef null)
         LLVMSetCurrentDebugLocation2(builder, loc)
     }
 
@@ -684,14 +684,14 @@ define Emitter
 
     function lookup_di_cache(this, name: String) returns LLVMMetadataRef
     {
-        let ir di_index.lookup(name)
+        let ir di_index.lookup name
         if ir >= 0
         {
             let t di_type_cache_types.get(ir as size_t)
             if t <> null
                 return t
         }
-        LLVMMetadataRef(null)
+        LLVMMetadataRef null
     }
 
     ; Map a primitive type name to a DWARF basic type; null if not primitive.
@@ -772,7 +772,7 @@ define Emitter
             set enc: (4 as i32)
         }
         if bits = 0
-            return LLVMMetadataRef(null)
+            return LLVMMetadataRef null
         LLVMDIBuilderCreateBasicType(di_builder, name.c_data(), name.get_length(), bits, enc, (0 as i32))
     }
 
@@ -801,7 +801,7 @@ define Emitter
                 let gens (*pt.generics)
                 if gens.length > 0
                 {
-                    let g0p gens.get(0)
+                    let g0p gens.get 0
                     if g0p <> null
                         set inner: di_type_for((*g0p))
                 }
@@ -809,7 +809,7 @@ define Emitter
             return LLVMDIBuilderCreatePointerType(di_builder, inner, (64 as size_t), (64 as i32), (0 as i32), pt.name.c_data(), pt.name.get_length())
         }
 
-        let basic di_basic_type(pt.name)
+        let basic di_basic_type pt.name
         if basic.handle <> null
             return basic
 
@@ -822,12 +822,12 @@ define Emitter
                 var i: size_t 0
                 while i < structs.length
                 {
-                    let sp structs.get(i)
+                    let sp structs.get i
                     if sp <> null
                     {
                         let s (*sp)
                         if s.mangled_name.equals(pt.mangled_name)
-                            return di_struct_type(s)
+                            return di_struct_type s
                     }
                     set i: i + 1
                 }
@@ -835,12 +835,12 @@ define Emitter
             var k: size_t 0
             while k < structs.length
             {
-                let sp structs.get(k)
+                let sp structs.get k
                 if sp <> null
                 {
                     let s (*sp)
                     if s.name.equals(pt.name)
-                        return di_struct_type(s)
+                        return di_struct_type s
                 }
                 set k: k + 1
             }
@@ -855,12 +855,12 @@ define Emitter
                 var j: size_t 0
                 while j < unions.length
                 {
-                    let up unions.get(j)
+                    let up unions.get j
                     if up <> null
                     {
                         let u (*up)
                         if u.mangled_name.equals(pt.mangled_name)
-                            return di_union_type(u)
+                            return di_union_type u
                     }
                     set j: j + 1
                 }
@@ -868,18 +868,18 @@ define Emitter
             var m: size_t 0
             while m < unions.length
             {
-                let up unions.get(m)
+                let up unions.get m
                 if up <> null
                 {
                     let u (*up)
                     if u.name.equals(pt.name)
-                        return di_union_type(u)
+                        return di_union_type u
                 }
                 set m: m + 1
             }
         }
 
-        LLVMMetadataRef(null)
+        LLVMMetadataRef null
     }
 
     ; Build a DICompositeType (DW_TAG_structure_type = 19) for a struct.
@@ -888,19 +888,19 @@ define Emitter
     ; struct size for the last field), so no type-size re-derivation needed.
     function di_struct_type(this, s: PlannedStructure) returns LLVMMetadataRef
     {
-        let cached lookup_di_cache(s.mangled_name)
+        let cached lookup_di_cache s.mangled_name
         if cached.handle <> null
             return cached
 
-        let pos compute_debug_pos(s.loc.start)
+        let pos compute_debug_pos s.loc.start
         let size_bits (s.size * 8)
         var empty String$("")
 
         ; Forward decl FIRST, cached, so a back-pointer member resolves here.
         let fwd LLVMDIBuilderCreateReplaceableCompositeType(di_builder, (19 as i32), s.name.c_data(), s.name.get_length(), di_cu, di_file, pos.line, (0 as i32), (size_bits as size_t), (0 as i32), (0 as i32), empty.c_data(), (0 as size_t))
         let idx di_type_cache_names.length
-        di_type_cache_names.add(s.mangled_name)
-        di_type_cache_types.add(fwd)
+        di_type_cache_names.add s.mangled_name
+        di_type_cache_types.add fwd
         if fwd.handle <> null
             di_index.insert_if_absent(s.mangled_name, idx)
 
@@ -915,7 +915,7 @@ define Emitter
                 var mi: size_t 0
                 while mi < props.length
                 {
-                    let pp props.get(mi)
+                    let pp props.get mi
                     if pp <> null
                     {
                         let prop (*pp)
@@ -931,7 +931,7 @@ define Emitter
                         if next_off > this_off
                             set msize_bytes: next_off - this_off
                         let msize_bits (msize_bytes * 8)
-                        var mty di_type_for(prop.prop_type)
+                        var mty di_type_for prop.prop_type
                         if mty.handle = null
                             set mty: di_placeholder_type(msize_bits)
                         let member LLVMDIBuilderCreateMemberType(di_builder, fwd, prop.name.c_data(), prop.name.get_length(), di_file, pos.line, (msize_bits as size_t), (0 as i32), (this_off * 8 as size_t), (0 as i32), mty)
@@ -944,7 +944,7 @@ define Emitter
             }
         }
 
-        let final LLVMDIBuilderCreateStructType(di_builder, di_cu, s.name.c_data(), s.name.get_length(), di_file, pos.line, (size_bits as size_t), (0 as i32), (0 as i32), LLVMMetadataRef(null), members_ptr, (added as i32), (0 as i32), LLVMMetadataRef(null), empty.c_data(), (0 as size_t))
+        let final LLVMDIBuilderCreateStructType(di_builder, di_cu, s.name.c_data(), s.name.get_length(), di_file, pos.line, (size_bits as size_t), (0 as i32), (0 as i32), LLVMMetadataRef null, members_ptr, (added as i32), (0 as i32), LLVMMetadataRef null, empty.c_data(), (0 as size_t))
         LLVMMetadataReplaceAllUsesWith(fwd, final)
         di_type_cache_types.put(idx, final)
         final
@@ -954,19 +954,19 @@ define Emitter
     ; payload is a DWARF union of the variant payload types (each at offset 0).
     function di_union_type(this, u: PlannedUnion) returns LLVMMetadataRef
     {
-        let cached lookup_di_cache(u.mangled_name)
+        let cached lookup_di_cache u.mangled_name
         if cached.handle <> null
             return cached
 
-        let pos compute_debug_pos(u.loc.start)
+        let pos compute_debug_pos u.loc.start
         let size_bits (u.size * 8)
         var empty String$("")
 
         ; Forward decl (emitted as a struct, tag 19), cached for cycle-break.
         let fwd LLVMDIBuilderCreateReplaceableCompositeType(di_builder, (19 as i32), u.name.c_data(), u.name.get_length(), di_cu, di_file, pos.line, (0 as i32), (size_bits as size_t), (0 as i32), (0 as i32), empty.c_data(), (0 as size_t))
         let idx di_type_cache_names.length
-        di_type_cache_names.add(u.mangled_name)
-        di_type_cache_types.add(fwd)
+        di_type_cache_names.add u.mangled_name
+        di_type_cache_types.add fwd
         if fwd.handle <> null
             di_index.insert_if_absent(u.mangled_name, idx)
 
@@ -990,14 +990,14 @@ define Emitter
                 var vi: size_t 0
                 while vi < variants.length
                 {
-                    let vp variants.get(vi)
+                    let vp variants.get vi
                     if vp <> null
                     {
                         let variant (*vp)
                         if variant.var_type <> null
                         {
                             let vt (*variant.var_type)
-                            var vty di_type_for(vt)
+                            var vty di_type_for vt
                             if vty.handle = null
                                 set vty: di_placeholder_type(payload_bits)
                             let vmember LLVMDIBuilderCreateMemberType(di_builder, fwd, variant.name.c_data(), variant.name.get_length(), di_file, pos.line, (payload_bits as size_t), (0 as i32), (0 as size_t), (0 as i32), vty)
@@ -1026,7 +1026,7 @@ define Emitter
             set out_count: 2
         }
 
-        let final LLVMDIBuilderCreateStructType(di_builder, di_cu, u.name.c_data(), u.name.get_length(), di_file, pos.line, (size_bits as size_t), (0 as i32), (0 as i32), LLVMMetadataRef(null), out_vec.data, (out_count as i32), (0 as i32), LLVMMetadataRef(null), empty.c_data(), (0 as size_t))
+        let final LLVMDIBuilderCreateStructType(di_builder, di_cu, u.name.c_data(), u.name.get_length(), di_file, pos.line, (size_bits as size_t), (0 as i32), (0 as i32), LLVMMetadataRef null, out_vec.data, (out_count as i32), (0 as i32), LLVMMetadataRef null, empty.c_data(), (0 as size_t))
         LLVMMetadataReplaceAllUsesWith(fwd, final)
         di_type_cache_types.put(idx, final)
         final
@@ -1043,7 +1043,7 @@ define Emitter
         let sp LLVMDIBuilderCreateFunction(di_builder, di_file, nm.c_data(), nm.get_length(), nm.c_data(), nm.get_length(), di_file, line, subroutine_ty, (0 as i32), (1 as i32), line, (0 as i32), (0 as i32))
         LLVMSetSubprogram(current_function, sp)
         set current_di_scope: sp
-        let loc LLVMDIBuilderCreateDebugLocation(context, line, (1 as i32), sp, LLVMMetadataRef(null))
+        let loc LLVMDIBuilderCreateDebugLocation(context, line, (1 as i32), sp, LLVMMetadataRef null)
         LLVMSetCurrentDebugLocation2(builder, loc)
     }
 
@@ -1053,7 +1053,7 @@ define Emitter
     procedure clear_debug_location(this)
     {
         set current_di_scope: LLVMMetadataRef(null)
-        LLVMSetCurrentDebugLocation2(builder, LLVMMetadataRef(null))
+        LLVMSetCurrentDebugLocation2(builder, LLVMMetadataRef null)
     }
 
     ; Set the line location for a statement before emitting it. -g only.
@@ -1061,59 +1061,59 @@ define Emitter
     {
         choose stmt
             when action: Action
-                set_debug_location(action.loc)
+                set_debug_location action.loc
             when binding: Binding
-                set_debug_location(binding.loc)
+                set_debug_location binding.loc
             when ret: Return
-                set_debug_location(ret.loc)
+                set_debug_location ret.loc
             when throw_stmt: Throw
-                set_debug_location(throw_stmt.loc)
+                set_debug_location throw_stmt.loc
             when brk: Break
-                set_debug_location(brk.loc)
+                set_debug_location brk.loc
             when cont: Continue
-                set_debug_location(cont.loc)
+                set_debug_location cont.loc
     }
 
     ; Initialize intrinsic type mappings
     procedure init_intrinsic_types(this)
     {
         ; void
-        register_intrinsic_type(String$("void"), LLVMVoidTypeInContext(context), 0, 0, false)
+        register_intrinsic_type(String$("void"), LLVMVoidTypeInContext context, 0, 0, false)
 
         ; bool (i1)
-        register_intrinsic_type(String$("bool"), LLVMInt1TypeInContext(context), 1, 1, false)
+        register_intrinsic_type(String$("bool"), LLVMInt1TypeInContext context, 1, 1, false)
 
         ; char (i8)
-        register_intrinsic_type(String$("char"), LLVMInt8TypeInContext(context), 1, 1, true)
+        register_intrinsic_type(String$("char"), LLVMInt8TypeInContext context, 1, 1, true)
 
         ; Signed integers
-        register_intrinsic_type(String$("i8"), LLVMInt8TypeInContext(context), 1, 1, true)
-        register_intrinsic_type(String$("i16"), LLVMInt16TypeInContext(context), 2, 2, true)
-        register_intrinsic_type(String$("i32"), LLVMInt32TypeInContext(context), 4, 4, true)
-        register_intrinsic_type(String$("i64"), LLVMInt64TypeInContext(context), 8, 8, true)
+        register_intrinsic_type(String$("i8"), LLVMInt8TypeInContext context, 1, 1, true)
+        register_intrinsic_type(String$("i16"), LLVMInt16TypeInContext context, 2, 2, true)
+        register_intrinsic_type(String$("i32"), LLVMInt32TypeInContext context, 4, 4, true)
+        register_intrinsic_type(String$("i64"), LLVMInt64TypeInContext context, 8, 8, true)
         ; s109: int/uint map to i64 to match stage-0 (Emitter.cpp:154-155).
         ; Itanium mangling still uses 'i'/'j' (encode_type#); the LLVM-level
         ; width difference is silently allowed at link time. Aligning here
         ; makes literals like `0` / `100` flow through to size_t/i64 params
         ; without requiring a separate width-promote pass.
-        register_intrinsic_type(String$("int"), LLVMInt64TypeInContext(context), 8, 8, true)
+        register_intrinsic_type(String$("int"), LLVMInt64TypeInContext context, 8, 8, true)
 
         ; Unsigned integers
-        register_intrinsic_type(String$("u8"), LLVMInt8TypeInContext(context), 1, 1, false)
-        register_intrinsic_type(String$("u16"), LLVMInt16TypeInContext(context), 2, 2, false)
-        register_intrinsic_type(String$("u32"), LLVMInt32TypeInContext(context), 4, 4, false)
-        register_intrinsic_type(String$("u64"), LLVMInt64TypeInContext(context), 8, 8, false)
-        register_intrinsic_type(String$("uint"), LLVMInt64TypeInContext(context), 8, 8, false)
-        register_intrinsic_type(String$("size_t"), LLVMInt64TypeInContext(context), 8, 8, false)
+        register_intrinsic_type(String$("u8"), LLVMInt8TypeInContext context, 1, 1, false)
+        register_intrinsic_type(String$("u16"), LLVMInt16TypeInContext context, 2, 2, false)
+        register_intrinsic_type(String$("u32"), LLVMInt32TypeInContext context, 4, 4, false)
+        register_intrinsic_type(String$("u64"), LLVMInt64TypeInContext context, 8, 8, false)
+        register_intrinsic_type(String$("uint"), LLVMInt64TypeInContext context, 8, 8, false)
+        register_intrinsic_type(String$("size_t"), LLVMInt64TypeInContext context, 8, 8, false)
 
         ; Floating point
-        register_intrinsic_type(String$("float"), LLVMFloatTypeInContext(context), 4, 4, true)
-        register_intrinsic_type(String$("double"), LLVMDoubleTypeInContext(context), 8, 8, true)
+        register_intrinsic_type(String$("float"), LLVMFloatTypeInContext context, 4, 4, true)
+        register_intrinsic_type(String$("double"), LLVMDoubleTypeInContext context, 8, 8, true)
     }
 
     procedure register_intrinsic_type(this, name: String, llvm_type: LLVMTypeRef, size: size_t, alignment: size_t, is_signed: bool)
     {
-        intrinsic_type_names.add(name)
+        intrinsic_type_names.add name
         intrinsic_types.add(IntrinsicTypeInfo(llvm_type, size, alignment, is_signed))
     }
 
@@ -1121,13 +1121,13 @@ define Emitter
     procedure dispose(this)
     {
         if builder.handle <> null
-            LLVMDisposeBuilder(builder)
+            LLVMDisposeBuilder builder
 
         if llvm_module.handle <> null
-            LLVMDisposeModule(llvm_module)
+            LLVMDisposeModule llvm_module
 
         if context.handle <> null
-            LLVMContextDispose(context)
+            LLVMContextDispose context
 
     }
 
@@ -1137,21 +1137,21 @@ define Emitter
 
     function lookup_type_cache(this, name: String) returns LLVMTypeRef
     {
-        let ir type_index.lookup(name)
+        let ir type_index.lookup name
         if ir >= 0
         {
             let t type_cache_types.get(ir as size_t)
             if t <> null
                 return t
         }
-        LLVMTypeRef(null)
+        LLVMTypeRef null
     }
 
     procedure cache_type(this, name: String, llvm_type: LLVMTypeRef)
     {
         let entry_idx type_cache_names.length
-        type_cache_names.add(name)
-        type_cache_types.add(llvm_type)
+        type_cache_names.add name
+        type_cache_types.add llvm_type
         if llvm_type.handle <> null
             type_index.insert_if_absent(name, entry_idx)
     }
@@ -1162,21 +1162,21 @@ define Emitter
 
     function lookup_struct_cache(this, name: String) returns LLVMTypeRef
     {
-        let ir struct_index.lookup(name)
+        let ir struct_index.lookup name
         if ir >= 0
         {
             let t struct_cache_types.get(ir as size_t)
             if t <> null
                 return t
         }
-        LLVMTypeRef(null)
+        LLVMTypeRef null
     }
 
     procedure cache_struct(this, name: String, llvm_type: LLVMTypeRef)
     {
         let entry_idx struct_cache_names.length
-        struct_cache_names.add(name)
-        struct_cache_types.add(llvm_type)
+        struct_cache_names.add name
+        struct_cache_types.add llvm_type
         if llvm_type.handle <> null
             struct_index.insert_if_absent(name, entry_idx)
     }
@@ -1288,9 +1288,9 @@ define Emitter
     ; escaping allocation on the local page is a use-after-free).
     function resolve_reference_page(this, ref_name: String) returns LLVMValueRef
     {
-        let nv lookup_variable(ref_name)
+        let nv lookup_variable ref_name
         if nv.handle = null
-            return LLVMValueRef(null)
+            return LLVMValueRef null
         var page_val LLVMValueRef(nv.handle)
         if ref_name.equals(String$("this"))
         {
@@ -1324,10 +1324,10 @@ define Emitter
         if function_local_page.handle <> null
             return function_local_page
         if current_function.handle = null
-            return LLVMValueRef(null)
+            return LLVMValueRef null
         let entry_block LLVMGetFirstBasicBlock(current_function)
         if entry_block.handle = null
-            return LLVMValueRef(null)
+            return LLVMValueRef null
 
         let alloc_fn get_alloc_root_page_fn()
         let alloc_ret_ty LLVMPointerTypeInContext(context, 0)
@@ -1345,7 +1345,7 @@ define Emitter
             LLVMPositionBuilderAtEnd(builder, saved_block)
 
         ; Patch returns emitted before this allocation (early-return guards).
-        patch_prior_returns(function_local_page)
+        patch_prior_returns function_local_page
         function_local_page
     }
 
@@ -1460,7 +1460,7 @@ define Emitter
         var i: size_t 0
         while i < s.get_length()
         {
-            let c s.get(i)
+            let c s.get i
             if c < (48 as u8)
                 return 0
             if c > (57 as u8)
@@ -1501,23 +1501,23 @@ define Emitter
         var i: size_t temp_pool_start
         while i < temp_pool_slots.length
         {
-            let f_ptr temp_pool_free.get(i)
+            let f_ptr temp_pool_free.get i
             if f_ptr <> null
             {
                 let f_val (*f_ptr)
                 if f_val = 1
                 {
-                    let ty_ptr temp_pool_types.get(i)
+                    let ty_ptr temp_pool_types.get i
                     if ty_ptr <> null
                     {
                         let pool_ty (*ty_ptr)
                         if pool_ty.handle = t.handle
                         {
-                            let slot_ptr temp_pool_slots.get(i)
+                            let slot_ptr temp_pool_slots.get i
                             if slot_ptr <> null
                             {
                                 temp_pool_free.put(i, in_use_flag)
-                                temp_stmt_log.add(i)
+                                temp_stmt_log.add i
                                 return (*slot_ptr)
                             }
                         }
@@ -1527,9 +1527,9 @@ define Emitter
             set i: i + 1
         }
         let a entry_alloca(t, name)
-        temp_pool_types.add(t)
-        temp_pool_slots.add(a)
-        temp_pool_free.add(in_use_flag)
+        temp_pool_types.add t
+        temp_pool_slots.add a
+        temp_pool_free.add in_use_flag
         temp_stmt_log.add(temp_pool_slots.length - 1)
         a
     }
@@ -1611,7 +1611,7 @@ define Emitter
         ; s34 ABI workaround: reconstruct the wrapper from .handle.
         var cur LLVMValueRef(v.handle)
         if cur.handle = null
-            return LLVMValueRef(null)
+            return LLVMValueRef null
         var hops: size_t 0
         while hops < 8
         {
@@ -1623,7 +1623,7 @@ define Emitter
         }
         let al LLVMIsAAllocaInst(cur)
         if al.handle = null
-            return LLVMValueRef(null)
+            return LLVMValueRef null
         cur
     }
 
@@ -1634,9 +1634,9 @@ define Emitter
     procedure pin_temp_value(this, v: LLVMValueRef)
     {
         var val LLVMValueRef(v.handle)
-        let base temp_base_alloca(val)
+        let base temp_base_alloca val
         if base.handle <> null
-            temp_pinned.add(base)
+            temp_pinned.add base
     }
 
     ; s178: free pool slot `idx` unless it is pinned (a pending arm
@@ -1651,13 +1651,13 @@ define Emitter
         var depth0: size_t 0
         if idx < temp_pool_slots.length
         {
-            let f_ptr temp_pool_free.get(idx)
+            let f_ptr temp_pool_free.get idx
             if f_ptr <> null
             {
                 let f_val (*f_ptr)
                 if f_val = 0
                 {
-                    let slot_ptr temp_pool_slots.get(idx)
+                    let slot_ptr temp_pool_slots.get idx
                     if slot_ptr <> null
                     {
                         let slot (*slot_ptr)
@@ -1665,7 +1665,7 @@ define Emitter
                         var pi: size_t 0
                         while pi < temp_pinned.length
                         {
-                            let p_ptr temp_pinned.get(pi)
+                            let p_ptr temp_pinned.get pi
                             if p_ptr <> null
                             {
                                 let pv (*p_ptr)
@@ -1679,11 +1679,11 @@ define Emitter
                             var vi: size_t 0
                             while vi < local_var_values.length
                             {
-                                let lv_ptr local_var_values.get(vi)
+                                let lv_ptr local_var_values.get vi
                                 if lv_ptr <> null
                                 {
                                     let lv (*lv_ptr)
-                                    let lv_base temp_base_alloca(lv)
+                                    let lv_base temp_base_alloca lv
                                     if lv_base.handle = slot.handle
                                         set kept: true
                                 }
@@ -1795,11 +1795,11 @@ define Emitter
         var li: size_t temp_stmt_log_start
         while li < temp_stmt_log.length
         {
-            let idx_ptr temp_stmt_log.get(li)
+            let idx_ptr temp_stmt_log.get li
             if idx_ptr <> null
             {
                 let idx (*idx_ptr)
-                release_slot_if_dead(idx)
+                release_slot_if_dead idx
             }
             set li: li + 1
         }
@@ -1812,21 +1812,21 @@ define Emitter
 
     function lookup_function_cache(this, mangled_name: String) returns LLVMValueRef
     {
-        let ir function_index.lookup(mangled_name)
+        let ir function_index.lookup mangled_name
         if ir >= 0
         {
             let f function_cache_funcs.get(ir as size_t)
             if f <> null
                 return f
         }
-        LLVMValueRef(null)
+        LLVMValueRef null
     }
 
     procedure cache_function(this, mangled_name: String, llvm_func: LLVMValueRef)
     {
         let entry_idx function_cache_names.length
-        function_cache_names.add(mangled_name)
-        function_cache_funcs.add(llvm_func)
+        function_cache_names.add mangled_name
+        function_cache_funcs.add llvm_func
         if llvm_func.handle <> null
             function_index.insert_if_absent(mangled_name, entry_idx)
     }
@@ -1848,24 +1848,24 @@ define Emitter
         while i > 0
         {
             set i: i - 1
-            let n_ptr local_var_names.get(i)
+            let n_ptr local_var_names.get i
             if n_ptr <> null
             {
                 if (*n_ptr).equals(name)
                 {
-                    let v local_var_values.get(i)
+                    let v local_var_values.get i
                     if v <> null
                         return (*v)
                 }
             }
         }
-        LLVMValueRef(null)
+        LLVMValueRef null
     }
 
     procedure define_variable(this, name: String, value: LLVMValueRef)
     {
-        local_var_names.add(name)
-        local_var_values.add(value)
+        local_var_names.add name
+        local_var_values.add value
     }
 
     procedure clear_local_variables(this)
@@ -1883,7 +1883,7 @@ define Emitter
     ; of similar snapshots).
     procedure enter_scope(this)
     {
-        scope_marks.add(local_var_names.length)
+        scope_marks.add local_var_names.length
     }
 
     ; s128: pop the most recent scope marker, truncate local_var_names
@@ -1916,22 +1916,22 @@ define Emitter
             var di: size_t mark
             while di < local_var_values.length
             {
-                let dv_ptr local_var_values.get(di)
+                let dv_ptr local_var_values.get di
                 if dv_ptr <> null
                 {
                     let dv (*dv_ptr)
-                    let base temp_base_alloca(dv)
+                    let base temp_base_alloca dv
                     if base.handle <> null
                     {
                         var ci: size_t temp_pool_start
                         while ci < temp_pool_slots.length
                         {
-                            let c_ptr temp_pool_slots.get(ci)
+                            let c_ptr temp_pool_slots.get ci
                             if c_ptr <> null
                             {
                                 let cslot (*c_ptr)
                                 if cslot.handle = base.handle
-                                    cands.add(ci)
+                                    cands.add ci
                             }
                             set ci: ci + 1
                         }
@@ -1944,11 +1944,11 @@ define Emitter
             var ri: size_t 0
             while ri < cands.length
             {
-                let r_ptr cands.get(ri)
+                let r_ptr cands.get ri
                 if r_ptr <> null
                 {
                     let r_idx (*r_ptr)
-                    release_slot_if_dead(r_idx)
+                    release_slot_if_dead r_idx
                 }
                 set ri: ri + 1
             }
@@ -1964,7 +1964,7 @@ define Emitter
     function map_type(this, planned_type: PlannedType) returns LLVMTypeRef
     {
         ; Check type cache first
-        let cached lookup_type_cache(planned_type.name)
+        let cached lookup_type_cache planned_type.name
         if cached.handle <> null
             return cached
 
@@ -1977,7 +1977,7 @@ define Emitter
         ; GEP/load come out as ptr instead of i64 — generic-spec'd
         ; method bodies emitted `gep ptr / load ptr / ret 0` instead
         ; of `gep i64 / load i64 / ret %deref` (s110).
-        let intr_type map_intrinsic_type_by_name(planned_type.name)
+        let intr_type map_intrinsic_type_by_name planned_type.name
         if intr_type.handle <> null
             return intr_type
 
@@ -2013,12 +2013,12 @@ define Emitter
         }
 
         ; Look up struct type
-        let struct_type lookup_struct_cache(planned_type.name)
+        let struct_type lookup_struct_cache planned_type.name
         if struct_type.handle <> null
             return struct_type
 
         ; Try mangled name
-        let struct_type2 lookup_struct_cache(planned_type.mangled_name)
+        let struct_type2 lookup_struct_cache planned_type.mangled_name
         if struct_type2.handle <> null
             return struct_type2
 
@@ -2052,12 +2052,12 @@ define Emitter
                 var i: size_t 0
                 while i < structs.length
                 {
-                    let s_ptr structs.get(i)
+                    let s_ptr structs.get i
                     if s_ptr <> null
                     {
                         let s (*s_ptr)
                         if s.mangled_name.equals(planned_type.mangled_name)
-                            return emit_struct_type(s)
+                            return emit_struct_type s
                     }
                     set i: i + 1
                 }
@@ -2065,12 +2065,12 @@ define Emitter
             var k: size_t 0
             while k < structs.length
             {
-                let s_ptr structs.get(k)
+                let s_ptr structs.get k
                 if s_ptr <> null
                 {
                     let s (*s_ptr)
                     if s.name.equals(planned_type.name)
-                        return emit_struct_type(s)
+                        return emit_struct_type s
                 }
                 set k: k + 1
             }
@@ -2083,12 +2083,12 @@ define Emitter
                 var j: size_t 0
                 while j < unions.length
                 {
-                    let u_ptr unions.get(j)
+                    let u_ptr unions.get j
                     if u_ptr <> null
                     {
                         let u (*u_ptr)
                         if u.mangled_name.equals(planned_type.mangled_name)
-                            return emit_union_type(u)
+                            return emit_union_type u
                     }
                     set j: j + 1
                 }
@@ -2096,12 +2096,12 @@ define Emitter
             var m: size_t 0
             while m < unions.length
             {
-                let u_ptr unions.get(m)
+                let u_ptr unions.get m
                 if u_ptr <> null
                 {
                     let u (*u_ptr)
                     if u.name.equals(planned_type.name)
-                        return emit_union_type(u)
+                        return emit_union_type u
                 }
                 set m: m + 1
             }
@@ -2155,10 +2155,10 @@ define Emitter
         ; pointer. Multi-field structs (Vector etc.) returned across packages
         ; aren't exercised by the s89 stretch test, so the size-mismatch is
         ; acceptable for now; revisit when pushing further.
-        let cached lookup_struct_cache(name)
+        let cached lookup_struct_cache name
         if cached.handle <> null
             return cached
-        let cached_m lookup_struct_cache(mangled_name)
+        let cached_m lookup_struct_cache mangled_name
         if cached_m.handle <> null
             return cached_m
         var fields Vector[LLVMTypeRef]#(1)
@@ -2189,7 +2189,7 @@ define Emitter
                 var i: size_t 0
                 while i < structures.length
                 {
-                    let struct_ptr structures.get(i)
+                    let struct_ptr structures.get i
                     if struct_ptr <> null
                     {
                         let struct (*struct_ptr)
@@ -2204,11 +2204,11 @@ define Emitter
                                     var pi: size_t 0
                                     while pi < props.length
                                     {
-                                        let prop_ptr props.get(pi)
+                                        let prop_ptr props.get pi
                                         if prop_ptr <> null
                                         {
                                             let prop (*prop_ptr)
-                                            let prop_ty map_type(prop.prop_type)
+                                            let prop_ty map_type prop.prop_type
                                             element_types.put(pi, prop_ty)
                                         }
                                         set pi: pi + 1
@@ -2296,7 +2296,7 @@ define Emitter
             fields.put(1, ptr_ty)
             return LLVMStructTypeInContext(context, fields.data, 2, 0)
         }
-        LLVMTypeRef(null)
+        LLVMTypeRef null
     }
 
     ; s89: Cached sret kind id (lazily looked up). 0 = uninitialized.
@@ -2365,7 +2365,7 @@ define Emitter
         let gens (*t.generics)
         if gens.length = 0
             return false
-        let inner_ptr gens.get(0)
+        let inner_ptr gens.get 0
         if inner_ptr = null
             return false
         let inner (*inner_ptr)
@@ -2405,14 +2405,14 @@ define Emitter
         {
             if n.equals(name)
             {
-                let info intrinsic_types.get(i)
+                let info intrinsic_types.get i
                 if info <> null
                     return info.llvm_type
 
             }
             set i: i + 1
         }
-        LLVMTypeRef(null)
+        LLVMTypeRef null
     }
 
     ; Direct intrinsic-name → LLVM type lookup that doesn't touch the
@@ -2424,40 +2424,40 @@ define Emitter
     function map_intrinsic_type_by_name(this, name: String) returns LLVMTypeRef
     {
         if name.equals("void")
-            return LLVMVoidTypeInContext(context)
+            return LLVMVoidTypeInContext context
         if name.equals("bool")
-            return LLVMInt1TypeInContext(context)
+            return LLVMInt1TypeInContext context
         if name.equals("char")
-            return LLVMInt8TypeInContext(context)
+            return LLVMInt8TypeInContext context
         if name.equals("const_char")
-            return LLVMInt8TypeInContext(context)
+            return LLVMInt8TypeInContext context
         if name.equals("i8")
-            return LLVMInt8TypeInContext(context)
+            return LLVMInt8TypeInContext context
         if name.equals("u8")
-            return LLVMInt8TypeInContext(context)
+            return LLVMInt8TypeInContext context
         if name.equals("i16")
-            return LLVMInt16TypeInContext(context)
+            return LLVMInt16TypeInContext context
         if name.equals("u16")
-            return LLVMInt16TypeInContext(context)
+            return LLVMInt16TypeInContext context
         if name.equals("i32")
-            return LLVMInt32TypeInContext(context)
+            return LLVMInt32TypeInContext context
         if name.equals("u32")
-            return LLVMInt32TypeInContext(context)
+            return LLVMInt32TypeInContext context
         if name.equals("int")
-            return LLVMInt64TypeInContext(context)
+            return LLVMInt64TypeInContext context
         if name.equals("uint")
-            return LLVMInt64TypeInContext(context)
+            return LLVMInt64TypeInContext context
         if name.equals("i64")
-            return LLVMInt64TypeInContext(context)
+            return LLVMInt64TypeInContext context
         if name.equals("u64")
-            return LLVMInt64TypeInContext(context)
+            return LLVMInt64TypeInContext context
         if name.equals("size_t")
-            return LLVMInt64TypeInContext(context)
+            return LLVMInt64TypeInContext context
         if name.equals("float")
-            return LLVMFloatTypeInContext(context)
+            return LLVMFloatTypeInContext context
         if name.equals("double")
-            return LLVMDoubleTypeInContext(context)
-        LLVMTypeRef(null)
+            return LLVMDoubleTypeInContext context
+        LLVMTypeRef null
     }
 
     ; Check if a type name is an intrinsic type
@@ -2484,10 +2484,10 @@ define Emitter
         ; same `name` but have distinct mangled names. Without this,
         ; the second specialisation's emit hits the first one's cache
         ; entry and emit_struct_type returns the wrong LLVMType.
-        let cached_m lookup_struct_cache(struct.mangled_name)
+        let cached_m lookup_struct_cache struct.mangled_name
         if cached_m.handle <> null
             return cached_m
-        let cached lookup_struct_cache(struct.name)
+        let cached lookup_struct_cache struct.name
         if cached.handle <> null
         {
             ; Reuse only when the cached entry's name and mangled_name
@@ -2527,11 +2527,11 @@ define Emitter
         var i: size_t 0
         while i < element_count
         {
-            let prop_ptr struct.properties.get(i)
+            let prop_ptr struct.properties.get i
             if prop_ptr <> null
             {
                 let prop prop_ptr.unwrap()
-                let prop_llvm_type map_type(prop.prop_type)
+                let prop_llvm_type map_type prop.prop_type
                 element_types.put(i, prop_llvm_type)
             }
             set i: i + 1
@@ -2581,7 +2581,7 @@ define Emitter
         if kind = LLVMTypeKind.VectorKind()
             return false
         if kind = LLVMTypeKind.ArrayKind()
-            return llvm_type_sizable(LLVMGetElementType(t))
+            return llvm_type_sizable(LLVMGetElementType t)
         if kind = LLVMTypeKind.Struct()
         {
             if LLVMIsOpaqueStruct(t) <> 0
@@ -2630,7 +2630,7 @@ define Emitter
         if kind = LLVMTypeKind.Half()
             return 2
         if kind = LLVMTypeKind.ArrayKind()
-            return llvm_type_abi_align(LLVMGetElementType(t))
+            return llvm_type_abi_align(LLVMGetElementType t)
         if kind = LLVMTypeKind.Struct()
         {
             var max_a: size_t 1
@@ -2682,7 +2682,7 @@ define Emitter
         {
             let elem LLVMGetElementType(t)
             let n LLVMGetArrayLength2(t)
-            let elem_sz llvm_type_abi_size(elem)
+            let elem_sz llvm_type_abi_size elem
             return elem_sz * (n as size_t)
         }
         if kind = LLVMTypeKind.Struct()
@@ -2694,8 +2694,8 @@ define Emitter
             while i < n
             {
                 let ft LLVMStructGetTypeAtIndex(t, i)
-                let fs llvm_type_abi_size(ft)
-                let fa llvm_type_abi_align(ft)
+                let fs llvm_type_abi_size ft
+                let fa llvm_type_abi_align ft
                 let aligned abi_align_to(offset, fa)
                 set offset: aligned + fs
                 if fa > sa
@@ -2711,7 +2711,7 @@ define Emitter
     function emit_union_type(this, union_type: PlannedUnion) returns LLVMTypeRef
     {
         ; Check cache first
-        let cached lookup_struct_cache(union_type.name)
+        let cached lookup_struct_cache union_type.name
         if cached.handle <> null
             return cached
 
@@ -2747,24 +2747,24 @@ define Emitter
             var vi: size_t 0
             while vi < vars.length
             {
-                let v_ptr vars.get(vi)
+                let v_ptr vars.get vi
                 if v_ptr <> null
                 {
                     let v (*v_ptr)
                     if v.var_type <> null
                     {
                         let vt (*v.var_type)
-                        let v_llvm map_type(vt)
+                        let v_llvm map_type vt
                         if v_llvm.handle = null
                             set walker_ok: false
                         if v_llvm.handle <> null
                         {
-                            let v_ok llvm_type_sizable(v_llvm)
+                            let v_ok llvm_type_sizable v_llvm
                             if v_ok = false
                                 set walker_ok: false
                             if v_ok
                             {
-                                let vs llvm_type_abi_size(v_llvm)
+                                let vs llvm_type_abi_size v_llvm
                                 if vs > max_size
                                     set max_size: vs
                             }
@@ -2832,7 +2832,7 @@ define Emitter
         }
         if llvm_type_sizable(t) = false
             return 256
-        llvm_type_abi_size(t)
+        llvm_type_abi_size t
     }
 
     function build_throws_result_type(this, value_ty: LLVMTypeRef, throws_ty: LLVMTypeRef, mangled_name: String) returns LLVMTypeRef
@@ -2873,7 +2873,7 @@ define Emitter
         {
             if n.equals(mangled_name)
             {
-                let t throws_result_types.get(i)
+                let t throws_result_types.get i
                 if t <> null
                     return t
 
@@ -2902,8 +2902,8 @@ define Emitter
         fields.put(0, i8_ty)
         fields.put(1, data_arr_ty)
         let result_ty LLVMStructTypeInContext(context, fields.data, 2, 0)
-        throws_result_names.add(mangled_name)
-        throws_result_types.add(result_ty)
+        throws_result_names.add mangled_name
+        throws_result_types.add result_ty
         result_ty
     }
 
@@ -2911,7 +2911,7 @@ define Emitter
     function emit_function_decl(this, func: PlannedFunction) returns LLVMValueRef
     {
         ; Check cache first
-        let cached lookup_function_cache(func.mangled_name)
+        let cached lookup_function_cache func.mangled_name
         if cached.handle <> null
         {
             ; s134: when the cached entry came from the s78/s83 extern-
@@ -2969,7 +2969,7 @@ define Emitter
         if func.return_type <> null
         {
             let rt func.return_type.unwrap()
-            let mapped map_type(rt)
+            let mapped map_type rt
             if use_sret
             {
                 ; s194: throws wrapper base. The wrapper data field is sized
@@ -3072,14 +3072,14 @@ define Emitter
                 var i: size_t 0
                 while i < input_count
                 {
-                    let item_ptr input.get(i)
+                    let item_ptr input.get i
                     if item_ptr <> null
                     {
                         let item (*item_ptr)
                         if item.item_type <> null
                         {
                             let item_type item.item_type.unwrap()
-                            let llvm_param_type map_type(item_type)
+                            let llvm_param_type map_type item_type
                             ; Pass struct/array types by pointer (borrowed),
                             ; primitives by value. Mirrors Emitter.cpp:1257-1268.
                             let kind LLVMGetTypeKind(llvm_param_type)
@@ -3204,7 +3204,7 @@ define Emitter
         var i: size_t 2
         while i < n
         {
-            let c mangled.get(i)
+            let c mangled.get i
             var is_param: bool false
             if c = (84 as char)
                 set is_param: true
@@ -3237,7 +3237,7 @@ define Emitter
     function emit_function_body(this, func: PlannedFunction) returns bool
     {
         ; Get the LLVM function (should already be declared)
-        let llvm_func lookup_function_cache(func.mangled_name)
+        let llvm_func lookup_function_cache func.mangled_name
         if llvm_func.handle = null
             return false
 
@@ -3286,7 +3286,7 @@ define Emitter
                     let stub_func_ty LLVMGlobalGetValueType(llvm_func)
                     let stub_ret_ty LLVMGetReturnType(stub_func_ty)
                     if LLVMGetTypeKind(stub_ret_ty) = LLVMTypeKind.Void()
-                        LLVMBuildRetVoid(builder)
+                        LLVMBuildRetVoid builder
                     if LLVMGetTypeKind(stub_ret_ty) <> LLVMTypeKind.Void()
                     {
                         let stub_zero LLVMConstNull(stub_ret_ty)
@@ -3317,7 +3317,7 @@ define Emitter
                 ; prior function bleeding into stubs/this prologue.
                 clear_debug_location()
                 if config.emit_debug_info
-                    set_function_debug_scope(func)
+                    set_function_debug_scope func
 
                 ; s89: sret-using functions consume LLVM-arg index 0 for
                 ; the indirect-result-location pointer; page/user params
@@ -3355,7 +3355,7 @@ define Emitter
                     var i: size_t 0
                     while i < input.length
                     {
-                        let item_ptr input.get(i)
+                        let item_ptr input.get i
                         if item_ptr <> null
                         {
                             let item (*item_ptr)
@@ -3371,7 +3371,7 @@ define Emitter
                 }
 
                 ; Emit the action (function body)
-                let result emit_action(action)
+                let result emit_action action
 
                 ; Add return if not already terminated. Choose RetVoid
                 ; vs Ret-zero by querying the LLVM function's actual
@@ -3380,7 +3380,7 @@ define Emitter
                 ; even when emit_function_decl gave the LLVM signature
                 ; a non-void result, which would otherwise produce
                 ; `ret void` in a `ptr`-returning function.
-                let term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock(builder))
+                let term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock builder)
                 if term.handle = null
                 {
                     ; The appended terminating return inherits the body's last
@@ -3451,9 +3451,9 @@ define Emitter
                                     var to_store_imp result
                                     if ret_is_value = false
                                     {
-                                        if LLVMGetTypeKind(LLVMTypeOf(result)) = LLVMTypeKind.Pointer()
+                                        if LLVMGetTypeKind(LLVMTypeOf result) = LLVMTypeKind.Pointer()
                                         {
-                                            var sty_imp map_type(rt2)
+                                            var sty_imp map_type rt2
                                             if LLVMGetTypeKind(sty_imp) <> LLVMTypeKind.Struct()
                                                 set sty_imp: get_or_create_struct_placeholder(rt2.name, rt2.mangled_name)
                                             if LLVMGetTypeKind(sty_imp) = LLVMTypeKind.Struct()
@@ -3473,16 +3473,16 @@ define Emitter
                             if result.handle <> null
                             {
                                 var to_store result
-                                if LLVMGetTypeKind(LLVMTypeOf(result)) = LLVMTypeKind.Pointer()
+                                if LLVMGetTypeKind(LLVMTypeOf result) = LLVMTypeKind.Pointer()
                                 {
                                     let rt2 func.return_type.unwrap()
-                                    var sty map_type(rt2)
+                                    var sty map_type rt2
                                     if LLVMGetTypeKind(sty) <> LLVMTypeKind.Struct()
                                         set sty: get_or_create_struct_placeholder(rt2.name, rt2.mangled_name)
                                     if LLVMGetTypeKind(sty) = LLVMTypeKind.Struct()
                                         set to_store: LLVMBuildLoad2(builder, sty, result, "sret.body")
                                 }
-                                if LLVMGetTypeKind(LLVMTypeOf(to_store)) = LLVMTypeKind.Struct()
+                                if LLVMGetTypeKind(LLVMTypeOf to_store) = LLVMTypeKind.Struct()
                                 {
                                     ; s178: memcpy when to_store is a load.
                                     let ts_ty LLVMTypeOf(to_store)
@@ -3490,12 +3490,12 @@ define Emitter
                                 }
                             }
                         }
-                        LLVMBuildRetVoid(builder)
+                        LLVMBuildRetVoid builder
                     }
                     else
                     {
                         if LLVMGetTypeKind(llvm_rt) = LLVMGetTypeKind(void_ty)
-                            LLVMBuildRetVoid(builder)
+                            LLVMBuildRetVoid builder
                         else
                         {
                             if result.handle <> null
@@ -3510,7 +3510,7 @@ define Emitter
                                 var ret_val result
                                 if LLVMGetTypeKind(llvm_rt) = LLVMTypeKind.Struct()
                                 {
-                                    if LLVMGetTypeKind(LLVMTypeOf(result)) = LLVMTypeKind.Pointer()
+                                    if LLVMGetTypeKind(LLVMTypeOf result) = LLVMTypeKind.Pointer()
                                         set ret_val: LLVMBuildLoad2(builder, llvm_rt, result, "ret.load")
                                 }
                                 ; ptr-returning fn with struct value → heap-alloc
@@ -3525,7 +3525,7 @@ define Emitter
                                 ; PageAllocate branch for Lifetime.Call.
                                 if LLVMGetTypeKind(llvm_rt) = LLVMTypeKind.Pointer()
                                 {
-                                    if LLVMGetTypeKind(LLVMTypeOf(ret_val)) = LLVMTypeKind.Struct()
+                                    if LLVMGetTypeKind(LLVMTypeOf ret_val) = LLVMTypeKind.Struct()
                                     {
                                         let result_ty LLVMTypeOf(ret_val)
                                         let rp_val lookup_variable(String$("rp"))
@@ -3538,8 +3538,8 @@ define Emitter
                                             {
                                                 var alloc_param_types_d Vector[LLVMTypeRef]#(3)
                                                 alloc_param_types_d.put(0, LLVMPointerTypeInContext(context, 0))
-                                                alloc_param_types_d.put(1, LLVMInt64TypeInContext(context))
-                                                alloc_param_types_d.put(2, LLVMInt64TypeInContext(context))
+                                                alloc_param_types_d.put(1, LLVMInt64TypeInContext context)
+                                                alloc_param_types_d.put(2, LLVMInt64TypeInContext context)
                                                 let alloc_ret_ty_d LLVMPointerTypeInContext(context, 0)
                                                 let alloc_decl_ty LLVMFunctionType(alloc_ret_ty_d, alloc_param_types_d.data, 3, 0)
                                                 set alloc_func: LLVMAddFunction(llvm_module, "_ZN4Page8allocateEmm", alloc_decl_ty)
@@ -3554,8 +3554,8 @@ define Emitter
                                             alloc_args.put(2, align_const)
                                             var alloc_param_types_c Vector[LLVMTypeRef]#(3)
                                             alloc_param_types_c.put(0, LLVMPointerTypeInContext(context, 0))
-                                            alloc_param_types_c.put(1, LLVMInt64TypeInContext(context))
-                                            alloc_param_types_c.put(2, LLVMInt64TypeInContext(context))
+                                            alloc_param_types_c.put(1, LLVMInt64TypeInContext context)
+                                            alloc_param_types_c.put(2, LLVMInt64TypeInContext context)
                                             let alloc_ret_ty_c LLVMPointerTypeInContext(context, 0)
                                             let alloc_call_ty LLVMFunctionType(alloc_ret_ty_c, alloc_param_types_c.data, 3, 0)
                                             let heap_ptr LLVMBuildCall2(builder, alloc_call_ty, alloc_func, alloc_args.data, 3, "ret.region")
@@ -3569,12 +3569,12 @@ define Emitter
                                 ; is always type-correct for the LLVM return
                                 ; type. Real fix is value-side integer promotion.
                                 if LLVMTypeOf(ret_val).handle <> llvm_rt.handle
-                                    LLVMBuildRet(builder, LLVMConstNull(llvm_rt))
+                                    LLVMBuildRet(builder, LLVMConstNull llvm_rt)
                                 else
                                     LLVMBuildRet(builder, ret_val)
                             }
                             else
-                                LLVMBuildRet(builder, LLVMConstNull(llvm_rt))
+                                LLVMBuildRet(builder, LLVMConstNull llvm_rt)
                         }
                     }
                 }
@@ -3593,7 +3593,7 @@ define Emitter
                     if bb_term.handle = null
                     {
                         LLVMPositionBuilderAtEnd(builder, bb)
-                        LLVMBuildUnreachable(builder)
+                        LLVMBuildUnreachable builder
                     }
                     set bb: LLVMGetNextBasicBlock(bb)
                 }
@@ -3636,7 +3636,7 @@ define Emitter
                 ; field) need the literal in the right width or stores
                 ; truncate (i32 stored into a size_t field reads
                 ; garbage in the high bytes).
-                var llvm_type map_intrinsic_type_by_name(result_type.name)
+                var llvm_type map_intrinsic_type_by_name result_type.name
                 if llvm_type.handle = null
                     set llvm_type: LLVMInt32TypeInContext(context)
                 if LLVMGetTypeKind(llvm_type) <> LLVMTypeKind.Integer()
@@ -3666,7 +3666,7 @@ define Emitter
                 ; Get first character
                 if c.value.get_length() > 0
                 {
-                    let ch c.value.get(0)
+                    let ch c.value.get 0
                     return LLVMConstInt(llvm_type, ch as size_t, 0)
                 }
                 return LLVMConstInt(llvm_type, 0, 0)
@@ -3678,7 +3678,7 @@ define Emitter
             when n: Null
             {
                 let ptr_type LLVMPointerTypeInContext(context, 0)
-                return LLVMConstPointerNull(ptr_type)
+                return LLVMConstPointerNull ptr_type
             }
     }
 
@@ -3743,14 +3743,14 @@ define Emitter
         if plan.structures <> null
         {
             for struct in plan.structures
-                emit_struct_type(struct)
+                emit_struct_type struct
         }
 
         ; Emit all unions
         if plan.unions <> null
         {
             for union_type in plan.unions
-                emit_union_type(union_type)
+                emit_union_type union_type
         }
 
         ; Emit function declarations first (for forward references)
@@ -3759,7 +3759,7 @@ define Emitter
             for func in plan.functions
             {
                 if is_test_function(func) = false
-                    emit_function_decl(func)
+                    emit_function_decl func
             }
         }
 
@@ -3781,7 +3781,7 @@ define Emitter
         {
             for global in plan.globals
             {
-                var global_type map_intrinsic_type_by_name(global.global_type.name)
+                var global_type map_intrinsic_type_by_name global.global_type.name
                 if global_type.handle = null
                     set global_type: map_type(global.global_type)
 
@@ -3790,7 +3790,7 @@ define Emitter
                 ; Set initializer if present
                 if global.value <> null
                 {
-                    let init_value emit_operands(global.value)
+                    let init_value emit_operands global.value
                     if init_value.handle <> null
                         LLVMSetInitializer(gv, init_value)
                 }
@@ -3803,7 +3803,7 @@ define Emitter
                 if global.is_mutable
                 {
                     if global.value = null
-                        LLVMSetInitializer(gv, LLVMConstNull(global_type))
+                        LLVMSetInitializer(gv, LLVMConstNull global_type)
                     LLVMSetGlobalConstant(gv, 0)
                 }
                 if global.is_mutable = false
@@ -3817,7 +3817,7 @@ define Emitter
             for func in plan.functions
             {
                 if is_test_function(func) = false
-                    emit_function_body(func)
+                    emit_function_body func
             }
         }
 
@@ -3864,10 +3864,10 @@ define Emitter
 
                     ; Emit top-level statements
                     for stmt in plan.statements
-                        emit_statement(stmt)
+                        emit_statement stmt
 
                     ; Return 0 if not terminated
-                    let term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock(builder))
+                    let term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock builder)
                     if term.handle = null
                     {
                         ; -g: point the synthetic return past the last source
@@ -3918,7 +3918,7 @@ define Emitter
 
         ; -g: resolve all deferred debug-info references into the module.
         if config.emit_debug_info
-            LLVMDIBuilderFinalize(di_builder)
+            LLVMDIBuilderFinalize di_builder
 
         true
     }
@@ -4080,7 +4080,7 @@ define Emitter
                             let func_ty LLVMGlobalGetValueType(func)
                             let ret_ty LLVMGetReturnType(func_ty)
                             if LLVMGetTypeKind(ret_ty) = LLVMTypeKind.Void()
-                                LLVMBuildRetVoid(builder)
+                                LLVMBuildRetVoid builder
                             if LLVMGetTypeKind(ret_ty) <> LLVMTypeKind.Void()
                             {
                                 let zero LLVMConstNull(ret_ty)
@@ -4148,7 +4148,7 @@ define Emitter
                             let func_ty LLVMGlobalGetValueType(func)
                             let ret_ty LLVMGetReturnType(func_ty)
                             if LLVMGetTypeKind(ret_ty) = LLVMTypeKind.Void()
-                                LLVMBuildRetVoid(builder)
+                                LLVMBuildRetVoid builder
                             if LLVMGetTypeKind(ret_ty) <> LLVMTypeKind.Void()
                             {
                                 let zero LLVMConstNull(ret_ty)
@@ -4174,7 +4174,7 @@ define Emitter
         if msg <> null
         {
             Console.println(msg as pointer[const_char])
-            LLVMDisposeErrorMessage(msg)
+            LLVMDisposeErrorMessage msg
         }
     }
 
@@ -4305,7 +4305,7 @@ define Emitter
     ; Print module IR to string (for debugging)
     function print_module_to_string(this) returns pointer[char]
     {
-        LLVMPrintModuleToString(llvm_module)
+        LLVMPrintModuleToString llvm_module
     }
 
     ; Write module IR to file
@@ -4369,7 +4369,7 @@ define Emitter
         let c_filename filename.to_c_string#()
         let emit_err LLVMTargetMachineEmitToFile(tm, llvm_module, c_filename, 1,
             null as pointer[pointer[char]])
-        LLVMDisposeTargetMachine(tm)
+        LLVMDisposeTargetMachine tm
 
         emit_err = 0
     }
@@ -4389,15 +4389,15 @@ define Emitter
     function emit_operands(this, ops: ref[Vector[PlannedOperand]]?) returns LLVMValueRef
     {
         if ops = null
-            return LLVMValueRef(null)
+            return LLVMValueRef null
 
         if ops.length = 0
-            return LLVMValueRef(null)
+            return LLVMValueRef null
 
         ; After collapseOperandSequence, we typically have a single collapsed operand
-        let first ops.get(0)
+        let first ops.get 0
         if first = null
-            return LLVMValueRef(null)
+            return LLVMValueRef null
 
         emit_operand(first.unwrap())
     }
@@ -4436,24 +4436,24 @@ define Emitter
         var current_value LLVMValueRef(base_value.handle)
 
         if current_value.handle = null
-            return LLVMValueRef(null)
+            return LLVMValueRef null
 
         ; Defensive: LLVMTypeOf can return null when current_value.handle
         ; is non-null but isn't a real LLVMValue (stale/invalid pointer).
         ; Bail out cleanly instead of dereferencing null in LLVMGetTypeKind.
         let cv_type LLVMTypeOf(current_value)
         if cv_type.handle = null
-            return LLVMValueRef(null)
+            return LLVMValueRef null
 
         ; If base value is a pointer, we may need to load the struct
         if LLVMGetTypeKind(cv_type) = LLVMTypeKind.Pointer()
         {
             ; Get the first member's parent type to know what to load
-            let first chain.get(0)
+            let first chain.get 0
             if first <> null
             {
                 let parent_type first.parent_type
-                var struct_type map_type(parent_type)
+                var struct_type map_type parent_type
                 ; s137: Defensive sized-type check. map_type may return an
                 ; opaque named struct (cached via LLVMStructCreateNamed
                 ; before setBody) or fall through to the opaque-ptr
@@ -4481,7 +4481,7 @@ define Emitter
         var i: size_t 0
         while i < chain.length
         {
-            let access_ptr chain.get(i)
+            let access_ptr chain.get i
             if access_ptr <> null
             {
                 let access access_ptr.unwrap()
@@ -4491,8 +4491,8 @@ define Emitter
                 {
                     ; Union layout is { i8 tag, [size x i8] data }
                     ; Store to alloca, GEP to field 1, bitcast, and load
-                    let union_type map_type(access.parent_type)
-                    let result_ty map_type(access.result_type)
+                    let union_type map_type access.parent_type
+                    let result_ty map_type access.result_type
 
                     ; Store the union value to an alloca
                     let union_ptr entry_alloca(union_type, "union.tmp")
@@ -4506,7 +4506,7 @@ define Emitter
                 }
                 else
                 {
-                    var cur_kind LLVMGetTypeKind(LLVMTypeOf(current_value))
+                    var cur_kind LLVMGetTypeKind(LLVMTypeOf current_value)
 
                     ; s121: deref-load when current_value is a pointer
                     ; to a struct. Happens when a previous chain step
@@ -4544,7 +4544,7 @@ define Emitter
                                 let dpg (*access.parent_type.generics)
                                 if dpg.length > 0
                                 {
-                                    let dip dpg.get(0)
+                                    let dip dpg.get 0
                                     if dip <> null
                                         set deref_parent: (*dip)
                                 }
@@ -4557,21 +4557,21 @@ define Emitter
                                 let dpg (*access.parent_type.generics)
                                 if dpg.length > 0
                                 {
-                                    let dip dpg.get(0)
+                                    let dip dpg.get 0
                                     if dip <> null
                                         set deref_parent: (*dip)
                                 }
                             }
                         }
-                        var deref_struct_ty map_type(deref_parent)
+                        var deref_struct_ty map_type deref_parent
                         if LLVMGetTypeKind(deref_struct_ty) <> LLVMTypeKind.Struct()
                             set deref_struct_ty: synthesize_literal_struct(deref_parent.name)
                         if deref_struct_ty.handle = null
-                            return LLVMValueRef(null)
+                            return LLVMValueRef null
                         if LLVMGetTypeKind(deref_struct_ty) <> LLVMTypeKind.Struct()
-                            return LLVMValueRef(null)
+                            return LLVMValueRef null
                         set current_value: LLVMBuildLoad2(builder, deref_struct_ty, current_value, "deref")
-                        set cur_kind: LLVMGetTypeKind(LLVMTypeOf(current_value))
+                        set cur_kind: LLVMGetTypeKind(LLVMTypeOf current_value)
                     }
 
                     ; Defensive: extractvalue requires a non-null
@@ -4580,7 +4580,7 @@ define Emitter
                     ; out instead of crashing inside
                     ; LLVMBuildExtractValue → setName.
                     if current_value.handle = null
-                        return LLVMValueRef(null)
+                        return LLVMValueRef null
 
                     ; Bail on non-aggregate (Int, Float, Function, etc.) —
                     ; LLVMBuildExtractValue requires Struct or Array.
@@ -4594,7 +4594,7 @@ define Emitter
                     if cur_kind <> LLVMTypeKind.Struct()
                     {
                         if cur_kind <> LLVMTypeKind.ArrayKind()
-                            return LLVMValueRef(null)
+                            return LLVMValueRef null
                     }
 
                     ; Use extractvalue for struct field access. Name
@@ -4635,75 +4635,75 @@ define Emitter
             when t: Type
             {
                 ; Type used as expression - error
-                return LLVMValueRef(null)
+                return LLVMValueRef null
             }
             when v: Variable
             {
-                return emit_variable(v)
+                return emit_variable v
             }
             when g: GlobalRef
             {
-                return emit_global_ref(g)
+                return emit_global_ref g
             }
             when c: Call
             {
-                return emit_call(c)
+                return emit_call c
             }
             when t: Tuple
             {
-                return emit_tuple(t)
+                return emit_tuple t
             }
             when m: Matrix
             {
-                return emit_matrix(m)
+                return emit_matrix m
             }
             when b: Block
             {
-                return emit_block(b)
+                return emit_block b
             }
             when i: If
             {
-                return emit_if(i)
+                return emit_if i
             }
             when m: Match
             {
-                return emit_match(m)
+                return emit_match m
             }
             when c: Choose
             {
-                return emit_choose(c)
+                return emit_choose c
             }
             when f: For
             {
-                return emit_for(f)
+                return emit_for f
             }
             when w: While
             {
-                return emit_while(w)
+                return emit_while w
             }
             when t: Try
             {
-                return emit_try(t)
+                return emit_try t
             }
             when s: SizeOf
             {
-                return emit_sizeof(s)
+                return emit_sizeof s
             }
             when a: AlignOf
             {
-                return emit_alignof(a)
+                return emit_alignof a
             }
             when i: Is
             {
-                return emit_is(i)
+                return emit_is i
             }
             when a: As
             {
-                return emit_as(a)
+                return emit_as a
             }
             when vc: VariantConstruction
             {
-                return emit_variant_construction(vc)
+                return emit_variant_construction vc
             }
     }
 
@@ -4714,9 +4714,9 @@ define Emitter
     ; Emit a variable reference
     function emit_variable(this, variable: PlannedVariable) returns LLVMValueRef
     {
-        let var_ptr lookup_variable(variable.name)
+        let var_ptr lookup_variable variable.name
         if var_ptr.handle = null
-            return LLVMValueRef(null)
+            return LLVMValueRef null
 
         ; s124: when variable.is_mutable but the looked-up value isn't a
         ; pointer, treat it as immutable. Stage-1's flat variable table
@@ -4754,7 +4754,7 @@ define Emitter
             ; stable hard-coded primitive table; for non-primitives
             ; it returns null and we fall back to map_type to keep
             ; struct / pointer / ref handling intact.
-            var ty map_intrinsic_type_by_name(variable.variable_type.name)
+            var ty map_intrinsic_type_by_name variable.variable_type.name
             if ty.handle = null
                 set ty: map_type(variable.variable_type)
             ; s178: an UNSIZED mapped type — void (planner fresh-type-
@@ -4833,7 +4833,7 @@ define Emitter
     {
         let gv LLVMGetNamedGlobal(llvm_module, global.mangled_name.c_data())
         if gv.handle = null
-            return LLVMValueRef(null)
+            return LLVMValueRef null
 
         ; s189: a mutable module global (marked non-constant) reads as a
         ; LOAD of the current stored value. Member access / comparison on
@@ -4849,7 +4849,7 @@ define Emitter
         if global.global_type.array_size.get_length() > 0
         {
             ; For arrays, create GEP to get pointer to first element
-            let element_type map_type(global.global_type)
+            let element_type map_type global.global_type
             let i64_type LLVMInt64TypeInContext(context)
             let zero LLVMConstInt(i64_type, 0, 0)
 
@@ -4904,15 +4904,15 @@ define Emitter
                 let gens (*ctor_rt.generics)
                 if gens.length > 0
                 {
-                    let g0 gens.get(0)
+                    let g0 gens.get 0
                     if g0 <> null
                         set ctor_rt: (*g0)
                 }
             }
         }
-        let struct_ty map_type(ctor_rt)
+        let struct_ty map_type ctor_rt
         if struct_ty.handle = null
-            return LLVMValueRef(null)
+            return LLVMValueRef null
 
         ; Decide allocation strategy based on call.life. Lifetime.Reference
         ; (^name) reads the page from the named local variable.
@@ -4970,7 +4970,7 @@ define Emitter
                 }
             }
             if page_arg.handle = null
-                return LLVMValueRef(null)
+                return LLVMValueRef null
         }
 
         ; Allocate the struct.
@@ -4986,8 +4986,8 @@ define Emitter
             {
                 var alloc_param_types_d Vector[LLVMTypeRef]#(3)
                 alloc_param_types_d.put(0, LLVMPointerTypeInContext(context, 0))
-                alloc_param_types_d.put(1, LLVMInt64TypeInContext(context))
-                alloc_param_types_d.put(2, LLVMInt64TypeInContext(context))
+                alloc_param_types_d.put(1, LLVMInt64TypeInContext context)
+                alloc_param_types_d.put(2, LLVMInt64TypeInContext context)
                 let alloc_ret_ty LLVMPointerTypeInContext(context, 0)
                 let alloc_decl_ty LLVMFunctionType(alloc_ret_ty, alloc_param_types_d.data, 3, 0)
                 set alloc_func: LLVMAddFunction(llvm_module, "_ZN4Page8allocateEmm", alloc_decl_ty)
@@ -5019,8 +5019,8 @@ define Emitter
             alloc_args.put(2, align_const)
             var alloc_param_types_c Vector[LLVMTypeRef]#(3)
             alloc_param_types_c.put(0, LLVMPointerTypeInContext(context, 0))
-            alloc_param_types_c.put(1, LLVMInt64TypeInContext(context))
-            alloc_param_types_c.put(2, LLVMInt64TypeInContext(context))
+            alloc_param_types_c.put(1, LLVMInt64TypeInContext context)
+            alloc_param_types_c.put(2, LLVMInt64TypeInContext context)
             let alloc_ret_ty2 LLVMPointerTypeInContext(context, 0)
             let alloc_call_ty LLVMFunctionType(alloc_ret_ty2, alloc_param_types_c.data, 3, 0)
             set struct_ptr: LLVMBuildCall2(builder, alloc_call_ty, alloc_func, alloc_args.data, 3, "struct.region")
@@ -5118,22 +5118,22 @@ define Emitter
             var ai: size_t 0
             while ai < argv.length
             {
-                let aptr argv.get(ai)
+                let aptr argv.get ai
                 if aptr <> null
                 {
                     var arg_value emit_operand((*aptr))
                     if arg_value.handle = null
-                        return LLVMValueRef(null)
-                    let arg_kind LLVMGetTypeKind(LLVMTypeOf(arg_value))
+                        return LLVMValueRef null
+                    let arg_kind LLVMGetTypeKind(LLVMTypeOf arg_value)
                     if arg_kind = LLVMTypeKind.Struct()
                     {
-                        let arg_alloca acquire_temp(LLVMTypeOf(arg_value), "arg.tmp")
+                        let arg_alloca acquire_temp(LLVMTypeOf arg_value, "arg.tmp")
                         let av_ty LLVMTypeOf(arg_value)
                         copy_struct_value(arg_alloca, arg_value, av_ty)
                         set arg_value: arg_alloca
                     }
                     ctor_args.put(slot, arg_value)
-                    ctor_param_types.put(slot, LLVMTypeOf(arg_value))
+                    ctor_param_types.put(slot, LLVMTypeOf arg_value)
                     set slot: slot + 1
                 }
                 set ai: ai + 1
@@ -5141,7 +5141,7 @@ define Emitter
         }
 
         ; Look up or declare the ctor function.
-        var ctor_fn lookup_function_cache(call.mangled_name)
+        var ctor_fn lookup_function_cache call.mangled_name
         if ctor_fn.handle = null
             set ctor_fn: LLVMGetNamedFunction(llvm_module, call.mangled_name.c_data())
         if ctor_fn.handle = null
@@ -5174,7 +5174,7 @@ define Emitter
                 let ic_args (*call.args)
                 if ic_args.length > 0
                 {
-                    let callee_ptr ic_args.get(0)
+                    let callee_ptr ic_args.get 0
                     if callee_ptr <> null
                     {
                         let callee_val emit_operand(*callee_ptr)
@@ -5184,16 +5184,16 @@ define Emitter
                     }
                 }
             }
-            return LLVMValueRef(null)
+            return LLVMValueRef null
         }
 
         ; Check if this is an intrinsic operator
         if call.is_intrinsic
         {
             if call.is_operator
-                return emit_intrinsic_operator(call)
+                return emit_intrinsic_operator call
             else
-                return emit_intrinsic_function(call)
+                return emit_intrinsic_function call
         }
 
         ; s80: Itanium C1 constructor calls — mangled name contains "C1E"
@@ -5203,10 +5203,10 @@ define Emitter
         ; args. Return struct ptr (the ctor itself returns void). Mirrors
         ; stage-0 Emitter.cpp:3308+ IsInitializerCall handling.
         if call.mangled_name.contains(String$("C1E"))
-            return emit_constructor_call(call)
+            return emit_constructor_call call
 
         ; Look up the function
-        var func lookup_function_cache(call.mangled_name)
+        var func lookup_function_cache call.mangled_name
         if func.handle = null
         {
             ; Try to find it in the module
@@ -5227,8 +5227,8 @@ define Emitter
                 ; the call was silently dropped: not_implemented's stderr
                 ; prints vanished from every stage-2+ binary.
                 if call.mangled_name.get_length() = 0
-                    return LLVMValueRef(null)
-                var decl_ret map_intrinsic_type_by_name(call.result_type.name)
+                    return LLVMValueRef null
+                var decl_ret map_intrinsic_type_by_name call.result_type.name
                 if decl_ret.handle = null
                     set decl_ret: map_type(call.result_type)
                 let decl_ty LLVMFunctionType(decl_ret, null as pointer[LLVMTypeRef], 0, 1)
@@ -5261,7 +5261,7 @@ define Emitter
         var sret_element_ty LLVMTypeRef(null)
         if use_sret
         {
-            let mapped map_type(call.result_type)
+            let mapped map_type call.result_type
             if call_can_throw_sret
             {
                 var wrap_base mapped
@@ -5314,7 +5314,7 @@ define Emitter
                 LLVMAddCallSiteAttribute(cv, 1 as u32, na_attr)
                 return sret_slot
             }
-            var result_type map_type(call.result_type)
+            var result_type map_type call.result_type
             ; s124: when the declared function returns void (procedure),
             ; force result_type to void here too so the call name is
             ; empty. map_type falls back to opaque ptr for empty/unknown
@@ -5367,7 +5367,7 @@ define Emitter
                     LLVMAddCallSiteAttribute(cv, 1 as u32, na_attr)
                     return sret_slot
                 }
-                var result_type map_type(call.result_type)
+                var result_type map_type call.result_type
                 ; s124: same void-return if as the call.args=null path.
                 let fn_ty LLVMGlobalGetValueType(func)
                 if fn_ty.handle <> null
@@ -5450,7 +5450,7 @@ define Emitter
         ; unreliable when its entry pages get reused (s71 class).
         ; Fall back to map_type for non-primitive (struct/pointer)
         ; result types.
-        var result_type map_intrinsic_type_by_name(call.result_type.name)
+        var result_type map_intrinsic_type_by_name call.result_type.name
         if result_type.handle = null
             set result_type: map_type(call.result_type)
         ; s89: when sret applies, the IR call returns void.
@@ -5477,7 +5477,7 @@ define Emitter
         var i: size_t 0
         while i < user_arg_count
         {
-            let arg_ptr call.args.get(i)
+            let arg_ptr call.args.get i
             if arg_ptr <> null
             {
                 let arg_operand arg_ptr.unwrap()
@@ -5502,7 +5502,7 @@ define Emitter
                             {
                                 if call.mangled_name.starts_with("LLVM") = false
                                 {
-                                    let var_ptr lookup_variable(v.name)
+                                    let var_ptr lookup_variable v.name
                                     if var_ptr.handle <> null
                                     {
                                         let is_alloca LLVMIsAAllocaInst(var_ptr)
@@ -5548,7 +5548,7 @@ define Emitter
                                 var ci0: size_t 0
                                 while ci0 < chain.length
                                 {
-                                    let acc_ptr0 chain.get(ci0)
+                                    let acc_ptr0 chain.get ci0
                                     if acc_ptr0 <> null
                                     {
                                         if (*acc_ptr0).is_method
@@ -5561,17 +5561,17 @@ define Emitter
                                     choose arg_operand.expr
                                         when v: Variable
                                         {
-                                            let var_ptr lookup_variable(v.name)
+                                            let var_ptr lookup_variable v.name
                                             if var_ptr.handle <> null
                                             {
                                                 let val_ty LLVMTypeOf(var_ptr)
                                                 if LLVMGetTypeKind(val_ty) = LLVMTypeKind.Pointer()
                                                 {
-                                                    let first_ptr chain.get(0)
+                                                    let first_ptr chain.get 0
                                                     if first_ptr <> null
                                                     {
                                                         let first_acc (*first_ptr)
-                                                        var current_struct_ty map_type(first_acc.parent_type)
+                                                        var current_struct_ty map_type first_acc.parent_type
                                                         if LLVMGetTypeKind(current_struct_ty) = LLVMTypeKind.Struct()
                                                         {
                                                             var current_ptr var_ptr
@@ -5602,7 +5602,7 @@ define Emitter
                                                             var ci: size_t 0
                                                             while ci < chain.length
                                                             {
-                                                                let acc_ptr chain.get(ci)
+                                                                let acc_ptr chain.get ci
                                                                 if acc_ptr <> null
                                                                 {
                                                                     ; s120: bail when the next step's parent
@@ -5697,7 +5697,7 @@ define Emitter
                 ; cleanly so the s48 fallback in emit_function_body emits
                 ; a degraded `ret <zero>` rather than corrupt IR.
                 if arg_value.handle = null
-                    return LLVMValueRef(null)
+                    return LLVMValueRef null
 
                 ; Struct args: emit_function_decl declares struct
                 ; params as `ptr` (line ~832), but emit_operand
@@ -5718,7 +5718,7 @@ define Emitter
                 ; NameInContext crash in stage-2's Emitter::initialize.
                 if direct_alloca = false
                 {
-                    let arg_kind LLVMGetTypeKind(LLVMTypeOf(arg_value))
+                    let arg_kind LLVMGetTypeKind(LLVMTypeOf arg_value)
                     if arg_kind = LLVMTypeKind.Struct()
                     {
                         var handled: bool false
@@ -5738,7 +5738,7 @@ define Emitter
                         }
                         if handled = false
                         {
-                            let arg_alloca acquire_temp(LLVMTypeOf(arg_value), "arg.tmp")
+                            let arg_alloca acquire_temp(LLVMTypeOf arg_value, "arg.tmp")
                             let av_ty2 LLVMTypeOf(arg_value)
                             copy_struct_value(arg_alloca, arg_value, av_ty2)
                             set arg_value: arg_alloca
@@ -5821,7 +5821,7 @@ define Emitter
                                 {
                                     if arg_operand.result_type.name.starts_with("LLVM")
                                     {
-                                        let w_ty map_type(arg_operand.result_type)
+                                        let w_ty map_type arg_operand.result_type
                                         if w_ty.handle <> null
                                         {
                                             if LLVMGetTypeKind(w_ty) = LLVMTypeKind.Struct()
@@ -5896,16 +5896,16 @@ define Emitter
     function emit_intrinsic_operator(this, call: PlannedCall) returns LLVMValueRef
     {
         if call.args = null
-            return LLVMValueRef(null)
+            return LLVMValueRef null
 
         let arg_count call.args.length
 
         ; Unary operators
         if arg_count = 1
         {
-            let arg call.args.get(0)
+            let arg call.args.get 0
             if arg = null
-                return LLVMValueRef(null)
+                return LLVMValueRef null
 
             let arg_op arg.unwrap()
 
@@ -5932,7 +5932,7 @@ define Emitter
                         {
                             if v.is_mutable
                             {
-                                let var_ptr lookup_variable(v.name)
+                                let var_ptr lookup_variable v.name
                                 if var_ptr.handle <> null
                                 {
                                     let is_alloca LLVMIsAAllocaInst(var_ptr)
@@ -5979,7 +5979,7 @@ define Emitter
                     ; field made PageListIterator.next return &node.page, and
                     ; deallocate_extensions's for-loop then deref'd garbage
                     ; (seed-only crash; fixpoint-invisible).
-                    let af_field_ty map_type(arg_op.result_type)
+                    let af_field_ty map_type arg_op.result_type
                     var af_is_ptr: bool false
                     if af_field_ty.handle <> null
                         set af_is_ptr: LLVMGetTypeKind(af_field_ty) = LLVMTypeKind.Pointer()
@@ -5987,10 +5987,10 @@ define Emitter
                     {
                     if ma_chain.length > 0
                     {
-                        let base_ptr emit_expression(arg_op.expr)
+                        let base_ptr emit_expression arg_op.expr
                         if base_ptr.handle <> null
                         {
-                            if LLVMGetTypeKind(LLVMTypeOf(base_ptr)) = LLVMTypeKind.Pointer()
+                            if LLVMGetTypeKind(LLVMTypeOf base_ptr) = LLVMTypeKind.Pointer()
                             {
                                 var gep_ptr base_ptr
                                 var gep_advanced: bool false
@@ -6000,11 +6000,11 @@ define Emitter
                                 {
                                     if gep_stop = false
                                     {
-                                        let gacc_ptr ma_chain.get(gi)
+                                        let gacc_ptr ma_chain.get gi
                                         if gacc_ptr <> null
                                         {
                                             let gacc (*gacc_ptr)
-                                            let gsty map_type(gacc.parent_type)
+                                            let gsty map_type gacc.parent_type
                                             if LLVMGetTypeKind(gsty) = LLVMTypeKind.Struct()
                                             {
                                                 set gep_ptr: LLVMBuildStructGEP2(builder, gsty, gep_ptr, gacc.field_index as u32, "addr.gep")
@@ -6025,20 +6025,20 @@ define Emitter
                 }
             }
 
-            let operand emit_operand(arg_op)
+            let operand emit_operand arg_op
             return emit_intrinsic_unary_op(call.name, operand, call.result_type)
         }
 
         ; Binary operators
         if arg_count = 2
         {
-            let left_arg call.args.get(0)
-            let right_arg call.args.get(1)
+            let left_arg call.args.get 0
+            let right_arg call.args.get 1
             if left_arg = null
-                return LLVMValueRef(null)
+                return LLVMValueRef null
 
             if right_arg = null
-                return LLVMValueRef(null)
+                return LLVMValueRef null
 
             ; s155: short-circuit || and && (Scaly semantics, mirrors
             ; stage-0 emitOperand's lor/land). The RHS must NOT be
@@ -6113,7 +6113,7 @@ define Emitter
             return emit_intrinsic_binary_op(call.name, left, right, call.result_type)
         }
 
-        LLVMValueRef(null)
+        LLVMValueRef null
     }
 
     ; Emit an intrinsic unary operator
@@ -6129,10 +6129,10 @@ define Emitter
         ; handle — better to emit a degraded ret void in the caller than
         ; let LLVMBuildNeg crash dereferencing operand->getType().
         if op.handle = null
-            return LLVMValueRef(null)
+            return LLVMValueRef null
 
-        let ty map_type(result_type)
-        let is_float is_floating_point_type(result_type)
+        let ty map_type result_type
+        let is_float is_floating_point_type result_type
 
         ; Negation
         if op_name.equals(String$("-"))
@@ -6212,17 +6212,17 @@ define Emitter
         ; `(*p).field` to round-trip through opaque ptr correctly.
         if op_name.equals(String$("&"))
         {
-            let op_kind LLVMGetTypeKind(LLVMTypeOf(op))
+            let op_kind LLVMGetTypeKind(LLVMTypeOf op)
             if op_kind = LLVMTypeKind.Struct()
             {
-                let tmp entry_alloca(LLVMTypeOf(op), "addr.tmp")
+                let tmp entry_alloca(LLVMTypeOf op, "addr.tmp")
                 LLVMBuildStore(builder, op, tmp)
                 return tmp
             }
             return op
         }
 
-        LLVMValueRef(null)
+        LLVMValueRef null
     }
 
     ; Emit an intrinsic binary operator
@@ -6232,21 +6232,21 @@ define Emitter
         var l LLVMValueRef(left.handle)
         var r LLVMValueRef(right.handle)
         if l.handle = null
-            return LLVMValueRef(null)
+            return LLVMValueRef null
         if r.handle = null
-            return LLVMValueRef(null)
+            return LLVMValueRef null
 
-        let ty map_type(result_type)
-        let is_float is_floating_point_type(result_type)
-        let is_signed is_signed_type(result_type)
+        let ty map_type result_type
+        let is_float is_floating_point_type result_type
+        let is_signed is_signed_type result_type
 
         ; Pointer arithmetic: pointer + int, pointer - int → GEP. The
         ; result_type is `pointer[T]` for these; element type for the
         ; GEP is map_type of the first generic, falling back to i8 when
         ; the result type isn't recognizably a pointer (gives a byte
         ; offset, matching the C++ Emitter at emitIntrinsicOp:4063+).
-        let l_kind LLVMGetTypeKind(LLVMTypeOf(l))
-        let r_kind LLVMGetTypeKind(LLVMTypeOf(r))
+        let l_kind LLVMGetTypeKind(LLVMTypeOf l)
+        let r_kind LLVMGetTypeKind(LLVMTypeOf r)
         if l_kind = LLVMTypeKind.Pointer()
         {
             if r_kind = LLVMTypeKind.Integer()
@@ -6261,7 +6261,7 @@ define Emitter
                             let gens (*result_type.generics)
                             if gens.length > 0
                             {
-                                let inner_ptr gens.get(0)
+                                let inner_ptr gens.get 0
                                 if inner_ptr <> null
                                 {
                                     ; s105: pointer[void] uses byte stride.
@@ -6288,7 +6288,7 @@ define Emitter
                             let gens (*result_type.generics)
                             if gens.length > 0
                             {
-                                let inner_ptr gens.get(0)
+                                let inner_ptr gens.get 0
                                 if inner_ptr <> null
                                     set elem_ty: map_type(*inner_ptr)
                             }
@@ -6311,14 +6311,14 @@ define Emitter
         {
             if r_kind = LLVMTypeKind.Integer()
             {
-                let l_width LLVMGetIntTypeWidth(LLVMTypeOf(l))
-                let r_width LLVMGetIntTypeWidth(LLVMTypeOf(r))
+                let l_width LLVMGetIntTypeWidth(LLVMTypeOf l)
+                let r_width LLVMGetIntTypeWidth(LLVMTypeOf r)
                 if l_width <> r_width
                 {
                     if l_width > r_width
-                        set r: LLVMBuildZExt(builder, r, LLVMTypeOf(l), "zext")
+                        set r: LLVMBuildZExt(builder, r, LLVMTypeOf l, "zext")
                     if l_width < r_width
-                        set l: LLVMBuildZExt(builder, l, LLVMTypeOf(r), "zext")
+                        set l: LLVMBuildZExt(builder, l, LLVMTypeOf r, "zext")
                 }
             }
         }
@@ -6451,8 +6451,8 @@ define Emitter
             if is_float
                 return LLVMBuildFCmp(builder, LLVMRealPredicate.OEQ(), l, r, "eq")
 
-            if LLVMGetTypeKind(LLVMTypeOf(l)) <> LLVMGetTypeKind(LLVMTypeOf(r))
-                return LLVMValueRef(null)
+            if LLVMGetTypeKind(LLVMTypeOf l) <> LLVMGetTypeKind(LLVMTypeOf r)
+                return LLVMValueRef null
             return LLVMBuildICmp(builder, LLVMIntPredicate.EQ(), l, r, "eq")
         }
 
@@ -6461,8 +6461,8 @@ define Emitter
             if is_float
                 return LLVMBuildFCmp(builder, LLVMRealPredicate.ONE(), l, r, "ne")
 
-            if LLVMGetTypeKind(LLVMTypeOf(l)) <> LLVMGetTypeKind(LLVMTypeOf(r))
-                return LLVMValueRef(null)
+            if LLVMGetTypeKind(LLVMTypeOf l) <> LLVMGetTypeKind(LLVMTypeOf r)
+                return LLVMValueRef null
             return LLVMBuildICmp(builder, LLVMIntPredicate.NE(), l, r, "ne")
         }
 
@@ -6471,8 +6471,8 @@ define Emitter
             if is_float
                 return LLVMBuildFCmp(builder, LLVMRealPredicate.OLT(), l, r, "lt")
 
-            if LLVMGetTypeKind(LLVMTypeOf(l)) <> LLVMGetTypeKind(LLVMTypeOf(r))
-                return LLVMValueRef(null)
+            if LLVMGetTypeKind(LLVMTypeOf l) <> LLVMGetTypeKind(LLVMTypeOf r)
+                return LLVMValueRef null
             if is_signed
                 return LLVMBuildICmp(builder, LLVMIntPredicate.SLT(), l, r, "lt")
 
@@ -6484,8 +6484,8 @@ define Emitter
             if is_float
                 return LLVMBuildFCmp(builder, LLVMRealPredicate.OLE(), l, r, "le")
 
-            if LLVMGetTypeKind(LLVMTypeOf(l)) <> LLVMGetTypeKind(LLVMTypeOf(r))
-                return LLVMValueRef(null)
+            if LLVMGetTypeKind(LLVMTypeOf l) <> LLVMGetTypeKind(LLVMTypeOf r)
+                return LLVMValueRef null
             if is_signed
                 return LLVMBuildICmp(builder, LLVMIntPredicate.SLE(), l, r, "le")
 
@@ -6497,8 +6497,8 @@ define Emitter
             if is_float
                 return LLVMBuildFCmp(builder, LLVMRealPredicate.OGT(), l, r, "gt")
 
-            if LLVMGetTypeKind(LLVMTypeOf(l)) <> LLVMGetTypeKind(LLVMTypeOf(r))
-                return LLVMValueRef(null)
+            if LLVMGetTypeKind(LLVMTypeOf l) <> LLVMGetTypeKind(LLVMTypeOf r)
+                return LLVMValueRef null
             if is_signed
                 return LLVMBuildICmp(builder, LLVMIntPredicate.SGT(), l, r, "gt")
 
@@ -6510,15 +6510,15 @@ define Emitter
             if is_float
                 return LLVMBuildFCmp(builder, LLVMRealPredicate.OGE(), l, r, "ge")
 
-            if LLVMGetTypeKind(LLVMTypeOf(l)) <> LLVMGetTypeKind(LLVMTypeOf(r))
-                return LLVMValueRef(null)
+            if LLVMGetTypeKind(LLVMTypeOf l) <> LLVMGetTypeKind(LLVMTypeOf r)
+                return LLVMValueRef null
             if is_signed
                 return LLVMBuildICmp(builder, LLVMIntPredicate.SGE(), l, r, "ge")
 
             return LLVMBuildICmp(builder, LLVMIntPredicate.UGE(), l, r, "ge")
         }
 
-        LLVMValueRef(null)
+        LLVMValueRef null
     }
 
     ; Emit an intrinsic function call
@@ -6534,18 +6534,18 @@ define Emitter
             {
                 if call.args.length = 1
                 {
-                    let arg call.args.get(0)
+                    let arg call.args.get 0
                     if arg <> null
                     {
                         let option_value emit_operand(arg.unwrap())
-                        let result_ty map_type(call.result_type)
+                        let result_ty map_type call.result_type
 
                         if result_ty.handle = null
-                            return LLVMValueRef(null)
+                            return LLVMValueRef null
 
                         ; Check if this is an NPO Option (pointer type)
                         ; For NPO, just load from the pointer
-                        if LLVMGetTypeKind(LLVMTypeOf(option_value)) = LLVMTypeKind.Pointer()
+                        if LLVMGetTypeKind(LLVMTypeOf option_value) = LLVMTypeKind.Pointer()
                         {
                             ; s169: NPO Option (Option[ref[T]] / Option[pointer[T]])
                             ; is represented as the raw pointer itself — option_value
@@ -6583,8 +6583,8 @@ define Emitter
                 if call.args.length = 2
                 {
                     ; First arg is the Option, second is the default
-                    let opt_arg call.args.get(0)
-                    let def_arg call.args.get(1)
+                    let opt_arg call.args.get 0
+                    let def_arg call.args.get 1
 
                     if opt_arg <> null
                     {
@@ -6600,7 +6600,7 @@ define Emitter
         }
 
         ; Unknown intrinsic function - return null
-        LLVMValueRef(null)
+        LLVMValueRef null
     }
 
     ; ========================================================================
@@ -6670,13 +6670,13 @@ define Emitter
             }
             if no_comps
             {
-                var struct_type lookup_struct_cache(tuple.tuple_type.mangled_name)
+                var struct_type lookup_struct_cache tuple.tuple_type.mangled_name
                 if struct_type.handle = null
                     set struct_type: lookup_struct_cache(tuple.tuple_type.name)
                 if struct_type.handle <> null
                 {
                     let tuple_ptr acquire_temp(struct_type, "tuple")
-                    LLVMBuildStore(builder, LLVMConstNull(struct_type), tuple_ptr)
+                    LLVMBuildStore(builder, LLVMConstNull struct_type, tuple_ptr)
                     ; Same load as the per-field-store branch below: when not
                     ; region-allocated, emit_binding needs the loaded struct
                     ; value so it alloca's a struct-typed slot for `var opts
@@ -6695,10 +6695,10 @@ define Emitter
         }
 
         if tuple.components = null
-            return LLVMValueRef(null)
+            return LLVMValueRef null
 
         if tuple.components.length = 0
-            return LLVMValueRef(null)
+            return LLVMValueRef null
 
         ; Check if this is struct construction vs grouped expression.
         ; Mirrors Emitter.cpp::emitTuple's StructCache-first heuristic
@@ -6708,12 +6708,12 @@ define Emitter
         if tuple.tuple_type.name.get_length() > 0
         {
             ; First check struct cache by mangled name and by readable name.
-            let cached_by_mangled lookup_struct_cache(tuple.tuple_type.mangled_name)
+            let cached_by_mangled lookup_struct_cache tuple.tuple_type.mangled_name
             if cached_by_mangled.handle <> null
                 set is_struct_construction: true
             if is_struct_construction = false
             {
-                let cached_by_name lookup_struct_cache(tuple.tuple_type.name)
+                let cached_by_name lookup_struct_cache tuple.tuple_type.name
                 if cached_by_name.handle <> null
                     set is_struct_construction: true
             }
@@ -6724,7 +6724,7 @@ define Emitter
                 set is_struct_construction: true
                 if tuple.components.length = 1
                 {
-                    let first tuple.components.get(0)
+                    let first tuple.components.get 0
                     if first <> null
                     {
                         if first.name = null
@@ -6753,7 +6753,7 @@ define Emitter
         {
             if tuple.components.length = 1
             {
-                let im_first tuple.components.get(0)
+                let im_first tuple.components.get 0
                 if im_first <> null
                 {
                     let imf (*im_first)
@@ -6764,7 +6764,7 @@ define Emitter
                             let ivops (*imf.value)
                             if ivops.length = 1
                             {
-                                let ilast_ptr ivops.get(0)
+                                let ilast_ptr ivops.get 0
                                 if ilast_ptr <> null
                                 {
                                     let ilast (*ilast_ptr)
@@ -6773,10 +6773,10 @@ define Emitter
                                         {
                                             if icall.name.equals(String$("*"))
                                             {
-                                                let deref_val emit_operands(imf.value)
+                                                let deref_val emit_operands imf.value
                                                 if deref_val.handle = null
-                                                    return LLVMValueRef(null)
-                                                let grp_ty map_type(tuple.tuple_type)
+                                                    return LLVMValueRef null
+                                                let grp_ty map_type tuple.tuple_type
                                                 if LLVMGetTypeKind(grp_ty) = LLVMTypeKind.Struct()
                                                     return LLVMBuildLoad2(builder, grp_ty, deref_val, "grp.deref.val")
                                                 return deref_val
@@ -6797,11 +6797,11 @@ define Emitter
         {
             if ~is_struct_construction
             {
-                let comp tuple.components.get(0)
+                let comp tuple.components.get 0
                 if comp <> null
                 {
                     if comp.name = null
-                        return emit_operands(comp.value)
+                        return emit_operands comp.value
 
                 }
             }
@@ -6818,11 +6818,11 @@ define Emitter
         var any_null: bool false
         while i < comp_count
         {
-            let comp_ptr tuple.components.get(i)
+            let comp_ptr tuple.components.get i
             if comp_ptr <> null
             {
                 let comp comp_ptr.unwrap()
-                let comp_value emit_operands(comp.value)
+                let comp_value emit_operands comp.value
                 comp_values.put(i, comp_value)
 
                 if comp_value.handle = null
@@ -6837,9 +6837,9 @@ define Emitter
             set i: i + 1
         }
         if any_null
-            return LLVMValueRef(null)
+            return LLVMValueRef null
         ; Get or create struct type
-        var struct_type lookup_struct_cache(tuple.tuple_type.mangled_name)
+        var struct_type lookup_struct_cache tuple.tuple_type.mangled_name
         if struct_type.handle = null
         {
             ; Create anonymous struct type
@@ -6863,7 +6863,7 @@ define Emitter
                     set page_var_name: r.location
                 else
                     0
-            let page_val_raw lookup_variable(page_var_name)
+            let page_val_raw lookup_variable page_var_name
             if page_val_raw.handle <> null
             {
                 var page_val LLVMValueRef(page_val_raw.handle)
@@ -6896,8 +6896,8 @@ define Emitter
                 {
                     var alloc_param_types_d Vector[LLVMTypeRef]#(3)
                     alloc_param_types_d.put(0, LLVMPointerTypeInContext(context, 0))
-                    alloc_param_types_d.put(1, LLVMInt64TypeInContext(context))
-                    alloc_param_types_d.put(2, LLVMInt64TypeInContext(context))
+                    alloc_param_types_d.put(1, LLVMInt64TypeInContext context)
+                    alloc_param_types_d.put(2, LLVMInt64TypeInContext context)
                     let alloc_ret_ty_d LLVMPointerTypeInContext(context, 0)
                     let alloc_decl_ty LLVMFunctionType(alloc_ret_ty_d, alloc_param_types_d.data, 3, 0)
                     set alloc_func: LLVMAddFunction(llvm_module, "_ZN4Page8allocateEmm", alloc_decl_ty)
@@ -6912,8 +6912,8 @@ define Emitter
                 alloc_args.put(2, align_const)
                 var alloc_param_types_c Vector[LLVMTypeRef]#(3)
                 alloc_param_types_c.put(0, LLVMPointerTypeInContext(context, 0))
-                alloc_param_types_c.put(1, LLVMInt64TypeInContext(context))
-                alloc_param_types_c.put(2, LLVMInt64TypeInContext(context))
+                alloc_param_types_c.put(1, LLVMInt64TypeInContext context)
+                alloc_param_types_c.put(2, LLVMInt64TypeInContext context)
                 let alloc_ret_ty_c LLVMPointerTypeInContext(context, 0)
                 let alloc_call_ty LLVMFunctionType(alloc_ret_ty_c, alloc_param_types_c.data, 3, 0)
                 set tuple_ptr: LLVMBuildCall2(builder, alloc_call_ty, alloc_func, alloc_args.data, 3, "tuple.region")
@@ -6954,7 +6954,7 @@ define Emitter
         {
             if elem_count > 1
             {
-                let cv0_ref comp_values.get(0)
+                let cv0_ref comp_values.get 0
                 if cv0_ref <> null
                 {
                     let cv0 (*cv0_ref)
@@ -6967,7 +6967,7 @@ define Emitter
                         ; result_type of the last collapsed operand carries
                         ; the planner's view ("Array" for `var X Array[T]$()`).
                         var comp0_is_array: bool false
-                        let c0_ptr tuple.components.get(0)
+                        let c0_ptr tuple.components.get 0
                         if c0_ptr <> null
                         {
                             let c0 c0_ptr.unwrap()
@@ -7050,13 +7050,13 @@ define Emitter
                                         LLVMBuildCondBr(builder, is_null, then_block, else_block)
                                         LLVMPositionBuilderAtEnd(builder, then_block)
                                         let len_gep_e LLVMBuildStructGEP2(builder, struct_type, tuple_ptr, 0 as u32, "v.length.ptr")
-                                        LLVMBuildStore(builder, LLVMConstInt(LLVMInt64TypeInContext(context), 0, 0), len_gep_e)
+                                        LLVMBuildStore(builder, LLVMConstInt(LLVMInt64TypeInContext context, 0, 0), len_gep_e)
                                         let data_gep_e LLVMBuildStructGEP2(builder, struct_type, tuple_ptr, 1 as u32, "v.data.ptr")
                                         LLVMBuildStore(builder, null_ptr, data_gep_e)
                                         LLVMBuildBr(builder, end_block)
                                         LLVMPositionBuilderAtEnd(builder, else_block)
                                         var inner_ftys Vector[LLVMTypeRef]#(2)
-                                        inner_ftys.put(0, LLVMInt64TypeInContext(context))
+                                        inner_ftys.put(0, LLVMInt64TypeInContext context)
                                         inner_ftys.put(1, LLVMPointerTypeInContext(context, 0))
                                         let inner_vec_ty LLVMStructTypeInContext(context, inner_ftys.data, 2, 0)
                                         let inner_vec LLVMBuildLoad2(builder, inner_vec_ty, arr_vec_ptr, "arr.inner")
@@ -7101,7 +7101,7 @@ define Emitter
                                     if tgt_name.starts_with("_Z6Vector")
                                     {
                                         var arr_ftys Vector[LLVMTypeRef]#(2)
-                                        arr_ftys.put(0, LLVMInt64TypeInContext(context))
+                                        arr_ftys.put(0, LLVMInt64TypeInContext context)
                                         arr_ftys.put(1, LLVMPointerTypeInContext(context, 0))
                                         let arr_struct_ty LLVMStructTypeInContext(context, arr_ftys.data, 2, 0)
                                         let arr_val LLVMBuildLoad2(builder, arr_struct_ty, cv0, "arrptr.load")
@@ -7115,13 +7115,13 @@ define Emitter
                                         LLVMBuildCondBr(builder, is_null2, then_block2, else_block2)
                                         LLVMPositionBuilderAtEnd(builder, then_block2)
                                         let len_gep_e2 LLVMBuildStructGEP2(builder, struct_type, tuple_ptr, 0 as u32, "v.length.ptr")
-                                        LLVMBuildStore(builder, LLVMConstInt(LLVMInt64TypeInContext(context), 0, 0), len_gep_e2)
+                                        LLVMBuildStore(builder, LLVMConstInt(LLVMInt64TypeInContext context, 0, 0), len_gep_e2)
                                         let data_gep_e2 LLVMBuildStructGEP2(builder, struct_type, tuple_ptr, 1 as u32, "v.data.ptr")
                                         LLVMBuildStore(builder, null_ptr2, data_gep_e2)
                                         LLVMBuildBr(builder, end_block2)
                                         LLVMPositionBuilderAtEnd(builder, else_block2)
                                         var inner_ftys2 Vector[LLVMTypeRef]#(2)
-                                        inner_ftys2.put(0, LLVMInt64TypeInContext(context))
+                                        inner_ftys2.put(0, LLVMInt64TypeInContext context)
                                         inner_ftys2.put(1, LLVMPointerTypeInContext(context, 0))
                                         let inner_vec_ty2 LLVMStructTypeInContext(context, inner_ftys2.data, 2, 0)
                                         let inner_vec2 LLVMBuildLoad2(builder, inner_vec_ty2, arr_vec_ptr, "arr.inner")
@@ -7156,7 +7156,7 @@ define Emitter
         set i: 0
         while i < comp_count
         {
-            let cv_ref comp_values.get(i)
+            let cv_ref comp_values.get i
             if cv_ref <> null
             {
                 var cv (*cv_ref)
@@ -7221,7 +7221,7 @@ define Emitter
     function emit_matrix(this, matrix: PlannedMatrix) returns LLVMValueRef
     {
         if matrix.operations = null
-            return LLVMValueRef(null)
+            return LLVMValueRef null
 
         let ops_ref matrix.operations.unwrap()
         let ops (*ops_ref)
@@ -7232,7 +7232,7 @@ define Emitter
         var row_idx: size_t 0
         while row_idx < ops.length
         {
-            let row_ptr ops.get(row_idx)
+            let row_ptr ops.get row_idx
             if row_ptr <> null
             {
                 let row (*row_ptr)
@@ -7242,7 +7242,7 @@ define Emitter
         }
 
         if total_count = 0
-            return LLVMValueRef(null)
+            return LLVMValueRef null
 
         ; Emit all element values
         var element_values Vector[LLVMValueRef]#(total_count)
@@ -7250,18 +7250,18 @@ define Emitter
         set row_idx: 0
         while row_idx < ops.length
         {
-            let row_ptr ops.get(row_idx)
+            let row_ptr ops.get row_idx
             if row_ptr <> null
             {
                 let row (*row_ptr)
                 var col_idx: size_t 0
                 while col_idx < row.length
                 {
-                    let operand_ptr row.get(col_idx)
+                    let operand_ptr row.get col_idx
                     if operand_ptr <> null
                     {
                         let operand operand_ptr.unwrap()
-                        let value emit_operand(operand)
+                        let value emit_operand operand
                         element_values.put(elem_idx, value)
                         set elem_idx: elem_idx + 1
                     }
@@ -7272,7 +7272,7 @@ define Emitter
         }
 
         ; Create array type
-        let element_llvm_type map_type(matrix.element_type)
+        let element_llvm_type map_type matrix.element_type
         ; Guard against unsized element types. When the planner can't
         ; resolve the matrix's element type (e.g. top-level array
         ; literals in root_pages.scaly with unresolved generic walk),
@@ -7280,7 +7280,7 @@ define Emitter
         ; an LLVM assertion in DataLayout::getTypeSizeInBits (rc=133).
         ; Same shape as the s97 emit_throw void-ret guard.
         if LLVMGetTypeKind(element_llvm_type) = LLVMTypeKind.Void()
-            return LLVMValueRef(null)
+            return LLVMValueRef null
         let array_type LLVMArrayType2(element_llvm_type, total_count)
 
         ; Allocate array on stack
@@ -7293,7 +7293,7 @@ define Emitter
         set elem_idx: 0
         while elem_idx < total_count
         {
-            let elem_value element_values.get(elem_idx)
+            let elem_value element_values.get elem_idx
             if elem_value <> null
             {
                 ; Build GEP with indices [0, elem_idx]
@@ -7318,7 +7318,7 @@ define Emitter
     function emit_block(this, block: PlannedBlock) returns LLVMValueRef
     {
         ; Push block cleanup context
-        push_block_cleanup(block.needs_local_page_cleanup)
+        push_block_cleanup block.needs_local_page_cleanup
 
         var last_value LLVMValueRef(null)
 
@@ -7329,7 +7329,7 @@ define Emitter
                 choose stmt
                     when action: Action
                     {
-                        let value emit_action(action)
+                        let value emit_action action
                         ; Only save value if it's not an assignment
                         if action.target = null
                             set last_value: value
@@ -7341,19 +7341,19 @@ define Emitter
                     }
                     when ret: Return
                     {
-                        emit_return(ret)
-                        pop_block_cleanup(false)
-                        return LLVMValueRef(null)
+                        emit_return ret
+                        pop_block_cleanup false
+                        return LLVMValueRef null
                     }
                     else
                     {
-                        emit_statement(stmt)
+                        emit_statement stmt
                     }
             }
         }
 
         ; Pop cleanup and emit cleanup if needed
-        pop_block_cleanup(true)
+        pop_block_cleanup true
 
         last_value
     }
@@ -7362,9 +7362,9 @@ define Emitter
     function emit_if(this, if_expr: PlannedIf) returns LLVMValueRef
     {
         ; Emit the condition
-        let cond_value emit_operands(if_expr.condition)
+        let cond_value emit_operands if_expr.condition
         if cond_value.handle = null
-            return LLVMValueRef(null)
+            return LLVMValueRef null
 
         ; Ensure we have a boolean (i1) for the branch. LLVMGetTypeKind
         ; returns IntegerTypeKind for i1, i32, i64, etc.; a kind-only check
@@ -7423,13 +7423,13 @@ define Emitter
         }
 
         ; Jump to merge block if not already terminated
-        let then_term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock(builder))
+        let then_term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock builder)
         if then_term.handle = null
             LLVMBuildBr(builder, merge_block)
         let then_end_block LLVMGetInsertBlock(builder)
         ; s178: the then-value feeds the merge PHI that doesn't exist
         ; yet — protect its slot from the scope-exit release.
-        pin_temp_value(then_value)
+        pin_temp_value then_value
         ; s128: balance the then-branch scope.
         exit_scope()
 
@@ -7453,12 +7453,12 @@ define Emitter
                         emit_statement(*alt_ref)
             }
 
-            let else_term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock(builder))
+            let else_term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock builder)
             if else_term.handle = null
                 LLVMBuildBr(builder, merge_block)
             set else_end_block: LLVMGetInsertBlock(builder)
             ; s178: same PHI protection as the then-branch.
-            pin_temp_value(else_value)
+            pin_temp_value else_value
             ; s128: balance the else-branch scope.
             exit_scope()
         }
@@ -7491,7 +7491,7 @@ define Emitter
                         ; both branches already br to merge, so the IR stays
                         ; valid; the if simply yields no value.
                         if then_ty.handle <> else_ty.handle
-                            return LLVMValueRef(null)
+                            return LLVMValueRef null
 
                         ; Skip the PHI when the branch values are void.
                         ; emit_action returns the LAST value it produced;
@@ -7504,9 +7504,9 @@ define Emitter
                         ; merge, so skipping the PHI yields valid value-less
                         ; IR. Mirrors emit_choose's s97 void-input skip.
                         if LLVMGetTypeKind(then_ty) = LLVMTypeKind.Void()
-                            return LLVMValueRef(null)
+                            return LLVMValueRef null
                         if LLVMGetTypeKind(else_ty) = LLVMTypeKind.Void()
-                            return LLVMValueRef(null)
+                            return LLVMValueRef null
 
                         ; Create PHI node (types match)
                         let phi LLVMBuildPhi(builder, then_ty, "if.value")
@@ -7534,7 +7534,7 @@ define Emitter
 
         }
 
-        LLVMValueRef(null)
+        LLVMValueRef null
     }
 
     ; Emit a match expression
@@ -7542,9 +7542,9 @@ define Emitter
     {
         ; Match is similar to if with multiple conditions
         ; Emit condition
-        let cond_value emit_operands(match_expr.condition)
+        let cond_value emit_operands match_expr.condition
         if cond_value.handle = null
-            return LLVMValueRef(null)
+            return LLVMValueRef null
 
         ; Create blocks
         let merge_block create_block(String$("match.end"))
@@ -7570,7 +7570,7 @@ define Emitter
                 {
                     for case_cond in branch.cases
                     {
-                        let case_value emit_operands(case_cond.condition)
+                        let case_value emit_operands case_cond.condition
                         if case_value.handle <> null
                             LLVMAddCase(switch_inst, case_value, case_block)
                     }
@@ -7585,7 +7585,7 @@ define Emitter
                     emit_statement(*stmt_ref)
                 }
 
-                let case_term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock(builder))
+                let case_term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock builder)
                 if case_term.handle = null
                     LLVMBuildBr(builder, merge_block)
             }
@@ -7597,7 +7597,7 @@ define Emitter
             let stmt_ref match_expr.alternative
             LLVMPositionBuilderAtEnd(builder, default_block)
             emit_statement(*stmt_ref)
-            let alt_term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock(builder))
+            let alt_term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock builder)
             if alt_term.handle = null
                 LLVMBuildBr(builder, merge_block)
         }
@@ -7605,16 +7605,16 @@ define Emitter
         ; Continue at merge block
         LLVMPositionBuilderAtEnd(builder, merge_block)
 
-        LLVMValueRef(null)
+        LLVMValueRef null
     }
 
     ; Emit a choose expression (pattern match on union)
     function emit_choose(this, choose_expr: PlannedChoose) returns LLVMValueRef
     {
         ; Emit the condition (union value)
-        let union_value emit_operands(choose_expr.condition)
+        let union_value emit_operands choose_expr.condition
         if union_value.handle = null
-            return LLVMValueRef(null)
+            return LLVMValueRef null
 
         ; The union struct type for GEP must come from the condition's
         ; PlannedType, NOT LLVMTypeOf(union_value) — the latter yields
@@ -7645,7 +7645,7 @@ define Emitter
                             let gens (*rt.generics)
                             if gens.length > 0
                             {
-                                let inner_ptr gens.get(0)
+                                let inner_ptr gens.get 0
                                 if inner_ptr <> null
                                     set rt: (*inner_ptr)
                             }
@@ -7658,7 +7658,7 @@ define Emitter
                             let gens (*rt.generics)
                             if gens.length > 0
                             {
-                                let inner_ptr gens.get(0)
+                                let inner_ptr gens.get 0
                                 if inner_ptr <> null
                                     set rt: (*inner_ptr)
                             }
@@ -7693,7 +7693,7 @@ define Emitter
                             let opt_gens (*cond_op.result_type.generics)
                             if opt_gens.length > 0
                             {
-                                let inner_g_ptr opt_gens.get(0)
+                                let inner_g_ptr opt_gens.get 0
                                 if inner_g_ptr <> null
                                 {
                                     let inner_g (*inner_g_ptr)
@@ -7737,7 +7737,7 @@ define Emitter
                                 var ri: size_t 0
                                 while ri < rcases.length
                                 {
-                                    let rc_ptr rcases.get(ri)
+                                    let rc_ptr rcases.get ri
                                     if rc_ptr <> null
                                     {
                                         let rc (*rc_ptr)
@@ -7757,7 +7757,7 @@ define Emitter
                             var ci: size_t 0
                             while ci < cases.length
                             {
-                                let c_ptr cases.get(ci)
+                                let c_ptr cases.get ci
                                 if c_ptr <> null
                                 {
                                     let c (*c_ptr)
@@ -7802,7 +7802,7 @@ define Emitter
         var union_ptr union_value
         ; Decide alloca+store via the planner's result_type, not by
         ; introspecting the LLVMValueRef. Stage-0 lowers a nested extern
-        ; call `LLVMGetTypeKind(LLVMTypeOf(union_value))` by storing the
+        ; call `LLVMGetTypeKind(LLVMTypeOf union_value)` by storing the
         ; LLVMTypeRef value into a `{ptr}`-typed temp alloca and passing
         ; the alloca ADDRESS to LLVMGetTypeKind — so `value_kind` was
         ; reading garbage from stack memory, not the real type kind.
@@ -7963,8 +7963,8 @@ define Emitter
         ; scope exits — a dying when-payload binding GEPs into them
         ; (making them release candidates) while later arms still read
         ; both. Pins expire with the enclosing statement window.
-        pin_temp_value(union_value)
-        pin_temp_value(union_ptr)
+        pin_temp_value union_value
+        pin_temp_value union_ptr
 
         ; Load the tag. For tagged unions, GEP into the union for the
         ; first field (i8). For NPO Option, derive the tag from a null
@@ -8088,7 +8088,7 @@ define Emitter
                 var si: size_t 0
                 while si < seen_count
                 {
-                    let st_ptr seen_tags.get(si)
+                    let st_ptr seen_tags.get si
                     if st_ptr <> null
                     {
                         if (*st_ptr) = when_case.variant_index
@@ -8150,11 +8150,11 @@ define Emitter
                         {
                             if when_case.variant_index = 0
                             {
-                                let rt_ty map_type(throws_call_return_type)
+                                let rt_ty map_type throws_call_return_type
                                 if LLVMGetTypeKind(rt_ty) = LLVMTypeKind.Void()
                                 {
                                     let ptr_ty_s LLVMPointerTypeInContext(context, 0)
-                                    define_variable(when_case.name, LLVMConstNull(ptr_ty_s))
+                                    define_variable(when_case.name, LLVMConstNull ptr_ty_s)
                                 }
                                 if LLVMGetTypeKind(rt_ty) <> LLVMTypeKind.Void()
                                 {
@@ -8167,11 +8167,11 @@ define Emitter
                             }
                             if when_case.variant_index <> 0
                             {
-                                let var_ty_e map_type(when_case.variant_type)
+                                let var_ty_e map_type when_case.variant_type
                                 if LLVMGetTypeKind(var_ty_e) = LLVMTypeKind.Void()
                                 {
                                     let ptr_ty_e LLVMPointerTypeInContext(context, 0)
-                                    define_variable(when_case.name, LLVMConstNull(ptr_ty_e))
+                                    define_variable(when_case.name, LLVMConstNull ptr_ty_e)
                                 }
                                 if LLVMGetTypeKind(var_ty_e) <> LLVMTypeKind.Void()
                                 {
@@ -8207,7 +8207,7 @@ define Emitter
                         if n_fields >= 2
                         {
                             let data_ptr LLVMBuildStructGEP2(builder, union_type, union_ptr, 1, "variant.c_data().ptr")
-                            let var_ty map_type(when_case.variant_type)
+                            let var_ty map_type when_case.variant_type
                             ; s114: bail when variant_type is unresolved (mapped
                             ; to void). LLVMBuildLoad2 of void calls into
                             ; DataLayout::getTypeSizeInBits which SIGTRAPs on
@@ -8258,10 +8258,10 @@ define Emitter
                             ; variable/constant operand planned to garbage.
                             if case_value.handle <> null
                             {
-                                let arm_ty map_type(action.result_type)
+                                let arm_ty map_type action.result_type
                                 if LLVMGetTypeKind(arm_ty) = LLVMTypeKind.Struct()
                                 {
-                                    if LLVMGetTypeKind(LLVMTypeOf(case_value)) = LLVMTypeKind.Pointer()
+                                    if LLVMGetTypeKind(LLVMTypeOf case_value) = LLVMTypeKind.Pointer()
                                         set case_value: LLVMBuildLoad2(builder, arm_ty, case_value, "choose.arm.load")
                                 }
                             }
@@ -8270,7 +8270,7 @@ define Emitter
                             emit_statement(*r)
                 }
 
-                let case_term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock(builder))
+                let case_term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock builder)
                 if case_term.handle = null
                 {
                     let case_end_block LLVMGetInsertBlock(builder)
@@ -8338,7 +8338,7 @@ define Emitter
                 ; s178: the case value feeds the merge PHI that doesn't
                 ; exist yet — protect its slot from the scope-exit
                 ; release.
-                pin_temp_value(case_value)
+                pin_temp_value case_value
                 ; s128: balance the enter_scope above. Place after the
                 ; case_term/LLVMBuildBr branch so the marker pops once
                 ; the case body is fully emitted (and the new alloca
@@ -8364,10 +8364,10 @@ define Emitter
                     ; site above (mirrors stage-0 Emitter.cpp:4829).
                     if alt_value.handle <> null
                     {
-                        let alt_ty map_type(action.result_type)
+                        let alt_ty map_type action.result_type
                         if LLVMGetTypeKind(alt_ty) = LLVMTypeKind.Struct()
                         {
-                            if LLVMGetTypeKind(LLVMTypeOf(alt_value)) = LLVMTypeKind.Pointer()
+                            if LLVMGetTypeKind(LLVMTypeOf alt_value) = LLVMTypeKind.Pointer()
                                 set alt_value: LLVMBuildLoad2(builder, alt_ty, alt_value, "choose.alt.load")
                         }
                     }
@@ -8391,13 +8391,13 @@ define Emitter
             {
                 if first_case_block.handle <> null
                 {
-                    let cur_term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock(builder))
+                    let cur_term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock builder)
                     if cur_term.handle = null
                         LLVMBuildBr(builder, first_case_block)
                 }
             }
         }
-        let alt_term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock(builder))
+        let alt_term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock builder)
         if alt_term.handle = null
         {
             let alt_end_block LLVMGetInsertBlock(builder)
@@ -8443,7 +8443,7 @@ define Emitter
             LLVMBuildBr(builder, merge_block)
         }
         ; s178: same PHI protection as the per-case site.
-        pin_temp_value(alt_value)
+        pin_temp_value alt_value
         ; s128: balance default-block scope.
         exit_scope()
 
@@ -8456,7 +8456,7 @@ define Emitter
         ; applies to every if-as-expression site already shipping.
         if phi_count > 0
         {
-            let first_ptr phi_values.get(0)
+            let first_ptr phi_values.get 0
             if first_ptr <> null
             {
                 ; Bind the deref'd value to a local var first — passing
@@ -8474,7 +8474,7 @@ define Emitter
                 var ui: size_t 0
                 while ui < undef_count
                 {
-                    let ub_ptr undef_blocks.get(ui)
+                    let ub_ptr undef_blocks.get ui
                     if ub_ptr <> null
                     {
                         phi_values.put(phi_count, undef_val)
@@ -8489,7 +8489,7 @@ define Emitter
             }
         }
 
-        LLVMValueRef(null)
+        LLVMValueRef null
     }
 
     ; Emit a for loop
@@ -8497,18 +8497,18 @@ define Emitter
     {
         ; Check if iterator-based or integer range loop
         if for_expr.is_iterator_loop
-            return emit_for_iterator(for_expr)
+            return emit_for_iterator for_expr
 
-        emit_for_integer_range(for_expr)
+        emit_for_integer_range for_expr
     }
 
     ; Emit integer range for loop: for i in N (iterates 0 to N-1)
     function emit_for_integer_range(this, for_expr: PlannedFor) returns LLVMValueRef
     {
         ; Evaluate the range expression to get the end value
-        let end_value emit_operands(for_expr.expr)
+        let end_value emit_operands for_expr.expr
         if end_value.handle = null
-            return LLVMValueRef(null)
+            return LLVMValueRef null
 
         let index_type LLVMTypeOf(end_value)
 
@@ -8548,10 +8548,10 @@ define Emitter
         define_variable(for_expr.identifier, body_index)
 
         ; Emit body
-        emit_action(for_expr.body)
+        emit_action for_expr.body
 
         ; Jump to increment block if not terminated
-        let body_term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock(builder))
+        let body_term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock builder)
         if body_term.handle = null
             LLVMBuildBr(builder, incr_block)
         ; s128: balance.
@@ -8572,16 +8572,16 @@ define Emitter
         LLVMPositionBuilderAtEnd(builder, exit_block)
 
         ; For loops don't produce a value
-        LLVMValueRef(null)
+        LLVMValueRef null
     }
 
     ; Emit iterator-based for loop
     function emit_for_iterator(this, for_expr: PlannedFor) returns LLVMValueRef
     {
         ; Evaluate collection expression
-        let collection emit_operands(for_expr.expr)
+        let collection emit_operands for_expr.expr
         if collection.handle = null
-            return LLVMValueRef(null)
+            return LLVMValueRef null
 
         ; Get collection pointer (if not already pointer).
         ; Bug fix: was comparing against raw `14` (Metadata kind), so a
@@ -8604,7 +8604,7 @@ define Emitter
         ; Look up get_iterator function
         let get_iter_fn LLVMGetNamedFunction(llvm_module, for_expr.get_iterator_method.c_data())
         if get_iter_fn.handle = null
-            return LLVMValueRef(null)
+            return LLVMValueRef null
 
         ; Call get_iterator() on collection.
         ; Stage-0 / stage-1's planner emits get_iterator with sret-return for
@@ -8614,7 +8614,7 @@ define Emitter
         ; runtime the callee reads garbage for page/coll, returning an
         ; uninitialized iterator — next() then immediately yields null and
         ; the for-loop body never runs. Build the 3-arg sret call to match.
-        let iter_type map_type(for_expr.iterator_type)
+        let iter_type map_type for_expr.iterator_type
         let iter_alloca entry_alloca(iter_type, "iter.alloca")
 
         let page_ptr_ty LLVMPointerTypeInContext(context, 0)
@@ -8629,7 +8629,7 @@ define Emitter
         if page_arg.handle = null
             set page_arg: get_or_create_local_page()
         if page_arg.handle = null
-            return LLVMValueRef(null)
+            return LLVMValueRef null
 
         var get_iter_args Vector[LLVMValueRef]#(3)
         var get_iter_param_types Vector[LLVMTypeRef]#(3)
@@ -8647,7 +8647,7 @@ define Emitter
         ; Look up next function
         let next_fn LLVMGetNamedFunction(llvm_module, for_expr.next_method.c_data())
         if next_fn.handle = null
-            return LLVMValueRef(null)
+            return LLVMValueRef null
 
         ; Create basic blocks
         let cond_block create_block(String$("for.cond"))
@@ -8665,7 +8665,7 @@ define Emitter
 
         ; Load iterator and call next()
         let iter_ptr_type LLVMPointerTypeInContext(context, 0)
-        let element_type map_type(for_expr.element_type)
+        let element_type map_type for_expr.element_type
         let option_element_type LLVMPointerTypeInContext(context, 0)  ; Option[T] represented as nullable pointer
 
         ; Build args for next call (iterator pointer)
@@ -8693,9 +8693,9 @@ define Emitter
         define_variable(for_expr.identifier, next_result)
 
         ; Execute loop body
-        emit_action(for_expr.body)
+        emit_action for_expr.body
 
-        let body_term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock(builder))
+        let body_term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock builder)
         if body_term.handle = null
             LLVMBuildBr(builder, cond_block)
         ; s128: balance.
@@ -8705,7 +8705,7 @@ define Emitter
         LLVMPositionBuilderAtEnd(builder, exit_block)
         pop_loop()
 
-        LLVMValueRef(null)
+        LLVMValueRef null
     }
 
     ; Emit a while loop
@@ -8726,11 +8726,11 @@ define Emitter
         LLVMPositionBuilderAtEnd(builder, cond_block)
 
         ; Emit the condition binding's operation
-        let cond_value emit_operands(while_expr.cond.operation)
+        let cond_value emit_operands while_expr.cond.operation
         if cond_value.handle = null
         {
             pop_loop()
-            return LLVMValueRef(null)
+            return LLVMValueRef null
         }
 
         ; Handle "while let" binding. s25/s28: ref[String]? must be
@@ -8783,10 +8783,10 @@ define Emitter
         ; s128: fresh scope for the while-body so `var i 0; ...` inside
         ; doesn't leak into outer code or sibling loop iterations.
         enter_scope()
-        emit_action(while_expr.body)
+        emit_action while_expr.body
 
         ; Jump back to condition if not terminated
-        let body_term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock(builder))
+        let body_term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock builder)
         if body_term.handle = null
             LLVMBuildBr(builder, cond_block)
         ; s128: balance.
@@ -8798,16 +8798,16 @@ define Emitter
         ; Continue at exit block
         LLVMPositionBuilderAtEnd(builder, exit_block)
 
-        LLVMValueRef(null)
+        LLVMValueRef null
     }
 
     ; Emit a try expression
     function emit_try(this, try_expr: PlannedTry) returns LLVMValueRef
     {
         ; Emit the binding's operation
-        let result_value emit_operands(try_expr.cond.operation)
+        let result_value emit_operands try_expr.cond.operation
         if result_value.handle = null
-            return LLVMValueRef(null)
+            return LLVMValueRef null
 
         let i8_ty LLVMInt8TypeInContext(context)
 
@@ -8893,7 +8893,7 @@ define Emitter
             else
                 define_variable(name, ok_value)
         }
-        let ok_term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock(builder))
+        let ok_term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock builder)
         if ok_term.handle = null
             LLVMBuildBr(builder, merge_block)
 
@@ -8959,7 +8959,7 @@ define Emitter
                     {
                         if catch_case.variant_type.name.equals(String$("void")) = false
                         {
-                            let err_ty map_type(catch_case.variant_type)
+                            let err_ty map_type catch_case.variant_type
                             let err_value LLVMBuildLoad2(builder, err_ty, payload_ptr, "err.val")
                             LLVMSetAlignment(err_value, 1 as u32)
                             define_variable(catch_case.name, err_value)
@@ -8972,14 +8972,14 @@ define Emitter
                         emit_statement(*stmt_ref)
                     }
 
-                    let cterm LLVMGetBasicBlockTerminator(LLVMGetInsertBlock(builder))
+                    let cterm LLVMGetBasicBlockTerminator(LLVMGetInsertBlock builder)
                     if cterm.handle = null
                         LLVMBuildBr(builder, merge_block)
                 }
 
                 LLVMPositionBuilderAtEnd(builder, default_block)
                 if have_else = false
-                    LLVMBuildUnreachable(builder)
+                    LLVMBuildUnreachable builder
                 if have_else
                 {
                     if try_expr.alternative <> null
@@ -8987,7 +8987,7 @@ define Emitter
                         let stmt_ref try_expr.alternative
                         emit_statement(*stmt_ref)
                     }
-                    let dterm LLVMGetBasicBlockTerminator(LLVMGetInsertBlock(builder))
+                    let dterm LLVMGetBasicBlockTerminator(LLVMGetInsertBlock builder)
                     if dterm.handle = null
                         LLVMBuildBr(builder, merge_block)
                 }
@@ -9001,7 +9001,7 @@ define Emitter
                     let stmt_ref try_expr.alternative
                     emit_statement(*stmt_ref)
                 }
-                let eterm LLVMGetBasicBlockTerminator(LLVMGetInsertBlock(builder))
+                let eterm LLVMGetBasicBlockTerminator(LLVMGetInsertBlock builder)
                 if eterm.handle = null
                     LLVMBuildBr(builder, merge_block)
             }
@@ -9030,12 +9030,12 @@ define Emitter
         ; ExpressionSyntax: planner 264 vs LLVM 256), which truncated every
         ; Vector[OperandSyntax] element. Fall back to the planner's estimate
         ; only when the type isn't materialised / sized.
-        let ty map_type(sizeof_expr.sized_type)
+        let ty map_type sizeof_expr.sized_type
         if ty.handle = null
             return LLVMConstInt(i64_type, sizeof_expr.size, 0)
         if LLVMTypeIsSized(ty) = 0
             return LLVMConstInt(i64_type, sizeof_expr.size, 0)
-        LLVMSizeOf(ty)
+        LLVMSizeOf ty
     }
 
     ; Emit alignof
@@ -9075,7 +9075,7 @@ define Emitter
                     let vgens (*opt_ty.generics)
                     if vgens.length > 0
                     {
-                        let vip vgens.get(0)
+                        let vip vgens.get 0
                         if vip <> null
                         {
                             set opt_ty: (*vip)
@@ -9092,7 +9092,7 @@ define Emitter
                     let ogens (*opt_ty.generics)
                     if ogens.length > 0
                     {
-                        let oip ogens.get(0)
+                        let oip ogens.get 0
                         if oip <> null
                         {
                             set uses_npo: false
@@ -9109,7 +9109,7 @@ define Emitter
                 ; Tag-encoded Option: load the tag and compare with 1
                 ; (None is the second variant after Some).
                 let i8_type_n LLVMInt8TypeInContext(context)
-                var union_llvm_type_n lookup_struct_cache(opt_ty.name)
+                var union_llvm_type_n lookup_struct_cache opt_ty.name
                 if union_llvm_type_n.handle = null
                     set union_llvm_type_n: lookup_struct_cache(opt_ty.mangled_name)
                 if union_llvm_type_n.handle = null
@@ -9119,7 +9119,7 @@ define Emitter
                     if LLVMGetTypeKind(union_llvm_type_n) = LLVMTypeKind.Struct()
                     {
                         var union_ptr_n union_value
-                        if LLVMGetTypeKind(LLVMTypeOf(union_value)) <> LLVMTypeKind.Pointer()
+                        if LLVMGetTypeKind(LLVMTypeOf union_value) <> LLVMTypeKind.Pointer()
                         {
                             set union_ptr_n: entry_alloca(union_llvm_type_n, "is.union")
                             LLVMBuildStore(builder, union_value, union_ptr_n)
@@ -9149,7 +9149,7 @@ define Emitter
         let i1_type LLVMInt1TypeInContext(context)
 
         ; Get the union type from cache
-        var union_llvm_type lookup_struct_cache(is_expr.union_name)
+        var union_llvm_type lookup_struct_cache is_expr.union_name
         if union_llvm_type.handle = null
         {
             ; Try with mangled name
@@ -9158,7 +9158,7 @@ define Emitter
 
         ; Store the union value to get a pointer
         var union_ptr union_value
-        if LLVMGetTypeKind(LLVMTypeOf(union_value)) <> LLVMTypeKind.Pointer()
+        if LLVMGetTypeKind(LLVMTypeOf union_value) <> LLVMTypeKind.Pointer()
         {
             ; Need to store to alloca
             if union_llvm_type.handle <> null
@@ -9192,11 +9192,11 @@ define Emitter
     {
         ; Emit the value being cast
         if as_expr.value = null
-            return LLVMValueRef(null)
+            return LLVMValueRef null
 
         let src_value emit_operand(as_expr.value.unwrap())
         if src_value.handle = null
-            return LLVMValueRef(null)
+            return LLVMValueRef null
 
         let src_type LLVMTypeOf(src_value)
         ; Prefer the by-name primitive lookup (s71 class). map_type's
@@ -9204,12 +9204,12 @@ define Emitter
         ; for size_t / int / u8 etc. that produces ptr instead of the
         ; correct integer type, and emit_as then emits inttoptr where
         ; zext / trunc was expected.
-        var dst_type map_intrinsic_type_by_name(as_expr.target_type.name)
+        var dst_type map_intrinsic_type_by_name as_expr.target_type.name
         if dst_type.handle = null
             set dst_type: map_type(as_expr.target_type)
 
         if dst_type.handle = null
-            return LLVMValueRef(null)
+            return LLVMValueRef null
 
         ; Check type kinds
         let src_kind LLVMGetTypeKind(src_type)
@@ -9325,7 +9325,7 @@ define Emitter
                 let opt_gens (*vc.union_type.generics)
                 if opt_gens.length > 0
                 {
-                    let inner_g_ptr opt_gens.get(0)
+                    let inner_g_ptr opt_gens.get 0
                     if inner_g_ptr <> null
                     {
                         let inner_g (*inner_g_ptr)
@@ -9348,7 +9348,7 @@ define Emitter
             {
                 ; None = null pointer
                 let ptr_type LLVMPointerTypeInContext(context, 0)
-                return LLVMConstNull(ptr_type)
+                return LLVMConstNull ptr_type
             }
 
             ; For Some, check if we have a value and the type uses NPO
@@ -9369,7 +9369,7 @@ define Emitter
                     ; into LLVMBuildStore — that would alloca on a null type
                     ; and crash inside DataLayout::getABITypeAlign.
                     if value.handle = null
-                        return LLVMValueRef(null)
+                        return LLVMValueRef null
                     let value_ptr entry_alloca(value_type, "option.some")
                     copy_struct_value(value_ptr, value, value_type)
                     return value_ptr
@@ -9381,14 +9381,14 @@ define Emitter
         ; Union layout: { i8 tag, [maxSize x i8] data }
 
         ; Look up the union type from cache
-        var union_type lookup_struct_cache(vc.union_type.mangled_name)
+        var union_type lookup_struct_cache vc.union_type.mangled_name
         if union_type.handle = null
             set union_type: lookup_struct_cache(vc.union_type.name)
 
         if union_type.handle = null
         {
             ; Can't find union type - return null
-            return LLVMValueRef(null)
+            return LLVMValueRef null
         }
 
         ; Allocate space for the union
@@ -9404,7 +9404,7 @@ define Emitter
         if vc.value <> null
         {
             let op vc.value.unwrap()
-            let value emit_operand(op)
+            let value emit_operand op
             ; Skip the store if the operand emitted nothing — without
             ; this guard, a null value passed into LLVMBuildStore SEGVs
             ; in CreateAlignedStore reading the value's type. Same class
@@ -9421,12 +9421,12 @@ define Emitter
                 ; ref/pointer/primitive payloads (expected type not a struct)
                 ; store as-is.
                 var to_store value
-                let expected_ty map_type(op.result_type)
+                let expected_ty map_type op.result_type
                 if expected_ty.handle <> null
                 {
                     if LLVMGetTypeKind(expected_ty) = LLVMTypeKind.Struct()
                     {
-                        if LLVMGetTypeKind(LLVMTypeOf(value)) = LLVMTypeKind.Pointer()
+                        if LLVMGetTypeKind(LLVMTypeOf value) = LLVMTypeKind.Pointer()
                             set to_store: LLVMBuildLoad2(builder, expected_ty, value, "variant.payload")
                     }
                 }
@@ -9462,7 +9462,7 @@ define Emitter
         let saved_start temp_stmt_log_start
         let saved_pinned temp_pinned.length
         set temp_stmt_log_start: temp_stmt_log.length
-        let result emit_statement_inner(stmt)
+        let result emit_statement_inner stmt
         release_statement_temps()
         set temp_pinned.length: saved_pinned
         set temp_stmt_log_start: saved_start
@@ -9473,32 +9473,32 @@ define Emitter
     {
         ; -g: set the line location for this statement's instructions.
         if config.emit_debug_info
-            set_statement_debug_location(stmt)
+            set_statement_debug_location stmt
         choose stmt
             when action: Action
             {
-                let result emit_action(action)
+                let result emit_action action
                 return result.handle <> null
             }
             when binding: Binding
             {
-                return emit_binding(binding)
+                return emit_binding binding
             }
             when ret: Return
             {
-                return emit_return(ret)
+                return emit_return ret
             }
             when throw_stmt: Throw
             {
-                return emit_throw(throw_stmt)
+                return emit_throw throw_stmt
             }
             when brk: Break
             {
-                return emit_break(brk)
+                return emit_break brk
             }
             when cont: Continue
             {
-                return emit_continue(cont)
+                return emit_continue cont
             }
     }
 
@@ -9514,12 +9514,12 @@ define Emitter
         ; chokepoint they all share. set_debug_location self-guards on
         ; emit_debug_info and returns before its O(n) offset scan when -g is
         ; off, so default (no-g) emission stays byte-identical.
-        set_debug_location(action.loc)
+        set_debug_location action.loc
 
         ; Emit source operands
-        var value emit_operands(action.source)
+        var value emit_operands action.source
         if value.handle = null
-            return LLVMValueRef(null)
+            return LLVMValueRef null
 
         ; If there are target operands, this is an assignment
         if action.target <> null
@@ -9527,7 +9527,7 @@ define Emitter
             if action.target.length > 0
             {
                 ; Get the target - should be a variable reference for simple assignment
-                let target_op action.target.get(0)
+                let target_op action.target.get 0
                 if target_op = null
                     return value
 
@@ -9535,9 +9535,9 @@ define Emitter
                     when variable: Variable
                     {
                         ; Look up the variable's pointer
-                        let var_ptr lookup_variable(variable.name)
+                        let var_ptr lookup_variable variable.name
                         if var_ptr.handle = null
-                            return LLVMValueRef(null)
+                            return LLVMValueRef null
 
                         ; Check for member access (e.g., this.x = value)
                         if target_op.member_access <> null
@@ -9554,7 +9554,7 @@ define Emitter
                                 ; field stores a valid heap pointer.
                                 set value: maybe_heap_copy_ctor_value(value, var_ptr, variable, action.source)
                                 if value.handle = null
-                                    return LLVMValueRef(null)
+                                    return LLVMValueRef null
                                 ; GEP-based field assignment for member access chains
                                 return emit_member_assignment(var_ptr, variable, target_op.member_access, value)
                             }
@@ -9562,7 +9562,7 @@ define Emitter
 
                         ; Simple variable assignment
                         if variable.is_mutable = false
-                            return LLVMValueRef(null)  ; Cannot assign to immutable
+                            return LLVMValueRef null  ; Cannot assign to immutable
 
                         ; s124: same flat-variable-table leak as
                         ; emit_variable. When sibling choose/if arms reuse
@@ -9616,8 +9616,8 @@ define Emitter
                                                 {
                                                     var ap_param_types Vector[LLVMTypeRef]#(3)
                                                     ap_param_types.put(0, LLVMPointerTypeInContext(context, 0))
-                                                    ap_param_types.put(1, LLVMInt64TypeInContext(context))
-                                                    ap_param_types.put(2, LLVMInt64TypeInContext(context))
+                                                    ap_param_types.put(1, LLVMInt64TypeInContext context)
+                                                    ap_param_types.put(2, LLVMInt64TypeInContext context)
                                                     let ap_decl_ty LLVMFunctionType(LLVMPointerTypeInContext(context, 0), ap_param_types.data, 3, 0)
                                                     set alloc_func: LLVMAddFunction(llvm_module, "_ZN4Page8allocateEmm", ap_decl_ty)
                                                     LLVMSetLinkage(alloc_func, LLVMLinkage.External())
@@ -9630,8 +9630,8 @@ define Emitter
                                                 alloc_args.put(2, align_const)
                                                 var ap_call_pt Vector[LLVMTypeRef]#(3)
                                                 ap_call_pt.put(0, LLVMPointerTypeInContext(context, 0))
-                                                ap_call_pt.put(1, LLVMInt64TypeInContext(context))
-                                                ap_call_pt.put(2, LLVMInt64TypeInContext(context))
+                                                ap_call_pt.put(1, LLVMInt64TypeInContext context)
+                                                ap_call_pt.put(2, LLVMInt64TypeInContext context)
                                                 let ap_call_ty LLVMFunctionType(LLVMPointerTypeInContext(context, 0), ap_call_pt.data, 3, 0)
                                                 let heap_ptr LLVMBuildCall2(builder, ap_call_ty, alloc_func, alloc_args.data, 3, "set.heap")
                                                 if heap_ptr.handle <> null
@@ -9690,7 +9690,7 @@ define Emitter
                                     ; Session-25 pattern: `choose ... when Some` on a
                                     ; ref[T]? deref produces null/garbage under NPO; use
                                     ; if <> null + .unwrap() instead.
-                                    let arg_opt call.args.get(0)
+                                    let arg_opt call.args.get 0
                                     if arg_opt <> null
                                     {
                                         let ptr emit_operand(arg_opt.unwrap())
@@ -9717,14 +9717,14 @@ define Emitter
                                                 let src_vec (*action.source)
                                                 if src_vec.length > 0
                                                 {
-                                                    let src_op_ptr src_vec.get(0)
+                                                    let src_op_ptr src_vec.get 0
                                                     if src_op_ptr <> null
                                                     {
                                                         let src_op (*src_op_ptr)
-                                                        let src_ty map_type(src_op.result_type)
+                                                        let src_ty map_type src_op.result_type
                                                         if LLVMGetTypeKind(src_ty) = LLVMTypeKind.Struct()
                                                         {
-                                                            if LLVMGetTypeKind(LLVMTypeOf(value)) = LLVMTypeKind.Pointer()
+                                                            if LLVMGetTypeKind(LLVMTypeOf value) = LLVMTypeKind.Pointer()
                                                                 set store_val: LLVMBuildLoad2(builder, src_ty, value, "store.load")
                                                         }
                                                     }
@@ -9800,7 +9800,7 @@ define Emitter
             return value
         if source.length <> 1
             return value
-        let op_ptr source.get(0)
+        let op_ptr source.get 0
         if op_ptr = null
             return value
         let op op_ptr.unwrap()
@@ -9848,8 +9848,8 @@ define Emitter
         {
             var ap_param_types Vector[LLVMTypeRef]#(3)
             ap_param_types.put(0, LLVMPointerTypeInContext(context, 0))
-            ap_param_types.put(1, LLVMInt64TypeInContext(context))
-            ap_param_types.put(2, LLVMInt64TypeInContext(context))
+            ap_param_types.put(1, LLVMInt64TypeInContext context)
+            ap_param_types.put(2, LLVMInt64TypeInContext context)
             let ap_decl_ty LLVMFunctionType(LLVMPointerTypeInContext(context, 0), ap_param_types.data, 3, 0)
             set alloc_func: LLVMAddFunction(llvm_module, "_ZN4Page8allocateEmm", ap_decl_ty)
             LLVMSetLinkage(alloc_func, LLVMLinkage.External())
@@ -9862,8 +9862,8 @@ define Emitter
         alloc_args.put(2, align_const)
         var ap_call_pt Vector[LLVMTypeRef]#(3)
         ap_call_pt.put(0, LLVMPointerTypeInContext(context, 0))
-        ap_call_pt.put(1, LLVMInt64TypeInContext(context))
-        ap_call_pt.put(2, LLVMInt64TypeInContext(context))
+        ap_call_pt.put(1, LLVMInt64TypeInContext context)
+        ap_call_pt.put(2, LLVMInt64TypeInContext context)
         let ap_call_ty LLVMFunctionType(LLVMPointerTypeInContext(context, 0), ap_call_pt.data, 3, 0)
         let heap_ptr LLVMBuildCall2(builder, ap_call_ty, alloc_func, alloc_args.data, 3, "ctor.heap")
 
@@ -9876,7 +9876,7 @@ define Emitter
             var mc_param_types Vector[LLVMTypeRef]#(3)
             mc_param_types.put(0, LLVMPointerTypeInContext(context, 0))
             mc_param_types.put(1, LLVMPointerTypeInContext(context, 0))
-            mc_param_types.put(2, LLVMInt64TypeInContext(context))
+            mc_param_types.put(2, LLVMInt64TypeInContext context)
             let mc_decl_ty LLVMFunctionType(LLVMPointerTypeInContext(context, 0), mc_param_types.data, 3, 0)
             set memcpy_fn: LLVMAddFunction(llvm_module, "memcpy", mc_decl_ty)
             LLVMSetLinkage(memcpy_fn, LLVMLinkage.External())
@@ -9888,7 +9888,7 @@ define Emitter
         var mc_call_pt Vector[LLVMTypeRef]#(3)
         mc_call_pt.put(0, LLVMPointerTypeInContext(context, 0))
         mc_call_pt.put(1, LLVMPointerTypeInContext(context, 0))
-        mc_call_pt.put(2, LLVMInt64TypeInContext(context))
+        mc_call_pt.put(2, LLVMInt64TypeInContext context)
         let mc_call_ty LLVMFunctionType(LLVMPointerTypeInContext(context, 0), mc_call_pt.data, 3, 0)
         LLVMBuildCall2(builder, mc_call_ty, memcpy_fn, mc_args.data, 3, "")
         heap_ptr
@@ -9950,7 +9950,7 @@ define Emitter
                 let gens (*var_ty.generics)
                 if gens.length > 0
                 {
-                    let inner_opt gens.get(0)
+                    let inner_opt gens.get 0
                     if inner_opt <> null
                     {
                         let inner (*inner_opt)
@@ -10014,7 +10014,7 @@ define Emitter
             var i: size_t 0
             while i < n
             {
-                let member_ptr chain.get(i)
+                let member_ptr chain.get i
                 if member_ptr <> null
                 {
                     let member member_ptr.unwrap()
@@ -10024,7 +10024,7 @@ define Emitter
                     if next < n
                     {
                         let rt member.result_type
-                        let mapped map_type(rt)
+                        let mapped map_type rt
                         set current_type: mapped
                         ; s99: when the field is pointer-like (ref[T]?,
                         ; ref[T], pointer[T], Option[ref[T]], etc.), load
@@ -10044,7 +10044,7 @@ define Emitter
                                         let gens (*inner_rt.generics)
                                         if gens.length > 0
                                         {
-                                            let g0 gens.get(0)
+                                            let g0 gens.get 0
                                             if g0 <> null
                                                 set inner_rt: (*g0)
                                         }
@@ -10057,7 +10057,7 @@ define Emitter
                                         let gens (*inner_rt.generics)
                                         if gens.length > 0
                                         {
-                                            let g0 gens.get(0)
+                                            let g0 gens.get 0
                                             if g0 <> null
                                                 set inner_rt: (*g0)
                                         }
@@ -10070,7 +10070,7 @@ define Emitter
                                         let gens (*inner_rt.generics)
                                         if gens.length > 0
                                         {
-                                            let g0 gens.get(0)
+                                            let g0 gens.get 0
                                             if g0 <> null
                                                 set inner_rt: (*g0)
                                         }
@@ -10108,10 +10108,10 @@ define Emitter
                 {
                     let last_member last_ptr.unwrap()
                     let last_rt last_member.result_type
-                    let field_type map_type(last_rt)
+                    let field_type map_type last_rt
                     if field_type.handle <> null
                     {
-                        let value_kind LLVMGetTypeKind(LLVMTypeOf(stored_value))
+                        let value_kind LLVMGetTypeKind(LLVMTypeOf stored_value)
                         let field_kind LLVMGetTypeKind(field_type)
                         if value_kind = LLVMTypeKind.Pointer() & field_kind = LLVMTypeKind.Struct()
                         {
@@ -10189,7 +10189,7 @@ define Emitter
                             let ops (*ops_ref)
                             if ops.length > 0
                             {
-                                let op0_ptr ops.get(0)
+                                let op0_ptr ops.get 0
                                 if op0_ptr <> null
                                 {
                                     ; Restrict to plain variable references
@@ -10244,7 +10244,7 @@ define Emitter
                     ; field; only the alloca stays inline as an LLVMValueRef).
                     if config.emit_debug_info
                     {
-                        let dpos compute_debug_pos(binding.loc.start)
+                        let dpos compute_debug_pos binding.loc.start
                         var dty LLVMMetadataRef(null)
                         if LLVMGetTypeKind(store_ty) = LLVMTypeKind.Integer()
                         {
@@ -10277,7 +10277,7 @@ define Emitter
                                     let ops (*ops_ref)
                                     if ops.length > 0
                                     {
-                                        let op0_ptr ops.get(0)
+                                        let op0_ptr ops.get 0
                                         if op0_ptr <> null
                                             set dty: di_type_for((*op0_ptr).result_type)
                                     }
@@ -10287,7 +10287,7 @@ define Emitter
                         {
                             let dvar LLVMDIBuilderCreateAutoVariable(di_builder, current_di_scope, name.c_data(), name.get_length(), di_file, dpos.line, dty, (0 as i32), (0 as i32), (0 as i32))
                             let dexpr LLVMDIBuilderCreateExpression(di_builder, null as pointer[size_t], (0 as size_t))
-                            let dloc LLVMDIBuilderCreateDebugLocation(context, dpos.line, dpos.col, current_di_scope, LLVMMetadataRef(null))
+                            let dloc LLVMDIBuilderCreateDebugLocation(context, dpos.line, dpos.col, current_di_scope, LLVMMetadataRef null)
                             let dblk LLVMGetInsertBlock(builder)
                             let ddecl LLVMDIBuilderInsertDeclareAtEnd(di_builder, alloca, dvar, dexpr, dloc, dblk)
                         }
@@ -10329,7 +10329,7 @@ define Emitter
                             let egens (*item_type.generics)
                             if egens.length > 0
                             {
-                                let e_ptr egens.get(0)
+                                let e_ptr egens.get 0
                                 if e_ptr <> null
                                     set elem_ty: map_type((*e_ptr))
                             }
@@ -10353,7 +10353,7 @@ define Emitter
                         }
                     }
 
-                    let ty map_type(item_type)
+                    let ty map_type item_type
                     ; s178: pooled, same as the initialized var path.
                     let alloca acquire_temp(ty, name.c_data())
                     define_variable(name, alloca)
@@ -10379,7 +10379,7 @@ define Emitter
         }
 
         ; Emit block-scoped cleanups for all pending blocks
-        emit_block_cleanups(0)
+        emit_block_cleanups 0
 
         ; s196: release the function-local root page before returning
         ; (no-op when none was allocated). Replaces the old dead cleanup
@@ -10419,7 +10419,7 @@ define Emitter
                 ; (which has struct-alignment 1), so any natural-aligned T
                 ; load/store at this address is misaligned. Mark the store
                 ; align 1 so LLVM doesn't lower it to an aligned sequence.
-                ; Mirrors stage-0 emitReturn's CreateAlignedStore(..., Align(1)).
+                ; Mirrors stage-0 emitReturn's CreateAlignedStore(..., Align 1).
                 if ret_val.handle <> null
                 {
                     ; s178: memcpy when ret_val is a load — the helper
@@ -10427,19 +10427,19 @@ define Emitter
                     let rv_ty LLVMTypeOf(ret_val)
                     copy_struct_value(data_ptr, ret_val, rv_ty)
                 }
-                LLVMBuildRetVoid(builder)
+                LLVMBuildRetVoid builder
                 return true
             }
             if ret_val.handle <> null
             {
                 var to_store ret_val
-                if LLVMGetTypeKind(LLVMTypeOf(ret_val)) = LLVMTypeKind.Pointer()
+                if LLVMGetTypeKind(LLVMTypeOf ret_val) = LLVMTypeKind.Pointer()
                 {
                     let sty LLVMGetTypeAttributeValue(sret_attr)
                     if LLVMGetTypeKind(sty) = LLVMTypeKind.Struct()
                         set to_store: LLVMBuildLoad2(builder, sty, ret_val, "sret.body")
                 }
-                if LLVMGetTypeKind(LLVMTypeOf(to_store)) = LLVMTypeKind.Struct()
+                if LLVMGetTypeKind(LLVMTypeOf to_store) = LLVMTypeKind.Struct()
                 {
                     ; s178: memcpy when to_store is a load.
                     let ts_ty2 LLVMTypeOf(to_store)
@@ -10469,11 +10469,11 @@ define Emitter
                     }
                 }
             }
-            LLVMBuildRetVoid(builder)
+            LLVMBuildRetVoid builder
             return true
         }
         if LLVMGetTypeKind(llvm_rt) = LLVMGetTypeKind(void_ty)
-            LLVMBuildRetVoid(builder)
+            LLVMBuildRetVoid builder
         else
         {
             if ret_val.handle <> null
@@ -10485,7 +10485,7 @@ define Emitter
                 var final_val ret_val
                 if LLVMGetTypeKind(llvm_rt) = LLVMTypeKind.Struct()
                 {
-                    if LLVMGetTypeKind(LLVMTypeOf(ret_val)) = LLVMTypeKind.Pointer()
+                    if LLVMGetTypeKind(LLVMTypeOf ret_val) = LLVMTypeKind.Pointer()
                         set final_val: LLVMBuildLoad2(builder, llvm_rt, ret_val, "ret.load")
                 }
                 ; Defensive: if final_val's type doesn't match the function's
@@ -10501,7 +10501,7 @@ define Emitter
                 LLVMBuildRet(builder, final_val)
             }
             else
-                LLVMBuildRet(builder, LLVMConstNull(llvm_rt))
+                LLVMBuildRet(builder, LLVMConstNull llvm_rt)
         }
 
         true
@@ -10571,16 +10571,16 @@ define Emitter
                 if throw_stmt.result <> null
                 {
                     if throw_stmt.result.length > 0
-                        emit_operands(throw_stmt.result)
+                        emit_operands throw_stmt.result
                 }
-                emit_block_cleanups(0)
+                emit_block_cleanups 0
                 ; s196: release the function-local root page on the throw path.
                 emit_release_local_page()
                 let void_ty LLVMVoidTypeInContext(context)
                 if LLVMGetTypeKind(ret_ty) = LLVMGetTypeKind(void_ty)
-                    LLVMBuildRetVoid(builder)
+                    LLVMBuildRetVoid builder
                 else
-                    LLVMBuildRet(builder, LLVMConstNull(ret_ty))
+                    LLVMBuildRet(builder, LLVMConstNull ret_ty)
                 return true
             }
             set result_ty: ret_ty
@@ -10598,7 +10598,7 @@ define Emitter
         {
             if throw_stmt.result.length > 0
             {
-                let thrown_value emit_operands(throw_stmt.result)
+                let thrown_value emit_operands throw_stmt.result
                 if thrown_value.handle <> null
                 {
                     ; Get pointer to the data field (field 1).
@@ -10623,7 +10623,7 @@ define Emitter
         }
 
         ; Emit block-scoped cleanups
-        emit_block_cleanups(0)
+        emit_block_cleanups 0
 
         ; s196: release the function-local root page before unwinding.
         emit_release_local_page()
@@ -10631,7 +10631,7 @@ define Emitter
         ; Return: sret functions return void, direct-return functions
         ; load+ret the result value.
         if is_sret
-            LLVMBuildRetVoid(builder)
+            LLVMBuildRetVoid builder
         if is_sret = false
         {
             let result LLVMBuildLoad2(builder, result_ty, result_ptr, "throw.val")
@@ -10653,7 +10653,7 @@ define Emitter
             return false
 
         ; Emit block-scoped cleanups back to the loop's entry depth
-        emit_block_cleanups(loop_ctx.cleanup_depth)
+        emit_block_cleanups loop_ctx.cleanup_depth
 
         ; Jump to the exit block of the innermost loop
         LLVMBuildBr(builder, loop_ctx.exit_block)
@@ -10673,7 +10673,7 @@ define Emitter
             return false
 
         ; Emit block-scoped cleanups back to the loop's entry depth
-        emit_block_cleanups(loop_ctx.cleanup_depth)
+        emit_block_cleanups loop_ctx.cleanup_depth
 
         ; Jump to the continue block of the innermost loop
         LLVMBuildBr(builder, loop_ctx.continue_block)
@@ -10706,7 +10706,7 @@ define Emitter
                         if current_region.local_page.handle <> null
                         {
                             ; Call restore_watermark(local_page, watermark)
-                            emit_restore_watermark(cleanup.watermark)
+                            emit_restore_watermark cleanup.watermark
                         }
                     }
                 }
@@ -10730,7 +10730,7 @@ define Emitter
                 {
                     ; BlockWatermark is a struct - get its type
                     let watermark_name String$("BlockWatermark")
-                    var watermark_type lookup_struct_cache(watermark_name)
+                    var watermark_type lookup_struct_cache watermark_name
                     if watermark_type.handle = null
                     {
                         ; Create an opaque watermark type (4 pointers = 32 bytes on 64-bit)
@@ -10757,7 +10757,7 @@ define Emitter
             }
         }
         let ctx BlockCleanupContext(watermark, needs_cleanup)
-        block_cleanup_stack.add(ctx)
+        block_cleanup_stack.add ctx
     }
 
     ; Pop a block cleanup context and optionally emit cleanup
@@ -10778,7 +10778,7 @@ define Emitter
                         if current_region.local_page.handle <> null
                         {
                             ; Call restore_watermark
-                            emit_restore_watermark(cleanup.watermark)
+                            emit_restore_watermark cleanup.watermark
                         }
                     }
                 }
@@ -10823,7 +10823,7 @@ define Emitter
     procedure push_loop(this, exit_block: LLVMBasicBlockRef, continue_block: LLVMBasicBlockRef)
     {
         let ctx LoopContext(exit_block, continue_block, block_cleanup_stack.length)
-        loop_stack.add(ctx)
+        loop_stack.add ctx
     }
 
     ; Pop a loop context from the stack
@@ -10869,7 +10869,7 @@ function test() returns int
 
             ; Plan the program
             var planner Planner#(String$("test.scaly"))
-            let plan planner.plan_program(program)
+            let plan planner.plan_program program
             if plan = null
                 return 101
 
@@ -10899,7 +10899,7 @@ function test() returns int
         {
             let program Modeler.build_program#(String$("test2.scaly"), String$("test2"), syntax, true)
             var planner Planner#(String$("test2.scaly"))
-            let plan planner.plan_program(program)
+            let plan planner.plan_program program
             if plan = null
                 return 111
 
@@ -10929,7 +10929,7 @@ function test() returns int
         {
             let program Modeler.build_program#(String$("test3.scaly"), String$("test3"), syntax, true)
             var planner Planner#(String$("test3.scaly"))
-            let plan planner.plan_program(program)
+            let plan planner.plan_program program
             if plan = null
                 return 121
 
@@ -10949,7 +10949,7 @@ function test() returns int
         {
             let program Modeler.build_program#(String$("test4.scaly"), String$("test4"), syntax, true)
             var planner Planner#(String$("test4.scaly"))
-            let plan planner.plan_program(program)
+            let plan planner.plan_program program
             if plan = null
                 return 131
 
@@ -10969,7 +10969,7 @@ function test() returns int
         {
             let program Modeler.build_program#(String$("test5.scaly"), String$("test5"), syntax, true)
             var planner Planner#(String$("test5.scaly"))
-            let plan planner.plan_program(program)
+            let plan planner.plan_program program
             if plan = null
                 return 141
 
@@ -10989,7 +10989,7 @@ function test() returns int
         {
             let program Modeler.build_program#(String$("test6.scaly"), String$("test6"), syntax, true)
             var planner Planner#(String$("test6.scaly"))
-            let plan planner.plan_program(program)
+            let plan planner.plan_program program
             if plan = null
                 return 151
 
@@ -11009,7 +11009,7 @@ function test() returns int
         {
             let program Modeler.build_program#(String$("test7.scaly"), String$("test7"), syntax, true)
             var planner Planner#(String$("test7.scaly"))
-            let plan planner.plan_program(program)
+            let plan planner.plan_program program
             if plan = null
                 return 161
 
@@ -11037,7 +11037,7 @@ function test() returns int
         {
             let program Modeler.build_program#(String$("test8.scaly"), String$("test8"), syntax, true)
             var planner Planner#(String$("test8.scaly"))
-            let plan planner.plan_program(program)
+            let plan planner.plan_program program
             if plan = null
                 return 171
 
@@ -11057,7 +11057,7 @@ function test() returns int
         {
             let program Modeler.build_program#(String$("test9.scaly"), String$("test9"), syntax, true)
             var planner Planner#(String$("test9.scaly"))
-            let plan planner.plan_program(program)
+            let plan planner.plan_program program
             if plan = null
                 return 181
 
@@ -11077,7 +11077,7 @@ function test() returns int
         {
             let program Modeler.build_program#(String$("test10.scaly"), String$("test10"), syntax, true)
             var planner Planner#(String$("test10.scaly"))
-            let plan planner.plan_program(program)
+            let plan planner.plan_program program
             if plan = null
                 return 191
 
@@ -11105,7 +11105,7 @@ function test() returns int
         {
             let program Modeler.build_program#(String$("test11.scaly"), String$("test11"), syntax, true)
             var planner Planner#(String$("test11.scaly"))
-            let plan planner.plan_program(program)
+            let plan planner.plan_program program
             if plan = null
                 return 201
 
@@ -11126,7 +11126,7 @@ function test() returns int
         {
             let program Modeler.build_program#(String$("test12.scaly"), String$("test12"), syntax, true)
             var planner Planner#(String$("test12.scaly"))
-            let plan planner.plan_program(program)
+            let plan planner.plan_program program
             if plan = null
                 return 211
 

@@ -87,7 +87,7 @@ define lexer
             {
                 set current: src.get_buffer()
                 set end: src.get_buffer() + src.length()
-                skip_whitespace(true)
+                skip_whitespace true
             }
         }
 
@@ -124,7 +124,7 @@ define lexer
             if ((c >= 97) && (c <= 122)) || ((c >= 65) && (c <= 90))  ; a-z, A-Z
             {
                 set token: scan_identifier#()
-                skip_whitespace(false)
+                skip_whitespace false
                 return
             }
 
@@ -132,7 +132,7 @@ define lexer
             if (c >= 49) && (c <= 57)  ; '1'-'9'
             {
                 set token: scan_integer_literal#(current, 0)
-                skip_whitespace(false)
+                skip_whitespace false
                 return
             }
 
@@ -140,7 +140,7 @@ define lexer
             if (c = 43) || (c = 45) || (c = 42) || (c = 47) || (c = 61) || (c = 37) || (c = 38) || (c = 124) || (c = 126) || (c = 60) || (c = 62)
             {
                 set token: scan_operator#()
-                skip_whitespace(false)
+                skip_whitespace false
                 return
             }
 
@@ -149,7 +149,7 @@ define lexer
             {
                 set token: Token.Punctuation(PunctuationToken(c as u8))
                 read_character()
-                skip_whitespace(false)
+                skip_whitespace false
                 return
             }
 
@@ -158,7 +158,7 @@ define lexer
             {
                 set token: Token.Punctuation(PunctuationToken(c as u8))
                 read_character()
-                skip_whitespace(true)
+                skip_whitespace true
                 return
             }
 
@@ -166,7 +166,7 @@ define lexer
             if c = 10  ; '\n'
             {
                 set token: scan_line_feed#()
-                skip_whitespace(false)
+                skip_whitespace false
                 return
             }
 
@@ -175,7 +175,7 @@ define lexer
             {
                 read_character()
                 set token: Token.Colon(ColonToken())
-                skip_whitespace(false)
+                skip_whitespace false
                 return
             }
 
@@ -183,7 +183,7 @@ define lexer
             if c = 48  ; '0'
             {
                 set token: scan_numeric_literal#()
-                skip_whitespace(false)
+                skip_whitespace false
                 return
             }
 
@@ -192,7 +192,7 @@ define lexer
             {
                 read_character()
                 set token: scan_attribute#()
-                skip_whitespace(false)
+                skip_whitespace false
                 return
             }
 
@@ -200,7 +200,7 @@ define lexer
             if c = 34  ; '"'
             {
                 set token: scan_string_literal#()
-                skip_whitespace(false)
+                skip_whitespace false
                 return
             }
 
@@ -208,7 +208,7 @@ define lexer
             if c = 39  ; '\''
             {
                 set token: scan_string_identifier#()
-                skip_whitespace(false)
+                skip_whitespace false
                 return
             }
 
@@ -216,13 +216,13 @@ define lexer
             if c = 96  ; '`'
             {
                 set token: scan_fragment_literal#()
-                skip_whitespace(false)
+                skip_whitespace false
                 return
             }
 
             ; Invalid token
             set token: Token.Invalid(InvalidToken())
-            skip_whitespace(false)
+            skip_whitespace false
         }
 
         procedure scan_line_feed(this) returns Token
@@ -232,7 +232,7 @@ define lexer
 
             while true
             {
-                skip_whitespace(false)
+                skip_whitespace false
                 if current = null
                     return Token.Colon(ColonToken())
 

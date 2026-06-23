@@ -104,7 +104,7 @@ define String (data: pointer[u8](null))
 
     init#(page, c_string: pointer[const_char])
     {
-        let length strlen(c_string)
+        let length strlen c_string
         if length = (0 as size_t)
         {
             set data: null
@@ -150,7 +150,7 @@ define String (data: pointer[u8](null))
             if bit_count = (PACKED_SIZE * 7) as size_t
             {
                 ; Bad string length
-                exit(12)
+                exit 12
             }
 
             let byte *(other.data + index)
@@ -186,7 +186,7 @@ define String (data: pointer[u8](null))
         while true
         {
             if bit_count = (PACKED_SIZE * 7) as size_t
-                exit(11)
+                exit 11
 
             var byte: u8 *(data + index)
             set length: length | ((byte & (0x7F as u8)) as size_t) << bit_count
@@ -214,7 +214,7 @@ define String (data: pointer[u8](null))
             while true
             {
                 if bit_count = (PACKED_SIZE * 7) as size_t
-                    exit(11)
+                    exit 11
 
                 var byte: u8 *(data + index)
                 set length: length | ((byte & (0x7F as u8)) as size_t) << bit_count
@@ -249,7 +249,7 @@ define String (data: pointer[u8](null))
         while true
         {
             if bit_count = (PACKED_SIZE * 7) as size_t
-                exit(11)
+                exit 11
 
             var byte: u8 *(data + index)
             set result: result | (((byte & (0x7F as u8)) as size_t)) << bit_count
@@ -290,7 +290,7 @@ define String (data: pointer[u8](null))
             while true
             {
                 if bit_count = (PACKED_SIZE * 7) as size_t
-                    exit(11)
+                    exit 11
 
                 var byte: u8 *(data + index)
                 set length: length | (((byte & (0x7F as u8)) as size_t)) << bit_count
@@ -321,7 +321,7 @@ define String (data: pointer[u8](null))
             while true
             {
                 if bit_count = (PACKED_SIZE * 7) as size_t
-                    exit(13)
+                    exit 13
 
                 var byte: u8 *(data + index)
                 set length: length | (((byte & (0x7F as u8)) as size_t)) << bit_count
@@ -350,7 +350,7 @@ define String (data: pointer[u8](null))
         while true
         {
             if bit_count = (PACKED_SIZE * 7) as size_t
-                exit(11)
+                exit 11
 
             var byte: u8 *(data + index)
             set length: length | (((byte & (0x7F as u8)) as size_t)) << bit_count
@@ -381,7 +381,7 @@ define String (data: pointer[u8](null))
         while true
         {
             if bit_count = (PACKED_SIZE * 7) as size_t
-                exit(11)
+                exit 11
 
             var byte: u8 *(data + index)
             set length: length | (((byte & (0x7F as u8)) as size_t)) << bit_count
@@ -396,7 +396,7 @@ define String (data: pointer[u8](null))
     }
 
     function get_iterator(this: String) returns StringIterator
-        StringIterator(this)
+        StringIterator this
 
     ; Get a non-owning slice view of the string data
     function as_slice(this: String) returns Slice[u8]
@@ -411,7 +411,7 @@ define String (data: pointer[u8](null))
         while true
         {
             if bit_count = (PACKED_SIZE * 7) as size_t
-                exit(11)
+                exit 11
 
             var byte: u8 *(data + index)
             set string_length: string_length | (((byte & (0x7F as u8)) as size_t)) << bit_count
@@ -488,7 +488,7 @@ define String (data: pointer[u8](null))
     function starts_with(this: String, prefix: pointer[const_char]) returns bool
     {
         let this_len get_length()
-        let prefix_len strlen(prefix)
+        let prefix_len strlen prefix
         if prefix_len > this_len
             return false
 
@@ -519,7 +519,7 @@ define String (data: pointer[u8](null))
     function ends_with(this: String, suffix: pointer[const_char]) returns bool
     {
         let this_len get_length()
-        let suffix_len strlen(suffix)
+        let suffix_len strlen suffix
         if suffix_len > this_len
             return false
 

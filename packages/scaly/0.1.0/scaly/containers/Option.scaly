@@ -48,12 +48,12 @@ define Option[T] union
     }
 
     ; Map a function over the contained value
-    ; Returns None if this is None, otherwise returns Some(f(value))
+    ; Returns None if this is None, otherwise returns Some(f value)
     ; function map[U](this: Option[T], f: function(T) returns U) returns Option[U]
     ; {
     ;     choose this
     ;         when v: Some
-    ;             Option[U].Some(f(v))
+    ;             Option[U].Some(f v)
     ;         else
     ;             Option[U].None
     ; }

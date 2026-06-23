@@ -17,11 +17,11 @@ define Directory
     function is_directory(path: String) returns bool
     {
         let path_c_string path.to_c_string$()
-        var dir opendir(path_c_string)
+        var dir opendir path_c_string
         if dir = null
             return false
 
-        closedir(dir)
+        closedir dir
         true
     }
 

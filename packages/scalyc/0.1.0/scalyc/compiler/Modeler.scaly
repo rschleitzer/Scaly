@@ -290,7 +290,7 @@ function handle_type#(syntax: TypeSyntax) returns ref[Type]?
         var i: size_t 0
         while i < exts.length
         {
-            let ext_ptr exts.get(i)
+            let ext_ptr exts.get i
             if ext_ptr <> null
             {
                 let ext (*ext_ptr)
@@ -311,7 +311,7 @@ function handle_type#(syntax: TypeSyntax) returns ref[Type]?
             var gi: size_t 0
             while gi < gen_syns.length
             {
-                let ga_ptr gen_syns.get(gi)
+                let ga_ptr gen_syns.get gi
                 if ga_ptr <> null
                 {
                     let ga (*ga_ptr)
@@ -328,7 +328,7 @@ function handle_type#(syntax: TypeSyntax) returns ref[Type]?
         }
     }
 
-    let life handle_lifetime(syntax.lifetime)
+    let life handle_lifetime syntax.lifetime
     let base_type Type#(Span(syntax.start, syntax.end), path, generics, life)
 
     ; s113: wrap optional types (T?) in Option[T], mirroring stage-0
@@ -379,7 +379,7 @@ function handle_object#(syntax: ObjectSyntax) returns Tuple
         var i: size_t 0
         while i < comps.length
         {
-            let comp_ptr comps.get(i)
+            let comp_ptr comps.get i
             if comp_ptr <> null
             {
                 let comp_syntax (*comp_ptr)
@@ -408,7 +408,7 @@ function handle_component#(syntax: ComponentSyntax) returns Component
             let name_ops (*syntax.operands)
             if name_ops.length > 0
             {
-                let name_op_ptr name_ops.get(0)
+                let name_op_ptr name_ops.get 0
                 if name_op_ptr <> null
                 {
                     let name_op (*name_op_ptr)
@@ -446,7 +446,7 @@ function handle_vector#(syntax: VectorSyntax) returns Matrix
         var i: size_t 0
         while i < elems.length
         {
-            let elem_ptr elems.get(i)
+            let elem_ptr elems.get i
             if elem_ptr <> null
             {
                 let element (*elem_ptr)
@@ -456,7 +456,7 @@ function handle_vector#(syntax: VectorSyntax) returns Matrix
             set i: i + 1
         }
     }
-    let life handle_lifetime(syntax.lifetime)
+    let life handle_lifetime syntax.lifetime
     Matrix(Span(syntax.start, syntax.end), operations, life)
 }
 
@@ -478,7 +478,7 @@ function handle_expression#(syntax: ExpressionSyntax) returns Expression
 {
     choose syntax
         when lit: LiteralSyntax
-            Expression.Constant(handle_literal(lit))
+            Expression.Constant(handle_literal lit)
         when name_syntax: NameSyntax
         {
             ; Bare `true` / `false` identifiers (no extensions) map to
@@ -509,7 +509,7 @@ function handle_expression#(syntax: ExpressionSyntax) returns Expression
                 var i: size_t 0
                 while i < exts.length
                 {
-                    let ext_ptr exts.get(i)
+                    let ext_ptr exts.get i
                     if ext_ptr <> null
                     {
                         let ext (*ext_ptr)
@@ -569,8 +569,8 @@ function handle_expression#(syntax: ExpressionSyntax) returns Expression
             ; into a Model.Lifetime.
             var life_holder Vector[LifetimeSyntax]#(1)
             life_holder.put(0, life_syntax)
-            let life_ref life_holder.get(0)
-            let model_life handle_lifetime(life_ref)
+            let life_ref life_holder.get 0
+            let model_life handle_lifetime life_ref
             Expression.Type(Type(
                 Span(0, 0),
                 Vector[String]#(0),
@@ -612,7 +612,7 @@ function handle_lambda#(syntax: LambdaSyntax) returns Lambda
         var i: size_t 0
         while i < ops.length
         {
-            let op_ptr ops.get(i)
+            let op_ptr ops.get i
             if op_ptr <> null
             {
                 let op (*op_ptr)
@@ -627,7 +627,7 @@ function handle_lambda#(syntax: LambdaSyntax) returns Lambda
                 input.put(i, Item(
                     Span(op.start, op.end),
                     false,
-                    name_holder.get(0),
+                    name_holder.get 0,
                     null,
                     Vector[Attribute]#(0)
                 ))
@@ -696,7 +696,7 @@ function handle_match#(syntax: MatchSyntax) returns Match
         var i: size_t 0
         while i < brs.length
         {
-            let br_ptr brs.get(i)
+            let br_ptr brs.get i
             if br_ptr <> null
             {
                 let branch_syntax (*br_ptr)
@@ -736,7 +736,7 @@ function handle_branch#(syntax: BranchSyntax) returns Branch
         var i: size_t 0
         while i < cs.length
         {
-            let case_ptr cs.get(i)
+            let case_ptr cs.get i
             if case_ptr <> null
             {
                 let case_syntax (*case_ptr)
@@ -772,7 +772,7 @@ function handle_choose#(syntax: ChooseSyntax) returns Choose
         var i: size_t 0
         while i < cs.length
         {
-            let when_ptr cs.get(i)
+            let when_ptr cs.get i
             if when_ptr <> null
             {
                 let when_syntax (*when_ptr)
@@ -818,7 +818,7 @@ function handle_when#(syntax: WhenSyntax) returns When
         var i: size_t 0
         while i < exts.length
         {
-            let ext_ptr exts.get(i)
+            let ext_ptr exts.get i
             if ext_ptr <> null
             {
                 let ext (*ext_ptr)
@@ -916,7 +916,7 @@ function handle_try#(syntax: TrySyntax) returns Try
         var i: size_t 0
         while i < cs.length
         {
-            let when_ptr cs.get(i)
+            let when_ptr cs.get i
             if when_ptr <> null
             {
                 let when_syntax (*when_ptr)
@@ -975,7 +975,7 @@ function handle_is#(syntax: IsSyntax) returns Is
         var i: size_t 0
         while i < exts.length
         {
-            let ext_ptr exts.get(i)
+            let ext_ptr exts.get i
             if ext_ptr <> null
             {
                 let ext (*ext_ptr)
@@ -1011,22 +1011,22 @@ function handle_operand#(syntax: OperandSyntax) returns Operand
         var i: size_t 0
         while i < members.length
         {
-            let member_ptr members.get(i)
+            let member_ptr members.get i
             if member_ptr <> null
             {
                 let member (*member_ptr)
-                path_arr.add(member.name.name)
+                path_arr.add member.name.name
                 if member.name.extensions <> null
                 {
                     let exts (*member.name.extensions)
                     var ei: size_t 0
                     while ei < exts.length
                     {
-                        let ext_ptr exts.get(ei)
+                        let ext_ptr exts.get ei
                         if ext_ptr <> null
                         {
                             let ext (*ext_ptr)
-                            path_arr.add(ext.name)
+                            path_arr.add ext.name
                         }
                         set ei: ei + 1
                     }
@@ -1053,7 +1053,7 @@ function handle_operands#(syntax: ref[Vector[OperandSyntax]]?) returns Vector[Op
     var i: size_t 0
     while i < syn.length
     {
-        let op_ptr syn.get(i)
+        let op_ptr syn.get i
         if op_ptr <> null
         {
             let operand_syntax (*op_ptr)
@@ -1086,7 +1086,7 @@ function handle_binding_item#(syntax: BindingSyntax) returns Item
     Item(
         Span(syntax.start, syntax.end),
         false,
-        name_holder.get(0),
+        name_holder.get 0,
         item_type,
         Vector[Attribute]#(0)
     )
@@ -1180,7 +1180,7 @@ function handle_statements#(syntax: ref[Vector[StatementSyntax]]?) returns Vecto
     var i: size_t 0
     while i < stmts.length
     {
-        let stmt_ptr stmts.get(i)
+        let stmt_ptr stmts.get i
         if stmt_ptr <> null
         {
             let stmt_syntax (*stmt_ptr)
@@ -1199,7 +1199,7 @@ function handle_statements#(syntax: ref[Vector[StatementSyntax]]?) returns Vecto
                             var c: size_t 0
                             while c < ops_val.length
                             {
-                                let op_ptr ops_val.get(c)
+                                let op_ptr ops_val.get c
                                 if op_ptr <> null
                                 {
                                     let oe (*op_ptr)
@@ -1215,7 +1215,7 @@ function handle_statements#(syntax: ref[Vector[StatementSyntax]]?) returns Vecto
                                 var ai: size_t 0
                                 while ai < ops_val.length
                                 {
-                                    let op_ptr2 ops_val.get(ai)
+                                    let op_ptr2 ops_val.get ai
                                     if op_ptr2 <> null
                                     {
                                         let oe2 (*op_ptr2)
@@ -1232,7 +1232,7 @@ function handle_statements#(syntax: ref[Vector[StatementSyntax]]?) returns Vecto
                                 var bi: size_t 0
                                 while bi < ops_val.length
                                 {
-                                    let op_ptr3 ops_val.get(bi)
+                                    let op_ptr3 ops_val.get bi
                                     if op_ptr3 <> null
                                     {
                                         let oe3 (*op_ptr3)
@@ -1278,13 +1278,13 @@ function handle_statements#(syntax: ref[Vector[StatementSyntax]]?) returns Vecto
                     if did_split = false
                     {
                         let stmt handle_statement#(stmt_syntax)
-                        result.add(stmt)
+                        result.add stmt
                     }
                 }
                 else
                 {
                     let stmt handle_statement#(stmt_syntax)
-                    result.add(stmt)
+                    result.add stmt
                 }
         }
         set i: i + 1
@@ -1324,7 +1324,7 @@ function handle_item#(is_private: bool, syntax: ItemSyntax) returns Item
     Item(
         Span(syntax.start, syntax.end),
         is_private,
-        name_holder.get(0),
+        name_holder.get 0,
         item_type,
         Vector[Attribute]#(0)
     )
@@ -1373,7 +1373,7 @@ function handle_model#(syntax: ModelSyntax) returns Model
 {
     choose syntax
         when lit: LiteralSyntax
-            Model.Constant(handle_literal(lit))
+            Model.Constant(handle_literal lit)
         when name: NameSyntax
             Model.Variable(name.name)
         when obj: ObjectSyntax
@@ -1404,7 +1404,7 @@ function handle_use#(syntax: UseSyntax) returns Use
         var i: size_t 0
         while i < exts.length
         {
-            let ext_ptr exts.get(i)
+            let ext_ptr exts.get i
             if ext_ptr <> null
             {
                 let ext (*ext_ptr)
@@ -1447,7 +1447,7 @@ function handle_parameter_set#(syntax: ParameterSetSyntax) returns Vector[Item]
             var i: size_t 0
             while i < items.length
             {
-                let item_ptr items.get(i)
+                let item_ptr items.get i
                 if item_ptr <> null
                 {
                     let item_syn (*item_ptr)
@@ -1524,7 +1524,7 @@ function build_function#(start: size_t, end_pos: size_t, syntax: TargetSyntax, i
                 set throws_type: handle_type#(throws_syntax.type)
             }
 
-            let life handle_lifetime(named.routine.lifetime)
+            let life handle_lifetime named.routine.lifetime
             let impl handle_implementation#(named.routine.implementation)
 
             ; Detect function# (Lifetime=Call). Two cases (mirror
@@ -1546,7 +1546,7 @@ function build_function#(start: size_t, end_pos: size_t, syntax: TargetSyntax, i
                 var first_has_name_no_type: bool false
                 if input.length > 0
                 {
-                    let first_ptr input.get(0)
+                    let first_ptr input.get 0
                     if first_ptr <> null
                     {
                         if first_ptr.name <> null
@@ -1558,7 +1558,7 @@ function build_function#(start: size_t, end_pos: size_t, syntax: TargetSyntax, i
                 }
                 if first_has_name_no_type
                 {
-                    let first_ptr input.get(0)
+                    let first_ptr input.get 0
                     if first_ptr <> null
                     {
                         if first_ptr.name <> null
@@ -1572,7 +1572,7 @@ function build_function#(start: size_t, end_pos: size_t, syntax: TargetSyntax, i
                     var k: size_t 1
                     while k < input.length
                     {
-                        let ip input.get(k)
+                        let ip input.get k
                         if ip <> null
                             rest.put(k - 1, (*ip))
                         set k: k + 1
@@ -1601,7 +1601,7 @@ function build_function#(start: size_t, end_pos: size_t, syntax: TargetSyntax, i
                     var gi: size_t 0
                     while gi < g_list.length
                     {
-                        let ga_ptr g_list.get(gi)
+                        let ga_ptr g_list.get gi
                         if ga_ptr <> null
                         {
                             let ga (*ga_ptr)
@@ -1691,7 +1691,7 @@ function handle_operator#(syntax: OperatorSyntax, is_private: bool) returns Oper
                     var gi: size_t 0
                     while gi < g_list.length
                     {
-                        let ga_ptr g_list.get(gi)
+                        let ga_ptr g_list.get gi
                         if ga_ptr <> null
                         {
                             let ga (*ga_ptr)
@@ -1800,7 +1800,7 @@ function handle_initializer#(syntax: InitSyntax, is_private: bool) returns Initi
         {
             if input.length > 0
             {
-                let first_ptr input.get(0)
+                let first_ptr input.get 0
                 if first_ptr <> null
                 {
                     if first_ptr.name <> null
@@ -1814,7 +1814,7 @@ function handle_initializer#(syntax: InitSyntax, is_private: bool) returns Initi
                 var k: size_t 1
                 while k < input.length
                 {
-                    let ip input.get(k)
+                    let ip input.get k
                     if ip <> null
                         rest.put(k - 1, (*ip))
                     set k: k + 1
@@ -1888,7 +1888,7 @@ function handle_class#(name: String, path: String, syntax: ClassSyntax, is_priva
         var i: size_t 0
         while i < parts.length
         {
-            let part_ptr parts.get(i)
+            let part_ptr parts.get i
             if part_ptr <> null
             {
                 let part (*part_ptr)
@@ -1930,7 +1930,7 @@ function handle_class#(name: String, path: String, syntax: ClassSyntax, is_priva
             var i: size_t 0
             while i < use_syns.length
             {
-                let use_ptr use_syns.get(i)
+                let use_ptr use_syns.get i
                 if use_ptr <> null
                 {
                     let use_syntax (*use_ptr)
@@ -1953,7 +1953,7 @@ function handle_class#(name: String, path: String, syntax: ClassSyntax, is_priva
             var member_idx: size_t 0
             while i < total
             {
-                let member_ptr member_syns.get(i)
+                let member_ptr member_syns.get i
                 if member_ptr <> null
                 {
                     let member_syntax (*member_ptr)
@@ -2075,7 +2075,7 @@ function handle_namespace#(name: String, path: String, syntax: NamespaceSyntax, 
         var member_idx: size_t 0
         while i < decl_syns.length
         {
-            let decl_ptr decl_syns.get(i)
+            let decl_ptr decl_syns.get i
             if decl_ptr <> null
             {
                 let decl_syntax (*decl_ptr)
@@ -2225,7 +2225,7 @@ function handle_union#(name: String, path: String, syntax: UnionSyntax, is_priva
         var i: size_t 0
         while i < var_syns.length
         {
-            let var_ptr var_syns.get(i)
+            let var_ptr var_syns.get i
             if var_ptr <> null
             {
                 let var_syntax (*var_ptr)
@@ -2249,7 +2249,7 @@ function handle_union#(name: String, path: String, syntax: UnionSyntax, is_priva
             var i: size_t 0
             while i < member_syns.length
             {
-                let member_ptr member_syns.get(i)
+                let member_ptr member_syns.get i
                 if member_ptr <> null
                 {
                     let member_syntax (*member_ptr)
@@ -2293,7 +2293,7 @@ function handle_definition#(path: String, syntax: DefinitionSyntax, is_private: 
             var i: size_t 0
             while i < param_vec.length
             {
-                let param_ptr param_vec.get(i)
+                let param_ptr param_vec.get i
                 if param_ptr <> null
                 {
                     let param_syntax (*param_ptr)
@@ -2314,7 +2314,7 @@ function handle_definition#(path: String, syntax: DefinitionSyntax, is_private: 
         var i: size_t 0
         while i < attr_vec.length
         {
-            let attr_ptr attr_vec.get(i)
+            let attr_ptr attr_vec.get i
             if attr_ptr <> null
             {
                 let attr_syntax (*attr_ptr)
@@ -2361,7 +2361,7 @@ function handle_definition#(path: String, syntax: DefinitionSyntax, is_private: 
         when intrinsic_syntax: IntrinsicSyntax
             Definition.Intrinsic(Intrinsic(Span(intrinsic_syntax.start, intrinsic_syntax.end)))
         else
-            Definition.Intrinsic(Intrinsic(loc))
+            Definition.Intrinsic(Intrinsic loc)
 
     Concept(loc, name, parameters, attributes, definition)
 }
@@ -2377,7 +2377,7 @@ function handle_definition#(path: String, syntax: DefinitionSyntax, is_private: 
 procedure handle_module_decl#(path: String, mod_syntax: ModuleSyntax, is_private: bool, modules: ref[Array[Module]])
 {
     let loaded build_referenced_module#(path, mod_syntax.name, is_private)
-    modules.add(loaded)
+    modules.add loaded
 }
 
 ; Format a VersionSyntax payload as "<majorMinor>.<patch>". The lexer
@@ -2388,17 +2388,17 @@ function format_version#(rp, version_ref: ref[VersionSyntax]) returns String
     var sb StringBuilder$()
     choose v.majorMinor
         when fp: FloatingPoint
-            sb.append(fp.value)
+            sb.append fp.value
         when i: Integer
-            sb.append(i.value)
+            sb.append i.value
         else
-            sb.append("0.1")
+            sb.append "0.1"
     sb.append("." as char)
     choose v.patch
         when i: Integer
-            sb.append(i.value)
+            sb.append i.value
         else
-            sb.append("0")
+            sb.append "0"
     sb.to_string^rp()
 }
 
@@ -2410,14 +2410,14 @@ function format_version#(rp, version_ref: ref[VersionSyntax]) returns String
 ; case byte-identical is what makes the seed self-compile reproduce unchanged.
 function scaly_home_base#(rp) returns String
 {
-    let home getenv("SCALY_HOME")
+    let home getenv "SCALY_HOME"
     if home = null
         return String^rp("")
     var home_str String$(home)
     if home_str.get_length() = 0
         return String^rp("")
     var sb StringBuilder$()
-    sb.append(home_str)
+    sb.append home_str
     sb.append("/" as char)
     sb.to_string^rp()
 }
@@ -2435,14 +2435,14 @@ procedure handle_package_decl#(pkg_syntax: PackageSyntax, packages: ref[Array[Mo
     ; Search path: <SCALY_HOME/>packages/<name>/<version>/
     var sb StringBuilder$()
     sb.append(scaly_home_base#())
-    sb.append("packages/")
-    sb.append(pkg_name)
+    sb.append "packages/"
+    sb.append pkg_name
     sb.append("/" as char)
-    sb.append(version_str)
+    sb.append version_str
     let pkg_path sb.to_string#()
 
     let loaded build_referenced_module#(pkg_path, pkg_name, false)
-    packages.add(loaded)
+    packages.add loaded
 }
 
 ; Load and model a sibling module file at <path>/<name>.scaly. Returns an
@@ -2454,11 +2454,11 @@ function build_referenced_module#(path: String, name: String, is_private: bool) 
     var sb StringBuilder$()
     if path.get_length() > 0
     {
-        sb.append(path)
+        sb.append path
         sb.append("/" as char)
     }
-    sb.append(name)
-    sb.append(".scaly")
+    sb.append name
+    sb.append ".scaly"
     let file_path sb.to_string#()
 
     ; Empty stub for failure cases (still has a valid name so lookups don't crash).
@@ -2492,10 +2492,10 @@ function build_referenced_module#(path: String, name: String, is_private: bool) 
     var sub_sb StringBuilder$()
     if path.get_length() > 0
     {
-        sub_sb.append(path)
+        sub_sb.append path
         sub_sb.append("/" as char)
     }
-    sub_sb.append(name)
+    sub_sb.append name
     let sub_path sub_sb.to_string#()
 
     build_module#(sub_path, file_path, name, syntax.file, is_private)
@@ -2520,7 +2520,7 @@ function build_module#(path: String, file_name: String, name: String, syntax: Fi
         var member_idx: size_t 0
         while i < total
         {
-            let decl_ptr decl_syns.get(i)
+            let decl_ptr decl_syns.get i
             if decl_ptr <> null
             {
                 let decl_syntax (*decl_ptr)
@@ -2570,7 +2570,7 @@ function build_program#(file_name: String, program_name: String, syntax: Program
         var i: size_t 0
         while i < decl_syns.length
         {
-            let decl_ptr decl_syns.get(i)
+            let decl_ptr decl_syns.get i
             if decl_ptr <> null
             {
                 let decl_syntax (*decl_ptr)
@@ -2605,7 +2605,7 @@ function build_program#(file_name: String, program_name: String, syntax: Program
     {
         var prelude_sb StringBuilder$()
         prelude_sb.append(scaly_home_base#())
-        prelude_sb.append("packages/scaly/0.1.0/scaly")
+        prelude_sb.append "packages/scaly/0.1.0/scaly"
         let prelude_path prelude_sb.to_string#()
         let prelude_module build_referenced_module#(prelude_path, String$("prelude"), false)
 
@@ -2616,7 +2616,7 @@ function build_program#(file_name: String, program_name: String, syntax: Program
             var mi: size_t 0
             while mi < init_mods_len
             {
-                let mp initial_module.modules.get(mi)
+                let mp initial_module.modules.get mi
                 if mp <> null
                     combined_modules.put(mi, *mp)
                 set mi: mi + 1
@@ -2661,7 +2661,7 @@ function test() returns int
             if program.statements.length <> 1
                 return 201
 
-            let stmt_ptr program.statements.get(0)
+            let stmt_ptr program.statements.get 0
             if stmt_ptr = null
                 return 202
 
@@ -2672,7 +2672,7 @@ function test() returns int
                     if action.source.length <> 1
                         return 203
 
-                    let op_ptr action.source.get(0)
+                    let op_ptr action.source.get 0
                     if op_ptr = null
                         return 204
 
@@ -2706,7 +2706,7 @@ function test() returns int
             if program.statements.length <> 1
                 return 211
 
-            let stmt_ptr program.statements.get(0)
+            let stmt_ptr program.statements.get 0
             if stmt_ptr = null
                 return 212
 
@@ -2714,7 +2714,7 @@ function test() returns int
             choose stmt
                 when action: Action
                 {
-                    let op_ptr action.source.get(0)
+                    let op_ptr action.source.get 0
                     if op_ptr = null
                         return 213
 
@@ -2743,7 +2743,7 @@ function test() returns int
             if program.statements.length <> 1
                 return 221
 
-            let stmt_ptr program.statements.get(0)
+            let stmt_ptr program.statements.get 0
             if stmt_ptr = null
                 return 222
 
@@ -2751,7 +2751,7 @@ function test() returns int
             choose stmt
                 when action: Action
                 {
-                    let op_ptr action.source.get(0)
+                    let op_ptr action.source.get 0
                     if op_ptr = null
                         return 223
 
@@ -2780,7 +2780,7 @@ function test() returns int
             if program.statements.length <> 1
                 return 231
 
-            let stmt_ptr program.statements.get(0)
+            let stmt_ptr program.statements.get 0
             if stmt_ptr = null
                 return 232
 
@@ -2813,7 +2813,7 @@ function test() returns int
             if program.statements.length <> 1
                 return 241
 
-            let stmt_ptr program.statements.get(0)
+            let stmt_ptr program.statements.get 0
             if stmt_ptr = null
                 return 242
 
@@ -2837,7 +2837,7 @@ function test() returns int
                     if item_type.name.length <> 1
                         return 247
 
-                    let type_name_ptr item_type.name.get(0)
+                    let type_name_ptr item_type.name.get 0
                     if type_name_ptr = null
                         return 248
 
@@ -2860,7 +2860,7 @@ function test() returns int
             if program.statements.length <> 1
                 return 251
 
-            let stmt_ptr program.statements.get(0)
+            let stmt_ptr program.statements.get 0
             if stmt_ptr = null
                 return 252
 
@@ -2868,7 +2868,7 @@ function test() returns int
             choose stmt
                 when action: Action
                 {
-                    let op_ptr action.source.get(0)
+                    let op_ptr action.source.get 0
                     if op_ptr = null
                         return 253
 
@@ -2879,7 +2879,7 @@ function test() returns int
                             if type_expr.name.length <> 1
                                 return 254
 
-                            let name_ptr type_expr.name.get(0)
+                            let name_ptr type_expr.name.get 0
                             if name_ptr = null
                                 return 255
 
@@ -2905,7 +2905,7 @@ function test() returns int
             if program.statements.length <> 1
                 return 261
 
-            let stmt_ptr program.statements.get(0)
+            let stmt_ptr program.statements.get 0
             if stmt_ptr = null
                 return 262
 
@@ -2913,7 +2913,7 @@ function test() returns int
             choose stmt
                 when action: Action
                 {
-                    let op_ptr action.source.get(0)
+                    let op_ptr action.source.get 0
                     if op_ptr = null
                         return 263
 
@@ -2938,7 +2938,7 @@ function test() returns int
             if program.module_.members.length <> 1
                 return 271
 
-            let member_ptr program.module_.members.get(0)
+            let member_ptr program.module_.members.get 0
             if member_ptr = null
                 return 272
 
@@ -2968,7 +2968,7 @@ function test() returns int
             if program.module_.members.length <> 1
                 return 281
 
-            let member_ptr program.module_.members.get(0)
+            let member_ptr program.module_.members.get 0
             if member_ptr = null
                 return 282
 
@@ -2998,7 +2998,7 @@ function test() returns int
             if program.module_.members.length <> 1
                 return 291
 
-            let member_ptr program.module_.members.get(0)
+            let member_ptr program.module_.members.get 0
             if member_ptr = null
                 return 292
 
@@ -3034,7 +3034,7 @@ function test() returns int
             if program.module_.members.length <> 1
                 return 298
 
-            let member_ptr program.module_.members.get(0)
+            let member_ptr program.module_.members.get 0
             if member_ptr = null
                 return 299
 

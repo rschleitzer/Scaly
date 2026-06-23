@@ -12,7 +12,7 @@ define HashMapBuilder[K, V]
         set slots: null
         if vec.length > 0
         {
-            reallocate(vec.length)
+            reallocate vec.length
             var vector_iterator VectorIterator[KeyValuePair[K, V]](&vec)
             while let element vector_iterator.next()
                 add_internal(element.key, element.value)
@@ -21,7 +21,7 @@ define HashMapBuilder[K, V]
 
     function reallocate(this: HashMapBuilder[K, V], size: size_t)
     {
-        let hash_size hashing.get_prime(size)
+        let hash_size hashing.get_prime size
         let own_page Page.get(this as pointer[void])
         let slots_page own_page.allocate_exclusive_page()
         let new_slots Vector[BuilderList[Slot[KeyValuePair[K, V]]]]^slots_page(hash_size)
@@ -36,7 +36,7 @@ define HashMapBuilder[K, V]
                 {
                     let hash_code item.hash_code
                     let slot_number hash_code % new_slots.length
-                    let slot_list new_slots.get_ptr(slot_number)
+                    let slot_list new_slots.get_ptr slot_number
                     slot_list.add^slots_page(*item)
                 }
             }
@@ -58,7 +58,7 @@ define HashMapBuilder[K, V]
     {
         let hash_code key.hash()
         let slot_number hash_code % slots.length
-        let slot_list slots.get_ptr(slot_number)
+        let slot_list slots.get_ptr slot_number
         var iterator slot_list.get_iterator()
         while let item iterator.next()
         {
@@ -81,7 +81,7 @@ define HashMapBuilder[K, V]
 
         let hash key.hash()
         let slot_number hash % slots.length
-        let slot slots.get_ptr(slot_number)
+        let slot slots.get_ptr slot_number
         var iterator slot.get_iterator()
         while let item iterator.next()
         {
@@ -112,6 +112,6 @@ define HashMapBuilder[K, V]
 
     operator [](key: K) returns ref[V]?
     {
-        return get(key)
+        return get key
     }
 }

@@ -40,12 +40,12 @@ define Page
             ; We need to reserve the space for the page object
             let gross_size size + sizeof Page
             if gross_size > PAGE_SIZE
-                return allocate_oversized(gross_size)
+                return allocate_oversized gross_size
 
             if current_page <> null
             {
                 let object current_page.allocate(size, align)
-                let page_of_allocated_object get(object)
+                let page_of_allocated_object get object
                 if page_of_allocated_object <> current_page
                     set current_page: page_of_allocated_object
 
@@ -69,7 +69,7 @@ define Page
         ; We allocate oversized objects directly.
         let address aligned_alloc(PAGE_SIZE,  (size + PAGE_SIZE - (1 as size_t)) & (~(PAGE_SIZE - (1 as size_t))))
         if address = null
-            exit(1)
+            exit 1
 
         var page address as pointer[Page]
 
@@ -77,7 +77,7 @@ define Page
         set page.next_object: null
 
         ; An oversized page is always exclusive
-        exclusive_pages.add(page)
+        exclusive_pages.add page
 
         ; The page offset by the null pointer for next_object
         return (page + 1) as pointer[void]
@@ -102,7 +102,7 @@ define Page
     function allocate_exclusive_page(this: Page) returns pointer[Page]
     {
         let page allocate_page()
-        exclusive_pages.add(page)
+        exclusive_pages.add page
         page
     }
 
@@ -115,7 +115,7 @@ define Page
         for exclusive_page in exclusive_pages
         {
             exclusive_page.deallocate_extensions()
-            scaly_release_page(exclusive_page)
+            scaly_release_page exclusive_page
         }
 
         var page next_page
@@ -129,9 +129,9 @@ define Page
             for excl in page.exclusive_pages
             {
                 excl.deallocate_extensions()
-                scaly_release_page(excl)
+                scaly_release_page excl
             }
-            scaly_release_page(page)
+            scaly_release_page page
             set page: next_page
         }
     }
@@ -139,9 +139,9 @@ define Page
     function deallocate_exclusive_page(this: Page, page: pointer[Page])
     {
         page.deallocate_extensions()
-        scaly_release_page(page)
+        scaly_release_page page
         if exclusive_pages.remove(page) = false
-            exit(2)
+            exit 2
 
     }
 
@@ -162,12 +162,12 @@ define Page
             let node exclusive_pages.head
             let page node.page
             page.deallocate_extensions()
-            scaly_release_page(page)
+            scaly_release_page page
             set exclusive_pages.head: node.next
         }
 
         ; Deallocate extensions added after mark.extension_tail
-        deallocate_extensions_after(mark.extension_tail)
+        deallocate_extensions_after mark.extension_tail
 
         ; Restore allocation state
         set current_page: mark.page
@@ -184,7 +184,7 @@ define Page
         {
             let page_to_free next_page
             set next_page: page_to_free.next_page
-            scaly_release_page(page_to_free)
+            scaly_release_page page_to_free
         }
     }
 }
