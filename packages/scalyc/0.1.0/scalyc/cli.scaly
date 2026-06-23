@@ -239,25 +239,25 @@ define cli
     ; Print usage information
     function print_usage()
     {
-        Console.println("Usage: scalyc [options] <input file>")
-        Console.println("")
-        Console.println("Options:")
-        Console.println("  -h, --help     Show this help message")
-        Console.println("  -v, --verbose  Verbose output")
-        Console.println("  -o <file>      Output file")
-        Console.println("  -S             Emit LLVM IR")
+        Console.println "Usage: scalyc [options] <input file>"
+        Console.println ""
+        Console.println "Options:"
+        Console.println "  -h, --help     Show this help message"
+        Console.println "  -v, --verbose  Verbose output"
+        Console.println "  -o <file>      Output file"
+        Console.println "  -S             Emit LLVM IR"
         Console.println("  -c             Compile only (no link)")
-        Console.println("  -L<path>       Add library search path")
-        Console.println("  -l<name>       Link library by name")
-        Console.println("  <file>.a/.o    Positional link inputs")
-        Console.println("  --lex          Lex input and print tokens")
-        Console.println("  --parse        Parse input and validate syntax")
-        Console.println("  --model        Build semantic model")
+        Console.println "  -L<path>       Add library search path"
+        Console.println "  -l<name>       Link library by name"
+        Console.println "  <file>.a/.o    Positional link inputs"
+        Console.println "  --lex          Lex input and print tokens"
+        Console.println "  --parse        Parse input and validate syntax"
+        Console.println "  --model        Build semantic model"
         Console.println("  --plan         Run planner (type resolution)")
-        Console.println("  --no-prelude   Skip auto-loading prelude module")
+        Console.println "  --no-prelude   Skip auto-loading prelude module"
         Console.println("  --no-tests     Omit test/test_* functions (seed build)")
-        Console.println("  --run <fn>     JIT-compile and run <fn> in-process")
-        Console.println("  --jit          JIT-compile and run the whole program")
+        Console.println "  --run <fn>     JIT-compile and run <fn> in-process"
+        Console.println "  --jit          JIT-compile and run the whole program"
     }
 
     ; Resolve the runtime static archive the linker pulls in. When SCALY_HOME
@@ -310,21 +310,21 @@ define cli
 
         if opts.has_error()
         {
-            Console.println("Error: ")
+            Console.println "Error: "
             ; TODO: print error message
             return 1
         }
 
         if opts.has_input() = false
         {
-            Console.println("Error: No input file specified")
+            Console.println "Error: No input file specified"
             print_usage()
             return 1
         }
 
         if opts.verbose
         {
-            Console.println("Compiling: ")
+            Console.println "Compiling: "
             ; TODO: print input file
         }
 
@@ -332,12 +332,12 @@ define cli
         var source File.read_to_string$(opts.input_file)
         if source.get_length() = 0
         {
-            Console.println("Error: Could not read input file")
+            Console.println "Error: Could not read input file"
             return 1
         }
 
         if opts.verbose
-            Console.println("Read source file successfully")
+            Console.println "Read source file successfully"
 
         ; ================================================================
         ; Stage 1: Parse
@@ -348,12 +348,12 @@ define cli
         if opts.lex_only
         {
             ; Just tokenize and print tokens
-            Console.println("Tokens:")
+            Console.println "Tokens:"
             p.lexer.advance$()
             while p.lexer.is_at_end() = false
             {
                 ; TODO: Print token details
-                Console.println("  <token>")
+                Console.println "  <token>"
                 p.lexer.advance$()
             }
             return 0
@@ -373,7 +373,7 @@ define cli
                     when i: Invalid
                         cli.print_parse_error#(opts.input_file, source, i.start, i.message)
                     when d: Different
-                        Console.println("Parse error")
+                        Console.println "Parse error"
                 return 2
             }
             when program: Success
@@ -382,11 +382,11 @@ define cli
             }
 
         if opts.verbose
-            Console.println("Parsing completed successfully")
+            Console.println "Parsing completed successfully"
 
         if opts.parse_only
         {
-            Console.println("Parse successful")
+            Console.println "Parse successful"
             return 0
         }
 
@@ -400,11 +400,11 @@ define cli
         let model Modeler.build_program#(opts.input_file, program_name, syntax, opts.no_prelude = false)
 
         if opts.verbose
-            Console.println("Model built successfully")
+            Console.println "Model built successfully"
 
         if opts.model_only
         {
-            Console.println("Model built successfully")
+            Console.println "Model built successfully"
             return 0
         }
 
@@ -418,7 +418,7 @@ define cli
 
         if plan = null
         {
-            Console.println("Planner error")
+            Console.println "Planner error"
             return 4
         }
 
@@ -433,11 +433,11 @@ define cli
         }
 
         if opts.verbose
-            Console.println("Planning completed successfully")
+            Console.println "Planning completed successfully"
 
         if opts.plan_only
         {
-            Console.println("Planning completed successfully")
+            Console.println "Planning completed successfully"
             return 0
         }
 
@@ -465,7 +465,7 @@ define cli
             }
             if target_mangled.get_length() = 0
             {
-                Console.println("Error: --run function not found")
+                Console.println "Error: --run function not found"
                 return 10
             }
 
@@ -506,24 +506,24 @@ define cli
 
         if emit_result = false
         {
-            Console.println("Emitter error")
+            Console.println "Emitter error"
             return 5
         }
 
         if opts.verbose
-            Console.println("Code generation completed successfully")
+            Console.println "Code generation completed successfully"
 
         if opts.emit_ir
         {
             if opts.output_file.get_length() = 0
             {
-                Console.println("Error: -S requires -o <file>")
+                Console.println "Error: -S requires -o <file>"
                 return 6
             }
             let ir_ok emitter.write_module_to_file opts.output_file
             if ir_ok = false
             {
-                Console.println("Error: Could not write IR file")
+                Console.println "Error: Could not write IR file"
                 return 6
             }
             return 0
@@ -535,13 +535,13 @@ define cli
         {
             if opts.output_file.get_length() = 0
             {
-                Console.println("Error: -c requires -o <file>")
+                Console.println "Error: -c requires -o <file>"
                 return 6
             }
             let obj_ok emitter.write_object_to_file opts.output_file
             if obj_ok = false
             {
-                Console.println("Error: Could not write object file")
+                Console.println "Error: Could not write object file"
                 return 8
             }
             return 0
@@ -549,7 +549,7 @@ define cli
 
         if opts.output_file.get_length() = 0
         {
-            Console.println("Error: -o <file> required for linking")
+            Console.println "Error: -o <file> required for linking"
             return 7
         }
 
@@ -558,7 +558,7 @@ define cli
         let obj_ok emitter.write_object_to_file tmp_obj
         if obj_ok = false
         {
-            Console.println("Error: Could not write object file")
+            Console.println "Error: Could not write object file"
             return 8
         }
 
@@ -647,7 +647,7 @@ define cli
 
         if link_rc <> 0
         {
-            Console.println("Error: Linker failed")
+            Console.println "Error: Linker failed"
             return 9
         }
 

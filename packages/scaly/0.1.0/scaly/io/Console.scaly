@@ -13,7 +13,7 @@ define Console
 
     function println(message: pointer[const_char])
     {
-        Console.print(message)
+        Console.print message
         ; Numeric LF byte: the lexer stores the "\n" string literal raw as
         ; [0x5c,0x6e] (no escape decode — s185 escape class), so under
         ; stage-emitted code write(…,"\n",1) emitted a backslash, not a

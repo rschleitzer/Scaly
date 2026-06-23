@@ -1375,13 +1375,13 @@ function handle_model#(syntax: ModelSyntax) returns Model
         when lit: LiteralSyntax
             Model.Constant(handle_literal lit)
         when name: NameSyntax
-            Model.Variable(name.name)
+            Model.Variable name.name
         when obj: ObjectSyntax
             Model.Tuple(handle_object#(obj))
         when vec: VectorSyntax
             Model.Matrix(handle_vector#(vec))
         else
-            Model.Variable("")
+            Model.Variable ""
 }
 
 ; ============================================================================
@@ -1896,13 +1896,13 @@ function handle_class#(name: String, path: String, syntax: ClassSyntax, is_priva
                     when field: FieldSyntax
                     {
                         let property handle_property#(true, field.property)
-                        symbols_builder.add(property.name, Nameable.Property(property))
+                        symbols_builder.add(property.name, Nameable.Property property)
                         properties.put(i, property)
                     }
                     when prop: PropertySyntax
                     {
                         let property handle_property#(false, prop)
-                        symbols_builder.add(property.name, Nameable.Property(property))
+                        symbols_builder.add(property.name, Nameable.Property property)
                         properties.put(i, property)
                     }
                     else {}
@@ -1999,24 +1999,24 @@ function handle_constituent#(path: String, syntax: MemberSyntax, symbols_builder
         when def: DefinitionSyntax
         {
             let concept handle_definition#(path, def, false)
-            (*symbols_builder).add(concept.name, Nameable.Concept(concept))
-            Member.Concept(concept)
+            (*symbols_builder).add(concept.name, Nameable.Concept concept)
+            Member.Concept concept
         }
         when func: FunctionSyntax
         {
             let fn build_function#(func.start, func.end, func.target, false, true)
             var fns Vector[Function]#(1)
             fns.put(0, fn)
-            (*symbols_builder).add(fn.name, Nameable.Functions(fns))
-            Member.Function(fn)
+            (*symbols_builder).add(fn.name, Nameable.Functions fns)
+            Member.Function fn
         }
         when proc: ProcedureSyntax
         {
             let proc_fn build_function#(proc.start, proc.end, proc.target, false, false)
             var fns Vector[Function]#(1)
             fns.put(0, proc_fn)
-            (*symbols_builder).add(proc_fn.name, Nameable.Functions(fns))
-            Member.Function(proc_fn)
+            (*symbols_builder).add(proc_fn.name, Nameable.Functions fns)
+            Member.Function proc_fn
         }
         when op: OperatorSyntax
         {
@@ -2032,8 +2032,8 @@ function handle_constituent#(path: String, syntax: MemberSyntax, symbols_builder
                 else
                 {
                     let operator_ handle_operator#(op, false)
-                    (*symbols_builder).add(operator_.name, Nameable.Operator(operator_))
-                    Member.Operator(operator_)
+                    (*symbols_builder).add(operator_.name, Nameable.Operator operator_)
+                    Member.Operator operator_
                 }
         }
         when mod: ModuleSyntax
@@ -2111,30 +2111,30 @@ function handle_declaration#(path: String, syntax: DeclarationSyntax, symbols_bu
         when def: DefinitionSyntax
         {
             let concept handle_definition#(path, def, false)
-            (*symbols_builder).add(concept.name, Nameable.Concept(concept))
-            Member.Concept(concept)
+            (*symbols_builder).add(concept.name, Nameable.Concept concept)
+            Member.Concept concept
         }
         when func: FunctionSyntax
         {
             let fn build_function#(func.start, func.end, func.target, false, true)
             var fns Vector[Function]#(1)
             fns.put(0, fn)
-            (*symbols_builder).add(fn.name, Nameable.Functions(fns))
-            Member.Function(fn)
+            (*symbols_builder).add(fn.name, Nameable.Functions fns)
+            Member.Function fn
         }
         when proc: ProcedureSyntax
         {
             let proc_fn build_function#(proc.start, proc.end, proc.target, false, false)
             var fns Vector[Function]#(1)
             fns.put(0, proc_fn)
-            (*symbols_builder).add(proc_fn.name, Nameable.Functions(fns))
-            Member.Function(proc_fn)
+            (*symbols_builder).add(proc_fn.name, Nameable.Functions fns)
+            Member.Function proc_fn
         }
         when op: OperatorSyntax
         {
             let operator_ handle_operator#(op, false)
-            (*symbols_builder).add(operator_.name, Nameable.Operator(operator_))
-            Member.Operator(operator_)
+            (*symbols_builder).add(operator_.name, Nameable.Operator operator_)
+            Member.Operator operator_
         }
         when mut: MutableSyntax
         {
@@ -2155,10 +2155,10 @@ function handle_declaration#(path: String, syntax: DeclarationSyntax, symbols_bu
                     String#(mut.binding.name),
                     Vector[GenericParameter]#(0),
                     Vector[Attribute]#(0),
-                    Definition.Global(mg_global)
+                    Definition.Global mg_global
                 )
-                (*symbols_builder).add(mg_concept.name, Nameable.Concept(mg_concept))
-                return Member.Concept(mg_concept)
+                (*symbols_builder).add(mg_concept.name, Nameable.Concept mg_concept)
+                return Member.Concept mg_concept
             }
             Member.Package(Vector[Module]#(0))
         }
@@ -2174,30 +2174,30 @@ function handle_export#(path: String, syntax: ExportSyntax, is_private: bool, sy
         when def: DefinitionSyntax
         {
             let concept handle_definition#(path, def, is_private)
-            (*symbols_builder).add(concept.name, Nameable.Concept(concept))
-            Member.Concept(concept)
+            (*symbols_builder).add(concept.name, Nameable.Concept concept)
+            Member.Concept concept
         }
         when func: FunctionSyntax
         {
             let fn build_function#(func.start, func.end, func.target, is_private, true)
             var fns Vector[Function]#(1)
             fns.put(0, fn)
-            (*symbols_builder).add(fn.name, Nameable.Functions(fns))
-            Member.Function(fn)
+            (*symbols_builder).add(fn.name, Nameable.Functions fns)
+            Member.Function fn
         }
         when proc: ProcedureSyntax
         {
             let proc_fn build_function#(proc.start, proc.end, proc.target, is_private, false)
             var fns Vector[Function]#(1)
             fns.put(0, proc_fn)
-            (*symbols_builder).add(proc_fn.name, Nameable.Functions(fns))
-            Member.Function(proc_fn)
+            (*symbols_builder).add(proc_fn.name, Nameable.Functions fns)
+            Member.Function proc_fn
         }
         when op: OperatorSyntax
         {
             let operator_ handle_operator#(op, is_private)
-            (*symbols_builder).add(operator_.name, Nameable.Operator(operator_))
-            Member.Operator(operator_)
+            (*symbols_builder).add(operator_.name, Nameable.Operator operator_)
+            Member.Operator operator_
         }
         when mod: ModuleSyntax
             Member.Package(Vector[Module]#(0))
@@ -2230,7 +2230,7 @@ function handle_union#(name: String, path: String, syntax: UnionSyntax, is_priva
             {
                 let var_syntax (*var_ptr)
                 let variant handle_variant#(var_syntax)
-                symbols_builder.add(variant.name, Nameable.Variant(variant))
+                symbols_builder.add(variant.name, Nameable.Variant variant)
                 variants.put(i, variant)
             }
             set i: i + 1
@@ -2330,17 +2330,17 @@ function handle_definition#(path: String, syntax: DefinitionSyntax, is_private: 
         when class_syntax: ClassSyntax
         {
             let structure handle_class#(name, path, class_syntax, is_private)
-            Definition.Structure(structure)
+            Definition.Structure structure
         }
         when namespace_syntax: NamespaceSyntax
         {
             let namespace_ handle_namespace#(name, path, namespace_syntax, is_private)
-            Definition.Namespace(namespace_)
+            Definition.Namespace namespace_
         }
         when union_syntax: UnionSyntax
         {
             let union_ handle_union#(name, path, union_syntax, is_private)
-            Definition.Union(union_)
+            Definition.Union union_
         }
         when constant_syntax: ConstantSyntax
         {

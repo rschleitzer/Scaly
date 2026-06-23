@@ -4169,7 +4169,7 @@ define Emitter
     ; caller must dispose; do NOT also call LLVMConsumeError.
     procedure report_jit_error(this, err: LLVMErrorRef, ctx: pointer[const_char])
     {
-        Console.println(ctx)
+        Console.println ctx
         let msg LLVMGetErrorMessage(err)
         if msg <> null
         {
@@ -4198,7 +4198,7 @@ define Emitter
         let ok emit(plan, module_name)
         if ok = false
         {
-            Console.println("JIT: emission failed")
+            Console.println "JIT: emission failed"
             return 127
         }
 
@@ -4220,7 +4220,7 @@ define Emitter
         let valid verify_module()
         if valid = false
         {
-            Console.println("JIT: module verification failed")
+            Console.println "JIT: module verification failed"
             return 127
         }
 
@@ -9282,7 +9282,7 @@ define Emitter
         src_value
     }
 
-    ; Emit variant construction (e.g., Result.Ok(value), Option.Some(value))
+    ; Emit variant construction (e.g., Result.Ok value, Option.Some value)
     function emit_variant_construction(this, vc: PlannedVariantConstruction) returns LLVMValueRef
     {
         ; Check for Option with NPO (Null Pointer Optimization)

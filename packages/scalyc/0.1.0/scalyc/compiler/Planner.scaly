@@ -223,7 +223,7 @@ define Planner
     ; type checker accepts the call site.
     function not_implemented_operand(method_name: pointer[const_char]) returns PlannedOperand
     {
-        Planner.not_implemented(method_name)
+        Planner.not_implemented method_name
         PlannedOperand(
             Span(0, 0),
             PlannedExpression.Constant(scalyc.compiler.Plan.PlannedConstant(
@@ -2197,7 +2197,7 @@ define Planner
                     ns_parent_holder.put(0, PlannedType(
                         Span(0, 0),
                         String^rp(cnsn),
-                        Planner.encode_name(cnsn),
+                        Planner.encode_name cnsn,
                         null,
                         Lifetime.Unspecified(Unspecified()),
                         null,
@@ -2606,7 +2606,7 @@ define Planner
                 let void_ty Planner.make_void_type#()
                 return PlannedOperand(
                     Span(0, 0),
-                    PlannedExpression.Type(void_ty),
+                    PlannedExpression.Type void_ty,
                     null,
                     void_ty
                 )
@@ -2619,7 +2619,7 @@ define Planner
                     let void_ty Planner.make_void_type#()
                     return PlannedOperand(
                         Span(0, 0),
-                        PlannedExpression.Type(void_ty),
+                        PlannedExpression.Type void_ty,
                         null,
                         void_ty
                     )
@@ -2658,7 +2658,7 @@ define Planner
                                 )
                                 let tuple_op PlannedOperand(
                                     only_op.loc,
-                                    PlannedExpression.Tuple(empty_tuple),
+                                    PlannedExpression.Tuple empty_tuple,
                                     null,
                                     void_ty
                                 )
@@ -2752,7 +2752,7 @@ define Planner
                                 )
                                 return PlannedOperand(
                                     ic_head.loc,
-                                    PlannedExpression.Call(ic_call),
+                                    PlannedExpression.Call ic_call,
                                     null,
                                     i64_ty
                                 )
@@ -2908,7 +2908,7 @@ define Planner
                                                             ; for the construction gate.
                                                             var merged_op PlannedOperand(
                                                                 cp_op.loc,
-                                                                PlannedExpression.Type(merged_type),
+                                                                PlannedExpression.Type merged_type,
                                                                 np_op.member_access,
                                                                 merged_type
                                                             )
@@ -2959,7 +2959,7 @@ define Planner
                                                                                     )
                                                                                     set merged_op: PlannedOperand(
                                                                                         cp_op.loc,
-                                                                                        PlannedExpression.VariantConstruction(unit_vc2),
+                                                                                        PlannedExpression.VariantConstruction unit_vc2,
                                                                                         null,
                                                                                         merged_type
                                                                                     )
@@ -2969,7 +2969,7 @@ define Planner
                                                                                     var rh_holder Vector[PlannedMemberAccess]^rp(re_chain)
                                                                                     set merged_op: PlannedOperand(
                                                                                         cp_op.loc,
-                                                                                        PlannedExpression.Type(merged_type),
+                                                                                        PlannedExpression.Type merged_type,
                                                                                         &rh_holder,
                                                                                         merged_type
                                                                                     )
@@ -3019,7 +3019,7 @@ define Planner
                                                                 ))
                                                                 merged_arr2.add(PlannedOperand(
                                                                     cp_op.loc,
-                                                                    PlannedExpression.Type(arr_type),
+                                                                    PlannedExpression.Type arr_type,
                                                                     null,
                                                                     arr_type
                                                                 ))
@@ -3176,7 +3176,7 @@ define Planner
                                         )
                                         merged_arr.add(PlannedOperand(
                                             mtp_op.loc,
-                                            PlannedExpression.Tuple(new_tp),
+                                            PlannedExpression.Tuple new_tp,
                                             mtp_op.member_access,
                                             mtp_op.result_type
                                         ))
@@ -3244,7 +3244,7 @@ define Planner
                                         )
                                         let new_op PlannedOperand(
                                             mp_op.loc,
-                                            PlannedExpression.Type(new_ty),
+                                            PlannedExpression.Type new_ty,
                                             mp_op.member_access,
                                             new_ty
                                         )
@@ -3282,7 +3282,7 @@ define Planner
                 let void_ty Planner.make_void_type#()
                 return PlannedOperand(
                     Span(0, 0),
-                    PlannedExpression.Type(void_ty),
+                    PlannedExpression.Type void_ty,
                     null,
                     void_ty
                 )
@@ -3559,7 +3559,7 @@ define Planner
                         )
                         let prefix_op PlannedOperand(
                             result.loc,
-                            PlannedExpression.Call(call),
+                            PlannedExpression.Call call,
                             null,
                             rt
                         )
@@ -3683,7 +3683,7 @@ define Planner
                             )
                             let sa_tuple_op PlannedOperand(
                                 sa_arg_op.loc,
-                                PlannedExpression.Tuple(sa_tuple),
+                                PlannedExpression.Tuple sa_tuple,
                                 null,
                                 sa_arg_op.result_type
                             )
@@ -4038,7 +4038,7 @@ define Planner
                                     )
                                     set result: this.rebind_trailing_chain#(PlannedOperand(
                                         second.loc,
-                                        PlannedExpression.Call(ctor_call),
+                                        PlannedExpression.Call ctor_call,
                                         second.member_access,
                                         ctor_struct_type
                                     ))
@@ -4140,7 +4140,7 @@ define Planner
                             )
                             set result: this.rebind_trailing_chain#(PlannedOperand(
                                 second.loc,
-                                PlannedExpression.Tuple(reshaped),
+                                PlannedExpression.Tuple reshaped,
                                 second.member_access,
                                 ctor_struct_type
                             ))
@@ -4208,7 +4208,7 @@ define Planner
                             ; — same rule as the struct-ctor sites.
                             set result: this.rebind_trailing_chain#(PlannedOperand(
                                 second.loc,
-                                PlannedExpression.VariantConstruction(vc),
+                                PlannedExpression.VariantConstruction vc,
                                 second.member_access,
                                 ctor_union_type
                             ))
@@ -4720,7 +4720,7 @@ define Planner
                                             ns_parent_holder.put(0, PlannedType(
                                                 result.loc,
                                                 String^rp(prefix),
-                                                Planner.encode_name(prefix),
+                                                Planner.encode_name prefix,
                                                 null,
                                                 Lifetime.Unspecified(Unspecified()),
                                                 null,
@@ -5111,7 +5111,7 @@ define Planner
                                             sparent_holder.put(0, PlannedType(
                                                 result.loc,
                                                 String^rp(prefix),
-                                                Planner.encode_name(prefix),
+                                                Planner.encode_name prefix,
                                                 null,
                                                 Lifetime.Unspecified(Unspecified()),
                                                 null,
@@ -5474,7 +5474,7 @@ define Planner
                                         ; branch (s184).
                                         set result: this.rebind_trailing_chain#(PlannedOperand(
                                             result.loc,
-                                            PlannedExpression.VariantConstruction(bv_vc),
+                                            PlannedExpression.VariantConstruction bv_vc,
                                             second.member_access,
                                             bv_union_ty
                                         ))
@@ -5591,7 +5591,7 @@ define Planner
                         )
                         set result: PlannedOperand(
                             result.loc,
-                            PlannedExpression.Call(call),
+                            PlannedExpression.Call call,
                             null,
                             rt
                         )
@@ -5692,7 +5692,7 @@ define Planner
                                                         )
                                                         set result: PlannedOperand(
                                                             next_args.loc,
-                                                            PlannedExpression.Call(chained),
+                                                            PlannedExpression.Call chained,
                                                             null,
                                                             m.return_type
                                                         )
@@ -5830,7 +5830,7 @@ define Planner
                             )
                             let tuple_op_l PlannedOperand(
                                 result.loc,
-                                PlannedExpression.Tuple(empty_tuple_l),
+                                PlannedExpression.Tuple empty_tuple_l,
                                 null,
                                 void_ty_l
                             )
@@ -5885,7 +5885,7 @@ define Planner
                         )
                         set result: PlannedOperand(
                             op.loc,
-                            PlannedExpression.Is(stitched),
+                            PlannedExpression.Is stitched,
                             null,
                             Planner.make_bool_type#()
                         )
@@ -5966,7 +5966,7 @@ define Planner
                             )
                             set result: PlannedOperand(
                                 op.loc,
-                                PlannedExpression.As(stitched),
+                                PlannedExpression.As stitched,
                                 null,
                                 pas.target_type
                             )
@@ -6175,7 +6175,7 @@ define Planner
                                         )
                                         let tuple_op_r PlannedOperand(
                                             rhs.loc,
-                                            PlannedExpression.Tuple(empty_tuple_r),
+                                            PlannedExpression.Tuple empty_tuple_r,
                                             null,
                                             void_ty_r
                                         )
@@ -6368,7 +6368,7 @@ define Planner
                     )
                     set result: PlannedOperand(
                         result.loc,
-                        PlannedExpression.Call(call),
+                        PlannedExpression.Call call,
                         null,
                         combined_type
                     )
@@ -6648,7 +6648,7 @@ define Planner
             var sb StringBuilder$()
             sb.append "_ZN"
             sb.append(Planner.encode_type#(parent))
-            sb.append(Planner.encode_name(method_name))
+            sb.append(Planner.encode_name method_name)
             sb.append "E"
 
             ; Implicit page parameter for `function foo#(...)` methods —
@@ -7266,7 +7266,7 @@ define Planner
                 let void_ty Planner.make_void_type#()
                 return PlannedOperand(
                     loc,
-                    PlannedExpression.Type(void_ty),
+                    PlannedExpression.Type void_ty,
                     null,
                     void_ty
                 )
@@ -7291,7 +7291,7 @@ define Planner
             let this_var PlannedVariable(loc, String^rp("this"), this_ty, false)
             let this_operand PlannedOperand(
                 loc,
-                PlannedExpression.Variable(this_var),
+                PlannedExpression.Variable this_var,
                 null,
                 this_ty
             )
@@ -7310,7 +7310,7 @@ define Planner
 
             PlannedOperand(
                 loc,
-                PlannedExpression.Call(call),
+                PlannedExpression.Call call,
                 null,
                 result_type
             )
@@ -8685,7 +8685,7 @@ define Planner
                                         when c: scalyc.compiler.Plan.PlannedConstant
                                             return PlannedOperand(
                                                 loc,
-                                                PlannedExpression.Constant(c),
+                                                PlannedExpression.Constant c,
                                                 null,
                                                 g.global_type
                                             )
@@ -8992,7 +8992,7 @@ define Planner
             let pt this.plan_type#(t)
             PlannedOperand(
                 loc,
-                PlannedExpression.Type(pt),
+                PlannedExpression.Type pt,
                 null,
                 pt
             )
@@ -9241,7 +9241,7 @@ define Planner
             set next_lambda_id: lam_id + 1
             var name_sb StringBuilder^rp()
             name_sb.append "_ZN6lambda"
-            name_sb.append(Planner.size_to_string(lam_id))
+            name_sb.append(Planner.size_to_string lam_id)
             name_sb.append "Ev"
             let mangled name_sb.to_string^rp()
 
@@ -10367,12 +10367,12 @@ define Planner
                 when tp: Tuple
                 {
                     let pt this.plan_tuple#(tp)
-                    PlannedOperand(op.span, PlannedExpression.Tuple(pt), null, pt.tuple_type)
+                    PlannedOperand(op.span, PlannedExpression.Tuple pt, null, pt.tuple_type)
                 }
                 when mx: Matrix
                 {
                     let pm this.plan_matrix#(mx)
-                    PlannedOperand(op.span, PlannedExpression.Matrix(pm), null, pm.element_type)
+                    PlannedOperand(op.span, PlannedExpression.Matrix pm, null, pm.element_type)
                 }
                 when bk: Block
                 {
@@ -10391,7 +10391,7 @@ define Planner
                                 set block_type: Planner.statement_result_type((*last_ptr))
                         }
                     }
-                    PlannedOperand(op.span, PlannedExpression.Block(pb), null, block_type)
+                    PlannedOperand(op.span, PlannedExpression.Block pb, null, block_type)
                 }
                 when ife: If
                 {
@@ -10405,7 +10405,7 @@ define Planner
                         let cons (*pi.consequent)
                         set if_type: Planner.statement_result_type(cons)
                     }
-                    PlannedOperand(op.span, PlannedExpression.If(pi), null, if_type)
+                    PlannedOperand(op.span, PlannedExpression.If pi, null, if_type)
                 }
                 when mt: Match
                 {
@@ -10427,7 +10427,7 @@ define Planner
                             }
                         }
                     }
-                    PlannedOperand(op.span, PlannedExpression.Match(pm), null, match_type)
+                    PlannedOperand(op.span, PlannedExpression.Match pm, null, match_type)
                 }
                 when ch: Choose
                 {
@@ -10449,17 +10449,17 @@ define Planner
                             }
                         }
                     }
-                    PlannedOperand(op.span, PlannedExpression.Choose(pc), null, choose_type)
+                    PlannedOperand(op.span, PlannedExpression.Choose pc, null, choose_type)
                 }
                 when fr: For
                 {
                     let pf this.plan_for#(fr)
-                    PlannedOperand(op.span, PlannedExpression.For(pf), null, Planner.make_void_type#())
+                    PlannedOperand(op.span, PlannedExpression.For pf, null, Planner.make_void_type#())
                 }
                 when wh: While
                 {
                     let pw this.plan_while#(wh)
-                    PlannedOperand(op.span, PlannedExpression.While(pw), null, Planner.make_void_type#())
+                    PlannedOperand(op.span, PlannedExpression.While pw, null, Planner.make_void_type#())
                 }
                 when tr: Try
                 {
@@ -10477,14 +10477,14 @@ define Planner
                                 set try_type: (*last_ptr).result_type
                         }
                     }
-                    PlannedOperand(op.span, PlannedExpression.Try(pt), null, try_type)
+                    PlannedOperand(op.span, PlannedExpression.Try pt, null, try_type)
                 }
                 when so: SizeOf
                 {
                     let ps this.plan_sizeof#(so)
                     PlannedOperand(
                         op.span,
-                        PlannedExpression.SizeOf(ps),
+                        PlannedExpression.SizeOf ps,
                         null,
                         Planner.make_size_type#()
                     )
@@ -10494,7 +10494,7 @@ define Planner
                     let pa this.plan_alignof#(ao)
                     PlannedOperand(
                         op.span,
-                        PlannedExpression.AlignOf(pa),
+                        PlannedExpression.AlignOf pa,
                         null,
                         Planner.make_size_type#()
                     )
@@ -10502,14 +10502,14 @@ define Planner
                 when isx: Is
                 {
                     let pi this.plan_is#(isx)
-                    PlannedOperand(op.span, PlannedExpression.Is(pi), null, Planner.make_bool_type#())
+                    PlannedOperand(op.span, PlannedExpression.Is pi, null, Planner.make_bool_type#())
                 }
                 when asx: scaly.compiler.Model.As
                 {
                     let pa this.plan_as#(asx)
                     PlannedOperand(
                         op.span,
-                        PlannedExpression.As(pa),
+                        PlannedExpression.As pa,
                         null,
                         pa.target_type
                     )
@@ -10517,17 +10517,17 @@ define Planner
                 when nw: New
                 {
                     let pt this.plan_new#(nw)
-                    PlannedOperand(op.span, PlannedExpression.Tuple(pt), null, pt.tuple_type)
+                    PlannedOperand(op.span, PlannedExpression.Tuple pt, null, pt.tuple_type)
                 }
                 when lam: Lambda
                 {
                     let pl this.plan_lambda#(lam)
-                    PlannedOperand(op.span, PlannedExpression.Lambda(pl), null, pl.return_type)
+                    PlannedOperand(op.span, PlannedExpression.Lambda pl, null, pl.return_type)
                 }
                 when rep: Repeat
                 {
                     let pr this.plan_repeat#(rep)
-                    PlannedOperand(op.span, PlannedExpression.Repeat(pr), null, Planner.make_void_type#())
+                    PlannedOperand(op.span, PlannedExpression.Repeat pr, null, Planner.make_void_type#())
                 }
 
             ; s164: bind member_access to a local BEFORE the guard. A
@@ -10638,7 +10638,7 @@ define Planner
             var holder Vector[PlannedOperand]^rp(1)
             holder.put(0, PlannedOperand(
                 loc,
-                PlannedExpression.VariantConstruction(unit_vc),
+                PlannedExpression.VariantConstruction unit_vc,
                 null,
                 unit_union_ty
             ))
@@ -13837,7 +13837,7 @@ define Planner
                         return PlannedConcept(
                             c.span,
                             c.name,
-                            Planner.encode_name(c.name),
+                            Planner.encode_name c.name,
                             null,
                             PlannedDefinition.Type(Planner.make_void_type#()),
                             null
@@ -14329,7 +14329,7 @@ define Planner
                     set base_name: type_value.name.substring(rp, 0, dot_pos as size_t)
 
                 var sb StringBuilder$()
-                sb.append(Planner.encode_name(base_name))
+                sb.append(Planner.encode_name base_name)
                 sb.append("I" as char)
                 var i: size_t 0
                 while i < gens.length
@@ -14350,7 +14350,7 @@ define Planner
 
         ; User-defined type: length-prefixed, with "scaly.*" stripped.
         let normalized Planner.strip_package_prefix#(type_value.name)
-        Planner.encode_name(normalized)
+        Planner.encode_name normalized
     }
 
     ; mangle_type: "_Z" + encode_type(T). The "_Z" prefix marks this as a
@@ -14376,7 +14376,7 @@ define Planner
             {
                 var sb StringBuilder$()
                 sb.append "_Z"
-                sb.append(Planner.encode_name(name))
+                sb.append(Planner.encode_name name)
                 sb.append "I"
                 var i: size_t 0
                 while i < args.length
@@ -14397,7 +14397,7 @@ define Planner
 
         var sb StringBuilder$()
         sb.append "_Z"
-        sb.append(Planner.encode_name(name))
+        sb.append(Planner.encode_name name)
         sb.to_string^rp()
     }
 
@@ -14434,11 +14434,11 @@ define Planner
             if name.equals(String$("init"))
                 sb.append "C1"
             if name.equals(String$("init")) = false
-                sb.append(Planner.encode_name(name))
+                sb.append(Planner.encode_name name)
             sb.append "E"
         }
         if parent = null
-            sb.append(Planner.encode_name(name))
+            sb.append(Planner.encode_name name)
 
         var has_explicit_params: bool false
 
@@ -14499,7 +14499,7 @@ define Planner
     {
         var sb StringBuilder$()
         sb.append "_Z"
-        sb.append(Planner.encode_name(name))
+        sb.append(Planner.encode_name name)
 
         var has_explicit: bool false
         if has_page_param
@@ -14580,7 +14580,7 @@ define Planner
         ; Vendor extension for operators without a dedicated code.
         var sb StringBuilder$()
         sb.append "v0"
-        sb.append(Planner.encode_name(name))
+        sb.append(Planner.encode_name name)
         sb.to_string^rp()
     }
 
@@ -16568,7 +16568,7 @@ define Planner
     {
         if Planner.is_integer_type(left) = false
             return false
-        Planner.is_integer_type(right)
+        Planner.is_integer_type right
     }
 
     ; ========================================================================
@@ -17624,7 +17624,7 @@ define Planner
         ; extract_arg_types - non-tuple operand yields empty Vector.
         let plain_op PlannedOperand(
             Span(0, 0),
-            PlannedExpression.Type(int_ty),
+            PlannedExpression.Type int_ty,
             null,
             int_ty
         )
@@ -17635,13 +17635,13 @@ define Planner
         ; extract_arg_types - tuple of two components (int, bool) yields [int, bool].
         let int_op PlannedOperand(
             Span(0, 0),
-            PlannedExpression.Type(int_ty),
+            PlannedExpression.Type int_ty,
             null,
             int_ty
         )
         let bool_op PlannedOperand(
             Span(0, 0),
-            PlannedExpression.Type(bool_ty),
+            PlannedExpression.Type bool_ty,
             null,
             bool_ty
         )
@@ -17662,7 +17662,7 @@ define Planner
         )
         let tuple_op PlannedOperand(
             Span(0, 0),
-            PlannedExpression.Tuple(tpl),
+            PlannedExpression.Tuple tpl,
             null,
             int_ty
         )

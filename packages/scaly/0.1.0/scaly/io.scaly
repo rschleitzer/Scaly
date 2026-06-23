@@ -20,8 +20,8 @@ define io
 
     function test_console() returns int
     {
-        Console.println("Hello from Scaly!")
-        Console.println("Console test passed.")
+        Console.println "Hello from Scaly!"
+        Console.println "Console test passed."
         0
     }
 
