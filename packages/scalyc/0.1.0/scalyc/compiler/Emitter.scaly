@@ -4821,7 +4821,7 @@ define Emitter
         ; caller's page so it outlives this frame.
         var on_caller: bool false
         choose clo.life
-            when c: scaly.compiler.Model.Lifetime.Call
+            when c: Lifetime.Call
                 set on_caller: true
             else
                 0
@@ -4892,7 +4892,7 @@ define Emitter
     {
         var on_caller: bool false
         choose life
-            when c: scaly.compiler.Model.Lifetime.Call
+            when c: Lifetime.Call
                 set on_caller: true
             else
                 0

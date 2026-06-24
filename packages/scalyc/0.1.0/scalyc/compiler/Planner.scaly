@@ -310,6 +310,11 @@ define Planner
         ; delegate-typed value to an LLVM ptr (GAP B). Empty for the scaly
         ; package (no delegates) → map_type byte-identical, fixpoint-safe.
         delegate_names: Array[String]
+        ; The enclosing function's planned return type during body planning
+        ; (GAP B): a lambda returned where this is a delegate type becomes an
+        ; ESCAPING closure (env on the caller page `#`). Null outside a function
+        ; body or when the function has no declared return type.
+        current_return_type: ref[PlannedType]?
         instantiated_functions: Array[PlannedFunction]
         ; O(1) membership index over instantiated_functions' mangled names,
         ; maintained in lockstep at the single record_function add site.
@@ -471,6 +476,7 @@ define Planner
             set instantiated_structures: Array[PlannedStructure]^page()
             set instantiated_unions: Array[scalyc.compiler.Plan.PlannedUnion]^page()
             set delegate_names: Array[String]^page()
+            set current_return_type: null
             set instantiated_functions: Array[PlannedFunction]^page()
             set function_name_index: ConceptIndex.create#(262144 as size_t)
             set instantiated_globals: Array[PlannedGlobal]^page()
@@ -12018,7 +12024,7 @@ define Planner
                                     set base_name: String^rp((*b.item.name))
                                 let del_pt this.plan_type#((*b.item.type))
                                 let dret this.delegate_return_type#(del_name)
-                                let clo this.make_closure#(base_name, dl, dparams, dret, del_pt, scaly.compiler.Model.Lifetime.Local(scaly.compiler.Model.Local(b.span)))
+                                let clo this.make_closure#(base_name, dl, dparams, dret, del_pt, Lifetime.Local(scalyc.compiler.Model.Local(b.span)))
                                 let fref_op PlannedOperand(b.span, PlannedExpression.Closure clo, null, del_pt)
                                 var op_arr Array[PlannedOperand]$()
                                 op_arr.add fref_op
@@ -13065,6 +13071,40 @@ define Planner
 
         function plan_return#(rp, this: Planner, r: Return) returns PlannedReturn
         {
+            ; GAP B: `return \x: …` where the function's return type is a delegate
+            ; yields an ESCAPING closure — env on the caller page (`#`) so it
+            ; outlives this frame. Mirrors the typed-binding closure path, but
+            ; with Lifetime.Call instead of Local.
+            if this.current_return_type <> null
+            {
+                let crt (*this.current_return_type)
+                if this.is_delegate_type(crt.name)
+                    if r.result.length = 1
+                    {
+                        let r0_ptr r.result.get 0
+                        if r0_ptr <> null
+                            choose (*r0_ptr).expression
+                                when rl: Lambda
+                                {
+                                    let dparams this.delegate_param_types#(crt.name)
+                                    let dret this.delegate_return_type#(crt.name)
+                                    let rlam_id next_lambda_id
+                                    set next_lambda_id: rlam_id + 1
+                                    var rb_sb StringBuilder^rp()
+                                    rb_sb.append "ret"
+                                    rb_sb.append size_to_string(rlam_id)
+                                    let rbase rb_sb.to_string^rp()
+                                    let rclo this.make_closure#(rbase, rl, dparams, dret, crt, Lifetime.Call(scalyc.compiler.Model.Call(r.span)))
+                                    let rclo_op PlannedOperand(r.span, PlannedExpression.Closure rclo, null, crt)
+                                    var rh Vector[PlannedOperand]^rp(1)
+                                    rh.put(0, rclo_op)
+                                    return PlannedReturn(r.span, &rh)
+                                }
+                                else
+                                    0
+                    }
+            }
+
             let planned_flat this.plan_operands#(r.result)
             let planned_collapsed this.collapse_operand_sequence#(planned_flat)
 
@@ -13551,7 +13591,12 @@ define Planner
                 set throws_type: tt_holder.get(0)
             }
 
+            ; GAP B: expose the return type to the body so a returned lambda
+            ; becomes an escaping closure (env on the caller page).
+            let saved_return_type this.current_return_type
+            set this.current_return_type: return_type
             let planned_impl this.plan_implementation#(f.implementation)
+            set this.current_return_type: saved_return_type
 
             this.pop_scope()
             set type_substitutions.length: saved_subst_len
