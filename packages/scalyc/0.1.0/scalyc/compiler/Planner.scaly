@@ -315,6 +315,11 @@ define Planner
         ; ESCAPING closure (env on the caller page `#`). Null outside a function
         ; body or when the function has no declared return type.
         current_return_type: ref[PlannedType]?
+        ; Names bound to a stack (non-escaping, Lifetime.Local) closure in the
+        ; current function (GAP B escape checking). Returning one is an escape
+        ; (the record lives on this frame) — flagged as a hard diagnostic.
+        ; Truncated to its entry length at each function boundary.
+        local_closure_names: Array[String]
         instantiated_functions: Array[PlannedFunction]
         ; O(1) membership index over instantiated_functions' mangled names,
         ; maintained in lockstep at the single record_function add site.
@@ -477,6 +482,7 @@ define Planner
             set instantiated_unions: Array[scalyc.compiler.Plan.PlannedUnion]^page()
             set delegate_names: Array[String]^page()
             set current_return_type: null
+            set local_closure_names: Array[String]^page()
             set instantiated_functions: Array[PlannedFunction]^page()
             set function_name_index: ConceptIndex.create#(262144 as size_t)
             set instantiated_globals: Array[PlannedGlobal]^page()
@@ -12043,7 +12049,12 @@ define Planner
                                 ; to the delegate type (e.g. passing g to apply,
                                 ; or calling g(...) indirectly).
                                 if b.item.name <> null
+                                {
                                     this.define_local((*b.item.name), del_pt, b.binding_type.equals("var"), false)
+                                    ; Track it as a stack closure for escape
+                                    ; checking (returning it would dangle).
+                                    local_closure_names.add(String^rp((*b.item.name)))
+                                }
                                 return PlannedBinding(b.span, b.binding_type, pitem, &op_vec)
                             }
                             else
@@ -13105,6 +13116,41 @@ define Planner
                     }
             }
 
+            ; GAP B escape check: returning a local (stack) closure dangles —
+            ; its record lives on this frame. Flag it (mirrors the design's
+            ; escape-as-compile-error) and point at the working alternative:
+            ; return the lambda DIRECTLY so it allocates on the caller page.
+            if r.result.length = 1
+            {
+                let er0_ptr r.result.get 0
+                if er0_ptr <> null
+                    choose (*er0_ptr).expression
+                        when ev: scalyc.compiler.Model.Type
+                        {
+                            if ev.name.length = 1
+                            {
+                                let evn_ptr ev.name.get 0
+                                if evn_ptr <> null
+                                {
+                                    var is_stack_closure: bool false
+                                    var lci: size_t 0
+                                    while lci < local_closure_names.length
+                                    {
+                                        let lcn_ptr local_closure_names.get lci
+                                        if lcn_ptr <> null
+                                            if (*lcn_ptr).equals((*evn_ptr))
+                                                set is_stack_closure: true
+                                        set lci: lci + 1
+                                    }
+                                    if is_stack_closure
+                                        this.add_diagnostic(r.span, String^rp("a closure bound to a local lives on the stack frame and cannot be returned - return the lambda directly (return \\x: ...) so it is allocated on the caller's region"))
+                                }
+                            }
+                        }
+                        else
+                            0
+            }
+
             let planned_flat this.plan_operands#(r.result)
             let planned_collapsed this.collapse_operand_sequence#(planned_flat)
 
@@ -13592,10 +13638,15 @@ define Planner
             }
 
             ; GAP B: expose the return type to the body so a returned lambda
-            ; becomes an escaping closure (env on the caller page).
+            ; becomes an escaping closure (env on the caller page). Track stack
+            ; closures bound in this function for the return-escape check; the
+            ; set is truncated back at the boundary so nested functions are
+            ; isolated.
             let saved_return_type this.current_return_type
             set this.current_return_type: return_type
+            let saved_lcn local_closure_names.length
             let planned_impl this.plan_implementation#(f.implementation)
+            set local_closure_names.length: saved_lcn
             set this.current_return_type: saved_return_type
 
             this.pop_scope()
