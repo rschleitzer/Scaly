@@ -146,4 +146,24 @@ x * 2<expect>10
 
 </category>
 
+<category id = lambdas title = "Lambdas">
+
+    <prose>A lambda is an anonymous function written with a backslash:
+    `\params: body`. Parameters are space-separated. A lambda bound to a name
+    and applied to arguments is monomorphized at the call site for those
+    argument types, so the same lambda works at any argument type.
+
+    <tests id = lambda-application title = "Lambda Application">
+        <prose>A lambda bound to a name can be called like a function.
+        <test id = lambda-inc program = program><input>let inc \x: x + 1
+inc(5)<expect>6
+        <test id = lambda-add program = program><input>let add \x y: x + y
+add(3, 4)<expect>7
+        <test id = lambda-reused program = program><input>let dbl \x: x + x
+let a dbl(10)
+let b dbl(21)
+a + b<expect>62
+
+</category>
+
 </suite>

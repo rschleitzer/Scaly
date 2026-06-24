@@ -631,3 +631,50 @@ x * 2</programlisting></entry>
       </informaltable>
     </section>
   </section>
+
+  <section xmlns='http://docbook.org/ns/docbook' xml:id='category-LAMBDAS'>
+    <title>Lambdas</title>
+    <para>A lambda is an anonymous function written with a backslash:
+    `\params: body`. Parameters are space-separated. A lambda bound to a name
+    and applied to arguments is monomorphized at the call site for those
+    argument types, so the same lambda works at any argument type.</para>
+
+    <section xml:id='tests-LAMBDA-APPLICATION'>
+      <title>Lambda Application</title>
+      <para>A lambda bound to a name can be called like a function.</para>
+      <informaltable frame='none'>
+        <tgroup cols='2'>
+          <colspec colwidth='1*'/>
+          <colspec colwidth='1*'/>
+          <thead>
+            <row>
+              <entry>Input</entry>
+              <entry>Result</entry>
+            </row>
+          </thead>
+          <tbody>
+            <row>
+              <entry><programlisting>let inc \x: x + 1
+inc(5)</programlisting></entry>
+              <entry><literal>6
+        </literal></entry>
+            </row>
+            <row>
+              <entry><programlisting>let add \x y: x + y
+add(3, 4)</programlisting></entry>
+              <entry><literal>7
+        </literal></entry>
+            </row>
+            <row>
+              <entry><programlisting>let dbl \x: x + x
+let a dbl(10)
+let b dbl(21)
+a + b</programlisting></entry>
+              <entry><literal>62
+</literal></entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </informaltable>
+    </section>
+  </section>
