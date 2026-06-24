@@ -10435,7 +10435,7 @@ define Emitter
                                         }
                                     }
                                 }
-                                var inner_struct LLVMTypeRef(map_type(inner_rt).handle)
+                                var inner_struct map_type(inner_rt)
                                 if LLVMGetTypeKind(inner_struct) <> LLVMTypeKind.Struct()
                                     set inner_struct: synthesize_literal_struct(inner_rt.name)
                                 if inner_struct.handle <> null
