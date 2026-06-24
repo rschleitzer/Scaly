@@ -175,6 +175,20 @@ let b 4
 let g \x: x + a + b
 g(10)<expect>17
 
+    <tests id = lambda-embedded title = "Embedded Calls">
+        <prose>A lambda call may appear anywhere inside a larger expression, not
+        only as the whole right-hand side of a binding. Each call is resolved to
+        a direct call before operator precedence is applied.
+        <test id = lambda-embed-sum program = program><input>let inc \x: x + 1
+let add \x y: x + y
+inc(5) + add(3, 4)<expect>13
+        <test id = lambda-embed-mix program = program><input>let inc \x: x + 1
+let n 100
+n + inc(9)<expect>110
+        <test id = lambda-embed-capture program = program><input>let n 100
+let cap \x: x + n
+cap(1) + cap(2)<expect>203
+
 </category>
 
 </suite>
