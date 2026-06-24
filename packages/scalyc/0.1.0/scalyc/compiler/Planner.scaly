@@ -9515,6 +9515,248 @@ define Planner
                     0
         }
 
+        ; Recursive lambda-body name walkers used by monomorphize_lambda#'s
+        ; capture discovery. Unlike collect_free_names (which only reaches
+        ; Variable/Call/Tuple, so a block-bodied lambda's captures were missed
+        ; entirely), these recurse through every compound expression and
+        ; statement, accumulating into `uses` every PlannedVariable name
+        ; referenced and into `bound` every name a body PlannedBinding (or a
+        ; for-loop identifier) introduces. A name in `bound` is shadowed by a
+        ; body-local binding and is NOT captured — flow-insensitive: any body
+        ; binding of a name suppresses its capture (the pathological same-name
+        ; use-before-bind, `let n n + 1` over an enclosing `n`, is unsupported).
+        function collect_lambda_names_ops(this: Planner, ops_ref: ref[Vector[PlannedOperand]]?, uses: Array[String], bound: Array[String])
+        {
+            if ops_ref = null
+                return
+            let ops (*ops_ref)
+            var i: size_t 0
+            while i < ops.length
+            {
+                let p ops.get i
+                if p <> null
+                    this.collect_lambda_names((*p), uses, bound)
+                set i: i + 1
+            }
+        }
+
+        function collect_lambda_names_action(this: Planner, act: PlannedAction, uses: Array[String], bound: Array[String])
+        {
+            this.collect_lambda_names_ops(act.source, uses, bound)
+            this.collect_lambda_names_ops(act.target, uses, bound)
+        }
+
+        function collect_lambda_names_stmt(this: Planner, stmt: PlannedStatement, uses: Array[String], bound: Array[String])
+        {
+            choose stmt
+                when a: PlannedAction
+                    this.collect_lambda_names_action(a, uses, bound)
+                when b: PlannedBinding
+                {
+                    if b.binding_item.name <> null
+                        bound.add (*b.binding_item.name)
+                    this.collect_lambda_names_ops(b.operation, uses, bound)
+                }
+                when r: PlannedReturn
+                    this.collect_lambda_names_ops(r.result, uses, bound)
+                when th: PlannedThrow
+                    this.collect_lambda_names_ops(th.result, uses, bound)
+                when brk: PlannedBreak
+                    this.collect_lambda_names_ops(brk.result, uses, bound)
+                else
+                    0
+        }
+
+        function collect_lambda_names_stmts(this: Planner, stmts_ref: ref[Vector[PlannedStatement]]?, uses: Array[String], bound: Array[String])
+        {
+            if stmts_ref = null
+                return
+            let stmts (*stmts_ref)
+            var i: size_t 0
+            while i < stmts.length
+            {
+                let p stmts.get i
+                if p <> null
+                    this.collect_lambda_names_stmt((*p), uses, bound)
+                set i: i + 1
+            }
+        }
+
+        function collect_lambda_names_stmt_opt(this: Planner, stmt_ref: ref[PlannedStatement]?, uses: Array[String], bound: Array[String])
+        {
+            if stmt_ref = null
+                return
+            this.collect_lambda_names_stmt((*stmt_ref), uses, bound)
+        }
+
+        function collect_lambda_names(this: Planner, op: PlannedOperand, uses: Array[String], bound: Array[String])
+        {
+            choose op.expr
+                when v: PlannedVariable
+                    uses.add v.name
+                when call: PlannedCall
+                {
+                    if call.args <> null
+                    {
+                        let args (*call.args)
+                        var i: size_t 0
+                        while i < args.length
+                        {
+                            let a_ptr args.get i
+                            if a_ptr <> null
+                                this.collect_lambda_names((*a_ptr), uses, bound)
+                            set i: i + 1
+                        }
+                    }
+                    0
+                }
+                when tup: PlannedTuple
+                {
+                    if tup.components <> null
+                    {
+                        let comps (*tup.components)
+                        var i: size_t 0
+                        while i < comps.length
+                        {
+                            let c_ptr comps.get i
+                            if c_ptr <> null
+                            {
+                                let c (*c_ptr)
+                                this.collect_lambda_names_ops(c.value, uses, bound)
+                            }
+                            set i: i + 1
+                        }
+                    }
+                    0
+                }
+                when blk: PlannedBlock
+                {
+                    this.collect_lambda_names_stmts(blk.statements, uses, bound)
+                    0
+                }
+                when iff: PlannedIf
+                {
+                    this.collect_lambda_names_ops(iff.condition, uses, bound)
+                    this.collect_lambda_names_stmt_opt(iff.consequent, uses, bound)
+                    this.collect_lambda_names_stmt_opt(iff.alternative, uses, bound)
+                    0
+                }
+                when ch: PlannedChoose
+                {
+                    this.collect_lambda_names_ops(ch.condition, uses, bound)
+                    if ch.cases <> null
+                    {
+                        let whens (*ch.cases)
+                        var i: size_t 0
+                        while i < whens.length
+                        {
+                            let w_ptr whens.get i
+                            if w_ptr <> null
+                            {
+                                let w (*w_ptr)
+                                if w.name.get_length() > 0
+                                    bound.add w.name
+                                this.collect_lambda_names_stmt_opt(w.consequent, uses, bound)
+                            }
+                            set i: i + 1
+                        }
+                    }
+                    this.collect_lambda_names_stmt_opt(ch.alternative, uses, bound)
+                    0
+                }
+                when mt: PlannedMatch
+                {
+                    this.collect_lambda_names_ops(mt.condition, uses, bound)
+                    if mt.branches <> null
+                    {
+                        let brs (*mt.branches)
+                        var i: size_t 0
+                        while i < brs.length
+                        {
+                            let b_ptr brs.get i
+                            if b_ptr <> null
+                            {
+                                let br (*b_ptr)
+                                if br.cases <> null
+                                {
+                                    let cs (*br.cases)
+                                    var j: size_t 0
+                                    while j < cs.length
+                                    {
+                                        let cp cs.get j
+                                        if cp <> null
+                                            this.collect_lambda_names_ops((*cp).condition, uses, bound)
+                                        set j: j + 1
+                                    }
+                                }
+                                this.collect_lambda_names_stmt_opt(br.consequent, uses, bound)
+                            }
+                            set i: i + 1
+                        }
+                    }
+                    this.collect_lambda_names_stmt_opt(mt.alternative, uses, bound)
+                    0
+                }
+                when fr: PlannedFor
+                {
+                    this.collect_lambda_names_ops(fr.expr, uses, bound)
+                    if fr.identifier.get_length() > 0
+                        bound.add fr.identifier
+                    this.collect_lambda_names_action(fr.body, uses, bound)
+                    0
+                }
+                when wh: PlannedWhile
+                {
+                    if wh.cond.binding_item.name <> null
+                        bound.add (*wh.cond.binding_item.name)
+                    this.collect_lambda_names_ops(wh.cond.operation, uses, bound)
+                    this.collect_lambda_names_action(wh.body, uses, bound)
+                    0
+                }
+                when rp: PlannedRepeat
+                {
+                    this.collect_lambda_names_action(rp.body, uses, bound)
+                    0
+                }
+                when as_e: scalyc.compiler.Plan.PlannedAs
+                {
+                    if as_e.value <> null
+                        this.collect_lambda_names((*as_e.value), uses, bound)
+                    0
+                }
+                when is_e: scalyc.compiler.Plan.PlannedIs
+                {
+                    if is_e.value <> null
+                        this.collect_lambda_names((*is_e.value), uses, bound)
+                    0
+                }
+                when tr: PlannedTry
+                {
+                    this.collect_lambda_names_ops(tr.cond.operation, uses, bound)
+                    if tr.catches <> null
+                    {
+                        let cats (*tr.catches)
+                        var i: size_t 0
+                        while i < cats.length
+                        {
+                            let w_ptr cats.get i
+                            if w_ptr <> null
+                            {
+                                let w (*w_ptr)
+                                if w.name.get_length() > 0
+                                    bound.add w.name
+                                this.collect_lambda_names_stmt_opt(w.consequent, uses, bound)
+                            }
+                            set i: i + 1
+                        }
+                    }
+                    this.collect_lambda_names_stmt_opt(tr.alternative, uses, bound)
+                    0
+                }
+                else
+                    0
+        }
+
         function plan_lambda#(rp, this: Planner, lam: Lambda) returns PlannedLambda
         {
             this.push_scope()
@@ -9687,18 +9929,9 @@ define Planner
             }
             let body1 this.plan_action#(lam.body)
             var free Array[String]$()
-            if body1.source <> null
-            {
-                let src1 (*body1.source)
-                var si: size_t 0
-                while si < src1.length
-                {
-                    let s_ptr src1.get si
-                    if s_ptr <> null
-                        this.collect_free_names((*s_ptr), free)
-                    set si: si + 1
-                }
-            }
+            var body_bound Array[String]$()
+            this.collect_lambda_names_ops(body1.source, free, body_bound)
+            this.collect_lambda_names_ops(body1.target, free, body_bound)
             this.pop_scope()
 
             var cap_names Array[String]$()
@@ -9730,16 +9963,29 @@ define Planner
                                 set already: true
                         set dj: dj + 1
                     }
+                    ; A name bound by a body-local let/var/for/when shadows the
+                    ; enclosing one — it is the local, not a capture.
+                    var is_shadowed: bool false
+                    var bk: size_t 0
+                    while bk < body_bound.length
+                    {
+                        let bn_ptr body_bound.get bk
+                        if bn_ptr <> null
+                            if (*bn_ptr).equals(nm)
+                                set is_shadowed: true
+                        set bk: bk + 1
+                    }
                     if is_param = false
                         if already = false
-                        {
-                            let lb this.lookup_local_binding(nm)
-                            if lb <> null
+                            if is_shadowed = false
                             {
-                                cap_names.add(String^rp(nm))
-                                cap_types.add((*lb).binding_type)
+                                let lb this.lookup_local_binding(nm)
+                                if lb <> null
+                                {
+                                    cap_names.add(String^rp(nm))
+                                    cap_types.add((*lb).binding_type)
+                                }
                             }
-                        }
                 }
                 set fi: fi + 1
             }

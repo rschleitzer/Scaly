@@ -1,0 +1,28 @@
+; Regression (Phase-2 lambdas, GAP C): capture discovery recurses into a
+; block-bodied lambda, and a body-local binding that shadows an enclosing name
+; suppresses the (spurious) capture. Before the fix, collect_free_names reached
+; only Variable/Call/Tuple, so a `{ ... }` body captured nothing.
+;
+;   cap   = \x: { x + n }      -> captures n=10, cap(5) = 15
+;   shade = \x: { let n 99     -> inner n shadows enclosing n; NOT captured
+;                 x + n }         shade(5) = 5 + 99 = 104
+; Expected: PASS
+
+let n 10
+
+let cap \x: { x + n }
+let r1 cap(5)
+
+let shade \x: { let n 99
+x + n }
+let r2 shade(5)
+
+if r1 = 15
+{
+    if r2 = 104
+        print("PASS")
+    else
+        print("FAIL shade")
+}
+else
+    print("FAIL cap")
