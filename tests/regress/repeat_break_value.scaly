@@ -1,0 +1,25 @@
+; Regression: `repeat` is an infinite loop that exits only via break, and
+; `break <value>` makes the repeat an expression yielding that value
+; (Rust-`loop` model). Frozen stage-0 emits no repeat at all, so this runs
+; only against a self-hosted stage.
+;
+; i counts 0,1,2,3,4,5; at i=5 the loop breaks with i+100 = 105.
+; Expected: PASS (answer = 105)
+
+function run() returns int
+{
+    var i 0
+    let answer repeat
+    {
+        if i = 5
+            break i + 100
+        set i: i + 1
+    }
+    return answer
+}
+
+let result run()
+if result = 105
+    print("PASS")
+else
+    print("FAIL")

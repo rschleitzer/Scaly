@@ -9421,7 +9421,136 @@ define Planner
             this.push_scope()
             let planned_body this.plan_action#(r.action)
             this.pop_scope()
-            PlannedRepeat(r.span, planned_body, r.loop_label)
+            ; A `repeat` is an infinite loop exiting only via break. Its value
+            ; (for `let x repeat { ... break v ... }`) is the type of the first
+            ; break-with-value targeting this repeat; void when none.
+            let value_type this.find_break_type_in_operands#(planned_body.source)
+            PlannedRepeat(r.span, planned_body, r.loop_label, value_type)
+        }
+
+        ; Recursive break-value-type finder. Descends through if/choose/match
+        ; consequents and nested blocks, but NOT into nested while/for/repeat
+        ; bodies (an unlabeled break there targets the inner loop, not this
+        ; repeat). Returns void when no break-with-value is found.
+        function find_break_type_in_operands#(rp, this: Planner, ops: ref[Vector[PlannedOperand]]?) returns PlannedType
+        {
+            if ops = null
+                return Planner.make_void_type#()
+            let v (*ops)
+            var i: size_t 0
+            while i < v.length
+            {
+                let op_ptr v.get i
+                if op_ptr <> null
+                {
+                    let t this.find_break_type_in_expr#((*op_ptr).expr)
+                    if t.name.equals(String$("void")) = false
+                        return t
+                }
+                set i: i + 1
+            }
+            Planner.make_void_type#()
+        }
+
+        function find_break_type_in_statement#(rp, this: Planner, s: PlannedStatement) returns PlannedType
+        {
+            choose s
+                when br: PlannedBreak
+                {
+                    if br.result = null
+                        return Planner.make_void_type#()
+                    let res (*br.result)
+                    if res.length = 0
+                        return Planner.make_void_type#()
+                    let op_ptr res.get 0
+                    if op_ptr = null
+                        return Planner.make_void_type#()
+                    (*op_ptr).result_type
+                }
+                when a: PlannedAction
+                    this.find_break_type_in_operands#(a.source)
+                else
+                    Planner.make_void_type#()
+        }
+
+        function find_break_type_in_stmt_ref#(rp, this: Planner, s: ref[PlannedStatement]?) returns PlannedType
+        {
+            if s = null
+                return Planner.make_void_type#()
+            this.find_break_type_in_statement#(*s)
+        }
+
+        function find_break_type_in_expr#(rp, this: Planner, e: PlannedExpression) returns PlannedType
+        {
+            choose e
+                when blk: PlannedBlock
+                {
+                    if blk.statements = null
+                        return Planner.make_void_type#()
+                    let stmts (*blk.statements)
+                    var i: size_t 0
+                    while i < stmts.length
+                    {
+                        let sp stmts.get i
+                        if sp <> null
+                        {
+                            let t this.find_break_type_in_statement#(*sp)
+                            if t.name.equals(String$("void")) = false
+                                return t
+                        }
+                        set i: i + 1
+                    }
+                    Planner.make_void_type#()
+                }
+                when ife: PlannedIf
+                {
+                    let tc this.find_break_type_in_stmt_ref#(ife.consequent)
+                    if tc.name.equals(String$("void")) = false
+                        return tc
+                    this.find_break_type_in_stmt_ref#(ife.alternative)
+                }
+                when ch: PlannedChoose
+                {
+                    if ch.cases <> null
+                    {
+                        let cases (*ch.cases)
+                        var i: size_t 0
+                        while i < cases.length
+                        {
+                            let cp cases.get i
+                            if cp <> null
+                            {
+                                let t this.find_break_type_in_stmt_ref#((*cp).consequent)
+                                if t.name.equals(String$("void")) = false
+                                    return t
+                            }
+                            set i: i + 1
+                        }
+                    }
+                    this.find_break_type_in_stmt_ref#(ch.alternative)
+                }
+                when mt: PlannedMatch
+                {
+                    if mt.branches <> null
+                    {
+                        let brs (*mt.branches)
+                        var i: size_t 0
+                        while i < brs.length
+                        {
+                            let bp brs.get i
+                            if bp <> null
+                            {
+                                let t this.find_break_type_in_stmt_ref#((*bp).consequent)
+                                if t.name.equals(String$("void")) = false
+                                    return t
+                            }
+                            set i: i + 1
+                        }
+                    }
+                    this.find_break_type_in_stmt_ref#(mt.alternative)
+                }
+                else
+                    Planner.make_void_type#()
         }
 
         ; plan_while: Binding condition + Action body. The binding opens
@@ -10691,7 +10820,7 @@ define Planner
                 when rep: Repeat
                 {
                     let pr this.plan_repeat#(rep)
-                    PlannedOperand(op.span, PlannedExpression.Repeat pr, null, Planner.make_void_type#())
+                    PlannedOperand(op.span, PlannedExpression.Repeat pr, null, pr.value_type)
                 }
 
             ; s164: bind member_access to a local BEFORE the guard. A
@@ -11923,8 +12052,19 @@ define Planner
 
         function plan_break#(rp, this: Planner, b: Break) returns PlannedBreak
         {
-            let planned this.plan_operands#(b.result)
-            var holder Vector[PlannedOperand]^rp(planned)
+            ; Collapse the operand sequence so a break value like `break -1`
+            ; or `break parse(line)` folds into a single typed operand (same
+            ; reason plan_throw# collapses) — emit_break stores result[0] and
+            ; the repeat's value type is read from result[0].result_type.
+            let planned_flat this.plan_operands#(b.result)
+            if planned_flat.length = 0
+            {
+                var empty_holder Vector[PlannedOperand]^rp(planned_flat)
+                return PlannedBreak(b.span, &empty_holder, b.loop_label)
+            }
+            let planned_collapsed this.collapse_operand_sequence#(planned_flat)
+            var holder Vector[PlannedOperand]^rp(1)
+            holder.put(0, planned_collapsed)
             PlannedBreak(b.span, &holder, b.loop_label)
         }
 

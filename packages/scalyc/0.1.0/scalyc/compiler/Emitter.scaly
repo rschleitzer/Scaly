@@ -287,6 +287,7 @@ define LoopContext
     continue_block: LLVMBasicBlockRef   ; Target for 'continue'
     cleanup_depth: size_t               ; BlockCleanupStack size at loop entry
     loop_label: String                  ; Loop label ("" = unlabeled)
+    result_slot: LLVMValueRef           ; break-value alloca (null = no value)
 )
 
 ; ============================================================================
@@ -4682,6 +4683,10 @@ define Emitter
             {
                 return emit_while w
             }
+            when r: Repeat
+            {
+                return emit_repeat r
+            }
             when t: Try
             {
                 return emit_try t
@@ -8527,7 +8532,7 @@ define Emitter
         let exit_block create_block(String$("for.exit"))
 
         ; Push loop context for break/continue
-        push_loop(exit_block, incr_block, for_expr.loop_label)
+        push_loop(exit_block, incr_block, for_expr.loop_label, LLVMValueRef(null))
 
         ; Jump to condition block
         LLVMBuildBr(builder, cond_block)
@@ -8656,7 +8661,7 @@ define Emitter
         let exit_block create_block(String$("for.exit"))
 
         ; Push loop context
-        push_loop(exit_block, cond_block, for_expr.loop_label)
+        push_loop(exit_block, cond_block, for_expr.loop_label, LLVMValueRef(null))
 
         ; Jump to condition block
         LLVMBuildBr(builder, cond_block)
@@ -8718,7 +8723,7 @@ define Emitter
         let exit_block create_block(String$("while.exit"))
 
         ; Push loop context
-        push_loop(exit_block, cond_block, while_expr.loop_label)
+        push_loop(exit_block, cond_block, while_expr.loop_label, LLVMValueRef(null))
 
         ; Jump to condition block
         LLVMBuildBr(builder, cond_block)
@@ -8799,6 +8804,51 @@ define Emitter
         ; Continue at exit block
         LLVMPositionBuilderAtEnd(builder, exit_block)
 
+        LLVMValueRef null
+    }
+
+    ; Emit a repeat loop — an infinite loop that exits only via `break`.
+    ; When the repeat yields a value (`let x repeat { ... break v }`), a
+    ; result slot is allocated; emit_break stores into it and the exit
+    ; block loads it as the repeat expression's value.
+    function emit_repeat(this, repeat_expr: PlannedRepeat) returns LLVMValueRef
+    {
+        ; Allocate the break-value slot unless the repeat is value-less (void).
+        var result_slot LLVMValueRef(null)
+        var value_llvm_ty LLVMTypeRef(null)
+        if repeat_expr.value_type.name.equals(String$("void")) = false
+        {
+            set value_llvm_ty: map_type(repeat_expr.value_type)
+            var slot_name String$("repeat.result")
+            set result_slot: entry_alloca(value_llvm_ty, slot_name.c_data())
+        }
+
+        let body_block create_block(String$("repeat.body"))
+        let exit_block create_block(String$("repeat.exit"))
+
+        ; continue re-runs the body; break exits to exit_block.
+        push_loop(exit_block, body_block, repeat_expr.loop_label, result_slot)
+
+        LLVMBuildBr(builder, body_block)
+        LLVMPositionBuilderAtEnd(builder, body_block)
+        enter_scope()
+        emit_action repeat_expr.body
+
+        ; Infinite loop: re-run the body unless it already terminated
+        ; (every exit path is a break/return/throw).
+        let body_term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock builder)
+        if body_term.handle = null
+            LLVMBuildBr(builder, body_block)
+        exit_scope()
+        pop_loop()
+
+        LLVMPositionBuilderAtEnd(builder, exit_block)
+
+        if result_slot.handle <> null
+        {
+            var load_name String$("repeat.value")
+            return LLVMBuildLoad2(builder, value_llvm_ty, result_slot, load_name.c_data())
+        }
         LLVMValueRef null
     }
 
@@ -10650,6 +10700,18 @@ define Emitter
         if loop_ctx = null
             return false
 
+        ; break-with-value: evaluate the value and store it into the target
+        ; loop's result slot (only repeat loops allocate one). Done before
+        ; cleanups, mirroring emit_return's evaluate-then-cleanup order.
+        if loop_ctx.result_slot.handle <> null
+            if brk.result <> null
+                if brk.result.length > 0
+                {
+                    let break_value emit_operands(brk.result)
+                    if break_value.handle <> null
+                        LLVMBuildStore(builder, break_value, loop_ctx.result_slot)
+                }
+
         ; Emit block-scoped cleanups back to the target loop's entry depth
         emit_block_cleanups loop_ctx.cleanup_depth
 
@@ -10815,9 +10877,9 @@ define Emitter
     ; ========================================================================
 
     ; Push a loop context onto the stack
-    procedure push_loop(this, exit_block: LLVMBasicBlockRef, continue_block: LLVMBasicBlockRef, loop_label: String)
+    procedure push_loop(this, exit_block: LLVMBasicBlockRef, continue_block: LLVMBasicBlockRef, loop_label: String, result_slot: LLVMValueRef)
     {
-        let ctx LoopContext(exit_block, continue_block, block_cleanup_stack.length, loop_label)
+        let ctx LoopContext(exit_block, continue_block, block_cleanup_stack.length, loop_label, result_slot)
         loop_stack.add ctx
     }
 

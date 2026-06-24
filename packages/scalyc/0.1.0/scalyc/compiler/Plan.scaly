@@ -272,12 +272,14 @@ define PlannedWhile
     loop_label: String
 )
 
-; Post-test do-while loop (body runs at least once, then re-runs while cond true)
+; Infinite loop — exits only via `break` (or return/throw). `value_type` is
+; the type of the `break <value>` payload (void when the repeat yields no value).
 define PlannedRepeat
 (
     loc: Span
     body: PlannedAction
     loop_label: String
+    value_type: PlannedType
 )
 
 ; Lambda: anonymous function with a mangled synthetic name.
