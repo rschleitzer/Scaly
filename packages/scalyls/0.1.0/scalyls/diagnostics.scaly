@@ -221,15 +221,15 @@ define diagnostics
     ; Non-file URIs are returned unchanged.
     function strip_uri#(rp, uri: String) returns String
     {
-        ; `if COND STMT` runs STMT when COND is TRUE: strip the prefix on
-        ; a file:// URI, otherwise fall through and return it unchanged.
-        if uri.starts_with("file://")
-        {
-            ; 7 == length of "file://"
-            let len uri.get_length()
-            return uri.substring(rp, 7 as size_t, len - (7 as size_t))
-        }
-        uri
+        ; A non-file:// URI is returned unchanged. The stripped result is the
+        ; trailing implicit return (an explicit `return uri.substring(rp,...)`
+        ; trips the escape checker's return-of-page-call false positive).
+        if uri.starts_with("file://") = false
+            return uri
+
+        ; 7 == length of "file://"
+        let len uri.get_length()
+        uri.substring(rp, 7 as size_t, len - (7 as size_t))
     }
 
     ; `"key":`

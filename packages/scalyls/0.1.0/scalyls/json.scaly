@@ -139,7 +139,7 @@ define json
             when arr: Array
             {
                 if i >= arr.count
-                    return json.null_value()
+                    return JsonValue.Null(JsonNull())
 
                 *(arr.items + i)
             }
@@ -186,7 +186,7 @@ define json
         if c = (0 as u8)
         {
             set p.ok: false
-            return json.null_value()
+            return JsonValue.Null(JsonNull())
         }
 
         if c = (0x7B as u8)             ; '{'
@@ -205,7 +205,7 @@ define json
             return JsonValue.Bool false
 
         if json.match_literal(p, "null")
-            return json.null_value()
+            return JsonValue.Null(JsonNull())
 
         if json.is_digit(c) || (c = (0x2D as u8))   ; digit or '-'
             return JsonValue.Number(json.parse_number p)
