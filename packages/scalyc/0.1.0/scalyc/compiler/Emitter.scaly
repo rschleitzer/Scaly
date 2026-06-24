@@ -9962,7 +9962,7 @@ define Emitter
                                     {
                                         if LLVMGetTypeKind(val_ty) = LLVMTypeKind.Struct()
                                         {
-                                            var copy_page LLVMValueRef(current_region.local_page.handle)
+                                            var copy_page current_region.local_page
                                             if copy_page.handle = null
                                             {
                                                 let rp_val lookup_variable(String$("rp"))
@@ -10124,7 +10124,7 @@ define Emitter
                                 if is_ptr_global
                                 {
                                     let ptr_type LLVMPointerTypeInContext(context, 0)
-                                    set base: LLVMValueRef(LLVMBuildLoad2(builder, ptr_type, gv, "gv.load").handle)
+                                    set base: LLVMBuildLoad2(builder, ptr_type, gv, "gv.load")
                                 }
                                 let gv_pv PlannedVariable(global_ref.loc, global_ref.name, global_ref.global_type, true)
                                 return emit_member_assignment(base, gv_pv, target_op.member_access, value)
@@ -10300,7 +10300,7 @@ define Emitter
                 if mp_is_alloca.handle <> null
                 {
                     let ptr_type LLVMPointerTypeInContext(context, 0)
-                    set current_ptr: LLVMValueRef(LLVMBuildLoad2(builder, ptr_type, current_ptr, "ptr.load").handle)
+                    set current_ptr: LLVMBuildLoad2(builder, ptr_type, current_ptr, "ptr.load")
                 }
             }
             ; Inner generic = struct type for GEP.
@@ -10351,7 +10351,7 @@ define Emitter
                             if LLVMGetTypeKind(alloc_ty) = LLVMTypeKind.Pointer()
                             {
                                 let ptr_type LLVMPointerTypeInContext(context, 0)
-                                set current_ptr: LLVMValueRef(LLVMBuildLoad2(builder, ptr_type, current_ptr, "ptr.load").handle)
+                                set current_ptr: LLVMBuildLoad2(builder, ptr_type, current_ptr, "ptr.load")
                             }
                         }
                     }
@@ -10474,7 +10474,7 @@ define Emitter
                         let field_kind LLVMGetTypeKind(field_type)
                         if value_kind = LLVMTypeKind.Pointer() & field_kind = LLVMTypeKind.Struct()
                         {
-                            set stored_value: LLVMValueRef(LLVMBuildLoad2(builder, field_type, stored_value, "field.load").handle)
+                            set stored_value: LLVMBuildLoad2(builder, field_type, stored_value, "field.load")
                         }
                     }
                 }
