@@ -151,6 +151,31 @@ chmod 755 "$PREFIX/bin/scalyc"
 say "installed scalyc -> $PREFIX/bin/scalyc"
 
 # ---------------------------------------------------------------------------
+# 5b. Build the scalyls language server, when the distribution shipped its seed.
+#     scalyls.ll is a SELF-CONTAINED program (the scaly stdlib + scalyc compiler
+#     are baked in), so it links standalone against libLLVM-18 and needs no
+#     libscaly.a. The VS Code extension launches `scalyls` from PATH; the
+#     wrapper sets SCALY_HOME so the server resolves the prelude from $PREFIX.
+# ---------------------------------------------------------------------------
+if [ -f "$PREFIX/seed/scalyls.ll" ]; then
+  say "building scalyls language server from seed"
+  "$LLC" -relocation-model=pic -filetype=obj "$PREFIX/seed/scalyls.ll" \
+    -o "$WORK/scalyls.o" || die "llc failed on seed/scalyls.ll"
+  # shellcheck disable=SC2086
+  "$CC" $LD_ARG "$WORK/scalyls.o" \
+    -L"$LLVM_LIBDIR" -l"$LLVM_LIBNAME" -o "$PREFIX/libexec/scalyls" \
+    || die "linking scalyls failed (is libLLVM-18 in $LLVM_LIBDIR?)"
+  cat > "$PREFIX/bin/scalyls" <<EOF
+#!/bin/sh
+# Scaly language server wrapper — installed by https://scaly.io/install.sh
+export SCALY_HOME="\${SCALY_HOME:-$PREFIX}"
+exec "\$SCALY_HOME/libexec/scalyls" "\$@"
+EOF
+  chmod 755 "$PREFIX/bin/scalyls"
+  say "installed scalyls -> $PREFIX/bin/scalyls"
+fi
+
+# ---------------------------------------------------------------------------
 # 6. Put $PREFIX/bin on PATH via the shell profile (unless already there).
 # ---------------------------------------------------------------------------
 BINDIR="$PREFIX/bin"

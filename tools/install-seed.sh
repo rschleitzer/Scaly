@@ -22,7 +22,18 @@ for f in main scalyc scaly; do
 done
 
 cp "$SRC/main.ll" "$SRC/scalyc.ll" "$SRC/scaly.ll" seed/
-( cd seed && shasum -a 256 main.ll scalyc.ll scaly.ll > SHA256SUMS )
+SUM_FILES="main.ll scalyc.ll scaly.ll"
 
-echo "install-seed: OK — seed/ updated"
+# scalyls language server seed (optional — present when tools/seed.sh emitted it
+# via the C++ stage-0; it is a separate self-contained program, not part of the
+# compiler fixed point).
+if [ -f "$SRC/scalyls.ll" ]; then
+    cp "$SRC/scalyls.ll" seed/
+    SUM_FILES="$SUM_FILES scalyls.ll"
+fi
+
+# shellcheck disable=SC2086
+( cd seed && shasum -a 256 $SUM_FILES > SHA256SUMS )
+
+echo "install-seed: OK — seed/ updated ($SUM_FILES)"
 echo "  git add seed && git commit -m \"Refresh seed\""

@@ -96,4 +96,56 @@ echo "seed: fixed-point self-reproduction"
 for f in main scalyc scaly; do
   cmp -s "$OUT/r_$f.ll" "$OUT/$f.ll" || fail "fixed point: $f.ll differs"
 done
-echo "SEED: OK — links clean, runs hello + AOT, reproduces itself byte-identical"
+
+# ---------------------------------------------------------------------------
+# scalyls language server seed (separate program; NOT part of the compiler
+# fixed point above).
+#
+# scalyls depends on the scalyc compiler PACKAGE. The self-hosted compiler
+# cannot emit the whole scalyls package yet (a multi-package emission gap drops
+# the sub-module bodies to empty stubs), so scalyls.ll is emitted by the C++
+# stage-0 (scalyc/build/scalyc) — the only compiler that builds it correctly.
+# It is a SELF-CONTAINED .ll (the scaly stdlib + scalyc compiler are baked in),
+# so it links standalone with just -lLLVM-18 and needs no libscaly.a. There is
+# NO fixed-point requirement (scalyls does not self-compile): mint it, link it
+# clean (zero undefined), and smoke-test an LSP initialize round-trip.
+SCALYLS_CC=${SCALYLS_CC:-scalyc/build/scalyc}
+if [ ! -x "$SCALYLS_CC" ]; then
+  echo "seed: building C++ stage-0 for scalyls ($SCALYLS_CC missing)"
+  ./build.sh >/dev/null 2>&1 || fail "build.sh (C++ stage-0 for scalyls)"
+fi
+# NOTE: no --no-tests — that flag is self-hosted-only; the C++ stage-0 rejects
+# it. scalyls emitted by stage-0 links clean WITH test functions present (they
+# are unreferenced from server.run and the linker drops them), verified below.
+echo "seed: emitting scalyls.ll with $SCALYLS_CC"
+( ulimit -s 65520
+  "$SCALYLS_CC" -S -o "$OUT/scalyls.ll" packages/scalyls/0.1.0/main.scaly
+) || fail "scalyls emission"
+"$LLC" -relocation-model=pic -filetype=obj "$OUT/scalyls.ll" -o "$OUT/scalyls.o" || fail "llc scalyls.ll"
+if ! "$CLANG" "$OUT/scalyls.o" -L"$LLVM_LIBDIR" -l"$LLVM_LIBNAME" \
+     -o "$OUT/scalyls" 2> "$OUT/scalyls_link.log"; then
+  grep -v 'reexported library' "$OUT/scalyls_link.log" || true
+  fail "scalyls link (undefined symbols)"
+fi
+echo "seed: scalyls linked clean -> $OUT/scalyls"
+echo "seed: scalyls LSP smoke (initialize -> capabilities)"
+python3 - "$OUT/scalyls" <<'PY' || fail "scalyls smoke"
+import sys, json, subprocess
+def frame(o):
+    b = json.dumps(o).encode()
+    return ("Content-Length: %d\r\n\r\n" % len(b)).encode() + b
+inp  = frame({"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {}})
+inp += frame({"jsonrpc": "2.0", "id": 2, "method": "shutdown"})
+inp += frame({"jsonrpc": "2.0", "method": "exit"})
+out = subprocess.run([sys.argv[1]], input=inp, stdout=subprocess.PIPE, timeout=30).stdout
+i = out.find(b"\r\n\r\n")
+if i < 0:
+    sys.exit("no response frame")
+n = int(out[:i].decode().split(":")[1].strip())
+f0 = json.loads(out[i + 4 : i + 4 + n])
+sys.exit(0 if (f0.get("id") == 1 and "capabilities" in f0.get("result", {})) else
+         "bad initialize response")
+PY
+
+echo "SEED: OK — compiler links clean, runs hello + AOT, reproduces itself"
+echo "          byte-identical; scalyls language server links + serves"

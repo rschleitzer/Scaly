@@ -55,6 +55,47 @@ echo "verify: AOT $pass/$total OK ($skipped skipped)"
 echo "verify: regression suite"
 tests/regress/run.sh "$SC" || fail "regression suite"
 
+# scalyls language server (when the seed shipped it): on THIS target, link it
+# from seed/scalyls.ll (host-independent IR, like the compiler seed) and
+# smoke-test an LSP initialize round-trip. Best-effort: skipped if LLVM 18 is
+# not resolvable. Mirrors install.sh's link path (incl. lld on Linux).
+if [ -f seed/scalyls.ll ]; then
+  echo "verify: scalyls language server"
+  # shellcheck disable=SC1091
+  . tools/llvm-env.sh 2>/dev/null || true
+  if [ "$llvm_env_ok" = "1" ]; then
+    LD_ARG=""
+    if [ "$(uname -s)" = "Linux" ]; then
+      for c in "$LLVM_PREFIX/bin/ld.lld" ld.lld ld.lld-18; do
+        command -v "$c" >/dev/null 2>&1 && { LD_ARG="-fuse-ld=$c"; break; }
+      done
+    fi
+    "$LLC" -relocation-model=pic -filetype=obj seed/scalyls.ll -o "$WORK/scalyls.o" \
+      >/dev/null 2>&1 || fail "llc scalyls.ll"
+    # shellcheck disable=SC2086
+    "${CLANG:-clang}" $LD_ARG "$WORK/scalyls.o" -L"$LLVM_LIBDIR" -l"$LLVM_LIBNAME" \
+      -o "$WORK/scalyls" 2>/dev/null || fail "link scalyls"
+    python3 - "$WORK/scalyls" <<'PY' || fail "scalyls smoke (initialize)"
+import sys, json, subprocess
+def frame(o):
+    b = json.dumps(o).encode()
+    return ("Content-Length: %d\r\n\r\n" % len(b)).encode() + b
+inp  = frame({"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {}})
+inp += frame({"jsonrpc": "2.0", "id": 2, "method": "shutdown"})
+inp += frame({"jsonrpc": "2.0", "method": "exit"})
+out = subprocess.run([sys.argv[1]], input=inp, stdout=subprocess.PIPE, timeout=30).stdout
+i = out.find(b"\r\n\r\n")
+if i < 0: sys.exit("no response frame")
+n = int(out[:i].decode().split(":")[1].strip())
+f0 = json.loads(out[i + 4 : i + 4 + n])
+sys.exit(0 if (f0.get("id") == 1 and "capabilities" in f0.get("result", {})) else "bad response")
+PY
+    echo "verify: scalyls OK (links + serves on this target)"
+  else
+    echo "verify: scalyls SKIP (LLVM 18 not resolved)"
+  fi
+fi
+
 # Byte-identical fixed-point re-emit proves the compiler reproduces the exact
 # committed seed on this target. OFF by default: re-emitting scalyc.ll peaks at
 # ~15 GB (main ~1 GB, scaly ~5.6 GB), over free CI runners. Run it at release

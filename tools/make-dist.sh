@@ -31,6 +31,10 @@ trap 'rm -rf "$STAGE"' EXIT
 mkdir -p "$STAGE/seed"
 cp seed/main.ll seed/scalyc.ll seed/scaly.ll "$STAGE/seed/"
 
+# scalyls language server seed (optional — a separate self-contained program;
+# install.sh links it into <prefix>/bin/scalyls when present).
+[ -f seed/scalyls.ll ] && cp seed/scalyls.ll "$STAGE/seed/"
+
 # scaly stdlib + prelude SOURCES (parsed by the front-end; no scalyc sources)
 mkdir -p "$STAGE/packages/scaly"
 cp -R "packages/scaly/$VERSION" "$STAGE/packages/scaly/$VERSION"

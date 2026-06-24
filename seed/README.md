@@ -1,11 +1,17 @@
 # The Scaly seed
 
-These three `.ll` files **are** the Scaly compiler — the self-hosted compiler
+These `.ll` files **are** the Scaly compiler — the self-hosted compiler
 emitted as its own LLVM IR:
 
 - `main.ll` — entry point
 - `scalyc.ll` — the compiler (lexer → parser → modeler → planner → emitter)
 - `scaly.ll` — the standard library / runtime
+- `scalyls.ll` — the language server (a **separate self-contained program**;
+  the scaly stdlib + scalyc compiler are baked in, so it links standalone). It
+  is **not** part of the compiler fixed point and, unlike the trio above, is
+  emitted by the **C++ stage-0** (`scalyc/build/scalyc`) — the self-hosted
+  compiler cannot yet emit the whole scalyls package (a multi-package emission
+  gap stubs its sub-modules). `install.sh` links it into `<prefix>/bin/scalyls`.
 - `SHA256SUMS` — integrity manifest
 
 ## One seed for all 64-bit little-endian targets
@@ -32,8 +38,9 @@ tools/build-from-seed.sh        # -> scalyc/build/scalyc, no C++ toolchain
 ## Refreshing the seed
 
 The seed is minted by `tools/seed.sh` (which bootstraps the C++ stage-0 once,
-emits the trio with `--no-tests`, and verifies the fixed point), then installed
-here with `tools/install-seed.sh`. Because emission is host-independent, you may
+emits the compiler trio with `--no-tests` and verifies the fixed point, then
+emits `scalyls.ll` via the C++ stage-0 and link-checks + LSP-smoke-tests it),
+then installed here with `tools/install-seed.sh`. Because emission is host-independent, you may
 mint on any LP64-LE host — but **verify on each target** (run hello + the AOT
 corpus + a fixed-point re-emit) before trusting it there. See `RELEASING.md`.
 
