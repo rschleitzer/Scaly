@@ -1,0 +1,26 @@
+; Regression (Phase-2 lambdas): a lambda may capture enclosing variables by
+; value. `\x: x + n` captures `n`; the captured value is passed as a leading
+; argument to the monomorphized function (capture by value). Self-hosted-only
+; (stage-0 never parses lambdas — it eats the backslash).
+;
+; n = 10 captured; f(5) = 5 + 10 = 15; with a, b captured: g(10) = 10+3+4 = 17.
+; Expected: PASS
+
+let n 10
+let f \x: x + n
+
+let a 3
+let b 4
+let g \x: x + a + b
+
+let r1 f(5)
+let r2 g(10)
+if r1 = 15
+{
+    if r2 = 17
+        print("PASS")
+    else
+        print("FAIL")
+}
+else
+    print("FAIL")

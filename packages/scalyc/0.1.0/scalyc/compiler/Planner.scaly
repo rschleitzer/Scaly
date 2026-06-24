@@ -2874,7 +2874,43 @@ define Planner
                                                 }
                                             }
                                             var lc_at_vec Vector[PlannedType]^rp(lc_arg_types)
-                                            let lc_mangled this.monomorphize_lambda#(lc_name, (*lc_lam_ref), lc_at_vec)
+                                            let lc_mono this.monomorphize_lambda#(lc_name, (*lc_lam_ref), lc_at_vec)
+                                            let lc_mangled lc_mono.mangled
+                                            ; Prepend the captured values (looked up at the
+                                            ; call site, where they are in scope) as leading
+                                            ; arguments — they map to the synthesized
+                                            ; function's leading capture parameters.
+                                            var lc_full_args Array[PlannedOperand]$()
+                                            if lc_mono.captures <> null
+                                            {
+                                                let lc_caps (*lc_mono.captures)
+                                                var lc_capi: size_t 0
+                                                while lc_capi < lc_caps.length
+                                                {
+                                                    let lc_cap_ptr lc_caps.get lc_capi
+                                                    if lc_cap_ptr <> null
+                                                    {
+                                                        let lc_capn (*lc_cap_ptr)
+                                                        let lc_cap_lb this.lookup_local_binding(lc_capn)
+                                                        if lc_cap_lb <> null
+                                                        {
+                                                            let lc_cap_ty (*lc_cap_lb).binding_type
+                                                            let lc_cap_mut (*lc_cap_lb).is_mutable
+                                                            let lc_cap_var PlannedVariable(lc_head.loc, String^rp(lc_capn), lc_cap_ty, lc_cap_mut)
+                                                            lc_full_args.add(PlannedOperand(lc_head.loc, PlannedExpression.Variable lc_cap_var, null, lc_cap_ty))
+                                                        }
+                                                    }
+                                                    set lc_capi: lc_capi + 1
+                                                }
+                                            }
+                                            var lc_afi: size_t 0
+                                            while lc_afi < lc_arg_ops.length
+                                            {
+                                                let lc_ao_ptr lc_arg_ops.get lc_afi
+                                                if lc_ao_ptr <> null
+                                                    lc_full_args.add((*lc_ao_ptr))
+                                                set lc_afi: lc_afi + 1
+                                            }
                                             var lc_ret Planner.make_void_type#()
                                             let lc_fidx function_name_index.lookup(lc_mangled)
                                             if lc_fidx >= 0
@@ -2886,7 +2922,7 @@ define Planner
                                                         set lc_ret: (*(*lc_fptr).return_type)
                                                 }
                                             }
-                                            var lc_call_args Vector[PlannedOperand]^rp(lc_arg_ops)
+                                            var lc_call_args Vector[PlannedOperand]^rp(lc_full_args)
                                             let lc_pc this.make_planned_call#(lc_head.loc, lc_name, lc_mangled, lc_ret, lc_call_args)
                                             return PlannedOperand(lc_head.loc, PlannedExpression.Call lc_pc, null, lc_ret)
                                         }
@@ -9540,13 +9576,119 @@ define Planner
         ; intercept in collapse_operand_sequence#). Cached per mangled name
         ; via has_recorded_function so repeated calls with identical arg
         ; types reuse the same function.
-        function monomorphize_lambda#(rp, this: Planner, base_name: String, lam: Lambda, arg_types: Vector[PlannedType]) returns String
+        function monomorphize_lambda#(rp, this: Planner, base_name: String, lam: Lambda, arg_types: Vector[PlannedType]) returns LambdaMonoResult
         {
-            ; Deterministic mangled name = base + each arg type's mangle.
+            ; ---- Pass 1: discover captures. Plan the body in a scope with the
+            ; lambda's own params defined; the enclosing scope is still on the
+            ; stack so a captured `n` resolves there. A captured name is a free
+            ; variable that, AFTER popping (params + body-locals gone), still
+            ; resolves via lookup_local_binding — i.e. it lives in an enclosing
+            ; scope. Captures become leading parameters; the call site passes
+            ; the captured VALUES as leading args (capture by value).
+            this.push_scope()
+            var pnames Array[String]$()
+            var p1i: size_t 0
+            while p1i < lam.input.length
+            {
+                let it_ptr lam.input.get p1i
+                if it_ptr <> null
+                {
+                    let it (*it_ptr)
+                    var pty1: PlannedType this.fresh_type_var#(String$(""))
+                    if p1i < arg_types.length
+                    {
+                        let at_ptr arg_types.get p1i
+                        if at_ptr <> null
+                            set pty1: (*at_ptr)
+                    }
+                    if it.name <> null
+                    {
+                        let pn (*it.name)
+                        pnames.add(String^rp(pn))
+                        this.define_parameter(pn, pty1)
+                    }
+                }
+                set p1i: p1i + 1
+            }
+            let body1 this.plan_action#(lam.body)
+            var free Array[String]$()
+            if body1.source <> null
+            {
+                let src1 (*body1.source)
+                var si: size_t 0
+                while si < src1.length
+                {
+                    let s_ptr src1.get si
+                    if s_ptr <> null
+                        this.collect_free_names((*s_ptr), free)
+                    set si: si + 1
+                }
+            }
+            this.pop_scope()
+
+            var cap_names Array[String]$()
+            var cap_types Array[PlannedType]$()
+            var fi: size_t 0
+            while fi < free.length
+            {
+                let nm_ptr free.get fi
+                if nm_ptr <> null
+                {
+                    let nm (*nm_ptr)
+                    var is_param: bool false
+                    var pj: size_t 0
+                    while pj < pnames.length
+                    {
+                        let pn_ptr pnames.get pj
+                        if pn_ptr <> null
+                            if (*pn_ptr).equals(nm)
+                                set is_param: true
+                        set pj: pj + 1
+                    }
+                    var already: bool false
+                    var dj: size_t 0
+                    while dj < cap_names.length
+                    {
+                        let d_ptr cap_names.get dj
+                        if d_ptr <> null
+                            if (*d_ptr).equals(nm)
+                                set already: true
+                        set dj: dj + 1
+                    }
+                    if is_param = false
+                        if already = false
+                        {
+                            let lb this.lookup_local_binding(nm)
+                            if lb <> null
+                            {
+                                cap_names.add(String^rp(nm))
+                                cap_types.add((*lb).binding_type)
+                            }
+                        }
+                }
+                set fi: fi + 1
+            }
+
+            ; ---- mangled name = base + capture type mangles + arg type mangles
             var ml_sb StringBuilder^rp()
             ml_sb.append "_ZN6lambdaN"
             ml_sb.append base_name
             ml_sb.append "E"
+            var cmi: size_t 0
+            while cmi < cap_types.length
+            {
+                let ct_ptr cap_types.get cmi
+                if ct_ptr <> null
+                {
+                    let ct (*ct_ptr)
+                    ml_sb.append "_c"
+                    if ct.mangled_name.get_length() > 0
+                        ml_sb.append ct.mangled_name
+                    else
+                        ml_sb.append ct.name
+                }
+                set cmi: cmi + 1
+            }
             var mi: size_t 0
             while mi < arg_types.length
             {
@@ -9554,10 +9696,6 @@ define Planner
                 if mat_ptr <> null
                 {
                     let mat (*mat_ptr)
-                    ; Separator + the type's mangle, falling back to its name
-                    ; when the mangle is empty (some primitives carry no
-                    ; Itanium mangle here) so distinct types never collide
-                    ; onto the same monomorphization.
                     ml_sb.append "_"
                     if mat.mangled_name.get_length() > 0
                         ml_sb.append mat.mangled_name
@@ -9569,28 +9707,51 @@ define Planner
             ml_sb.append "Ev"
             let mangled ml_sb.to_string^rp()
 
-            ; Already synthesized for these arg types — reuse.
-            if this.has_recorded_function(mangled)
-                return mangled
+            var caps_holder Vector[String]^rp(cap_names)
+            var caps_ref: ref[Vector[String]]? null
+            if caps_holder.length > 0
+                set caps_ref: &caps_holder
 
+            ; Already synthesized for this (captures, arg types) — reuse.
+            if this.has_recorded_function(mangled)
+                return LambdaMonoResult(mangled, caps_ref)
+
+            ; ---- Pass 2: plan with captures + params as parameters.
             this.push_scope()
-            var planned_items Vector[PlannedItem]^rp(lam.input.length)
-            var i: size_t 0
-            while i < lam.input.length
+            var item_arr Array[PlannedItem]$()
+            var ci: size_t 0
+            while ci < cap_names.length
             {
-                let it_ptr lam.input.get i
+                let cn_ptr cap_names.get ci
+                let ct_ptr cap_types.get ci
+                if cn_ptr <> null
+                    if ct_ptr <> null
+                    {
+                        let cn (*cn_ptr)
+                        let ct (*ct_ptr)
+                        var ct_holder Vector[PlannedType]^rp(1)
+                        ct_holder.put(0, ct)
+                        var cn_holder Vector[String]^rp(1)
+                        cn_holder.put(0, String^rp(cn))
+                        this.define_parameter(cn, ct)
+                        item_arr.add(PlannedItem(lam.span, false, cn_holder.get(0), ct_holder.get(0), null))
+                    }
+                set ci: ci + 1
+            }
+            var pi2: size_t 0
+            while pi2 < lam.input.length
+            {
+                let it_ptr lam.input.get pi2
                 if it_ptr <> null
                 {
                     let it (*it_ptr)
                     var pty: PlannedType this.fresh_type_var#(String$(""))
-                    if i < arg_types.length
+                    if pi2 < arg_types.length
                     {
-                        let at_ptr arg_types.get i
+                        let at_ptr arg_types.get pi2
                         if at_ptr <> null
                             set pty: (*at_ptr)
                     }
-                    ; Stable refs on rp via 1-element holders (the plan_item#
-                    ; idiom) — the recorded PlannedFunction outlives this loop.
                     var pty_holder Vector[PlannedType]^rp(1)
                     pty_holder.put(0, pty)
                     var pname_ref: ref[String]? null
@@ -9602,14 +9763,14 @@ define Planner
                         set pname_ref: name_holder.get(0)
                         this.define_parameter(pn, pty)
                     }
-                    planned_items.put(i, PlannedItem(it.span, false, pname_ref, pty_holder.get(0), null))
+                    item_arr.add(PlannedItem(it.span, false, pname_ref, pty_holder.get(0), null))
                 }
-                set i: i + 1
+                set pi2: pi2 + 1
             }
             let planned_body this.plan_action#(lam.body)
             this.pop_scope()
 
-            var items_holder Vector[PlannedItem]^rp(planned_items)
+            var items_holder Vector[PlannedItem]^rp(item_arr)
             var rt_holder Vector[PlannedType]^rp(1)
             rt_holder.put(0, planned_body.result_type)
             let synth_fn PlannedFunction(
@@ -9631,7 +9792,7 @@ define Planner
                 this.file
             )
             this.record_function(synth_fn)
-            mangled
+            LambdaMonoResult(mangled, caps_ref)
         }
 
         ; plan_repeat: do-while body runs at least once; the terminating

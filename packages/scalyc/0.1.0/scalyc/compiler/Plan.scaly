@@ -284,6 +284,16 @@ define PlannedRepeat
 
 ; Lambda: anonymous function with a mangled synthetic name.
 ; Closure capture is deferred — captures is an empty vector for now.
+; Result of monomorphizing a lambda at a call site: the synthesized
+; function's mangled name plus the captured variable names (in parameter
+; order, before the lambda's own parameters). The call site prepends the
+; captured values as leading arguments.
+define LambdaMonoResult
+(
+    mangled: String
+    captures: ref[Vector[String]]?
+)
+
 define PlannedLambda
 (
     loc: Span
