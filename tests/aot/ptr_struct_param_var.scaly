@@ -1,0 +1,29 @@
+; AOT Test: session-34 root fix — a single-ptr-field wrapper struct passed by
+; value (by-pointer ABI) and bound to a `var` local must be COPIED into a
+; struct-typed slot, not aliased to the caller's storage as a bare ptr slot.
+; Reading the field through the local then yields the real pointer. Before the
+; emitBinding fix, the var slot held the parameter pointer (the caller's struct
+; address), so the field read returned garbage.
+; Expected: OK
+
+define Box(slot: pointer[int])
+
+function read_box(b: Box) returns int
+{
+    var w b
+    let p w.slot
+    *p
+}
+
+function run() returns int
+{
+    var x: int 42
+    let b Box(&x)
+    read_box(b)
+}
+
+let r run()
+if r = 42
+    print("OK")
+else
+    print("BAD")
