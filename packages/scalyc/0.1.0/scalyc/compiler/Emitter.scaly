@@ -3053,14 +3053,10 @@ define Emitter
                 ; is the sret BUFFER POINTER (a struct held by-reference),
                 ; not a by-value struct. A plain `set llvm_return_type:
                 ; mapped` stores that buffer ADDRESS into llvm_return_type's
-                ; {ptr} field, so emit_function_decl later passes a stack
-                ; address as the LLVM return type to LLVMFunctionType →
-                ; SIGSEGV in FunctionType uniquing. Reconstruct via `.handle`
-                ; (session-34/36 pattern): `mapped.handle` derefs the buffer
-                ; and loads the real type handle, then LLVMTypeRef(...) builds
-                ; a fresh by-value struct the `set` stores correctly.
-                let mapped_handle mapped.handle
-                set llvm_return_type: LLVMTypeRef(mapped_handle)
+                ; s170: map_type returns LLVMTypeRef via sret, so `mapped`
+                ; is the sret BUFFER POINTER (a struct held by-reference),
+                ; not a by-value struct.
+                set llvm_return_type: mapped
             }
         }
 
