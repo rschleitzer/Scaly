@@ -113,6 +113,7 @@ use scalyc.compiler.Plan.PlannedAlignOf
 use scalyc.compiler.Plan.PlannedIs
 use scalyc.compiler.Plan.PlannedAs
 use scalyc.compiler.Plan.PlannedFunctionRef
+use scalyc.compiler.Plan.PlannedClosure
 use scalyc.compiler.Plan.PlannedIf
 use scalyc.compiler.Plan.PlannedWhile
 use scalyc.compiler.Plan.PlannedFor
@@ -10286,6 +10287,70 @@ define Planner
             LambdaMonoResult(mangled, caps_ref)
         }
 
+        ; GAP B substep 2: build a closure VALUE for a lambda assigned to a
+        ; delegate type. Monomorphizes the real lambda against the delegate's
+        ; parameter types (captures become leading params, reused from
+        ; monomorphize_lambda#), then packages a PlannedClosure carrying the
+        ; real symbol, a generated thunk symbol, the closure record type name,
+        ; and the captured VALUES (looked up here, where they are in scope) +
+        ; their types. The emitter lowers it to a heap `{ptr thunk, caps...}`
+        ; record; the thunk bridges the uniform `R(ptr self, params)` call
+        ; shape to `real(caps..., params)`. `life` is the record's allocation
+        ; lifetime (local region, or `#` caller page when the closure escapes).
+        function make_closure#(rp, this: Planner, base_name: String, lam: Lambda, dparams: Vector[PlannedType], dret: PlannedType, del_pt: PlannedType, life: Lifetime) returns PlannedClosure
+        {
+            let mono this.monomorphize_lambda#(base_name, lam, dparams)
+            var cap_ops Array[PlannedOperand]$()
+            var cap_tys Array[PlannedType]$()
+            if mono.captures <> null
+            {
+                let caps (*mono.captures)
+                var ci: size_t 0
+                while ci < caps.length
+                {
+                    let cn_ptr caps.get ci
+                    if cn_ptr <> null
+                    {
+                        let cn (*cn_ptr)
+                        let lb this.lookup_local_binding(cn)
+                        if lb <> null
+                        {
+                            let cty (*lb).binding_type
+                            let cmut (*lb).is_mutable
+                            let cvar PlannedVariable(lam.span, String^rp(cn), cty, cmut)
+                            let cop PlannedOperand(lam.span, PlannedExpression.Variable cvar, null, cty)
+                            cap_ops.add cop
+                            cap_tys.add cty
+                        }
+                    }
+                    set ci: ci + 1
+                }
+            }
+            var thunk_sb StringBuilder^rp()
+            thunk_sb.append mono.mangled
+            thunk_sb.append "_thunk"
+            let thunk_name thunk_sb.to_string^rp()
+            var clo_sb StringBuilder^rp()
+            clo_sb.append "clo_"
+            clo_sb.append mono.mangled
+            let clo_type_name clo_sb.to_string^rp()
+            var cap_ops_holder Vector[PlannedOperand]^rp(cap_ops)
+            var cap_tys_holder Vector[PlannedType]^rp(cap_tys)
+            var dparams_holder Vector[PlannedType]^rp(dparams)
+            PlannedClosure(
+                lam.span,
+                thunk_name,
+                mono.mangled,
+                clo_type_name,
+                &cap_ops_holder,
+                &cap_tys_holder,
+                &dparams_holder,
+                dret,
+                del_pt,
+                life
+            )
+        }
+
         ; plan_repeat: do-while body runs at least once; the terminating
         ; condition lives inside the body action via `break` or an
         ; embedded if. Nothing else to constrain at this level.
@@ -11951,10 +12016,10 @@ define Planner
                                 var base_name String^rp("lam")
                                 if b.item.name <> null
                                     set base_name: String^rp((*b.item.name))
-                                let mono this.monomorphize_lambda#(base_name, dl, dparams)
                                 let del_pt this.plan_type#((*b.item.type))
-                                let fref PlannedFunctionRef(b.span, mono.mangled, del_pt)
-                                let fref_op PlannedOperand(b.span, PlannedExpression.FunctionRef fref, null, del_pt)
+                                let dret this.delegate_return_type#(del_name)
+                                let clo this.make_closure#(base_name, dl, dparams, dret, del_pt, scaly.compiler.Model.Lifetime.Local(scaly.compiler.Model.Local(b.span)))
+                                let fref_op PlannedOperand(b.span, PlannedExpression.Closure clo, null, del_pt)
                                 var op_arr Array[PlannedOperand]$()
                                 op_arr.add fref_op
                                 var op_vec Vector[PlannedOperand]^rp(op_arr)

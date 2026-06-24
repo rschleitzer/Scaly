@@ -1,0 +1,34 @@
+; Regression (GAP B substep 2): a CAPTURING lambda assigned to a delegate type
+; is a true closure value — a heap/stack record { thunk, captures... } passed by
+; pointer. A bridge thunk loads the captures from the record and calls the real
+; monomorphized lambda. Non-escaping closures live on the stack frame.
+; Self-hosted-only.
+;
+;   n=10 captured; apply(add, 5) = 5 + 10 = 15
+;   a=3,b=4 captured; apply(sum, 100) = 100 + 3 + 4 = 107
+; Expected: PASS
+
+define IntFn delegate(int) returns int
+
+function apply(f: IntFn, x: int) returns int
+    f(x)
+
+let n 10
+let add: IntFn \x: x + n
+
+let a 3
+let b 4
+let sum: IntFn \x: x + a + b
+
+let r1 apply(add, 5)
+let r2 apply(sum, 100)
+
+if r1 = 15
+{
+    if r2 = 107
+        print("PASS")
+    else
+        print("FAIL sum")
+}
+else
+    print("FAIL add")

@@ -41,6 +41,7 @@ use scaly.compiler.Plan.PlannedAlignOf
 use scaly.compiler.Plan.PlannedIs
 use scaly.compiler.Plan.PlannedAs
 use scaly.compiler.Plan.PlannedFunctionRef
+use scaly.compiler.Plan.PlannedClosure
 use scaly.compiler.Plan.PlannedGlobalRef
 use scaly.compiler.Plan.PlannedVariantConstruction
 use scaly.compiler.Plan.PlannedMemberAccess
@@ -4749,6 +4750,10 @@ define Emitter
             {
                 return emit_function_ref fr
             }
+            when clo: Closure
+            {
+                return emit_closure clo
+            }
     }
 
     ; Emit a function-reference value (GAP B): the address of the named symbol,
@@ -4769,6 +4774,220 @@ define Emitter
             LLVMSetLinkage(func, LLVMLinkage.External())
         }
         func
+    }
+
+    ; GAP B substep 2: lower a closure value to a heap record
+    ; `{ ptr thunk, capture0, capture1, ... }` and return the record pointer.
+    ; The record's field 0 is the bridge thunk; the indirect call loads it and
+    ; calls `thunk(record, args...)`. Captures are stored at fields 1.. in order.
+    function emit_closure(this, clo: PlannedClosure) returns LLVMValueRef
+    {
+        let ptr_ty LLVMPointerTypeInContext(context, 0)
+
+        var cap_count: size_t 0
+        if clo.capture_types <> null
+            set cap_count: (*clo.capture_types).length
+        let n_fields cap_count + 1
+
+        ; Closure record struct type { ptr thunk, caps... }.
+        var clo_ty lookup_struct_cache clo.closure_type_name
+        if clo_ty.handle = null
+        {
+            var field_tys Vector[LLVMTypeRef]#(n_fields)
+            field_tys.put(0, ptr_ty)
+            var fi: size_t 0
+            while fi < cap_count
+            {
+                let ct_ptr (*clo.capture_types).get fi
+                if ct_ptr <> null
+                    field_tys.put(fi + 1, map_type((*ct_ptr)))
+                set fi: fi + 1
+            }
+            set clo_ty: LLVMStructCreateNamed(context, clo.closure_type_name.c_data())
+            LLVMStructSetBody(clo_ty, field_tys.data, n_fields as u32, 0)
+            cache_struct(clo.closure_type_name, clo_ty)
+        }
+
+        ; Generate the bridge thunk once. It re-looks-up the closure struct
+        ; from the cache by name (passing the LLVMTypeRef as a parameter hits
+        ; the session-34 single-ptr-struct-param ABI bug — the handle aliases).
+        var thunk_fn LLVMGetNamedFunction(llvm_module, clo.thunk_name.c_data())
+        if thunk_fn.handle = null
+            set thunk_fn: emit_closure_thunk(clo)
+
+        ; Allocate the closure record. A non-escaping closure (Lifetime.Local)
+        ; lives on the stack frame (freed at return, no runtime dependency); an
+        ; escaping closure (Lifetime.Call / `#`) is heap-allocated on the
+        ; caller's page so it outlives this frame.
+        var on_caller: bool false
+        choose clo.life
+            when c: scaly.compiler.Model.Lifetime.Call
+                set on_caller: true
+            else
+                0
+        var record LLVMValueRef(null)
+        if on_caller = false
+            set record: entry_alloca(clo_ty, "closure")
+        if on_caller
+        {
+            var page_arg resolve_closure_page(clo.life)
+            if page_arg.handle = null
+                return LLVMValueRef null
+            var alloc_func lookup_function_cache(String$("_ZN4Page8allocateEmm"))
+            if alloc_func.handle = null
+                set alloc_func: LLVMGetNamedFunction(llvm_module, "_ZN4Page8allocateEmm")
+            if alloc_func.handle = null
+            {
+                var apt Vector[LLVMTypeRef]#(3)
+                apt.put(0, ptr_ty)
+                apt.put(1, LLVMInt64TypeInContext context)
+                apt.put(2, LLVMInt64TypeInContext context)
+                let adt LLVMFunctionType(ptr_ty, apt.data, 3, 0)
+                set alloc_func: LLVMAddFunction(llvm_module, "_ZN4Page8allocateEmm", adt)
+                LLVMSetLinkage(alloc_func, LLVMLinkage.External())
+                cache_function(String$("_ZN4Page8allocateEmm"), alloc_func)
+            }
+            let size_const LLVMSizeOf(clo_ty)
+            let align_const LLVMAlignOf(clo_ty)
+            var alloc_args Vector[LLVMValueRef]#(3)
+            alloc_args.put(0, page_arg)
+            alloc_args.put(1, size_const)
+            alloc_args.put(2, align_const)
+            var apt2 Vector[LLVMTypeRef]#(3)
+            apt2.put(0, ptr_ty)
+            apt2.put(1, LLVMInt64TypeInContext context)
+            apt2.put(2, LLVMInt64TypeInContext context)
+            let act LLVMFunctionType(ptr_ty, apt2.data, 3, 0)
+            set record: LLVMBuildCall2(builder, act, alloc_func, alloc_args.data, 3, "closure")
+        }
+        if record.handle = null
+            return LLVMValueRef null
+
+        ; Store the thunk pointer at field 0.
+        let f0 LLVMBuildStructGEP2(builder, clo_ty, record, 0, "clo.fn")
+        LLVMBuildStore(builder, thunk_fn, f0)
+
+        ; Store the captured values at fields 1...
+        var ci: size_t 0
+        while ci < cap_count
+        {
+            if clo.captures <> null
+            {
+                let cap_ptr (*clo.captures).get ci
+                if cap_ptr <> null
+                {
+                    let cap_val emit_operand((*cap_ptr))
+                    let cf LLVMBuildStructGEP2(builder, clo_ty, record, (ci + 1) as u32, "clo.cap")
+                    LLVMBuildStore(builder, cap_val, cf)
+                }
+            }
+            set ci: ci + 1
+        }
+        record
+    }
+
+    ; Resolve the page a closure record is allocated on from its lifetime:
+    ; Local → this function's local region; Call (`#`) → caller's `rp`.
+    function resolve_closure_page(this, life: scaly.compiler.Model.Lifetime) returns LLVMValueRef
+    {
+        var on_caller: bool false
+        choose life
+            when c: scaly.compiler.Model.Lifetime.Call
+                set on_caller: true
+            else
+                0
+        if on_caller
+        {
+            let rp_val lookup_variable(String$("rp"))
+            if rp_val.handle <> null
+                return rp_val
+        }
+        get_or_create_local_page()
+    }
+
+    ; Generate the closure bridge thunk `R thunk(ptr self, params...)`: load the
+    ; captures from `self` (fields 1..) and call the real monomorphized lambda
+    ; `real(captures..., params...)`. Mirrors a hand-written trampoline; emitted
+    ; as direct IR (no body planning) with the builder saved/restored.
+    function emit_closure_thunk(this, clo: PlannedClosure) returns LLVMValueRef
+    {
+        let ptr_ty LLVMPointerTypeInContext(context, 0)
+        let clo_ty lookup_struct_cache clo.closure_type_name
+        let ret_ty map_type(clo.return_type)
+
+        var pcount: size_t 0
+        if clo.param_types <> null
+            set pcount: (*clo.param_types).length
+        var cap_count: size_t 0
+        if clo.capture_types <> null
+            set cap_count: (*clo.capture_types).length
+
+        ; Thunk signature: R(ptr self, params...).
+        let n_tp pcount + 1
+        var tptys Vector[LLVMTypeRef]#(n_tp)
+        tptys.put(0, ptr_ty)
+        var pi: size_t 0
+        while pi < pcount
+        {
+            let pt_ptr (*clo.param_types).get pi
+            if pt_ptr <> null
+                tptys.put(pi + 1, map_type((*pt_ptr)))
+            set pi: pi + 1
+        }
+        let thunk_ty LLVMFunctionType(ret_ty, tptys.data, n_tp as u32, 0)
+        let thunk LLVMAddFunction(llvm_module, clo.thunk_name.c_data(), thunk_ty)
+        LLVMSetLinkage(thunk, LLVMLinkage.LinkOnceODR())
+
+        let saved_block LLVMGetInsertBlock(builder)
+        let entry LLVMAppendBasicBlockInContext(context, thunk, "entry")
+        LLVMPositionBuilderAtEnd(builder, entry)
+
+        let self_param LLVMGetParam(thunk, 0)
+
+        ; Real signature: R(captures..., params...).
+        let n_real cap_count + pcount
+        var real_args Vector[LLVMValueRef]#(n_real)
+        var real_tys Vector[LLVMTypeRef]#(n_real)
+        var k: size_t 0
+        while k < cap_count
+        {
+            let ct_ptr (*clo.capture_types).get k
+            var ct ptr_ty
+            if ct_ptr <> null
+                set ct: map_type((*ct_ptr))
+            let gep LLVMBuildStructGEP2(builder, clo_ty, self_param, (k + 1) as u32, "cap")
+            let cv LLVMBuildLoad2(builder, ct, gep, "cap")
+            real_args.put(k, cv)
+            real_tys.put(k, ct)
+            set k: k + 1
+        }
+        var j: size_t 0
+        while j < pcount
+        {
+            let pv LLVMGetParam(thunk, (j + 1) as u32)
+            var pt ptr_ty
+            let pt_ptr (*clo.param_types).get j
+            if pt_ptr <> null
+                set pt: map_type((*pt_ptr))
+            real_args.put(cap_count + j, pv)
+            real_tys.put(cap_count + j, pt)
+            set j: j + 1
+        }
+        let real_ty LLVMFunctionType(ret_ty, real_tys.data, n_real as u32, 0)
+        var real_fn LLVMGetNamedFunction(llvm_module, clo.real_name.c_data())
+        if real_fn.handle = null
+        {
+            set real_fn: LLVMAddFunction(llvm_module, clo.real_name.c_data(), real_ty)
+            LLVMSetLinkage(real_fn, LLVMLinkage.External())
+        }
+        let result LLVMBuildCall2(builder, real_ty, real_fn, real_args.data, n_real as u32, "")
+        if clo.return_type.name.equals(String$("void"))
+            LLVMBuildRetVoid builder
+        else
+            LLVMBuildRet(builder, result)
+
+        LLVMPositionBuilderAtEnd(builder, saved_block)
+        thunk
     }
 
     ; ========================================================================
@@ -5242,20 +5461,27 @@ define Emitter
                     if callee_ptr <> null
                     {
                         let callee_val emit_operand(*callee_ptr)
-                        ; Zero extra args → the JIT zero-arg i64() path.
-                        if ic_args.length = 1
+                        ; Phase-1 JIT (`cli --run`) zero-arg i64() invoke — the
+                        ; callee value is itself the function address.
+                        if call.name.equals(String$("__jit_indirect"))
                         {
                             let i64_ty LLVMInt64TypeInContext(context)
-                            let fn_ty LLVMFunctionType(i64_ty, null as pointer[LLVMTypeRef], 0, 0)
-                            return LLVMBuildCall2(builder, fn_ty, callee_val, null as pointer[LLVMValueRef], 0, "jit.call")
+                            let jit_ty LLVMFunctionType(i64_ty, null as pointer[LLVMTypeRef], 0, 0)
+                            return LLVMBuildCall2(builder, jit_ty, callee_val, null as pointer[LLVMValueRef], 0, "jit.call")
                         }
-                        ; GAP B delegate indirect call: build the LLVM function
-                        ; type from the planned argument types + the call's
-                        ; result type, emit the arguments, and call through the
-                        ; callee pointer.
-                        let n_args ic_args.length - 1
+                        ; GAP B closure indirect call. `callee_val` is a closure
+                        ; record pointer `{ ptr thunk, caps... }`. Load the thunk
+                        ; (field 0, at offset 0 → a plain ptr load) and call it
+                        ; as `thunk(record, args...)`. The thunk signature is
+                        ; R(ptr self, params...); build it from the planned arg
+                        ; types + the call's result type.
+                        let ptr_ty LLVMPointerTypeInContext(context, 0)
+                        let thunk LLVMBuildLoad2(builder, ptr_ty, callee_val, "clo.thunk")
+                        let n_args ic_args.length
                         var arg_tys Vector[LLVMTypeRef]#(n_args)
                         var arg_vals Vector[LLVMValueRef]#(n_args)
+                        arg_vals.put(0, callee_val)
+                        arg_tys.put(0, ptr_ty)
                         var k: size_t 1
                         while k < ic_args.length
                         {
@@ -5263,14 +5489,14 @@ define Emitter
                             if a_ptr <> null
                             {
                                 let av emit_operand(*a_ptr)
-                                arg_vals.put(k - 1, av)
-                                arg_tys.put(k - 1, map_type((*a_ptr).result_type))
+                                arg_vals.put(k, av)
+                                arg_tys.put(k, map_type((*a_ptr).result_type))
                             }
                             set k: k + 1
                         }
                         let ret_ty map_type(call.result_type)
                         let fn_ty LLVMFunctionType(ret_ty, arg_tys.data, n_args as u32, 0)
-                        return LLVMBuildCall2(builder, fn_ty, callee_val, arg_vals.data, n_args as u32, "")
+                        return LLVMBuildCall2(builder, fn_ty, thunk, arg_vals.data, n_args as u32, "")
                     }
                 }
             }

@@ -361,6 +361,28 @@ define PlannedFunctionRef
     fn_type: PlannedType
 )
 
+; A closure value (GAP B substep 2): the runtime representation of a lambda
+; assigned to a delegate type. Lowers to a pointer to a heap-allocated closure
+; record `{ ptr thunk, capture0, capture1, ... }`. `thunk_name` is a generated
+; bridge `R thunk(ptr self, params...)` that loads the captures from `self` and
+; tail-calls the real monomorphized lambda `real_name(captures..., params...)`.
+; Captures (in order) are the values stored into the record at creation; `life`
+; is the record's allocation lifetime (local region, or caller page `#` when
+; the closure escapes). For a non-capturing lambda `captures` is empty.
+define PlannedClosure
+(
+    loc: Span
+    thunk_name: String
+    real_name: String
+    closure_type_name: String
+    captures: ref[Vector[PlannedOperand]]?
+    capture_types: ref[Vector[PlannedType]]?
+    param_types: ref[Vector[PlannedType]]?
+    return_type: PlannedType
+    fn_type: PlannedType
+    life: Lifetime
+)
+
 define PlannedVariantConstruction
 (
     loc: Span
@@ -462,6 +484,7 @@ define PlannedExpression union
     As: PlannedAs
     VariantConstruction: PlannedVariantConstruction
     FunctionRef: PlannedFunctionRef
+    Closure: PlannedClosure
 )
 
 define PlannedMemberAccess
