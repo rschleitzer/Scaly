@@ -9421,7 +9421,7 @@ define Planner
             this.push_scope()
             let planned_body this.plan_action#(r.action)
             this.pop_scope()
-            PlannedRepeat(r.span, planned_body)
+            PlannedRepeat(r.span, planned_body, r.loop_label)
         }
 
         ; plan_while: Binding condition + Action body. The binding opens
@@ -9493,7 +9493,7 @@ define Planner
                 }
             }
 
-            PlannedWhile(w.span, planned_cond, planned_body)
+            PlannedWhile(w.span, planned_cond, planned_body, w.loop_label)
         }
 
         ; plan_for: loop variable bound to each element of `expression`.
@@ -9651,7 +9651,8 @@ define Planner
                 iterator_type,
                 element_type,
                 get_iter_name,
-                next_name
+                next_name,
+                f.loop_label
             )
         }
 
@@ -11924,7 +11925,7 @@ define Planner
         {
             let planned this.plan_operands#(b.result)
             var holder Vector[PlannedOperand]^rp(planned)
-            PlannedBreak(b.span, &holder)
+            PlannedBreak(b.span, &holder, b.loop_label)
         }
 
         function plan_throw#(rp, this: Planner, t: Throw) returns PlannedThrow
@@ -11961,7 +11962,7 @@ define Planner
                 when br: Break
                     PlannedStatement.Break(this.plan_break#(br))
                 when c: Continue
-                    PlannedStatement.Continue(PlannedContinue c.span)
+                    PlannedStatement.Continue(PlannedContinue(c.span, c.loop_label))
                 when r: Return
                     PlannedStatement.Return(this.plan_return#(r))
                 when t: Throw
@@ -18969,7 +18970,7 @@ define Planner
             return 265
 
         ; plan_statement over a Continue.
-        let stmt_continue Statement.Continue(Continue(Span(0, 0)))
+        let stmt_continue Statement.Continue(Continue(Span(0, 0), String$("")))
         let pl_cont p3.plan_statement$(stmt_continue)
         let stmt_is_continue choose pl_cont
             when c: PlannedContinue
@@ -19152,7 +19153,7 @@ define Planner
         ; ====================================================================
         ; Repeat: a do-while whose body is the same trivial Action.
         ; ====================================================================
-        let model_rep Repeat(Span(0, 0), lam_body)
+        let model_rep Repeat(Span(0, 0), lam_body, String$(""))
         let pl_rep p4.plan_repeat$(model_rep)
         if pl_rep.body.result_type.name.equals(String$("int")) = false
             return 292

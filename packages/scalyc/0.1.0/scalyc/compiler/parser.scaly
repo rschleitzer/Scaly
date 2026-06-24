@@ -3360,6 +3360,8 @@ define Parser
             when success: Success
                 set name: LabelSyntax#(success.start, success.end, success.name)
 
+        lexer.parse_colon#()
+
         let action_start lexer.position
         var action: ActionSyntax
         choose parse_action#()
@@ -4416,6 +4418,8 @@ define Parser
             when success: Success
                 set name: LabelSyntax#(success.start, success.end, success.name)
 
+        lexer.parse_colon#()
+
         let action_start lexer.position
         var action: ActionSyntax
         choose parse_action#()
@@ -4469,6 +4473,8 @@ define Parser
             }
             when success: Success
                 set name: LabelSyntax#(success.start, success.end, success.name)
+
+        lexer.parse_colon#()
 
         let action_start lexer.position
         var action: ActionSyntax

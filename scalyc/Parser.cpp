@@ -2753,6 +2753,8 @@ llvm::Expected<WhileSyntax> Parser::parseWhile() {
             llvm::consumeError(ParseResult.takeError());
     }
 
+    Lex.parseColon();
+
     auto ActionOrErr = parseAction();
     if (!ActionOrErr) {
         std::string ErrMsg = llvm::toString(ActionOrErr.takeError());
@@ -3641,6 +3643,8 @@ llvm::Expected<ForSyntax> Parser::parseFor() {
             llvm::consumeError(ParseResult.takeError());
     }
 
+    Lex.parseColon();
+
     auto ActionOrErr = parseAction();
     if (!ActionOrErr) {
         std::string ErrMsg = llvm::toString(ActionOrErr.takeError());
@@ -3691,6 +3695,8 @@ llvm::Expected<RepeatSyntax> Parser::parseRepeat() {
         else
             llvm::consumeError(ParseResult.takeError());
     }
+
+    Lex.parseColon();
 
     auto ActionOrErr = parseAction();
     if (!ActionOrErr) {

@@ -384,6 +384,7 @@
     <content link = Condition                               property = condition
     <content colon
     <content link = Label                          optional property = name
+    <content colon                                 optional
     <content link = Action                                  property = action
 
 <syntax id = Choose
@@ -517,6 +518,7 @@
     <content link = Operand               multiple          property = operation
     <content colon
     <content link = Label                          optional property = name
+    <content colon                                 optional
     <content link = Action                                  property = action
 
 <syntax id = Label
@@ -526,6 +528,7 @@
 <syntax id = Repeat
     <content link = repeat
     <content link = Label                          optional property = name
+    <content colon                                 optional
     <content link = Action                                  property = action
 
 <syntax id = Action                       multiple abstract

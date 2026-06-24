@@ -1,0 +1,30 @@
+; Regression: labeled break targets a named OUTER loop, not just the innermost
+; one. `break loop outer` from the inner loop must exit BOTH loops. Frozen
+; stage-0 hard-errors on a loop Label ("cannot be processed by the modeler
+; yet"), so this runs only against a self-hosted stage.
+;
+; counter starts at 0. outer i=0: inner j=0 -> counter=1; j=1 -> break outer.
+;   labeled break   => exits both loops immediately, counter = 1.
+;   innermost break => exits inner only, re-enters outer for i=1,2, counter = 3.
+; Expected: PASS (counter = 1)
+
+function run() returns int
+{
+    var counter 0
+    for i in 3: label outer
+    {
+        for j in 3
+        {
+            if j = 1
+                break loop outer
+            set counter: counter + 1
+        }
+    }
+    return counter
+}
+
+let result run()
+if result = 1
+    print("PASS")
+else
+    print("FAIL")

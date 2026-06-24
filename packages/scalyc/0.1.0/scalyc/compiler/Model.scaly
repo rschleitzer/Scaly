@@ -84,8 +84,9 @@ define Binding
 )
 
 ; Control flow statements
-define Break(span: Span, result: Vector[Operand])
-define Continue(span: Span)
+; `loop_label` is the optional target loop name (empty String = innermost loop).
+define Break(span: Span, result: Vector[Operand], loop_label: String)
+define Continue(span: Span, loop_label: String)
 define Return(span: Span, result: Vector[Operand])
 define Throw(span: Span, result: Vector[Operand])
 
@@ -163,12 +164,15 @@ define Choose
 )
 
 ; Loops
+; `loop_label` is the optional loop name targeted by labeled break/continue
+; (empty String = unlabeled).
 define For
 (
     span: Span
     identifier: String
     expression: Vector[Operand]
     action: Action
+    loop_label: String
 )
 
 define While
@@ -176,6 +180,7 @@ define While
     span: Span
     condition: Binding
     action: Action
+    loop_label: String
 )
 
 ; Error handling
@@ -215,6 +220,7 @@ define Repeat
 (
     span: Span
     action: Action
+    loop_label: String
 )
 
 ; Expression union

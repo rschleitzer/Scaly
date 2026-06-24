@@ -286,6 +286,7 @@ define LoopContext
     exit_block: LLVMBasicBlockRef       ; Target for 'break'
     continue_block: LLVMBasicBlockRef   ; Target for 'continue'
     cleanup_depth: size_t               ; BlockCleanupStack size at loop entry
+    loop_label: String                  ; Loop label ("" = unlabeled)
 )
 
 ; ============================================================================
@@ -8526,7 +8527,7 @@ define Emitter
         let exit_block create_block(String$("for.exit"))
 
         ; Push loop context for break/continue
-        push_loop(exit_block, incr_block)
+        push_loop(exit_block, incr_block, for_expr.loop_label)
 
         ; Jump to condition block
         LLVMBuildBr(builder, cond_block)
@@ -8655,7 +8656,7 @@ define Emitter
         let exit_block create_block(String$("for.exit"))
 
         ; Push loop context
-        push_loop(exit_block, cond_block)
+        push_loop(exit_block, cond_block, for_expr.loop_label)
 
         ; Jump to condition block
         LLVMBuildBr(builder, cond_block)
@@ -8717,7 +8718,7 @@ define Emitter
         let exit_block create_block(String$("while.exit"))
 
         ; Push loop context
-        push_loop(exit_block, cond_block)
+        push_loop(exit_block, cond_block, while_expr.loop_label)
 
         ; Jump to condition block
         LLVMBuildBr(builder, cond_block)
@@ -10644,18 +10645,15 @@ define Emitter
     ; Emit a break statement
     function emit_break(this, brk: PlannedBreak) returns bool
     {
-        if loop_stack.length = 0
-            return false  ; break outside of loop
-
-        ; Get the innermost loop context
-        let loop_ctx loop_stack.get(loop_stack.length - 1)
+        ; Resolve the target loop (labeled → matching loop, else innermost)
+        let loop_ctx this.find_loop_context(brk.loop_label)
         if loop_ctx = null
             return false
 
-        ; Emit block-scoped cleanups back to the loop's entry depth
+        ; Emit block-scoped cleanups back to the target loop's entry depth
         emit_block_cleanups loop_ctx.cleanup_depth
 
-        ; Jump to the exit block of the innermost loop
+        ; Jump to the exit block of the target loop
         LLVMBuildBr(builder, loop_ctx.exit_block)
 
         true
@@ -10664,18 +10662,15 @@ define Emitter
     ; Emit a continue statement
     function emit_continue(this, cont: PlannedContinue) returns bool
     {
-        if loop_stack.length = 0
-            return false  ; continue outside of loop
-
-        ; Get the innermost loop context
-        let loop_ctx loop_stack.get(loop_stack.length - 1)
+        ; Resolve the target loop (labeled → matching loop, else innermost)
+        let loop_ctx this.find_loop_context(cont.loop_label)
         if loop_ctx = null
             return false
 
-        ; Emit block-scoped cleanups back to the loop's entry depth
+        ; Emit block-scoped cleanups back to the target loop's entry depth
         emit_block_cleanups loop_ctx.cleanup_depth
 
-        ; Jump to the continue block of the innermost loop
+        ; Jump to the continue block of the target loop
         LLVMBuildBr(builder, loop_ctx.continue_block)
 
         true
@@ -10820,10 +10815,33 @@ define Emitter
     ; ========================================================================
 
     ; Push a loop context onto the stack
-    procedure push_loop(this, exit_block: LLVMBasicBlockRef, continue_block: LLVMBasicBlockRef)
+    procedure push_loop(this, exit_block: LLVMBasicBlockRef, continue_block: LLVMBasicBlockRef, loop_label: String)
     {
-        let ctx LoopContext(exit_block, continue_block, block_cleanup_stack.length)
+        let ctx LoopContext(exit_block, continue_block, block_cleanup_stack.length, loop_label)
         loop_stack.add ctx
+    }
+
+    ; Resolve the loop a break/continue targets. An empty loop_label means the
+    ; innermost loop (top of stack); a non-empty loop_label scans from innermost
+    ; outward for the matching loop. Returns null when no match is found.
+    function find_loop_context(this, loop_label: String) returns ref[LoopContext]?
+    {
+        if loop_stack.length = 0
+            return null
+        if loop_label.get_length() = 0
+            return loop_stack.get(loop_stack.length - 1)
+        var i loop_stack.length
+        while i > 0
+        {
+            let ctx_ptr loop_stack.get(i - 1)
+            if ctx_ptr <> null
+            {
+                if ctx_ptr.loop_label.equals(loop_label)
+                    return ctx_ptr
+            }
+            set i: i - 1
+        }
+        null
     }
 
     ; Pop a loop context from the stack

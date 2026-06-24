@@ -159,11 +159,13 @@ define PlannedBreak
 (
     loc: Span
     result: ref[Vector[PlannedOperand]]?
+    loop_label: String
 )
 
 define PlannedContinue
 (
     loc: Span
+    loop_label: String
 )
 
 define PlannedReturn
@@ -259,6 +261,7 @@ define PlannedFor
     element_type: PlannedType
     get_iterator_method: String     ; Mangled name of get_iterator
     next_method: String             ; Mangled name of next
+    loop_label: String              ; Loop label for labeled break/continue
 )
 
 define PlannedWhile
@@ -266,6 +269,7 @@ define PlannedWhile
     loc: Span
     cond: PlannedBinding
     body: PlannedAction
+    loop_label: String
 )
 
 ; Post-test do-while loop (body runs at least once, then re-runs while cond true)
@@ -273,6 +277,7 @@ define PlannedRepeat
 (
     loc: Span
     body: PlannedAction
+    loop_label: String
 )
 
 ; Lambda: anonymous function with a mangled synthetic name.

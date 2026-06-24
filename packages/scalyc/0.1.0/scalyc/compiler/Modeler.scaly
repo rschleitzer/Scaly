@@ -648,9 +648,13 @@ function handle_lambda#(syntax: LambdaSyntax) returns Lambda
 function handle_repeat#(syntax: RepeatSyntax) returns Repeat
 {
     let body handle_action#(syntax.action)
+    var repeat_label: String String#("")
+    if syntax.name <> null
+        set repeat_label: (*syntax.name).name
     Repeat(
         Span(syntax.start, syntax.end),
-        body
+        body,
+        repeat_label
     )
 }
 
@@ -852,12 +856,16 @@ function handle_for#(syntax: ForSyntax) returns For
 {
     let expr handle_operands#(syntax.operation)
     let body handle_action#(syntax.action)
+    var for_label: String String#("")
+    if syntax.name <> null
+        set for_label: (*syntax.name).name
 
     For(
         Span(syntax.start, syntax.end),
         syntax.variable,
         expr,
-        body
+        body,
+        for_label
     )
 }
 
@@ -865,11 +873,15 @@ function handle_while#(syntax: WhileSyntax) returns While
 {
     let cond handle_condition#(syntax.condition)
     let body handle_action#(syntax.action)
+    var while_label: String String#("")
+    if syntax.name <> null
+        set while_label: (*syntax.name).name
 
     While(
         Span(syntax.start, syntax.end),
         cond,
-        body
+        body,
+        while_label
     )
 }
 
@@ -1142,10 +1154,18 @@ function handle_command#(syntax: StatementSyntax) returns Statement
         when break_syntax: BreakSyntax
         {
             let result handle_operands#(break_syntax.result)
-            Statement.Break(Break(Span(break_syntax.start, break_syntax.end), result))
+            var break_label: String String#("")
+            if break_syntax.name <> null
+                set break_label: (*break_syntax.name).name
+            Statement.Break(Break(Span(break_syntax.start, break_syntax.end), result, break_label))
         }
         when continue_syntax: ContinueSyntax
-            Statement.Continue(Continue(Span(continue_syntax.start, continue_syntax.end)))
+        {
+            var continue_label: String String#("")
+            if continue_syntax.name <> null
+                set continue_label: (*continue_syntax.name).name
+            Statement.Continue(Continue(Span(continue_syntax.start, continue_syntax.end), continue_label))
+        }
         when return_syntax: ReturnSyntax
         {
             let result handle_operands#(return_syntax.result)
