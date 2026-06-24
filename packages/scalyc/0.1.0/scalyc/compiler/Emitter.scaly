@@ -4459,10 +4459,9 @@ define Emitter
     ; Emit member access chain (e.g., person.address.city)
     function emit_member_access_chain(this, base_value: LLVMValueRef, chain: Vector[PlannedMemberAccess], result_type: PlannedType) returns LLVMValueRef
     {
-        ; Force struct-typed alloca via .handle extract + reconstruct.
-        ; `var current_value base_value` would alloca a ptr-typed slot
-        ; aliased to the caller's storage, breaking later extern LLVM calls.
-        var current_value LLVMValueRef(base_value.handle)
+        ; s34 root fix: plain copy of the by-ptr struct param (emitBinding
+        ; now copies single-ptr-field struct params into a struct slot).
+        var current_value base_value
 
         if current_value.handle = null
             return LLVMValueRef null
@@ -4800,12 +4799,12 @@ define Emitter
             cache_struct(clo.closure_type_name, clo_ty)
         }
 
-        ; Generate the bridge thunk once. It re-looks-up the closure struct
-        ; from the cache by name (passing the LLVMTypeRef as a parameter hits
-        ; the session-34 single-ptr-struct-param ABI bug — the handle aliases).
+        ; Generate the bridge thunk once. s34 root fix: pass the closure
+        ; struct type directly (emitBinding now copies single-ptr-field struct
+        ; params correctly, so the old cache re-lookup-by-name is unneeded).
         var thunk_fn LLVMGetNamedFunction(llvm_module, clo.thunk_name.c_data())
         if thunk_fn.handle = null
-            set thunk_fn: emit_closure_thunk(clo)
+            set thunk_fn: emit_closure_thunk(clo, clo_ty)
 
         ; Allocate the closure record. A non-escaping closure (Lifetime.Local)
         ; lives on the stack frame (freed at return, no runtime dependency); an
@@ -4901,10 +4900,14 @@ define Emitter
     ; captures from `self` (fields 1..) and call the real monomorphized lambda
     ; `real(captures..., params...)`. Mirrors a hand-written trampoline; emitted
     ; as direct IR (no body planning) with the builder saved/restored.
-    function emit_closure_thunk(this, clo: PlannedClosure) returns LLVMValueRef
+    function emit_closure_thunk(this, clo: PlannedClosure, clo_ty_param: LLVMTypeRef) returns LLVMValueRef
     {
+        ; s34 root fix: bind the by-ptr struct param to a local var (emitBinding
+        ; copies single-ptr-field struct params into a struct slot) so later
+        ; extern LLVM calls receive a real LLVMTypeRef handle. Passing the bare
+        ; by-ptr param straight to an extern call is NOT covered by the fix.
+        var clo_ty clo_ty_param
         let ptr_ty LLVMPointerTypeInContext(context, 0)
-        let clo_ty lookup_struct_cache clo.closure_type_name
         let ret_ty map_type(clo.return_type)
 
         var pcount: size_t 0
