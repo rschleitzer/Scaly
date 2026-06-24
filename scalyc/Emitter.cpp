@@ -2403,9 +2403,44 @@ llvm::Error Emitter::emitBinding(const PlannedBinding &Binding) {
         if (Value) {
             llvm::Type *Ty = Value->getType();
             if (Binding.BindingType == "var" || Binding.BindingType == "mutable") {
-                // Mutable binding: allocate on stack
-                auto *Alloca = createEntryBlockAlloca(Ty, *Binding.BindingItem.Name);
-                Builder->CreateStore(Value, Alloca);
+                // Mutable binding: allocate on stack.
+                //
+                // session-34 root fix: a struct value held through a pointer
+                // (a single-ptr-field wrapper like LLVMValueRef arrives as a
+                // by-pointer parameter, an sret call result, or a plain struct
+                // local) must be COPIED into a struct-typed alloca. Alloca'ing
+                // the raw `ptr` makes a ptr slot that later field GEPs (emitted
+                // against the struct layout) read as if it were the struct
+                // itself, yielding garbage. Mirrors Emitter.scaly::emit_binding
+                // (s174/s176): take the conceptual struct type from the binding
+                // annotation, else from the initializer's op0 when it is a plain
+                // variable reference (only those alias existing storage; ctor /
+                // call results — esp. region-allocated `T$()` — keep ptr slots),
+                // and when that maps to a non-empty struct while the value is a
+                // pointer, load the struct and copy it.
+                llvm::Type *StoreTy = Ty;
+                llvm::Value *StoreVal = Value;
+                llvm::Type *Mapped = nullptr;
+                if (Binding.BindingItem.ItemType) {
+                    Mapped = mapType(*Binding.BindingItem.ItemType);
+                } else if (!Binding.Operation.empty() &&
+                           std::holds_alternative<PlannedVariable>(Binding.Operation[0].Expr)) {
+                    Mapped = mapType(Binding.Operation[0].ResultType);
+                }
+                // Narrowed to single-ptr-field wrapper structs (LLVMValueRef,
+                // LLVMTypeRef, …) — the precise session-34 shape. Wider structs
+                // tolerate the legacy ptr-alias slot under stage-0 (the source
+                // never relies on copy semantics for them), so keep them
+                // untouched to minimize blast radius.
+                if (Mapped && Mapped->isStructTy() &&
+                    llvm::cast<llvm::StructType>(Mapped)->getNumElements() == 1 &&
+                    llvm::cast<llvm::StructType>(Mapped)->getElementType(0)->isPointerTy() &&
+                    Ty->isPointerTy()) {
+                    StoreTy = Mapped;
+                    StoreVal = Builder->CreateLoad(Mapped, Value, "binding.load");
+                }
+                auto *Alloca = createEntryBlockAlloca(StoreTy, *Binding.BindingItem.Name);
+                Builder->CreateStore(StoreVal, Alloca);
                 LocalVariables[*Binding.BindingItem.Name] = Alloca;
             } else {
                 // Immutable binding: just use the value directly
