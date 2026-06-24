@@ -175,6 +175,17 @@ let b 4
 let g \x: x + a + b
 g(10)<expect>17
 
+    <tests id = lambda-block-captures title = "Captures in Braced Bodies">
+        <prose>Capture discovery reaches inside a braced body, and a body-local
+        binding that shadows an enclosing name is the local, not a capture.
+        <test id = lambda-capture-block program = program><input>let n 10
+let cap \x: { x + n }
+cap(5)<expect>15
+        <test id = lambda-capture-shadow program = program><input>let n 10
+let shade \x: { let n 99
+x + n }
+shade(5)<expect>104
+
     <tests id = lambda-embedded title = "Embedded Calls">
         <prose>A lambda call may appear anywhere inside a larger expression, not
         only as the whole right-hand side of a binding. Each call is resolved to

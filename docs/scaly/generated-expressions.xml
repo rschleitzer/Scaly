@@ -715,6 +715,42 @@ g(10)</programlisting></entry>
       </informaltable>
     </section>
 
+    <section xml:id='tests-LAMBDA-BLOCK-CAPTURES'>
+      <title>Captures in Braced Bodies</title>
+      <para>Capture discovery reaches inside a braced body, and a body-local
+        binding that shadows an enclosing name is the local, not a capture.</para>
+      <informaltable frame='none'>
+        <tgroup cols='2'>
+          <colspec colwidth='1*'/>
+          <colspec colwidth='1*'/>
+          <thead>
+            <row>
+              <entry>Input</entry>
+              <entry>Result</entry>
+            </row>
+          </thead>
+          <tbody>
+            <row>
+              <entry><programlisting>let n 10
+let cap \x: { x + n }
+cap(5)</programlisting></entry>
+              <entry><literal>15
+        </literal></entry>
+            </row>
+            <row>
+              <entry><programlisting>let n 10
+let shade \x: { let n 99
+x + n }
+shade(5)</programlisting></entry>
+              <entry><literal>104
+
+    </literal></entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </informaltable>
+    </section>
+
     <section xml:id='tests-LAMBDA-EMBEDDED'>
       <title>Embedded Calls</title>
       <para>A lambda call may appear anywhere inside a larger expression, not
