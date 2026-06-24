@@ -2600,7 +2600,8 @@ define Emitter
     ; back to a conservative estimate rather than risk under-sizing.
     function llvm_type_sizable(this, ty: LLVMTypeRef) returns bool
     {
-        var t LLVMTypeRef(ty.handle)
+        ; s34 root fix: plain copy of the by-ptr struct param.
+        var t ty
         if t.handle = null
             return false
         let kind LLVMGetTypeKind(t)
@@ -2642,7 +2643,8 @@ define Emitter
     ; on opaque structs (s97). Check llvm_type_sizable first.
     function llvm_type_abi_align(this, ty: LLVMTypeRef) returns size_t
     {
-        var t LLVMTypeRef(ty.handle)
+        ; s34 root fix: plain copy of the by-ptr struct param.
+        var t ty
         let kind LLVMGetTypeKind(t)
         if kind = LLVMTypeKind.Integer()
         {
@@ -2689,7 +2691,8 @@ define Emitter
     ; first; unsizeable kinds return 0 here.
     function llvm_type_abi_size(this, ty: LLVMTypeRef) returns size_t
     {
-        var t LLVMTypeRef(ty.handle)
+        ; s34 root fix: plain copy of the by-ptr struct param.
+        var t ty
         let kind LLVMGetTypeKind(t)
         if kind = LLVMTypeKind.Integer()
         {
@@ -8770,10 +8773,11 @@ define Emitter
             let first_ptr phi_values.get 0
             if first_ptr <> null
             {
-                ; Bind the deref'd value to a local var first — passing
-                ; (*first_ptr) directly to LLVMTypeOf miscompiles under
-                ; stage-0 (same family as session 34's struct-by-ptr ABI
-                ; quirk for single-ptr-field handles).
+                ; Bind the deref'd value to a local first — passing a bare
+                ; (*first_ptr) deref-expression straight to an extern call
+                ; (LLVMTypeOf) still miscompiles under stage-0. (This is a
+                ; separate deref-arg quirk, NOT the emit_binding single-ptr-
+                ; struct-param bug, which is fixed.)
                 let first_val (*first_ptr)
                 let phi_ty LLVMTypeOf(first_val)
                 ; s124: append undef entries for every predecessor that
