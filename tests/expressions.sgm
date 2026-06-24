@@ -218,7 +218,7 @@ twice(dbl, 20)<expect>80
     <tests id = lambda-closures title = "Closures">
         <prose>A capturing lambda assigned to a delegate type is a true closure
         value carrying the captured variables. (Closures returned from a
-        function escape onto the caller's region — see the escaping-closure AOT
+        function escape onto the caller's region -- see the escaping-closure AOT
         regression test.)
         <test id = closure-capture program = program><input>define IntFn delegate(int) returns int
 function apply(f: IntFn, x: int) returns int

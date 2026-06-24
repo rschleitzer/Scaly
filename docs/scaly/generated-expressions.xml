@@ -838,7 +838,7 @@ twice(dbl, 20)</programlisting></entry>
       <title>Closures</title>
       <para>A capturing lambda assigned to a delegate type is a true closure
         value carrying the captured variables. (Closures returned from a
-        function escape onto the caller's region — see the escaping-closure AOT
+        function escape onto the caller's region -- see the escaping-closure AOT
         regression test.)</para>
       <informaltable frame='none'>
         <tgroup cols='2'>
