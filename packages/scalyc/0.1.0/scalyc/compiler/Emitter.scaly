@@ -2844,7 +2844,8 @@ define Emitter
     ; sizing would let a store overflow the caller's slot).
     function throws_wrapper_payload_size(this, ty: LLVMTypeRef) returns size_t
     {
-        var t LLVMTypeRef(ty.handle)
+        ; s34 root fix: plain copy of the by-ptr struct param.
+        var t ty
         if t.handle = null
             return 0
         ; `{ptr}` placeholder with no struct name → unknown real size.
@@ -2915,11 +2916,9 @@ define Emitter
             set i: i + 1
         }
 
-        ; Size from the RETURN value type. Reconstruct via .handle
-        ; (session-34/36 single-ptr-field struct-param ABI pattern) before
-        ; introspecting. A `{ptr}` cross-package placeholder (unknown true
-        ; size) or any unsizeable type falls back to 256 (over-alloc is the
-        ; safe direction).
+        ; Size from the RETURN value type. A `{ptr}` cross-package
+        ; placeholder (unknown true size) or any unsizeable type falls back
+        ; to 256 (over-alloc is the safe direction).
         var value_size: size_t throws_wrapper_payload_size(value_ty)
         ; Size from the THROWS error type — emit_throw stores the whole
         ; error struct inline into the data field.
