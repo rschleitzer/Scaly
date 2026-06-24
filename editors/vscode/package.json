@@ -4,7 +4,12 @@
   "description": "Scaly language support (LSP client for scalyls)",
   "version": "0.1.0",
   "publisher": "scaly",
-  "license": "SEE LICENSE IN ../../LICENSE",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rschleitzer/Scaly.git",
+    "directory": "editors/vscode"
+  },
   "engines": {
     "vscode": "^1.75.0"
   },
@@ -48,8 +53,8 @@
       "properties": {
         "scaly.server.path": {
           "type": "string",
-          "default": "/tmp/scalyls",
-          "description": "Path to the scalyls language server binary."
+          "default": "scalyls",
+          "description": "Path to the scalyls language server binary. Default 'scalyls' resolves it on PATH (the scaly.io installer's wrapper); falls back to ~/.scaly/bin/scalyls."
         },
         "scaly.home": {
           "type": "string",
@@ -60,9 +65,11 @@
     }
   },
   "scripts": {
-    "vscode:prepublish": "npm run compile",
+    "vscode:prepublish": "npm run bundle",
     "compile": "tsc -p ./",
-    "watch": "tsc -watch -p ./"
+    "bundle": "esbuild ./src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node --minify",
+    "watch": "tsc -watch -p ./",
+    "package": "vsce package"
   },
   "dependencies": {
     "vscode-languageclient": "^9.0.1"
@@ -70,6 +77,8 @@
   "devDependencies": {
     "@types/node": "^20.0.0",
     "@types/vscode": "^1.75.0",
+    "@vscode/vsce": "^3.0.0",
+    "esbuild": "^0.21.0",
     "typescript": "^5.4.0"
   }
 }
