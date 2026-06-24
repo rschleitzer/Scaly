@@ -8937,7 +8937,7 @@ define Emitter
         let iter_sret_ty LLVMPointerTypeInContext(context, 0)
 
         let rp_val lookup_variable(String$("rp"))
-        var page_arg: LLVMValueRef LLVMValueRef(rp_val.handle)
+        var page_arg: LLVMValueRef rp_val
         ; s196: non-# caller — reuse this function's single local root page
         ; (released on exit) for the iterator instead of leaking a fresh one
         ; per for-loop.
@@ -9948,7 +9948,7 @@ define Emitter
                         ; (stage-2 fn_name.last_index_of on "\x06helper").
                         ; Heap-alloc a copy on the local page (or rp) and
                         ; store the new pointer instead.
-                        var store_val LLVMValueRef(value.handle)
+                        var store_val value
                         let is_alloca LLVMIsAAllocaInst(var_ptr)
                         if is_alloca.handle <> null
                         {
@@ -10071,7 +10071,7 @@ define Emitter
                                             ; first 8 bytes of a String (giving the
                                             ; raw data pointer as the "String") and
                                             ; equals/etc. read garbage.
-                                            var store_val LLVMValueRef(value.handle)
+                                            var store_val value
                                             if action.source <> null
                                             {
                                                 let src_vec (*action.source)
@@ -10117,7 +10117,7 @@ define Emitter
                         {
                             if target_op.member_access.length > 0
                             {
-                                var base LLVMValueRef(gv.handle)
+                                var base gv
                                 var is_ptr_global global_ref.global_type.name.equals(String$("pointer"))
                                 if is_ptr_global = false
                                     set is_ptr_global: global_ref.global_type.name.equals(String$("ref"))
