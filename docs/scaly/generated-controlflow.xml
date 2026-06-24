@@ -294,7 +294,7 @@ sum</programlisting></entry>
 
     <section xml:id='tests-NESTED-LOOPS'>
       <title>Nested Loops</title>
-      <para>Break and continue affect only the innermost loop.</para>
+      <para>By default break and continue affect only the innermost loop.</para>
       <informaltable frame='none'>
         <tgroup cols='2'>
           <colspec colwidth='1*'/>
@@ -318,6 +318,84 @@ count</programlisting></entry>
 for i in 3 : { for j in 5 : { if j % 2 = 1 : continue else set count : count + 1 } }
 count</programlisting></entry>
               <entry><literal>9
+
+    </literal></entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </informaltable>
+    </section>
+
+    <section xml:id='tests-LABELED-LOOPS'>
+      <title>Labeled Break and Continue</title>
+      <para>A loop may carry a label written `label NAME` after its colon.
+        From within a nested loop, `break loop NAME` exits the named loop and
+        `continue loop NAME` jumps to its next iteration, rather than acting on
+        the innermost loop.</para>
+      <informaltable frame='none'>
+        <tgroup cols='2'>
+          <colspec colwidth='1*'/>
+          <colspec colwidth='1*'/>
+          <thead>
+            <row>
+              <entry>Input</entry>
+              <entry>Result</entry>
+            </row>
+          </thead>
+          <tbody>
+            <row>
+              <entry><programlisting>var count 0
+for i in 3 : label outer { for j in 5 : { if j = 2 : break loop outer else set count : count + 1 } }
+count</programlisting></entry>
+              <entry><literal>2
+        </literal></entry>
+            </row>
+            <row>
+              <entry><programlisting>var count 0
+for i in 3 : label outer { for j in 5 : { if j = 0 : continue loop outer else set count : count + 100 } }
+count</programlisting></entry>
+              <entry><literal>0
+</literal></entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </informaltable>
+    </section>
+  </section>
+
+  <section xmlns='http://docbook.org/ns/docbook' xml:id='category-REPEAT-LOOPS'>
+    <title>Repeat Loops</title>
+    <para>A repeat loop runs its body forever and exits only through break (or
+    return). Because break is the only way out, a break carrying a value
+    (`break v`) makes the repeat an expression that yields that value.</para>
+
+    <section xml:id='tests-REPEAT-BASIC'>
+      <title>Repeat and Break Value</title>
+      <para>The value of a repeat expression is the operand of the break
+        that exits it.</para>
+      <informaltable frame='none'>
+        <tgroup cols='2'>
+          <colspec colwidth='1*'/>
+          <colspec colwidth='1*'/>
+          <thead>
+            <row>
+              <entry>Input</entry>
+              <entry>Result</entry>
+            </row>
+          </thead>
+          <tbody>
+            <row>
+              <entry><programlisting>var i 0
+let answer repeat { if i = 5 : break i + 100 else set i : i + 1 }
+answer</programlisting></entry>
+              <entry><literal>105
+        </literal></entry>
+            </row>
+            <row>
+              <entry><programlisting>var i 0
+repeat { if i = 3 : break else set i : i + 1 }
+i</programlisting></entry>
+              <entry><literal>3
 </literal></entry>
             </row>
           </tbody>
