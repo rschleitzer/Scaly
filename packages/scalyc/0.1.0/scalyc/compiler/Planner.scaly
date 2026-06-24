@@ -90,6 +90,7 @@ use scalyc.compiler.Plan.PlannedModule
 use scalyc.compiler.Model.Namespace
 use scalyc.compiler.Model.Concept
 use scalyc.compiler.Model.Global
+use scalyc.compiler.Model.Delegate
 use scalyc.compiler.Model.Member
 use scalyc.compiler.Model.Module
 use scalyc.compiler.Model.SizeOf
@@ -111,6 +112,7 @@ use scalyc.compiler.Plan.PlannedSizeOf
 use scalyc.compiler.Plan.PlannedAlignOf
 use scalyc.compiler.Plan.PlannedIs
 use scalyc.compiler.Plan.PlannedAs
+use scalyc.compiler.Plan.PlannedFunctionRef
 use scalyc.compiler.Plan.PlannedIf
 use scalyc.compiler.Plan.PlannedWhile
 use scalyc.compiler.Plan.PlannedFor
@@ -302,6 +304,11 @@ define Planner
         ; complete list for emission.
         instantiated_structures: Array[PlannedStructure]
         instantiated_unions: Array[scalyc.compiler.Plan.PlannedUnion]
+        ; Names of every `delegate` (function-pointer) concept registered.
+        ; Flows to Plan.delegates so the emitter's map_type lowers a
+        ; delegate-typed value to an LLVM ptr (GAP B). Empty for the scaly
+        ; package (no delegates) → map_type byte-identical, fixpoint-safe.
+        delegate_names: Array[String]
         instantiated_functions: Array[PlannedFunction]
         ; O(1) membership index over instantiated_functions' mangled names,
         ; maintained in lockstep at the single record_function add site.
@@ -462,6 +469,7 @@ define Planner
             set concept_index: ConceptIndex.create#(65536 as size_t)
             set instantiated_structures: Array[PlannedStructure]^page()
             set instantiated_unions: Array[scalyc.compiler.Plan.PlannedUnion]^page()
+            set delegate_names: Array[String]^page()
             set instantiated_functions: Array[PlannedFunction]^page()
             set function_name_index: ConceptIndex.create#(262144 as size_t)
             set instantiated_globals: Array[PlannedGlobal]^page()
@@ -627,6 +635,13 @@ define Planner
 
         function register_concept(this: Planner, c: Concept)
         {
+            ; Track delegate (function-pointer type) names for the emitter's
+            ; map_type lowering (GAP B).
+            choose c.definition
+                when d: Delegate
+                    delegate_names.add(String^this(c.name))
+                else
+                    0
             concepts.add(KeyValuePair[String, Concept](c.name, c))
             ; Maintain the O(1) index in lockstep. insert OVERWRITES on a
             ; duplicate key so the LAST-registered index wins — matching
@@ -701,6 +716,85 @@ define Planner
         function has_concept(this: Planner, name: String) returns bool
         {
             this.lookup_concept(name) <> null
+        }
+
+        ; GAP B delegate (function-pointer type) helpers. A delegate concept
+        ; `define Cb delegate(A, B) returns R` names a function type; a lambda
+        ; or function whose signature matches is assignable to a Cb-typed
+        ; binding/parameter, and a Cb-typed value is callable indirectly.
+        function is_delegate_type(this: Planner, name: String) returns bool
+        {
+            let c this.lookup_concept(name)
+            if c = null
+                return false
+            var result: bool false
+            choose (*c).definition
+                when d: Delegate
+                    set result: true
+                else
+                    0
+            result
+        }
+
+        ; The delegate's parameter types as planned types (drives lambda
+        ; monomorphization against the declared signature).
+        function delegate_param_types#(rp, this: Planner, name: String) returns Vector[PlannedType]
+        {
+            var result Array[PlannedType]$()
+            let c this.lookup_concept(name)
+            if c <> null
+                choose (*c).definition
+                    when d: Delegate
+                    {
+                        var i: size_t 0
+                        while i < d.input.length
+                        {
+                            let it_ptr d.input.get i
+                            if it_ptr <> null
+                            {
+                                let it (*it_ptr)
+                                if it.type <> null
+                                {
+                                    let pt this.plan_type#((*it.type))
+                                    result.add pt
+                                }
+                                else
+                                {
+                                    ; `delegate(int)`: a bare type is modeled as a
+                                    ; param NAMED "int" with no type — the name is
+                                    ; the parameter's type. (`delegate(x: int)`
+                                    ; takes the it.type branch above.)
+                                    if it.name <> null
+                                    {
+                                        var nm_path Vector[String]^rp(1)
+                                        nm_path.put(0, String^rp((*it.name)))
+                                        let synth_ty Type(it.span, nm_path, null, scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.Unspecified()))
+                                        let synth_pt this.plan_type#(synth_ty)
+                                        result.add synth_pt
+                                    }
+                                }
+                            }
+                            set i: i + 1
+                        }
+                    }
+                    else
+                        0
+            Vector[PlannedType]^rp(result)
+        }
+
+        function delegate_return_type#(rp, this: Planner, name: String) returns PlannedType
+        {
+            let c this.lookup_concept(name)
+            if c <> null
+                choose (*c).definition
+                    when d: Delegate
+                    {
+                        if d.returns_ <> null
+                            return this.plan_type#((*d.returns_))
+                    }
+                    else
+                        0
+            Planner.make_void_type#()
         }
 
         ; Instantiation-cache recording helpers. Called as each planned
@@ -2916,6 +3010,82 @@ define Planner
                                     PlannedExpression.Call ic_call,
                                     null,
                                     i64_ty
+                                )
+                            }
+                        }
+
+                        ; GAP B: indirect call through a delegate-typed value
+                        ; `f(args)` where f is a Variable of a delegate type.
+                        ; Build an is_indirect PlannedCall whose args are
+                        ; [callee, arg0, arg1, ...]; the emitter reconstructs
+                        ; the LLVM function type from the planned arg types +
+                        ; the delegate's return type.
+                        var ic_del_name String^rp("")
+                        choose ic_head.expr
+                            when v: Variable
+                                if this.is_delegate_type(v.variable_type.name)
+                                    set ic_del_name: v.variable_type.name
+                            else
+                                0
+                        if ic_del_name.get_length() > 0
+                        {
+                            var dcall_is_tuple: bool false
+                            choose ic_tail.expr
+                                when dtp: PlannedTuple
+                                    set dcall_is_tuple: true
+                                else
+                                    0
+                            if dcall_is_tuple
+                            {
+                                var dc_args Array[PlannedOperand]$()
+                                dc_args.add ic_head
+                                choose ic_tail.expr
+                                    when dtp: PlannedTuple
+                                    {
+                                        if dtp.components <> null
+                                        {
+                                            let dcomps (*dtp.components)
+                                            var dci: size_t 0
+                                            while dci < dcomps.length
+                                            {
+                                                let dcp dcomps.get dci
+                                                if dcp <> null
+                                                    if (*dcp).value <> null
+                                                    {
+                                                        let dvals (*(*dcp).value)
+                                                        if dvals.length > 0
+                                                        {
+                                                            let dca this.collapse_operand_sequence#(dvals)
+                                                            dc_args.add dca
+                                                        }
+                                                    }
+                                                set dci: dci + 1
+                                            }
+                                        }
+                                    }
+                                    else
+                                        0
+                                let dc_ret this.delegate_return_type#(ic_del_name)
+                                var dc_args_holder Vector[PlannedOperand]^rp(dc_args)
+                                let dc_call PlannedCall(
+                                    ic_head.loc,
+                                    String^rp("indirect"),
+                                    String^rp(""),
+                                    false,
+                                    false,
+                                    false,
+                                    false,
+                                    &dc_args_holder,
+                                    dc_ret,
+                                    Lifetime.Unspecified(Unspecified()),
+                                    null,
+                                    true
+                                )
+                                return PlannedOperand(
+                                    ic_head.loc,
+                                    PlannedExpression.Call dc_call,
+                                    null,
+                                    dc_ret
                                 )
                             }
                         }
@@ -11753,6 +11923,63 @@ define Planner
 
         function plan_binding#(rp, this: Planner, b: Binding) returns PlannedBinding
         {
+            ; GAP B: a delegate-typed binding initialized by a lambda literal —
+            ; `let g: Callback \x: x + 1` — becomes a function-pointer VALUE (the
+            ; address of the lambda monomorphized against the delegate's declared
+            ; signature), so g can be passed around and called indirectly. This
+            ; must run BEFORE the Phase-1 model-record intercept below, which
+            ; would otherwise treat it as a call-site-monomorphized binding and
+            ; emit no value.
+            if b.operation.length = 1
+            {
+                var del_name String^rp("")
+                if b.item.type <> null
+                {
+                    let ann (*b.item.type)
+                    let nm Planner.join_dotted_name#(ann.name)
+                    if this.is_delegate_type(nm)
+                        set del_name: nm
+                }
+                if del_name.get_length() > 0
+                {
+                    let dop_ptr b.operation.get 0
+                    if dop_ptr <> null
+                        choose (*dop_ptr).expression
+                            when dl: Lambda
+                            {
+                                var dparams this.delegate_param_types#(del_name)
+                                var base_name String^rp("lam")
+                                if b.item.name <> null
+                                    set base_name: String^rp((*b.item.name))
+                                let mono this.monomorphize_lambda#(base_name, dl, dparams)
+                                let del_pt this.plan_type#((*b.item.type))
+                                let fref PlannedFunctionRef(b.span, mono.mangled, del_pt)
+                                let fref_op PlannedOperand(b.span, PlannedExpression.FunctionRef fref, null, del_pt)
+                                var op_arr Array[PlannedOperand]$()
+                                op_arr.add fref_op
+                                var op_vec Vector[PlannedOperand]^rp(op_arr)
+                                var name_ref: ref[String]? null
+                                if b.item.name <> null
+                                {
+                                    var nh Vector[String]^rp(1)
+                                    nh.put(0, String^rp((*b.item.name)))
+                                    set name_ref: nh.get(0)
+                                }
+                                var pt_h Vector[PlannedType]^rp(1)
+                                pt_h.put(0, del_pt)
+                                let pitem PlannedItem(b.span, false, name_ref, pt_h.get(0), null)
+                                ; Register the local so later references resolve
+                                ; to the delegate type (e.g. passing g to apply,
+                                ; or calling g(...) indirectly).
+                                if b.item.name <> null
+                                    this.define_local((*b.item.name), del_pt, b.binding_type.equals("var"), false)
+                                return PlannedBinding(b.span, b.binding_type, pitem, &op_vec)
+                            }
+                            else
+                                0
+                }
+            }
+
             ; Phase-1 lambda binding: `let f \params: body`. Record the lambda
             ; model under the binding name and emit no runtime value — calls to
             ; `f` monomorphize the body at the call site (collapse_operand_sequence#).
@@ -15292,6 +15519,7 @@ define Planner
             var unions_holder Vector[scalyc.compiler.Plan.PlannedUnion]^rp(instantiated_unions)
             var funcs_holder Vector[PlannedFunction]^rp(instantiated_functions)
             var globals_holder Vector[PlannedGlobal]^rp(instantiated_globals)
+            var delegates_holder Vector[String]^rp(delegate_names)
             var constraints_holder Vector[TypeConstraint]^rp(constraints)
 
             Plan#(
@@ -15301,6 +15529,7 @@ define Planner
                 &unions_holder,
                 &funcs_holder,
                 &globals_holder,
+                &delegates_holder,
                 next_type_var_id,
                 &constraints_holder
             )

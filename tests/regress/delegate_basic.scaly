@@ -1,0 +1,34 @@
+; Regression (GAP B substep 1): first-class NON-capturing lambda values via a
+; named `delegate` type. A delegate names a function (pointer) type; a lambda
+; assigned to a delegate-typed binding becomes a function-pointer value (the
+; address of the lambda monomorphized against the delegate's declared
+; signature). The value can be passed to a function and called indirectly.
+; Self-hosted-only (stage-0 never parses lambdas and does not model delegates).
+;
+;   apply(g, 5) calls g(5) indirectly; g = \x: x+1  ->  6
+;   twice(h, 20) calls h(h(20)); h = \x: x+x        ->  80
+; Expected: PASS
+
+define IntFn delegate(int) returns int
+
+function apply(f: IntFn, x: int) returns int
+    f(x)
+
+function twice(f: IntFn, x: int) returns int
+    f(f(x))
+
+let g: IntFn \x: x + 1
+let h: IntFn \x: x + x
+
+let r1 apply(g, 5)
+let r2 twice(h, 20)
+
+if r1 = 6
+{
+    if r2 = 80
+        print("PASS")
+    else
+        print("FAIL twice")
+}
+else
+    print("FAIL apply")

@@ -373,6 +373,18 @@ define Global
     is_mutable: bool
 )
 
+; Delegate — a named function (closure) type. `define Cb delegate(int) returns int`
+; names a function type usable as a parameter/return/field type; a lambda or
+; function reference whose signature matches is assignable to it (GAP B).
+define Delegate
+(
+    span: Span
+    name: String
+    input: Vector[Item]
+    returns_: ref[Type]?
+    throws_: ref[Type]?
+)
+
 ; Definition union
 define Definition union (
     Intrinsic: Intrinsic
@@ -381,6 +393,7 @@ define Definition union (
     Structure: Structure
     Union: Union
     Type: Type
+    Delegate: Delegate
 )
 
 ; Use statement

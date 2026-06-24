@@ -74,6 +74,7 @@ use scaly.compiler.Model.Structure
 use scaly.compiler.Model.Union
 use scaly.compiler.Model.Namespace
 use scaly.compiler.Model.Global
+use scaly.compiler.Model.Delegate
 use scaly.compiler.Model.Definition
 use scaly.compiler.Model.Concept
 use scaly.compiler.Model.Member
@@ -169,6 +170,7 @@ use scaly.compiler.Syntax.VariantSyntax
 use scaly.compiler.Syntax.UnionSyntax
 use scaly.compiler.Syntax.NamespaceSyntax
 use scaly.compiler.Syntax.ConstantSyntax
+use scaly.compiler.Syntax.DelegateSyntax
 use scaly.compiler.Syntax.ConceptSyntax
 use scaly.compiler.Syntax.DefinitionSyntax
 use scaly.compiler.Syntax.PrivateSyntax
@@ -1454,6 +1456,34 @@ function handle_generic_parameter#(syntax: GenericParameterSyntax) returns Gener
 ; Parameter handling
 ; ============================================================================
 
+; Model a `define NAME delegate(params) returns T throws E` concept (GAP B).
+; The delegate names a function (closure) type; the parameter Items and the
+; return type drive both lambda monomorphization against this signature and the
+; LLVM function type used at indirect call sites.
+function handle_delegate#(name: String, syntax: DelegateSyntax) returns Delegate
+{
+    let loc Span(syntax.start, syntax.end)
+    var input Vector[Item]#(0)
+    if syntax.parameters <> null
+    {
+        let params (*syntax.parameters)
+        set input: handle_parameter_set#(params)
+    }
+    var return_type: ref[Type]? null
+    if syntax.result <> null
+    {
+        let returns_syntax (*syntax.result)
+        set return_type: handle_type#(returns_syntax.type)
+    }
+    var throws_type: ref[Type]? null
+    if syntax.error <> null
+    {
+        let throws_syntax (*syntax.error)
+        set throws_type: handle_type#(throws_syntax.type)
+    }
+    Delegate(loc, String#(name), input, return_type, throws_type)
+}
+
 function handle_parameter_set#(syntax: ParameterSetSyntax) returns Vector[Item]
 {
     choose syntax
@@ -2380,6 +2410,11 @@ function handle_definition#(path: String, syntax: DefinitionSyntax, is_private: 
         }
         when intrinsic_syntax: IntrinsicSyntax
             Definition.Intrinsic(Intrinsic(Span(intrinsic_syntax.start, intrinsic_syntax.end)))
+        when delegate_syntax: DelegateSyntax
+        {
+            let del handle_delegate#(name, delegate_syntax)
+            Definition.Delegate del
+        }
         else
             Definition.Intrinsic(Intrinsic loc)
 

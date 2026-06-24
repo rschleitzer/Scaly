@@ -349,6 +349,18 @@ define PlannedAs
     value: ref[PlannedOperand]?
 )
 
+; A reference to a (non-capturing) function as a value — the address of the
+; named symbol, typed as the delegate type it satisfies (lowers to an LLVM
+; ptr). Produced when a lambda or function is assigned to a delegate-typed
+; binding/parameter (GAP B). `mangled_name` is the symbol to take the address
+; of (a monomorphized lambda or an ordinary function).
+define PlannedFunctionRef
+(
+    loc: Span
+    mangled_name: String
+    fn_type: PlannedType
+)
+
 define PlannedVariantConstruction
 (
     loc: Span
@@ -449,6 +461,7 @@ define PlannedExpression union
     Is: PlannedIs
     As: PlannedAs
     VariantConstruction: PlannedVariantConstruction
+    FunctionRef: PlannedFunctionRef
 )
 
 define PlannedMemberAccess
@@ -681,6 +694,9 @@ define Plan
     unions: ref[Vector[PlannedUnion]]?
     functions: ref[Vector[PlannedFunction]]?
     globals: ref[Vector[PlannedGlobal]]?
+    ; Names of `delegate` (function-pointer) types — the emitter's map_type
+    ; lowers a value of one of these names to an LLVM ptr (GAP B).
+    delegates: ref[Vector[String]]?
     ; Type inference state
     next_type_var_id: size_t
     constraints: ref[Vector[TypeConstraint]]?

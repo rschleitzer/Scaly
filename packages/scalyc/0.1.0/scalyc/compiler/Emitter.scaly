@@ -40,6 +40,7 @@ use scaly.compiler.Plan.PlannedSizeOf
 use scaly.compiler.Plan.PlannedAlignOf
 use scaly.compiler.Plan.PlannedIs
 use scaly.compiler.Plan.PlannedAs
+use scaly.compiler.Plan.PlannedFunctionRef
 use scaly.compiler.Plan.PlannedGlobalRef
 use scaly.compiler.Plan.PlannedVariantConstruction
 use scaly.compiler.Plan.PlannedMemberAccess
@@ -1963,6 +1964,29 @@ define Emitter
     ; ========================================================================
 
     ; Map a PlannedType to an LLVM type
+    ; True when `name` is a delegate (function-pointer) concept declared in the
+    ; current plan. Linear scan over current_plan.delegates, which is empty for
+    ; delegate-free programs (the scaly package) — so the common path is a
+    ; single null/length check (GAP B).
+    function is_delegate_type_name(this, name: String) returns bool
+    {
+        if current_plan = null
+            return false
+        if current_plan.delegates = null
+            return false
+        let dels (*current_plan.delegates)
+        var i: size_t 0
+        while i < dels.length
+        {
+            let d_ptr dels.get i
+            if d_ptr <> null
+                if (*d_ptr).equals(name)
+                    return true
+            set i: i + 1
+        }
+        false
+    }
+
     function map_type(this, planned_type: PlannedType) returns LLVMTypeRef
     {
         ; Check type cache first
@@ -1997,6 +2021,16 @@ define Emitter
         {
             let ptr_type LLVMPointerTypeInContext(context, 0)
             cache_type(planned_type.mangled_name, ptr_type)
+            return ptr_type
+        }
+
+        ; Delegate (function-pointer) types lower to an LLVM ptr (GAP B). The
+        ; planner lists every delegate concept name in current_plan.delegates;
+        ; the list is empty outside programs that declare delegates, so this is
+        ; a no-op for the scaly package (fixpoint-safe).
+        if is_delegate_type_name planned_type.name
+        {
+            let ptr_type LLVMPointerTypeInContext(context, 0)
             return ptr_type
         }
 
@@ -4711,6 +4745,30 @@ define Emitter
             {
                 return emit_variant_construction vc
             }
+            when fr: FunctionRef
+            {
+                return emit_function_ref fr
+            }
+    }
+
+    ; Emit a function-reference value (GAP B): the address of the named symbol,
+    ; usable as an LLVM ptr (a delegate value). The symbol is a monomorphized
+    ; lambda (or an ordinary function) already emitted into the module; declare
+    ; it as an external if it is not yet present.
+    function emit_function_ref(this, fref: PlannedFunctionRef) returns LLVMValueRef
+    {
+        var func LLVMGetNamedFunction(llvm_module, fref.mangled_name.c_data())
+        if func.handle = null
+        {
+            ; Not yet emitted in this module — declare a varargs stub; the real
+            ; definition (or a cross-unit symbol) resolves at link time. Only
+            ; its address is taken here, so the cosmetic signature is harmless.
+            let i8ptr LLVMPointerTypeInContext(context, 0)
+            let stub_ty LLVMFunctionType(i8ptr, null as pointer[LLVMTypeRef], 0, 1)
+            set func: LLVMAddFunction(llvm_module, fref.mangled_name.c_data(), stub_ty)
+            LLVMSetLinkage(func, LLVMLinkage.External())
+        }
+        func
     }
 
     ; ========================================================================
@@ -5184,9 +5242,35 @@ define Emitter
                     if callee_ptr <> null
                     {
                         let callee_val emit_operand(*callee_ptr)
-                        let i64_ty LLVMInt64TypeInContext(context)
-                        let fn_ty LLVMFunctionType(i64_ty, null as pointer[LLVMTypeRef], 0, 0)
-                        return LLVMBuildCall2(builder, fn_ty, callee_val, null as pointer[LLVMValueRef], 0, "jit.call")
+                        ; Zero extra args → the JIT zero-arg i64() path.
+                        if ic_args.length = 1
+                        {
+                            let i64_ty LLVMInt64TypeInContext(context)
+                            let fn_ty LLVMFunctionType(i64_ty, null as pointer[LLVMTypeRef], 0, 0)
+                            return LLVMBuildCall2(builder, fn_ty, callee_val, null as pointer[LLVMValueRef], 0, "jit.call")
+                        }
+                        ; GAP B delegate indirect call: build the LLVM function
+                        ; type from the planned argument types + the call's
+                        ; result type, emit the arguments, and call through the
+                        ; callee pointer.
+                        let n_args ic_args.length - 1
+                        var arg_tys Vector[LLVMTypeRef]#(n_args)
+                        var arg_vals Vector[LLVMValueRef]#(n_args)
+                        var k: size_t 1
+                        while k < ic_args.length
+                        {
+                            let a_ptr ic_args.get k
+                            if a_ptr <> null
+                            {
+                                let av emit_operand(*a_ptr)
+                                arg_vals.put(k - 1, av)
+                                arg_tys.put(k - 1, map_type((*a_ptr).result_type))
+                            }
+                            set k: k + 1
+                        }
+                        let ret_ty map_type(call.result_type)
+                        let fn_ty LLVMFunctionType(ret_ty, arg_tys.data, n_args as u32, 0)
+                        return LLVMBuildCall2(builder, fn_ty, callee_val, arg_vals.data, n_args as u32, "")
                     }
                 }
             }
