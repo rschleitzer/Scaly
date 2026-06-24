@@ -6435,11 +6435,10 @@ define Emitter
     ; Emit an intrinsic unary operator
     function emit_intrinsic_unary_op(this, op_name: String, operand: LLVMValueRef, result_type: PlannedType) returns LLVMValueRef
     {
-        ; Session 34 ABI workaround: stage-0 alloca's a ptr-typed slot
-        ; aliased to the caller's storage when binding a single-ptr-field
-        ; struct param to a local. Reconstruct via .handle extract so
-        ; subsequent uses of `op` see a real LLVMValueRef.
-        var op LLVMValueRef(operand.handle)
+        ; s34 root fix (emitBinding now copies a single-ptr-field struct
+        ; param into a struct slot): a plain `var op operand` is a correct
+        ; copy under both compilers — no .handle reconstruction needed.
+        var op operand
 
         ; Bail out cleanly if the upstream operand emitter returned a null
         ; handle — better to emit a degraded ret void in the caller than
@@ -6544,9 +6543,10 @@ define Emitter
     ; Emit an intrinsic binary operator
     function emit_intrinsic_binary_op(this, op_name: String, left: LLVMValueRef, right: LLVMValueRef, result_type: PlannedType) returns LLVMValueRef
     {
-        ; Session 34 ABI workaround for both LLVMValueRef params.
-        var l LLVMValueRef(left.handle)
-        var r LLVMValueRef(right.handle)
+        ; s34 root fix: plain copies of the by-ptr struct params (emitBinding
+        ; now copies single-ptr-field struct params correctly).
+        var l left
+        var r right
         if l.handle = null
             return LLVMValueRef null
         if r.handle = null
