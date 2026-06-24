@@ -1198,13 +1198,9 @@ define Emitter
     ; the insertion point.
     function entry_alloca(this, ty: LLVMTypeRef, name: pointer[const_char]) returns LLVMValueRef
     {
-        ; s138: session-34 ABI workaround. Stage-0 binds a struct-by-value
-        ; param to a ptr-typed slot aliasing the caller's storage, so
-        ; passing `ty` onward to LLVMBuildAlloca extern would forward the
-        ; alloca address as the struct value instead of the handle.
-        ; Reconstruct via .handle extract at function entry — same fix as
-        ; emit_intrinsic_unary_op / emit_intrinsic_binary_op.
-        var t LLVMTypeRef(ty.handle)
+        ; s34 root fix: plain copy of the by-ptr struct param (emitBinding
+        ; now copies single-ptr-field struct params correctly).
+        var t ty
         let saved_block LLVMGetInsertBlock(builder)
         ; Scaly's `if cond STMT` runs STMT when cond is TRUE. Fall
         ; back to the in-place alloca only when current_function or
@@ -1497,8 +1493,8 @@ define Emitter
     ; 65520 to self-compile.
     function acquire_temp(this, ty: LLVMTypeRef, name: pointer[const_char]) returns LLVMValueRef
     {
-        ; s34 ABI workaround: reconstruct the wrapper from .handle.
-        var t LLVMTypeRef(ty.handle)
+        ; s34 root fix: plain copy of the by-ptr struct param.
+        var t ty
         if current_function.handle = null
             return entry_alloca(t, name)
         var in_use_flag: size_t 0
@@ -1546,9 +1542,9 @@ define Emitter
     ; unrecognized (phi of arm results, select, ret) escapes too.
     function temp_user_is_safe(this, user_v: LLVMValueRef, ptr_v: LLVMValueRef, depth: size_t) returns bool
     {
-        ; s34 ABI workaround: reconstruct wrappers from .handle.
-        var user LLVMValueRef(user_v.handle)
-        var ptr_val LLVMValueRef(ptr_v.handle)
+        ; s34 root fix: plain copies of the by-ptr struct params.
+        var user user_v
+        var ptr_val ptr_v
         let ld LLVMIsALoadInst(user)
         if ld.handle <> null
             return true
@@ -1587,8 +1583,8 @@ define Emitter
     ; windows because emit_statement returns only bool.
     function temp_value_escapes(this, v: LLVMValueRef, depth: size_t) returns bool
     {
-        ; s34 ABI workaround: reconstruct the wrapper from .handle.
-        var val LLVMValueRef(v.handle)
+        ; s34 root fix: plain copy of the by-ptr struct param.
+        var val v
         if depth > 3
             return true
         var u LLVMGetFirstUse(val)
@@ -1612,8 +1608,8 @@ define Emitter
     ; slot itself).
     function temp_base_alloca(this, v: LLVMValueRef) returns LLVMValueRef
     {
-        ; s34 ABI workaround: reconstruct the wrapper from .handle.
-        var cur LLVMValueRef(v.handle)
+        ; s34 root fix: plain copy of the by-ptr struct param.
+        var cur v
         if cur.handle = null
             return LLVMValueRef null
         var hops: size_t 0
@@ -1637,7 +1633,8 @@ define Emitter
     ; exists and the escape walk sees it.
     procedure pin_temp_value(this, v: LLVMValueRef)
     {
-        var val LLVMValueRef(v.handle)
+        ; s34 root fix: plain copy of the by-ptr struct param.
+        var val v
         let base temp_base_alloca val
         if base.handle <> null
             temp_pinned.add base
@@ -1721,10 +1718,10 @@ define Emitter
     ; checks and PHI void-gates.
     function copy_struct_value(this, dst: LLVMValueRef, src_value: LLVMValueRef, ty: LLVMTypeRef) returns LLVMValueRef
     {
-        ; s34 ABI workaround: reconstruct wrappers from .handle.
-        var d LLVMValueRef(dst.handle)
-        var sv LLVMValueRef(src_value.handle)
-        var t LLVMTypeRef(ty.handle)
+        ; s34 root fix: plain copies of the by-ptr struct params.
+        var d dst
+        var sv src_value
+        var t ty
         ; Fallback stores are marked align 1: some destinations (the
         ; throws Result data field at byte offset 1, s150) are
         ; misaligned, and align 1 is always safe.
