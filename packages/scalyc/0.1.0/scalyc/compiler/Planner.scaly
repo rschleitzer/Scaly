@@ -5241,9 +5241,36 @@ define Planner
                                                                                 }
                                                                             }
                                                                             let expected_arity nf.input.length - pstart
+                                                                            ; Two callable forms for a namespace function
+                                                                            ; with an explicit `this` receiver param:
+                                                                            ;   (a) receiver-separate: arg_types holds the
+                                                                            ;       non-`this` args (expected_arity match);
+                                                                            ;   (b) this-inclusive: the receiver is passed
+                                                                            ;       as the first arg (json.stringify#(v)),
+                                                                            ;       so arg_types.length == nf.input.length.
+                                                                            ; For (b) build from the FULL input (build_start
+                                                                            ; 0) so the recorded stub's param list MATCHES
+                                                                            ; the real PlannedFunction (plan_function# keeps
+                                                                            ; `this` in input; mangle_function# skips the
+                                                                            ; `this`-named item). Without this, a function
+                                                                            ; whose ONLY param is `this` got an empty-input
+                                                                            ; extern stub recorded first, locking in a
+                                                                            ; signature missing the `this` LLVM arg.
+                                                                            var build_start: size_t pstart
+                                                                            var arity_ok: bool false
                                                                             if expected_arity = arg_types.length
+                                                                                set arity_ok: true
+                                                                            if pstart > 0
                                                                             {
-                                                                                var pi_ns: size_t pstart
+                                                                                if nf.input.length = arg_types.length
+                                                                                {
+                                                                                    set arity_ok: true
+                                                                                    set build_start: 0
+                                                                                }
+                                                                            }
+                                                                            if arity_ok
+                                                                            {
+                                                                                var pi_ns: size_t build_start
                                                                                 while pi_ns < nf.input.length
                                                                                 {
                                                                                     let p_ptr nf.input.get pi_ns
@@ -5255,10 +5282,13 @@ define Planner
                                                                                             let planned_p this.plan_type#(pt)
                                                                                             var ity_holder Vector[PlannedType]^rp(1)
                                                                                             ity_holder.put(0, planned_p)
+                                                                                            ; Preserve the param NAME so the
+                                                                                            ; `this` item is recognised and
+                                                                                            ; skipped by mangle_function#.
                                                                                             items_arr.add(PlannedItem(
                                                                                                 result.loc,
                                                                                                 false,
-                                                                                                null,
+                                                                                                p_ptr.name,
                                                                                                 ity_holder.get 0,
                                                                                                 null
                                                                                             ))
@@ -14849,6 +14879,11 @@ define Planner
                 let planned this.plan_module#(sub)
             }
             if sub.name.equals("Planner")
+            {
+                let planned this.plan_module#(sub)
+            }
+            ; scalyls modules (self-host effort) — added one at a time.
+            if sub.name.equals("json")
             {
                 let planned this.plan_module#(sub)
             }
