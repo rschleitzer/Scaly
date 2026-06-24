@@ -200,6 +200,21 @@ n + inc(9)<expect>110
 let cap \x: x + n
 cap(1) + cap(2)<expect>203
 
+    <tests id = lambda-delegates title = "Delegate Values">
+        <prose>A `delegate` names a function type. A non-capturing lambda assigned
+        to a delegate-typed binding is a function-pointer value that can be passed
+        to a function and called indirectly.
+        <test id = delegate-apply program = program><input>define IntFn delegate(int) returns int
+function apply(f: IntFn, x: int) returns int
+    f(x)
+let g: IntFn \x: x + 1
+apply(g, 5)<expect>6
+        <test id = delegate-twice program = program><input>define IntFn delegate(int) returns int
+function twice(f: IntFn, x: int) returns int
+    f(f(x))
+let dbl: IntFn \x: x + x
+twice(dbl, 20)<expect>80
+
 </category>
 
 </suite>

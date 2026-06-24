@@ -786,6 +786,46 @@ n + inc(9)</programlisting></entry>
 let cap \x: x + n
 cap(1) + cap(2)</programlisting></entry>
               <entry><literal>203
+
+    </literal></entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </informaltable>
+    </section>
+
+    <section xml:id='tests-LAMBDA-DELEGATES'>
+      <title>Delegate Values</title>
+      <para>A `delegate` names a function type. A non-capturing lambda assigned
+        to a delegate-typed binding is a function-pointer value that can be passed
+        to a function and called indirectly.</para>
+      <informaltable frame='none'>
+        <tgroup cols='2'>
+          <colspec colwidth='1*'/>
+          <colspec colwidth='1*'/>
+          <thead>
+            <row>
+              <entry>Input</entry>
+              <entry>Result</entry>
+            </row>
+          </thead>
+          <tbody>
+            <row>
+              <entry><programlisting>define IntFn delegate(int) returns int
+function apply(f: IntFn, x: int) returns int
+    f(x)
+let g: IntFn \x: x + 1
+apply(g, 5)</programlisting></entry>
+              <entry><literal>6
+        </literal></entry>
+            </row>
+            <row>
+              <entry><programlisting>define IntFn delegate(int) returns int
+function twice(f: IntFn, x: int) returns int
+    f(f(x))
+let dbl: IntFn \x: x + x
+twice(dbl, 20)</programlisting></entry>
+              <entry><literal>80
 </literal></entry>
             </row>
           </tbody>
