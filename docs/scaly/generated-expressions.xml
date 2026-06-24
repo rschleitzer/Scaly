@@ -671,6 +671,42 @@ let a dbl(10)
 let b dbl(21)
 a + b</programlisting></entry>
               <entry><literal>62
+
+    </literal></entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </informaltable>
+    </section>
+
+    <section xml:id='tests-LAMBDA-CAPTURES'>
+      <title>Captures</title>
+      <para>A lambda captures enclosing variables by value. The captured
+        value is fixed when the lambda is applied.</para>
+      <informaltable frame='none'>
+        <tgroup cols='2'>
+          <colspec colwidth='1*'/>
+          <colspec colwidth='1*'/>
+          <thead>
+            <row>
+              <entry>Input</entry>
+              <entry>Result</entry>
+            </row>
+          </thead>
+          <tbody>
+            <row>
+              <entry><programlisting>let n 10
+let f \x: x + n
+f(5)</programlisting></entry>
+              <entry><literal>15
+        </literal></entry>
+            </row>
+            <row>
+              <entry><programlisting>let a 3
+let b 4
+let g \x: x + a + b
+g(10)</programlisting></entry>
+              <entry><literal>17
 </literal></entry>
             </row>
           </tbody>

@@ -164,6 +164,17 @@ let a dbl(10)
 let b dbl(21)
 a + b<expect>62
 
+    <tests id = lambda-captures title = "Captures">
+        <prose>A lambda captures enclosing variables by value. The captured
+        value is fixed when the lambda is applied.
+        <test id = lambda-capture-one program = program><input>let n 10
+let f \x: x + n
+f(5)<expect>15
+        <test id = lambda-capture-many program = program><input>let a 3
+let b 4
+let g \x: x + a + b
+g(10)<expect>17
+
 </category>
 
 </suite>
