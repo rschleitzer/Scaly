@@ -1291,7 +1291,7 @@ define Emitter
         let nv lookup_variable ref_name
         if nv.handle = null
             return LLVMValueRef null
-        var page_val LLVMValueRef(nv.handle)
+        var page_val nv
         if ref_name.equals(String$("this"))
         {
             ; ^this: wrap the receiver in Page.get(this). Mirrors stage-0's
@@ -7180,7 +7180,7 @@ define Emitter
             let page_val_raw lookup_variable page_var_name
             if page_val_raw.handle <> null
             {
-                var page_val LLVMValueRef(page_val_raw.handle)
+                var page_val page_val_raw
                 if page_var_name.equals(String$("this"))
                 {
                     ; ^this: the receiver is an object pointer, not a
