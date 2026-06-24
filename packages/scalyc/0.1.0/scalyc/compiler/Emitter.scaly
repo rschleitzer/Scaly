@@ -10258,11 +10258,10 @@ define Emitter
     ; Helper for member field assignment
     function emit_member_assignment(this, var_ptr: LLVMValueRef, planned_var: PlannedVariable, members: ref[Vector[PlannedMemberAccess]]?, value: LLVMValueRef) returns LLVMValueRef
     {
-        ; Force struct-typed alloca via .handle reconstruction (session 34
-        ; ABI workaround: stage-0 alloca's a ptr-typed slot aliasing
-        ; caller's storage when binding a single-ptr-field struct param).
-        var current_ptr LLVMValueRef(var_ptr.handle)
-        var stored_value LLVMValueRef(value.handle)
+        ; s34 root fix: plain var copies of the by-ptr struct params
+        ; (emitBinding now copies single-ptr-field struct params correctly).
+        var current_ptr var_ptr
+        var stored_value value
 
         ; Determine the struct type for GEP. For `this` (pointer[T]) we
         ; want T's struct type directly. For non-pointer locals we use
