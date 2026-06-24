@@ -144,8 +144,8 @@ define lexer
                 return
             }
 
-            ; Punctuation (no linefeed skip): } ) ] . ? ! $ # ^
-            if (c = 125) || (c = 41) || (c = 93) || (c = 46) || (c = 63) || (c = 33) || (c = 36) || (c = 35) || (c = 94)
+            ; Punctuation (no linefeed skip): } ) ] . ? ! $ # ^ \
+            if (c = 125) || (c = 41) || (c = 93) || (c = 46) || (c = 63) || (c = 33) || (c = 36) || (c = 35) || (c = 94) || (c = 92)
             {
                 set token: Token.Punctuation(PunctuationToken(c as u8))
                 read_character()
@@ -661,22 +661,27 @@ define lexer
                     return
                 }
 
-                ; Line continuation: backslash followed by newline
+                ; Backslash: a line continuation when followed by a newline,
+                ; otherwise the lambda punctuation token. PEEK the next char
+                ; without consuming the '\' — if it is not a newline, leave the
+                ; '\' for advance# to tokenize (eating it here silently dropped
+                ; every lambda's backslash).
                 if c = 92  ; '\'
                 {
-                    read_character()
-                    if current = null
+                    let bs_next current + 1
+                    if bs_next >= end
                         return
-
-                    let n *current
-                    if n = 13  ; '\r'
+                    let n *bs_next
+                    if n = 13  ; '\r' — consume '\' + CR + LF
                     {
+                        read_character()
                         read_character()
                         read_character()
                         continue
                     }
-                    if n = 10  ; '\n'
+                    if n = 10  ; '\n' — consume '\' + LF
                     {
+                        read_character()
                         read_character()
                         continue
                     }

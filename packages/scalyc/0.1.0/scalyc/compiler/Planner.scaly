@@ -334,6 +334,12 @@ define Planner
         ; lookup_functions returns all matches.
         model_functions: Array[KeyValuePair[String, Function]]
 
+        ; Phase-1 lambdas: `let f \params: body` records the lambda model
+        ; keyed by the binding name; calls to `f` monomorphize the body at
+        ; the call site (see collapse_operand_sequence#). No runtime value
+        ; is emitted for the binding.
+        lambda_models: Array[KeyValuePair[String, Lambda]]
+
         ; O(1) name -> ordered registry-index chain over model_functions,
         ; maintained in lockstep at the single register_function add site.
         ; Replaces lookup_functions / is_function's O(n) linear scan (O(n^2)
@@ -462,6 +468,7 @@ define Planner
             set instantiating_structures: Array[String]^page()
             set instantiating_methods: Array[String]^page()
             set model_functions: Array[KeyValuePair[String, Function]]^page()
+            set lambda_models: Array[KeyValuePair[String, Lambda]]^page()
             set model_function_index: FunctionIndex.create#(65536 as size_t, 262144 as size_t)
             set model_operators: Array[KeyValuePair[String, Operator]]^page()
             set model_operator_index: FunctionIndex.create#(65536 as size_t, 262144 as size_t)
@@ -977,6 +984,28 @@ define Planner
             while i < loaded_packages.length
             {
                 let kvp_ptr loaded_packages.get i
+                if kvp_ptr <> null
+                {
+                    if kvp_ptr.key.equals(name)
+                        return &kvp_ptr.value
+                }
+                set i: i + 1
+            }
+            null
+        }
+
+        ; Phase-1 lambda registry: record the model lambda bound to `name`.
+        function record_lambda_model(this: Planner, name: String, lam: Lambda)
+            lambda_models.add(KeyValuePair[String, Lambda](name, lam))
+
+        ; Return the lambda model bound to `name`, or null. Forward scan
+        ; (first binding wins) — Phase-1 lambdas are not scope-shadowed.
+        function lookup_lambda_model(this: Planner, name: String) returns ref[Lambda]?
+        {
+            var i: size_t 0
+            while i < lambda_models.length
+            {
+                let kvp_ptr lambda_models.get i
                 if kvp_ptr <> null
                 {
                     if kvp_ptr.key.equals(name)
@@ -2774,6 +2803,96 @@ define Planner
                                     null,
                                     i64_ty
                                 )
+                            }
+                        }
+                    }
+                }
+            }
+
+            ; Phase-1 lambda call: `f(args)` where f names a lambda binding.
+            ; The lambda binding emits no runtime value, so `f` arrives as a
+            ; bare PlannedType. Monomorphize the lambda body with the call's
+            ; argument types and resolve to a direct call to the synthesized
+            ; function. Captures are unsupported in Phase 1 — a captured name
+            ; in the body resolves as an unknown name (planner diagnostic).
+            if ops.length = 2
+            {
+                let lc_head_ptr ops.get 0
+                let lc_tail_ptr ops.get 1
+                if lc_head_ptr <> null
+                {
+                    if lc_tail_ptr <> null
+                    {
+                        let lc_head (*lc_head_ptr)
+                        let lc_tail (*lc_tail_ptr)
+                        if lc_head.member_access = null
+                        {
+                            ; `f` may resolve as a bare PlannedType (unknown
+                            ; name) or as an unresolved Variable — accept both.
+                            var lc_name String^rp("")
+                            choose lc_head.expr
+                                when lht: PlannedType
+                                {
+                                    if lht.generics = null
+                                        set lc_name: lht.name
+                                }
+                                when lhv: Variable
+                                    set lc_name: lhv.name
+                                else
+                                    0
+                            if lc_name.get_length() > 0
+                            {
+                                let lc_lam_ref this.lookup_lambda_model(lc_name)
+                                if lc_lam_ref <> null
+                                {
+                                    choose lc_tail.expr
+                                        when lc_tp: PlannedTuple
+                                        {
+                                            var lc_arg_ops Array[PlannedOperand]$()
+                                            var lc_arg_types Array[PlannedType]$()
+                                            if lc_tp.components <> null
+                                            {
+                                                let lc_comps (*lc_tp.components)
+                                                var lc_ci: size_t 0
+                                                while lc_ci < lc_comps.length
+                                                {
+                                                    let lc_cp lc_comps.get lc_ci
+                                                    if lc_cp <> null
+                                                    {
+                                                        if (*lc_cp).value <> null
+                                                        {
+                                                            let lc_vals (*(*lc_cp).value)
+                                                            if lc_vals.length > 0
+                                                            {
+                                                                let lc_collapsed this.collapse_operand_sequence#(lc_vals)
+                                                                lc_arg_ops.add lc_collapsed
+                                                                lc_arg_types.add lc_collapsed.result_type
+                                                            }
+                                                        }
+                                                    }
+                                                    set lc_ci: lc_ci + 1
+                                                }
+                                            }
+                                            var lc_at_vec Vector[PlannedType]^rp(lc_arg_types)
+                                            let lc_mangled this.monomorphize_lambda#(lc_name, (*lc_lam_ref), lc_at_vec)
+                                            var lc_ret Planner.make_void_type#()
+                                            let lc_fidx function_name_index.lookup(lc_mangled)
+                                            if lc_fidx >= 0
+                                            {
+                                                let lc_fptr instantiated_functions.get lc_fidx
+                                                if lc_fptr <> null
+                                                {
+                                                    if (*lc_fptr).return_type <> null
+                                                        set lc_ret: (*(*lc_fptr).return_type)
+                                                }
+                                            }
+                                            var lc_call_args Vector[PlannedOperand]^rp(lc_arg_ops)
+                                            let lc_pc this.make_planned_call#(lc_head.loc, lc_name, lc_mangled, lc_ret, lc_call_args)
+                                            return PlannedOperand(lc_head.loc, PlannedExpression.Call lc_pc, null, lc_ret)
+                                        }
+                                        else
+                                            0
+                                }
                             }
                         }
                     }
@@ -9413,6 +9532,108 @@ define Planner
             )
         }
 
+        ; Phase-1 lambda monomorphization: given a lambda model and the
+        ; call-site argument types, synthesize (and record, once) a concrete
+        ; top-level function whose parameters take those arg types, plan its
+        ; body, and return the function's mangled name. The call site then
+        ; resolves to a direct call to this function (see the lambda-call
+        ; intercept in collapse_operand_sequence#). Cached per mangled name
+        ; via has_recorded_function so repeated calls with identical arg
+        ; types reuse the same function.
+        function monomorphize_lambda#(rp, this: Planner, base_name: String, lam: Lambda, arg_types: Vector[PlannedType]) returns String
+        {
+            ; Deterministic mangled name = base + each arg type's mangle.
+            var ml_sb StringBuilder^rp()
+            ml_sb.append "_ZN6lambdaN"
+            ml_sb.append base_name
+            ml_sb.append "E"
+            var mi: size_t 0
+            while mi < arg_types.length
+            {
+                let mat_ptr arg_types.get mi
+                if mat_ptr <> null
+                {
+                    let mat (*mat_ptr)
+                    ; Separator + the type's mangle, falling back to its name
+                    ; when the mangle is empty (some primitives carry no
+                    ; Itanium mangle here) so distinct types never collide
+                    ; onto the same monomorphization.
+                    ml_sb.append "_"
+                    if mat.mangled_name.get_length() > 0
+                        ml_sb.append mat.mangled_name
+                    else
+                        ml_sb.append mat.name
+                }
+                set mi: mi + 1
+            }
+            ml_sb.append "Ev"
+            let mangled ml_sb.to_string^rp()
+
+            ; Already synthesized for these arg types — reuse.
+            if this.has_recorded_function(mangled)
+                return mangled
+
+            this.push_scope()
+            var planned_items Vector[PlannedItem]^rp(lam.input.length)
+            var i: size_t 0
+            while i < lam.input.length
+            {
+                let it_ptr lam.input.get i
+                if it_ptr <> null
+                {
+                    let it (*it_ptr)
+                    var pty: PlannedType this.fresh_type_var#(String$(""))
+                    if i < arg_types.length
+                    {
+                        let at_ptr arg_types.get i
+                        if at_ptr <> null
+                            set pty: (*at_ptr)
+                    }
+                    ; Stable refs on rp via 1-element holders (the plan_item#
+                    ; idiom) — the recorded PlannedFunction outlives this loop.
+                    var pty_holder Vector[PlannedType]^rp(1)
+                    pty_holder.put(0, pty)
+                    var pname_ref: ref[String]? null
+                    if it.name <> null
+                    {
+                        let pn (*it.name)
+                        var name_holder Vector[String]^rp(1)
+                        name_holder.put(0, String^rp(pn))
+                        set pname_ref: name_holder.get(0)
+                        this.define_parameter(pn, pty)
+                    }
+                    planned_items.put(i, PlannedItem(it.span, false, pname_ref, pty_holder.get(0), null))
+                }
+                set i: i + 1
+            }
+            let planned_body this.plan_action#(lam.body)
+            this.pop_scope()
+
+            var items_holder Vector[PlannedItem]^rp(planned_items)
+            var rt_holder Vector[PlannedType]^rp(1)
+            rt_holder.put(0, planned_body.result_type)
+            let synth_fn PlannedFunction(
+                lam.span,
+                false,
+                false,
+                mangled,
+                mangled,
+                null,
+                &items_holder,
+                rt_holder.get(0),
+                null,
+                Lifetime.Unspecified(Unspecified()),
+                PlannedImplementation.Action(planned_body),
+                null,
+                false,
+                false,
+                null,
+                this.file
+            )
+            this.record_function(synth_fn)
+            mangled
+        }
+
         ; plan_repeat: do-while body runs at least once; the terminating
         ; condition lives inside the body action via `break` or an
         ; embedded if. Nothing else to constrain at this level.
@@ -11050,6 +11271,35 @@ define Planner
 
         function plan_binding#(rp, this: Planner, b: Binding) returns PlannedBinding
         {
+            ; Phase-1 lambda binding: `let f \params: body`. Record the lambda
+            ; model under the binding name and emit no runtime value — calls to
+            ; `f` monomorphize the body at the call site (collapse_operand_sequence#).
+            if b.operation.length = 1
+            {
+                let lb_op0_ptr b.operation.get 0
+                if lb_op0_ptr <> null
+                {
+                    if b.item.name <> null
+                    {
+                        choose (*lb_op0_ptr).expression
+                            when lb_lam: Lambda
+                            {
+                                this.record_lambda_model((*b.item.name), lb_lam)
+                                ; skip-binding: null item name + null operation
+                                ; → emit_binding is a no-op for this binding.
+                                return PlannedBinding(
+                                    b.span,
+                                    b.binding_type,
+                                    PlannedItem(b.span, false, null, null, null),
+                                    null
+                                )
+                            }
+                            else
+                                0
+                    }
+                }
+            }
+
             let raw_ops_flat this.plan_operands#(b.operation)
             let planned_ops_flat Planner.strip_leading_eq#(raw_ops_flat)
             let orig_item this.plan_item#(b.item)
@@ -11125,6 +11375,11 @@ define Planner
                                             if this.is_namespace_sibling_function(ft.name)
                                                 set head_is_call: true
                                             if this.has_this_method#(ft.name)
+                                                set head_is_call: true
+                                            ; A Phase-1 lambda binding name is callable,
+                                            ; not a type — `let r inc(5)` must collapse
+                                            ; to the lambda call, not peel `inc` as r's type.
+                                            if this.lookup_lambda_model(ft.name) <> null
                                                 set head_is_call: true
                                             if ft.name.last_index_of("." as u8) >= 0
                                             {

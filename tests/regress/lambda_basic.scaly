@@ -1,0 +1,23 @@
+; Regression (Phase-1 lambdas): a non-capturing lambda bound to a name is
+; callable; the body is monomorphized at the call site with the argument
+; types. Frozen stage-0 silently eats the lambda's backslash in
+; skip-whitespace (so `\x: x+1` lexes as `x: x+1`), so lambdas never parse
+; there — this runs only against a self-hosted stage.
+;
+; A Phase-1 lambda call must be the whole operand sequence of a statement /
+; binding initializer (a + inc(5) embedded in a larger expression is not yet
+; intercepted), so each call gets its own binding.
+;
+; inc(5) = 6, add(3,4) = 7  ->  6 + 7 = 13
+; Expected: PASS
+
+let inc \x: x + 1
+let add \x y: x + y
+
+let a inc(5)
+let b add(3, 4)
+let total a + b
+if total = 13
+    print("PASS")
+else
+    print("FAIL")
