@@ -826,6 +826,39 @@ function twice(f: IntFn, x: int) returns int
 let dbl: IntFn \x: x + x
 twice(dbl, 20)</programlisting></entry>
               <entry><literal>80
+
+    </literal></entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </informaltable>
+    </section>
+
+    <section xml:id='tests-LAMBDA-CLOSURES'>
+      <title>Closures</title>
+      <para>A capturing lambda assigned to a delegate type is a true closure
+        value carrying the captured variables. (Closures returned from a
+        function escape onto the caller's region — see the escaping-closure AOT
+        regression test.)</para>
+      <informaltable frame='none'>
+        <tgroup cols='2'>
+          <colspec colwidth='1*'/>
+          <colspec colwidth='1*'/>
+          <thead>
+            <row>
+              <entry>Input</entry>
+              <entry>Result</entry>
+            </row>
+          </thead>
+          <tbody>
+            <row>
+              <entry><programlisting>define IntFn delegate(int) returns int
+function apply(f: IntFn, x: int) returns int
+    f(x)
+let n 10
+let add: IntFn \x: x + n
+apply(add, 5)</programlisting></entry>
+              <entry><literal>15
 </literal></entry>
             </row>
           </tbody>
