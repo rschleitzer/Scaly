@@ -10378,7 +10378,7 @@ define Emitter
                 {
                     let member member_ptr.unwrap()
                     let field_ptr LLVMBuildStructGEP2(builder, current_type, current_ptr, member.field_index as int, member.name.c_data())
-                    set current_ptr: LLVMValueRef(field_ptr.handle)
+                    set current_ptr: field_ptr
                     let next i + 1
                     if next < n
                     {
@@ -10444,7 +10444,7 @@ define Emitter
                                     {
                                         let ptr_type LLVMPointerTypeInContext(context, 0)
                                         let loaded LLVMBuildLoad2(builder, ptr_type, current_ptr, "field.deref")
-                                        set current_ptr: LLVMValueRef(loaded.handle)
+                                        set current_ptr: loaded
                                         set current_type: inner_struct
                                     }
                                 }
