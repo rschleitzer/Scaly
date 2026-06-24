@@ -1,0 +1,27 @@
+; ESCAPE (negative), NAMESPACE variant: a function INSIDE a `define ns { ... }`
+; that returns a pointer to a $-local-page object. The escape checker must
+; REJECT it (rc != 0, "escapes") exactly like the top-level neg case.
+;
+; REGRESSION GUARD: planNamespace used to SWALLOW a failed planFunction (to
+; tolerate partially-implemented namespaces), which silently dropped an
+; escaping function to an empty `ret void` stub — a silent miscompile that
+; broke scalyls' JSON parser. The escape error must propagate as a hard error.
+define Box
+(
+    v: int
+)
+
+define ns
+{
+    function leak() returns pointer[Box]
+    {
+        let b Box$(5)
+        return &b
+    }
+}
+
+function main() returns int
+{
+    let p ns.leak()
+    return (*p).v
+}

@@ -13071,7 +13071,36 @@ llvm::Expected<PlannedNamespace> Planner::planNamespace(const Namespace &NS,
                 // Skip functions that fail to plan rather than aborting the namespace.
                 // This allows partially-implemented namespaces to work for the
                 // functions that CAN be planned (e.g., cli.main works even if cli.run fails).
-                llvm::consumeError(PlannedFunc.takeError());
+                //
+                // EXCEPTION: an escaping-reference error is a genuine RBMM safety
+                // violation, not an unimplemented feature. Surface it as a hard
+                // compile error (matching planModule and the checker's fatal-on-
+                // detect contract) instead of silently dropping the function — a
+                // dropped function is emitted as an empty `ret void` stub, i.e. a
+                // SILENT MISCOMPILE (this is exactly how scalyls' JSON parser broke).
+                bool IsEscape = false;
+                std::string EFile, EVia;
+                Span ELoc{};
+                llvm::Error Rest = llvm::handleErrors(
+                    PlannedFunc.takeError(),
+                    [&](const PlannerError &PE) {
+                        if (auto *ER = std::get_if<EscapingReferenceError>(
+                                &PE.getError())) {
+                            IsEscape = true;
+                            EFile = ER->File;
+                            ELoc = ER->Loc;
+                            EVia = ER->Via;
+                        }
+                    });
+                llvm::consumeError(std::move(Rest));
+                if (IsEscape) {
+                    for (const auto &[N, OldC] : SavedConcepts) { Concepts[N] = OldC; }
+                    ModuleStack.pop_back();
+                    CurrentNamespaceName = OldNamespaceName;
+                    CurrentNamespace = OldNamespace;
+                    CurrentNamespaceModules = OldNamespaceModules;
+                    return makeEscapingReferenceError(EFile, ELoc, EVia);
+                }
                 continue;
             }
 
