@@ -2636,6 +2636,120 @@ define Planner
             )
         }
 
+        ; If `op` is a Phase-1 lambda binding name used as a callable head (a
+        ; bare PlannedType with no generics, or an unresolved Variable, with no
+        ; member-access chain), return that lambda name; otherwise the empty
+        ; string. The lambda binding emits no runtime value, so the name arrives
+        ; here unresolved — this is how a lambda call is recognized.
+        function lambda_head_name#(rp, this: Planner, op: PlannedOperand) returns String
+        {
+            if op.member_access <> null
+                return String^rp("")
+            var nm String^rp("")
+            choose op.expr
+                when lht: PlannedType
+                {
+                    if lht.generics = null
+                        set nm: lht.name
+                }
+                when lhv: Variable
+                    set nm: lhv.name
+                else
+                    0
+            if nm.get_length() = 0
+                return String^rp("")
+            if this.lookup_lambda_model(nm) <> null
+                return nm
+            String^rp("")
+        }
+
+        ; Resolve a Phase-1 lambda call `name(args)` into a direct call to the
+        ; monomorphized function. `head_loc` is the call-site span, `lc_name`
+        ; the lambda binding name, `lc_lam` its recorded model, `lc_tp` the
+        ; argument Tuple. monomorphize_lambda# plans the body with the call's
+        ; argument types and synthesizes a concrete top-level function; the
+        ; captures it discovers are looked up at the call site (where they are
+        ; in scope) and prepended as leading arguments (capture by value).
+        function resolve_lambda_call#(rp, this: Planner, head_loc: Span, lc_name: String, lc_lam: Lambda, lc_tp: PlannedTuple) returns PlannedOperand
+        {
+            var lc_arg_ops Array[PlannedOperand]$()
+            var lc_arg_types Array[PlannedType]$()
+            if lc_tp.components <> null
+            {
+                let lc_comps (*lc_tp.components)
+                var lc_ci: size_t 0
+                while lc_ci < lc_comps.length
+                {
+                    let lc_cp lc_comps.get lc_ci
+                    if lc_cp <> null
+                    {
+                        if (*lc_cp).value <> null
+                        {
+                            let lc_vals (*(*lc_cp).value)
+                            if lc_vals.length > 0
+                            {
+                                let lc_collapsed this.collapse_operand_sequence#(lc_vals)
+                                lc_arg_ops.add lc_collapsed
+                                lc_arg_types.add lc_collapsed.result_type
+                            }
+                        }
+                    }
+                    set lc_ci: lc_ci + 1
+                }
+            }
+            var lc_at_vec Vector[PlannedType]^rp(lc_arg_types)
+            let lc_mono this.monomorphize_lambda#(lc_name, lc_lam, lc_at_vec)
+            let lc_mangled lc_mono.mangled
+            ; Prepend the captured values (looked up at the call site, where they
+            ; are in scope) as leading arguments — they map to the synthesized
+            ; function's leading capture parameters.
+            var lc_full_args Array[PlannedOperand]$()
+            if lc_mono.captures <> null
+            {
+                let lc_caps (*lc_mono.captures)
+                var lc_capi: size_t 0
+                while lc_capi < lc_caps.length
+                {
+                    let lc_cap_ptr lc_caps.get lc_capi
+                    if lc_cap_ptr <> null
+                    {
+                        let lc_capn (*lc_cap_ptr)
+                        let lc_cap_lb this.lookup_local_binding(lc_capn)
+                        if lc_cap_lb <> null
+                        {
+                            let lc_cap_ty (*lc_cap_lb).binding_type
+                            let lc_cap_mut (*lc_cap_lb).is_mutable
+                            let lc_cap_var PlannedVariable(head_loc, String^rp(lc_capn), lc_cap_ty, lc_cap_mut)
+                            lc_full_args.add(PlannedOperand(head_loc, PlannedExpression.Variable lc_cap_var, null, lc_cap_ty))
+                        }
+                    }
+                    set lc_capi: lc_capi + 1
+                }
+            }
+            var lc_afi: size_t 0
+            while lc_afi < lc_arg_ops.length
+            {
+                let lc_ao_ptr lc_arg_ops.get lc_afi
+                if lc_ao_ptr <> null
+                    lc_full_args.add((*lc_ao_ptr))
+                set lc_afi: lc_afi + 1
+            }
+            var lc_ret Planner.make_void_type#()
+            let lc_fidx function_name_index.lookup(lc_mangled)
+            if lc_fidx >= 0
+            {
+                let lc_fptr instantiated_functions.get lc_fidx
+                if lc_fptr <> null
+                {
+                    if (*lc_fptr).return_type <> null
+                        set lc_ret: (*(*lc_fptr).return_type)
+                }
+            }
+            var lc_call_args Vector[PlannedOperand]^rp(lc_full_args)
+            let lc_pc this.make_planned_call#(head_loc, lc_name, lc_mangled, lc_ret, lc_call_args)
+            PlannedOperand(head_loc, PlannedExpression.Call lc_pc, null, lc_ret)
+        }
+
         ; collapse_operand_sequence: fold a flat operand list of the
         ; shape [lhs, op, rhs, op, rhs, ...] into a single PlannedOperand
         ; representing the combined expression. LEFT-ASSOCIATIVE — this
@@ -2809,128 +2923,89 @@ define Planner
                 }
             }
 
-            ; Phase-1 lambda call: `f(args)` where f names a lambda binding.
-            ; The lambda binding emits no runtime value, so `f` arrives as a
-            ; bare PlannedType. Monomorphize the lambda body with the call's
-            ; argument types and resolve to a direct call to the synthesized
-            ; function. Captures are unsupported in Phase 1 — a captured name
-            ; in the body resolves as an unknown name (planner diagnostic).
-            if ops.length = 2
+            ; Phase-1 lambda call: resolve any adjacent `[lambdaName, Tuple]`
+            ; pair anywhere in the flat operand list into a single direct call
+            ; to the monomorphized lambda function — BEFORE the precedence /
+            ; binary loop runs — so lambda calls embedded in larger expressions
+            ; work (`a + inc(5)`, `inc(5) + add(3, 4)`), not only when the call
+            ; is the whole operand sequence. lambdaName is recognized by
+            ; lambda_head_name# (a bare PlannedType/Variable in lambda_models).
+            ; The pair is replaced by the resolved call operand and the shorter
+            ; list re-collapsed; the strictly-decreasing length terminates.
+            if ops.length >= 2
             {
-                let lc_head_ptr ops.get 0
-                let lc_tail_ptr ops.get 1
-                if lc_head_ptr <> null
+                var lp_i: size_t 0
+                var lp_found: bool false
+                var lp_at: size_t 0
+                while lp_i + 1 < ops.length
                 {
-                    if lc_tail_ptr <> null
+                    if lp_found = false
                     {
-                        let lc_head (*lc_head_ptr)
-                        let lc_tail (*lc_tail_ptr)
-                        if lc_head.member_access = null
+                        let lp_h_ptr ops.get lp_i
+                        let lp_t_ptr ops.get(lp_i + 1)
+                        if lp_h_ptr <> null
                         {
-                            ; `f` may resolve as a bare PlannedType (unknown
-                            ; name) or as an unresolved Variable — accept both.
-                            var lc_name String^rp("")
-                            choose lc_head.expr
-                                when lht: PlannedType
-                                {
-                                    if lht.generics = null
-                                        set lc_name: lht.name
-                                }
-                                when lhv: Variable
-                                    set lc_name: lhv.name
-                                else
-                                    0
-                            if lc_name.get_length() > 0
+                            if lp_t_ptr <> null
                             {
-                                let lc_lam_ref this.lookup_lambda_model(lc_name)
-                                if lc_lam_ref <> null
+                                let lp_name this.lambda_head_name#((*lp_h_ptr))
+                                if lp_name.get_length() > 0
                                 {
-                                    choose lc_tail.expr
-                                        when lc_tp: PlannedTuple
-                                        {
-                                            var lc_arg_ops Array[PlannedOperand]$()
-                                            var lc_arg_types Array[PlannedType]$()
-                                            if lc_tp.components <> null
-                                            {
-                                                let lc_comps (*lc_tp.components)
-                                                var lc_ci: size_t 0
-                                                while lc_ci < lc_comps.length
-                                                {
-                                                    let lc_cp lc_comps.get lc_ci
-                                                    if lc_cp <> null
-                                                    {
-                                                        if (*lc_cp).value <> null
-                                                        {
-                                                            let lc_vals (*(*lc_cp).value)
-                                                            if lc_vals.length > 0
-                                                            {
-                                                                let lc_collapsed this.collapse_operand_sequence#(lc_vals)
-                                                                lc_arg_ops.add lc_collapsed
-                                                                lc_arg_types.add lc_collapsed.result_type
-                                                            }
-                                                        }
-                                                    }
-                                                    set lc_ci: lc_ci + 1
-                                                }
-                                            }
-                                            var lc_at_vec Vector[PlannedType]^rp(lc_arg_types)
-                                            let lc_mono this.monomorphize_lambda#(lc_name, (*lc_lam_ref), lc_at_vec)
-                                            let lc_mangled lc_mono.mangled
-                                            ; Prepend the captured values (looked up at the
-                                            ; call site, where they are in scope) as leading
-                                            ; arguments — they map to the synthesized
-                                            ; function's leading capture parameters.
-                                            var lc_full_args Array[PlannedOperand]$()
-                                            if lc_mono.captures <> null
-                                            {
-                                                let lc_caps (*lc_mono.captures)
-                                                var lc_capi: size_t 0
-                                                while lc_capi < lc_caps.length
-                                                {
-                                                    let lc_cap_ptr lc_caps.get lc_capi
-                                                    if lc_cap_ptr <> null
-                                                    {
-                                                        let lc_capn (*lc_cap_ptr)
-                                                        let lc_cap_lb this.lookup_local_binding(lc_capn)
-                                                        if lc_cap_lb <> null
-                                                        {
-                                                            let lc_cap_ty (*lc_cap_lb).binding_type
-                                                            let lc_cap_mut (*lc_cap_lb).is_mutable
-                                                            let lc_cap_var PlannedVariable(lc_head.loc, String^rp(lc_capn), lc_cap_ty, lc_cap_mut)
-                                                            lc_full_args.add(PlannedOperand(lc_head.loc, PlannedExpression.Variable lc_cap_var, null, lc_cap_ty))
-                                                        }
-                                                    }
-                                                    set lc_capi: lc_capi + 1
-                                                }
-                                            }
-                                            var lc_afi: size_t 0
-                                            while lc_afi < lc_arg_ops.length
-                                            {
-                                                let lc_ao_ptr lc_arg_ops.get lc_afi
-                                                if lc_ao_ptr <> null
-                                                    lc_full_args.add((*lc_ao_ptr))
-                                                set lc_afi: lc_afi + 1
-                                            }
-                                            var lc_ret Planner.make_void_type#()
-                                            let lc_fidx function_name_index.lookup(lc_mangled)
-                                            if lc_fidx >= 0
-                                            {
-                                                let lc_fptr instantiated_functions.get lc_fidx
-                                                if lc_fptr <> null
-                                                {
-                                                    if (*lc_fptr).return_type <> null
-                                                        set lc_ret: (*(*lc_fptr).return_type)
-                                                }
-                                            }
-                                            var lc_call_args Vector[PlannedOperand]^rp(lc_full_args)
-                                            let lc_pc this.make_planned_call#(lc_head.loc, lc_name, lc_mangled, lc_ret, lc_call_args)
-                                            return PlannedOperand(lc_head.loc, PlannedExpression.Call lc_pc, null, lc_ret)
-                                        }
+                                    var lp_is_tuple: bool false
+                                    choose (*lp_t_ptr).expr
+                                        when lp_tp_chk: PlannedTuple
+                                            set lp_is_tuple: true
                                         else
                                             0
+                                    if lp_is_tuple
+                                    {
+                                        set lp_found: true
+                                        set lp_at: lp_i
+                                    }
                                 }
                             }
                         }
+                    }
+                    set lp_i: lp_i + 1
+                }
+                if lp_found
+                {
+                    let lp_h_ptr ops.get lp_at
+                    let lp_t_ptr ops.get(lp_at + 1)
+                    let lp_head (*lp_h_ptr)
+                    let lp_name this.lambda_head_name#(lp_head)
+                    let lp_lam_ref this.lookup_lambda_model(lp_name)
+                    if lp_lam_ref <> null
+                    {
+                        choose (*lp_t_ptr).expr
+                            when lp_tp: PlannedTuple
+                            {
+                                let lp_call this.resolve_lambda_call#(lp_head.loc, lp_name, (*lp_lam_ref), lp_tp)
+                                ; Rebuild the operand list with the [name, Tuple]
+                                ; pair replaced by the single resolved call
+                                ; operand, then recurse on the strictly-shorter
+                                ; list.
+                                var lp_new Array[PlannedOperand]$()
+                                var lp_k: size_t 0
+                                while lp_k < ops.length
+                                {
+                                    if lp_k = lp_at
+                                        lp_new.add lp_call
+                                    else
+                                    {
+                                        if lp_k <> lp_at + 1
+                                        {
+                                            let lp_op_ptr ops.get lp_k
+                                            if lp_op_ptr <> null
+                                                lp_new.add (*lp_op_ptr)
+                                        }
+                                    }
+                                    set lp_k: lp_k + 1
+                                }
+                                var lp_new_vec Vector[PlannedOperand]^rp(lp_new)
+                                return this.collapse_operand_sequence#(lp_new_vec)
+                            }
+                            else
+                                0
                     }
                 }
             }

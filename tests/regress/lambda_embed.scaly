@@ -1,0 +1,36 @@
+; Regression (Phase-1 lambdas, GAP A): a lambda call may be EMBEDDED inside a
+; larger expression — `a + inc(5)`, `inc(5) + add(3, 4)` — not only when it is
+; the whole operand sequence of a statement/binding. A pre-pass in
+; collapse_operand_sequence# resolves every adjacent `[lambdaName, Tuple]` pair
+; into a direct call before the precedence/binary loop runs. Captures still
+; work inside an embedded call. Self-hosted-only (stage-0 eats the backslash).
+;
+; inc(5)=6, add(3,4)=7 -> r1 = 13
+; n=100; n + inc(9) = 100 + 10 -> r2 = 110
+; cap captures n; cap(1)=101, cap(2)=102 -> r3 = 203
+; Expected: PASS
+
+let inc \x: x + 1
+let add \x y: x + y
+let n 100
+
+let r1 inc(5) + add(3, 4)
+let r2 n + inc(9)
+
+let cap \x: x + n
+let r3 cap(1) + cap(2)
+
+if r1 = 13
+{
+    if r2 = 110
+    {
+        if r3 = 203
+            print("PASS")
+        else
+            print("FAIL3")
+    }
+    else
+        print("FAIL2")
+}
+else
+    print("FAIL1")
