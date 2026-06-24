@@ -185,6 +185,8 @@ entry:
 
 define linkonce_odr void @_ZN4Page21deallocate_extensionsEv(ptr %0) {
 entry:
+  %iter.alloca11 = alloca %_Z16PageListIterator, align 8
+  %coll.tmp10 = alloca %_Z8PageList, align 8
   %page = alloca ptr, align 8
   %local_page = call ptr @_Z21scaly_alloc_root_pagev()
   %iter.alloca = alloca %_Z16PageListIterator, align 8
@@ -221,7 +223,7 @@ for.exit:                                         ; preds = %for.cond
   store ptr %next_page, ptr %page, align 1
   br label %while.cond
 
-while.cond:                                       ; preds = %while.body, %for.exit
+while.cond:                                       ; preds = %for.exit14, %for.exit
   %page3 = load ptr, ptr %page, align 8
   %ne = icmp ne ptr %page3, null
   br i1 %ne, label %while.body, label %while.exit
@@ -231,13 +233,31 @@ while.body:                                       ; preds = %while.cond
   %load.struct5 = load %_Z4Page, ptr %page4, align 8
   %next_page6 = extractvalue %_Z4Page %load.struct5, 2
   %page7 = load ptr, ptr %page, align 8
-  call void @_Z18scaly_release_pageP4Page(ptr %page7)
-  store ptr %next_page6, ptr %page, align 1
-  br label %while.cond
+  %load.struct8 = load %_Z4Page, ptr %page7, align 8
+  %exclusive_pages9 = extractvalue %_Z4Page %load.struct8, 3
+  store %_Z8PageList %exclusive_pages9, ptr %coll.tmp10, align 8
+  call void @_ZN8PageList12get_iteratorEPN4scaly6memory4PageE(ptr %iter.alloca11, ptr %local_page, ptr %coll.tmp10)
+  br label %for.cond12
 
 while.exit:                                       ; preds = %while.cond
-  call void @_Z23scaly_release_root_pageP4Page(ptr %local_page)
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   ret void
+
+for.cond12:                                       ; preds = %for.body13, %while.body
+  %next15 = call ptr @_ZN16PageListIterator4nextEv(ptr %iter.alloca11)
+  %is.done16 = icmp eq ptr %next15, null
+  br i1 %is.done16, label %for.exit14, label %for.body13
+
+for.body13:                                       ; preds = %for.cond12
+  call void @_ZN4Page21deallocate_extensionsEv(ptr %next15)
+  call void @_Z18scaly_release_pageP4Page(ptr %next15)
+  br label %for.cond12
+
+for.exit14:                                       ; preds = %for.cond12
+  %page17 = load ptr, ptr %page, align 8
+  call void @_Z18scaly_release_pageP4Page(ptr %page17)
+  store ptr %next_page6, ptr %page, align 1
+  br label %while.cond
 }
 
 define linkonce_odr ptr @_ZN4Page8allocateEmm(ptr %0, i64 %1, i64 %2) {
@@ -331,6 +351,8 @@ declare void @abort()
 declare i64 @strlen(ptr)
 
 declare i64 @write(i64, ptr, i64)
+
+declare i64 @read(i64, ptr, i64)
 
 declare ptr @fopen(ptr, ptr)
 
@@ -1025,41 +1047,100 @@ if.end:                                           ; preds = %if.then, %entry
 
 define linkonce_odr i32 @_Z7ctz_u643u64(i64 %0) {
 entry:
-  %count = alloca i64, align 8
-  store i64 0, ptr %count, align 1
+  %n = alloca i64, align 8
+  store i64 0, ptr %n, align 1
   %v = alloca i64, align 8
   store i64 %0, ptr %v, align 1
-  br label %while.cond
+  %v1 = load i64, ptr %v, align 4
+  %and = and i64 %v1, 4294967295
+  %eq = icmp eq i64 %and, 0
+  br i1 %eq, label %if.then, label %if.end
 
-while.cond:                                       ; preds = %if.end, %entry
-  %count1 = load i64, ptr %count, align 4
-  %lt = icmp slt i64 %count1, 64
-  br i1 %lt, label %while.body, label %while.exit
-
-while.body:                                       ; preds = %while.cond
-  %v2 = load i64, ptr %v, align 4
-  %and = and i64 %v2, 1
-  %ne = icmp ne i64 %and, 0
-  br i1 %ne, label %if.then, label %if.end
-
-while.exit:                                       ; preds = %while.cond
-  %count6 = load i64, ptr %count, align 4
-  %as.trunc7 = trunc i64 %count6 to i32
-  ret i32 %as.trunc7
-
-if.then:                                          ; preds = %while.body
-  %count3 = load i64, ptr %count, align 4
-  %as.trunc = trunc i64 %count3 to i32
-  ret i32 %as.trunc
-
-if.end:                                           ; preds = %while.body
-  %count4 = load i64, ptr %count, align 4
-  %add = add i64 %count4, 1
-  store i64 %add, ptr %count, align 1
-  %v5 = load i64, ptr %v, align 4
-  %lshr = lshr i64 %v5, 1
+if.then:                                          ; preds = %entry
+  %n2 = load i64, ptr %n, align 4
+  %add = add i64 %n2, 32
+  store i64 %add, ptr %n, align 1
+  %v3 = load i64, ptr %v, align 4
+  %lshr = lshr i64 %v3, 32
   store i64 %lshr, ptr %v, align 1
-  br label %while.cond
+  br label %if.end
+
+if.end:                                           ; preds = %if.then, %entry
+  %v4 = load i64, ptr %v, align 4
+  %and5 = and i64 %v4, 65535
+  %eq6 = icmp eq i64 %and5, 0
+  br i1 %eq6, label %if.then7, label %if.end8
+
+if.then7:                                         ; preds = %if.end
+  %n9 = load i64, ptr %n, align 4
+  %add10 = add i64 %n9, 16
+  store i64 %add10, ptr %n, align 1
+  %v11 = load i64, ptr %v, align 4
+  %lshr12 = lshr i64 %v11, 16
+  store i64 %lshr12, ptr %v, align 1
+  br label %if.end8
+
+if.end8:                                          ; preds = %if.then7, %if.end
+  %v13 = load i64, ptr %v, align 4
+  %and14 = and i64 %v13, 255
+  %eq15 = icmp eq i64 %and14, 0
+  br i1 %eq15, label %if.then16, label %if.end17
+
+if.then16:                                        ; preds = %if.end8
+  %n18 = load i64, ptr %n, align 4
+  %add19 = add i64 %n18, 8
+  store i64 %add19, ptr %n, align 1
+  %v20 = load i64, ptr %v, align 4
+  %lshr21 = lshr i64 %v20, 8
+  store i64 %lshr21, ptr %v, align 1
+  br label %if.end17
+
+if.end17:                                         ; preds = %if.then16, %if.end8
+  %v22 = load i64, ptr %v, align 4
+  %and23 = and i64 %v22, 15
+  %eq24 = icmp eq i64 %and23, 0
+  br i1 %eq24, label %if.then25, label %if.end26
+
+if.then25:                                        ; preds = %if.end17
+  %n27 = load i64, ptr %n, align 4
+  %add28 = add i64 %n27, 4
+  store i64 %add28, ptr %n, align 1
+  %v29 = load i64, ptr %v, align 4
+  %lshr30 = lshr i64 %v29, 4
+  store i64 %lshr30, ptr %v, align 1
+  br label %if.end26
+
+if.end26:                                         ; preds = %if.then25, %if.end17
+  %v31 = load i64, ptr %v, align 4
+  %and32 = and i64 %v31, 3
+  %eq33 = icmp eq i64 %and32, 0
+  br i1 %eq33, label %if.then34, label %if.end35
+
+if.then34:                                        ; preds = %if.end26
+  %n36 = load i64, ptr %n, align 4
+  %add37 = add i64 %n36, 2
+  store i64 %add37, ptr %n, align 1
+  %v38 = load i64, ptr %v, align 4
+  %lshr39 = lshr i64 %v38, 2
+  store i64 %lshr39, ptr %v, align 1
+  br label %if.end35
+
+if.end35:                                         ; preds = %if.then34, %if.end26
+  %v40 = load i64, ptr %v, align 4
+  %and41 = and i64 %v40, 1
+  %eq42 = icmp eq i64 %and41, 0
+  br i1 %eq42, label %if.then43, label %if.end44
+
+if.then43:                                        ; preds = %if.end35
+  %n45 = load i64, ptr %n, align 4
+  %add46 = add i64 %n45, 1
+  store i64 %add46, ptr %n, align 1
+  br label %if.end44
+
+if.end44:                                         ; preds = %if.then43, %if.end35
+  %n47 = load i64, ptr %n, align 4
+  %as.trunc = trunc i64 %n47 to i32
+  ret i32 %as.trunc
 }
 
 define linkonce_odr ptr @_Z21scaly_alloc_root_pagev() {
@@ -1166,6 +1247,63 @@ if.end7:                                          ; preds = %if.end5
   %deref.recv = load ptr, ptr %field.inplace, align 8
   %call8 = call ptr @_Z16last_usable_pagePv(ptr %deref.recv)
   store ptr %call8, ptr @stack_top, align 8
+  ret void
+}
+
+define linkonce_odr void @_Z28scaly_release_root_page_fullP4Page(ptr %0) {
+entry:
+  %used = alloca i1, align 1
+  %eq = icmp eq ptr %0, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret void
+
+if.end:                                           ; preds = %entry
+  %as.ptrtoint = ptrtoint ptr %0 to i64
+  %add = add i64 %as.ptrtoint, ptrtoint (ptr getelementptr (%_Z4Page, ptr null, i32 1) to i64)
+  %as.inttoptr = inttoptr i64 %add to ptr
+  store i1 false, ptr %used, align 1
+  %load.struct = load %_Z4Page, ptr %0, align 8
+  %next_object = extractvalue %_Z4Page %load.struct, 0
+  %ne = icmp ne ptr %next_object, %as.inttoptr
+  br i1 %ne, label %if.then1, label %if.end2
+
+if.then1:                                         ; preds = %if.end
+  store i1 true, ptr %used, align 1
+  br label %if.end2
+
+if.end2:                                          ; preds = %if.then1, %if.end
+  %load.struct3 = load %_Z4Page, ptr %0, align 8
+  %next_page = extractvalue %_Z4Page %load.struct3, 2
+  %ne4 = icmp ne ptr %next_page, null
+  br i1 %ne4, label %if.then5, label %if.end6
+
+if.then5:                                         ; preds = %if.end2
+  store i1 true, ptr %used, align 1
+  br label %if.end6
+
+if.end6:                                          ; preds = %if.then5, %if.end2
+  %load.struct7 = load %_Z4Page, ptr %0, align 8
+  %exclusive_pages = extractvalue %_Z4Page %load.struct7, 3
+  %head = extractvalue %_Z8PageList %exclusive_pages, 0
+  %ne8 = icmp ne ptr %head, null
+  br i1 %ne8, label %if.then9, label %if.end10
+
+if.then9:                                         ; preds = %if.end6
+  store i1 true, ptr %used, align 1
+  br label %if.end10
+
+if.end10:                                         ; preds = %if.then9, %if.end6
+  %used11 = load i1, ptr %used, align 1
+  br i1 %used11, label %if.then12, label %if.end13
+
+if.then12:                                        ; preds = %if.end10
+  call void @_ZN4Page21deallocate_extensionsEv(ptr %0)
+  br label %if.end13
+
+if.end13:                                         ; preds = %if.then12, %if.end10
+  call void @_Z23scaly_release_root_pageP4Page(ptr %0)
   ret void
 }
 
@@ -2263,7 +2401,7 @@ while.body:                                       ; preds = %while.cond
 
 while.exit:                                       ; preds = %while.cond
   %i3 = load i64, ptr %i, align 4
-  call void @_Z23scaly_release_root_pageP4Page(ptr %local_page)
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   ret i64 %i3
 }
 
@@ -2367,6 +2505,7 @@ define linkonce_odr void @_ZN6VectorIiEC1EPN4scaly6memory4PageE4ListIiE(ptr %0, 
 entry:
   %i = alloca i64, align 8
   %list_iterator = alloca ptr, align 8
+  %local_page = call ptr @_Z21scaly_alloc_root_pagev()
   %sret.result = alloca %_Z12ListIteratorIiE, align 8
   %call = call i64 @_ZN4ListIiE5countEv(ptr %2)
   %length = getelementptr inbounds %_Z6VectorIiE, ptr %0, i32 0, i32 0
@@ -2383,7 +2522,7 @@ if.then:                                          ; preds = %entry
   %call4 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 %mul, i64 8)
   %data = getelementptr inbounds %_Z6VectorIiE, ptr %0, i32 0, i32 1
   store ptr %call4, ptr %data, align 8
-  call void @_ZN4ListIiE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorIiE) %sret.result, ptr %1, ptr %2)
+  call void @_ZN4ListIiE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorIiE) %sret.result, ptr %local_page, ptr %2)
   store ptr %sret.result, ptr %list_iterator, align 1
   %load.struct5 = load %_Z6VectorIiE, ptr %0, align 8
   %length6 = extractvalue %_Z6VectorIiE %load.struct5, 0
@@ -2396,6 +2535,7 @@ if.else:                                          ; preds = %entry
   br label %if.end
 
 if.end:                                           ; preds = %if.else, %while.exit
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   ret void
 
 while.cond:                                       ; preds = %while.body, %if.then
@@ -3398,7 +3538,7 @@ while.body:                                       ; preds = %while.cond
 
 while.exit:                                       ; preds = %while.cond
   %i3 = load i64, ptr %i, align 4
-  call void @_Z23scaly_release_root_pageP4Page(ptr %local_page)
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   ret i64 %i3
 }
 
@@ -3502,6 +3642,7 @@ define linkonce_odr void @_ZN6VectorIcEC1EPN4scaly6memory4PageE4ListIcE(ptr %0, 
 entry:
   %i = alloca i64, align 8
   %list_iterator = alloca ptr, align 8
+  %local_page = call ptr @_Z21scaly_alloc_root_pagev()
   %sret.result = alloca %_Z12ListIteratorIcE, align 8
   %call = call i64 @_ZN4ListIcE5countEv(ptr %2)
   %length = getelementptr inbounds %_Z6VectorIcE, ptr %0, i32 0, i32 0
@@ -3518,7 +3659,7 @@ if.then:                                          ; preds = %entry
   %call4 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 %mul, i64 1)
   %data = getelementptr inbounds %_Z6VectorIcE, ptr %0, i32 0, i32 1
   store ptr %call4, ptr %data, align 8
-  call void @_ZN4ListIcE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorIcE) %sret.result, ptr %1, ptr %2)
+  call void @_ZN4ListIcE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorIcE) %sret.result, ptr %local_page, ptr %2)
   store ptr %sret.result, ptr %list_iterator, align 1
   %load.struct5 = load %_Z6VectorIcE, ptr %0, align 8
   %length6 = extractvalue %_Z6VectorIcE %load.struct5, 0
@@ -3531,6 +3672,7 @@ if.else:                                          ; preds = %entry
   br label %if.end
 
 if.end:                                           ; preds = %if.else, %while.exit
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   ret void
 
 while.cond:                                       ; preds = %while.body, %if.then
@@ -4128,7 +4270,7 @@ while.body:                                       ; preds = %while.cond
 
 while.exit:                                       ; preds = %while.cond
   %i3 = load i64, ptr %i, align 4
-  call void @_Z23scaly_release_root_pageP4Page(ptr %local_page)
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   ret i64 %i3
 }
 
@@ -4201,6 +4343,7 @@ entry:
   %deref.tmp = alloca %_Z6String, align 8
   %i = alloca i64, align 8
   %list_iterator = alloca ptr, align 8
+  %local_page = call ptr @_Z21scaly_alloc_root_pagev()
   %sret.result = alloca %_Z12ListIteratorI6StringE, align 8
   %call = call i64 @_ZN4ListI6StringE5countEv(ptr %2)
   %length = getelementptr inbounds %_Z6VectorI6StringE, ptr %0, i32 0, i32 0
@@ -4217,7 +4360,7 @@ if.then:                                          ; preds = %entry
   %call4 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 %mul, i64 8)
   %data = getelementptr inbounds %_Z6VectorI6StringE, ptr %0, i32 0, i32 1
   store ptr %call4, ptr %data, align 8
-  call void @_ZN4ListI6StringE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI6StringE) %sret.result, ptr %1, ptr %2)
+  call void @_ZN4ListI6StringE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI6StringE) %sret.result, ptr %local_page, ptr %2)
   store ptr %sret.result, ptr %list_iterator, align 1
   %load.struct5 = load %_Z6VectorI6StringE, ptr %0, align 8
   %length6 = extractvalue %_Z6VectorI6StringE %load.struct5, 0
@@ -4230,6 +4373,7 @@ if.else:                                          ; preds = %entry
   br label %if.end
 
 if.end:                                           ; preds = %if.else, %while.exit
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   ret void
 
 while.cond:                                       ; preds = %while.body, %if.then
@@ -4799,7 +4943,7 @@ while.body:                                       ; preds = %while.cond
 
 while.exit:                                       ; preds = %while.cond
   %i3 = load i64, ptr %i, align 4
-  call void @_Z23scaly_release_root_pageP4Page(ptr %local_page)
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   ret i64 %i3
 }
 
@@ -4996,7 +5140,7 @@ while.body:                                       ; preds = %while.cond
 
 while.exit:                                       ; preds = %while.cond
   %i3 = load i64, ptr %i, align 4
-  call void @_Z23scaly_release_root_pageP4Page(ptr %local_page)
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   ret i64 %i3
 }
 
@@ -5484,7 +5628,7 @@ while.body:                                       ; preds = %while.cond
 
 while.exit:                                       ; preds = %while.cond
   %i3 = load i64, ptr %i, align 4
-  call void @_Z23scaly_release_root_pageP4Page(ptr %local_page)
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   ret i64 %i3
 }
 
@@ -5557,6 +5701,7 @@ entry:
   %deref.tmp = alloca %_Z11BuilderListI4SlotI6StringEE, align 8
   %i = alloca i64, align 8
   %list_iterator = alloca ptr, align 8
+  %local_page = call ptr @_Z21scaly_alloc_root_pagev()
   %sret.result = alloca %_Z12ListIteratorI11BuilderListI4SlotI6StringEEE, align 8
   %call = call i64 @_ZN4ListI11BuilderListI4SlotI6StringEEE5countEv(ptr %2)
   %length = getelementptr inbounds %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 0
@@ -5573,7 +5718,7 @@ if.then:                                          ; preds = %entry
   %call4 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 %mul, i64 8)
   %data = getelementptr inbounds %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 1
   store ptr %call4, ptr %data, align 8
-  call void @_ZN4ListI11BuilderListI4SlotI6StringEEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI11BuilderListI4SlotI6StringEEE) %sret.result, ptr %1, ptr %2)
+  call void @_ZN4ListI11BuilderListI4SlotI6StringEEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI11BuilderListI4SlotI6StringEEE) %sret.result, ptr %local_page, ptr %2)
   store ptr %sret.result, ptr %list_iterator, align 1
   %load.struct5 = load %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
   %length6 = extractvalue %_Z6VectorI11BuilderListI4SlotI6StringEEE %load.struct5, 0
@@ -5586,6 +5731,7 @@ if.else:                                          ; preds = %entry
   br label %if.end
 
 if.end:                                           ; preds = %if.else, %while.exit
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   ret void
 
 while.cond:                                       ; preds = %while.body, %if.then
@@ -5753,7 +5899,7 @@ while.body:                                       ; preds = %while.cond
 
 while.exit:                                       ; preds = %while.cond
   %i3 = load i64, ptr %i, align 4
-  call void @_Z23scaly_release_root_pageP4Page(ptr %local_page)
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   ret i64 %i3
 }
 
@@ -6007,11 +6153,11 @@ while.exit:                                       ; preds = %while.cond
   %add = add i64 %length11, 1
   %length12 = getelementptr inbounds %_Z14HashSetBuilderI6StringE, ptr %0, i32 0, i32 0
   store i64 %add, ptr %length12, align 4
-  call void @_Z23scaly_release_root_pageP4Page(ptr %local_page)
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   ret i1 true
 
 if.then:                                          ; preds = %while.body
-  call void @_Z23scaly_release_root_pageP4Page(ptr %local_page)
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   ret i1 false
 
 if.end:                                           ; preds = %while.body
@@ -6058,11 +6204,11 @@ while.body:                                       ; preds = %while.cond
   br i1 %call7, label %if.then8, label %if.end9
 
 while.exit:                                       ; preds = %while.cond
-  call void @_Z23scaly_release_root_pageP4Page(ptr %local_page)
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   ret i1 false
 
 if.then8:                                         ; preds = %while.body
-  call void @_Z23scaly_release_root_pageP4Page(ptr %local_page)
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   ret i1 true
 
 if.end9:                                          ; preds = %while.body
@@ -6659,7 +6805,7 @@ while.body:                                       ; preds = %while.cond
 
 while.exit:                                       ; preds = %while.cond
   %i3 = load i64, ptr %i, align 4
-  call void @_Z23scaly_release_root_pageP4Page(ptr %local_page)
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   ret i64 %i3
 }
 
@@ -6732,6 +6878,7 @@ entry:
   %deref.tmp = alloca %_Z6VectorI6StringE, align 8
   %i = alloca i64, align 8
   %list_iterator = alloca ptr, align 8
+  %local_page = call ptr @_Z21scaly_alloc_root_pagev()
   %sret.result = alloca %_Z12ListIteratorI6VectorI6StringEE, align 8
   %call = call i64 @_ZN4ListI6VectorI6StringEE5countEv(ptr %2)
   %length = getelementptr inbounds %_Z6VectorI6VectorI6StringEE, ptr %0, i32 0, i32 0
@@ -6748,7 +6895,7 @@ if.then:                                          ; preds = %entry
   %call4 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 %mul, i64 8)
   %data = getelementptr inbounds %_Z6VectorI6VectorI6StringEE, ptr %0, i32 0, i32 1
   store ptr %call4, ptr %data, align 8
-  call void @_ZN4ListI6VectorI6StringEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI6VectorI6StringEE) %sret.result, ptr %1, ptr %2)
+  call void @_ZN4ListI6VectorI6StringEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI6VectorI6StringEE) %sret.result, ptr %local_page, ptr %2)
   store ptr %sret.result, ptr %list_iterator, align 1
   %load.struct5 = load %_Z6VectorI6VectorI6StringEE, ptr %0, align 8
   %length6 = extractvalue %_Z6VectorI6VectorI6StringEE %load.struct5, 0
@@ -6761,6 +6908,7 @@ if.else:                                          ; preds = %entry
   br label %if.end
 
 if.end:                                           ; preds = %if.else, %while.exit
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   ret void
 
 while.cond:                                       ; preds = %while.body, %if.then
@@ -6894,6 +7042,7 @@ entry:
   %list_iterator = alloca %_Z12ListIteratorI4SlotI6StringEE, align 8
   %tuple = alloca %_Z12ListIteratorI4SlotI6StringEE, align 8
   %array = alloca ptr, align 8
+  %local_page = call ptr @_Z21scaly_alloc_root_pagev()
   %i = alloca i64, align 8
   %length9 = alloca i64, align 8
   %load.struct = load %_Z14HashSetBuilderI6StringE, ptr %2, align 8
@@ -6904,6 +7053,7 @@ entry:
 if.then:                                          ; preds = %entry
   %slots = getelementptr inbounds %_Z7HashSetI6StringE, ptr %0, i32 0, i32 0
   store ptr null, ptr %slots, align 8
+  call void @_Z23scaly_release_root_pageP4Page(ptr %local_page)
   ret void
 
 if.end:                                           ; preds = %entry
@@ -6938,10 +7088,11 @@ while.body:                                       ; preds = %while.cond
   br i1 %ne, label %if.then13, label %if.end14
 
 while.exit:                                       ; preds = %while.cond
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   ret void
 
 if.then13:                                        ; preds = %while.body
-  %struct.region15 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr (%_Z5ArrayI6StringE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5ArrayI6StringE }, ptr null, i64 0, i32 1) to i64))
+  %struct.region15 = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 ptrtoint (ptr getelementptr (%_Z5ArrayI6StringE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5ArrayI6StringE }, ptr null, i64 0, i32 1) to i64))
   %tuple.field = getelementptr inbounds %_Z5ArrayI6StringE, ptr %struct.region15, i32 0, i32 0
   store i64 0, ptr %tuple.field, align 4
   %tuple.field16 = getelementptr inbounds %_Z5ArrayI6StringE, ptr %struct.region15, i32 0, i32 1
@@ -7704,7 +7855,7 @@ while.body:                                       ; preds = %while.cond
 
 while.exit:                                       ; preds = %while.cond
   %i3 = load i64, ptr %i, align 4
-  call void @_Z23scaly_release_root_pageP4Page(ptr %local_page)
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   ret i64 %i3
 }
 
@@ -7777,6 +7928,7 @@ entry:
   %deref.tmp = alloca %_Z12KeyValuePairI6StringiE, align 8
   %i = alloca i64, align 8
   %list_iterator = alloca ptr, align 8
+  %local_page = call ptr @_Z21scaly_alloc_root_pagev()
   %sret.result = alloca %_Z12ListIteratorI12KeyValuePairI6StringiEE, align 8
   %call = call i64 @_ZN4ListI12KeyValuePairI6StringiEE5countEv(ptr %2)
   %length = getelementptr inbounds %_Z6VectorI12KeyValuePairI6StringiEE, ptr %0, i32 0, i32 0
@@ -7793,7 +7945,7 @@ if.then:                                          ; preds = %entry
   %call4 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 %mul, i64 8)
   %data = getelementptr inbounds %_Z6VectorI12KeyValuePairI6StringiEE, ptr %0, i32 0, i32 1
   store ptr %call4, ptr %data, align 8
-  call void @_ZN4ListI12KeyValuePairI6StringiEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI12KeyValuePairI6StringiEE) %sret.result, ptr %1, ptr %2)
+  call void @_ZN4ListI12KeyValuePairI6StringiEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI12KeyValuePairI6StringiEE) %sret.result, ptr %local_page, ptr %2)
   store ptr %sret.result, ptr %list_iterator, align 1
   %load.struct5 = load %_Z6VectorI12KeyValuePairI6StringiEE, ptr %0, align 8
   %length6 = extractvalue %_Z6VectorI12KeyValuePairI6StringiEE %load.struct5, 0
@@ -7806,6 +7958,7 @@ if.else:                                          ; preds = %entry
   br label %if.end
 
 if.end:                                           ; preds = %if.else, %while.exit
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   ret void
 
 while.cond:                                       ; preds = %while.body, %if.then
@@ -9037,10 +9190,12 @@ if.end16:                                         ; preds = %if.then15, %if.end9
 
 define linkonce_odr void @_ZN5Slice10slice_fromEPN4scaly6memory4PageEm(ptr noalias sret(%_Z5Slice) %0, ptr %1, ptr %2, i64 %3) {
 entry:
+  %local_page = call ptr @_Z21scaly_alloc_root_pagev()
   %sret.result = alloca %_Z5Slice, align 8
   %field.inplace = getelementptr inbounds %_Z5Slice, ptr %2, i32 0, i32 1
   %field.val = load i64, ptr %field.inplace, align 4
-  call void @_ZN5Slice8subsliceEPN4scaly6memory4PageEmm(ptr noalias sret(%_Z5Slice) %sret.result, ptr %1, ptr %2, i64 %3, i64 %field.val)
+  call void @_ZN5Slice8subsliceEPN4scaly6memory4PageEmm(ptr noalias sret(%_Z5Slice) %sret.result, ptr %local_page, ptr %2, i64 %3, i64 %field.val)
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   %sret.body = load %_Z5Slice, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr (%_Z5Slice, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -9048,8 +9203,10 @@ entry:
 
 define linkonce_odr void @_ZN5Slice8slice_toEPN4scaly6memory4PageEm(ptr noalias sret(%_Z5Slice) %0, ptr %1, ptr %2, i64 %3) {
 entry:
+  %local_page = call ptr @_Z21scaly_alloc_root_pagev()
   %sret.result = alloca %_Z5Slice, align 8
-  call void @_ZN5Slice8subsliceEPN4scaly6memory4PageEmm(ptr noalias sret(%_Z5Slice) %sret.result, ptr %1, ptr %2, i64 0, i64 %3)
+  call void @_ZN5Slice8subsliceEPN4scaly6memory4PageEmm(ptr noalias sret(%_Z5Slice) %sret.result, ptr %local_page, ptr %2, i64 0, i64 %3)
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   %sret.body = load %_Z5Slice, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr (%_Z5Slice, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -9221,7 +9378,7 @@ while.body:                                       ; preds = %while.cond
 
 while.exit:                                       ; preds = %while.cond
   %i3 = load i64, ptr %i, align 4
-  call void @_Z23scaly_release_root_pageP4Page(ptr %local_page)
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   ret i64 %i3
 }
 
@@ -9752,7 +9909,7 @@ while.body:                                       ; preds = %while.cond
 
 while.exit:                                       ; preds = %while.cond
   %i3 = load i64, ptr %i, align 4
-  call void @_Z23scaly_release_root_pageP4Page(ptr %local_page)
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   ret i64 %i3
 }
 
@@ -11947,7 +12104,7 @@ entry:
   %call = call ptr @_ZN6String11to_c_stringEPN4scaly6memory4PageE(ptr %local_page, ptr %0)
   %call1 = call i64 @access(ptr %call, i64 0)
   %eq = icmp eq i64 %call1, 0
-  call void @_Z23scaly_release_root_pageP4Page(ptr %local_page)
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   ret i1 %eq
 }
 
@@ -11955,7 +12112,8 @@ define linkonce_odr void @_ZN4File14read_to_stringEPN4scaly6memory4PageE6String(
 entry:
   %ret = alloca ptr, align 8
   %struct.init = alloca %_Z6String, align 8
-  %call = call ptr @_ZN6String11to_c_stringEPN4scaly6memory4PageE(ptr %1, ptr %2)
+  %local_page = call ptr @_Z21scaly_alloc_root_pagev()
+  %call = call ptr @_ZN6String11to_c_stringEPN4scaly6memory4PageE(ptr %local_page, ptr %2)
   %call1 = call ptr @fopen(ptr %call, ptr @.str.22)
   %file = alloca ptr, align 8
   store ptr %call1, ptr %file, align 1
@@ -11966,6 +12124,7 @@ entry:
 if.then:                                          ; preds = %entry
   %tuple.field = getelementptr inbounds %_Z6String, ptr %struct.init, i32 0, i32 0
   store ptr null, ptr %tuple.field, align 8
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   %sret.body = load %_Z6String, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z6String, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -11987,6 +12146,7 @@ if.end:                                           ; preds = %entry
   %file12 = load ptr, ptr %file, align 8
   %call13 = call i64 @fclose(ptr %file12)
   %ret14 = load ptr, ptr %ret, align 8
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   %sret.body15 = load %_Z6String, ptr %ret14, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %ret14, i64 ptrtoint (ptr getelementptr (%_Z6String, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -12004,7 +12164,7 @@ entry:
   br i1 %eq, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z23scaly_release_root_pageP4Page(ptr %local_page)
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   ret i1 false
 
 if.end:                                           ; preds = %entry
@@ -12014,7 +12174,7 @@ if.end:                                           ; preds = %entry
   %call6 = call i64 @fwrite(ptr %call3, i64 1, i64 %call4, ptr %file5)
   %file7 = load ptr, ptr %file, align 8
   %call8 = call i64 @fclose(ptr %file7)
-  call void @_Z23scaly_release_root_pageP4Page(ptr %local_page)
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   ret i1 true
 }
 
@@ -12024,7 +12184,7 @@ entry:
   %call = call ptr @_ZN6String11to_c_stringEPN4scaly6memory4PageE(ptr %local_page, ptr %0)
   %call1 = call i64 @access(ptr %call, i64 0)
   %eq = icmp eq i64 %call1, 0
-  call void @_Z23scaly_release_root_pageP4Page(ptr %local_page)
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   ret i1 %eq
 }
 
@@ -12040,13 +12200,13 @@ entry:
   br i1 %eq, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z23scaly_release_root_pageP4Page(ptr %local_page)
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   ret i1 false
 
 if.end:                                           ; preds = %entry
   %dir3 = load ptr, ptr %dir, align 8
   %call4 = call i64 @closedir(ptr %dir3)
-  call void @_Z23scaly_release_root_pageP4Page(ptr %local_page)
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   ret i1 true
 }
 
@@ -12056,7 +12216,7 @@ entry:
   %call = call ptr @_ZN6String11to_c_stringEPN4scaly6memory4PageE(ptr %local_page, ptr %0)
   %call1 = call i64 @mkdir(ptr %call, i64 493)
   %eq = icmp eq i64 %call1, 0
-  call void @_Z23scaly_release_root_pageP4Page(ptr %local_page)
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   ret i1 %eq
 }
 
@@ -12066,13 +12226,14 @@ entry:
   %call = call ptr @_ZN6String11to_c_stringEPN4scaly6memory4PageE(ptr %local_page, ptr %0)
   %call1 = call i64 @rmdir(ptr %call)
   %eq = icmp eq i64 %call1, 0
-  call void @_Z23scaly_release_root_pageP4Page(ptr %local_page)
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   ret i1 %eq
 }
 
 define linkonce_odr void @_ZN4Path18get_directory_nameEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z6String) %0, ptr %1, ptr %2) {
 entry:
-  %call = call ptr @_ZN6String11to_c_stringEPN4scaly6memory4PageE(ptr %1, ptr %2)
+  %local_page = call ptr @_Z21scaly_alloc_root_pagev()
+  %call = call ptr @_ZN6String11to_c_stringEPN4scaly6memory4PageE(ptr %local_page, ptr %2)
   %call1 = call ptr @dirname(ptr %call)
   %call2 = call i64 @strcmp(ptr %call1, ptr @.str.24)
   %eq = icmp eq i64 %call2, 0
@@ -12081,6 +12242,7 @@ entry:
 if.then:                                          ; preds = %entry
   %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr (%_Z6String, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6String }, ptr null, i64 0, i32 1) to i64))
   call void @_ZN6StringC1EPN4scaly6memory4PageEP10const_char(ptr %struct.region, ptr %1, ptr @.str.25)
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   %sret.body = load %_Z6String, ptr %struct.region, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.region, i64 ptrtoint (ptr getelementptr (%_Z6String, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -12088,6 +12250,7 @@ if.then:                                          ; preds = %entry
 if.end:                                           ; preds = %entry
   %struct.region3 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr (%_Z6String, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6String }, ptr null, i64 0, i32 1) to i64))
   call void @_ZN6StringC1EPN4scaly6memory4PageEP10const_char(ptr %struct.region3, ptr %1, ptr %call1)
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   %sret.body4 = load %_Z6String, ptr %struct.region3, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.region3, i64 ptrtoint (ptr getelementptr (%_Z6String, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -12095,10 +12258,12 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN4Path13get_file_nameEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z6String) %0, ptr %1, ptr %2) {
 entry:
-  %call = call ptr @_ZN6String11to_c_stringEPN4scaly6memory4PageE(ptr %1, ptr %2)
+  %local_page = call ptr @_Z21scaly_alloc_root_pagev()
+  %call = call ptr @_ZN6String11to_c_stringEPN4scaly6memory4PageE(ptr %local_page, ptr %2)
   %call1 = call ptr @basename(ptr %call)
   %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr (%_Z6String, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6String }, ptr null, i64 0, i32 1) to i64))
   call void @_ZN6StringC1EPN4scaly6memory4PageEP10const_char(ptr %struct.region, ptr %1, ptr %call1)
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   %sret.body = load %_Z6String, ptr %struct.region, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.region, i64 ptrtoint (ptr getelementptr (%_Z6String, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -12108,6 +12273,7 @@ define linkonce_odr void @_ZN4Path4joinEPN4scaly6memory4PageE6String6String(ptr 
 entry:
   %sret.result = alloca %_Z6String, align 8
   %path = alloca ptr, align 8
+  %local_page = call ptr @_Z21scaly_alloc_root_pagev()
   %call = call i64 @_ZN6String10get_lengthEv(ptr %2)
   %eq = icmp eq i64 %call, 0
   br i1 %eq, label %if.then, label %if.end
@@ -12117,11 +12283,12 @@ if.then:                                          ; preds = %entry
   call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region, ptr %1, ptr %3)
   %sret.body = load %_Z6String, ptr %struct.region, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.region, i64 ptrtoint (ptr getelementptr (%_Z6String, ptr null, i32 1) to i64), i1 false)
+  call void @_Z23scaly_release_root_pageP4Page(ptr %local_page)
   ret void
 
 if.end:                                           ; preds = %entry
-  %struct.region1 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr (%_Z13StringBuilder, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z13StringBuilder }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN13StringBuilderC1EPN4scaly6memory4PageE(ptr %struct.region1, ptr %1)
+  %struct.region1 = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 ptrtoint (ptr getelementptr (%_Z13StringBuilder, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z13StringBuilder }, ptr null, i64 0, i32 1) to i64))
+  call void @_ZN13StringBuilderC1EPN4scaly6memory4PageE(ptr %struct.region1, ptr %local_page)
   store ptr %struct.region1, ptr %path, align 1
   %path2 = load ptr, ptr %path, align 8
   call void @_ZN13StringBuilder6appendE6String(ptr %path2, ptr %2)
@@ -12132,6 +12299,7 @@ if.end:                                           ; preds = %entry
 if.then5:                                         ; preds = %if.end
   %path7 = load ptr, ptr %path, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret(%_Z6String) %sret.result, ptr %1, ptr %path7)
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   %sret.body8 = load %_Z6String, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr (%_Z6String, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -12143,6 +12311,7 @@ if.end6:                                          ; preds = %if.end
   call void @_ZN13StringBuilder6appendE6String(ptr %path10, ptr %3)
   %path11 = load ptr, ptr %path, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret(%_Z6String) %sret.result, ptr %1, ptr %path11)
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   %sret.body12 = load %_Z6String, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr (%_Z6String, ptr null, i32 1) to i64), i1 false)
   ret void
