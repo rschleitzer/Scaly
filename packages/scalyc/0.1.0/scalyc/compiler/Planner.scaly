@@ -1182,7 +1182,7 @@ define Planner
         {
             let step1 Path.join^rp(base, name)
             let step2 Path.join^rp(step1, version)
-            var file_sb StringBuilder^rp()
+            var file_sb StringBuilder$()
             file_sb.append name
             file_sb.append ".scaly"
             let file_part file_sb.to_string^rp()
@@ -1241,7 +1241,7 @@ define Planner
             module_name: String
         ) returns ref[Module]?
         {
-            var name_sb StringBuilder^rp()
+            var name_sb StringBuilder$()
             name_sb.append module_name
             name_sb.append ".scaly"
             let file_part name_sb.to_string^rp()
@@ -10191,7 +10191,7 @@ define Planner
 
             let lam_id next_lambda_id
             set next_lambda_id: lam_id + 1
-            var name_sb StringBuilder^rp()
+            var name_sb StringBuilder$()
             name_sb.append "_ZN6lambda"
             name_sb.append(Planner.size_to_string lam_id)
             name_sb.append "Ev"
@@ -10319,7 +10319,7 @@ define Planner
             }
 
             ; ---- mangled name = base + capture type mangles + arg type mangles
-            var ml_sb StringBuilder^rp()
+            var ml_sb StringBuilder$()
             ml_sb.append "_ZN6lambdaN"
             ml_sb.append base_name
             ml_sb.append "E"
@@ -10483,11 +10483,11 @@ define Planner
                     set ci: ci + 1
                 }
             }
-            var thunk_sb StringBuilder^rp()
+            var thunk_sb StringBuilder$()
             thunk_sb.append mono.mangled
             thunk_sb.append "_thunk"
             let thunk_name thunk_sb.to_string^rp()
-            var clo_sb StringBuilder^rp()
+            var clo_sb StringBuilder$()
             clo_sb.append "clo_"
             clo_sb.append mono.mangled
             let clo_type_name clo_sb.to_string^rp()
@@ -13252,7 +13252,7 @@ define Planner
                                     let dret this.delegate_return_type#(crt.name)
                                     let rlam_id next_lambda_id
                                     set next_lambda_id: rlam_id + 1
-                                    var rb_sb StringBuilder^rp()
+                                    var rb_sb StringBuilder$()
                                     rb_sb.append "ret"
                                     let rlam_str size_to_string(rlam_id)
                                     rb_sb.append rlam_str
