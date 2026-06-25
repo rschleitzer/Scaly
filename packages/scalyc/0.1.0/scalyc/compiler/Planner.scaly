@@ -14746,251 +14746,21 @@ define Planner
         ; (silent rc=139 SEGV in the helper after IR is emitted).
         function plan_namespace_module_one#(rp, this: Planner, sub: Module)
         {
-            if sub.name.equals("memory")
-            {
-                let planned this.plan_module#(sub)
-            }
-            if sub.name.equals("io")
-            {
-                let planned this.plan_module#(sub)
-            }
-            if sub.name.equals("containers")
-            {
-                let planned this.plan_module#(sub)
-            }
-            if sub.name.equals("compiler")
-            {
-                let planned this.plan_module#(sub)
-            }
-            if sub.name.equals("cli")
-            {
-                let planned this.plan_module#(sub)
-            }
-            if sub.name.equals("Vector")
-            {
-                let planned this.plan_module#(sub)
-            }
-            if sub.name.equals("HashMap")
-            {
-                let planned this.plan_module#(sub)
-            }
-            if sub.name.equals("Array")
-            {
-                let planned this.plan_module#(sub)
-            }
-            if sub.name.equals("BuilderList")
-            {
-                let planned this.plan_module#(sub)
-            }
-            if sub.name.equals("BuilderListIterator")
-            {
-                let planned this.plan_module#(sub)
-            }
-            if sub.name.equals("HashMapBuilder")
-            {
-                let planned this.plan_module#(sub)
-            }
-            if sub.name.equals("HashSet")
-            {
-                let planned this.plan_module#(sub)
-            }
-            if sub.name.equals("HashSetBuilder")
-            {
-                let planned this.plan_module#(sub)
-            }
-            if sub.name.equals("KeyValuePair")
-            {
-                let planned this.plan_module#(sub)
-            }
-            if sub.name.equals("List")
-            {
-                let planned this.plan_module#(sub)
-            }
-            if sub.name.equals("ListIterator")
-            {
-                let planned this.plan_module#(sub)
-            }
-            if sub.name.equals("Node")
-            {
-                let planned this.plan_module#(sub)
-            }
-            if sub.name.equals("Slot")
-            {
-                let planned this.plan_module#(sub)
-            }
-            if sub.name.equals("Slice")
-            {
-                let planned this.plan_module#(sub)
-            }
-            if sub.name.equals("Option")
-            {
-                let planned this.plan_module#(sub)
-            }
-            if sub.name.equals("Result")
-            {
-                let planned this.plan_module#(sub)
-            }
-            if sub.name.equals("StringIterator")
-            {
-                let planned this.plan_module#(sub)
-            }
-            ; s188: hashing namespace (hash FNV-1a + is_prime + get_prime).
-            ; Now walkable after the sqrt/fixed-array removals in hashing.scaly.
-            ; Needed real for the seed: HashSetBuilder<String>::reallocate
-            ; calls get_prime, String::hash calls hash — declare-only (→
-            ; undefined at link) until the namespace is walked.
-            if sub.name.equals("hashing")
-            {
-                let planned this.plan_module#(sub)
-            }
-            if sub.name.equals("StringBuilder")
-            {
-                let planned this.plan_module#(sub)
-            }
-            if sub.name.equals("String")
-            {
-                let planned this.plan_module#(sub)
-            }
-            if sub.name.equals("Page")
-            {
-                let planned this.plan_module#(sub)
-            }
-            if sub.name.equals("PageList")
-            {
-                let planned this.plan_module#(sub)
-            }
-            if sub.name.equals("PageNode")
-            {
-                let planned this.plan_module#(sub)
-            }
-            if sub.name.equals("PageListIterator")
-            {
-                let planned this.plan_module#(sub)
-            }
-            if sub.name.equals("BlockWatermark")
-            {
-                let planned this.plan_module#(sub)
-            }
-            if sub.name.equals("runtime")
-            {
-                let planned this.plan_module#(sub)
-            }
-            if sub.name.equals("root_pages")
-            {
-                let planned this.plan_module#(sub)
-            }
-            if sub.name.equals("Console")
-            {
-                let planned this.plan_module#(sub)
-            }
-            if sub.name.equals("File")
-            {
-                let planned this.plan_module#(sub)
-            }
-            if sub.name.equals("Directory")
-            {
-                let planned this.plan_module#(sub)
-            }
-            if sub.name.equals("Path")
-            {
-                let planned this.plan_module#(sub)
-            }
-            if sub.name.equals("FileError")
-            {
-                let planned this.plan_module#(sub)
-            }
-            if sub.name.equals("Model")
-            {
-                let planned this.plan_module#(sub)
-            }
-            if sub.name.equals("Plan")
-            {
-                let planned this.plan_module#(sub)
-            }
-            if sub.name.equals("ConceptIndex")
-            {
-                let planned this.plan_module#(sub)
-            }
-            if sub.name.equals("FunctionIndex")
-            {
-                let planned this.plan_module#(sub)
-            }
-            if sub.name.equals("LLVM")
-            {
-                let planned this.plan_module#(sub)
-            }
-            if sub.name.equals("Syntax")
-            {
-                let planned this.plan_module#(sub)
-            }
-            if sub.name.equals("lexer")
-            {
-                let planned this.plan_module#(sub)
-            }
-            if sub.name.equals("parser")
-            {
-                let planned this.plan_module#(sub)
-            }
-            if sub.name.equals("Modeler")
-            {
-                let planned this.plan_module#(sub)
-            }
-            if sub.name.equals("Emitter")
-            {
-                let planned this.plan_module#(sub)
-            }
-            if sub.name.equals("Planner")
-            {
-                let planned this.plan_module#(sub)
-            }
-            ; scalyls modules (self-host effort) — added one at a time.
-            if sub.name.equals("json")
-            {
-                let planned this.plan_module#(sub)
-            }
-            if sub.name.equals("rpc")
-            {
-                let planned this.plan_module#(sub)
-            }
-            if sub.name.equals("diagnostics")
-            {
-                let planned this.plan_module#(sub)
-            }
-            if sub.name.equals("symindex")
-            {
-                let planned this.plan_module#(sub)
-            }
-            if sub.name.equals("grammar")
-            {
-                let planned this.plan_module#(sub)
-            }
-            if sub.name.equals("nameset")
-            {
-                let planned this.plan_module#(sub)
-            }
-            if sub.name.equals("symbols")
-            {
-                let planned this.plan_module#(sub)
-            }
-            if sub.name.equals("docstore")
-            {
-                let planned this.plan_module#(sub)
-            }
-            if sub.name.equals("worker")
-            {
-                let planned this.plan_module#(sub)
-            }
-            if sub.name.equals("server")
-            {
-                let planned this.plan_module#(sub)
-            }
-            if sub.name.equals("semantic")
-            {
-                let planned this.plan_module#(sub)
-            }
-            ; Layout-only fallback: even when this sub-module isn't on
-            ; the safe-walk list (or when it was walked but its struct
-            ; was already cached), register layouts for any concrete
+            ; Walk EVERY sub-module of the namespace being compiled.
+            ; Only the COMPILATION ROOT package's namespace modules reach
+            ; here (loaded dependency packages are registered but never
+            ; walked — plan_loaded_packages# is intentionally not called),
+            ; so this emits exactly the current package's bodies: scaly's
+            ; for scaly.scaly, scalyc's for scalyc.scaly, scalyls's for
+            ; scalyls.scaly. Replaces the former hand-maintained name
+            ; allowlist (every reachable scaly/scalyc module was already on
+            ; it, so this is emission-identical for the compiler) and lets
+            ; the scalyls package self-host without naming its modules in
+            ; the compiler. A bare call (no `equals("X") = false` negation)
+            ; avoids the stage-0 codegen SEGV that motivated the allowlist.
+            let planned this.plan_module#(sub)
+            ; Layout-only fallback: after the walk (or when a struct was
+            ; already cached), register layouts for any concrete
             ; (parameterless) Structures it defines. has_instantiated_structure
             ; in register_struct_layouts_in_concept# guards against
             ; duplicate entries. This makes cross-module struct types
@@ -15000,8 +14770,8 @@ define Planner
         }
 
         ; Helper for plan_namespace#: walk ns.modules and route each
-        ; through plan_namespace_module_one# (which applies the
-        ; safe-walk filter). Side effect only — plan_module# returns
+        ; through plan_namespace_module_one# (which walks the module's
+        ; bodies). Side effect only — plan_module# returns
         ; a struct-by-value PlannedModule that's intentionally
         ; discarded inside the inner helper. Mixing that struct
         ; return into plan_namespace#'s own struct construction
