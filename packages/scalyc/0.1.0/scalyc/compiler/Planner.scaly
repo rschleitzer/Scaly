@@ -14887,6 +14887,42 @@ define Planner
             {
                 let planned this.plan_module#(sub)
             }
+            if sub.name.equals("rpc")
+            {
+                let planned this.plan_module#(sub)
+            }
+            if sub.name.equals("diagnostics")
+            {
+                let planned this.plan_module#(sub)
+            }
+            if sub.name.equals("symindex")
+            {
+                let planned this.plan_module#(sub)
+            }
+            if sub.name.equals("grammar")
+            {
+                let planned this.plan_module#(sub)
+            }
+            if sub.name.equals("nameset")
+            {
+                let planned this.plan_module#(sub)
+            }
+            if sub.name.equals("symbols")
+            {
+                let planned this.plan_module#(sub)
+            }
+            if sub.name.equals("docstore")
+            {
+                let planned this.plan_module#(sub)
+            }
+            if sub.name.equals("worker")
+            {
+                let planned this.plan_module#(sub)
+            }
+            if sub.name.equals("server")
+            {
+                let planned this.plan_module#(sub)
+            }
             ; Layout-only fallback: even when this sub-module isn't on
             ; the safe-walk list (or when it was walked but its struct
             ; was already cached), register layouts for any concrete
