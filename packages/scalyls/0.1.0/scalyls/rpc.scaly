@@ -22,8 +22,8 @@ use scaly.containers.Array
 use scaly.memory.Page
 use scaly.memory.runtime
 
-define STDIN_FD: int 0
-define STDOUT_FD: int 1
+define RPC_STDIN_FD: int 0
+define RPC_STDOUT_FD: int 1
 
 define rpc
 {
@@ -33,7 +33,7 @@ define rpc
     {
         var c: u8 0
         let cp &c
-        let n read(STDIN_FD, cp as pointer[void], 1 as size_t)
+        let n read(RPC_STDIN_FD, cp as pointer[void], 1 as size_t)
         ; Read the byte back THROUGH the pointer: `read` wrote it via cp,
         ; and stage-0 does not reload an escaped local (`c as int` returns
         ; the stale pre-read value), so deref cp to force a memory load.
@@ -50,7 +50,7 @@ define rpc
         while total < n
         {
             let dst (buf as pointer[u8] + total) as pointer[void]
-            let got read(STDIN_FD, dst, n - total)
+            let got read(RPC_STDIN_FD, dst, n - total)
 
             if got = (0 as size_t)          ; EOF
                 return
@@ -166,7 +166,7 @@ define rpc
         while total < len
         {
             let dst (buf + total) as pointer[void]
-            let w write(STDOUT_FD, dst, len - total)
+            let w write(RPC_STDOUT_FD, dst, len - total)
 
             if w = (0 as size_t)
                 return

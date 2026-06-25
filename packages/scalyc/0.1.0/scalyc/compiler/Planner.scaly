@@ -5243,6 +5243,20 @@ define Planner
                                             ; libscaly's `..P10const_char`.
                                             var items_arr Array[PlannedItem]$()
                                             var used_ns_local: bool false
+                                            ; When the prefix namespace declares
+                                            ; the member itself (used_ns_local),
+                                            ; the page requirement must come from
+                                            ; THAT member, not from the global
+                                            ; bare-name match — a same-named
+                                            ; function in another package (e.g.
+                                            ; scalyc.compiler's no-`#`
+                                            ; is_primitive_type_name vs symbols'
+                                            ; `#` one) can win the registry scan
+                                            ; with requires_page_param=false,
+                                            ; dropping `PN4scaly6memory4PageE` and
+                                            ; leaving the call referencing a
+                                            ; never-defined no-page symbol.
+                                            var used_ns_page: bool false
                                             choose nsc.definition
                                                 when ns_def: Namespace
                                                 {
@@ -5332,6 +5346,10 @@ define Planner
                                                                                     set pi_ns: pi_ns + 1
                                                                                 }
                                                                                 set used_ns_local: true
+                                                                                if nf.page_parameter <> null
+                                                                                    set used_ns_page: true
+                                                                                if Planner.needs_implicit_return_page(nf)
+                                                                                    set used_ns_page: true
                                                                             }
                                                                         }
                                                                     }
@@ -5404,8 +5422,16 @@ define Planner
                                             ; doesn't match libscalyc's real
                                             ; `_ZN3cli10parse_argsEPN4scaly6memory4PageEiPPc`.
                                             let mm_pp (*match_ref)
+                                            ; Page requirement: when the prefix
+                                            ; namespace itself declared the member
+                                            ; (used_ns_local), trust THAT member's
+                                            ; page flag; otherwise the resolved
+                                            ; global match.
+                                            var ns_has_page: bool mm_pp.requires_page_param
+                                            if used_ns_local
+                                                set ns_has_page: used_ns_page
                                             set ns_mangled: Planner.mangle_function#(
-                                                suffix, &items_holder, ns_parent_ref, mm_pp.requires_page_param
+                                                suffix, &items_holder, ns_parent_ref, ns_has_page
                                             )
                                             set has_ns_mangled: true
 
@@ -5516,7 +5542,7 @@ define Planner
                                                 ; uses LLVMGetParam(func, 1) on a 1-param
                                                 ; function and gets a bogus pointer.
                                                 var pp_ref: ref[String]? null
-                                                if mm.requires_page_param
+                                                if ns_has_page
                                                 {
                                                     var pp_h Vector[String]^rp(1)
                                                     pp_h.put(0, String^rp("rp"))
