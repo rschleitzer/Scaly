@@ -111,13 +111,19 @@ done
 # ensure_union_layout# (they plan the dependency type's LAYOUT on demand, no
 # initializers/methods, so the body still resolves cross-unit at link time).
 # documentSymbol/definition/references/completion/signatureHelp/semanticTokens/
-# folding/hover-on-decl are at parity with the C++-stage-0 build.
+# folding/hover (incl. semantic hover on a variable USE) / diagnostics are at
+# parity with the C++-stage-0 build — the cross-package by-value LAYOUT fix
+# (Planner.scaly ensure_layout_by_name# recursion + the call-boundary +
+# instantiate_generic# ensure-hooks) lets the worker construct + run the full
+# planner (Modeler.build_program# -> plan_program over a cross-package Planner)
+# without the s114 { ptr }-placeholder ABI mismatch that crashed it.
 #
-# KNOWN GAP (graceful, not a regression to []): semantic hover on a variable
-# USE falls back to the lexical hover — semantic.scaly runs the full planner in
-# a worker and its plan-walk semantic-type path is not yet self-hosted, so the
-# server's PREFER-semantic/FALL-BACK-to-lexical path lands on the lexical
-# answer. Every other feature matches the C++ build.
+# KNOWN GAP (narrow, graceful): a mid-session SAME-LENGTH on-disk edit of a
+# sibling file is not picked up by the chain-segment inlayHint content-hash
+# cache (the re-read file String's hash() returns its pre-edit value in the
+# long-running worker — a probe-sensitive heap Heisenbug). Editors send a
+# didChange (the in-memory store path, which works) rather than editing on disk
+# silently, and length-changing edits invalidate fine, so this is rarely hit.
 #
 # Build: reuse the compiler seed's scalyc.o + scaly.o (the same packages
 # scalyls depends on, already emitted above) and add scalyls' OWN main + root.
