@@ -2110,7 +2110,22 @@ define Planner
                         if p_ptr <> null
                         {
                             if a_ptr <> null
+                            {
+                                ; Ensure a cross-package by-value generic
+                                ; ARGUMENT's layout before it is substituted
+                                ; into the instantiation's properties. A
+                                ; Node[Use] / KeyValuePair[String, Concept]
+                                ; embeds the argument (Use / Concept) BY VALUE;
+                                ; if its layout is the s114 { ptr } placeholder
+                                ; here the instantiation is laid out with an 8B
+                                ; ptr where the dependency object has the real
+                                ; struct, so a List[Use] / HashMap walked by
+                                ; value across the boundary corrupts. No-op for
+                                ; in-package args (already laid out) → fixpoint-
+                                ; safe.
+                                this.ensure_type_layout#((*a_ptr))
                                 this.define_type_substitution(p_ptr.name, Planner.rehome_type^own_page((*a_ptr)))
+                            }
                         }
                     }
                     set i: i + 1
@@ -2292,6 +2307,9 @@ define Planner
                         set ok: Planner.types_compatible(planned_p, arg)
                     if ok = false
                         return null
+                    ; Ensure a by-value cross-package param type's layout so the
+                    ; arg slot is sized correctly (not the { ptr } placeholder).
+                    this.ensure_type_layout#(planned_p)
                     planned_params_arr.add planned_p
                 }
                 set j: j + 1
@@ -2303,6 +2321,8 @@ define Planner
             {
                 let rt (*f.returns_)
                 set return_type: this.plan_type#(rt)
+                ; Ensure a by-value cross-package sret return type's layout.
+                this.ensure_type_layout#(return_type)
             }
 
             var has_page: bool false
@@ -2761,6 +2781,18 @@ define Planner
             args: Vector[PlannedOperand]
         ) returns PlannedCall
         {
+            ; Ensure by-value cross-package struct/union layouts (sret return +
+            ; each by-value arg) so map_type emits the real type, not the s114
+            ; { ptr } placeholder — see ensure_type_layout#.
+            this.ensure_type_layout#(result_type)
+            var at_i: size_t 0
+            while at_i < args.length
+            {
+                let ao args.get at_i
+                if ao <> null
+                    this.ensure_type_layout#((*ao).result_type)
+                set at_i: at_i + 1
+            }
             var args_holder Vector[PlannedOperand]^rp(args)
             PlannedCall(
                 loc,
@@ -14700,6 +14732,35 @@ define Planner
                     let pl this.plan_structure_layout_opt^own_page(s, name, false)
                     if instantiating_structures.length > 0
                         set instantiating_structures.length: instantiating_structures.length - 1
+                    ; Recurse into BY-VALUE field types so the emitter's struct
+                    ; sizing walker maps each embedded field to its REAL layout
+                    ; rather than the s114 { ptr } placeholder — e.g. Planner
+                    ; embeds ConceptIndex (16B) / FunctionIndex (32B) by value;
+                    ; placeholdering them to 8B shifts every later field offset
+                    ; and a Planner constructed in this root mismatches the
+                    ; dependency object's. Pointer/ref/primitive/generic
+                    ; segments → guarded no-op; the has_instantiated guard at the
+                    ; top of each helper breaks field-graph cycles.
+                    var fpi: size_t 0
+                    while fpi < s.properties.length
+                    {
+                        let pp_ptr s.properties.get fpi
+                        if pp_ptr <> null
+                        {
+                            let pp (*pp_ptr)
+                            if pp.type <> null
+                            {
+                                let pt (*pp.type)
+                                if pt.name.length > 0
+                                {
+                                    let lp pt.name.get(pt.name.length - 1)
+                                    if lp <> null
+                                        this.ensure_layout_by_name#((*lp))
+                                }
+                            }
+                        }
+                        set fpi: fpi + 1
+                    }
                     0
                 }
                 else
@@ -14749,10 +14810,68 @@ define Planner
                     let pl this.plan_union_opt^own_page(u, name, false)
                     if instantiating_structures.length > 0
                         set instantiating_structures.length: instantiating_structures.length - 1
+                    ; Recurse into BY-VALUE variant payload types so the union
+                    ; payload is sized over their REAL layouts, not the { ptr }
+                    ; placeholder (e.g. JsonValue.Array → JsonArray, 16B). Same
+                    ; guard/cycle reasoning as the struct recursion above.
+                    var vpi: size_t 0
+                    while vpi < u.variants.length
+                    {
+                        let vv_ptr u.variants.get vpi
+                        if vv_ptr <> null
+                        {
+                            let vv (*vv_ptr)
+                            if vv.type <> null
+                            {
+                                let vt (*vv.type)
+                                if vt.name.length > 0
+                                {
+                                    let lv vt.name.get(vt.name.length - 1)
+                                    if lv <> null
+                                        this.ensure_layout_by_name#((*lv))
+                                }
+                            }
+                        }
+                        set vpi: vpi + 1
+                    }
                     0
                 }
                 else
                     0
+        }
+
+        ; ensure_type_layout#: on-demand layout for a CROSS-PACKAGE struct OR
+        ; union that crosses a call boundary BY VALUE (an sret return type or a
+        ; by-value parameter) while planning a root that does not walk the
+        ; defining package. ensure_member_layout# / ensure_union_layout# fire
+        ; only on member-access hops / choose scrutinees; a type that is merely
+        ; PASSED to or RETURNED from an extern dependency function (e.g.
+        ; scalyls' json.get / json.as_i64 with JsonValue, a scalyc union) never
+        ; reaches either, so map_type falls back to the s114 { ptr } placeholder
+        ; — the caller sizes the sret/arg slot at 8 bytes while the callee
+        ; (in the dependency's object) writes the real (larger) struct, smashing
+        ; the stack. Ensuring both kinds here makes map_type emit the real type
+        ; so the by-value ABI matches across the package boundary. Dispatch is by
+        ; trying both helpers; each is a guarded no-op when the named concept is
+        ; not its kind / already instantiated / opaque / generic. Fixed-point-
+        ; safe for the same reason as the two underlying helpers: scaly/scalyc/
+        ; main pass no unplanned cross-package types by value (every in-package
+        ; type is already registered → no-op).
+        function ensure_type_layout#(rp, this: Planner, t: PlannedType)
+            this.ensure_layout_by_name#(t.name)
+
+        ; By-name twin of ensure_type_layout#: lay out whichever kind (struct
+        ; or union) the named concept is. Each underlying helper is a guarded
+        ; no-op when the concept is not its kind / already instantiated / opaque
+        ; / generic / unknown (primitives, pointer, ref). Both helpers RECURSE
+        ; into the type's by-value constituents (see their bodies), so this also
+        ; lays out the whole by-value subgraph reachable from `name`.
+        function ensure_layout_by_name#(rp, this: Planner, name: String)
+        {
+            if name.get_length() = 0
+                return
+            this.ensure_member_layout#(name)
+            this.ensure_union_layout#(name)
         }
 
         ; plan_global: Model.Global → Plan.PlannedGlobal.
