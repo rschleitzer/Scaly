@@ -15002,24 +15002,16 @@ define Planner
             )
         }
 
-        ; plan_namespace_module_one#: route a single sub-module through
-        ; plan_module# only when its name is on the safe-walk list
-        ; (top-level package namespaces). Inner generic sub-modules of
-        ; the scaly stdlib (containers/Vector, containers/HashMap, etc.)
-        ; carry generic struct definitions whose body planning hits an
-        ; unresolved Type.name walk in join_dotted_name → crashes
-        ; mid-emit. Until that gap is closed, restrict the walk to the
-        ; outer package namespaces.
+        ; plan_namespace_module_one#: walk EVERY sub-module of the
+        ; namespace being compiled (the former hand-maintained name
+        ; allowlist is GONE — commit 0c4791f4). Only the COMPILATION
+        ; ROOT package's namespace modules reach here (loaded dependency
+        ; packages are registered but never walked), so this emits
+        ; exactly the current package's bodies.
         ;
-        ; Functions inside the skipped inner sub-modules still resolve
-        ; via register_concept_recursive (which walks ns.modules and
-        ; registers concepts/functions globally) plus the
-        ; collapse_operand_sequence# extern-decl gate; bodies come from
-        ; libscaly / libscalyc at link time.
-        ;
-        ; Positive enumeration of safe names — the negation form
-        ; `equals("X") = false` triggers a stage-0 codegen issue
-        ; (silent rc=139 SEGV in the helper after IR is emitted).
+        ; A bare `plan_module#(sub)` call (no `equals("X") = false`
+        ; negation) avoids the stage-0 codegen SEGV that originally
+        ; motivated the positive-enumeration allowlist.
         function plan_namespace_module_one#(rp, this: Planner, sub: Module)
         {
             ; Walk EVERY sub-module of the namespace being compiled.
