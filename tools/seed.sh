@@ -101,26 +101,33 @@ done
 # scalyls language server seed (separate program; NOT part of the compiler
 # fixed point above).
 #
-# scalyls depends on the scalyc compiler PACKAGE. It is now emitted by the
-# SELF-HOSTED compiler ($CC, the same stage-2 that minted the compiler seed),
-# PER-PACKAGE-ROOT like the compiler seed: a tiny scalyls main.ll (extern
-# server.run) + scalyls.ll (the LSP package bodies), linked against the
-# already-emitted scalyc.ll + scaly.ll (the compiler package + stdlib). The
-# four roots link with just -lLLVM-18 and need no libscaly.a. There is NO
-# fixed-point requirement (scalyls does not self-compile): mint it, link it
-# clean (zero undefined), and smoke-test an LSP initialize round-trip.
-echo "seed: emitting scalyls (4-root, self-hosted) with $CC --no-tests"
+# scalyls depends on the scalyc compiler PACKAGE. The self-hosted compiler can
+# now EMIT + LINK the whole scalyls package per-root (the multi-package
+# emission gap is closed), and the resulting server initializes — BUT its LSP
+# feature functions are still miscompiled (e.g. parse_program# returns Success
+# with program.file.declarations null, so document_symbols#/hover/inlay return
+# empty). Until that self-hosted-codegen class is fixed module-by-module,
+# scalyls.ll is emitted by the C++ stage-0 (scalyc/build/scalyc) — the only
+# compiler that builds a FUNCTIONALLY correct scalyls. It is a SELF-CONTAINED
+# .ll (the scaly stdlib + scalyc compiler are baked in), so it links standalone
+# with just -lLLVM-18 and needs no libscaly.a. There is NO fixed-point
+# requirement (scalyls does not self-compile): mint it, link it clean (zero
+# undefined), and smoke-test an LSP initialize round-trip.
+SCALYLS_CC=${SCALYLS_CC:-scalyc/build/scalyc}
+if [ ! -x "$SCALYLS_CC" ]; then
+  echo "seed: building C++ stage-0 for scalyls ($SCALYLS_CC missing)"
+  ./build.sh >/dev/null 2>&1 || fail "build.sh (C++ stage-0 for scalyls)"
+fi
+# NOTE: no --no-tests — that flag is self-hosted-only; the C++ stage-0 rejects
+# it. scalyls emitted by stage-0 links clean WITH test functions present (they
+# are unreferenced from server.run and the linker drops them), verified below.
+echo "seed: emitting scalyls.ll with $SCALYLS_CC"
 ( ulimit -s 65520
-  "$CC" -S --no-tests -o "$OUT/lsmain.ll"  packages/scalyls/0.1.0/main.scaly    || exit 1
-  "$CC" -S --no-tests -o "$OUT/scalyls.ll" packages/scalyls/0.1.0/scalyls.scaly || exit 1
+  "$SCALYLS_CC" -S -o "$OUT/scalyls.ll" packages/scalyls/0.1.0/main.scaly
 ) || fail "scalyls emission"
-# scalyc.o + scaly.o were produced by the compiler-seed llc loop above; only
-# the two scalyls-specific roots need lowering here.
-for f in lsmain scalyls; do
-  "$LLC" -relocation-model=pic -filetype=obj "$OUT/$f.ll" -o "$OUT/$f.o" || fail "llc $f.ll"
-done
-if ! "$CLANG" "$OUT/lsmain.o" "$OUT/scalyls.o" "$OUT/scalyc.o" "$OUT/scaly.o" \
-     -L"$LLVM_LIBDIR" -l"$LLVM_LIBNAME" -o "$OUT/scalyls" 2> "$OUT/scalyls_link.log"; then
+"$LLC" -relocation-model=pic -filetype=obj "$OUT/scalyls.ll" -o "$OUT/scalyls.o" || fail "llc scalyls.ll"
+if ! "$CLANG" "$OUT/scalyls.o" -L"$LLVM_LIBDIR" -l"$LLVM_LIBNAME" \
+     -o "$OUT/scalyls" 2> "$OUT/scalyls_link.log"; then
   grep -v 'reexported library' "$OUT/scalyls_link.log" || true
   fail "scalyls link (undefined symbols)"
 fi
