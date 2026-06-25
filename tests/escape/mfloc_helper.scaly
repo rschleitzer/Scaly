@@ -1,14 +1,14 @@
 ; Helper module for the multi-file diagnostic-location regression (mfloc_main).
-; Its leak() has a return-escape; the diagnostic MUST report THIS file, not the
-; entry file (mfloc_main.scaly). Not a neg_/pos_ test — the runner globs those,
-; so this file is only ever compiled transitively via `module mfloc_helper`.
+; leak() returns a POINTER into a local ($) page — a genuine dangle (the pointee
+; stays local), rejected by BOTH compilers at line 13. The diagnostic MUST name
+; THIS file, not the entry file. Not a neg_/pos_ test — the runner globs those.
 define Box
 (
     v: int
 )
 
-function leak() returns Box
+function leak() returns pointer[Box]
 {
     let b Box$(5)
-    return b
+    return &b
 }

@@ -1,0 +1,28 @@
+; Regression: page inference gap 1 (backward binding promotion). A local bound
+; and then returned (`let r Builder(); ... return r`) is auto-promoted to the
+; caller page — the hand-written `let r Builder#(); return r` idiom, with no
+; sigil. The returned String must survive after build() returns (its local page
+; freed), proving the binding's allocation landed on the caller page. Was a hard
+; "escapes via return" error pre-inference; self-hosted-only (frozen stage-0 has
+; no page inference, still rejects it). Returning a POINTER into a local still
+; rejects (tests/escape/neg_return_local_ptr, mfloc_helper).
+; Expected: PASS
+
+package scaly 0.1.0
+
+use scaly.containers.StringBuilder
+use scaly.containers.String
+
+function build() returns String
+{
+    let sb StringBuilder()
+    sb.append "Hello, world"
+    let result sb.to_string()
+    return result
+}
+
+let g build()
+if g.equals("Hello, world")
+    print("PASS")
+else
+    print("FAIL")

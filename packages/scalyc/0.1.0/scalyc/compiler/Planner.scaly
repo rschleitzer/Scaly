@@ -320,6 +320,15 @@ define Planner
         ; (the record lives on this frame) — flagged as a hard diagnostic.
         ; Truncated to its entry length at each function boundary.
         local_closure_names: Array[String]
+        ; Page inference, gap 1 (backward binding promotion). escaping_return_
+        ; locals: names a pre-scan found returned bare (`return x`) somewhere in
+        ; the current function body — their `let x <alloc>` binding's allocation
+        ; must live on the CALLER's page, not the local page. promoted_binding_
+        ; names: the subset actually promoted at the binding (init was a
+        ; relocatable allocation), consulted at the return site to skip the
+        ; escape diagnostic. Both truncated at each function boundary.
+        escaping_return_locals: Array[String]
+        promoted_binding_names: Array[String]
         instantiated_functions: Array[PlannedFunction]
         ; O(1) membership index over instantiated_functions' mangled names,
         ; maintained in lockstep at the single record_function add site.
@@ -490,6 +499,8 @@ define Planner
             set delegate_names: Array[String]^page()
             set current_return_type: null
             set local_closure_names: Array[String]^page()
+            set escaping_return_locals: Array[String]^page()
+            set promoted_binding_names: Array[String]^page()
             set instantiated_functions: Array[PlannedFunction]^page()
             set function_name_index: ConceptIndex.create#(262144 as size_t)
             set instantiated_globals: Array[PlannedGlobal]^page()
@@ -12380,7 +12391,30 @@ define Planner
                 set ri: ri + 1
             }
             let ops_to_collapse Vector[PlannedOperand]^rp(rest_arr)
-            let collapsed this.collapse_operand_sequence#(ops_to_collapse)
+            var collapsed this.collapse_operand_sequence#(ops_to_collapse)
+
+            ; Page inference, gap 1 (backward binding promotion): if this
+            ; binding's name was found returned bare (`let x Foo(); ... return
+            ; x`) and its initializer is a relocatable allocation, promote the
+            ; allocation to the CALLER's page now (instead of the local page),
+            ; and record the name so plan_return# skips the escape diagnostic at
+            ; `return x`. The binding_type itself stays Local — the value still
+            ; LIVES in this frame's slot, it just points at caller-page guts,
+            ; exactly like the hand-written `let x Foo#(); return x` idiom.
+            if b.item.name <> null
+            {
+                let bn (*b.item.name)
+                if this.array_contains_name(escaping_return_locals, bn)
+                {
+                    let promote_life Lifetime.Call(scalyc.compiler.Model.Call(b.span))
+                    let promoted_init this.restamp_operand_life#(collapsed, promote_life)
+                    if promoted_init <> null
+                    {
+                        set collapsed: (*promoted_init)
+                        promoted_binding_names.add(String^rp(bn))
+                    }
+                }
+            }
 
             ; s192: stack array declaration `var buffer char[64]` (no
             ; init). The single operand collapses to a PlannedType that
@@ -13414,12 +13448,28 @@ define Planner
             if planned_flat.length > 0
                 if Planner.is_reference_to_local_page(planned_collapsed.result_type)
                 {
-                    let call_life Lifetime.Call(scalyc.compiler.Model.Call(r.span))
-                    let promoted this.restamp_operand_life#(planned_collapsed, call_life)
-                    if promoted <> null
-                        set planned_collapsed: (*promoted)
-                    else
-                        this.add_diagnostic(r.span, String^rp("reference into a local ($) page escapes via return - allocate the target with '#' (caller page) or '^name' (region) so it outlives the use"))
+                    ; Gap 1: `return x` where x's binding was already promoted to
+                    ; the caller page (its allocation lives on rp) — the Variable
+                    ; itself is just a frame slot holding a caller-page pointer,
+                    ; so it does NOT dangle. Skip both the re-stamp and the error.
+                    var already_promoted false
+                    choose planned_collapsed.expr
+                        when v: Variable
+                        {
+                            if this.array_contains_name(promoted_binding_names, v.name)
+                                set already_promoted: true
+                        }
+                        else
+                            0
+                    if already_promoted = false
+                    {
+                        let call_life Lifetime.Call(scalyc.compiler.Model.Call(r.span))
+                        let promoted this.restamp_operand_life#(planned_collapsed, call_life)
+                        if promoted <> null
+                            set planned_collapsed: (*promoted)
+                        else
+                            this.add_diagnostic(r.span, String^rp("reference into a local ($) page escapes via return - allocate the target with '#' (caller page) or '^name' (region) so it outlives the use"))
+                    }
                 }
 
             var holder Vector[PlannedOperand]^rp(1)
@@ -13730,6 +13780,101 @@ define Planner
         ; Extern/Instruction/Intrinsic are trivially tagged wrappers;
         ; Action delegates to plan_action which in turn plans its source
         ; and target operand lists.
+        ; Page inference, gap 1 (backward binding promotion) — read-only Model
+        ; pre-scan collecting bare `return x` targets. A function-body walk that
+        ; records, into escaping_return_locals, every local NAME returned bare
+        ; (`return x`, including inside if/choose/match/loop bodies). plan_binding#
+        ; then promotes those bindings' allocations to the caller page. Missing a
+        ; nested shape is SAFE — that binding simply stays a hard escape error,
+        ; the pre-inference behavior. NOT recorded: chained/qualified returns
+        ; (`return x.f`, `return f(x)`) — those are handled by rule 2's
+        ; return-site promotion, not binding promotion.
+        function array_contains_name(this: Planner, arr: Array[String], name: String) returns bool
+        {
+            var i: size_t 0
+            while i < arr.length
+            {
+                let p arr.get i
+                if p <> null
+                    if (*p).equals(name)
+                        return true
+                set i: i + 1
+            }
+            false
+        }
+
+        ; Page inference, gap 1: NON-RECURSIVE pre-scan of a function body for
+        ; bare `return x` targets at the TOP LEVEL of the body block. A mutually
+        ; recursive Model walker miscompiled under the self-hosted compiler (the
+        ; documented recursive-walker hazard), so this stays flat: it descends
+        ; exactly one structural level (Action -> body Block -> statements) and
+        ; records each `return <bare-local-name>`. Returns nested in if/choose/
+        ; loop bodies are NOT collected — those bindings simply stay hard escape
+        ; errors (the safe, pre-inference behavior), to be lifted by a proven
+        ; walker shape later. Appends each name to escaping_return_locals.
+        procedure scan_top_level_returns#(rp, this: Planner, impl: Implementation)
+        {
+            var body_block: ref[Block]? null
+            choose impl
+                when a: Action
+                {
+                    if a.source.length = 1
+                    {
+                        let sp a.source.get 0
+                        if sp <> null
+                            choose (*sp).expression
+                                when b: Block
+                                {
+                                    var bh Vector[Block]^rp(1)
+                                    bh.put(0, b)
+                                    set body_block: bh.get(0)
+                                }
+                                else
+                                    0
+                    }
+                }
+                else
+                    0
+            if body_block = null
+                return
+            let blk (*body_block)
+            var i: size_t 0
+            while i < blk.statements.length
+            {
+                let stp blk.statements.get i
+                if stp <> null
+                    choose (*stp)
+                        when r: Return
+                        {
+                            if r.result.length = 1
+                            {
+                                let rp0 r.result.get 0
+                                if rp0 <> null
+                                {
+                                    let rop (*rp0)
+                                    if rop.member_access = null
+                                        choose rop.expression
+                                            when t: scalyc.compiler.Model.Type
+                                            {
+                                                if t.generics = null
+                                                    if t.name.length = 1
+                                                    {
+                                                        let np t.name.get 0
+                                                        if np <> null
+                                                            escaping_return_locals.add(String^rp((*np)))
+                                                    }
+                                            }
+                                            else
+                                                0
+                                }
+                            }
+                        }
+                        else
+                            0
+                set i: i + 1
+            }
+        }
+
         function plan_implementation#(rp, this: Planner, impl: Implementation) returns PlannedImplementation
         {
             choose impl
@@ -13908,7 +14053,16 @@ define Planner
             let saved_return_type this.current_return_type
             set this.current_return_type: return_type
             let saved_lcn local_closure_names.length
+            ; Page inference, gap 1: pre-scan the body for bare `return x`
+            ; targets so plan_binding# can promote their allocations to the
+            ; caller page. Sets are truncated at the function boundary so
+            ; nested functions stay isolated.
+            let saved_erl escaping_return_locals.length
+            let saved_pbn promoted_binding_names.length
+            this.scan_top_level_returns#(f.implementation)
             let planned_impl this.plan_implementation#(f.implementation)
+            set escaping_return_locals.length: saved_erl
+            set promoted_binding_names.length: saved_pbn
             set local_closure_names.length: saved_lcn
             set this.current_return_type: saved_return_type
 
