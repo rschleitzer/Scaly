@@ -797,7 +797,7 @@ define Emitter
         ; pointer[T] / ref[T] — both lower to ptr; point at the pointee's
         ; DIType (cycle-safe: a struct pointee resolves to its cached
         ; forward decl while it is being built).
-        if pt.name.equals(String$("pointer")) or pt.name.equals(String$("ref"))
+        if pt.name.equals(String$("pointer")) || pt.name.equals(String$("ref"))
         {
             var inner LLVMMetadataRef(null)
             if pt.generics <> null

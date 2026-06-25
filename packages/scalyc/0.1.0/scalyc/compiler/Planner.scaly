@@ -9755,8 +9755,8 @@ define Planner
                 let cons_ty Planner.statement_result_type(planned_consequent)
                 let alt_ty Planner.statement_result_type(planned_alt)
                 if cons_ty.name.equals(String$("void")) = false
-                    and alt_ty.name.equals(String$("void")) = false
-                    this.add_equality_constraint(cons_ty, alt_ty, f.span)
+                    if alt_ty.name.equals(String$("void")) = false
+                        this.add_equality_constraint(cons_ty, alt_ty, f.span)
             }
 
             var cond_holder Vector[PlannedOperand]^rp(1)
@@ -10181,7 +10181,7 @@ define Planner
                         }
                         set di: di + 1
                     }
-                    if is_param = false and already = false
+                    if is_param = false && already = false
                         captures_arr.add(String^rp(nm))
                 }
                 set fi: fi + 1
