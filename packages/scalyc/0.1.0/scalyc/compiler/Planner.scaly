@@ -465,10 +465,17 @@ define Planner
         escape_checking: bool
         escape_found: bool
         escape_fn_index: size_t
+
+        ; The Planner's own owning page (the init# `page`). Persistent for
+        ; the whole compile. instantiate_generic# pins lazily-instantiated
+        ; generics here instead of the threaded rp (which may be a
+        ; transient sub-computation page); see the s100-class note there.
+        owning_page: pointer[scaly.memory.Page]
     )
     {
         init#(page, filename: String)
         {
+            set owning_page: page
             set file: String^page(filename)
             set scope_bindings: Array[KeyValuePair[String, LocalBinding]]^page()
             set scope_boundaries: Array[size_t]^page()
@@ -2079,7 +2086,20 @@ define Planner
 
                 let saved_subst_len type_substitutions.length
 
+                ; The Planner's OWNING page (persistent for the whole
+                ; compile). Everything recorded for this instantiation —
+                ; the structure AND the generic-argument types substituted
+                ; into its properties/methods — must live here, not on the
+                ; threaded `rp` (which may be a transient sub-computation
+                ; page; see the s100 note at the plan_structure^own_page
+                ; call below).
+                let own_page this.owning_page
+
                 ; Bind each generic parameter name to its concrete argument.
+                ; Rehome the argument onto own_page first: a lazily reached
+                ; instantiation (s188 hook) receives args built on a
+                ; transient rp; the substituted property types would dangle
+                ; (read as garbage in emit's String hash).
                 var i: size_t 0
                 while i < c.parameters.length
                 {
@@ -2090,7 +2110,7 @@ define Planner
                         if p_ptr <> null
                         {
                             if a_ptr <> null
-                                this.define_type_substitution(p_ptr.name, (*a_ptr))
+                                this.define_type_substitution(p_ptr.name, Planner.rehome_type^own_page((*a_ptr)))
                         }
                     }
                     set i: i + 1
@@ -2100,15 +2120,30 @@ define Planner
                 ; the instantiated struct/union. The returned planned
                 ; value is unused — we rebuild the PlannedType shell
                 ; below with the correct generics/mangled_name.
+                ;
+                ; Instantiate onto the Planner's OWNING page (not the
+                ; threaded `rp`): a generic reached via the s188 lazy
+                ; method hook (e.g. Vector[PlannedStatement] from a
+                ; scalyls `semantic` walk) can be called with a transient
+                ; `rp` — a planner sub-computation's page that is freed
+                ; before emission. The recorded PlannedStructure lives in
+                ; the persistent `instantiated_structures` field, but its
+                ; name/mangled/property/method Strings were built on `rp`
+                ; and dangled (read as garbage in emit_struct_type →
+                ; String::hash). Pinning to `this.owning_page` makes the
+                ; whole instantiation outlive the Planner, matching the
+                ; s100 `register_runtime_functions^page()` pattern. Content
+                ; is identical to the rp build, so emission is byte-
+                ; identical and the bootstrap fixpoint holds.
                 choose c.definition
                     when s: Structure
                     {
-                        let pl this.plan_structure#(s, concept_name)
+                        let pl this.plan_structure^own_page(s, concept_name)
                         0
                     }
                     when u: scalyc.compiler.Model.Union
                     {
-                        let pl this.plan_union#(u, concept_name)
+                        let pl this.plan_union^own_page(u, concept_name)
                         0
                     }
                     else
@@ -14923,6 +14958,10 @@ define Planner
             {
                 let planned this.plan_module#(sub)
             }
+            if sub.name.equals("semantic")
+            {
+                let planned this.plan_module#(sub)
+            }
             ; Layout-only fallback: even when this sub-module isn't on
             ; the safe-walk list (or when it was walked but its struct
             ; was already cached), register layouts for any concrete
@@ -17294,6 +17333,49 @@ define Planner
             null,
             String^rp(""),
             null
+        )
+    }
+
+    ; rehome_type#: deep-copy a PlannedType onto `rp`, recursively
+    ; re-homing its name / mangled_name / array_size Strings and all
+    ; nested generic-argument PlannedTypes. Used by instantiate_generic#
+    ; to pin a generic argument (which may have been built on a transient
+    ; sub-computation page by the s188 lazy method hook) onto the
+    ; Planner's persistent owning page before it is substituted into the
+    ; instantiated structure's property / method types — otherwise the
+    ; substituted name Strings dangle and emit's String hash SIGSEGVs.
+    ; origin / variable refs are carried as-is (not read on the emit
+    ; struct-type / hash path); life is a value, copied.
+    function rehome_type#(rp, t: PlannedType) returns PlannedType
+    {
+        var gens_ref: ref[Vector[PlannedType]]? null
+        if t.generics <> null
+        {
+            let gs (*t.generics)
+            if gs.length > 0
+            {
+                var arr Array[PlannedType]$()
+                var i: size_t 0
+                while i < gs.length
+                {
+                    let gp gs.get i
+                    if gp <> null
+                        arr.add(Planner.rehome_type#((*gp)))
+                    set i: i + 1
+                }
+                var gh Vector[PlannedType]^rp(arr)
+                set gens_ref: &gh
+            }
+        }
+        PlannedType(
+            t.loc,
+            String^rp(t.name),
+            String^rp(t.mangled_name),
+            gens_ref,
+            t.life,
+            t.origin,
+            String^rp(t.array_size),
+            t.variable
         )
     }
 
