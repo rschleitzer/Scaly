@@ -13252,6 +13252,69 @@ define Planner
             }
         }
 
+        ; Page inference, rule 2 (return-escape promotion): a returned value
+        ; whose lifetime came out Local must instead live on the CALLER's page
+        ; so it outlives this frame. The enclosing function already receives an
+        ; implicit caller page — needs_implicit_return_page gives every
+        ; non-primitive-returning function an `rp` — so when the returned
+        ; operand IS the allocation expression (a construction/method Call or a
+        ; Tuple) we re-stamp its lifetime Local -> Call and emit_* allocates on
+        ; rp instead of the local page. This replaces the old "allocate with #"
+        ; hard error for the common builder/factory pattern (`return
+        ; sb.to_string()`, `return X()`). Returns null when the operand is not a
+        ; directly-promotable allocation (a bare local Variable whose allocation
+        ; happened at an earlier `let`, or a ref into a local pointee) — those
+        ; still need an explicit annotation or a later dataflow pass, so the
+        ; caller keeps the hard escape diagnostic.
+        function promote_return_operand_to_call#(rp, this: Planner, op: PlannedOperand) returns ref[PlannedOperand]?
+        {
+            ; Only an allocation whose RESULT genuinely owns heap guts on the
+            ; page can be relocated by re-stamping the page. A pointer/ref
+            ; result (e.g. `return &b` where b is a local) points into memory
+            ; that stays on the local page no matter where the `&` expression
+            ; "allocates" — promoting it would be a false fix and mask a real
+            ; dangle. result_owns_page_guts excludes pointer/ref/LLVM handles,
+            ; so those keep the hard escape diagnostic.
+            if Planner.result_owns_page_guts(op.result_type) = false
+                return null
+            let call_life Lifetime.Call(scalyc.compiler.Model.Call(op.loc))
+            choose op.expr
+                when c: PlannedCall
+                {
+                    ; Never promote an intrinsic OPERATOR call (`&`, `*`, …) —
+                    ; its result aliases existing storage, not a fresh page
+                    ; allocation. Only constructor / heap-returning function
+                    ; calls own relocatable guts.
+                    if c.is_operator
+                        return null
+                    ; Minimal re-stamp: change ONLY the call's allocation
+                    ; lifetime; copy every other field verbatim. Rebuilding
+                    ; the result_type (which embeds the Lifetime union) by
+                    ; value tripped the s34/s196 union-struct-copy ABI hazard.
+                    let nc PlannedCall(
+                        c.loc, c.name, c.mangled_name, c.is_intrinsic, c.is_operator,
+                        c.can_throw, c.requires_page_param, c.args,
+                        c.result_type, call_life, c.throws_type, c.is_indirect
+                    )
+                    var h Vector[PlannedOperand]^rp(1)
+                    h.put(0, PlannedOperand(op.loc, PlannedExpression.Call nc, op.member_access, op.result_type))
+                    return h.get(0)
+                }
+                when t: PlannedTuple
+                {
+                    let nt PlannedTuple(
+                        t.loc, t.components, t.tuple_type,
+                        true, call_life, t.region_arg
+                    )
+                    var h Vector[PlannedOperand]^rp(1)
+                    h.put(0, PlannedOperand(op.loc, PlannedExpression.Tuple nt, op.member_access, op.result_type))
+                    return h.get(0)
+                }
+                else
+                    return null
+            null
+        }
+
         function plan_return#(rp, this: Planner, r: Return) returns PlannedReturn
         {
             ; GAP B: `return \x: …` where the function's return type is a delegate
@@ -13325,12 +13388,23 @@ define Planner
             }
 
             let planned_flat this.plan_operands#(r.result)
-            let planned_collapsed this.collapse_operand_sequence#(planned_flat)
+            var planned_collapsed this.collapse_operand_sequence#(planned_flat)
 
-            ; A returned ref/pointer into a Local ($) page escapes -> hard error.
+            ; A returned value/ref whose lifetime is the Local ($) page would
+            ; dangle once the frame is freed. Page inference (rule 2): if the
+            ; returned operand IS the allocation expression, PROMOTE it to the
+            ; caller page (rp) so it outlives the use — no `#` needed. Only when
+            ; promotion isn't possible (a bare local Variable, or a ref into a
+            ; local pointee) do we keep the hard escape diagnostic.
             if planned_flat.length > 0
                 if Planner.is_reference_to_local_page(planned_collapsed.result_type)
-                    this.add_diagnostic(r.span, String^rp("reference into a local ($) page escapes via return - allocate the target with '#' (caller page) or '^name' (region) so it outlives the use"))
+                {
+                    let promoted this.promote_return_operand_to_call#(planned_collapsed)
+                    if promoted <> null
+                        set planned_collapsed: (*promoted)
+                    else
+                        this.add_diagnostic(r.span, String^rp("reference into a local ($) page escapes via return - allocate the target with '#' (caller page) or '^name' (region) so it outlives the use"))
+                }
 
             var holder Vector[PlannedOperand]^rp(1)
             if planned_flat.length > 0

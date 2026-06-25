@@ -1,0 +1,28 @@
+; Regression: page inference rule 2 (return-escape promotion). A factory that
+; builds a heap value and returns it WITHOUT any `#` sigil: the builder is a
+; transient local, and the returned `to_string()` result is auto-promoted to
+; the CALLER's page (rp) so it outlives the frame. Before page inference this
+; hard-errored ("escapes via return - allocate with '#'"); now the compiler
+; places it on the caller page. The enclosing function already receives an
+; implicit rp (needs_implicit_return_page). Self-hosted-only (frozen stage-0
+; has no page inference). Escape safety is preserved: `return &local` and
+; `return localVar` still reject (see tests/escape/neg_return_*).
+; Expected: PASS
+
+package scaly 0.1.0
+
+use scaly.containers.StringBuilder
+use scaly.containers.String
+
+function greet() returns String
+{
+    let sb StringBuilder()
+    sb.append "Hello, world"
+    return sb.to_string()
+}
+
+let g greet()
+if g.equals("Hello, world")
+    print("PASS")
+else
+    print("FAIL")
