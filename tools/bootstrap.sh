@@ -30,12 +30,12 @@ echo "bootstrap: stage-0 -> stage1"
 # generics that would otherwise be undefined at link).
 echo "bootstrap: stage1 -> /tmp/libscaly.a (runtime archive)"
 ( ulimit -s 65520; /tmp/scalyc_stage1 -c --no-prelude --no-tests -o /tmp/libscaly.o packages/scaly/0.1.0/scaly.scaly )
-ar rcs /tmp/libscaly.a /tmp/libscaly.o
+rm -f /tmp/libscaly.a; ar rcs /tmp/libscaly.a /tmp/libscaly.o
 
 echo "bootstrap: stage1 -> stage2"
 ( ulimit -s 65520
   /tmp/scalyc_stage1 -c -o /tmp/sc1.o packages/scalyc/0.1.0/scalyc.scaly
-  ar rcs /tmp/libscalyc1.a /tmp/sc1.o
+  rm -f /tmp/libscalyc1.a; ar rcs /tmp/libscalyc1.a /tmp/sc1.o
   /tmp/scalyc_stage1 -o /tmp/scalyc_stage2 packages/scalyc/0.1.0/main.scaly /tmp/libscalyc1.a $LINK
 ) 2>&1 | grep -v 'ld: warning' || true
 

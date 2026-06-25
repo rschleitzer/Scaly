@@ -8,7 +8,7 @@ set -e
 cd "$(dirname "$0")/.."
 ./scalyc/build/scalyc -o /tmp/scalyc_stage1_new packages/scalyc/0.1.0/main.scaly -L/opt/homebrew/opt/llvm@18/lib -lLLVM-18 2>&1 | grep -v warning | grep -v "^$" || true
 bash -c 'ulimit -s 65520; /tmp/scalyc_stage1_new -c -o /tmp/sc1n.o packages/scalyc/0.1.0/scalyc.scaly'
-ar rcs /tmp/libscalyc1n.a /tmp/sc1n.o
+rm -f /tmp/libscalyc1n.a; ar rcs /tmp/libscalyc1n.a /tmp/sc1n.o
 bash -c 'ulimit -s 65520; /tmp/scalyc_stage1_new -o /tmp/scalyc_stage2_new packages/scalyc/0.1.0/main.scaly /tmp/libscalyc1n.a -L/opt/homebrew/opt/llvm@18/lib -lLLVM-18' 2>&1 | grep -v "ld: warning" || true
 /tmp/scalyc_stage1_new -S --no-prelude -o /tmp/sl_s1.ll packages/scaly/0.1.0/scaly.scaly 2>/dev/null
 /tmp/scalyc_stage2_new -S --no-prelude -o /tmp/sl_s2.ll packages/scaly/0.1.0/scaly.scaly 2>/dev/null

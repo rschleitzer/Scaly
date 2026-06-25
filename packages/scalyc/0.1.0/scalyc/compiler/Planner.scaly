@@ -8196,6 +8196,14 @@ define Planner
                     if prop_ref <> null
                     {
                         set matched: true
+                        ; Ensure the parent struct's LLVM layout is planned so
+                        ; the emitter GEPs the right field offset for this hop
+                        ; — needed for cross-package types whose defining
+                        ; package this root doesn't walk (e.g. ProgramSyntax /
+                        ; FileSyntax referenced from scalyls). No-op for the
+                        ; compiler's own builds (every such struct is already
+                        ; registered) and for ABI-opaque stdlib structs.
+                        this.ensure_member_layout#(lookup_type.name)
                         let prop (*prop_ref)
                         var prop_type: PlannedType this.fresh_type_var#(String$(""))
                         if prop.type <> null
@@ -11122,6 +11130,12 @@ define Planner
                     }
                 }
             }
+
+            ; Ensure a cross-package union scrutinee has its layout planned so
+            ; the emitter extracts the variant payload at the right offset
+            ; (rather than off the s114 { ptr } placeholder). No-op for the
+            ; compiler's own builds and for opaque stdlib types.
+            this.ensure_union_layout#(union_type.name)
 
             ; s143: detect a throws-call as the choose condition. plan_when#
             ; needs this so it can assign distinct variant_index to the
@@ -14406,6 +14420,21 @@ define Planner
         ; check_function_match → String::get_buffer) that would otherwise
         ; happen when walking generic/cross-module method bodies.
         function plan_structure_layout#(rp, this: Planner, s: Structure, name: String) returns PlannedStructure
+            this.plan_structure_layout_opt#(s, name, true)
+
+        ; plan_structure_layout_opt#: as plan_structure_layout# but with a
+        ; `plan_inits` switch. The on-demand cross-package path
+        ; (ensure_member_layout#) passes false: it needs ONLY the field
+        ; layout so map_type can emit the real struct type for member-access
+        ; GEPs, NOT the constructor. Planning initializers there records a
+        ; PlannedInitializer, which makes the Emitter emit the struct's
+        ; `C1` body into THIS root's object — but a dependency type's
+        ; constructor belongs to its OWN package's object (e.g. emitting
+        ; Planner::C1 into scalyls.o mis-mangles its internal
+        ; `ConceptIndex.create#` call to a bare `_Z6createm` and fails to
+        ; link). With plan_inits=false the struct stays declare-only here
+        ; and the real body is resolved cross-unit at link time.
+        function plan_structure_layout_opt#(rp, this: Planner, s: Structure, name: String, plan_inits: bool) returns PlannedStructure
         {
             var planned_props Array[PlannedProperty]$()
             var i: size_t 0
@@ -14479,16 +14508,19 @@ define Planner
             ; mid-emit. Initializers are simpler (just `set field: ...`
             ; over the struct's own fields) and safe to walk here.
             var planned_initializers Array[PlannedInitializer]$()
-            var ii: size_t 0
-            while ii < s.initializers.length
+            if plan_inits
             {
-                let ii_ptr s.initializers.get ii
-                if ii_ptr <> null
+                var ii: size_t 0
+                while ii < s.initializers.length
                 {
-                    let ini (*ii_ptr)
-                    planned_initializers.add(this.plan_initializer#(ini, parent_ref))
+                    let ii_ptr s.initializers.get ii
+                    if ii_ptr <> null
+                    {
+                        let ini (*ii_ptr)
+                        planned_initializers.add(this.plan_initializer#(ini, parent_ref))
+                    }
+                    set ii: ii + 1
                 }
-                set ii: ii + 1
             }
 
             var methods_holder Vector[PlannedFunction]^rp(0)
@@ -14606,6 +14638,117 @@ define Planner
                         }
                         set mi: mi + 1
                     }
+                    0
+                }
+                else
+                    0
+        }
+
+        ; ensure_member_layout#: on-demand layout for a CROSS-PACKAGE struct
+        ; reached as a member-access base while planning a root that does NOT
+        ; walk the defining package. register_struct_layouts_in_module# only
+        ; imports the COMPILATION-ROOT package's structs; a dependency type
+        ; (e.g. scalyc's ProgramSyntax referenced from scalyls'
+        ; symbols.document_symbols#) is registered as a Concept but its
+        ; PlannedStructure is never planned, so map_type falls back to the
+        ; s114 { ptr } placeholder and emit_member_access_chain GEPs offset 0
+        ; for every field — the throws-Success arm `program.file.declarations`
+        ; reads garbage and the enclosing `if … <> null` is dropped, so the
+        ; LSP feature returns []. Planning the layout here lands it in
+        ; instantiated_structures → map_type's on-demand walk emits the real
+        ; struct → the GEP chain is correct.
+        ;
+        ; Pinned to owning_page (the s188/d8c7216e transient-rp lesson): the
+        ; PlannedStructure is persistent, so its name/mangled/property-type
+        ; Strings must not live on resolve_member_access#'s transient page.
+        ; ABI-opaque stdlib structs are excluded (is_runtime_opaque_struct) so
+        ; the scaly/scalyc/main fixed point stays byte-identical. Generic
+        ; concepts are left to instantiate_generic# (parameterless guard).
+        function ensure_member_layout#(rp, this: Planner, name: String)
+        {
+            if Planner.is_runtime_opaque_struct(name)
+                return
+            let m_check Planner.mangle_structure#(name, null)
+            if this.has_instantiated_structure(m_check)
+                return
+            ; Re-entrancy guard (same discipline as instantiate_generic#):
+            ; skip if this struct's layout is already being planned higher up
+            ; the stack, before record_structure has run.
+            var gi: size_t 0
+            while gi < instantiating_structures.length
+            {
+                let im_ptr instantiating_structures.get gi
+                if im_ptr <> null
+                    if im_ptr.equals(m_check)
+                        return
+                set gi: gi + 1
+            }
+            let concept_ref this.lookup_concept(name)
+            if concept_ref = null
+                return
+            let c (*concept_ref)
+            if c.parameters.length > 0
+                return
+            choose c.definition
+                when s: Structure
+                {
+                    ; Layout-only (no initializers) — see
+                    ; plan_structure_layout_opt#: the dependency type's
+                    ; constructor must NOT be emitted into this root.
+                    let own_page this.owning_page
+                    instantiating_structures.add m_check
+                    let pl this.plan_structure_layout_opt^own_page(s, name, false)
+                    if instantiating_structures.length > 0
+                        set instantiating_structures.length: instantiating_structures.length - 1
+                    0
+                }
+                else
+                    0
+        }
+
+        ; ensure_union_layout#: on-demand layout for a CROSS-PACKAGE union
+        ; that is the scrutinee of a `choose` while planning a root that does
+        ; not walk the union's defining package (e.g. scalyc's
+        ; DeclarationSyntax matched in scalyls' decl_symbol#). Without it,
+        ; map_type returns the s114 { ptr } placeholder, the choose extracts
+        ; no payload, and a `when f: FunctionSyntax { f.target … }` arm GEPs
+        ; the field off a NULL base. Registering the variant tags + payload
+        ; sizing (methods skipped — see plan_union_opt#) makes map_type emit
+        ; the real tagged union so the payload is extracted correctly.
+        ;
+        ; Same fixed-point safety as ensure_member_layout#: opaque stdlib
+        ; types are excluded, generic concepts are left to instantiate_generic#,
+        ; and pinning is to owning_page (persistent plan storage).
+        function ensure_union_layout#(rp, this: Planner, name: String)
+        {
+            if Planner.is_runtime_opaque_struct(name)
+                return
+            let m_check Planner.mangle_structure#(name, null)
+            if this.has_instantiated_union(m_check)
+                return
+            var gi: size_t 0
+            while gi < instantiating_structures.length
+            {
+                let im_ptr instantiating_structures.get gi
+                if im_ptr <> null
+                    if im_ptr.equals(m_check)
+                        return
+                set gi: gi + 1
+            }
+            let concept_ref this.lookup_concept(name)
+            if concept_ref = null
+                return
+            let c (*concept_ref)
+            if c.parameters.length > 0
+                return
+            choose c.definition
+                when u: scalyc.compiler.Model.Union
+                {
+                    let own_page this.owning_page
+                    instantiating_structures.add m_check
+                    let pl this.plan_union_opt^own_page(u, name, false)
+                    if instantiating_structures.length > 0
+                        set instantiating_structures.length: instantiating_structures.length - 1
                     0
                 }
                 else
@@ -15407,6 +15550,16 @@ define Planner
         ; Similar scope to plan_structure: plans variants and computes
         ; size/alignment; skips methods/operators for now.
         function plan_union#(rp, this: Planner, u: scalyc.compiler.Model.Union, name: String) returns scalyc.compiler.Plan.PlannedUnion
+            this.plan_union_opt#(u, name, true)
+
+        ; plan_union_opt#: as plan_union# with a `plan_methods` switch. The
+        ; on-demand cross-package path (ensure_union_layout#) passes false:
+        ; it needs the variant tags + payload sizing so map_type emits the
+        ; real tagged-union type (and choose extracts the payload at the
+        ; right offset), but NOT the union's methods/operators — those
+        ; belong to the union's own package's object (same reasoning as
+        ; plan_structure_layout_opt#).
+        function plan_union_opt#(rp, this: Planner, u: scalyc.compiler.Model.Union, name: String, plan_methods: bool) returns scalyc.compiler.Plan.PlannedUnion
         {
             var planned_vs Array[PlannedVariant]$()
             var tag: int 0
@@ -15495,28 +15648,31 @@ define Planner
             ; Plan methods and operators declared on the union.
             var planned_methods Array[PlannedFunction]$()
             var planned_operators Array[PlannedOperator]$()
-            var mi: size_t 0
-            while mi < u.members.length
+            if plan_methods
             {
-                let m_ptr u.members.get mi
-                if m_ptr <> null
+                var mi: size_t 0
+                while mi < u.members.length
                 {
-                    let mem (*m_ptr)
-                    choose mem
-                        when f: Function
-                        {
-                            planned_methods.add(this.plan_function#(f, u_parent_ref))
-                            0
-                        }
-                        when o: Operator
-                        {
-                            planned_operators.add(this.plan_operator#(o, u_parent_ref))
-                            0
-                        }
-                        else
-                            0
+                    let m_ptr u.members.get mi
+                    if m_ptr <> null
+                    {
+                        let mem (*m_ptr)
+                        choose mem
+                            when f: Function
+                            {
+                                planned_methods.add(this.plan_function#(f, u_parent_ref))
+                                0
+                            }
+                            when o: Operator
+                            {
+                                planned_operators.add(this.plan_operator#(o, u_parent_ref))
+                                0
+                            }
+                            else
+                                0
+                    }
+                    set mi: mi + 1
                 }
-                set mi: mi + 1
             }
 
             var methods_holder Vector[PlannedFunction]^rp(planned_methods)
@@ -18192,6 +18348,54 @@ define Planner
                                     if name.equals("KeyValuePair") = false
                                         return false
         true
+    }
+
+    ; is_runtime_opaque_struct: the non-generic scaly-stdlib structs whose
+    ; LLVM layout map_type intentionally keeps OPAQUE (String → literal
+    ; { ptr }, Page/PageList/... → plain ptr). The s176 note records that
+    ; registering their real layouts flips them from ptr to full structs
+    ; throughout, changing every ABI decision stage-1 makes and emptying
+    ; stage-2's modules. The on-demand cross-package layout registration
+    ; (ensure_member_layout#) must NEVER touch these — so String stays
+    ; { ptr } whether the compilation root is scaly, scalyc, or scalyls,
+    ; keeping the compiler fixed point byte-identical. Generic stdlib
+    ; containers (Vector/Array/HashMap/...) need no entry here: the caller
+    ; already skips parameterized concepts.
+    function is_runtime_opaque_struct(name: String) returns bool
+    {
+        if name.equals("String")
+            return true
+        if name.equals("StringBuilder")
+            return true
+        if name.equals("StringIterator")
+            return true
+        if name.equals("Page")
+            return true
+        if name.equals("PageList")
+            return true
+        if name.equals("PageListIterator")
+            return true
+        if name.equals("PageNode")
+            return true
+        if name.equals("Path")
+            return true
+        if name.equals("File")
+            return true
+        if name.equals("Directory")
+            return true
+        if name.equals("Console")
+            return true
+        if name.equals("FileError")
+            return true
+        if name.equals("BlockWatermark")
+            return true
+        if name.equals("HeapBucketHeader")
+            return true
+        if name.equals("StackBucketHeader")
+            return true
+        if name.equals("TraceEntry")
+            return true
+        false
     }
 
     ; is_generic_type_param_name: single ASCII uppercase letter — how the
