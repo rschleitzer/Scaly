@@ -6422,9 +6422,10 @@ define Emitter
                 return phi
             }
 
-            let left emit_operand(left_arg.unwrap())
+            let lhs_op left_arg.unwrap()
+            let left emit_operand(lhs_op)
             let right emit_operand(right_arg.unwrap())
-            return emit_intrinsic_binary_op(call.name, left, right, call.result_type)
+            return emit_intrinsic_binary_op(call.name, left, right, call.result_type, lhs_op.result_type)
         }
 
         LLVMValueRef null
@@ -6539,7 +6540,7 @@ define Emitter
     }
 
     ; Emit an intrinsic binary operator
-    function emit_intrinsic_binary_op(this, op_name: String, left: LLVMValueRef, right: LLVMValueRef, result_type: PlannedType) returns LLVMValueRef
+    function emit_intrinsic_binary_op(this, op_name: String, left: LLVMValueRef, right: LLVMValueRef, result_type: PlannedType, left_operand_type: PlannedType) returns LLVMValueRef
     {
         ; s34 root fix: plain copies of the by-ptr struct params (emitBinding
         ; now copies single-ptr-field struct params correctly).
@@ -6552,7 +6553,12 @@ define Emitter
 
         let ty map_type result_type
         let is_float is_floating_point_type result_type
-        let is_signed is_signed_type result_type
+        ; Signedness derives from the LEFT OPERAND's type, NOT result_type:
+        ; for comparisons result_type is bool (signed by default), which
+        ; would wrongly emit signed slt/sgt for size_t/unsigned operands.
+        ; Mirrors C++ Emitter.cpp emitIntrinsicOp (SignednessType =
+        ; LeftOperandType ? *LeftOperandType : ResultType).
+        var is_signed is_signed_type left_operand_type
 
         ; Pointer arithmetic: pointer + int, pointer - int → GEP. The
         ; result_type is `pointer[T]` for these; element type for the
@@ -6561,6 +6567,10 @@ define Emitter
         ; offset, matching the C++ Emitter at emitIntrinsicOp:4063+).
         let l_kind LLVMGetTypeKind(LLVMTypeOf l)
         let r_kind LLVMGetTypeKind(LLVMTypeOf r)
+        ; Pointer comparisons are unsigned (mirror C++ emitIntrinsicOp).
+        if l_kind = LLVMTypeKind.Pointer()
+            if r_kind = LLVMTypeKind.Pointer()
+                set is_signed: false
         if l_kind = LLVMTypeKind.Pointer()
         {
             if r_kind = LLVMTypeKind.Integer()
@@ -6953,6 +6963,18 @@ define Emitter
             return false
 
         if t.name.equals(String$("size_t"))
+            return false
+
+        if t.name.equals(String$("size"))
+            return false
+
+        if t.name.equals(String$("usize"))
+            return false
+
+        if t.name.equals(String$("bool"))
+            return false
+
+        if t.name.equals(String$("char"))
             return false
 
         ; Everything else is signed by default
