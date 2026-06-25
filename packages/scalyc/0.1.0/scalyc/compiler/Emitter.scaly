@@ -8576,7 +8576,42 @@ define Emitter
                                 if LLVMGetTypeKind(arm_ty) = LLVMTypeKind.Struct()
                                 {
                                     if LLVMGetTypeKind(LLVMTypeOf case_value) = LLVMTypeKind.Pointer()
-                                        set case_value: LLVMBuildLoad2(builder, arm_ty, case_value, "choose.arm.load")
+                                    {
+                                        ; The s164 load reads `case_value` (a
+                                        ; pointer) in the CURRENT block. emit_action
+                                        ; can return a pointer defined in a nested
+                                        ; branch of a statement-y arm — e.g. a
+                                        ; Success arm whose block ends in
+                                        ; `if cond { set local: X^... }`, where X is
+                                        ; region-allocated only in the inner
+                                        ; then-branch. Loading it in the arm's merge
+                                        ; block references a value that does not
+                                        ; dominate ("Instruction does not dominate
+                                        ; all uses" — scalyls semantic::resolve_at).
+                                        ; Only load when the pointer provably
+                                        ; dominates: an alloca (entry-hoisted, always
+                                        ; dominates) or an instruction in the current
+                                        ; block. Otherwise skip the load — the
+                                        ; dominance gate below then rejects the still-
+                                        ; pointer case_value, so the arm contributes
+                                        ; undef (the choose value is unused in this
+                                        ; statement position anyway).
+                                        var s164_dom: bool true
+                                        let s164_inst LLVMIsAInstruction(case_value)
+                                        if s164_inst.handle <> null
+                                        {
+                                            let s164_alloca LLVMIsAAllocaInst(case_value)
+                                            if s164_alloca.handle = null
+                                            {
+                                                let s164_parent LLVMGetInstructionParent(s164_inst)
+                                                let s164_cur LLVMGetInsertBlock(builder)
+                                                if s164_parent.handle <> s164_cur.handle
+                                                    set s164_dom: false
+                                            }
+                                        }
+                                        if s164_dom
+                                            set case_value: LLVMBuildLoad2(builder, arm_ty, case_value, "choose.arm.load")
+                                    }
                                 }
                             }
                         }
