@@ -53,14 +53,21 @@ function hash(data: pointer[char], length: size_t) returns size_t
 {
     var hash: size_t 0xcbf29ce484222325
     var prime: size_t 0x100000001b3
-    var i: int 0
+    var i: size_t 0
     while i < length
     {
-        let value *(data + i)
-        set hash: hash // value
-        set hash: hash * prime
+        let value (*(data + i)) as size_t
+        ; FNV-1a XOR step. The `^` token is Scaly's reference-lifetime
+        ; sigil and cannot be written as a bitwise operator in expression
+        ; position, so XOR is computed via the identity
+        ; a ^ b == (a | b) - (a & b) using only supported operators.
+        ; (The legacy `hash // value` relied on an UNKNOWN operator `//`
+        ; that the self-hosted emitter dropped entirely — making the hash
+        ; content-independent / length-only.)
+        let xord (hash | value) - (hash & value)
+        set hash: xord * prime
 
-        set i: i + 1
+        set i: i + (1 as size_t)
     }
     return hash
 }

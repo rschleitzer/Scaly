@@ -63,9 +63,12 @@ define nameset
         var i: size_t 0
         while i < len
         {
-            let value *(p + i)
-            set h: h // value
-            set h: h * prime
+            let value (*(p + i)) as size_t
+            ; FNV-1a XOR via a ^ b == (a | b) - (a & b); `^` is the
+            ; lifetime sigil and the legacy `h // value` used an unknown
+            ; operator the self-hosted emitter dropped (length-only hash).
+            let xord (h | value) - (h & value)
+            set h: xord * prime
             set i: i + (1 as size_t)
         }
         h

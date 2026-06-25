@@ -21,7 +21,7 @@ set -euo pipefail
 cd "$(dirname "$0")/../.."
 SCALYC="${1:-./scalyc/build/scalyc}"
 MODE="${2:-cpp}"
-export SCALYLS_MODE="$MODE"   # python blocks read this to gate known self-hosted gaps
+export SCALYLS_MODE="$MODE"   # available to python blocks (no self-hosted gaps remain)
 
 # Resolve the LLVM-18 lib dir (Homebrew / apt). The diagnostics pipeline
 # pulls in the LLVM-backed Emitter, so every link below needs it.
@@ -1708,29 +1708,17 @@ def check(cond, label):
     print(("PASS  " if cond else "FAIL  ") + label)
     if not cond: failures += 1
 check(t1 == ": Point", "cross-file chain `r.origin` resolves the field type from cache (: Point)")
-# KNOWN SELF-HOSTED GAP (t2/t3): a mid-session SAME-LENGTH disk edit of a
-# sibling file is not picked up by the chain-segment content-hash cache. The
-# re-read file String's hash() returns its pre-edit value in the long-running
-# worker (a probe-sensitive heap/lifetime Heisenbug in the self-hosted-emitted
-# String.hash / chash path — adding any allocation between the read and the
-# valid() check makes it resolve correctly). It is NARROW: editors send a
-# didChange (so the in-memory store, which works, is used) rather than editing
-# on disk silently; equal-length edits collide while length-changing edits
-# (every other content-hash invalidation test here) are picked up. Reported as
-# KNOWN-GAP under the self-hosted build so the suite stays green; the C++ build
-# still asserts it. See the scalyls-self-host-blocker memory.
-import os
-_selfhosted = os.environ.get("SCALYLS_MODE") == "selfhosted"
-def check_or_gap(cond, label):
-    global failures
-    if cond:
-        print("PASS  " + label)
-    elif _selfhosted:
-        print("KNOWN-GAP  " + label + " (self-hosted same-length disk-edit cache)")
-    else:
-        print("FAIL  " + label); failures += 1
-check_or_gap(t2 == ": Coord", "chain segment-type disk change picked up (content-hash invalidation: : Coord)")
-check_or_gap(t3 == ": Coord", "repeated chain query stable from cache (: Coord)")
+# A mid-session SAME-LENGTH disk edit of a sibling file IS now picked up by the
+# chain-segment content-hash cache under BOTH compilers. The former self-hosted
+# gap was a content-INDEPENDENT (length-only) hash: hashing.hash used a legacy
+# `hash // value` FNV step where `//` is an UNKNOWN operator the self-hosted
+# emitter dropped entirely (the XOR of the byte was a no-op), so same-length
+# files hashed identically and symindex.valid() spuriously stayed true. Fixed
+# by computing the FNV XOR via the identity a^b == (a|b)-(a&b) (`^` is the
+# lifetime sigil and cannot be written as a bitwise op). See the
+# scalyls-self-host-blocker memory.
+check(t2 == ": Coord", "chain segment-type disk change picked up (content-hash invalidation: : Coord)")
+check(t3 == ": Coord", "repeated chain query stable from cache (: Coord)")
 sys.exit(1 if failures else 0)
 PY
 rc=$?
