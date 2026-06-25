@@ -5136,6 +5136,13 @@ define Planner
                         ; for `compiler.test()` etc.
                         var ns_mangled: String String^rp("")
                         var has_ns_mangled: bool false
+                        ; Hoisted out of the nested ns-resolution block so the
+                        ; call_requires_page computation below can honor the
+                        ; prefix namespace member's own page flag (used_ns_page)
+                        ; when the dotted re-mangle fired — otherwise the symbol
+                        ; gets the page in its name but the call omits the rp
+                        ; argument (wrong slot / missing page).
+                        var ns_mangled_page: bool false
                         if match_ref = null
                         {
                             let dot_idx fn_name.last_index_of(46 as u8)
@@ -5434,6 +5441,7 @@ define Planner
                                                 suffix, &items_holder, ns_parent_ref, ns_has_page
                                             )
                                             set has_ns_mangled: true
+                                            set ns_mangled_page: ns_has_page
 
                                             ; Declare the namespaced
                                             ; function as extern in the
@@ -5878,6 +5886,12 @@ define Planner
                             if mm_for_pp.requires_page_param
                                 set call_requires_page: true
                         }
+                        ; When the dotted re-mangle overrode the symbol with the
+                        ; prefix namespace member's page flag, the call must pass
+                        ; rp to match (the global match this call resolved to can
+                        ; be a same-named no-page function in another package).
+                        if has_ns_mangled
+                            set call_requires_page: ns_mangled_page
                         ; s143: propagate the matched function's can_throw
                         ; flag so plan_choose# can recognise this as a
                         ; throws-call when planning a choose over its

@@ -1,0 +1,43 @@
+; Regression: a namespace `#` (page-taking) function called qualified from a
+; sibling must mangle WITH the implicit `PN4scaly6memory4PageE` page param —
+; even when an UNRELATED same-named function with NO page parameter is
+; registered first in the global bare-name registry.
+;
+; The dotted-call resolution looks the callee up by bare name, so the no-page
+; `plain.is_special` below wins the registry scan and reports
+; requires_page_param=false. The namespace re-mangle then dropped the page,
+; emitting a call to `_ZN5fancy10is_specialEi` while the real body is
+; `_ZN5fancy10is_specialEPN4scaly6memory4PageEi` — an undefined symbol at link
+; (the binary never links/runs -> empty output -> FAIL). The fix derives the
+; page flag from the prefix namespace's OWN member, not the global match.
+;
+; This mirrors the scalyls self-host collision (scalyls.symbols'
+; is_primitive_type_name# vs scalyc.compiler's no-`#` is_primitive_type_name).
+; Frozen stage-0 walks the whole program into one module so it never hit this;
+; the self-hosted compiler emits per-root, hence regress (not AOT corpus).
+
+define plain
+{
+    ; No page parameter; same short name as fancy.is_special below, and
+    ; declared first so it wins the bare-name registry scan.
+    function is_special(name: int) returns bool
+        false
+}
+
+define fancy
+{
+    ; Page-taking (#) sibling — the `#` gives it an implicit `rp` page param
+    ; that MUST appear in its mangled symbol.
+    function is_special#(rp, name: int) returns bool
+        name = 42
+
+    function run#(rp) returns bool
+        fancy.is_special#(42)
+}
+
+function main() returns int
+{
+    if fancy.run#()
+        print("PASS")
+    return 0
+}
