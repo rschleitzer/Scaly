@@ -298,10 +298,18 @@ define rpc
             let dst (buf + total) as pointer[void]
             let w write(fd, dst, len - total)
 
-            if w = (0 as size_t)
+            ; write() is C's ssize_t: it returns -1 on error (EPIPE when the
+            ; worker pipe's reader has died — the crash-isolation path) and 0
+            ; at EOF. Detect the error via an explicit SIGNED `< 0` (matching
+            ; the C convention) rather than the unsigned `w > remaining` trick:
+            ; the self-hosted compiler emits a SIGNED i64 compare for size_t, so
+            ; `w > remaining` reads (size_t)-1 as a negative and is never true —
+            ; write_all_fd would then busy-loop forever on a dead pipe. The cast
+            ; makes the intent explicit and correct under both compilers.
+            if (w as i64) < (0 as i64)
                 return
 
-            if w > (len - total)
+            if w = (0 as size_t)
                 return
 
             set total: total + w
