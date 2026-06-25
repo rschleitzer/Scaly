@@ -1,0 +1,28 @@
+; Regression: page inference gap 1 must NOT override an EXPLICIT `^page`
+; lifetime when a `^page`-bound local is returned from a NESTED (if) branch.
+; Mirrors lexer's parse_identifier (`let name String^page(…); … return name`
+; inside a choose). The recursive pre-scan collects `name`; restamp_operand_
+; life# must skip it (its init is Reference, not Local) — otherwise it gets
+; re-stamped to the caller page `Call`, whose emit looks up a var named "rp"
+; that does NOT exist (the param is "page"), falls back to the function-LOCAL
+; page, and the returned String dangles (empty/garbage). With the fix `name`
+; stays on `page` (the caller's page) and survives the return. Self-hosted-only.
+; Expected: PASS
+
+package scaly 0.1.0
+
+use scaly.containers.String
+
+function pick#(page, flag: bool, text: pointer[const_char]) returns String
+{
+    let name String^page(text)
+    if flag
+        return name
+    return name
+}
+
+let g pick#(true, "hello")
+if g.equals("hello")
+    print("PASS")
+else
+    print("FAIL")

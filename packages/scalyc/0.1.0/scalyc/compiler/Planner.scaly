@@ -13340,6 +13340,22 @@ define Planner
                 {
                     if c.is_operator
                         return null
+                    ; ONLY promote a DEFAULTED-Local allocation. An allocation
+                    ; that already carries an EXPLICIT lifetime — `^name`
+                    ; (Reference) or `#` (Call) — was placed deliberately by the
+                    ; programmer; re-stamping it would override the explicit page
+                    ; and dangle. E.g. lexer's `let name String^page(…); return
+                    ; name` (Reference) must keep `^page`, not be promoted to the
+                    ; caller page. (No-sigil and `$` both lower to Local and are
+                    ; the only promotable forms.)
+                    var c_local false
+                    choose c.life
+                        when l: Local
+                            set c_local: true
+                        else
+                            0
+                    if c_local = false
+                        return null
                     let nc PlannedCall(
                         c.loc, c.name, c.mangled_name, c.is_intrinsic, c.is_operator,
                         c.can_throw, c.requires_page_param, c.args,
@@ -13351,6 +13367,14 @@ define Planner
                 }
                 when t: PlannedTuple
                 {
+                    var t_local false
+                    choose t.life
+                        when l: Local
+                            set t_local: true
+                        else
+                            0
+                    if t_local = false
+                        return null
                     let nt PlannedTuple(
                         t.loc, t.components, t.tuple_type,
                         true, new_life, t.region_arg
@@ -13804,23 +13828,22 @@ define Planner
         }
 
         ; Page inference, gap 1 — RECURSIVE pre-scan collecting bare `return x`
-        ; names through Block and IF branches (consequent + alternative), so a
-        ; `return x` nested in an if/else is found, not just top-level returns.
+        ; names ANYWHERE in a function body (Block, if consequent/alternative,
+        ; choose/match branches + alternative, and loop bodies), so a `return x`
+        ; nested in any control flow is found, not just top-level returns.
         ; The walker is `#` and deep-copies each collected name onto rp via
         ; `String^rp` — load-bearing: the name comes from a Model Type.name
         ; Vector whose String `data` points into a transient page; storing it BY
-        ; VALUE (`.add((*np))`) dangles and corrupts later reads. (The earlier
-        ; "Model-union-by-value miscompiles" theory was WRONG — the recursive walk
-        ; over Model unions, even passing value-field consequents like
-        ; iff.consequent by value, is fine; the only bug was the borrowed-String-
-        ; by-value storage.) Mirrors the proven plan_statement#/plan_if# Model
+        ; VALUE (`.add((*np))`) dangles and corrupts later reads. (There is NO
+        ; "Model-union-by-value" codegen bug — the recursive walk over Model
+        ; unions, even passing value-field consequents like iff.consequent by
+        ; value, is fine.) Mirrors the proven plan_statement#/plan_if# Model
         ; recursion: union params pass by in-place pointer, `.unwrap()` collapses
-        ; to a ref under NPO. CHOOSE/MATCH branches are deliberately NOT descended:
-        ; an arm iterating `Vector[When]`/`Vector[Branch]` (structs embedding a
-        ; Statement union) miscompiles THIS function under the self-hosted emitter
-        ; (corrupts unrelated token Strings — a narrow, still-open codegen bug,
-        ; distinct from the union-walk itself). Returns nested in choose/match/
-        ; loop bodies therefore stay safe hard escape errors, as before.
+        ; to a ref under NPO. The earlier "choose/match arm corrupts" was a
+        ; SYMPTOM of a promotion bug, now fixed: collecting a nested return of an
+        ; EXPLICITLY-`^page`-bound local (lexer's `return name`) made restamp_
+        ; operand_life# override the explicit lifetime → wrong page → dangling
+        ; token Strings. restamp now only promotes DEFAULTED-Local allocations.
         function collect_returns_stmt#(rp, this: Planner, s: Statement)
         {
             choose s
@@ -13877,6 +13900,44 @@ define Planner
                         this.collect_returns_stmt#((*alt))
                     }
                 }
+                when ch: Choose
+                {
+                    var i: size_t 0
+                    while i < ch.cases.length
+                    {
+                        let wp ch.cases.get i
+                        if wp <> null
+                            this.collect_returns_stmt#(wp.consequent)
+                        set i: i + 1
+                    }
+                    if ch.alternative <> null
+                    {
+                        let alt ch.alternative
+                        this.collect_returns_stmt#((*alt))
+                    }
+                }
+                when m: Match
+                {
+                    var i: size_t 0
+                    while i < m.branches.length
+                    {
+                        let bp m.branches.get i
+                        if bp <> null
+                            this.collect_returns_stmt#(bp.consequent)
+                        set i: i + 1
+                    }
+                    if m.alternative <> null
+                    {
+                        let alt m.alternative
+                        this.collect_returns_stmt#((*alt))
+                    }
+                }
+                when fo: For
+                    this.collect_returns_action#(fo.action)
+                when wh: While
+                    this.collect_returns_action#(wh.action)
+                when rep: Repeat
+                    this.collect_returns_action#(rep.action)
                 else
                     0
         }
