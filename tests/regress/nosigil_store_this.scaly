@@ -1,0 +1,31 @@
+; Regression: page inference rule 3 (store-into-this-field promotion). A setter
+; stores a freshly-built value into `this.field` WITHOUT any `#`/`^` sigil: the
+; compiler places the allocation on the RECEIVER's page (Reference("this") ->
+; Page.get(this) in the emitter) so it outlives the setter's frame. Before page
+; inference this hard-errored ("escapes via store"). The String must survive
+; after set_name returns (its local page is freed), proving it landed on h's
+; page. Self-hosted-only. Escape safety preserved: `set this.f: &local` still
+; rejects (tests/escape/neg_store_through_this).
+; Expected: PASS
+
+package scaly 0.1.0
+
+use scaly.containers.String
+
+define Holder
+(
+    name: String
+)
+{
+    procedure set_name(this: Holder, text: pointer[const_char])
+    {
+        set this.name: String(text)
+    }
+}
+
+var h Holder(String("x"))
+h.set_name("hello")
+if h.name.equals("hello")
+    print("PASS")
+else
+    print("FAIL")
