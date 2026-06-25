@@ -1,0 +1,27 @@
+; Regression: page inference rule 1 — a no-sigil construction of a heap-backed
+; type (StringBuilder, whose init takes a page) defaults to the function's
+; local page, exactly as an explicit `$` would. Before page inference,
+; `StringBuilder()` left the ctor with an Unspecified lifetime, so
+; emit_constructor_call had no page to allocate on → garbage page → SIGSEGV.
+; First step toward abolishing the `$`/`#` page sigils: the programmer writes
+; `StringBuilder()` and the compiler picks the page. Self-hosted-only (frozen
+; stage-0 has no page inference).
+; Expected: PASS
+
+package scaly 0.1.0
+
+use scaly.containers.StringBuilder
+
+function build_len() returns int
+{
+    let sb StringBuilder()
+    sb.append "hello"
+    sb.append " world"
+    sb.get_length() as int
+}
+
+let n build_len()
+if n = 11
+    print("PASS")
+else
+    print("FAIL")

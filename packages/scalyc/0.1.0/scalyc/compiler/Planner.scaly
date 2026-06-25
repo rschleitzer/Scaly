@@ -4533,6 +4533,27 @@ define Planner
                                             0
                                     var ctor_args_vec Vector[PlannedOperand]^rp(ctor_call_args)
 
+                                    ; Page inference, rule 1 (default-to-local
+                                    ; construction): a no-sigil construction of
+                                    ; a heap-backed type (its init takes a page —
+                                    ; `has_page_param`) carries Unspecified life,
+                                    ; which leaves emit_constructor_call with no
+                                    ; page to allocate on (garbage page → SIGSEGV).
+                                    ; Default it to the function's local page,
+                                    ; exactly as an explicit `$` would. The escape
+                                    ; checker promotes it to the caller page when
+                                    ; the result escapes (return/store). This is
+                                    ; the first step of abolishing the `$`/`#`
+                                    ; sigils: the programmer writes `StringBuilder()`
+                                    ; and the compiler picks the page.
+                                    var eff_ctor_life: Lifetime ctor_struct_type.life
+                                    if has_page_param
+                                        choose ctor_struct_type.life
+                                            when u: Unspecified
+                                                set eff_ctor_life: Lifetime.Local(scalyc.compiler.Model.Local(second.loc))
+                                            else
+                                                0
+
                                     let ctor_call PlannedCall(
                                         second.loc,
                                         String^rp("init"),
@@ -4543,7 +4564,7 @@ define Planner
                                         has_page_param,
                                         &ctor_args_vec,
                                         ctor_struct_type,
-                                        ctor_struct_type.life,
+                                        eff_ctor_life,
                                         null,
                                         false
                                     )
