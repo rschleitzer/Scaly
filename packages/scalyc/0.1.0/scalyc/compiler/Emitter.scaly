@@ -6536,6 +6536,18 @@ define Emitter
             return op
         }
 
+        ; Unknown unary operator — HARD, LOUD failure instead of silently
+        ; returning a null handle (which DROPS the whole expression: the
+        ; Bug-B class, e.g. an unknown `//` that lowered to null → a
+        ; content-independent hash). exit/scaly_eputs resolve from the
+        ; package the same way ConceptIndex/FunctionIndex use them; the LSP
+        ; never runs the Emitter (parser->model->plan only) so this cannot
+        ; crash the semantic worker. For clean source this is dead code.
+        scaly_eputs "Emitter: unknown unary operator: "
+        let uopc op_name.to_c_string#()
+        scaly_eputs uopc
+        scaly_eputs "\n"
+        exit 14
         LLVMValueRef null
     }
 
@@ -6842,6 +6854,35 @@ define Emitter
             return LLVMBuildICmp(builder, LLVMIntPredicate.UGE(), l, r, "ge")
         }
 
+        ; `==` and `[]` are DEFINED source/user operators (Slice.operator==,
+        ; the subscript operator) — NOT the genuinely-unknown Bug-B class.
+        ; The self-hosted planner cannot yet DISPATCH a generic concept's
+        ; operator from a call site (the documented s185 generic-operator
+        ; gap), so resolve_operator_call# returns null and the call falls
+        ; through here marked intrinsic. Returning null preserves the
+        ; pre-existing behavior for these KNOWN operators (their lone call
+        ; site is a stdlib test that is exercised under the JIT/stage-0 path,
+        ; where dispatch works); the hard trap below stays reserved for truly
+        ; undefined operators (`//` and typos — the Bug-B class), which it
+        ; does NOT mask. Keeps emission byte-identical (cycle/fixpoint).
+        if op_name.equals(String$("=="))
+            return LLVMValueRef null
+        if op_name.equals(String$("[]"))
+            return LLVMValueRef null
+
+        ; Unknown binary operator — HARD, LOUD failure instead of silently
+        ; returning a null handle. A null here DROPS the whole assignment/
+        ; expression: this is the Bug-B class — `hash // value` with an
+        ; unknown `//` lowered to null, reducing the FNV loop to a
+        ; content-independent (length-only) hash. exit/scaly_eputs resolve
+        ; from the package as ConceptIndex/FunctionIndex use them; the LSP
+        ; never runs the Emitter (parser->model->plan only) so this cannot
+        ; crash the semantic worker. For clean source this is dead code.
+        scaly_eputs "Emitter: unknown binary operator: "
+        let bopc op_name.to_c_string#()
+        scaly_eputs bopc
+        scaly_eputs "\n"
+        exit 14
         LLVMValueRef null
     }
 

@@ -15,13 +15,28 @@ pass=0; fail=0; failures=()
 for f in tests/regress/*.scaly; do
   t=$(basename "$f" .scaly)
   bin=/tmp/rt_$t; rm -f "$bin"
-  "$STAGE" -o "$bin" "$f" >/dev/null 2>&1
-  out=$("$bin" 2>/dev/null)
-  if [ "$out" = "PASS" ]; then
-    pass=$((pass+1))
-  else
-    fail=$((fail+1)); failures+=("$t: '$out'")
-  fi
+  case "$t" in
+    xfail_*)
+      # Expected-failure test: the compile must FAIL loudly. PASS when the
+      # compiler exits nonzero AND stderr contains the `; xfail:` substring.
+      want=$(sed -n 's/^; xfail: //p' "$f" | head -1)
+      err=$("$STAGE" -o "$bin" "$f" 2>&1 >/dev/null); rc=$?
+      if [ $rc -ne 0 ] && printf '%s' "$err" | grep -qF "$want"; then
+        pass=$((pass+1))
+      else
+        fail=$((fail+1)); failures+=("$t: rc=$rc '$err'")
+      fi
+      ;;
+    *)
+      "$STAGE" -o "$bin" "$f" >/dev/null 2>&1
+      out=$("$bin" 2>/dev/null)
+      if [ "$out" = "PASS" ]; then
+        pass=$((pass+1))
+      else
+        fail=$((fail+1)); failures+=("$t: '$out'")
+      fi
+      ;;
+  esac
 done
 echo "regress: $pass PASS, $fail FAIL ${failures[*]}"
 [ $fail -eq 0 ]

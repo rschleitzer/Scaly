@@ -222,16 +222,16 @@ define containers
             if keywords_builder.contains(String$("nix"))
                 return -30
 
-            if *(*keywords_builder)[String$("using")] <> 1
+            if *((*keywords_builder)[String$("using")]) <> 1
                 return -31
 
-            if *(*keywords_builder)[String$("namespace")] <> 2
+            if *((*keywords_builder)[String$("namespace")]) <> 2
                 return -32
 
-            if *(*keywords_builder)[String$("typedef")] <> 3
+            if *((*keywords_builder)[String$("typedef")]) <> 3
                 return -33
 
-            if (*keywords_builder)[String$("nix")] <> null
+            if ((*keywords_builder)[String$("nix")]) <> null
                 return -34
 
             var keywords HashMap[String, int]$(*keywords_builder)
@@ -247,16 +247,16 @@ define containers
             if keywords.contains(String$("nix"))
                 return -38
 
-            if *keywords[String$("using")] <> 1
+            if *(keywords[String$("using")]) <> 1
                 return -39
 
-            if *keywords[String$("namespace")] <> 2
+            if *(keywords[String$("namespace")]) <> 2
                 return -40
 
-            if *keywords[String$("typedef")] <> 3
+            if *(keywords[String$("typedef")]) <> 3
                 return -41
 
-            if keywords[String$("nix")] <> null
+            if (keywords[String$("nix")]) <> null
                 return -42
 
         }
@@ -340,7 +340,7 @@ define containers
                                 if map.contains(theString) = false
                                     return -44
 
-                                if *(*map)[theString] <> (i * j * k * l) as size_t
+                                if *((*map)[theString]) <> (i * j * k * l) as size_t
                                     return -45
 
                                 set l: l + 1
@@ -370,10 +370,10 @@ define containers
         if slice.length <> 5
             return -50
 
-        if *slice[0] <> 10
+        if *(slice[0]) <> 10
             return -51
 
-        if *slice[4] <> 50
+        if *(slice[4]) <> 50
             return -52
 
         ; Test sub-slice
@@ -381,10 +381,10 @@ define containers
         if sub.length <> 3
             return -53
 
-        if *sub[0] <> 20
+        if *(sub[0]) <> 20
             return -54
 
-        if *sub[2] <> 40
+        if *(sub[2]) <> 40
             return -55
 
         ; Test String slice
@@ -393,16 +393,16 @@ define containers
         if str_slice.length <> 5
             return -56
 
-        if *str_slice[0] <> "H" as char
+        if *(str_slice[0]) <> "H" as char
             return -57
 
-        if *str_slice[4] <> "o" as char
+        if *(str_slice[4]) <> "o" as char
             return -58
 
         ; Test slice equality
         var s2 String$("Hello")
         let str_slice2 s2.as_slice()
-        if str_slice == str_slice2 = false
+        if (str_slice == str_slice2) = false
             return -59
 
         ; Test triple chained method calls: as_slice().subslice().subslice()
@@ -410,10 +410,10 @@ define containers
         if triple_chain.length <> 2
             return -60
 
-        if *triple_chain[0] <> 20
+        if *(triple_chain[0]) <> 20
             return -61
 
-        if *triple_chain[1] <> 30
+        if *(triple_chain[1]) <> 30
             return -62
 
         0

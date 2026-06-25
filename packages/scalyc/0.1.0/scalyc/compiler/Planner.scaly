@@ -13254,7 +13254,8 @@ define Planner
                                     set next_lambda_id: rlam_id + 1
                                     var rb_sb StringBuilder^rp()
                                     rb_sb.append "ret"
-                                    rb_sb.append size_to_string(rlam_id)
+                                    let rlam_str size_to_string(rlam_id)
+                                    rb_sb.append rlam_str
                                     let rbase rb_sb.to_string^rp()
                                     let rclo this.make_closure#(rbase, rl, dparams, dret, crt, Lifetime.Call(scalyc.compiler.Model.Call(r.span)))
                                     let rclo_op PlannedOperand(r.span, PlannedExpression.Closure rclo, null, crt)

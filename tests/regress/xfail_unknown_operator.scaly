@@ -1,0 +1,18 @@
+; xfail: unknown binary operator
+;
+; An unknown intrinsic operator (`//` has no definition, no `operator //`,
+; precedence 0) must HARD-FAIL the compile, not silently lower to a null
+; handle that DROPS the whole expression. This is the Bug-B class: `hash //
+; value` once reduced an FNV loop to a content-independent (length-only)
+; hash because the dropped `//` left `hash = hash * prime`.
+;
+; Self-hosted-only: the frozen C++ stage-0 drops the emitter `exit` call
+; (s186-class) so it prints-but-continues; stage-2+ aborts loudly (rc 14).
+
+function main() returns int
+{
+    let a (10 as size_t)
+    let b (3 as size_t)
+    let c a // b
+    return c as int
+}
