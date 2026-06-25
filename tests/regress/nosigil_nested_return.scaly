@@ -1,0 +1,29 @@
+; Regression: page inference gap 1 — backward binding promotion now reaches
+; returns nested inside IF branches (not just top-level returns). The pre-scan
+; recurses through Block + if-consequent/alternative, so `let r Builder(); if c
+; return r` promotes r's allocation to the caller page. The String must survive
+; after the function returns (local page freed). Self-hosted-only. Choose/match/
+; loop-nested returns are NOT covered (a separate self-hosted codegen bug) and
+; stay safe hard errors.
+; Expected: PASS
+
+package scaly 0.1.0
+
+use scaly.containers.StringBuilder
+use scaly.containers.String
+
+function pick(flag: bool) returns String
+{
+    let sb StringBuilder()
+    sb.append "nested"
+    let r sb.to_string()
+    if flag
+        return r
+    return r
+}
+
+let g pick(true)
+if g.equals("nested")
+    print("PASS")
+else
+    print("FAIL")
