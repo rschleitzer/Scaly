@@ -101,54 +101,76 @@ done
 # scalyls language server seed (separate program; NOT part of the compiler
 # fixed point above).
 #
-# scalyls depends on the scalyc compiler PACKAGE. The self-hosted compiler can
-# now EMIT + LINK the whole scalyls package per-root (the multi-package
-# emission gap is closed), and the resulting server initializes — BUT its LSP
-# feature functions are still miscompiled (e.g. parse_program# returns Success
-# with program.file.declarations null, so document_symbols#/hover/inlay return
-# empty). Until that self-hosted-codegen class is fixed module-by-module,
-# scalyls.ll is emitted by the C++ stage-0 (scalyc/build/scalyc) — the only
-# compiler that builds a FUNCTIONALLY correct scalyls. It is a SELF-CONTAINED
-# .ll (the scaly stdlib + scalyc compiler are baked in), so it links standalone
-# with just -lLLVM-18 and needs no libscaly.a. There is NO fixed-point
-# requirement (scalyls does not self-compile): mint it, link it clean (zero
-# undefined), and smoke-test an LSP initialize round-trip.
-SCALYLS_CC=${SCALYLS_CC:-scalyc/build/scalyc}
-if [ ! -x "$SCALYLS_CC" ]; then
-  echo "seed: building C++ stage-0 for scalyls ($SCALYLS_CC missing)"
-  ./build.sh >/dev/null 2>&1 || fail "build.sh (C++ stage-0 for scalyls)"
-fi
-# NOTE: no --no-tests — that flag is self-hosted-only; the C++ stage-0 rejects
-# it. scalyls emitted by stage-0 links clean WITH test functions present (they
-# are unreferenced from server.run and the linker drops them), verified below.
-echo "seed: emitting scalyls.ll with $SCALYLS_CC"
+# scalyls depends on the scalyc compiler PACKAGE and is now built SELF-HOSTED
+# (by the seed compiler), per-root like the compiler itself. The former
+# cross-package type-layout gap — a dependency type referenced as a member-
+# access base or choose scrutinee (ProgramSyntax/FileSyntax structs,
+# DeclarationSyntax union) was registered as a Concept but never laid out, so
+# map_type fell back to the s114 { ptr } placeholder and document_symbols#
+# returned [] — is closed by Planner.scaly's ensure_member_layout# /
+# ensure_union_layout# (they plan the dependency type's LAYOUT on demand, no
+# initializers/methods, so the body still resolves cross-unit at link time).
+# documentSymbol/definition/references/completion/signatureHelp/semanticTokens/
+# folding/hover-on-decl are at parity with the C++-stage-0 build.
+#
+# KNOWN GAP (graceful, not a regression to []): semantic hover on a variable
+# USE falls back to the lexical hover — semantic.scaly runs the full planner in
+# a worker and its plan-walk semantic-type path is not yet self-hosted, so the
+# server's PREFER-semantic/FALL-BACK-to-lexical path lands on the lexical
+# answer. Every other feature matches the C++ build.
+#
+# Build: reuse the compiler seed's scalyc.o + scaly.o (the same packages
+# scalyls depends on, already emitted above) and add scalyls' OWN main + root.
+# NO fixed-point requirement (scalyls does not self-compile): link it clean
+# (zero undefined) and smoke-test documentSymbol against a known input.
+echo "seed: emitting scalyls roots with $OUT/scalyc_seed (self-hosted)"
 ( ulimit -s 65520
-  "$SCALYLS_CC" -S -o "$OUT/scalyls.ll" packages/scalyls/0.1.0/main.scaly
+  "$OUT/scalyc_seed" -S --no-tests -o "$OUT/scalyls_main.ll" packages/scalyls/0.1.0/main.scaly || exit 1
+  "$OUT/scalyc_seed" -S --no-tests -o "$OUT/scalyls.ll"      packages/scalyls/0.1.0/scalyls.scaly || exit 1
 ) || fail "scalyls emission"
-"$LLC" -relocation-model=pic -filetype=obj "$OUT/scalyls.ll" -o "$OUT/scalyls.o" || fail "llc scalyls.ll"
-if ! "$CLANG" "$OUT/scalyls.o" -L"$LLVM_LIBDIR" -l"$LLVM_LIBNAME" \
-     -o "$OUT/scalyls" 2> "$OUT/scalyls_link.log"; then
+for f in scalyls_main scalyls; do
+  "$LLC" -relocation-model=pic -filetype=obj "$OUT/$f.ll" -o "$OUT/$f.o" || fail "llc $f.ll"
+done
+if ! "$CLANG" "$OUT/scalyls_main.o" "$OUT/scalyls.o" "$OUT/scalyc.o" "$OUT/scaly.o" \
+     -L"$LLVM_LIBDIR" -l"$LLVM_LIBNAME" -o "$OUT/scalyls" 2> "$OUT/scalyls_link.log"; then
   grep -v 'reexported library' "$OUT/scalyls_link.log" || true
   fail "scalyls link (undefined symbols)"
 fi
 echo "seed: scalyls linked clean -> $OUT/scalyls"
-echo "seed: scalyls LSP smoke (initialize -> capabilities)"
+echo "seed: scalyls LSP smoke (initialize + documentSymbol)"
 python3 - "$OUT/scalyls" <<'PY' || fail "scalyls smoke"
-import sys, json, subprocess
+import sys, json, subprocess, tempfile, os
 def frame(o):
     b = json.dumps(o).encode()
     return ("Content-Length: %d\r\n\r\n" % len(b)).encode() + b
-inp  = frame({"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {}})
-inp += frame({"jsonrpc": "2.0", "id": 2, "method": "shutdown"})
-inp += frame({"jsonrpc": "2.0", "method": "exit"})
+src = "function answer() returns int\n{\n    return 42\n}\n"
+fd, path = tempfile.mkstemp(suffix=".scaly"); os.write(fd, src.encode()); os.close(fd)
+uri = "file://" + path
+inp  = frame({"jsonrpc":"2.0","id":1,"method":"initialize","params":{"rootUri":"file://"+os.path.dirname(path)}})
+inp += frame({"jsonrpc":"2.0","method":"initialized","params":{}})
+inp += frame({"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{"uri":uri,"languageId":"scaly","version":1,"text":src}}})
+inp += frame({"jsonrpc":"2.0","id":2,"method":"textDocument/documentSymbol","params":{"textDocument":{"uri":uri}}})
+inp += frame({"jsonrpc":"2.0","id":3,"method":"shutdown"})
+inp += frame({"jsonrpc":"2.0","method":"exit"})
 out = subprocess.run([sys.argv[1]], input=inp, stdout=subprocess.PIPE, timeout=30).stdout
-i = out.find(b"\r\n\r\n")
-if i < 0:
-    sys.exit("no response frame")
-n = int(out[:i].decode().split(":")[1].strip())
-f0 = json.loads(out[i + 4 : i + 4 + n])
-sys.exit(0 if (f0.get("id") == 1 and "capabilities" in f0.get("result", {})) else
-         "bad initialize response")
+os.unlink(path)
+got_init = got_sym = False
+i = 0
+while True:
+    j = out.find(b"\r\n\r\n", i)
+    if j < 0: break
+    n = int(out[i:j].decode().split(":")[1].strip())
+    try:
+        o = json.loads(out[j+4:j+4+n])
+    except Exception:
+        o = {}
+    if o.get("id") == 1 and "capabilities" in o.get("result", {}): got_init = True
+    if o.get("id") == 2:
+        r = o.get("result") or []
+        if len(r) == 1 and r[0].get("name") == "answer": got_sym = True
+    i = j+4+n
+if not got_init: sys.exit("bad initialize response")
+if not got_sym:  sys.exit("documentSymbol did not return the expected outline")
 PY
 
 echo "SEED: OK — compiler links clean, runs hello + AOT, reproduces itself"
