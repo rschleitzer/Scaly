@@ -6242,8 +6242,23 @@ define Planner
                         {
                             choose call_life
                                 when u: Unspecified
-                                    if Planner.result_owns_page_guts(rt)
-                                        set call_life: Lifetime.Local(scalyc.compiler.Model.Local(Span(0, 0)))
+                                    ; A VOID call with requires_page_param is a
+                                    ; storage/collector procedure (it builds
+                                    ; values onto a caller-provided page, returning
+                                    ; nothing) — it must receive the CALLER's rp,
+                                    ; never this frame's local page. void has no
+                                    ; page-owning RESULT value, so the
+                                    ; default-to-local flip below would be a false
+                                    ; positive (result_owns_page_guts(void)=true via
+                                    ; its fall-through). Leaving call_life
+                                    ; Unspecified routes the page arg to
+                                    ; lookup_variable("rp") in emit_call. NEUTRAL on
+                                    ; the sigiled source: there these are `#`-calls
+                                    ; (Call life, not Unspecified), so the flip
+                                    ; never fired for them anyway.
+                                    if rt.name.equals("void") = false
+                                        if Planner.result_owns_page_guts(rt)
+                                            set call_life: Lifetime.Local(scalyc.compiler.Model.Local(Span(0, 0)))
                                 else
                                     0
                         }
