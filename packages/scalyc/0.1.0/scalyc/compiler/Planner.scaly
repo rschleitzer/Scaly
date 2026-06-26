@@ -1651,6 +1651,21 @@ define Planner
         ; false and stays a stack value.
         function concept_is_heap_backed(this: Planner, name: String) returns bool
         {
+            ; Name fallback for known heap-backed stdlib CONTAINERS. Reached as
+            ; a cross-package generic (e.g. compiling scalyc, which depends on
+            ; the scaly package), their `init#` initializers are not populated
+            ; on the Structure, so the init#-scan below can't see the page
+            ; parameter. Recognize them by name: their instances must live on a
+            ; page because their methods do Page.get(this) to grow/reallocate
+            ; (a stack base would compute a garbage page header). Same idiom as
+            ; is_lazy_machinery_generic / is_runtime_opaque_struct.
+            if name.equals("Array")
+                return true
+            if name.equals("List")
+                return true
+            if name.equals("HashSetBuilder")
+                return true
+
             let concept_ref this.lookup_concept(name)
             if concept_ref = null
                 return false
