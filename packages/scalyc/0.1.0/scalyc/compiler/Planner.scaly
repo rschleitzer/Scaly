@@ -13935,13 +13935,30 @@ define Planner
             let c (*b)
             (c >= (65 as u8)) && (c <= (90 as u8))
         }
-        ; Collect a bare-local name from a single argument value, recursing when
-        ; the value is itself an inline construction.
-        function collect_value_locals#(rp, this: Planner, val: Vector[Operand])
+        ; UNIFIED value-flow extractor (page-inference name-graph). Given a
+        ; value's operand sequence `ops`, collect every bare-local NAME whose
+        ; own allocation becomes part of that value — so when an escaping
+        ; consumer (a return, or a store into an escaping receiver) takes the
+        ; value, those locals escape too and plan_binding# must promote them
+        ; to the caller page. This subsumes the former two capitalized-gated
+        ; heuristics (collect_value_locals#/collect_ctor_arg_locals#) into ONE
+        ; recursive walker that descends ALL value-flow shapes:
+        ;   - bare local alias `a`        -> a flows in (the alias itself owns
+        ;                                    nothing; promote the source)
+        ;   - inline ctor `Ctor(args)`    -> recurse each arg value
+        ;   - choose/if/block-valued init -> recurse each branch's value
+        ; A CALL or METHOD call (lowercase head, or member-access chain) is NOT
+        ; descended: its result is a fresh value (the binding-init restamp
+        ; promotes the call itself) or a borrow (result_owns_page_guts gates
+        ; restamp), and its arguments are inputs, not the result's guts.
+        ; Over-collection is merely leaky, never unsafe; under-collection
+        ; dangles. The mutually-recursive collect_flow_stmt# unwraps a branch
+        ; statement (Action/Return) to its value operands.
+        function collect_flow_locals#(rp, this: Planner, ops: Vector[Operand])
         {
-            if val.length = 1
+            if ops.length = 1
             {
-                let vp val.get 0
+                let vp ops.get 0
                 if vp <> null
                 {
                     let v (*vp)
@@ -13954,20 +13971,64 @@ define Planner
                                     {
                                         let np t.name.get 0
                                         if np <> null
-                                            this.add_escaping_local#((*np))
+                                            if this.name_is_capitalized((*np)) = false
+                                                this.add_escaping_local#((*np))
                                     }
+                            }
+                            when ch: Choose
+                            {
+                                var i: size_t 0
+                                while i < ch.cases.length
+                                {
+                                    let wp ch.cases.get i
+                                    if wp <> null
+                                        this.collect_flow_stmt#((*wp).consequent)
+                                    set i: i + 1
+                                }
+                                if ch.alternative <> null
+                                {
+                                    let alt ch.alternative
+                                    this.collect_flow_stmt#((*alt))
+                                }
+                            }
+                            when iff: scalyc.compiler.Model.If
+                            {
+                                this.collect_flow_stmt#(iff.consequent)
+                                if iff.alternative <> null
+                                {
+                                    let alt iff.alternative
+                                    this.collect_flow_stmt#((*alt))
+                                }
+                            }
+                            when m: Match
+                            {
+                                var i: size_t 0
+                                while i < m.branches.length
+                                {
+                                    let bp m.branches.get i
+                                    if bp <> null
+                                        this.collect_flow_stmt#((*bp).consequent)
+                                    set i: i + 1
+                                }
+                                if m.alternative <> null
+                                {
+                                    let alt m.alternative
+                                    this.collect_flow_stmt#((*alt))
+                                }
+                            }
+                            when b: Block
+                            {
+                                if b.statements.length > 0
+                                {
+                                    let lp b.statements.get(b.statements.length - 1)
+                                    if lp <> null
+                                        this.collect_flow_stmt#(lp.unwrap())
+                                }
                             }
                             else
                                 0
                 }
             }
-            if val.length >= 2
-                this.collect_ctor_arg_locals#(val)
-        }
-        ; When `ops` is a construction [CapitalizedType, Tuple(args)], collect the
-        ; argument-position local names (and nested constructions' locals).
-        function collect_ctor_arg_locals#(rp, this: Planner, ops: Vector[Operand])
-        {
             if ops.length >= 2
             {
                 let head_ptr ops.get 0
@@ -14001,7 +14062,7 @@ define Planner
                                     {
                                         let cp tup.components.get ci
                                         if cp <> null
-                                            this.collect_value_locals#((*cp).value)
+                                            this.collect_flow_locals#((*cp).value)
                                         set ci: ci + 1
                                     }
                                 }
@@ -14009,6 +14070,18 @@ define Planner
                                     0
                     }
             }
+        }
+        ; Unwrap a value-yielding branch statement to its value operands so
+        ; collect_flow_locals# can descend a choose/if/match/block branch.
+        function collect_flow_stmt#(rp, this: Planner, s: Statement)
+        {
+            choose s
+                when a: Action
+                    this.collect_flow_locals#(a.source)
+                when r: Return
+                    this.collect_flow_locals#(r.result)
+                else
+                    0
         }
 
         ; deep-R2 store-escape helpers. A value stored via `recv.put(i, v)` /
@@ -14097,7 +14170,7 @@ define Planner
                                     {
                                         let cp tup.components.get ci
                                         if cp <> null
-                                            this.collect_value_locals#((*cp).value)
+                                            this.collect_flow_locals#((*cp).value)
                                         set ci: ci + 1
                                     }
                                 }
@@ -14128,32 +14201,11 @@ define Planner
         {
             choose s
                 when r: Return
-                {
-                    if r.result.length = 1
-                    {
-                        let rp0 r.result.get 0
-                        if rp0 <> null
-                        {
-                            let rop rp0.unwrap()
-                            if rop.member_access = null
-                                choose rop.expression
-                                    when t: scalyc.compiler.Model.Type
-                                    {
-                                        if t.generics = null
-                                            if t.name.length = 1
-                                            {
-                                                let np t.name.get 0
-                                                if np <> null
-                                                    this.add_escaping_local#((*np))
-                                            }
-                                    }
-                                    else
-                                        0
-                        }
-                    }
-                    ; deep-R2: `return T(args...)` — promote the arg locals.
-                    this.collect_ctor_arg_locals#(r.result)
-                }
+                    ; A returned value escapes — seed the name-graph with every
+                    ; bare local flowing into it (alias, ctor args, branch
+                    ; values). collect_flow_locals# subsumes the former
+                    ; bare-`return x` add + the deep-R2 `return T(args)` walk.
+                    this.collect_flow_locals#(r.result)
                 when bind: Binding
                 {
                     ; deep-R2 binding closure: when this binding's name is already
@@ -14164,7 +14216,7 @@ define Planner
                     {
                         let bnm (*bind.item.name)
                         if this.array_contains_name(escaping_return_locals, bnm)
-                            this.collect_ctor_arg_locals#(bind.operation)
+                            this.collect_flow_locals#(bind.operation)
                         ; deep-R2 store-escape: a binding with an escaping init
                         ; (`^name`/`#`), or an already-promoted name, is a target
                         ; into which put/add stores must place caller-page values.
@@ -14200,7 +14252,7 @@ define Planner
                         if last_ptr <> null
                             choose last_ptr.unwrap()
                                 when la: Action
-                                    this.collect_ctor_arg_locals#(la.source)
+                                    this.collect_flow_locals#(la.source)
                                 else
                                     0
                     }
