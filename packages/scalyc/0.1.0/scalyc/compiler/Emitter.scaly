@@ -505,10 +505,10 @@ define Emitter
         set di_type_cache_types: Array[LLVMMetadataRef]^page()
         set function_cache_names: Array[String]^page()
         set function_cache_funcs: Array[LLVMValueRef]^page()
-        set type_index: ConceptIndex.create#(131072 as size_t)
-        set struct_index: ConceptIndex.create#(131072 as size_t)
-        set function_index: ConceptIndex.create#(262144 as size_t)
-        set di_index: ConceptIndex.create#(131072 as size_t)
+        set type_index: ConceptIndex.create(131072 as size_t)
+        set struct_index: ConceptIndex.create(131072 as size_t)
+        set function_index: ConceptIndex.create(262144 as size_t)
+        set di_index: ConceptIndex.create(131072 as size_t)
         set throws_result_names: Array[String]^page()
         set throws_result_types: Array[LLVMTypeRef]^page()
         set intrinsic_type_names: Array[String]^page()
@@ -556,7 +556,7 @@ define Emitter
         ; with NO null terminator, and LLVMModuleCreateWithNameInContext
         ; reads until NUL. Without this, the Module ID is garbage from
         ; whatever follows in the heap page (session 28).
-        set llvm_module: LLVMModuleCreateWithNameInContext(module_name.to_c_string#(), context)
+        set llvm_module: LLVMModuleCreateWithNameInContext(module_name.to_c_string(), context)
 
         ; Create builder
         set builder: LLVMCreateBuilderInContext(context)
@@ -915,7 +915,7 @@ define Emitter
             let props (*s.properties)
             if props.length > 0
             {
-                var member_vec Vector[LLVMMetadataRef]#(props.length)
+                var member_vec Vector[LLVMMetadataRef](props.length)
                 var mi: size_t 0
                 while mi < props.length
                 {
@@ -989,7 +989,7 @@ define Emitter
             let variants (*u.variants)
             if variants.length > 0
             {
-                var var_vec Vector[LLVMMetadataRef]#(variants.length)
+                var var_vec Vector[LLVMMetadataRef](variants.length)
                 var vadded: size_t 0
                 var vi: size_t 0
                 while vi < variants.length
@@ -1020,7 +1020,7 @@ define Emitter
         var tag_name String("tag")
         var pay_name String("payload")
         let tag_member LLVMDIBuilderCreateMemberType(di_builder, fwd, tag_name.c_data(), tag_name.get_length(), di_file, pos.line, (tag_size * 8 as size_t), (0 as i32), (0 as size_t), (0 as i32), di_placeholder_type(tag_size * 8))
-        var out_vec Vector[LLVMMetadataRef]#(2)
+        var out_vec Vector[LLVMMetadataRef](2)
         out_vec.put(0, tag_member)
         var out_count: size_t 1
         if payload_ty.handle <> null
@@ -1269,7 +1269,7 @@ define Emitter
         {
             let void_ty LLVMVoidTypeInContext(context)
             let ptr_ty LLVMPointerTypeInContext(context, 0)
-            var ptys Vector[LLVMTypeRef]#(1)
+            var ptys Vector[LLVMTypeRef](1)
             ptys.put(0, ptr_ty)
             let fty LLVMFunctionType(void_ty, ptys.data, 1, 0)
             set rel_fn: LLVMAddFunction(llvm_module, "_Z23scaly_release_root_pageP4Page", fty)
@@ -1300,7 +1300,7 @@ define Emitter
             if get_fn.handle = null
                 set get_fn: LLVMGetNamedFunction(llvm_module, "_Z3getPv")
             let ptr_ty LLVMPointerTypeInContext(context, 0)
-            var get_param_tys Vector[LLVMTypeRef]#(1)
+            var get_param_tys Vector[LLVMTypeRef](1)
             get_param_tys.put(0, ptr_ty)
             let get_fn_ty LLVMFunctionType(ptr_ty, get_param_tys.data, 1, 0)
             if get_fn.handle = null
@@ -1309,7 +1309,7 @@ define Emitter
                 LLVMSetLinkage(get_fn, LLVMLinkage.External())
                 cache_function(String("_Z3getPv"), get_fn)
             }
-            var get_args Vector[LLVMValueRef]#(1)
+            var get_args Vector[LLVMValueRef](1)
             get_args.put(0, page_val)
             set page_val: LLVMBuildCall2(builder, get_fn_ty, get_fn, get_args.data, 1, "own_page")
         }
@@ -1362,7 +1362,7 @@ define Emitter
         let rel_fn get_release_root_page_fn()
         let void_ty LLVMVoidTypeInContext(context)
         let ptr_ty LLVMPointerTypeInContext(context, 0)
-        var ptys Vector[LLVMTypeRef]#(1)
+        var ptys Vector[LLVMTypeRef](1)
         ptys.put(0, ptr_ty)
         let rel_fty LLVMFunctionType(void_ty, ptys.data, 1, 0)
 
@@ -1377,7 +1377,7 @@ define Emitter
                 if ret_inst.handle <> null
                 {
                     LLVMPositionBuilderBefore(builder, term)
-                    var args Vector[LLVMValueRef]#(1)
+                    var args Vector[LLVMValueRef](1)
                     args.put(0, page)
                     LLVMBuildCall2(builder, rel_fty, rel_fn, args.data, 1, "")
                 }
@@ -1401,7 +1401,7 @@ define Emitter
         {
             let void_ty LLVMVoidTypeInContext(context)
             let ptr_ty LLVMPointerTypeInContext(context, 0)
-            var ptys Vector[LLVMTypeRef]#(1)
+            var ptys Vector[LLVMTypeRef](1)
             ptys.put(0, ptr_ty)
             let fty LLVMFunctionType(void_ty, ptys.data, 1, 0)
             set rel_fn: LLVMAddFunction(llvm_module, "_Z28scaly_release_root_page_fullP4Page", fty)
@@ -1440,10 +1440,10 @@ define Emitter
         let void_ty LLVMVoidTypeInContext(context)
 
         let rel_fn get_release_root_page_full_fn()
-        var r_ptys Vector[LLVMTypeRef]#(1)
+        var r_ptys Vector[LLVMTypeRef](1)
         r_ptys.put(0, ptr_ty)
         let r_fty LLVMFunctionType(void_ty, r_ptys.data, 1, 0)
-        var r_args Vector[LLVMValueRef]#(1)
+        var r_args Vector[LLVMValueRef](1)
         r_args.put(0, page)
         LLVMBuildCall2(builder, r_fty, rel_fn, r_args.data, 1, "")
     }
@@ -2154,7 +2154,7 @@ define Emitter
         ; ListIterator, etc.); add them only when needed.
         if planned_type.name.equals(String("String"))
         {
-            var fields Vector[LLVMTypeRef]#(1)
+            var fields Vector[LLVMTypeRef](1)
             fields.put(0, LLVMPointerTypeInContext(context, 0))
             return LLVMStructTypeInContext(context, fields.data, 1, 0)
         }
@@ -2195,7 +2195,7 @@ define Emitter
         let cached_m lookup_struct_cache mangled_name
         if cached_m.handle <> null
             return cached_m
-        var fields Vector[LLVMTypeRef]#(1)
+        var fields Vector[LLVMTypeRef](1)
         fields.put(0, LLVMPointerTypeInContext(context, 0))
         LLVMStructTypeInContext(context, fields.data, 1, 0)
     }
@@ -2234,7 +2234,7 @@ define Emitter
                                 let props (*struct.properties)
                                 if props.length > 0
                                 {
-                                    var element_types Vector[LLVMTypeRef]#(props.length)
+                                    var element_types Vector[LLVMTypeRef](props.length)
                                     var pi: size_t 0
                                     while pi < props.length
                                     {
@@ -2268,7 +2268,7 @@ define Emitter
         if name.equals("Vector")
         {
             ; Vector[T]: { length: size_t, data: pointer[T] }
-            var fields Vector[LLVMTypeRef]#(2)
+            var fields Vector[LLVMTypeRef](2)
             fields.put(0, i64_ty)
             fields.put(1, ptr_ty)
             return LLVMStructTypeInContext(context, fields.data, 2, 0)
@@ -2276,7 +2276,7 @@ define Emitter
         if name.equals("HashMap")
         {
             ; HashMap[K,V]: { length, slots: ptr, capacity, page }
-            var fields Vector[LLVMTypeRef]#(4)
+            var fields Vector[LLVMTypeRef](4)
             fields.put(0, i64_ty)
             fields.put(1, ptr_ty)
             fields.put(2, i64_ty)
@@ -2286,7 +2286,7 @@ define Emitter
         if name.equals("HashSet")
         {
             ; HashSet[T]: { length, slots: ptr, capacity, page }
-            var fields Vector[LLVMTypeRef]#(4)
+            var fields Vector[LLVMTypeRef](4)
             fields.put(0, i64_ty)
             fields.put(1, ptr_ty)
             fields.put(2, i64_ty)
@@ -2300,7 +2300,7 @@ define Emitter
             ; Pre-s121 had a 4-field layout that didn't match the real
             ; stdlib definition; corrected so deref-load through an
             ; Array-typed field GEPs to the right offsets.
-            var fields Vector[LLVMTypeRef]#(2)
+            var fields Vector[LLVMTypeRef](2)
             fields.put(0, i64_ty)
             fields.put(1, ptr_ty)
             return LLVMStructTypeInContext(context, fields.data, 2, 0)
@@ -2308,7 +2308,7 @@ define Emitter
         if name.equals("List")
         {
             ; List[T]: { head: ptr, tail: ptr, length }
-            var fields Vector[LLVMTypeRef]#(3)
+            var fields Vector[LLVMTypeRef](3)
             fields.put(0, ptr_ty)
             fields.put(1, ptr_ty)
             fields.put(2, i64_ty)
@@ -2317,7 +2317,7 @@ define Emitter
         if name.equals("HashMapBuilder")
         {
             ; HashMapBuilder[K,V]: { length: size_t, slots: pointer[Vector[...]] }
-            var fields Vector[LLVMTypeRef]#(2)
+            var fields Vector[LLVMTypeRef](2)
             fields.put(0, i64_ty)
             fields.put(1, ptr_ty)
             return LLVMStructTypeInContext(context, fields.data, 2, 0)
@@ -2325,7 +2325,7 @@ define Emitter
         if name.equals("HashSetBuilder")
         {
             ; HashSetBuilder[T]: { length: size_t, slots: pointer[Vector[...]] }
-            var fields Vector[LLVMTypeRef]#(2)
+            var fields Vector[LLVMTypeRef](2)
             fields.put(0, i64_ty)
             fields.put(1, ptr_ty)
             return LLVMStructTypeInContext(context, fields.data, 2, 0)
@@ -2556,7 +2556,7 @@ define Emitter
 
         ; Collect element types from properties
         let element_count struct.properties.length
-        var element_types Vector[LLVMTypeRef]#(element_count)
+        var element_types Vector[LLVMTypeRef](element_count)
 
         var i: size_t 0
         while i < element_count
@@ -2819,7 +2819,7 @@ define Emitter
         ; GEP field 1 unconditionally, so the data field must exist.
         let data_array_type LLVMArrayType2(i8_type, data_size)
 
-        var element_types Vector[LLVMTypeRef]#(2)
+        var element_types Vector[LLVMTypeRef](2)
         element_types.put(0, i8_type)       ; tag field
         element_types.put(1, data_array_type) ; data field
 
@@ -2934,7 +2934,7 @@ define Emitter
 
         let i8_ty LLVMInt8TypeInContext(context)
         let data_arr_ty LLVMArrayType2(i8_ty, data_size)
-        var fields Vector[LLVMTypeRef]#(2)
+        var fields Vector[LLVMTypeRef](2)
         fields.put(0, i8_ty)
         fields.put(1, data_arr_ty)
         let result_ty LLVMStructTypeInContext(context, fields.data, 2, 0)
@@ -3091,7 +3091,7 @@ define Emitter
 
         if param_count > 0
         {
-            var param_types Vector[LLVMTypeRef]#(param_count)
+            var param_types Vector[LLVMTypeRef](param_count)
             if use_sret
                 param_types.put(0, LLVMPointerTypeInContext(context, 0))
             if has_page_param
@@ -3435,7 +3435,7 @@ define Emitter
                     ; result value (if any) is stored to the sret slot. If
                     ; emit_action yielded a struct-by-value, store it.
                     ; If it yielded a pointer to a struct (e.g. a heap-
-                    ; allocated `var opts Options#()`), load the struct
+                    ; allocated `var opts Options()`), load the struct
                     ; first via the sret element type.
                     if use_sret
                     {
@@ -3468,7 +3468,7 @@ define Emitter
                                     ; field (copy_struct_value plain-stores
                                     ; non-structs, align 1). Only a STRUCT
                                     ; return whose body yielded a pointer-to-
-                                    ; struct (heap `Foo#(...)`) needs the load-
+                                    ; struct (heap `Foo(...)`) needs the load-
                                     ; first so the whole aggregate is memcpy'd,
                                     ; not just 8 bytes of the pointer.
                                     var ret_is_value: bool false
@@ -3547,11 +3547,11 @@ define Emitter
                                 }
                                 ; ptr-returning fn with struct value → heap-alloc
                                 ; on rp, store, ret ptr. Workaround for the planner
-                                ; force-stack-allocating `Foo#(...)` data-class
+                                ; force-stack-allocating `Foo(...)` data-class
                                 ; ctors regardless of `#` (Planner.scaly:3047 "heap
                                 ; $/#/^ ctor support is deferred"). Without this,
                                 ; `function plan_program#() returns ref[Plan]? {
-                                ; Plan#(...) }` emits `ret ptr null` because the
+                                ; Plan(...) }` emits `ret ptr null` because the
                                 ; body yields a stack struct that can't be returned
                                 ; as a ref. Mirrors stage-0 emit_tuple's
                                 ; PageAllocate branch for Lifetime.Call.
@@ -3568,7 +3568,7 @@ define Emitter
                                                 set alloc_func: LLVMGetNamedFunction(llvm_module, "_ZN4Page8allocateEmm")
                                             if alloc_func.handle = null
                                             {
-                                                var alloc_param_types_d Vector[LLVMTypeRef]#(3)
+                                                var alloc_param_types_d Vector[LLVMTypeRef](3)
                                                 alloc_param_types_d.put(0, LLVMPointerTypeInContext(context, 0))
                                                 alloc_param_types_d.put(1, LLVMInt64TypeInContext context)
                                                 alloc_param_types_d.put(2, LLVMInt64TypeInContext context)
@@ -3580,11 +3580,11 @@ define Emitter
                                             }
                                             let size_const LLVMSizeOf(result_ty)
                                             let align_const LLVMAlignOf(result_ty)
-                                            var alloc_args Vector[LLVMValueRef]#(3)
+                                            var alloc_args Vector[LLVMValueRef](3)
                                             alloc_args.put(0, rp_val)
                                             alloc_args.put(1, size_const)
                                             alloc_args.put(2, align_const)
-                                            var alloc_param_types_c Vector[LLVMTypeRef]#(3)
+                                            var alloc_param_types_c Vector[LLVMTypeRef](3)
                                             alloc_param_types_c.put(0, LLVMPointerTypeInContext(context, 0))
                                             alloc_param_types_c.put(1, LLVMInt64TypeInContext context)
                                             alloc_param_types_c.put(2, LLVMInt64TypeInContext context)
@@ -3987,7 +3987,7 @@ define Emitter
         LLVMPositionBuilderAtEnd(builder, block)
         let arg0 LLVMGetParam(free_get, 0)
         let pg_ty LLVMGlobalGetValueType(page_get)
-        var call_args Vector[LLVMValueRef]#(1)
+        var call_args Vector[LLVMValueRef](1)
         call_args.put(0, arg0)
         let result LLVMBuildCall2(builder, pg_ty, page_get, call_args.data, 1, "page")
         LLVMBuildRet(builder, result)
@@ -4315,7 +4315,7 @@ define Emitter
 
         ; Look up the target function's address (ORC applies the global prefix).
         var addr: u64 0
-        let lookup_err LLVMOrcLLJITLookup(jit, &addr, fn_mangled.to_c_string#())
+        let lookup_err LLVMOrcLLJITLookup(jit, &addr, fn_mangled.to_c_string())
         if lookup_err.handle <> null
         {
             report_jit_error(lookup_err, "JIT: symbol lookup failed")
@@ -4346,7 +4346,7 @@ define Emitter
         ; filename.c_data() returns a pointer into the String's varint-prefixed
         ; buffer — NOT null-terminated. The C API reads past the end. Use
         ; to_c_string# to get a proper null-terminated copy allocated on rp.
-        let c_name filename.to_c_string#()
+        let c_name filename.to_c_string()
         let result LLVMPrintModuleToFile(llvm_module, c_name, null as pointer[pointer[char]])
         result = 0
     }
@@ -4354,7 +4354,7 @@ define Emitter
     ; Write bitcode to file
     function write_bitcode_to_file(this, filename: String) returns bool
     {
-        let c_name filename.to_c_string#()
+        let c_name filename.to_c_string()
         let result LLVMWriteBitcodeToFile(llvm_module, c_name)
         result = 0
     }
@@ -4398,7 +4398,7 @@ define Emitter
         ; varint-prefixed buffer with NO null terminator (s28 rule).
         ; Exercised for the first time when stage-2 -o reached the
         ; object-writing path.
-        let c_filename filename.to_c_string#()
+        let c_filename filename.to_c_string()
         let emit_err LLVMTargetMachineEmitToFile(tm, llvm_module, c_filename, 1,
             null as pointer[pointer[char]])
         LLVMDisposeTargetMachine tm
@@ -4634,7 +4634,7 @@ define Emitter
                     ; varint-prefixed buffer and has no null terminator
                     ; (load-bearing rule: any C API expecting a
                     ; null-terminated string needs to_c_string#).
-                    let name_cstr access.name.to_c_string#()
+                    let name_cstr access.name.to_c_string()
                     set current_value: LLVMBuildExtractValue(builder, current_value, access.field_index as u32, name_cstr)
                 }
             }
@@ -4651,7 +4651,7 @@ define Emitter
             when c: Constant
             {
                 ; Use void type as placeholder when no type info available
-                let void_type PlannedType#(
+                let void_type PlannedType(
                     Span(0, 0),
                     String("void"),
                     String("v"),
@@ -4787,7 +4787,7 @@ define Emitter
         var clo_ty lookup_struct_cache clo.closure_type_name
         if clo_ty.handle = null
         {
-            var field_tys Vector[LLVMTypeRef]#(n_fields)
+            var field_tys Vector[LLVMTypeRef](n_fields)
             field_tys.put(0, ptr_ty)
             var fi: size_t 0
             while fi < cap_count
@@ -4832,7 +4832,7 @@ define Emitter
                 set alloc_func: LLVMGetNamedFunction(llvm_module, "_ZN4Page8allocateEmm")
             if alloc_func.handle = null
             {
-                var apt Vector[LLVMTypeRef]#(3)
+                var apt Vector[LLVMTypeRef](3)
                 apt.put(0, ptr_ty)
                 apt.put(1, LLVMInt64TypeInContext context)
                 apt.put(2, LLVMInt64TypeInContext context)
@@ -4843,11 +4843,11 @@ define Emitter
             }
             let size_const LLVMSizeOf(clo_ty)
             let align_const LLVMAlignOf(clo_ty)
-            var alloc_args Vector[LLVMValueRef]#(3)
+            var alloc_args Vector[LLVMValueRef](3)
             alloc_args.put(0, page_arg)
             alloc_args.put(1, size_const)
             alloc_args.put(2, align_const)
-            var apt2 Vector[LLVMTypeRef]#(3)
+            var apt2 Vector[LLVMTypeRef](3)
             apt2.put(0, ptr_ty)
             apt2.put(1, LLVMInt64TypeInContext context)
             apt2.put(2, LLVMInt64TypeInContext context)
@@ -4922,7 +4922,7 @@ define Emitter
 
         ; Thunk signature: R(ptr self, params...).
         let n_tp pcount + 1
-        var tptys Vector[LLVMTypeRef]#(n_tp)
+        var tptys Vector[LLVMTypeRef](n_tp)
         tptys.put(0, ptr_ty)
         var pi: size_t 0
         while pi < pcount
@@ -4944,8 +4944,8 @@ define Emitter
 
         ; Real signature: R(captures..., params...).
         let n_real cap_count + pcount
-        var real_args Vector[LLVMValueRef]#(n_real)
-        var real_tys Vector[LLVMTypeRef]#(n_real)
+        var real_args Vector[LLVMValueRef](n_real)
+        var real_tys Vector[LLVMTypeRef](n_real)
         var k: size_t 0
         while k < cap_count
         {
@@ -5080,7 +5080,7 @@ define Emitter
             }
             ; s87: when the alloca's allocated type is `ptr` but the
             ; mapped variable type is a struct, the binding stored a
-            ; heap pointer from a region-allocated ctor (Options#(),
+            ; heap pointer from a region-allocated ctor (Options(),
             ; T(), T^name(...)). Loading the struct from an 8-byte
             ; ptr slot would read past the alloca and pick up stack
             ; garbage. Mirror stage-0 (Emitter.cpp:3155-3161): load
@@ -5135,7 +5135,7 @@ define Emitter
             let zero LLVMConstInt(i64_type, 0, 0)
 
             ; Build indices array [0, 0] to get pointer to first element
-            var indices Vector[LLVMValueRef]#(2)
+            var indices Vector[LLVMValueRef](2)
             indices.put(0, zero)
             indices.put(1, zero)
 
@@ -5265,7 +5265,7 @@ define Emitter
                 set alloc_func: LLVMGetNamedFunction(llvm_module, "_ZN4Page8allocateEmm")
             if alloc_func.handle = null
             {
-                var alloc_param_types_d Vector[LLVMTypeRef]#(3)
+                var alloc_param_types_d Vector[LLVMTypeRef](3)
                 alloc_param_types_d.put(0, LLVMPointerTypeInContext(context, 0))
                 alloc_param_types_d.put(1, LLVMInt64TypeInContext context)
                 alloc_param_types_d.put(2, LLVMInt64TypeInContext context)
@@ -5294,11 +5294,11 @@ define Emitter
                 set size_const: LLVMConstInt(i64_ty_sz, 64, 0)
             }
             let align_const LLVMAlignOf(struct_ty)
-            var alloc_args Vector[LLVMValueRef]#(3)
+            var alloc_args Vector[LLVMValueRef](3)
             alloc_args.put(0, page_arg)
             alloc_args.put(1, size_const)
             alloc_args.put(2, align_const)
-            var alloc_param_types_c Vector[LLVMTypeRef]#(3)
+            var alloc_param_types_c Vector[LLVMTypeRef](3)
             alloc_param_types_c.put(0, LLVMPointerTypeInContext(context, 0))
             alloc_param_types_c.put(1, LLVMInt64TypeInContext context)
             alloc_param_types_c.put(2, LLVMInt64TypeInContext context)
@@ -5379,8 +5379,8 @@ define Emitter
         set total_ctor_args: total_ctor_args + user_arg_count
 
         ; Build args + param types as we emit. Start with `this`.
-        var ctor_args Vector[LLVMValueRef]#(total_ctor_args)
-        var ctor_param_types Vector[LLVMTypeRef]#(total_ctor_args)
+        var ctor_args Vector[LLVMValueRef](total_ctor_args)
+        var ctor_param_types Vector[LLVMTypeRef](total_ctor_args)
         ctor_args.put(0, struct_ptr)
         ctor_param_types.put(0, LLVMPointerTypeInContext(context, 0))
         var slot: size_t 1
@@ -5476,8 +5476,8 @@ define Emitter
                         let ptr_ty LLVMPointerTypeInContext(context, 0)
                         let thunk LLVMBuildLoad2(builder, ptr_ty, callee_val, "clo.thunk")
                         let n_args ic_args.length
-                        var arg_tys Vector[LLVMTypeRef]#(n_args)
-                        var arg_vals Vector[LLVMValueRef]#(n_args)
+                        var arg_tys Vector[LLVMTypeRef](n_args)
+                        var arg_vals Vector[LLVMValueRef](n_args)
                         arg_vals.put(0, callee_val)
                         arg_tys.put(0, ptr_ty)
                         var k: size_t 1
@@ -5613,8 +5613,8 @@ define Emitter
         {
             if use_sret
             {
-                var sa Vector[LLVMValueRef]#(1)
-                var sp Vector[LLVMTypeRef]#(1)
+                var sa Vector[LLVMValueRef](1)
+                var sp Vector[LLVMTypeRef](1)
                 sa.put(0, sret_slot)
                 sp.put(0, LLVMPointerTypeInContext(context, 0))
                 let void_ty LLVMVoidTypeInContext(context)
@@ -5654,7 +5654,7 @@ define Emitter
 
         ; s168: zero-user-arg shortcut. SKIP it when the call needs an
         ; implicit page (rp) arg — a `function#` callee with no explicit
-        ; args (e.g. `Planner.make_void_type#()`) must still receive rp in
+        ; args (e.g. `Planner.make_void_type()`) must still receive rp in
         ; slot 0 (after sret). The old shortcut passed only the sret and
         ; dropped rp, so the callee read garbage in its page param and
         ; Page::allocate crashed with a null/garbage page. Falling through
@@ -5666,8 +5666,8 @@ define Emitter
             {
                 if use_sret
                 {
-                    var sa Vector[LLVMValueRef]#(1)
-                    var sp Vector[LLVMTypeRef]#(1)
+                    var sa Vector[LLVMValueRef](1)
+                    var sp Vector[LLVMTypeRef](1)
                     sa.put(0, sret_slot)
                     sp.put(0, LLVMPointerTypeInContext(context, 0))
                     let void_ty LLVMVoidTypeInContext(context)
@@ -5772,8 +5772,8 @@ define Emitter
             set result_type: LLVMVoidTypeInContext(context)
 
         ; Build args vector - allocate with page
-        var args_array Vector[LLVMValueRef]#(total_arg_count)
-        var param_types Vector[LLVMTypeRef]#(total_arg_count)
+        var args_array Vector[LLVMValueRef](total_arg_count)
+        var param_types Vector[LLVMTypeRef](total_arg_count)
 
         if use_sret
         {
@@ -5890,7 +5890,7 @@ define Emitter
                                                         {
                                                             var current_ptr var_ptr
                                                             ; s175: a region-allocated binding (`var opts
-                                                            ; Options#()`) allocas a ptr SLOT holding the
+                                                            ; Options()`) allocas a ptr SLOT holding the
                                                             ; heap address (s27); GEPing the slot directly
                                                             ; lands the field address in stack garbage —
                                                             ; stage-2's parse_args crashed in
@@ -6229,7 +6229,7 @@ define Emitter
             ; a snapshot in `addr.tmp`, not x. Mirrors stage-0
             ; emitOperand's KeepOriginalPointer + &-shortcut path.
             ; s146: discriminate by alloca's allocated type. For
-            ; heap-bound vars (var x Foo^p() / Foo() / Foo#()), the
+            ; heap-bound vars (var x Foo^p() / Foo() / Foo()), the
             ; alloca holds a ptr; loading it returns the heap address
             ; callers expect from &x — without this, Plan(&stmts, ...)
             ; stores the stack alloca address into Plan.statements and
@@ -6412,8 +6412,8 @@ define Emitter
                 LLVMBuildBr(builder, end_blk)
                 LLVMPositionBuilderAtEnd(builder, end_blk)
                 let phi LLVMBuildPhi(builder, i1_ty, "lor.result")
-                var lvalues Vector[LLVMValueRef]#(2)
-                var lblocks Vector[LLVMBasicBlockRef]#(2)
+                var lvalues Vector[LLVMValueRef](2)
+                var lblocks Vector[LLVMBasicBlockRef](2)
                 lvalues.put(0, shortcut)
                 lvalues.put(1, rc)
                 lblocks.put(0, entry_blk)
@@ -6544,7 +6544,7 @@ define Emitter
         ; never runs the Emitter (parser->model->plan only) so this cannot
         ; crash the semantic worker. For clean source this is dead code.
         scaly_eputs "Emitter: unknown unary operator: "
-        let uopc op_name.to_c_string#()
+        let uopc op_name.to_c_string()
         scaly_eputs uopc
         scaly_eputs "\n"
         exit 14
@@ -6609,7 +6609,7 @@ define Emitter
                             }
                         }
                     }
-                    var indices Vector[LLVMValueRef]#(1)
+                    var indices Vector[LLVMValueRef](1)
                     indices.put(0, r)
                     return LLVMBuildInBoundsGEP2(builder, elem_ty, l, indices.data, 1, "ptr.add")
                 }
@@ -6631,7 +6631,7 @@ define Emitter
                         }
                     }
                     let neg_offset LLVMBuildNeg(builder, r, "neg")
-                    var indices Vector[LLVMValueRef]#(1)
+                    var indices Vector[LLVMValueRef](1)
                     indices.put(0, neg_offset)
                     return LLVMBuildInBoundsGEP2(builder, elem_ty, l, indices.data, 1, "ptr.sub")
                 }
@@ -6879,7 +6879,7 @@ define Emitter
         ; never runs the Emitter (parser->model->plan only) so this cannot
         ; crash the semantic worker. For clean source this is dead code.
         scaly_eputs "Emitter: unknown binary operator: "
-        let bopc op_name.to_c_string#()
+        let bopc op_name.to_c_string()
         scaly_eputs bopc
         scaly_eputs "\n"
         exit 14
@@ -7029,7 +7029,7 @@ define Emitter
     ; Emit a tuple construction
     function emit_tuple(this, tuple: PlannedTuple) returns LLVMValueRef
     {
-        ; Zero-arg struct ctor (e.g. `Options#()`, `Vector[int]#(0)` after the
+        ; Zero-arg struct ctor (e.g. `Options()`, `Vector[int](0)` after the
         ; planner collapses an integer literal away in some paths). Look up
         ; the struct in the cache; if found, alloca and zero-init. Without
         ; this, every empty-paren ctor returns null and the binding drops.
@@ -7057,11 +7057,11 @@ define Emitter
                     ; Same load as the per-field-store branch below: when not
                     ; region-allocated, emit_binding needs the loaded struct
                     ; value so it alloca's a struct-typed slot for `var opts
-                    ; Options#()` instead of a ptr-typed slot. Without this,
+                    ; Options()` instead of a ptr-typed slot. Without this,
                     ; subsequent `set opts.field: ...` GEPs corrupt the
                     ; pointer instead of writing struct fields. Today the
                     ; planner never sets is_region_alloc, so this fires for
-                    ; both Options() and Options#() — matches stage-0 which
+                    ; both Options() and Options() — matches stage-0 which
                     ; treats both as stack-allocated for empty-arg data
                     ; classes (no init#).
                     if tuple.is_region_alloc = false
@@ -7188,8 +7188,8 @@ define Emitter
         let comp_count tuple.components.length
 
         ; Emit component values
-        var comp_values Vector[LLVMValueRef]#(comp_count)
-        var comp_types Vector[LLVMTypeRef]#(comp_count)
+        var comp_values Vector[LLVMValueRef](comp_count)
+        var comp_types Vector[LLVMTypeRef](comp_count)
 
         var i: size_t 0
         var any_null: bool false
@@ -7226,7 +7226,7 @@ define Emitter
         ; Allocate on stack (default) or heap on the appropriate page when
         ; the tuple carries a non-Unspecified lifetime (#/$/^). Mirrors stage-0
         ; emitTuple's PageAllocate branch (Emitter.cpp:6389-6421). Without
-        ; this, every `Plan#(...)` / `Vector[T]^rp(...)` data-class ctor goes
+        ; this, every `Plan(...)` / `Vector[T]^rp(...)` data-class ctor goes
         ; to the stack and any caller storing the pointer past return-time
         ; gets dangling memory.
         var tuple_ptr: LLVMValueRef LLVMValueRef(null)
@@ -7253,7 +7253,7 @@ define Emitter
                     if get_fn.handle = null
                         set get_fn: LLVMGetNamedFunction(llvm_module, "_Z3getPv")
                     let get_ptr_ty LLVMPointerTypeInContext(context, 0)
-                    var get_param_tys Vector[LLVMTypeRef]#(1)
+                    var get_param_tys Vector[LLVMTypeRef](1)
                     get_param_tys.put(0, get_ptr_ty)
                     let get_fn_ty LLVMFunctionType(get_ptr_ty, get_param_tys.data, 1, 0)
                     if get_fn.handle = null
@@ -7262,7 +7262,7 @@ define Emitter
                         LLVMSetLinkage(get_fn, LLVMLinkage.External())
                         cache_function(String("_Z3getPv"), get_fn)
                     }
-                    var get_args Vector[LLVMValueRef]#(1)
+                    var get_args Vector[LLVMValueRef](1)
                     get_args.put(0, page_val)
                     set page_val: LLVMBuildCall2(builder, get_fn_ty, get_fn, get_args.data, 1, "own_page")
                 }
@@ -7271,7 +7271,7 @@ define Emitter
                     set alloc_func: LLVMGetNamedFunction(llvm_module, "_ZN4Page8allocateEmm")
                 if alloc_func.handle = null
                 {
-                    var alloc_param_types_d Vector[LLVMTypeRef]#(3)
+                    var alloc_param_types_d Vector[LLVMTypeRef](3)
                     alloc_param_types_d.put(0, LLVMPointerTypeInContext(context, 0))
                     alloc_param_types_d.put(1, LLVMInt64TypeInContext context)
                     alloc_param_types_d.put(2, LLVMInt64TypeInContext context)
@@ -7283,11 +7283,11 @@ define Emitter
                 }
                 let size_const LLVMSizeOf(struct_type)
                 let align_const LLVMAlignOf(struct_type)
-                var alloc_args Vector[LLVMValueRef]#(3)
+                var alloc_args Vector[LLVMValueRef](3)
                 alloc_args.put(0, page_val)
                 alloc_args.put(1, size_const)
                 alloc_args.put(2, align_const)
-                var alloc_param_types_c Vector[LLVMTypeRef]#(3)
+                var alloc_param_types_c Vector[LLVMTypeRef](3)
                 alloc_param_types_c.put(0, LLVMPointerTypeInContext(context, 0))
                 alloc_param_types_c.put(1, LLVMInt64TypeInContext context)
                 alloc_param_types_c.put(2, LLVMInt64TypeInContext context)
@@ -7325,7 +7325,7 @@ define Emitter
         ; data uninitialized. Discriminator: cv is alloca whose allocated
         ; type equals struct_type. Narrow enough to skip:
         ; (a) `Vector[T]^rp(0)` — cv is i64, not alloca;
-        ; (b) `PlannedOperand#(ptr_field)` — comp_count >> 1 or alloca's
+        ; (b) `PlannedOperand(ptr_field)` — comp_count >> 1 or alloca's
         ;     type differs.
         if comp_count = 1
         {
@@ -7363,7 +7363,7 @@ define Emitter
 
                         ; s172: the single component is already a struct
                         ; VALUE of the target type (e.g. a choose-bound
-                        ; `success` payload in `ParameterSetSyntax#(success)`)
+                        ; `success` payload in `ParameterSetSyntax(success)`)
                         ; — store it directly. The alloca branch below only
                         ; covers by-pointer components.
                         if cv0_ty.handle = struct_type.handle
@@ -7410,7 +7410,7 @@ define Emitter
                                 let source_name_c LLVMGetStructName(cv0_ty)
                                 if source_name_c <> null
                                 {
-                                    let source_name String#(source_name_c)
+                                    let source_name String(source_name_c)
                                     if source_name.starts_with("_Z5Array")
                                     {
                                         ; Branch on Array.vector != null: empty
@@ -7432,7 +7432,7 @@ define Emitter
                                         LLVMBuildStore(builder, null_ptr, data_gep_e)
                                         LLVMBuildBr(builder, end_block)
                                         LLVMPositionBuilderAtEnd(builder, else_block)
-                                        var inner_ftys Vector[LLVMTypeRef]#(2)
+                                        var inner_ftys Vector[LLVMTypeRef](2)
                                         inner_ftys.put(0, LLVMInt64TypeInContext context)
                                         inner_ftys.put(1, LLVMPointerTypeInContext(context, 0))
                                         let inner_vec_ty LLVMStructTypeInContext(context, inner_ftys.data, 2, 0)
@@ -7474,10 +7474,10 @@ define Emitter
                                 let tgt_name_c LLVMGetStructName(struct_type)
                                 if tgt_name_c <> null
                                 {
-                                    let tgt_name String#(tgt_name_c)
+                                    let tgt_name String(tgt_name_c)
                                     if tgt_name.starts_with("_Z6Vector")
                                     {
-                                        var arr_ftys Vector[LLVMTypeRef]#(2)
+                                        var arr_ftys Vector[LLVMTypeRef](2)
                                         arr_ftys.put(0, LLVMInt64TypeInContext context)
                                         arr_ftys.put(1, LLVMPointerTypeInContext(context, 0))
                                         let arr_struct_ty LLVMStructTypeInContext(context, arr_ftys.data, 2, 0)
@@ -7497,7 +7497,7 @@ define Emitter
                                         LLVMBuildStore(builder, null_ptr2, data_gep_e2)
                                         LLVMBuildBr(builder, end_block2)
                                         LLVMPositionBuilderAtEnd(builder, else_block2)
-                                        var inner_ftys2 Vector[LLVMTypeRef]#(2)
+                                        var inner_ftys2 Vector[LLVMTypeRef](2)
                                         inner_ftys2.put(0, LLVMInt64TypeInContext context)
                                         inner_ftys2.put(1, LLVMPointerTypeInContext(context, 0))
                                         let inner_vec_ty2 LLVMStructTypeInContext(context, inner_ftys2.data, 2, 0)
@@ -7557,7 +7557,7 @@ define Emitter
                     ; ptr but the field expects a struct, load the struct from
                     ; the pointer before storing. Without this, an 8-byte ptr
                     ; gets written into a wider struct slot and high bytes are
-                    ; stack garbage — observed: Vector[Module]#(0) stored into
+                    ; stack garbage — observed: Vector[Module](0) stored into
                     ; Module.modules (Vector<Module>=16B) leaves modules.data
                     ; uninitialized AND puts the heap ptr into modules.length,
                     ; making build_program's prelude loop run ~37 billion times.
@@ -7622,7 +7622,7 @@ define Emitter
             return LLVMValueRef null
 
         ; Emit all element values
-        var element_values Vector[LLVMValueRef]#(total_count)
+        var element_values Vector[LLVMValueRef](total_count)
         var elem_idx: size_t 0
         set row_idx: 0
         while row_idx < ops.length
@@ -7674,7 +7674,7 @@ define Emitter
             if elem_value <> null
             {
                 ; Build GEP with indices [0, elem_idx]
-                var indices Vector[LLVMValueRef]#(2)
+                var indices Vector[LLVMValueRef](2)
                 indices.put(0, zero)
                 indices.put(1, LLVMConstInt(i64_type, elem_idx, 0))
 
@@ -7889,8 +7889,8 @@ define Emitter
                         let phi LLVMBuildPhi(builder, then_ty, "if.value")
 
                         ; Add incoming values - need arrays for LLVMAddIncoming
-                        var values Vector[LLVMValueRef]#(2)
-                        var blocks Vector[LLVMBasicBlockRef]#(2)
+                        var values Vector[LLVMValueRef](2)
+                        var blocks Vector[LLVMBasicBlockRef](2)
                         values.put(0, then_value)
                         values.put(1, else_value)
                         blocks.put(0, then_end_block)
@@ -8195,12 +8195,12 @@ define Emitter
         var cond_is_pointer: bool false
         ; s143: throws-call return type for binding the synthetic Success
         ; arm to the bare sret value. Stage-1 doesn't wrap throws returns
-        ; in a Result struct, so for `choose parse_X#() when success:
+        ; in a Result struct, so for `choose parse_X() when success:
         ; Success ...`, the bound `success` should be the entire sret slot
         ; loaded as the call's return_type — not the variant_type the
         ; planner couldn't resolve and fell back to void.
         var is_throws_call: bool false
-        var throws_call_return_type: PlannedType Planner.make_void_type#()
+        var throws_call_return_type: PlannedType Planner.make_void_type()
         ; s157: a throws-call returning a pointer/ref (e.g.
         ; parse_declaration_list# -> ref[Vector[..]]?) is NOT wrapped in
         ; the sret Result struct — it returns the bare pointer and signals
@@ -8386,7 +8386,7 @@ define Emitter
         if compute_throws_ptr
         {
             let one_val LLVMConstInt(i8_ty, 1, 0)
-            var idx_vec Vector[LLVMValueRef]#(1)
+            var idx_vec Vector[LLVMValueRef](1)
             idx_vec.put(0, one_val)
             set throws_success_ptr: LLVMBuildInBoundsGEP2(builder, i8_ty, union_ptr, idx_vec.data, 1, "throws.data.ptr")
         }
@@ -8413,8 +8413,8 @@ define Emitter
         ; statement (no Action consequents) yields an empty count and
         ; we return null so the caller emits no return.
         let max_count choose_expr.cases.length + 1
-        var phi_values Vector[LLVMValueRef]#(max_count)
-        var phi_blocks Vector[LLVMBasicBlockRef]#(max_count)
+        var phi_values Vector[LLVMValueRef](max_count)
+        var phi_blocks Vector[LLVMBasicBlockRef](max_count)
         var phi_count: size_t 0
         ; s124: track every block that branches to merge_block without
         ; contributing a value (void result, type mismatch, statement-
@@ -8423,7 +8423,7 @@ define Emitter
         ; rejects with "PHINode should have one entry for each
         ; predecessor of its parent basic block". Filled in below; drained
         ; at PHI assembly time with undef of phi_ref_type.
-        var undef_blocks Vector[LLVMBasicBlockRef]#(max_count)
+        var undef_blocks Vector[LLVMBasicBlockRef](max_count)
         var undef_count: size_t 0
 
         ; Track variant_index values already added to the switch. When
@@ -8433,7 +8433,7 @@ define Emitter
         ; rejects the IR at -c (passes -S verification but llc/IRTranslator
         ; aborts). Skip duplicates so the IR remains well-formed; the
         ; first-wins arm runs and the rest become unreachable.
-        var seen_tags Vector[size_t]#(choose_expr.cases.length + 1)
+        var seen_tags Vector[size_t](choose_expr.cases.length + 1)
         var seen_count: size_t 0
 
         ; Reference type for the PHI — locked in by the first non-void
@@ -8448,7 +8448,7 @@ define Emitter
         ; when the planner couldn't resolve variant indices (all cases
         ; collide on variant_index=0, so most case bodies get dedup'd).
         ; Without this redirect, the default block has no terminator
-        ; matching the dropped cases, and `choose parse_X#()` over a
+        ; matching the dropped cases, and `choose parse_X()` over a
         ; throws-returning function emits a switch that loops forever:
         ; my throw fix stores tag=1, switch case 0 doesn't match, default
         ; (empty) brs to merge, parse_declaration_list re-enters forever.
@@ -8630,7 +8630,7 @@ define Emitter
                             ; result_type is a struct but case_value is a
                             ; pointer. Mirrors stage-0 emitChoose
                             ; (Emitter.cpp:4829). Without this, plan_operand#'s
-                            ; Constant/Type arms (bare `this.plan_X_operand#()`)
+                            ; Constant/Type arms (bare `this.plan_X_operand()`)
                             ; contributed `undef` to choose.value, so every
                             ; variable/constant operand planned to garbage.
                             if case_value.handle <> null
@@ -9044,8 +9044,8 @@ define Emitter
         if page_arg.handle = null
             return LLVMValueRef null
 
-        var get_iter_args Vector[LLVMValueRef]#(3)
-        var get_iter_param_types Vector[LLVMTypeRef]#(3)
+        var get_iter_args Vector[LLVMValueRef](3)
+        var get_iter_param_types Vector[LLVMTypeRef](3)
         get_iter_args.put(0, iter_alloca)
         get_iter_args.put(1, page_arg)
         get_iter_args.put(2, collection_ptr)
@@ -9082,8 +9082,8 @@ define Emitter
         let option_element_type LLVMPointerTypeInContext(context, 0)  ; Option[T] represented as nullable pointer
 
         ; Build args for next call (iterator pointer)
-        var next_args Vector[LLVMValueRef]#(1)
-        var next_param_types Vector[LLVMTypeRef]#(1)
+        var next_args Vector[LLVMValueRef](1)
+        var next_param_types Vector[LLVMTypeRef](1)
         next_args.put(0, iter_alloca)
         next_param_types.put(0, iter_ptr_type)
 
@@ -9333,7 +9333,7 @@ define Emitter
                 set ok_type: mapped
         }
         let ok_one LLVMConstInt(i8_ty, 1, 0)
-        var ok_idx Vector[LLVMValueRef]#(1)
+        var ok_idx Vector[LLVMValueRef](1)
         ok_idx.put(0, ok_one)
         let ok_data_ptr LLVMBuildInBoundsGEP2(builder, i8_ty, result_ptr, ok_idx.data, 1, "ok.data.ptr")
         let ok_value LLVMBuildLoad2(builder, ok_type, ok_data_ptr, "ok.val")
@@ -9365,7 +9365,7 @@ define Emitter
             ; Inline error union tag at byte offset 1 (the union's own tag is
             ; the first byte of the wrapper data field).
             let et_one LLVMConstInt(i8_ty, 1, 0)
-            var et_idx Vector[LLVMValueRef]#(1)
+            var et_idx Vector[LLVMValueRef](1)
             et_idx.put(0, et_one)
             let errtag_ptr LLVMBuildInBoundsGEP2(builder, i8_ty, result_ptr, et_idx.data, 1, "err.tag.ptr")
             let err_tag LLVMBuildLoad2(builder, i8_ty, errtag_ptr, "err.tag")
@@ -9374,7 +9374,7 @@ define Emitter
             ; The variant payload sits at byte offset 2 (after the wrapper
             ; status byte and the inline error union's own tag byte).
             let pl_two LLVMConstInt(i8_ty, 2, 0)
-            var pl_idx Vector[LLVMValueRef]#(1)
+            var pl_idx Vector[LLVMValueRef](1)
             pl_idx.put(0, pl_two)
             let payload_ptr LLVMBuildInBoundsGEP2(builder, i8_ty, result_ptr, pl_idx.data, 1, "err.payload.ptr")
 
@@ -9872,7 +9872,7 @@ define Emitter
                 let data_ptr LLVMBuildStructGEP2(builder, union_type, union_ptr, 1, "variant.data.ptr")
                 ; If the payload type is a struct but emit_operand produced a
                 ; POINTER (the operand is a local bound to an sret-returning
-                ; call, e.g. `let fn build_function#(...)` → Member.Function(fn)),
+                ; call, e.g. `let fn build_function(...)` → Member.Function(fn)),
                 ; store the loaded struct VALUE, not the 8-byte pointer.
                 ; Without this the union payload got the sret-slot address and
                 ; every field of the stored struct read back as garbage.
@@ -10072,7 +10072,7 @@ define Emitter
                                                 var alloc_func LLVMGetNamedFunction(llvm_module, "_ZN4Page8allocateEmm")
                                                 if alloc_func.handle = null
                                                 {
-                                                    var ap_param_types Vector[LLVMTypeRef]#(3)
+                                                    var ap_param_types Vector[LLVMTypeRef](3)
                                                     ap_param_types.put(0, LLVMPointerTypeInContext(context, 0))
                                                     ap_param_types.put(1, LLVMInt64TypeInContext context)
                                                     ap_param_types.put(2, LLVMInt64TypeInContext context)
@@ -10082,11 +10082,11 @@ define Emitter
                                                 }
                                                 let size_const LLVMSizeOf(val_ty)
                                                 let align_const LLVMAlignOf(val_ty)
-                                                var alloc_args Vector[LLVMValueRef]#(3)
+                                                var alloc_args Vector[LLVMValueRef](3)
                                                 alloc_args.put(0, copy_page)
                                                 alloc_args.put(1, size_const)
                                                 alloc_args.put(2, align_const)
-                                                var ap_call_pt Vector[LLVMTypeRef]#(3)
+                                                var ap_call_pt Vector[LLVMTypeRef](3)
                                                 ap_call_pt.put(0, LLVMPointerTypeInContext(context, 0))
                                                 ap_call_pt.put(1, LLVMInt64TypeInContext context)
                                                 ap_call_pt.put(2, LLVMInt64TypeInContext context)
@@ -10287,15 +10287,15 @@ define Emitter
         var page_get_fn LLVMGetNamedFunction(llvm_module, "_ZN4Page3getEPv")
         if page_get_fn.handle = null
         {
-            var pg_param_types Vector[LLVMTypeRef]#(1)
+            var pg_param_types Vector[LLVMTypeRef](1)
             pg_param_types.put(0, LLVMPointerTypeInContext(context, 0))
             let pg_decl_ty LLVMFunctionType(LLVMPointerTypeInContext(context, 0), pg_param_types.data, 1, 0)
             set page_get_fn: LLVMAddFunction(llvm_module, "_ZN4Page3getEPv", pg_decl_ty)
             LLVMSetLinkage(page_get_fn, LLVMLinkage.External())
         }
-        var pg_args Vector[LLVMValueRef]#(1)
+        var pg_args Vector[LLVMValueRef](1)
         pg_args.put(0, var_ptr)
-        var pg_call_pt Vector[LLVMTypeRef]#(1)
+        var pg_call_pt Vector[LLVMTypeRef](1)
         pg_call_pt.put(0, LLVMPointerTypeInContext(context, 0))
         let pg_call_ty LLVMFunctionType(LLVMPointerTypeInContext(context, 0), pg_call_pt.data, 1, 0)
         let parent_page LLVMBuildCall2(builder, pg_call_ty, page_get_fn, pg_args.data, 1, "parent.page")
@@ -10304,7 +10304,7 @@ define Emitter
         var alloc_func LLVMGetNamedFunction(llvm_module, "_ZN4Page8allocateEmm")
         if alloc_func.handle = null
         {
-            var ap_param_types Vector[LLVMTypeRef]#(3)
+            var ap_param_types Vector[LLVMTypeRef](3)
             ap_param_types.put(0, LLVMPointerTypeInContext(context, 0))
             ap_param_types.put(1, LLVMInt64TypeInContext context)
             ap_param_types.put(2, LLVMInt64TypeInContext context)
@@ -10314,11 +10314,11 @@ define Emitter
         }
         let size_const LLVMSizeOf(struct_ty)
         let align_const LLVMAlignOf(struct_ty)
-        var alloc_args Vector[LLVMValueRef]#(3)
+        var alloc_args Vector[LLVMValueRef](3)
         alloc_args.put(0, parent_page)
         alloc_args.put(1, size_const)
         alloc_args.put(2, align_const)
-        var ap_call_pt Vector[LLVMTypeRef]#(3)
+        var ap_call_pt Vector[LLVMTypeRef](3)
         ap_call_pt.put(0, LLVMPointerTypeInContext(context, 0))
         ap_call_pt.put(1, LLVMInt64TypeInContext context)
         ap_call_pt.put(2, LLVMInt64TypeInContext context)
@@ -10331,7 +10331,7 @@ define Emitter
         var memcpy_fn LLVMGetNamedFunction(llvm_module, "memcpy")
         if memcpy_fn.handle = null
         {
-            var mc_param_types Vector[LLVMTypeRef]#(3)
+            var mc_param_types Vector[LLVMTypeRef](3)
             mc_param_types.put(0, LLVMPointerTypeInContext(context, 0))
             mc_param_types.put(1, LLVMPointerTypeInContext(context, 0))
             mc_param_types.put(2, LLVMInt64TypeInContext context)
@@ -10339,11 +10339,11 @@ define Emitter
             set memcpy_fn: LLVMAddFunction(llvm_module, "memcpy", mc_decl_ty)
             LLVMSetLinkage(memcpy_fn, LLVMLinkage.External())
         }
-        var mc_args Vector[LLVMValueRef]#(3)
+        var mc_args Vector[LLVMValueRef](3)
         mc_args.put(0, heap_ptr)
         mc_args.put(1, value)
         mc_args.put(2, size_const)
-        var mc_call_pt Vector[LLVMTypeRef]#(3)
+        var mc_call_pt Vector[LLVMTypeRef](3)
         mc_call_pt.put(0, LLVMPointerTypeInContext(context, 0))
         mc_call_pt.put(1, LLVMPointerTypeInContext(context, 0))
         mc_call_pt.put(2, LLVMInt64TypeInContext context)
@@ -10429,7 +10429,7 @@ define Emitter
         }
 
         ; s87: when var_ptr is an alloca-of-ptr (region-allocated ctor
-        ; result like Options#()), the alloca holds the heap pointer
+        ; result like Options()), the alloca holds the heap pointer
         ; rather than the struct itself. GEPing into the alloca treats
         ; an 8-byte ptr slot as the struct base and overflows on every
         ; field offset. Load the heap pointer first, then GEP into the
@@ -10797,7 +10797,7 @@ define Emitter
                             let arr_alloca entry_alloca(arr_ty, name.c_data())
                             let i64_type LLVMInt64TypeInContext(context)
                             let zero LLVMConstInt(i64_type, 0, 0)
-                            var indices Vector[LLVMValueRef]#(2)
+                            var indices Vector[LLVMValueRef](2)
                             indices.put(0, zero)
                             indices.put(1, zero)
                             let first_elem LLVMBuildInBoundsGEP2(
@@ -11199,7 +11199,7 @@ define Emitter
                         ; Create an opaque watermark type (4 pointers = 32 bytes on 64-bit)
                         set watermark_type: LLVMStructCreateNamed(context, watermark_name.c_data())
                         let ptr_type LLVMPointerTypeInContext(context, 0)
-                        var wm_fields Vector[LLVMTypeRef]#(4)
+                        var wm_fields Vector[LLVMTypeRef](4)
                         wm_fields.put(0, ptr_type)  ; page
                         wm_fields.put(1, ptr_type)  ; next_object
                         wm_fields.put(2, ptr_type)  ; extension_tail
@@ -11209,10 +11209,10 @@ define Emitter
                     }
 
                     ; Call save_watermark
-                    var save_args Vector[LLVMValueRef]#(1)
+                    var save_args Vector[LLVMValueRef](1)
                     save_args.put(0, current_region.local_page)
                     let ptr_type LLVMPointerTypeInContext(context, 0)
-                    var save_param_types Vector[LLVMTypeRef]#(1)
+                    var save_param_types Vector[LLVMTypeRef](1)
                     save_param_types.put(0, ptr_type)
                     let save_func_type LLVMFunctionType(watermark_type, save_param_types.data, 1, 0)
                     set watermark: LLVMBuildCall2(builder, save_func_type, save_wm_fn, save_args.data, 1, "watermark")
@@ -11261,7 +11261,7 @@ define Emitter
         if restore_wm_fn.handle <> null
         {
             ; Call restore_watermark(local_page, watermark)
-            var restore_args Vector[LLVMValueRef]#(2)
+            var restore_args Vector[LLVMValueRef](2)
             restore_args.put(0, current_region.local_page)
             restore_args.put(1, watermark)
 
@@ -11269,7 +11269,7 @@ define Emitter
             let void_type LLVMVoidTypeInContext(context)
             let watermark_type LLVMTypeOf(watermark)
 
-            var restore_param_types Vector[LLVMTypeRef]#(2)
+            var restore_param_types Vector[LLVMTypeRef](2)
             restore_param_types.put(0, ptr_type)       ; Page pointer
             restore_param_types.put(1, watermark_type) ; BlockWatermark
 
@@ -11327,7 +11327,7 @@ define Emitter
 function test() returns int
 {
     ; Test EmitterConfig initialization
-    let config EmitterConfig#()
+    let config EmitterConfig()
     if config.emit_debug_info = false
         return 1
 
@@ -11335,7 +11335,7 @@ function test() returns int
         return 2
 
     ; Test RegionInfo
-    let region RegionInfo#()
+    let region RegionInfo()
     if region.local_page.handle <> null
         return 3
 
@@ -11344,23 +11344,23 @@ function test() returns int
     ; ========================================================================
 
     ; Test 100: End-to-end compilation of simple integer expression
-    var parser Parser#(String("42"))
-    choose parser.parse_program#()
+    var parser Parser(String("42"))
+    choose parser.parse_program()
         when err: Error
             return 100
         when syntax: Success
         {
             ; Model the parsed program
-            let program Modeler.build_program#(String("test.scaly"), String("test"), syntax, true)
+            let program Modeler.build_program(String("test.scaly"), String("test"), syntax, true)
 
             ; Plan the program
-            var planner Planner#(String("test.scaly"))
+            var planner Planner(String("test.scaly"))
             let plan planner.plan_program program
             if plan = null
                 return 101
 
             ; Emit the plan
-            var emitter Emitter#()
+            var emitter Emitter()
             let emit_result emitter.emit(plan, String("test_module"))
             if emit_result = false
                 return 102
@@ -11377,19 +11377,19 @@ function test() returns int
         }
 
     ; Test 110: End-to-end with function definition
-    set parser: Parser#(String("function answer() returns int\n    42"))
-    choose parser.parse_program#()
+    set parser: Parser(String("function answer() returns int\n    42"))
+    choose parser.parse_program()
         when err: Error
             return 110
         when syntax: Success
         {
-            let program Modeler.build_program#(String("test2.scaly"), String("test2"), syntax, true)
-            var planner Planner#(String("test2.scaly"))
+            let program Modeler.build_program(String("test2.scaly"), String("test2"), syntax, true)
+            var planner Planner(String("test2.scaly"))
             let plan planner.plan_program program
             if plan = null
                 return 111
 
-            var emitter Emitter#()
+            var emitter Emitter()
             let emit_result emitter.emit(plan, String("test2_module"))
             if emit_result = false
                 return 112
@@ -11407,19 +11407,19 @@ function test() returns int
         }
 
     ; Test 120: End-to-end with struct definition
-    set parser: Parser#(String("define Point(x: int, y: int)"))
-    choose parser.parse_program#()
+    set parser: Parser(String("define Point(x: int, y: int)"))
+    choose parser.parse_program()
         when err: Error
             return 120
         when syntax: Success
         {
-            let program Modeler.build_program#(String("test3.scaly"), String("test3"), syntax, true)
-            var planner Planner#(String("test3.scaly"))
+            let program Modeler.build_program(String("test3.scaly"), String("test3"), syntax, true)
+            var planner Planner(String("test3.scaly"))
             let plan planner.plan_program program
             if plan = null
                 return 121
 
-            var emitter Emitter#()
+            var emitter Emitter()
             let emit_result emitter.emit(plan, String("test3_module"))
             if emit_result = false
                 return 122
@@ -11427,19 +11427,19 @@ function test() returns int
         }
 
     ; Test 130: End-to-end with if expression
-    set parser: Parser#(String("if true\n    1\nelse\n    0"))
-    choose parser.parse_program#()
+    set parser: Parser(String("if true\n    1\nelse\n    0"))
+    choose parser.parse_program()
         when err: Error
             return 130
         when syntax: Success
         {
-            let program Modeler.build_program#(String("test4.scaly"), String("test4"), syntax, true)
-            var planner Planner#(String("test4.scaly"))
+            let program Modeler.build_program(String("test4.scaly"), String("test4"), syntax, true)
+            var planner Planner(String("test4.scaly"))
             let plan planner.plan_program program
             if plan = null
                 return 131
 
-            var emitter Emitter#()
+            var emitter Emitter()
             let emit_result emitter.emit(plan, String("test4_module"))
             if emit_result = false
                 return 132
@@ -11447,19 +11447,19 @@ function test() returns int
         }
 
     ; Test 140: End-to-end with let binding and arithmetic
-    set parser: Parser#(String("let x 10\nlet y 20\nlet sum x + y"))
-    choose parser.parse_program#()
+    set parser: Parser(String("let x 10\nlet y 20\nlet sum x + y"))
+    choose parser.parse_program()
         when err: Error
             return 140
         when syntax: Success
         {
-            let program Modeler.build_program#(String("test5.scaly"), String("test5"), syntax, true)
-            var planner Planner#(String("test5.scaly"))
+            let program Modeler.build_program(String("test5.scaly"), String("test5"), syntax, true)
+            var planner Planner(String("test5.scaly"))
             let plan planner.plan_program program
             if plan = null
                 return 141
 
-            var emitter Emitter#()
+            var emitter Emitter()
             let emit_result emitter.emit(plan, String("test5_module"))
             if emit_result = false
                 return 142
@@ -11467,19 +11467,19 @@ function test() returns int
         }
 
     ; Test 150: End-to-end with while loop
-    set parser: Parser#(String("var i: int 0\nwhile i < 10\n    set i: i + 1"))
-    choose parser.parse_program#()
+    set parser: Parser(String("var i: int 0\nwhile i < 10\n    set i: i + 1"))
+    choose parser.parse_program()
         when err: Error
             return 150
         when syntax: Success
         {
-            let program Modeler.build_program#(String("test6.scaly"), String("test6"), syntax, true)
-            var planner Planner#(String("test6.scaly"))
+            let program Modeler.build_program(String("test6.scaly"), String("test6"), syntax, true)
+            var planner Planner(String("test6.scaly"))
             let plan planner.plan_program program
             if plan = null
                 return 151
 
-            var emitter Emitter#()
+            var emitter Emitter()
             let emit_result emitter.emit(plan, String("test6_module"))
             if emit_result = false
                 return 152
@@ -11487,19 +11487,19 @@ function test() returns int
         }
 
     ; Test 160: End-to-end with function call
-    set parser: Parser#(String("function double(x: int) returns int\n    x * 2\n\nlet result double(21)"))
-    choose parser.parse_program#()
+    set parser: Parser(String("function double(x: int) returns int\n    x * 2\n\nlet result double(21)"))
+    choose parser.parse_program()
         when err: Error
             return 160
         when syntax: Success
         {
-            let program Modeler.build_program#(String("test7.scaly"), String("test7"), syntax, true)
-            var planner Planner#(String("test7.scaly"))
+            let program Modeler.build_program(String("test7.scaly"), String("test7"), syntax, true)
+            var planner Planner(String("test7.scaly"))
             let plan planner.plan_program program
             if plan = null
                 return 161
 
-            var emitter Emitter#()
+            var emitter Emitter()
             let emit_result emitter.emit(plan, String("test7_module"))
             if emit_result = false
                 return 162
@@ -11515,19 +11515,19 @@ function test() returns int
         }
 
     ; Test 170: End-to-end with union definition
-    set parser: Parser#(String("define Option union(Some: int, None)"))
-    choose parser.parse_program#()
+    set parser: Parser(String("define Option union(Some: int, None)"))
+    choose parser.parse_program()
         when err: Error
             return 170
         when syntax: Success
         {
-            let program Modeler.build_program#(String("test8.scaly"), String("test8"), syntax, true)
-            var planner Planner#(String("test8.scaly"))
+            let program Modeler.build_program(String("test8.scaly"), String("test8"), syntax, true)
+            var planner Planner(String("test8.scaly"))
             let plan planner.plan_program program
             if plan = null
                 return 171
 
-            var emitter Emitter#()
+            var emitter Emitter()
             let emit_result emitter.emit(plan, String("test8_module"))
             if emit_result = false
                 return 172
@@ -11535,19 +11535,19 @@ function test() returns int
         }
 
     ; Test 180: End-to-end with union variant construction
-    set parser: Parser#(String("define Option union(Some: int, None)\nlet opt Option.Some(42)"))
-    choose parser.parse_program#()
+    set parser: Parser(String("define Option union(Some: int, None)\nlet opt Option.Some(42)"))
+    choose parser.parse_program()
         when err: Error
             return 180
         when syntax: Success
         {
-            let program Modeler.build_program#(String("test9.scaly"), String("test9"), syntax, true)
-            var planner Planner#(String("test9.scaly"))
+            let program Modeler.build_program(String("test9.scaly"), String("test9"), syntax, true)
+            var planner Planner(String("test9.scaly"))
             let plan planner.plan_program program
             if plan = null
                 return 181
 
-            var emitter Emitter#()
+            var emitter Emitter()
             let emit_result emitter.emit(plan, String("test9_module"))
             if emit_result = false
                 return 182
@@ -11555,19 +11555,19 @@ function test() returns int
         }
 
     ; Test 190: End-to-end with choose/when pattern matching
-    set parser: Parser#(String("define Option union(Some: int, None)\nfunction unwrap(opt: Option) returns int\n    choose opt\n        when v: Some\n            v\n        else\n            0"))
-    choose parser.parse_program#()
+    set parser: Parser(String("define Option union(Some: int, None)\nfunction unwrap(opt: Option) returns int\n    choose opt\n        when v: Some\n            v\n        else\n            0"))
+    choose parser.parse_program()
         when err: Error
             return 190
         when syntax: Success
         {
-            let program Modeler.build_program#(String("test10.scaly"), String("test10"), syntax, true)
-            var planner Planner#(String("test10.scaly"))
+            let program Modeler.build_program(String("test10.scaly"), String("test10"), syntax, true)
+            var planner Planner(String("test10.scaly"))
             let plan planner.plan_program program
             if plan = null
                 return 191
 
-            var emitter Emitter#()
+            var emitter Emitter()
             let emit_result emitter.emit(plan, String("test10_module"))
             if emit_result = false
                 return 192
@@ -11583,19 +11583,19 @@ function test() returns int
         }
 
     ; Test 200: End-to-end with generic type
-    set parser: Parser#(String("define Box[T](value: T)\nlet b Box[int](42)"))
-    choose parser.parse_program#()
+    set parser: Parser(String("define Box[T](value: T)\nlet b Box[int](42)"))
+    choose parser.parse_program()
         when err: Error
             return 200
         when syntax: Success
         {
-            let program Modeler.build_program#(String("test11.scaly"), String("test11"), syntax, true)
-            var planner Planner#(String("test11.scaly"))
+            let program Modeler.build_program(String("test11.scaly"), String("test11"), syntax, true)
+            var planner Planner(String("test11.scaly"))
             let plan planner.plan_program program
             if plan = null
                 return 201
 
-            var emitter Emitter#()
+            var emitter Emitter()
             let emit_result emitter.emit(plan, String("test11_module"))
             if emit_result = false
                 return 202
@@ -11604,19 +11604,19 @@ function test() returns int
 
     ; Test 210: Complex program with struct, method, and mutation
     ; This mimics lexer-like code patterns
-    set parser: Parser#(String("define Scanner(text: pointer[char], pos: int)\n{\n    function current_char(this) returns char\n        *(text + pos)\n    procedure advance#(this)\n        set pos: pos + 1\n}\nvar lex Scanner(\"test\", 0)\nlet ch lex.current_char()"))
-    choose parser.parse_program#()
+    set parser: Parser(String("define Scanner(text: pointer[char], pos: int)\n{\n    function current_char(this) returns char\n        *(text + pos)\n    procedure advance#(this)\n        set pos: pos + 1\n}\nvar lex Scanner(\"test\", 0)\nlet ch lex.current_char()"))
+    choose parser.parse_program()
         when err: Error
             return 210
         when syntax: Success
         {
-            let program Modeler.build_program#(String("test12.scaly"), String("test12"), syntax, true)
-            var planner Planner#(String("test12.scaly"))
+            let program Modeler.build_program(String("test12.scaly"), String("test12"), syntax, true)
+            var planner Planner(String("test12.scaly"))
             let plan planner.plan_program program
             if plan = null
                 return 211
 
-            var emitter Emitter#()
+            var emitter Emitter()
             let emit_result emitter.emit(plan, String("test12_module"))
             if emit_result = false
                 return 212
