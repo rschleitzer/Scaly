@@ -12685,6 +12685,48 @@ define Planner
                     }
                 }
 
+            ; STORE vector (page inference, VALUE variant): a fresh page-owning
+            ; VALUE stored into a FIELD of an escaping (returned) local must be
+            ; promoted to the caller page (Call/rp) — the local is returned by
+            ; value, so its field's heap guts must outlive this frame. Inline
+            ; constructions (`set opts.field: String(x)`) have no binding to
+            ; promote, so restamp the source operand here at the plan site.
+            ; result_owns_page_guts is false for refs (handled by the block
+            ; above, so this never double-fires) and for pure stack values;
+            ; restamp_operand_life# only promotes DEFAULTED (Local/Unspecified)
+            ; lifetimes, so an explicit #/^ source and a non-escaping local
+            ; target are no-ops (-> emission-neutral on sigiled source).
+            if a.target.length > 0
+                if Planner.result_owns_page_guts(planned_source_collapsed.result_type)
+                {
+                    var vmember false
+                    if planned_target_collapsed.member_access <> null
+                    {
+                        let ma (*planned_target_collapsed.member_access)
+                        if ma.length > (0 as size_t)
+                            set vmember: true
+                    }
+                    if vmember
+                        choose planned_target_collapsed.expr
+                            when v: Variable
+                            {
+                                var vesc false
+                                if this.array_contains_name(escaping_return_locals, v.name)
+                                    set vesc: true
+                                if this.array_contains_name(promoted_binding_names, v.name)
+                                    set vesc: true
+                                if vesc
+                                {
+                                    let cl Lifetime.Call(scalyc.compiler.Model.Call(action_loc))
+                                    let pr this.restamp_operand_life#(planned_source_collapsed, cl)
+                                    if pr <> null
+                                        set planned_source_collapsed: (*pr)
+                                }
+                            }
+                            else
+                                0
+                }
+
             let result_type planned_source_collapsed.result_type
 
             var source_holder Vector[PlannedOperand]^rp(1)
