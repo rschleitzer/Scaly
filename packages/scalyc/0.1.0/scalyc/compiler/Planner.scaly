@@ -13896,6 +13896,109 @@ define Planner
             false
         }
 
+        ; deep-R2 (nested-construction return-promotion). The bare-`return x`
+        ; collection below promotes only the OUTERMOST returned allocation. A
+        ; construction returned (directly or via a bound local) builds its value
+        ; from SUB-constructions assigned to other locals (`let p Vector(...);
+        ; ... T(p, ...)`); those sub-allocations default to the local page and
+        ; would be freed before the returned value's fields are read (dangling).
+        ; These helpers collect, into escaping_return_locals, every local whose
+        ; value flows into a returned construction's argument fields — directly,
+        ; and transitively through bindings (the binding closure in
+        ; collect_returns_stmt#'s Binding arm + the fixpoint loop in
+        ; scan_top_level_returns#). plan_binding# then promotes them all to rp.
+        ; Gated on a CAPITALIZED head name (a construction, not a call) so an
+        ; ordinary `return f(scratch)` does not over-promote scratch — over-
+        ; collection is merely leaky, never unsafe, but the gate keeps it tight.
+        function add_escaping_local#(rp, this: Planner, name: String)
+        {
+            if this.array_contains_name(escaping_return_locals, name) = false
+                escaping_return_locals.add(String^rp(name))
+        }
+        function name_is_capitalized(this: Planner, n: String) returns bool
+        {
+            if n.get_length() = 0
+                return false
+            let b n.get_buffer()
+            let c (*b)
+            (c >= (65 as u8)) && (c <= (90 as u8))
+        }
+        ; Collect a bare-local name from a single argument value, recursing when
+        ; the value is itself an inline construction.
+        function collect_value_locals#(rp, this: Planner, val: Vector[Operand])
+        {
+            if val.length = 1
+            {
+                let vp val.get 0
+                if vp <> null
+                {
+                    let v (*vp)
+                    if v.member_access = null
+                        choose v.expression
+                            when t: scalyc.compiler.Model.Type
+                            {
+                                if t.generics = null
+                                    if t.name.length = 1
+                                    {
+                                        let np t.name.get 0
+                                        if np <> null
+                                            this.add_escaping_local#((*np))
+                                    }
+                            }
+                            else
+                                0
+                }
+            }
+            if val.length >= 2
+                this.collect_ctor_arg_locals#(val)
+        }
+        ; When `ops` is a construction [CapitalizedType, Tuple(args)], collect the
+        ; argument-position local names (and nested constructions' locals).
+        function collect_ctor_arg_locals#(rp, this: Planner, ops: Vector[Operand])
+        {
+            if ops.length >= 2
+            {
+                let head_ptr ops.get 0
+                let args_ptr ops.get 1
+                if head_ptr <> null
+                    if args_ptr <> null
+                    {
+                        let head (*head_ptr)
+                        let args (*args_ptr)
+                        var is_ctor: bool false
+                        if head.member_access = null
+                            choose head.expression
+                                when t: scalyc.compiler.Model.Type
+                                {
+                                    if t.name.length >= 1
+                                    {
+                                        let n0 t.name.get 0
+                                        if n0 <> null
+                                            if this.name_is_capitalized((*n0))
+                                                set is_ctor: true
+                                    }
+                                }
+                                else
+                                    0
+                        if is_ctor
+                            choose args.expression
+                                when tup: scalyc.compiler.Model.Tuple
+                                {
+                                    var ci: size_t 0
+                                    while ci < tup.components.length
+                                    {
+                                        let cp tup.components.get ci
+                                        if cp <> null
+                                            this.collect_value_locals#((*cp).value)
+                                        set ci: ci + 1
+                                    }
+                                }
+                                else
+                                    0
+                    }
+            }
+        }
+
         ; Page inference, gap 1 — RECURSIVE pre-scan collecting bare `return x`
         ; names ANYWHERE in a function body (Block, if consequent/alternative,
         ; choose/match branches + alternative, and loop bodies), so a `return x`
@@ -13933,13 +14036,25 @@ define Planner
                                             {
                                                 let np t.name.get 0
                                                 if np <> null
-                                                    escaping_return_locals.add(String^rp((*np)))
+                                                    this.add_escaping_local#((*np))
                                             }
                                     }
                                     else
                                         0
                         }
                     }
+                    ; deep-R2: `return T(args...)` — promote the arg locals.
+                    this.collect_ctor_arg_locals#(r.result)
+                }
+                when bind: Binding
+                {
+                    ; deep-R2 binding closure: when this binding's name is already
+                    ; known to escape, the locals feeding its construction
+                    ; initializer escape too. The fixpoint loop in
+                    ; scan_top_level_returns# re-runs until no new names appear.
+                    if bind.item.name <> null
+                        if this.array_contains_name(escaping_return_locals, (*bind.item.name))
+                            this.collect_ctor_arg_locals#(bind.operation)
                 }
                 when a: Action
                     this.collect_returns_action#(a)
@@ -13958,6 +14073,18 @@ define Planner
                         if sp <> null
                             this.collect_returns_stmt#(sp.unwrap())
                         set i: i + 1
+                    }
+                    ; deep-R2: the block's LAST statement, if an Action, is the
+                    ; implicit return — promote its construction arg locals.
+                    if b.statements.length > 0
+                    {
+                        let last_ptr b.statements.get(b.statements.length - 1)
+                        if last_ptr <> null
+                            choose last_ptr.unwrap()
+                                when la: Action
+                                    this.collect_ctor_arg_locals#(la.source)
+                                else
+                                    0
                     }
                 }
                 when iff: scalyc.compiler.Model.If
@@ -14022,12 +14149,29 @@ define Planner
             }
         }
 
-        ; Entry: pre-scan a whole function body for bare `return x` targets.
+        ; Entry: pre-scan a whole function body for bare `return x` targets and
+        ; (deep-R2) locals flowing into returned constructions. Re-run to a
+        ; FIXPOINT: each pass the Binding arm propagates escape one level deeper
+        ; through `let p Ctor(q, ...)` chains; iterate until the set stops
+        ; growing. Bounded by the number of bindings (monotone, dedup-add).
         procedure scan_top_level_returns#(rp, this: Planner, impl: Implementation)
         {
             choose impl
                 when a: Action
-                    this.collect_returns_action#(a)
+                {
+                    var prev_len: size_t 0
+                    var passes: size_t 0
+                    repeat
+                    {
+                        set prev_len: escaping_return_locals.length
+                        this.collect_returns_action#(a)
+                        set passes: passes + 1
+                        if escaping_return_locals.length = prev_len
+                            break
+                        if passes >= 64
+                            break
+                    }
+                }
                 else
                     0
         }
