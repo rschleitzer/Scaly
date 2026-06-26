@@ -1639,56 +1639,38 @@ define Planner
             true
         }
 
-        ; concept_is_heap_backed: does the named struct concept declare ANY
-        ; initializer that takes an implicit page (page_parameter set)? Such a
-        ; type's instances must live on a page — its methods do Page.get(this)
-        ; (Array/List/Vector/HashSetBuilder reallocate against this's own page),
-        ; so a stack instance would compute a garbage page header. Page inference
-        ; rule 1 uses this to default a no-sigil construction of such a type to
-        ; the function's local page even when the specific (no-arg / data-class)
-        ; construction matched no init# and falls through the reshape path. A
-        ; plain value struct (no page-param init, e.g. EmitterConfig) returns
-        ; false and stays a stack value.
+        ; concept_is_heap_backed: must an instance of the named type live on a
+        ; page? True exactly for the stdlib containers whose methods do
+        ; Page.get(this) / store ^this-allocated nodes (Array/List reallocate
+        ; against this's own page; the HashMap/HashSet builders grow likewise;
+        ; StringBuilder/PageList do too) — a stack instance would compute a
+        ; garbage page header. Page-inference rule 1 uses this to default a
+        ; no-sigil construction of such a type to the function's local page when
+        ; the construction matched a page-LESS init (no-arg generic container)
+        ; or fell through the reshape path.
+        ;
+        ; Identified BY NAME, deliberately NOT by "has a page-param init#": that
+        ; test is too broad — Vector and String allocate their DATA buffer on a
+        ; page (via init#) but the struct itself is stack-safe (Vector is
+        ; fixed-size, String immutable; neither does Page.get(this)). It is also
+        ; unavailable cross-package: these are GENERIC, and a dependency
+        ; package's generic init# is not populated on the Structure when reached
+        ; from a consumer (e.g. compiling scalyc). Same idiom as
+        ; is_lazy_machinery_generic / is_runtime_opaque_struct. A plain value
+        ; struct (EmitterConfig) is absent here and stays a stack value.
         function concept_is_heap_backed(this: Planner, name: String) returns bool
         {
-            ; Name fallback for known heap-backed stdlib CONTAINERS. Reached as
-            ; a cross-package generic (e.g. compiling scalyc, which depends on
-            ; the scaly package), their `init#` initializers are not populated
-            ; on the Structure, so the init#-scan below can't see the page
-            ; parameter. Recognize them by name: their instances must live on a
-            ; page because their methods do Page.get(this) to grow/reallocate
-            ; (a stack base would compute a garbage page header). Same idiom as
-            ; is_lazy_machinery_generic / is_runtime_opaque_struct.
             if name.equals("Array")
                 return true
             if name.equals("List")
                 return true
             if name.equals("HashSetBuilder")
                 return true
-
-            let concept_ref this.lookup_concept(name)
-            if concept_ref = null
-                return false
-            let c (*concept_ref)
-            choose c.definition
-                when s: Structure
-                {
-                    var i: size_t 0
-                    while i < s.initializers.length
-                    {
-                        let init_ptr s.initializers.get i
-                        if init_ptr <> null
-                        {
-                            let ini (*init_ptr)
-                            if ini.page_parameter <> null
-                                return true
-                        }
-                        set i: i + 1
-                    }
-                    false
-                }
-                else
-                    false
+            if name.equals("HashMapBuilder")
+                return true
+            if name.equals("StringBuilder")
+                return true
+            false
         }
 
         function find_initializer#(
@@ -4609,8 +4591,22 @@ define Planner
                                     ; the first step of abolishing the `$`/`#`
                                     ; sigils: the programmer writes `StringBuilder()`
                                     ; and the compiler picks the page.
+                                    ; Default to Local also when the matched
+                                    ; init has no page param (has_page_param
+                                    ; false) but the CONCEPT is a heap-backed
+                                    ; container (Array/List/HashSetBuilder/...):
+                                    ; its no-arg init() leaves life Unspecified,
+                                    ; which would stack-allocate, but the instance
+                                    ; must live on a page (its methods do
+                                    ; Page.get(this)). Mirrors the reshape-path
+                                    ; rule 1. Only fires for Unspecified life, so
+                                    ; explicit $/#/^ constructions are unchanged.
+                                    var ctor_heap_default: bool has_page_param
+                                    if has_page_param = false
+                                        if this.concept_is_heap_backed(fn_name)
+                                            set ctor_heap_default: true
                                     var eff_ctor_life: Lifetime ctor_struct_type.life
-                                    if has_page_param
+                                    if ctor_heap_default
                                         choose ctor_struct_type.life
                                             when u: Unspecified
                                                 set eff_ctor_life: Lifetime.Local(scalyc.compiler.Model.Local(second.loc))
