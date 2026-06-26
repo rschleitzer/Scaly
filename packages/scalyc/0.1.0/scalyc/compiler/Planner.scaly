@@ -1639,6 +1639,43 @@ define Planner
             true
         }
 
+        ; concept_is_heap_backed: does the named struct concept declare ANY
+        ; initializer that takes an implicit page (page_parameter set)? Such a
+        ; type's instances must live on a page — its methods do Page.get(this)
+        ; (Array/List/Vector/HashSetBuilder reallocate against this's own page),
+        ; so a stack instance would compute a garbage page header. Page inference
+        ; rule 1 uses this to default a no-sigil construction of such a type to
+        ; the function's local page even when the specific (no-arg / data-class)
+        ; construction matched no init# and falls through the reshape path. A
+        ; plain value struct (no page-param init, e.g. EmitterConfig) returns
+        ; false and stays a stack value.
+        function concept_is_heap_backed(this: Planner, name: String) returns bool
+        {
+            let concept_ref this.lookup_concept(name)
+            if concept_ref = null
+                return false
+            let c (*concept_ref)
+            choose c.definition
+                when s: Structure
+                {
+                    var i: size_t 0
+                    while i < s.initializers.length
+                    {
+                        let init_ptr s.initializers.get i
+                        if init_ptr <> null
+                        {
+                            let ini (*init_ptr)
+                            if ini.page_parameter <> null
+                                return true
+                        }
+                        set i: i + 1
+                    }
+                    false
+                }
+                else
+                    false
+        }
+
         function find_initializer#(
             rp,
             this: Planner,
@@ -4666,8 +4703,29 @@ define Planner
                             ; Non-Unspecified life ⇒ heap allocation
                             ; (emit_tuple respects is_region_alloc by calling
                             ; Page::allocate on the appropriate page).
-                            var is_region: bool false
+                            ; Page inference rule 1 (reshape path): a no-sigil
+                            ; construction of a heap-backed type (its concept
+                            ; declares a page-param init) that matched no init#
+                            ; here carries Unspecified life and would stack-
+                            ; allocate — but the instance MUST live on a page
+                            ; (its methods do Page.get(this); a stack base gives
+                            ; a garbage page). Default it to the function's local
+                            ; page, exactly as `$` would; the escape checker
+                            ; promotes to the caller page on escape. Plain value
+                            ; structs (no page-param init) stay Unspecified ->
+                            ; stack. Existing $/#/^ constructions already carry a
+                            ; non-Unspecified life, so this only fires for
+                            ; de-sigiled sources (emission-neutral otherwise).
+                            var reshape_life: Lifetime ctor_struct_type.life
                             choose ctor_struct_type.life
+                                when u: Unspecified
+                                    if this.concept_is_heap_backed(fn_name)
+                                        set reshape_life: Lifetime.Local(scalyc.compiler.Model.Local(second.loc))
+                                else
+                                    0
+
+                            var is_region: bool false
+                            choose reshape_life
                                 when u: Unspecified
                                     0
                                 else
@@ -4678,7 +4736,7 @@ define Planner
                                 components_holder,
                                 ctor_struct_type,
                                 is_region,
-                                ctor_struct_type.life,
+                                reshape_life,
                                 null
                             )
                             set result: this.rebind_trailing_chain#(PlannedOperand(
