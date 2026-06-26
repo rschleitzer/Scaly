@@ -19,7 +19,7 @@ define HashSet[T]
             let slot_ptr hash_set_builder.slots.get_ptr i
             if slot_ptr <> null
             {
-                var array Array[T]$()
+                var array Array[T]()
                 var list_iterator ListIterator[Slot[T]](slot_ptr.head)
                 while let item list_iterator.next()
                     array.add item.value
