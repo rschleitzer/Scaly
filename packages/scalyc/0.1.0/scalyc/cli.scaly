@@ -112,60 +112,60 @@ define cli
         while i < argc
         {
             let arg_ptr *(argv + i)
-            var arg String$(arg_ptr)
+            var arg String(arg_ptr)
 
-            if arg.starts_with(String$("-"))
+            if arg.starts_with(String("-"))
             {
                 ; Option flag
-                if arg.equals(String$("-h")) | arg.equals(String$("--help"))
+                if arg.equals(String("-h")) | arg.equals(String("--help"))
                 {
                     set opts.show_help: true
                 }
-                else if arg.equals(String$("-v")) | arg.equals(String$("--verbose"))
+                else if arg.equals(String("-v")) | arg.equals(String("--verbose"))
                 {
                     set opts.verbose: true
                 }
-                else if arg.equals(String$("-S"))
+                else if arg.equals(String("-S"))
                 {
                     set opts.emit_ir: true
                 }
-                else if arg.equals(String$("-c"))
+                else if arg.equals(String("-c"))
                 {
                     set opts.compile_only: true
                 }
-                else if arg.equals(String$("-g"))
+                else if arg.equals(String("-g"))
                 {
                     set opts.debug: true
                 }
-                else if arg.equals(String$("--lex"))
+                else if arg.equals(String("--lex"))
                 {
                     set opts.lex_only: true
                 }
-                else if arg.equals(String$("--parse"))
+                else if arg.equals(String("--parse"))
                 {
                     set opts.parse_only: true
                 }
-                else if arg.equals(String$("--model"))
+                else if arg.equals(String("--model"))
                 {
                     set opts.model_only: true
                 }
-                else if arg.equals(String$("--plan"))
+                else if arg.equals(String("--plan"))
                 {
                     set opts.plan_only: true
                 }
-                else if arg.equals(String$("--no-prelude"))
+                else if arg.equals(String("--no-prelude"))
                 {
                     set opts.no_prelude: true
                 }
-                else if arg.equals(String$("--no-tests"))
+                else if arg.equals(String("--no-tests"))
                 {
                     set opts.no_tests: true
                 }
-                else if arg.equals(String$("--jit"))
+                else if arg.equals(String("--jit"))
                 {
                     set opts.jit_program: true
                 }
-                else if arg.equals(String$("-o"))
+                else if arg.equals(String("-o"))
                 {
                     ; Output file - next argument is the filename
                     set i: i + 1
@@ -179,7 +179,7 @@ define cli
                         set opts.error_message: String#("-o requires a filename")
                     }
                 }
-                else if arg.equals(String$("--run"))
+                else if arg.equals(String("--run"))
                 {
                     ; JIT mode - next argument is the function name to execute
                     set i: i + 1
@@ -194,13 +194,13 @@ define cli
                         set opts.error_message: String#("--run requires a function name")
                     }
                 }
-                else if arg.starts_with(String$("-L")) & arg.get_length() > 2
+                else if arg.starts_with(String("-L")) & arg.get_length() > 2
                 {
                     ; Library search path: -L<path> (prefix-form, like clang).
                     ; Forwarded verbatim to the clang link command.
                     opts.library_paths.add(String#(arg_ptr + 2))
                 }
-                else if arg.starts_with(String$("-l")) & arg.get_length() > 2
+                else if arg.starts_with(String("-l")) & arg.get_length() > 2
                 {
                     ; Library name: -l<name> (prefix-form, like clang).
                     opts.libraries.add(String#(arg_ptr + 2))
@@ -216,7 +216,7 @@ define cli
             {
                 ; Treat positional .a / .o args as extra link inputs so
                 ; stage-1 self-build can pass libscalyc.a directly.
-                if arg.ends_with(String$(".a")) | arg.ends_with(String$(".o"))
+                if arg.ends_with(String(".a")) | arg.ends_with(String(".o"))
                 {
                     opts.extra_objects.add(String#(arg_ptr))
                 }
@@ -271,10 +271,10 @@ define cli
         let home getenv "SCALY_HOME"
         if home = null
             return String^rp("/tmp/libscaly.a")
-        var home_str String$(home)
+        var home_str String(home)
         if home_str.get_length() = 0
             return String^rp("/tmp/libscaly.a")
-        var sb StringBuilder$()
+        var sb StringBuilder()
         sb.append home_str
         sb.append "/lib/libscaly.a"
         sb.to_string^rp()
@@ -292,7 +292,7 @@ define cli
             set name: getenv("CC")
         if name = null
             return String^rp("clang")
-        var s String$(name)
+        var s String(name)
         if s.get_length() = 0
             return String^rp("clang")
         String^rp(name)
@@ -343,7 +343,7 @@ define cli
         ; Stage 1: Parse
         ; ================================================================
 
-        var p parser.Parser$(source)
+        var p parser.Parser(source)
 
         if opts.lex_only
         {
@@ -412,7 +412,7 @@ define cli
         ; Stage 3: Plan (type resolution, name mangling)
         ; ================================================================
 
-        var planner Planner.Planner$(opts.input_file)
+        var planner Planner.Planner(opts.input_file)
         cli.register_packages(&planner, &model)
         let plan planner.plan_program model
 
@@ -451,7 +451,7 @@ define cli
         {
             ; Find the mangled name of the requested function in the plan
             ; (mirrors ModuleTests.cpp's name->MangledName scan).
-            var target_mangled String$("")
+            var target_mangled String("")
             if plan.functions <> null
             {
                 for f in plan.functions
@@ -471,7 +471,7 @@ define cli
 
             var jit_config EmitterConfig$()
             set jit_config.emit_debug_info: false
-            var jit_emitter Emitter.Emitter$(jit_config)
+            var jit_emitter Emitter.Emitter(jit_config)
             let jit_rc jit_emitter.jit_run(plan, program_name, target_mangled)
             return jit_rc as int
         }
@@ -486,8 +486,8 @@ define cli
         {
             var prog_config EmitterConfig$()
             set prog_config.emit_debug_info: false
-            var prog_emitter Emitter.Emitter$(prog_config)
-            let prog_rc prog_emitter.jit_run(plan, program_name, String$("main"))
+            var prog_emitter Emitter.Emitter(prog_config)
+            let prog_rc prog_emitter.jit_run(plan, program_name, String("main"))
             return prog_rc as int
         }
 
@@ -499,7 +499,7 @@ define cli
         set config.emit_debug_info: opts.debug
         set config.skip_tests: opts.no_tests
 
-        var emitter Emitter.Emitter$(config)
+        var emitter Emitter.Emitter(config)
         if opts.debug
             emitter.set_debug_source(opts.input_file, source)
         let emit_result emitter.emit(plan, program_name)
@@ -855,7 +855,7 @@ define cli
     function test() returns int
     {
         ; Test 1: Check Options initialization
-        var opts Options$()
+        var opts Options()
         if opts.has_input()
             return -1
 
@@ -869,14 +869,14 @@ define cli
             return -4
 
         ; Test 2: Test extract_program_name
-        var path1 String$("/path/to/hello.scaly")
+        var path1 String("/path/to/hello.scaly")
         var name1 cli.extract_program_name#(path1)
-        if name1.equals(String$("hello")) = false
+        if name1.equals(String("hello")) = false
             return -10
 
-        var path2 String$("simple.scaly")
+        var path2 String("simple.scaly")
         var name2 cli.extract_program_name#(path2)
-        if name2.equals(String$("simple")) = false
+        if name2.equals(String("simple")) = false
             return -11
 
         ; Test 3: Test pipeline on a minimal program
@@ -897,7 +897,7 @@ define cli
     function test_hello_scaly#() returns int
     {
         ; Path to hello.scaly (relative to scalyc/build where tests run)
-        var file_path String$("../../hello.scaly")
+        var file_path String("../../hello.scaly")
 
         ; Read the file
         var source File.read_to_string$(file_path)
@@ -905,7 +905,7 @@ define cli
             return -1  ; Could not read file
 
         ; Stage 1: Parse
-        var p parser.Parser$(source)
+        var p parser.Parser(source)
         var syntax: parser.ProgramSyntax
         choose p.parse_program#()
             when err: Error
@@ -918,11 +918,11 @@ define cli
             }
 
         ; Stage 2: Build model
-        var program_name String$("hello")
+        var program_name String("hello")
         let model Modeler.build_program#(file_path, program_name, syntax, true)
 
         ; Stage 3: Plan
-        var planner Planner.Planner$(file_path)
+        var planner Planner.Planner(file_path)
         let plan planner.plan_program model
         if plan = null
             return -3  ; Planning failed
@@ -930,7 +930,7 @@ define cli
         ; Stage 4: Emit
         var config EmitterConfig$()
         set config.emit_debug_info: false
-        var emitter Emitter.Emitter$(config)
+        var emitter Emitter.Emitter(config)
         let emit_result emitter.emit(plan, program_name)
         if emit_result = false
             return -4  ; Emission failed
@@ -943,10 +943,10 @@ define cli
     function test_pipeline#() returns int
     {
         ; Minimal valid Scaly program
-        var source String$("function test_func() returns int { 42 }")
+        var source String("function test_func() returns int { 42 }")
 
         ; Stage 1: Parse
-        var p parser.Parser$(source)
+        var p parser.Parser(source)
         var syntax: parser.ProgramSyntax
         choose p.parse_program#()
             when err: Error
@@ -959,12 +959,12 @@ define cli
             }
 
         ; Stage 2: Build model
-        var file_name String$("test.scaly")
-        var program_name String$("test")
+        var file_name String("test.scaly")
+        var program_name String("test")
         let model Modeler.build_program#(file_name, program_name, syntax, true)
 
         ; Stage 3: Plan
-        var planner Planner.Planner$(file_name)
+        var planner Planner.Planner(file_name)
         let plan planner.plan_program model
         if plan = null
             return -3  ; Planning failed
@@ -972,7 +972,7 @@ define cli
         ; Stage 4: Emit (just verify it doesn't crash)
         var config EmitterConfig$()
         set config.emit_debug_info: false
-        var emitter Emitter.Emitter$(config)
+        var emitter Emitter.Emitter(config)
         let emit_result emitter.emit(plan, program_name)
         if emit_result = false
             return -4  ; Emission failed

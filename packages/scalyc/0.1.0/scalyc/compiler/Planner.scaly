@@ -235,12 +235,12 @@ define Planner
             null,
             PlannedType(
                 Span(0, 0),
-                String$("void"),
-                String$("v"),
+                String("void"),
+                String("v"),
                 null,
                 Lifetime.Unspecified(Unspecified()),
                 null,
-                String$(""),
+                String(""),
                 null
             )
         )
@@ -1193,7 +1193,7 @@ define Planner
         {
             let step1 Path.join^rp(base, name)
             let step2 Path.join^rp(step1, version)
-            var file_sb StringBuilder$()
+            var file_sb StringBuilder()
             file_sb.append name
             file_sb.append ".scaly"
             let file_part file_sb.to_string^rp()
@@ -1252,7 +1252,7 @@ define Planner
             module_name: String
         ) returns ref[Module]?
         {
-            var name_sb StringBuilder$()
+            var name_sb StringBuilder()
             name_sb.append module_name
             name_sb.append ".scaly"
             let file_part name_sb.to_string^rp()
@@ -2232,7 +2232,7 @@ define Planner
                     if first_ptr.name <> null
                     {
                         let fname (*first_ptr.name)
-                        if fname.equals(String$("this"))
+                        if fname.equals(String("this"))
                             set param_start: 1
                     }
                 }
@@ -2286,7 +2286,7 @@ define Planner
                     if first_ptr.name <> null
                     {
                         let fname (*first_ptr.name)
-                        if fname.equals(String$("this"))
+                        if fname.equals(String("this"))
                             set param_start: 1
                     }
                 }
@@ -2512,7 +2512,7 @@ define Planner
                                                 {
                                                     if nmi0.name <> null
                                                     {
-                                                        if (*nmi0.name).equals(String$("this"))
+                                                        if (*nmi0.name).equals(String("this"))
                                                             return true
                                                     }
                                                 }
@@ -2607,7 +2607,7 @@ define Planner
             let candidates this.lookup_functions#(name)
             if candidates.length = 0
             {
-                var sb StringBuilder$()
+                var sb StringBuilder()
                 sb.append "function not found: "
                 sb.append name
                 this.add_error(sb.to_string^rp())
@@ -2665,7 +2665,7 @@ define Planner
                                 if fi0.name <> null
                                 {
                                     let fname (*fi0.name)
-                                    if fname.equals(String$("this"))
+                                    if fname.equals(String("this"))
                                         set param_start2: 1
                                 }
                             }
@@ -2724,7 +2724,7 @@ define Planner
                 set g: g + 1
             }
 
-            var sb StringBuilder$()
+            var sb StringBuilder()
             sb.append "no matching overload for function: "
             sb.append name
             this.add_error(sb.to_string^rp())
@@ -3056,7 +3056,7 @@ define Planner
                             when v: Variable
                             {
                                 let vt v.variable_type
-                                if vt.name.equals(String$("pointer"))
+                                if vt.name.equals(String("pointer"))
                                 {
                                     if vt.generics <> null
                                     {
@@ -3065,7 +3065,7 @@ define Planner
                                             let g0_ptr (*vt.generics).get(0)
                                             if g0_ptr <> null
                                             {
-                                                if (*g0_ptr).name.equals(String$("void"))
+                                                if (*g0_ptr).name.equals(String("void"))
                                                     set ic_is_void_ptr: true
                                             }
                                         }
@@ -4018,11 +4018,11 @@ define Planner
                             set rt: (*rt_ref)
                         if rt_ref = null
                         {
-                            if prefix_name.equals(String$("!"))
+                            if prefix_name.equals(String("!"))
                                 set rt: Planner.make_bool_type#()
-                            if prefix_name.equals(String$("not"))
+                            if prefix_name.equals(String("not"))
                                 set rt: Planner.make_bool_type#()
-                            if prefix_name.equals(String$("*"))
+                            if prefix_name.equals(String("*"))
                             {
                                 ; Dereference: result is the pointer's
                                 ; element type. Use get_pointer_element_type
@@ -4050,7 +4050,7 @@ define Planner
                             ; types_compatible (s96 part 2) extends the
                             ; rule set so pointer[T] flows into ref[T] /
                             ; pointer[T] params.
-                            if prefix_name.equals(String$("&"))
+                            if prefix_name.equals(String("&"))
                                 set rt: Planner.make_pointer_type#(rest_result.result_type)
                         }
 
@@ -4306,9 +4306,9 @@ define Planner
                         ; the result PlannedTuple so stage-1 stack-alloca's the
                         ; struct (heap $/#/^ ctor support is deferred — would
                         ; need scaly_page_alloc + RBMM wiring). Without lifting
-                        ; this guard, every `T$(args)` / `T#(args)` for a
+                        ; this guard, every `T(args)` / `T#(args)` for a
                         ; registered struct (e.g. `Options#()`,
-                        ; `String$(arg_ptr)`, `Vector[T]#(0)`) silently dropped:
+                        ; `String(arg_ptr)`, `Vector[T]#(0)`) silently dropped:
                         ; lookup_concept finds the Structure but the gate stays
                         ; shut, the call falls through to resolve_function_call
                         ; which returns null, mangled_name stays empty, and
@@ -4451,7 +4451,7 @@ define Planner
                             ; matches an init# overload (page_parameter set),
                             ; build a PlannedCall with C1 mangling and divert
                             ; to emit_constructor_call (Page::allocate + ctor
-                            ; call). Without this, every T$/T#/T^ goes
+                            ; call). Without this, every T/T#/T^ goes
                             ; through the stack-alloc reshape below, which
                             ; only works for "data class" structs without
                             ; custom init# logic. Heavy users like String,
@@ -4475,7 +4475,7 @@ define Planner
                                 ; route through emit_constructor_call: heap-
                                 ; allocate via Page::allocate, call C1 with
                                 ; `this` only. Mirrors stage-0's
-                                ; cli.test() IR for `var opts Options$()`.
+                                ; cli.test() IR for `var opts Options()`.
                                 {
                                     let has_page_param ini_match.page_parameter <> null
                                     let saved_subst_ctor type_substitutions.length
@@ -4512,7 +4512,7 @@ define Planner
                                     let parent_ref parent_holder.get 0
 
                                     let c1_mangled Planner.mangle_function#(
-                                        String$("init"), &init_input_holder, parent_ref, has_page_param
+                                        String("init"), &init_input_holder, parent_ref, has_page_param
                                     )
 
                                     var ctor_call_args Array[PlannedOperand]$()
@@ -4662,7 +4662,7 @@ define Planner
                             ; Propagate the type's lifetime into the tuple.
                             ; ctor_struct_type carries the lifetime from the
                             ; lifetime marker merge (above) — `Plan#(...)` has
-                            ; life=Call; `String$(...)` has life=Local; etc.
+                            ; life=Call; `String(...)` has life=Local; etc.
                             ; Non-Unspecified life ⇒ heap allocation
                             ; (emit_tuple respects is_region_alloc by calling
                             ; Page::allocate on the appropriate page).
@@ -4872,18 +4872,18 @@ define Planner
                                     var skip_dispatch: bool false
                                     if local.binding_type.generics <> null
                                     {
-                                        if local.binding_type.name.equals(String$("pointer")) = false
+                                        if local.binding_type.name.equals(String("pointer")) = false
                                         {
-                                            if local.binding_type.name.equals(String$("ref")) = false
+                                            if local.binding_type.name.equals(String("ref")) = false
                                             {
                                                 ; s137-INVESTIGATE: Vector removed
-                                                if local.binding_type.name.equals(String$("HashMap"))
+                                                if local.binding_type.name.equals(String("HashMap"))
                                                     set skip_dispatch: true
-                                                if local.binding_type.name.equals(String$("HashMapBuilder"))
+                                                if local.binding_type.name.equals(String("HashMapBuilder"))
                                                     set skip_dispatch: true
-                                                if local.binding_type.name.equals(String$("HashSet"))
+                                                if local.binding_type.name.equals(String("HashSet"))
                                                     set skip_dispatch: true
-                                                if local.binding_type.name.equals(String$("HashSetBuilder"))
+                                                if local.binding_type.name.equals(String("HashSetBuilder"))
                                                     set skip_dispatch: true
                                                 ; s154: Array removed from skip_dispatch, mirroring
                                                 ; the s137 Vector lift. Array[T] is specialised via
@@ -4902,25 +4902,25 @@ define Planner
                                                 ; route through the s109 extern-decl + record_function
                                                 ; path the same way Vector does (skip_dispatch on Vector
                                                 ; was lifted in s137, no regression there).
-                                                ; if local.binding_type.name.equals(String$("List"))
+                                                ; if local.binding_type.name.equals(String("List"))
                                                 ;     set skip_dispatch: true
-                                                if local.binding_type.name.equals(String$("ListIterator"))
+                                                if local.binding_type.name.equals(String("ListIterator"))
                                                     set skip_dispatch: true
-                                                if local.binding_type.name.equals(String$("BuilderList"))
+                                                if local.binding_type.name.equals(String("BuilderList"))
                                                     set skip_dispatch: true
-                                                if local.binding_type.name.equals(String$("BuilderListIterator"))
+                                                if local.binding_type.name.equals(String("BuilderListIterator"))
                                                     set skip_dispatch: true
-                                                if local.binding_type.name.equals(String$("Option"))
+                                                if local.binding_type.name.equals(String("Option"))
                                                     set skip_dispatch: true
-                                                if local.binding_type.name.equals(String$("Result"))
+                                                if local.binding_type.name.equals(String("Result"))
                                                     set skip_dispatch: true
-                                                if local.binding_type.name.equals(String$("Slice"))
+                                                if local.binding_type.name.equals(String("Slice"))
                                                     set skip_dispatch: true
-                                                if local.binding_type.name.equals(String$("Slot"))
+                                                if local.binding_type.name.equals(String("Slot"))
                                                     set skip_dispatch: true
-                                                if local.binding_type.name.equals(String$("Node"))
+                                                if local.binding_type.name.equals(String("Node"))
                                                     set skip_dispatch: true
-                                                if local.binding_type.name.equals(String$("KeyValuePair"))
+                                                if local.binding_type.name.equals(String("KeyValuePair"))
                                                     set skip_dispatch: true
                                             }
                                         }
@@ -5355,7 +5355,7 @@ define Planner
                                                                                     if fi0.name <> null
                                                                                     {
                                                                                         let fname (*fi0.name)
-                                                                                        if fname.equals(String$("this"))
+                                                                                        if fname.equals(String("this"))
                                                                                             set pstart: 1
                                                                                     }
                                                                                 }
@@ -5687,7 +5687,7 @@ define Planner
                                                                             {
                                                                                 if i0.name <> null
                                                                                 {
-                                                                                    if (*i0.name).equals(String$("this"))
+                                                                                    if (*i0.name).equals(String("this"))
                                                                                         set is_static: false
                                                                                 }
                                                                             }
@@ -5845,7 +5845,7 @@ define Planner
                                 if this_ref <> null
                                 {
                                     let this_ty (*this_ref)
-                                    if this_ty.name.equals(String$("pointer"))
+                                    if this_ty.name.equals(String("pointer"))
                                     {
                                         if this_ty.generics <> null
                                         {
@@ -5890,7 +5890,7 @@ define Planner
                             }
                         }
 
-                        var rt: PlannedType this.fresh_type_var#(String$(""))
+                        var rt: PlannedType this.fresh_type_var#(String(""))
                         var mangled: String String^rp("")
                         if match_ref <> null
                         {
@@ -5987,9 +5987,9 @@ define Planner
                         ; libscaly.a (Option over scaly types only) can't
                         ; provide → stage-2 link failure.
                         var call_is_intrinsic: bool false
-                        if fn_name.equals(String$("unwrap"))
+                        if fn_name.equals(String("unwrap"))
                             set call_is_intrinsic: true
-                        if fn_name.equals(String$("unwrap_or"))
+                        if fn_name.equals(String("unwrap_or"))
                             set call_is_intrinsic: true
                         ; s184: only Option's OWN unwrap/unwrap_or are
                         ; intrinsic. A user-defined free function named
@@ -6005,7 +6005,7 @@ define Planner
                                 var recv_is_option: bool false
                                 if is_method_dispatch
                                 {
-                                    if receiver_op.result_type.name.equals(String$("Option"))
+                                    if receiver_op.result_type.name.equals(String("Option"))
                                         set recv_is_option: true
                                 }
                                 if recv_is_option = false
@@ -6109,7 +6109,7 @@ define Planner
                                         return result
                                     }
                                 }
-                                var dsb StringBuilder$()
+                                var dsb StringBuilder()
                                 dsb.append "function not found: "
                                 dsb.append fn_name
                                 this.add_diagnostic(result.loc, dsb.to_string^rp())
@@ -6367,7 +6367,7 @@ define Planner
                                         let tc (*tc_ptr)
                                         if tc.is_method
                                             set all_props: false
-                                        if tc.result_type.name.equals(String$("void"))
+                                        if tc.result_type.name.equals(String("void"))
                                             set all_props: false
                                     }
                                     set tci: tci + 1
@@ -6515,7 +6515,7 @@ define Planner
                         ; such if in cli/lexer/parser is silently dropped.
                         ; Mirrors stage-0 Planner.cpp:4470-4517.
                         var folded: bool false
-                        if pas.target_type.name.equals(String$("char"))
+                        if pas.target_type.name.equals(String("char"))
                         {
                             choose result.expr
                                 when pc: scalyc.compiler.Plan.PlannedConstant
@@ -6538,7 +6538,7 @@ define Planner
                                 else
                                     0
                         }
-                        if pas.target_type.name.equals(String$("u8"))
+                        if pas.target_type.name.equals(String("u8"))
                         {
                             if folded = false
                             {
@@ -6941,7 +6941,7 @@ define Planner
                     let resolved this.resolve_operator_call#(
                         op_name, result.result_type, rhs.result_type
                     )
-                    var combined_type: PlannedType this.fresh_type_var#(String$(""))
+                    var combined_type: PlannedType this.fresh_type_var#(String(""))
                     if resolved <> null
                         set combined_type: (*resolved)
 
@@ -6955,13 +6955,13 @@ define Planner
                     ; IsIntegerType branch) — result type = LHS pointer type.
                     if resolved = null
                     {
-                        if result.result_type.name.equals(String$("pointer"))
+                        if result.result_type.name.equals(String("pointer"))
                         {
                             if Planner.is_integer_type(rhs.result_type.name)
                             {
-                                if op_name.equals(String$("+"))
+                                if op_name.equals(String("+"))
                                     set combined_type: result.result_type
-                                if op_name.equals(String$("-"))
+                                if op_name.equals(String("-"))
                                     set combined_type: result.result_type
                             }
                         }
@@ -6975,21 +6975,21 @@ define Planner
                         ; mangled="", and `let X f(a, p = q)` silently drops.
                         ; Mirrors Planner.cpp's findOperator returning bool
                         ; for primitive comparison.
-                        if op_name.equals(String$("="))
+                        if op_name.equals(String("="))
                             set combined_type: Planner.make_bool_type#()
-                        if op_name.equals(String$("<>"))
+                        if op_name.equals(String("<>"))
                             set combined_type: Planner.make_bool_type#()
-                        if op_name.equals(String$("<"))
+                        if op_name.equals(String("<"))
                             set combined_type: Planner.make_bool_type#()
-                        if op_name.equals(String$(">"))
+                        if op_name.equals(String(">"))
                             set combined_type: Planner.make_bool_type#()
-                        if op_name.equals(String$("<="))
+                        if op_name.equals(String("<="))
                             set combined_type: Planner.make_bool_type#()
-                        if op_name.equals(String$(">="))
+                        if op_name.equals(String(">="))
                             set combined_type: Planner.make_bool_type#()
-                        if op_name.equals(String$("&&"))
+                        if op_name.equals(String("&&"))
                             set combined_type: Planner.make_bool_type#()
-                        if op_name.equals(String$("||"))
+                        if op_name.equals(String("||"))
                             set combined_type: Planner.make_bool_type#()
 
                         ; s101: built-in arithmetic / bitwise operators on
@@ -7007,29 +7007,29 @@ define Planner
                         {
                             if Planner.is_integer_type(rhs.result_type.name)
                             {
-                                if op_name.equals(String$("+"))
+                                if op_name.equals(String("+"))
                                     set combined_type: result.result_type
-                                if op_name.equals(String$("-"))
+                                if op_name.equals(String("-"))
                                     set combined_type: result.result_type
-                                if op_name.equals(String$("*"))
+                                if op_name.equals(String("*"))
                                     set combined_type: result.result_type
-                                if op_name.equals(String$("/"))
+                                if op_name.equals(String("/"))
                                     set combined_type: result.result_type
-                                if op_name.equals(String$("%"))
+                                if op_name.equals(String("%"))
                                     set combined_type: result.result_type
-                                if op_name.equals(String$("div"))
+                                if op_name.equals(String("div"))
                                     set combined_type: result.result_type
-                                if op_name.equals(String$("mod"))
+                                if op_name.equals(String("mod"))
                                     set combined_type: result.result_type
-                                if op_name.equals(String$("&"))
+                                if op_name.equals(String("&"))
                                     set combined_type: result.result_type
-                                if op_name.equals(String$("|"))
+                                if op_name.equals(String("|"))
                                     set combined_type: result.result_type
-                                if op_name.equals(String$("^"))
+                                if op_name.equals(String("^"))
                                     set combined_type: result.result_type
-                                if op_name.equals(String$("<<"))
+                                if op_name.equals(String("<<"))
                                     set combined_type: result.result_type
-                                if op_name.equals(String$(">>"))
+                                if op_name.equals(String(">>"))
                                     set combined_type: result.result_type
                             }
                         }
@@ -7111,7 +7111,7 @@ define Planner
                     if first_ptr.name <> null
                     {
                         let fname (*first_ptr.name)
-                        if fname.equals(String$("this"))
+                        if fname.equals(String("this"))
                             set param_start: 1
                     }
                 }
@@ -7302,7 +7302,7 @@ define Planner
                                 if fi0.name <> null
                                 {
                                     let fname (*fi0.name)
-                                    if fname.equals(String$("this"))
+                                    if fname.equals(String("this"))
                                         set param_start2: 1
                                 }
                             }
@@ -7379,7 +7379,7 @@ define Planner
             has_page_param: bool
         ) returns String
         {
-            var sb StringBuilder$()
+            var sb StringBuilder()
             sb.append "_ZN"
             sb.append(Planner.encode_type#(parent))
             sb.append(Planner.encode_name method_name)
@@ -7439,7 +7439,7 @@ define Planner
                     if first_ptr.name <> null
                     {
                         let fname (*first_ptr.name)
-                        if fname.equals(String$("this"))
+                        if fname.equals(String("this"))
                             set param_start: 1
                     }
                 }
@@ -7496,7 +7496,7 @@ define Planner
             ; implicit `page: pointer[scaly.memory.Page]`) silently fails
             ; because lookup walks the outer "pointer" name.
             var lookup_st: PlannedType struct_type
-            if struct_type.name.equals(String$("pointer"))
+            if struct_type.name.equals(String("pointer"))
             {
                 if struct_type.generics <> null
                 {
@@ -7509,7 +7509,7 @@ define Planner
                     }
                 }
             }
-            if struct_type.name.equals(String$("ref"))
+            if struct_type.name.equals(String("ref"))
             {
                 if struct_type.generics <> null
                 {
@@ -7531,17 +7531,17 @@ define Planner
             ; dispatch drops the whole call. Option's own methods are
             ; exempt so NPO unwrap dispatch keeps resolving.
             var mn_is_opt: bool false
-            if method_name.equals(String$("unwrap"))
+            if method_name.equals(String("unwrap"))
                 set mn_is_opt: true
-            if method_name.equals(String$("unwrap_or"))
+            if method_name.equals(String("unwrap_or"))
                 set mn_is_opt: true
-            if method_name.equals(String$("is_some"))
+            if method_name.equals(String("is_some"))
                 set mn_is_opt: true
-            if method_name.equals(String$("is_none"))
+            if method_name.equals(String("is_none"))
                 set mn_is_opt: true
             if mn_is_opt = false
             {
-                if lookup_st.name.equals(String$("Option"))
+                if lookup_st.name.equals(String("Option"))
                 {
                     if lookup_st.generics <> null
                     {
@@ -7552,7 +7552,7 @@ define Planner
                             if og_ptr <> null
                             {
                                 var inner_o (*og_ptr)
-                                if inner_o.name.equals(String$("ref"))
+                                if inner_o.name.equals(String("ref"))
                                 {
                                     if inner_o.generics <> null
                                     {
@@ -7565,7 +7565,7 @@ define Planner
                                         }
                                     }
                                 }
-                                if inner_o.name.equals(String$("pointer"))
+                                if inner_o.name.equals(String("pointer"))
                                 {
                                     if inner_o.generics <> null
                                     {
@@ -7886,7 +7886,7 @@ define Planner
                     if first_ptr.name <> null
                     {
                         let fname (*first_ptr.name)
-                        if fname.equals(String$("this"))
+                        if fname.equals(String("this"))
                             set param_start: 1
                     }
                 }
@@ -7994,7 +7994,7 @@ define Planner
         ; threads a value through.
         function generate_page_get_this#(rp, this: Planner, loc: Span) returns PlannedOperand
         {
-            let this_ty_ref this.lookup_local(String$("this"))
+            let this_ty_ref this.lookup_local(String("this"))
             if this_ty_ref = null
             {
                 let void_ty Planner.make_void_type#()
@@ -8094,7 +8094,7 @@ define Planner
                     let tc (*tc_ptr)
                     if tc.is_method
                         set all_props: false
-                    if tc.result_type.name.equals(String$("void"))
+                    if tc.result_type.name.equals(String("void"))
                         set all_props: false
                 }
                 set tci: tci + 1
@@ -8155,7 +8155,7 @@ define Planner
                     ; never finds methods because lookup walks the outer
                     ; "pointer" name.
                     var lookup_type: PlannedType current
-                    if current.name.equals(String$("pointer"))
+                    if current.name.equals(String("pointer"))
                     {
                         if current.generics <> null
                         {
@@ -8168,7 +8168,7 @@ define Planner
                             }
                         }
                     }
-                    if current.name.equals(String$("ref"))
+                    if current.name.equals(String("ref"))
                     {
                         if current.generics <> null
                         {
@@ -8195,13 +8195,13 @@ define Planner
                     ; exempt so NPO unwrap dispatch keeps resolving on
                     ; the Option itself.
                     var m_is_opt_method: bool false
-                    if m.equals(String$("unwrap"))
+                    if m.equals(String("unwrap"))
                         set m_is_opt_method: true
-                    if m.equals(String$("unwrap_or"))
+                    if m.equals(String("unwrap_or"))
                         set m_is_opt_method: true
-                    if m.equals(String$("is_some"))
+                    if m.equals(String("is_some"))
                         set m_is_opt_method: true
-                    if m.equals(String$("is_none"))
+                    if m.equals(String("is_none"))
                         set m_is_opt_method: true
                     ; s184: variant names resolve on the union itself
                     ; (`Option[int].None` after the generic merge) —
@@ -8211,7 +8211,7 @@ define Planner
                         set m_is_opt_method: true
                     if m_is_opt_method = false
                     {
-                        if lookup_type.name.equals(String$("Option"))
+                        if lookup_type.name.equals(String("Option"))
                         {
                             if lookup_type.generics <> null
                             {
@@ -8222,7 +8222,7 @@ define Planner
                                     if og_ptr <> null
                                     {
                                         var inner_o (*og_ptr)
-                                        if inner_o.name.equals(String$("ref"))
+                                        if inner_o.name.equals(String("ref"))
                                         {
                                             if inner_o.generics <> null
                                             {
@@ -8235,7 +8235,7 @@ define Planner
                                                 }
                                             }
                                         }
-                                        if inner_o.name.equals(String$("pointer"))
+                                        if inner_o.name.equals(String("pointer"))
                                         {
                                             if inner_o.generics <> null
                                             {
@@ -8269,7 +8269,7 @@ define Planner
                         ; registered) and for ABI-opaque stdlib structs.
                         this.ensure_member_layout#(lookup_type.name)
                         let prop (*prop_ref)
-                        var prop_type: PlannedType this.fresh_type_var#(String$(""))
+                        var prop_type: PlannedType this.fresh_type_var#(String(""))
                         if prop.type <> null
                         {
                             let t (*prop.type)
@@ -8409,7 +8409,7 @@ define Planner
                             if first_ptr <> null
                             {
                                 let f (*first_ptr)
-                                var return_ty: PlannedType this.fresh_type_var#(String$(""))
+                                var return_ty: PlannedType this.fresh_type_var#(String(""))
                                 if f.returns_ <> null
                                 {
                                     let rt (*f.returns_)
@@ -8453,7 +8453,7 @@ define Planner
                     ; instead of a plain extractvalue at field_index.
                     if matched = false
                     {
-                        if m.equals(String$("value"))
+                        if m.equals(String("value"))
                         {
                             let conc_ref_for_value this.lookup_concept(lookup_type.name)
                             if conc_ref_for_value <> null
@@ -8505,7 +8505,7 @@ define Planner
                     ; Unresolved — record placeholder with void result.
                     if matched = false
                     {
-                        var sb StringBuilder$()
+                        var sb StringBuilder()
                         sb.append "member '"
                         sb.append m
                         sb.append "' not found in type "
@@ -8558,7 +8558,7 @@ define Planner
         )
         {
             constraints.add(TypeConstraint.Equality(
-                EqualityConstraint(left, right, loc, String$(file))
+                EqualityConstraint(left, right, loc, String(file))
             ))
         }
 
@@ -8675,7 +8675,7 @@ define Planner
                             set gi: gi + 1
                         }
                         ; Rebuild outer mangled name with canonicalized inner.
-                        var sb StringBuilder$()
+                        var sb StringBuilder()
                         if after_subst.name.equals("pointer")
                             sb.append "P"
                         if after_subst.name.equals("ref")
@@ -8744,7 +8744,7 @@ define Planner
                                 String^rp(""),
                                 null
                             ))
-                            var ptr_sb StringBuilder$()
+                            var ptr_sb StringBuilder()
                             ptr_sb.append "P"
                             ptr_sb.append elem_mangled
                             return PlannedType(
@@ -9274,7 +9274,7 @@ define Planner
                 let first_ptr i.name.get 0
                 if first_ptr <> null
                 {
-                    if (*first_ptr).equals(String$("null"))
+                    if (*first_ptr).equals(String("null"))
                         return PlannedIs(
                             i.span,
                             Planner.make_void_type#(),
@@ -9354,17 +9354,17 @@ define Planner
                     ; Type names; rewrite them as Constant operands so the
                     ; emitter sees the right shape. Mirrors
                     ; Planner.cpp:10148-10160.
-                    if name.equals(String$("null"))
+                    if name.equals(String("null"))
                     {
                         let c Constant.Null(NullConstant loc)
                         return this.plan_constant_operand#(c, loc)
                     }
-                    if name.equals(String$("true"))
+                    if name.equals(String("true"))
                     {
                         let c Constant.Boolean(BooleanConstant(loc, true))
                         return this.plan_constant_operand#(c, loc)
                     }
-                    if name.equals(String$("false"))
+                    if name.equals(String("false"))
                     {
                         let c Constant.Boolean(BooleanConstant(loc, false))
                         return this.plan_constant_operand#(c, loc)
@@ -9472,7 +9472,7 @@ define Planner
                     if this_ref <> null
                     {
                         let this_ty (*this_ref)
-                        if this_ty.name.equals(String$("pointer"))
+                        if this_ty.name.equals(String("pointer"))
                         {
                             if this_ty.generics <> null
                             {
@@ -9546,7 +9546,7 @@ define Planner
                         ; Auto-deref pointer[T] / ref[T]: use the inner
                         ; generic as the base for member resolution.
                         var base_for_chain lb.binding_type
-                        if lb.binding_type.name.equals(String$("pointer"))
+                        if lb.binding_type.name.equals(String("pointer"))
                         {
                             if lb.binding_type.generics <> null
                             {
@@ -9559,7 +9559,7 @@ define Planner
                                 }
                             }
                         }
-                        if lb.binding_type.name.equals(String$("ref"))
+                        if lb.binding_type.name.equals(String("ref"))
                         {
                             if lb.binding_type.generics <> null
                             {
@@ -9676,7 +9676,7 @@ define Planner
                     if this_ref2 <> null
                     {
                         let this_ty2 (*this_ref2)
-                        if this_ty2.name.equals(String$("pointer"))
+                        if this_ty2.name.equals(String("pointer"))
                         {
                             if this_ty2.generics <> null
                             {
@@ -9786,8 +9786,8 @@ define Planner
                 ; voids (pure statements contribute no constraint).
                 let cons_ty Planner.statement_result_type(planned_consequent)
                 let alt_ty Planner.statement_result_type(planned_alt)
-                if cons_ty.name.equals(String$("void")) = false
-                    if alt_ty.name.equals(String$("void")) = false
+                if cons_ty.name.equals(String("void")) = false
+                    if alt_ty.name.equals(String("void")) = false
                         this.add_equality_constraint(cons_ty, alt_ty, f.span)
             }
 
@@ -10140,7 +10140,7 @@ define Planner
                         ; Lambda parameters omit type annotations; give
                         ; each a fresh type variable that the solver
                         ; later unifies against the call site.
-                        var pname: String String$("")
+                        var pname: String String("")
                         if it.name <> null
                             set pname: (*it.name)
                         set param_type: this.fresh_type_var#(pname)
@@ -10223,7 +10223,7 @@ define Planner
 
             let lam_id next_lambda_id
             set next_lambda_id: lam_id + 1
-            var name_sb StringBuilder$()
+            var name_sb StringBuilder()
             name_sb.append "_ZN6lambda"
             name_sb.append(Planner.size_to_string lam_id)
             name_sb.append "Ev"
@@ -10271,7 +10271,7 @@ define Planner
                 if it_ptr <> null
                 {
                     let it (*it_ptr)
-                    var pty1: PlannedType this.fresh_type_var#(String$(""))
+                    var pty1: PlannedType this.fresh_type_var#(String(""))
                     if p1i < arg_types.length
                     {
                         let at_ptr arg_types.get p1i
@@ -10351,7 +10351,7 @@ define Planner
             }
 
             ; ---- mangled name = base + capture type mangles + arg type mangles
-            var ml_sb StringBuilder$()
+            var ml_sb StringBuilder()
             ml_sb.append "_ZN6lambdaN"
             ml_sb.append base_name
             ml_sb.append "E"
@@ -10426,7 +10426,7 @@ define Planner
                 if it_ptr <> null
                 {
                     let it (*it_ptr)
-                    var pty: PlannedType this.fresh_type_var#(String$(""))
+                    var pty: PlannedType this.fresh_type_var#(String(""))
                     if pi2 < arg_types.length
                     {
                         let at_ptr arg_types.get pi2
@@ -10515,11 +10515,11 @@ define Planner
                     set ci: ci + 1
                 }
             }
-            var thunk_sb StringBuilder$()
+            var thunk_sb StringBuilder()
             thunk_sb.append mono.mangled
             thunk_sb.append "_thunk"
             let thunk_name thunk_sb.to_string^rp()
-            var clo_sb StringBuilder$()
+            var clo_sb StringBuilder()
             clo_sb.append "clo_"
             clo_sb.append mono.mangled
             let clo_type_name clo_sb.to_string^rp()
@@ -10571,7 +10571,7 @@ define Planner
                 if op_ptr <> null
                 {
                     let t this.find_break_type_in_expr#((*op_ptr).expr)
-                    if t.name.equals(String$("void")) = false
+                    if t.name.equals(String("void")) = false
                         return t
                 }
                 set i: i + 1
@@ -10622,7 +10622,7 @@ define Planner
                         if sp <> null
                         {
                             let t this.find_break_type_in_statement#(*sp)
-                            if t.name.equals(String$("void")) = false
+                            if t.name.equals(String("void")) = false
                                 return t
                         }
                         set i: i + 1
@@ -10632,7 +10632,7 @@ define Planner
                 when ife: PlannedIf
                 {
                     let tc this.find_break_type_in_stmt_ref#(ife.consequent)
-                    if tc.name.equals(String$("void")) = false
+                    if tc.name.equals(String("void")) = false
                         return tc
                     this.find_break_type_in_stmt_ref#(ife.alternative)
                 }
@@ -10648,7 +10648,7 @@ define Planner
                             if cp <> null
                             {
                                 let t this.find_break_type_in_stmt_ref#((*cp).consequent)
-                                if t.name.equals(String$("void")) = false
+                                if t.name.equals(String("void")) = false
                                     return t
                             }
                             set i: i + 1
@@ -10668,7 +10668,7 @@ define Planner
                             if bp <> null
                             {
                                 let t this.find_break_type_in_stmt_ref#((*bp).consequent)
-                                if t.name.equals(String$("void")) = false
+                                if t.name.equals(String("void")) = false
                                     return t
                             }
                             set i: i + 1
@@ -10725,7 +10725,7 @@ define Planner
                             if last_ptr <> null
                             {
                                 let op_ty (*last_ptr).result_type
-                                if op_ty.name.equals(String$("Option"))
+                                if op_ty.name.equals(String("Option"))
                                 {
                                     if op_ty.generics <> null
                                     {
@@ -10769,7 +10769,7 @@ define Planner
             var coll_type: PlannedType collapsed_expr.result_type
 
             ; Auto-unwrap Option[T] → T on the collection side.
-            if coll_type.name.equals(String$("Option"))
+            if coll_type.name.equals(String("Option"))
             {
                 if coll_type.generics <> null
                 {
@@ -10790,9 +10790,9 @@ define Planner
             ; per-name guards.
             var iter_type: PlannedType coll_type
             var is_pointer_like: bool false
-            if iter_type.name.equals(String$("ref"))
+            if iter_type.name.equals(String("ref"))
                 set is_pointer_like: true
-            if iter_type.name.equals(String$("pointer"))
+            if iter_type.name.equals(String("pointer"))
                 set is_pointer_like: true
             if is_pointer_like
             {
@@ -10813,25 +10813,25 @@ define Planner
             ; runs unconditionally). Use per-name guards so each one
             ; matches its own primitive name.
             var is_integer: bool false
-            if iter_type.name.equals(String$("int"))
+            if iter_type.name.equals(String("int"))
                 set is_integer: true
-            if iter_type.name.equals(String$("int8"))
+            if iter_type.name.equals(String("int8"))
                 set is_integer: true
-            if iter_type.name.equals(String$("int16"))
+            if iter_type.name.equals(String("int16"))
                 set is_integer: true
-            if iter_type.name.equals(String$("int32"))
+            if iter_type.name.equals(String("int32"))
                 set is_integer: true
-            if iter_type.name.equals(String$("int64"))
+            if iter_type.name.equals(String("int64"))
                 set is_integer: true
-            if iter_type.name.equals(String$("size_t"))
+            if iter_type.name.equals(String("size_t"))
                 set is_integer: true
-            if iter_type.name.equals(String$("uint8"))
+            if iter_type.name.equals(String("uint8"))
                 set is_integer: true
-            if iter_type.name.equals(String$("uint16"))
+            if iter_type.name.equals(String("uint16"))
                 set is_integer: true
-            if iter_type.name.equals(String$("uint32"))
+            if iter_type.name.equals(String("uint32"))
                 set is_integer: true
-            if iter_type.name.equals(String$("uint64"))
+            if iter_type.name.equals(String("uint64"))
                 set is_integer: true
 
             var is_iterator_loop: bool false
@@ -10851,7 +10851,7 @@ define Planner
                 ; selection.
                 var no_args_arr Array[PlannedType]$()
                 let no_args Vector[PlannedType]^rp(no_args_arr)
-                let get_iter_match this.lookup_method#(iter_type, String$("get_iterator"), no_args)
+                let get_iter_match this.lookup_method#(iter_type, String("get_iterator"), no_args)
                 if get_iter_match <> null
                 {
                     let gm (*get_iter_match)
@@ -10859,7 +10859,7 @@ define Planner
                     set iterator_type: gm.return_type
                     set get_iter_name: gm.mangled_name
 
-                    let next_match this.lookup_method#(iterator_type, String$("next"), no_args)
+                    let next_match this.lookup_method#(iterator_type, String("next"), no_args)
                     if next_match <> null
                     {
                         let nm (*next_match)
@@ -11013,7 +11013,7 @@ define Planner
             ; Fall back to a fresh type variable when the union isn't
             ; resolvable (e.g. when called from plan_try before
             ; exception types land).
-            var binding_ty: PlannedType this.fresh_type_var#(String$(""))
+            var binding_ty: PlannedType this.fresh_type_var#(String(""))
             var variant_type: PlannedType Planner.make_void_type#()
             var variant_tag: size_t 0
 
@@ -11093,12 +11093,12 @@ define Planner
             {
                 if is_throws_call
                 {
-                    let is_error variant_name.equals(String$("Error"))
+                    let is_error variant_name.equals(String("Error"))
                     var is_err: bool is_error
                     if is_err = false
-                        set is_err: variant_name.equals(String$("err"))
+                        set is_err: variant_name.equals(String("err"))
                     if is_err = false
-                        set is_err: variant_name.equals(String$("error"))
+                        set is_err: variant_name.equals(String("error"))
                     if is_err
                     {
                         set variant_tag: 1
@@ -11111,16 +11111,16 @@ define Planner
                     }
                     if is_err = false
                     {
-                        let is_success variant_name.equals(String$("Success"))
+                        let is_success variant_name.equals(String("Success"))
                         var is_ok: bool is_success
                         if is_ok = false
-                            set is_ok: variant_name.equals(String$("Ok"))
+                            set is_ok: variant_name.equals(String("Ok"))
                         if is_ok = false
-                            set is_ok: variant_name.equals(String$("ok"))
+                            set is_ok: variant_name.equals(String("ok"))
                         if is_ok = false
-                            set is_ok: variant_name.equals(String$("value"))
+                            set is_ok: variant_name.equals(String("value"))
                         if is_ok = false
-                            set is_ok: variant_name.equals(String$("node"))
+                            set is_ok: variant_name.equals(String("node"))
                         if is_ok
                         {
                             ; s172: bind the success arm to the call's
@@ -11177,9 +11177,9 @@ define Planner
             ; dispatch. Mirrors stage-0 Planner.cpp:11247-11250.
             var union_type: PlannedType collapsed_cond.result_type
             var peel_cond: bool false
-            if union_type.name.equals(String$("ref"))
+            if union_type.name.equals(String("ref"))
                 set peel_cond: true
-            if union_type.name.equals(String$("pointer"))
+            if union_type.name.equals(String("pointer"))
                 set peel_cond: true
             if peel_cond
             {
@@ -11260,7 +11260,7 @@ define Planner
                         {
                             let cons_ref (*pw.consequent)
                             let arm_ty Planner.statement_result_type(cons_ref)
-                            if arm_ty.name.equals(String$("void")) = false
+                            if arm_ty.name.equals(String("void")) = false
                             {
                                 if have_first = false
                                 {
@@ -11282,7 +11282,7 @@ define Planner
                     {
                         let alt (*alternative_ref)
                         let alt_ty Planner.statement_result_type(alt)
-                        if alt_ty.name.equals(String$("void")) = false
+                        if alt_ty.name.equals(String("void")) = false
                             this.add_equality_constraint(first_ty, alt_ty, c.span)
                     }
                 }
@@ -11410,7 +11410,7 @@ define Planner
                         {
                             let cons (*br.consequent)
                             let br_ty Planner.statement_result_type(cons)
-                            if br_ty.name.equals(String$("void")) = false
+                            if br_ty.name.equals(String("void")) = false
                             {
                                 if have_first = false
                                 {
@@ -11432,7 +11432,7 @@ define Planner
                     {
                         let alt (*alternative_ref)
                         let alt_ty Planner.statement_result_type(alt)
-                        if alt_ty.name.equals(String$("void")) = false
+                        if alt_ty.name.equals(String("void")) = false
                             this.add_equality_constraint(first_ty, alt_ty, m.span)
                     }
                 }
@@ -11762,7 +11762,7 @@ define Planner
             let init_ref this.find_initializer#(planned_ty.name, arg_types_vec)
             if init_ref = null
             {
-                var sb StringBuilder$()
+                var sb StringBuilder()
                 sb.append "no matching initializer for `new "
                 sb.append planned_ty.name
                 sb.append "`"
@@ -12573,7 +12573,7 @@ define Planner
                                     if lb.is_parameter
                                     {
                                         set external: true
-                                        if v.name.equals(String$("this"))
+                                        if v.name.equals(String("this"))
                                             set base_is_this: true
                                     }
                             }
@@ -12636,7 +12636,7 @@ define Planner
         ;  (1) a ref[T]/pointer[T] whose POINTEE lives on a Local ($) page — the
         ;      `&` operator and resolve_type keep the pointee (with its life) in
         ;      generics[0];
-        ;  (2) a VALUE whose OWN life is Local (design-B item 3) — String$()/etc
+        ;  (2) a VALUE whose OWN life is Local (design-B item 3) — String()/etc
         ;      carry an internal `data` pointer into the local page, so returning
         ;      the value by copy still hands out a dangling internal pointer.
         ; A Local pointee/value dies at scope exit, so returning/storing it is a
@@ -12649,8 +12649,8 @@ define Planner
                     return true
                 else
                     0
-            let ptr_name String$("pointer")
-            let ref_name String$("ref")
+            let ptr_name String("pointer")
+            let ref_name String("ref")
             var is_ref_like false
             if t.name.equals(ptr_name)
                 set is_ref_like: true
@@ -12710,10 +12710,10 @@ define Planner
         ; site via is_reference_to_local_page. Mirrors isReferenceLikeType.
         function is_reference_like(t: PlannedType) returns bool
         {
-            let ptr_name String$("pointer")
+            let ptr_name String("pointer")
             if t.name.equals(ptr_name)
                 return true
-            let ref_name String$("ref")
+            let ref_name String("ref")
             if t.name.equals(ref_name)
                 return true
             false
@@ -13409,7 +13409,7 @@ define Planner
                                     let dret this.delegate_return_type#(crt.name)
                                     let rlam_id next_lambda_id
                                     set next_lambda_id: rlam_id + 1
-                                    var rb_sb StringBuilder$()
+                                    var rb_sb StringBuilder()
                                     rb_sb.append "ret"
                                     let rlam_str size_to_string(rlam_id)
                                     rb_sb.append rlam_str
@@ -13770,7 +13770,7 @@ define Planner
         ; ================================================================
         function plan_property#(rp, this: Planner, p: Property) returns PlannedProperty
         {
-            var prop_type: PlannedType this.fresh_type_var#(String$(""))
+            var prop_type: PlannedType this.fresh_type_var#(String(""))
             if p.type <> null
             {
                 let t (*p.type)
@@ -14041,7 +14041,7 @@ define Planner
                             if item.item_type = null
                             {
                                 let n (*item.name)
-                                if n.equals(String$("this"))
+                                if n.equals(String("this"))
                                 {
                                     let p (*parent)
                                     var type_holder Vector[PlannedType]^rp(1)
@@ -14073,12 +14073,12 @@ define Planner
                             ; For 'this', the local-scope binding should be
                             ; pointer[T] (struct-by-pointer ABI), so field
                             ; access auto-derefs. Mirrors Planner.cpp:11781-11790.
-                            if n.equals(String$("this"))
+                            if n.equals(String("this"))
                             {
                                 let ptr_t Planner.make_pointer_type#(t)
                                 this.define_parameter(n, ptr_t)
                             }
-                            if n.equals(String$("this")) = false
+                            if n.equals(String("this")) = false
                                 this.define_parameter(n, t)
                         }
                     }
@@ -14340,7 +14340,7 @@ define Planner
             {
                 let p (*parent)
                 let this_ptr_ty Planner.make_pointer_type#(p)
-                this.define_parameter(String$("this"), this_ptr_ty)
+                this.define_parameter(String("this"), this_ptr_ty)
             }
 
             let planned_impl this.plan_implementation#(ini.implementation)
@@ -14359,7 +14359,7 @@ define Planner
                 set has_page: true
 
             let mangled Planner.mangle_function#(
-                String$("init"), &input_holder, parent, has_page
+                String("init"), &input_holder, parent, has_page
             )
 
             ; Clone the page_parameter name into rp so the resulting
@@ -14485,7 +14485,7 @@ define Planner
             ; Mangle as a method of `parent` named "deinit" (Itanium
             ; `_ZN<parent>6deinitEv`); bare deinit for a free context.
             let mangled Planner.mangle_function#(
-                String$("deinit"), null, parent, false
+                String("deinit"), null, parent, false
             )
             PlannedDeInitializer(
                 dei.span,
@@ -15430,9 +15430,9 @@ define Planner
             if this_ty.generics <> null
             {
                 var is_ptr_like: bool false
-                if this_ty.name.equals(String$("pointer"))
+                if this_ty.name.equals(String("pointer"))
                     set is_ptr_like: true
-                if this_ty.name.equals(String$("ref"))
+                if this_ty.name.equals(String("ref"))
                     set is_ptr_like: true
                 if is_ptr_like
                 {
@@ -15876,7 +15876,7 @@ define Planner
 
             ; Generic concepts get a simple length-prefixed name; fully
             ; instantiated concepts get the full `_Z<name-len><name>`.
-            var mangled: String String$("")
+            var mangled: String String("")
             if c.parameters.length > 0
                 set mangled: Planner.encode_name(c.name)
             if c.parameters.length = 0
@@ -15901,19 +15901,19 @@ define Planner
         function compute_payload_size(this: Planner, name: String) returns size_t
         {
             var size: size_t Planner.get_primitive_alignment(name)
-            if name.equals(String$("Vector"))
+            if name.equals(String("Vector"))
                 return 16
-            if name.equals(String$("Array"))
+            if name.equals(String("Array"))
                 return 16
-            if name.equals(String$("String"))
+            if name.equals(String("String"))
                 return 8
-            if name.equals(String$("HashMap"))
+            if name.equals(String("HashMap"))
                 return 8
-            if name.equals(String$("HashSet"))
+            if name.equals(String("HashSet"))
                 return 8
-            if name.equals(String$("HashMapBuilder"))
+            if name.equals(String("HashMapBuilder"))
                 return 8
-            if name.equals(String$("HashSetBuilder"))
+            if name.equals(String("HashSetBuilder"))
                 return 8
             let c_ref this.lookup_concept(name)
             if c_ref <> null
@@ -16319,7 +16319,7 @@ define Planner
                     {
                         let arg (*arg_ptr)
                         let inner Planner.encode_type#(arg)
-                        var sb StringBuilder$()
+                        var sb StringBuilder()
                         sb.append("P" as char)
                         sb.append inner
                         return sb.to_string^rp()
@@ -16341,7 +16341,7 @@ define Planner
                     {
                         let arg (*arg_ptr)
                         let inner Planner.encode_type#(arg)
-                        var sb StringBuilder$()
+                        var sb StringBuilder()
                         sb.append("R" as char)
                         sb.append inner
                         return sb.to_string^rp()
@@ -16362,7 +16362,7 @@ define Planner
                 if dot_pos >= 0
                     set base_name: type_value.name.substring(rp, 0, dot_pos as size_t)
 
-                var sb StringBuilder$()
+                var sb StringBuilder()
                 sb.append(Planner.encode_name base_name)
                 sb.append("I" as char)
                 var i: size_t 0
@@ -16393,7 +16393,7 @@ define Planner
     function mangle_type#(rp, type_value: PlannedType) returns String
     {
         let encoded Planner.encode_type#(type_value)
-        var sb StringBuilder$()
+        var sb StringBuilder()
         sb.append "_Z"
         sb.append encoded
         sb.to_string^rp()
@@ -16408,7 +16408,7 @@ define Planner
             let args (*generic_args)
             if args.length > 0
             {
-                var sb StringBuilder$()
+                var sb StringBuilder()
                 sb.append "_Z"
                 sb.append(Planner.encode_name name)
                 sb.append "I"
@@ -16429,7 +16429,7 @@ define Planner
             }
         }
 
-        var sb StringBuilder$()
+        var sb StringBuilder()
         sb.append "_Z"
         sb.append(Planner.encode_name name)
         sb.to_string^rp()
@@ -16452,7 +16452,7 @@ define Planner
         has_page_param: bool
     ) returns String
     {
-        var sb StringBuilder$()
+        var sb StringBuilder()
         sb.append "_Z"
 
         if parent <> null
@@ -16465,9 +16465,9 @@ define Planner
             ; stage-0 Planner.cpp:12100-12103. Required so constructor call-
             ; sites and the def-site (plan_initializer) agree on the symbol
             ; (`_ZN<T>C1E<args>`) which libscaly.a exports from stage-0.
-            if name.equals(String$("init"))
+            if name.equals(String("init"))
                 sb.append "C1"
-            if name.equals(String$("init")) = false
+            if name.equals(String("init")) = false
                 sb.append(Planner.encode_name name)
             sb.append "E"
         }
@@ -16531,7 +16531,7 @@ define Planner
         has_page_param: bool
     ) returns String
     {
-        var sb StringBuilder$()
+        var sb StringBuilder()
         sb.append "_Z"
         sb.append(Planner.encode_name name)
 
@@ -16612,7 +16612,7 @@ define Planner
             return String^rp("cl")
 
         ; Vendor extension for operators without a dedicated code.
-        var sb StringBuilder$()
+        var sb StringBuilder()
         sb.append "v0"
         sb.append(Planner.encode_name name)
         sb.to_string^rp()
@@ -16630,7 +16630,7 @@ define Planner
     ) returns String
     {
         let op_code Planner.operator_code#(name)
-        var sb StringBuilder$()
+        var sb StringBuilder()
         sb.append "_Z"
 
         if parent <> null
@@ -16710,7 +16710,7 @@ define Planner
             let gens (*type_value.generics)
             if gens.length > 0
             {
-                var sb StringBuilder$()
+                var sb StringBuilder()
                 sb.append type_value.name
                 sb.append "["
                 var i: size_t 0
@@ -17752,7 +17752,7 @@ define Planner
     {
         var gens Vector[PlannedType]^rp(1)
         gens.put(0, inner)
-        var sb StringBuilder$()
+        var sb StringBuilder()
         sb.append "P"
         sb.append inner.mangled_name
         PlannedType(
@@ -18015,7 +18015,7 @@ define Planner
                     if inner_ptr <> null
                     {
                         let inner (*inner_ptr)
-                        var sb StringBuilder$()
+                        var sb StringBuilder()
                         sb.append "P"
                         sb.append inner.mangled_name
                         set mangled: sb.to_string^rp()
@@ -18034,7 +18034,7 @@ define Planner
                     if inner_ptr <> null
                     {
                         let inner (*inner_ptr)
-                        var sb StringBuilder$()
+                        var sb StringBuilder()
                         sb.append "R"
                         sb.append inner.mangled_name
                         set mangled: sb.to_string^rp()
@@ -18756,7 +18756,7 @@ define Planner
     ; one canonical dotted identifier for primitive/generic-param checks.
     function join_dotted_name#(rp, parts: Vector[String]) returns String
     {
-        var sb StringBuilder$()
+        var sb StringBuilder()
         ; Defensive: bail early if the Vector layout is corrupted —
         ; length>0 with data=null. Some Type.name vectors picked up
         ; via plan_type → resolve_type_base end up in this state once
@@ -19252,180 +19252,180 @@ define Planner
     {
         ; size_to_string - smallest self-contained helper.
         let str0 Planner.size_to_string(0)
-        if str0.equals(String$("0")) = false
+        if str0.equals(String("0")) = false
             return 1
 
         let str4 Planner.size_to_string(4)
-        if str4.equals(String$("4")) = false
+        if str4.equals(String("4")) = false
             return 2
 
         let str42 Planner.size_to_string(42)
-        if str42.equals(String$("42")) = false
+        if str42.equals(String("42")) = false
             return 3
 
         ; encode_name - depends on size_to_string.
-        let encoded Planner.encode_name(String$("test"))
-        if encoded.equals(String$("4test")) = false
+        let encoded Planner.encode_name(String("test"))
+        if encoded.equals(String("4test")) = false
             return 4
 
-        let encoded2 Planner.encode_name(String$(""))
-        if encoded2.equals(String$("0")) = false
+        let encoded2 Planner.encode_name(String(""))
+        if encoded2.equals(String("0")) = false
             return 5
 
         ; strip_package_prefix - only strips when it starts with "scaly."
-        let stripped Planner.strip_package_prefix$(String$("scaly.containers.String"))
-        if stripped.equals(String$("String")) = false
+        let stripped Planner.strip_package_prefix$(String("scaly.containers.String"))
+        if stripped.equals(String("String")) = false
             return 6
 
-        let unstripped Planner.strip_package_prefix$(String$("scalyc.compiler.Planner"))
-        if unstripped.equals(String$("scalyc.compiler.Planner")) = false
+        let unstripped Planner.strip_package_prefix$(String("scalyc.compiler.Planner"))
+        if unstripped.equals(String("scalyc.compiler.Planner")) = false
             return 7
 
         ; encode_type - built-in primitive codes.
         let int_ty PlannedType(
             Span(0, 0),
-            String$("int"),
-            String$(""),
+            String("int"),
+            String(""),
             null,
             Lifetime.Unspecified(Unspecified()),
             null,
-            String$(""),
+            String(""),
             null
         )
         let enc_int Planner.encode_type$(int_ty)
-        if enc_int.equals(String$("i")) = false
+        if enc_int.equals(String("i")) = false
             return 8
 
         let bool_ty PlannedType(
             Span(0, 0),
-            String$("bool"),
-            String$(""),
+            String("bool"),
+            String(""),
             null,
             Lifetime.Unspecified(Unspecified()),
             null,
-            String$(""),
+            String(""),
             null
         )
         let enc_bool Planner.encode_type$(bool_ty)
-        if enc_bool.equals(String$("b")) = false
+        if enc_bool.equals(String("b")) = false
             return 9
 
         ; encode_type - user-defined falls through to encode_name.
         let foo_ty PlannedType(
             Span(0, 0),
-            String$("Foo"),
-            String$(""),
+            String("Foo"),
+            String(""),
             null,
             Lifetime.Unspecified(Unspecified()),
             null,
-            String$(""),
+            String(""),
             null
         )
         let enc_foo Planner.encode_type$(foo_ty)
-        if enc_foo.equals(String$("3Foo")) = false
+        if enc_foo.equals(String("3Foo")) = false
             return 10
 
         ; encode_type - "scaly.containers.String" -> "6String" (prefix stripped).
         let sstr_ty PlannedType(
             Span(0, 0),
-            String$("scaly.containers.String"),
-            String$(""),
+            String("scaly.containers.String"),
+            String(""),
             null,
             Lifetime.Unspecified(Unspecified()),
             null,
-            String$(""),
+            String(""),
             null
         )
         let enc_sstr Planner.encode_type$(sstr_ty)
-        if enc_sstr.equals(String$("6String")) = false
+        if enc_sstr.equals(String("6String")) = false
             return 11
 
         ; mangle_type - "_Z" prefix + encoded type.
         let mangled_int Planner.mangle_type$(int_ty)
-        if mangled_int.equals(String$("_Zi")) = false
+        if mangled_int.equals(String("_Zi")) = false
             return 12
 
         let mangled_foo Planner.mangle_type$(foo_ty)
-        if mangled_foo.equals(String$("_Z3Foo")) = false
+        if mangled_foo.equals(String("_Z3Foo")) = false
             return 13
 
         ; mangle_structure - no generics falls back to encode_name.
-        let mangled_s Planner.mangle_structure$(String$("String"), null)
-        if mangled_s.equals(String$("_Z6String")) = false
+        let mangled_s Planner.mangle_structure$(String("String"), null)
+        if mangled_s.equals(String("_Z6String")) = false
             return 14
 
         ; mangle_structure with one int generic arg: Vector[int] -> _Z6VectorIiE.
         var gens_vec Vector[PlannedType]$(1)
         gens_vec.put(0, int_ty)
-        let mangled_vec Planner.mangle_structure$(String$("Vector"), &gens_vec)
-        if mangled_vec.equals(String$("_Z6VectorIiE")) = false
+        let mangled_vec Planner.mangle_structure$(String("Vector"), &gens_vec)
+        if mangled_vec.equals(String("_Z6VectorIiE")) = false
             return 15
 
         ; mangle_function - free, no params -> _Z3foov.
-        let mf_free Planner.mangle_function$(String$("foo"), null, null, false)
-        if mf_free.equals(String$("_Z3foov")) = false
+        let mf_free Planner.mangle_function$(String("foo"), null, null, false)
+        if mf_free.equals(String("_Z3foov")) = false
             return 16
 
         ; mangle_function - method on Foo, no params -> _ZN3Foo3fooEv.
-        let mf_method Planner.mangle_function$(String$("foo"), null, &foo_ty, false)
-        if mf_method.equals(String$("_ZN3Foo3fooEv")) = false
+        let mf_method Planner.mangle_function$(String("foo"), null, &foo_ty, false)
+        if mf_method.equals(String("_ZN3Foo3fooEv")) = false
             return 17
 
         ; mangle_function - 'this' is implicit; drops out of the name.
-        let this_name String$("this")
+        let this_name String("this")
         var this_only Vector[PlannedItem]$(1)
         this_only.put(0, PlannedItem(Span(0, 0), false, &this_name, &foo_ty, null))
-        let mf_this Planner.mangle_function$(String$("bar"), &this_only, &foo_ty, false)
-        if mf_this.equals(String$("_ZN3Foo3barEv")) = false
+        let mf_this Planner.mangle_function$(String("bar"), &this_only, &foo_ty, false)
+        if mf_this.equals(String("_ZN3Foo3barEv")) = false
             return 18
 
         ; mangle_function with implicit page param.
-        let mf_page Planner.mangle_function$(String$("foo"), null, null, true)
-        if mf_page.equals(String$("_Z3fooPN4scaly6memory4PageE")) = false
+        let mf_page Planner.mangle_function$(String("foo"), null, null, true)
+        if mf_page.equals(String("_Z3fooPN4scaly6memory4PageE")) = false
             return 19
 
         ; mangle_function - free with int param -> _Z3fooi.
-        let x_name String$("x")
+        let x_name String("x")
         var one_int Vector[PlannedItem]$(1)
         one_int.put(0, PlannedItem(Span(0, 0), false, &x_name, &int_ty, null))
-        let mf_i Planner.mangle_function$(String$("foo"), &one_int, null, false)
-        if mf_i.equals(String$("_Z3fooi")) = false
+        let mf_i Planner.mangle_function$(String("foo"), &one_int, null, false)
+        if mf_i.equals(String("_Z3fooi")) = false
             return 20
 
         ; operator_code - a few known codes plus vendor extension.
-        let op_plus Planner.operator_code$(String$("+"))
-        if op_plus.equals(String$("pl")) = false
+        let op_plus Planner.operator_code$(String("+"))
+        if op_plus.equals(String("pl")) = false
             return 21
 
-        let op_index Planner.operator_code$(String$("[]"))
-        if op_index.equals(String$("ix")) = false
+        let op_index Planner.operator_code$(String("[]"))
+        if op_index.equals(String("ix")) = false
             return 22
 
-        let op_vendor Planner.operator_code$(String$("??"))
-        if op_vendor.equals(String$("v02??")) = false
+        let op_vendor Planner.operator_code$(String("??"))
+        if op_vendor.equals(String("v02??")) = false
             return 23
 
         ; mangle_operator - free + with int param -> _Zpli.
-        let mop_plus Planner.mangle_operator$(String$("+"), &one_int, null)
-        if mop_plus.equals(String$("_Zpli")) = false
+        let mop_plus Planner.mangle_operator$(String("+"), &one_int, null)
+        if mop_plus.equals(String("_Zpli")) = false
             return 24
 
         ; mangle_operator - member + on Foo with (this, int) -> _ZN3FooplEi.
         var this_int Vector[PlannedItem]$(2)
         this_int.put(0, PlannedItem(Span(0, 0), false, &this_name, &foo_ty, null))
         this_int.put(1, PlannedItem(Span(0, 0), false, &x_name, &int_ty, null))
-        let mop_member Planner.mangle_operator$(String$("+"), &this_int, &foo_ty)
-        if mop_member.equals(String$("_ZN3FooplEi")) = false
+        let mop_member Planner.mangle_operator$(String("+"), &this_int, &foo_ty)
+        if mop_member.equals(String("_ZN3FooplEi")) = false
             return 25
 
         ; mangle_operator - member with only 'this' -> _ZN3FooneEv (the 'this' skip).
-        let mop_this Planner.mangle_operator$(String$("!="), &this_only, &foo_ty)
-        if mop_this.equals(String$("_ZN3FooneEv")) = false
+        let mop_this Planner.mangle_operator$(String("!="), &this_only, &foo_ty)
+        if mop_this.equals(String("_ZN3FooneEv")) = false
             return 26
 
         ; get_readable_name - plain type, no generics.
         let rn_int Planner.get_readable_name$(int_ty)
-        if rn_int.equals(String$("int")) = false
+        if rn_int.equals(String("int")) = false
             return 27
 
         ; get_readable_name - generic: Vector[int] -> "Vector[int]".
@@ -19433,39 +19433,39 @@ define Planner
         vec_gens.put(0, int_ty)
         let vec_ty PlannedType(
             Span(0, 0),
-            String$("Vector"),
-            String$(""),
+            String("Vector"),
+            String(""),
             &vec_gens,
             Lifetime.Unspecified(Unspecified()),
             null,
-            String$(""),
+            String(""),
             null
         )
         let rn_vec Planner.get_readable_name$(vec_ty)
-        if rn_vec.equals(String$("Vector[int]")) = false
+        if rn_vec.equals(String("Vector[int]")) = false
             return 28
 
         ; normalize_type_name - builtin aliases collapse.
-        let nm_int Planner.normalize_type_name$(String$("int"))
-        if nm_int.equals(String$("i64")) = false
+        let nm_int Planner.normalize_type_name$(String("int"))
+        if nm_int.equals(String("i64")) = false
             return 29
 
-        let nm_size Planner.normalize_type_name$(String$("size_t"))
-        if nm_size.equals(String$("u64")) = false
+        let nm_size Planner.normalize_type_name$(String("size_t"))
+        if nm_size.equals(String("u64")) = false
             return 30
 
-        let nm_char Planner.normalize_type_name$(String$("char"))
-        if nm_char.equals(String$("u8")) = false
+        let nm_char Planner.normalize_type_name$(String("char"))
+        if nm_char.equals(String("u8")) = false
             return 31
 
         ; normalize_type_name - "scaly.containers.String" -> "String".
-        let nm_sstr Planner.normalize_type_name$(String$("scaly.containers.String"))
-        if nm_sstr.equals(String$("String")) = false
+        let nm_sstr Planner.normalize_type_name$(String("scaly.containers.String"))
+        if nm_sstr.equals(String("String")) = false
             return 32
 
         ; normalize_type_name - user types pass through.
-        let nm_user Planner.normalize_type_name$(String$("scalyc.compiler.Planner"))
-        if nm_user.equals(String$("scalyc.compiler.Planner")) = false
+        let nm_user Planner.normalize_type_name$(String("scalyc.compiler.Planner"))
+        if nm_user.equals(String("scalyc.compiler.Planner")) = false
             return 33
 
         ; types_equal - identical primitives.
@@ -19475,12 +19475,12 @@ define Planner
         ; types_equal - int == i64 via normalization.
         let i64_ty PlannedType(
             Span(0, 0),
-            String$("i64"),
-            String$(""),
+            String("i64"),
+            String(""),
             null,
             Lifetime.Unspecified(Unspecified()),
             null,
-            String$(""),
+            String(""),
             null
         )
         if Planner.types_equal(int_ty, i64_ty) = false
@@ -19495,12 +19495,12 @@ define Planner
         vec_gens2.put(0, int_ty)
         let vec_ty2 PlannedType(
             Span(0, 0),
-            String$("Vector"),
-            String$(""),
+            String("Vector"),
+            String(""),
             &vec_gens2,
             Lifetime.Unspecified(Unspecified()),
             null,
-            String$(""),
+            String(""),
             null
         )
         if Planner.types_equal(vec_ty, vec_ty2) = false
@@ -19511,21 +19511,21 @@ define Planner
         vec_gens_b.put(0, bool_ty)
         let vec_bool_ty PlannedType(
             Span(0, 0),
-            String$("Vector"),
-            String$(""),
+            String("Vector"),
+            String(""),
             &vec_gens_b,
             Lifetime.Unspecified(Unspecified()),
             null,
-            String$(""),
+            String(""),
             null
         )
         if Planner.types_equal(vec_ty, vec_bool_ty)
             return 38
 
         ; is_integer_type - a couple of positive and negative cases.
-        if Planner.is_integer_type(String$("i64")) = false
+        if Planner.is_integer_type(String("i64")) = false
             return 39
-        if Planner.is_integer_type(String$("bool"))
+        if Planner.is_integer_type(String("bool"))
             return 40
 
         ; types_compatible - exact equality.
@@ -19536,12 +19536,12 @@ define Planner
         ;                                      so pair a distinct integer family).
         let u32_ty PlannedType(
             Span(0, 0),
-            String$("u32"),
-            String$(""),
+            String("u32"),
+            String(""),
             null,
             Lifetime.Unspecified(Unspecified()),
             null,
-            String$(""),
+            String(""),
             null
         )
         if Planner.types_compatible(int_ty, u32_ty) = false
@@ -19556,12 +19556,12 @@ define Planner
         ptr_int_gens.put(0, int_ty)
         let ptr_int_ty PlannedType(
             Span(0, 0),
-            String$("pointer"),
-            String$(""),
+            String("pointer"),
+            String(""),
             &ptr_int_gens,
             Lifetime.Unspecified(Unspecified()),
             null,
-            String$(""),
+            String(""),
             null
         )
         if Planner.types_compatible(int_ty, ptr_int_ty) = false
@@ -19570,24 +19570,24 @@ define Planner
         ; types_compatible - pointer[void] accepts any pointer.
         let void_ty PlannedType(
             Span(0, 0),
-            String$("void"),
-            String$(""),
+            String("void"),
+            String(""),
             null,
             Lifetime.Unspecified(Unspecified()),
             null,
-            String$(""),
+            String(""),
             null
         )
         var ptr_void_gens Vector[PlannedType]$(1)
         ptr_void_gens.put(0, void_ty)
         let ptr_void_ty PlannedType(
             Span(0, 0),
-            String$("pointer"),
-            String$(""),
+            String("pointer"),
+            String(""),
             &ptr_void_gens,
             Lifetime.Unspecified(Unspecified()),
             null,
-            String$(""),
+            String(""),
             null
         )
         if Planner.types_compatible(ptr_void_ty, ptr_int_ty) = false
@@ -19596,46 +19596,46 @@ define Planner
         ; types_compatible - pointer[const_char] <- pointer[i8] (Rule 5).
         let const_char_ty PlannedType(
             Span(0, 0),
-            String$("const_char"),
-            String$(""),
+            String("const_char"),
+            String(""),
             null,
             Lifetime.Unspecified(Unspecified()),
             null,
-            String$(""),
+            String(""),
             null
         )
         let i8_ty PlannedType(
             Span(0, 0),
-            String$("i8"),
-            String$(""),
+            String("i8"),
+            String(""),
             null,
             Lifetime.Unspecified(Unspecified()),
             null,
-            String$(""),
+            String(""),
             null
         )
         var ptr_cc_gens Vector[PlannedType]$(1)
         ptr_cc_gens.put(0, const_char_ty)
         let ptr_cc_ty PlannedType(
             Span(0, 0),
-            String$("pointer"),
-            String$(""),
+            String("pointer"),
+            String(""),
             &ptr_cc_gens,
             Lifetime.Unspecified(Unspecified()),
             null,
-            String$(""),
+            String(""),
             null
         )
         var ptr_i8_gens Vector[PlannedType]$(1)
         ptr_i8_gens.put(0, i8_ty)
         let ptr_i8_ty PlannedType(
             Span(0, 0),
-            String$("pointer"),
-            String$(""),
+            String("pointer"),
+            String(""),
             &ptr_i8_gens,
             Lifetime.Unspecified(Unspecified()),
             null,
-            String$(""),
+            String(""),
             null
         )
         if Planner.types_compatible(ptr_cc_ty, ptr_i8_ty) = false
@@ -19644,35 +19644,35 @@ define Planner
         ; types_compatible - Option accepts null (pointer[void]).
         let option_ty PlannedType(
             Span(0, 0),
-            String$("Option"),
-            String$(""),
+            String("Option"),
+            String(""),
             null,
             Lifetime.Unspecified(Unspecified()),
             null,
-            String$(""),
+            String(""),
             null
         )
         if Planner.types_compatible(option_ty, ptr_void_ty) = false
             return 47
 
         ; is_operator_name - operator chars and 'abs' are operators.
-        if Planner.is_operator_name(String$("+")) = false
+        if Planner.is_operator_name(String("+")) = false
             return 48
-        if Planner.is_operator_name(String$("abs")) = false
+        if Planner.is_operator_name(String("abs")) = false
             return 49
-        if Planner.is_operator_name(String$("foo"))
+        if Planner.is_operator_name(String("foo"))
             return 50
-        if Planner.is_operator_name(String$(""))
+        if Planner.is_operator_name(String(""))
             return 51
 
         ; get_operator_precedence - canonical ranks plus the 'unknown' zero.
-        if Planner.get_operator_precedence(String$("||")) <> 1
+        if Planner.get_operator_precedence(String("||")) <> 1
             return 52
-        if Planner.get_operator_precedence(String$("*")) <> 10
+        if Planner.get_operator_precedence(String("*")) <> 10
             return 53
-        if Planner.get_operator_precedence(String$("<>")) <> 6
+        if Planner.get_operator_precedence(String("<>")) <> 6
             return 54
-        if Planner.get_operator_precedence(String$("???")) <> 0
+        if Planner.get_operator_precedence(String("???")) <> 0
             return 55
 
         ; get_pointer_element_type - pointer[int] -> int.
@@ -19693,12 +19693,12 @@ define Planner
         opt_gens.put(0, ptr_int_ty)
         let opt_ptr_int_ty PlannedType(
             Span(0, 0),
-            String$("Option"),
-            String$(""),
+            String("Option"),
+            String(""),
             &opt_gens,
             Lifetime.Unspecified(Unspecified()),
             null,
-            String$(""),
+            String(""),
             null
         )
         let pe_opt Planner.get_pointer_element_type(opt_ptr_int_ty)
@@ -19729,7 +19729,7 @@ define Planner
             return 64
 
         ; infer_constant_type - string literal is pointer[i8] (Itanium "Pa").
-        let c_str Constant.String(StringConstant(Span(0, 0), String$("hi")))
+        let c_str Constant.String(StringConstant(Span(0, 0), String("hi")))
         let t_str Planner.infer_constant_type$(c_str)
         if t_str.name.equals("pointer") = false
             return 65
@@ -19808,21 +19808,21 @@ define Planner
             return 75
 
         ; is_primitive_type_name - representative cases.
-        if Planner.is_primitive_type_name(String$("int")) = false
+        if Planner.is_primitive_type_name(String("int")) = false
             return 76
-        if Planner.is_primitive_type_name(String$("pointer")) = false
+        if Planner.is_primitive_type_name(String("pointer")) = false
             return 77
-        if Planner.is_primitive_type_name(String$("Foo"))
+        if Planner.is_primitive_type_name(String("Foo"))
             return 78
 
         ; get_primitive_alignment - bool/char -> 1, int -> 8 (i64),
         ; default 8. Matches stage-0 (Planner.cpp:960) for sizeof
         ; consistency.
-        if Planner.get_primitive_alignment(String$("bool")) <> 1
+        if Planner.get_primitive_alignment(String("bool")) <> 1
             return 79
-        if Planner.get_primitive_alignment(String$("int")) <> 8
+        if Planner.get_primitive_alignment(String("int")) <> 8
             return 80
-        if Planner.get_primitive_alignment(String$("String")) <> 8
+        if Planner.get_primitive_alignment(String("String")) <> 8
             return 81
 
         ; align_offset - round up to nearest power-of-two multiple.
@@ -19840,15 +19840,15 @@ define Planner
             return 86
 
         ; occurs_in - direct hit on the top-level variable.
-        let tv7 TypeVariable(7, String$("T"))
+        let tv7 TypeVariable(7, String("T"))
         let var_ty PlannedType(
             Span(0, 0),
-            String$("T"),
-            String$(""),
+            String("T"),
+            String(""),
             null,
             Lifetime.Unspecified(Unspecified()),
             null,
-            String$(""),
+            String(""),
             &tv7
         )
         if Planner.occurs_in(7, var_ty) = false
@@ -19859,12 +19859,12 @@ define Planner
         vec_with_var.put(0, var_ty)
         let vec_of_t_ty PlannedType(
             Span(0, 0),
-            String$("Vector"),
-            String$(""),
+            String("Vector"),
+            String(""),
             &vec_with_var,
             Lifetime.Unspecified(Unspecified()),
             null,
-            String$(""),
+            String(""),
             null
         )
         if Planner.occurs_in(7, vec_of_t_ty) = false
@@ -19873,26 +19873,26 @@ define Planner
             return 89
 
         ; are_compatible_integer_types - both integer -> true, one not -> false.
-        if Planner.are_compatible_integer_types(String$("int"), String$("u64")) = false
+        if Planner.are_compatible_integer_types(String("int"), String("u64")) = false
             return 90
-        if Planner.are_compatible_integer_types(String$("int"), String$("bool"))
+        if Planner.are_compatible_integer_types(String("int"), String("bool"))
             return 91
 
         ; join_dotted_name - joins a Vector[String] with dots.
         var parts Vector[String]$(3)
-        parts.put(0, String$("scaly"))
-        parts.put(1, String$("containers"))
-        parts.put(2, String$("String"))
+        parts.put(0, String("scaly"))
+        parts.put(1, String("containers"))
+        parts.put(2, String("String"))
         let joined Planner.join_dotted_name$(parts)
-        if joined.equals(String$("scaly.containers.String")) = false
+        if joined.equals(String("scaly.containers.String")) = false
             return 92
 
         ; is_generic_type_param_name - single uppercase letter.
-        if Planner.is_generic_type_param_name(String$("T")) = false
+        if Planner.is_generic_type_param_name(String("T")) = false
             return 93
-        if Planner.is_generic_type_param_name(String$("Foo"))
+        if Planner.is_generic_type_param_name(String("Foo"))
             return 94
-        if Planner.is_generic_type_param_name(String$("t"))
+        if Planner.is_generic_type_param_name(String("t"))
             return 95
 
         ; needs_implicit_return_page - extern returns false regardless.
@@ -19900,7 +19900,7 @@ define Planner
             Span(0, 0),
             false,
             false,
-            String$("foo"),
+            String("foo"),
             Vector[GenericParameter]$(0),
             null,
             Vector[Item]$(0),
@@ -19917,7 +19917,7 @@ define Planner
             Span(0, 0),
             false,
             false,
-            String$("bar"),
+            String("bar"),
             Vector[GenericParameter]$(0),
             null,
             Vector[Item]$(0),
@@ -19931,7 +19931,7 @@ define Planner
 
         ; needs_implicit_return_page - returns primitive "int" -> false.
         var int_return_parts Vector[String]$(1)
-        int_return_parts.put(0, String$("int"))
+        int_return_parts.put(0, String("int"))
         let int_return_ty Type(
             Span(0, 0),
             int_return_parts,
@@ -19942,7 +19942,7 @@ define Planner
             Span(0, 0),
             false,
             false,
-            String$("baz"),
+            String("baz"),
             Vector[GenericParameter]$(0),
             null,
             Vector[Item]$(0),
@@ -19956,7 +19956,7 @@ define Planner
 
         ; needs_implicit_return_page - returns generic param "T" -> false.
         var t_return_parts Vector[String]$(1)
-        t_return_parts.put(0, String$("T"))
+        t_return_parts.put(0, String("T"))
         let t_return_ty Type(
             Span(0, 0),
             t_return_parts,
@@ -19967,7 +19967,7 @@ define Planner
             Span(0, 0),
             false,
             false,
-            String$("qux"),
+            String("qux"),
             Vector[GenericParameter]$(0),
             null,
             Vector[Item]$(0),
@@ -19981,7 +19981,7 @@ define Planner
 
         ; needs_implicit_return_page - returns "Foo" (user type) -> true.
         var foo_return_parts Vector[String]$(1)
-        foo_return_parts.put(0, String$("Foo"))
+        foo_return_parts.put(0, String("Foo"))
         let foo_return_ty Type(
             Span(0, 0),
             foo_return_parts,
@@ -19992,7 +19992,7 @@ define Planner
             Span(0, 0),
             false,
             false,
-            String$("make_foo"),
+            String("make_foo"),
             Vector[GenericParameter]$(0),
             null,
             Vector[Item]$(0),
@@ -20039,15 +20039,15 @@ define Planner
             return 108
 
         ; apply_substitution - follows chains T7 -> T8 -> int.
-        let tv8 TypeVariable(8, String$("U"))
+        let tv8 TypeVariable(8, String("U"))
         let var_ty8 PlannedType(
             Span(0, 0),
-            String$("U"),
-            String$(""),
+            String("U"),
+            String(""),
             null,
             Lifetime.Unspecified(Unspecified()),
             null,
-            String$(""),
+            String(""),
             &tv8
         )
         var sub_chain Vector[KeyValuePair[size_t, PlannedType]]$(2)
@@ -20105,11 +20105,11 @@ define Planner
         ; (int is 8 bytes per s103).
         var two_ints Vector[PlannedProperty]$(2)
         two_ints.put(0, PlannedProperty(
-            Span(0, 0), false, String$("x"), String$(""),
+            Span(0, 0), false, String("x"), String(""),
             int_ty, null, null, 0
         ))
         two_ints.put(1, PlannedProperty(
-            Span(0, 0), false, String$("y"), String$(""),
+            Span(0, 0), false, String("y"), String(""),
             int_ty, null, null, 0
         ))
         if Planner.compute_struct_size(&two_ints) <> 16
@@ -20135,11 +20135,11 @@ define Planner
         ; (8-byte alignment for int per s103).
         var bool_then_int Vector[PlannedProperty]$(2)
         bool_then_int.put(0, PlannedProperty(
-            Span(0, 0), false, String$("flag"), String$(""),
+            Span(0, 0), false, String("flag"), String(""),
             bool_ty, null, null, 0
         ))
         bool_then_int.put(1, PlannedProperty(
-            Span(0, 0), false, String$("count"), String$(""),
+            Span(0, 0), false, String("count"), String(""),
             int_ty, null, null, 0
         ))
         if Planner.compute_struct_size(&bool_then_int) <> 16
@@ -20227,12 +20227,12 @@ define Planner
         list_gens.put(0, int_ty)
         let list_int_ty PlannedType(
             Span(0, 0),
-            String$("List"),
-            String$(""),
+            String("List"),
+            String(""),
             &list_gens,
             Lifetime.Unspecified(Unspecified()),
             null,
-            String$(""),
+            String(""),
             null
         )
         if Planner.unify$(vec_ty, list_int_ty) <> null
@@ -20248,7 +20248,7 @@ define Planner
         ; solve_constraints - single T7 = int → binds T7 to int.
         var one_eq Vector[TypeConstraint]$(1)
         one_eq.put(0, TypeConstraint.Equality(
-            EqualityConstraint(var_ty, int_ty, Span(0, 0), String$(""))
+            EqualityConstraint(var_ty, int_ty, Span(0, 0), String(""))
         ))
         let sc_one Planner.solve_constraints$(&one_eq)
         if sc_one = null
@@ -20262,10 +20262,10 @@ define Planner
         ; solve_constraints - chain T7 = T8, T8 = int → T7 resolves to int.
         var chain Vector[TypeConstraint]$(2)
         chain.put(0, TypeConstraint.Equality(
-            EqualityConstraint(var_ty, var_ty8, Span(0, 0), String$(""))
+            EqualityConstraint(var_ty, var_ty8, Span(0, 0), String(""))
         ))
         chain.put(1, TypeConstraint.Equality(
-            EqualityConstraint(var_ty8, int_ty, Span(0, 0), String$(""))
+            EqualityConstraint(var_ty8, int_ty, Span(0, 0), String(""))
         ))
         let sc_chain Planner.solve_constraints$(&chain)
         if sc_chain = null
@@ -20277,10 +20277,10 @@ define Planner
         ; solve_constraints - conflicting: T7 = int, T7 = bool → null.
         var conflict Vector[TypeConstraint]$(2)
         conflict.put(0, TypeConstraint.Equality(
-            EqualityConstraint(var_ty, int_ty, Span(0, 0), String$(""))
+            EqualityConstraint(var_ty, int_ty, Span(0, 0), String(""))
         ))
         conflict.put(1, TypeConstraint.Equality(
-            EqualityConstraint(var_ty, bool_ty, Span(0, 0), String$(""))
+            EqualityConstraint(var_ty, bool_ty, Span(0, 0), String(""))
         ))
         if Planner.solve_constraints$(&conflict) <> null
             return 158
@@ -20311,12 +20311,12 @@ define Planner
         two_t.put(1, var_ty)
         let pair_of_t_ty PlannedType(
             Span(0, 0),
-            String$("Pair"),
-            String$(""),
+            String("Pair"),
+            String(""),
             &two_t,
             Lifetime.Unspecified(Unspecified()),
             null,
-            String$(""),
+            String(""),
             null
         )
         let fv_pair Planner.free_type_vars$(pair_of_t_ty)
@@ -20372,42 +20372,42 @@ define Planner
             return 176
 
         ; decode_utf8_to_code_point - ASCII "A" -> 65.
-        if Planner.decode_utf8_to_code_point(String$("A")) <> 65
+        if Planner.decode_utf8_to_code_point(String("A")) <> 65
             return 177
 
         ; decode_utf8_to_code_point - empty string -> -1.
-        if Planner.decode_utf8_to_code_point(String$("")) <> -1
+        if Planner.decode_utf8_to_code_point(String("")) <> -1
             return 178
 
         ; decode_utf8_to_code_point - "AB" (trailing byte) -> -1.
-        if Planner.decode_utf8_to_code_point(String$("AB")) <> -1
+        if Planner.decode_utf8_to_code_point(String("AB")) <> -1
             return 179
 
         ; lookup_local_in_scope - hit, miss.
         let lb_x LocalBinding(int_ty, false, false)
         let lb_y LocalBinding(bool_ty, true, true)
         var scope1 Vector[KeyValuePair[String, LocalBinding]]$(2)
-        scope1.put(0, KeyValuePair[String, LocalBinding](String$("x"), lb_x))
-        scope1.put(1, KeyValuePair[String, LocalBinding](String$("y"), lb_y))
-        let hit_x Planner.lookup_local_in_scope(scope1, String$("x"))
+        scope1.put(0, KeyValuePair[String, LocalBinding](String("x"), lb_x))
+        scope1.put(1, KeyValuePair[String, LocalBinding](String("y"), lb_y))
+        let hit_x Planner.lookup_local_in_scope(scope1, String("x"))
         if hit_x = null
             return 180
         if (*hit_x).is_mutable
             return 181
-        if Planner.lookup_local_in_scope(scope1, String$("z")) <> null
+        if Planner.lookup_local_in_scope(scope1, String("z")) <> null
             return 182
 
         ; lookup_local_in_stack - innermost shadows outer.
         let lb_x_outer LocalBinding(int_ty, false, false)
         let lb_x_inner LocalBinding(bool_ty, true, false)
         var outer_scope Vector[KeyValuePair[String, LocalBinding]]$(1)
-        outer_scope.put(0, KeyValuePair[String, LocalBinding](String$("x"), lb_x_outer))
+        outer_scope.put(0, KeyValuePair[String, LocalBinding](String("x"), lb_x_outer))
         var inner_scope Vector[KeyValuePair[String, LocalBinding]]$(1)
-        inner_scope.put(0, KeyValuePair[String, LocalBinding](String$("x"), lb_x_inner))
+        inner_scope.put(0, KeyValuePair[String, LocalBinding](String("x"), lb_x_inner))
         var stack Vector[Vector[KeyValuePair[String, LocalBinding]]]$(2)
         stack.put(0, outer_scope)
         stack.put(1, inner_scope)
-        let resolved Planner.lookup_local_in_stack(stack, String$("x"))
+        let resolved Planner.lookup_local_in_stack(stack, String("x"))
         if resolved = null
             return 183
         if (*resolved).is_mutable = false
@@ -20415,7 +20415,7 @@ define Planner
 
         ; resolve_type_base - simple path.
         var int_name_vec Vector[String]$(1)
-        int_name_vec.put(0, String$("int"))
+        int_name_vec.put(0, String("int"))
         let int_type Type(
             Span(0, 0),
             int_name_vec,
@@ -20430,9 +20430,9 @@ define Planner
 
         ; resolve_type_base - dotted name.
         var str_name_vec Vector[String]$(3)
-        str_name_vec.put(0, String$("scaly"))
-        str_name_vec.put(1, String$("containers"))
-        str_name_vec.put(2, String$("String"))
+        str_name_vec.put(0, String("scaly"))
+        str_name_vec.put(1, String("containers"))
+        str_name_vec.put(2, String("String"))
         let str_type Type(
             Span(0, 0),
             str_name_vec,
@@ -20445,7 +20445,7 @@ define Planner
 
         ; resolve_type_base - pointer[int] gets "P" mangled prefix.
         var ptr_name_vec Vector[String]$(1)
-        ptr_name_vec.put(0, String$("pointer"))
+        ptr_name_vec.put(0, String("pointer"))
         var ptr_inner_gens Vector[Type]$(1)
         ptr_inner_gens.put(0, int_type)
         let ptr_type Type(
@@ -20474,24 +20474,24 @@ define Planner
 
         ; name_substitution_lookup - hit/miss.
         var t_subst Vector[KeyValuePair[String, PlannedType]]$(1)
-        t_subst.put(0, KeyValuePair[String, PlannedType](String$("T"), int_ty))
-        let hit_t Planner.name_substitution_lookup(t_subst, String$("T"))
+        t_subst.put(0, KeyValuePair[String, PlannedType](String("T"), int_ty))
+        let hit_t Planner.name_substitution_lookup(t_subst, String("T"))
         if hit_t = null
             return 194
         if (*hit_t).name.equals("int") = false
             return 195
-        if Planner.name_substitution_lookup(t_subst, String$("K")) <> null
+        if Planner.name_substitution_lookup(t_subst, String("K")) <> null
             return 196
 
         ; apply_name_substitution - standalone "T" replaced by int.
         let t_ty PlannedType(
             Span(0, 0),
-            String$("T"),
-            String$(""),
+            String("T"),
+            String(""),
             null,
             Lifetime.Unspecified(Unspecified()),
             null,
-            String$(""),
+            String(""),
             null
         )
         let subst_t Planner.apply_name_substitution$(t_ty, &t_subst)
@@ -20503,12 +20503,12 @@ define Planner
         vec_t_gens_ns.put(0, t_ty)
         let vec_t_ns_ty PlannedType(
             Span(0, 0),
-            String$("Vector"),
-            String$(""),
+            String("Vector"),
+            String(""),
             &vec_t_gens_ns,
             Lifetime.Unspecified(Unspecified()),
             null,
-            String$(""),
+            String(""),
             null
         )
         let subst_vec Planner.apply_name_substitution$(vec_t_ns_ty, &t_subst)
@@ -20564,20 +20564,20 @@ define Planner
 
         ; ====================================================================
         ; Planner-instance (scope stack) tests. Exercises the struct surgery
-        ; added in this session — `Planner.Planner$(...)` constructor, plus
+        ; added in this session — `Planner.Planner(...)` constructor, plus
         ; push_scope / define_local / lookup_local / pop_scope sequencing.
         ; ====================================================================
 
-        var p Planner.Planner$(String$("test.scaly"))
+        var p Planner.Planner(String("test.scaly"))
 
         ; Empty stack → no local named "x".
-        if p.lookup_local(String$("x")) <> null
+        if p.lookup_local(String("x")) <> null
             return 213
 
         ; Push a scope, define "x" = int, lookup → hits.
         p.push_scope()
-        p.define_local(String$("x"), int_ty, false, false)
-        let px1 p.lookup_local(String$("x"))
+        p.define_local(String("x"), int_ty, false, false)
+        let px1 p.lookup_local(String("x"))
         if px1 = null
             return 214
         if (*px1).name.equals("int") = false
@@ -20585,15 +20585,15 @@ define Planner
 
         ; Push inner scope, shadow "x" with bool.
         p.push_scope()
-        p.define_local(String$("x"), bool_ty, true, false)
-        let px2 p.lookup_local(String$("x"))
+        p.define_local(String("x"), bool_ty, true, false)
+        let px2 p.lookup_local(String("x"))
         if px2 = null
             return 216
         if (*px2).name.equals("bool") = false
             return 217
 
         ; Lookup binding flags on inner "x".
-        let pxb2 p.lookup_local_binding(String$("x"))
+        let pxb2 p.lookup_local_binding(String("x"))
         if pxb2 = null
             return 218
         if (*pxb2).is_mutable = false
@@ -20601,7 +20601,7 @@ define Planner
 
         ; Pop inner scope, outer "x" reappears.
         p.pop_scope()
-        let px3 p.lookup_local(String$("x"))
+        let px3 p.lookup_local(String("x"))
         if px3 = null
             return 220
         if (*px3).name.equals("int") = false
@@ -20609,25 +20609,25 @@ define Planner
 
         ; Pop outer scope, no locals remain.
         p.pop_scope()
-        if p.lookup_local(String$("x")) <> null
+        if p.lookup_local(String("x")) <> null
             return 222
 
         ; ====================================================================
         ; Type-substitution tests.
         ; ====================================================================
 
-        if p.lookup_type_substitution(String$("T")) <> null
+        if p.lookup_type_substitution(String("T")) <> null
             return 223
 
-        p.define_type_substitution(String$("T"), int_ty)
-        let ps_t p.lookup_type_substitution(String$("T"))
+        p.define_type_substitution(String("T"), int_ty)
+        let ps_t p.lookup_type_substitution(String("T"))
         if ps_t = null
             return 224
         if (*ps_t).name.equals("int") = false
             return 225
 
         p.clear_type_substitutions()
-        if p.lookup_type_substitution(String$("T")) <> null
+        if p.lookup_type_substitution(String("T")) <> null
             return 226
 
         ; ====================================================================
@@ -20645,7 +20645,7 @@ define Planner
         ; fresh_type_var + constraint-solver methods on the Planner instance.
         ; ====================================================================
 
-        let fv1 p.fresh_type_var$(String$("T"))
+        let fv1 p.fresh_type_var$(String("T"))
         if fv1.variable = null
             return 230
         if (*fv1.variable).id <> 3
@@ -20663,13 +20663,13 @@ define Planner
 
         ; Constraints are cleared after a successful solve — adding an
         ; unrelated constraint and solving again should still succeed.
-        let fv2 p.fresh_type_var$(String$("U"))
+        let fv2 p.fresh_type_var$(String("U"))
         p.add_equality_constraint(fv2, bool_ty, Span(0, 0))
         if p.solve_and_apply$() = false
             return 234
 
         ; Add a conflicting pair: fv3 = int, fv3 = bool. Expect failure.
-        let fv3 p.fresh_type_var$(String$("V"))
+        let fv3 p.fresh_type_var$(String("V"))
         p.add_equality_constraint(fv3, int_ty, Span(0, 0))
         p.add_equality_constraint(fv3, bool_ty, Span(0, 0))
         if p.solve_and_apply$()
@@ -20680,18 +20680,18 @@ define Planner
         ; ====================================================================
 
         ; A clean Planner — no active substitutions — resolves "int" plainly.
-        var p2 Planner.Planner$(String$("test2.scaly"))
+        var p2 Planner.Planner(String("test2.scaly"))
         let pt_int p2.plan_type$(int_type)
         if pt_int.name.equals("int") = false
             return 236
 
         ; With T → int substitution active, Vector[T] becomes Vector[int].
-        p2.define_type_substitution(String$("T"), int_ty)
+        p2.define_type_substitution(String("T"), int_ty)
         var vec_t_path Vector[String]$(1)
-        vec_t_path.put(0, String$("Vector"))
+        vec_t_path.put(0, String("Vector"))
         var vec_t_generics Vector[Type]$(1)
         var t_path Vector[String]$(1)
-        t_path.put(0, String$("T"))
+        t_path.put(0, String("T"))
         vec_t_generics.put(0, Type(
             Span(0, 0),
             t_path,
@@ -20723,14 +20723,14 @@ define Planner
         let model_item Item(
             Span(0, 0),
             false,
-            &(String$("x")),
+            &(String("x")),
             &int_type,
             Vector[Attribute]$(0)
         )
         let pl_item p2.plan_item$(model_item)
         if pl_item.name = null
             return 241
-        if (*pl_item.name).equals(String$("x")) = false
+        if (*pl_item.name).equals(String("x")) = false
             return 242
         if pl_item.item_type = null
             return 243
@@ -20804,17 +20804,17 @@ define Planner
         ; plan_binding - `let x: int = 42`:
         ;   - produces PlannedBinding with PlannedItem.name = "x"
         ;   - registers x in the current scope
-        var p3 Planner.Planner$(String$("test3.scaly"))
+        var p3 Planner.Planner(String("test3.scaly"))
         p3.push_scope()
         var init_ops Vector[Operand]$(1)
         init_ops.put(0, op_42)
         let model_bind Binding(
             Span(0, 0),
-            String$("let"),
+            String("let"),
             Item(
                 Span(0, 0),
                 false,
-                &(String$("x")),
+                &(String("x")),
                 &int_type,
                 Vector[Attribute]$(0)
             ),
@@ -20825,11 +20825,11 @@ define Planner
             return 256
         if pb.binding_item.name = null
             return 257
-        if (*pb.binding_item.name).equals(String$("x")) = false
+        if (*pb.binding_item.name).equals(String("x")) = false
             return 258
 
         ; After plan_binding, x should be a local in p3's scope.
-        let plocal_x p3.lookup_local(String$("x"))
+        let plocal_x p3.lookup_local(String("x"))
         if plocal_x = null
             return 259
         if (*plocal_x).name.equals("int") = false
@@ -20869,7 +20869,7 @@ define Planner
             return 265
 
         ; plan_statement over a Continue.
-        let stmt_continue Statement.Continue(Continue(Span(0, 0), String$("")))
+        let stmt_continue Statement.Continue(Continue(Span(0, 0), String("")))
         let pl_cont p3.plan_statement$(stmt_continue)
         let stmt_is_continue choose pl_cont
             when c: PlannedContinue
@@ -20893,13 +20893,13 @@ define Planner
         let model_prop Property(
             Span(0, 0),
             false,
-            String$("x"),
+            String("x"),
             &int_type,
             null,
             Vector[Attribute]$(0)
         )
         let pl_prop p3.plan_property$(model_prop)
-        if pl_prop.name.equals(String$("x")) = false
+        if pl_prop.name.equals(String("x")) = false
             return 269
         if pl_prop.prop_type.name.equals("int") = false
             return 270
@@ -20909,12 +20909,12 @@ define Planner
         ; plan_variant - Variant { name: "Some", type: int, tag=1 }.
         let model_variant Variant(
             Span(0, 0),
-            String$("Some"),
+            String("Some"),
             &int_type,
             Vector[Attribute]$(0)
         )
         let pl_variant p3.plan_variant$(model_variant, 1)
-        if pl_variant.name.equals(String$("Some")) = false
+        if pl_variant.name.equals(String("Some")) = false
             return 272
         if pl_variant.tag <> 1
             return 273
@@ -20926,7 +20926,7 @@ define Planner
         x_params.put(0, Item(
             Span(0, 0),
             false,
-            &(String$("x")),
+            &(String("x")),
             &int_type,
             Vector[Attribute]$(0)
         ))
@@ -20934,7 +20934,7 @@ define Planner
             Span(0, 0),
             false,
             true,
-            String$("foo"),
+            String("foo"),
             Vector[GenericParameter]$(0),
             null,
             x_params,
@@ -20944,7 +20944,7 @@ define Planner
             Implementation.Extern(Extern(Span(0, 0)))
         )
         let pl_fn p3.plan_function$(model_fn, null)
-        if pl_fn.name.equals(String$("foo")) = false
+        if pl_fn.name.equals(String("foo")) = false
             return 275
         if pl_fn.input = null
             return 276
@@ -20970,8 +20970,8 @@ define Planner
             Vector[scalyc.compiler.Model.Member]$(0),
             empty_symbols
         )
-        let pl_struct p3.plan_structure$(empty_struct, String$("Foo"))
-        if pl_struct.name.equals(String$("Foo")) = false
+        let pl_struct p3.plan_structure$(empty_struct, String("Foo"))
+        if pl_struct.name.equals(String("Foo")) = false
             return 280
         if pl_struct.size <> 0
             return 281
@@ -20997,21 +20997,21 @@ define Planner
         plus_params.put(0, Item(
             Span(0, 0),
             false,
-            &(String$("this")),
+            &(String("this")),
             null,
             Vector[Attribute]$(0)
         ))
         plus_params.put(1, Item(
             Span(0, 0),
             false,
-            &(String$("other")),
+            &(String("other")),
             &int_type,
             Vector[Attribute]$(0)
         ))
         let model_op Operator(
             Span(0, 0),
             false,
-            String$("+"),
+            String("+"),
             Vector[GenericParameter]$(0),
             plus_params,
             &int_type,
@@ -21019,7 +21019,7 @@ define Planner
             Implementation.Intrinsic(Intrinsic(Span(0, 0)))
         )
         let pl_op p3.plan_operator$(model_op, null)
-        if pl_op.name.equals(String$("+")) = false
+        if pl_op.name.equals(String("+")) = false
             return 285
         if pl_op.input = null
             return 286
@@ -21031,7 +21031,7 @@ define Planner
         ; ====================================================================
         ; Lambda: `\: 42` — no params, body is an Action returning 42.
         ; ====================================================================
-        var p4 Planner.Planner$(String$("test_lambda.scaly"))
+        var p4 Planner.Planner(String("test_lambda.scaly"))
         let lam_body Action(init_ops, Vector[Operand]$(0))
         let model_lam Lambda(
             Span(0, 0),
@@ -21039,22 +21039,22 @@ define Planner
             lam_body
         )
         let pl_lam p4.plan_lambda$(model_lam)
-        if pl_lam.mangled_name.equals(String$("_ZN6lambda0Ev")) = false
+        if pl_lam.mangled_name.equals(String("_ZN6lambda0Ev")) = false
             return 289
-        if pl_lam.return_type.name.equals(String$("int")) = false
+        if pl_lam.return_type.name.equals(String("int")) = false
             return 290
 
         ; A second lambda bumps the counter to 1.
         let pl_lam2 p4.plan_lambda$(model_lam)
-        if pl_lam2.mangled_name.equals(String$("_ZN6lambda1Ev")) = false
+        if pl_lam2.mangled_name.equals(String("_ZN6lambda1Ev")) = false
             return 291
 
         ; ====================================================================
         ; Repeat: a do-while whose body is the same trivial Action.
         ; ====================================================================
-        let model_rep Repeat(Span(0, 0), lam_body, String$(""))
+        let model_rep Repeat(Span(0, 0), lam_body, String(""))
         let pl_rep p4.plan_repeat$(model_rep)
-        if pl_rep.body.result_type.name.equals(String$("int")) = false
+        if pl_rep.body.result_type.name.equals(String("int")) = false
             return 292
 
         0

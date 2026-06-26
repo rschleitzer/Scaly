@@ -416,7 +416,7 @@ function handle_component#(syntax: ComponentSyntax) returns Component
                     let name_op (*name_op_ptr)
                     choose name_op.expression
                         when type_expr: TypeSyntax
-                            set name: String$(type_expr.name.name)
+                            set name: String(type_expr.name.name)
                         else {}
                 }
             }
@@ -490,9 +490,9 @@ function handle_expression#(syntax: ExpressionSyntax) returns Expression
             if name_syntax.extensions = null
             {
                 let loc Span(name_syntax.start, name_syntax.end)
-                if name_syntax.name.equals(String$("true"))
+                if name_syntax.name.equals(String("true"))
                     return Expression.Constant(Constant.Boolean(BooleanConstant(loc, true)))
-                if name_syntax.name.equals(String$("false"))
+                if name_syntax.name.equals(String("false"))
                     return Expression.Constant(Constant.Boolean(BooleanConstant(loc, false)))
             }
 
@@ -618,12 +618,12 @@ function handle_lambda#(syntax: LambdaSyntax) returns Lambda
             if op_ptr <> null
             {
                 let op (*op_ptr)
-                var param_name: String$ String$("")
+                var param_name: String String("")
                 choose op.expression
                     when name_syn: NameSyntax
-                        set param_name: String$(name_syn.name)
+                        set param_name: String(name_syn.name)
                     else
-                        set param_name: String$("")
+                        set param_name: String("")
                 var name_holder Vector[String]#(1)
                 name_holder.put(0, String#(param_name))
                 input.put(i, Item(
@@ -2440,7 +2440,7 @@ procedure handle_module_decl#(path: String, mod_syntax: ModuleSyntax, is_private
 function format_version#(rp, version_ref: ref[VersionSyntax]) returns String
 {
     let v (*version_ref)
-    var sb StringBuilder$()
+    var sb StringBuilder()
     choose v.majorMinor
         when fp: FloatingPoint
             sb.append fp.value
@@ -2468,10 +2468,10 @@ function scaly_home_base#(rp) returns String
     let home getenv "SCALY_HOME"
     if home = null
         return String^rp("")
-    var home_str String$(home)
+    var home_str String(home)
     if home_str.get_length() = 0
         return String^rp("")
-    var sb StringBuilder$()
+    var sb StringBuilder()
     sb.append home_str
     sb.append("/" as char)
     sb.to_string^rp()
@@ -2483,12 +2483,12 @@ function scaly_home_base#(rp) returns String
 procedure handle_package_decl#(pkg_syntax: PackageSyntax, packages: ref[Array[Module]])
 {
     let pkg_name pkg_syntax.name.name
-    var version_str String$("0.1.0")
+    var version_str String("0.1.0")
     if pkg_syntax.version <> null
         set version_str: format_version$(pkg_syntax.version.unwrap())
 
     ; Search path: <SCALY_HOME/>packages/<name>/<version>/
-    var sb StringBuilder$()
+    var sb StringBuilder()
     sb.append(scaly_home_base#())
     sb.append "packages/"
     sb.append pkg_name
@@ -2506,7 +2506,7 @@ procedure handle_package_decl#(pkg_syntax: PackageSyntax, packages: ref[Array[Mo
 function build_referenced_module#(path: String, name: String, is_private: bool) returns Module
 {
     ; Compute file path: <path>/<name>.scaly
-    var sb StringBuilder$()
+    var sb StringBuilder()
     if path.get_length() > 0
     {
         sb.append path
@@ -2535,7 +2535,7 @@ function build_referenced_module#(path: String, name: String, is_private: bool) 
     if contents.get_length() = 0
         return empty_module
 
-    var p Parser$(contents)
+    var p Parser(contents)
     var syntax: ProgramSyntax
     choose p.parse_program#()
         when err: Error
@@ -2544,7 +2544,7 @@ function build_referenced_module#(path: String, name: String, is_private: bool) 
             set syntax: prog
 
     ; Sub-path for nested modules: <path>/<name>
-    var sub_sb StringBuilder$()
+    var sub_sb StringBuilder()
     if path.get_length() > 0
     {
         sub_sb.append path
@@ -2658,11 +2658,11 @@ function build_program#(file_name: String, program_name: String, syntax: Program
     var main_module: Module initial_module
     if enable_prelude
     {
-        var prelude_sb StringBuilder$()
+        var prelude_sb StringBuilder()
         prelude_sb.append(scaly_home_base#())
         prelude_sb.append "packages/scaly/0.1.0/scaly"
         let prelude_path prelude_sb.to_string#()
-        let prelude_module build_referenced_module#(prelude_path, String$("prelude"), false)
+        let prelude_module build_referenced_module#(prelude_path, String("prelude"), false)
 
         if prelude_module.members.length > 0
         {
@@ -2706,13 +2706,13 @@ function build_program#(file_name: String, program_name: String, syntax: Program
 function test() returns int
 {
     ; Test 200: Boolean constant - "true" maps to BooleanConstant with value=true
-    var parser Parser#(String$("true"))
+    var parser Parser#(String("true"))
     choose parser.parse_program#()
         when err: Error
             return 200
         when syntax: Success
         {
-            let program build_program#(String$("t1.scaly"), String$("t1"), syntax, true)
+            let program build_program#(String("t1.scaly"), String("t1"), syntax, true)
             if program.statements.length <> 1
                 return 201
 
@@ -2751,13 +2751,13 @@ function test() returns int
         }
 
     ; Test 210: Integer literal - "42" maps to IntegerConstant
-    set parser: Parser#(String$("42"))
+    set parser: Parser#(String("42"))
     choose parser.parse_program#()
         when err: Error
             return 210
         when syntax: Success
         {
-            let program build_program#(String$("t2.scaly"), String$("t2"), syntax, true)
+            let program build_program#(String("t2.scaly"), String("t2"), syntax, true)
             if program.statements.length <> 1
                 return 211
 
@@ -2788,13 +2788,13 @@ function test() returns int
         }
 
     ; Test 220: String literal - "\"hello\"" maps to StringConstant
-    set parser: Parser#(String$("\"hello\""))
+    set parser: Parser#(String("\"hello\""))
     choose parser.parse_program#()
         when err: Error
             return 220
         when syntax: Success
         {
-            let program build_program#(String$("t3.scaly"), String$("t3"), syntax, true)
+            let program build_program#(String("t3.scaly"), String("t3"), syntax, true)
             if program.statements.length <> 1
                 return 221
 
@@ -2825,13 +2825,13 @@ function test() returns int
         }
 
     ; Test 230: Let binding - binding_type="const", item.name="x"
-    set parser: Parser#(String$("let x 42"))
+    set parser: Parser#(String("let x 42"))
     choose parser.parse_program#()
         when err: Error
             return 230
         when syntax: Success
         {
-            let program build_program#(String$("t4.scaly"), String$("t4"), syntax, true)
+            let program build_program#(String("t4.scaly"), String("t4"), syntax, true)
             if program.statements.length <> 1
                 return 231
 
@@ -2843,13 +2843,13 @@ function test() returns int
             choose stmt
                 when binding: Binding
                 {
-                    if binding.binding_type.equals(String$("const")) = false
+                    if binding.binding_type.equals(String("const")) = false
                         return 233
 
                     if binding.item.name = null
                         return 234
 
-                    if (*binding.item.name).equals(String$("x")) = false
+                    if (*binding.item.name).equals(String("x")) = false
                         return 235
 
                 }
@@ -2858,13 +2858,13 @@ function test() returns int
         }
 
     ; Test 240: Var binding with type - binding_type="var", name="y", type path=["int"]
-    set parser: Parser#(String$("var y: int 0"))
+    set parser: Parser#(String("var y: int 0"))
     choose parser.parse_program#()
         when err: Error
             return 240
         when syntax: Success
         {
-            let program build_program#(String$("t5.scaly"), String$("t5"), syntax, true)
+            let program build_program#(String("t5.scaly"), String("t5"), syntax, true)
             if program.statements.length <> 1
                 return 241
 
@@ -2876,13 +2876,13 @@ function test() returns int
             choose stmt
                 when binding: Binding
                 {
-                    if binding.binding_type.equals(String$("var")) = false
+                    if binding.binding_type.equals(String("var")) = false
                         return 243
 
                     if binding.item.name = null
                         return 244
 
-                    if (*binding.item.name).equals(String$("y")) = false
+                    if (*binding.item.name).equals(String("y")) = false
                         return 245
 
                     if binding.item.type = null
@@ -2896,7 +2896,7 @@ function test() returns int
                     if type_name_ptr = null
                         return 248
 
-                    if (*type_name_ptr).equals(String$("int")) = false
+                    if (*type_name_ptr).equals(String("int")) = false
                         return 249
 
                 }
@@ -2905,13 +2905,13 @@ function test() returns int
         }
 
     ; Test 250: Name expression - "foo" maps to Expression.Type with path=["foo"]
-    set parser: Parser#(String$("foo"))
+    set parser: Parser#(String("foo"))
     choose parser.parse_program#()
         when err: Error
             return 250
         when syntax: Success
         {
-            let program build_program#(String$("t6.scaly"), String$("t6"), syntax, true)
+            let program build_program#(String("t6.scaly"), String("t6"), syntax, true)
             if program.statements.length <> 1
                 return 251
 
@@ -2938,7 +2938,7 @@ function test() returns int
                             if name_ptr = null
                                 return 255
 
-                            if (*name_ptr).equals(String$("foo")) = false
+                            if (*name_ptr).equals(String("foo")) = false
                                 return 256
 
                         }
@@ -2950,13 +2950,13 @@ function test() returns int
         }
 
     ; Test 260: If expression - top-level if produces Expression.If
-    set parser: Parser#(String$("if true\n    1\nelse\n    0"))
+    set parser: Parser#(String("if true\n    1\nelse\n    0"))
     choose parser.parse_program#()
         when err: Error
             return 260
         when syntax: Success
         {
-            let program build_program#(String$("t7.scaly"), String$("t7"), syntax, true)
+            let program build_program#(String("t7.scaly"), String("t7"), syntax, true)
             if program.statements.length <> 1
                 return 261
 
@@ -2983,13 +2983,13 @@ function test() returns int
         }
 
     ; Test 270: Function definition - pure=true, name="answer"
-    set parser: Parser#(String$("function answer() returns int\n    42"))
+    set parser: Parser#(String("function answer() returns int\n    42"))
     choose parser.parse_program#()
         when err: Error
             return 270
         when syntax: Success
         {
-            let program build_program#(String$("t8.scaly"), String$("t8"), syntax, true)
+            let program build_program#(String("t8.scaly"), String("t8"), syntax, true)
             if program.module_.members.length <> 1
                 return 271
 
@@ -3001,7 +3001,7 @@ function test() returns int
             choose member
                 when fn: Function
                 {
-                    if fn.name.equals(String$("answer")) = false
+                    if fn.name.equals(String("answer")) = false
                         return 273
 
                     if fn.pure = false
@@ -3013,13 +3013,13 @@ function test() returns int
         }
 
     ; Test 280: Procedure definition - pure=false, name="mutate"
-    set parser: Parser#(String$("procedure mutate(this)\n    0"))
+    set parser: Parser#(String("procedure mutate(this)\n    0"))
     choose parser.parse_program#()
         when err: Error
             return 280
         when syntax: Success
         {
-            let program build_program#(String$("t9.scaly"), String$("t9"), syntax, true)
+            let program build_program#(String("t9.scaly"), String("t9"), syntax, true)
             if program.module_.members.length <> 1
                 return 281
 
@@ -3031,7 +3031,7 @@ function test() returns int
             choose member
                 when fn: Function
                 {
-                    if fn.name.equals(String$("mutate")) = false
+                    if fn.name.equals(String("mutate")) = false
                         return 283
 
                     if fn.pure = true
@@ -3043,13 +3043,13 @@ function test() returns int
         }
 
     ; Test 290: Structure definition - Concept with Definition.Structure
-    set parser: Parser#(String$("define Point(x: int, y: int)"))
+    set parser: Parser#(String("define Point(x: int, y: int)"))
     choose parser.parse_program#()
         when err: Error
             return 290
         when syntax: Success
         {
-            let program build_program#(String$("t10.scaly"), String$("t10"), syntax, true)
+            let program build_program#(String("t10.scaly"), String("t10"), syntax, true)
             if program.module_.members.length <> 1
                 return 291
 
@@ -3061,7 +3061,7 @@ function test() returns int
             choose member
                 when concept: Concept
                 {
-                    if concept.name.equals(String$("Point")) = false
+                    if concept.name.equals(String("Point")) = false
                         return 293
 
                     choose concept.definition
@@ -3079,13 +3079,13 @@ function test() returns int
         }
 
     ; Test 297: Union definition - Concept with Definition.Union and 2 variants
-    set parser: Parser#(String$("define Option union(Some: int, None)"))
+    set parser: Parser#(String("define Option union(Some: int, None)"))
     choose parser.parse_program#()
         when err: Error
             return 297
         when syntax: Success
         {
-            let program build_program#(String$("t11.scaly"), String$("t11"), syntax, true)
+            let program build_program#(String("t11.scaly"), String("t11"), syntax, true)
             if program.module_.members.length <> 1
                 return 298
 
@@ -3097,7 +3097,7 @@ function test() returns int
             choose member
                 when concept: Concept
                 {
-                    if concept.name.equals(String$("Option")) = false
+                    if concept.name.equals(String("Option")) = false
                         return 300
 
                     choose concept.definition
