@@ -14198,11 +14198,20 @@ define Planner
             if this.array_contains_name(escaping_targets, name) = false
                 escaping_targets.add(String^rp(name))
         }
+        ; A binding initializer escapes the frame when its construction carries
+        ; an explicit `^name` (Reference) or `#` (Call) lifetime. For a
+        ; NON-generic type (`String^rp(…)`) the marker lands on the leading
+        ; Type operand; for a GENERIC container (`Vector[T]^rp(…)`) the parser
+        ; splits `Vector[T]^rp` into [Type(Vector), Matrix([T])^rp] and the
+        ; lifetime rides the MATRIX operand's `life` (s107). Scan EVERY operand
+        ; (top-level only — nested ctor args in a Tuple are not the binding's
+        ; own placement) for either form.
         function operand_seq_escaping_ctor(this: Planner, ops: Vector[Operand]) returns bool
         {
-            if ops.length >= 1
+            var i: size_t 0
+            while i < ops.length
             {
-                let h ops.get 0
+                let h ops.get i
                 if h <> null
                     choose (*h).expression
                         when t: scalyc.compiler.Model.Type
@@ -14215,8 +14224,19 @@ define Planner
                                 else
                                     0
                         }
+                        when mx: Matrix
+                        {
+                            choose mx.life
+                                when r: Reference
+                                    return true
+                                when c: Call
+                                    return true
+                                else
+                                    0
+                        }
                         else
                             0
+                set i: i + 1
             }
             false
         }
@@ -14232,6 +14252,8 @@ define Planner
                         let head (*head_ptr)
                         let args (*args_ptr)
                         var recv_escapes: bool false
+                        ; Form A — explicit member access: head is `recv` (Type
+                        ; name=["recv"]) with member_access=[…, "put"/"add"].
                         if head.member_access <> null
                         {
                             let ma (*head.member_access)
@@ -14263,6 +14285,39 @@ define Planner
                                 }
                             }
                         }
+                        ; Form B — dotted name: `recv.put(args)` is modeled as a
+                        ; Type whose name is ["recv", "put"] with member_access=null
+                        ; (the parser folds the method into the name's extensions).
+                        ; This is the shape the tree-builders actually emit
+                        ; (`gens_holder.put(0, gen_types)` in Modeler.handle_type#),
+                        ; so without it the store-escape never fired.
+                        if head.member_access = null
+                            choose head.expression
+                                when t: scalyc.compiler.Model.Type
+                                {
+                                    if t.name.length = 2
+                                    {
+                                        let meth_ptr t.name.get 1
+                                        if meth_ptr <> null
+                                        {
+                                            let meth (*meth_ptr)
+                                            if meth.equals(String("put")) || meth.equals(String("add"))
+                                            {
+                                                let rn_ptr t.name.get 0
+                                                if rn_ptr <> null
+                                                {
+                                                    let rn (*rn_ptr)
+                                                    if this.array_contains_name(escaping_targets, rn)
+                                                        set recv_escapes: true
+                                                    if this.array_contains_name(escaping_return_locals, rn)
+                                                        set recv_escapes: true
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                                else
+                                    0
                         if recv_escapes
                             choose args.expression
                                 when tup: scalyc.compiler.Model.Tuple
