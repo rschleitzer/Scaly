@@ -106,7 +106,7 @@ define cli
     ; argv: argument vector (C-style array of char pointers)
     function parse_args#(argc: int, argv: pointer[pointer[char]]) returns Options
     {
-        var opts Options#()
+        var opts Options()
 
         var i 1  ; Skip program name (argv[0])
         while i < argc
@@ -172,11 +172,11 @@ define cli
                     if i < argc
                     {
                         let out_ptr *(argv + i)
-                        set opts.output_file: String#(out_ptr)
+                        set opts.output_file: String(out_ptr)
                     }
                     else
                     {
-                        set opts.error_message: String#("-o requires a filename")
+                        set opts.error_message: String("-o requires a filename")
                     }
                 }
                 else if arg.equals(String("--run"))
@@ -186,12 +186,12 @@ define cli
                     if i < argc
                     {
                         let fn_ptr *(argv + i)
-                        set opts.run_function: String#(fn_ptr)
+                        set opts.run_function: String(fn_ptr)
                         set opts.run_mode: true
                     }
                     else
                     {
-                        set opts.error_message: String#("--run requires a function name")
+                        set opts.error_message: String("--run requires a function name")
                     }
                 }
                 else if arg.starts_with(String("-L")) & arg.get_length() > 2
@@ -208,7 +208,7 @@ define cli
                 else
                 {
                     ; Unknown option
-                    set opts.error_message: String#("Unknown option: ")
+                    set opts.error_message: String("Unknown option: ")
                     ; TODO: append arg to error message
                 }
             }
@@ -222,11 +222,11 @@ define cli
                 }
                 else if opts.has_input()
                 {
-                    set opts.error_message: String#("Multiple input files not yet supported")
+                    set opts.error_message: String("Multiple input files not yet supported")
                 }
                 else
                 {
-                    set opts.input_file: String#(arg_ptr)
+                    set opts.input_file: String(arg_ptr)
                 }
             }
 
@@ -361,7 +361,7 @@ define cli
 
         ; Parse the program
         var syntax: parser.ProgramSyntax
-        choose p.parse_program#()
+        choose p.parse_program()
             when err: Error
             {
                 ; s194: the thrown error now survives propagation (NPO
@@ -371,7 +371,7 @@ define cli
                 ; Different means the top-level construct simply didn't match.
                 choose err
                     when i: Invalid
-                        cli.print_parse_error#(opts.input_file, source, i.start, i.message)
+                        cli.print_parse_error(opts.input_file, source, i.start, i.message)
                     when d: Different
                         Console.println "Parse error"
                 return 2
@@ -395,9 +395,9 @@ define cli
         ; ================================================================
 
         ; Extract program name from filename (strip path and extension)
-        var program_name cli.extract_program_name#(opts.input_file)
+        var program_name cli.extract_program_name(opts.input_file)
 
-        let model Modeler.build_program#(opts.input_file, program_name, syntax, opts.no_prelude = false)
+        let model Modeler.build_program(opts.input_file, program_name, syntax, opts.no_prelude = false)
 
         if opts.verbose
             Console.println "Model built successfully"
@@ -428,7 +428,7 @@ define cli
         ; mirroring stage-0's error behavior.
         if planner.has_diagnostics()
         {
-            cli.print_diagnostics#(&planner, opts.input_file, source)
+            cli.print_diagnostics(&planner, opts.input_file, source)
             return 4
         }
 
@@ -554,7 +554,7 @@ define cli
         }
 
         ; Emit object file to fixed temp path, link with clang, then unlink temp.
-        var tmp_obj String#("/tmp/scalyc_out.o")
+        var tmp_obj String("/tmp/scalyc_out.o")
         let obj_ok emitter.write_object_to_file tmp_obj
         if obj_ok = false
         {
@@ -562,8 +562,8 @@ define cli
             return 8
         }
 
-        var cmd_builder StringBuilder#()
-        cmd_builder.append(link_compiler#())
+        var cmd_builder StringBuilder()
+        cmd_builder.append(link_compiler())
         cmd_builder.append " "
         cmd_builder.append tmp_obj
         ; Append the scaly stdlib static archive. Provides runtime
@@ -578,7 +578,7 @@ define cli
         ; symbols on every AOT test that pulls libscaly.o in for
         ; the runtime (s111).
         cmd_builder.append " "
-        cmd_builder.append(runtime_archive_path#())
+        cmd_builder.append(runtime_archive_path())
 
         ; Forward extra positional .a / .o inputs from the user
         ; (e.g. /tmp/libscalyc.a for stage-1 self-build). Required
@@ -624,7 +624,7 @@ define cli
 
         cmd_builder.append " -o "
         cmd_builder.append opts.output_file
-        let cmd_str cmd_builder.to_string#()
+        let cmd_str cmd_builder.to_string()
         let link_rc system(cmd_str.c_data())
 
         ; -g: on macOS the linker leaves DWARF in a debug map that points at
@@ -635,11 +635,11 @@ define cli
         if opts.debug
             if link_rc = 0
             {
-                var dsym_builder StringBuilder#()
+                var dsym_builder StringBuilder()
                 dsym_builder.append "dsymutil "
                 dsym_builder.append opts.output_file
                 dsym_builder.append " 2>/dev/null"
-                let dsym_str dsym_builder.to_string#()
+                let dsym_str dsym_builder.to_string()
                 let dsym_rc system(dsym_str.c_data())
             }
 
@@ -707,16 +707,16 @@ define cli
                 set col: col + 1
             set off: off + 1
         }
-        var msg StringBuilder#()
+        var msg StringBuilder()
         msg.append file_path
         msg.append ":"
-        msg.append(cli.format_size#(line))
+        msg.append(cli.format_size(line))
         msg.append ":"
-        msg.append(cli.format_size#(col))
+        msg.append(cli.format_size(col))
         msg.append ": "
         msg.append message
-        let msg_str msg.to_string#()
-        Console.println(msg_str.to_c_string#())
+        let msg_str msg.to_string()
+        Console.println(msg_str.to_c_string())
     }
 
     function print_diagnostics#(planner: ref[Planner.Planner], file_path: String, source: String)
@@ -763,16 +763,16 @@ define cli
                     }
                     set off: off + 1
                 }
-                var msg StringBuilder#()
+                var msg StringBuilder()
                 msg.append dpath
                 msg.append ":"
-                msg.append(cli.format_size#(line))
+                msg.append(cli.format_size(line))
                 msg.append ":"
-                msg.append(cli.format_size#(col))
+                msg.append(cli.format_size(col))
                 msg.append ": error: "
                 msg.append d_ptr.message
-                let msg_str msg.to_string#()
-                Console.println(msg_str.to_c_string#())
+                let msg_str msg.to_string()
+                Console.println(msg_str.to_c_string())
             }
             set di: di + 1
         }
@@ -784,7 +784,7 @@ define cli
     function format_size#(n: size_t) returns String
     {
         if n = 0
-            return String#("0")
+            return String("0")
         var value n
         var digits Array[char]$()
         while value > 0
@@ -793,7 +793,7 @@ define cli
             digits.add digit
             set value: value / 10
         }
-        var sb StringBuilder#()
+        var sb StringBuilder()
         var i digits.length
         while i > 0
         {
@@ -802,7 +802,7 @@ define cli
             if d <> null
                 sb.append(*d)
         }
-        sb.to_string#()
+        sb.to_string()
     }
 
     function extract_program_name#(file_path: String) returns String
@@ -847,8 +847,8 @@ define cli
     ; Main entry point
     function main(argc: int, argv: pointer[pointer[char]]) returns int
     {
-        var opts cli.parse_args#(argc, argv)
-        return cli.run#(opts)
+        var opts cli.parse_args(argc, argv)
+        return cli.run(opts)
     }
 
     ; Test function
@@ -870,12 +870,12 @@ define cli
 
         ; Test 2: Test extract_program_name
         var path1 String("/path/to/hello.scaly")
-        var name1 cli.extract_program_name#(path1)
+        var name1 cli.extract_program_name(path1)
         if name1.equals(String("hello")) = false
             return -10
 
         var path2 String("simple.scaly")
-        var name2 cli.extract_program_name#(path2)
+        var name2 cli.extract_program_name(path2)
         if name2.equals(String("simple")) = false
             return -11
 
@@ -907,7 +907,7 @@ define cli
         ; Stage 1: Parse
         var p parser.Parser(source)
         var syntax: parser.ProgramSyntax
-        choose p.parse_program#()
+        choose p.parse_program()
             when err: Error
             {
                 return -2  ; Parse failed
@@ -919,7 +919,7 @@ define cli
 
         ; Stage 2: Build model
         var program_name String("hello")
-        let model Modeler.build_program#(file_path, program_name, syntax, true)
+        let model Modeler.build_program(file_path, program_name, syntax, true)
 
         ; Stage 3: Plan
         var planner Planner.Planner(file_path)
@@ -948,7 +948,7 @@ define cli
         ; Stage 1: Parse
         var p parser.Parser(source)
         var syntax: parser.ProgramSyntax
-        choose p.parse_program#()
+        choose p.parse_program()
             when err: Error
             {
                 return -1  ; Parse failed
@@ -961,7 +961,7 @@ define cli
         ; Stage 2: Build model
         var file_name String("test.scaly")
         var program_name String("test")
-        let model Modeler.build_program#(file_name, program_name, syntax, true)
+        let model Modeler.build_program(file_name, program_name, syntax, true)
 
         ; Stage 3: Plan
         var planner Planner.Planner(file_name)
