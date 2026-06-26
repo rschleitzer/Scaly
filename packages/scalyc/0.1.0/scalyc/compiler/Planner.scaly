@@ -14167,7 +14167,20 @@ define Planner
                                     }
                                 }
                                 else
-                                    0
+                                {
+                                    ; Variant construction with a BARE-value
+                                    ; payload (`Member.Concept concept`,
+                                    ; `Nameable.Functions fns`): the payload is a
+                                    ; single operand, NOT a Tuple. It becomes the
+                                    ; union's stored value, so a bound-local
+                                    ; payload flows into the escaping union and
+                                    ; must be promoted. Recurse on a one-operand
+                                    ; sequence so the ops.length=1 alias/branch
+                                    ; logic collects it.
+                                    var ph Vector[Operand]^rp(1)
+                                    ph.put(0, args)
+                                    this.collect_flow_locals#(ph)
+                                }
                     }
             }
         }
