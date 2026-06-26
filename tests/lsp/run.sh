@@ -6,21 +6,24 @@
 # scalyls consumer. Hence every link here passes -lLLVM-18.
 #
 # Usage: tests/lsp/run.sh [scalyc-binary] [mode]
-#   scalyc-binary  default ./scalyc/build/scalyc (the C++ stage-0)
-#   mode           cpp (default) | selfhosted
+#   scalyc-binary  default /tmp/scalyc_stage2 (the canonical self-hosted stage)
+#   mode           selfhosted (default) | cpp
 #
-# In `cpp` mode the C++ stage-0 emits the whole transitive closure of a
-# scalyls consumer into one module, so `$SCALYC -o <prog>` links directly.
-# The self-hosted compiler emits PER PACKAGE ROOT, so a scalyls consumer
-# must be linked from four objects — the program's own root plus the
-# scalyls / scalyc / scaly package roots (the seed.sh "4-root" recipe).
-# `selfhosted` mode emits the three shared roots once and reuses them, so
-# the whole existing LSP corpus runs against the self-hosted scalyls.
+# `selfhosted` mode emits the three shared package roots once (scalyc / scaly /
+# scalyls) and reuses them, linking each scalyls consumer from four objects (the
+# seed.sh "4-root" recipe). This is the canonical gate.
+#
+# `cpp` mode (LEGACY) drives the frozen C++ stage-0, which emits the whole
+# transitive closure into one module so `$SCALYC -o <prog>` links directly.
+# C++ stage-0 is `#`-only with no page inference, so cpp mode ONLY works on the
+# fully-sigiled (pre-de-sigil-migration) compiler source — it is retired as a
+# bar gate. Invoke explicitly (`tests/lsp/run.sh ./scalyc/build/scalyc cpp`)
+# against sigiled source if you need the historical cross-check.
 set -euo pipefail
 
 cd "$(dirname "$0")/../.."
-SCALYC="${1:-./scalyc/build/scalyc}"
-MODE="${2:-cpp}"
+SCALYC="${1:-/tmp/scalyc_stage2}"
+MODE="${2:-selfhosted}"
 export SCALYLS_MODE="$MODE"   # available to python blocks (no self-hosted gaps remain)
 
 # Resolve the LLVM-18 lib dir (Homebrew / apt). The diagnostics pipeline
