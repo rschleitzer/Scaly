@@ -329,6 +329,10 @@ define Planner
         ; escape diagnostic. Both truncated at each function boundary.
         escaping_return_locals: Array[String]
         promoted_binding_names: Array[String]
+        ; deep-R2 store-escape: locals bound with an escaping init lifetime
+        ; (`^name`/`#`) or already-promoted, into which a put/add stores a value
+        ; that must therefore also live on a non-local page.
+        escaping_targets: Array[String]
         instantiated_functions: Array[PlannedFunction]
         ; O(1) membership index over instantiated_functions' mangled names,
         ; maintained in lockstep at the single record_function add site.
@@ -501,6 +505,7 @@ define Planner
             set local_closure_names: Array[String]^page()
             set escaping_return_locals: Array[String]^page()
             set promoted_binding_names: Array[String]^page()
+            set escaping_targets: Array[String]^page()
             set instantiated_functions: Array[PlannedFunction]^page()
             set function_name_index: ConceptIndex.create#(262144 as size_t)
             set instantiated_globals: Array[PlannedGlobal]^page()
@@ -13409,17 +13414,22 @@ define Planner
                 {
                     if c.is_operator
                         return null
-                    ; ONLY promote a DEFAULTED-Local allocation. An allocation
-                    ; that already carries an EXPLICIT lifetime — `^name`
-                    ; (Reference) or `#` (Call) — was placed deliberately by the
-                    ; programmer; re-stamping it would override the explicit page
-                    ; and dangle. E.g. lexer's `let name String^page(…); return
-                    ; name` (Reference) must keep `^page`, not be promoted to the
-                    ; caller page. (No-sigil and `$` both lower to Local and are
-                    ; the only promotable forms.)
+                    ; ONLY promote a DEFAULTED allocation — Local (`$` and
+                    ; no-sigil heap-backed via R1) or Unspecified (no-sigil
+                    ; page-owning stack type, e.g. a `Vector[T](…)` whose data
+                    ; buffer would otherwise land on the local page). An
+                    ; allocation that already carries an EXPLICIT lifetime —
+                    ; `^name` (Reference) or `#` (Call) — was placed deliberately
+                    ; by the programmer; re-stamping it would override the
+                    ; explicit page and dangle (e.g. lexer's `let name
+                    ; String^page(…); return name` must keep `^page`). The
+                    ; result_owns_page_guts gate above already excludes pure
+                    ; stack values (no page buffer) and borrows (pointer/ref).
                     var c_local false
                     choose c.life
                         when l: Local
+                            set c_local: true
+                        when u: Unspecified
                             set c_local: true
                         else
                             0
@@ -13439,6 +13449,8 @@ define Planner
                     var t_local false
                     choose t.life
                         when l: Local
+                            set t_local: true
+                        when u: Unspecified
                             set t_local: true
                         else
                             0
@@ -13999,6 +14011,102 @@ define Planner
             }
         }
 
+        ; deep-R2 store-escape helpers. A value stored via `recv.put(i, v)` /
+        ; `recv.add(v)` into a Vector that outlives the frame (recv bound with a
+        ; `^name`/`#` init, or already promoted to escape) must itself live on a
+        ; non-local page. Bound-local values are collected here (the name-set
+        ; then promotes their binding in plan_binding#); INLINE constructions in
+        ; a put/add value position have no binding and are left `#` at the source
+        ; (the de-sigil skips put/add inline args), so they stay caller-page.
+        function add_escaping_target#(rp, this: Planner, name: String)
+        {
+            if this.array_contains_name(escaping_targets, name) = false
+                escaping_targets.add(String^rp(name))
+        }
+        function operand_seq_escaping_ctor(this: Planner, ops: Vector[Operand]) returns bool
+        {
+            if ops.length >= 1
+            {
+                let h ops.get 0
+                if h <> null
+                    choose (*h).expression
+                        when t: scalyc.compiler.Model.Type
+                        {
+                            choose t.lifetime
+                                when r: Reference
+                                    return true
+                                when c: Call
+                                    return true
+                                else
+                                    0
+                        }
+                        else
+                            0
+            }
+            false
+        }
+        function collect_store_value_locals#(rp, this: Planner, source: Vector[Operand])
+        {
+            if source.length >= 2
+            {
+                let head_ptr source.get 0
+                let args_ptr source.get 1
+                if head_ptr <> null
+                    if args_ptr <> null
+                    {
+                        let head (*head_ptr)
+                        let args (*args_ptr)
+                        var recv_escapes: bool false
+                        if head.member_access <> null
+                        {
+                            let ma (*head.member_access)
+                            if ma.length >= 1
+                            {
+                                let last_ptr ma.get(ma.length - 1)
+                                if last_ptr <> null
+                                {
+                                    let meth (*last_ptr)
+                                    if meth.equals(String("put")) || meth.equals(String("add"))
+                                        choose head.expression
+                                            when t: scalyc.compiler.Model.Type
+                                            {
+                                                if t.name.length = 1
+                                                {
+                                                    let rn_ptr t.name.get 0
+                                                    if rn_ptr <> null
+                                                    {
+                                                        let rn (*rn_ptr)
+                                                        if this.array_contains_name(escaping_targets, rn)
+                                                            set recv_escapes: true
+                                                        if this.array_contains_name(escaping_return_locals, rn)
+                                                            set recv_escapes: true
+                                                    }
+                                                }
+                                            }
+                                            else
+                                                0
+                                }
+                            }
+                        }
+                        if recv_escapes
+                            choose args.expression
+                                when tup: scalyc.compiler.Model.Tuple
+                                {
+                                    var ci: size_t 0
+                                    while ci < tup.components.length
+                                    {
+                                        let cp tup.components.get ci
+                                        if cp <> null
+                                            this.collect_value_locals#((*cp).value)
+                                        set ci: ci + 1
+                                    }
+                                }
+                                else
+                                    0
+                    }
+            }
+        }
+
         ; Page inference, gap 1 — RECURSIVE pre-scan collecting bare `return x`
         ; names ANYWHERE in a function body (Block, if consequent/alternative,
         ; choose/match branches + alternative, and loop bodies), so a `return x`
@@ -14053,8 +14161,18 @@ define Planner
                     ; initializer escape too. The fixpoint loop in
                     ; scan_top_level_returns# re-runs until no new names appear.
                     if bind.item.name <> null
-                        if this.array_contains_name(escaping_return_locals, (*bind.item.name))
+                    {
+                        let bnm (*bind.item.name)
+                        if this.array_contains_name(escaping_return_locals, bnm)
                             this.collect_ctor_arg_locals#(bind.operation)
+                        ; deep-R2 store-escape: a binding with an escaping init
+                        ; (`^name`/`#`), or an already-promoted name, is a target
+                        ; into which put/add stores must place caller-page values.
+                        if this.operand_seq_escaping_ctor(bind.operation)
+                            this.add_escaping_target#(bnm)
+                        if this.array_contains_name(escaping_return_locals, bnm)
+                            this.add_escaping_target#(bnm)
+                    }
                 }
                 when a: Action
                     this.collect_returns_action#(a)
@@ -14147,6 +14265,10 @@ define Planner
                     this.collect_returns_operand#(op_ptr.unwrap())
                 set i: i + 1
             }
+            ; deep-R2 store-escape: a `recv.put/add(value)` where recv outlives
+            ; the frame promotes the stored value's bound locals to a non-local
+            ; page.
+            this.collect_store_value_locals#(a.source)
         }
 
         ; Entry: pre-scan a whole function body for bare `return x` targets and
@@ -14360,10 +14482,12 @@ define Planner
             ; nested functions stay isolated.
             let saved_erl escaping_return_locals.length
             let saved_pbn promoted_binding_names.length
+            let saved_etg escaping_targets.length
             this.scan_top_level_returns#(f.implementation)
             let planned_impl this.plan_implementation#(f.implementation)
             set escaping_return_locals.length: saved_erl
             set promoted_binding_names.length: saved_pbn
+            set escaping_targets.length: saved_etg
             set local_closure_names.length: saved_lcn
             set this.current_return_type: saved_return_type
 
