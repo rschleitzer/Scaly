@@ -2378,7 +2378,7 @@ define Planner
             var has_page: bool false
             if f.page_parameter <> null
                 set has_page: true
-            if Planner.needs_implicit_return_page(f)
+            if Planner.function_needs_caller_page(f)
                 set has_page: true
 
             ; Extern C functions use their unmangled name so the linker
@@ -5493,7 +5493,7 @@ define Planner
                                                                                 set used_ns_local: true
                                                                                 if nf.page_parameter <> null
                                                                                     set used_ns_page: true
-                                                                                if Planner.needs_implicit_return_page(nf)
+                                                                                if Planner.function_needs_caller_page(nf)
                                                                                     set used_ns_page: true
                                                                             }
                                                                         }
@@ -5832,7 +5832,7 @@ define Planner
                                             var s_pp: bool false
                                             if sfn.page_parameter <> null
                                                 set s_pp: true
-                                            if Planner.needs_implicit_return_page(sfn)
+                                            if Planner.function_needs_caller_page(sfn)
                                                 set s_pp: true
                                             let smangled Planner.mangle_function#(
                                                 suffix, &sitems_holder, sparent_ref, s_pp
@@ -8001,7 +8001,7 @@ define Planner
             ; user-defined struct/union gets an `_rp` page parameter
             ; injected at planFunction time (Planner.cpp:11697). Mirror
             ; that here so the mangled name matches the emitted function.
-            if Planner.needs_implicit_return_page(f)
+            if Planner.function_needs_caller_page(f)
                 set has_page: true
             ; s106: mangle against the auto-derefed receiver type.
             ; struct_type may be pointer[Foo] / ref[Foo]; the Itanium
@@ -14725,7 +14725,7 @@ define Planner
             var has_page: bool false
             if f.page_parameter <> null
                 set has_page: true
-            if Planner.needs_implicit_return_page(f)
+            if Planner.function_needs_caller_page(f)
                 set has_page: true
 
             ; Extern C functions keep their unmangled name so LLVM can
@@ -14797,7 +14797,7 @@ define Planner
             }
             if f.page_parameter = null
             {
-                if Planner.needs_implicit_return_page(f)
+                if Planner.function_needs_caller_page(f)
                 {
                     var pp_holder Vector[String]^rp(1)
                     pp_holder.put(0, String^rp("rp"))
@@ -19467,6 +19467,208 @@ define Planner
             return false
 
         true
+    }
+
+    ; ---- Interprocedural collector-procedure page inference ----
+    ; A VOID procedure that stores a freshly-constructed value into a non-`this`
+    ; ref/pointer parameter via `param.add(...)` / `param.put(...)` must receive
+    ; the caller's page (rp), exactly like a `#`-procedure: the values it builds
+    ; (e.g. build_referenced_module#'s Module) have to outlive this frame and
+    ; land on the caller's page, not this frame's local page (freed on return).
+    ; This is the interprocedural counterpart of needs_implicit_return_page for
+    ; collector procedures — handle_module_decl / handle_package_decl in the
+    ; de-sigiled Modeler, which append loaded sub-modules into a `&modules`
+    ; out-parameter. Detected by a shallow Model-body scan for the
+    ; put/add-on-ref-param shape (Form A / Form B of collect_store_value_locals#).
+    ; Cheap-gated: false for non-void (needs_implicit_return_page covers those),
+    ; externs, and functions with no non-`this` ref/pointer parameter.
+    ;
+    ; NEUTRAL on the sigiled source: the only two functions it flags are already
+    ; `#` (page_parameter set), so the page decision is unchanged everywhere it
+    ; fires. function_needs_caller_page unifies it with needs_implicit_return_page
+    ; at every page-decision site (mangled `…PageE` suffix, page_param_ref="rp",
+    ; requires_page_param on calls).
+    function is_ref_or_pointer_type(t: scalyc.compiler.Model.Type) returns bool
+    {
+        if t.name.length <> 1
+            return false
+        let n0 t.name.get 0
+        if n0 = null
+            return false
+        let n (*n0)
+        if n.equals(String("ref"))
+            return true
+        if n.equals(String("pointer"))
+            return true
+        false
+    }
+    function is_ref_pointer_param(func: Function, name: String) returns bool
+    {
+        var i: size_t 0
+        while i < func.input.length
+        {
+            let ip func.input.get i
+            if ip <> null
+            {
+                let it (*ip)
+                if it.name <> null
+                    if it.type <> null
+                    {
+                        let nm (*it.name)
+                        if nm.equals(name)
+                            if nm.equals(String("this")) = false
+                                return Planner.is_ref_or_pointer_type((*it.type))
+                    }
+            }
+            set i: i + 1
+        }
+        false
+    }
+    function has_ref_pointer_param(func: Function) returns bool
+    {
+        var i: size_t 0
+        while i < func.input.length
+        {
+            let ip func.input.get i
+            if ip <> null
+            {
+                let it (*ip)
+                if it.name <> null
+                    if it.type <> null
+                    {
+                        let nm (*it.name)
+                        if nm.equals(String("this")) = false
+                            if Planner.is_ref_or_pointer_type((*it.type))
+                                return true
+                    }
+            }
+            set i: i + 1
+        }
+        false
+    }
+    ; A single operand sequence is `recv.put(...)` / `recv.add(...)` where recv is
+    ; a non-`this` ref/pointer parameter of func. Form A: member_access ends in
+    ; put/add with head Type name=["recv"]; Form B: dotted name ["recv","put"]
+    ; with member_access=null (the shape the tree-builders actually emit).
+    function op_seq_stores_into_ref_param(func: Function, ops: Vector[Operand]) returns bool
+    {
+        if ops.length < 2
+            return false
+        let head_ptr ops.get 0
+        if head_ptr = null
+            return false
+        let head (*head_ptr)
+        if head.member_access <> null
+        {
+            let ma (*head.member_access)
+            if ma.length >= 1
+            {
+                let last_ptr ma.get(ma.length - 1)
+                if last_ptr <> null
+                {
+                    let meth (*last_ptr)
+                    if meth.equals(String("put")) || meth.equals(String("add"))
+                        choose head.expression
+                            when t: scalyc.compiler.Model.Type
+                            {
+                                if t.name.length = 1
+                                {
+                                    let rn_ptr t.name.get 0
+                                    if rn_ptr <> null
+                                        if Planner.is_ref_pointer_param(func, (*rn_ptr))
+                                            return true
+                                }
+                            }
+                            else
+                                0
+                }
+            }
+        }
+        if head.member_access = null
+            choose head.expression
+                when t: scalyc.compiler.Model.Type
+                {
+                    if t.name.length = 2
+                    {
+                        let meth_ptr t.name.get 1
+                        if meth_ptr <> null
+                        {
+                            let meth (*meth_ptr)
+                            if meth.equals(String("put")) || meth.equals(String("add"))
+                            {
+                                let rn_ptr t.name.get 0
+                                if rn_ptr <> null
+                                    if Planner.is_ref_pointer_param(func, (*rn_ptr))
+                                        return true
+                            }
+                        }
+                    }
+                }
+                else
+                    0
+        false
+    }
+    ; Walk a body Action: either a single Block operand (the common
+    ; multi-statement body) whose top-level Action statements are scanned, or a
+    ; direct store operand sequence (single-statement body).
+    function action_stores_into_ref_param(func: Function, a: Action) returns bool
+    {
+        if Planner.op_seq_stores_into_ref_param(func, a.source)
+            return true
+        if a.source.length = 1
+        {
+            let op_ptr a.source.get 0
+            if op_ptr <> null
+            {
+                let op (*op_ptr)
+                choose op.expression
+                    when b: Block
+                    {
+                        var i: size_t 0
+                        while i < b.statements.length
+                        {
+                            let sp b.statements.get i
+                            if sp <> null
+                                choose sp.unwrap()
+                                    when sa: Action
+                                        if Planner.op_seq_stores_into_ref_param(func, sa.source)
+                                            return true
+                                    else
+                                        0
+                            set i: i + 1
+                        }
+                    }
+                    else
+                        0
+            }
+        }
+        false
+    }
+    function proc_needs_caller_page_for_storage(func: Function) returns bool
+    {
+        if func.returns_ <> null
+            return false
+        if Planner.is_extern_impl(func.implementation)
+            return false
+        if Planner.has_ref_pointer_param(func) = false
+            return false
+        choose func.implementation
+            when a: Action
+                return Planner.action_stores_into_ref_param(func, a)
+            else
+                0
+        false
+    }
+    ; Unified page-decision predicate: a function needs the caller's page (rp)
+    ; either to allocate a returned struct/union (needs_implicit_return_page) or
+    ; to store freshly-built values into a ref/pointer out-parameter
+    ; (proc_needs_caller_page_for_storage). Consulted at every has_page /
+    ; page_param_ref / requires_page_param site.
+    function function_needs_caller_page(func: Function) returns bool
+    {
+        if Planner.needs_implicit_return_page(func)
+            return true
+        Planner.proc_needs_caller_page_for_storage(func)
     }
 
     ; ========================================================================
