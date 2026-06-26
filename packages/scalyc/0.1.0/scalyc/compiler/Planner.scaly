@@ -9018,7 +9018,7 @@ define Planner
                     ; s148: List + ListIterator + Node removed analogous to
                     ; the s129 Vector/Array lift. Without this, stage-1's
                     ; planner doesn't run instantiate_generic# for
-                    ; List<StatementSyntax>/etc., so `list.add$(node)` calls
+                    ; List<StatementSyntax>/etc., so `list.add(node)` calls
                     ; emitted via the skip_dispatch (still kept) extern-decl
                     ; shim have no body to link against. Specialised bodies
                     ; (`_ZN4ListIxxxE3addExxx`) are needed because Itanium
@@ -16948,8 +16948,8 @@ define Planner
     ; are unequal. Null/empty generics are treated uniformly as arity 0.
     function types_equal(a: PlannedType, b: PlannedType) returns bool
     {
-        let norm_a Planner.normalize_type_name$(a.name)
-        let norm_b Planner.normalize_type_name$(b.name)
+        let norm_a Planner.normalize_type_name(a.name)
+        let norm_b Planner.normalize_type_name(b.name)
         if norm_a.equals(norm_b) = false
             return false
 
@@ -17012,8 +17012,8 @@ define Planner
 
         ; Rule 2: any integer type is compatible with any other. The Emitter
         ; inserts the appropriate zext/sext/trunc at the call site.
-        let norm_p Planner.normalize_type_name$(param_type.name)
-        let norm_a Planner.normalize_type_name$(arg_type.name)
+        let norm_p Planner.normalize_type_name(param_type.name)
+        let norm_a Planner.normalize_type_name(arg_type.name)
         if Planner.is_integer_type(norm_p)
         {
             if Planner.is_integer_type(norm_a)
@@ -18971,7 +18971,7 @@ define Planner
         if ret_type.name.length = 0
             return false
 
-        let joined Planner.join_dotted_name$(ret_type.name)
+        let joined Planner.join_dotted_name(ret_type.name)
         if Planner.is_primitive_type_name(joined)
             return false
 
@@ -19342,11 +19342,11 @@ define Planner
             return 5
 
         ; strip_package_prefix - only strips when it starts with "scaly."
-        let stripped Planner.strip_package_prefix$(String("scaly.containers.String"))
+        let stripped Planner.strip_package_prefix(String("scaly.containers.String"))
         if stripped.equals(String("String")) = false
             return 6
 
-        let unstripped Planner.strip_package_prefix$(String("scalyc.compiler.Planner"))
+        let unstripped Planner.strip_package_prefix(String("scalyc.compiler.Planner"))
         if unstripped.equals(String("scalyc.compiler.Planner")) = false
             return 7
 
@@ -19361,7 +19361,7 @@ define Planner
             String(""),
             null
         )
-        let enc_int Planner.encode_type$(int_ty)
+        let enc_int Planner.encode_type(int_ty)
         if enc_int.equals(String("i")) = false
             return 8
 
@@ -19375,7 +19375,7 @@ define Planner
             String(""),
             null
         )
-        let enc_bool Planner.encode_type$(bool_ty)
+        let enc_bool Planner.encode_type(bool_ty)
         if enc_bool.equals(String("b")) = false
             return 9
 
@@ -19390,7 +19390,7 @@ define Planner
             String(""),
             null
         )
-        let enc_foo Planner.encode_type$(foo_ty)
+        let enc_foo Planner.encode_type(foo_ty)
         if enc_foo.equals(String("3Foo")) = false
             return 10
 
@@ -19405,38 +19405,38 @@ define Planner
             String(""),
             null
         )
-        let enc_sstr Planner.encode_type$(sstr_ty)
+        let enc_sstr Planner.encode_type(sstr_ty)
         if enc_sstr.equals(String("6String")) = false
             return 11
 
         ; mangle_type - "_Z" prefix + encoded type.
-        let mangled_int Planner.mangle_type$(int_ty)
+        let mangled_int Planner.mangle_type(int_ty)
         if mangled_int.equals(String("_Zi")) = false
             return 12
 
-        let mangled_foo Planner.mangle_type$(foo_ty)
+        let mangled_foo Planner.mangle_type(foo_ty)
         if mangled_foo.equals(String("_Z3Foo")) = false
             return 13
 
         ; mangle_structure - no generics falls back to encode_name.
-        let mangled_s Planner.mangle_structure$(String("String"), null)
+        let mangled_s Planner.mangle_structure(String("String"), null)
         if mangled_s.equals(String("_Z6String")) = false
             return 14
 
         ; mangle_structure with one int generic arg: Vector[int] -> _Z6VectorIiE.
         var gens_vec Vector[PlannedType]$(1)
         gens_vec.put(0, int_ty)
-        let mangled_vec Planner.mangle_structure$(String("Vector"), &gens_vec)
+        let mangled_vec Planner.mangle_structure(String("Vector"), &gens_vec)
         if mangled_vec.equals(String("_Z6VectorIiE")) = false
             return 15
 
         ; mangle_function - free, no params -> _Z3foov.
-        let mf_free Planner.mangle_function$(String("foo"), null, null, false)
+        let mf_free Planner.mangle_function(String("foo"), null, null, false)
         if mf_free.equals(String("_Z3foov")) = false
             return 16
 
         ; mangle_function - method on Foo, no params -> _ZN3Foo3fooEv.
-        let mf_method Planner.mangle_function$(String("foo"), null, &foo_ty, false)
+        let mf_method Planner.mangle_function(String("foo"), null, &foo_ty, false)
         if mf_method.equals(String("_ZN3Foo3fooEv")) = false
             return 17
 
@@ -19444,12 +19444,12 @@ define Planner
         let this_name String("this")
         var this_only Vector[PlannedItem]$(1)
         this_only.put(0, PlannedItem(Span(0, 0), false, &this_name, &foo_ty, null))
-        let mf_this Planner.mangle_function$(String("bar"), &this_only, &foo_ty, false)
+        let mf_this Planner.mangle_function(String("bar"), &this_only, &foo_ty, false)
         if mf_this.equals(String("_ZN3Foo3barEv")) = false
             return 18
 
         ; mangle_function with implicit page param.
-        let mf_page Planner.mangle_function$(String("foo"), null, null, true)
+        let mf_page Planner.mangle_function(String("foo"), null, null, true)
         if mf_page.equals(String("_Z3fooPN4scaly6memory4PageE")) = false
             return 19
 
@@ -19457,25 +19457,25 @@ define Planner
         let x_name String("x")
         var one_int Vector[PlannedItem]$(1)
         one_int.put(0, PlannedItem(Span(0, 0), false, &x_name, &int_ty, null))
-        let mf_i Planner.mangle_function$(String("foo"), &one_int, null, false)
+        let mf_i Planner.mangle_function(String("foo"), &one_int, null, false)
         if mf_i.equals(String("_Z3fooi")) = false
             return 20
 
         ; operator_code - a few known codes plus vendor extension.
-        let op_plus Planner.operator_code$(String("+"))
+        let op_plus Planner.operator_code(String("+"))
         if op_plus.equals(String("pl")) = false
             return 21
 
-        let op_index Planner.operator_code$(String("[]"))
+        let op_index Planner.operator_code(String("[]"))
         if op_index.equals(String("ix")) = false
             return 22
 
-        let op_vendor Planner.operator_code$(String("??"))
+        let op_vendor Planner.operator_code(String("??"))
         if op_vendor.equals(String("v02??")) = false
             return 23
 
         ; mangle_operator - free + with int param -> _Zpli.
-        let mop_plus Planner.mangle_operator$(String("+"), &one_int, null)
+        let mop_plus Planner.mangle_operator(String("+"), &one_int, null)
         if mop_plus.equals(String("_Zpli")) = false
             return 24
 
@@ -19483,17 +19483,17 @@ define Planner
         var this_int Vector[PlannedItem]$(2)
         this_int.put(0, PlannedItem(Span(0, 0), false, &this_name, &foo_ty, null))
         this_int.put(1, PlannedItem(Span(0, 0), false, &x_name, &int_ty, null))
-        let mop_member Planner.mangle_operator$(String("+"), &this_int, &foo_ty)
+        let mop_member Planner.mangle_operator(String("+"), &this_int, &foo_ty)
         if mop_member.equals(String("_ZN3FooplEi")) = false
             return 25
 
         ; mangle_operator - member with only 'this' -> _ZN3FooneEv (the 'this' skip).
-        let mop_this Planner.mangle_operator$(String("!="), &this_only, &foo_ty)
+        let mop_this Planner.mangle_operator(String("!="), &this_only, &foo_ty)
         if mop_this.equals(String("_ZN3FooneEv")) = false
             return 26
 
         ; get_readable_name - plain type, no generics.
-        let rn_int Planner.get_readable_name$(int_ty)
+        let rn_int Planner.get_readable_name(int_ty)
         if rn_int.equals(String("int")) = false
             return 27
 
@@ -19510,30 +19510,30 @@ define Planner
             String(""),
             null
         )
-        let rn_vec Planner.get_readable_name$(vec_ty)
+        let rn_vec Planner.get_readable_name(vec_ty)
         if rn_vec.equals(String("Vector[int]")) = false
             return 28
 
         ; normalize_type_name - builtin aliases collapse.
-        let nm_int Planner.normalize_type_name$(String("int"))
+        let nm_int Planner.normalize_type_name(String("int"))
         if nm_int.equals(String("i64")) = false
             return 29
 
-        let nm_size Planner.normalize_type_name$(String("size_t"))
+        let nm_size Planner.normalize_type_name(String("size_t"))
         if nm_size.equals(String("u64")) = false
             return 30
 
-        let nm_char Planner.normalize_type_name$(String("char"))
+        let nm_char Planner.normalize_type_name(String("char"))
         if nm_char.equals(String("u8")) = false
             return 31
 
         ; normalize_type_name - "scaly.containers.String" -> "String".
-        let nm_sstr Planner.normalize_type_name$(String("scaly.containers.String"))
+        let nm_sstr Planner.normalize_type_name(String("scaly.containers.String"))
         if nm_sstr.equals(String("String")) = false
             return 32
 
         ; normalize_type_name - user types pass through.
-        let nm_user Planner.normalize_type_name$(String("scalyc.compiler.Planner"))
+        let nm_user Planner.normalize_type_name(String("scalyc.compiler.Planner"))
         if nm_user.equals(String("scalyc.compiler.Planner")) = false
             return 33
 
@@ -19779,13 +19779,13 @@ define Planner
 
         ; infer_constant_type - booleans yield "bool".
         let c_bool Constant.Boolean(BooleanConstant(Span(0, 0), true))
-        let t_bool Planner.infer_constant_type$(c_bool)
+        let t_bool Planner.infer_constant_type(c_bool)
         if t_bool.name.equals("bool") = false
             return 61
 
         ; infer_constant_type - integer literal is "int" (pre-solver).
         let c_int Constant.Integer(IntegerConstant(Span(0, 0), 42))
-        let t_int Planner.infer_constant_type$(c_int)
+        let t_int Planner.infer_constant_type(c_int)
         if t_int.name.equals("int") = false
             return 62
         if t_int.mangled_name.equals("i") = false
@@ -19793,13 +19793,13 @@ define Planner
 
         ; infer_constant_type - hex literal is u64.
         let c_hex Constant.Hex(HexConstant(Span(0, 0), 255))
-        let t_hex Planner.infer_constant_type$(c_hex)
+        let t_hex Planner.infer_constant_type(c_hex)
         if t_hex.name.equals("u64") = false
             return 64
 
         ; infer_constant_type - string literal is pointer[i8] (Itanium "Pa").
         let c_str Constant.String(StringConstant(Span(0, 0), String("hi")))
-        let t_str Planner.infer_constant_type$(c_str)
+        let t_str Planner.infer_constant_type(c_str)
         if t_str.name.equals("pointer") = false
             return 65
         if t_str.mangled_name.equals("Pa") = false
@@ -19809,7 +19809,7 @@ define Planner
 
         ; infer_constant_type - null literal is pointer[void].
         let c_null Constant.Null(NullConstant(Span(0, 0)))
-        let t_null Planner.infer_constant_type$(c_null)
+        let t_null Planner.infer_constant_type(c_null)
         if t_null.name.equals("pointer") = false
             return 68
         if t_null.mangled_name.equals("Pv") = false
@@ -19822,7 +19822,7 @@ define Planner
             null,
             int_ty
         )
-        let empty_types Planner.extract_arg_types$(plain_op)
+        let empty_types Planner.extract_arg_types(plain_op)
         if empty_types.length <> 0
             return 70
 
@@ -19860,7 +19860,7 @@ define Planner
             null,
             int_ty
         )
-        let two_types Planner.extract_arg_types$(tuple_op)
+        let two_types Planner.extract_arg_types(tuple_op)
         if two_types.length <> 2
             return 71
         let t0 two_types.get 0
@@ -19952,7 +19952,7 @@ define Planner
         parts.put(0, String("scaly"))
         parts.put(1, String("containers"))
         parts.put(2, String("String"))
-        let joined Planner.join_dotted_name$(parts)
+        let joined Planner.join_dotted_name(parts)
         if joined.equals(String("scaly.containers.String")) = false
             return 92
 
@@ -20074,25 +20074,25 @@ define Planner
             return 100
 
         ; apply_substitution - null substitution leaves type unchanged.
-        let sub_int Planner.apply_substitution$(int_ty, null)
+        let sub_int Planner.apply_substitution(int_ty, null)
         if sub_int.name.equals("int") = false
             return 101
 
         ; apply_substitution - unbound variable stays as-is.
         var empty_sub Vector[KeyValuePair[size_t, PlannedType]]$(0)
-        let sub_var Planner.apply_substitution$(var_ty, &empty_sub)
+        let sub_var Planner.apply_substitution(var_ty, &empty_sub)
         if sub_var.variable = null
             return 102
 
         ; apply_substitution - bound variable gets replaced.
         var sub1 Vector[KeyValuePair[size_t, PlannedType]]$(1)
         sub1.put(0, KeyValuePair[size_t, PlannedType](7, int_ty))
-        let sub_hit Planner.apply_substitution$(var_ty, &sub1)
+        let sub_hit Planner.apply_substitution(var_ty, &sub1)
         if sub_hit.name.equals("int") = false
             return 103
 
         ; apply_substitution - substitutes inside generic arguments.
-        let sub_vec Planner.apply_substitution$(vec_of_t_ty, &sub1)
+        let sub_vec Planner.apply_substitution(vec_of_t_ty, &sub1)
         if sub_vec.name.equals("Vector") = false
             return 104
         if sub_vec.generics = null
@@ -20122,7 +20122,7 @@ define Planner
         var sub_chain Vector[KeyValuePair[size_t, PlannedType]]$(2)
         sub_chain.put(0, KeyValuePair[size_t, PlannedType](7, var_ty8))
         sub_chain.put(1, KeyValuePair[size_t, PlannedType](8, int_ty))
-        let sub_chained Planner.apply_substitution$(var_ty, &sub_chain)
+        let sub_chained Planner.apply_substitution(var_ty, &sub_chain)
         if sub_chained.name.equals("int") = false
             return 109
 
@@ -20132,7 +20132,7 @@ define Planner
         s1_vec.put(0, KeyValuePair[size_t, PlannedType](7, var_ty8))
         var s2_vec Vector[KeyValuePair[size_t, PlannedType]]$(1)
         s2_vec.put(0, KeyValuePair[size_t, PlannedType](8, int_ty))
-        let composed Planner.compose_substitutions$(s1_vec, s2_vec)
+        let composed Planner.compose_substitutions(s1_vec, s2_vec)
         if composed.length <> 2
             return 110
 
@@ -20154,7 +20154,7 @@ define Planner
         s1_dup.put(0, KeyValuePair[size_t, PlannedType](7, int_ty))
         var s2_dup Vector[KeyValuePair[size_t, PlannedType]]$(1)
         s2_dup.put(0, KeyValuePair[size_t, PlannedType](7, bool_ty))
-        let dup_comp Planner.compose_substitutions$(s1_dup, s2_dup)
+        let dup_comp Planner.compose_substitutions(s1_dup, s2_dup)
         if dup_comp.length <> 1
             return 114
         let dup7 Planner.substitution_lookup(dup_comp, 7)
@@ -20186,7 +20186,7 @@ define Planner
         if Planner.compute_struct_alignment(&two_ints) <> 8
             return 120
 
-        let offsets Planner.compute_property_offsets$(&two_ints)
+        let offsets Planner.compute_property_offsets(&two_ints)
         if offsets.length <> 2
             return 121
         let o0 offsets.get 0
@@ -20213,7 +20213,7 @@ define Planner
         ))
         if Planner.compute_struct_size(&bool_then_int) <> 16
             return 126
-        let bi_offsets Planner.compute_property_offsets$(&bool_then_int)
+        let bi_offsets Planner.compute_property_offsets(&bool_then_int)
         let bi0 bi_offsets.get 0
         if bi0 = null
             return 127
@@ -20226,18 +20226,18 @@ define Planner
             return 130
 
         ; unify - identical concrete types → empty substitution.
-        let u1 Planner.unify$(int_ty, int_ty)
+        let u1 Planner.unify(int_ty, int_ty)
         if u1 = null
             return 131
         if (*u1).length <> 0
             return 132
 
         ; unify - incompatible primitives → null.
-        if Planner.unify$(int_ty, bool_ty) <> null
+        if Planner.unify(int_ty, bool_ty) <> null
             return 133
 
         ; unify - left variable, right concrete → binds.
-        let u2 Planner.unify$(var_ty, int_ty)
+        let u2 Planner.unify(var_ty, int_ty)
         if u2 = null
             return 134
         if (*u2).length <> 1
@@ -20249,34 +20249,34 @@ define Planner
             return 137
 
         ; unify - right variable, left concrete → also binds.
-        let u3 Planner.unify$(int_ty, var_ty)
+        let u3 Planner.unify(int_ty, var_ty)
         if u3 = null
             return 138
         if (*u3).length <> 1
             return 139
 
         ; unify - same variable → empty.
-        let u4 Planner.unify$(var_ty, var_ty)
+        let u4 Planner.unify(var_ty, var_ty)
         if u4 = null
             return 140
         if (*u4).length <> 0
             return 141
 
         ; unify - void unifies with anything.
-        if Planner.unify$(void_ty, int_ty) = null
+        if Planner.unify(void_ty, int_ty) = null
             return 142
 
         ; unify - integer compatibility (u64 vs int).
-        let i64_try Planner.unify$(int_ty, u32_ty)
+        let i64_try Planner.unify(int_ty, u32_ty)
         if i64_try = null
             return 143
 
         ; unify - Option[T] vs pointer[void] → empty.
-        if Planner.unify$(option_ty, ptr_void_ty) = null
+        if Planner.unify(option_ty, ptr_void_ty) = null
             return 144
 
         ; unify - recurse on generics: Vector[T7] vs Vector[int] → [(7, int)].
-        let u_vec Planner.unify$(vec_of_t_ty, vec_ty)
+        let u_vec Planner.unify(vec_of_t_ty, vec_ty)
         if u_vec = null
             return 145
         if (*u_vec).length <> 1
@@ -20288,7 +20288,7 @@ define Planner
             return 148
 
         ; unify - occurs check: T7 vs Vector[T7] → null.
-        if Planner.unify$(var_ty, vec_of_t_ty) <> null
+        if Planner.unify(var_ty, vec_of_t_ty) <> null
             return 149
 
         ; unify - name mismatch with matching arity → null.
@@ -20304,11 +20304,11 @@ define Planner
             String(""),
             null
         )
-        if Planner.unify$(vec_ty, list_int_ty) <> null
+        if Planner.unify(vec_ty, list_int_ty) <> null
             return 150
 
         ; solve_constraints - null list → empty substitution.
-        let sc_null Planner.solve_constraints$(null)
+        let sc_null Planner.solve_constraints(null)
         if sc_null = null
             return 151
         if (*sc_null).length <> 0
@@ -20319,7 +20319,7 @@ define Planner
         one_eq.put(0, TypeConstraint.Equality(
             EqualityConstraint(var_ty, int_ty, Span(0, 0), String(""))
         ))
-        let sc_one Planner.solve_constraints$(&one_eq)
+        let sc_one Planner.solve_constraints(&one_eq)
         if sc_one = null
             return 153
         let sc_one_lookup Planner.substitution_lookup((*sc_one), 7)
@@ -20336,10 +20336,10 @@ define Planner
         chain.put(1, TypeConstraint.Equality(
             EqualityConstraint(var_ty8, int_ty, Span(0, 0), String(""))
         ))
-        let sc_chain Planner.solve_constraints$(&chain)
+        let sc_chain Planner.solve_constraints(&chain)
         if sc_chain = null
             return 156
-        let sc_chain_t7 Planner.apply_substitution$(var_ty, sc_chain)
+        let sc_chain_t7 Planner.apply_substitution(var_ty, sc_chain)
         if sc_chain_t7.name.equals("int") = false
             return 157
 
@@ -20351,16 +20351,16 @@ define Planner
         conflict.put(1, TypeConstraint.Equality(
             EqualityConstraint(var_ty, bool_ty, Span(0, 0), String(""))
         ))
-        if Planner.solve_constraints$(&conflict) <> null
+        if Planner.solve_constraints(&conflict) <> null
             return 158
 
         ; free_type_vars - concrete type yields empty list.
-        let fv_int Planner.free_type_vars$(int_ty)
+        let fv_int Planner.free_type_vars(int_ty)
         if fv_int.length <> 0
             return 159
 
         ; free_type_vars - standalone variable yields [id].
-        let fv_var Planner.free_type_vars$(var_ty)
+        let fv_var Planner.free_type_vars(var_ty)
         if fv_var.length <> 1
             return 160
         let fv_var_0 fv_var.get 0
@@ -20370,7 +20370,7 @@ define Planner
             return 162
 
         ; free_type_vars - Vector[T7] yields [7].
-        let fv_vec Planner.free_type_vars$(vec_of_t_ty)
+        let fv_vec Planner.free_type_vars(vec_of_t_ty)
         if fv_vec.length <> 1
             return 163
 
@@ -20388,7 +20388,7 @@ define Planner
             String(""),
             null
         )
-        let fv_pair Planner.free_type_vars$(pair_of_t_ty)
+        let fv_pair Planner.free_type_vars(pair_of_t_ty)
         if fv_pair.length <> 1
             return 164
 
@@ -20403,7 +20403,7 @@ define Planner
 
         ; generalize - concrete type has no quantified vars.
         var empty_env Vector[size_t]$(0)
-        let sch_int Planner.generalize$(int_ty, empty_env)
+        let sch_int Planner.generalize(int_ty, empty_env)
         if sch_int.quantified = null
             return 167
         let sch_int_q (*sch_int.quantified)
@@ -20411,7 +20411,7 @@ define Planner
             return 168
 
         ; generalize - standalone type variable is quantified when not in env.
-        let sch_var Planner.generalize$(var_ty, empty_env)
+        let sch_var Planner.generalize(var_ty, empty_env)
         if sch_var.quantified = null
             return 169
         let sch_var_q (*sch_var.quantified)
@@ -20426,7 +20426,7 @@ define Planner
         ; generalize - variable present in env is NOT quantified.
         var env_with_7 Vector[size_t]$(1)
         env_with_7.put(0, 7)
-        let sch_in_env Planner.generalize$(var_ty, env_with_7)
+        let sch_in_env Planner.generalize(var_ty, env_with_7)
         if sch_in_env.quantified = null
             return 173
         if (*sch_in_env.quantified).length <> 0
@@ -20491,7 +20491,7 @@ define Planner
             null,
             Lifetime.Unspecified(Unspecified())
         )
-        let rt_int Planner.resolve_type_base$(int_type)
+        let rt_int Planner.resolve_type_base(int_type)
         if rt_int.name.equals("int") = false
             return 185
         if rt_int.generics <> null
@@ -20508,7 +20508,7 @@ define Planner
             null,
             Lifetime.Unspecified(Unspecified())
         )
-        let rt_str Planner.resolve_type_base$(str_type)
+        let rt_str Planner.resolve_type_base(str_type)
         if rt_str.name.equals("scaly.containers.String") = false
             return 187
 
@@ -20523,7 +20523,7 @@ define Planner
             &ptr_inner_gens,
             Lifetime.Unspecified(Unspecified())
         )
-        let rt_ptr Planner.resolve_type_base$(ptr_type)
+        let rt_ptr Planner.resolve_type_base(ptr_type)
         if rt_ptr.name.equals("pointer") = false
             return 188
         if rt_ptr.generics = null
@@ -20563,7 +20563,7 @@ define Planner
             String(""),
             null
         )
-        let subst_t Planner.apply_name_substitution$(t_ty, &t_subst)
+        let subst_t Planner.apply_name_substitution(t_ty, &t_subst)
         if subst_t.name.equals("int") = false
             return 197
 
@@ -20580,7 +20580,7 @@ define Planner
             String(""),
             null
         )
-        let subst_vec Planner.apply_name_substitution$(vec_t_ns_ty, &t_subst)
+        let subst_vec Planner.apply_name_substitution(vec_t_ns_ty, &t_subst)
         if subst_vec.name.equals("Vector") = false
             return 198
         if subst_vec.generics = null
@@ -20592,23 +20592,23 @@ define Planner
             return 201
 
         ; apply_name_substitution - null substitution, no change.
-        let no_subst Planner.apply_name_substitution$(vec_t_ns_ty, null)
+        let no_subst Planner.apply_name_substitution(vec_t_ns_ty, null)
         if no_subst.name.equals("Vector") = false
             return 202
 
         ; Primitive factories set the Itanium one-letter codes.
-        let mk_int Planner.make_int_type$()
+        let mk_int Planner.make_int_type()
         if mk_int.name.equals("int") = false
             return 203
         if mk_int.mangled_name.equals("i") = false
             return 204
 
-        let mk_void Planner.make_void_type$()
+        let mk_void Planner.make_void_type()
         if mk_void.mangled_name.equals("v") = false
             return 205
 
         ; make_pointer_type wraps "P" + inner.mangled_name.
-        let mk_ptr_int Planner.make_pointer_type$(mk_int)
+        let mk_ptr_int Planner.make_pointer_type(mk_int)
         if mk_ptr_int.name.equals("pointer") = false
             return 206
         if mk_ptr_int.mangled_name.equals("Pi") = false
@@ -20620,12 +20620,12 @@ define Planner
             return 209
 
         ; instantiate - no quantified vars: return scheme type unchanged.
-        let inst_int Planner.instantiate$(sch_int, 100)
+        let inst_int Planner.instantiate(sch_int, 100)
         if inst_int.name.equals("int") = false
             return 210
 
         ; instantiate - scheme with quantified T7 gets fresh id 100.
-        let inst_var Planner.instantiate$(sch_var, 100)
+        let inst_var Planner.instantiate(sch_var, 100)
         if inst_var.variable = null
             return 211
         if (*inst_var.variable).id <> 100
@@ -20714,7 +20714,7 @@ define Planner
         ; fresh_type_var + constraint-solver methods on the Planner instance.
         ; ====================================================================
 
-        let fv1 p.fresh_type_var$(String("T"))
+        let fv1 p.fresh_type_var(String("T"))
         if fv1.variable = null
             return 230
         if (*fv1.variable).id <> 3
@@ -20722,26 +20722,26 @@ define Planner
 
         ; Add a solvable constraint: fv1 = int, solve → success.
         p.add_equality_constraint(fv1, int_ty, Span(0, 0))
-        if p.solve_and_apply$() = false
+        if p.solve_and_apply() = false
             return 232
 
         ; Applying the current substitution to fv1 should now yield int.
-        let rewritten p.apply_current_substitution$(fv1)
+        let rewritten p.apply_current_substitution(fv1)
         if rewritten.name.equals("int") = false
             return 233
 
         ; Constraints are cleared after a successful solve — adding an
         ; unrelated constraint and solving again should still succeed.
-        let fv2 p.fresh_type_var$(String("U"))
+        let fv2 p.fresh_type_var(String("U"))
         p.add_equality_constraint(fv2, bool_ty, Span(0, 0))
-        if p.solve_and_apply$() = false
+        if p.solve_and_apply() = false
             return 234
 
         ; Add a conflicting pair: fv3 = int, fv3 = bool. Expect failure.
-        let fv3 p.fresh_type_var$(String("V"))
+        let fv3 p.fresh_type_var(String("V"))
         p.add_equality_constraint(fv3, int_ty, Span(0, 0))
         p.add_equality_constraint(fv3, bool_ty, Span(0, 0))
-        if p.solve_and_apply$()
+        if p.solve_and_apply()
             return 235
 
         ; ====================================================================
@@ -20750,7 +20750,7 @@ define Planner
 
         ; A clean Planner — no active substitutions — resolves "int" plainly.
         var p2 Planner.Planner(String("test2.scaly"))
-        let pt_int p2.plan_type$(int_type)
+        let pt_int p2.plan_type(int_type)
         if pt_int.name.equals("int") = false
             return 236
 
@@ -20773,7 +20773,7 @@ define Planner
             &vec_t_generics,
             Lifetime.Unspecified(Unspecified())
         )
-        let pt_vec_t p2.plan_type$(vec_t_model)
+        let pt_vec_t p2.plan_type(vec_t_model)
         if pt_vec_t.name.equals("Vector") = false
             return 237
         if pt_vec_t.generics = null
@@ -20796,7 +20796,7 @@ define Planner
             &int_type,
             Vector[Attribute]$(0)
         )
-        let pl_item p2.plan_item$(model_item)
+        let pl_item p2.plan_item(model_item)
         if pl_item.name = null
             return 241
         if (*pl_item.name).equals(String("x")) = false
@@ -20814,7 +20814,7 @@ define Planner
             null,
             Vector[Attribute]$(0)
         )
-        let pl_bare p2.plan_item$(bare_item)
+        let pl_bare p2.plan_item(bare_item)
         if pl_bare.name <> null
             return 245
         if pl_bare.item_type <> null
@@ -20826,7 +20826,7 @@ define Planner
         var model_items Vector[Item]$(2)
         model_items.put(0, model_item)
         model_items.put(1, bare_item)
-        let pl_items p2.plan_items$(model_items)
+        let pl_items p2.plan_items(model_items)
         if pl_items.length <> 2
             return 248
         let pi0 pl_items.get 0
@@ -20836,7 +20836,7 @@ define Planner
             return 250
 
         ; plan_constant_operand: literal 42 → PlannedOperand with result_type = int.
-        let plan_c42 p2.plan_constant_operand$(
+        let plan_c42 p2.plan_constant_operand(
             Constant.Integer(IntegerConstant(Span(0, 0), 42)),
             Span(0, 0)
         )
@@ -20849,7 +20849,7 @@ define Planner
             Expression.Constant(Constant.Integer(IntegerConstant(Span(0, 0), 42))),
             null
         )
-        let po_42 p2.plan_operand$(op_42)
+        let po_42 p2.plan_operand(op_42)
         if po_42.result_type.name.equals("int") = false
             return 252
 
@@ -20861,7 +20861,7 @@ define Planner
         var model_ops Vector[Operand]$(2)
         model_ops.put(0, op_42)
         model_ops.put(1, op_true)
-        let po_batch p2.plan_operands$(model_ops)
+        let po_batch p2.plan_operands(model_ops)
         if po_batch.length <> 2
             return 253
         let po_batch_1 po_batch.get 1
@@ -20889,7 +20889,7 @@ define Planner
             ),
             init_ops
         )
-        let pb p3.plan_binding$(model_bind)
+        let pb p3.plan_binding(model_bind)
         if pb.binding_type.equals("let") = false
             return 256
         if pb.binding_item.name = null
@@ -20905,7 +20905,7 @@ define Planner
             return 260
 
         ; The equality constraint binding_type = init_type should be solvable.
-        if p3.solve_and_apply$() = false
+        if p3.solve_and_apply() = false
             return 261
 
         ; ====================================================================
@@ -20914,13 +20914,13 @@ define Planner
 
         ; An Action: source = [42], target = [] → PlannedAction with result_type int.
         let model_action Action(init_ops, Vector[Operand]$(0))
-        let pl_act p3.plan_action$(model_action)
+        let pl_act p3.plan_action(model_action)
         if pl_act.result_type.name.equals("int") = false
             return 262
 
         ; A Return with one operand.
         let model_return Return(Span(0, 0), init_ops)
-        let pl_ret p3.plan_return$(model_return)
+        let pl_ret p3.plan_return(model_return)
         if pl_ret.result = null
             return 263
         if (*pl_ret.result).length <> 1
@@ -20928,7 +20928,7 @@ define Planner
 
         ; plan_statement over the Action above.
         let stmt_action Statement.Action(model_action)
-        let pl_stmt p3.plan_statement$(stmt_action)
+        let pl_stmt p3.plan_statement(stmt_action)
         let stmt_is_action choose pl_stmt
             when a: PlannedAction
                 true
@@ -20939,7 +20939,7 @@ define Planner
 
         ; plan_statement over a Continue.
         let stmt_continue Statement.Continue(Continue(Span(0, 0), String("")))
-        let pl_cont p3.plan_statement$(stmt_continue)
+        let pl_cont p3.plan_statement(stmt_continue)
         let stmt_is_continue choose pl_cont
             when c: PlannedContinue
                 true
@@ -20952,7 +20952,7 @@ define Planner
         var stmts_vec Vector[Statement]$(1)
         stmts_vec.put(0, stmt_action)
         let model_block Block(Span(0, 0), stmts_vec)
-        let pl_block p3.plan_block$(model_block)
+        let pl_block p3.plan_block(model_block)
         if pl_block.statements = null
             return 267
         if (*pl_block.statements).length <> 1
@@ -20967,7 +20967,7 @@ define Planner
             null,
             Vector[Attribute]$(0)
         )
-        let pl_prop p3.plan_property$(model_prop)
+        let pl_prop p3.plan_property(model_prop)
         if pl_prop.name.equals(String("x")) = false
             return 269
         if pl_prop.prop_type.name.equals("int") = false
@@ -20982,7 +20982,7 @@ define Planner
             &int_type,
             Vector[Attribute]$(0)
         )
-        let pl_variant p3.plan_variant$(model_variant, 1)
+        let pl_variant p3.plan_variant(model_variant, 1)
         if pl_variant.name.equals(String("Some")) = false
             return 272
         if pl_variant.tag <> 1
@@ -21012,7 +21012,7 @@ define Planner
             Lifetime.Unspecified(Unspecified()),
             Implementation.Extern(Extern(Span(0, 0)))
         )
-        let pl_fn p3.plan_function$(model_fn, null)
+        let pl_fn p3.plan_function(model_fn, null)
         if pl_fn.name.equals(String("foo")) = false
             return 275
         if pl_fn.input = null
@@ -21039,7 +21039,7 @@ define Planner
             Vector[scalyc.compiler.Model.Member]$(0),
             empty_symbols
         )
-        let pl_struct p3.plan_structure$(empty_struct, String("Foo"))
+        let pl_struct p3.plan_structure(empty_struct, String("Foo"))
         if pl_struct.name.equals(String("Foo")) = false
             return 280
         if pl_struct.size <> 0
@@ -21055,7 +21055,7 @@ define Planner
             x_params,
             Implementation.Intrinsic(Intrinsic(Span(0, 0)))
         )
-        let pl_init p3.plan_initializer$(model_init, null)
+        let pl_init p3.plan_initializer(model_init, null)
         if pl_init.input = null
             return 283
         if (*pl_init.input).length <> 1
@@ -21087,7 +21087,7 @@ define Planner
             null,
             Implementation.Intrinsic(Intrinsic(Span(0, 0)))
         )
-        let pl_op p3.plan_operator$(model_op, null)
+        let pl_op p3.plan_operator(model_op, null)
         if pl_op.name.equals(String("+")) = false
             return 285
         if pl_op.input = null
@@ -21107,14 +21107,14 @@ define Planner
             Vector[Item]$(0),
             lam_body
         )
-        let pl_lam p4.plan_lambda$(model_lam)
+        let pl_lam p4.plan_lambda(model_lam)
         if pl_lam.mangled_name.equals(String("_ZN6lambda0Ev")) = false
             return 289
         if pl_lam.return_type.name.equals(String("int")) = false
             return 290
 
         ; A second lambda bumps the counter to 1.
-        let pl_lam2 p4.plan_lambda$(model_lam)
+        let pl_lam2 p4.plan_lambda(model_lam)
         if pl_lam2.mangled_name.equals(String("_ZN6lambda1Ev")) = false
             return 291
 
@@ -21122,7 +21122,7 @@ define Planner
         ; Repeat: a do-while whose body is the same trivial Action.
         ; ====================================================================
         let model_rep Repeat(Span(0, 0), lam_body, String(""))
-        let pl_rep p4.plan_repeat$(model_rep)
+        let pl_rep p4.plan_repeat(model_rep)
         if pl_rep.body.result_type.name.equals(String("int")) = false
             return 292
 

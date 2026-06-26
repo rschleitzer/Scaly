@@ -928,7 +928,7 @@ define lexer
         ; Test 2: Identifier
         {
             var lexer Lexer(String("abc_123"))
-            lexer.advance$()
+            lexer.advance()
             choose lexer.token
                 when ident: Identifier
                 {
@@ -943,7 +943,7 @@ define lexer
         ; Test 3: Integer literal
         {
             var lexer Lexer(String("42"))
-            lexer.advance$()
+            lexer.advance()
             choose lexer.token
                 when lit: Literal
                 {
@@ -964,8 +964,8 @@ define lexer
         ; Test 4: Colon from newline
         {
             var lexer Lexer(String("a\nb"))
-            lexer.advance$()  ; 'a'
-            lexer.advance$()  ; newline -> colon
+            lexer.advance()  ; 'a'
+            lexer.advance()  ; newline -> colon
             choose lexer.token
                 when c: Colon {}
                 else
@@ -975,8 +975,8 @@ define lexer
         ; Test 5: Single-line comment (doesn't swallow newline)
         {
             var lexer Lexer(String("a;comment\nb"))
-            lexer.advance$()  ; 'a'
-            lexer.advance$()  ; newline -> colon (comment skipped)
+            lexer.advance()  ; 'a'
+            lexer.advance()  ; newline -> colon (comment skipped)
             choose lexer.token
                 when e: Empty
                     return 90
@@ -993,7 +993,7 @@ define lexer
                     return 96
                 else
                     return 97
-            lexer.advance$()  ; 'b'
+            lexer.advance()  ; 'b'
             choose lexer.token
                 when ident: Identifier
                 {
@@ -1008,7 +1008,7 @@ define lexer
         ; Test 6: String literal
         {
             var lexer Lexer(String("\"hello\""))
-            lexer.advance$()
+            lexer.advance()
             choose lexer.token
                 when lit: Literal
                 {
@@ -1029,7 +1029,7 @@ define lexer
         ; Test 7: Freeform identifier (single quotes)
         {
             var lexer Lexer(String("'my identifier'"))
-            lexer.advance$()
+            lexer.advance()
             choose lexer.token
                 when ident: Identifier
                 {
@@ -1044,7 +1044,7 @@ define lexer
         ; Test 8: Hex literal
         {
             var lexer Lexer(String("0xABcd"))
-            lexer.advance$()
+            lexer.advance()
             choose lexer.token
                 when lit: Literal
                 {
@@ -1065,7 +1065,7 @@ define lexer
         ; Test 9: Boolean literal
         {
             var lexer Lexer(String("0B1"))
-            lexer.advance$()
+            lexer.advance()
             choose lexer.token
                 when lit: Literal
                 {
@@ -1086,7 +1086,7 @@ define lexer
         ; Test 10: Floating point
         {
             var lexer Lexer(String("3.14"))
-            lexer.advance$()
+            lexer.advance()
             choose lexer.token
                 when lit: Literal
                 {
@@ -1107,7 +1107,7 @@ define lexer
         ; Test 11: Operator
         {
             var lexer Lexer(String("<>"))
-            lexer.advance$()
+            lexer.advance()
             choose lexer.token
                 when ident: Identifier
                 {
@@ -1122,7 +1122,7 @@ define lexer
         ; Test 12: Attribute
         {
             var lexer Lexer(String("@summary"))
-            lexer.advance$()
+            lexer.advance()
             choose lexer.token
                 when attr: Attribute
                 {
@@ -1137,7 +1137,7 @@ define lexer
         ; Test 13: Multi-line comment
         {
             var lexer Lexer(String(";* comment *;x"))
-            lexer.advance$()
+            lexer.advance()
             choose lexer.token
                 when ident: Identifier
                 {

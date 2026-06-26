@@ -2112,10 +2112,10 @@ function handle_namespace#(name: String, path: String, syntax: NamespaceSyntax, 
     ; Skip the append when path's last component already equals name —
     ; happens when build_module# loaded a file whose define matches its
     ; own filename. Mirrors stage-0 Modeler.cpp:1864-1868.
-    let last_seg Path.get_file_name$(path)
+    let last_seg Path.get_file_name(path)
     var ns_path: String path
     if last_seg.equals(name) = false
-        set ns_path: Path.join$(path, name)
+        set ns_path: Path.join(path, name)
 
     if syntax.declarations <> null
     {
@@ -2485,7 +2485,7 @@ procedure handle_package_decl#(pkg_syntax: PackageSyntax, packages: ref[Array[Mo
     let pkg_name pkg_syntax.name.name
     var version_str String("0.1.0")
     if pkg_syntax.version <> null
-        set version_str: format_version$(pkg_syntax.version.unwrap())
+        set version_str: format_version(pkg_syntax.version.unwrap())
 
     ; Search path: <SCALY_HOME/>packages/<name>/<version>/
     var sb StringBuilder()
@@ -2531,7 +2531,7 @@ function build_referenced_module#(path: String, name: String, is_private: bool) 
     if File.exists(file_path) = false
         return empty_module
 
-    var contents File.read_to_string$(file_path)
+    var contents File.read_to_string(file_path)
     if contents.get_length() = 0
         return empty_module
 
@@ -2644,7 +2644,7 @@ function build_program#(file_name: String, program_name: String, syntax: Program
     ; Build main module — base path is the directory containing the source
     ; file, so sibling `module foo` decls resolve to <dir>/foo.scaly (mirrors
     ; stage-0 Modeler::buildProgram).
-    let path Path.get_directory_name$(file_name)
+    let path Path.get_directory_name(file_name)
     let initial_module build_module#(path, file_name, program_name, syntax.file, false)
 
     ; Load prelude.scaly and add it as a sub-module of the main module so

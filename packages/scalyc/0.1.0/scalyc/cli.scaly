@@ -329,7 +329,7 @@ define cli
         }
 
         ; Read the source file
-        var source File.read_to_string$(opts.input_file)
+        var source File.read_to_string(opts.input_file)
         if source.get_length() = 0
         {
             Console.println "Error: Could not read input file"
@@ -349,12 +349,12 @@ define cli
         {
             ; Just tokenize and print tokens
             Console.println "Tokens:"
-            p.lexer.advance$()
+            p.lexer.advance()
             while p.lexer.is_at_end() = false
             {
                 ; TODO: Print token details
                 Console.println "  <token>"
-                p.lexer.advance$()
+                p.lexer.advance()
             }
             return 0
         }
@@ -737,7 +737,7 @@ define cli
                 if d_ptr.file.get_length() > 0
                 {
                     set dpath: d_ptr.file
-                    set dsrc: File.read_to_string$(d_ptr.file)
+                    set dsrc: File.read_to_string(d_ptr.file)
                 }
                 var line: size_t 1
                 var col: size_t 1
@@ -900,7 +900,7 @@ define cli
         var file_path String("../../hello.scaly")
 
         ; Read the file
-        var source File.read_to_string$(file_path)
+        var source File.read_to_string(file_path)
         if source.get_length() = 0
             return -1  ; Could not read file
 
