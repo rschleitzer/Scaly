@@ -13477,9 +13477,17 @@ define Planner
                             0
                     if c_local = false
                         return null
+                    ; Recursively promote the construction's ARGUMENTS to the
+                    ; same page: an inline construction in an arg position
+                    ; (`T(String(x), …)`) becomes a field of the escaping
+                    ; aggregate, so its heap guts must outlive the frame too.
+                    ; restamp_args# keeps non-owning/explicit args verbatim.
+                    var new_args: ref[Vector[PlannedOperand]]? c.args
+                    if c.args <> null
+                        set new_args: this.restamp_args#((*c.args), new_life)
                     let nc PlannedCall(
                         c.loc, c.name, c.mangled_name, c.is_intrinsic, c.is_operator,
-                        c.can_throw, c.requires_page_param, c.args,
+                        c.can_throw, c.requires_page_param, new_args,
                         c.result_type, new_life, c.throws_type, c.is_indirect
                     )
                     var h Vector[PlannedOperand]^rp(1)
@@ -13498,8 +13506,14 @@ define Planner
                             0
                     if t_local = false
                         return null
+                    ; Recursively promote the tuple's component values (struct
+                    ; field constructions) to the same page — same reasoning as
+                    ; the PlannedCall arg recursion above.
+                    var new_comps: ref[Vector[PlannedComponent]]? t.components
+                    if t.components <> null
+                        set new_comps: this.restamp_components#((*t.components), new_life)
                     let nt PlannedTuple(
-                        t.loc, t.components, t.tuple_type,
+                        t.loc, new_comps, t.tuple_type,
                         true, new_life, t.region_arg
                     )
                     var h Vector[PlannedOperand]^rp(1)
@@ -13509,6 +13523,52 @@ define Planner
                 else
                     return null
             null
+        }
+        ; Recursively re-stamp the operands of a promoted construction's
+        ; argument list / component values: each arg that is itself a defaulted
+        ; page-owning construction is promoted to the SAME life (it becomes a
+        ; field of the escaping aggregate). Args that don't own page guts
+        ; (primitives, borrows) or already carry an explicit lifetime are kept
+        ; verbatim — restamp_operand_life# returns null for them. Bound-local
+        ; args (a Variable) are likewise kept (their own binding is promoted via
+        ; the name-graph); only INLINE constructions are restamped here.
+        function restamp_args#(rp, this: Planner, args: Vector[PlannedOperand], new_life: Lifetime) returns ref[Vector[PlannedOperand]]?
+        {
+            var out Vector[PlannedOperand]^rp(args.length)
+            var i: size_t 0
+            while i < args.length
+            {
+                let ap args.get i
+                if ap <> null
+                {
+                    let promoted this.restamp_operand_life#((*ap), new_life)
+                    if promoted <> null
+                        out.put(i, (*promoted))
+                    if promoted = null
+                        out.put(i, (*ap))
+                }
+                set i: i + 1
+            }
+            &out
+        }
+        function restamp_components#(rp, this: Planner, comps: Vector[PlannedComponent], new_life: Lifetime) returns ref[Vector[PlannedComponent]]?
+        {
+            var out Vector[PlannedComponent]^rp(comps.length)
+            var i: size_t 0
+            while i < comps.length
+            {
+                let cp comps.get i
+                if cp <> null
+                {
+                    let c (*cp)
+                    var new_value: ref[Vector[PlannedOperand]]? c.value
+                    if c.value <> null
+                        set new_value: this.restamp_args#((*c.value), new_life)
+                    out.put(i, PlannedComponent(c.loc, c.name, new_value, c.attributes))
+                }
+                set i: i + 1
+            }
+            &out
         }
 
         function plan_return#(rp, this: Planner, r: Return) returns PlannedReturn
