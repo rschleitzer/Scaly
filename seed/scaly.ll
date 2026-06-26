@@ -274,12 +274,12 @@ entry:
   %as.ptrtoint2 = ptrtoint ptr %0 to i64
   %add3 = add i64 %as.ptrtoint2, 4096
   %sub4 = sub i64 %add3, %and
-  %lt = icmp slt i64 %sub4, %1
+  %lt = icmp ult i64 %sub4, %1
   br i1 %lt, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
   %add5 = add i64 %1, ptrtoint (ptr getelementptr (%_Z4Page, ptr null, i32 1) to i64)
-  %gt = icmp sgt i64 %add5, 4096
+  %gt = icmp ugt i64 %add5, 4096
   br i1 %gt, label %if.then6, label %if.end7
 
 if.end:                                           ; preds = %entry
@@ -1162,7 +1162,7 @@ if.end:                                           ; preds = %entry
   %add = add i64 %as.ptrtoint, 4096
   %as.inttoptr = inttoptr i64 %add to ptr
   %call10 = call ptr @_Z16last_usable_pagePv(ptr %call8)
-  %gt = icmp sgt ptr %as.inttoptr, %call10
+  %gt = icmp ugt ptr %as.inttoptr, %call10
   br i1 %gt, label %if.then11, label %if.end12
 
 if.then3:                                         ; preds = %if.then
@@ -1622,7 +1622,7 @@ define linkonce_odr ptr @_ZN6VectorIiE3getEPN4scaly6memory4PageEm(ptr %0, ptr %1
 entry:
   %load.struct = load %_Z6VectorIiE, ptr %1, align 8
   %length = extractvalue %_Z6VectorIiE %load.struct, 0
-  %ge = icmp sge i64 %2, %length
+  %ge = icmp uge i64 %2, %length
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
@@ -1639,7 +1639,7 @@ define linkonce_odr ptr @_ZN6VectorIiE7get_ptrEm(ptr %0, i64 %1) {
 entry:
   %load.struct = load %_Z6VectorIiE, ptr %0, align 8
   %length = extractvalue %_Z6VectorIiE %load.struct, 0
-  %ge = icmp sge i64 %1, %length
+  %ge = icmp uge i64 %1, %length
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
@@ -1656,7 +1656,7 @@ define linkonce_odr void @_ZN6VectorIiE3putEmi(ptr %0, i64 %1, i64 %2) {
 entry:
   %load.struct = load %_Z6VectorIiE, ptr %0, align 8
   %length = extractvalue %_Z6VectorIiE %load.struct, 0
-  %ge = icmp sge i64 %1, %length
+  %ge = icmp uge i64 %1, %length
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
@@ -1772,7 +1772,7 @@ define linkonce_odr void @_ZN6VectorIiEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1,
 entry:
   %length = getelementptr inbounds %_Z6VectorIiE, ptr %0, i32 0, i32 0
   store i64 %2, ptr %length, align 4
-  %gt = icmp sgt i64 %2, 0
+  %gt = icmp ugt i64 %2, 0
   br i1 %gt, label %if.then, label %if.else
 
 if.then:                                          ; preds = %entry
@@ -1800,7 +1800,7 @@ define linkonce_odr void @_ZN6VectorIiEC1EPN4scaly6memory4PageEPim(ptr %0, ptr %
 entry:
   %length = getelementptr inbounds %_Z6VectorIiE, ptr %0, i32 0, i32 0
   store i64 %3, ptr %length, align 4
-  %gt = icmp sgt i64 %3, 0
+  %gt = icmp ugt i64 %3, 0
   br i1 %gt, label %if.then, label %if.else
 
 if.then:                                          ; preds = %entry
@@ -1832,7 +1832,7 @@ entry:
   store i64 %length, ptr %length1, align 4
   %load.struct2 = load %_Z6VectorIiE, ptr %0, align 8
   %length3 = extractvalue %_Z6VectorIiE %load.struct2, 0
-  %gt = icmp sgt i64 %length3, 0
+  %gt = icmp ugt i64 %length3, 0
   br i1 %gt, label %if.then, label %if.else
 
 if.then:                                          ; preds = %entry
@@ -2019,7 +2019,7 @@ entry:
   %new_length3 = load i64, ptr %new_length, align 4
   %load.struct4 = load %_Z5ArrayIiE, ptr %0, align 8
   %length5 = extractvalue %_Z5ArrayIiE %load.struct4, 0
-  %lt = icmp slt i64 %new_length3, %length5
+  %lt = icmp ult i64 %new_length3, %length5
   br i1 %lt, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
@@ -2038,7 +2038,7 @@ lor.rhs:                                          ; preds = %if.end
   %vector9 = extractvalue %_Z5ArrayIiE %load.struct8, 1
   %deref = load %_Z6VectorIiE, ptr %vector9, align 8
   %length10 = extractvalue %_Z6VectorIiE %deref, 0
-  %gt = icmp sgt i64 %new_length7, %length10
+  %gt = icmp ugt i64 %new_length7, %length10
   br label %lor.end
 
 lor.end:                                          ; preds = %lor.rhs, %if.end
@@ -2055,7 +2055,7 @@ if.end12:                                         ; preds = %if.then11, %lor.end
   %vector15 = extractvalue %_Z5ArrayIiE %load.struct14, 1
   %deref16 = load %_Z6VectorIiE, ptr %vector15, align 8
   %length17 = extractvalue %_Z6VectorIiE %deref16, 0
-  %gt18 = icmp sgt i64 %new_length13, %length17
+  %gt18 = icmp ugt i64 %new_length13, %length17
   br i1 %gt18, label %if.then19, label %if.end20
 
 if.then19:                                        ; preds = %if.end12
@@ -2070,13 +2070,13 @@ if.then19:                                        ; preds = %if.end12
   %mul26 = mul i64 %length25, ptrtoint (ptr getelementptr (i64, ptr null, i32 1) to i64)
   %load.struct27 = load %_Z5ArrayIiE, ptr %0, align 8
   %length28 = extractvalue %_Z5ArrayIiE %load.struct27, 0
-  %gt29 = icmp sgt i64 %length28, 0
+  %gt29 = icmp ugt i64 %length28, 0
   br i1 %gt29, label %if.then30, label %if.end31
 
 if.end20:                                         ; preds = %if.end31, %if.end12
   %load.struct48 = load %_Z6VectorIiE, ptr %1, align 8
   %length49 = extractvalue %_Z6VectorIiE %load.struct48, 0
-  %gt50 = icmp sgt i64 %length49, 0
+  %gt50 = icmp ugt i64 %length49, 0
   br i1 %gt50, label %if.then51, label %if.end52
 
 if.then30:                                        ; preds = %if.then19
@@ -2139,7 +2139,7 @@ define linkonce_odr ptr @_ZN5ArrayIiE3getEPN4scaly6memory4PageEm(ptr %0, ptr %1,
 entry:
   %load.struct = load %_Z5ArrayIiE, ptr %1, align 8
   %length = extractvalue %_Z5ArrayIiE %load.struct, 0
-  %ge = icmp sge i64 %2, %length
+  %ge = icmp uge i64 %2, %length
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
@@ -2158,7 +2158,7 @@ define linkonce_odr void @_ZN5ArrayIiE3putEmi(ptr %0, i64 %1, i64 %2) {
 entry:
   %load.struct = load %_Z5ArrayIiE, ptr %0, align 8
   %length = extractvalue %_Z5ArrayIiE %load.struct, 0
-  %ge = icmp sge i64 %1, %length
+  %ge = icmp uge i64 %1, %length
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
@@ -2294,7 +2294,7 @@ entry:
   store i64 %length, ptr %length1, align 4
   %load.struct2 = load %_Z6VectorIiE, ptr %0, align 8
   %length3 = extractvalue %_Z6VectorIiE %load.struct2, 0
-  %gt = icmp sgt i64 %length3, 0
+  %gt = icmp ugt i64 %length3, 0
   br i1 %gt, label %if.then, label %if.else
 
 if.then:                                          ; preds = %entry
@@ -2512,7 +2512,7 @@ entry:
   store i64 %call, ptr %length, align 4
   %load.struct = load %_Z6VectorIiE, ptr %0, align 8
   %length1 = extractvalue %_Z6VectorIiE %load.struct, 0
-  %gt = icmp sgt i64 %length1, 0
+  %gt = icmp ugt i64 %length1, 0
   br i1 %gt, label %if.then, label %if.else
 
 if.then:                                          ; preds = %entry
@@ -2759,7 +2759,7 @@ define linkonce_odr ptr @_ZN6VectorIcE3getEPN4scaly6memory4PageEm(ptr %0, ptr %1
 entry:
   %load.struct = load %_Z6VectorIcE, ptr %1, align 8
   %length = extractvalue %_Z6VectorIcE %load.struct, 0
-  %ge = icmp sge i64 %2, %length
+  %ge = icmp uge i64 %2, %length
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
@@ -2776,7 +2776,7 @@ define linkonce_odr ptr @_ZN6VectorIcE7get_ptrEm(ptr %0, i64 %1) {
 entry:
   %load.struct = load %_Z6VectorIcE, ptr %0, align 8
   %length = extractvalue %_Z6VectorIcE %load.struct, 0
-  %ge = icmp sge i64 %1, %length
+  %ge = icmp uge i64 %1, %length
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
@@ -2793,7 +2793,7 @@ define linkonce_odr void @_ZN6VectorIcE3putEmc(ptr %0, i64 %1, i8 %2) {
 entry:
   %load.struct = load %_Z6VectorIcE, ptr %0, align 8
   %length = extractvalue %_Z6VectorIcE %load.struct, 0
-  %ge = icmp sge i64 %1, %length
+  %ge = icmp uge i64 %1, %length
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
@@ -2909,7 +2909,7 @@ define linkonce_odr void @_ZN6VectorIcEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1,
 entry:
   %length = getelementptr inbounds %_Z6VectorIcE, ptr %0, i32 0, i32 0
   store i64 %2, ptr %length, align 4
-  %gt = icmp sgt i64 %2, 0
+  %gt = icmp ugt i64 %2, 0
   br i1 %gt, label %if.then, label %if.else
 
 if.then:                                          ; preds = %entry
@@ -2937,7 +2937,7 @@ define linkonce_odr void @_ZN6VectorIcEC1EPN4scaly6memory4PageEPcm(ptr %0, ptr %
 entry:
   %length = getelementptr inbounds %_Z6VectorIcE, ptr %0, i32 0, i32 0
   store i64 %3, ptr %length, align 4
-  %gt = icmp sgt i64 %3, 0
+  %gt = icmp ugt i64 %3, 0
   br i1 %gt, label %if.then, label %if.else
 
 if.then:                                          ; preds = %entry
@@ -2969,7 +2969,7 @@ entry:
   store i64 %length, ptr %length1, align 4
   %load.struct2 = load %_Z6VectorIcE, ptr %0, align 8
   %length3 = extractvalue %_Z6VectorIcE %load.struct2, 0
-  %gt = icmp sgt i64 %length3, 0
+  %gt = icmp ugt i64 %length3, 0
   br i1 %gt, label %if.then, label %if.else
 
 if.then:                                          ; preds = %entry
@@ -3156,7 +3156,7 @@ entry:
   %new_length3 = load i64, ptr %new_length, align 4
   %load.struct4 = load %_Z5ArrayIcE, ptr %0, align 8
   %length5 = extractvalue %_Z5ArrayIcE %load.struct4, 0
-  %lt = icmp slt i64 %new_length3, %length5
+  %lt = icmp ult i64 %new_length3, %length5
   br i1 %lt, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
@@ -3175,7 +3175,7 @@ lor.rhs:                                          ; preds = %if.end
   %vector9 = extractvalue %_Z5ArrayIcE %load.struct8, 1
   %deref = load %_Z6VectorIcE, ptr %vector9, align 8
   %length10 = extractvalue %_Z6VectorIcE %deref, 0
-  %gt = icmp sgt i64 %new_length7, %length10
+  %gt = icmp ugt i64 %new_length7, %length10
   br label %lor.end
 
 lor.end:                                          ; preds = %lor.rhs, %if.end
@@ -3192,7 +3192,7 @@ if.end12:                                         ; preds = %if.then11, %lor.end
   %vector15 = extractvalue %_Z5ArrayIcE %load.struct14, 1
   %deref16 = load %_Z6VectorIcE, ptr %vector15, align 8
   %length17 = extractvalue %_Z6VectorIcE %deref16, 0
-  %gt18 = icmp sgt i64 %new_length13, %length17
+  %gt18 = icmp ugt i64 %new_length13, %length17
   br i1 %gt18, label %if.then19, label %if.end20
 
 if.then19:                                        ; preds = %if.end12
@@ -3207,13 +3207,13 @@ if.then19:                                        ; preds = %if.end12
   %mul26 = mul i64 %length25, ptrtoint (ptr getelementptr (i8, ptr null, i32 1) to i64)
   %load.struct27 = load %_Z5ArrayIcE, ptr %0, align 8
   %length28 = extractvalue %_Z5ArrayIcE %load.struct27, 0
-  %gt29 = icmp sgt i64 %length28, 0
+  %gt29 = icmp ugt i64 %length28, 0
   br i1 %gt29, label %if.then30, label %if.end31
 
 if.end20:                                         ; preds = %if.end31, %if.end12
   %load.struct48 = load %_Z6VectorIcE, ptr %1, align 8
   %length49 = extractvalue %_Z6VectorIcE %load.struct48, 0
-  %gt50 = icmp sgt i64 %length49, 0
+  %gt50 = icmp ugt i64 %length49, 0
   br i1 %gt50, label %if.then51, label %if.end52
 
 if.then30:                                        ; preds = %if.then19
@@ -3276,7 +3276,7 @@ define linkonce_odr ptr @_ZN5ArrayIcE3getEPN4scaly6memory4PageEm(ptr %0, ptr %1,
 entry:
   %load.struct = load %_Z5ArrayIcE, ptr %1, align 8
   %length = extractvalue %_Z5ArrayIcE %load.struct, 0
-  %ge = icmp sge i64 %2, %length
+  %ge = icmp uge i64 %2, %length
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
@@ -3295,7 +3295,7 @@ define linkonce_odr void @_ZN5ArrayIcE3putEmc(ptr %0, i64 %1, i8 %2) {
 entry:
   %load.struct = load %_Z5ArrayIcE, ptr %0, align 8
   %length = extractvalue %_Z5ArrayIcE %load.struct, 0
-  %ge = icmp sge i64 %1, %length
+  %ge = icmp uge i64 %1, %length
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
@@ -3431,7 +3431,7 @@ entry:
   store i64 %length, ptr %length1, align 4
   %load.struct2 = load %_Z6VectorIcE, ptr %0, align 8
   %length3 = extractvalue %_Z6VectorIcE %load.struct2, 0
-  %gt = icmp sgt i64 %length3, 0
+  %gt = icmp ugt i64 %length3, 0
   br i1 %gt, label %if.then, label %if.else
 
 if.then:                                          ; preds = %entry
@@ -3649,7 +3649,7 @@ entry:
   store i64 %call, ptr %length, align 4
   %load.struct = load %_Z6VectorIcE, ptr %0, align 8
   %length1 = extractvalue %_Z6VectorIcE %load.struct, 0
-  %gt = icmp sgt i64 %length1, 0
+  %gt = icmp ugt i64 %length1, 0
   br i1 %gt, label %if.then, label %if.else
 
 if.then:                                          ; preds = %entry
@@ -3914,7 +3914,7 @@ define linkonce_odr ptr @_ZN6VectorI6StringE3getEPN4scaly6memory4PageEm(ptr %0, 
 entry:
   %load.struct = load %_Z6VectorI6StringE, ptr %1, align 8
   %length = extractvalue %_Z6VectorI6StringE %load.struct, 0
-  %ge = icmp sge i64 %2, %length
+  %ge = icmp uge i64 %2, %length
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
@@ -3931,7 +3931,7 @@ define linkonce_odr ptr @_ZN6VectorI6StringE7get_ptrEm(ptr %0, i64 %1) {
 entry:
   %load.struct = load %_Z6VectorI6StringE, ptr %0, align 8
   %length = extractvalue %_Z6VectorI6StringE %load.struct, 0
-  %ge = icmp sge i64 %1, %length
+  %ge = icmp uge i64 %1, %length
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
@@ -3948,7 +3948,7 @@ define linkonce_odr void @_ZN6VectorI6StringE3putEm6String(ptr %0, i64 %1, ptr %
 entry:
   %load.struct = load %_Z6VectorI6StringE, ptr %0, align 8
   %length = extractvalue %_Z6VectorI6StringE %load.struct, 0
-  %ge = icmp sge i64 %1, %length
+  %ge = icmp uge i64 %1, %length
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
@@ -4065,7 +4065,7 @@ define linkonce_odr void @_ZN6VectorI6StringEC1EPN4scaly6memory4PageEm(ptr %0, p
 entry:
   %length = getelementptr inbounds %_Z6VectorI6StringE, ptr %0, i32 0, i32 0
   store i64 %2, ptr %length, align 4
-  %gt = icmp sgt i64 %2, 0
+  %gt = icmp ugt i64 %2, 0
   br i1 %gt, label %if.then, label %if.else
 
 if.then:                                          ; preds = %entry
@@ -4093,7 +4093,7 @@ define linkonce_odr void @_ZN6VectorI6StringEC1EPN4scaly6memory4PageEP6Stringm(p
 entry:
   %length = getelementptr inbounds %_Z6VectorI6StringE, ptr %0, i32 0, i32 0
   store i64 %3, ptr %length, align 4
-  %gt = icmp sgt i64 %3, 0
+  %gt = icmp ugt i64 %3, 0
   br i1 %gt, label %if.then, label %if.else
 
 if.then:                                          ; preds = %entry
@@ -4125,7 +4125,7 @@ entry:
   store i64 %length, ptr %length1, align 4
   %load.struct2 = load %_Z6VectorI6StringE, ptr %0, align 8
   %length3 = extractvalue %_Z6VectorI6StringE %load.struct2, 0
-  %gt = icmp sgt i64 %length3, 0
+  %gt = icmp ugt i64 %length3, 0
   br i1 %gt, label %if.then, label %if.else
 
 if.then:                                          ; preds = %entry
@@ -4163,7 +4163,7 @@ entry:
   store i64 %length, ptr %length1, align 4
   %load.struct2 = load %_Z6VectorI6StringE, ptr %0, align 8
   %length3 = extractvalue %_Z6VectorI6StringE %load.struct2, 0
-  %gt = icmp sgt i64 %length3, 0
+  %gt = icmp ugt i64 %length3, 0
   br i1 %gt, label %if.then, label %if.else
 
 if.then:                                          ; preds = %entry
@@ -4350,7 +4350,7 @@ entry:
   store i64 %call, ptr %length, align 4
   %load.struct = load %_Z6VectorI6StringE, ptr %0, align 8
   %length1 = extractvalue %_Z6VectorI6StringE %load.struct, 0
-  %gt = icmp sgt i64 %length1, 0
+  %gt = icmp ugt i64 %length1, 0
   br i1 %gt, label %if.then, label %if.else
 
 if.then:                                          ; preds = %entry
@@ -4557,7 +4557,7 @@ entry:
   %new_length3 = load i64, ptr %new_length, align 4
   %load.struct4 = load %_Z5ArrayI6StringE, ptr %0, align 8
   %length5 = extractvalue %_Z5ArrayI6StringE %load.struct4, 0
-  %lt = icmp slt i64 %new_length3, %length5
+  %lt = icmp ult i64 %new_length3, %length5
   br i1 %lt, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
@@ -4576,7 +4576,7 @@ lor.rhs:                                          ; preds = %if.end
   %vector9 = extractvalue %_Z5ArrayI6StringE %load.struct8, 1
   %deref = load %_Z6VectorI6StringE, ptr %vector9, align 8
   %length10 = extractvalue %_Z6VectorI6StringE %deref, 0
-  %gt = icmp sgt i64 %new_length7, %length10
+  %gt = icmp ugt i64 %new_length7, %length10
   br label %lor.end
 
 lor.end:                                          ; preds = %lor.rhs, %if.end
@@ -4593,7 +4593,7 @@ if.end12:                                         ; preds = %if.then11, %lor.end
   %vector15 = extractvalue %_Z5ArrayI6StringE %load.struct14, 1
   %deref16 = load %_Z6VectorI6StringE, ptr %vector15, align 8
   %length17 = extractvalue %_Z6VectorI6StringE %deref16, 0
-  %gt18 = icmp sgt i64 %new_length13, %length17
+  %gt18 = icmp ugt i64 %new_length13, %length17
   br i1 %gt18, label %if.then19, label %if.end20
 
 if.then19:                                        ; preds = %if.end12
@@ -4608,13 +4608,13 @@ if.then19:                                        ; preds = %if.end12
   %mul26 = mul i64 %length25, ptrtoint (ptr getelementptr (%_Z6String, ptr null, i32 1) to i64)
   %load.struct27 = load %_Z5ArrayI6StringE, ptr %0, align 8
   %length28 = extractvalue %_Z5ArrayI6StringE %load.struct27, 0
-  %gt29 = icmp sgt i64 %length28, 0
+  %gt29 = icmp ugt i64 %length28, 0
   br i1 %gt29, label %if.then30, label %if.end31
 
 if.end20:                                         ; preds = %if.end31, %if.end12
   %load.struct48 = load %_Z6VectorI6StringE, ptr %1, align 8
   %length49 = extractvalue %_Z6VectorI6StringE %load.struct48, 0
-  %gt50 = icmp sgt i64 %length49, 0
+  %gt50 = icmp ugt i64 %length49, 0
   br i1 %gt50, label %if.then51, label %if.end52
 
 if.then30:                                        ; preds = %if.then19
@@ -4677,7 +4677,7 @@ define linkonce_odr ptr @_ZN5ArrayI6StringE3getEPN4scaly6memory4PageEm(ptr %0, p
 entry:
   %load.struct = load %_Z5ArrayI6StringE, ptr %1, align 8
   %length = extractvalue %_Z5ArrayI6StringE %load.struct, 0
-  %ge = icmp sge i64 %2, %length
+  %ge = icmp uge i64 %2, %length
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
@@ -4696,7 +4696,7 @@ define linkonce_odr void @_ZN5ArrayI6StringE3putEm6String(ptr %0, i64 %1, ptr %2
 entry:
   %load.struct = load %_Z5ArrayI6StringE, ptr %0, align 8
   %length = extractvalue %_Z5ArrayI6StringE %load.struct, 0
-  %ge = icmp sge i64 %1, %length
+  %ge = icmp uge i64 %1, %length
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
@@ -4970,7 +4970,7 @@ define linkonce_odr ptr @_ZN6VectorI11BuilderListI4SlotI6StringEEE3getEPN4scaly6
 entry:
   %load.struct = load %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %1, align 8
   %length = extractvalue %_Z6VectorI11BuilderListI4SlotI6StringEEE %load.struct, 0
-  %ge = icmp sge i64 %2, %length
+  %ge = icmp uge i64 %2, %length
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
@@ -4987,7 +4987,7 @@ define linkonce_odr ptr @_ZN6VectorI11BuilderListI4SlotI6StringEEE7get_ptrEm(ptr
 entry:
   %load.struct = load %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
   %length = extractvalue %_Z6VectorI11BuilderListI4SlotI6StringEEE %load.struct, 0
-  %ge = icmp sge i64 %1, %length
+  %ge = icmp uge i64 %1, %length
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
@@ -5004,7 +5004,7 @@ define linkonce_odr void @_ZN6VectorI11BuilderListI4SlotI6StringEEE3putEm11Build
 entry:
   %load.struct = load %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
   %length = extractvalue %_Z6VectorI11BuilderListI4SlotI6StringEEE %load.struct, 0
-  %ge = icmp sge i64 %1, %length
+  %ge = icmp uge i64 %1, %length
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
@@ -5210,7 +5210,7 @@ define linkonce_odr void @_ZN6VectorI11BuilderListI4SlotI6StringEEEC1EPN4scaly6m
 entry:
   %length = getelementptr inbounds %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 0
   store i64 %2, ptr %length, align 4
-  %gt = icmp sgt i64 %2, 0
+  %gt = icmp ugt i64 %2, 0
   br i1 %gt, label %if.then, label %if.else
 
 if.then:                                          ; preds = %entry
@@ -5238,7 +5238,7 @@ define linkonce_odr void @_ZN6VectorI11BuilderListI4SlotI6StringEEEC1EPN4scaly6m
 entry:
   %length = getelementptr inbounds %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 0
   store i64 %3, ptr %length, align 4
-  %gt = icmp sgt i64 %3, 0
+  %gt = icmp ugt i64 %3, 0
   br i1 %gt, label %if.then, label %if.else
 
 if.then:                                          ; preds = %entry
@@ -5270,7 +5270,7 @@ entry:
   store i64 %length, ptr %length1, align 4
   %load.struct2 = load %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
   %length3 = extractvalue %_Z6VectorI11BuilderListI4SlotI6StringEEE %load.struct2, 0
-  %gt = icmp sgt i64 %length3, 0
+  %gt = icmp ugt i64 %length3, 0
   br i1 %gt, label %if.then, label %if.else
 
 if.then:                                          ; preds = %entry
@@ -5365,7 +5365,7 @@ entry:
   %new_length3 = load i64, ptr %new_length, align 4
   %load.struct4 = load %_Z5ArrayI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
   %length5 = extractvalue %_Z5ArrayI11BuilderListI4SlotI6StringEEE %load.struct4, 0
-  %lt = icmp slt i64 %new_length3, %length5
+  %lt = icmp ult i64 %new_length3, %length5
   br i1 %lt, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
@@ -5391,7 +5391,7 @@ if.end8:                                          ; preds = %if.then7, %lor.end
   %new_length9 = load i64, ptr %new_length, align 4
   %load.struct10 = load %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %1, align 8
   %length11 = extractvalue %_Z6VectorI11BuilderListI4SlotI6StringEEE %load.struct10, 0
-  %gt = icmp sgt i64 %length11, 0
+  %gt = icmp ugt i64 %length11, 0
   br i1 %gt, label %if.then12, label %if.end13
 
 if.then12:                                        ; preds = %if.end8
@@ -5415,7 +5415,7 @@ define linkonce_odr ptr @_ZN5ArrayI11BuilderListI4SlotI6StringEEE3getEPN4scaly6m
 entry:
   %load.struct = load %_Z5ArrayI11BuilderListI4SlotI6StringEEE, ptr %1, align 8
   %length = extractvalue %_Z5ArrayI11BuilderListI4SlotI6StringEEE %load.struct, 0
-  %ge = icmp sge i64 %2, %length
+  %ge = icmp uge i64 %2, %length
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
@@ -5429,7 +5429,7 @@ define linkonce_odr void @_ZN5ArrayI11BuilderListI4SlotI6StringEEE3putEm11Builde
 entry:
   %load.struct = load %_Z5ArrayI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
   %length = extractvalue %_Z5ArrayI11BuilderListI4SlotI6StringEEE %load.struct, 0
-  %ge = icmp sge i64 %1, %length
+  %ge = icmp uge i64 %1, %length
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
@@ -5521,7 +5521,7 @@ entry:
   store i64 %length, ptr %length1, align 4
   %load.struct2 = load %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
   %length3 = extractvalue %_Z6VectorI11BuilderListI4SlotI6StringEEE %load.struct2, 0
-  %gt = icmp sgt i64 %length3, 0
+  %gt = icmp ugt i64 %length3, 0
   br i1 %gt, label %if.then, label %if.else
 
 if.then:                                          ; preds = %entry
@@ -5708,7 +5708,7 @@ entry:
   store i64 %call, ptr %length, align 4
   %load.struct = load %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %0, align 8
   %length1 = extractvalue %_Z6VectorI11BuilderListI4SlotI6StringEEE %load.struct, 0
-  %gt = icmp sgt i64 %length1, 0
+  %gt = icmp ugt i64 %length1, 0
   br i1 %gt, label %if.then, label %if.else
 
 if.then:                                          ; preds = %entry
@@ -6010,7 +6010,7 @@ lor.rhs:                                          ; preds = %entry
   %slots3 = extractvalue %_Z14HashSetBuilderI6StringE %load.struct2, 1
   %deref = load %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %slots3, align 8
   %length4 = extractvalue %_Z6VectorI11BuilderListI4SlotI6StringEEE %deref, 0
-  %gt = icmp sgt i64 %call, %length4
+  %gt = icmp ugt i64 %call, %length4
   br label %lor.end
 
 lor.end:                                          ; preds = %lor.rhs, %entry
@@ -6226,7 +6226,7 @@ entry:
   store ptr null, ptr %slots, align 8
   %load.struct = load %_Z6VectorI6StringE, ptr %1, align 8
   %length1 = extractvalue %_Z6VectorI6StringE %load.struct, 0
-  %gt = icmp sgt i64 %length1, 0
+  %gt = icmp ugt i64 %length1, 0
   br i1 %gt, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
@@ -6264,7 +6264,7 @@ define linkonce_odr ptr @_ZN6VectorI6VectorI6StringEE3getEPN4scaly6memory4PageEm
 entry:
   %load.struct = load %_Z6VectorI6VectorI6StringEE, ptr %1, align 8
   %length = extractvalue %_Z6VectorI6VectorI6StringEE %load.struct, 0
-  %ge = icmp sge i64 %2, %length
+  %ge = icmp uge i64 %2, %length
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
@@ -6281,7 +6281,7 @@ define linkonce_odr ptr @_ZN6VectorI6VectorI6StringEE7get_ptrEm(ptr %0, i64 %1) 
 entry:
   %load.struct = load %_Z6VectorI6VectorI6StringEE, ptr %0, align 8
   %length = extractvalue %_Z6VectorI6VectorI6StringEE %load.struct, 0
-  %ge = icmp sge i64 %1, %length
+  %ge = icmp uge i64 %1, %length
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
@@ -6298,7 +6298,7 @@ define linkonce_odr void @_ZN6VectorI6VectorI6StringEE3putEm6VectorI6StringE(ptr
 entry:
   %load.struct = load %_Z6VectorI6VectorI6StringEE, ptr %0, align 8
   %length = extractvalue %_Z6VectorI6VectorI6StringEE %load.struct, 0
-  %ge = icmp sge i64 %1, %length
+  %ge = icmp uge i64 %1, %length
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
@@ -6387,7 +6387,7 @@ define linkonce_odr void @_ZN6VectorI6VectorI6StringEEC1EPN4scaly6memory4PageEm(
 entry:
   %length = getelementptr inbounds %_Z6VectorI6VectorI6StringEE, ptr %0, i32 0, i32 0
   store i64 %2, ptr %length, align 4
-  %gt = icmp sgt i64 %2, 0
+  %gt = icmp ugt i64 %2, 0
   br i1 %gt, label %if.then, label %if.else
 
 if.then:                                          ; preds = %entry
@@ -6415,7 +6415,7 @@ define linkonce_odr void @_ZN6VectorI6VectorI6StringEEC1EPN4scaly6memory4PageEP6
 entry:
   %length = getelementptr inbounds %_Z6VectorI6VectorI6StringEE, ptr %0, i32 0, i32 0
   store i64 %3, ptr %length, align 4
-  %gt = icmp sgt i64 %3, 0
+  %gt = icmp ugt i64 %3, 0
   br i1 %gt, label %if.then, label %if.else
 
 if.then:                                          ; preds = %entry
@@ -6447,7 +6447,7 @@ entry:
   store i64 %length, ptr %length1, align 4
   %load.struct2 = load %_Z6VectorI6VectorI6StringEE, ptr %0, align 8
   %length3 = extractvalue %_Z6VectorI6VectorI6StringEE %load.struct2, 0
-  %gt = icmp sgt i64 %length3, 0
+  %gt = icmp ugt i64 %length3, 0
   br i1 %gt, label %if.then, label %if.else
 
 if.then:                                          ; preds = %entry
@@ -6542,7 +6542,7 @@ entry:
   %new_length3 = load i64, ptr %new_length, align 4
   %load.struct4 = load %_Z5ArrayI6VectorI6StringEE, ptr %0, align 8
   %length5 = extractvalue %_Z5ArrayI6VectorI6StringEE %load.struct4, 0
-  %lt = icmp slt i64 %new_length3, %length5
+  %lt = icmp ult i64 %new_length3, %length5
   br i1 %lt, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
@@ -6568,7 +6568,7 @@ if.end8:                                          ; preds = %if.then7, %lor.end
   %new_length9 = load i64, ptr %new_length, align 4
   %load.struct10 = load %_Z6VectorI6VectorI6StringEE, ptr %1, align 8
   %length11 = extractvalue %_Z6VectorI6VectorI6StringEE %load.struct10, 0
-  %gt = icmp sgt i64 %length11, 0
+  %gt = icmp ugt i64 %length11, 0
   br i1 %gt, label %if.then12, label %if.end13
 
 if.then12:                                        ; preds = %if.end8
@@ -6592,7 +6592,7 @@ define linkonce_odr ptr @_ZN5ArrayI6VectorI6StringEE3getEPN4scaly6memory4PageEm(
 entry:
   %load.struct = load %_Z5ArrayI6VectorI6StringEE, ptr %1, align 8
   %length = extractvalue %_Z5ArrayI6VectorI6StringEE %load.struct, 0
-  %ge = icmp sge i64 %2, %length
+  %ge = icmp uge i64 %2, %length
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
@@ -6606,7 +6606,7 @@ define linkonce_odr void @_ZN5ArrayI6VectorI6StringEE3putEm6VectorI6StringE(ptr 
 entry:
   %load.struct = load %_Z5ArrayI6VectorI6StringEE, ptr %0, align 8
   %length = extractvalue %_Z5ArrayI6VectorI6StringEE %load.struct, 0
-  %ge = icmp sge i64 %1, %length
+  %ge = icmp uge i64 %1, %length
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
@@ -6698,7 +6698,7 @@ entry:
   store i64 %length, ptr %length1, align 4
   %load.struct2 = load %_Z6VectorI6VectorI6StringEE, ptr %0, align 8
   %length3 = extractvalue %_Z6VectorI6VectorI6StringEE %load.struct2, 0
-  %gt = icmp sgt i64 %length3, 0
+  %gt = icmp ugt i64 %length3, 0
   br i1 %gt, label %if.then, label %if.else
 
 if.then:                                          ; preds = %entry
@@ -6885,7 +6885,7 @@ entry:
   store i64 %call, ptr %length, align 4
   %load.struct = load %_Z6VectorI6VectorI6StringEE, ptr %0, align 8
   %length1 = extractvalue %_Z6VectorI6VectorI6StringEE %load.struct, 0
-  %gt = icmp sgt i64 %length1, 0
+  %gt = icmp ugt i64 %length1, 0
   br i1 %gt, label %if.then, label %if.else
 
 if.then:                                          ; preds = %entry
@@ -6972,7 +6972,7 @@ if.end6:                                          ; preds = %if.end
 
 while.cond:                                       ; preds = %if.end13, %if.end6
   %i9 = load i64, ptr %i, align 4
-  %lt = icmp slt i64 %i9, %length8
+  %lt = icmp ult i64 %i9, %length8
   br i1 %lt, label %while.body, label %while.exit
 
 while.body:                                       ; preds = %while.cond
@@ -7076,7 +7076,7 @@ if.end:                                           ; preds = %entry
 while.cond:                                       ; preds = %if.end14, %if.end
   %i10 = load i64, ptr %i, align 4
   %length11 = load i64, ptr %length9, align 4
-  %lt = icmp slt i64 %i10, %length11
+  %lt = icmp ult i64 %i10, %length11
   br i1 %lt, label %while.body, label %while.exit
 
 while.body:                                       ; preds = %while.cond
@@ -7127,7 +7127,7 @@ while.exit21:                                     ; preds = %while.cond19
   %array25 = load ptr, ptr %array, align 8
   %load.struct26 = load %_Z5ArrayI6StringE, ptr %array25, align 8
   %length27 = extractvalue %_Z5ArrayI6StringE %load.struct26, 0
-  %gt = icmp sgt i64 %length27, 0
+  %gt = icmp ugt i64 %length27, 0
   br i1 %gt, label %if.then28, label %if.end29
 
 if.then28:                                        ; preds = %while.exit21
@@ -7499,7 +7499,7 @@ define linkonce_odr ptr @_ZN6VectorI12KeyValuePairI6StringiEE3getEPN4scaly6memor
 entry:
   %load.struct = load %_Z6VectorI12KeyValuePairI6StringiEE, ptr %1, align 8
   %length = extractvalue %_Z6VectorI12KeyValuePairI6StringiEE %load.struct, 0
-  %ge = icmp sge i64 %2, %length
+  %ge = icmp uge i64 %2, %length
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
@@ -7516,7 +7516,7 @@ define linkonce_odr ptr @_ZN6VectorI12KeyValuePairI6StringiEE7get_ptrEm(ptr %0, 
 entry:
   %load.struct = load %_Z6VectorI12KeyValuePairI6StringiEE, ptr %0, align 8
   %length = extractvalue %_Z6VectorI12KeyValuePairI6StringiEE %load.struct, 0
-  %ge = icmp sge i64 %1, %length
+  %ge = icmp uge i64 %1, %length
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
@@ -7533,7 +7533,7 @@ define linkonce_odr void @_ZN6VectorI12KeyValuePairI6StringiEE3putEm12KeyValuePa
 entry:
   %load.struct = load %_Z6VectorI12KeyValuePairI6StringiEE, ptr %0, align 8
   %length = extractvalue %_Z6VectorI12KeyValuePairI6StringiEE %load.struct, 0
-  %ge = icmp sge i64 %1, %length
+  %ge = icmp uge i64 %1, %length
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
@@ -7650,7 +7650,7 @@ define linkonce_odr void @_ZN6VectorI12KeyValuePairI6StringiEEC1EPN4scaly6memory
 entry:
   %length = getelementptr inbounds %_Z6VectorI12KeyValuePairI6StringiEE, ptr %0, i32 0, i32 0
   store i64 %2, ptr %length, align 4
-  %gt = icmp sgt i64 %2, 0
+  %gt = icmp ugt i64 %2, 0
   br i1 %gt, label %if.then, label %if.else
 
 if.then:                                          ; preds = %entry
@@ -7678,7 +7678,7 @@ define linkonce_odr void @_ZN6VectorI12KeyValuePairI6StringiEEC1EPN4scaly6memory
 entry:
   %length = getelementptr inbounds %_Z6VectorI12KeyValuePairI6StringiEE, ptr %0, i32 0, i32 0
   store i64 %3, ptr %length, align 4
-  %gt = icmp sgt i64 %3, 0
+  %gt = icmp ugt i64 %3, 0
   br i1 %gt, label %if.then, label %if.else
 
 if.then:                                          ; preds = %entry
@@ -7710,7 +7710,7 @@ entry:
   store i64 %length, ptr %length1, align 4
   %load.struct2 = load %_Z6VectorI12KeyValuePairI6StringiEE, ptr %0, align 8
   %length3 = extractvalue %_Z6VectorI12KeyValuePairI6StringiEE %load.struct2, 0
-  %gt = icmp sgt i64 %length3, 0
+  %gt = icmp ugt i64 %length3, 0
   br i1 %gt, label %if.then, label %if.else
 
 if.then:                                          ; preds = %entry
@@ -7748,7 +7748,7 @@ entry:
   store i64 %length, ptr %length1, align 4
   %load.struct2 = load %_Z6VectorI12KeyValuePairI6StringiEE, ptr %0, align 8
   %length3 = extractvalue %_Z6VectorI12KeyValuePairI6StringiEE %load.struct2, 0
-  %gt = icmp sgt i64 %length3, 0
+  %gt = icmp ugt i64 %length3, 0
   br i1 %gt, label %if.then, label %if.else
 
 if.then:                                          ; preds = %entry
@@ -7935,7 +7935,7 @@ entry:
   store i64 %call, ptr %length, align 4
   %load.struct = load %_Z6VectorI12KeyValuePairI6StringiEE, ptr %0, align 8
   %length1 = extractvalue %_Z6VectorI12KeyValuePairI6StringiEE %load.struct, 0
-  %gt = icmp sgt i64 %length1, 0
+  %gt = icmp ugt i64 %length1, 0
   br i1 %gt, label %if.then, label %if.else
 
 if.then:                                          ; preds = %entry
@@ -8142,7 +8142,7 @@ entry:
   %new_length3 = load i64, ptr %new_length, align 4
   %load.struct4 = load %_Z5ArrayI12KeyValuePairI6StringiEE, ptr %0, align 8
   %length5 = extractvalue %_Z5ArrayI12KeyValuePairI6StringiEE %load.struct4, 0
-  %lt = icmp slt i64 %new_length3, %length5
+  %lt = icmp ult i64 %new_length3, %length5
   br i1 %lt, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
@@ -8161,7 +8161,7 @@ lor.rhs:                                          ; preds = %if.end
   %vector9 = extractvalue %_Z5ArrayI12KeyValuePairI6StringiEE %load.struct8, 1
   %deref = load %_Z6VectorI12KeyValuePairI6StringiEE, ptr %vector9, align 8
   %length10 = extractvalue %_Z6VectorI12KeyValuePairI6StringiEE %deref, 0
-  %gt = icmp sgt i64 %new_length7, %length10
+  %gt = icmp ugt i64 %new_length7, %length10
   br label %lor.end
 
 lor.end:                                          ; preds = %lor.rhs, %if.end
@@ -8178,7 +8178,7 @@ if.end12:                                         ; preds = %if.then11, %lor.end
   %vector15 = extractvalue %_Z5ArrayI12KeyValuePairI6StringiEE %load.struct14, 1
   %deref16 = load %_Z6VectorI12KeyValuePairI6StringiEE, ptr %vector15, align 8
   %length17 = extractvalue %_Z6VectorI12KeyValuePairI6StringiEE %deref16, 0
-  %gt18 = icmp sgt i64 %new_length13, %length17
+  %gt18 = icmp ugt i64 %new_length13, %length17
   br i1 %gt18, label %if.then19, label %if.end20
 
 if.then19:                                        ; preds = %if.end12
@@ -8193,13 +8193,13 @@ if.then19:                                        ; preds = %if.end12
   %mul26 = mul i64 %length25, ptrtoint (ptr getelementptr (%_Z12KeyValuePairI6StringiE, ptr null, i32 1) to i64)
   %load.struct27 = load %_Z5ArrayI12KeyValuePairI6StringiEE, ptr %0, align 8
   %length28 = extractvalue %_Z5ArrayI12KeyValuePairI6StringiEE %load.struct27, 0
-  %gt29 = icmp sgt i64 %length28, 0
+  %gt29 = icmp ugt i64 %length28, 0
   br i1 %gt29, label %if.then30, label %if.end31
 
 if.end20:                                         ; preds = %if.end31, %if.end12
   %load.struct48 = load %_Z6VectorI12KeyValuePairI6StringiEE, ptr %1, align 8
   %length49 = extractvalue %_Z6VectorI12KeyValuePairI6StringiEE %load.struct48, 0
-  %gt50 = icmp sgt i64 %length49, 0
+  %gt50 = icmp ugt i64 %length49, 0
   br i1 %gt50, label %if.then51, label %if.end52
 
 if.then30:                                        ; preds = %if.then19
@@ -8262,7 +8262,7 @@ define linkonce_odr ptr @_ZN5ArrayI12KeyValuePairI6StringiEE3getEPN4scaly6memory
 entry:
   %load.struct = load %_Z5ArrayI12KeyValuePairI6StringiEE, ptr %1, align 8
   %length = extractvalue %_Z5ArrayI12KeyValuePairI6StringiEE %load.struct, 0
-  %ge = icmp sge i64 %2, %length
+  %ge = icmp uge i64 %2, %length
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
@@ -8281,7 +8281,7 @@ define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6StringiEE3putEm12KeyValuePai
 entry:
   %load.struct = load %_Z5ArrayI12KeyValuePairI6StringiEE, ptr %0, align 8
   %length = extractvalue %_Z5ArrayI12KeyValuePairI6StringiEE %load.struct, 0
-  %ge = icmp sge i64 %1, %length
+  %ge = icmp uge i64 %1, %length
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
@@ -8720,7 +8720,7 @@ if.end:                                           ; preds = %entry
 
 while.cond:                                       ; preds = %if.end6, %if.end
   %i2 = load i64, ptr %i, align 4
-  %lt = icmp slt i64 %i2, %call1
+  %lt = icmp ult i64 %i2, %call1
   br i1 %lt, label %while.body, label %while.exit
 
 while.body:                                       ; preds = %while.cond
@@ -8755,7 +8755,7 @@ if.then:                                          ; preds = %entry
   ret i1 true
 
 if.end:                                           ; preds = %entry
-  %gt = icmp sgt i64 %call1, %call
+  %gt = icmp ugt i64 %call1, %call
   br i1 %gt, label %if.then2, label %if.end3
 
 if.then2:                                         ; preds = %if.end
@@ -8770,7 +8770,7 @@ if.end3:                                          ; preds = %if.end
 while.cond:                                       ; preds = %if.end11, %if.end3
   %i6 = load i64, ptr %i, align 4
   %sub = sub i64 %call, %call1
-  %le = icmp sle i64 %i6, %sub
+  %le = icmp ule i64 %i6, %sub
   br i1 %le, label %while.body, label %while.exit
 
 while.body:                                       ; preds = %while.cond
@@ -8798,7 +8798,7 @@ define linkonce_odr i1 @_ZN6String11starts_withE6String(ptr %0, ptr %1) {
 entry:
   %call = call i64 @_ZN6String10get_lengthEv(ptr %0)
   %call1 = call i64 @_ZN6String10get_lengthEv(ptr %1)
-  %gt = icmp sgt i64 %call1, %call
+  %gt = icmp ugt i64 %call1, %call
   br i1 %gt, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
@@ -8824,7 +8824,7 @@ define linkonce_odr i1 @_ZN6String11starts_withEP10const_char(ptr %0, ptr %1) {
 entry:
   %call = call i64 @_ZN6String10get_lengthEv(ptr %0)
   %call1 = call i64 @strlen(ptr %1)
-  %gt = icmp sgt i64 %call1, %call
+  %gt = icmp ugt i64 %call1, %call
   br i1 %gt, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
@@ -8849,7 +8849,7 @@ define linkonce_odr i1 @_ZN6String9ends_withEP10const_char(ptr %0, ptr %1) {
 entry:
   %call = call i64 @_ZN6String10get_lengthEv(ptr %0)
   %call1 = call i64 @strlen(ptr %1)
-  %gt = icmp sgt i64 %call1, %call
+  %gt = icmp ugt i64 %call1, %call
   br i1 %gt, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
@@ -8877,7 +8877,7 @@ define linkonce_odr i1 @_ZN6String9ends_withE6String(ptr %0, ptr %1) {
 entry:
   %call = call i64 @_ZN6String10get_lengthEv(ptr %0)
   %call1 = call i64 @_ZN6String10get_lengthEv(ptr %1)
-  %gt = icmp sgt i64 %call1, %call
+  %gt = icmp ugt i64 %call1, %call
   br i1 %gt, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
@@ -8919,7 +8919,7 @@ if.end:                                           ; preds = %entry
 
 while.cond:                                       ; preds = %if.end6, %if.end
   %i2 = load i64, ptr %i, align 4
-  %lt = icmp slt i64 %i2, %call1
+  %lt = icmp ult i64 %i2, %call1
   br i1 %lt, label %while.body, label %while.exit
 
 while.body:                                       ; preds = %while.cond
@@ -8955,7 +8955,7 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %call1 = call i64 @_ZN6String10get_lengthEv(ptr %0)
-  %ge = icmp sge i64 %2, %call1
+  %ge = icmp uge i64 %2, %call1
   br i1 %ge, label %if.then2, label %if.end3
 
 if.then2:                                         ; preds = %if.end
@@ -8967,7 +8967,7 @@ if.end3:                                          ; preds = %if.end
 
 while.cond:                                       ; preds = %if.end8, %if.end3
   %i4 = load i64, ptr %i, align 4
-  %lt = icmp slt i64 %i4, %call1
+  %lt = icmp ult i64 %i4, %call1
   br i1 %lt, label %while.body, label %while.exit
 
 while.body:                                       ; preds = %while.cond
@@ -9028,7 +9028,7 @@ while.cond:                                       ; preds = %if.end5, %if.then
   %divisor1 = load i64, ptr %divisor, align 4
   %divisor2 = load i64, ptr %divisor, align 4
   %mul = mul i64 %divisor1, %divisor2
-  %le = icmp sle i64 %mul, %0
+  %le = icmp ule i64 %mul, %0
   br i1 %le, label %while.body, label %while.exit
 
 while.body:                                       ; preds = %while.cond
@@ -9080,18 +9080,21 @@ entry:
 
 while.cond:                                       ; preds = %while.body, %entry
   %i1 = load i64, ptr %i, align 4
-  %lt = icmp slt i64 %i1, %1
+  %lt = icmp ult i64 %i1, %1
   br i1 %lt, label %while.body, label %while.exit
 
 while.body:                                       ; preds = %while.cond
   %i2 = load i64, ptr %i, align 4
   %ptr.add = getelementptr inbounds i8, ptr %0, i64 %i2
   %deref = load i8, ptr %ptr.add, align 1
+  %as.zext = zext i8 %deref to i64
   %hash3 = load i64, ptr %hash, align 4
-  %zext = zext i8 %deref to i64
+  %or = or i64 %hash3, %as.zext
   %hash4 = load i64, ptr %hash, align 4
+  %and = and i64 %hash4, %as.zext
+  %sub = sub i64 %or, %and
   %prime5 = load i64, ptr %prime, align 4
-  %mul = mul i64 %hash4, %prime5
+  %mul = mul i64 %sub, %prime5
   store i64 %mul, ptr %hash, align 1
   %i6 = load i64, ptr %i, align 4
   %add = add i64 %i6, 1
@@ -9107,7 +9110,7 @@ define linkonce_odr ptr @_ZN5Slice3getEPN4scaly6memory4PageEm(ptr %0, ptr %1, i6
 entry:
   %load.struct = load %_Z5Slice, ptr %1, align 8
   %length = extractvalue %_Z5Slice %load.struct, 1
-  %ge = icmp sge i64 %2, %length
+  %ge = icmp uge i64 %2, %length
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
@@ -9138,7 +9141,7 @@ entry:
   %from1 = load i64, ptr %from, align 4
   %load.struct = load %_Z5Slice, ptr %2, align 8
   %length = extractvalue %_Z5Slice %load.struct, 1
-  %gt = icmp sgt i64 %from1, %length
+  %gt = icmp ugt i64 %from1, %length
   br i1 %gt, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
@@ -9151,7 +9154,7 @@ if.end:                                           ; preds = %if.then, %entry
   %to4 = load i64, ptr %to, align 4
   %load.struct5 = load %_Z5Slice, ptr %2, align 8
   %length6 = extractvalue %_Z5Slice %load.struct5, 1
-  %gt7 = icmp sgt i64 %to4, %length6
+  %gt7 = icmp ugt i64 %to4, %length6
   br i1 %gt7, label %if.then8, label %if.end9
 
 if.then8:                                         ; preds = %if.end
@@ -9163,7 +9166,7 @@ if.then8:                                         ; preds = %if.end
 if.end9:                                          ; preds = %if.then8, %if.end
   %from12 = load i64, ptr %from, align 4
   %to13 = load i64, ptr %to, align 4
-  %gt14 = icmp sgt i64 %from12, %to13
+  %gt14 = icmp ugt i64 %from12, %to13
   br i1 %gt14, label %if.then15, label %if.end16
 
 if.then15:                                        ; preds = %if.end9
@@ -9269,7 +9272,7 @@ entry:
   %load.struct1 = load %_Z13SliceIterator, ptr %0, align 8
   %slice = extractvalue %_Z13SliceIterator %load.struct1, 0
   %length = extractvalue %_Z5Slice %slice, 1
-  %ge = icmp sge i64 %position, %length
+  %ge = icmp uge i64 %position, %length
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
@@ -9461,7 +9464,7 @@ define linkonce_odr ptr @_ZN6Vector3getEPN4scaly6memory4PageEm(ptr %0, ptr %1, i
 entry:
   %load.struct = load %_Z6VectorI1TE, ptr %1, align 8
   %length = extractvalue %_Z6VectorI1TE %load.struct, 0
-  %ge = icmp sge i64 %2, %length
+  %ge = icmp uge i64 %2, %length
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
@@ -9478,7 +9481,7 @@ define linkonce_odr ptr @_ZN6Vector7get_ptrEm(ptr %0, i64 %1) {
 entry:
   %load.struct = load %_Z6VectorI1TE, ptr %0, align 8
   %length = extractvalue %_Z6VectorI1TE %load.struct, 0
-  %ge = icmp sge i64 %1, %length
+  %ge = icmp uge i64 %1, %length
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
@@ -9539,7 +9542,7 @@ define linkonce_odr void @_ZN6VectorC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i6
 entry:
   %length = getelementptr inbounds %_Z6Vector, ptr %0, i32 0, i32 0
   store i64 %2, ptr %length, align 4
-  %gt = icmp sgt i64 %2, 0
+  %gt = icmp ugt i64 %2, 0
   br i1 %gt, label %if.then, label %if.else
 
 if.then:                                          ; preds = %entry
@@ -9689,7 +9692,7 @@ define linkonce_odr ptr @_ZN5Array3getEPN4scaly6memory4PageEm(ptr %0, ptr %1, i6
 entry:
   %load.struct = load %_Z5ArrayI1TE, ptr %1, align 8
   %length = extractvalue %_Z5ArrayI1TE %load.struct, 0
-  %ge = icmp sge i64 %2, %length
+  %ge = icmp uge i64 %2, %length
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
@@ -11076,7 +11079,7 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %call1 = call i64 @_ZN6String10get_lengthEv(ptr %0)
-  %ge = icmp sge i64 %1, %call1
+  %ge = icmp uge i64 %1, %call1
   br i1 %ge, label %if.then2, label %if.end3
 
 if.then2:                                         ; preds = %if.end
@@ -11314,7 +11317,7 @@ if.end4:                                          ; preds = %if.end
 
 while.cond:                                       ; preds = %if.end14, %if.end4
   %i5 = load i64, ptr %i, align 4
-  %ge = icmp sge i64 %i5, 0
+  %ge = icmp uge i64 %i5, 0
   br i1 %ge, label %while.body, label %while.exit
 
 while.body:                                       ; preds = %while.cond
@@ -11365,7 +11368,7 @@ entry:
 
 while.cond:                                       ; preds = %while.body, %entry
   %rest1 = load i64, ptr %rest, align 4
-  %ge = icmp sge i64 %rest1, 128
+  %ge = icmp uge i64 %rest1, 128
   br i1 %ge, label %while.body, label %while.exit
 
 while.body:                                       ; preds = %while.cond
@@ -11391,7 +11394,7 @@ while.exit:                                       ; preds = %while.cond
 
 while.cond8:                                      ; preds = %while.body9, %while.exit
   %wrest11 = load i64, ptr %wrest, align 4
-  %ge12 = icmp sge i64 %wrest11, 128
+  %ge12 = icmp uge i64 %wrest11, 128
   br i1 %ge12, label %while.body9, label %while.exit10
 
 while.body9:                                      ; preds = %while.cond8
@@ -11447,7 +11450,7 @@ if.end:                                           ; preds = %entry
 
 while.cond:                                       ; preds = %while.body, %if.end
   %rest1 = load i64, ptr %rest, align 4
-  %ge = icmp sge i64 %rest1, 128
+  %ge = icmp uge i64 %rest1, 128
   br i1 %ge, label %while.body, label %while.exit
 
 while.body:                                       ; preds = %while.cond
@@ -11473,7 +11476,7 @@ while.exit:                                       ; preds = %while.cond
 
 while.cond9:                                      ; preds = %while.body10, %while.exit
   %wrest12 = load i64, ptr %wrest, align 4
-  %ge13 = icmp sge i64 %wrest12, 128
+  %ge13 = icmp uge i64 %wrest12, 128
   br i1 %ge13, label %while.body10, label %while.exit11
 
 while.body10:                                     ; preds = %while.cond9
@@ -11528,7 +11531,7 @@ entry:
 
 while.cond:                                       ; preds = %while.body, %entry
   %rest1 = load i64, ptr %rest, align 4
-  %ge = icmp sge i64 %rest1, 128
+  %ge = icmp uge i64 %rest1, 128
   br i1 %ge, label %while.body, label %while.exit
 
 while.body:                                       ; preds = %while.cond
@@ -11558,7 +11561,7 @@ while.exit:                                       ; preds = %while.cond
 
 while.cond12:                                     ; preds = %while.body13, %while.exit
   %wrest15 = load i64, ptr %wrest, align 4
-  %ge16 = icmp sge i64 %wrest15, 128
+  %ge16 = icmp uge i64 %wrest15, 128
   br i1 %ge16, label %while.body13, label %while.exit14
 
 while.body13:                                     ; preds = %while.cond12
@@ -11588,7 +11591,7 @@ while.exit14:                                     ; preds = %while.cond12
   store i8 %as.trunc26, ptr %ptr.add30, align 1
   %load.struct31 = load %_Z6VectorIcE, ptr %2, align 8
   %length32 = extractvalue %_Z6VectorIcE %load.struct31, 0
-  %gt = icmp sgt i64 %length32, 0
+  %gt = icmp ugt i64 %length32, 0
   br i1 %gt, label %if.then, label %if.end
 
 if.then:                                          ; preds = %while.exit14
@@ -11634,7 +11637,7 @@ if.end:                                           ; preds = %entry
 
 while.cond:                                       ; preds = %while.body, %if.end
   %rest1 = load i64, ptr %rest, align 4
-  %ge = icmp sge i64 %rest1, 128
+  %ge = icmp uge i64 %rest1, 128
   br i1 %ge, label %while.body, label %while.exit
 
 while.body:                                       ; preds = %while.cond
@@ -11660,7 +11663,7 @@ while.exit:                                       ; preds = %while.cond
 
 while.cond10:                                     ; preds = %while.body11, %while.exit
   %wrest13 = load i64, ptr %wrest, align 4
-  %ge14 = icmp sge i64 %wrest13, 128
+  %ge14 = icmp uge i64 %wrest13, 128
   br i1 %ge14, label %while.body11, label %while.exit12
 
 while.body11:                                     ; preds = %while.cond10
