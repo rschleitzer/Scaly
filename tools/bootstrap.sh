@@ -2,24 +2,51 @@
 # Clean bootstrap from a fresh checkout to a working self-hosted stage-2.
 #   tools/bootstrap.sh            -> /tmp/scalyc_stage2 (+ stage1)
 #
-# Steps: build C++ stage-0 (build.sh: openjade codegen + cmake), then
-#   stage-0 -> stage1 (compiles main.scaly),
-#   stage1  -> stage2 (compiles scalyc.scaly into libscalyc, relinks main).
+# Steps: build the bootstrap ROOT, then
+#   ROOT   -> stage1 (compiles the scalyc package),
+#   stage1 -> stage2 (compiles scalyc.scaly into libscalyc, relinks main).
 # stage2 is the canonical self-hosted compiler the seed is emitted from.
 #
+# ROOT is built from the committed .ll seed (tools/build-from-seed.sh: llc +
+# clang, NO C++ stage-0) — the seed compiler handles both the legacy #/$ page
+# sigils AND no-sigil page inference, so it survives the de-sigil migration that
+# frozen C++ stage-0 cannot parse. Falls back to building C++ stage-0 only when
+# no committed seed is present (valid while the source still uses #).
+#
 # Requires (install per platform — see tools/seed.sh header):
-#   LLVM 18 (+dev), clang/clang++, cmake, openjade, ar.
+#   LLVM 18 (+dev), clang/clang++, ar — plus cmake + openjade ONLY for the
+#   C++ stage-0 fallback (no committed seed).
 set -e
 cd "$(dirname "$0")/.."
 source tools/llvm-env.sh
 [ "$llvm_env_ok" = "1" ] || { echo "bootstrap: FAIL — LLVM 18 not found"; exit 1; }
 
-echo "bootstrap: building C++ stage-0 (build.sh)"
-./build.sh >/dev/null
-
 LINK="-L$LLVM_LIBDIR -l$LLVM_LIBNAME"
-echo "bootstrap: stage-0 -> stage1"
-./scalyc/build/scalyc -o /tmp/scalyc_stage1 packages/scalyc/0.1.0/main.scaly $LINK 2>&1 | grep -v 'warning' || true
+
+# Bootstrap ROOT: prefer the committed seed (C++-free); else C++ stage-0.
+if [ -f seed/scalyc.ll ] && tools/build-from-seed.sh /tmp/scalyc_seed_root >/dev/null 2>&1; then
+  echo "bootstrap: ROOT = seed-built compiler -> /tmp/scalyc_seed_root"
+  ROOT=/tmp/scalyc_seed_root; ROOT_SELFHOSTED=1
+else
+  echo "bootstrap: no usable seed — falling back to C++ stage-0 (build.sh)"
+  ./build.sh >/dev/null
+  ROOT=./scalyc/build/scalyc; ROOT_SELFHOSTED=0
+fi
+
+echo "bootstrap: ROOT -> stage1"
+if [ "$ROOT_SELFHOSTED" = "1" ]; then
+  # A self-hosted ROOT compiling main.scaly emits only main + external refs to
+  # the compiler package; the package must be compiled to an archive and linked
+  # (the same two-step as stage1 -> stage2). C++ stage-0 instead emits the whole
+  # package from main.scaly alone, so its branch stays single-step.
+  ( ulimit -s 65520
+    "$ROOT" -c -o /tmp/sc0.o packages/scalyc/0.1.0/scalyc.scaly
+    rm -f /tmp/libscalyc0.a; ar rcs /tmp/libscalyc0.a /tmp/sc0.o
+    "$ROOT" -o /tmp/scalyc_stage1 packages/scalyc/0.1.0/main.scaly /tmp/libscalyc0.a $LINK
+  ) 2>&1 | grep -v 'ld: warning' || true
+else
+  "$ROOT" -o /tmp/scalyc_stage1 packages/scalyc/0.1.0/main.scaly $LINK 2>&1 | grep -v 'warning' || true
+fi
 
 # Rebuild the scaly-package runtime archive with stage1 so stage2's -o link
 # (cli.run appends /tmp/libscaly.a) picks up a fix-consistent runtime. A STALE
