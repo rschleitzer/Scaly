@@ -98,7 +98,7 @@ define Parser
 
     function initialize_keywords_index#(rp, this: Parser) returns Vector[String]
     {
-        var keywords_builder Array[String]$()
+        var keywords_builder Array[String]()
 "   (apply-to-selected-children "keyword" (lambda (keyword) ($
 "        keywords_builder.add(String#(\""(id keyword)"\"))
 "   )))
@@ -107,7 +107,7 @@ define Parser
 
     function initialize_keywords#(rp, this: Parser) returns HashSet[String]
     {
-        var hash_set_builder HashSetBuilder[String]$(keywords_index)
+        var hash_set_builder HashSetBuilder[String](keywords_index)
         HashSet[String]#(hash_set_builder)
     }
 
@@ -154,7 +154,7 @@ define Parser
 "
     function parse_"(downcase-string (id syntax))"_list#(rp, this: Parser) returns ref[Vector["(id syntax)"Syntax]]? throws ParserError
     {
-        var acc List["(id syntax)"Syntax]$()
+        var acc List["(id syntax)"Syntax]()
         var parsing: bool true
         while parsing
         {
@@ -413,7 +413,7 @@ define Parser
 function test() returns int
 {
     ; Test 1: Parse a simple literal
-    var parser Parser$(String$(\"42\"))
+    var parser Parser(String(\"42\"))
     choose parser.parse_literal$()
         when err: Error
             return 1
@@ -424,7 +424,7 @@ function test() returns int
         }
 
     ; Test 2: Parse an identifier expression
-    set parser: Parser$(String$(\"foo\"))
+    set parser: Parser(String(\"foo\"))
     choose parser.parse_name$()
         when err: Error
             return 3
@@ -435,7 +435,7 @@ function test() returns int
         }
 
     ; Test 3: Parse a function definition
-    set parser: Parser$(String$(\"function hello() returns int 42\"))
+    set parser: Parser(String(\"function hello() returns int 42\"))
     choose parser.parse_function$()
         when err: Error
             return 5
@@ -446,7 +446,7 @@ function test() returns int
         }
 
     ; Test 4: Parse a structure definition
-    set parser: Parser$(String$(\"define a ()\"))
+    set parser: Parser(String(\"define a ()\"))
     choose parser.parse_definition$()
         when err: Error
             return 7
@@ -457,7 +457,7 @@ function test() returns int
         }
 
     ; Test 5: Parse a structure with properties
-    set parser: Parser$(String$(\"define Point (x: int, y: int)\"))
+    set parser: Parser(String(\"define Point (x: int, y: int)\"))
     choose parser.parse_definition$()
         when err: Error
             return 9
@@ -468,7 +468,7 @@ function test() returns int
         }
 
     ; Test 6: Parse a union definition
-    set parser: Parser$(String$(\"define Option union (Some: int, None)\"))
+    set parser: Parser(String(\"define Option union (Some: int, None)\"))
     choose parser.parse_definition$()
         when err: Error
             return 11

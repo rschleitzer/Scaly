@@ -74,7 +74,7 @@ define Parser
 
     function initialize_keywords_index#(rp, this: Parser) returns Vector[String]
     {
-        var keywords_builder Array[String]$()
+        var keywords_builder Array[String]()
         keywords_builder.add(String#("alignof"))
         keywords_builder.add(String#("as"))
         keywords_builder.add(String#("break"))
@@ -126,7 +126,7 @@ define Parser
 
     function initialize_keywords#(rp, this: Parser) returns HashSet[String]
     {
-        var hash_set_builder HashSetBuilder[String]$(keywords_index)
+        var hash_set_builder HashSetBuilder[String](keywords_index)
         HashSet[String]#(hash_set_builder)
     }
 
@@ -222,7 +222,7 @@ define Parser
 
     function parse_declaration_list#(rp, this: Parser) returns ref[Vector[DeclarationSyntax]]? throws ParserError
     {
-        var acc List[DeclarationSyntax]$()
+        var acc List[DeclarationSyntax]()
         var parsing: bool true
         while parsing
         {
@@ -467,7 +467,7 @@ define Parser
 
     function parse_member_list#(rp, this: Parser) returns ref[Vector[MemberSyntax]]? throws ParserError
     {
-        var acc List[MemberSyntax]$()
+        var acc List[MemberSyntax]()
         var parsing: bool true
         while parsing
         {
@@ -697,7 +697,7 @@ define Parser
 
     function parse_genericparameter_list#(rp, this: Parser) returns ref[Vector[GenericParameterSyntax]]? throws ParserError
     {
-        var acc List[GenericParameterSyntax]$()
+        var acc List[GenericParameterSyntax]()
         var parsing: bool true
         while parsing
         {
@@ -980,7 +980,7 @@ define Parser
 
     function parse_variant_list#(rp, this: Parser) returns ref[Vector[VariantSyntax]]? throws ParserError
     {
-        var acc List[VariantSyntax]$()
+        var acc List[VariantSyntax]()
         var parsing: bool true
         while parsing
         {
@@ -1170,7 +1170,7 @@ define Parser
 
     function parse_genericargument_list#(rp, this: Parser) returns ref[Vector[GenericArgumentSyntax]]? throws ParserError
     {
-        var acc List[GenericArgumentSyntax]$()
+        var acc List[GenericArgumentSyntax]()
         var parsing: bool true
         while parsing
         {
@@ -1283,7 +1283,7 @@ define Parser
 
     function parse_item_list#(rp, this: Parser) returns ref[Vector[ItemSyntax]]? throws ParserError
     {
-        var acc List[ItemSyntax]$()
+        var acc List[ItemSyntax]()
         var parsing: bool true
         while parsing
         {
@@ -1432,7 +1432,7 @@ define Parser
 
     function parse_use_list#(rp, this: Parser) returns ref[Vector[UseSyntax]]? throws ParserError
     {
-        var acc List[UseSyntax]$()
+        var acc List[UseSyntax]()
         var parsing: bool true
         while parsing
         {
@@ -1645,7 +1645,7 @@ define Parser
 
     function parse_method_list#(rp, this: Parser) returns ref[Vector[MethodSyntax]]? throws ParserError
     {
-        var acc List[MethodSyntax]$()
+        var acc List[MethodSyntax]()
         var parsing: bool true
         while parsing
         {
@@ -1709,7 +1709,7 @@ define Parser
 
     function parse_init_list#(rp, this: Parser) returns ref[Vector[InitSyntax]]? throws ParserError
     {
-        var acc List[InitSyntax]$()
+        var acc List[InitSyntax]()
         var parsing: bool true
         while parsing
         {
@@ -2158,7 +2158,7 @@ define Parser
 
     function parse_extend_list#(rp, this: Parser) returns ref[Vector[ExtendSyntax]]? throws ParserError
     {
-        var acc List[ExtendSyntax]$()
+        var acc List[ExtendSyntax]()
         var parsing: bool true
         while parsing
         {
@@ -2250,7 +2250,7 @@ define Parser
 
     function parse_attribute_list#(rp, this: Parser) returns ref[Vector[AttributeSyntax]]? throws ParserError
     {
-        var acc List[AttributeSyntax]$()
+        var acc List[AttributeSyntax]()
         var parsing: bool true
         while parsing
         {
@@ -2367,7 +2367,7 @@ define Parser
 
     function parse_package_list#(rp, this: Parser) returns ref[Vector[PackageSyntax]]? throws ParserError
     {
-        var acc List[PackageSyntax]$()
+        var acc List[PackageSyntax]()
         var parsing: bool true
         while parsing
         {
@@ -2491,7 +2491,7 @@ define Parser
 
     function parse_operand_list#(rp, this: Parser) returns ref[Vector[OperandSyntax]]? throws ParserError
     {
-        var acc List[OperandSyntax]$()
+        var acc List[OperandSyntax]()
         var parsing: bool true
         while parsing
         {
@@ -2550,7 +2550,7 @@ define Parser
 
     function parse_memberaccess_list#(rp, this: Parser) returns ref[Vector[MemberAccessSyntax]]? throws ParserError
     {
-        var acc List[MemberAccessSyntax]$()
+        var acc List[MemberAccessSyntax]()
         var parsing: bool true
         while parsing
         {
@@ -2834,7 +2834,7 @@ define Parser
 
     function parse_component_list#(rp, this: Parser) returns ref[Vector[ComponentSyntax]]? throws ParserError
     {
-        var acc List[ComponentSyntax]$()
+        var acc List[ComponentSyntax]()
         var parsing: bool true
         while parsing
         {
@@ -2987,7 +2987,7 @@ define Parser
 
     function parse_element_list#(rp, this: Parser) returns ref[Vector[ElementSyntax]]? throws ParserError
     {
-        var acc List[ElementSyntax]$()
+        var acc List[ElementSyntax]()
         var parsing: bool true
         while parsing
         {
@@ -3208,7 +3208,7 @@ define Parser
 
     function parse_branch_list#(rp, this: Parser) returns ref[Vector[BranchSyntax]]? throws ParserError
     {
-        var acc List[BranchSyntax]$()
+        var acc List[BranchSyntax]()
         var parsing: bool true
         while parsing
         {
@@ -3271,7 +3271,7 @@ define Parser
 
     function parse_case_list#(rp, this: Parser) returns ref[Vector[CaseSyntax]]? throws ParserError
     {
-        var acc List[CaseSyntax]$()
+        var acc List[CaseSyntax]()
         var parsing: bool true
         while parsing
         {
@@ -3528,7 +3528,7 @@ define Parser
 
     function parse_when_list#(rp, this: Parser) returns ref[Vector[WhenSyntax]]? throws ParserError
     {
-        var acc List[WhenSyntax]$()
+        var acc List[WhenSyntax]()
         var parsing: bool true
         while parsing
         {
@@ -3608,7 +3608,7 @@ define Parser
 
     function parse_statement_list#(rp, this: Parser) returns ref[Vector[StatementSyntax]]? throws ParserError
     {
-        var acc List[StatementSyntax]$()
+        var acc List[StatementSyntax]()
         var parsing: bool true
         while parsing
         {
@@ -3884,7 +3884,7 @@ define Parser
 
     function parse_bindingspec_list#(rp, this: Parser) returns ref[Vector[BindingSpecSyntax]]? throws ParserError
     {
-        var acc List[BindingSpecSyntax]$()
+        var acc List[BindingSpecSyntax]()
         var parsing: bool true
         while parsing
         {
@@ -4004,7 +4004,7 @@ define Parser
 
     function parse_part_list#(rp, this: Parser) returns ref[Vector[PartSyntax]]? throws ParserError
     {
-        var acc List[PartSyntax]$()
+        var acc List[PartSyntax]()
         var parsing: bool true
         while parsing
         {
@@ -4084,7 +4084,7 @@ define Parser
 
     function parse_property_list#(rp, this: Parser) returns ref[Vector[PropertySyntax]]? throws ParserError
     {
-        var acc List[PropertySyntax]$()
+        var acc List[PropertySyntax]()
         var parsing: bool true
         while parsing
         {
@@ -4497,7 +4497,7 @@ define Parser
 
     function parse_action_list#(rp, this: Parser) returns ref[Vector[ActionSyntax]]? throws ParserError
     {
-        var acc List[ActionSyntax]$()
+        var acc List[ActionSyntax]()
         var parsing: bool true
         while parsing
         {
@@ -4766,7 +4766,7 @@ define Parser
 
     function parse_type_list#(rp, this: Parser) returns ref[Vector[TypeSyntax]]? throws ParserError
     {
-        var acc List[TypeSyntax]$()
+        var acc List[TypeSyntax]()
         var parsing: bool true
         while parsing
         {
@@ -4874,7 +4874,7 @@ define Parser
 
     function parse_extension_list#(rp, this: Parser) returns ref[Vector[ExtensionSyntax]]? throws ParserError
     {
-        var acc List[ExtensionSyntax]$()
+        var acc List[ExtensionSyntax]()
         var parsing: bool true
         while parsing
         {
@@ -5033,7 +5033,7 @@ define Parser
 function test() returns int
 {
     ; Test 1: Parse a simple literal
-    var parser Parser$(String$("42"))
+    var parser Parser(String("42"))
     choose parser.parse_literal$()
         when err: Error
             return 1
@@ -5044,7 +5044,7 @@ function test() returns int
         }
 
     ; Test 2: Parse an identifier expression
-    set parser: Parser$(String$("foo"))
+    set parser: Parser(String("foo"))
     choose parser.parse_name$()
         when err: Error
             return 3
@@ -5055,7 +5055,7 @@ function test() returns int
         }
 
     ; Test 3: Parse a function definition
-    set parser: Parser$(String$("function hello() returns int 42"))
+    set parser: Parser(String("function hello() returns int 42"))
     choose parser.parse_function$()
         when err: Error
             return 5
@@ -5066,7 +5066,7 @@ function test() returns int
         }
 
     ; Test 4: Parse a structure definition
-    set parser: Parser$(String$("define a ()"))
+    set parser: Parser(String("define a ()"))
     choose parser.parse_definition$()
         when err: Error
             return 7
@@ -5077,7 +5077,7 @@ function test() returns int
         }
 
     ; Test 5: Parse a structure with properties
-    set parser: Parser$(String$("define Point (x: int, y: int)"))
+    set parser: Parser(String("define Point (x: int, y: int)"))
     choose parser.parse_definition$()
         when err: Error
             return 9
@@ -5088,7 +5088,7 @@ function test() returns int
         }
 
     ; Test 6: Parse a union definition
-    set parser: Parser$(String$("define Option union (Some: int, None)"))
+    set parser: Parser(String("define Option union (Some: int, None)"))
     choose parser.parse_definition$()
         when err: Error
             return 11
