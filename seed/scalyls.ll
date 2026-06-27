@@ -3312,8 +3312,6 @@ lor.end:                                          ; preds = %lor.rhs, %entry
   ret i1 %lor.result
 }
 
-declare ptr @0()
-
 define linkonce_odr i64 @_ZN4json12parse_numberEP10JsonParser(ptr %0) {
 entry:
   %value = alloca i64, align 8
@@ -3858,7 +3856,6 @@ entry:
   %sret.result = alloca { ptr }, align 8
   %i = alloca i64, align 8
   %digits = alloca ptr, align 8
-  %local_page = call ptr @_Z21scaly_alloc_root_pagev()
   %value = alloca i64, align 8
   %sb = alloca ptr, align 8
   %eq = icmp eq i64 %2, 0
@@ -3869,7 +3866,6 @@ if.then:                                          ; preds = %entry
   call void @_ZN6StringC1EPN4scaly6memory4PageEP10const_char(ptr %struct.region, ptr %1, ptr @.str.9)
   %sret.body = load { ptr }, ptr %struct.region, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.region, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
-  call void @_Z23scaly_release_root_pageP4Page(ptr %local_page)
   ret void
 
 if.end:                                           ; preds = %entry
@@ -3890,7 +3886,7 @@ if.then3:                                         ; preds = %if.end
   br label %if.end4
 
 if.end4:                                          ; preds = %if.then3, %if.end
-  %struct.region7 = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 ptrtoint (ptr getelementptr (%_Z5ArrayIcE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5ArrayIcE }, ptr null, i64 0, i32 1) to i64))
+  %struct.region7 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr (%_Z5ArrayIcE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5ArrayIcE }, ptr null, i64 0, i32 1) to i64))
   %tuple.field = getelementptr inbounds %_Z5ArrayIcE, ptr %struct.region7, i32 0, i32 0
   store i64 0, ptr %tuple.field, align 4
   %tuple.field8 = getelementptr inbounds %_Z5ArrayIcE, ptr %struct.region7, i32 0, i32 1
@@ -3940,7 +3936,6 @@ while.body15:                                     ; preds = %while.cond14
 while.exit16:                                     ; preds = %while.cond14
   %sb26 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sb26)
-  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   %sret.body27 = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -4529,7 +4524,6 @@ entry:
   %sret.result = alloca { ptr }, align 8
   %i = alloca i64, align 8
   %digits = alloca ptr, align 8
-  %local_page = call ptr @_Z21scaly_alloc_root_pagev()
   %value = alloca i64, align 8
   %sb = alloca ptr, align 8
   %eq = icmp eq i64 %2, 0
@@ -4540,7 +4534,6 @@ if.then:                                          ; preds = %entry
   call void @_ZN6StringC1EPN4scaly6memory4PageEP10const_char(ptr %struct.region, ptr %1, ptr @.str.12)
   %sret.body = load { ptr }, ptr %struct.region, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.region, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
-  call void @_Z23scaly_release_root_pageP4Page(ptr %local_page)
   ret void
 
 if.end:                                           ; preds = %entry
@@ -4548,7 +4541,7 @@ if.end:                                           ; preds = %entry
   call void @_ZN13StringBuilderC1EPN4scaly6memory4PageE(ptr %struct.region1, ptr %1)
   store ptr %struct.region1, ptr %sb, align 1
   store i64 %2, ptr %value, align 1
-  %struct.region2 = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 ptrtoint (ptr getelementptr (%_Z5ArrayIcE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5ArrayIcE }, ptr null, i64 0, i32 1) to i64))
+  %struct.region2 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr (%_Z5ArrayIcE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5ArrayIcE }, ptr null, i64 0, i32 1) to i64))
   %tuple.field = getelementptr inbounds %_Z5ArrayIcE, ptr %struct.region2, i32 0, i32 0
   store i64 0, ptr %tuple.field, align 4
   %tuple.field3 = getelementptr inbounds %_Z5ArrayIcE, ptr %struct.region2, i32 0, i32 1
@@ -4598,7 +4591,6 @@ while.body10:                                     ; preds = %while.cond9
 while.exit11:                                     ; preds = %while.cond9
   %sb20 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sb20)
-  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   %sret.body21 = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void

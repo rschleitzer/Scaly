@@ -14563,6 +14563,7 @@ define Planner
                             when t: scalyc.compiler.Model.Type
                             {
                                 if t.generics = null
+                                {
                                     if t.name.length = 1
                                     {
                                         let np t.name.get 0
@@ -14570,6 +14571,28 @@ define Planner
                                             if this.name_is_capitalized((*np)) = false
                                                 this.add_escaping_local((*np))
                                     }
+                                    ; A dotted FIELD READ of a local — `inst.name`,
+                                    ; `base.generics` — folds into a Type name
+                                    ; [local, field, …] with member_access=null
+                                    ; (Form A). Storing the field into an escaping
+                                    ; aggregate aliases the BASE local's guts (a
+                                    ; field String's .data / Vector buffer lives on
+                                    ; the base's page), so the base local must be
+                                    ; promoted to rp too. Collect the first segment
+                                    ; when it is a non-capitalized local. Over-
+                                    ; collection is safe + NEUTRAL: a sigiled `#`/`^`
+                                    ; binding is kept verbatim by restamp, and a
+                                    ; dotted name whose head is not a local (a
+                                    ; namespace/qualified ref) records a name that
+                                    ; never matches a binding.
+                                    if t.name.length >= 2
+                                    {
+                                        let bp t.name.get 0
+                                        if bp <> null
+                                            if this.name_is_capitalized((*bp)) = false
+                                                this.add_escaping_local((*bp))
+                                    }
+                                }
                             }
                             when ch: Choose
                             {
@@ -14619,6 +14642,25 @@ define Planner
                                     let lp b.statements.get(b.statements.length - 1)
                                     if lp <> null
                                         this.collect_flow_stmt(lp.unwrap())
+                                }
+                            }
+                            else
+                                0
+                    ; Same field-read as above but modeled as a bare local
+                    ; Type([local]) carrying a member_access chain (Form B,
+                    ; `inst.name` → expression Type(["inst"]) + member_access
+                    ; ["name"]). Collect the base local for the same aliasing
+                    ; reason. Single non-capitalized segment only.
+                    if v.member_access <> null
+                        choose v.expression
+                            when t: scalyc.compiler.Model.Type
+                            {
+                                if t.name.length = 1
+                                {
+                                    let bp t.name.get 0
+                                    if bp <> null
+                                        if this.name_is_capitalized((*bp)) = false
+                                            this.add_escaping_local((*bp))
                                 }
                             }
                             else
