@@ -15426,6 +15426,52 @@ define Planner
             ; the frame promotes the stored value's bound locals to a non-local
             ; page.
             this.collect_store_value_locals(a.source)
+            ; set-reassignment escape: `set X: value` where X is an escaping
+            ; accumulator local (the tree-builders' `var result …; … set result:
+            ; PlannedOperand(.., Call call, ..); … result` pattern in
+            ; collapse_operand_sequence#). The source flows into X and escapes,
+            ; so collect the source's bound-local constructions (`call`,
+            ; `chained`, `void_ty`) — plan_binding# then promotes their inits (the
+            ; inline mangle_*/make_planned_call calls build the returned operand's
+            ; mangled-name String / PlannedCall and must live on rp). The
+            ; plan_action# PROMOTION side already restamps INLINE source
+            ; constructions for the same `set X:`; this is the COLLECTION
+            ; counterpart for BOUND-local sources the name-graph owns. Plain-var
+            ; target only (member_access null, single segment) — a `set obj.field:`
+            ; is the rule-3 store-into-field path, handled elsewhere. NEUTRAL on
+            ; sigiled source: the bound local's init carries an explicit #/^,
+            ; which restamp keeps verbatim.
+            if a.target.length = 1
+            {
+                let tgt_p a.target.get 0
+                if tgt_p <> null
+                {
+                    let tgt (*tgt_p)
+                    if tgt.member_access = null
+                        choose tgt.expression
+                            when tt: scalyc.compiler.Model.Type
+                            {
+                                if tt.generics = null
+                                    if tt.name.length = 1
+                                    {
+                                        let tnp tt.name.get 0
+                                        if tnp <> null
+                                        {
+                                            let tn (*tnp)
+                                            var tesc: bool false
+                                            if this.array_contains_name(escaping_return_locals, tn)
+                                                set tesc: true
+                                            if this.array_contains_name(escaping_targets, tn)
+                                                set tesc: true
+                                            if tesc
+                                                this.collect_flow_locals(a.source)
+                                        }
+                                    }
+                            }
+                            else
+                                0
+                }
+            }
         }
 
         ; Entry: pre-scan a whole function body for bare `return x` targets and
