@@ -333,6 +333,14 @@ define Planner
         ; (`^name`/`#`) or already-promoted, into which a put/add stores a value
         ; that must therefore also live on a non-local page.
         escaping_targets: Array[String]
+        ; Set true while planning the IMPLICIT-RETURN (tail) action of a
+        ; function whose return value owns page guts (needs_implicit_return_
+        ; page). plan_action# reads-and-clears it so only the OUTERMOST body
+        ; action promotes; promote_tail_operand# then re-stamps the tail
+        ; expression (and recurses into choose/if/match arms + variant
+        ; payloads) to the caller page. Closes the implicit-return-of-a-
+        ; construction/call gap that R2 (explicit `return` only) misses.
+        promote_tail_return: bool
         instantiated_functions: Array[PlannedFunction]
         ; O(1) membership index over instantiated_functions' mangled names,
         ; maintained in lockstep at the single record_function add site.
@@ -506,6 +514,7 @@ define Planner
             set escaping_return_locals: Array[String]^page()
             set promoted_binding_names: Array[String]^page()
             set escaping_targets: Array[String]^page()
+            set promote_tail_return: false
             set instantiated_functions: Array[PlannedFunction]^page()
             set function_name_index: ConceptIndex.create#(262144 as size_t)
             set instantiated_globals: Array[PlannedGlobal]^page()
@@ -12616,6 +12625,14 @@ define Planner
 
         function plan_action#(rp, this: Planner, a: Action) returns PlannedAction
         {
+            ; Read-and-clear the tail-return flag: only THIS (outermost body)
+            ; action is the function's implicit return. Nested actions planned
+            ; while collapsing this one's source (choose/if arm consequents)
+            ; must NOT see it set — promote_tail_operand# recurses into those
+            ; arms itself.
+            let do_tail_promote this.promote_tail_return
+            set this.promote_tail_return: false
+
             let planned_source_flat this.plan_operands#(a.source)
             var planned_source_collapsed this.collapse_operand_sequence#(planned_source_flat)
 
@@ -12740,6 +12757,23 @@ define Planner
                         else
                             0
 
+            ; Implicit-return (tail) promotion: this action is the body's last
+            ; expression of a page-owning-return function and has no store
+            ; target, so its value IS the function result. Promote a no-sigil
+            ; construction/call (and recurse into choose/if/match arms + variant
+            ; payloads) to the caller page so the returned guts outlive the
+            ; frame. NEUTRAL on sigiled source: the tail is an explicit `#`
+            ; (Call life) which restamp refuses, or a void action (no page-
+            ; owning value). Only fires for needs_implicit_return_page funcs.
+            if do_tail_promote
+                if a.target.length = 0
+                {
+                    let tail_life Lifetime.Call(scalyc.compiler.Model.Call(action_loc))
+                    let tp this.promote_tail_operand#(planned_source_collapsed, tail_life)
+                    if tp <> null
+                        set planned_source_collapsed: (*tp)
+                }
+
             let result_type planned_source_collapsed.result_type
 
             var source_holder Vector[PlannedOperand]^rp(1)
@@ -12787,6 +12821,16 @@ define Planner
         function operand_is_local_page_construction(this: Planner, op: PlannedOperand) returns bool
         {
             if Planner.result_owns_page_guts(op.result_type) = false
+                return false
+            ; Slice[T] is a BORROW value (data pointer + length into memory the
+            ; callee does not own); result_owns_page_guts can't tell (it only
+            ; excludes ptr/ref/LLVM/Option-of-ref by name). A Slice-returning
+            ; call/construction is built on whatever page but its guts point
+            ; elsewhere, so it never needs page promotion — excluding it keeps
+            ; `slice_from`/`slice_to` (de-sigiled tail calls to `subslice`)
+            ; byte-identical. R2's explicit-return path still covers a Local-
+            ; life Slice via is_reference_to_local_page if one ever escapes.
+            if op.result_type.name.equals(String("Slice"))
                 return false
             ; Read the EXPRESSION life (call.life / tuple.life). Only LOCAL —
             ; a construction the init#/reshape block placed on the function's
@@ -13630,6 +13674,254 @@ define Planner
                 set i: i + 1
             }
             &out
+        }
+
+        ; ================================================================
+        ; Implicit-return (tail) promotion. R2 (plan_return#) promotes an
+        ; EXPLICIT `return X`; this pair handles the IMPLICIT return — the
+        ; body's last expression with no `return` keyword — for a function
+        ; whose result owns page guts. A directly-returned no-sigil
+        ; construction/call (`{ ... Vector[T](0) }`) is promoted to the
+        ; caller page by restamp_operand_life#; a choose/if/match/block tail
+        ; (handle_expression#'s `choose syntax when ...: Expression.X(handle_Y
+        ; (...))`) recurses into each branch's value position, and a variant
+        ; construction (`Expression.Tuple(handle_object(obj))`) recurses into
+        ; its payload. Returns null when nothing was promotable (NEUTRAL — the
+        ; operand is kept verbatim). All rebuilds copy PlannedType/String
+        ; fields verbatim and only swap the promoted sub-operand, avoiding the
+        ; s34/s196 result_type-rebuild hazard.
+        ; ================================================================
+        function promote_tail_operand#(rp, this: Planner, op: PlannedOperand, new_life: Lifetime) returns ref[PlannedOperand]?
+        {
+            ; Direct construction/call placed on the LOCAL page (Local life on
+            ; the PlannedCall/PlannedTuple). Gated on operand_is_local_page_
+            ; construction (Local only) NOT a bare restamp_operand_life# call:
+            ; restamp also promotes UNSPECIFIED-life tuples, which for a tail
+            ; return would region-promote a pure STACK value struct (e.g.
+            ; PageList.get_iterator's by-value PageListIterator) onto the caller
+            ; page — wrong and emission-changing. A real local-page allocation
+            ; carries Local life; a stack value carries Unspecified and must
+            ; stay stack.
+            if this.operand_is_local_page_construction(op)
+            {
+                let direct this.restamp_operand_life#(op, new_life)
+                if direct <> null
+                    return direct
+            }
+            choose op.expr
+                when vc: PlannedVariantConstruction
+                {
+                    if vc.value = null
+                        return null
+                    let promoted this.promote_tail_operand#((*vc.value), new_life)
+                    if promoted = null
+                        return null
+                    var vh Vector[PlannedOperand]^rp(1)
+                    vh.put(0, (*promoted))
+                    let nvc PlannedVariantConstruction(vc.loc, vc.union_type, vc.variant_name, vc.variant_tag, vh.get(0))
+                    var h Vector[PlannedOperand]^rp(1)
+                    h.put(0, PlannedOperand(op.loc, PlannedExpression.VariantConstruction nvc, op.member_access, op.result_type))
+                    return h.get(0)
+                }
+                when ch: PlannedChoose
+                {
+                    var changed false
+                    var new_cases: ref[Vector[PlannedWhen]]? ch.cases
+                    if ch.cases <> null
+                    {
+                        let cases_in (*ch.cases)
+                        var out_cases Vector[PlannedWhen]^rp(cases_in.length)
+                        var i: size_t 0
+                        while i < cases_in.length
+                        {
+                            let cp cases_in.get i
+                            if cp <> null
+                            {
+                                let cw (*cp)
+                                var new_cons: ref[PlannedStatement]? cw.consequent
+                                if cw.consequent <> null
+                                {
+                                    let pc this.promote_tail_statement#((*cw.consequent), new_life)
+                                    if pc <> null
+                                    {
+                                        set new_cons: pc
+                                        set changed: true
+                                    }
+                                }
+                                out_cases.put(i, PlannedWhen(cw.loc, cw.name, cw.variant_type, cw.variant_index, new_cons))
+                            }
+                            set i: i + 1
+                        }
+                        var ch_holder Vector[PlannedWhen]^rp(out_cases)
+                        set new_cases: &ch_holder
+                    }
+                    var new_alt: ref[PlannedStatement]? ch.alternative
+                    if ch.alternative <> null
+                    {
+                        let pa this.promote_tail_statement#((*ch.alternative), new_life)
+                        if pa <> null
+                        {
+                            set new_alt: pa
+                            set changed: true
+                        }
+                    }
+                    if changed = false
+                        return null
+                    let nch PlannedChoose(ch.loc, ch.condition, new_cases, new_alt)
+                    var h Vector[PlannedOperand]^rp(1)
+                    h.put(0, PlannedOperand(op.loc, PlannedExpression.Choose nch, op.member_access, op.result_type))
+                    return h.get(0)
+                }
+                when iff: PlannedIf
+                {
+                    var changed false
+                    var new_cons: ref[PlannedStatement]? iff.consequent
+                    if iff.consequent <> null
+                    {
+                        let pc this.promote_tail_statement#((*iff.consequent), new_life)
+                        if pc <> null
+                        {
+                            set new_cons: pc
+                            set changed: true
+                        }
+                    }
+                    var new_alt: ref[PlannedStatement]? iff.alternative
+                    if iff.alternative <> null
+                    {
+                        let pa this.promote_tail_statement#((*iff.alternative), new_life)
+                        if pa <> null
+                        {
+                            set new_alt: pa
+                            set changed: true
+                        }
+                    }
+                    if changed = false
+                        return null
+                    let nif PlannedIf(iff.loc, iff.condition, iff.prop, new_cons, new_alt)
+                    var h Vector[PlannedOperand]^rp(1)
+                    h.put(0, PlannedOperand(op.loc, PlannedExpression.If nif, op.member_access, op.result_type))
+                    return h.get(0)
+                }
+                when mt: PlannedMatch
+                {
+                    var changed false
+                    var new_branches: ref[Vector[PlannedBranch]]? mt.branches
+                    if mt.branches <> null
+                    {
+                        let brs_in (*mt.branches)
+                        var out_brs Vector[PlannedBranch]^rp(brs_in.length)
+                        var i: size_t 0
+                        while i < brs_in.length
+                        {
+                            let bp brs_in.get i
+                            if bp <> null
+                            {
+                                let br (*bp)
+                                var new_cons: ref[PlannedStatement]? br.consequent
+                                if br.consequent <> null
+                                {
+                                    let pc this.promote_tail_statement#((*br.consequent), new_life)
+                                    if pc <> null
+                                    {
+                                        set new_cons: pc
+                                        set changed: true
+                                    }
+                                }
+                                out_brs.put(i, PlannedBranch(br.loc, br.cases, new_cons))
+                            }
+                            set i: i + 1
+                        }
+                        var mb_holder Vector[PlannedBranch]^rp(out_brs)
+                        set new_branches: &mb_holder
+                    }
+                    var new_malt: ref[PlannedStatement]? mt.alternative
+                    if mt.alternative <> null
+                    {
+                        let pa this.promote_tail_statement#((*mt.alternative), new_life)
+                        if pa <> null
+                        {
+                            set new_malt: pa
+                            set changed: true
+                        }
+                    }
+                    if changed = false
+                        return null
+                    let nmt PlannedMatch(mt.loc, mt.condition, new_branches, new_malt)
+                    var h Vector[PlannedOperand]^rp(1)
+                    h.put(0, PlannedOperand(op.loc, PlannedExpression.Match nmt, op.member_access, op.result_type))
+                    return h.get(0)
+                }
+                when blk: PlannedBlock
+                {
+                    if blk.statements = null
+                        return null
+                    let stmts (*blk.statements)
+                    if stmts.length = 0
+                        return null
+                    let last_ptr stmts.get(stmts.length - 1)
+                    if last_ptr = null
+                        return null
+                    let pl this.promote_tail_statement#((*last_ptr), new_life)
+                    if pl = null
+                        return null
+                    var out_stmts Vector[PlannedStatement]^rp(stmts.length)
+                    var i: size_t 0
+                    while i < stmts.length
+                    {
+                        let sp stmts.get i
+                        if sp <> null
+                        {
+                            if i = stmts.length - 1
+                                out_stmts.put(i, (*pl))
+                            else
+                                out_stmts.put(i, (*sp))
+                        }
+                        set i: i + 1
+                    }
+                    var sh Vector[PlannedStatement]^rp(out_stmts)
+                    let nblk PlannedBlock(blk.loc, &sh, blk.needs_local_page_cleanup)
+                    var h Vector[PlannedOperand]^rp(1)
+                    h.put(0, PlannedOperand(op.loc, PlannedExpression.Block nblk, op.member_access, op.result_type))
+                    return h.get(0)
+                }
+                else
+                    return null
+            null
+        }
+
+        ; Promote the value position of a tail STATEMENT (a choose/if/match arm
+        ; consequent or a block's last statement). Only an Action with NO store
+        ; target carries an implicit value; a Return is already handled by R2
+        ; (plan_return#), so leave it (return null). The action's value is its
+        ; single source operand.
+        function promote_tail_statement#(rp, this: Planner, stmt: PlannedStatement, new_life: Lifetime) returns ref[PlannedStatement]?
+        {
+            choose stmt
+                when a: PlannedAction
+                {
+                    if a.target <> null
+                        return null
+                    if a.source = null
+                        return null
+                    let src (*a.source)
+                    if src.length = 0
+                        return null
+                    let s0_ptr src.get 0
+                    if s0_ptr = null
+                        return null
+                    let promoted this.promote_tail_operand#((*s0_ptr), new_life)
+                    if promoted = null
+                        return null
+                    var srch Vector[PlannedOperand]^rp(1)
+                    srch.put(0, (*promoted))
+                    let na PlannedAction(a.loc, &srch, a.target, a.result_type)
+                    var h Vector[PlannedStatement]^rp(1)
+                    h.put(0, PlannedStatement.Action na)
+                    return h.get(0)
+                }
+                else
+                    return null
+            null
         }
 
         function plan_return#(rp, this: Planner, r: Return) returns PlannedReturn
@@ -14780,7 +15072,17 @@ define Planner
             let saved_pbn promoted_binding_names.length
             let saved_etg escaping_targets.length
             this.scan_top_level_returns#(f.implementation)
+            ; Page inference: promote the IMPLICIT-RETURN (tail) expression of a
+            ; page-owning-return function to the caller page. R2 only sees
+            ; explicit `return`; a function whose body's last expression is a
+            ; bare construction/call (`{ ... Vector[T](0) }`) or a choose/if
+            ; whose arms construct the result needs the tail promoted too, or
+            ; it dangles on the local page. plan_action# reads-and-clears the
+            ; flag so only the outermost body action promotes.
+            let saved_ptr this.promote_tail_return
+            set this.promote_tail_return: Planner.needs_implicit_return_page(f)
             let planned_impl this.plan_implementation#(f.implementation)
+            set this.promote_tail_return: saved_ptr
             set escaping_return_locals.length: saved_erl
             set promoted_binding_names.length: saved_pbn
             set escaping_targets.length: saved_etg
