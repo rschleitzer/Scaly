@@ -13695,6 +13695,169 @@ define Planner
             &out
         }
 
+        ; promote_escaping_guts#: promote nested page-owning Local-life LEAF
+        ; constructions buried inside a RETURNED value aggregate to the caller
+        ; page (rp). Unlike restamp_operand_life# — which flips the TOP
+        ; construction and only fires for a Local-life top — this walks an
+        ; aggregate whose own life is Unspecified (a plain value struct / a
+        ; variant returned by sret) and promotes ONLY the genuine Local-life
+        ; heap constructions inside its fields. Example: plan_type_operand#
+        ; returns `PlannedOperand(.., PlannedExpression.Variable(PlannedVariable(
+        ; .., String("this"), ..)), ..)` — the PlannedOperand/PlannedVariable
+        ; structs are stack values copied into the sret, but the fresh
+        ; `String("this")` data buffer would land on the local page and dangle.
+        ; The enclosing value struct stays a stack value; only the dangling heap
+        ; guts move to rp. Recurses through PlannedCall args, PlannedTuple
+        ; components, and PlannedVariantConstruction value (which restamp_args#
+        ; cannot reach). Returns null when NOTHING was promoted (NEUTRAL — the
+        ; caller keeps the operand verbatim, so sigiled source whose nested
+        ; constructions carry explicit #/^ lifetimes stays byte-identical). All
+        ; rebuilds copy PlannedType/String fields verbatim (s34/s196 hazard).
+        function promote_escaping_guts#(rp, this: Planner, op: PlannedOperand, new_life: Lifetime) returns ref[PlannedOperand]?
+        {
+            choose op.expr
+                when c: PlannedCall
+                {
+                    if c.is_operator
+                        return null
+                    var changed false
+                    var new_args: ref[Vector[PlannedOperand]]? c.args
+                    if c.args <> null
+                    {
+                        let pa this.promote_escaping_args((*c.args), new_life)
+                        if pa <> null
+                        {
+                            set new_args: pa
+                            set changed: true
+                        }
+                    }
+                    var out_life c.life
+                    if Planner.result_owns_page_guts(c.result_type)
+                        choose c.life
+                            when l: Local
+                            {
+                                set out_life: new_life
+                                set changed: true
+                            }
+                            else
+                                0
+                    if changed = false
+                        return null
+                    let nc PlannedCall(
+                        c.loc, c.name, c.mangled_name, c.is_intrinsic, c.is_operator,
+                        c.can_throw, c.requires_page_param, new_args,
+                        c.result_type, out_life, c.throws_type, c.is_indirect
+                    )
+                    var h Vector[PlannedOperand]^rp(1)
+                    h.put(0, PlannedOperand(op.loc, PlannedExpression.Call nc, op.member_access, op.result_type))
+                    return h.get(0)
+                }
+                when t: PlannedTuple
+                {
+                    var changed false
+                    var new_comps: ref[Vector[PlannedComponent]]? t.components
+                    if t.components <> null
+                    {
+                        let pc this.promote_escaping_components((*t.components), new_life)
+                        if pc <> null
+                        {
+                            set new_comps: pc
+                            set changed: true
+                        }
+                    }
+                    var out_life t.life
+                    var out_region t.is_region_alloc
+                    choose t.life
+                        when l: Local
+                        {
+                            set out_life: new_life
+                            set out_region: true
+                            set changed: true
+                        }
+                        else
+                            0
+                    if changed = false
+                        return null
+                    let nt PlannedTuple(
+                        t.loc, new_comps, t.tuple_type, out_region, out_life, t.region_arg
+                    )
+                    var h Vector[PlannedOperand]^rp(1)
+                    h.put(0, PlannedOperand(op.loc, PlannedExpression.Tuple nt, op.member_access, op.result_type))
+                    return h.get(0)
+                }
+                when vc: PlannedVariantConstruction
+                {
+                    if vc.value = null
+                        return null
+                    let promoted this.promote_escaping_guts((*vc.value), new_life)
+                    if promoted = null
+                        return null
+                    let nvc PlannedVariantConstruction(
+                        vc.loc, vc.union_type, vc.variant_name, vc.variant_tag, promoted
+                    )
+                    var h Vector[PlannedOperand]^rp(1)
+                    h.put(0, PlannedOperand(op.loc, PlannedExpression.VariantConstruction nvc, op.member_access, op.result_type))
+                    return h.get(0)
+                }
+                else
+                    return null
+            null
+        }
+        function promote_escaping_args#(rp, this: Planner, args: Vector[PlannedOperand], new_life: Lifetime) returns ref[Vector[PlannedOperand]]?
+        {
+            var changed false
+            var out Vector[PlannedOperand]^rp(args.length)
+            var i: size_t 0
+            while i < args.length
+            {
+                let ap args.get i
+                if ap <> null
+                {
+                    let promoted this.promote_escaping_guts((*ap), new_life)
+                    if promoted <> null
+                    {
+                        out.put(i, (*promoted))
+                        set changed: true
+                    }
+                    if promoted = null
+                        out.put(i, (*ap))
+                }
+                set i: i + 1
+            }
+            if changed = false
+                return null
+            &out
+        }
+        function promote_escaping_components#(rp, this: Planner, comps: Vector[PlannedComponent], new_life: Lifetime) returns ref[Vector[PlannedComponent]]?
+        {
+            var changed false
+            var out Vector[PlannedComponent]^rp(comps.length)
+            var i: size_t 0
+            while i < comps.length
+            {
+                let cp comps.get i
+                if cp <> null
+                {
+                    let c (*cp)
+                    var new_value: ref[Vector[PlannedOperand]]? c.value
+                    if c.value <> null
+                    {
+                        let pv this.promote_escaping_args((*c.value), new_life)
+                        if pv <> null
+                        {
+                            set new_value: pv
+                            set changed: true
+                        }
+                    }
+                    out.put(i, PlannedComponent(c.loc, c.name, new_value, c.attributes))
+                }
+                set i: i + 1
+            }
+            if changed = false
+                return null
+            &out
+        }
+
         ; ================================================================
         ; Implicit-return (tail) promotion. R2 (plan_return#) promotes an
         ; EXPLICIT `return X`; this pair handles the IMPLICIT return — the
@@ -14113,6 +14276,22 @@ define Planner
                             this.add_diagnostic(r.span, String^rp("reference into a local ($) page escapes via return - allocate the target with '#' (caller page) or '^name' (region) so it outlives the use"))
                     }
                 }
+
+            ; Nested-guts promotion: even when the returned operand itself does
+            ; not need top-level promotion (it is an Unspecified value struct or
+            ; a variant copied by value into the sret), a fresh Local-life heap
+            ; construction buried in its fields would dangle. Promote those to
+            ; rp. NEUTRAL when nothing is promotable (returns null -> keep
+            ; verbatim); idempotent after the restamp above (already-Call leaves
+            ; are not re-flipped). Reaches PlannedVariantConstruction payloads
+            ; that restamp_args# cannot.
+            if planned_flat.length > 0
+            {
+                let nested_call_life Lifetime.Call(scalyc.compiler.Model.Call(r.span))
+                let nested_promoted this.promote_escaping_guts(planned_collapsed, nested_call_life)
+                if nested_promoted <> null
+                    set planned_collapsed: (*nested_promoted)
+            }
 
             var holder Vector[PlannedOperand]^rp(1)
             if planned_flat.length > 0
