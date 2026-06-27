@@ -12294,7 +12294,7 @@ define Planner
                 if b.item.type <> null
                 {
                     let ann (*b.item.type)
-                    let nm Planner.join_dotted_name#(ann.name)
+                    let nm Planner.join_dotted_name(ann.name)
                     if this.is_delegate_type(nm)
                         set del_name: nm
                 }
@@ -12305,13 +12305,13 @@ define Planner
                         choose (*dop_ptr).expression
                             when dl: Lambda
                             {
-                                var dparams this.delegate_param_types#(del_name)
+                                var dparams this.delegate_param_types(del_name)
                                 var base_name String^rp("lam")
                                 if b.item.name <> null
                                     set base_name: String^rp((*b.item.name))
-                                let del_pt this.plan_type#((*b.item.type))
-                                let dret this.delegate_return_type#(del_name)
-                                let clo this.make_closure#(base_name, dl, dparams, dret, del_pt, Lifetime.Local(scalyc.compiler.Model.Local(b.span)))
+                                let del_pt this.plan_type((*b.item.type))
+                                let dret this.delegate_return_type(del_name)
+                                let clo this.make_closure(base_name, dl, dparams, dret, del_pt, Lifetime.Local(scalyc.compiler.Model.Local(b.span)))
                                 let fref_op PlannedOperand(b.span, PlannedExpression.Closure clo, null, del_pt)
                                 var op_arr Array[PlannedOperand]$()
                                 op_arr.add fref_op
@@ -12372,9 +12372,9 @@ define Planner
                 }
             }
 
-            let raw_ops_flat this.plan_operands#(b.operation)
-            let planned_ops_flat Planner.strip_leading_eq#(raw_ops_flat)
-            let orig_item this.plan_item#(b.item)
+            let raw_ops_flat this.plan_operands(b.operation)
+            let planned_ops_flat Planner.strip_leading_eq(raw_ops_flat)
+            let orig_item this.plan_item(b.item)
 
             ; s135: support `var NAME TYPE INIT` (no colon). When the
             ; Modeler produces a Binding with no annotation but >=2
@@ -12446,7 +12446,7 @@ define Planner
                                                 set head_is_call: true
                                             if this.is_namespace_sibling_function(ft.name)
                                                 set head_is_call: true
-                                            if this.has_this_method#(ft.name)
+                                            if this.has_this_method(ft.name)
                                                 set head_is_call: true
                                             ; A Phase-1 lambda binding name is callable,
                                             ; not a type — `let r inc(5)` must collapse
@@ -12489,7 +12489,7 @@ define Planner
                 set ri: ri + 1
             }
             let ops_to_collapse Vector[PlannedOperand]^rp(rest_arr)
-            var collapsed this.collapse_operand_sequence#(ops_to_collapse)
+            var collapsed this.collapse_operand_sequence(ops_to_collapse)
 
             ; Page inference, gap 1 (backward binding promotion): if this
             ; binding's name was found returned bare (`let x Foo(); ... return
@@ -12498,14 +12498,14 @@ define Planner
             ; and record the name so plan_return# skips the escape diagnostic at
             ; `return x`. The binding_type itself stays Local — the value still
             ; LIVES in this frame's slot, it just points at caller-page guts,
-            ; exactly like the hand-written `let x Foo#(); return x` idiom.
+            ; exactly like the hand-written `let x Foo(); return x` idiom.
             if b.item.name <> null
             {
                 let bn (*b.item.name)
                 if this.array_contains_name(escaping_return_locals, bn)
                 {
                     let promote_life Lifetime.Call(scalyc.compiler.Model.Call(b.span))
-                    let promoted_init this.restamp_operand_life#(collapsed, promote_life)
+                    let promoted_init this.restamp_operand_life(collapsed, promote_life)
                     if promoted_init <> null
                     {
                         set collapsed: (*promoted_init)
@@ -12523,7 +12523,7 @@ define Planner
                         ; on sigiled source: the branch values are explicit
                         ; `#`-calls (Call life), which restamp refuses, so nothing
                         ; is promoted and the binding is kept verbatim.
-                        let promoted_ctrl this.promote_tail_operand#(collapsed, promote_life)
+                        let promoted_ctrl this.promote_tail_operand(collapsed, promote_life)
                         if promoted_ctrl <> null
                         {
                             set collapsed: (*promoted_ctrl)

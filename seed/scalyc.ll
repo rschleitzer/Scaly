@@ -145911,6 +145911,7 @@ entry:
   %arg.tmp258 = alloca { ptr }, align 8
   %arg.tmp252 = alloca { ptr }, align 8
   %arg.tmp247 = alloca { ptr }, align 8
+  %local_page = call ptr @_Z21scaly_alloc_root_pagev()
   %arg.tmp242 = alloca { ptr }, align 8
   %arg.tmp237 = alloca { ptr }, align 8
   %head_is_call = alloca i1, align 1
@@ -146196,6 +146197,7 @@ if.end92:                                         ; preds = %if.then91, %if.end6
   store ptr %addr.heap, ptr %tuple.field113, align 1
   %tuple.val114 = load %_Z14PlannedBinding, ptr %tuple108, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple108, i64 ptrtoint (ptr getelementptr (%_Z14PlannedBinding, ptr null, i32 1) to i64), i1 false)
+  call void @_Z23scaly_release_root_pageP4Page(ptr %local_page)
   ret void
 
 if.then119:                                       ; preds = %if.end
@@ -146287,6 +146289,7 @@ choose.when140:                                   ; preds = %if.then130
   store ptr null, ptr %tuple.field164, align 1
   %tuple.val165 = load %_Z14PlannedBinding, ptr %tuple160, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple160, i64 ptrtoint (ptr getelementptr (%_Z14PlannedBinding, ptr null, i32 1) to i64), i1 false)
+  call void @_Z23scaly_release_root_pageP4Page(ptr %local_page)
   ret void
 
 if.then175:                                       ; preds = %if.end120
@@ -146443,7 +146446,7 @@ if.then244:                                       ; preds = %if.end240
 if.end245:                                        ; preds = %if.then244, %if.end240
   %name246 = extractvalue %_Z11PlannedType %variant.val196, 1
   store { ptr } %name246, ptr %arg.tmp247, align 1
-  %call248 = call i1 @_ZN7Planner15has_this_methodEPN4scaly6memory4PageE6String(ptr %1, ptr %2, ptr %arg.tmp247)
+  %call248 = call i1 @_ZN7Planner15has_this_methodEPN4scaly6memory4PageE6String(ptr %local_page, ptr %2, ptr %arg.tmp247)
   br i1 %call248, label %if.then249, label %if.end250
 
 if.then249:                                       ; preds = %if.end245
@@ -146807,7 +146810,8 @@ if.end433:                                        ; preds = %if.end437, %if.end4
   %tuple.field450 = getelementptr inbounds %_Z14PlannedBinding, ptr %tuple446, i32 0, i32 3
   store ptr %addr.heap445, ptr %tuple.field450, align 1
   %tuple.val451 = load %_Z14PlannedBinding, ptr %tuple446, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple446, i64 ptrtoint (ptr getelementptr (%_Z14PlannedBinding, ptr null, i32 1) to i64), i1 false)
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
+  store %_Z14PlannedBinding %tuple.val451, ptr %0, align 1
   ret void
 
 if.then436:                                       ; preds = %if.then432
