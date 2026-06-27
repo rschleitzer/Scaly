@@ -13884,6 +13884,56 @@ define Planner
                     h.put(0, PlannedOperand(op.loc, PlannedExpression.Block nblk, op.member_access, op.result_type))
                     return h.get(0)
                 }
+                when c: PlannedCall
+                {
+                    ; A plain-struct construction (`Action(handle_operands(...),
+                    ; ...)`) in tail position: the STRUCT itself is a by-value
+                    ; stack aggregate (Unspecified life — operand_is_local_page_
+                    ; construction above is Local-only and did NOT fire), so keep
+                    ; its own life, but its INLINE page-owning args (the
+                    ; handle_operands call) become the escaping struct's fields and
+                    ; must move to the caller page. Recurse restamp_args# only —
+                    ; never restamp the construction itself (that would region-
+                    ; promote a pure stack value, the ba5045c2 rule-3 hazard).
+                    ; Gated on Unspecified so explicit `#`/`^` placements stand.
+                    var c_unspec false
+                    choose c.life
+                        when u: Unspecified
+                            set c_unspec: true
+                        else
+                            0
+                    if c_unspec = false
+                        return null
+                    if c.args = null
+                        return null
+                    let new_args this.restamp_args#((*c.args), new_life)
+                    let nc PlannedCall(
+                        c.loc, c.name, c.mangled_name, c.is_intrinsic, c.is_operator,
+                        c.can_throw, c.requires_page_param, new_args,
+                        c.result_type, c.life, c.throws_type, c.is_indirect
+                    )
+                    var h Vector[PlannedOperand]^rp(1)
+                    h.put(0, PlannedOperand(op.loc, PlannedExpression.Call nc, op.member_access, op.result_type))
+                    return h.get(0)
+                }
+                when t: PlannedTuple
+                {
+                    var t_unspec false
+                    choose t.life
+                        when u: Unspecified
+                            set t_unspec: true
+                        else
+                            0
+                    if t_unspec = false
+                        return null
+                    if t.components = null
+                        return null
+                    let new_comps this.restamp_components#((*t.components), new_life)
+                    let nt PlannedTuple(t.loc, new_comps, t.tuple_type, t.is_region_alloc, t.life, t.region_arg)
+                    var h Vector[PlannedOperand]^rp(1)
+                    h.put(0, PlannedOperand(op.loc, PlannedExpression.Tuple nt, op.member_access, op.result_type))
+                    return h.get(0)
+                }
                 else
                     return null
             null
@@ -14403,6 +14453,65 @@ define Planner
             let c (*b)
             (c >= (65 as u8)) && (c <= (90 as u8))
         }
+        ; If `ops` is a `RECV.get(...)` call (a dotted Type name ["RECV","get"]),
+        ; return RECV (deep-copied onto rp); otherwise the empty string. Used to
+        ; back-propagate escape through a Vector element read: `let opp
+        ; SRC.get(i)` makes opp alias SRC's element guts.
+        function binding_get_receiver#(rp, this: Planner, ops: Vector[Operand]) returns String
+        {
+            if ops.length >= 1
+            {
+                let hp ops.get 0
+                if hp <> null
+                {
+                    let h (*hp)
+                    ; Form A — dotted name `Type(["SRC","get"])`, member_access null.
+                    if h.member_access = null
+                        choose h.expression
+                            when t: scalyc.compiler.Model.Type
+                            {
+                                if t.name.length = 2
+                                {
+                                    let mp t.name.get 1
+                                    if mp <> null
+                                        if (*mp).equals(String("get"))
+                                        {
+                                            let rp_ptr t.name.get 0
+                                            if rp_ptr <> null
+                                                return String^rp((*rp_ptr))
+                                        }
+                                }
+                            }
+                            else
+                                0
+                    ; Form B — member access `Type(["SRC"])` + member_access whose
+                    ; last hop is `get`.
+                    if h.member_access <> null
+                        choose h.expression
+                            when t2: scalyc.compiler.Model.Type
+                            {
+                                if t2.name.length = 1
+                                {
+                                    let ma (*h.member_access)
+                                    if ma.length >= 1
+                                    {
+                                        let last_ptr ma.get(ma.length - 1)
+                                        if last_ptr <> null
+                                            if (*last_ptr).equals(String("get"))
+                                            {
+                                                let rp2 t2.name.get 0
+                                                if rp2 <> null
+                                                    return String^rp((*rp2))
+                                            }
+                                    }
+                                }
+                            }
+                            else
+                                0
+                }
+            }
+            String^rp("")
+        }
         ; UNIFIED value-flow extractor (page-inference name-graph). Given a
         ; value's operand sequence `ops`, collect every bare-local NAME whose
         ; own allocation becomes part of that value — so when an escaping
@@ -14500,13 +14609,28 @@ define Planner
             if ops.length >= 2
             {
                 let head_ptr ops.get 0
-                let args_ptr ops.get 1
+                ; The arguments operand is normally at index 1, but a GENERIC
+                ; container ctor `Vector[T](args)` splits into [Type(Vector),
+                ; Matrix([T]), Tuple(args)] (s107) — the generic args ride a
+                ; Matrix at index 1 and the real arg Tuple is at index 2. Skip
+                ; a leading Matrix so a returned `Vector[Statement](result)`
+                ; collects `result` (else the whole tree-builder dangles).
+                var args_idx: size_t 1
+                let probe_ptr ops.get 1
+                if probe_ptr <> null
+                    choose (*probe_ptr).expression
+                        when mx: Matrix
+                            set args_idx: 2
+                        else
+                            0
+                let args_ptr ops.get args_idx
                 if head_ptr <> null
                     if args_ptr <> null
                     {
                         let head (*head_ptr)
                         let args (*args_ptr)
                         var is_ctor: bool false
+                        var is_deref: bool false
                         if head.member_access = null
                             choose head.expression
                                 when t: scalyc.compiler.Model.Type
@@ -14518,9 +14642,28 @@ define Planner
                                             if this.name_is_capitalized((*n0))
                                                 set is_ctor: true
                                     }
+                                    ; A deref `*opp` is the operand sequence
+                                    ; [Type("*"), opp]; the VALUE is what follows
+                                    ; the operator. Recurse past it so a `*opp`
+                                    ; stored into an escaping receiver collects
+                                    ; `opp` (whose binding may alias an escaping
+                                    ; source). Single-segment name only.
+                                    if t.name.length = 1
+                                    {
+                                        let d0 t.name.get 0
+                                        if d0 <> null
+                                            if (*d0).equals(String("*"))
+                                                set is_deref: true
+                                    }
                                 }
                                 else
                                     0
+                        if is_deref
+                        {
+                            var dh Vector[Operand]^rp(1)
+                            dh.put(0, args)
+                            this.collect_flow_locals#(dh)
+                        }
                         if is_ctor
                             choose args.expression
                                 when tup: scalyc.compiler.Model.Tuple
@@ -14711,7 +14854,15 @@ define Planner
                                     }
                                 }
                                 else
-                                    0
+                                {
+                                    ; Parenless single-argument store
+                                    ; (`result.add stmt`, s199): the argument is a
+                                    ; bare value operand, NOT wrapped in a Tuple, so
+                                    ; collect the value's flow locals directly.
+                                    var sa Vector[Operand]^rp(1)
+                                    sa.put(0, args)
+                                    this.collect_flow_locals#(sa)
+                                }
                     }
             }
         }
@@ -14760,6 +14911,20 @@ define Planner
                             this.add_escaping_target#(bnm)
                         if this.array_contains_name(escaping_return_locals, bnm)
                             this.add_escaping_target#(bnm)
+                        ; get-alias back-propagation: a binding `let opp
+                        ; SRC.get(i)` aliases element guts of the local Vector
+                        ; SRC. If that alias `opp` is found escaping (its deref
+                        ; was stored into an escaping receiver), then SRC's
+                        ; elements escape too — mark SRC an escaping target so
+                        ; the values put into SRC are themselves promoted. This
+                        ; threads escape backward through a Vector-to-Vector
+                        ; element copy (`dst.put(i, *src.get(j))`).
+                        if this.array_contains_name(escaping_return_locals, bnm)
+                        {
+                            let src this.binding_get_receiver#(bind.operation)
+                            if src.get_length() > 0
+                                this.add_escaping_target#(src)
+                        }
                     }
                 }
                 when a: Action
@@ -14873,10 +15038,16 @@ define Planner
                     var passes: size_t 0
                     repeat
                     {
-                        set prev_len: escaping_return_locals.length
+                        ; Track BOTH sets: a pass may grow only escaping_targets
+                        ; (e.g. the get-alias marking a Vector whose elements feed
+                        ; an escaping receiver) without adding any return-local.
+                        ; Terminating on escaping_return_locals alone would stop
+                        ; before the next pass picks up the newly-escaping target's
+                        ; stored values (`SRC.put(i, modelled)` → promote modelled).
+                        set prev_len: escaping_return_locals.length + escaping_targets.length
                         this.collect_returns_action#(a)
                         set passes: passes + 1
-                        if escaping_return_locals.length = prev_len
+                        if (escaping_return_locals.length + escaping_targets.length) = prev_len
                             break
                         if passes >= 64
                             break
