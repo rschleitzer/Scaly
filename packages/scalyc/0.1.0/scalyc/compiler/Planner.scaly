@@ -12511,6 +12511,25 @@ define Planner
                         set collapsed: (*promoted_init)
                         promoted_binding_names.add(String^rp(bn))
                     }
+                    else
+                    {
+                        ; Choose/if/match/block-bound init (`let base choose {
+                        ; when c: plan_constant_operand(c) ... }; return base`):
+                        ; restamp_operand_life# only promotes a top-level
+                        ; Call/Tuple, so a control-flow init returns null. Fall
+                        ; back to promote_tail_operand#, which recurses into each
+                        ; branch's value position and promotes the leaf Local/
+                        ; Unspecified construction/call to the caller page. NEUTRAL
+                        ; on sigiled source: the branch values are explicit
+                        ; `#`-calls (Call life), which restamp refuses, so nothing
+                        ; is promoted and the binding is kept verbatim.
+                        let promoted_ctrl this.promote_tail_operand#(collapsed, promote_life)
+                        if promoted_ctrl <> null
+                        {
+                            set collapsed: (*promoted_ctrl)
+                            promoted_binding_names.add(String^rp(bn))
+                        }
+                    }
                 }
             }
 
