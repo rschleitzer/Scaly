@@ -14762,6 +14762,57 @@ define Planner
             }
             false
         }
+        ; Extract the receiver name from a `(*X)` deref modeled as a parenthesized
+        ; Tuple with one component whose value is the operand sequence
+        ; [Type("*"), Type([X])]. Returns "" when the shape doesn't match. Used to
+        ; recognise a pointer-param store `(*param).add(v)` whose receiver is a
+        ; ref/pointer out-parameter (seeded into escaping_targets).
+        function tuple_deref_receiver_name#(rp, this: Planner, tup: scalyc.compiler.Model.Tuple) returns String
+        {
+            if tup.components.length <> 1
+                return String("")
+            let cp tup.components.get 0
+            if cp = null
+                return String("")
+            let val (*cp).value
+            if val.length <> 2
+                return String("")
+            let op0 val.get 0
+            let op1 val.get 1
+            if op0 = null
+                return String("")
+            if op1 = null
+                return String("")
+            var star_ok: bool false
+            choose (*op0).expression
+                when t0: scalyc.compiler.Model.Type
+                {
+                    if t0.name.length = 1
+                    {
+                        let s0 t0.name.get 0
+                        if s0 <> null
+                            if (*s0).equals(String("*"))
+                                set star_ok: true
+                    }
+                }
+                else
+                    0
+            if star_ok = false
+                return String("")
+            choose (*op1).expression
+                when t1: scalyc.compiler.Model.Type
+                {
+                    if t1.name.length = 1
+                    {
+                        let s1 t1.name.get 0
+                        if s1 <> null
+                            return String^rp((*s1))
+                    }
+                }
+                else
+                    0
+            String("")
+        }
         function collect_store_value_locals#(rp, this: Planner, source: Vector[Operand])
         {
             if source.length >= 2
@@ -14840,6 +14891,41 @@ define Planner
                                 }
                                 else
                                     0
+                        ; Form C — pointer-param deref: `(*param).add(args)` /
+                        ; `(*param).put(args)` models head.expression as a
+                        ; parenthesized Tuple wrapping `(*param)`, with
+                        ; member_access ending in put/add. Extract the deref'd
+                        ; receiver and check escape membership (ref/pointer
+                        ; out-params are seeded into escaping_targets), e.g.
+                        ; handle_constituent's `(*symbols_builder).add(name,
+                        ; Nameable.Functions fns)`.
+                        if head.member_access <> null
+                        {
+                            let ma2 (*head.member_access)
+                            if ma2.length >= 1
+                            {
+                                let last2 ma2.get(ma2.length - 1)
+                                if last2 <> null
+                                {
+                                    let meth2 (*last2)
+                                    if meth2.equals(String("put")) || meth2.equals(String("add"))
+                                        choose head.expression
+                                            when th: scalyc.compiler.Model.Tuple
+                                            {
+                                                let rn2 this.tuple_deref_receiver_name#(th)
+                                                if rn2.get_length() > 0
+                                                {
+                                                    if this.array_contains_name(escaping_targets, rn2)
+                                                        set recv_escapes: true
+                                                    if this.array_contains_name(escaping_return_locals, rn2)
+                                                        set recv_escapes: true
+                                                }
+                                            }
+                                            else
+                                                0
+                                }
+                            }
+                        }
                         if recv_escapes
                             choose args.expression
                                 when tup: scalyc.compiler.Model.Tuple
@@ -15242,6 +15328,29 @@ define Planner
             let saved_erl escaping_return_locals.length
             let saved_pbn promoted_binding_names.length
             let saved_etg escaping_targets.length
+            ; Page inference: a value stored through a ref/pointer out-parameter
+            ; escapes to the caller, so seed those param names as escape targets.
+            ; A later `param.add(v)` / `(*param).add(v)` then promotes v to the
+            ; caller page (e.g. handle_constituent's `var fns Vector[Function]`
+            ; stored into the `symbols_builder` pointer param). `this` excluded.
+            var pp: size_t 0
+            while pp < f.input.length
+            {
+                let pip f.input.get pp
+                if pip <> null
+                {
+                    let pit (*pip)
+                    if pit.name <> null
+                        if pit.type <> null
+                        {
+                            let pnm (*pit.name)
+                            if pnm.equals(String("this")) = false
+                                if Planner.is_ref_or_pointer_type((*pit.type))
+                                    this.add_escaping_target#(pnm)
+                        }
+                }
+                set pp: pp + 1
+            }
             this.scan_top_level_returns#(f.implementation)
             ; Page inference: promote the IMPLICIT-RETURN (tail) expression of a
             ; page-owning-return function to the caller page. R2 only sees
