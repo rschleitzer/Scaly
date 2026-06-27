@@ -14650,6 +14650,25 @@ define Planner
                         let args (*args_ptr)
                         var is_ctor: bool false
                         var is_deref: bool false
+                        ; A method/qualified CALL bound to an escaping local can
+                        ; ALIAS its arguments into the result — e.g.
+                        ; collapse_operand_sequence(flat) returns an operand that
+                        ; shares `flat`'s element guts. The call's result is
+                        ; promoted to the caller page via the binding-init restamp,
+                        ; but a bound-local ARG whose guts the call passes through
+                        ; would still dangle on the local page. Collect those arg
+                        ; locals so they are promoted too. Conservatively assumes a
+                        ; call may alias its args; over-promotion to rp is safe and
+                        ; NEUTRAL on sigiled source — an arg whose binding carries
+                        ; an explicit `#`/`^` lifetime is kept verbatim by restamp.
+                        ; Two call shapes: `obj.method(args)` carries a
+                        ; member_access; `this.method(args)`/`recv.method(args)`
+                        ; folds into a dotted Type name [recv, …, method] with a
+                        ; NON-capitalized last segment (a dotted ctor `a.b.Type`
+                        ; has a capitalized last segment, so it stays is_ctor).
+                        var is_call: bool false
+                        if head.member_access <> null
+                            set is_call: true
                         if head.member_access = null
                             choose head.expression
                                 when t: scalyc.compiler.Model.Type
@@ -14674,6 +14693,13 @@ define Planner
                                             if (*d0).equals(String("*"))
                                                 set is_deref: true
                                     }
+                                    if t.name.length >= 2
+                                    {
+                                        let last_seg t.name.get(t.name.length - 1)
+                                        if last_seg <> null
+                                            if this.name_is_capitalized((*last_seg)) = false
+                                                set is_call: true
+                                    }
                                 }
                                 else
                                     0
@@ -14683,7 +14709,7 @@ define Planner
                             dh.put(0, args)
                             this.collect_flow_locals#(dh)
                         }
-                        if is_ctor
+                        if is_ctor || is_call
                             choose args.expression
                                 when tup: scalyc.compiler.Model.Tuple
                                 {
@@ -15013,7 +15039,18 @@ define Planner
                         ; (`^name`/`#`), or an already-promoted name, is a target
                         ; into which put/add stores must place caller-page values.
                         if this.operand_seq_escaping_ctor(bind.operation)
+                        {
                             this.add_escaping_target#(bnm)
+                            ; The escaping (`^rp`/`#`) construction's bound-local
+                            ; ARGS flow into the aggregate and must outlive the
+                            ; frame too — e.g. a copy-ctor `Vector[T]^rp(local)`
+                            ; shallow-copies `local`'s elements, whose heap guts
+                            ; stay on the local page. Collect them so their
+                            ; bindings are promoted to the construction's page.
+                            ; NEUTRAL on sigiled source: the arg's binding-init
+                            ; carries an explicit lifetime, which restamp keeps.
+                            this.collect_flow_locals#(bind.operation)
+                        }
                         if this.array_contains_name(escaping_return_locals, bnm)
                             this.add_escaping_target#(bnm)
                         ; get-alias back-propagation: a binding `let opp

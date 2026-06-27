@@ -4474,7 +4474,7 @@ if.then10:                                        ; preds = %while.exit3
 
 if.end11:                                         ; preds = %while.exit3
   %line12 = load ptr, ptr %line, align 8
-  call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %local_page, ptr %line12)
+  call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %line12)
   %call13 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result)
   %eq14 = icmp eq i64 %call13, 0
   br i1 %eq14, label %if.then15, label %if.end16
@@ -4825,7 +4825,7 @@ if.then10:                                        ; preds = %while.exit3
 
 if.end11:                                         ; preds = %while.exit3
   %line12 = load ptr, ptr %line, align 8
-  call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %local_page, ptr %line12)
+  call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %line12)
   %call13 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result)
   %eq14 = icmp eq i64 %call13, 0
   br i1 %eq14, label %if.then15, label %if.end16
