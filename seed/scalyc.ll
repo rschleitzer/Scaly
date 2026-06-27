@@ -138645,8 +138645,8 @@ if.then65:                                        ; preds = %if.end38
   br i1 %is_mutable69, label %if.then70, label %if.end71
 
 if.end66:                                         ; preds = %if.end38
-  %struct.region175 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6StringC1EPN4scaly6memory4PageEP10const_char(ptr %struct.region175, ptr %1, ptr @.str.561)
+  %struct.region175 = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
+  call void @_ZN6StringC1EPN4scaly6memory4PageEP10const_char(ptr %struct.region175, ptr %local_page, ptr @.str.561)
   %call176 = call ptr @_ZN7Planner12lookup_localEPN4scaly6memory4PageE6String(ptr %1, ptr %2, ptr %struct.region175)
   %ne177 = icmp ne ptr %call176, null
   br i1 %ne177, label %if.then178, label %if.end179
@@ -139020,8 +139020,8 @@ if.then270:                                       ; preds = %if.then266
   br label %while.cond
 
 if.end271:                                        ; preds = %if.end406, %if.then266
-  %struct.region452 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6StringC1EPN4scaly6memory4PageEP10const_char(ptr %struct.region452, ptr %1, ptr @.str.567)
+  %struct.region452 = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
+  call void @_ZN6StringC1EPN4scaly6memory4PageEP10const_char(ptr %struct.region452, ptr %local_page, ptr @.str.567)
   %call453 = call ptr @_ZN7Planner12lookup_localEPN4scaly6memory4PageE6String(ptr %1, ptr %2, ptr %struct.region452)
   %ne454 = icmp ne ptr %call453, null
   br i1 %ne454, label %if.then455, label %if.end456

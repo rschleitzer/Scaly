@@ -9455,17 +9455,17 @@ define Planner
                     if name.equals(String("null"))
                     {
                         let c Constant.Null(NullConstant loc)
-                        return this.plan_constant_operand#(c, loc)
+                        return this.plan_constant_operand(c, loc)
                     }
                     if name.equals(String("true"))
                     {
                         let c Constant.Boolean(BooleanConstant(loc, true))
-                        return this.plan_constant_operand#(c, loc)
+                        return this.plan_constant_operand(c, loc)
                     }
                     if name.equals(String("false"))
                     {
                         let c Constant.Boolean(BooleanConstant(loc, false))
-                        return this.plan_constant_operand#(c, loc)
+                        return this.plan_constant_operand(c, loc)
                     }
 
                     ; Local variable lookup.
@@ -9566,7 +9566,7 @@ define Planner
                     ; returned operand must live on rp, not the local
                     ; page — otherwise their data is freed when the
                     ; function returns.
-                    let this_ref this.lookup_local(String#("this"))
+                    let this_ref this.lookup_local(String("this"))
                     if this_ref <> null
                     {
                         let this_ty (*this_ref)
@@ -9585,11 +9585,11 @@ define Planner
                                         if prop_ref <> null
                                         {
                                             let prop (*prop_ref)
-                                            var prop_type: PlannedType this.fresh_type_var#(String#(""))
+                                            var prop_type: PlannedType this.fresh_type_var(String(""))
                                             if prop.type <> null
                                             {
                                                 let pt2 (*prop.type)
-                                                set prop_type: this.plan_type#(pt2)
+                                                set prop_type: this.plan_type(pt2)
                                             }
                                             let idx this.get_property_index(inner.name, name)
                                             var ma_arr Array[PlannedMemberAccess]^rp()
@@ -9601,7 +9601,7 @@ define Planner
                                             return PlannedOperand(
                                                 loc,
                                                 PlannedExpression.Variable(PlannedVariable(
-                                                    loc, String#("this"), this_ty, false
+                                                    loc, String("this"), this_ty, false
                                                 )),
                                                 &ma_holder,
                                                 prop_type
@@ -9670,7 +9670,7 @@ define Planner
                                 }
                             }
                         }
-                        let access_chain this.resolve_member_access#(
+                        let access_chain this.resolve_member_access(
                             base_for_chain, rest_vec
                         )
                         var has_method: bool false
@@ -9770,7 +9770,7 @@ define Planner
                     ; chain-building from 6805-6826. Skip when the chain
                     ; contains any method hop — same constraint as the
                     ; local-binding branch above.
-                    let this_ref2 this.lookup_local(String#("this"))
+                    let this_ref2 this.lookup_local(String("this"))
                     if this_ref2 <> null
                     {
                         let this_ty2 (*this_ref2)
@@ -9798,7 +9798,7 @@ define Planner
                                                 set k2: k2 + 1
                                             }
                                             var all_vec Vector[String]^rp(all_arr)
-                                            let chain2 this.resolve_member_access#(inner2, all_vec)
+                                            let chain2 this.resolve_member_access(inner2, all_vec)
                                             ; s87: skip removed (was `var has_method2 / while /
                                             ; if has_method2 = false` wrapper preserved through
                                             ; s83-s86). With s87's emit_variable struct/ptr-alloca
@@ -9815,7 +9815,7 @@ define Planner
                                             return PlannedOperand(
                                                 loc,
                                                 PlannedExpression.Variable(PlannedVariable(
-                                                    loc, String#("this"), this_ty2, false
+                                                    loc, String("this"), this_ty2, false
                                                 )),
                                                 &holder2,
                                                 ft2
@@ -9829,7 +9829,7 @@ define Planner
                 }
             }
 
-            let pt this.plan_type#(t)
+            let pt this.plan_type(t)
             PlannedOperand(
                 loc,
                 PlannedExpression.Type pt,
