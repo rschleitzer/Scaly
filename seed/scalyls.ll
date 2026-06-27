@@ -3312,6 +3312,8 @@ lor.end:                                          ; preds = %lor.rhs, %entry
   ret i1 %lor.result
 }
 
+declare ptr @0()
+
 define linkonce_odr i64 @_ZN4json12parse_numberEP10JsonParser(ptr %0) {
 entry:
   %value = alloca i64, align 8
