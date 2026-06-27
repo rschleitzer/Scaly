@@ -14823,6 +14823,28 @@ define Planner
                                         this.collect_flow_stmt(lp.unwrap())
                                 }
                             }
+                            when tup: scalyc.compiler.Model.Tuple
+                            {
+                                ; A PARENTHESIZED expression `(X)` is modeled as a
+                                ; single-operand Tuple wrapping X; it aliases X (no
+                                ; allocation of its own). Recurse each component's
+                                ; value so a parenthesized deref `(*p_ptr)` stored
+                                ; into an escaping receiver collects `p_ptr` (and a
+                                ; parenthesized local `(x)` collects `x`). Without
+                                ; this the length-1 path stops at the Tuple and the
+                                ; inner value's flow locals are missed —
+                                ; `dst.add((*src.get(i)))` (a Vector element copy
+                                ; written with explicit parens) is the case in
+                                ; plan_binding#'s rest_arr fill loop.
+                                var ti: size_t 0
+                                while ti < tup.components.length
+                                {
+                                    let cp tup.components.get ti
+                                    if cp <> null
+                                        this.collect_flow_locals((*cp).value)
+                                    set ti: ti + 1
+                                }
+                            }
                             else
                                 0
                     ; Same field-read as above but modeled as a bare local
@@ -15282,11 +15304,30 @@ define Planner
                         ; the values put into SRC are themselves promoted. This
                         ; threads escape backward through a Vector-to-Vector
                         ; element copy (`dst.put(i, *src.get(j))`).
+                        ;
+                        ; ALSO add SRC to escaping_return_locals: when SRC is a
+                        ; call-RESULT binding whose elements are read out and
+                        ; shallow-copied into an escaping aggregate (plan_binding#'s
+                        ; `let planned_ops_flat strip_leading_eq(raw); … let p_ptr
+                        ; planned_ops_flat.get i; rest_arr.add(*p_ptr)`), the
+                        ; escaping_targets membership alone does NOT promote SRC's
+                        ; binding — plan_binding#'s init-promotion gate reads
+                        ; escaping_return_locals, not escaping_targets. So the
+                        ; strip_leading_eq/plan_operands call result stays on the
+                        ; local page and its element guts dangle. Adding SRC to
+                        ; escaping_return_locals restamps its call-init to rp.
+                        ; NEUTRAL on sigiled source: a `#`/`^`-init binding is kept
+                        ; verbatim by restamp; a fill-Vector SRC (the get-alias's
+                        ; original target) is already `^rp`/`#`, so promotion is a
+                        ; no-op there too — only a DEFAULTED-Local call result moves.
                         if this.array_contains_name(escaping_return_locals, bnm)
                         {
                             let src this.binding_get_receiver(bind.operation)
                             if src.get_length() > 0
+                            {
                                 this.add_escaping_target(src)
+                                this.add_escaping_local(src)
+                            }
                         }
                     }
                 }
