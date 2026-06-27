@@ -2432,7 +2432,7 @@ function handle_definition#(path: String, syntax: DefinitionSyntax, is_private: 
 ; collection .add inside a choose-arm corrupts the caller's frame).
 procedure handle_module_decl(path: String, mod_syntax: ModuleSyntax, is_private: bool, modules: ref[Array[Module]])
 {
-    let loaded build_referenced_module#(path, mod_syntax.name, is_private)
+    let loaded build_referenced_module(path, mod_syntax.name, is_private)
     modules.add loaded
 }
 
@@ -2497,7 +2497,7 @@ procedure handle_package_decl(pkg_syntax: PackageSyntax, packages: ref[Array[Mod
     sb.append version_str
     let pkg_path sb.to_string()
 
-    let loaded build_referenced_module#(pkg_path, pkg_name, false)
+    let loaded build_referenced_module(pkg_path, pkg_name, false)
     packages.add loaded
 }
 
@@ -2554,10 +2554,10 @@ function build_referenced_module(path: String, name: String, is_private: bool) r
     sub_sb.append name
     let sub_path sub_sb.to_string()
 
-    build_module#(sub_path, file_path, name, syntax.file, is_private)
+    build_module(sub_path, file_path, name, syntax.file, is_private)
 }
 
-function build_module#(path: String, file_name: String, name: String, syntax: FileSyntax, is_private: bool) returns Module
+function build_module(path: String, file_name: String, name: String, syntax: FileSyntax, is_private: bool) returns Module
 {
     var symbols_builder HashMapBuilder[String, Nameable]()
 
