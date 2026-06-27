@@ -12771,6 +12771,54 @@ define Planner
         ; A Local pointee/value dies at scope exit, so returning/storing it is a
         ; use-after-free. Call (#) and Reference (^name) lifetimes outlive the
         ; function and are fine. Mirrors Planner.cpp::isReferenceToLocalPage.
+        ; True when the operand IS a freshly-built page-owning construction
+        ; whose allocation lives on the function's LOCAL page (Local life) or
+        ; would (Unspecified life on a page-owning value). is_reference_to_local_
+        ; page only inspects result_type.life, but the construction blocks
+        ; (init# / reshape) stamp the Local life onto the PlannedCall/PlannedTuple
+        ; EXPRESSION (call.life), leaving result_type.life Unspecified — the
+        ; emitter selects the page from call.life, not result_type.life. So a
+        ; directly-returned no-sigil construction (`return Vector[T](0)`) is a
+        ; local-page allocation that is_reference_to_local_page misses. R2 uses
+        ; this as an additional gate so such returns are promoted to rp by
+        ; restamp_operand_life# (which re-checks the expression life itself).
+        ; result_owns_page_guts excludes borrows/handles. Read the EXPRESSION
+        ; life, not result_type.life, by design.
+        function operand_is_local_page_construction(this: Planner, op: PlannedOperand) returns bool
+        {
+            if Planner.result_owns_page_guts(op.result_type) = false
+                return false
+            ; Read the EXPRESSION life (call.life / tuple.life). Only LOCAL —
+            ; a construction the init#/reshape block placed on the function's
+            ; local page (heap-backed default, or `$`). Unspecified is NOT
+            ; included: a no-page-param construction (a plain value struct) has
+            ; Unspecified life and is a pure STACK value that must NOT be
+            ; region-promoted (result_owns_page_guts returns true for it too —
+            ; it only excludes borrows/handles, not stack structs).
+            choose op.expr
+                when c: PlannedCall
+                {
+                    if c.is_operator
+                        return false
+                    choose c.life
+                        when l: Local
+                            return true
+                        else
+                            return false
+                }
+                when t: PlannedTuple
+                {
+                    choose t.life
+                        when l: Local
+                            return true
+                        else
+                            return false
+                }
+                else
+                    return false
+            false
+        }
+
         function is_reference_to_local_page(t: PlannedType) returns bool
         {
             choose t.life
@@ -13665,8 +13713,21 @@ define Planner
             ; caller page (rp) so it outlives the use — no `#` needed. Only when
             ; promotion isn't possible (a bare local Variable, or a ref into a
             ; local pointee) do we keep the hard escape diagnostic.
+            ; Promote when the returned operand is a Local-page REFERENCE/value
+            ; (is_reference_to_local_page reads result_type.life) OR a directly-
+            ; returned no-sigil CONSTRUCTION whose Local life rides the
+            ; expression (call.life / tuple.life), which is_reference_to_local_
+            ; page misses because the construction blocks leave result_type.life
+            ; Unspecified. The latter closes `return Vector[T](0)` /
+            ; `return SomeStruct(...)` directly-returned-construction dangling.
+            var return_needs_promotion false
+            if Planner.is_reference_to_local_page(planned_collapsed.result_type)
+                set return_needs_promotion: true
+            if return_needs_promotion = false
+                if this.operand_is_local_page_construction(planned_collapsed)
+                    set return_needs_promotion: true
             if planned_flat.length > 0
-                if Planner.is_reference_to_local_page(planned_collapsed.result_type)
+                if return_needs_promotion
                 {
                     ; Gap 1: `return x` where x's binding was already promoted to
                     ; the caller page (its allocation lives on rp) — the Variable
