@@ -8715,14 +8715,14 @@ define Planner
         ; ================================================================
         function plan_type#(rp, this: Planner, t: Type) returns PlannedType
         {
-            let base Planner.resolve_type_base#(t)
+            let base Planner.resolve_type_base(t)
 
             var after_subst: PlannedType base
             var subst_fired: bool false
             if type_substitutions.length > 0
             {
                 var sub_vec Vector[KeyValuePair[String, PlannedType]]^rp(type_substitutions)
-                set after_subst: Planner.apply_name_substitution#(base, &sub_vec)
+                set after_subst: Planner.apply_name_substitution(base, &sub_vec)
                 ; If substitution actually replaced the name (T → Concrete),
                 ; the result is already a concrete type — skip the dotted-name
                 ; canonicalization that would shorten qualified names like
@@ -8767,7 +8767,7 @@ define Planner
                             if g_ptr <> null
                             {
                                 let g (*g_ptr)
-                                let canon_inner this.plan_type#(g)
+                                let canon_inner this.plan_type(g)
                                 canon_gens.put(gi, canon_inner)
                             }
                             set gi: gi + 1
@@ -8830,7 +8830,7 @@ define Planner
                                 String^rp(""),
                                 null
                             ))
-                            let elem_mangled Planner.encode_type#((*probe_holder.get(0)))
+                            let elem_mangled Planner.encode_type((*probe_holder.get(0)))
                             var elem_holder Vector[PlannedType]^rp(1)
                             elem_holder.put(0, PlannedType(
                                 after_subst.loc,
@@ -9192,7 +9192,7 @@ define Planner
                                                         if mp_ptr <> null
                                                         {
                                                             let mp (*mp_ptr)
-                                                            let cgi this.plan_type#(mp)
+                                                            let cgi this.plan_type(mp)
                                                             canon_gens_inst.put(ggi, cgi)
                                                         }
                                                     }
@@ -9211,7 +9211,7 @@ define Planner
                                     ; `Container[int]^page_ptr(...)` loses
                                     ; the page-pointer arg at the ctor
                                     ; call site (`<null operand!>`).
-                                    let inst this.instantiate_generic#(canonical_name, canon_gens_inst, after_subst.loc)
+                                    let inst this.instantiate_generic(canonical_name, canon_gens_inst, after_subst.loc)
                                     return PlannedType(
                                         inst.loc,
                                         inst.name,
@@ -9228,7 +9228,7 @@ define Planner
                 }
             }
 
-            let mangled Planner.mangle_structure#(canonical_name, after_subst.generics)
+            let mangled Planner.mangle_structure(canonical_name, after_subst.generics)
             PlannedType(
                 after_subst.loc,
                 canonical_name,
