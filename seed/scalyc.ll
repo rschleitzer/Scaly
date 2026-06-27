@@ -127393,7 +127393,7 @@ while.body:                                       ; preds = %while.cond
 
 while.exit:                                       ; preds = %while.cond
   %field.inplace26 = getelementptr inbounds %_Z6Lambda, ptr %4, i32 0, i32 2
-  call void @_ZN7Planner11plan_actionEPN4scaly6memory4PageE6Action(ptr noalias sret(%_Z13PlannedAction) %sret.result25, ptr %1, ptr %2, ptr %field.inplace26)
+  call void @_ZN7Planner11plan_actionEPN4scaly6memory4PageE6Action(ptr noalias sret(%_Z13PlannedAction) %sret.result25, ptr %local_page, ptr %2, ptr %field.inplace26)
   %struct.region27 = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 ptrtoint (ptr getelementptr (%_Z5ArrayI6StringE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5ArrayI6StringE }, ptr null, i64 0, i32 1) to i64))
   %tuple.field28 = getelementptr inbounds %_Z5ArrayI6StringE, ptr %struct.region27, i32 0, i32 0
   store i64 0, ptr %tuple.field28, align 4
@@ -127435,8 +127435,8 @@ while.exit:                                       ; preds = %while.cond
 if.then:                                          ; preds = %while.body
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp, ptr align 1 %call, i64 ptrtoint (ptr getelementptr (%_Z4Item, ptr null, i32 1) to i64), i1 false)
   %grp.deref.val = load %_Z4Item, ptr %deref.tmp, align 8
-  %struct.region4 = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6StringC1EPN4scaly6memory4PageEP10const_char(ptr %struct.region4, ptr %local_page, ptr @.str.583)
+  %struct.region4 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
+  call void @_ZN6StringC1EPN4scaly6memory4PageEP10const_char(ptr %struct.region4, ptr %1, ptr @.str.583)
   call void @_ZN7Planner14fresh_type_varEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z11PlannedType) %sret.result, ptr %1, ptr %2, ptr %struct.region4)
   %binding.load = load %_Z11PlannedType, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %pty1, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr (%_Z11PlannedType, ptr null, i32 1) to i64), i1 false)
@@ -128003,8 +128003,8 @@ while.exit265:                                    ; preds = %while.cond263
 if.then275:                                       ; preds = %while.body264
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp, ptr align 1 %call273, i64 ptrtoint (ptr getelementptr (%_Z4Item, ptr null, i32 1) to i64), i1 false)
   %grp.deref.val277 = load %_Z4Item, ptr %deref.tmp, align 8
-  %struct.region279 = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6StringC1EPN4scaly6memory4PageEP10const_char(ptr %struct.region279, ptr %local_page, ptr @.str.589)
+  %struct.region279 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
+  call void @_ZN6StringC1EPN4scaly6memory4PageEP10const_char(ptr %struct.region279, ptr %1, ptr @.str.589)
   call void @_ZN7Planner14fresh_type_varEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z11PlannedType) %sret.result278, ptr %1, ptr %2, ptr %struct.region279)
   %binding.load280 = load %_Z11PlannedType, ptr %sret.result278, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %pty, ptr align 1 %sret.result278, i64 ptrtoint (ptr getelementptr (%_Z11PlannedType, ptr null, i32 1) to i64), i1 false)

@@ -2921,7 +2921,7 @@ define Planner
                             let lc_vals (*(*lc_cp).value)
                             if lc_vals.length > 0
                             {
-                                let lc_collapsed this.collapse_operand_sequence#(lc_vals)
+                                let lc_collapsed this.collapse_operand_sequence(lc_vals)
                                 lc_arg_ops.add lc_collapsed
                                 lc_arg_types.add lc_collapsed.result_type
                             }
@@ -2931,7 +2931,7 @@ define Planner
                 }
             }
             var lc_at_vec Vector[PlannedType]^rp(lc_arg_types)
-            let lc_mono this.monomorphize_lambda#(lc_name, lc_lam, lc_at_vec)
+            let lc_mono this.monomorphize_lambda(lc_name, lc_lam, lc_at_vec)
             let lc_mangled lc_mono.mangled
             ; Prepend the captured values (looked up at the call site, where they
             ; are in scope) as leading arguments — they map to the synthesized
@@ -2967,7 +2967,7 @@ define Planner
                     lc_full_args.add((*lc_ao_ptr))
                 set lc_afi: lc_afi + 1
             }
-            var lc_ret Planner.make_void_type#()
+            var lc_ret Planner.make_void_type()
             let lc_fidx function_name_index.lookup(lc_mangled)
             if lc_fidx >= 0
             {
@@ -2979,7 +2979,7 @@ define Planner
                 }
             }
             var lc_call_args Vector[PlannedOperand]^rp(lc_full_args)
-            let lc_pc this.make_planned_call#(head_loc, lc_name, lc_mangled, lc_ret, lc_call_args)
+            let lc_pc this.make_planned_call(head_loc, lc_name, lc_mangled, lc_ret, lc_call_args)
             PlannedOperand(head_loc, PlannedExpression.Call lc_pc, null, lc_ret)
         }
 
@@ -10369,7 +10369,7 @@ define Planner
                 if it_ptr <> null
                 {
                     let it (*it_ptr)
-                    var pty1: PlannedType this.fresh_type_var#(String(""))
+                    var pty1: PlannedType this.fresh_type_var(String(""))
                     if p1i < arg_types.length
                     {
                         let at_ptr arg_types.get p1i
@@ -10385,7 +10385,7 @@ define Planner
                 }
                 set p1i: p1i + 1
             }
-            let body1 this.plan_action#(lam.body)
+            let body1 this.plan_action(lam.body)
             var free Array[String]$()
             var body_bound Array[String]$()
             this.collect_lambda_names_ops(body1.source, free, body_bound)
@@ -10524,7 +10524,7 @@ define Planner
                 if it_ptr <> null
                 {
                     let it (*it_ptr)
-                    var pty: PlannedType this.fresh_type_var#(String(""))
+                    var pty: PlannedType this.fresh_type_var(String(""))
                     if pi2 < arg_types.length
                     {
                         let at_ptr arg_types.get pi2
@@ -10546,7 +10546,7 @@ define Planner
                 }
                 set pi2: pi2 + 1
             }
-            let planned_body this.plan_action#(lam.body)
+            let planned_body this.plan_action(lam.body)
             this.pop_scope()
 
             var items_holder Vector[PlannedItem]^rp(item_arr)
@@ -10586,7 +10586,7 @@ define Planner
         ; lifetime (local region, or `#` caller page when the closure escapes).
         function make_closure#(rp, this: Planner, base_name: String, lam: Lambda, dparams: Vector[PlannedType], dret: PlannedType, del_pt: PlannedType, life: Lifetime) returns PlannedClosure
         {
-            let mono this.monomorphize_lambda#(base_name, lam, dparams)
+            let mono this.monomorphize_lambda(base_name, lam, dparams)
             var cap_ops Array[PlannedOperand]$()
             var cap_tys Array[PlannedType]$()
             if mono.captures <> null
