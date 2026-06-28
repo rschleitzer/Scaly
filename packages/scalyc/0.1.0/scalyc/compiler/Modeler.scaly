@@ -274,7 +274,7 @@ function handle_lifetime(syntax: ref[LifetimeSyntax]?) returns Lifetime
 ; Type handling
 ; ============================================================================
 
-function handle_type#(syntax: TypeSyntax) returns ref[Type]?
+function handle_type(syntax: TypeSyntax) returns ref[Type]?
 {
     ; Count extensions to determine path size
     var ext_count: size_t 0
@@ -355,7 +355,7 @@ function handle_type#(syntax: TypeSyntax) returns ref[Type]?
     )
 }
 
-function handle_binding_annotation#(annotation: BindingAnnotationSyntax) returns ref[Type]?
+function handle_binding_annotation(annotation: BindingAnnotationSyntax) returns ref[Type]?
 {
     choose annotation.spec
         when type_syntax: TypeSyntax
@@ -368,7 +368,7 @@ function handle_binding_annotation#(annotation: BindingAnnotationSyntax) returns
 ; Object/Tuple handling
 ; ============================================================================
 
-function handle_object#(syntax: ObjectSyntax) returns Tuple
+function handle_object(syntax: ObjectSyntax) returns Tuple
 {
     var count: size_t 0
     if syntax.components <> null
@@ -394,7 +394,7 @@ function handle_object#(syntax: ObjectSyntax) returns Tuple
     Tuple(Span(syntax.start, syntax.end), components)
 }
 
-function handle_component#(syntax: ComponentSyntax) returns Component
+function handle_component(syntax: ComponentSyntax) returns Component
 {
     var name: ref[String]? null
     var operands handle_operands(syntax.operands)
@@ -435,7 +435,7 @@ function handle_component#(syntax: ComponentSyntax) returns Component
 ; Vector/Matrix handling
 ; ============================================================================
 
-function handle_vector#(syntax: VectorSyntax) returns Matrix
+function handle_vector(syntax: VectorSyntax) returns Matrix
 {
     var count: size_t 0
     if syntax.elements <> null
@@ -466,7 +466,7 @@ function handle_vector#(syntax: VectorSyntax) returns Matrix
 ; Block handling
 ; ============================================================================
 
-function handle_block#(syntax: BlockSyntax) returns Block
+function handle_block(syntax: BlockSyntax) returns Block
 {
     let statements handle_statements(syntax.statements)
     Block(Span(syntax.start, syntax.end), statements)
@@ -476,7 +476,7 @@ function handle_block#(syntax: BlockSyntax) returns Block
 ; Expression handling
 ; ============================================================================
 
-function handle_expression#(syntax: ExpressionSyntax) returns Expression
+function handle_expression(syntax: ExpressionSyntax) returns Expression
 {
     choose syntax
         when lit: LiteralSyntax
@@ -584,7 +584,7 @@ function handle_expression#(syntax: ExpressionSyntax) returns Expression
             Expression.Constant(Constant.Integer(IntegerConstant(Span(0, 0), 0)))
 }
 
-function handle_as#(syntax: AsSyntax) returns scaly.compiler.Model.As
+function handle_as(syntax: AsSyntax) returns scaly.compiler.Model.As
 {
     let target handle_type(syntax.type)
     var target_ty: Type Type(
@@ -604,7 +604,7 @@ function handle_as#(syntax: AsSyntax) returns scaly.compiler.Model.As
 
 ; Lambda: each input operand should be a simple name; we build an Item
 ; per operand with no type annotation (type inferred from context).
-function handle_lambda#(syntax: LambdaSyntax) returns Lambda
+function handle_lambda(syntax: LambdaSyntax) returns Lambda
 {
     var input Vector[Item](0)
     if syntax.input <> null
@@ -647,7 +647,7 @@ function handle_lambda#(syntax: LambdaSyntax) returns Lambda
     )
 }
 
-function handle_repeat#(syntax: RepeatSyntax) returns Repeat
+function handle_repeat(syntax: RepeatSyntax) returns Repeat
 {
     let body handle_action(syntax.action)
     var repeat_label: String String("")
@@ -664,7 +664,7 @@ function handle_repeat#(syntax: RepeatSyntax) returns Repeat
 ; Control flow handling
 ; ============================================================================
 
-function handle_if#(syntax: IfSyntax) returns If
+function handle_if(syntax: IfSyntax) returns If
 {
     let condition handle_operands(syntax.condition)
     let cons_stmt handle_command(syntax.consequent.statement)
@@ -687,7 +687,7 @@ function handle_if#(syntax: IfSyntax) returns If
     )
 }
 
-function handle_match#(syntax: MatchSyntax) returns Match
+function handle_match(syntax: MatchSyntax) returns Match
 {
     let scrutinee handle_operands(syntax.scrutinee)
 
@@ -729,7 +729,7 @@ function handle_match#(syntax: MatchSyntax) returns Match
     )
 }
 
-function handle_branch#(syntax: BranchSyntax) returns Branch
+function handle_branch(syntax: BranchSyntax) returns Branch
 {
     var case_count: size_t 0
     if syntax.cases <> null
@@ -757,13 +757,13 @@ function handle_branch#(syntax: BranchSyntax) returns Branch
     Branch(Span(syntax.start, syntax.end), cases, stmt)
 }
 
-function handle_case#(syntax: CaseSyntax) returns Case
+function handle_case(syntax: CaseSyntax) returns Case
 {
     let condition handle_operands(syntax.condition)
     Case(Span(syntax.start, syntax.end), condition)
 }
 
-function handle_choose#(syntax: ChooseSyntax) returns Choose
+function handle_choose(syntax: ChooseSyntax) returns Choose
 {
     let condition handle_operands(syntax.condition)
 
@@ -805,7 +805,7 @@ function handle_choose#(syntax: ChooseSyntax) returns Choose
     )
 }
 
-function handle_when#(syntax: WhenSyntax) returns When
+function handle_when(syntax: WhenSyntax) returns When
 {
     ; syntax.variant is a NameSyntax — build the full variant_path
     ; including extensions so dotted paths (`when u: a.b.Union`) keep
@@ -843,7 +843,7 @@ function handle_when#(syntax: WhenSyntax) returns When
     )
 }
 
-function handle_action#(syntax: ActionSyntax) returns Action
+function handle_action(syntax: ActionSyntax) returns Action
 {
     choose syntax
         when op: OperationSyntax
@@ -854,7 +854,7 @@ function handle_action#(syntax: ActionSyntax) returns Action
             Action(Vector[Operand](0), Vector[Operand](0))
 }
 
-function handle_for#(syntax: ForSyntax) returns For
+function handle_for(syntax: ForSyntax) returns For
 {
     let expr handle_operands(syntax.operation)
     let body handle_action(syntax.action)
@@ -871,7 +871,7 @@ function handle_for#(syntax: ForSyntax) returns For
     )
 }
 
-function handle_while#(syntax: WhileSyntax) returns While
+function handle_while(syntax: WhileSyntax) returns While
 {
     let cond handle_condition(syntax.condition)
     let body handle_action(syntax.action)
@@ -887,7 +887,7 @@ function handle_while#(syntax: WhileSyntax) returns While
     )
 }
 
-function handle_condition#(syntax: ConditionSyntax) returns Binding
+function handle_condition(syntax: ConditionSyntax) returns Binding
 {
     choose syntax
         when op: OperationSyntax
@@ -915,7 +915,7 @@ function handle_condition#(syntax: ConditionSyntax) returns Binding
             Binding(Span(0, 0), String("const"), Item(Span(0, 0), false, null, null, Vector[Attribute](0)), Vector[Operand](0))
 }
 
-function handle_try#(syntax: TrySyntax) returns Try
+function handle_try(syntax: TrySyntax) returns Try
 {
     let cond handle_condition(syntax.condition)
 
@@ -961,19 +961,19 @@ function handle_try#(syntax: TrySyntax) returns Try
 ; Type operation handling
 ; ============================================================================
 
-function handle_sizeof#(syntax: SizeOfSyntax) returns SizeOf
+function handle_sizeof(syntax: SizeOfSyntax) returns SizeOf
 {
     let sized_type handle_type(syntax.type)
     SizeOf(Span(syntax.start, syntax.end), *sized_type)
 }
 
-function handle_alignof#(syntax: AlignOfSyntax) returns scaly.compiler.Model.AlignOf
+function handle_alignof(syntax: AlignOfSyntax) returns scaly.compiler.Model.AlignOf
 {
     let aligned_type handle_type(syntax.type)
     scaly.compiler.Model.AlignOf(Span(syntax.start, syntax.end), *aligned_type)
 }
 
-function handle_is#(syntax: IsSyntax) returns Is
+function handle_is(syntax: IsSyntax) returns Is
 {
     ; Count extensions
     var ext_count: size_t 0
@@ -1005,7 +1005,7 @@ function handle_is#(syntax: IsSyntax) returns Is
 ; Operand handling
 ; ============================================================================
 
-function handle_operand#(syntax: OperandSyntax) returns Operand
+function handle_operand(syntax: OperandSyntax) returns Operand
 {
     let expr handle_expression(syntax.expression)
 
@@ -1057,7 +1057,7 @@ function handle_operand#(syntax: OperandSyntax) returns Operand
     Operand(Span(syntax.start, syntax.end), expr, member_access)
 }
 
-function handle_operands#(syntax: ref[Vector[OperandSyntax]]?) returns Vector[Operand]
+function handle_operands(syntax: ref[Vector[OperandSyntax]]?) returns Vector[Operand]
 {
     if syntax = null
         return Vector[Operand](0)
@@ -1079,14 +1079,14 @@ function handle_operands#(syntax: ref[Vector[OperandSyntax]]?) returns Vector[Op
     result
 }
 
-function handle_operation#(syntax: OperationSyntax) returns Vector[Operand]
+function handle_operation(syntax: OperationSyntax) returns Vector[Operand]
     handle_operands(syntax.operands)
 
 ; ============================================================================
 ; Statement handling
 ; ============================================================================
 
-function handle_binding_item#(syntax: BindingSyntax) returns Item
+function handle_binding_item(syntax: BindingSyntax) returns Item
 {
     var item_type: ref[Type]? null
     if syntax.annotation <> null
@@ -1106,7 +1106,7 @@ function handle_binding_item#(syntax: BindingSyntax) returns Item
     )
 }
 
-function handle_command#(syntax: StatementSyntax) returns Statement
+function handle_command(syntax: StatementSyntax) returns Statement
 {
     choose syntax
         when op: OperationSyntax
@@ -1182,10 +1182,10 @@ function handle_command#(syntax: StatementSyntax) returns Statement
             Statement.Action(Action(Vector[Operand](0), Vector[Operand](0)))
 }
 
-function handle_statement#(syntax: StatementSyntax) returns Statement
+function handle_statement(syntax: StatementSyntax) returns Statement
     handle_command(syntax)
 
-function handle_statements#(syntax: ref[Vector[StatementSyntax]]?) returns Vector[Statement]
+function handle_statements(syntax: ref[Vector[StatementSyntax]]?) returns Vector[Statement]
 {
     if syntax = null
         return Vector[Statement](0)
@@ -1332,7 +1332,7 @@ function is_statement_like_expression(expr: ExpressionSyntax) returns bool
 ; Item and Property handling
 ; ============================================================================
 
-function handle_item#(is_private: bool, syntax: ItemSyntax) returns Item
+function handle_item(is_private: bool, syntax: ItemSyntax) returns Item
 {
     var item_type: ref[Type]? null
     if syntax.annotation <> null
@@ -1352,7 +1352,7 @@ function handle_item#(is_private: bool, syntax: ItemSyntax) returns Item
     )
 }
 
-function handle_property#(is_private: bool, syntax: PropertySyntax) returns Property
+function handle_property(is_private: bool, syntax: PropertySyntax) returns Property
 {
     let prop_type handle_type(syntax.annotation.type)
 
@@ -1380,7 +1380,7 @@ function handle_property#(is_private: bool, syntax: PropertySyntax) returns Prop
 ; Attribute handling
 ; ============================================================================
 
-function handle_attribute#(syntax: AttributeSyntax) returns Attribute
+function handle_attribute(syntax: AttributeSyntax) returns Attribute
 {
     let model_result handle_model(syntax.model)
 
@@ -1391,7 +1391,7 @@ function handle_attribute#(syntax: AttributeSyntax) returns Attribute
     )
 }
 
-function handle_model#(syntax: ModelSyntax) returns Model
+function handle_model(syntax: ModelSyntax) returns Model
 {
     choose syntax
         when lit: LiteralSyntax
@@ -1410,7 +1410,7 @@ function handle_model#(syntax: ModelSyntax) returns Model
 ; Use handling
 ; ============================================================================
 
-function handle_use#(syntax: UseSyntax) returns Use
+function handle_use(syntax: UseSyntax) returns Use
 {
     ; Count extensions
     var ext_count: size_t 0
@@ -1443,7 +1443,7 @@ function handle_use#(syntax: UseSyntax) returns Use
 ; Generic parameter handling
 ; ============================================================================
 
-function handle_generic_parameter#(syntax: GenericParameterSyntax) returns GenericParameter
+function handle_generic_parameter(syntax: GenericParameterSyntax) returns GenericParameter
 {
     GenericParameter(
         Span(syntax.start, syntax.end),
@@ -1460,7 +1460,7 @@ function handle_generic_parameter#(syntax: GenericParameterSyntax) returns Gener
 ; The delegate names a function (closure) type; the parameter Items and the
 ; return type drive both lambda monomorphization against this signature and the
 ; LLVM function type used at indirect call sites.
-function handle_delegate#(name: String, syntax: DelegateSyntax) returns Delegate
+function handle_delegate(name: String, syntax: DelegateSyntax) returns Delegate
 {
     let loc Span(syntax.start, syntax.end)
     var input Vector[Item](0)
@@ -1484,7 +1484,7 @@ function handle_delegate#(name: String, syntax: DelegateSyntax) returns Delegate
     Delegate(loc, String(name), input, return_type, throws_type)
 }
 
-function handle_parameter_set#(syntax: ParameterSetSyntax) returns Vector[Item]
+function handle_parameter_set(syntax: ParameterSetSyntax) returns Vector[Item]
 {
     choose syntax
         when params: ParametersSyntax
@@ -1529,7 +1529,7 @@ function handle_parameter_set#(syntax: ParameterSetSyntax) returns Vector[Item]
 ; Implementation handling
 ; ============================================================================
 
-function handle_implementation#(syntax: ImplementationSyntax) returns Implementation
+function handle_implementation(syntax: ImplementationSyntax) returns Implementation
 {
     choose syntax
         when act: ActionSyntax
@@ -1548,7 +1548,7 @@ function handle_implementation#(syntax: ImplementationSyntax) returns Implementa
 ; Function building
 ; ============================================================================
 
-function build_function#(start: size_t, end_pos: size_t, syntax: TargetSyntax, is_private: bool, pure: bool) returns Function
+function build_function(start: size_t, end_pos: size_t, syntax: TargetSyntax, is_private: bool, pure: bool) returns Function
 {
     choose syntax
         when named: NamedSyntax
@@ -1701,7 +1701,7 @@ function build_function#(start: size_t, end_pos: size_t, syntax: TargetSyntax, i
 ; Operator handling
 ; ============================================================================
 
-function handle_operator#(syntax: OperatorSyntax, is_private: bool) returns Operator
+function handle_operator(syntax: OperatorSyntax, is_private: bool) returns Operator
 {
     choose syntax.target
         when named: NamedSyntax
@@ -1822,7 +1822,7 @@ function handle_operator#(syntax: OperatorSyntax, is_private: bool) returns Oper
 ; Initializer handling
 ; ============================================================================
 
-function handle_initializer#(syntax: InitSyntax, is_private: bool) returns Initializer
+function handle_initializer(syntax: InitSyntax, is_private: bool) returns Initializer
 {
     var input Vector[Item](0)
     if syntax.parameters <> null
@@ -1886,7 +1886,7 @@ function handle_initializer#(syntax: InitSyntax, is_private: bool) returns Initi
     )
 }
 
-function handle_deinitializer#(syntax: DeInitSyntax) returns ref[DeInitializer]?
+function handle_deinitializer(syntax: DeInitSyntax) returns ref[DeInitializer]?
 {
     let act handle_action(syntax.action)
     let impl Implementation.Action(act)
@@ -1901,7 +1901,7 @@ function handle_deinitializer#(syntax: DeInitSyntax) returns ref[DeInitializer]?
 ; Variant handling (for unions)
 ; ============================================================================
 
-function handle_variant#(syntax: VariantSyntax) returns Variant
+function handle_variant(syntax: VariantSyntax) returns Variant
 {
     var variant_type: ref[Type]? null
     if syntax.annotation <> null
@@ -1922,7 +1922,7 @@ function handle_variant#(syntax: VariantSyntax) returns Variant
 ; Class/Structure handling
 ; ============================================================================
 
-function handle_class#(name: String, path: String, syntax: ClassSyntax, is_private: bool) returns Structure
+function handle_class(name: String, path: String, syntax: ClassSyntax, is_private: bool) returns Structure
 {
     var symbols_builder HashMapBuilder[String, Nameable]()
 
@@ -2043,7 +2043,7 @@ function handle_class#(name: String, path: String, syntax: ClassSyntax, is_priva
     )
 }
 
-function handle_constituent#(path: String, syntax: MemberSyntax, symbols_builder: pointer[HashMapBuilder[String, Nameable]]) returns Member
+function handle_constituent(path: String, syntax: MemberSyntax, symbols_builder: pointer[HashMapBuilder[String, Nameable]]) returns Member
 {
     choose syntax
         when def: DefinitionSyntax
@@ -2099,7 +2099,7 @@ function handle_constituent#(path: String, syntax: MemberSyntax, symbols_builder
 ; Namespace handling
 ; ============================================================================
 
-function handle_namespace#(name: String, path: String, syntax: NamespaceSyntax, is_private: bool) returns Namespace
+function handle_namespace(name: String, path: String, syntax: NamespaceSyntax, is_private: bool) returns Namespace
 {
     var symbols_builder HashMapBuilder[String, Nameable]()
     var modules Array[Module]()
@@ -2154,7 +2154,7 @@ function handle_namespace#(name: String, path: String, syntax: NamespaceSyntax, 
     )
 }
 
-function handle_declaration#(path: String, syntax: DeclarationSyntax, symbols_builder: pointer[HashMapBuilder[String, Nameable]]) returns Member
+function handle_declaration(path: String, syntax: DeclarationSyntax, symbols_builder: pointer[HashMapBuilder[String, Nameable]]) returns Member
 {
     choose syntax
         when private_syntax: PrivateSyntax
@@ -2219,7 +2219,7 @@ function handle_declaration#(path: String, syntax: DeclarationSyntax, symbols_bu
             Member.Package(Vector[Module](0))
 }
 
-function handle_export#(path: String, syntax: ExportSyntax, is_private: bool, symbols_builder: pointer[HashMapBuilder[String, Nameable]]) returns Member
+function handle_export(path: String, syntax: ExportSyntax, is_private: bool, symbols_builder: pointer[HashMapBuilder[String, Nameable]]) returns Member
 {
     choose syntax
         when def: DefinitionSyntax
@@ -2260,7 +2260,7 @@ function handle_export#(path: String, syntax: ExportSyntax, is_private: bool, sy
 ; Union handling
 ; ============================================================================
 
-function handle_union#(name: String, path: String, syntax: UnionSyntax, is_private: bool) returns Union
+function handle_union(name: String, path: String, syntax: UnionSyntax, is_private: bool) returns Union
 {
     var symbols_builder HashMapBuilder[String, Nameable]()
 
@@ -2327,7 +2327,7 @@ function handle_union#(name: String, path: String, syntax: UnionSyntax, is_priva
 ; Definition handling
 ; ============================================================================
 
-function handle_definition#(path: String, syntax: DefinitionSyntax, is_private: bool) returns Concept
+function handle_definition(path: String, syntax: DefinitionSyntax, is_private: bool) returns Concept
 {
     let name syntax.name
     let loc Span(syntax.start, syntax.end)
@@ -2438,7 +2438,7 @@ procedure handle_module_decl(path: String, mod_syntax: ModuleSyntax, is_private:
 
 ; Format a VersionSyntax payload as "<majorMinor>.<patch>". The lexer
 ; already formatted majorMinor as "0.1" (FloatingPoint) or "0" (Integer).
-function format_version#(rp, version_ref: ref[VersionSyntax]) returns String
+function format_version(version_ref: ref[VersionSyntax]) returns String
 {
     let v (*version_ref)
     var sb StringBuilder()
@@ -2464,7 +2464,7 @@ function format_version#(rp, version_ref: ref[VersionSyntax]) returns String
 ; (the `scalyc` wrapper sets SCALY_HOME); otherwise returns "" so resolution
 ; stays relative to the current directory exactly as before. Keeping the empty
 ; case byte-identical is what makes the seed self-compile reproduce unchanged.
-function scaly_home_base#(rp) returns String
+function scaly_home_base() returns String
 {
     let home getenv "SCALY_HOME"
     if home = null
@@ -2618,7 +2618,7 @@ function build_module(path: String, file_name: String, name: String, syntax: Fil
 ; Program building
 ; ============================================================================
 
-function build_program#(file_name: String, program_name: String, syntax: ProgramSyntax, enable_prelude: bool) returns Program
+function build_program(file_name: String, program_name: String, syntax: ProgramSyntax, enable_prelude: bool) returns Program
 {
     var packages Array[Module]()
     if syntax.file.declarations <> null
