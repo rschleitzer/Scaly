@@ -16984,7 +16984,7 @@ define Planner
         ; (`let p get x` inside a method) so s135 doesn't mis-peel the
         ; method name as a type. A FIELD named `name` is not a method, so
         ; this stays false for casts like `data as pointer[u8]`.
-        function has_this_method#(rp, this: Planner, name: String) returns bool
+        function has_this_method(this: Planner, name: String) returns bool
         {
             let this_ref this.lookup_local(String("this"))
             if this_ref = null
