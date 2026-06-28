@@ -783,7 +783,7 @@ define Planner
 
         ; The delegate's parameter types as planned types (drives lambda
         ; monomorphization against the declared signature).
-        function delegate_param_types#(rp, this: Planner, name: String) returns Vector[PlannedType]
+        function delegate_param_types(this: Planner, name: String) returns Vector[PlannedType]
         {
             var result Array[PlannedType]$()
             let c this.lookup_concept(name)
@@ -827,7 +827,7 @@ define Planner
             Vector[PlannedType]^rp(result)
         }
 
-        function delegate_return_type#(rp, this: Planner, name: String) returns PlannedType
+        function delegate_return_type(this: Planner, name: String) returns PlannedType
         {
             let c this.lookup_concept(name)
             if c <> null
@@ -1008,7 +1008,7 @@ define Planner
         ; lookup_use_alias_namespace: scan program_use_aliases in parallel
         ; with program_use_namespaces; return the namespace segment of the
         ; use clause whose last segment equals `name`, or empty if none.
-        function lookup_use_alias_namespace#(rp, this: Planner, name: String) returns String
+        function lookup_use_alias_namespace(this: Planner, name: String) returns String
         {
             var i: size_t 0
             while i < program_use_aliases.length
@@ -1179,7 +1179,7 @@ define Planner
         ; source file's parent chain is omitted here — the call sites
         ; that need it can push additional entries via
         ; add_package_search_path.
-        function build_package_search_paths#(rp, this: Planner) returns Vector[String]
+        function build_package_search_paths(this: Planner) returns Vector[String]
         {
             var paths Array[String]$()
             paths.add(String^rp("packages"))
@@ -1197,8 +1197,7 @@ define Planner
         }
 
         ; Compose "base/<name>/<version>/<name>.scaly" using Path.join#.
-        function build_package_file_path#(
-            rp,
+        function build_package_file_path(
             this: Planner,
             base: String,
             name: String,
@@ -1294,7 +1293,7 @@ define Planner
         ; lookup_functions: return every Function in the registry whose
         ; name matches. Overloads are preserved — the caller picks by
         ; argument-type compatibility.
-        function lookup_functions#(rp, this: Planner, name: String) returns Vector[Function]
+        function lookup_functions(this: Planner, name: String) returns Vector[Function]
         {
             var matches Array[Function]$()
             var cur model_function_index.lookup_head name
@@ -1308,7 +1307,7 @@ define Planner
             Vector[Function]^rp(matches)
         }
 
-        function lookup_operators#(rp, this: Planner, name: String) returns Vector[Operator]
+        function lookup_operators(this: Planner, name: String) returns Vector[Operator]
         {
             var matches Array[Operator]$()
             var cur model_operator_index.lookup_head name
@@ -1516,8 +1515,7 @@ define Planner
             }
         }
 
-        function lookup_methods#(
-            rp,
+        function lookup_methods(
             this: Planner,
             struct_name: String,
             method_name: String
@@ -1935,8 +1933,7 @@ define Planner
         ; mutating a caller-supplied accumulator, because passing a
         ; mutable Array as a parameter doesn't propagate in Scaly's
         ; value-semantics model.
-        function match_type_pattern#(
-            rp,
+        function match_type_pattern(
             this: Planner,
             pattern: PlannedType,
             actual: PlannedType
@@ -2007,8 +2004,7 @@ define Planner
         ; contain duplicates for a generic parameter inferred from
         ; multiple positions (all should agree — agreement is checked
         ; downstream during substitution).
-        function infer_type_arguments#(
-            rp,
+        function infer_type_arguments(
             this: Planner,
             param_types: Vector[PlannedType],
             arg_types: Vector[PlannedType]
@@ -2052,8 +2048,7 @@ define Planner
         ; concrete types. The resulting PlannedFunction has each use of
         ; T replaced with its concrete binding, and is recorded in the
         ; instantiation cache via plan_function.
-        function instantiate_generic_function#(
-            rp,
+        function instantiate_generic_function(
             this: Planner,
             f: Function,
             args: Vector[KeyValuePair[String, PlannedType]]
@@ -2087,8 +2082,7 @@ define Planner
         ; fall back to a fresh type variable — keeps the planner
         ; productive on incomplete programs.
         ; ================================================================
-        function instantiate_generic#(
-            rp,
+        function instantiate_generic(
             this: Planner,
             concept_name: String,
             args: Vector[PlannedType],
@@ -2783,8 +2777,7 @@ define Planner
         ; the PlannedItem list mangle_operator expects from two
         ; PlannedType arguments. Holder Vectors keep both types alive
         ; on rp so their refs are stable for the Item construction.
-        function mangle_binary_operator#(
-            rp,
+        function mangle_binary_operator(
             this: Planner,
             op_name: String,
             left: PlannedType,
@@ -2808,8 +2801,7 @@ define Planner
         }
 
         ; mangle_unary_operator: same idea for prefix/unary operators.
-        function mangle_unary_operator#(
-            rp,
+        function mangle_unary_operator(
             this: Planner,
             op_name: String,
             operand: PlannedType
@@ -2830,8 +2822,7 @@ define Planner
         ; site. Callers provide the mangled symbol, result type, and
         ; planned argument list; flags default to the common
         ; "non-intrinsic, non-operator, non-throwing, no-page" case.
-        function make_planned_call#(
-            rp,
+        function make_planned_call(
             this: Planner,
             loc: Span,
             name: String,
@@ -2874,7 +2865,7 @@ define Planner
         ; member-access chain), return that lambda name; otherwise the empty
         ; string. The lambda binding emits no runtime value, so the name arrives
         ; here unresolved — this is how a lambda call is recognized.
-        function lambda_head_name#(rp, this: Planner, op: PlannedOperand) returns String
+        function lambda_head_name(this: Planner, op: PlannedOperand) returns String
         {
             if op.member_access <> null
                 return String^rp("")
@@ -2903,7 +2894,7 @@ define Planner
         ; argument types and synthesizes a concrete top-level function; the
         ; captures it discovers are looked up at the call site (where they are
         ; in scope) and prepended as leading arguments (capture by value).
-        function resolve_lambda_call#(rp, this: Planner, head_loc: Span, lc_name: String, lc_lam: Lambda, lc_tp: PlannedTuple) returns PlannedOperand
+        function resolve_lambda_call(this: Planner, head_loc: Span, lc_name: String, lc_lam: Lambda, lc_tp: PlannedTuple) returns PlannedOperand
         {
             var lc_arg_ops Array[PlannedOperand]$()
             var lc_arg_types Array[PlannedType]$()
@@ -2989,8 +2980,7 @@ define Planner
         ; drops operator precedence; a full precedence-climbing version
         ; is a later refactor. Empty and single-element inputs pass
         ; through unchanged.
-        function collapse_operand_sequence#(
-            rp,
+        function collapse_operand_sequence(
             this: Planner,
             ops: Vector[PlannedOperand]
         ) returns PlannedOperand
@@ -7468,8 +7458,7 @@ define Planner
         ; mangle_method: build `_ZN<parent>methodEparam*` without the
         ; PlannedItem ceremony that mangle_function requires. Just takes
         ; a parent PlannedType and a Vector of param PlannedTypes.
-        function mangle_method#(
-            rp,
+        function mangle_method(
             this: Planner,
             method_name: String,
             parent: PlannedType,
@@ -8090,7 +8079,7 @@ define Planner
         ; `this` must be a local in the current scope; the unreachable
         ; fallback returns a void placeholder so the type checker still
         ; threads a value through.
-        function generate_page_get_this#(rp, this: Planner, loc: Span) returns PlannedOperand
+        function generate_page_get_this(this: Planner, loc: Span) returns PlannedOperand
         {
             let this_ty_ref this.lookup_local(String("this"))
             if this_ty_ref = null
@@ -8157,8 +8146,7 @@ define Planner
         ; result_type when every hop resolves as a property — the same
         ; rule as the s175 call-branch fix. Returns the operand
         ; unchanged when the chain is absent or not all-property.
-        function rebind_trailing_chain#(
-            rp,
+        function rebind_trailing_chain(
             this: Planner,
             operand: PlannedOperand
         ) returns PlannedOperand
@@ -8226,8 +8214,7 @@ define Planner
         ;
         ; The produced access chain feeds `PlannedOperand.member_access`.
         ; ================================================================
-        function resolve_member_access#(
-            rp,
+        function resolve_member_access(
             this: Planner,
             base_type: PlannedType,
             members: Vector[String]
@@ -8624,7 +8611,7 @@ define Planner
         ; wrapper with `variable` populated. Equivalent to Planner.cpp's
         ; freshTypeVar. `debug_name` is stored on the TypeVariable for
         ; error messages ("expected T, got int").
-        function fresh_type_var#(rp, this: Planner, debug_name: String) returns PlannedType
+        function fresh_type_var(this: Planner, debug_name: String) returns PlannedType
         {
             let id this.fresh_type_var_id()
             ; Allocate the TypeVariable in a one-element Vector on rp so
@@ -8698,7 +8685,7 @@ define Planner
         ; apply_current_substitution: rewrite `t` using the current
         ; `solution`. Convenience wrapper around apply_substitution so
         ; callers don't have to marshal the Array-as-Vector themselves.
-        function apply_current_substitution#(rp, this: Planner, t: PlannedType) returns PlannedType
+        function apply_current_substitution(this: Planner, t: PlannedType) returns PlannedType
         {
             if solution.length = 0
                 return t
@@ -8713,7 +8700,7 @@ define Planner
         ; skeleton), apply_name_substitution (T → int, etc.), and the
         ; concept registry to fill in mangled_name for registered types.
         ; ================================================================
-        function plan_type#(rp, this: Planner, t: Type) returns PlannedType
+        function plan_type(this: Planner, t: Type) returns PlannedType
         {
             let base Planner.resolve_type_base(t)
 
@@ -9253,7 +9240,7 @@ define Planner
         ; allocated on this function's rp, so they survive the caller's
         ; use of the returned PlannedItem.
         ; ================================================================
-        function plan_item#(rp, this: Planner, i: Item) returns PlannedItem
+        function plan_item(this: Planner, i: Item) returns PlannedItem
         {
             var planned_name: ref[String]? null
             if i.name <> null
@@ -9286,7 +9273,7 @@ define Planner
         ; plan_items: batch version of plan_item over a Vector[Item].
         ; Pre-allocates the result Vector at the correct size so we can
         ; use `put(i, ...)` instead of Array.add + copy.
-        function plan_items#(rp, this: Planner, items: Vector[Item]) returns Vector[PlannedItem]
+        function plan_items(this: Planner, items: Vector[Item]) returns Vector[PlannedItem]
         {
             var result Vector[PlannedItem]^rp(items.length)
             var i: size_t 0
@@ -9308,8 +9295,7 @@ define Planner
         ; with its inferred type populated. The result_type is whatever
         ; infer_constant_type says at pre-solver time (e.g. IntegerConstant
         ; → "int", StringConstant → pointer[i8]).
-        function plan_constant_operand#(
-            rp,
+        function plan_constant_operand(
             this: Planner,
             c: Constant,
             loc: Span
@@ -9341,7 +9327,7 @@ define Planner
         ; matching the LLVM struct layout. Without this, Vector(rp,len)
         ; for Vector[Module] allocates len*8 instead of len*80, and
         ; put(i, m) overruns and SEGVs build_program.
-        function plan_sizeof#(rp, this: Planner, s: SizeOf) returns PlannedSizeOf
+        function plan_sizeof(this: Planner, s: SizeOf) returns PlannedSizeOf
         {
             let sized this.plan_type(s.type)
             ; Delegate to compute_payload_size, which sizes primitives,
@@ -9363,7 +9349,7 @@ define Planner
         ; we resolve the test type and (best-effort) the union_name; the
         ; `variant_tag` and `value` fields get stitched in at the
         ; operand-sequence collapse site, which has the value operand.
-        function plan_is#(rp, this: Planner, i: Is) returns PlannedIs
+        function plan_is(this: Planner, i: Is) returns PlannedIs
         {
             ; `x is null` — single-segment "null" name. Skip type
             ; resolution; the emitter compares the pointer to zero.
@@ -9407,7 +9393,7 @@ define Planner
         ; plan_as: `x as TargetType` — explicit cast. Resolves the
         ; target type; the value operand is stitched in at the use site
         ; (typically during collapse, like PlannedIs).
-        function plan_as#(rp, this: Planner, a: scaly.compiler.Model.As) returns PlannedAs
+        function plan_as(this: Planner, a: scaly.compiler.Model.As) returns PlannedAs
         {
             let target this.plan_type(a.target_type)
             PlannedAs(a.span, target, null)
@@ -9418,8 +9404,7 @@ define Planner
         ; of hardcoding 0. Without this, every `alignof T` lowers to a
         ; literal 0 — observed first as init_lifetime's
         ; `page.allocate(sizeof int, alignof int)` passing align=0.
-        function plan_alignof#(
-            rp,
+        function plan_alignof(
             this: Planner,
             a: scaly.compiler.Model.AlignOf
         ) returns PlannedAlignOf
@@ -9437,7 +9422,7 @@ define Planner
         ;     call resolution)
         ;   - an actual type name → PlannedExpression.Type with the
         ;     planned type
-        function plan_type_operand#(rp, this: Planner, t: Type, loc: Span) returns PlannedOperand
+        function plan_type_operand(this: Planner, t: Type, loc: Span) returns PlannedOperand
         {
             ; Single-name references are candidates for local-variable
             ; resolution. Dotted names always go to plan_type.
@@ -9859,7 +9844,7 @@ define Planner
         ; statement, and optionally the alternative. Emits a bool
         ; constraint on the condition and (when an alternative exists)
         ; unifies the two branches' result types.
-        function plan_if#(rp, this: Planner, f: If) returns PlannedIf
+        function plan_if(this: Planner, f: If) returns PlannedIf
         {
             let planned_cond_flat this.plan_operands(f.condition)
             let planned_cond_collapsed this.collapse_operand_sequence(planned_cond_flat)
@@ -10215,7 +10200,7 @@ define Planner
                     0
         }
 
-        function plan_lambda#(rp, this: Planner, lam: Lambda) returns PlannedLambda
+        function plan_lambda(this: Planner, lam: Lambda) returns PlannedLambda
         {
             this.push_scope()
 
@@ -10351,7 +10336,7 @@ define Planner
         ; intercept in collapse_operand_sequence#). Cached per mangled name
         ; via has_recorded_function so repeated calls with identical arg
         ; types reuse the same function.
-        function monomorphize_lambda#(rp, this: Planner, base_name: String, lam: Lambda, arg_types: Vector[PlannedType]) returns LambdaMonoResult
+        function monomorphize_lambda(this: Planner, base_name: String, lam: Lambda, arg_types: Vector[PlannedType]) returns LambdaMonoResult
         {
             ; ---- Pass 1: discover captures. Plan the body in a scope with the
             ; lambda's own params defined; the enclosing scope is still on the
@@ -10584,7 +10569,7 @@ define Planner
         ; record; the thunk bridges the uniform `R(ptr self, params)` call
         ; shape to `real(caps..., params)`. `life` is the record's allocation
         ; lifetime (local region, or `#` caller page when the closure escapes).
-        function make_closure#(rp, this: Planner, base_name: String, lam: Lambda, dparams: Vector[PlannedType], dret: PlannedType, del_pt: PlannedType, life: Lifetime) returns PlannedClosure
+        function make_closure(this: Planner, base_name: String, lam: Lambda, dparams: Vector[PlannedType], dret: PlannedType, del_pt: PlannedType, life: Lifetime) returns PlannedClosure
         {
             let mono this.monomorphize_lambda(base_name, lam, dparams)
             var cap_ops Array[PlannedOperand]$()
@@ -10641,7 +10626,7 @@ define Planner
         ; plan_repeat: do-while body runs at least once; the terminating
         ; condition lives inside the body action via `break` or an
         ; embedded if. Nothing else to constrain at this level.
-        function plan_repeat#(rp, this: Planner, r: Repeat) returns PlannedRepeat
+        function plan_repeat(this: Planner, r: Repeat) returns PlannedRepeat
         {
             this.push_scope()
             let planned_body this.plan_action(r.action)
@@ -10657,7 +10642,7 @@ define Planner
         ; consequents and nested blocks, but NOT into nested while/for/repeat
         ; bodies (an unlabeled break there targets the inner loop, not this
         ; repeat). Returns void when no break-with-value is found.
-        function find_break_type_in_operands#(rp, this: Planner, ops: ref[Vector[PlannedOperand]]?) returns PlannedType
+        function find_break_type_in_operands(this: Planner, ops: ref[Vector[PlannedOperand]]?) returns PlannedType
         {
             if ops = null
                 return Planner.make_void_type()
@@ -10677,7 +10662,7 @@ define Planner
             Planner.make_void_type()
         }
 
-        function find_break_type_in_statement#(rp, this: Planner, s: PlannedStatement) returns PlannedType
+        function find_break_type_in_statement(this: Planner, s: PlannedStatement) returns PlannedType
         {
             choose s
                 when br: PlannedBreak
@@ -10698,14 +10683,14 @@ define Planner
                     Planner.make_void_type()
         }
 
-        function find_break_type_in_stmt_ref#(rp, this: Planner, s: ref[PlannedStatement]?) returns PlannedType
+        function find_break_type_in_stmt_ref(this: Planner, s: ref[PlannedStatement]?) returns PlannedType
         {
             if s = null
                 return Planner.make_void_type()
             this.find_break_type_in_statement(*s)
         }
 
-        function find_break_type_in_expr#(rp, this: Planner, e: PlannedExpression) returns PlannedType
+        function find_break_type_in_expr(this: Planner, e: PlannedExpression) returns PlannedType
         {
             choose e
                 when blk: PlannedBlock
@@ -10783,7 +10768,7 @@ define Planner
         ; that the planned binding's type is bool (the solver promotes
         ; `while let maybe_x = ...` through Option's None sentinel, so
         ; this is a reasonable approximation today).
-        function plan_while#(rp, this: Planner, w: While) returns PlannedWhile
+        function plan_while(this: Planner, w: While) returns PlannedWhile
         {
             this.push_scope()
             let planned_cond this.plan_binding(w.condition)
@@ -10858,7 +10843,7 @@ define Planner
         ;      iterator type; the element type is what `next` returns.
         ; Option[T] and ref/pointer wrappers on the collection type are
         ; peeled before the dispatch.
-        function plan_for#(rp, this: Planner, f: For) returns PlannedFor
+        function plan_for(this: Planner, f: For) returns PlannedFor
         {
             this.push_scope()
             let planned_expr this.plan_operands(f.expression)
@@ -11011,7 +10996,7 @@ define Planner
         }
 
         ; plan_try: try { binding } catch WhenPatterns else alt.
-        function plan_try#(rp, this: Planner, t: Try) returns PlannedTry
+        function plan_try(this: Planner, t: Try) returns PlannedTry
         {
             ; The try-bound variable (e.g. `try let q ...`) leaks into the
             ; ENCLOSING scope: the success path is the only way execution
@@ -11093,8 +11078,7 @@ define Planner
         ; extract the payload and compare tags correctly. When union_type
         ; is void (the fallback from plan_try with no exception type),
         ; the arm still plans but variant_type stays void and tag stays 0.
-        function plan_when#(
-            rp,
+        function plan_when(
             this: Planner,
             w: When,
             union_type: PlannedType,
@@ -11258,7 +11242,7 @@ define Planner
         }
 
         ; plan_choose: Scaly's choose/when pattern match.
-        function plan_choose#(rp, this: Planner, c: Choose) returns PlannedChoose
+        function plan_choose(this: Planner, c: Choose) returns PlannedChoose
         {
             let planned_cond this.plan_operands(c.condition)
             ; Fold the choose condition down to a single value to
@@ -11398,14 +11382,14 @@ define Planner
         }
 
         ; plan_case / plan_branch / plan_match: the full match-expression form.
-        function plan_case#(rp, this: Planner, cs: Case) returns PlannedCase
+        function plan_case(this: Planner, cs: Case) returns PlannedCase
         {
             let planned_cond this.plan_operands(cs.condition)
             var cond_holder Vector[PlannedOperand]^rp(planned_cond)
             PlannedCase(cs.span, &cond_holder)
         }
 
-        function plan_branch#(rp, this: Planner, b: Branch) returns PlannedBranch
+        function plan_branch(this: Planner, b: Branch) returns PlannedBranch
         {
             var cases_arr Array[PlannedCase]$()
             var i: size_t 0
@@ -11428,7 +11412,7 @@ define Planner
             PlannedBranch(b.span, &cases_holder, cons_holder.get 0)
         }
 
-        function plan_match#(rp, this: Planner, m: Match) returns PlannedMatch
+        function plan_match(this: Planner, m: Match) returns PlannedMatch
         {
             let planned_cond this.plan_operands(m.condition)
             ; Fold the match condition so its result_type is
@@ -11552,7 +11536,7 @@ define Planner
         ; raw operand sequence. emit_tuple's grouping shortcut emits
         ; comp.value[0], so without this collapse `(*p).field` would
         ; emit only the leading `Type("*")` operand and produce null.
-        function plan_component#(rp, this: Planner, c: Component) returns PlannedComponent
+        function plan_component(this: Planner, c: Component) returns PlannedComponent
         {
             let planned_value this.plan_operands(c.value)
             var name_ref: ref[String]? null
@@ -11737,7 +11721,7 @@ define Planner
             PlannedComponent(c.span, name_ref, &value_holder, null)
         }
 
-        function plan_tuple#(rp, this: Planner, t: Tuple) returns PlannedTuple
+        function plan_tuple(this: Planner, t: Tuple) returns PlannedTuple
         {
             var comps_arr Array[PlannedComponent]$()
             var i: size_t 0
@@ -11793,7 +11777,7 @@ define Planner
             )
         }
 
-        function plan_matrix#(rp, this: Planner, m: Matrix) returns scalyc.compiler.Plan.PlannedMatrix
+        function plan_matrix(this: Planner, m: Matrix) returns scalyc.compiler.Plan.PlannedMatrix
         {
             var rows_arr Array[Vector[PlannedOperand]]$()
             var i: size_t 0
@@ -11823,7 +11807,7 @@ define Planner
         ; table, so we plan the type skeleton and arguments and leave
         ; the call layout for later resolution. For now we model it as
         ; a PlannedTuple carrying the argument list and the planned type.
-        function plan_new#(rp, this: Planner, n: New) returns PlannedTuple
+        function plan_new(this: Planner, n: New) returns PlannedTuple
         {
             let planned_ty this.plan_type(n.type)
             let planned_args this.plan_tuple(n.arguments)
@@ -11881,7 +11865,7 @@ define Planner
         ; plan_operand: dispatch by Expression variant, then wrap with
         ; any member-access chain declared on the operand.
         ; ================================================================
-        function plan_operand#(rp, this: Planner, op: scalyc.compiler.Model.Operand) returns PlannedOperand
+        function plan_operand(this: Planner, op: scalyc.compiler.Model.Operand) returns PlannedOperand
         {
             let base choose op.expression
                 when c: Constant
@@ -12169,8 +12153,7 @@ define Planner
             holder.get 0
         }
 
-        function plan_operands#(
-            rp,
+        function plan_operands(
             this: Planner,
             ops: Vector[scalyc.compiler.Model.Operand]
         ) returns Vector[PlannedOperand]
@@ -12279,7 +12262,7 @@ define Planner
             ops
         }
 
-        function plan_binding#(rp, this: Planner, b: Binding) returns PlannedBinding
+        function plan_binding(this: Planner, b: Binding) returns PlannedBinding
         {
             ; GAP B: a delegate-typed binding initialized by a lambda literal —
             ; `let g: Callback \x: x + 1` — becomes a function-pointer VALUE (the
@@ -12642,7 +12625,7 @@ define Planner
         ; the collapsed source's type.
         ; ================================================================
 
-        function plan_action#(rp, this: Planner, a: Action) returns PlannedAction
+        function plan_action(this: Planner, a: Action) returns PlannedAction
         {
             ; Read-and-clear the tail-return flag: only THIS (outermost body)
             ; action is the function's implicit return. Nested actions planned
@@ -14156,7 +14139,7 @@ define Planner
             null
         }
 
-        function plan_return#(rp, this: Planner, r: Return) returns PlannedReturn
+        function plan_return(this: Planner, r: Return) returns PlannedReturn
         {
             ; GAP B: `return \x: …` where the function's return type is a delegate
             ; yields an ESCAPING closure — env on the caller page (`#`) so it
@@ -14299,7 +14282,7 @@ define Planner
             PlannedReturn(r.span, &holder)
         }
 
-        function plan_break#(rp, this: Planner, b: Break) returns PlannedBreak
+        function plan_break(this: Planner, b: Break) returns PlannedBreak
         {
             ; Collapse the operand sequence so a break value like `break -1`
             ; or `break parse(line)` folds into a single typed operand (same
@@ -14317,7 +14300,7 @@ define Planner
             PlannedBreak(b.span, &holder, b.loop_label)
         }
 
-        function plan_throw#(rp, this: Planner, t: Throw) returns PlannedThrow
+        function plan_throw(this: Planner, t: Throw) returns PlannedThrow
         {
             ; Collapse the operand sequence the same way plan_return# does.
             ; A thrown value like `MyError.Different(DifferentSyntax())` arrives
@@ -14341,7 +14324,7 @@ define Planner
         ; variant-specific plan_* method. `Continue` is trivial — just
         ; carries the location.
         ; ================================================================
-        function plan_statement#(rp, this: Planner, s: Statement) returns PlannedStatement
+        function plan_statement(this: Planner, s: Statement) returns PlannedStatement
         {
             choose s
                 when a: Action
@@ -14359,8 +14342,7 @@ define Planner
         }
 
         ; plan_statements: batch plan_statement over a Model.Block's statements.
-        function plan_statements#(
-            rp,
+        function plan_statements(
             this: Planner,
             stmts: Vector[Statement]
         ) returns Vector[PlannedStatement]
@@ -14388,7 +14370,7 @@ define Planner
         ; allocation happened in this block and the emitter must emit
         ; page-cleanup on exit.
         ; ================================================================
-        function plan_block#(rp, this: Planner, b: Block) returns PlannedBlock
+        function plan_block(this: Planner, b: Block) returns PlannedBlock
         {
             this.push_scope()
             let planned_stmts this.plan_statements(b.statements)
@@ -14565,7 +14547,7 @@ define Planner
         ; `offset` is 0 until compute_property_offsets runs as part of
         ; the enclosing struct's layout pass.
         ; ================================================================
-        function plan_property#(rp, this: Planner, p: Property) returns PlannedProperty
+        function plan_property(this: Planner, p: Property) returns PlannedProperty
         {
             var prop_type: PlannedType this.fresh_type_var(String(""))
             if p.type <> null
@@ -14655,7 +14637,7 @@ define Planner
         ; return RECV (deep-copied onto rp); otherwise the empty string. Used to
         ; back-propagate escape through a Vector element read: `let opp
         ; SRC.get(i)` makes opp alias SRC's element guts.
-        function binding_get_receiver#(rp, this: Planner, ops: Vector[Operand]) returns String
+        function binding_get_receiver(this: Planner, ops: Vector[Operand]) returns String
         {
             if ops.length >= 1
             {
@@ -15055,7 +15037,7 @@ define Planner
         ; [Type("*"), Type([X])]. Returns "" when the shape doesn't match. Used to
         ; recognise a pointer-param store `(*param).add(v)` whose receiver is a
         ; ref/pointer out-parameter (seeded into escaping_targets).
-        function tuple_deref_receiver_name#(rp, this: Planner, tup: scalyc.compiler.Model.Tuple) returns String
+        function tuple_deref_receiver_name(this: Planner, tup: scalyc.compiler.Model.Tuple) returns String
         {
             if tup.components.length <> 1
                 return String("")
@@ -15507,7 +15489,7 @@ define Planner
                     0
         }
 
-        function plan_implementation#(rp, this: Planner, impl: Implementation) returns PlannedImplementation
+        function plan_implementation(this: Planner, impl: Implementation) returns PlannedImplementation
         {
             choose impl
                 when a: Action
@@ -15533,8 +15515,7 @@ define Planner
         ; `origin` (instantiation source) and `scheme` (post-solver
         ; type scheme) remain null for now.
         ; ================================================================
-        function plan_function#(
-            rp,
+        function plan_function(
             this: Planner,
             f: Function,
             parent: ref[PlannedType]?
@@ -15883,8 +15864,7 @@ define Planner
         ; — page_parameter on the wrapper is left null to avoid the
         ; emit_function_decl page-prepend; the page slot is just a
         ; regular input item.
-        function plan_initializer#(
-            rp,
+        function plan_initializer(
             this: Planner,
             ini: Initializer,
             parent: ref[PlannedType]?
@@ -16075,8 +16055,7 @@ define Planner
 
         ; plan_deinitializer: Model.DeInitializer → Plan.PlannedDeInitializer.
         ; Even simpler than plan_initializer — no parameters.
-        function plan_deinitializer#(
-            rp,
+        function plan_deinitializer(
             this: Planner,
             dei: DeInitializer,
             parent: ref[PlannedType]?
@@ -16098,8 +16077,7 @@ define Planner
         ; plan_operator: Model.Operator → Plan.PlannedOperator.
         ; Structurally identical to plan_function modulo the two missing
         ; fields (no `pure`, no `lifetime`).
-        function plan_operator#(
-            rp,
+        function plan_operator(
             this: Planner,
             op: Operator,
             parent: ref[PlannedType]?
@@ -16194,7 +16172,7 @@ define Planner
         ; within the union; we can't see sibling variants from here).
         ; `mangled_name` is left empty for the same reason as
         ; plan_property.
-        function plan_variant#(rp, this: Planner, v: Variant, tag: int) returns PlannedVariant
+        function plan_variant(this: Planner, v: Variant, tag: int) returns PlannedVariant
         {
             var var_type: ref[PlannedType]? null
             if v.type <> null
@@ -16227,7 +16205,7 @@ define Planner
         ; deinitializer. mangled_name is built via mangle_structure so
         ; method/operator mangling can reference the parent.
         ; ================================================================
-        function plan_structure#(rp, this: Planner, s: Structure, name: String) returns PlannedStructure
+        function plan_structure(this: Planner, s: Structure, name: String) returns PlannedStructure
         {
             var planned_props Array[PlannedProperty]$()
             var i: size_t 0
@@ -16406,7 +16384,7 @@ define Planner
         ; Skipping methods avoids the planner-side crashes (null this in
         ; check_function_match → String::get_buffer) that would otherwise
         ; happen when walking generic/cross-module method bodies.
-        function plan_structure_layout#(rp, this: Planner, s: Structure, name: String) returns PlannedStructure
+        function plan_structure_layout(this: Planner, s: Structure, name: String) returns PlannedStructure
             this.plan_structure_layout_opt(s, name, true)
 
         ; plan_structure_layout_opt#: as plan_structure_layout# but with a
@@ -16421,7 +16399,7 @@ define Planner
         ; `ConceptIndex.create#` call to a bare `_Z6createm` and fails to
         ; link). With plan_inits=false the struct stays declare-only here
         ; and the real body is resolved cross-unit at link time.
-        function plan_structure_layout_opt#(rp, this: Planner, s: Structure, name: String, plan_inits: bool) returns PlannedStructure
+        function plan_structure_layout_opt(this: Planner, s: Structure, name: String, plan_inits: bool) returns PlannedStructure
         {
             var planned_props Array[PlannedProperty]$()
             var i: size_t 0
@@ -16832,7 +16810,7 @@ define Planner
         ; plan_global: Model.Global → Plan.PlannedGlobal.
         ; The `name` comes from the enclosing Concept — Global itself has
         ; no name field.
-        function plan_global#(rp, this: Planner, g: Global, name: String) returns PlannedGlobal
+        function plan_global(this: Planner, g: Global, name: String) returns PlannedGlobal
         {
             let planned_type this.plan_type(g.type)
             let planned_value this.plan_operands(g.value)
@@ -16867,7 +16845,7 @@ define Planner
         ; can resolve unqualified intra-namespace calls. The old
         ; context is restored before returning, giving nested
         ; namespaces correct save/restore semantics.
-        function plan_namespace#(rp, this: Planner, ns: Namespace, name: String) returns PlannedNamespace
+        function plan_namespace(this: Planner, ns: Namespace, name: String) returns PlannedNamespace
         {
             ; Build the parent PlannedType that tags every Function /
             ; Operator inside this namespace for mangling. Name alone
@@ -17249,7 +17227,7 @@ define Planner
         ; module's tree, then plan sub-modules and members. This makes
         ; forward references resolve — `struct A { b: B }` works even
         ; when B is defined later in the same module.
-        function plan_module#(rp, this: Planner, m: Module) returns PlannedModule
+        function plan_module(this: Planner, m: Module) returns PlannedModule
         {
             ; Track the current source file for diagnostics (mirrors stage-0
             ; planModule: `OldFile = File; if (!Mod.File.empty()) File = Mod.File`).
@@ -17429,7 +17407,7 @@ define Planner
         ; Intrinsic concepts (built-in types) are represented by a Type
         ; variant carrying a void placeholder until a proper Intrinsic
         ; variant is added to PlannedDefinition.
-        function plan_concept#(rp, this: Planner, c: Concept) returns PlannedConcept
+        function plan_concept(this: Planner, c: Concept) returns PlannedConcept
         {
             ; s107: generic data-class concepts (Structure with no
             ; members/initializers) defer body planning to
@@ -17615,7 +17593,7 @@ define Planner
         ; plan_union: Model.Union → Plan.PlannedUnion.
         ; Similar scope to plan_structure: plans variants and computes
         ; size/alignment; skips methods/operators for now.
-        function plan_union#(rp, this: Planner, u: scalyc.compiler.Model.Union, name: String) returns scalyc.compiler.Plan.PlannedUnion
+        function plan_union(this: Planner, u: scalyc.compiler.Model.Union, name: String) returns scalyc.compiler.Plan.PlannedUnion
             this.plan_union_opt(u, name, true)
 
         ; plan_union_opt#: as plan_union# with a `plan_methods` switch. The
@@ -17625,7 +17603,7 @@ define Planner
         ; right offset), but NOT the union's methods/operators — those
         ; belong to the union's own package's object (same reasoning as
         ; plan_structure_layout_opt#).
-        function plan_union_opt#(rp, this: Planner, u: scalyc.compiler.Model.Union, name: String, plan_methods: bool) returns scalyc.compiler.Plan.PlannedUnion
+        function plan_union_opt(this: Planner, u: scalyc.compiler.Model.Union, name: String, plan_methods: bool) returns scalyc.compiler.Plan.PlannedUnion
         {
             var planned_vs Array[PlannedVariant]$()
             var tag: int 0
