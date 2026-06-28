@@ -227,7 +227,7 @@ define Parser
                         (("keyword")
                             ($
 "
-        if ~lexer.parse_keyword#(String#(\""(id (element-with-id (link content)))"\"))"
+        if ~lexer.parse_keyword(String#(\""(id (element-with-id (link content)))"\"))"
                                 (if (equal? 1 (child-number content))
                                     "
             throw ParserError.Different(DifferentSyntax())
@@ -243,12 +243,12 @@ define Parser
                                 ;; Optional punctuation - just try it
                                 ($
 "
-        lexer.parse_punctuation#("(punct-const-name (value (element-with-id (link content))))")
+        lexer.parse_punctuation("(punct-const-name (value (element-with-id (link content))))")
 "                               )
                                 ;; Required punctuation
                                 ($
 "
-        if ~lexer.parse_punctuation#("(punct-const-name (value (element-with-id (link content))))")"
+        if ~lexer.parse_punctuation("(punct-const-name (value (element-with-id (link content))))")"
                                     (if (equal? 1 (child-number content))
                                         "
             throw ParserError.Different(DifferentSyntax())
@@ -265,12 +265,12 @@ define Parser
                                 ;; Optional colon - just try it
                                 ($
 "
-        lexer.parse_colon#()
+        lexer.parse_colon()
 "                               )
                                 ;; Required colon
                                 ($
 "
-        if ~lexer.parse_colon#()"
+        if ~lexer.parse_colon()"
                                     (if (equal? 1 (child-number content))
                                         "
             throw ParserError.Different(DifferentSyntax())
