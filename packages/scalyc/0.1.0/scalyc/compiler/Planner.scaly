@@ -16538,7 +16538,7 @@ define Planner
         ; register_struct_layouts_in_concept#: if the concept's
         ; definition is a Structure, register its layout. If it's a
         ; Namespace, recurse into namespace members and modules.
-        function register_struct_layouts_in_concept#(rp, this: Planner, c: Concept)
+        function register_struct_layouts_in_concept(this: Planner, c: Concept)
         {
             ; Only handle parameterless concepts here — generic
             ; structures get planned per-instantiation by the existing
@@ -16614,7 +16614,7 @@ define Planner
         ; ABI-opaque stdlib structs are excluded (is_runtime_opaque_struct) so
         ; the scaly/scalyc/main fixed point stays byte-identical. Generic
         ; concepts are left to instantiate_generic# (parameterless guard).
-        function ensure_member_layout#(rp, this: Planner, name: String)
+        function ensure_member_layout(this: Planner, name: String)
         {
             if Planner.is_runtime_opaque_struct(name)
                 return
@@ -16698,7 +16698,7 @@ define Planner
         ; Same fixed-point safety as ensure_member_layout#: opaque stdlib
         ; types are excluded, generic concepts are left to instantiate_generic#,
         ; and pinning is to owning_page (persistent plan storage).
-        function ensure_union_layout#(rp, this: Planner, name: String)
+        function ensure_union_layout(this: Planner, name: String)
         {
             if Planner.is_runtime_opaque_struct(name)
                 return
@@ -16775,7 +16775,7 @@ define Planner
         ; safe for the same reason as the two underlying helpers: scaly/scalyc/
         ; main pass no unplanned cross-package types by value (every in-package
         ; type is already registered → no-op).
-        function ensure_type_layout#(rp, this: Planner, t: PlannedType)
+        function ensure_type_layout(this: Planner, t: PlannedType)
             this.ensure_layout_by_name(t.name)
 
         ; By-name twin of ensure_type_layout#: lay out whichever kind (struct
@@ -16784,7 +16784,7 @@ define Planner
         ; / generic / unknown (primitives, pointer, ref). Both helpers RECURSE
         ; into the type's by-value constituents (see their bodies), so this also
         ; lays out the whole by-value subgraph reachable from `name`.
-        function ensure_layout_by_name#(rp, this: Planner, name: String)
+        function ensure_layout_by_name(this: Planner, name: String)
         {
             if name.get_length() = 0
                 return
@@ -17734,7 +17734,7 @@ define Planner
         ; are left null — the per-kind planned data lives inside the
         ; PlannedModule tree for now. The separate caches come online
         ; once the instantiate-generic pass is ported.
-        function plan_program#(rp, this: Planner, prog: Program) returns ref[Plan]?
+        function plan_program(this: Planner, prog: Program) returns ref[Plan]?
         {
             ; Stash the program's main-module Use aliases up front
             ; so the dotted-call extern-decl gate can consult them
@@ -19414,7 +19414,7 @@ define Planner
         out
     }
 
-    function extract_row_to_type#(rp, row: Vector[PlannedOperand]) returns ref[Type]?
+    function extract_row_to_type(row: Vector[PlannedOperand]) returns ref[Type]?
     {
         if row.length = 0
             return null
@@ -19943,8 +19943,7 @@ define Planner
     ;   - compatible integer families            → empty subst
     ;   - Option family vs pointer[void]         → empty subst
     ;   - concrete names equal, arities equal    → recurse on generics
-    function unify#(
-        rp,
+    function unify(
         left: PlannedType,
         right: PlannedType
     ) returns ref[Vector[KeyValuePair[size_t, PlannedType]]]?
@@ -20082,8 +20081,7 @@ define Planner
     ; unifying them, and composing the new substitution into the solution.
     ; Instance (trait) constraints are skipped — matches the TODO in
     ; Planner.cpp. Returns null on any unification failure.
-    function solve_constraints#(
-        rp,
+    function solve_constraints(
         constraints: ref[Vector[TypeConstraint]]?
     ) returns ref[Vector[KeyValuePair[size_t, PlannedType]]]?
     {
