@@ -2837,7 +2837,7 @@ entry:
   ret i1 %eq
 }
 
-define linkonce_odr void @_ZN5Lexer7advanceEPN4scaly6memory4PageE(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN5Lexer7advanceEv(ptr %0) {
 entry:
   %tuple226 = alloca %_Z12InvalidToken, align 8
   %variant.ptr224 = alloca %_Z5Token, align 8
@@ -2856,11 +2856,11 @@ entry:
   %sret.result84 = alloca %_Z5Token, align 8
   %sret.result26 = alloca %_Z5Token, align 8
   %sret.result = alloca %_Z5Token, align 8
-  %load.struct = load %_Z5Lexer, ptr %1, align 8
+  %load.struct = load %_Z5Lexer, ptr %0, align 8
   %position = extractvalue %_Z5Lexer %load.struct, 3
-  %previous_position = getelementptr inbounds %_Z5Lexer, ptr %1, i32 0, i32 4
+  %previous_position = getelementptr inbounds %_Z5Lexer, ptr %0, i32 0, i32 4
   store i64 %position, ptr %previous_position, align 4
-  %load.struct1 = load %_Z5Lexer, ptr %1, align 8
+  %load.struct1 = load %_Z5Lexer, ptr %0, align 8
   %current = extractvalue %_Z5Lexer %load.struct1, 1
   %eq = icmp eq ptr %current, null
   br i1 %eq, label %if.then, label %if.end
@@ -2869,7 +2869,7 @@ if.then:                                          ; preds = %entry
   ret void
 
 if.end:                                           ; preds = %entry
-  %load.struct2 = load %_Z5Lexer, ptr %1, align 8
+  %load.struct2 = load %_Z5Lexer, ptr %0, align 8
   %current3 = extractvalue %_Z5Lexer %load.struct2, 1
   %deref = load i8, ptr %current3, align 1
   %zext = zext i8 %deref to i64
@@ -2904,12 +2904,12 @@ lor.end10:                                        ; preds = %lor.rhs9, %lor.rhs5
   br label %lor.end6
 
 if.then15:                                        ; preds = %lor.end6
-  %own_page = call ptr @_Z3getPv(ptr %1)
-  call void @_ZN5Lexer15scan_identifierEPN4scaly6memory4PageE(ptr noalias sret(%_Z5Token) %sret.result, ptr %own_page, ptr %1)
-  %token = getelementptr inbounds %_Z5Lexer, ptr %1, i32 0, i32 5
+  %own_page = call ptr @_Z3getPv(ptr %0)
+  call void @_ZN5Lexer15scan_identifierEPN4scaly6memory4PageE(ptr noalias sret(%_Z5Token) %sret.result, ptr %own_page, ptr %0)
+  %token = getelementptr inbounds %_Z5Lexer, ptr %0, i32 0, i32 5
   %field.load = load %_Z5Token, ptr %sret.result, align 1
   store %_Z5Token %field.load, ptr %token, align 1
-  call void @_ZN5Lexer15skip_whitespaceEb(ptr %1, i1 false)
+  call void @_ZN5Lexer15skip_whitespaceEb(ptr %0, i1 false)
   ret void
 
 if.end16:                                         ; preds = %lor.end6
@@ -2927,14 +2927,14 @@ lor.end20:                                        ; preds = %lor.rhs19, %if.end1
   br i1 %lor.result23, label %if.then24, label %if.end25
 
 if.then24:                                        ; preds = %lor.end20
-  %own_page27 = call ptr @_Z3getPv(ptr %1)
-  %field.inplace = getelementptr inbounds %_Z5Lexer, ptr %1, i32 0, i32 1
+  %own_page27 = call ptr @_Z3getPv(ptr %0)
+  %field.inplace = getelementptr inbounds %_Z5Lexer, ptr %0, i32 0, i32 1
   %deref.recv = load ptr, ptr %field.inplace, align 8
-  call void @_ZN5Lexer20scan_integer_literalEPN4scaly6memory4PageEPcm(ptr noalias sret(%_Z5Token) %sret.result26, ptr %own_page27, ptr %1, ptr %deref.recv, i64 0)
-  %token28 = getelementptr inbounds %_Z5Lexer, ptr %1, i32 0, i32 5
+  call void @_ZN5Lexer20scan_integer_literalEPN4scaly6memory4PageEPcm(ptr noalias sret(%_Z5Token) %sret.result26, ptr %own_page27, ptr %0, ptr %deref.recv, i64 0)
+  %token28 = getelementptr inbounds %_Z5Lexer, ptr %0, i32 0, i32 5
   %field.load29 = load %_Z5Token, ptr %sret.result26, align 1
   store %_Z5Token %field.load29, ptr %token28, align 1
-  call void @_ZN5Lexer15skip_whitespaceEb(ptr %1, i1 false)
+  call void @_ZN5Lexer15skip_whitespaceEb(ptr %0, i1 false)
   ret void
 
 if.end25:                                         ; preds = %lor.end20
@@ -3033,12 +3033,12 @@ lor.end78:                                        ; preds = %lor.rhs77, %lor.end
   br i1 %lor.result81, label %if.then82, label %if.end83
 
 if.then82:                                        ; preds = %lor.end78
-  %own_page85 = call ptr @_Z3getPv(ptr %1)
-  call void @_ZN5Lexer13scan_operatorEPN4scaly6memory4PageE(ptr noalias sret(%_Z5Token) %sret.result84, ptr %own_page85, ptr %1)
-  %token86 = getelementptr inbounds %_Z5Lexer, ptr %1, i32 0, i32 5
+  %own_page85 = call ptr @_Z3getPv(ptr %0)
+  call void @_ZN5Lexer13scan_operatorEPN4scaly6memory4PageE(ptr noalias sret(%_Z5Token) %sret.result84, ptr %own_page85, ptr %0)
+  %token86 = getelementptr inbounds %_Z5Lexer, ptr %0, i32 0, i32 5
   %field.load87 = load %_Z5Token, ptr %sret.result84, align 1
   store %_Z5Token %field.load87, ptr %token86, align 1
-  call void @_ZN5Lexer15skip_whitespaceEb(ptr %1, i1 false)
+  call void @_ZN5Lexer15skip_whitespaceEb(ptr %0, i1 false)
   ret void
 
 if.end83:                                         ; preds = %lor.end78
@@ -3136,10 +3136,10 @@ if.then135:                                       ; preds = %lor.end131
   %variant.data.ptr = getelementptr inbounds %_Z5Token, ptr %variant.ptr, i32 0, i32 1
   store %_Z16PunctuationToken %tuple.val, ptr %variant.data.ptr, align 1
   %variant.val = load %_Z5Token, ptr %variant.ptr, align 1
-  %token137 = getelementptr inbounds %_Z5Lexer, ptr %1, i32 0, i32 5
+  %token137 = getelementptr inbounds %_Z5Lexer, ptr %0, i32 0, i32 5
   store %_Z5Token %variant.val, ptr %token137, align 1
-  call void @_ZN5Lexer14read_characterEv(ptr %1)
-  call void @_ZN5Lexer15skip_whitespaceEb(ptr %1, i1 false)
+  call void @_ZN5Lexer14read_characterEv(ptr %0)
+  call void @_ZN5Lexer15skip_whitespaceEb(ptr %0, i1 false)
   ret void
 
 if.end136:                                        ; preds = %lor.end131
@@ -3183,10 +3183,10 @@ if.then155:                                       ; preds = %lor.end151
   %variant.data.ptr162 = getelementptr inbounds %_Z5Token, ptr %variant.ptr157, i32 0, i32 1
   store %_Z16PunctuationToken %tuple.val161, ptr %variant.data.ptr162, align 1
   %variant.val163 = load %_Z5Token, ptr %variant.ptr157, align 1
-  %token164 = getelementptr inbounds %_Z5Lexer, ptr %1, i32 0, i32 5
+  %token164 = getelementptr inbounds %_Z5Lexer, ptr %0, i32 0, i32 5
   store %_Z5Token %variant.val163, ptr %token164, align 1
-  call void @_ZN5Lexer14read_characterEv(ptr %1)
-  call void @_ZN5Lexer15skip_whitespaceEb(ptr %1, i1 true)
+  call void @_ZN5Lexer14read_characterEv(ptr %0)
+  call void @_ZN5Lexer15skip_whitespaceEb(ptr %0, i1 true)
   ret void
 
 if.end156:                                        ; preds = %lor.end151
@@ -3195,12 +3195,12 @@ if.end156:                                        ; preds = %lor.end151
   br i1 %eq166, label %if.then167, label %if.end168
 
 if.then167:                                       ; preds = %if.end156
-  %own_page170 = call ptr @_Z3getPv(ptr %1)
-  call void @_ZN5Lexer14scan_line_feedEPN4scaly6memory4PageE(ptr noalias sret(%_Z5Token) %sret.result169, ptr %own_page170, ptr %1)
-  %token171 = getelementptr inbounds %_Z5Lexer, ptr %1, i32 0, i32 5
+  %own_page170 = call ptr @_Z3getPv(ptr %0)
+  call void @_ZN5Lexer14scan_line_feedEPN4scaly6memory4PageE(ptr noalias sret(%_Z5Token) %sret.result169, ptr %own_page170, ptr %0)
+  %token171 = getelementptr inbounds %_Z5Lexer, ptr %0, i32 0, i32 5
   %field.load172 = load %_Z5Token, ptr %sret.result169, align 1
   store %_Z5Token %field.load172, ptr %token171, align 1
-  call void @_ZN5Lexer15skip_whitespaceEb(ptr %1, i1 false)
+  call void @_ZN5Lexer15skip_whitespaceEb(ptr %0, i1 false)
   ret void
 
 if.end168:                                        ; preds = %if.end156
@@ -3209,7 +3209,7 @@ if.end168:                                        ; preds = %if.end156
   br i1 %eq174, label %if.then175, label %if.end176
 
 if.then175:                                       ; preds = %if.end168
-  call void @_ZN5Lexer14read_characterEv(ptr %1)
+  call void @_ZN5Lexer14read_characterEv(ptr %0)
   %variant.tag.ptr178 = getelementptr inbounds %_Z5Token, ptr %variant.ptr177, i32 0, i32 0
   store i8 2, ptr %variant.tag.ptr178, align 1
   store %_Z10ColonToken zeroinitializer, ptr %tuple179, align 1
@@ -3217,9 +3217,9 @@ if.then175:                                       ; preds = %if.end168
   %variant.data.ptr181 = getelementptr inbounds %_Z5Token, ptr %variant.ptr177, i32 0, i32 1
   store %_Z10ColonToken %tuple.val180, ptr %variant.data.ptr181, align 1
   %variant.val182 = load %_Z5Token, ptr %variant.ptr177, align 1
-  %token183 = getelementptr inbounds %_Z5Lexer, ptr %1, i32 0, i32 5
+  %token183 = getelementptr inbounds %_Z5Lexer, ptr %0, i32 0, i32 5
   store %_Z5Token %variant.val182, ptr %token183, align 1
-  call void @_ZN5Lexer15skip_whitespaceEb(ptr %1, i1 false)
+  call void @_ZN5Lexer15skip_whitespaceEb(ptr %0, i1 false)
   ret void
 
 if.end176:                                        ; preds = %if.end168
@@ -3228,12 +3228,12 @@ if.end176:                                        ; preds = %if.end168
   br i1 %eq185, label %if.then186, label %if.end187
 
 if.then186:                                       ; preds = %if.end176
-  %own_page189 = call ptr @_Z3getPv(ptr %1)
-  call void @_ZN5Lexer20scan_numeric_literalEPN4scaly6memory4PageE(ptr noalias sret(%_Z5Token) %sret.result188, ptr %own_page189, ptr %1)
-  %token190 = getelementptr inbounds %_Z5Lexer, ptr %1, i32 0, i32 5
+  %own_page189 = call ptr @_Z3getPv(ptr %0)
+  call void @_ZN5Lexer20scan_numeric_literalEPN4scaly6memory4PageE(ptr noalias sret(%_Z5Token) %sret.result188, ptr %own_page189, ptr %0)
+  %token190 = getelementptr inbounds %_Z5Lexer, ptr %0, i32 0, i32 5
   %field.load191 = load %_Z5Token, ptr %sret.result188, align 1
   store %_Z5Token %field.load191, ptr %token190, align 1
-  call void @_ZN5Lexer15skip_whitespaceEb(ptr %1, i1 false)
+  call void @_ZN5Lexer15skip_whitespaceEb(ptr %0, i1 false)
   ret void
 
 if.end187:                                        ; preds = %if.end176
@@ -3242,13 +3242,13 @@ if.end187:                                        ; preds = %if.end176
   br i1 %eq193, label %if.then194, label %if.end195
 
 if.then194:                                       ; preds = %if.end187
-  call void @_ZN5Lexer14read_characterEv(ptr %1)
-  %own_page197 = call ptr @_Z3getPv(ptr %1)
-  call void @_ZN5Lexer14scan_attributeEPN4scaly6memory4PageE(ptr noalias sret(%_Z5Token) %sret.result196, ptr %own_page197, ptr %1)
-  %token198 = getelementptr inbounds %_Z5Lexer, ptr %1, i32 0, i32 5
+  call void @_ZN5Lexer14read_characterEv(ptr %0)
+  %own_page197 = call ptr @_Z3getPv(ptr %0)
+  call void @_ZN5Lexer14scan_attributeEPN4scaly6memory4PageE(ptr noalias sret(%_Z5Token) %sret.result196, ptr %own_page197, ptr %0)
+  %token198 = getelementptr inbounds %_Z5Lexer, ptr %0, i32 0, i32 5
   %field.load199 = load %_Z5Token, ptr %sret.result196, align 1
   store %_Z5Token %field.load199, ptr %token198, align 1
-  call void @_ZN5Lexer15skip_whitespaceEb(ptr %1, i1 false)
+  call void @_ZN5Lexer15skip_whitespaceEb(ptr %0, i1 false)
   ret void
 
 if.end195:                                        ; preds = %if.end187
@@ -3257,12 +3257,12 @@ if.end195:                                        ; preds = %if.end187
   br i1 %eq201, label %if.then202, label %if.end203
 
 if.then202:                                       ; preds = %if.end195
-  %own_page205 = call ptr @_Z3getPv(ptr %1)
-  call void @_ZN5Lexer19scan_string_literalEPN4scaly6memory4PageE(ptr noalias sret(%_Z5Token) %sret.result204, ptr %own_page205, ptr %1)
-  %token206 = getelementptr inbounds %_Z5Lexer, ptr %1, i32 0, i32 5
+  %own_page205 = call ptr @_Z3getPv(ptr %0)
+  call void @_ZN5Lexer19scan_string_literalEPN4scaly6memory4PageE(ptr noalias sret(%_Z5Token) %sret.result204, ptr %own_page205, ptr %0)
+  %token206 = getelementptr inbounds %_Z5Lexer, ptr %0, i32 0, i32 5
   %field.load207 = load %_Z5Token, ptr %sret.result204, align 1
   store %_Z5Token %field.load207, ptr %token206, align 1
-  call void @_ZN5Lexer15skip_whitespaceEb(ptr %1, i1 false)
+  call void @_ZN5Lexer15skip_whitespaceEb(ptr %0, i1 false)
   ret void
 
 if.end203:                                        ; preds = %if.end195
@@ -3271,12 +3271,12 @@ if.end203:                                        ; preds = %if.end195
   br i1 %eq209, label %if.then210, label %if.end211
 
 if.then210:                                       ; preds = %if.end203
-  %own_page213 = call ptr @_Z3getPv(ptr %1)
-  call void @_ZN5Lexer22scan_string_identifierEPN4scaly6memory4PageE(ptr noalias sret(%_Z5Token) %sret.result212, ptr %own_page213, ptr %1)
-  %token214 = getelementptr inbounds %_Z5Lexer, ptr %1, i32 0, i32 5
+  %own_page213 = call ptr @_Z3getPv(ptr %0)
+  call void @_ZN5Lexer22scan_string_identifierEPN4scaly6memory4PageE(ptr noalias sret(%_Z5Token) %sret.result212, ptr %own_page213, ptr %0)
+  %token214 = getelementptr inbounds %_Z5Lexer, ptr %0, i32 0, i32 5
   %field.load215 = load %_Z5Token, ptr %sret.result212, align 1
   store %_Z5Token %field.load215, ptr %token214, align 1
-  call void @_ZN5Lexer15skip_whitespaceEb(ptr %1, i1 false)
+  call void @_ZN5Lexer15skip_whitespaceEb(ptr %0, i1 false)
   ret void
 
 if.end211:                                        ; preds = %if.end203
@@ -3285,12 +3285,12 @@ if.end211:                                        ; preds = %if.end203
   br i1 %eq217, label %if.then218, label %if.end219
 
 if.then218:                                       ; preds = %if.end211
-  %own_page221 = call ptr @_Z3getPv(ptr %1)
-  call void @_ZN5Lexer21scan_fragment_literalEPN4scaly6memory4PageE(ptr noalias sret(%_Z5Token) %sret.result220, ptr %own_page221, ptr %1)
-  %token222 = getelementptr inbounds %_Z5Lexer, ptr %1, i32 0, i32 5
+  %own_page221 = call ptr @_Z3getPv(ptr %0)
+  call void @_ZN5Lexer21scan_fragment_literalEPN4scaly6memory4PageE(ptr noalias sret(%_Z5Token) %sret.result220, ptr %own_page221, ptr %0)
+  %token222 = getelementptr inbounds %_Z5Lexer, ptr %0, i32 0, i32 5
   %field.load223 = load %_Z5Token, ptr %sret.result220, align 1
   store %_Z5Token %field.load223, ptr %token222, align 1
-  call void @_ZN5Lexer15skip_whitespaceEb(ptr %1, i1 false)
+  call void @_ZN5Lexer15skip_whitespaceEb(ptr %0, i1 false)
   ret void
 
 if.end219:                                        ; preds = %if.end211
@@ -3301,9 +3301,9 @@ if.end219:                                        ; preds = %if.end211
   %variant.data.ptr228 = getelementptr inbounds %_Z5Token, ptr %variant.ptr224, i32 0, i32 1
   store %_Z12InvalidToken %tuple.val227, ptr %variant.data.ptr228, align 1
   %variant.val229 = load %_Z5Token, ptr %variant.ptr224, align 1
-  %token230 = getelementptr inbounds %_Z5Lexer, ptr %1, i32 0, i32 5
+  %token230 = getelementptr inbounds %_Z5Lexer, ptr %0, i32 0, i32 5
   store %_Z5Token %variant.val229, ptr %token230, align 1
-  call void @_ZN5Lexer15skip_whitespaceEb(ptr %1, i1 false)
+  call void @_ZN5Lexer15skip_whitespaceEb(ptr %0, i1 false)
   ret void
 }
 
@@ -5625,7 +5625,6 @@ define linkonce_odr i1 @_ZN5Lexer13parse_keywordE6String(ptr %0, ptr %1) {
 entry:
   %arg.tmp = alloca { ptr }, align 8
   %choose.union3 = alloca %_Z5Token, align 8
-  %local_page = call ptr @_Z21scaly_alloc_root_pagev()
   %load.struct = load %_Z5Lexer, ptr %0, align 8
   %token = extractvalue %_Z5Lexer %load.struct, 5
   %choose.union = alloca %_Z5Token, align 8
@@ -5652,11 +5651,10 @@ choose.else:                                      ; preds = %entry
 choose.when:                                      ; preds = %entry
   %"variant.c_data().ptr" = getelementptr inbounds %_Z5Token, ptr %choose.union, i32 0, i32 1
   %variant.val = load %_Z10EmptyToken, ptr %"variant.c_data().ptr", align 1
-  call void @_ZN5Lexer7advanceEPN4scaly6memory4PageE(ptr %local_page, ptr %0)
+  call void @_ZN5Lexer7advanceEv(ptr %0)
   br label %choose.end
 
 choose.end6:                                      ; preds = %choose.else7, %if.end
-  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   ret i1 false
 
 choose.else7:                                     ; preds = %choose.end
@@ -5672,7 +5670,6 @@ choose.when8:                                     ; preds = %choose.end
 
 if.then:                                          ; preds = %choose.when8
   call void @_ZN5Lexer5emptyEv(ptr %0)
-  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   ret i1 true
 
 if.end:                                           ; preds = %choose.when8
@@ -9346,7 +9343,6 @@ entry:
   %arg.tmp12 = alloca { ptr }, align 8
   %arg.tmp = alloca { ptr }, align 8
   %choose.union3 = alloca %_Z5Token, align 8
-  %local_page = call ptr @_Z21scaly_alloc_root_pagev()
   %load.struct = load %_Z5Lexer, ptr %2, align 8
   %token = extractvalue %_Z5Lexer %load.struct, 5
   %choose.union = alloca %_Z5Token, align 8
@@ -9373,13 +9369,12 @@ choose.else:                                      ; preds = %entry
 choose.when:                                      ; preds = %entry
   %"variant.c_data().ptr" = getelementptr inbounds %_Z5Token, ptr %choose.union, i32 0, i32 1
   %variant.val = load %_Z10EmptyToken, ptr %"variant.c_data().ptr", align 1
-  call void @_ZN5Lexer7advanceEPN4scaly6memory4PageE(ptr %local_page, ptr %2)
+  call void @_ZN5Lexer7advanceEv(ptr %2)
   br label %choose.end
 
 choose.end6:                                      ; preds = %choose.else7
   %struct.region17 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
   call void @_ZN6StringC1EPN4scaly6memory4PageEP10const_charm(ptr %struct.region17, ptr %1, ptr @.str.7, i64 0)
-  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   %sret.body18 = load { ptr }, ptr %struct.region17, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.region17, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -9404,14 +9399,12 @@ choose.when8:                                     ; preds = %choose.end
 if.then:                                          ; preds = %choose.when8
   %struct.region15 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
   call void @_ZN6StringC1EPN4scaly6memory4PageEP10const_charm(ptr %struct.region15, ptr %1, ptr @.str.6, i64 0)
-  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   %sret.body = load { ptr }, ptr %struct.region15, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.region15, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
 
 if.end:                                           ; preds = %choose.when8
   call void @_ZN5Lexer5emptyEv(ptr %2)
-  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   %sret.body16 = load { ptr }, ptr %struct.region, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.region, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -9422,7 +9415,6 @@ entry:
   %arg.tmp12 = alloca { ptr }, align 8
   %arg.tmp = alloca { ptr }, align 8
   %choose.union3 = alloca %_Z5Token, align 8
-  %local_page = call ptr @_Z21scaly_alloc_root_pagev()
   %load.struct = load %_Z5Lexer, ptr %2, align 8
   %token = extractvalue %_Z5Lexer %load.struct, 5
   %choose.union = alloca %_Z5Token, align 8
@@ -9449,13 +9441,12 @@ choose.else:                                      ; preds = %entry
 choose.when:                                      ; preds = %entry
   %"variant.c_data().ptr" = getelementptr inbounds %_Z5Token, ptr %choose.union, i32 0, i32 1
   %variant.val = load %_Z10EmptyToken, ptr %"variant.c_data().ptr", align 1
-  call void @_ZN5Lexer7advanceEPN4scaly6memory4PageE(ptr %local_page, ptr %2)
+  call void @_ZN5Lexer7advanceEv(ptr %2)
   br label %choose.end
 
 choose.end6:                                      ; preds = %choose.else7
   %struct.region14 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
   call void @_ZN6StringC1EPN4scaly6memory4PageEP10const_charm(ptr %struct.region14, ptr %1, ptr @.str.8, i64 0)
-  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   %sret.body15 = load { ptr }, ptr %struct.region14, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.region14, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -9474,7 +9465,6 @@ choose.when8:                                     ; preds = %choose.end
   store { ptr } %name11, ptr %arg.tmp12, align 1
   %call13 = call i64 @_ZN6String6lengthEv(ptr %arg.tmp12)
   call void @_ZN6StringC1EPN4scaly6memory4PageEP10const_charm(ptr %struct.region, ptr %1, ptr %call, i64 %call13)
-  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   %sret.body = load { ptr }, ptr %struct.region, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.region, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -9485,7 +9475,6 @@ entry:
   %arg.tmp12 = alloca { ptr }, align 8
   %arg.tmp = alloca { ptr }, align 8
   %choose.union3 = alloca %_Z5Token, align 8
-  %local_page = call ptr @_Z21scaly_alloc_root_pagev()
   %load.struct = load %_Z5Lexer, ptr %2, align 8
   %token = extractvalue %_Z5Lexer %load.struct, 5
   %choose.union = alloca %_Z5Token, align 8
@@ -9512,13 +9501,12 @@ choose.else:                                      ; preds = %entry
 choose.when:                                      ; preds = %entry
   %"variant.c_data().ptr" = getelementptr inbounds %_Z5Token, ptr %choose.union, i32 0, i32 1
   %variant.val = load %_Z10EmptyToken, ptr %"variant.c_data().ptr", align 1
-  call void @_ZN5Lexer7advanceEPN4scaly6memory4PageE(ptr %local_page, ptr %2)
+  call void @_ZN5Lexer7advanceEv(ptr %2)
   br label %choose.end
 
 choose.end6:                                      ; preds = %choose.else7
   %struct.region14 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
   call void @_ZN6StringC1EPN4scaly6memory4PageEP10const_charm(ptr %struct.region14, ptr %1, ptr @.str.9, i64 0)
-  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   %sret.body15 = load { ptr }, ptr %struct.region14, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.region14, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -9538,7 +9526,6 @@ choose.when8:                                     ; preds = %choose.end
   %call13 = call i64 @_ZN6String6lengthEv(ptr %arg.tmp12)
   call void @_ZN6StringC1EPN4scaly6memory4PageEP10const_charm(ptr %struct.region, ptr %1, ptr %call, i64 %call13)
   call void @_ZN5Lexer5emptyEv(ptr %2)
-  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   %sret.body = load { ptr }, ptr %struct.region, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.region, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -9547,7 +9534,6 @@ choose.when8:                                     ; preds = %choose.end
 define linkonce_odr i1 @_ZN5Lexer17parse_punctuationE2u8(ptr %0, i8 %1) {
 entry:
   %choose.union3 = alloca %_Z5Token, align 8
-  %local_page = call ptr @_Z21scaly_alloc_root_pagev()
   %load.struct = load %_Z5Lexer, ptr %0, align 8
   %token = extractvalue %_Z5Lexer %load.struct, 5
   %choose.union = alloca %_Z5Token, align 8
@@ -9574,11 +9560,10 @@ choose.else:                                      ; preds = %entry
 choose.when:                                      ; preds = %entry
   %"variant.c_data().ptr" = getelementptr inbounds %_Z5Token, ptr %choose.union, i32 0, i32 1
   %variant.val = load %_Z10EmptyToken, ptr %"variant.c_data().ptr", align 1
-  call void @_ZN5Lexer7advanceEPN4scaly6memory4PageE(ptr %local_page, ptr %0)
+  call void @_ZN5Lexer7advanceEv(ptr %0)
   br label %choose.end
 
 choose.end6:                                      ; preds = %choose.else7, %if.end
-  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   ret i1 false
 
 choose.else7:                                     ; preds = %choose.end
@@ -9593,7 +9578,6 @@ choose.when8:                                     ; preds = %choose.end
 
 if.then:                                          ; preds = %choose.when8
   call void @_ZN5Lexer5emptyEv(ptr %0)
-  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   ret i1 true
 
 if.end:                                           ; preds = %choose.when8
@@ -9603,7 +9587,6 @@ if.end:                                           ; preds = %choose.when8
 define linkonce_odr i1 @_ZN5Lexer11parse_colonEv(ptr %0) {
 entry:
   %choose.union3 = alloca %_Z5Token, align 8
-  %local_page = call ptr @_Z21scaly_alloc_root_pagev()
   %load.struct = load %_Z5Lexer, ptr %0, align 8
   %token = extractvalue %_Z5Lexer %load.struct, 5
   %choose.union = alloca %_Z5Token, align 8
@@ -9630,11 +9613,10 @@ choose.else:                                      ; preds = %entry
 choose.when:                                      ; preds = %entry
   %"variant.c_data().ptr" = getelementptr inbounds %_Z5Token, ptr %choose.union, i32 0, i32 1
   %variant.val = load %_Z10EmptyToken, ptr %"variant.c_data().ptr", align 1
-  call void @_ZN5Lexer7advanceEPN4scaly6memory4PageE(ptr %local_page, ptr %0)
+  call void @_ZN5Lexer7advanceEv(ptr %0)
   br label %choose.end
 
 choose.end6:                                      ; preds = %choose.else7
-  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   ret i1 false
 
 choose.else7:                                     ; preds = %choose.end
@@ -9644,7 +9626,6 @@ choose.when8:                                     ; preds = %choose.end
   %"variant.c_data().ptr9" = getelementptr inbounds %_Z5Token, ptr %choose.union3, i32 0, i32 1
   %variant.val10 = load %_Z10ColonToken, ptr %"variant.c_data().ptr9", align 1
   call void @_ZN5Lexer5emptyEv(ptr %0)
-  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   ret i1 true
 }
 
@@ -11577,7 +11558,7 @@ choose.when:                                      ; preds = %entry
   %"variant.c_data().ptr" = getelementptr inbounds %_Z5Token, ptr %choose.union, i32 0, i32 1
   %variant.val = load %_Z10EmptyToken, ptr %"variant.c_data().ptr", align 1
   %field.inplace = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
-  call void @_ZN5Lexer7advanceEPN4scaly6memory4PageE(ptr %1, ptr %field.inplace)
+  call void @_ZN5Lexer7advanceEv(ptr %field.inplace)
   br label %choose.end
 
 choose.end7:                                      ; No predecessors!
@@ -212860,7 +212841,7 @@ if.then25:                                        ; preds = %if.end21
   %call27 = call i64 @_ZN7Console7printlnEP10const_char(ptr @.str.1706)
   %base.deref = load ptr, ptr %p, align 8
   %field.inplace28 = getelementptr inbounds %_Z6Parser, ptr %base.deref, i32 0, i32 0
-  call void @_ZN5Lexer7advanceEPN4scaly6memory4PageE(ptr %local_page, ptr %field.inplace28)
+  call void @_ZN5Lexer7advanceEv(ptr %field.inplace28)
   br label %while.cond
 
 if.end26:                                         ; preds = %if.end21
@@ -212884,7 +212865,7 @@ while.body:                                       ; preds = %while.cond
   %call33 = call i64 @_ZN7Console7printlnEP10const_char(ptr @.str.1707)
   %base.deref34 = load ptr, ptr %p, align 8
   %field.inplace35 = getelementptr inbounds %_Z6Parser, ptr %base.deref34, i32 0, i32 0
-  call void @_ZN5Lexer7advanceEPN4scaly6memory4PageE(ptr %local_page, ptr %field.inplace35)
+  call void @_ZN5Lexer7advanceEv(ptr %field.inplace35)
   br label %while.cond
 
 while.exit:                                       ; preds = %while.cond
@@ -213589,15 +213570,15 @@ declare void @llvm.memcpy.p0.p0.i64(ptr noalias nocapture writeonly, ptr noalias
 
 declare void @_ZN6StringC1EPN4scaly6memory4PageEP10const_charm(ptr, ptr, ptr, i64)
 
+declare void @_Z11scaly_eputsP10const_char(...)
+
+declare void @_Z12scaly_eputnlv(...)
+
 declare ptr @_Z21scaly_alloc_root_pagev()
 
 declare void @_Z23scaly_release_root_pageP4Page(ptr)
 
 declare void @_Z28scaly_release_root_page_fullP4Page(ptr)
-
-declare void @_Z11scaly_eputsP10const_char(...)
-
-declare void @_Z12scaly_eputnlv(...)
 
 declare i64 @_ZN7hashing9get_primeEm(...)
 

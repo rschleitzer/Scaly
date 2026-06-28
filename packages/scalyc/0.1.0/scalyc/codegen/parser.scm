@@ -92,7 +92,7 @@ define Parser
     {
         choose lexer.token
             when Empty: empty
-                lexer.advance#()
+                lexer.advance()
             else {}
 
         choose lexer.token
@@ -285,7 +285,7 @@ define Parser
                             (let ((prop (property content)))
                             ($
 "
-        let " prop " lexer.parse_identifier#(keywords)
+        let " prop " lexer.parse_identifier(keywords)
         if " prop ".length() = 0"
                                 (if (equal? 1 (child-number content))
                                     "
@@ -300,7 +300,7 @@ define Parser
                             (let ((prop (property content)))
                             ($
 "
-        let " prop " lexer.parse_attribute#()
+        let " prop " lexer.parse_attribute()
         if " prop ".length() = 0"
                                 (if (equal? 1 (child-number content))
                                     "

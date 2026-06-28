@@ -111,7 +111,7 @@ define lexer
         function is_at_end(this) returns bool
             current = null
 
-        procedure advance#(rp, this)
+        procedure advance(this)
         {
             set previous_position: position
 
@@ -793,7 +793,7 @@ define lexer
 
         ; Parser helper: parse identifier, returns empty string if not found
         ; or if the identifier is a keyword (matches C++ parseName behaviour).
-        procedure parse_identifier#(page, this, keywords: HashSet[String]) returns String
+        procedure parse_identifier(this, keywords: HashSet[String]) returns String
         {
             choose token
                 when e: Empty
@@ -803,20 +803,20 @@ define lexer
             choose token
                 when ident: Identifier
                 {
-                    let name String^page(ident.name.get_buffer(), ident.name.length)
+                    let name String^rp(ident.name.get_buffer(), ident.name.length)
                     if keywords.contains(name)
-                        return String^page("", 0)
+                        return String^rp("", 0)
 
                     empty()
                     return name
                 }
                 else {}
 
-            String^page("", 0)
+            String^rp("", 0)
         }
 
         ; Parser helper: peek identifier without consuming
-        procedure peek_identifier#(page, this) returns String
+        procedure peek_identifier(this) returns String
         {
             choose token
                 when e: Empty
@@ -825,14 +825,14 @@ define lexer
 
             choose token
                 when ident: Identifier
-                    return String^page(ident.name.get_buffer(), ident.name.length)
+                    return String^rp(ident.name.get_buffer(), ident.name.length)
                 else {}
 
-            String^page("", 0)
+            String^rp("", 0)
         }
 
         ; Parser helper: parse attribute
-        procedure parse_attribute#(page, this) returns String
+        procedure parse_attribute(this) returns String
         {
             choose token
                 when e: Empty
@@ -842,13 +842,13 @@ define lexer
             choose token
                 when attr: Attribute
                 {
-                    let name String^page(attr.name.get_buffer(), attr.name.length)
+                    let name String^rp(attr.name.get_buffer(), attr.name.length)
                     empty()
                     return name
                 }
                 else {}
 
-            String^page("", 0)
+            String^rp("", 0)
         }
 
         ; Parser helper: parse punctuation

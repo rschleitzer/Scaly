@@ -134,7 +134,7 @@ define Parser
     {
         choose lexer.token
             when empty: Empty
-                lexer.advance#()
+                lexer.advance()
             else {}
 
         choose lexer.token
@@ -616,7 +616,7 @@ define Parser
         if ~lexer.parse_keyword#(String#("define"))
             throw ParserError.Different(DifferentSyntax())
 
-        let name lexer.parse_identifier#(keywords)
+        let name lexer.parse_identifier(keywords)
         if name.length() = 0
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#("expected identifier")))
 
@@ -728,7 +728,7 @@ define Parser
     {
         let start lexer.previous_position
 
-        let name lexer.parse_identifier#(keywords)
+        let name lexer.parse_identifier(keywords)
         if name.length() = 0
             throw ParserError.Different(DifferentSyntax())
 
@@ -1011,7 +1011,7 @@ define Parser
     {
         let start lexer.previous_position
 
-        let name lexer.parse_identifier#(keywords)
+        let name lexer.parse_identifier(keywords)
         if name.length() = 0
             throw ParserError.Different(DifferentSyntax())
 
@@ -1314,7 +1314,7 @@ define Parser
     {
         let start lexer.previous_position
 
-        let name lexer.parse_identifier#(keywords)
+        let name lexer.parse_identifier(keywords)
         if name.length() = 0
             throw ParserError.Different(DifferentSyntax())
 
@@ -1927,7 +1927,7 @@ define Parser
     {
         let start lexer.previous_position
 
-        let name lexer.parse_identifier#(keywords)
+        let name lexer.parse_identifier(keywords)
         if name.length() = 0
             throw ParserError.Different(DifferentSyntax())
 
@@ -2211,7 +2211,7 @@ define Parser
         if ~lexer.parse_keyword#(String#("macro"))
             throw ParserError.Different(DifferentSyntax())
 
-        let name lexer.parse_identifier#(keywords)
+        let name lexer.parse_identifier(keywords)
         if name.length() = 0
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#("expected identifier")))
 
@@ -2281,7 +2281,7 @@ define Parser
     {
         let start lexer.previous_position
 
-        let name lexer.parse_attribute#()
+        let name lexer.parse_attribute()
         if name.length() = 0
             throw ParserError.Different(DifferentSyntax())
 
@@ -2356,7 +2356,7 @@ define Parser
         if ~lexer.parse_keyword#(String#("module"))
             throw ParserError.Different(DifferentSyntax())
 
-        let name lexer.parse_identifier#(keywords)
+        let name lexer.parse_identifier(keywords)
         if name.length() = 0
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#("expected identifier")))
 
@@ -3562,7 +3562,7 @@ define Parser
         if ~lexer.parse_keyword#(String#("when"))
             throw ParserError.Different(DifferentSyntax())
 
-        let name lexer.parse_identifier#(keywords)
+        let name lexer.parse_identifier(keywords)
         if name.length() = 0
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#("expected identifier")))
 
@@ -3822,7 +3822,7 @@ define Parser
     {
         let start lexer.previous_position
 
-        let name lexer.parse_identifier#(keywords)
+        let name lexer.parse_identifier(keywords)
         if name.length() = 0
             throw ParserError.Different(DifferentSyntax())
 
@@ -4115,7 +4115,7 @@ define Parser
     {
         let start lexer.previous_position
 
-        let name lexer.parse_identifier#(keywords)
+        let name lexer.parse_identifier(keywords)
         if name.length() = 0
             throw ParserError.Different(DifferentSyntax())
 
@@ -4261,7 +4261,7 @@ define Parser
         if ~lexer.parse_keyword#(String#("loop"))
             throw ParserError.Different(DifferentSyntax())
 
-        let name lexer.parse_identifier#(keywords)
+        let name lexer.parse_identifier(keywords)
         if name.length() = 0
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#("expected identifier")))
 
@@ -4370,7 +4370,7 @@ define Parser
         if ~lexer.parse_keyword#(String#("for"))
             throw ParserError.Different(DifferentSyntax())
 
-        let variable lexer.parse_identifier#(keywords)
+        let variable lexer.parse_identifier(keywords)
         if variable.length() = 0
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#("expected identifier")))
 
@@ -4446,7 +4446,7 @@ define Parser
         if ~lexer.parse_keyword#(String#("label"))
             throw ParserError.Different(DifferentSyntax())
 
-        let name lexer.parse_identifier#(keywords)
+        let name lexer.parse_identifier(keywords)
         if name.length() = 0
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#("expected identifier")))
 
@@ -4850,7 +4850,7 @@ define Parser
     {
         let start lexer.previous_position
 
-        let name lexer.parse_identifier#(keywords)
+        let name lexer.parse_identifier(keywords)
         if name.length() = 0
             throw ParserError.Different(DifferentSyntax())
 
@@ -4908,7 +4908,7 @@ define Parser
         if ~lexer.parse_punctuation#(ParserConstants.CHAR_DOT())
             throw ParserError.Different(DifferentSyntax())
 
-        let name lexer.parse_identifier#(keywords)
+        let name lexer.parse_identifier(keywords)
         if name.length() = 0
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#("expected identifier")))
 
@@ -4993,7 +4993,7 @@ define Parser
         if ~lexer.parse_punctuation#(ParserConstants.CHAR_CARET())
             throw ParserError.Different(DifferentSyntax())
 
-        let location lexer.parse_identifier#(keywords)
+        let location lexer.parse_identifier(keywords)
         if location.length() = 0
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#("expected identifier")))
 
