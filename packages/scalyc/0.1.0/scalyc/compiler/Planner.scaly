@@ -6279,6 +6279,51 @@ define Planner
                                 else
                                     set rt: PlannedType(rt.loc, rt.name, rt.mangled_name, rt.generics, call_life, rt.origin, rt.array_size, rt.variable)
                         }
+                        ; Page inference (put/add into an escaping receiver): an
+                        ; INLINE construction passed as a put/add VALUE argument
+                        ; into a receiver container that escapes (returned or
+                        ; stored) must live on the receiver's caller page, not
+                        ; this frame's local page — Vector.put/add copies the
+                        ; value struct by value, so its heap guts must outlive
+                        ; the frame. The bound-local half is the name-graph
+                        ; (collect_store_value_locals# marks the receiver, then
+                        ; plan_binding# restamps the bound value's init); an
+                        ; INLINE ctor (`inner_path.put(0, String("Option"))`) has
+                        ; no binding, so restamp it here at the plan site.
+                        ; NEUTRAL on sigiled source: an explicit `#` value
+                        ; (Call life) is kept verbatim by restamp_operand_life#.
+                        ; Mirrors plan_action#'s set-store inline-ctor restamp
+                        ; (499d3312) for the put/add method-call shape.
+                        var put_args_ref: ref[Vector[PlannedOperand]]? &call_args_holder
+                        var is_putadd false
+                        if fn_name.equals(String("put"))
+                            set is_putadd: true
+                        if fn_name.equals(String("add"))
+                            set is_putadd: true
+                        if is_putadd
+                        {
+                            var recv_escapes false
+                            choose result.expr
+                                when rv: Variable
+                                {
+                                    if this.array_contains_name(escaping_return_locals, rv.name)
+                                        set recv_escapes: true
+                                    if this.array_contains_name(escaping_targets, rv.name)
+                                        set recv_escapes: true
+                                    if this.array_contains_name(promoted_binding_names, rv.name)
+                                        set recv_escapes: true
+                                }
+                                else
+                                    0
+                            if recv_escapes
+                                if call_args_holder.length > 0
+                                {
+                                    let putadd_life Lifetime.Call(scalyc.compiler.Model.Call(result.loc))
+                                    let restamped this.restamp_putadd_constructions(call_args_holder, putadd_life)
+                                    if restamped <> null
+                                        set put_args_ref: restamped
+                                }
+                        }
                         let call PlannedCall(
                             result.loc,
                             fn_name,
@@ -6287,7 +6332,7 @@ define Planner
                             false,
                             call_can_throw,
                             call_requires_page,
-                            &call_args_holder,
+                            put_args_ref,
                             rt,
                             call_life,
                             call_throws_ty,
@@ -13681,6 +13726,51 @@ define Planner
                         out.put(i, (*promoted))
                     if promoted = null
                         out.put(i, (*ap))
+                }
+                set i: i + 1
+            }
+            &out
+        }
+        ; Restamp ONLY inline-CONSTRUCTION value-arguments (a Tuple = struct/
+        ; variant ctor, or a PlannedCall whose name is capitalized = a Type
+        ; construction such as String/Vector/LoopSyntax) of a put/add into an
+        ; escaping receiver. A regular function-call RESULT (lowercase name)
+        ; owns its own page routing and must NOT be overridden — promoting it
+        ; cascades a bogus caller-page need across the call graph (the over-flag
+        ; class). The receiver Variable, the index, call results and explicit-#
+        ; args are all kept verbatim (restamp_operand_life# returns null for
+        ; them anyway, but the capitalized-name gate is what bounds the change).
+        function restamp_putadd_constructions(this: Planner, args: Vector[PlannedOperand], new_life: Lifetime) returns ref[Vector[PlannedOperand]]?
+        {
+            var out Vector[PlannedOperand]^rp(args.length)
+            var i: size_t 0
+            while i < args.length
+            {
+                let ap args.get i
+                if ap <> null
+                {
+                    var is_ctor false
+                    choose (*ap).expr
+                        when c: PlannedCall
+                        {
+                            if c.is_operator = false
+                                if this.name_is_capitalized(c.name)
+                                    set is_ctor: true
+                        }
+                        when t: PlannedTuple
+                            set is_ctor: true
+                        else
+                            0
+                    if is_ctor = false
+                        out.put(i, (*ap))
+                    if is_ctor
+                    {
+                        let promoted this.restamp_operand_life((*ap), new_life)
+                        if promoted <> null
+                            out.put(i, (*promoted))
+                        if promoted = null
+                            out.put(i, (*ap))
+                    }
                 }
                 set i: i + 1
             }
