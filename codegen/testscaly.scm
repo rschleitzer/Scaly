@@ -6,7 +6,7 @@
 ; cannot plan float comparisons yet (float < hangs, float = infers double);
 ; upgrade them to run tests once that works. Compile-only tests are checked
 ; with --plan --no-prelude (= the JIT harness's compileToPlan: no prelude,
-; no emission — bare union variants like None don't emit as dropped values).
+; no emission - bare union variants like None don't emit as dropped values).
 ; Run them with tests/selfhosted/run.sh <stage-binary>.
 ; Requires testcpp.scm to be included first (trim, test-input, test-expect,
 ; test-skip?, expect-type, list-head, is-newline?, id).
