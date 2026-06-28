@@ -77,7 +77,7 @@ define Parser
     {
         var keywords_builder Array[String]$()
 "   (apply-to-selected-children "keyword" (lambda (keyword) ($
-"        keywords_builder.add(String#(\""(id keyword)"\"))
+"        keywords_builder.add(String(\""(id keyword)"\"))
 "   )))
 "        Vector[String]#(keywords_builder)
     }
