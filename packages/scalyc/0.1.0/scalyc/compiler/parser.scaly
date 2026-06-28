@@ -174,7 +174,7 @@ define Parser
 
         let file_start lexer.position
         var file: FileSyntax
-        choose parse_file#()
+        choose parse_file()
             when err: Error
                 throw err
             when success: Success
@@ -226,7 +226,7 @@ define Parser
         var parsing: bool true
         while parsing
         {
-            choose parse_declaration#()
+            choose parse_declaration()
                 when err: Error
                 {
                     ; Different = no more items; stop the list (or rethrow if the
@@ -251,7 +251,7 @@ define Parser
 
     function parse_declaration(this: Parser) returns DeclarationSyntax throws ParserError
     {
-        choose parse_empty#()
+        choose parse_empty()
             when err: Error
             {
                 choose err
@@ -261,7 +261,7 @@ define Parser
             }
             when node: Success
                 return DeclarationSyntax.Empty(node)
-        choose parse_package#()
+        choose parse_package()
             when err: Error
             {
                 choose err
@@ -271,7 +271,7 @@ define Parser
             }
             when node: Success
                 return DeclarationSyntax.Package(node)
-        choose parse_use#()
+        choose parse_use()
             when err: Error
             {
                 choose err
@@ -281,7 +281,7 @@ define Parser
             }
             when node: Success
                 return DeclarationSyntax.Use(node)
-        choose parse_private#()
+        choose parse_private()
             when err: Error
             {
                 choose err
@@ -291,7 +291,7 @@ define Parser
             }
             when node: Success
                 return DeclarationSyntax.Private(node)
-        choose parse_definition#()
+        choose parse_definition()
             when err: Error
             {
                 choose err
@@ -301,7 +301,7 @@ define Parser
             }
             when node: Success
                 return DeclarationSyntax.Definition(node)
-        choose parse_function#()
+        choose parse_function()
             when err: Error
             {
                 choose err
@@ -311,7 +311,7 @@ define Parser
             }
             when node: Success
                 return DeclarationSyntax.Function(node)
-        choose parse_procedure#()
+        choose parse_procedure()
             when err: Error
             {
                 choose err
@@ -321,7 +321,7 @@ define Parser
             }
             when node: Success
                 return DeclarationSyntax.Procedure(node)
-        choose parse_operator#()
+        choose parse_operator()
             when err: Error
             {
                 choose err
@@ -331,7 +331,7 @@ define Parser
             }
             when node: Success
                 return DeclarationSyntax.Operator(node)
-        choose parse_trait#()
+        choose parse_trait()
             when err: Error
             {
                 choose err
@@ -341,7 +341,7 @@ define Parser
             }
             when node: Success
                 return DeclarationSyntax.Trait(node)
-        choose parse_macro#()
+        choose parse_macro()
             when err: Error
             {
                 choose err
@@ -351,7 +351,7 @@ define Parser
             }
             when node: Success
                 return DeclarationSyntax.Macro(node)
-        choose parse_module#()
+        choose parse_module()
             when err: Error
             {
                 choose err
@@ -361,7 +361,7 @@ define Parser
             }
             when node: Success
                 return DeclarationSyntax.Module(node)
-        choose parse_mutable#()
+        choose parse_mutable()
             when err: Error
             {
                 choose err
@@ -383,7 +383,7 @@ define Parser
 
         let export__start lexer.position
         var export_: ExportSyntax
-        choose parse_export#()
+        choose parse_export()
             when err: Error
             {
                 choose err
@@ -402,7 +402,7 @@ define Parser
 
     function parse_export(this: Parser) returns ExportSyntax throws ParserError
     {
-        choose parse_definition#()
+        choose parse_definition()
             when err: Error
             {
                 choose err
@@ -412,7 +412,7 @@ define Parser
             }
             when node: Success
                 return ExportSyntax.Definition(node)
-        choose parse_function#()
+        choose parse_function()
             when err: Error
             {
                 choose err
@@ -422,7 +422,7 @@ define Parser
             }
             when node: Success
                 return ExportSyntax.Function(node)
-        choose parse_procedure#()
+        choose parse_procedure()
             when err: Error
             {
                 choose err
@@ -432,7 +432,7 @@ define Parser
             }
             when node: Success
                 return ExportSyntax.Procedure(node)
-        choose parse_operator#()
+        choose parse_operator()
             when err: Error
             {
                 choose err
@@ -442,7 +442,7 @@ define Parser
             }
             when node: Success
                 return ExportSyntax.Operator(node)
-        choose parse_trait#()
+        choose parse_trait()
             when err: Error
             {
                 choose err
@@ -452,7 +452,7 @@ define Parser
             }
             when node: Success
                 return ExportSyntax.Trait(node)
-        choose parse_module#()
+        choose parse_module()
             when err: Error
             {
                 choose err
@@ -471,7 +471,7 @@ define Parser
         var parsing: bool true
         while parsing
         {
-            choose parse_member#()
+            choose parse_member()
                 when err: Error
                 {
                     ; Different = no more items; stop the list (or rethrow if the
@@ -496,7 +496,7 @@ define Parser
 
     function parse_member(this: Parser) returns MemberSyntax throws ParserError
     {
-        choose parse_empty#()
+        choose parse_empty()
             when err: Error
             {
                 choose err
@@ -506,7 +506,7 @@ define Parser
             }
             when node: Success
                 return MemberSyntax.Empty(node)
-        choose parse_init#()
+        choose parse_init()
             when err: Error
             {
                 choose err
@@ -516,7 +516,7 @@ define Parser
             }
             when node: Success
                 return MemberSyntax.Init(node)
-        choose parse_deinit#()
+        choose parse_deinit()
             when err: Error
             {
                 choose err
@@ -526,7 +526,7 @@ define Parser
             }
             when node: Success
                 return MemberSyntax.DeInit(node)
-        choose parse_definition#()
+        choose parse_definition()
             when err: Error
             {
                 choose err
@@ -536,7 +536,7 @@ define Parser
             }
             when node: Success
                 return MemberSyntax.Definition(node)
-        choose parse_function#()
+        choose parse_function()
             when err: Error
             {
                 choose err
@@ -546,7 +546,7 @@ define Parser
             }
             when node: Success
                 return MemberSyntax.Function(node)
-        choose parse_procedure#()
+        choose parse_procedure()
             when err: Error
             {
                 choose err
@@ -556,7 +556,7 @@ define Parser
             }
             when node: Success
                 return MemberSyntax.Procedure(node)
-        choose parse_operator#()
+        choose parse_operator()
             when err: Error
             {
                 choose err
@@ -566,7 +566,7 @@ define Parser
             }
             when node: Success
                 return MemberSyntax.Operator(node)
-        choose parse_implement#()
+        choose parse_implement()
             when err: Error
             {
                 choose err
@@ -576,7 +576,7 @@ define Parser
             }
             when node: Success
                 return MemberSyntax.Implement(node)
-        choose parse_trait#()
+        choose parse_trait()
             when err: Error
             {
                 choose err
@@ -586,7 +586,7 @@ define Parser
             }
             when node: Success
                 return MemberSyntax.Trait(node)
-        choose parse_macro#()
+        choose parse_macro()
             when err: Error
             {
                 choose err
@@ -596,7 +596,7 @@ define Parser
             }
             when node: Success
                 return MemberSyntax.Macro(node)
-        choose parse_module#()
+        choose parse_module()
             when err: Error
             {
                 choose err
@@ -649,7 +649,7 @@ define Parser
 
         let concept__start lexer.position
         var concept_: ConceptSyntax
-        choose parse_concept#()
+        choose parse_concept()
             when err: Error
             {
                 choose err
@@ -701,7 +701,7 @@ define Parser
         var parsing: bool true
         while parsing
         {
-            choose parse_genericparameter#()
+            choose parse_genericparameter()
                 when err: Error
                 {
                     ; Different = no more items; stop the list (or rethrow if the
@@ -754,7 +754,7 @@ define Parser
 
     function parse_concept(this: Parser) returns ConceptSyntax throws ParserError
     {
-        choose parse_class#()
+        choose parse_class()
             when err: Error
             {
                 choose err
@@ -764,7 +764,7 @@ define Parser
             }
             when node: Success
                 return ConceptSyntax.Class(node)
-        choose parse_namespace#()
+        choose parse_namespace()
             when err: Error
             {
                 choose err
@@ -774,7 +774,7 @@ define Parser
             }
             when node: Success
                 return ConceptSyntax.Namespace(node)
-        choose parse_union#()
+        choose parse_union()
             when err: Error
             {
                 choose err
@@ -784,7 +784,7 @@ define Parser
             }
             when node: Success
                 return ConceptSyntax.Union(node)
-        choose parse_constant#()
+        choose parse_constant()
             when err: Error
             {
                 choose err
@@ -794,7 +794,7 @@ define Parser
             }
             when node: Success
                 return ConceptSyntax.Constant(node)
-        choose parse_delegate#()
+        choose parse_delegate()
             when err: Error
             {
                 choose err
@@ -804,7 +804,7 @@ define Parser
             }
             when node: Success
                 return ConceptSyntax.Delegate(node)
-        choose parse_intrinsic#()
+        choose parse_intrinsic()
             when err: Error
             {
                 choose err
@@ -823,7 +823,7 @@ define Parser
 
         let structure_start lexer.position
         var structure: StructureSyntax
-        choose parse_structure#()
+        choose parse_structure()
             when err: Error
                 throw err
             when success: Success
@@ -984,7 +984,7 @@ define Parser
         var parsing: bool true
         while parsing
         {
-            choose parse_variant#()
+            choose parse_variant()
                 when err: Error
                 {
                     ; Different = no more items; stop the list (or rethrow if the
@@ -1055,7 +1055,7 @@ define Parser
 
         let type_start lexer.position
         var type: TypeSyntax
-        choose parse_type#()
+        choose parse_type()
             when err: Error
                 throw err
             when success: Success
@@ -1088,7 +1088,7 @@ define Parser
 
         let parameters_start lexer.position
         var parameters: ref[ParameterSetSyntax]? null
-        choose parse_parameterset#()
+        choose parse_parameterset()
             when err: Error
             {
                 choose err
@@ -1174,7 +1174,7 @@ define Parser
         var parsing: bool true
         while parsing
         {
-            choose parse_genericargument#()
+            choose parse_genericargument()
                 when err: Error
                 {
                     ; Different = no more items; stop the list (or rethrow if the
@@ -1203,7 +1203,7 @@ define Parser
 
         let type_start lexer.position
         var type: TypeSyntax
-        choose parse_type#()
+        choose parse_type()
             when err: Error
                 throw err
             when success: Success
@@ -1230,7 +1230,7 @@ define Parser
 
     function parse_parameterset(this: Parser) returns ParameterSetSyntax throws ParserError
     {
-        choose parse_parameters#()
+        choose parse_parameters()
             when err: Error
             {
                 choose err
@@ -1240,7 +1240,7 @@ define Parser
             }
             when node: Success
                 return ParameterSetSyntax.Parameters(node)
-        choose parse_type#()
+        choose parse_type()
             when err: Error
             {
                 choose err
@@ -1287,7 +1287,7 @@ define Parser
         var parsing: bool true
         while parsing
         {
-            choose parse_item#()
+            choose parse_item()
                 when err: Error
                 {
                     ; Different = no more items; stop the list (or rethrow if the
@@ -1361,7 +1361,7 @@ define Parser
 
         let type_start lexer.position
         var type: TypeSyntax
-        choose parse_type#()
+        choose parse_type()
             when err: Error
             {
                 choose err
@@ -1400,7 +1400,7 @@ define Parser
 
         let type_start lexer.position
         var type: TypeSyntax
-        choose parse_type#()
+        choose parse_type()
             when err: Error
             {
                 choose err
@@ -1436,7 +1436,7 @@ define Parser
         var parsing: bool true
         while parsing
         {
-            choose parse_use#()
+            choose parse_use()
                 when err: Error
                 {
                     ; Different = no more items; stop the list (or rethrow if the
@@ -1468,7 +1468,7 @@ define Parser
 
         let name_start lexer.position
         var name: NameSyntax
-        choose parse_name#()
+        choose parse_name()
             when err: Error
             {
                 choose err
@@ -1496,7 +1496,7 @@ define Parser
 
         let type_start lexer.position
         var type: TypeSyntax
-        choose parse_type#()
+        choose parse_type()
             when err: Error
             {
                 choose err
@@ -1569,7 +1569,7 @@ define Parser
 
         let name_start lexer.position
         var name: NameSyntax
-        choose parse_name#()
+        choose parse_name()
             when err: Error
             {
                 choose err
@@ -1649,7 +1649,7 @@ define Parser
         var parsing: bool true
         while parsing
         {
-            choose parse_method#()
+            choose parse_method()
                 when err: Error
                 {
                     ; Different = no more items; stop the list (or rethrow if the
@@ -1674,7 +1674,7 @@ define Parser
 
     function parse_method(this: Parser) returns MethodSyntax throws ParserError
     {
-        choose parse_function#()
+        choose parse_function()
             when err: Error
             {
                 choose err
@@ -1684,7 +1684,7 @@ define Parser
             }
             when node: Success
                 return MethodSyntax.Function(node)
-        choose parse_procedure#()
+        choose parse_procedure()
             when err: Error
             {
                 choose err
@@ -1694,7 +1694,7 @@ define Parser
             }
             when node: Success
                 return MethodSyntax.Procedure(node)
-        choose parse_operator#()
+        choose parse_operator()
             when err: Error
             {
                 choose err
@@ -1713,7 +1713,7 @@ define Parser
         var parsing: bool true
         while parsing
         {
-            choose parse_init#()
+            choose parse_init()
                 when err: Error
                 {
                     ; Different = no more items; stop the list (or rethrow if the
@@ -1745,7 +1745,7 @@ define Parser
 
         let lifetime_start lexer.position
         var lifetime: ref[LifetimeSyntax]? null
-        choose parse_lifetime#()
+        choose parse_lifetime()
             when err: Error
             {
                 choose err
@@ -1757,7 +1757,7 @@ define Parser
 
         let parameters_start lexer.position
         var parameters: ref[ParameterSetSyntax]? null
-        choose parse_parameterset#()
+        choose parse_parameterset()
             when err: Error
             {
                 choose err
@@ -1771,7 +1771,7 @@ define Parser
 
         let action_start lexer.position
         var action: ActionSyntax
-        choose parse_action#()
+        choose parse_action()
             when err: Error
             {
                 choose err
@@ -1801,7 +1801,7 @@ define Parser
 
         let action_start lexer.position
         var action: ActionSyntax
-        choose parse_action#()
+        choose parse_action()
             when err: Error
             {
                 choose err
@@ -1829,7 +1829,7 @@ define Parser
 
         let target_start lexer.position
         var target: TargetSyntax
-        choose parse_target#()
+        choose parse_target()
             when err: Error
             {
                 choose err
@@ -1855,7 +1855,7 @@ define Parser
 
         let target_start lexer.position
         var target: TargetSyntax
-        choose parse_target#()
+        choose parse_target()
             when err: Error
             {
                 choose err
@@ -1881,7 +1881,7 @@ define Parser
 
         let target_start lexer.position
         var target: TargetSyntax
-        choose parse_target#()
+        choose parse_target()
             when err: Error
             {
                 choose err
@@ -1900,7 +1900,7 @@ define Parser
 
     function parse_target(this: Parser) returns TargetSyntax throws ParserError
     {
-        choose parse_named#()
+        choose parse_named()
             when err: Error
             {
                 choose err
@@ -1910,7 +1910,7 @@ define Parser
             }
             when node: Success
                 return TargetSyntax.Named(node)
-        choose parse_routine#()
+        choose parse_routine()
             when err: Error
             {
                 choose err
@@ -1933,7 +1933,7 @@ define Parser
 
         let routine_start lexer.position
         var routine: RoutineSyntax
-        choose parse_routine#()
+        choose parse_routine()
             when err: Error
             {
                 choose err
@@ -1968,7 +1968,7 @@ define Parser
 
         let lifetime_start lexer.position
         var lifetime: ref[LifetimeSyntax]? null
-        choose parse_lifetime#()
+        choose parse_lifetime()
             when err: Error
             {
                 choose err
@@ -1980,7 +1980,7 @@ define Parser
 
         let parameters_start lexer.position
         var parameters: ref[ParameterSetSyntax]? null
-        choose parse_parameterset#()
+        choose parse_parameterset()
             when err: Error
             {
                 choose err
@@ -2033,7 +2033,7 @@ define Parser
 
         let implementation_start lexer.position
         var implementation: ImplementationSyntax
-        choose parse_implementation#()
+        choose parse_implementation()
             when err: Error
             {
                 choose err
@@ -2052,7 +2052,7 @@ define Parser
 
     function parse_implementation(this: Parser) returns ImplementationSyntax throws ParserError
     {
-        choose parse_action#()
+        choose parse_action()
             when err: Error
             {
                 choose err
@@ -2062,7 +2062,7 @@ define Parser
             }
             when node: Success
                 return ImplementationSyntax.Action(node)
-        choose parse_extern#()
+        choose parse_extern()
             when err: Error
             {
                 choose err
@@ -2072,7 +2072,7 @@ define Parser
             }
             when node: Success
                 return ImplementationSyntax.Extern(node)
-        choose parse_instruction#()
+        choose parse_instruction()
             when err: Error
             {
                 choose err
@@ -2082,7 +2082,7 @@ define Parser
             }
             when node: Success
                 return ImplementationSyntax.Instruction(node)
-        choose parse_intrinsic#()
+        choose parse_intrinsic()
             when err: Error
             {
                 choose err
@@ -2162,7 +2162,7 @@ define Parser
         var parsing: bool true
         while parsing
         {
-            choose parse_extend#()
+            choose parse_extend()
                 when err: Error
                 {
                     ; Different = no more items; stop the list (or rethrow if the
@@ -2191,7 +2191,7 @@ define Parser
 
         let type_start lexer.position
         var type: TypeSyntax
-        choose parse_type#()
+        choose parse_type()
             when err: Error
                 throw err
             when success: Success
@@ -2217,7 +2217,7 @@ define Parser
 
         let model_start lexer.position
         var model: ModelSyntax
-        choose parse_model#()
+        choose parse_model()
             when err: Error
             {
                 choose err
@@ -2254,7 +2254,7 @@ define Parser
         var parsing: bool true
         while parsing
         {
-            choose parse_attribute#()
+            choose parse_attribute()
                 when err: Error
                 {
                     ; Different = no more items; stop the list (or rethrow if the
@@ -2287,7 +2287,7 @@ define Parser
 
         let model_start lexer.position
         var model: ModelSyntax
-        choose parse_model#()
+        choose parse_model()
             when err: Error
             {
                 choose err
@@ -2306,7 +2306,7 @@ define Parser
 
     function parse_model(this: Parser) returns ModelSyntax throws ParserError
     {
-        choose parse_literal#()
+        choose parse_literal()
             when err: Error
             {
                 choose err
@@ -2316,7 +2316,7 @@ define Parser
             }
             when node: Success
                 return ModelSyntax.Literal(node)
-        choose parse_name#()
+        choose parse_name()
             when err: Error
             {
                 choose err
@@ -2326,7 +2326,7 @@ define Parser
             }
             when node: Success
                 return ModelSyntax.Name(node)
-        choose parse_object#()
+        choose parse_object()
             when err: Error
             {
                 choose err
@@ -2336,7 +2336,7 @@ define Parser
             }
             when node: Success
                 return ModelSyntax.Object(node)
-        choose parse_vector#()
+        choose parse_vector()
             when err: Error
             {
                 choose err
@@ -2371,7 +2371,7 @@ define Parser
         var parsing: bool true
         while parsing
         {
-            choose parse_package#()
+            choose parse_package()
                 when err: Error
                 {
                     ; Different = no more items; stop the list (or rethrow if the
@@ -2403,7 +2403,7 @@ define Parser
 
         let name_start lexer.position
         var name: NameSyntax
-        choose parse_name#()
+        choose parse_name()
             when err: Error
             {
                 choose err
@@ -2439,7 +2439,7 @@ define Parser
         let start lexer.previous_position
 
         var majorMinor: Literal
-        choose parse_literal_token#()
+        choose parse_literal_token()
             when err: Error
                 throw err
             when success: Success
@@ -2449,7 +2449,7 @@ define Parser
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#("expected '.'")))
 
         var patch: Literal
-        choose parse_literal_token#()
+        choose parse_literal_token()
             when err: Error
                 throw err
             when success: Success
@@ -2495,7 +2495,7 @@ define Parser
         var parsing: bool true
         while parsing
         {
-            choose parse_operand#()
+            choose parse_operand()
                 when err: Error
                 {
                     ; Different = no more items; stop the list (or rethrow if the
@@ -2524,7 +2524,7 @@ define Parser
 
         let expression_start lexer.position
         var expression: ExpressionSyntax
-        choose parse_expression#()
+        choose parse_expression()
             when err: Error
                 throw err
             when success: Success
@@ -2554,7 +2554,7 @@ define Parser
         var parsing: bool true
         while parsing
         {
-            choose parse_memberaccess#()
+            choose parse_memberaccess()
                 when err: Error
                 {
                     ; Different = no more items; stop the list (or rethrow if the
@@ -2586,7 +2586,7 @@ define Parser
 
         let name_start lexer.position
         var name: NameSyntax
-        choose parse_name#()
+        choose parse_name()
             when err: Error
             {
                 choose err
@@ -2605,7 +2605,7 @@ define Parser
 
     function parse_expression(this: Parser) returns ExpressionSyntax throws ParserError
     {
-        choose parse_literal#()
+        choose parse_literal()
             when err: Error
             {
                 choose err
@@ -2615,7 +2615,7 @@ define Parser
             }
             when node: Success
                 return ExpressionSyntax.Literal(node)
-        choose parse_name#()
+        choose parse_name()
             when err: Error
             {
                 choose err
@@ -2625,7 +2625,7 @@ define Parser
             }
             when node: Success
                 return ExpressionSyntax.Name(node)
-        choose parse_object#()
+        choose parse_object()
             when err: Error
             {
                 choose err
@@ -2635,7 +2635,7 @@ define Parser
             }
             when node: Success
                 return ExpressionSyntax.Object(node)
-        choose parse_vector#()
+        choose parse_vector()
             when err: Error
             {
                 choose err
@@ -2645,7 +2645,7 @@ define Parser
             }
             when node: Success
                 return ExpressionSyntax.Vector(node)
-        choose parse_block#()
+        choose parse_block()
             when err: Error
             {
                 choose err
@@ -2655,7 +2655,7 @@ define Parser
             }
             when node: Success
                 return ExpressionSyntax.Block(node)
-        choose parse_if#()
+        choose parse_if()
             when err: Error
             {
                 choose err
@@ -2665,7 +2665,7 @@ define Parser
             }
             when node: Success
                 return ExpressionSyntax.If(node)
-        choose parse_match#()
+        choose parse_match()
             when err: Error
             {
                 choose err
@@ -2675,7 +2675,7 @@ define Parser
             }
             when node: Success
                 return ExpressionSyntax.Match(node)
-        choose parse_lambda#()
+        choose parse_lambda()
             when err: Error
             {
                 choose err
@@ -2685,7 +2685,7 @@ define Parser
             }
             when node: Success
                 return ExpressionSyntax.Lambda(node)
-        choose parse_for#()
+        choose parse_for()
             when err: Error
             {
                 choose err
@@ -2695,7 +2695,7 @@ define Parser
             }
             when node: Success
                 return ExpressionSyntax.For(node)
-        choose parse_while#()
+        choose parse_while()
             when err: Error
             {
                 choose err
@@ -2705,7 +2705,7 @@ define Parser
             }
             when node: Success
                 return ExpressionSyntax.While(node)
-        choose parse_choose#()
+        choose parse_choose()
             when err: Error
             {
                 choose err
@@ -2715,7 +2715,7 @@ define Parser
             }
             when node: Success
                 return ExpressionSyntax.Choose(node)
-        choose parse_try#()
+        choose parse_try()
             when err: Error
             {
                 choose err
@@ -2725,7 +2725,7 @@ define Parser
             }
             when node: Success
                 return ExpressionSyntax.Try(node)
-        choose parse_repeat#()
+        choose parse_repeat()
             when err: Error
             {
                 choose err
@@ -2735,7 +2735,7 @@ define Parser
             }
             when node: Success
                 return ExpressionSyntax.Repeat(node)
-        choose parse_sizeof#()
+        choose parse_sizeof()
             when err: Error
             {
                 choose err
@@ -2745,7 +2745,7 @@ define Parser
             }
             when node: Success
                 return ExpressionSyntax.SizeOf(node)
-        choose parse_alignof#()
+        choose parse_alignof()
             when err: Error
             {
                 choose err
@@ -2755,7 +2755,7 @@ define Parser
             }
             when node: Success
                 return ExpressionSyntax.AlignOf(node)
-        choose parse_is#()
+        choose parse_is()
             when err: Error
             {
                 choose err
@@ -2765,7 +2765,7 @@ define Parser
             }
             when node: Success
                 return ExpressionSyntax.Is(node)
-        choose parse_as#()
+        choose parse_as()
             when err: Error
             {
                 choose err
@@ -2775,7 +2775,7 @@ define Parser
             }
             when node: Success
                 return ExpressionSyntax.As(node)
-        choose parse_lifetime#()
+        choose parse_lifetime()
             when err: Error
             {
                 choose err
@@ -2793,7 +2793,7 @@ define Parser
         let start lexer.previous_position
 
         var literal: Literal
-        choose parse_literal_token#()
+        choose parse_literal_token()
             when err: Error
                 throw err
             when success: Success
@@ -2838,7 +2838,7 @@ define Parser
         var parsing: bool true
         while parsing
         {
-            choose parse_component#()
+            choose parse_component()
                 when err: Error
                 {
                     ; Different = no more items; stop the list (or rethrow if the
@@ -2970,7 +2970,7 @@ define Parser
 
         let lifetime_start lexer.position
         var lifetime: ref[LifetimeSyntax]? null
-        choose parse_lifetime#()
+        choose parse_lifetime()
             when err: Error
             {
                 choose err
@@ -2991,7 +2991,7 @@ define Parser
         var parsing: bool true
         while parsing
         {
-            choose parse_element#()
+            choose parse_element()
                 when err: Error
                 {
                     ; Different = no more items; stop the list (or rethrow if the
@@ -3072,7 +3072,7 @@ define Parser
 
         let consequent_start lexer.position
         var consequent: ThenSyntax
-        choose parse_then#()
+        choose parse_then()
             when err: Error
             {
                 choose err
@@ -3107,7 +3107,7 @@ define Parser
 
         let statement_start lexer.position
         var statement: StatementSyntax
-        choose parse_statement#()
+        choose parse_statement()
             when err: Error
                 throw err
             when success: Success
@@ -3134,7 +3134,7 @@ define Parser
 
         let alternative_start lexer.position
         var alternative: StatementSyntax
-        choose parse_statement#()
+        choose parse_statement()
             when err: Error
             {
                 choose err
@@ -3212,7 +3212,7 @@ define Parser
         var parsing: bool true
         while parsing
         {
-            choose parse_branch#()
+            choose parse_branch()
                 when err: Error
                 {
                     ; Different = no more items; stop the list (or rethrow if the
@@ -3252,7 +3252,7 @@ define Parser
 
         let consequent_start lexer.position
         var consequent: StatementSyntax
-        choose parse_statement#()
+        choose parse_statement()
             when err: Error
             {
                 choose err
@@ -3275,7 +3275,7 @@ define Parser
         var parsing: bool true
         while parsing
         {
-            choose parse_case#()
+            choose parse_case()
                 when err: Error
                 {
                     ; Different = no more items; stop the list (or rethrow if the
@@ -3333,7 +3333,7 @@ define Parser
 
         let condition_start lexer.position
         var condition: ConditionSyntax
-        choose parse_condition#()
+        choose parse_condition()
             when err: Error
             {
                 choose err
@@ -3364,7 +3364,7 @@ define Parser
 
         let action_start lexer.position
         var action: ActionSyntax
-        choose parse_action#()
+        choose parse_action()
             when err: Error
             {
                 choose err
@@ -3444,7 +3444,7 @@ define Parser
 
         let lifetime_start lexer.position
         var lifetime: ref[LifetimeSyntax]? null
-        choose parse_lifetime#()
+        choose parse_lifetime()
             when err: Error
             {
                 choose err
@@ -3456,7 +3456,7 @@ define Parser
 
         let condition_start lexer.position
         var condition: ConditionSyntax
-        choose parse_condition#()
+        choose parse_condition()
             when err: Error
             {
                 choose err
@@ -3503,7 +3503,7 @@ define Parser
 
     function parse_condition(this: Parser) returns ConditionSyntax throws ParserError
     {
-        choose parse_operation#()
+        choose parse_operation()
             when err: Error
             {
                 choose err
@@ -3513,7 +3513,7 @@ define Parser
             }
             when node: Success
                 return ConditionSyntax.Operation(node)
-        choose parse_let#()
+        choose parse_let()
             when err: Error
             {
                 choose err
@@ -3532,7 +3532,7 @@ define Parser
         var parsing: bool true
         while parsing
         {
-            choose parse_when#()
+            choose parse_when()
                 when err: Error
                 {
                     ; Different = no more items; stop the list (or rethrow if the
@@ -3571,7 +3571,7 @@ define Parser
 
         let variant_start lexer.position
         var variant: NameSyntax
-        choose parse_name#()
+        choose parse_name()
             when err: Error
             {
                 choose err
@@ -3587,7 +3587,7 @@ define Parser
 
         let statement_start lexer.position
         var statement: StatementSyntax
-        choose parse_statement#()
+        choose parse_statement()
             when err: Error
             {
                 choose err
@@ -3612,7 +3612,7 @@ define Parser
         var parsing: bool true
         while parsing
         {
-            choose parse_statement#()
+            choose parse_statement()
                 when err: Error
                 {
                     ; Different = no more items; stop the list (or rethrow if the
@@ -3637,7 +3637,7 @@ define Parser
 
     function parse_statement(this: Parser) returns StatementSyntax throws ParserError
     {
-        choose parse_empty#()
+        choose parse_empty()
             when err: Error
             {
                 choose err
@@ -3647,7 +3647,7 @@ define Parser
             }
             when node: Success
                 return StatementSyntax.Empty(node)
-        choose parse_operation#()
+        choose parse_operation()
             when err: Error
             {
                 choose err
@@ -3657,7 +3657,7 @@ define Parser
             }
             when node: Success
                 return StatementSyntax.Operation(node)
-        choose parse_let#()
+        choose parse_let()
             when err: Error
             {
                 choose err
@@ -3667,7 +3667,7 @@ define Parser
             }
             when node: Success
                 return StatementSyntax.Let(node)
-        choose parse_var#()
+        choose parse_var()
             when err: Error
             {
                 choose err
@@ -3677,7 +3677,7 @@ define Parser
             }
             when node: Success
                 return StatementSyntax.Var(node)
-        choose parse_mutable#()
+        choose parse_mutable()
             when err: Error
             {
                 choose err
@@ -3687,7 +3687,7 @@ define Parser
             }
             when node: Success
                 return StatementSyntax.Mutable(node)
-        choose parse_set#()
+        choose parse_set()
             when err: Error
             {
                 choose err
@@ -3697,7 +3697,7 @@ define Parser
             }
             when node: Success
                 return StatementSyntax.Set(node)
-        choose parse_continue#()
+        choose parse_continue()
             when err: Error
             {
                 choose err
@@ -3707,7 +3707,7 @@ define Parser
             }
             when node: Success
                 return StatementSyntax.Continue(node)
-        choose parse_break#()
+        choose parse_break()
             when err: Error
             {
                 choose err
@@ -3717,7 +3717,7 @@ define Parser
             }
             when node: Success
                 return StatementSyntax.Break(node)
-        choose parse_return#()
+        choose parse_return()
             when err: Error
             {
                 choose err
@@ -3727,7 +3727,7 @@ define Parser
             }
             when node: Success
                 return StatementSyntax.Return(node)
-        choose parse_throw#()
+        choose parse_throw()
             when err: Error
             {
                 choose err
@@ -3749,7 +3749,7 @@ define Parser
 
         let binding_start lexer.position
         var binding: BindingSyntax
-        choose parse_binding#()
+        choose parse_binding()
             when err: Error
             {
                 choose err
@@ -3775,7 +3775,7 @@ define Parser
 
         let binding_start lexer.position
         var binding: BindingSyntax
-        choose parse_binding#()
+        choose parse_binding()
             when err: Error
             {
                 choose err
@@ -3801,7 +3801,7 @@ define Parser
 
         let binding_start lexer.position
         var binding: BindingSyntax
-        choose parse_binding#()
+        choose parse_binding()
             when err: Error
             {
                 choose err
@@ -3865,7 +3865,7 @@ define Parser
 
         let spec_start lexer.position
         var spec: BindingSpecSyntax
-        choose parse_bindingspec#()
+        choose parse_bindingspec()
             when err: Error
             {
                 choose err
@@ -3888,7 +3888,7 @@ define Parser
         var parsing: bool true
         while parsing
         {
-            choose parse_bindingspec#()
+            choose parse_bindingspec()
                 when err: Error
                 {
                     ; Different = no more items; stop the list (or rethrow if the
@@ -3913,7 +3913,7 @@ define Parser
 
     function parse_bindingspec(this: Parser) returns BindingSpecSyntax throws ParserError
     {
-        choose parse_structure#()
+        choose parse_structure()
             when err: Error
             {
                 choose err
@@ -3923,7 +3923,7 @@ define Parser
             }
             when node: Success
                 return BindingSpecSyntax.Structure(node)
-        choose parse_type#()
+        choose parse_type()
             when err: Error
             {
                 choose err
@@ -3933,7 +3933,7 @@ define Parser
             }
             when node: Success
                 return BindingSpecSyntax.Type(node)
-        choose parse_array#()
+        choose parse_array()
             when err: Error
             {
                 choose err
@@ -4008,7 +4008,7 @@ define Parser
         var parsing: bool true
         while parsing
         {
-            choose parse_part#()
+            choose parse_part()
                 when err: Error
                 {
                     ; Different = no more items; stop the list (or rethrow if the
@@ -4033,7 +4033,7 @@ define Parser
 
     function parse_part(this: Parser) returns PartSyntax throws ParserError
     {
-        choose parse_field#()
+        choose parse_field()
             when err: Error
             {
                 choose err
@@ -4043,7 +4043,7 @@ define Parser
             }
             when node: Success
                 return PartSyntax.Field(node)
-        choose parse_property#()
+        choose parse_property()
             when err: Error
             {
                 choose err
@@ -4065,7 +4065,7 @@ define Parser
 
         let property_start lexer.position
         var property: PropertySyntax
-        choose parse_property#()
+        choose parse_property()
             when err: Error
             {
                 choose err
@@ -4088,7 +4088,7 @@ define Parser
         var parsing: bool true
         while parsing
         {
-            choose parse_property#()
+            choose parse_property()
                 when err: Error
                 {
                     ; Different = no more items; stop the list (or rethrow if the
@@ -4121,7 +4121,7 @@ define Parser
 
         let annotation_start lexer.position
         var annotation: TypeAnnotationSyntax
-        choose parse_typeannotation#()
+        choose parse_typeannotation()
             when err: Error
             {
                 choose err
@@ -4176,7 +4176,7 @@ define Parser
 
         let type_start lexer.position
         var type: TypeSyntax
-        choose parse_type#()
+        choose parse_type()
             when err: Error
             {
                 choose err
@@ -4346,7 +4346,7 @@ define Parser
 
         let block_start lexer.position
         var block: ActionSyntax
-        choose parse_action#()
+        choose parse_action()
             when err: Error
             {
                 choose err
@@ -4422,7 +4422,7 @@ define Parser
 
         let action_start lexer.position
         var action: ActionSyntax
-        choose parse_action#()
+        choose parse_action()
             when err: Error
             {
                 choose err
@@ -4478,7 +4478,7 @@ define Parser
 
         let action_start lexer.position
         var action: ActionSyntax
-        choose parse_action#()
+        choose parse_action()
             when err: Error
             {
                 choose err
@@ -4501,7 +4501,7 @@ define Parser
         var parsing: bool true
         while parsing
         {
-            choose parse_action#()
+            choose parse_action()
                 when err: Error
                 {
                     ; Different = no more items; stop the list (or rethrow if the
@@ -4526,7 +4526,7 @@ define Parser
 
     function parse_action(this: Parser) returns ActionSyntax throws ParserError
     {
-        choose parse_operation#()
+        choose parse_operation()
             when err: Error
             {
                 choose err
@@ -4536,7 +4536,7 @@ define Parser
             }
             when node: Success
                 return ActionSyntax.Operation(node)
-        choose parse_set#()
+        choose parse_set()
             when err: Error
             {
                 choose err
@@ -4546,7 +4546,7 @@ define Parser
             }
             when node: Success
                 return ActionSyntax.Set(node)
-        choose parse_block#()
+        choose parse_block()
             when err: Error
             {
                 choose err
@@ -4669,7 +4669,7 @@ define Parser
 
         let type_start lexer.position
         var type: TypeSyntax
-        choose parse_type#()
+        choose parse_type()
             when err: Error
             {
                 choose err
@@ -4695,7 +4695,7 @@ define Parser
 
         let type_start lexer.position
         var type: TypeSyntax
-        choose parse_type#()
+        choose parse_type()
             when err: Error
             {
                 choose err
@@ -4721,7 +4721,7 @@ define Parser
 
         let name_start lexer.position
         var name: NameSyntax
-        choose parse_name#()
+        choose parse_name()
             when err: Error
             {
                 choose err
@@ -4747,7 +4747,7 @@ define Parser
 
         let type_start lexer.position
         var type: TypeSyntax
-        choose parse_type#()
+        choose parse_type()
             when err: Error
             {
                 choose err
@@ -4770,7 +4770,7 @@ define Parser
         var parsing: bool true
         while parsing
         {
-            choose parse_type#()
+            choose parse_type()
                 when err: Error
                 {
                     ; Different = no more items; stop the list (or rethrow if the
@@ -4799,7 +4799,7 @@ define Parser
 
         let name_start lexer.position
         var name: NameSyntax
-        choose parse_name#()
+        choose parse_name()
             when err: Error
                 throw err
             when success: Success
@@ -4831,7 +4831,7 @@ define Parser
 
         let lifetime_start lexer.position
         var lifetime: ref[LifetimeSyntax]? null
-        choose parse_lifetime#()
+        choose parse_lifetime()
             when err: Error
             {
                 choose err
@@ -4878,7 +4878,7 @@ define Parser
         var parsing: bool true
         while parsing
         {
-            choose parse_extension#()
+            choose parse_extension()
                 when err: Error
                 {
                     ; Different = no more items; stop the list (or rethrow if the
@@ -4919,7 +4919,7 @@ define Parser
 
     function parse_lifetime(this: Parser) returns LifetimeSyntax throws ParserError
     {
-        choose parse_call#()
+        choose parse_call()
             when err: Error
             {
                 choose err
@@ -4929,7 +4929,7 @@ define Parser
             }
             when node: Success
                 return LifetimeSyntax.Call(node)
-        choose parse_local#()
+        choose parse_local()
             when err: Error
             {
                 choose err
@@ -4939,7 +4939,7 @@ define Parser
             }
             when node: Success
                 return LifetimeSyntax.Local(node)
-        choose parse_reference#()
+        choose parse_reference()
             when err: Error
             {
                 choose err
@@ -4949,7 +4949,7 @@ define Parser
             }
             when node: Success
                 return LifetimeSyntax.Reference(node)
-        choose parse_thrown#()
+        choose parse_thrown()
             when err: Error
             {
                 choose err

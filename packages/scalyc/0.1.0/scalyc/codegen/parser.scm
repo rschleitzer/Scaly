@@ -114,7 +114,7 @@ define Parser
         var list List["(id syntax)"Syntax]$()
         while true
         {
-            choose parse_"(downcase-string (id syntax))"#()
+            choose parse_"(downcase-string (id syntax))"()
                 when Error: err
                 {
                     choose err
@@ -140,7 +140,7 @@ define Parser
             ;; Abstract syntax - try each alternative
             ($
                 (apply-to-children-of syntax (lambda (content) ($
-"        choose parse_"(downcase-string (link content))"#()
+"        choose parse_"(downcase-string (link content))"()
             when Error: err
             {
                 choose err
@@ -171,7 +171,7 @@ define Parser
 "
         let " prop "_start lexer.position
         var " prop ": ref[" (if (multiple? content) ($ "Vector[" (link content) "Syntax]") ($ (link content) "Syntax")) "]? null
-        choose parse_"(downcase-string (link content))(if (multiple? content) "_list" "")"#()
+        choose parse_"(downcase-string (link content))(if (multiple? content) "_list#" (if (abstract? (element-with-id (link content))) "" "#"))"()
             when Error: err
             {
                 choose err
@@ -188,7 +188,7 @@ define Parser
 "
         let " prop "_start lexer.position
         var " prop ": " type-name "
-        choose parse_"(downcase-string (link content))(if (multiple? content) "_list" "")"#()
+        choose parse_"(downcase-string (link content))(if (multiple? content) "_list#" "")"()
             when Error: err
 "
                                     (if (equal? 1 (child-number content))
@@ -216,7 +216,7 @@ define Parser
                             ($
 "
         var " prop ": Literal
-        choose parse_literal_token#()
+        choose parse_literal_token()
             when Error: err
                 throw err
             when Success: success
