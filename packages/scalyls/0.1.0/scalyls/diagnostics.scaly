@@ -77,13 +77,13 @@ define diagnostics
                     }
                     when d: Different
                     {
-                        sb.append(diagnostics.diag_object#(text, 0 as size_t, String#("unexpected top-level construct")))
+                        sb.append(diagnostics.diag_object#(text, 0 as size_t, "unexpected top-level construct"))
                         set first: false
                     }
             }
             when program: Success
             {
-                let prog_name String#("document")
+                let prog_name "document"
                 let model Modeler.build_program#(path, prog_name, program, true)
 
                 var planner Planner.Planner$(path)

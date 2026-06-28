@@ -332,37 +332,37 @@ define worker
     ; unavailable / crashed / hung (and respawns it next time). The text is
     ; the editor's latest buffer (the position frame is unused for diagnostics).
     function analyze#(rp, uri: String, text: String) returns String
-        worker.exchange#("d", uri, text, String#(""), diagnostics.clear_diagnostics#(uri))
+        worker.exchange#("d", uri, text, "", diagnostics.clear_diagnostics#(uri))
 
     ; Build the documentSymbol result for `uri` in the worker. `text` is the
     ; in-memory document copy (empty -> worker reads disk). Returns the JSON
     ; array; an empty array `[]` if the worker is unavailable/crashed/hung.
     function symbols#(rp, uri: String, text: String) returns String
-        worker.exchange#("s", uri, text, String#(""), String#("[]"))
+        worker.exchange#("s", uri, text, "", "[]")
 
     ; Hover for `uri` at the packed "<line> <char>" position. `text` is the
     ; in-memory document copy (empty -> worker reads disk). Returns the LSP
     ; hover object, or "" (empty) if unavailable / no symbol at the cursor.
     function hover#(rp, uri: String, text: String, packed: String) returns String
-        worker.exchange#("h", uri, text, packed, String#(""))
+        worker.exchange#("h", uri, text, packed, "")
 
     ; Go-to-definition for `uri` at the packed "<line> <char>" position.
     ; `text` is the in-memory copy (empty -> worker reads disk). Returns the
     ; LSP Location object, or "" if unavailable / no matching declaration.
     function definition#(rp, uri: String, text: String, packed: String) returns String
-        worker.exchange#("g", uri, text, packed, String#(""))
+        worker.exchange#("g", uri, text, packed, "")
 
     ; Find-all-references for `uri` at the packed "<line> <char>" position.
     ; `text` is the in-memory copy (empty -> worker reads disk). Returns the
     ; LSP Location[] array; `[]` if unavailable / crashed / hung / no identifier.
     function references#(rp, uri: String, text: String, packed: String) returns String
-        worker.exchange#("r", uri, text, packed, String#("[]"))
+        worker.exchange#("r", uri, text, packed, "[]")
 
     ; documentHighlight for `uri` at the packed "<line> <char>" position.
     ; `text` is the in-memory copy (empty -> worker reads disk). Returns the
     ; LSP DocumentHighlight[] array (ranges only); `[]` if unavailable / none.
     function highlights#(rp, uri: String, text: String, packed: String) returns String
-        worker.exchange#("l", uri, text, packed, String#("[]"))
+        worker.exchange#("l", uri, text, packed, "[]")
 
     ; Completion for `uri` at the packed "<line> <char>" position. `text` is
     ; the in-memory copy (empty -> worker reads disk). Returns the members of
@@ -370,44 +370,44 @@ define worker
     ; concept, else a CompletionItem[] of every declared name; `[]` if
     ; unavailable.
     function completion#(rp, uri: String, text: String, packed: String) returns String
-        worker.exchange#("c", uri, text, packed, String#("[]"))
+        worker.exchange#("c", uri, text, packed, "[]")
 
     ; Rename for `uri`. `packed` is "<line> <char> <newName>". `text` is the
     ; in-memory copy (empty -> worker reads disk). Returns the LSP
     ; WorkspaceEdit, or "" if unavailable / no identifier at the cursor.
     function rename#(rp, uri: String, text: String, packed: String) returns String
-        worker.exchange#("n", uri, text, packed, String#(""))
+        worker.exchange#("n", uri, text, packed, "")
 
     ; prepareRename for `uri` at the packed "<line> <char>" position. `text`
     ; is the in-memory copy (empty -> worker reads disk). Returns the LSP Range
     ; of the renameable identifier, or "" if unavailable / not renameable.
     function prepare_rename#(rp, uri: String, text: String, packed: String) returns String
-        worker.exchange#("p", uri, text, packed, String#(""))
+        worker.exchange#("p", uri, text, packed, "")
 
     ; signatureHelp for `uri` at the packed "<line> <char>" position. `text`
     ; is the in-memory copy (empty -> worker reads disk). Returns the LSP
     ; SignatureHelp, or "" if unavailable / cursor not inside a known call.
     function signature_help#(rp, uri: String, text: String, packed: String) returns String
-        worker.exchange#("f", uri, text, packed, String#(""))
+        worker.exchange#("f", uri, text, packed, "")
 
     ; inlayHint for `uri` over the packed "<sl> <sc> <el> <ec>" range. `text` is
     ; the in-memory copy (empty -> worker reads disk). Returns the LSP
     ; InlayHint[] array; `[]` if unavailable / crashed / hung.
     function inlay_hints#(rp, uri: String, text: String, packed: String) returns String
-        worker.exchange#("y", uri, text, packed, String#("[]"))
+        worker.exchange#("y", uri, text, packed, "[]")
 
     ; foldingRange for `uri` (uri-only, no position). `text` is the in-memory
     ; copy (empty -> worker reads disk). Returns the LSP FoldingRange[] array;
     ; `[]` if unavailable / crashed / hung.
     function folding#(rp, uri: String, text: String) returns String
-        worker.exchange#("o", uri, text, String#(""), String#("[]"))
+        worker.exchange#("o", uri, text, "", "[]")
 
     ; Semantic type at the packed "<line> <char>" position. `text` is the
     ; in-memory copy (empty -> worker reads disk). Returns the framed reply
     ; "1<name>" on a hit, "0" on a miss, or "" if unavailable / crashed / hung
     ; (the server decodes the tag and falls back to the lexical hover).
     function semantic_type#(rp, uri: String, text: String, packed: String) returns String
-        worker.exchange#("x", uri, text, packed, String#(""))
+        worker.exchange#("x", uri, text, packed, "")
 
     ; semanticTokens for `uri` (uri-only, no position). `text` is the in-memory
     ; copy (empty -> worker reads disk). Returns the LSP {"data":[...]} object;
@@ -424,7 +424,7 @@ define worker
         fb.append(0x5B as char)                    ; [
         fb.append(0x5D as char)                    ; ]
         fb.append(0x7D as char)                    ; }
-        worker.exchange#("t", uri, text, String#(""), fb.to_string#())
+        worker.exchange#("t", uri, text, "", fb.to_string#())
     }
 
     ; workspace/symbol: search every .scaly file under `root` for declarations
@@ -432,7 +432,7 @@ define worker
     ; frame; the text frame is unused. Returns SymbolInformation[]; `[]` if
     ; unavailable / no root / no match.
     function workspace_symbols#(rp, root: String, query: String) returns String
-        worker.exchange#("w", root, String#(""), query, String#("[]"))
+        worker.exchange#("w", root, "", query, "[]")
 
     ; Send one (kind,uri,text,position) request to the worker and return its
     ; framed reply, or `fallback` if the worker is unavailable / crashed /

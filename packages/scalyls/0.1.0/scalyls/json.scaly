@@ -512,12 +512,12 @@ define json
         ; yield an empty/dropped value under stage-0.
         choose this
             when nul: Null
-                return String#("null")
+                return "null"
             when b: Bool
             {
                 if b
-                    return String#("true")
-                return String#("false")
+                    return "true"
+                return "false"
             }
             when n: Number
                 return json.format_i64#(n)
@@ -559,7 +559,7 @@ define json
                 return sb.to_string#()
             }
             else
-                return String#("null")
+                return "null"
     }
 
     ; Quote and escape a string into a "..."-wrapped JSON string literal.
@@ -620,7 +620,7 @@ define json
     function format_i64#(rp, n: i64) returns String
     {
         if n = 0
-            return String#("0")
+            return "0"
 
         var sb StringBuilder#()
         var value n

@@ -138,7 +138,7 @@ define symindex
             if s.blob_data <> null
                 return String#(s.blob_data as pointer[const_char], s.blob_len)
         }
-        String#("")
+        ""
     }
 
     ; Replace slot `s`'s blob with a fresh malloc'd copy of `blob`'s bytes,

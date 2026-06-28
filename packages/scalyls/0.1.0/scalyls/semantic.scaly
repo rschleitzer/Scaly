@@ -134,16 +134,16 @@ define semantic
         ; whitespace.
         let len source.get_length()
         if offset >= len
-            return String#("")
+            return ""
         let b source.get offset
         if b = (0x20 as u8)
-            return String#("")
+            return ""
         if b = (0x09 as u8)
-            return String#("")
+            return ""
         if b = (0x0A as u8)
-            return String#("")
+            return ""
         if b = (0x0D as u8)
-            return String#("")
+            return ""
         let path diagnostics.strip_uri#(uri)
         semantic.resolve_at#(source, path, 0 as size_t, offset)
     }
@@ -179,13 +179,13 @@ define semantic
     function resolve_at#(rp, source: String, path: String, mode: size_t, offset: size_t) returns String
     {
         var p parser.Parser$(source)
-        var result String#("")
+        var result ""
         choose p.parse_program#()
             when err: Error
-                return String#("")
+                return ""
             when program: Success
             {
-                let prog_name String#("document")
+                let prog_name "document"
                 let model Modeler.build_program#(path, prog_name, program, true)
                 var planner Planner.Planner$(path)
                 diagnostics.register_packages(&planner, &model)
@@ -233,7 +233,7 @@ define semantic
     }
 
     function none#(rp) returns ResolveResult
-        ResolveResult(false, 0 as size_t, String#(""))
+        ResolveResult(false, 0 as size_t, "")
 
     ; ====================================================================
     ; Plan walk — first FOUND match wins across non-overlapping siblings.
@@ -883,11 +883,11 @@ define semantic
     function type_name#(rp, pt: PlannedType) returns String
     {
         if pt.variable <> null
-            return String#("")
+            return ""
         if pt.name.get_length() = (0 as size_t)
-            return String#("")
+            return ""
         if pt.name.equals("void")
-            return String#("")
+            return ""
         String#(pt.name)
     }
 }

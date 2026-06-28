@@ -168,21 +168,21 @@ define symbols
             when def: DefinitionSyntax
                 return symbols.definition_symbol#(source, def)
             when m: ModuleSyntax
-                return symbols.symbol_object#(source, m.name, 2 as i64, m.start, m.end, String#("[]"))
+                return symbols.symbol_object#(source, m.name, 2 as i64, m.start, m.end, "[]")
             when mut: MutableSyntax
-                return symbols.symbol_object#(source, mut.binding.name, 13 as i64, mut.start, mut.end, String#("[]"))
+                return symbols.symbol_object#(source, mut.binding.name, 13 as i64, mut.start, mut.end, "[]")
             when priv: PrivateSyntax
                 return symbols.export_symbol#(source, priv.export_)
             when e: EmptySyntax
-                return String#("")
+                return ""
             when pkg: PackageSyntax
-                return String#("")
+                return ""
             when u: UseSyntax
-                return String#("")
+                return ""
             when t: TraitSyntax
-                return String#("")
+                return ""
             when mac: MacroSyntax
-                return String#("")
+                return ""
     }
 
     ; A `private` declaration unwraps to its exported construct.
@@ -198,16 +198,16 @@ define symbols
             when def: DefinitionSyntax
                 return symbols.definition_symbol#(source, def)
             when t: TraitSyntax
-                return String#("")
+                return ""
             when m: ModuleSyntax
-                return symbols.symbol_object#(source, m.name, 2 as i64, m.start, m.end, String#("[]"))
+                return symbols.symbol_object#(source, m.name, 2 as i64, m.start, m.end, "[]")
     }
 
     ; A function / procedure / operator: name from its target, no children.
     function routine_symbol#(rp, source: String, target: TargetSyntax, start: size_t, end: size_t, kind: i64) returns String
     {
         let name symbols.target_name#(target)
-        symbols.symbol_object#(source, name, kind, start, end, String#("[]"))
+        symbols.symbol_object#(source, name, kind, start, end, "[]")
     }
 
     ; The declared name of a routine target (operator targets may be the
@@ -218,7 +218,7 @@ define symbols
             when named: NamedSyntax
                 return String#(named.name)
             when r: RoutineSyntax
-                return String#("[]")
+                return "[]"
     }
 
     ; A `define X` declaration. Kind + children depend on the concept:
@@ -229,7 +229,7 @@ define symbols
     function definition_symbol#(rp, source: String, def: DefinitionSyntax) returns String
     {
         var kind: i64 (23 as i64)
-        var children String#("[]")
+        var children "[]"
         choose def.concept_
             when c: ClassSyntax
             {
@@ -309,21 +309,21 @@ define symbols
             when o: OperatorSyntax
                 return symbols.routine_symbol#(source, o.target, o.start, o.end, 25 as i64)
             when ini: InitSyntax
-                return symbols.symbol_object#(source, String#("init"), 9 as i64, ini.start, ini.end, String#("[]"))
+                return symbols.symbol_object#(source, "init", 9 as i64, ini.start, ini.end, "[]")
             when dei: DeInitSyntax
-                return symbols.symbol_object#(source, String#("deinit"), 9 as i64, dei.start, dei.end, String#("[]"))
+                return symbols.symbol_object#(source, "deinit", 9 as i64, dei.start, dei.end, "[]")
             when def: DefinitionSyntax
                 return symbols.definition_symbol#(source, def)
             when e: EmptySyntax
-                return String#("")
+                return ""
             when im: ImplementSyntax
-                return String#("")
+                return ""
             when t: TraitSyntax
-                return String#("")
+                return ""
             when mac: MacroSyntax
-                return String#("")
+                return ""
             when m: ModuleSyntax
-                return symbols.symbol_object#(source, m.name, 2 as i64, m.start, m.end, String#("[]"))
+                return symbols.symbol_object#(source, m.name, 2 as i64, m.start, m.end, "[]")
     }
 
     ; Children of a namespace: its nested declarations (reuses decl_symbol#).
@@ -382,7 +382,7 @@ define symbols
                 {
                     if first = false
                         sb.append(0x2C as char)
-                    let vsym symbols.symbol_object#(source, vptr.name, 22 as i64, vptr.start, vptr.end, String#("[]"))
+                    let vsym symbols.symbol_object#(source, vptr.name, 22 as i64, vptr.start, vptr.end, "[]")
                     var ci: size_t 0
                     let cn vsym.get_length()
                     while ci < cn
@@ -607,19 +607,19 @@ define symbols
             when m: ModuleSyntax
                 return symbols.fold_range#(source, m.start, m.end)
             when mut: MutableSyntax
-                return String#("")
+                return ""
             when priv: PrivateSyntax
                 return symbols.fold_export#(source, priv.export_)
             when e: EmptySyntax
-                return String#("")
+                return ""
             when pkg: PackageSyntax
-                return String#("")
+                return ""
             when u: UseSyntax
-                return String#("")
+                return ""
             when t: TraitSyntax
-                return String#("")
+                return ""
             when mac: MacroSyntax
-                return String#("")
+                return ""
     }
 
     ; A `private` declaration unwraps to its exported construct.
@@ -635,7 +635,7 @@ define symbols
             when def: DefinitionSyntax
                 return symbols.fold_definition#(source, def)
             when t: TraitSyntax
-                return String#("")
+                return ""
             when m: ModuleSyntax
                 return symbols.fold_range#(source, m.start, m.end)
     }
@@ -643,7 +643,7 @@ define symbols
     ; A `define X` -> its own range followed by its members' ranges.
     function fold_definition#(rp, source: String, def: DefinitionSyntax) returns String
     {
-        var members String#("")
+        var members ""
         choose def.concept_
             when c: ClassSyntax
                 set members: symbols.fold_body#(source, c.body)
@@ -715,13 +715,13 @@ define symbols
             when def: DefinitionSyntax
                 return symbols.fold_definition#(source, def)
             when e: EmptySyntax
-                return String#("")
+                return ""
             when im: ImplementSyntax
-                return String#("")
+                return ""
             when t: TraitSyntax
-                return String#("")
+                return ""
             when mac: MacroSyntax
-                return String#("")
+                return ""
             when m: ModuleSyntax
                 return symbols.fold_range#(source, m.start, m.end)
     }
@@ -812,7 +812,7 @@ define symbols
         let real_end symbols.last_real_offset(source, end)
         let end_line symbols.line_at(source, real_end)
         if end_line <= start_line
-            return String#("")
+            return ""
         var sb StringBuilder#()
         sb.append(0x7B as char)                    ; {
         sb.append(symbols.key#("startLine"))
@@ -1517,7 +1517,7 @@ define symbols
                             if i0 <> null
                             {
                                 let it0 (*i0)
-                                let kw_this String#("this")
+                                let kw_this "this"
                                 if it0.name.equals(kw_this)
                                     set i: 1 as size_t
                             }
@@ -1569,7 +1569,7 @@ define symbols
             sb.append(0x0A as char)                ; newline
             return sb.to_string#()
         }
-        String#("")
+        ""
     }
 
     ; One routine-range record "R\t<start>\t<end>\n", emitted for EVERY routine
@@ -1636,7 +1636,7 @@ define symbols
                 if off + nlen <= source.get_length()
                     if symbols.range_equals(source, off, prop.name, 0 as size_t, nlen)
                         return symbols.f_record#(off)
-                return String#("")
+                return ""
             }
             when prop2: Property
             {
@@ -1645,7 +1645,7 @@ define symbols
                 if off + nlen <= source.get_length()
                     if symbols.range_equals(source, off, prop2.name, 0 as size_t, nlen)
                         return symbols.f_record#(off)
-                return String#("")
+                return ""
             }
     }
 
@@ -1663,21 +1663,21 @@ define symbols
             when def: DefinitionSyntax
                 return symbols.st_definition#(source, def)
             when m: ModuleSyntax
-                return String#("")
+                return ""
             when mut: MutableSyntax
-                return String#("")
+                return ""
             when priv: PrivateSyntax
                 return symbols.st_export#(source, priv.export_)
             when e: EmptySyntax
-                return String#("")
+                return ""
             when pkg: PackageSyntax
-                return String#("")
+                return ""
             when u: UseSyntax
-                return String#("")
+                return ""
             when t: TraitSyntax
-                return String#("")
+                return ""
             when mac: MacroSyntax
-                return String#("")
+                return ""
     }
 
     ; A `private` declaration unwraps to its exported construct.
@@ -1693,9 +1693,9 @@ define symbols
             when def: DefinitionSyntax
                 return symbols.st_definition#(source, def)
             when t: TraitSyntax
-                return String#("")
+                return ""
             when m: ModuleSyntax
-                return String#("")
+                return ""
     }
 
     ; A `define X` -> field records (class structure) + member scope records.
@@ -1709,11 +1709,11 @@ define symbols
             when un: UnionSyntax
                 return symbols.st_union#(source, un)
             when cn: ConstantSyntax
-                return String#("")
+                return ""
             when dl: DelegateSyntax
-                return String#("")
+                return ""
             when ic: IntrinsicSyntax
-                return String#("")
+                return ""
     }
 
     ; Class: field declarations from the structure parts, then body members.
@@ -1800,19 +1800,19 @@ define symbols
             when ini: InitSyntax
                 return symbols.st_init#(source, ini.start, ini.end, ini.parameters)
             when dei: DeInitSyntax
-                return String#("")
+                return ""
             when def: DefinitionSyntax
                 return symbols.st_definition#(source, def)
             when e: EmptySyntax
-                return String#("")
+                return ""
             when im: ImplementSyntax
-                return String#("")
+                return ""
             when t: TraitSyntax
-                return String#("")
+                return ""
             when mac: MacroSyntax
-                return String#("")
+                return ""
             when m: ModuleSyntax
-                return String#("")
+                return ""
     }
 
     ; Nested declarations of a namespace -> concatenated records.
@@ -1847,7 +1847,7 @@ define symbols
     ; A union -> its body members' records (variants carry no params/fields).
     function st_union#(rp, source: String, un: UnionSyntax) returns String
     {
-        var result String#("")
+        var result ""
         if un.body <> null
             set result: symbols.st_body#(source, un.body)
         result
@@ -2064,7 +2064,7 @@ define symbols
             sb.append(json.format_i64#(best_end as i64))
             return sb.to_string#()
         }
-        String#("")
+        ""
     }
 
     ; True when `off` is the start offset of a declared field/property name.
@@ -2207,15 +2207,15 @@ define symbols
             when priv: PrivateSyntax
                 return symbols.completion_export#(source, priv.export_)
             when e: EmptySyntax
-                return String#("")
+                return ""
             when pkg: PackageSyntax
-                return String#("")
+                return ""
             when u: UseSyntax
-                return String#("")
+                return ""
             when t: TraitSyntax
-                return String#("")
+                return ""
             when mac: MacroSyntax
-                return String#("")
+                return ""
     }
 
     ; A `private` declaration unwraps to its exported construct.
@@ -2231,7 +2231,7 @@ define symbols
             when def: DefinitionSyntax
                 return symbols.completion_definition#(source, def)
             when t: TraitSyntax
-                return String#("")
+                return ""
             when m: ModuleSyntax
                 return symbols.completion_item#(m.name, 9 as i64)
     }
@@ -2240,7 +2240,7 @@ define symbols
     function completion_definition#(rp, source: String, def: DefinitionSyntax) returns String
     {
         var kind: i64 (22 as i64)
-        var members String#("")
+        var members ""
         choose def.concept_
             when c: ClassSyntax
             {
@@ -2338,19 +2338,19 @@ define symbols
             when o: OperatorSyntax
                 return symbols.completion_item#(symbols.target_name#(o.target), 24 as i64)
             when ini: InitSyntax
-                return symbols.completion_item#(String#("init"), 4 as i64)
+                return symbols.completion_item#("init", 4 as i64)
             when dei: DeInitSyntax
-                return symbols.completion_item#(String#("deinit"), 4 as i64)
+                return symbols.completion_item#("deinit", 4 as i64)
             when def: DefinitionSyntax
                 return symbols.completion_definition#(source, def)
             when e: EmptySyntax
-                return String#("")
+                return ""
             when im: ImplementSyntax
-                return String#("")
+                return ""
             when t: TraitSyntax
-                return String#("")
+                return ""
             when mac: MacroSyntax
-                return String#("")
+                return ""
             when m: ModuleSyntax
                 return symbols.completion_item#(m.name, 9 as i64)
     }
@@ -2596,7 +2596,7 @@ define symbols
         if pkg.get_length() > (0 as size_t)
             if pkg.equals(dir) = false
                 return symbols.member_completions_in_dir#(pkg, path, type_name)
-        String#("")
+        ""
     }
 
     ; Enumerate the .scaly files under `dir` (recursively, skipping self_path)
@@ -2610,10 +2610,10 @@ define symbols
     function member_completions_in_dir#(rp, dir: String, self_path: String, type_name: String) returns String
     {
         if dir.get_length() = (0 as size_t)
-            return String#("")
+            return ""
         let listing symbols.list_scaly_files#(dir)   ; abs paths, each + LF
 
-        var result String#("")
+        var result ""
         var line_start: size_t 0
         let n listing.get_length()
         var i: size_t 0
@@ -2630,7 +2630,7 @@ define symbols
                             {
                                 let fsrc File.read_to_string#(fpath)
                                 let chash fsrc.hash()
-                                var blob String#("")
+                                var blob ""
                                 if symindex.valid(fpath, chash)
                                     set blob: symindex.get_blob#(fpath)
                                 if symindex.valid(fpath, chash) = false
@@ -2665,7 +2665,7 @@ define symbols
         var prev_end: size_t 0
         var have_prev: size_t 0        ; 1 once a prev identifier token is seen
         var prev_punct: size_t 0       ; last significant punctuation: ( , or 0
-        var result String#("")
+        var result ""
         var k: size_t 0
         while k < len
         {
@@ -2719,8 +2719,8 @@ define symbols
         var is_binding: bool false
         if have_prev <> (0 as size_t)
         {
-            let kw_var String#("var")
-            let kw_let String#("let")
+            let kw_var "var"
+            let kw_let "let"
             if symbols.token_equals(source, prev_start, prev_end, kw_var)
                 set is_binding: true
             if symbols.token_equals(source, prev_start, prev_end, kw_let)
@@ -2766,7 +2766,7 @@ define symbols
                         if symbols.is_ctor_sigil(source.get te)
                             return symbols.substring#(source, after, te)
                 }
-        String#("")
+        ""
     }
 
     ; First index at or after `pos` that is not a space or tab.
@@ -2818,7 +2818,7 @@ define symbols
                 }
                 return symbols.substring#(source, start, e)
             }
-        String#("")
+        ""
     }
 
     ; ====================================================================
@@ -2857,7 +2857,7 @@ define symbols
             let rs (*routine.returns_)
             return symbols.type_base_name#(rs.type)
         }
-        String#("")
+        ""
     }
 
     ; If `target` is a routine NAMED `name`, its return-type base name, else "".
@@ -2868,10 +2868,10 @@ define symbols
             {
                 if named.name.equals(name)
                     return symbols.routine_return_base#(named.routine)
-                return String#("")
+                return ""
             }
             when r: RoutineSyntax
-                return String#("")
+                return ""
     }
 
     ; The type (base concept name) of member `member_name` of concept
@@ -2880,10 +2880,10 @@ define symbols
     function member_type#(rp, source: String, type_name: String, member_name: String) returns String
     {
         var p parser.Parser$(source)
-        var result String#("")
+        var result ""
         choose p.parse_program#()
             when err: Error
-                set result: String#("")
+                set result: ""
             when program: Success
             {
                 let file program.file
@@ -2917,7 +2917,7 @@ define symbols
             when priv: PrivateSyntax
                 return symbols.mt_export#(source, priv.export_, type_name, member_name)
             else
-                return String#("")
+                return ""
     }
 
     function mt_export#(rp, source: String, export_: ExportSyntax, type_name: String, member_name: String) returns String
@@ -2926,7 +2926,7 @@ define symbols
             when def: DefinitionSyntax
                 return symbols.mt_definition#(source, def, type_name, member_name)
             else
-                return String#("")
+                return ""
     }
 
     ; The concept named `type_name`: look up `member_name` in its fields/methods.
@@ -2935,7 +2935,7 @@ define symbols
     {
         if def.name.equals(type_name)
         {
-            var t String#("")
+            var t ""
             choose def.concept_
                 when c: ClassSyntax
                     set t: symbols.mt_in_class#(source, c, member_name)
@@ -2943,7 +2943,7 @@ define symbols
                     0
             return t
         }
-        var nested String#("")
+        var nested ""
         choose def.concept_
             when n: NamespaceSyntax
                 set nested: symbols.mt_namespace#(source, n, type_name, member_name)
@@ -2954,7 +2954,7 @@ define symbols
 
     function mt_namespace#(rp, source: String, ns: NamespaceSyntax, type_name: String, member_name: String) returns String
     {
-        var result String#("")
+        var result ""
         if ns.declarations <> null
         {
             let decls (*ns.declarations)
@@ -2980,7 +2980,7 @@ define symbols
     ; method bodies' return types. "" when absent.
     function mt_in_class#(rp, source: String, c: ClassSyntax, member_name: String) returns String
     {
-        var result String#("")
+        var result ""
         if c.structure.parts <> null
         {
             let parts (*c.structure.parts)
@@ -3034,13 +3034,13 @@ define symbols
             {
                 if fld.property.name.equals(member_name)
                     return symbols.type_base_name#(fld.property.annotation.type)
-                return String#("")
+                return ""
             }
             when prop: PropertySyntax
             {
                 if prop.name.equals(member_name)
                     return symbols.type_base_name#(prop.annotation.type)
-                return String#("")
+                return ""
             }
     }
 
@@ -3053,7 +3053,7 @@ define symbols
             when pr: ProcedureSyntax
                 return symbols.target_return_type#(source, pr.target, member_name)
             else
-                return String#("")
+                return ""
     }
 
     ; member_type# across the workspace: THIS source first, then the current
@@ -3073,7 +3073,7 @@ define symbols
         if pkg.get_length() > (0 as size_t)
             if pkg.equals(dir) = false
                 return symbols.member_type_in_dir#(pkg, path, type_name, member_name)
-        String#("")
+        ""
     }
 
     ; Step 33: read each sibling/package file's CACHED ws blob (symindex.valid →
@@ -3085,9 +3085,9 @@ define symbols
     function member_type_in_dir#(rp, dir: String, self_path: String, type_name: String, member_name: String) returns String
     {
         if dir.get_length() = (0 as size_t)
-            return String#("")
+            return ""
         let listing symbols.list_scaly_files#(dir)
-        var result String#("")
+        var result ""
         var line_start: size_t 0
         let n listing.get_length()
         var i: size_t 0
@@ -3104,7 +3104,7 @@ define symbols
                             {
                                 let fsrc File.read_to_string#(fpath)
                                 let chash fsrc.hash()
-                                var blob String#("")
+                                var blob ""
                                 if symindex.valid(fpath, chash)
                                     set blob: symindex.get_blob#(fpath)
                                 if symindex.valid(fpath, chash) = false
@@ -3129,10 +3129,10 @@ define symbols
     function function_return_type#(rp, source: String, fname: String) returns String
     {
         var p parser.Parser$(source)
-        var result String#("")
+        var result ""
         choose p.parse_program#()
             when err: Error
-                set result: String#("")
+                set result: ""
             when program: Success
             {
                 let file program.file
@@ -3170,7 +3170,7 @@ define symbols
             when priv: PrivateSyntax
                 return symbols.frt_export#(source, priv.export_, fname)
             else
-                return String#("")
+                return ""
     }
 
     function frt_export#(rp, source: String, export_: ExportSyntax, fname: String) returns String
@@ -3183,12 +3183,12 @@ define symbols
             when def: DefinitionSyntax
                 return symbols.frt_definition#(source, def, fname)
             else
-                return String#("")
+                return ""
     }
 
     function frt_definition#(rp, source: String, def: DefinitionSyntax, fname: String) returns String
     {
-        var result String#("")
+        var result ""
         choose def.concept_
             when n: NamespaceSyntax
             {
@@ -3232,15 +3232,15 @@ define symbols
         if pkg.get_length() > (0 as size_t)
             if pkg.equals(dir) = false
                 return symbols.function_return_type_in_dir#(pkg, path, fname)
-        String#("")
+        ""
     }
 
     function function_return_type_in_dir#(rp, dir: String, self_path: String, fname: String) returns String
     {
         if dir.get_length() = (0 as size_t)
-            return String#("")
+            return ""
         let listing symbols.list_scaly_files#(dir)
-        var result String#("")
+        var result ""
         var line_start: size_t 0
         let n listing.get_length()
         var i: size_t 0
@@ -3289,7 +3289,7 @@ define symbols
     {
         let len source.get_length()
         if len = (0 as size_t)
-            return String#("")
+            return ""
         var p offset
         if p > len
             set p: len
@@ -3323,7 +3323,7 @@ define symbols
                 if cstart < dot
                     return symbols.substring#(source, cstart, dot)
             }
-        String#("")
+        ""
     }
 
     ; Resolve the type (base concept name) of a multi-segment receiver chain
@@ -3332,7 +3332,7 @@ define symbols
     function resolve_chain_type#(rp, source: String, uri: String, chain: String) returns String
     {
         let n chain.get_length()
-        var base String#("")
+        var base ""
         var seg_start: size_t 0
         var seg_index: size_t 0
         var failed false
@@ -3368,7 +3368,7 @@ define symbols
             set i: i + (1 as size_t)
         }
         if failed
-            return String#("")
+            return ""
         base
     }
 
@@ -3381,7 +3381,7 @@ define symbols
     {
         let len source.get_length()
         if len = (0 as size_t)
-            return String#("")
+            return ""
         var p offset
         if p > len
             set p: len
@@ -3420,7 +3420,7 @@ define symbols
                     return sb.to_string#()
                 }
             }
-        String#("")
+        ""
     }
 
     ; The byte offset of the LAST character of the `.`-receiver token before
@@ -3485,10 +3485,10 @@ define symbols
     function member_completions#(rp, source: String, receiver: String) returns String
     {
         var p parser.Parser$(source)
-        var result String#("")
+        var result ""
         choose p.parse_program#()
             when err: Error
-                set result: String#("")
+                set result: ""
             when program: Success
             {
                 let file program.file
@@ -3520,29 +3520,29 @@ define symbols
     {
         choose decl
             when f: FunctionSyntax
-                return String#("")
+                return ""
             when pr: ProcedureSyntax
-                return String#("")
+                return ""
             when o: OperatorSyntax
-                return String#("")
+                return ""
             when def: DefinitionSyntax
                 return symbols.mem_definition#(source, def, receiver)
             when m: ModuleSyntax
-                return String#("")
+                return ""
             when mut: MutableSyntax
-                return String#("")
+                return ""
             when priv: PrivateSyntax
                 return symbols.mem_export#(source, priv.export_, receiver)
             when e: EmptySyntax
-                return String#("")
+                return ""
             when pkg: PackageSyntax
-                return String#("")
+                return ""
             when u: UseSyntax
-                return String#("")
+                return ""
             when t: TraitSyntax
-                return String#("")
+                return ""
             when mac: MacroSyntax
-                return String#("")
+                return ""
     }
 
     ; A `private` declaration unwraps to its exported construct.
@@ -3550,17 +3550,17 @@ define symbols
     {
         choose export_
             when f: FunctionSyntax
-                return String#("")
+                return ""
             when pr: ProcedureSyntax
-                return String#("")
+                return ""
             when o: OperatorSyntax
-                return String#("")
+                return ""
             when def: DefinitionSyntax
                 return symbols.mem_definition#(source, def, receiver)
             when t: TraitSyntax
-                return String#("")
+                return ""
             when m: ModuleSyntax
-                return String#("")
+                return ""
     }
 
     ; A `define X`: when its name equals `receiver`, return its members wrapped
@@ -3571,7 +3571,7 @@ define symbols
     {
         if def.name.equals(receiver)
         {
-            var members String#("")
+            var members ""
             choose def.concept_
                 when c: ClassSyntax
                     set members: symbols.completion_body#(source, c.body)
@@ -3593,7 +3593,7 @@ define symbols
             sb.append(0x5D as char)                ; ]
             return sb.to_string#()
         }
-        var nested String#("")
+        var nested ""
         choose def.concept_
             when n: NamespaceSyntax
                 set nested: symbols.mem_namespace#(source, n, receiver)
@@ -3606,7 +3606,7 @@ define symbols
     ; `receiver`, else "".
     function mem_namespace#(rp, source: String, ns: NamespaceSyntax, receiver: String) returns String
     {
-        var result String#("")
+        var result ""
         if ns.declarations <> null
         {
             let decls (*ns.declarations)
@@ -3672,13 +3672,13 @@ define symbols
     function hover_envelope#(rp, text: String) returns String
     {
         if text.get_length() = (0 as size_t)
-            return String#("")
+            return ""
         var sb StringBuilder#()
         sb.append(0x7B as char)
         sb.append(symbols.key#("contents"))
         sb.append(0x7B as char)
         sb.append(symbols.key#("kind"))
-        sb.append(json.quote_string#(String#("markdown")))
+        sb.append(json.quote_string#("markdown"))
         sb.append(0x2C as char)
         sb.append(symbols.key#("value"))
         sb.append(json.quote_string#(text))
@@ -3723,10 +3723,10 @@ define symbols
     {
         let offset symbols.position_to_offset#(source, line, character)
         var p parser.Parser$(source)
-        var result String#("")
+        var result ""
         choose p.parse_program#()
             when err: Error
-                set result: String#("")
+                set result: ""
             when program: Success
             {
                 let file program.file
@@ -3771,15 +3771,15 @@ define symbols
             when priv: PrivateSyntax
                 return symbols.hover_export#(source, priv.export_, offset)
             when e: EmptySyntax
-                return String#("")
+                return ""
             when pkg: PackageSyntax
-                return String#("")
+                return ""
             when u: UseSyntax
-                return String#("")
+                return ""
             when t: TraitSyntax
-                return String#("")
+                return ""
             when mac: MacroSyntax
-                return String#("")
+                return ""
     }
 
     ; A `private` declaration unwraps to its exported construct.
@@ -3795,7 +3795,7 @@ define symbols
             when def: DefinitionSyntax
                 return symbols.hover_definition#(source, def, offset)
             when t: TraitSyntax
-                return String#("")
+                return ""
             when m: ModuleSyntax
                 return symbols.hover_leaf#(m.start, m.end, offset, "module", String#(m.name))
     }
@@ -3808,7 +3808,7 @@ define symbols
         {
             if offset < def.end
             {
-                var child String#("")
+                var child ""
                 choose def.concept_
                     when c: ClassSyntax
                         set child: symbols.hover_body#(source, c.body, offset)
@@ -3821,20 +3821,20 @@ define symbols
                 if child.get_length() > (0 as size_t)
                     return child
 
-                var kind String#("struct")
+                var kind "struct"
                 choose def.concept_
                     when c2: ClassSyntax
-                        set kind: String#("struct")
+                        set kind: "struct"
                     when n2: NamespaceSyntax
-                        set kind: String#("namespace")
+                        set kind: "namespace"
                     when un2: UnionSyntax
-                        set kind: String#("union")
+                        set kind: "union"
                     when cn2: ConstantSyntax
-                        set kind: String#("constant")
+                        set kind: "constant"
                     when dl2: DelegateSyntax
-                        set kind: String#("function")
+                        set kind: "function"
                     when ic2: IntrinsicSyntax
-                        set kind: String#("struct")
+                        set kind: "struct"
                 var sb StringBuilder#()
                 sb.append kind
                 sb.append(0x20 as char)
@@ -3842,13 +3842,13 @@ define symbols
                 return sb.to_string#()
             }
         }
-        String#("")
+        ""
     }
 
     ; Innermost-matching member of a class body, or "".
     function hover_body#(rp, source: String, body: ref[BodySyntax]?, offset: size_t) returns String
     {
-        var result String#("")
+        var result ""
         if body <> null
         {
             let b (*body)
@@ -3885,19 +3885,19 @@ define symbols
             when o: OperatorSyntax
                 return symbols.hover_leaf#(o.start, o.end, offset, "operator", symbols.target_name#(o.target))
             when ini: InitSyntax
-                return symbols.hover_leaf#(ini.start, ini.end, offset, "init", String#("init"))
+                return symbols.hover_leaf#(ini.start, ini.end, offset, "init", "init")
             when dei: DeInitSyntax
-                return symbols.hover_leaf#(dei.start, dei.end, offset, "deinit", String#("deinit"))
+                return symbols.hover_leaf#(dei.start, dei.end, offset, "deinit", "deinit")
             when def: DefinitionSyntax
                 return symbols.hover_definition#(source, def, offset)
             when e: EmptySyntax
-                return String#("")
+                return ""
             when im: ImplementSyntax
-                return String#("")
+                return ""
             when t: TraitSyntax
-                return String#("")
+                return ""
             when mac: MacroSyntax
-                return String#("")
+                return ""
             when m: ModuleSyntax
                 return symbols.hover_leaf#(m.start, m.end, offset, "module", String#(m.name))
     }
@@ -3905,7 +3905,7 @@ define symbols
     ; Innermost-matching nested declaration of a namespace, or "".
     function hover_namespace#(rp, source: String, ns: NamespaceSyntax, offset: size_t) returns String
     {
-        var result String#("")
+        var result ""
         if ns.declarations <> null
         {
             let decls (*ns.declarations)
@@ -3930,7 +3930,7 @@ define symbols
     ; A union: each variant, then any body members.
     function hover_union#(rp, source: String, un: UnionSyntax, offset: size_t) returns String
     {
-        var result String#("")
+        var result ""
         if un.variants <> null
         {
             let variants (*un.variants)
@@ -3964,7 +3964,7 @@ define symbols
                 sb.append name
                 return sb.to_string#()
             }
-        String#("")
+        ""
     }
 
     ; ====================================================================
@@ -4011,7 +4011,7 @@ define symbols
         let offset symbols.position_to_offset#(source, line, character)
         let name symbols.identifier_at#(source, offset)
         if name.get_length() = (0 as size_t)
-            return String#("")
+            return ""
         symbols.find_definition#(source, uri, name)
     }
 
@@ -4039,7 +4039,7 @@ define symbols
     {
         let len source.get_length()
         if len = (0 as size_t)
-            return String#("")
+            return ""
         var off offset
         if off >= len
             set off: len - (1 as size_t)
@@ -4048,9 +4048,9 @@ define symbols
         if symbols.is_ident_byte(source.get off) = false
         {
             if off = (0 as size_t)
-                return String#("")
+                return ""
             if symbols.is_ident_byte(source.get(off - (1 as size_t))) = false
-                return String#("")
+                return ""
             set anchor: off - (1 as size_t)
         }
 
@@ -4084,10 +4084,10 @@ define symbols
     function find_definition#(rp, source: String, uri: String, name: String) returns String
     {
         var p parser.Parser$(source)
-        var result String#("")
+        var result ""
         choose p.parse_program#()
             when err: Error
-                set result: String#("")
+                set result: ""
             when program: Success
             {
                 let file program.file
@@ -4133,15 +4133,15 @@ define symbols
             when priv: PrivateSyntax
                 return symbols.def_export#(source, uri, priv.export_, name)
             when e: EmptySyntax
-                return String#("")
+                return ""
             when pkg: PackageSyntax
-                return String#("")
+                return ""
             when u: UseSyntax
-                return String#("")
+                return ""
             when t: TraitSyntax
-                return String#("")
+                return ""
             when mac: MacroSyntax
-                return String#("")
+                return ""
     }
 
     ; A `private` declaration unwraps to its exported construct.
@@ -4157,7 +4157,7 @@ define symbols
             when def: DefinitionSyntax
                 return symbols.def_definition#(source, uri, def, name)
             when t: TraitSyntax
-                return String#("")
+                return ""
             when m: ModuleSyntax
                 return symbols.def_match#(source, uri, String#(m.name), name, m.start)
     }
@@ -4166,7 +4166,7 @@ define symbols
     ; name.
     function def_definition#(rp, source: String, uri: String, def: DefinitionSyntax, name: String) returns String
     {
-        var child String#("")
+        var child ""
         choose def.concept_
             when c: ClassSyntax
                 set child: symbols.def_body#(source, uri, c.body, name)
@@ -4184,7 +4184,7 @@ define symbols
     ; Members of a class body.
     function def_body#(rp, source: String, uri: String, body: ref[BodySyntax]?, name: String) returns String
     {
-        var result String#("")
+        var result ""
         if body <> null
         {
             let b (*body)
@@ -4221,19 +4221,19 @@ define symbols
             when o: OperatorSyntax
                 return symbols.def_match#(source, uri, symbols.target_name#(o.target), name, o.start)
             when ini: InitSyntax
-                return String#("")
+                return ""
             when dei: DeInitSyntax
-                return String#("")
+                return ""
             when def: DefinitionSyntax
                 return symbols.def_definition#(source, uri, def, name)
             when e: EmptySyntax
-                return String#("")
+                return ""
             when im: ImplementSyntax
-                return String#("")
+                return ""
             when t: TraitSyntax
-                return String#("")
+                return ""
             when mac: MacroSyntax
-                return String#("")
+                return ""
             when m: ModuleSyntax
                 return symbols.def_match#(source, uri, String#(m.name), name, m.start)
     }
@@ -4241,7 +4241,7 @@ define symbols
     ; Nested declarations of a namespace.
     function def_namespace#(rp, source: String, uri: String, ns: NamespaceSyntax, name: String) returns String
     {
-        var result String#("")
+        var result ""
         if ns.declarations <> null
         {
             let decls (*ns.declarations)
@@ -4266,7 +4266,7 @@ define symbols
     ; Variants of a union, then any body members.
     function def_union#(rp, source: String, uri: String, un: UnionSyntax, name: String) returns String
     {
-        var result String#("")
+        var result ""
         if un.variants <> null
         {
             let variants (*un.variants)
@@ -4293,7 +4293,7 @@ define symbols
     {
         if candidate.equals(name)
             return symbols.location_object#(source, uri, start)
-        String#("")
+        ""
     }
 
     ; LSP Location: {"uri":<uri>,"range":{...}} — a zero-width range at `start`
@@ -4364,7 +4364,7 @@ define symbols
         let offset symbols.position_to_offset#(source, line, character)
         let name symbols.identifier_at#(source, offset)
         if name.get_length() = (0 as size_t)
-            return String#("")
+            return ""
         symbols.find_definition_in_workspace#(uri, name)
     }
 
@@ -4384,7 +4384,7 @@ define symbols
         if pkg.get_length() > (0 as size_t)
             if pkg.equals(dir) = false
                 return symbols.find_definition_in_dir#(pkg, path, name)
-        String#("")
+        ""
     }
 
     ; Enumerate the .scaly files under `dir` (recursively) and return the first
@@ -4406,10 +4406,10 @@ define symbols
     function find_definition_in_dir#(rp, dir: String, self_path: String, name: String) returns String
     {
         if dir.get_length() = (0 as size_t)
-            return String#("")
+            return ""
         let listing symbols.list_scaly_files#(dir)   ; abs paths, each + LF
 
-        var result String#("")
+        var result ""
         var line_start: size_t 0
         let n listing.get_length()
         var i: size_t 0
@@ -4426,7 +4426,7 @@ define symbols
                             {
                                 let fsrc File.read_to_string#(fpath)
                                 let chash fsrc.hash()
-                                var blob String#("")
+                                var blob ""
                                 if symindex.valid(fpath, chash)
                                     set blob: symindex.get_blob#(fpath)
                                 if symindex.valid(fpath, chash) = false
@@ -4529,7 +4529,7 @@ define symbols
             }
             set i: i + (1 as size_t)
         }
-        String#("")
+        ""
     }
 
     ; Find the first record in a cached ws blob whose name EXACTLY equals `name`
@@ -4609,7 +4609,7 @@ define symbols
             }
             set i: i + (1 as size_t)
         }
-        String#("")
+        ""
     }
 
     ; Cross-file signatureHelp from a cached ws blob: the routine named `name`'s
@@ -4623,7 +4623,7 @@ define symbols
             let labels symbols.substring#(r, 1 as size_t, r.get_length())
             return symbols.build_signature_from_labels#(name, labels, active)
         }
-        String#("")
+        ""
     }
 
     ; Cross-file member completion from a cached ws blob: the concept named
@@ -4648,7 +4648,7 @@ define symbols
             sb.append(0x5D as char)                    ; ]
             return sb.to_string#()
         }
-        String#("")
+        ""
     }
 
     ; ====================================================================
@@ -4710,7 +4710,7 @@ define symbols
             }
             set i: i + (1 as size_t)
         }
-        String#("")
+        ""
     }
 
     ; True when the FIRST record in `blob` whose name EXACTLY equals `name` is a
@@ -4856,13 +4856,13 @@ define symbols
                                 }
                                 set ps: ps + (1 as size_t)
                             }
-                            return String#("")        ; concept found, member not
+                            return ""        ; concept found, member not
                         }
                 set rec_start: i + (1 as size_t)
             }
             set i: i + (1 as size_t)
         }
-        String#("")
+        ""
     }
 
     ; Is there a concept named `name` anywhere in the workspace? Mirrors
@@ -4907,7 +4907,7 @@ define symbols
                             {
                                 let fsrc File.read_to_string#(fpath)
                                 let chash fsrc.hash()
-                                var blob String#("")
+                                var blob ""
                                 if symindex.valid(fpath, chash)
                                     set blob: symindex.get_blob#(fpath)
                                 if symindex.valid(fpath, chash) = false
@@ -4942,15 +4942,15 @@ define symbols
         if pkg.get_length() > (0 as size_t)
             if pkg.equals(dir) = false
                 return symbols.return_type_in_dir#(pkg, path, name)
-        String#("")
+        ""
     }
 
     function return_type_in_dir#(rp, dir: String, self_path: String, name: String) returns String
     {
         if dir.get_length() = (0 as size_t)
-            return String#("")
+            return ""
         let listing symbols.list_scaly_files#(dir)
-        var result String#("")
+        var result ""
         var line_start: size_t 0
         let n listing.get_length()
         var i: size_t 0
@@ -4967,7 +4967,7 @@ define symbols
                             {
                                 let fsrc File.read_to_string#(fpath)
                                 let chash fsrc.hash()
-                                var blob String#("")
+                                var blob ""
                                 if symindex.valid(fpath, chash)
                                     set blob: symindex.get_blob#(fpath)
                                 if symindex.valid(fpath, chash) = false
@@ -5041,7 +5041,7 @@ define symbols
                 }
             return sb.to_string#()
         }
-        String#("")
+        ""
     }
 
     ; Harvest tagged function/type names from every .scaly file under `dir`
@@ -5052,7 +5052,7 @@ define symbols
     function workspace_names_in_dir#(rp, dir: String, self_path: String) returns String
     {
         if dir.get_length() = (0 as size_t)
-            return String#("")
+            return ""
         let listing symbols.list_scaly_files#(dir)
 
         var sb StringBuilder#()
@@ -5070,7 +5070,7 @@ define symbols
                         {
                             let fsrc File.read_to_string#(fpath)
                             let chash fsrc.hash()
-                            var blob String#("")
+                            var blob ""
                             if symindex.valid(fpath, chash)
                                 set blob: symindex.get_blob#(fpath)
                             if symindex.valid(fpath, chash) = false
@@ -5231,10 +5231,10 @@ define symbols
     {
         let home getenv "SCALY_HOME"
         if home = null
-            return String#("")
+            return ""
         var home_str String$(home)
         if home_str.get_length() = (0 as size_t)
-            return String#("")
+            return ""
         var sb StringBuilder#()
         var i: size_t 0
         let hl home_str.get_length()
@@ -5274,7 +5274,7 @@ define symbols
     ; when `path` is not under a packages/ directory.
     function packages_dir_from_path#(rp, path: String) returns String
     {
-        let needle String#("/packages/")
+        let needle "/packages/"
         let pn path.get_length()
         let nn needle.get_length()
         if pn >= nn
@@ -5294,7 +5294,7 @@ define symbols
             if found
                 return symbols.substring#(path, 0 as size_t, last_found + nn - (1 as size_t))
         }
-        String#("")
+        ""
     }
 
     ; Run `find '<dir>' -name '*.scaly'` and return its stdout (newline-
@@ -5323,7 +5323,7 @@ define symbols
 
         let f popen(cmd_str.to_c_string#(), "r")
         if f = null
-            return String#("")
+            return ""
 
         var sb StringBuilder#()
         var keep true
@@ -5381,7 +5381,7 @@ define symbols
     {
         let n path.get_length()
         if n = (0 as size_t)
-            return String#("")
+            return ""
         var last: size_t 0
         var found false
         var i: size_t 0
@@ -5396,7 +5396,7 @@ define symbols
         }
         if found
             return symbols.substring#(path, 0 as size_t, last)
-        String#("")
+        ""
     }
 
     ; ====================================================================
@@ -5425,7 +5425,7 @@ define symbols
     function workspace_symbols#(rp, root: String, query: String) returns String
     {
         if root.get_length() = (0 as size_t)
-            return String#("[]")
+            return "[]"
         let listing symbols.list_scaly_files#(root)
 
         var sb StringBuilder#()
@@ -5444,7 +5444,7 @@ define symbols
                     {
                         let fsrc File.read_to_string#(fpath)
                         let chash fsrc.hash()
-                        var blob String#("")
+                        var blob ""
                         if symindex.valid(fpath, chash)
                             set blob: symindex.get_blob#(fpath)
                         if symindex.valid(fpath, chash) = false
@@ -5583,29 +5583,29 @@ define symbols
     {
         choose decl
             when f: FunctionSyntax
-                return symbols.ws_item#(source, uri, symbols.target_name#(f.target), 12 as i64, f.start, f.end, symbols.routine_param_detail#(source, f.target), symbols.target_return_field#(f.target), String#(""))
+                return symbols.ws_item#(source, uri, symbols.target_name#(f.target), 12 as i64, f.start, f.end, symbols.routine_param_detail#(source, f.target), symbols.target_return_field#(f.target), "")
             when pr: ProcedureSyntax
-                return symbols.ws_item#(source, uri, symbols.target_name#(pr.target), 12 as i64, pr.start, pr.end, symbols.routine_param_detail#(source, pr.target), symbols.target_return_field#(pr.target), String#(""))
+                return symbols.ws_item#(source, uri, symbols.target_name#(pr.target), 12 as i64, pr.start, pr.end, symbols.routine_param_detail#(source, pr.target), symbols.target_return_field#(pr.target), "")
             when o: OperatorSyntax
-                return symbols.ws_item#(source, uri, symbols.target_name#(o.target), 25 as i64, o.start, o.end, symbols.routine_param_detail#(source, o.target), symbols.target_return_field#(o.target), String#(""))
+                return symbols.ws_item#(source, uri, symbols.target_name#(o.target), 25 as i64, o.start, o.end, symbols.routine_param_detail#(source, o.target), symbols.target_return_field#(o.target), "")
             when def: DefinitionSyntax
                 return symbols.ws_definition#(source, uri, def)
             when m: ModuleSyntax
-                return symbols.ws_item#(source, uri, String#(m.name), 2 as i64, m.start, m.end, String#(""), String#(""), String#(""))
+                return symbols.ws_item#(source, uri, String#(m.name), 2 as i64, m.start, m.end, "", "", "")
             when mut: MutableSyntax
-                return symbols.ws_item#(source, uri, String#(mut.binding.name), 13 as i64, mut.start, mut.end, String#(""), String#(""), String#(""))
+                return symbols.ws_item#(source, uri, String#(mut.binding.name), 13 as i64, mut.start, mut.end, "", "", "")
             when priv: PrivateSyntax
                 return symbols.ws_export#(source, uri, priv.export_)
             when e: EmptySyntax
-                return String#("")
+                return ""
             when pkg: PackageSyntax
-                return String#("")
+                return ""
             when u: UseSyntax
-                return String#("")
+                return ""
             when t: TraitSyntax
-                return String#("")
+                return ""
             when mac: MacroSyntax
-                return String#("")
+                return ""
     }
 
     ; A `private` declaration unwraps to its exported construct.
@@ -5613,17 +5613,17 @@ define symbols
     {
         choose export_
             when f: FunctionSyntax
-                return symbols.ws_item#(source, uri, symbols.target_name#(f.target), 12 as i64, f.start, f.end, symbols.routine_param_detail#(source, f.target), symbols.target_return_field#(f.target), String#(""))
+                return symbols.ws_item#(source, uri, symbols.target_name#(f.target), 12 as i64, f.start, f.end, symbols.routine_param_detail#(source, f.target), symbols.target_return_field#(f.target), "")
             when pr: ProcedureSyntax
-                return symbols.ws_item#(source, uri, symbols.target_name#(pr.target), 12 as i64, pr.start, pr.end, symbols.routine_param_detail#(source, pr.target), symbols.target_return_field#(pr.target), String#(""))
+                return symbols.ws_item#(source, uri, symbols.target_name#(pr.target), 12 as i64, pr.start, pr.end, symbols.routine_param_detail#(source, pr.target), symbols.target_return_field#(pr.target), "")
             when o: OperatorSyntax
-                return symbols.ws_item#(source, uri, symbols.target_name#(o.target), 25 as i64, o.start, o.end, symbols.routine_param_detail#(source, o.target), symbols.target_return_field#(o.target), String#(""))
+                return symbols.ws_item#(source, uri, symbols.target_name#(o.target), 25 as i64, o.start, o.end, symbols.routine_param_detail#(source, o.target), symbols.target_return_field#(o.target), "")
             when def: DefinitionSyntax
                 return symbols.ws_definition#(source, uri, def)
             when t: TraitSyntax
-                return String#("")
+                return ""
             when m: ModuleSyntax
-                return symbols.ws_item#(source, uri, String#(m.name), 2 as i64, m.start, m.end, String#(""), String#(""), String#(""))
+                return symbols.ws_item#(source, uri, String#(m.name), 2 as i64, m.start, m.end, "", "", "")
     }
 
     ; A `define X` -> its own item (struct/namespace/union/…) joined with its
@@ -5631,7 +5631,7 @@ define symbols
     function ws_definition#(rp, source: String, uri: String, def: DefinitionSyntax) returns String
     {
         var kind: i64 (23 as i64)
-        var children String#("")
+        var children ""
         choose def.concept_
             when c: ClassSyntax
             {
@@ -5654,7 +5654,7 @@ define symbols
                 set kind: (12 as i64)
             when ic: IntrinsicSyntax
                 set kind: (23 as i64)
-        let own symbols.ws_item#(source, uri, def.name, kind, def.start, def.end, symbols.concept_member_detail#(source, def), String#(""), symbols.concept_member_types#(source, def))
+        let own symbols.ws_item#(source, uri, def.name, kind, def.start, def.end, symbols.concept_member_detail#(source, def), "", symbols.concept_member_types#(source, def))
         symbols.join_fragments#(own, children)
     }
 
@@ -5696,27 +5696,27 @@ define symbols
     {
         choose member
             when f: FunctionSyntax
-                return symbols.ws_item#(source, uri, symbols.target_name#(f.target), 6 as i64, f.start, f.end, symbols.routine_param_detail#(source, f.target), symbols.target_return_field#(f.target), String#(""))
+                return symbols.ws_item#(source, uri, symbols.target_name#(f.target), 6 as i64, f.start, f.end, symbols.routine_param_detail#(source, f.target), symbols.target_return_field#(f.target), "")
             when pr: ProcedureSyntax
-                return symbols.ws_item#(source, uri, symbols.target_name#(pr.target), 6 as i64, pr.start, pr.end, symbols.routine_param_detail#(source, pr.target), symbols.target_return_field#(pr.target), String#(""))
+                return symbols.ws_item#(source, uri, symbols.target_name#(pr.target), 6 as i64, pr.start, pr.end, symbols.routine_param_detail#(source, pr.target), symbols.target_return_field#(pr.target), "")
             when o: OperatorSyntax
-                return symbols.ws_item#(source, uri, symbols.target_name#(o.target), 25 as i64, o.start, o.end, symbols.routine_param_detail#(source, o.target), symbols.target_return_field#(o.target), String#(""))
+                return symbols.ws_item#(source, uri, symbols.target_name#(o.target), 25 as i64, o.start, o.end, symbols.routine_param_detail#(source, o.target), symbols.target_return_field#(o.target), "")
             when ini: InitSyntax
-                return symbols.ws_item#(source, uri, String#("init"), 9 as i64, ini.start, ini.end, String#(""), String#(""), String#(""))
+                return symbols.ws_item#(source, uri, "init", 9 as i64, ini.start, ini.end, "", "", "")
             when dei: DeInitSyntax
-                return symbols.ws_item#(source, uri, String#("deinit"), 9 as i64, dei.start, dei.end, String#(""), String#(""), String#(""))
+                return symbols.ws_item#(source, uri, "deinit", 9 as i64, dei.start, dei.end, "", "", "")
             when def: DefinitionSyntax
                 return symbols.ws_definition#(source, uri, def)
             when e: EmptySyntax
-                return String#("")
+                return ""
             when im: ImplementSyntax
-                return String#("")
+                return ""
             when t: TraitSyntax
-                return String#("")
+                return ""
             when mac: MacroSyntax
-                return String#("")
+                return ""
             when m: ModuleSyntax
-                return symbols.ws_item#(source, uri, String#(m.name), 2 as i64, m.start, m.end, String#(""), String#(""), String#(""))
+                return symbols.ws_item#(source, uri, String#(m.name), 2 as i64, m.start, m.end, "", "", "")
     }
 
     ; Nested declarations of a namespace -> a concatenated record fragment.
@@ -5763,7 +5763,7 @@ define symbols
                 let vptr variants.get i
                 if vptr <> null
                 {
-                    let vitem symbols.ws_item#(source, uri, String#(vptr.name), 22 as i64, vptr.start, vptr.end, String#(""), String#(""), String#(""))
+                    let vitem symbols.ws_item#(source, uri, String#(vptr.name), 22 as i64, vptr.start, vptr.end, "", "", "")
                     var ci: size_t 0
                     let cn vitem.get_length()
                     while ci < cn
@@ -5827,7 +5827,7 @@ define symbols
                 return sb.to_string#()
             }
             when r: RoutineSyntax
-                return String#("")
+                return ""
     }
 
     ; The ws-blob DETAIL field of a `define X`: "M" + its member completion
@@ -5838,7 +5838,7 @@ define symbols
     ; matching mem_definition#).
     function concept_member_detail#(rp, source: String, def: DefinitionSyntax) returns String
     {
-        var members String#("")
+        var members ""
         choose def.concept_
             when c: ClassSyntax
                 set members: symbols.completion_body#(source, c.body)
@@ -5950,7 +5950,7 @@ define symbols
             when pr: ProcedureSyntax
                 return symbols.cmt_pair#(symbols.target_name#(pr.target), symbols.target_return_field#(pr.target))
             else
-                return String#("")
+                return ""
     }
 
     ; `name 0x1F type_base 0x1F` (both raw, no escaping — neither contains a
@@ -5958,7 +5958,7 @@ define symbols
     function cmt_pair#(rp, name: String, type_base: String) returns String
     {
         if name.get_length() = (0 as size_t)
-            return String#("")
+            return ""
         var sb StringBuilder#()
         var ni: size_t 0
         let nn name.get_length()
@@ -6055,7 +6055,7 @@ define symbols
             when named: NamedSyntax
                 return symbols.routine_return_base#(named.routine)
             when r: RoutineSyntax
-                return String#("")
+                return ""
     }
 
     ; Concatenate two tagged-record fragments (records are newline-terminated,
@@ -6167,7 +6167,7 @@ define symbols
                 return symbols.substring#(packed, 0 as size_t, i)
             set i: i + (1 as size_t)
         }
-        String#("")
+        ""
     }
 
     function strip_root_prefix#(rp, packed: String) returns String
@@ -6211,7 +6211,7 @@ define symbols
         let offset symbols.position_to_offset#(source, line, character)
         let name symbols.identifier_at#(source, offset)
         if name.get_length() = (0 as size_t)
-            return String#("[]")
+            return "[]"
         let scope_tbl symbols.scope_table#(source)
         let comp_items symbols.completion_items#(source)
         let range_packed symbols.scan_scope#(source, scope_tbl, comp_items, uri, name, offset)
@@ -6614,12 +6614,12 @@ define symbols
     {
         let len source.get_length()
         if symbols.range_binds_name(source, name, 0 as size_t, len) = false
-            return String#("")
-        let kw_function String#("function")
-        let kw_procedure String#("procedure")
-        let kw_operator String#("operator")
-        let kw_init String#("init")
-        let kw_deinit String#("deinit")
+            return ""
+        let kw_function "function"
+        let kw_procedure "procedure"
+        let kw_operator "operator"
+        let kw_init "init"
+        let kw_deinit "deinit"
         var sb StringBuilder#()
         var k: size_t 0
         while k < len
@@ -6796,7 +6796,7 @@ define symbols
                     {
                         if first = false
                             sb.append(0x2C as char)    ; ,
-                        var piece String#("")
+                        var piece ""
                         if want_uri
                             set piece: symbols.location_span_object#(source, uri, k, j)
                         if want_uri = false
@@ -6822,7 +6822,7 @@ define symbols
     {
         ; Single-file / scoped path (a local confined to its routine, or
         ; documentHighlight): no shadow exclusion needed.
-        let frag symbols.scan_fragment#(source, uri, name, want_uri, range_packed, String#(""))
+        let frag symbols.scan_fragment#(source, uri, name, want_uri, range_packed, "")
         var sb StringBuilder#()
         sb.append(0x5B as char)                    ; [
         var i: size_t 0
@@ -6885,7 +6885,7 @@ define symbols
     ; INCLUDES the package being edited but EXCLUDES sibling dependency packages.
     function current_package_dir#(rp, path: String) returns String
     {
-        let needle String#("/packages/")
+        let needle "/packages/"
         let pn path.get_length()
         let nn needle.get_length()
         if pn >= nn
@@ -6909,7 +6909,7 @@ define symbols
                 set i: i + (1 as size_t)
             }
         }
-        String#("")
+        ""
     }
 
     ; True when `fpath` must be excluded from a workspace-ROOT walk: a file in
@@ -6925,9 +6925,9 @@ define symbols
     ; packages and retired/ sit under the repo root.
     function excluded_from_root_walk#(rp, fpath: String, cur_pkg_dir: String) returns bool
     {
-        if symbols.path_contains(fpath, String#("/retired/"))
+        if symbols.path_contains(fpath, "/retired/")
             return true
-        if symbols.path_contains(fpath, String#("/packages/"))
+        if symbols.path_contains(fpath, "/packages/")
         {
             if cur_pkg_dir.get_length() = (0 as size_t)
                 return true
@@ -6957,7 +6957,7 @@ define symbols
         ; (1) the current file (in-memory text, whole-file scan). Skip any
         ; routine that binds `name` as a same-named local/parameter (shadow).
         let cur_shadow symbols.shadow_ranges#(source, name)
-        let cur symbols.scan_fragment#(source, uri, name, true, String#(""), cur_shadow)
+        let cur symbols.scan_fragment#(source, uri, name, true, "", cur_shadow)
         if cur.get_length() > (0 as size_t)
         {
             var ci: size_t 0
@@ -7006,7 +7006,7 @@ define symbols
                                 let fsrc File.read_to_string#(fpath)
                                 let furi symbols.path_to_uri#(fpath)
                                 let fshadow symbols.shadow_ranges#(fsrc, name)
-                                let frag symbols.scan_fragment#(fsrc, furi, name, true, String#(""), fshadow)
+                                let frag symbols.scan_fragment#(fsrc, furi, name, true, "", fshadow)
                                 if frag.get_length() > (0 as size_t)
                                 {
                                     if first = false
@@ -7169,9 +7169,9 @@ define symbols
     {
         let routine symbols.enclosing_routine#(scope_tbl, offset)
         if routine.get_length() = (0 as size_t)
-            return String#("")
+            return ""
         if symbols.name_is_module_wide#(source, comp_items, scope_tbl, uri, name)
-            return String#("")
+            return ""
         routine
     }
 
@@ -7240,13 +7240,13 @@ define symbols
         let offset symbols.position_to_offset#(source, line, character)
         let name symbols.identifier_at#(source, offset)
         if name.get_length() = (0 as size_t)
-            return String#("[]")
+            return "[]"
         let scope_tbl symbols.scope_table#(source)
         let comp_items symbols.completion_items#(source)
         ; documentHighlight is single-document, so no workspace uri is threaded;
         ; "" makes a cross-file name fall to the in-file checks only (cosmetic).
-        let range_packed symbols.scan_scope#(source, scope_tbl, comp_items, String#(""), name, offset)
-        symbols.scan_tokens#(source, String#(""), name, false, range_packed)
+        let range_packed symbols.scan_scope#(source, scope_tbl, comp_items, "", name, offset)
+        symbols.scan_tokens#(source, "", name, false, range_packed)
     }
 
     ; LSP DocumentHighlight: {"range":{...}} covering the whole token.
@@ -7319,14 +7319,14 @@ define symbols
 
         let offset symbols.position_to_offset#(source, line, character)
         if symbols.offset_in_noncode(source, offset)
-            return String#("")
+            return ""
         let old_name symbols.identifier_at#(source, offset)
         if old_name.get_length() = (0 as size_t)
-            return String#("")
+            return ""
         if grammar.is_keyword(old_name)
-            return String#("")
+            return ""
         if new_name.get_length() = (0 as size_t)
-            return String#("")
+            return ""
         let scope_tbl symbols.scope_table#(source)
         let comp_items symbols.completion_items#(source)
         let range_packed symbols.scan_scope#(source, scope_tbl, comp_items, uri, old_name, offset)
@@ -7429,7 +7429,7 @@ define symbols
     function rename_edits#(rp, source: String, uri: String, old_name: String, new_name: String, range_packed: String) returns String
     {
         ; Single-file scoped path (a local confined to its routine): no shadow.
-        let frag symbols.edits_fragment#(source, old_name, new_name, range_packed, String#(""))
+        let frag symbols.edits_fragment#(source, old_name, new_name, range_packed, "")
         var sb StringBuilder#()
         sb.append(0x7B as char)                    ; {
         sb.append(symbols.key#("changes"))
@@ -7471,7 +7471,7 @@ define symbols
         ; (1) the current file. Skip any routine that binds `old_name` as a
         ; same-named local/parameter (shadow).
         let cur_shadow symbols.shadow_ranges#(source, old_name)
-        let cur symbols.edits_fragment#(source, old_name, new_name, String#(""), cur_shadow)
+        let cur symbols.edits_fragment#(source, old_name, new_name, "", cur_shadow)
         if cur.get_length() > (0 as size_t)
         {
             sb.append(json.quote_string#(uri))
@@ -7523,7 +7523,7 @@ define symbols
                             {
                                 let fsrc File.read_to_string#(fpath)
                                 let fshadow symbols.shadow_ranges#(fsrc, old_name)
-                                let frag symbols.edits_fragment#(fsrc, old_name, new_name, String#(""), fshadow)
+                                let frag symbols.edits_fragment#(fsrc, old_name, new_name, "", fshadow)
                                 if frag.get_length() > (0 as size_t)
                                 {
                                     if first = false
@@ -7596,12 +7596,12 @@ define symbols
 
         let offset symbols.position_to_offset#(source, line, character)
         if symbols.offset_in_noncode(source, offset)
-            return String#("")
+            return ""
         let name symbols.identifier_at#(source, offset)
         if name.get_length() = (0 as size_t)
-            return String#("")
+            return ""
         if grammar.is_keyword(name)
-            return String#("")
+            return ""
         symbols.identifier_range#(source, offset)
     }
 
@@ -7612,7 +7612,7 @@ define symbols
     {
         let len source.get_length()
         if len = (0 as size_t)
-            return String#("")
+            return ""
         var off offset
         if off >= len
             set off: len - (1 as size_t)
@@ -7621,9 +7621,9 @@ define symbols
         if symbols.is_ident_byte(source.get off) = false
         {
             if off = (0 as size_t)
-                return String#("")
+                return ""
             if symbols.is_ident_byte(source.get(off - (1 as size_t))) = false
-                return String#("")
+                return ""
             set anchor: off - (1 as size_t)
         }
 
@@ -7708,7 +7708,7 @@ define symbols
                     return ws
             }
         }
-        String#("")
+        ""
     }
 
     ; Scan left from `offset` for the `(` that encloses the cursor at the
@@ -7776,9 +7776,9 @@ define symbols
             set e: e - (1 as size_t)
         }
         if e = (0 as size_t)
-            return String#("")
+            return ""
         if symbols.is_ident_byte(source.get(e - (1 as size_t))) = false
-            return String#("")
+            return ""
         var s e
         while s > (0 as size_t)
         {
@@ -7912,7 +7912,7 @@ define symbols
             when named: NamedSyntax
                 return symbols.bm_routine_record#(source, String#(named.name), named.routine)
             when r: RoutineSyntax
-                return String#("")
+                return ""
     }
 
     function bm_decl#(rp, source: String, decl: DeclarationSyntax) returns String
@@ -7929,7 +7929,7 @@ define symbols
             when priv: PrivateSyntax
                 return symbols.bm_export#(source, priv.export_)
             else
-                return String#("")
+                return ""
     }
 
     function bm_export#(rp, source: String, export_: ExportSyntax) returns String
@@ -7944,7 +7944,7 @@ define symbols
             when def: DefinitionSyntax
                 return symbols.bm_definition#(source, def)
             else
-                return String#("")
+                return ""
     }
 
     function bm_definition#(rp, source: String, def: DefinitionSyntax) returns String
@@ -7958,7 +7958,7 @@ define symbols
             sb.append(crec.get(ci) as char)
             set ci: ci + (1 as size_t)
         }
-        var members String#("")
+        var members ""
         choose def.concept_
             when c: ClassSyntax
                 set members: symbols.bm_body#(source, c.body)
@@ -8022,7 +8022,7 @@ define symbols
             when def: DefinitionSyntax
                 return symbols.bm_definition#(source, def)
             else
-                return String#("")
+                return ""
     }
 
     function bm_namespace#(rp, source: String, ns: NamespaceSyntax) returns String
@@ -8137,7 +8137,7 @@ define symbols
             }
             set rs: re + (1 as size_t)
         }
-        String#("")
+        ""
     }
 
     ; The return-type base of the FIRST routine named `name` in the map, or "".
@@ -8181,7 +8181,7 @@ define symbols
             }
             set rs: re + (1 as size_t)
         }
-        String#("")
+        ""
     }
 
     ; True when the map carries a concept (`define`) named `name`.
@@ -8293,8 +8293,8 @@ define symbols
         sb.append(0x5B as char)                    ; [
         var first true
         let len source.get_length()
-        let kw_let String#("let")
-        let kw_var String#("var")
+        let kw_let "let"
+        let kw_var "var"
         var binding_pending false
         var k: size_t 0
         while k < len
@@ -8407,16 +8407,16 @@ define symbols
                 break
             set s: s - (1 as size_t)
         }
-        let kwf String#("function")
+        let kwf "function"
         if symbols.token_equals(source, s, e, kwf)
             return true
-        let kwp String#("procedure")
+        let kwp "procedure"
         if symbols.token_equals(source, s, e, kwp)
             return true
-        let kwo String#("operator")
+        let kwo "operator"
         if symbols.token_equals(source, s, e, kwo)
             return true
-        let kwd String#("define")
+        let kwd "define"
         if symbols.token_equals(source, s, e, kwd)
             return true
         false
@@ -8436,7 +8436,7 @@ define symbols
         ; Cross-file: the symindex-cached signature path.
         var sig symbols.find_signature_in_workspace#(uri, callee, 0 as size_t)
         if sig.get_length() = (0 as size_t)
-            return String#("")
+            return ""
         let v json.parse#(sig)
         let sigs json.get(v, "signatures")
         let sig0 json.array_get(sigs, 0 as size_t)
@@ -8570,7 +8570,7 @@ define symbols
         }
         if idx = k
             return symbols.substring#(s, seg_start, n)
-        String#("")
+        ""
     }
 
     ; One LSP InlayHint: a Parameter-kind (2) hint "<name>:" at `offset`, with a
@@ -8683,13 +8683,13 @@ define symbols
         ; Annotated binding `NAME: T` -> the user already sees the type. No hint.
         if after < len
             if source.get(after) = (0x3A as u8)
-                return String#("")
+                return ""
         ; The initializer must start with an identifier (a literal / `(` / prefix
         ; operator is not a resolvable type token).
         if after >= len
-            return String#("")
+            return ""
         if symbols.is_ident_byte(source.get after) = false
-            return String#("")
+            return ""
         ; NOTE: inlay TYPE hints stay LEXICAL. A semantic (planner) attempt was
         ; evaluated and dropped: stage-0's planner mis-types a binding VALUE for
         ; the exact shapes the lexical walk can't reach (a mid-chain call
@@ -8722,7 +8722,7 @@ define symbols
                 let chain symbols.substring#(source, after, ce)
                 let ct symbols.resolve_chain_type#(source, uri, chain)
                 if symbols.is_primitive_type_name#(ct)
-                    return String#("")
+                    return ""
                 return ct
             }
         let tname symbols.substring#(source, after, te)
@@ -8754,7 +8754,7 @@ define symbols
                 if symbols.is_upper(source.get after)
                     if symbols.concept_in_workspace#(uri, tname)
                         return tname
-                return String#("")
+                return ""
             }
         }
         ; Bare identifier initializer (`let alias other`): resolve the variable's
@@ -8762,7 +8762,7 @@ define symbols
         ; the callee NAME, whose return type is the real type).
         let vt symbols.resolve_variable_type#(source, tname)
         if vt.get_length() = (0 as size_t)
-            return String#("")
+            return ""
         symbols.concept_or_return_type#(source, uri, vt, map)
     }
 
@@ -8773,14 +8773,14 @@ define symbols
     function concept_or_return_type#(rp, source: String, uri: String, name: String, map: String) returns String
     {
         if name.get_length() = (0 as size_t)
-            return String#("")
+            return ""
         if symbols.map_is_concept#(map, name)
             return name
         let mrt symbols.map_return_type#(map, name)
         if mrt.get_length() > (0 as size_t)
         {
             if symbols.is_primitive_type_name#(mrt)
-                return String#("")
+                return ""
             return mrt
         }
         ; Intra-map miss: consult the SAME content-hash-cached ws blobs the rest
@@ -8790,7 +8790,7 @@ define symbols
             return name
         let rt symbols.return_type_in_workspace#(uri, name)
         if symbols.is_primitive_type_name#(rt)
-            return String#("")
+            return ""
         rt
     }
 
@@ -8799,10 +8799,10 @@ define symbols
     function find_signature#(rp, source: String, name: String, active: size_t) returns String
     {
         var p parser.Parser$(source)
-        var result String#("")
+        var result ""
         choose p.parse_program#()
             when err: Error
-                set result: String#("")
+                set result: ""
             when program: Success
             {
                 let file program.file
@@ -8842,21 +8842,21 @@ define symbols
             when def: DefinitionSyntax
                 return symbols.sig_definition#(source, def, name, active)
             when m: ModuleSyntax
-                return String#("")
+                return ""
             when mut: MutableSyntax
-                return String#("")
+                return ""
             when priv: PrivateSyntax
                 return symbols.sig_export#(source, priv.export_, name, active)
             when e: EmptySyntax
-                return String#("")
+                return ""
             when pkg: PackageSyntax
-                return String#("")
+                return ""
             when u: UseSyntax
-                return String#("")
+                return ""
             when t: TraitSyntax
-                return String#("")
+                return ""
             when mac: MacroSyntax
-                return String#("")
+                return ""
     }
 
     ; A `private` declaration unwraps to its exported construct.
@@ -8872,16 +8872,16 @@ define symbols
             when def: DefinitionSyntax
                 return symbols.sig_definition#(source, def, name, active)
             when t: TraitSyntax
-                return String#("")
+                return ""
             when m: ModuleSyntax
-                return String#("")
+                return ""
     }
 
     ; A `define X`: recurse into the body / namespace / union for a member
     ; routine named `name` (a definition itself has no parameter list).
     function sig_definition#(rp, source: String, def: DefinitionSyntax, name: String, active: size_t) returns String
     {
-        var child String#("")
+        var child ""
         choose def.concept_
             when c: ClassSyntax
                 set child: symbols.sig_body#(source, c.body, name, active)
@@ -8897,7 +8897,7 @@ define symbols
     ; Members of a class body.
     function sig_body#(rp, source: String, body: ref[BodySyntax]?, name: String, active: size_t) returns String
     {
-        var result String#("")
+        var result ""
         if body <> null
         {
             let b (*body)
@@ -8934,27 +8934,27 @@ define symbols
             when o: OperatorSyntax
                 return symbols.sig_target#(source, o.target, name, active)
             when ini: InitSyntax
-                return String#("")
+                return ""
             when dei: DeInitSyntax
-                return String#("")
+                return ""
             when def: DefinitionSyntax
                 return symbols.sig_definition#(source, def, name, active)
             when e: EmptySyntax
-                return String#("")
+                return ""
             when im: ImplementSyntax
-                return String#("")
+                return ""
             when t: TraitSyntax
-                return String#("")
+                return ""
             when mac: MacroSyntax
-                return String#("")
+                return ""
             when m: ModuleSyntax
-                return String#("")
+                return ""
     }
 
     ; Nested declarations of a namespace.
     function sig_namespace#(rp, source: String, ns: NamespaceSyntax, name: String, active: size_t) returns String
     {
-        var result String#("")
+        var result ""
         if ns.declarations <> null
         {
             let decls (*ns.declarations)
@@ -8979,7 +8979,7 @@ define symbols
     ; Body members of a union (variants carry no parameter list).
     function sig_union#(rp, source: String, un: UnionSyntax, name: String, active: size_t) returns String
     {
-        var result String#("")
+        var result ""
         if un.body <> null
             set result: symbols.sig_body#(source, un.body, name, active)
         result
@@ -8993,10 +8993,10 @@ define symbols
             {
                 if named.name.equals(name)
                     return symbols.build_signature#(source, String#(named.name), named.routine, active)
-                return String#("")
+                return ""
             }
             when r: RoutineSyntax
-                return String#("")
+                return ""
     }
 
     ; Assemble the SignatureHelp JSON for a routine: a label "name(p0, p1)" and
@@ -9038,7 +9038,7 @@ define symbols
                             if i0 <> null
                             {
                                 let it0 (*i0)
-                                let kw_this String#("this")
+                                let kw_this "this"
                                 if it0.name.equals(kw_this)
                                     set i: 1 as size_t
                             }
@@ -9176,7 +9176,7 @@ define symbols
                             if i0 <> null
                             {
                                 let it0 (*i0)
-                                let kw_this String#("this")
+                                let kw_this "this"
                                 if it0.name.equals(kw_this)
                                     set i: 1 as size_t
                             }
@@ -9475,7 +9475,7 @@ define symbols
         if pkg.get_length() > (0 as size_t)
             if pkg.equals(dir) = false
                 return symbols.find_signature_in_dir#(pkg, path, name, active)
-        String#("")
+        ""
     }
 
     ; Enumerate the .scaly files under `dir` (recursively) and return the first
@@ -9489,10 +9489,10 @@ define symbols
     function find_signature_in_dir#(rp, dir: String, self_path: String, name: String, active: size_t) returns String
     {
         if dir.get_length() = (0 as size_t)
-            return String#("")
+            return ""
         let listing symbols.list_scaly_files#(dir)
 
-        var result String#("")
+        var result ""
         var line_start: size_t 0
         let n listing.get_length()
         var i: size_t 0
@@ -9509,7 +9509,7 @@ define symbols
                             {
                                 let fsrc File.read_to_string#(fpath)
                                 let chash fsrc.hash()
-                                var blob String#("")
+                                var blob ""
                                 if symindex.valid(fpath, chash)
                                     set blob: symindex.get_blob#(fpath)
                                 if symindex.valid(fpath, chash) = false

@@ -85,7 +85,7 @@ define docstore
     {
         if ws_root_data <> null
             return String#(ws_root_data as pointer[const_char], ws_root_len)
-        String#("")
+        ""
     }
     ; Lazily allocate + zero the slot array on first use. A malloc failure
     ; leaves doc_slots null; callers then no-op and navigation falls back to
@@ -242,6 +242,6 @@ define docstore
             if s.text_data <> null
                 return String#(s.text_data as pointer[const_char], s.text_len)
         }
-        String#("")
+        ""
     }
 }

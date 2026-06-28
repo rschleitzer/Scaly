@@ -181,7 +181,7 @@ define rpc
     function format_size#(rp, n: size_t) returns String
     {
         if n = (0 as size_t)
-            return String#("0")
+            return "0"
 
         var sb StringBuilder#()
         var value n
