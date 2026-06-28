@@ -13808,7 +13808,7 @@ define Planner
                 return null
             &out
         }
-        function promote_escaping_components#(rp, this: Planner, comps: Vector[PlannedComponent], new_life: Lifetime) returns ref[Vector[PlannedComponent]]?
+        function promote_escaping_components(this: Planner, comps: Vector[PlannedComponent], new_life: Lifetime) returns ref[Vector[PlannedComponent]]?
         {
             var changed false
             var out Vector[PlannedComponent]^rp(comps.length)
@@ -13853,7 +13853,7 @@ define Planner
         ; fields verbatim and only swap the promoted sub-operand, avoiding the
         ; s34/s196 result_type-rebuild hazard.
         ; ================================================================
-        function promote_tail_operand#(rp, this: Planner, op: PlannedOperand, new_life: Lifetime) returns ref[PlannedOperand]?
+        function promote_tail_operand(this: Planner, op: PlannedOperand, new_life: Lifetime) returns ref[PlannedOperand]?
         {
             ; Direct construction/call placed on the LOCAL page (Local life on
             ; the PlannedCall/PlannedTuple). Gated on operand_is_local_page_
@@ -14106,7 +14106,7 @@ define Planner
         ; target carries an implicit value; a Return is already handled by R2
         ; (plan_return#), so leave it (return null). The action's value is its
         ; single source operand.
-        function promote_tail_statement#(rp, this: Planner, stmt: PlannedStatement, new_life: Lifetime) returns ref[PlannedStatement]?
+        function promote_tail_statement(this: Planner, stmt: PlannedStatement, new_life: Lifetime) returns ref[PlannedStatement]?
         {
             choose stmt
                 when a: PlannedAction
@@ -14617,7 +14617,7 @@ define Planner
         ; Gated on a CAPITALIZED head name (a construction, not a call) so an
         ; ordinary `return f(scratch)` does not over-promote scratch — over-
         ; collection is merely leaky, never unsafe, but the gate keeps it tight.
-        function add_escaping_local#(rp, this: Planner, name: String)
+        function add_escaping_local(this: Planner, name: String)
         {
             if this.array_contains_name(escaping_return_locals, name) = false
                 escaping_return_locals.add(String^rp(name))
@@ -14708,7 +14708,7 @@ define Planner
         ; Over-collection is merely leaky, never unsafe; under-collection
         ; dangles. The mutually-recursive collect_flow_stmt# unwraps a branch
         ; statement (Action/Return) to its value operands.
-        function collect_flow_locals#(rp, this: Planner, ops: Vector[Operand])
+        function collect_flow_locals(this: Planner, ops: Vector[Operand])
         {
             if ops.length = 1
             {
@@ -14964,7 +14964,7 @@ define Planner
         }
         ; Unwrap a value-yielding branch statement to its value operands so
         ; collect_flow_locals# can descend a choose/if/match/block branch.
-        function collect_flow_stmt#(rp, this: Planner, s: Statement)
+        function collect_flow_stmt(this: Planner, s: Statement)
         {
             choose s
                 when a: Action
@@ -14982,7 +14982,7 @@ define Planner
         ; then promotes their binding in plan_binding#); INLINE constructions in
         ; a put/add value position have no binding and are left `#` at the source
         ; (the de-sigil skips put/add inline args), so they stay caller-page.
-        function add_escaping_target#(rp, this: Planner, name: String)
+        function add_escaping_target(this: Planner, name: String)
         {
             if this.array_contains_name(escaping_targets, name) = false
                 escaping_targets.add(String^rp(name))
@@ -15080,7 +15080,7 @@ define Planner
                     0
             String("")
         }
-        function collect_store_value_locals#(rp, this: Planner, source: Vector[Operand])
+        function collect_store_value_locals(this: Planner, source: Vector[Operand])
         {
             if source.length >= 2
             {
@@ -15237,7 +15237,7 @@ define Planner
         ; EXPLICITLY-`^page`-bound local (lexer's `return name`) made restamp_
         ; operand_life# override the explicit lifetime → wrong page → dangling
         ; token Strings. restamp now only promotes DEFAULTED-Local allocations.
-        function collect_returns_stmt#(rp, this: Planner, s: Statement)
+        function collect_returns_stmt(this: Planner, s: Statement)
         {
             choose s
                 when r: Return
@@ -15315,7 +15315,7 @@ define Planner
                 else
                     0
         }
-        function collect_returns_operand#(rp, this: Planner, op: Operand)
+        function collect_returns_operand(this: Planner, op: Operand)
         {
             choose op.expression
                 when b: Block
@@ -15391,7 +15391,7 @@ define Planner
                 else
                     0
         }
-        function collect_returns_action#(rp, this: Planner, a: Action)
+        function collect_returns_action(this: Planner, a: Action)
         {
             var i: size_t 0
             while i < a.source.length
@@ -15458,7 +15458,7 @@ define Planner
         ; FIXPOINT: each pass the Binding arm propagates escape one level deeper
         ; through `let p Ctor(q, ...)` chains; iterate until the set stops
         ; growing. Bounded by the number of bindings (monotone, dedup-add).
-        procedure scan_top_level_returns#(rp, this: Planner, impl: Implementation)
+        procedure scan_top_level_returns(this: Planner, impl: Implementation)
         {
             choose impl
                 when a: Action
@@ -16513,7 +16513,7 @@ define Planner
         ; definition is a Structure. Skips the Concept if its name is
         ; already in instantiated_structures (avoids duplicate entries
         ; when the same module is also walked by the full planner).
-        function register_struct_layouts_in_module#(rp, this: Planner, m: Module)
+        function register_struct_layouts_in_module(this: Planner, m: Module)
         {
             var i: size_t 0
             while i < m.members.length
