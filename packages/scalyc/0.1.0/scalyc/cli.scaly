@@ -104,7 +104,7 @@ define cli
     ; Parse command-line arguments
     ; argc: argument count
     ; argv: argument vector (C-style array of char pointers)
-    function parse_args#(argc: int, argv: pointer[pointer[char]]) returns Options
+    function parse_args(argc: int, argv: pointer[pointer[char]]) returns Options
     {
         var opts Options()
 
@@ -266,7 +266,7 @@ define cli
     ; survives reboots — unlike /tmp, which is cleared on boot. With SCALY_HOME
     ; unset (CI, bootstrap, AOT harness) it stays /tmp/libscaly.a exactly as
     ; before, so those paths are byte-for-byte unchanged.
-    function runtime_archive_path#(rp) returns String
+    function runtime_archive_path() returns String
     {
         let home getenv "SCALY_HOME"
         if home = null
@@ -285,7 +285,7 @@ define cli
     ; found, e.g. clang-18 on a box that has no plain `clang`), then $CC,
     ; falling back to `clang`. Unset → `clang`, exactly as before, so CI /
     ; bootstrap / AOT linking is byte-for-byte unchanged.
-    function link_compiler#(rp) returns String
+    function link_compiler() returns String
     {
         var name getenv "SCALY_CC"
         if name = null
@@ -781,7 +781,7 @@ define cli
     ; Decimal formatting for diagnostics. Local mirror of
     ; Planner.size_to_string to avoid cross-namespace call resolution
     ; risk under stage-1.
-    function format_size#(n: size_t) returns String
+    function format_size(n: size_t) returns String
     {
         if n = 0
             return String("0")
@@ -805,7 +805,7 @@ define cli
         sb.to_string()
     }
 
-    function extract_program_name#(file_path: String) returns String
+    function extract_program_name(file_path: String) returns String
     {
         ; Find last '/' or '\'
         var start 0
