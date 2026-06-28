@@ -622,7 +622,7 @@ define Parser
 
         let parameters_start lexer.position
         var parameters: ref[GenericParametersSyntax]? null
-        choose parse_genericparameters#()
+        choose parse_genericparameters()
             when err: Error
             {
                 choose err
@@ -833,7 +833,7 @@ define Parser
 
         let body_start lexer.position
         var body: ref[BodySyntax]? null
-        choose parse_body#()
+        choose parse_body()
             when err: Error
             {
                 choose err
@@ -963,7 +963,7 @@ define Parser
 
         let body_start lexer.position
         var body: ref[BodySyntax]? null
-        choose parse_body#()
+        choose parse_body()
             when err: Error
             {
                 choose err
@@ -1030,7 +1030,7 @@ define Parser
 
         let annotation_start lexer.position
         var annotation: ref[TypeAnnotationSyntax]? null
-        choose parse_typeannotation#()
+        choose parse_typeannotation()
             when err: Error
             {
                 choose err
@@ -1113,7 +1113,7 @@ define Parser
 
         let result_start lexer.position
         var result: ref[ReturnsSyntax]? null
-        choose parse_returns#()
+        choose parse_returns()
             when err: Error
             {
                 choose err
@@ -1125,7 +1125,7 @@ define Parser
 
         let error_start lexer.position
         var error: ref[ThrowsSyntax]? null
-        choose parse_throws#()
+        choose parse_throws()
             when err: Error
             {
                 choose err
@@ -1320,7 +1320,7 @@ define Parser
 
         let annotation_start lexer.position
         var annotation: ref[TypeAnnotationSyntax]? null
-        choose parse_typeannotation#()
+        choose parse_typeannotation()
             when err: Error
             {
                 choose err
@@ -1583,7 +1583,7 @@ define Parser
 
         let extension_start lexer.position
         var extension: ref[ExtendsSyntax]? null
-        choose parse_extends#()
+        choose parse_extends()
             when err: Error
             {
                 choose err
@@ -1956,7 +1956,7 @@ define Parser
 
         let generics_start lexer.position
         var generics: ref[GenericArgumentsSyntax]? null
-        choose parse_genericarguments#()
+        choose parse_genericarguments()
             when err: Error
             {
                 choose err
@@ -2005,7 +2005,7 @@ define Parser
 
         let returns__start lexer.position
         var returns_: ref[ReturnsSyntax]? null
-        choose parse_returns#()
+        choose parse_returns()
             when err: Error
             {
                 choose err
@@ -2019,7 +2019,7 @@ define Parser
 
         let throws__start lexer.position
         var throws_: ref[ThrowsSyntax]? null
-        choose parse_throws#()
+        choose parse_throws()
             when err: Error
             {
                 choose err
@@ -2417,7 +2417,7 @@ define Parser
 
         let version_start lexer.position
         var version: ref[VersionSyntax]? null
-        choose parse_version#()
+        choose parse_version()
             when err: Error
             {
                 choose err
@@ -2888,7 +2888,7 @@ define Parser
 
         let value_start lexer.position
         var value: ref[ValueSyntax]? null
-        choose parse_value#()
+        choose parse_value()
             when err: Error
             {
                 choose err
@@ -3086,7 +3086,7 @@ define Parser
 
         let alternative_start lexer.position
         var alternative: ref[ElseSyntax]? null
-        choose parse_else#()
+        choose parse_else()
             when err: Error
             {
                 choose err
@@ -3191,7 +3191,7 @@ define Parser
 
         let alternative_start lexer.position
         var alternative: ref[ElseSyntax]? null
-        choose parse_else#()
+        choose parse_else()
             when err: Error
             {
                 choose err
@@ -3350,7 +3350,7 @@ define Parser
 
         let name_start lexer.position
         var name: ref[LabelSyntax]? null
-        choose parse_label#()
+        choose parse_label()
             when err: Error
             {
                 choose err
@@ -3420,7 +3420,7 @@ define Parser
 
         let alternative_start lexer.position
         var alternative: ref[ElseSyntax]? null
-        choose parse_else#()
+        choose parse_else()
             when err: Error
             {
                 choose err
@@ -3486,7 +3486,7 @@ define Parser
 
         let dropper_start lexer.position
         var dropper: ref[ElseSyntax]? null
-        choose parse_else#()
+        choose parse_else()
             when err: Error
             {
                 choose err
@@ -3828,7 +3828,7 @@ define Parser
 
         let annotation_start lexer.position
         var annotation: ref[BindingAnnotationSyntax]? null
-        choose parse_bindingannotation#()
+        choose parse_bindingannotation()
             when err: Error
             {
                 choose err
@@ -4135,7 +4135,7 @@ define Parser
 
         let initializer_start lexer.position
         var initializer: ref[InitializerSyntax]? null
-        choose parse_initializer#()
+        choose parse_initializer()
             when err: Error
             {
                 choose err
@@ -4202,7 +4202,7 @@ define Parser
 
         let name_start lexer.position
         var name: ref[LoopSyntax]? null
-        choose parse_loop#()
+        choose parse_loop()
             when err: Error
             {
                 choose err
@@ -4226,7 +4226,7 @@ define Parser
 
         let name_start lexer.position
         var name: ref[LoopSyntax]? null
-        choose parse_loop#()
+        choose parse_loop()
             when err: Error
             {
                 choose err
@@ -4376,7 +4376,7 @@ define Parser
 
         let annotation_start lexer.position
         var annotation: ref[TypeAnnotationSyntax]? null
-        choose parse_typeannotation#()
+        choose parse_typeannotation()
             when err: Error
             {
                 choose err
@@ -4408,7 +4408,7 @@ define Parser
 
         let name_start lexer.position
         var name: ref[LabelSyntax]? null
-        choose parse_label#()
+        choose parse_label()
             when err: Error
             {
                 choose err
@@ -4464,7 +4464,7 @@ define Parser
 
         let name_start lexer.position
         var name: ref[LabelSyntax]? null
-        choose parse_label#()
+        choose parse_label()
             when err: Error
             {
                 choose err
@@ -4807,7 +4807,7 @@ define Parser
 
         let generics_start lexer.position
         var generics: ref[GenericArgumentsSyntax]? null
-        choose parse_genericarguments#()
+        choose parse_genericarguments()
             when err: Error
             {
                 choose err
@@ -4819,7 +4819,7 @@ define Parser
 
         let optional_start lexer.position
         var optional: ref[OptionalSyntax]? null
-        choose parse_optional#()
+        choose parse_optional()
             when err: Error
             {
                 choose err

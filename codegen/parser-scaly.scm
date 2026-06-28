@@ -223,7 +223,7 @@ define Parser
 "
         let " prop "_start lexer.position
         var " prop ": ref[" (if (multiple? content) ($ "Vector[" (link content) "Syntax]") ($ (link content) "Syntax")) "]? null
-        choose parse_"(downcase-string (link content))(if (multiple? content) "_list" (if (abstract? (element-with-id (link content))) "" "#"))"()
+        choose parse_"(downcase-string (link content))(if (multiple? content) "_list" "")"()
             when err: Error
             {
                 choose err
