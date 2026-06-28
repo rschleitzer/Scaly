@@ -14884,17 +14884,46 @@ define Planner
                 ; The arguments operand is normally at index 1, but a GENERIC
                 ; container ctor `Vector[T](args)` splits into [Type(Vector),
                 ; Matrix([T]), Tuple(args)] (s107) — the generic args ride a
-                ; Matrix at index 1 and the real arg Tuple is at index 2. Skip
-                ; a leading Matrix so a returned `Vector[Statement](result)`
-                ; collects `result` (else the whole tree-builder dangles).
+                ; Matrix at index 1 and the real arg Tuple is at index 2. A
+                ; LIFETIME ctor `Foo#(args)` additionally inserts the lifetime
+                ; marker — an EMPTY-name Type carrying the Call/Local/Reference
+                ; lifetime (handle_expression's LifetimeSyntax arm,
+                ; Modeler.scaly:576-581) — as its OWN operand before the arg
+                ; Tuple, so `LoopSyntax#(a, b)` is [Type(LoopSyntax),
+                ; Type(empty,#), Tuple(a, b)] and `Vector[T]#(args)` is
+                ; [Type(Vector), Matrix([T]), Type(empty,#), Tuple(args)]. Skip
+                ; any leading Matrix and/or empty-name lifetime-marker operands
+                ; so the real arg Tuple is found — else a `#`-lifetime
+                ; reconstruction ctor `set name: LoopSyntax#(success.start, …)`
+                ; stops at the marker and never collects the field-read base
+                ; `success`. A real Type arg always has a non-empty name, so the
+                ; empty-name test never skips a genuine argument. Over-collection
+                ; is safe + NEUTRAL on sigiled source (restamp keeps an explicit
+                ; #/^ arg binding verbatim).
                 var args_idx: size_t 1
-                let probe_ptr ops.get 1
-                if probe_ptr <> null
-                    choose (*probe_ptr).expression
-                        when mx: Matrix
-                            set args_idx: 2
-                        else
-                            0
+                var skipping: bool true
+                while skipping
+                {
+                    set skipping: false
+                    let probe_ptr ops.get args_idx
+                    if probe_ptr <> null
+                        choose (*probe_ptr).expression
+                            when mx: Matrix
+                            {
+                                set args_idx: args_idx + 1
+                                set skipping: true
+                            }
+                            when lt: scalyc.compiler.Model.Type
+                            {
+                                if lt.name.length = 0
+                                {
+                                    set args_idx: args_idx + 1
+                                    set skipping: true
+                                }
+                            }
+                            else
+                                0
+                }
                 let args_ptr ops.get args_idx
                 if head_ptr <> null
                     if args_ptr <> null

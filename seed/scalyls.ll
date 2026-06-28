@@ -62494,9 +62494,9 @@ if.end10:                                         ; preds = %if.end7
 
 define linkonce_odr i1 @_ZN7symbols18name_in_completionEPN4scaly6memory4PageE6String6String(ptr %0, ptr %1, ptr %2) {
 entry:
+  %local_page = call ptr @_Z21scaly_alloc_root_pagev()
   %sret.result5 = alloca %_Z9JsonValue, align 8
   %sret.result4 = alloca { ptr }, align 8
-  %local_page = call ptr @_Z21scaly_alloc_root_pagev()
   %sret.result2 = alloca %_Z9JsonValue, align 8
   %sret.result = alloca %_Z9JsonValue, align 8
   call void @_ZN4json5parseEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z9JsonValue) %sret.result, ptr %0, ptr %1)
@@ -62512,7 +62512,7 @@ while.cond:                                       ; preds = %if.end, %entry
 
 while.body:                                       ; preds = %while.cond
   %i3 = load i64, ptr %i, align 4
-  call void @_ZN4json9array_getEPN4scaly6memory4PageEm(ptr noalias sret(%_Z9JsonValue) %sret.result2, ptr %local_page, ptr %sret.result, i64 %i3)
+  call void @_ZN4json9array_getEPN4scaly6memory4PageEm(ptr noalias sret(%_Z9JsonValue) %sret.result2, ptr %0, ptr %sret.result, i64 %i3)
   call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result5, ptr %local_page, ptr %sret.result2, ptr @.str.519)
   call void @_ZN4json9as_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result4, ptr %0, ptr %sret.result5)
   %call6 = call i1 @_ZN6String6equalsE6String(ptr %sret.result4, ptr %2)
@@ -66302,6 +66302,7 @@ entry:
   %ni = alloca i64, align 8
   %ci = alloca i64, align 8
   %nlen = alloca i64, align 8
+  %local_page = call ptr @_Z21scaly_alloc_root_pagev()
   %sret.result18 = alloca %_Z9JsonValue, align 8
   %sret.result17 = alloca { ptr }, align 8
   %sret.result15 = alloca %_Z9JsonValue, align 8
@@ -66309,7 +66310,6 @@ entry:
   %sb = alloca ptr, align 8
   %sret.result11 = alloca %_Z9JsonValue, align 8
   %sret.result10 = alloca %_Z9JsonValue, align 8
-  %local_page = call ptr @_Z21scaly_alloc_root_pagev()
   %sret.result9 = alloca %_Z9JsonValue, align 8
   %sret.result7 = alloca %_Z9JsonValue, align 8
   %sig = alloca ptr, align 8
@@ -66346,9 +66346,9 @@ if.then4:                                         ; preds = %if.end
 if.end5:                                          ; preds = %if.end
   %sig8 = load ptr, ptr %sig, align 8
   call void @_ZN4json5parseEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z9JsonValue) %sret.result7, ptr %1, ptr %sig8)
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result9, ptr %local_page, ptr %sret.result7, ptr @.str.562)
-  call void @_ZN4json9array_getEPN4scaly6memory4PageEm(ptr noalias sret(%_Z9JsonValue) %sret.result10, ptr %local_page, ptr %sret.result9, i64 0)
-  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result11, ptr %local_page, ptr %sret.result10, ptr @.str.563)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result9, ptr %1, ptr %sret.result7, ptr @.str.562)
+  call void @_ZN4json9array_getEPN4scaly6memory4PageEm(ptr noalias sret(%_Z9JsonValue) %sret.result10, ptr %1, ptr %sret.result9, i64 0)
+  call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result11, ptr %1, ptr %sret.result10, ptr @.str.563)
   %call12 = call i64 @_ZN4json12array_lengthEv(ptr %sret.result11)
   %struct.region13 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
   call void @_ZN13StringBuilderC1EPN4scaly6memory4PageE(ptr %struct.region13, ptr %1)
@@ -66363,7 +66363,7 @@ while.cond:                                       ; preds = %while.exit39, %if.e
 
 while.body:                                       ; preds = %while.cond
   %i16 = load i64, ptr %i, align 4
-  call void @_ZN4json9array_getEPN4scaly6memory4PageEm(ptr noalias sret(%_Z9JsonValue) %sret.result15, ptr %local_page, ptr %sret.result11, i64 %i16)
+  call void @_ZN4json9array_getEPN4scaly6memory4PageEm(ptr noalias sret(%_Z9JsonValue) %sret.result15, ptr %1, ptr %sret.result11, i64 %i16)
   call void @_ZN4json3getEPN4scaly6memory4PageEP10const_char(ptr noalias sret(%_Z9JsonValue) %sret.result18, ptr %local_page, ptr %sret.result15, ptr @.str.564)
   call void @_ZN4json9as_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result17, ptr %1, ptr %sret.result18)
   store i64 0, ptr %nlen, align 1
