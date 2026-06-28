@@ -11246,7 +11246,38 @@ define Planner
             ; Fold the choose condition down to a single value to
             ; recover its type — that's the union each `when` pattern
             ; selects a variant of.
-            let collapsed_cond this.collapse_operand_sequence(planned_cond)
+            var collapsed_cond this.collapse_operand_sequence(planned_cond)
+            ; GAP 1 (when-arm-escape): when a when-arm BINDING name escapes
+            ; (is returned / stored into an escaping aggregate — collected by
+            ; the set-reassignment / flow-graph machinery into
+            ; escaping_return_locals), the choose SCRUTINEE call's result flows
+            ; out through that arm binding, so it must live on the caller page.
+            ; The arm binding has no plan_binding# to restamp its init — its
+            ; init IS this scrutinee — so promote a defaulted-Local/Unspecified
+            ; scrutinee construction to rp here. NEUTRAL on sigiled source: an
+            ; explicit `#`/`^` scrutinee carries Call/Reference life, which
+            ; restamp_operand_life# keeps verbatim (returns null).
+            var arm_escapes: bool false
+            var ae_i: size_t 0
+            while ae_i < c.cases.length
+            {
+                let ae_wp c.cases.get ae_i
+                if ae_wp <> null
+                {
+                    let ae_w (*ae_wp)
+                    if ae_w.name.get_length() > 0
+                        if this.array_contains_name(escaping_return_locals, ae_w.name)
+                            set arm_escapes: true
+                }
+                set ae_i: ae_i + 1
+            }
+            if arm_escapes
+            {
+                let ae_life Lifetime.Call(scalyc.compiler.Model.Call(c.span))
+                let ae_promoted this.restamp_operand_life(collapsed_cond, ae_life)
+                if ae_promoted <> null
+                    set collapsed_cond: (*ae_promoted)
+            }
             ; s173: peel ref[T]/pointer[T] off the condition type so
             ; plan_when# can resolve the union's variants. A for-in loop
             ; variable is typed ref[T] (the iterator's next() return),
