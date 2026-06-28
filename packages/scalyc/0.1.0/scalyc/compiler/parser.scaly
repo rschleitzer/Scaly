@@ -182,7 +182,7 @@ define Parser
 
         let statements_start lexer.position
         var statements: ref[Vector[StatementSyntax]]? null
-        choose parse_statement_list#()
+        choose parse_statement_list()
             when err: Error
             {
                 choose err
@@ -204,7 +204,7 @@ define Parser
 
         let declarations_start lexer.position
         var declarations: ref[Vector[DeclarationSyntax]]? null
-        choose parse_declaration_list#()
+        choose parse_declaration_list()
             when err: Error
             {
                 choose err
@@ -220,7 +220,7 @@ define Parser
         FileSyntax(start, end, declarations)
     }
 
-    function parse_declaration_list#(rp, this: Parser) returns ref[Vector[DeclarationSyntax]]? throws ParserError
+    function parse_declaration_list(this: Parser) returns ref[Vector[DeclarationSyntax]]? throws ParserError
     {
         var acc List[DeclarationSyntax]()
         var parsing: bool true
@@ -465,7 +465,7 @@ define Parser
         throw ParserError.Different(DifferentSyntax())
     }
 
-    function parse_member_list#(rp, this: Parser) returns ref[Vector[MemberSyntax]]? throws ParserError
+    function parse_member_list(this: Parser) returns ref[Vector[MemberSyntax]]? throws ParserError
     {
         var acc List[MemberSyntax]()
         var parsing: bool true
@@ -636,7 +636,7 @@ define Parser
 
         let attributes_start lexer.position
         var attributes: ref[Vector[AttributeSyntax]]? null
-        choose parse_attribute_list#()
+        choose parse_attribute_list()
             when err: Error
             {
                 choose err
@@ -675,7 +675,7 @@ define Parser
 
         let parameters_start lexer.position
         var parameters: ref[Vector[GenericParameterSyntax]]?
-        choose parse_genericparameter_list#()
+        choose parse_genericparameter_list()
             when err: Error
             {
                 choose err
@@ -695,7 +695,7 @@ define Parser
         GenericParametersSyntax(start, end, parameters)
     }
 
-    function parse_genericparameter_list#(rp, this: Parser) returns ref[Vector[GenericParameterSyntax]]? throws ParserError
+    function parse_genericparameter_list(this: Parser) returns ref[Vector[GenericParameterSyntax]]? throws ParserError
     {
         var acc List[GenericParameterSyntax]()
         var parsing: bool true
@@ -734,7 +734,7 @@ define Parser
 
         let attributes_start lexer.position
         var attributes: ref[Vector[AttributeSyntax]]? null
-        choose parse_attribute_list#()
+        choose parse_attribute_list()
             when err: Error
             {
                 choose err
@@ -857,7 +857,7 @@ define Parser
 
         let uses_start lexer.position
         var uses: ref[Vector[UseSyntax]]? null
-        choose parse_use_list#()
+        choose parse_use_list()
             when err: Error
             {
                 choose err
@@ -870,7 +870,7 @@ define Parser
 
         let members_start lexer.position
         var members: ref[Vector[MemberSyntax]]? null
-        choose parse_member_list#()
+        choose parse_member_list()
             when err: Error
             {
                 choose err
@@ -898,7 +898,7 @@ define Parser
 
         let uses_start lexer.position
         var uses: ref[Vector[UseSyntax]]? null
-        choose parse_use_list#()
+        choose parse_use_list()
             when err: Error
             {
                 choose err
@@ -911,7 +911,7 @@ define Parser
 
         let declarations_start lexer.position
         var declarations: ref[Vector[DeclarationSyntax]]? null
-        choose parse_declaration_list#()
+        choose parse_declaration_list()
             when err: Error
             {
                 choose err
@@ -944,7 +944,7 @@ define Parser
 
         let variants_start lexer.position
         var variants: ref[Vector[VariantSyntax]]?
-        choose parse_variant_list#()
+        choose parse_variant_list()
             when err: Error
             {
                 choose err
@@ -978,7 +978,7 @@ define Parser
         UnionSyntax(start, end, variants, body)
     }
 
-    function parse_variant_list#(rp, this: Parser) returns ref[Vector[VariantSyntax]]? throws ParserError
+    function parse_variant_list(this: Parser) returns ref[Vector[VariantSyntax]]? throws ParserError
     {
         var acc List[VariantSyntax]()
         var parsing: bool true
@@ -1017,7 +1017,7 @@ define Parser
 
         let attributes_start lexer.position
         var attributes: ref[Vector[AttributeSyntax]]? null
-        choose parse_attribute_list#()
+        choose parse_attribute_list()
             when err: Error
             {
                 choose err
@@ -1063,7 +1063,7 @@ define Parser
 
         let operation_start lexer.position
         var operation: ref[Vector[OperandSyntax]]? null
-        choose parse_operand_list#()
+        choose parse_operand_list()
             when err: Error
             {
                 choose err
@@ -1100,7 +1100,7 @@ define Parser
 
         let attributes_start lexer.position
         var attributes: ref[Vector[AttributeSyntax]]? null
-        choose parse_attribute_list#()
+        choose parse_attribute_list()
             when err: Error
             {
                 choose err
@@ -1149,7 +1149,7 @@ define Parser
 
         let generics_start lexer.position
         var generics: ref[Vector[GenericArgumentSyntax]]? null
-        choose parse_genericargument_list#()
+        choose parse_genericargument_list()
             when err: Error
             {
                 choose err
@@ -1168,7 +1168,7 @@ define Parser
         GenericArgumentsSyntax(start, end, generics)
     }
 
-    function parse_genericargument_list#(rp, this: Parser) returns ref[Vector[GenericArgumentSyntax]]? throws ParserError
+    function parse_genericargument_list(this: Parser) returns ref[Vector[GenericArgumentSyntax]]? throws ParserError
     {
         var acc List[GenericArgumentSyntax]()
         var parsing: bool true
@@ -1262,7 +1262,7 @@ define Parser
 
         let items_start lexer.position
         var items: ref[Vector[ItemSyntax]]? null
-        choose parse_item_list#()
+        choose parse_item_list()
             when err: Error
             {
                 choose err
@@ -1281,7 +1281,7 @@ define Parser
         ParametersSyntax(start, end, items)
     }
 
-    function parse_item_list#(rp, this: Parser) returns ref[Vector[ItemSyntax]]? throws ParserError
+    function parse_item_list(this: Parser) returns ref[Vector[ItemSyntax]]? throws ParserError
     {
         var acc List[ItemSyntax]()
         var parsing: bool true
@@ -1336,7 +1336,7 @@ define Parser
 
         let attributes_start lexer.position
         var attributes: ref[Vector[AttributeSyntax]]? null
-        choose parse_attribute_list#()
+        choose parse_attribute_list()
             when err: Error
             {
                 choose err
@@ -1375,7 +1375,7 @@ define Parser
 
         let attributes_start lexer.position
         var attributes: ref[Vector[AttributeSyntax]]? null
-        choose parse_attribute_list#()
+        choose parse_attribute_list()
             when err: Error
             {
                 choose err
@@ -1414,7 +1414,7 @@ define Parser
 
         let attributes_start lexer.position
         var attributes: ref[Vector[AttributeSyntax]]? null
-        choose parse_attribute_list#()
+        choose parse_attribute_list()
             when err: Error
             {
                 choose err
@@ -1430,7 +1430,7 @@ define Parser
         ThrowsSyntax(start, end, type, attributes)
     }
 
-    function parse_use_list#(rp, this: Parser) returns ref[Vector[UseSyntax]]? throws ParserError
+    function parse_use_list(this: Parser) returns ref[Vector[UseSyntax]]? throws ParserError
     {
         var acc List[UseSyntax]()
         var parsing: bool true
@@ -1510,7 +1510,7 @@ define Parser
 
         let attributes_start lexer.position
         var attributes: ref[Vector[AttributeSyntax]]? null
-        choose parse_attribute_list#()
+        choose parse_attribute_list()
             when err: Error
             {
                 choose err
@@ -1528,7 +1528,7 @@ define Parser
 
         let uses_start lexer.position
         var uses: ref[Vector[UseSyntax]]? null
-        choose parse_use_list#()
+        choose parse_use_list()
             when err: Error
             {
                 choose err
@@ -1541,7 +1541,7 @@ define Parser
 
         let methods_start lexer.position
         var methods: ref[Vector[MethodSyntax]]? null
-        choose parse_method_list#()
+        choose parse_method_list()
             when err: Error
             {
                 choose err
@@ -1595,7 +1595,7 @@ define Parser
 
         let attributes_start lexer.position
         var attributes: ref[Vector[AttributeSyntax]]? null
-        choose parse_attribute_list#()
+        choose parse_attribute_list()
             when err: Error
             {
                 choose err
@@ -1611,7 +1611,7 @@ define Parser
 
         let uses_start lexer.position
         var uses: ref[Vector[UseSyntax]]? null
-        choose parse_use_list#()
+        choose parse_use_list()
             when err: Error
             {
                 choose err
@@ -1624,7 +1624,7 @@ define Parser
 
         let functions_start lexer.position
         var functions: ref[Vector[MethodSyntax]]? null
-        choose parse_method_list#()
+        choose parse_method_list()
             when err: Error
             {
                 choose err
@@ -1643,7 +1643,7 @@ define Parser
         TraitSyntax(start, end, name, extension, attributes, uses, functions)
     }
 
-    function parse_method_list#(rp, this: Parser) returns ref[Vector[MethodSyntax]]? throws ParserError
+    function parse_method_list(this: Parser) returns ref[Vector[MethodSyntax]]? throws ParserError
     {
         var acc List[MethodSyntax]()
         var parsing: bool true
@@ -1707,7 +1707,7 @@ define Parser
         throw ParserError.Different(DifferentSyntax())
     }
 
-    function parse_init_list#(rp, this: Parser) returns ref[Vector[InitSyntax]]? throws ParserError
+    function parse_init_list(this: Parser) returns ref[Vector[InitSyntax]]? throws ParserError
     {
         var acc List[InitSyntax]()
         var parsing: bool true
@@ -1992,7 +1992,7 @@ define Parser
 
         let attributes_start lexer.position
         var attributes: ref[Vector[AttributeSyntax]]? null
-        choose parse_attribute_list#()
+        choose parse_attribute_list()
             when err: Error
             {
                 choose err
@@ -2140,7 +2140,7 @@ define Parser
 
         let extensions_start lexer.position
         var extensions: ref[Vector[ExtendSyntax]]? null
-        choose parse_extend_list#()
+        choose parse_extend_list()
             when err: Error
             {
                 choose err
@@ -2156,7 +2156,7 @@ define Parser
         ExtendsSyntax(start, end, extensions)
     }
 
-    function parse_extend_list#(rp, this: Parser) returns ref[Vector[ExtendSyntax]]? throws ParserError
+    function parse_extend_list(this: Parser) returns ref[Vector[ExtendSyntax]]? throws ParserError
     {
         var acc List[ExtendSyntax]()
         var parsing: bool true
@@ -2231,7 +2231,7 @@ define Parser
 
         let rule_start lexer.position
         var rule: ref[Vector[OperandSyntax]]?
-        choose parse_operand_list#()
+        choose parse_operand_list()
             when err: Error
             {
                 choose err
@@ -2248,7 +2248,7 @@ define Parser
         MacroSyntax(start, end, name, model, rule)
     }
 
-    function parse_attribute_list#(rp, this: Parser) returns ref[Vector[AttributeSyntax]]? throws ParserError
+    function parse_attribute_list(this: Parser) returns ref[Vector[AttributeSyntax]]? throws ParserError
     {
         var acc List[AttributeSyntax]()
         var parsing: bool true
@@ -2365,7 +2365,7 @@ define Parser
         ModuleSyntax(start, end, name)
     }
 
-    function parse_package_list#(rp, this: Parser) returns ref[Vector[PackageSyntax]]? throws ParserError
+    function parse_package_list(this: Parser) returns ref[Vector[PackageSyntax]]? throws ParserError
     {
         var acc List[PackageSyntax]()
         var parsing: bool true
@@ -2469,7 +2469,7 @@ define Parser
 
         let operands_start lexer.position
         var operands: ref[Vector[OperandSyntax]]?
-        choose parse_operand_list#()
+        choose parse_operand_list()
             when err: Error
             {
                 choose err
@@ -2489,7 +2489,7 @@ define Parser
         InitializerSyntax(start, end, operands)
     }
 
-    function parse_operand_list#(rp, this: Parser) returns ref[Vector[OperandSyntax]]? throws ParserError
+    function parse_operand_list(this: Parser) returns ref[Vector[OperandSyntax]]? throws ParserError
     {
         var acc List[OperandSyntax]()
         var parsing: bool true
@@ -2532,7 +2532,7 @@ define Parser
 
         let members_start lexer.position
         var members: ref[Vector[MemberAccessSyntax]]? null
-        choose parse_memberaccess_list#()
+        choose parse_memberaccess_list()
             when err: Error
             {
                 choose err
@@ -2548,7 +2548,7 @@ define Parser
         OperandSyntax(start, end, expression, members)
     }
 
-    function parse_memberaccess_list#(rp, this: Parser) returns ref[Vector[MemberAccessSyntax]]? throws ParserError
+    function parse_memberaccess_list(this: Parser) returns ref[Vector[MemberAccessSyntax]]? throws ParserError
     {
         var acc List[MemberAccessSyntax]()
         var parsing: bool true
@@ -2813,7 +2813,7 @@ define Parser
 
         let components_start lexer.position
         var components: ref[Vector[ComponentSyntax]]? null
-        choose parse_component_list#()
+        choose parse_component_list()
             when err: Error
             {
                 choose err
@@ -2832,7 +2832,7 @@ define Parser
         ObjectSyntax(start, end, components)
     }
 
-    function parse_component_list#(rp, this: Parser) returns ref[Vector[ComponentSyntax]]? throws ParserError
+    function parse_component_list(this: Parser) returns ref[Vector[ComponentSyntax]]? throws ParserError
     {
         var acc List[ComponentSyntax]()
         var parsing: bool true
@@ -2867,7 +2867,7 @@ define Parser
 
         let operands_start lexer.position
         var operands: ref[Vector[OperandSyntax]]?
-        choose parse_operand_list#()
+        choose parse_operand_list()
             when err: Error
                 throw err
             when success: Success
@@ -2875,7 +2875,7 @@ define Parser
 
         let attributes_start lexer.position
         var attributes: ref[Vector[AttributeSyntax]]? null
-        choose parse_attribute_list#()
+        choose parse_attribute_list()
             when err: Error
             {
                 choose err
@@ -2914,7 +2914,7 @@ define Parser
 
         let value_start lexer.position
         var value: ref[Vector[OperandSyntax]]?
-        choose parse_operand_list#()
+        choose parse_operand_list()
             when err: Error
             {
                 choose err
@@ -2928,7 +2928,7 @@ define Parser
 
         let attributes_start lexer.position
         var attributes: ref[Vector[AttributeSyntax]]? null
-        choose parse_attribute_list#()
+        choose parse_attribute_list()
             when err: Error
             {
                 choose err
@@ -2953,7 +2953,7 @@ define Parser
 
         let elements_start lexer.position
         var elements: ref[Vector[ElementSyntax]]?
-        choose parse_element_list#()
+        choose parse_element_list()
             when err: Error
             {
                 choose err
@@ -2985,7 +2985,7 @@ define Parser
         VectorSyntax(start, end, elements, lifetime)
     }
 
-    function parse_element_list#(rp, this: Parser) returns ref[Vector[ElementSyntax]]? throws ParserError
+    function parse_element_list(this: Parser) returns ref[Vector[ElementSyntax]]? throws ParserError
     {
         var acc List[ElementSyntax]()
         var parsing: bool true
@@ -3020,7 +3020,7 @@ define Parser
 
         let operation_start lexer.position
         var operation: ref[Vector[OperandSyntax]]?
-        choose parse_operand_list#()
+        choose parse_operand_list()
             when err: Error
                 throw err
             when success: Success
@@ -3028,7 +3028,7 @@ define Parser
 
         let attributes_start lexer.position
         var attributes: ref[Vector[AttributeSyntax]]? null
-        choose parse_attribute_list#()
+        choose parse_attribute_list()
             when err: Error
             {
                 choose err
@@ -3055,7 +3055,7 @@ define Parser
 
         let condition_start lexer.position
         var condition: ref[Vector[OperandSyntax]]?
-        choose parse_operand_list#()
+        choose parse_operand_list()
             when err: Error
             {
                 choose err
@@ -3160,7 +3160,7 @@ define Parser
 
         let scrutinee_start lexer.position
         var scrutinee: ref[Vector[OperandSyntax]]?
-        choose parse_operand_list#()
+        choose parse_operand_list()
             when err: Error
             {
                 choose err
@@ -3177,7 +3177,7 @@ define Parser
 
         let branches_start lexer.position
         var branches: ref[Vector[BranchSyntax]]?
-        choose parse_branch_list#()
+        choose parse_branch_list()
             when err: Error
             {
                 choose err
@@ -3206,7 +3206,7 @@ define Parser
         MatchSyntax(start, end, scrutinee, branches, alternative)
     }
 
-    function parse_branch_list#(rp, this: Parser) returns ref[Vector[BranchSyntax]]? throws ParserError
+    function parse_branch_list(this: Parser) returns ref[Vector[BranchSyntax]]? throws ParserError
     {
         var acc List[BranchSyntax]()
         var parsing: bool true
@@ -3241,7 +3241,7 @@ define Parser
 
         let cases_start lexer.position
         var cases: ref[Vector[CaseSyntax]]?
-        choose parse_case_list#()
+        choose parse_case_list()
             when err: Error
                 throw err
             when success: Success
@@ -3269,7 +3269,7 @@ define Parser
         BranchSyntax(start, end, cases, consequent)
     }
 
-    function parse_case_list#(rp, this: Parser) returns ref[Vector[CaseSyntax]]? throws ParserError
+    function parse_case_list(this: Parser) returns ref[Vector[CaseSyntax]]? throws ParserError
     {
         var acc List[CaseSyntax]()
         var parsing: bool true
@@ -3307,7 +3307,7 @@ define Parser
 
         let condition_start lexer.position
         var condition: ref[Vector[OperandSyntax]]?
-        choose parse_operand_list#()
+        choose parse_operand_list()
             when err: Error
             {
                 choose err
@@ -3390,7 +3390,7 @@ define Parser
 
         let condition_start lexer.position
         var condition: ref[Vector[OperandSyntax]]?
-        choose parse_operand_list#()
+        choose parse_operand_list()
             when err: Error
             {
                 choose err
@@ -3407,7 +3407,7 @@ define Parser
 
         let cases_start lexer.position
         var cases: ref[Vector[WhenSyntax]]? null
-        choose parse_when_list#()
+        choose parse_when_list()
             when err: Error
             {
                 choose err
@@ -3473,7 +3473,7 @@ define Parser
 
         let cases_start lexer.position
         var cases: ref[Vector[WhenSyntax]]? null
-        choose parse_when_list#()
+        choose parse_when_list()
             when err: Error
             {
                 choose err
@@ -3526,7 +3526,7 @@ define Parser
         throw ParserError.Different(DifferentSyntax())
     }
 
-    function parse_when_list#(rp, this: Parser) returns ref[Vector[WhenSyntax]]? throws ParserError
+    function parse_when_list(this: Parser) returns ref[Vector[WhenSyntax]]? throws ParserError
     {
         var acc List[WhenSyntax]()
         var parsing: bool true
@@ -3606,7 +3606,7 @@ define Parser
         WhenSyntax(start, end, name, variant, statement)
     }
 
-    function parse_statement_list#(rp, this: Parser) returns ref[Vector[StatementSyntax]]? throws ParserError
+    function parse_statement_list(this: Parser) returns ref[Vector[StatementSyntax]]? throws ParserError
     {
         var acc List[StatementSyntax]()
         var parsing: bool true
@@ -3840,7 +3840,7 @@ define Parser
 
         let operation_start lexer.position
         var operation: ref[Vector[OperandSyntax]]? null
-        choose parse_operand_list#()
+        choose parse_operand_list()
             when err: Error
             {
                 choose err
@@ -3882,7 +3882,7 @@ define Parser
         BindingAnnotationSyntax(start, end, spec)
     }
 
-    function parse_bindingspec_list#(rp, this: Parser) returns ref[Vector[BindingSpecSyntax]]? throws ParserError
+    function parse_bindingspec_list(this: Parser) returns ref[Vector[BindingSpecSyntax]]? throws ParserError
     {
         var acc List[BindingSpecSyntax]()
         var parsing: bool true
@@ -3955,7 +3955,7 @@ define Parser
 
         let members_start lexer.position
         var members: ref[Vector[TypeSyntax]]? null
-        choose parse_type_list#()
+        choose parse_type_list()
             when err: Error
             {
                 choose err
@@ -3983,7 +3983,7 @@ define Parser
 
         let parts_start lexer.position
         var parts: ref[Vector[PartSyntax]]? null
-        choose parse_part_list#()
+        choose parse_part_list()
             when err: Error
             {
                 choose err
@@ -4002,7 +4002,7 @@ define Parser
         StructureSyntax(start, end, parts)
     }
 
-    function parse_part_list#(rp, this: Parser) returns ref[Vector[PartSyntax]]? throws ParserError
+    function parse_part_list(this: Parser) returns ref[Vector[PartSyntax]]? throws ParserError
     {
         var acc List[PartSyntax]()
         var parsing: bool true
@@ -4082,7 +4082,7 @@ define Parser
         FieldSyntax(start, end, property)
     }
 
-    function parse_property_list#(rp, this: Parser) returns ref[Vector[PropertySyntax]]? throws ParserError
+    function parse_property_list(this: Parser) returns ref[Vector[PropertySyntax]]? throws ParserError
     {
         var acc List[PropertySyntax]()
         var parsing: bool true
@@ -4151,7 +4151,7 @@ define Parser
 
         let attributes_start lexer.position
         var attributes: ref[Vector[AttributeSyntax]]? null
-        choose parse_attribute_list#()
+        choose parse_attribute_list()
             when err: Error
             {
                 choose err
@@ -4238,7 +4238,7 @@ define Parser
 
         let result_start lexer.position
         var result: ref[Vector[OperandSyntax]]? null
-        choose parse_operand_list#()
+        choose parse_operand_list()
             when err: Error
             {
                 choose err
@@ -4279,7 +4279,7 @@ define Parser
 
         let result_start lexer.position
         var result: ref[Vector[OperandSyntax]]? null
-        choose parse_operand_list#()
+        choose parse_operand_list()
             when err: Error
             {
                 choose err
@@ -4304,7 +4304,7 @@ define Parser
 
         let result_start lexer.position
         var result: ref[Vector[OperandSyntax]]? null
-        choose parse_operand_list#()
+        choose parse_operand_list()
             when err: Error
             {
                 choose err
@@ -4329,7 +4329,7 @@ define Parser
 
         let input_start lexer.position
         var input: ref[Vector[OperandSyntax]]?
-        choose parse_operand_list#()
+        choose parse_operand_list()
             when err: Error
             {
                 choose err
@@ -4391,7 +4391,7 @@ define Parser
 
         let operation_start lexer.position
         var operation: ref[Vector[OperandSyntax]]?
-        choose parse_operand_list#()
+        choose parse_operand_list()
             when err: Error
             {
                 choose err
@@ -4495,7 +4495,7 @@ define Parser
         RepeatSyntax(start, end, name, action)
     }
 
-    function parse_action_list#(rp, this: Parser) returns ref[Vector[ActionSyntax]]? throws ParserError
+    function parse_action_list(this: Parser) returns ref[Vector[ActionSyntax]]? throws ParserError
     {
         var acc List[ActionSyntax]()
         var parsing: bool true
@@ -4565,7 +4565,7 @@ define Parser
 
         let operands_start lexer.position
         var operands: ref[Vector[OperandSyntax]]?
-        choose parse_operand_list#()
+        choose parse_operand_list()
             when err: Error
                 throw err
             when success: Success
@@ -4585,7 +4585,7 @@ define Parser
 
         let target_start lexer.position
         var target: ref[Vector[OperandSyntax]]?
-        choose parse_operand_list#()
+        choose parse_operand_list()
             when err: Error
             {
                 choose err
@@ -4602,7 +4602,7 @@ define Parser
 
         let source_start lexer.position
         var source: ref[Vector[OperandSyntax]]?
-        choose parse_operand_list#()
+        choose parse_operand_list()
             when err: Error
             {
                 choose err
@@ -4628,7 +4628,7 @@ define Parser
 
         let uses_start lexer.position
         var uses: ref[Vector[UseSyntax]]? null
-        choose parse_use_list#()
+        choose parse_use_list()
             when err: Error
             {
                 choose err
@@ -4641,7 +4641,7 @@ define Parser
 
         let statements_start lexer.position
         var statements: ref[Vector[StatementSyntax]]? null
-        choose parse_statement_list#()
+        choose parse_statement_list()
             when err: Error
             {
                 choose err
@@ -4764,7 +4764,7 @@ define Parser
         AsSyntax(start, end, type)
     }
 
-    function parse_type_list#(rp, this: Parser) returns ref[Vector[TypeSyntax]]? throws ParserError
+    function parse_type_list(this: Parser) returns ref[Vector[TypeSyntax]]? throws ParserError
     {
         var acc List[TypeSyntax]()
         var parsing: bool true
@@ -4856,7 +4856,7 @@ define Parser
 
         let extensions_start lexer.position
         var extensions: ref[Vector[ExtensionSyntax]]? null
-        choose parse_extension_list#()
+        choose parse_extension_list()
             when err: Error
             {
                 choose err
@@ -4872,7 +4872,7 @@ define Parser
         NameSyntax(start, end, name, extensions)
     }
 
-    function parse_extension_list#(rp, this: Parser) returns ref[Vector[ExtensionSyntax]]? throws ParserError
+    function parse_extension_list(this: Parser) returns ref[Vector[ExtensionSyntax]]? throws ParserError
     {
         var acc List[ExtensionSyntax]()
         var parsing: bool true

@@ -109,7 +109,7 @@ define Parser
     (apply-to-selected-children "syntax" (lambda (syntax) ($
         (if (multiple? syntax) ($
 "
-    function parse_"(downcase-string (id syntax))"_list#(rp, this: Parser) returns ref[Vector["(id syntax)"Syntax]]? throws ParserError
+    function parse_"(downcase-string (id syntax))"_list(this: Parser) returns ref[Vector["(id syntax)"Syntax]]? throws ParserError
     {
         var list List["(id syntax)"Syntax]$()
         while true
@@ -171,7 +171,7 @@ define Parser
 "
         let " prop "_start lexer.position
         var " prop ": ref[" (if (multiple? content) ($ "Vector[" (link content) "Syntax]") ($ (link content) "Syntax")) "]? null
-        choose parse_"(downcase-string (link content))(if (multiple? content) "_list#" (if (abstract? (element-with-id (link content))) "" "#"))"()
+        choose parse_"(downcase-string (link content))(if (multiple? content) "_list" (if (abstract? (element-with-id (link content))) "" "#"))"()
             when Error: err
             {
                 choose err
@@ -188,7 +188,7 @@ define Parser
 "
         let " prop "_start lexer.position
         var " prop ": " type-name "
-        choose parse_"(downcase-string (link content))(if (multiple? content) "_list#" "")"()
+        choose parse_"(downcase-string (link content))(if (multiple? content) "_list" "")"()
             when Error: err
 "
                                     (if (equal? 1 (child-number content))
