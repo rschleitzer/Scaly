@@ -198,7 +198,7 @@ define Parser
 "            {
                 choose err
                     when Different: d
-                        throw ParserError.Invalid(InvalidSyntax(" prop "_start, lexer.position, String#(\"expected "(link content)"\")))
+                        throw ParserError.Invalid(InvalidSyntax(" prop "_start, lexer.position, String(\"expected "(link content)"\")))
                     when Invalid: i
                         throw ParserError.Invalid(i)
             }
@@ -233,7 +233,7 @@ define Parser
             throw ParserError.Different(DifferentSyntax())
 "
                                     ($ "
-            throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#(\"expected '"(id (element-with-id (link content)))"'\")))
+            throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String(\"expected '"(id (element-with-id (link content)))"'\")))
 ")
                                 )
                             )
@@ -254,7 +254,7 @@ define Parser
             throw ParserError.Different(DifferentSyntax())
 "
                                         ($ "
-            throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#(\"expected '"(value (element-with-id (link content)))"'\")))
+            throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String(\"expected '"(value (element-with-id (link content)))"'\")))
 ")
                                     )
                                 )
@@ -276,7 +276,7 @@ define Parser
             throw ParserError.Different(DifferentSyntax())
 "
                                         "
-            throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#(\"expected colon or newline\")))
+            throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String(\"expected colon or newline\")))
 ")
                                 )
                             )
@@ -292,7 +292,7 @@ define Parser
             throw ParserError.Different(DifferentSyntax())
 "
                                     "
-            throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#(\"expected identifier\")))
+            throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String(\"expected identifier\")))
 ")
                             ))
                         )
@@ -307,7 +307,7 @@ define Parser
             throw ParserError.Different(DifferentSyntax())
 "
                                     "
-            throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String#(\"expected attribute\")))
+            throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String(\"expected attribute\")))
 ")
                             ))
                         )
