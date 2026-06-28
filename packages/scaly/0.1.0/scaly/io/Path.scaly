@@ -3,7 +3,7 @@ use scaly.containers.StringBuilder
 
 define Path
 {
-    function get_directory_name#(rp, path: String) returns String
+    function get_directory_name(path: String) returns String
     {
         let path_as_c_string path.to_c_string$()
         let directory_name_as_c_string dirname(path_as_c_string as pointer[char])
@@ -13,14 +13,14 @@ define Path
         String^rp(directory_name_as_c_string)
     }
 
-    function get_file_name#(rp, path: String) returns String
+    function get_file_name(path: String) returns String
     {
         let path_as_c_string path.to_c_string$()
         let file_name_as_c_string basename(path_as_c_string as pointer[char])
         String^rp(file_name_as_c_string)
     }
 
-    function join#(rp, path1: String, path2: String) returns String
+    function join(path1: String, path2: String) returns String
     {
         if path1.get_length() = 0
             return String^rp(path2)

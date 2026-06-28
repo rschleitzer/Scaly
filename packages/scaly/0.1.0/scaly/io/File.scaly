@@ -17,7 +17,7 @@ define File
         access(path_c_string, F_OK) = 0
     }
 
-    function read_to_string#(rp, path: String) returns String
+    function read_to_string(path: String) returns String
     {
         var file fopen(path.to_c_string$(), "rb")
         if file = null
