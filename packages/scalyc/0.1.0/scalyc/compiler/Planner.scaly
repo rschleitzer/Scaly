@@ -20656,16 +20656,256 @@ define Planner
                 0
         false
     }
+    ; ---- body-^rp-scan: a function whose body constructs anything with a
+    ; `^rp` reference lifetime (`String^rp(...)` / `Vector[T]^rp(...)`) needs the
+    ; caller's page even when its return type is primitive (ref/void/bool) —
+    ; needs_implicit_return_page only inspects the RETURN TYPE. The escape-
+    ; analysis/promotion helpers (collect_*/promote_*/scan_top_level_returns/
+    ; add_escaping_*) build promoted rp-allocated operands via `^rp`; de-sigiled
+    ; without a page, those `^rp` allocations have no rp local — the promotion
+    ; silently lands on the local page and fails, and the values it was meant to
+    ; promote (e.g. find_break_type_in_*'s returned PlannedType) then escape.
+    ; A recursive Model-body walk. It RETURNS bool and STORES NOTHING — no
+    ; borrowed-String lifetime hazard, so it needs no page itself (cf. the
+    ; disproven "Model-union-by-value" fear: a recursive Model walk that only
+    ; reads is fine). PRECISE: only a Type carrying Lifetime.Reference("rp")
+    ; counts — type ANNOTATIONS carry Unspecified, never Reference — so it never
+    ; spuriously flips has_page. NEUTRAL on the sigiled source: every function it
+    ; flags is still `#` there (page_parameter set → has_page already true).
+    function type_has_rp_lifetime(t: scalyc.compiler.Model.Type) returns bool
+    {
+        choose t.lifetime
+            when r: Reference
+                return r.location.equals(String("rp"))
+            else
+                return false
+        false
+    }
+    function ops_reference_rp(ops: Vector[Operand]) returns bool
+    {
+        var i: size_t 0
+        while i < ops.length
+        {
+            let op_ptr ops.get i
+            if op_ptr <> null
+                if Planner.operand_references_rp(op_ptr.unwrap())
+                    return true
+            set i: i + 1
+        }
+        false
+    }
+    function binding_references_rp(b: Binding) returns bool
+    {
+        Planner.ops_reference_rp(b.operation)
+    }
+    function statement_references_rp(s: Statement) returns bool
+    {
+        choose s
+            when a: Action
+            {
+                if Planner.ops_reference_rp(a.source)
+                    return true
+                if Planner.ops_reference_rp(a.target)
+                    return true
+            }
+            when bd: Binding
+                if Planner.binding_references_rp(bd)
+                    return true
+            when r: Return
+                if Planner.ops_reference_rp(r.result)
+                    return true
+            when th: Throw
+                if Planner.ops_reference_rp(th.result)
+                    return true
+            when br: Break
+                if Planner.ops_reference_rp(br.result)
+                    return true
+            else
+                0
+        false
+    }
+    function action_references_rp(a: Action) returns bool
+    {
+        if Planner.ops_reference_rp(a.source)
+            return true
+        Planner.ops_reference_rp(a.target)
+    }
+    function operand_references_rp(op: Operand) returns bool
+    {
+        choose op.expression
+            when t: scalyc.compiler.Model.Type
+                if Planner.type_has_rp_lifetime(t)
+                    return true
+            when tup: Tuple
+            {
+                var i: size_t 0
+                while i < tup.components.length
+                {
+                    let cp tup.components.get i
+                    if cp <> null
+                        if Planner.ops_reference_rp((*cp).value)
+                            return true
+                    set i: i + 1
+                }
+            }
+            when mx: Matrix
+            {
+                var i: size_t 0
+                while i < mx.operations.length
+                {
+                    let rp_ptr mx.operations.get i
+                    if rp_ptr <> null
+                        if Planner.ops_reference_rp((*rp_ptr))
+                            return true
+                    set i: i + 1
+                }
+            }
+            when b: Block
+            {
+                var i: size_t 0
+                while i < b.statements.length
+                {
+                    let sp b.statements.get i
+                    if sp <> null
+                        if Planner.statement_references_rp(sp.unwrap())
+                            return true
+                    set i: i + 1
+                }
+            }
+            when iff: scalyc.compiler.Model.If
+            {
+                if Planner.ops_reference_rp(iff.condition)
+                    return true
+                if Planner.statement_references_rp(iff.consequent)
+                    return true
+                if iff.alternative <> null
+                    if Planner.statement_references_rp((*iff.alternative))
+                        return true
+            }
+            when ch: Choose
+            {
+                if Planner.ops_reference_rp(ch.condition)
+                    return true
+                var i: size_t 0
+                while i < ch.cases.length
+                {
+                    let wp ch.cases.get i
+                    if wp <> null
+                        if Planner.statement_references_rp((*wp).consequent)
+                            return true
+                    set i: i + 1
+                }
+                if ch.alternative <> null
+                    if Planner.statement_references_rp((*ch.alternative))
+                        return true
+            }
+            when m: Match
+            {
+                if Planner.ops_reference_rp(m.condition)
+                    return true
+                var i: size_t 0
+                while i < m.branches.length
+                {
+                    let bp m.branches.get i
+                    if bp <> null
+                        if Planner.statement_references_rp((*bp).consequent)
+                            return true
+                    set i: i + 1
+                }
+                if m.alternative <> null
+                    if Planner.statement_references_rp((*m.alternative))
+                        return true
+            }
+            when fo: For
+            {
+                if Planner.ops_reference_rp(fo.expression)
+                    return true
+                if Planner.action_references_rp(fo.action)
+                    return true
+            }
+            when wh: While
+            {
+                if Planner.binding_references_rp(wh.condition)
+                    return true
+                if Planner.action_references_rp(wh.action)
+                    return true
+            }
+            when rep: Repeat
+                if Planner.action_references_rp(rep.action)
+                    return true
+            when tr: Try
+            {
+                if Planner.binding_references_rp(tr.binding)
+                    return true
+                var i: size_t 0
+                while i < tr.catches.length
+                {
+                    let wp tr.catches.get i
+                    if wp <> null
+                        if Planner.statement_references_rp((*wp).consequent)
+                            return true
+                    set i: i + 1
+                }
+                if tr.alternative <> null
+                    if Planner.statement_references_rp((*tr.alternative))
+                        return true
+            }
+            when az: As
+                if Planner.type_has_rp_lifetime(az.target_type)
+                    return true
+            when nw: New
+            {
+                if Planner.type_has_rp_lifetime(nw.type)
+                    return true
+                var i: size_t 0
+                while i < nw.arguments.components.length
+                {
+                    let cp nw.arguments.components.get i
+                    if cp <> null
+                        if Planner.ops_reference_rp((*cp).value)
+                            return true
+                    set i: i + 1
+                }
+            }
+            when so: SizeOf
+                if Planner.type_has_rp_lifetime(so.type)
+                    return true
+            when ao: AlignOf
+                if Planner.type_has_rp_lifetime(ao.type)
+                    return true
+            when lam: Lambda
+                if Planner.action_references_rp(lam.body)
+                    return true
+            else
+                0
+        false
+    }
+    ; A function whose body constructs anything with a `^rp` reference lifetime
+    ; needs the caller's page (see the walker above).
+    function body_references_rp(func: Function) returns bool
+    {
+        if Planner.is_extern_impl(func.implementation)
+            return false
+        choose func.implementation
+            when a: Action
+                return Planner.action_references_rp(a)
+            else
+                0
+        false
+    }
     ; Unified page-decision predicate: a function needs the caller's page (rp)
-    ; either to allocate a returned struct/union (needs_implicit_return_page) or
-    ; to store freshly-built values into a ref/pointer out-parameter
-    ; (proc_needs_caller_page_for_storage). Consulted at every has_page /
+    ; either to allocate a returned struct/union (needs_implicit_return_page), to
+    ; store freshly-built values into a ref/pointer out-parameter
+    ; (proc_needs_caller_page_for_storage), or to build a `^rp`-lifetime value in
+    ; its body (body_references_rp). Consulted at every has_page /
     ; page_param_ref / requires_page_param site.
     function function_needs_caller_page(func: Function) returns bool
     {
         if Planner.needs_implicit_return_page(func)
             return true
-        Planner.proc_needs_caller_page_for_storage(func)
+        if Planner.proc_needs_caller_page_for_storage(func)
+            return true
+        Planner.body_references_rp(func)
     }
 
     ; ========================================================================
