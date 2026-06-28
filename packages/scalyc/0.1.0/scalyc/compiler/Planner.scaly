@@ -13732,14 +13732,21 @@ define Planner
             &out
         }
         ; Restamp ONLY inline-CONSTRUCTION value-arguments (a Tuple = struct/
-        ; variant ctor, or a PlannedCall whose name is capitalized = a Type
-        ; construction such as String/Vector/LoopSyntax) of a put/add into an
-        ; escaping receiver. A regular function-call RESULT (lowercase name)
-        ; owns its own page routing and must NOT be overridden — promoting it
-        ; cascades a bogus caller-page need across the call graph (the over-flag
-        ; class). The receiver Variable, the index, call results and explicit-#
+        ; variant ctor, or a PlannedCall that is a CONSTRUCTION: a capitalized
+        ; name = a Type construction such as LoopSyntax, OR name "init" = a
+        ; value-type init# constructor such as String/Vector/Array/HashMap —
+        ; these lower to a PlannedCall to the lowercase `init` method, NOT a
+        ; capitalized Type name, so the capitalized gate alone misses them and
+        ; the de-sigiled `recv.put(0, String("x"))` left its String on the local
+        ; page) of a put/add into an escaping receiver. A regular function-call
+        ; RESULT (lowercase non-`init` name) owns its own page routing and must
+        ; NOT be overridden — promoting it cascades a bogus caller-page need
+        ; across the call graph (the over-flag class). `init` is reserved for
+        ; constructors (init/init#/init^ per the spec), so it never names a plain
+        ; function. The receiver Variable, the index, call results and explicit-#
         ; args are all kept verbatim (restamp_operand_life# returns null for
-        ; them anyway, but the capitalized-name gate is what bounds the change).
+        ; them — explicit-# is Call life, gated out — so this stays NEUTRAL on
+        ; sigiled source).
         function restamp_putadd_constructions(this: Planner, args: Vector[PlannedOperand], new_life: Lifetime) returns ref[Vector[PlannedOperand]]?
         {
             var out Vector[PlannedOperand]^rp(args.length)
@@ -13754,8 +13761,12 @@ define Planner
                         when c: PlannedCall
                         {
                             if c.is_operator = false
+                            {
                                 if this.name_is_capitalized(c.name)
                                     set is_ctor: true
+                                if c.name.equals(String("init"))
+                                    set is_ctor: true
+                            }
                         }
                         when t: PlannedTuple
                             set is_ctor: true
