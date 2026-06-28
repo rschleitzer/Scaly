@@ -12230,7 +12230,7 @@ define Planner
         ; comparison operator, so a NON-leading `=` (`let r a = b`) must be
         ; kept — it collapses to the comparison `r = (a == b)`. Mirrors the
         ; stage-0 index-0 if in Planner.cpp::planBinding.
-        function strip_leading_eq#(rp, ops: Vector[PlannedOperand]) returns Vector[PlannedOperand]
+        function strip_leading_eq(ops: Vector[PlannedOperand]) returns Vector[PlannedOperand]
         {
             if ops.length > (0 as size_t)
             {
@@ -17838,7 +17838,7 @@ define Planner
     ; Matches stripPackagePrefix in Planner.cpp: only strips when the full
     ; name begins with "scaly.". Anything else (e.g. "scalyc.compiler.Foo")
     ; is returned unchanged so user types keep their qualified identity.
-    function strip_package_prefix#(rp, name: String) returns String
+    function strip_package_prefix(name: String) returns String
     {
         if name.starts_with("scaly.") = false
             return String^rp(name)
@@ -17859,7 +17859,7 @@ define Planner
     ; implementation is deliberately omitted here — every PlannedType we
     ; construct from scratch will end up with an empty mangled_name, and
     ; the shortcut only saves work in a later pass we do not implement yet.
-    function encode_type#(rp, type_value: PlannedType) returns String
+    function encode_type(type_value: PlannedType) returns String
     {
         ; Built-in primitive types.
         if type_value.name.equals("void")
@@ -17969,7 +17969,7 @@ define Planner
     ; mangle_type: "_Z" + encode_type(T). The "_Z" prefix marks this as a
     ; (fake) C++-compatible Itanium symbol so external tools like c++filt
     ; can demangle our names for humans.
-    function mangle_type#(rp, type_value: PlannedType) returns String
+    function mangle_type(type_value: PlannedType) returns String
     {
         let encoded Planner.encode_type(type_value)
         var sb StringBuilder()
@@ -17980,7 +17980,7 @@ define Planner
 
     ; mangle_structure: "_Z" + name-with-length-prefix + optional "I...E" generic block.
     ; Used for symbol-mangling concrete struct / union / trait definitions.
-    function mangle_structure#(rp, name: String, generic_args: ref[Vector[PlannedType]]?) returns String
+    function mangle_structure(name: String, generic_args: ref[Vector[PlannedType]]?) returns String
     {
         if generic_args <> null
         {
@@ -18023,8 +18023,7 @@ define Planner
     ; name — Itanium treats it as implicit. If has_page_param is set the
     ; implicit page parameter (`pointer[Page]`) is encoded first; this is
     ; how "function foo#" lowers on the ABI side.
-    function mangle_function#(
-        rp,
+    function mangle_function(
         name: String,
         params: ref[Vector[PlannedItem]]?,
         parent: ref[PlannedType]?,
@@ -18103,8 +18102,7 @@ define Planner
     ; symbol directly from PlannedTypes, skipping the PlannedItem
     ; ceremony mangle_function requires. Shape matches mangle_function
     ; with parent=null.
-    function mangle_free_function_from_types#(
-        rp,
+    function mangle_free_function_from_types(
         name: String,
         params: Vector[PlannedType],
         has_page_param: bool
@@ -18143,7 +18141,7 @@ define Planner
     ; operator_code: map a Scaly operator name to its Itanium ABI two-letter
     ; code. Unknown operators fall back to the `v0` vendor extension,
     ; followed by the length-prefixed operator identifier.
-    function operator_code#(rp, name: String) returns String
+    function operator_code(name: String) returns String
     {
         if name.equals("+")
             return String^rp("pl")
@@ -18201,8 +18199,7 @@ define Planner
     ; Mirrors mangle_function but substitutes the two-letter op code for
     ; the operator name and skips an explicit 'this' parameter when the
     ; operator is declared as a member.
-    function mangle_operator#(
-        rp,
+    function mangle_operator(
         name: String,
         params: ref[Vector[PlannedItem]]?,
         parent: ref[PlannedType]?
@@ -18282,7 +18279,7 @@ define Planner
     ; ========================================================================
 
     ; get_readable_name: human-facing representation, e.g. "Vector[int]".
-    function get_readable_name#(rp, type_value: PlannedType) returns String
+    function get_readable_name(type_value: PlannedType) returns String
     {
         if type_value.generics <> null
         {
@@ -18318,7 +18315,7 @@ define Planner
     ; "scaly.*" packages collapse to their last component so "scaly.containers.String"
     ; compares equal to "String", matching Planner.cpp's normalizeTypeName. Integer
     ; aliases fold onto their sized form so int/size_t/char compare structurally.
-    function normalize_type_name#(rp, name: String) returns String
+    function normalize_type_name(name: String) returns String
     {
         var base: String name
         if name.starts_with("scaly.")
@@ -18905,7 +18902,7 @@ define Planner
     ; Split out as a separate pass (rather than mutating PlannedProperty in
     ; place) because Scaly's Vector stores by value and we don't yet have
     ; a clean mutation pattern for nested struct fields.
-    function compute_property_offsets#(rp, props: ref[Vector[PlannedProperty]]?) returns Vector[size_t]
+    function compute_property_offsets(props: ref[Vector[PlannedProperty]]?) returns Vector[size_t]
     {
         if props = null
             return Vector[size_t]^rp(0)
@@ -19039,8 +19036,7 @@ define Planner
     ; else (loc / life / origin / mangled_name / array_size / variable) is
     ; preserved from the input. Returns the input unchanged when subst is
     ; null (i.e. empty substitution).
-    function apply_substitution#(
-        rp,
+    function apply_substitution(
         t: PlannedType,
         subst: ref[Vector[KeyValuePair[size_t, PlannedType]]]?
     ) returns PlannedType
@@ -19096,7 +19092,7 @@ define Planner
     ; free_type_vars_with_dups: depth-first collection of every type-var
     ; id reachable through the generics tree. May contain duplicates —
     ; the public free_type_vars wrapper dedupes.
-    function free_type_vars_with_dups#(rp, t: PlannedType) returns Vector[size_t]
+    function free_type_vars_with_dups(t: PlannedType) returns Vector[size_t]
     {
         var acc Array[size_t]$()
         if t.variable <> null
@@ -19133,7 +19129,7 @@ define Planner
 
     ; free_type_vars: distinct type-var ids in `t`, in first-seen order.
     ; Used for generalization (promoting a type to a type scheme).
-    function free_type_vars#(rp, t: PlannedType) returns Vector[size_t]
+    function free_type_vars(t: PlannedType) returns Vector[size_t]
     {
         let with_dups Planner.free_type_vars_with_dups(t)
         var acc Array[size_t]$()
@@ -19188,7 +19184,7 @@ define Planner
     ; planned_type_to_model_type: deep-convert PlannedType → Model.Type,
     ; preserving nested generics. Used by extract_row_to_type# to rebuild
     ; an outer Model.Type with proper inner generic structure.
-    function planned_type_to_model_type#(rp, pt: PlannedType) returns Type
+    function planned_type_to_model_type(pt: PlannedType) returns Type
     {
         var name_path Vector[String]^rp(1)
         name_path.put(0, pt.name)
@@ -19223,8 +19219,7 @@ define Planner
     ;
     ; Preserves the caller's `loc` on the substituted type so error
     ; messages point at the use-site, matching Planner.cpp.
-    function apply_name_substitution#(
-        rp,
+    function apply_name_substitution(
         t: PlannedType,
         subst: ref[Vector[KeyValuePair[String, PlannedType]]]?
     ) returns PlannedType
@@ -19290,7 +19285,7 @@ define Planner
     ; go through these factories so the codes stay consistent everywhere.
     ; ========================================================================
 
-    function make_primitive_type#(rp, name: pointer[const_char], mangled: pointer[const_char]) returns PlannedType
+    function make_primitive_type(name: pointer[const_char], mangled: pointer[const_char]) returns PlannedType
     {
         PlannedType(
             Span(0, 0),
@@ -19304,30 +19299,30 @@ define Planner
         )
     }
 
-    function make_void_type#(rp) returns PlannedType
+    function make_void_type() returns PlannedType
         Planner.make_primitive_type("void", "v")
 
-    function make_bool_type#(rp) returns PlannedType
+    function make_bool_type() returns PlannedType
         Planner.make_primitive_type("bool", "b")
 
-    function make_int_type#(rp) returns PlannedType
+    function make_int_type() returns PlannedType
         Planner.make_primitive_type("int", "i")
 
-    function make_i64_type#(rp) returns PlannedType
+    function make_i64_type() returns PlannedType
         Planner.make_primitive_type("i64", "x")
 
-    function make_char_type#(rp) returns PlannedType
+    function make_char_type() returns PlannedType
         Planner.make_primitive_type("char", "c")
 
-    function make_size_type#(rp) returns PlannedType
+    function make_size_type() returns PlannedType
         Planner.make_primitive_type("size_t", "m")
 
-    function make_double_type#(rp) returns PlannedType
+    function make_double_type() returns PlannedType
         Planner.make_primitive_type("double", "d")
 
     ; make_pointer_type: wrap `inner` as pointer[inner], with Itanium "P..."
     ; mangled name. `inner.mangled_name` must be populated.
-    function make_pointer_type#(rp, inner: PlannedType) returns PlannedType
+    function make_pointer_type(inner: PlannedType) returns PlannedType
     {
         var gens Vector[PlannedType]^rp(1)
         gens.put(0, inner)
@@ -19356,7 +19351,7 @@ define Planner
     ; substituted name Strings dangle and emit's String hash SIGSEGVs.
     ; origin / variable refs are carried as-is (not read on the emit
     ; struct-type / hash path); life is a value, copied.
-    function rehome_type#(rp, t: PlannedType) returns PlannedType
+    function rehome_type(t: PlannedType) returns PlannedType
     {
         var gens_ref: ref[Vector[PlannedType]]? null
         if t.generics <> null
@@ -19402,7 +19397,7 @@ define Planner
     ; single integer-constant cell, return its decimal value as a String;
     ; otherwise empty. Recognises the `primitive[N]` stack-array shape in
     ; collapse_operand_sequence#'s Type+Matrix merge (s192).
-    function matrix_single_int_size#(rp, nm: scalyc.compiler.Plan.PlannedMatrix) returns String
+    function matrix_single_int_size(nm: scalyc.compiler.Plan.PlannedMatrix) returns String
     {
         if nm.operations = null
             return String^rp("")
@@ -19558,7 +19553,7 @@ define Planner
     ;   - Concepts table lookup for user-defined types' mangled_name
     ;     (leaves mangled_name empty for non-intrinsic names; the caller
     ;     fills that in once the Concepts table is available)
-    function resolve_type_base#(rp, t: Type) returns PlannedType
+    function resolve_type_base(t: Type) returns PlannedType
     {
         let joined Planner.join_dotted_name(t.name)
 
@@ -19829,8 +19824,7 @@ define Planner
     ; we take `next_id_start` as a parameter and allocate sequential ids
     ; from there; the caller is responsible for advancing its counter by
     ; `scheme.quantified.length`.
-    function instantiate#(
-        rp,
+    function instantiate(
         scheme: TypeScheme,
         next_id_start: size_t
     ) returns PlannedType
@@ -19886,8 +19880,7 @@ define Planner
     ; quantifying every free var that is NOT already free in the
     ; surrounding type environment. This is the operation behind
     ; `let`-polymorphism (ML / Haskell).
-    function generalize#(
-        rp,
+    function generalize(
         t: PlannedType,
         free_in_env: Vector[size_t]
     ) returns TypeScheme
@@ -20150,8 +20143,7 @@ define Planner
     ; assignment overwrites). We implement the dedup by first emitting
     ; every S1 entry with its S2-applied value, then appending only the
     ; S2 entries whose id did not already appear in S1.
-    function compose_substitutions#(
-        rp,
+    function compose_substitutions(
         s1: Vector[KeyValuePair[size_t, PlannedType]],
         s2: Vector[KeyValuePair[size_t, PlannedType]]
     ) returns Vector[KeyValuePair[size_t, PlannedType]]
@@ -20333,7 +20325,7 @@ define Planner
     ; join_dotted_name: "scaly" / "containers" / "String" -> "scaly.containers.String".
     ; Matches the Planner.cpp logic that collapses a Type.Name Vector into
     ; one canonical dotted identifier for primitive/generic-param checks.
-    function join_dotted_name#(rp, parts: Vector[String]) returns String
+    function join_dotted_name(parts: Vector[String]) returns String
     {
         var sb StringBuilder()
         ; Defensive: bail early if the Vector layout is corrupted —
@@ -20700,7 +20692,7 @@ define Planner
     ; Collect the result_type of every operand inside a tuple-shaped operand.
     ; Split out so extract_arg_types can dispatch via a simple choose without
     ; a nested side-effecting match expression.
-    function extract_tuple_arg_types#(rp, tuple_val: PlannedTuple) returns Vector[PlannedType]
+    function extract_tuple_arg_types(tuple_val: PlannedTuple) returns Vector[PlannedType]
     {
         var temp Array[PlannedType]$()
         if tuple_val.components <> null
@@ -20740,7 +20732,7 @@ define Planner
     ; A non-tuple operand falls back to its own result_type as a single arg —
     ; the parser may elide the tuple around a single-argument call like
     ; `f(x)` where `x` is already a complete operand.
-    function extract_arg_types#(rp, args_op: PlannedOperand) returns Vector[PlannedType]
+    function extract_arg_types(args_op: PlannedOperand) returns Vector[PlannedType]
     {
         choose args_op.expr
             when t: PlannedTuple
@@ -20755,7 +20747,7 @@ define Planner
 
     ; Helper: build a pointer[i8]-typed PlannedType — the representation of
     ; C-style string literals. Shared by StringConstant and FragmentConstant.
-    function make_cstring_type#(rp, sp: Span) returns PlannedType
+    function make_cstring_type(sp: Span) returns PlannedType
     {
         var gens Vector[PlannedType]^rp(1)
         let i8_ty PlannedType(
@@ -20784,7 +20776,7 @@ define Planner
     ; Helper: pointer[void] for the null literal. The constraint solver is
     ; expected to unify this with whatever pointer-like type is required
     ; at the use-site.
-    function make_null_type#(rp, sp: Span) returns PlannedType
+    function make_null_type(sp: Span) returns PlannedType
     {
         var gens Vector[PlannedType]^rp(1)
         let void_ty PlannedType(
@@ -20814,7 +20806,7 @@ define Planner
     ; to that literal before the constraint solver runs. Primitive families
     ; carry the Itanium one-letter codes directly; string/fragment/null
     ; delegate to the helpers above.
-    function infer_constant_type#(rp, c: Constant) returns PlannedType
+    function infer_constant_type(c: Constant) returns PlannedType
     {
         choose c
             when b: BooleanConstant
