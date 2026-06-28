@@ -50,13 +50,6 @@ source_filename = "scalyc"
 %_Z14HashSetBuilderI6StringE = type { i64, ptr }
 %_Z12ListIteratorI4SlotI6StringEE = type { ptr }
 %_Z10LexerState = type { ptr, i64, i64, %_Z5Token }
-%_Z6VectorIcE = type { i64, ptr }
-%_Z14VectorIteratorIcE = type { ptr, i64 }
-%_Z5ArrayIcE = type { i64, ptr }
-%_Z13ArrayIteratorIcE = type { ptr, i64 }
-%_Z4ListIcE = type { ptr }
-%_Z4NodeIcE = type { i8, ptr }
-%_Z12ListIteratorIcE = type { ptr }
 %_Z14VectorIteratorI1TE = type { ptr, i64 }
 %_Z13ArrayIteratorI1TE = type { ptr, i64 }
 %_Z12ListIteratorI1TE = type { ptr }
@@ -531,6 +524,13 @@ source_filename = "scalyc"
 %_Z4NodeI6VectorI4TypeEE = type { %_Z6VectorI4TypeE, ptr }
 %_Z12ListIteratorI6VectorI4TypeEE = type { ptr }
 %_Z5Tuple = type { %_Z4Span, %_Z6VectorI9ComponentE }
+%_Z6VectorIcE = type { i64, ptr }
+%_Z14VectorIteratorIcE = type { ptr, i64 }
+%_Z5ArrayIcE = type { i64, ptr }
+%_Z13ArrayIteratorIcE = type { ptr, i64 }
+%_Z4ListIcE = type { ptr }
+%_Z4NodeIcE = type { i8, ptr }
+%_Z12ListIteratorIcE = type { ptr }
 %_Z6Matrix = type { %_Z4Span, %_Z6VectorI6VectorI7OperandEE, %_Z8Lifetime }
 %_Z5Block = type { %_Z4Span, %_Z6VectorI9StatementE }
 %_Z6VectorI14LifetimeSyntaxE = type { i64, ptr }
@@ -1019,246 +1019,246 @@ source_filename = "scalyc"
 @.str.3 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
 @.str.4 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
 @.str.5 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
-@.str.6 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
-@.str.7 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
 @.sconst = private constant [9 x i8] c"\07alignof\00"
-@.sconst.8 = private constant [4 x i8] c"\02as\00"
-@.sconst.9 = private constant [7 x i8] c"\05break\00"
-@.sconst.10 = private constant [6 x i8] c"\04case\00"
-@.sconst.11 = private constant [8 x i8] c"\06choose\00"
-@.sconst.12 = private constant [10 x i8] c"\08continue\00"
-@.sconst.13 = private constant [8 x i8] c"\06define\00"
-@.sconst.14 = private constant [8 x i8] c"\06deinit\00"
-@.sconst.15 = private constant [10 x i8] c"\08delegate\00"
-@.sconst.16 = private constant [6 x i8] c"\04else\00"
-@.sconst.17 = private constant [9 x i8] c"\07extends\00"
-@.sconst.18 = private constant [8 x i8] c"\06extern\00"
-@.sconst.19 = private constant [5 x i8] c"\03for\00"
-@.sconst.20 = private constant [10 x i8] c"\08function\00"
-@.sconst.21 = private constant [4 x i8] c"\02if\00"
-@.sconst.22 = private constant [11 x i8] c"\09implement\00"
-@.sconst.23 = private constant [4 x i8] c"\02in\00"
-@.sconst.24 = private constant [6 x i8] c"\04init\00"
-@.sconst.25 = private constant [13 x i8] c"\0Binstruction\00"
-@.sconst.26 = private constant [11 x i8] c"\09intrinsic\00"
-@.sconst.27 = private constant [4 x i8] c"\02is\00"
-@.sconst.28 = private constant [7 x i8] c"\05label\00"
-@.sconst.29 = private constant [5 x i8] c"\03let\00"
-@.sconst.30 = private constant [6 x i8] c"\04loop\00"
-@.sconst.31 = private constant [7 x i8] c"\05macro\00"
-@.sconst.32 = private constant [7 x i8] c"\05match\00"
-@.sconst.33 = private constant [8 x i8] c"\06module\00"
-@.sconst.34 = private constant [9 x i8] c"\07mutable\00"
-@.sconst.35 = private constant [10 x i8] c"\08operator\00"
-@.sconst.36 = private constant [9 x i8] c"\07private\00"
-@.sconst.37 = private constant [11 x i8] c"\09procedure\00"
-@.sconst.38 = private constant [8 x i8] c"\06repeat\00"
-@.sconst.39 = private constant [8 x i8] c"\06return\00"
-@.sconst.40 = private constant [9 x i8] c"\07returns\00"
-@.sconst.41 = private constant [5 x i8] c"\03set\00"
-@.sconst.42 = private constant [8 x i8] c"\06sizeof\00"
-@.sconst.43 = private constant [7 x i8] c"\05throw\00"
-@.sconst.44 = private constant [8 x i8] c"\06throws\00"
-@.sconst.45 = private constant [7 x i8] c"\05trait\00"
-@.sconst.46 = private constant [5 x i8] c"\03try\00"
-@.sconst.47 = private constant [7 x i8] c"\05union\00"
-@.sconst.48 = private constant [5 x i8] c"\03use\00"
-@.sconst.49 = private constant [5 x i8] c"\03var\00"
-@.sconst.50 = private constant [6 x i8] c"\04when\00"
-@.sconst.51 = private constant [7 x i8] c"\05while\00"
-@.sconst.52 = private constant [9 x i8] c"\07package\00"
-@.str.53 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
-@.str.54 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
-@.sconst.55 = private constant [9 x i8] c"\07private\00"
-@.sconst.56 = private constant [17 x i8] c"\0Fexpected Export\00"
-@.str.57 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
-@.str.58 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
-@.sconst.59 = private constant [8 x i8] c"\06define\00"
-@.sconst.60 = private constant [21 x i8] c"\13expected identifier\00"
-@.sconst.61 = private constant [18 x i8] c"\10expected Concept\00"
-@.sconst.62 = private constant [27 x i8] c"\19expected GenericParameter\00"
-@.sconst.63 = private constant [14 x i8] c"\0Cexpected ']'\00"
-@.str.64 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
-@.str.65 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
-@.sconst.66 = private constant [14 x i8] c"\0Cexpected '}'\00"
-@.sconst.67 = private constant [14 x i8] c"\0Cexpected '}'\00"
-@.sconst.68 = private constant [7 x i8] c"\05union\00"
-@.sconst.69 = private constant [14 x i8] c"\0Cexpected '('\00"
-@.sconst.70 = private constant [18 x i8] c"\10expected Variant\00"
-@.sconst.71 = private constant [14 x i8] c"\0Cexpected ')'\00"
-@.str.72 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
-@.str.73 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
-@.sconst.74 = private constant [10 x i8] c"\08delegate\00"
-@.sconst.75 = private constant [14 x i8] c"\0Cexpected ']'\00"
-@.str.76 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
-@.str.77 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
-@.sconst.78 = private constant [14 x i8] c"\0Cexpected ')'\00"
-@.str.79 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
-@.str.80 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
-@.sconst.81 = private constant [9 x i8] c"\07returns\00"
+@.sconst.6 = private constant [4 x i8] c"\02as\00"
+@.sconst.7 = private constant [7 x i8] c"\05break\00"
+@.sconst.8 = private constant [6 x i8] c"\04case\00"
+@.sconst.9 = private constant [8 x i8] c"\06choose\00"
+@.sconst.10 = private constant [10 x i8] c"\08continue\00"
+@.sconst.11 = private constant [8 x i8] c"\06define\00"
+@.sconst.12 = private constant [8 x i8] c"\06deinit\00"
+@.sconst.13 = private constant [10 x i8] c"\08delegate\00"
+@.sconst.14 = private constant [6 x i8] c"\04else\00"
+@.sconst.15 = private constant [9 x i8] c"\07extends\00"
+@.sconst.16 = private constant [8 x i8] c"\06extern\00"
+@.sconst.17 = private constant [5 x i8] c"\03for\00"
+@.sconst.18 = private constant [10 x i8] c"\08function\00"
+@.sconst.19 = private constant [4 x i8] c"\02if\00"
+@.sconst.20 = private constant [11 x i8] c"\09implement\00"
+@.sconst.21 = private constant [4 x i8] c"\02in\00"
+@.sconst.22 = private constant [6 x i8] c"\04init\00"
+@.sconst.23 = private constant [13 x i8] c"\0Binstruction\00"
+@.sconst.24 = private constant [11 x i8] c"\09intrinsic\00"
+@.sconst.25 = private constant [4 x i8] c"\02is\00"
+@.sconst.26 = private constant [7 x i8] c"\05label\00"
+@.sconst.27 = private constant [5 x i8] c"\03let\00"
+@.sconst.28 = private constant [6 x i8] c"\04loop\00"
+@.sconst.29 = private constant [7 x i8] c"\05macro\00"
+@.sconst.30 = private constant [7 x i8] c"\05match\00"
+@.sconst.31 = private constant [8 x i8] c"\06module\00"
+@.sconst.32 = private constant [9 x i8] c"\07mutable\00"
+@.sconst.33 = private constant [10 x i8] c"\08operator\00"
+@.sconst.34 = private constant [9 x i8] c"\07private\00"
+@.sconst.35 = private constant [11 x i8] c"\09procedure\00"
+@.sconst.36 = private constant [8 x i8] c"\06repeat\00"
+@.sconst.37 = private constant [8 x i8] c"\06return\00"
+@.sconst.38 = private constant [9 x i8] c"\07returns\00"
+@.sconst.39 = private constant [5 x i8] c"\03set\00"
+@.sconst.40 = private constant [8 x i8] c"\06sizeof\00"
+@.sconst.41 = private constant [7 x i8] c"\05throw\00"
+@.sconst.42 = private constant [8 x i8] c"\06throws\00"
+@.sconst.43 = private constant [7 x i8] c"\05trait\00"
+@.sconst.44 = private constant [5 x i8] c"\03try\00"
+@.sconst.45 = private constant [7 x i8] c"\05union\00"
+@.sconst.46 = private constant [5 x i8] c"\03use\00"
+@.sconst.47 = private constant [5 x i8] c"\03var\00"
+@.sconst.48 = private constant [6 x i8] c"\04when\00"
+@.sconst.49 = private constant [7 x i8] c"\05while\00"
+@.sconst.50 = private constant [9 x i8] c"\07package\00"
+@.str.51 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
+@.str.52 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
+@.sconst.53 = private constant [9 x i8] c"\07private\00"
+@.sconst.54 = private constant [17 x i8] c"\0Fexpected Export\00"
+@.str.55 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
+@.str.56 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
+@.sconst.57 = private constant [8 x i8] c"\06define\00"
+@.sconst.58 = private constant [21 x i8] c"\13expected identifier\00"
+@.sconst.59 = private constant [18 x i8] c"\10expected Concept\00"
+@.sconst.60 = private constant [27 x i8] c"\19expected GenericParameter\00"
+@.sconst.61 = private constant [14 x i8] c"\0Cexpected ']'\00"
+@.str.62 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
+@.str.63 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
+@.sconst.64 = private constant [14 x i8] c"\0Cexpected '}'\00"
+@.sconst.65 = private constant [14 x i8] c"\0Cexpected '}'\00"
+@.sconst.66 = private constant [7 x i8] c"\05union\00"
+@.sconst.67 = private constant [14 x i8] c"\0Cexpected '('\00"
+@.sconst.68 = private constant [18 x i8] c"\10expected Variant\00"
+@.sconst.69 = private constant [14 x i8] c"\0Cexpected ')'\00"
+@.str.70 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
+@.str.71 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
+@.sconst.72 = private constant [10 x i8] c"\08delegate\00"
+@.sconst.73 = private constant [14 x i8] c"\0Cexpected ']'\00"
+@.str.74 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
+@.str.75 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
+@.sconst.76 = private constant [14 x i8] c"\0Cexpected ')'\00"
+@.str.77 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
+@.str.78 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
+@.sconst.79 = private constant [9 x i8] c"\07returns\00"
+@.sconst.80 = private constant [15 x i8] c"\0Dexpected Type\00"
+@.sconst.81 = private constant [8 x i8] c"\06throws\00"
 @.sconst.82 = private constant [15 x i8] c"\0Dexpected Type\00"
-@.sconst.83 = private constant [8 x i8] c"\06throws\00"
-@.sconst.84 = private constant [15 x i8] c"\0Dexpected Type\00"
-@.str.85 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
-@.str.86 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
-@.sconst.87 = private constant [5 x i8] c"\03use\00"
-@.sconst.88 = private constant [15 x i8] c"\0Dexpected Name\00"
-@.sconst.89 = private constant [11 x i8] c"\09implement\00"
-@.sconst.90 = private constant [15 x i8] c"\0Dexpected Type\00"
-@.sconst.91 = private constant [14 x i8] c"\0Cexpected '{'\00"
-@.sconst.92 = private constant [14 x i8] c"\0Cexpected '}'\00"
-@.sconst.93 = private constant [7 x i8] c"\05trait\00"
-@.sconst.94 = private constant [15 x i8] c"\0Dexpected Name\00"
-@.sconst.95 = private constant [14 x i8] c"\0Cexpected '{'\00"
-@.sconst.96 = private constant [14 x i8] c"\0Cexpected '}'\00"
+@.str.83 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
+@.str.84 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
+@.sconst.85 = private constant [5 x i8] c"\03use\00"
+@.sconst.86 = private constant [15 x i8] c"\0Dexpected Name\00"
+@.sconst.87 = private constant [11 x i8] c"\09implement\00"
+@.sconst.88 = private constant [15 x i8] c"\0Dexpected Type\00"
+@.sconst.89 = private constant [14 x i8] c"\0Cexpected '{'\00"
+@.sconst.90 = private constant [14 x i8] c"\0Cexpected '}'\00"
+@.sconst.91 = private constant [7 x i8] c"\05trait\00"
+@.sconst.92 = private constant [15 x i8] c"\0Dexpected Name\00"
+@.sconst.93 = private constant [14 x i8] c"\0Cexpected '{'\00"
+@.sconst.94 = private constant [14 x i8] c"\0Cexpected '}'\00"
+@.str.95 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
+@.str.96 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
 @.str.97 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
 @.str.98 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
-@.str.99 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
-@.str.100 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
-@.sconst.101 = private constant [6 x i8] c"\04init\00"
+@.sconst.99 = private constant [6 x i8] c"\04init\00"
+@.sconst.100 = private constant [17 x i8] c"\0Fexpected Action\00"
+@.sconst.101 = private constant [8 x i8] c"\06deinit\00"
 @.sconst.102 = private constant [17 x i8] c"\0Fexpected Action\00"
-@.sconst.103 = private constant [8 x i8] c"\06deinit\00"
-@.sconst.104 = private constant [17 x i8] c"\0Fexpected Action\00"
-@.sconst.105 = private constant [10 x i8] c"\08function\00"
+@.sconst.103 = private constant [10 x i8] c"\08function\00"
+@.sconst.104 = private constant [17 x i8] c"\0Fexpected Target\00"
+@.sconst.105 = private constant [11 x i8] c"\09procedure\00"
 @.sconst.106 = private constant [17 x i8] c"\0Fexpected Target\00"
-@.sconst.107 = private constant [11 x i8] c"\09procedure\00"
+@.sconst.107 = private constant [10 x i8] c"\08operator\00"
 @.sconst.108 = private constant [17 x i8] c"\0Fexpected Target\00"
-@.sconst.109 = private constant [10 x i8] c"\08operator\00"
-@.sconst.110 = private constant [17 x i8] c"\0Fexpected Target\00"
-@.sconst.111 = private constant [18 x i8] c"\10expected Routine\00"
-@.sconst.112 = private constant [25 x i8] c"\17expected Implementation\00"
-@.sconst.113 = private constant [8 x i8] c"\06extern\00"
-@.sconst.114 = private constant [13 x i8] c"\0Binstruction\00"
-@.sconst.115 = private constant [11 x i8] c"\09intrinsic\00"
-@.sconst.116 = private constant [9 x i8] c"\07extends\00"
-@.str.117 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
-@.str.118 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
-@.sconst.119 = private constant [7 x i8] c"\05macro\00"
-@.sconst.120 = private constant [21 x i8] c"\13expected identifier\00"
-@.sconst.121 = private constant [16 x i8] c"\0Eexpected Model\00"
-@.sconst.122 = private constant [18 x i8] c"\10expected Operand\00"
-@.str.123 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
-@.str.124 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
-@.sconst.125 = private constant [16 x i8] c"\0Eexpected Model\00"
-@.sconst.126 = private constant [8 x i8] c"\06module\00"
-@.sconst.127 = private constant [21 x i8] c"\13expected identifier\00"
-@.str.128 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
-@.str.129 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
-@.sconst.130 = private constant [9 x i8] c"\07package\00"
-@.sconst.131 = private constant [15 x i8] c"\0Dexpected Name\00"
-@.sconst.132 = private constant [14 x i8] c"\0Cexpected '.'\00"
-@.sconst.133 = private constant [18 x i8] c"\10expected Operand\00"
-@.sconst.134 = private constant [14 x i8] c"\0Cexpected ')'\00"
+@.sconst.109 = private constant [18 x i8] c"\10expected Routine\00"
+@.sconst.110 = private constant [25 x i8] c"\17expected Implementation\00"
+@.sconst.111 = private constant [8 x i8] c"\06extern\00"
+@.sconst.112 = private constant [13 x i8] c"\0Binstruction\00"
+@.sconst.113 = private constant [11 x i8] c"\09intrinsic\00"
+@.sconst.114 = private constant [9 x i8] c"\07extends\00"
+@.str.115 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
+@.str.116 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
+@.sconst.117 = private constant [7 x i8] c"\05macro\00"
+@.sconst.118 = private constant [21 x i8] c"\13expected identifier\00"
+@.sconst.119 = private constant [16 x i8] c"\0Eexpected Model\00"
+@.sconst.120 = private constant [18 x i8] c"\10expected Operand\00"
+@.str.121 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
+@.str.122 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
+@.sconst.123 = private constant [16 x i8] c"\0Eexpected Model\00"
+@.sconst.124 = private constant [8 x i8] c"\06module\00"
+@.sconst.125 = private constant [21 x i8] c"\13expected identifier\00"
+@.str.126 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
+@.str.127 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
+@.sconst.128 = private constant [9 x i8] c"\07package\00"
+@.sconst.129 = private constant [15 x i8] c"\0Dexpected Name\00"
+@.sconst.130 = private constant [14 x i8] c"\0Cexpected '.'\00"
+@.sconst.131 = private constant [18 x i8] c"\10expected Operand\00"
+@.sconst.132 = private constant [14 x i8] c"\0Cexpected ')'\00"
+@.str.133 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
+@.str.134 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
 @.str.135 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
 @.str.136 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
-@.str.137 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
-@.str.138 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
-@.sconst.139 = private constant [15 x i8] c"\0Dexpected Name\00"
-@.sconst.140 = private constant [14 x i8] c"\0Cexpected ')'\00"
-@.str.141 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
-@.str.142 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
-@.sconst.143 = private constant [18 x i8] c"\10expected Operand\00"
-@.sconst.144 = private constant [18 x i8] c"\10expected Element\00"
-@.sconst.145 = private constant [14 x i8] c"\0Cexpected ']'\00"
-@.str.146 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
-@.str.147 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
-@.sconst.148 = private constant [4 x i8] c"\02if\00"
-@.sconst.149 = private constant [18 x i8] c"\10expected Operand\00"
-@.sconst.150 = private constant [27 x i8] c"\19expected colon or newline\00"
-@.sconst.151 = private constant [15 x i8] c"\0Dexpected Then\00"
-@.sconst.152 = private constant [6 x i8] c"\04else\00"
-@.sconst.153 = private constant [20 x i8] c"\12expected Statement\00"
-@.sconst.154 = private constant [7 x i8] c"\05match\00"
-@.sconst.155 = private constant [18 x i8] c"\10expected Operand\00"
-@.sconst.156 = private constant [27 x i8] c"\19expected colon or newline\00"
-@.sconst.157 = private constant [17 x i8] c"\0Fexpected Branch\00"
-@.str.158 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
-@.str.159 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
-@.sconst.160 = private constant [27 x i8] c"\19expected colon or newline\00"
-@.sconst.161 = private constant [20 x i8] c"\12expected Statement\00"
-@.str.162 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
-@.str.163 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
-@.sconst.164 = private constant [6 x i8] c"\04case\00"
-@.sconst.165 = private constant [18 x i8] c"\10expected Operand\00"
-@.sconst.166 = private constant [7 x i8] c"\05while\00"
-@.sconst.167 = private constant [20 x i8] c"\12expected Condition\00"
-@.sconst.168 = private constant [27 x i8] c"\19expected colon or newline\00"
-@.sconst.169 = private constant [17 x i8] c"\0Fexpected Action\00"
-@.sconst.170 = private constant [8 x i8] c"\06choose\00"
-@.sconst.171 = private constant [18 x i8] c"\10expected Operand\00"
-@.sconst.172 = private constant [27 x i8] c"\19expected colon or newline\00"
-@.sconst.173 = private constant [5 x i8] c"\03try\00"
-@.sconst.174 = private constant [20 x i8] c"\12expected Condition\00"
-@.sconst.175 = private constant [27 x i8] c"\19expected colon or newline\00"
-@.str.176 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
-@.str.177 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
-@.sconst.178 = private constant [6 x i8] c"\04when\00"
-@.sconst.179 = private constant [21 x i8] c"\13expected identifier\00"
-@.sconst.180 = private constant [27 x i8] c"\19expected colon or newline\00"
-@.sconst.181 = private constant [15 x i8] c"\0Dexpected Name\00"
-@.sconst.182 = private constant [20 x i8] c"\12expected Statement\00"
-@.str.183 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
-@.str.184 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
-@.sconst.185 = private constant [5 x i8] c"\03let\00"
+@.sconst.137 = private constant [15 x i8] c"\0Dexpected Name\00"
+@.sconst.138 = private constant [14 x i8] c"\0Cexpected ')'\00"
+@.str.139 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
+@.str.140 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
+@.sconst.141 = private constant [18 x i8] c"\10expected Operand\00"
+@.sconst.142 = private constant [18 x i8] c"\10expected Element\00"
+@.sconst.143 = private constant [14 x i8] c"\0Cexpected ']'\00"
+@.str.144 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
+@.str.145 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
+@.sconst.146 = private constant [4 x i8] c"\02if\00"
+@.sconst.147 = private constant [18 x i8] c"\10expected Operand\00"
+@.sconst.148 = private constant [27 x i8] c"\19expected colon or newline\00"
+@.sconst.149 = private constant [15 x i8] c"\0Dexpected Then\00"
+@.sconst.150 = private constant [6 x i8] c"\04else\00"
+@.sconst.151 = private constant [20 x i8] c"\12expected Statement\00"
+@.sconst.152 = private constant [7 x i8] c"\05match\00"
+@.sconst.153 = private constant [18 x i8] c"\10expected Operand\00"
+@.sconst.154 = private constant [27 x i8] c"\19expected colon or newline\00"
+@.sconst.155 = private constant [17 x i8] c"\0Fexpected Branch\00"
+@.str.156 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
+@.str.157 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
+@.sconst.158 = private constant [27 x i8] c"\19expected colon or newline\00"
+@.sconst.159 = private constant [20 x i8] c"\12expected Statement\00"
+@.str.160 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
+@.str.161 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
+@.sconst.162 = private constant [6 x i8] c"\04case\00"
+@.sconst.163 = private constant [18 x i8] c"\10expected Operand\00"
+@.sconst.164 = private constant [7 x i8] c"\05while\00"
+@.sconst.165 = private constant [20 x i8] c"\12expected Condition\00"
+@.sconst.166 = private constant [27 x i8] c"\19expected colon or newline\00"
+@.sconst.167 = private constant [17 x i8] c"\0Fexpected Action\00"
+@.sconst.168 = private constant [8 x i8] c"\06choose\00"
+@.sconst.169 = private constant [18 x i8] c"\10expected Operand\00"
+@.sconst.170 = private constant [27 x i8] c"\19expected colon or newline\00"
+@.sconst.171 = private constant [5 x i8] c"\03try\00"
+@.sconst.172 = private constant [20 x i8] c"\12expected Condition\00"
+@.sconst.173 = private constant [27 x i8] c"\19expected colon or newline\00"
+@.str.174 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
+@.str.175 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
+@.sconst.176 = private constant [6 x i8] c"\04when\00"
+@.sconst.177 = private constant [21 x i8] c"\13expected identifier\00"
+@.sconst.178 = private constant [27 x i8] c"\19expected colon or newline\00"
+@.sconst.179 = private constant [15 x i8] c"\0Dexpected Name\00"
+@.sconst.180 = private constant [20 x i8] c"\12expected Statement\00"
+@.str.181 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
+@.str.182 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
+@.sconst.183 = private constant [5 x i8] c"\03let\00"
+@.sconst.184 = private constant [18 x i8] c"\10expected Binding\00"
+@.sconst.185 = private constant [5 x i8] c"\03var\00"
 @.sconst.186 = private constant [18 x i8] c"\10expected Binding\00"
-@.sconst.187 = private constant [5 x i8] c"\03var\00"
+@.sconst.187 = private constant [9 x i8] c"\07mutable\00"
 @.sconst.188 = private constant [18 x i8] c"\10expected Binding\00"
-@.sconst.189 = private constant [9 x i8] c"\07mutable\00"
-@.sconst.190 = private constant [18 x i8] c"\10expected Binding\00"
-@.sconst.191 = private constant [22 x i8] c"\14expected BindingSpec\00"
-@.str.192 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
-@.str.193 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
-@.sconst.194 = private constant [14 x i8] c"\0Cexpected ']'\00"
-@.sconst.195 = private constant [14 x i8] c"\0Cexpected ')'\00"
-@.str.196 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
-@.str.197 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
-@.sconst.198 = private constant [9 x i8] c"\07private\00"
-@.sconst.199 = private constant [19 x i8] c"\11expected Property\00"
-@.str.200 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
-@.str.201 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
-@.sconst.202 = private constant [25 x i8] c"\17expected TypeAnnotation\00"
-@.sconst.203 = private constant [15 x i8] c"\0Dexpected Type\00"
-@.sconst.204 = private constant [10 x i8] c"\08continue\00"
-@.sconst.205 = private constant [7 x i8] c"\05break\00"
-@.sconst.206 = private constant [6 x i8] c"\04loop\00"
-@.sconst.207 = private constant [21 x i8] c"\13expected identifier\00"
-@.sconst.208 = private constant [8 x i8] c"\06return\00"
-@.sconst.209 = private constant [7 x i8] c"\05throw\00"
-@.sconst.210 = private constant [18 x i8] c"\10expected Operand\00"
-@.sconst.211 = private constant [27 x i8] c"\19expected colon or newline\00"
-@.sconst.212 = private constant [17 x i8] c"\0Fexpected Action\00"
-@.sconst.213 = private constant [5 x i8] c"\03for\00"
-@.sconst.214 = private constant [21 x i8] c"\13expected identifier\00"
-@.sconst.215 = private constant [4 x i8] c"\02in\00"
-@.sconst.216 = private constant [15 x i8] c"\0Dexpected 'in'\00"
-@.sconst.217 = private constant [18 x i8] c"\10expected Operand\00"
-@.sconst.218 = private constant [27 x i8] c"\19expected colon or newline\00"
-@.sconst.219 = private constant [17 x i8] c"\0Fexpected Action\00"
-@.sconst.220 = private constant [7 x i8] c"\05label\00"
-@.sconst.221 = private constant [21 x i8] c"\13expected identifier\00"
-@.sconst.222 = private constant [8 x i8] c"\06repeat\00"
-@.sconst.223 = private constant [17 x i8] c"\0Fexpected Action\00"
-@.str.224 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
-@.str.225 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
-@.sconst.226 = private constant [5 x i8] c"\03set\00"
+@.sconst.189 = private constant [22 x i8] c"\14expected BindingSpec\00"
+@.str.190 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
+@.str.191 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
+@.sconst.192 = private constant [14 x i8] c"\0Cexpected ']'\00"
+@.sconst.193 = private constant [14 x i8] c"\0Cexpected ')'\00"
+@.str.194 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
+@.str.195 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
+@.sconst.196 = private constant [9 x i8] c"\07private\00"
+@.sconst.197 = private constant [19 x i8] c"\11expected Property\00"
+@.str.198 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
+@.str.199 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
+@.sconst.200 = private constant [25 x i8] c"\17expected TypeAnnotation\00"
+@.sconst.201 = private constant [15 x i8] c"\0Dexpected Type\00"
+@.sconst.202 = private constant [10 x i8] c"\08continue\00"
+@.sconst.203 = private constant [7 x i8] c"\05break\00"
+@.sconst.204 = private constant [6 x i8] c"\04loop\00"
+@.sconst.205 = private constant [21 x i8] c"\13expected identifier\00"
+@.sconst.206 = private constant [8 x i8] c"\06return\00"
+@.sconst.207 = private constant [7 x i8] c"\05throw\00"
+@.sconst.208 = private constant [18 x i8] c"\10expected Operand\00"
+@.sconst.209 = private constant [27 x i8] c"\19expected colon or newline\00"
+@.sconst.210 = private constant [17 x i8] c"\0Fexpected Action\00"
+@.sconst.211 = private constant [5 x i8] c"\03for\00"
+@.sconst.212 = private constant [21 x i8] c"\13expected identifier\00"
+@.sconst.213 = private constant [4 x i8] c"\02in\00"
+@.sconst.214 = private constant [15 x i8] c"\0Dexpected 'in'\00"
+@.sconst.215 = private constant [18 x i8] c"\10expected Operand\00"
+@.sconst.216 = private constant [27 x i8] c"\19expected colon or newline\00"
+@.sconst.217 = private constant [17 x i8] c"\0Fexpected Action\00"
+@.sconst.218 = private constant [7 x i8] c"\05label\00"
+@.sconst.219 = private constant [21 x i8] c"\13expected identifier\00"
+@.sconst.220 = private constant [8 x i8] c"\06repeat\00"
+@.sconst.221 = private constant [17 x i8] c"\0Fexpected Action\00"
+@.str.222 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
+@.str.223 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
+@.sconst.224 = private constant [5 x i8] c"\03set\00"
+@.sconst.225 = private constant [18 x i8] c"\10expected Operand\00"
+@.sconst.226 = private constant [27 x i8] c"\19expected colon or newline\00"
 @.sconst.227 = private constant [18 x i8] c"\10expected Operand\00"
-@.sconst.228 = private constant [27 x i8] c"\19expected colon or newline\00"
-@.sconst.229 = private constant [18 x i8] c"\10expected Operand\00"
-@.sconst.230 = private constant [14 x i8] c"\0Cexpected '}'\00"
-@.sconst.231 = private constant [8 x i8] c"\06sizeof\00"
+@.sconst.228 = private constant [14 x i8] c"\0Cexpected '}'\00"
+@.sconst.229 = private constant [8 x i8] c"\06sizeof\00"
+@.sconst.230 = private constant [15 x i8] c"\0Dexpected Type\00"
+@.sconst.231 = private constant [9 x i8] c"\07alignof\00"
 @.sconst.232 = private constant [15 x i8] c"\0Dexpected Type\00"
-@.sconst.233 = private constant [9 x i8] c"\07alignof\00"
-@.sconst.234 = private constant [15 x i8] c"\0Dexpected Type\00"
-@.sconst.235 = private constant [4 x i8] c"\02is\00"
-@.sconst.236 = private constant [15 x i8] c"\0Dexpected Name\00"
-@.sconst.237 = private constant [4 x i8] c"\02as\00"
-@.sconst.238 = private constant [15 x i8] c"\0Dexpected Type\00"
+@.sconst.233 = private constant [4 x i8] c"\02is\00"
+@.sconst.234 = private constant [15 x i8] c"\0Dexpected Name\00"
+@.sconst.235 = private constant [4 x i8] c"\02as\00"
+@.sconst.236 = private constant [15 x i8] c"\0Dexpected Type\00"
+@.str.237 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
+@.str.238 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
 @.str.239 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
 @.str.240 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
-@.str.241 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
-@.str.242 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
-@.sconst.243 = private constant [21 x i8] c"\13expected identifier\00"
-@.sconst.244 = private constant [21 x i8] c"\13expected identifier\00"
+@.sconst.241 = private constant [21 x i8] c"\13expected identifier\00"
+@.sconst.242 = private constant [21 x i8] c"\13expected identifier\00"
+@.str.243 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
+@.str.244 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
 @.str.245 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
 @.str.246 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
 @.str.247 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
@@ -1295,9 +1295,9 @@ source_filename = "scalyc"
 @.str.278 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
 @.str.279 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
 @.str.280 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
-@.str.281 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
-@.str.282 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
-@.sconst.283 = private constant [8 x i8] c"\06Option\00"
+@.sconst.281 = private constant [8 x i8] c"\06Option\00"
+@.str.282 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
+@.str.283 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
 @.str.284 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
 @.str.285 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
 @.sconst.286 = private constant [6 x i8] c"\04true\00"
@@ -9707,948 +9707,6 @@ entry:
   ret i8 92
 }
 
-define linkonce_odr ptr @_ZN6VectorIcE3getEPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %load.struct = load %_Z6VectorIcE, ptr %1, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct, 0
-  %ge = icmp uge i64 %2, %length
-  br i1 %ge, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  ret ptr null
-
-if.end:                                           ; preds = %entry
-  %load.struct1 = load %_Z6VectorIcE, ptr %1, align 8
-  %data = extractvalue %_Z6VectorIcE %load.struct1, 1
-  %ptr.add = getelementptr inbounds i8, ptr %data, i64 %2
-  ret ptr %ptr.add
-}
-
-define linkonce_odr ptr @_ZN6VectorIcE7get_ptrEm(ptr %0, i64 %1) {
-entry:
-  %load.struct = load %_Z6VectorIcE, ptr %0, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct, 0
-  %ge = icmp uge i64 %1, %length
-  br i1 %ge, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  ret ptr null
-
-if.end:                                           ; preds = %entry
-  %load.struct1 = load %_Z6VectorIcE, ptr %0, align 8
-  %data = extractvalue %_Z6VectorIcE %load.struct1, 1
-  %ptr.add = getelementptr inbounds i8, ptr %data, i64 %1
-  ret ptr %ptr.add
-}
-
-define linkonce_odr void @_ZN6VectorIcE3putEmc(ptr %0, i64 %1, i8 %2) {
-entry:
-  %load.struct = load %_Z6VectorIcE, ptr %0, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct, 0
-  %ge = icmp uge i64 %1, %length
-  br i1 %ge, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.6)
-  call void @_Z12scaly_eputnlv()
-  call void @exit(i64 15)
-  br label %if.end
-
-if.end:                                           ; preds = %if.then, %entry
-  %load.struct1 = load %_Z6VectorIcE, ptr %0, align 8
-  %data = extractvalue %_Z6VectorIcE %load.struct1, 1
-  %ptr.add = getelementptr inbounds i8, ptr %data, i64 %1
-  store i8 %2, ptr %ptr.add, align 1
-  ret void
-}
-
-define linkonce_odr ptr @_ZN14VectorIteratorIcE4nextEv(ptr %0) {
-entry:
-  %load.struct = load %_Z14VectorIteratorIcE, ptr %0, align 8
-  %vector = extractvalue %_Z14VectorIteratorIcE %load.struct, 0
-  %eq = icmp eq ptr %vector, null
-  br i1 %eq, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  ret ptr null
-
-if.end:                                           ; preds = %entry
-  %load.struct1 = load %_Z14VectorIteratorIcE, ptr %0, align 8
-  %position = extractvalue %_Z14VectorIteratorIcE %load.struct1, 1
-  %load.struct2 = load %_Z14VectorIteratorIcE, ptr %0, align 8
-  %vector3 = extractvalue %_Z14VectorIteratorIcE %load.struct2, 0
-  %deref = load %_Z6VectorIcE, ptr %vector3, align 8
-  %length = extractvalue %_Z6VectorIcE %deref, 0
-  %eq4 = icmp eq i64 %position, %length
-  br i1 %eq4, label %if.then5, label %if.end6
-
-if.then5:                                         ; preds = %if.end
-  ret ptr null
-
-if.end6:                                          ; preds = %if.end
-  %load.struct7 = load %_Z14VectorIteratorIcE, ptr %0, align 8
-  %position8 = extractvalue %_Z14VectorIteratorIcE %load.struct7, 1
-  %add = add i64 %position8, 1
-  %position9 = getelementptr inbounds %_Z14VectorIteratorIcE, ptr %0, i32 0, i32 1
-  store i64 %add, ptr %position9, align 4
-  %field.inplace = getelementptr inbounds %_Z14VectorIteratorIcE, ptr %0, i32 0, i32 0
-  %deref.recv = load ptr, ptr %field.inplace, align 8
-  %load.struct10 = load %_Z14VectorIteratorIcE, ptr %0, align 8
-  %position11 = extractvalue %_Z14VectorIteratorIcE %load.struct10, 1
-  %sub = sub i64 %position11, 1
-  %call = call ptr @_ZN6VectorIcE7get_ptrEm(ptr %deref.recv, i64 %sub)
-  ret ptr %call
-}
-
-define linkonce_odr void @_ZN14VectorIteratorIcEC1EP6VectorIcE(ptr %0, ptr %1) {
-entry:
-  %vector = getelementptr inbounds %_Z14VectorIteratorIcE, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %vector, align 8
-  %position = getelementptr inbounds %_Z14VectorIteratorIcE, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 4
-  ret void
-}
-
-define linkonce_odr void @_ZN14VectorIteratorIcEC1Ev(ptr %0) {
-entry:
-  ret void
-}
-
-define linkonce_odr void @_ZN6VectorIcE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z14VectorIteratorIcE) %0, ptr %1, ptr %2) {
-entry:
-  %struct.init = alloca %_Z14VectorIteratorIcE, align 8
-  call void @_ZN14VectorIteratorIcEC1EP6VectorIcE(ptr %struct.init, ptr %2)
-  %sret.body = load %_Z14VectorIteratorIcE, ptr %struct.init, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z14VectorIteratorIcE, ptr null, i32 1) to i64), i1 false)
-  ret void
-}
-
-define linkonce_odr void @_ZN6VectorIcE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2) {
-entry:
-  %load.struct = load %_Z6VectorIcE, ptr %2, align 8
-  %data = extractvalue %_Z6VectorIcE %load.struct, 1
-  %load.struct1 = load %_Z6VectorIcE, ptr %2, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct1, 0
-  %tuple = alloca { ptr, i64 }, align 8
-  %tuple.field = getelementptr inbounds { ptr, i64 }, ptr %tuple, i32 0, i32 0
-  store ptr %data, ptr %tuple.field, align 1
-  %tuple.field2 = getelementptr inbounds { ptr, i64 }, ptr %tuple, i32 0, i32 1
-  store i64 %length, ptr %tuple.field2, align 1
-  %tuple.val = load { ptr, i64 }, ptr %tuple, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr ({ ptr, i64 }, ptr null, i32 1) to i64), i1 false)
-  ret void
-}
-
-define linkonce_odr void @_ZN6VectorIcEC1Ev(ptr %0) {
-entry:
-  %length = getelementptr inbounds %_Z6VectorIcE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %data = getelementptr inbounds %_Z6VectorIcE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %data, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN6VectorIcEC1EPcm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z6VectorIcE, ptr %0, i32 0, i32 0
-  store i64 %2, ptr %length, align 4
-  %data = getelementptr inbounds %_Z6VectorIcE, ptr %0, i32 0, i32 1
-  store ptr %1, ptr %data, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN6VectorIcEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z6VectorIcE, ptr %0, i32 0, i32 0
-  store i64 %2, ptr %length, align 4
-  %gt = icmp ugt i64 %2, 0
-  br i1 %gt, label %if.then, label %if.else
-
-if.then:                                          ; preds = %entry
-  %mul = mul i64 %2, ptrtoint (ptr getelementptr (i8, ptr null, i32 1) to i64)
-  %call = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 %mul, i64 1)
-  %data = getelementptr inbounds %_Z6VectorIcE, ptr %0, i32 0, i32 1
-  store ptr %call, ptr %data, align 8
-  %field.inplace = getelementptr inbounds %_Z6VectorIcE, ptr %0, i32 0, i32 1
-  %deref.recv = load ptr, ptr %field.inplace, align 8
-  %mul1 = mul i64 %2, ptrtoint (ptr getelementptr (i8, ptr null, i32 1) to i64)
-  %call2 = call ptr @memset(ptr %deref.recv, i64 0, i64 %mul1)
-  br label %if.end
-
-if.else:                                          ; preds = %entry
-  %data3 = getelementptr inbounds %_Z6VectorIcE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %data3, align 8
-  br label %if.end
-
-if.end:                                           ; preds = %if.else, %if.then
-  %if.value = phi ptr [ %call2, %if.then ], [ null, %if.else ]
-  ret void
-}
-
-define linkonce_odr void @_ZN6VectorIcEC1EPN4scaly6memory4PageEPcm(ptr %0, ptr %1, ptr %2, i64 %3) {
-entry:
-  %length = getelementptr inbounds %_Z6VectorIcE, ptr %0, i32 0, i32 0
-  store i64 %3, ptr %length, align 4
-  %gt = icmp ugt i64 %3, 0
-  br i1 %gt, label %if.then, label %if.else
-
-if.then:                                          ; preds = %entry
-  %mul = mul i64 %3, ptrtoint (ptr getelementptr (i8, ptr null, i32 1) to i64)
-  %call = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 %mul, i64 1)
-  %data = getelementptr inbounds %_Z6VectorIcE, ptr %0, i32 0, i32 1
-  store ptr %call, ptr %data, align 8
-  %field.inplace = getelementptr inbounds %_Z6VectorIcE, ptr %0, i32 0, i32 1
-  %deref.recv = load ptr, ptr %field.inplace, align 8
-  %mul1 = mul i64 %3, ptrtoint (ptr getelementptr (i8, ptr null, i32 1) to i64)
-  %call2 = call ptr @memcpy(ptr %deref.recv, ptr %2, i64 %mul1)
-  br label %if.end
-
-if.else:                                          ; preds = %entry
-  %data3 = getelementptr inbounds %_Z6VectorIcE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %data3, align 8
-  br label %if.end
-
-if.end:                                           ; preds = %if.else, %if.then
-  %if.value = phi ptr [ %call2, %if.then ], [ null, %if.else ]
-  ret void
-}
-
-define linkonce_odr void @_ZN6VectorIcEC1EPN4scaly6memory4PageE6VectorIcE(ptr %0, ptr %1, ptr %2) {
-entry:
-  %load.struct = load %_Z6VectorIcE, ptr %2, align 8
-  %length = extractvalue %_Z6VectorIcE %load.struct, 0
-  %length1 = getelementptr inbounds %_Z6VectorIcE, ptr %0, i32 0, i32 0
-  store i64 %length, ptr %length1, align 4
-  %load.struct2 = load %_Z6VectorIcE, ptr %0, align 8
-  %length3 = extractvalue %_Z6VectorIcE %load.struct2, 0
-  %gt = icmp ugt i64 %length3, 0
-  br i1 %gt, label %if.then, label %if.else
-
-if.then:                                          ; preds = %entry
-  %load.struct4 = load %_Z6VectorIcE, ptr %0, align 8
-  %length5 = extractvalue %_Z6VectorIcE %load.struct4, 0
-  %mul = mul i64 %length5, ptrtoint (ptr getelementptr (i8, ptr null, i32 1) to i64)
-  %call = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 %mul, i64 1)
-  %data = getelementptr inbounds %_Z6VectorIcE, ptr %0, i32 0, i32 1
-  store ptr %call, ptr %data, align 8
-  %field.inplace = getelementptr inbounds %_Z6VectorIcE, ptr %0, i32 0, i32 1
-  %deref.recv = load ptr, ptr %field.inplace, align 8
-  %field.inplace6 = getelementptr inbounds %_Z6VectorIcE, ptr %2, i32 0, i32 1
-  %deref.recv7 = load ptr, ptr %field.inplace6, align 8
-  %load.struct8 = load %_Z6VectorIcE, ptr %0, align 8
-  %length9 = extractvalue %_Z6VectorIcE %load.struct8, 0
-  %mul10 = mul i64 %length9, ptrtoint (ptr getelementptr (i8, ptr null, i32 1) to i64)
-  %call11 = call ptr @memcpy(ptr %deref.recv, ptr %deref.recv7, i64 %mul10)
-  br label %if.end
-
-if.else:                                          ; preds = %entry
-  %data12 = getelementptr inbounds %_Z6VectorIcE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %data12, align 8
-  br label %if.end
-
-if.end:                                           ; preds = %if.else, %if.then
-  %if.value = phi ptr [ %call11, %if.then ], [ null, %if.else ]
-  ret void
-}
-
-define linkonce_odr ptr @_ZN5ArrayIcE10get_bufferEv(ptr %0) {
-entry:
-  %load.struct = load %_Z5ArrayIcE, ptr %0, align 8
-  %vector = extractvalue %_Z5ArrayIcE %load.struct, 1
-  %eq = icmp eq ptr %vector, null
-  br i1 %eq, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  ret ptr null
-
-if.end:                                           ; preds = %entry
-  %load.struct1 = load %_Z5ArrayIcE, ptr %0, align 8
-  %vector2 = extractvalue %_Z5ArrayIcE %load.struct1, 1
-  %deref = load %_Z6VectorIcE, ptr %vector2, align 8
-  %data = extractvalue %_Z6VectorIcE %deref, 1
-  ret ptr %data
-}
-
-define linkonce_odr i64 @_ZN5ArrayIcE10get_lengthEv(ptr %0) {
-entry:
-  %load.struct = load %_Z5ArrayIcE, ptr %0, align 8
-  %length = extractvalue %_Z5ArrayIcE %load.struct, 0
-  ret i64 %length
-}
-
-define linkonce_odr i64 @_ZN5ArrayIcE12get_capacityEv(ptr %0) {
-entry:
-  %load.struct = load %_Z5ArrayIcE, ptr %0, align 8
-  %vector = extractvalue %_Z5ArrayIcE %load.struct, 1
-  %eq = icmp eq ptr %vector, null
-  br i1 %eq, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  ret i64 0
-
-if.end:                                           ; preds = %entry
-  %load.struct1 = load %_Z5ArrayIcE, ptr %0, align 8
-  %vector2 = extractvalue %_Z5ArrayIcE %load.struct1, 1
-  %deref = load %_Z6VectorIcE, ptr %vector2, align 8
-  %length = extractvalue %_Z6VectorIcE %deref, 0
-  ret i64 %length
-}
-
-define linkonce_odr void @_ZN5ArrayIcE10reallocateEv(ptr %0) {
-entry:
-  %call = call ptr @_ZN4Page3getEPv(ptr %0)
-  %length = alloca i64, align 8
-  store i64 0, ptr %length, align 1
-  %load.struct = load %_Z5ArrayIcE, ptr %0, align 8
-  %vector = extractvalue %_Z5ArrayIcE %load.struct, 1
-  %eq = icmp eq ptr %vector, null
-  br i1 %eq, label %if.then, label %if.else
-
-if.then:                                          ; preds = %entry
-  %call1 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call)
-  %call2 = call i64 @_ZN4Page12get_capacityEm(ptr %call1, i64 1)
-  %sub = sub i64 %call2, ptrtoint (ptr getelementptr (%_Z6VectorIcE, ptr null, i32 1) to i64)
-  %udiv = udiv i64 %sub, ptrtoint (ptr getelementptr (i8, ptr null, i32 1) to i64)
-  store i64 %udiv, ptr %length, align 1
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call1, i64 ptrtoint (ptr getelementptr (%_Z6VectorIcE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorIcE }, ptr null, i64 0, i32 1) to i64))
-  %length3 = load i64, ptr %length, align 4
-  call void @_ZN6VectorIcEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call1, i64 %length3)
-  %vector4 = getelementptr inbounds %_Z5ArrayIcE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector4, align 8
-  br label %if.end
-
-if.else:                                          ; preds = %entry
-  %load.struct5 = load %_Z5ArrayIcE, ptr %0, align 8
-  %vector6 = extractvalue %_Z5ArrayIcE %load.struct5, 1
-  %deref = load %_Z6VectorIcE, ptr %vector6, align 8
-  %length7 = extractvalue %_Z6VectorIcE %deref, 0
-  %mul = mul i64 %length7, 2
-  store i64 %mul, ptr %length, align 1
-  %call8 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call)
-  %struct.region9 = call ptr @_ZN4Page8allocateEmm(ptr %call8, i64 ptrtoint (ptr getelementptr (%_Z6VectorIcE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorIcE }, ptr null, i64 0, i32 1) to i64))
-  %length10 = load i64, ptr %length, align 4
-  call void @_ZN6VectorIcEC1EPN4scaly6memory4PageEm(ptr %struct.region9, ptr %call8, i64 %length10)
-  %load.struct11 = load %_Z5ArrayIcE, ptr %0, align 8
-  %vector12 = extractvalue %_Z5ArrayIcE %load.struct11, 1
-  %deref13 = load %_Z6VectorIcE, ptr %vector12, align 8
-  %length14 = extractvalue %_Z6VectorIcE %deref13, 0
-  %mul15 = mul i64 %length14, ptrtoint (ptr getelementptr (i8, ptr null, i32 1) to i64)
-  %field.inplace = getelementptr inbounds %_Z6VectorIcE, ptr %struct.region9, i32 0, i32 1
-  %deref.recv = load ptr, ptr %field.inplace, align 8
-  %field.inplace16 = getelementptr inbounds %_Z5ArrayIcE, ptr %0, i32 0, i32 1
-  %load.struct17 = load %_Z5ArrayIcE, ptr %0, align 8
-  %vector18 = extractvalue %_Z5ArrayIcE %load.struct17, 1
-  %deref19 = load %_Z6VectorIcE, ptr %vector18, align 8
-  %data = extractvalue %_Z6VectorIcE %deref19, 1
-  %call20 = call ptr @memcpy(ptr %deref.recv, ptr %data, i64 %mul15)
-  %load.struct21 = load %_Z5ArrayIcE, ptr %0, align 8
-  %vector22 = extractvalue %_Z5ArrayIcE %load.struct21, 1
-  %call23 = call ptr @_ZN4Page3getEPv(ptr %vector22)
-  call void @_ZN4Page25deallocate_exclusive_pageEP4Page(ptr %call, ptr %call23)
-  %vector24 = getelementptr inbounds %_Z5ArrayIcE, ptr %0, i32 0, i32 1
-  store ptr %struct.region9, ptr %vector24, align 8
-  br label %if.end
-
-if.end:                                           ; preds = %if.else, %if.then
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayIcE3addEc(ptr %0, i8 %1) {
-entry:
-  %load.struct = load %_Z5ArrayIcE, ptr %0, align 8
-  %vector = extractvalue %_Z5ArrayIcE %load.struct, 1
-  %eq = icmp eq ptr %vector, null
-  br i1 %eq, label %lor.end, label %lor.rhs
-
-lor.rhs:                                          ; preds = %entry
-  %load.struct1 = load %_Z5ArrayIcE, ptr %0, align 8
-  %length = extractvalue %_Z5ArrayIcE %load.struct1, 0
-  %load.struct2 = load %_Z5ArrayIcE, ptr %0, align 8
-  %vector3 = extractvalue %_Z5ArrayIcE %load.struct2, 1
-  %deref = load %_Z6VectorIcE, ptr %vector3, align 8
-  %length4 = extractvalue %_Z6VectorIcE %deref, 0
-  %eq5 = icmp eq i64 %length, %length4
-  br label %lor.end
-
-lor.end:                                          ; preds = %lor.rhs, %entry
-  %lor.result = phi i1 [ true, %entry ], [ %eq5, %lor.rhs ]
-  br i1 %lor.result, label %if.then, label %if.end
-
-if.then:                                          ; preds = %lor.end
-  call void @_ZN5ArrayIcE10reallocateEv(ptr %0)
-  br label %if.end
-
-if.end:                                           ; preds = %if.then, %lor.end
-  %load.struct6 = load %_Z5ArrayIcE, ptr %0, align 8
-  %vector7 = extractvalue %_Z5ArrayIcE %load.struct6, 1
-  %deref8 = load %_Z6VectorIcE, ptr %vector7, align 8
-  %data = extractvalue %_Z6VectorIcE %deref8, 1
-  %load.struct9 = load %_Z5ArrayIcE, ptr %0, align 8
-  %length10 = extractvalue %_Z5ArrayIcE %load.struct9, 0
-  %ptr.add = getelementptr inbounds i8, ptr %data, i64 %length10
-  store i8 %1, ptr %ptr.add, align 1
-  %load.struct11 = load %_Z5ArrayIcE, ptr %0, align 8
-  %length12 = extractvalue %_Z5ArrayIcE %load.struct11, 0
-  %add = add i64 %length12, 1
-  %length13 = getelementptr inbounds %_Z5ArrayIcE, ptr %0, i32 0, i32 0
-  store i64 %add, ptr %length13, align 4
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayIcE3addE6VectorIcE(ptr %0, ptr %1) {
-entry:
-  %own_page = alloca ptr, align 8
-  %load.struct = load %_Z5ArrayIcE, ptr %0, align 8
-  %length = extractvalue %_Z5ArrayIcE %load.struct, 0
-  %load.struct1 = load %_Z6VectorIcE, ptr %1, align 8
-  %length2 = extractvalue %_Z6VectorIcE %load.struct1, 0
-  %add = add i64 %length, %length2
-  %new_length = alloca i64, align 8
-  store i64 %add, ptr %new_length, align 1
-  %new_length3 = load i64, ptr %new_length, align 4
-  %load.struct4 = load %_Z5ArrayIcE, ptr %0, align 8
-  %length5 = extractvalue %_Z5ArrayIcE %load.struct4, 0
-  %lt = icmp ult i64 %new_length3, %length5
-  br i1 %lt, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  call void @exit(i64 14)
-  br label %if.end
-
-if.end:                                           ; preds = %if.then, %entry
-  %load.struct6 = load %_Z5ArrayIcE, ptr %0, align 8
-  %vector = extractvalue %_Z5ArrayIcE %load.struct6, 1
-  %eq = icmp eq ptr %vector, null
-  br i1 %eq, label %lor.end, label %lor.rhs
-
-lor.rhs:                                          ; preds = %if.end
-  %new_length7 = load i64, ptr %new_length, align 4
-  %load.struct8 = load %_Z5ArrayIcE, ptr %0, align 8
-  %vector9 = extractvalue %_Z5ArrayIcE %load.struct8, 1
-  %deref = load %_Z6VectorIcE, ptr %vector9, align 8
-  %length10 = extractvalue %_Z6VectorIcE %deref, 0
-  %gt = icmp ugt i64 %new_length7, %length10
-  br label %lor.end
-
-lor.end:                                          ; preds = %lor.rhs, %if.end
-  %lor.result = phi i1 [ true, %if.end ], [ %gt, %lor.rhs ]
-  br i1 %lor.result, label %if.then11, label %if.end12
-
-if.then11:                                        ; preds = %lor.end
-  call void @_ZN5ArrayIcE10reallocateEv(ptr %0)
-  br label %if.end12
-
-if.end12:                                         ; preds = %if.then11, %lor.end
-  %new_length13 = load i64, ptr %new_length, align 4
-  %load.struct14 = load %_Z5ArrayIcE, ptr %0, align 8
-  %vector15 = extractvalue %_Z5ArrayIcE %load.struct14, 1
-  %deref16 = load %_Z6VectorIcE, ptr %vector15, align 8
-  %length17 = extractvalue %_Z6VectorIcE %deref16, 0
-  %gt18 = icmp ugt i64 %new_length13, %length17
-  br i1 %gt18, label %if.then19, label %if.end20
-
-if.then19:                                        ; preds = %if.end12
-  %call = call ptr @_ZN4Page3getEPv(ptr %0)
-  store ptr %call, ptr %own_page, align 1
-  %own_page21 = load ptr, ptr %own_page, align 8
-  %new_length22 = load i64, ptr %new_length, align 4
-  %mul = mul i64 %new_length22, ptrtoint (ptr getelementptr (i8, ptr null, i32 1) to i64)
-  %call23 = call ptr @_ZN4Page8allocateEmm(ptr %own_page21, i64 %mul, i64 1)
-  %load.struct24 = load %_Z5ArrayIcE, ptr %0, align 8
-  %length25 = extractvalue %_Z5ArrayIcE %load.struct24, 0
-  %mul26 = mul i64 %length25, ptrtoint (ptr getelementptr (i8, ptr null, i32 1) to i64)
-  %load.struct27 = load %_Z5ArrayIcE, ptr %0, align 8
-  %length28 = extractvalue %_Z5ArrayIcE %load.struct27, 0
-  %gt29 = icmp ugt i64 %length28, 0
-  br i1 %gt29, label %if.then30, label %if.end31
-
-if.end20:                                         ; preds = %if.end31, %if.end12
-  %load.struct48 = load %_Z6VectorIcE, ptr %1, align 8
-  %length49 = extractvalue %_Z6VectorIcE %load.struct48, 0
-  %gt50 = icmp ugt i64 %length49, 0
-  br i1 %gt50, label %if.then51, label %if.end52
-
-if.then30:                                        ; preds = %if.then19
-  %field.inplace = getelementptr inbounds %_Z5ArrayIcE, ptr %0, i32 0, i32 1
-  %load.struct32 = load %_Z5ArrayIcE, ptr %0, align 8
-  %vector33 = extractvalue %_Z5ArrayIcE %load.struct32, 1
-  %deref34 = load %_Z6VectorIcE, ptr %vector33, align 8
-  %data = extractvalue %_Z6VectorIcE %deref34, 1
-  %call35 = call ptr @memcpy(ptr %call23, ptr %data, i64 %mul26)
-  br label %if.end31
-
-if.end31:                                         ; preds = %if.then30, %if.then19
-  %load.struct36 = load %_Z5ArrayIcE, ptr %0, align 8
-  %vector37 = extractvalue %_Z5ArrayIcE %load.struct36, 1
-  %deref38 = load %_Z6VectorIcE, ptr %vector37, align 8
-  %data39 = extractvalue %_Z6VectorIcE %deref38, 1
-  %call40 = call ptr @_ZN4Page3getEPv(ptr %data39)
-  %own_page41 = load ptr, ptr %own_page, align 8
-  call void @_ZN4Page25deallocate_exclusive_pageEP4Page(ptr %own_page41, ptr %call40)
-  %vector42 = getelementptr inbounds %_Z5ArrayIcE, ptr %0, i32 0, i32 1
-  %field.deref = load ptr, ptr %vector42, align 8
-  %data43 = getelementptr inbounds %_Z6VectorIcE, ptr %field.deref, i32 0, i32 1
-  store ptr %call23, ptr %data43, align 8
-  %new_length44 = load i64, ptr %new_length, align 4
-  %vector45 = getelementptr inbounds %_Z5ArrayIcE, ptr %0, i32 0, i32 1
-  %field.deref46 = load ptr, ptr %vector45, align 8
-  %length47 = getelementptr inbounds %_Z6VectorIcE, ptr %field.deref46, i32 0, i32 0
-  store i64 %new_length44, ptr %length47, align 4
-  br label %if.end20
-
-if.then51:                                        ; preds = %if.end20
-  %load.struct53 = load %_Z5ArrayIcE, ptr %0, align 8
-  %vector54 = extractvalue %_Z5ArrayIcE %load.struct53, 1
-  %deref55 = load %_Z6VectorIcE, ptr %vector54, align 8
-  %data56 = extractvalue %_Z6VectorIcE %deref55, 1
-  %load.struct57 = load %_Z5ArrayIcE, ptr %0, align 8
-  %length58 = extractvalue %_Z5ArrayIcE %load.struct57, 0
-  %mul59 = mul i64 %length58, ptrtoint (ptr getelementptr (i8, ptr null, i32 1) to i64)
-  %ptr.add = getelementptr inbounds i8, ptr %data56, i64 %mul59
-  %field.inplace60 = getelementptr inbounds %_Z6VectorIcE, ptr %1, i32 0, i32 1
-  %deref.recv = load ptr, ptr %field.inplace60, align 8
-  %load.struct61 = load %_Z6VectorIcE, ptr %1, align 8
-  %length62 = extractvalue %_Z6VectorIcE %load.struct61, 0
-  %mul63 = mul i64 %length62, ptrtoint (ptr getelementptr (i8, ptr null, i32 1) to i64)
-  %call64 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv, i64 %mul63)
-  br label %if.end52
-
-if.end52:                                         ; preds = %if.then51, %if.end20
-  %load.struct65 = load %_Z5ArrayIcE, ptr %0, align 8
-  %length66 = extractvalue %_Z5ArrayIcE %load.struct65, 0
-  %load.struct67 = load %_Z6VectorIcE, ptr %1, align 8
-  %length68 = extractvalue %_Z6VectorIcE %load.struct67, 0
-  %add69 = add i64 %length66, %length68
-  %length70 = getelementptr inbounds %_Z5ArrayIcE, ptr %0, i32 0, i32 0
-  store i64 %add69, ptr %length70, align 4
-  ret void
-}
-
-define linkonce_odr ptr @_ZN5ArrayIcE3getEPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %load.struct = load %_Z5ArrayIcE, ptr %1, align 8
-  %length = extractvalue %_Z5ArrayIcE %load.struct, 0
-  %ge = icmp uge i64 %2, %length
-  br i1 %ge, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  ret ptr null
-
-if.end:                                           ; preds = %entry
-  %load.struct1 = load %_Z5ArrayIcE, ptr %1, align 8
-  %vector = extractvalue %_Z5ArrayIcE %load.struct1, 1
-  %deref = load %_Z6VectorIcE, ptr %vector, align 8
-  %data = extractvalue %_Z6VectorIcE %deref, 1
-  %ptr.add = getelementptr inbounds i8, ptr %data, i64 %2
-  ret ptr %ptr.add
-}
-
-define linkonce_odr void @_ZN5ArrayIcE3putEmc(ptr %0, i64 %1, i8 %2) {
-entry:
-  %load.struct = load %_Z5ArrayIcE, ptr %0, align 8
-  %length = extractvalue %_Z5ArrayIcE %load.struct, 0
-  %ge = icmp uge i64 %1, %length
-  br i1 %ge, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.7)
-  call void @_Z12scaly_eputnlv()
-  call void @exit(i64 15)
-  br label %if.end
-
-if.end:                                           ; preds = %if.then, %entry
-  %load.struct1 = load %_Z5ArrayIcE, ptr %0, align 8
-  %vector = extractvalue %_Z5ArrayIcE %load.struct1, 1
-  %deref = load %_Z6VectorIcE, ptr %vector, align 8
-  %data = extractvalue %_Z6VectorIcE %deref, 1
-  %ptr.add = getelementptr inbounds i8, ptr %data, i64 %1
-  store i8 %2, ptr %ptr.add, align 1
-  ret void
-}
-
-define linkonce_odr ptr @_ZN13ArrayIteratorIcE4nextEv(ptr %0) {
-entry:
-  %load.struct = load %_Z13ArrayIteratorIcE, ptr %0, align 8
-  %array = extractvalue %_Z13ArrayIteratorIcE %load.struct, 0
-  %eq = icmp eq ptr %array, null
-  br i1 %eq, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  ret ptr null
-
-if.end:                                           ; preds = %entry
-  %load.struct1 = load %_Z13ArrayIteratorIcE, ptr %0, align 8
-  %position = extractvalue %_Z13ArrayIteratorIcE %load.struct1, 1
-  %load.struct2 = load %_Z13ArrayIteratorIcE, ptr %0, align 8
-  %array3 = extractvalue %_Z13ArrayIteratorIcE %load.struct2, 0
-  %deref = load %_Z5ArrayIcE, ptr %array3, align 8
-  %length = extractvalue %_Z5ArrayIcE %deref, 0
-  %eq4 = icmp eq i64 %position, %length
-  br i1 %eq4, label %if.then5, label %if.end6
-
-if.then5:                                         ; preds = %if.end
-  ret ptr null
-
-if.end6:                                          ; preds = %if.end
-  %load.struct7 = load %_Z13ArrayIteratorIcE, ptr %0, align 8
-  %position8 = extractvalue %_Z13ArrayIteratorIcE %load.struct7, 1
-  %add = add i64 %position8, 1
-  %position9 = getelementptr inbounds %_Z13ArrayIteratorIcE, ptr %0, i32 0, i32 1
-  store i64 %add, ptr %position9, align 4
-  %field.inplace = getelementptr inbounds %_Z13ArrayIteratorIcE, ptr %0, i32 0, i32 0
-  %deref.recv = load ptr, ptr %field.inplace, align 8
-  %call = call ptr @_ZN5ArrayIcE10get_bufferEv(ptr %deref.recv)
-  %load.struct10 = load %_Z13ArrayIteratorIcE, ptr %0, align 8
-  %position11 = extractvalue %_Z13ArrayIteratorIcE %load.struct10, 1
-  %sub = sub i64 %position11, 1
-  %ptr.add = getelementptr inbounds i8, ptr %call, i64 %sub
-  ret ptr %ptr.add
-}
-
-define linkonce_odr void @_ZN13ArrayIteratorIcEC1EP5ArrayIcE(ptr %0, ptr %1) {
-entry:
-  %array = getelementptr inbounds %_Z13ArrayIteratorIcE, ptr %0, i32 0, i32 0
-  store ptr %1, ptr %array, align 8
-  %position = getelementptr inbounds %_Z13ArrayIteratorIcE, ptr %0, i32 0, i32 1
-  store i64 0, ptr %position, align 4
-  ret void
-}
-
-define linkonce_odr void @_ZN13ArrayIteratorIcEC1Ev(ptr %0) {
-entry:
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayIcE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z13ArrayIteratorIcE) %0, ptr %1, ptr %2) {
-entry:
-  %struct.init = alloca %_Z13ArrayIteratorIcE, align 8
-  call void @_ZN13ArrayIteratorIcEC1EP5ArrayIcE(ptr %struct.init, ptr %2)
-  %sret.body = load %_Z13ArrayIteratorIcE, ptr %struct.init, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13ArrayIteratorIcE, ptr null, i32 1) to i64), i1 false)
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayIcEC1Ev(ptr %0) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayIcE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayIcE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayIcEC1Em(ptr %0, i64 %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayIcE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayIcE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page3getEPv(ptr %0)
-  %call1 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call1, i64 ptrtoint (ptr getelementptr (%_Z6VectorIcE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorIcE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorIcEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call1, i64 %1)
-  %vector2 = getelementptr inbounds %_Z5ArrayIcE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector2, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayIcEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayIcE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayIcE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayIcEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayIcE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayIcE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %1)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorIcE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorIcE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorIcEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call, i64 %2)
-  %vector1 = getelementptr inbounds %_Z5ArrayIcE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector1, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN6VectorIcEC1EPN4scaly6memory4PageE5ArrayIcE(ptr %0, ptr %1, ptr %2) {
-entry:
-  %load.struct = load %_Z5ArrayIcE, ptr %2, align 8
-  %length = extractvalue %_Z5ArrayIcE %load.struct, 0
-  %length1 = getelementptr inbounds %_Z6VectorIcE, ptr %0, i32 0, i32 0
-  store i64 %length, ptr %length1, align 4
-  %load.struct2 = load %_Z6VectorIcE, ptr %0, align 8
-  %length3 = extractvalue %_Z6VectorIcE %load.struct2, 0
-  %gt = icmp ugt i64 %length3, 0
-  br i1 %gt, label %if.then, label %if.else
-
-if.then:                                          ; preds = %entry
-  %load.struct4 = load %_Z6VectorIcE, ptr %0, align 8
-  %length5 = extractvalue %_Z6VectorIcE %load.struct4, 0
-  %mul = mul i64 %length5, ptrtoint (ptr getelementptr (i8, ptr null, i32 1) to i64)
-  %call = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 %mul, i64 1)
-  %data = getelementptr inbounds %_Z6VectorIcE, ptr %0, i32 0, i32 1
-  store ptr %call, ptr %data, align 8
-  %load.struct6 = load %_Z5ArrayIcE, ptr %2, align 8
-  %vector = extractvalue %_Z5ArrayIcE %load.struct6, 1
-  %field.inplace = getelementptr inbounds %_Z6VectorIcE, ptr %0, i32 0, i32 1
-  %deref.recv = load ptr, ptr %field.inplace, align 8
-  %field.inplace7 = getelementptr inbounds %_Z6VectorIcE, ptr %vector, i32 0, i32 1
-  %deref.recv8 = load ptr, ptr %field.inplace7, align 8
-  %load.struct9 = load %_Z6VectorIcE, ptr %0, align 8
-  %length10 = extractvalue %_Z6VectorIcE %load.struct9, 0
-  %mul11 = mul i64 %length10, ptrtoint (ptr getelementptr (i8, ptr null, i32 1) to i64)
-  %call12 = call ptr @memcpy(ptr %deref.recv, ptr %deref.recv8, i64 %mul11)
-  br label %if.end
-
-if.else:                                          ; preds = %entry
-  %data13 = getelementptr inbounds %_Z6VectorIcE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %data13, align 8
-  br label %if.end
-
-if.end:                                           ; preds = %if.else, %if.then
-  %if.value = phi ptr [ %call12, %if.then ], [ null, %if.else ]
-  ret void
-}
-
-define linkonce_odr ptr @_ZN4ListIcE8get_headEPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %load.struct = load %_Z4ListIcE, ptr %1, align 8
-  %head = extractvalue %_Z4ListIcE %load.struct, 0
-  %eq = icmp eq ptr %head, null
-  br i1 %eq, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  ret ptr null
-
-if.end:                                           ; preds = %entry
-  %addr.gep = getelementptr inbounds %_Z4ListIcE, ptr %1, i32 0, i32 0
-  %addr.gep1 = getelementptr inbounds %_Z4NodeIcE, ptr %addr.gep, i32 0, i32 0
-  ret ptr %addr.gep1
-}
-
-define linkonce_odr ptr @_ZN12ListIteratorIcE4nextEv(ptr %0) {
-entry:
-  %old_current = alloca ptr, align 8
-  %load.struct = load %_Z12ListIteratorIcE, ptr %0, align 8
-  %current = extractvalue %_Z12ListIteratorIcE %load.struct, 0
-  %ne = icmp ne ptr %current, null
-  br i1 %ne, label %if.then, label %if.else
-
-if.then:                                          ; preds = %entry
-  %load.struct1 = load %_Z12ListIteratorIcE, ptr %0, align 8
-  %current2 = extractvalue %_Z12ListIteratorIcE %load.struct1, 0
-  store ptr %current2, ptr %old_current, align 1
-  %load.struct3 = load %_Z12ListIteratorIcE, ptr %0, align 8
-  %current4 = extractvalue %_Z12ListIteratorIcE %load.struct3, 0
-  %deref = load %_Z4NodeIcE, ptr %current4, align 8
-  %next = extractvalue %_Z4NodeIcE %deref, 1
-  %current5 = getelementptr inbounds %_Z12ListIteratorIcE, ptr %0, i32 0, i32 0
-  store ptr %next, ptr %current5, align 8
-  %old_current6 = load ptr, ptr %old_current, align 8
-  %addr.gep = getelementptr inbounds %_Z4NodeIcE, ptr %old_current6, i32 0, i32 0
-  ret ptr %addr.gep
-
-if.else:                                          ; preds = %entry
-  ret ptr null
-
-if.end:                                           ; No predecessors!
-  ret ptr null
-}
-
-define linkonce_odr void @_ZN12ListIteratorIcEC1Ev(ptr %0) {
-entry:
-  ret void
-}
-
-define linkonce_odr i64 @_ZN4ListIcE5countEv(ptr %0) {
-entry:
-  %local_page = call ptr @_Z21scaly_alloc_root_pagev()
-  %sret.result = alloca %_Z12ListIteratorIcE, align 8
-  call void @_ZN4ListIcE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorIcE) %sret.result, ptr %local_page, ptr %0)
-  %list_iterator = alloca ptr, align 8
-  store ptr %sret.result, ptr %list_iterator, align 1
-  %i = alloca i64, align 8
-  store i64 0, ptr %i, align 1
-  br label %while.cond
-
-while.cond:                                       ; preds = %while.body, %entry
-  %list_iterator1 = load ptr, ptr %list_iterator, align 8
-  %call = call ptr @_ZN12ListIteratorIcE4nextEv(ptr %list_iterator1)
-  %ne = icmp ne ptr %call, null
-  br i1 %ne, label %while.body, label %while.exit
-
-while.body:                                       ; preds = %while.cond
-  %i2 = load i64, ptr %i, align 4
-  %add = add i64 %i2, 1
-  store i64 %add, ptr %i, align 1
-  br label %while.cond
-
-while.exit:                                       ; preds = %while.cond
-  %i3 = load i64, ptr %i, align 4
-  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
-  ret i64 %i3
-}
-
-define linkonce_odr i1 @_ZN4ListIcE6removeEc(ptr %0, i8 %1) {
-entry:
-  %load.struct = load %_Z4ListIcE, ptr %0, align 8
-  %head = extractvalue %_Z4ListIcE %load.struct, 0
-  %node = alloca ptr, align 8
-  store ptr %head, ptr %node, align 1
-  %previous_node = alloca ptr, align 8
-  store ptr null, ptr %previous_node, align 1
-  br label %while.cond
-
-while.cond:                                       ; preds = %if.end, %entry
-  %node1 = load ptr, ptr %node, align 8
-  %ne = icmp ne ptr %node1, null
-  br i1 %ne, label %while.body, label %while.exit
-
-while.body:                                       ; preds = %while.cond
-  %node2 = load ptr, ptr %node, align 8
-  %load.struct3 = load %_Z4NodeIcE, ptr %node2, align 8
-  %element = extractvalue %_Z4NodeIcE %load.struct3, 0
-  %eq = icmp eq i8 %element, %1
-  br i1 %eq, label %if.then, label %if.end
-
-while.exit:                                       ; preds = %while.cond
-  ret i1 false
-
-if.then:                                          ; preds = %while.body
-  %previous_node4 = load ptr, ptr %previous_node, align 8
-  %ne5 = icmp ne ptr %previous_node4, null
-  br i1 %ne5, label %if.then6, label %if.end7
-
-if.end:                                           ; preds = %while.body
-  %node18 = load ptr, ptr %node, align 8
-  store ptr %node18, ptr %previous_node, align 1
-  %node19 = load ptr, ptr %node, align 8
-  %load.struct20 = load %_Z4NodeIcE, ptr %node19, align 8
-  %next21 = extractvalue %_Z4NodeIcE %load.struct20, 1
-  store ptr %next21, ptr %node, align 1
-  br label %while.cond
-
-if.then6:                                         ; preds = %if.then
-  %node8 = load ptr, ptr %node, align 8
-  %load.struct9 = load %_Z4NodeIcE, ptr %node8, align 8
-  %next = extractvalue %_Z4NodeIcE %load.struct9, 1
-  %ptr.load = load ptr, ptr %previous_node, align 8
-  %next10 = getelementptr inbounds %_Z4NodeIcE, ptr %ptr.load, i32 0, i32 1
-  store ptr %next, ptr %next10, align 8
-  br label %if.end7
-
-if.end7:                                          ; preds = %if.then6, %if.then
-  %node11 = load ptr, ptr %node, align 8
-  %load.struct12 = load %_Z4ListIcE, ptr %0, align 8
-  %head13 = extractvalue %_Z4ListIcE %load.struct12, 0
-  %eq14 = icmp eq ptr %node11, %head13
-  br i1 %eq14, label %if.then15, label %if.end16
-
-if.then15:                                        ; preds = %if.end7
-  %head17 = getelementptr inbounds %_Z4ListIcE, ptr %0, i32 0, i32 0
-  store ptr null, ptr %head17, align 8
-  br label %if.end16
-
-if.end16:                                         ; preds = %if.then15, %if.end7
-  ret i1 true
-}
-
-define linkonce_odr void @_ZN4ListIcE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorIcE) %0, ptr %1, ptr %2) {
-entry:
-  %load.struct = load %_Z4ListIcE, ptr %2, align 8
-  %head = extractvalue %_Z4ListIcE %load.struct, 0
-  %tuple = alloca %_Z12ListIteratorIcE, align 8
-  %tuple.field = getelementptr inbounds %_Z12ListIteratorIcE, ptr %tuple, i32 0, i32 0
-  store ptr %head, ptr %tuple.field, align 1
-  %tuple.val = load %_Z12ListIteratorIcE, ptr %tuple, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z12ListIteratorIcE, ptr null, i32 1) to i64), i1 false)
-  ret void
-}
-
-define linkonce_odr void @_ZN4ListIcE3addEc(ptr %0, i8 %1) {
-entry:
-  %load.struct = load %_Z4ListIcE, ptr %0, align 8
-  %head = extractvalue %_Z4ListIcE %load.struct, 0
-  %own_page = call ptr @_Z3getPv(ptr %0)
-  %tuple.region = call ptr @_ZN4Page8allocateEmm(ptr %own_page, i64 ptrtoint (ptr getelementptr (%_Z4NodeIcE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z4NodeIcE }, ptr null, i64 0, i32 1) to i64))
-  %tuple.field = getelementptr inbounds %_Z4NodeIcE, ptr %tuple.region, i32 0, i32 0
-  store i8 %1, ptr %tuple.field, align 1
-  %tuple.field1 = getelementptr inbounds %_Z4NodeIcE, ptr %tuple.region, i32 0, i32 1
-  store ptr %head, ptr %tuple.field1, align 1
-  %head2 = getelementptr inbounds %_Z4ListIcE, ptr %0, i32 0, i32 0
-  store ptr %tuple.region, ptr %head2, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN4ListIcEC1Ev(ptr %0) {
-entry:
-  ret void
-}
-
-define linkonce_odr void @_ZN6VectorIcEC1EPN4scaly6memory4PageE4ListIcE(ptr %0, ptr %1, ptr %2) {
-entry:
-  %i = alloca i64, align 8
-  %list_iterator = alloca ptr, align 8
-  %local_page = call ptr @_Z21scaly_alloc_root_pagev()
-  %sret.result = alloca %_Z12ListIteratorIcE, align 8
-  %call = call i64 @_ZN4ListIcE5countEv(ptr %2)
-  %length = getelementptr inbounds %_Z6VectorIcE, ptr %0, i32 0, i32 0
-  store i64 %call, ptr %length, align 4
-  %load.struct = load %_Z6VectorIcE, ptr %0, align 8
-  %length1 = extractvalue %_Z6VectorIcE %load.struct, 0
-  %gt = icmp ugt i64 %length1, 0
-  br i1 %gt, label %if.then, label %if.else
-
-if.then:                                          ; preds = %entry
-  %load.struct2 = load %_Z6VectorIcE, ptr %0, align 8
-  %length3 = extractvalue %_Z6VectorIcE %load.struct2, 0
-  %mul = mul i64 %length3, ptrtoint (ptr getelementptr (i8, ptr null, i32 1) to i64)
-  %call4 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 %mul, i64 1)
-  %data = getelementptr inbounds %_Z6VectorIcE, ptr %0, i32 0, i32 1
-  store ptr %call4, ptr %data, align 8
-  call void @_ZN4ListIcE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorIcE) %sret.result, ptr %local_page, ptr %2)
-  store ptr %sret.result, ptr %list_iterator, align 1
-  %load.struct5 = load %_Z6VectorIcE, ptr %0, align 8
-  %length6 = extractvalue %_Z6VectorIcE %load.struct5, 0
-  store i64 %length6, ptr %i, align 1
-  br label %while.cond
-
-if.else:                                          ; preds = %entry
-  %data13 = getelementptr inbounds %_Z6VectorIcE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %data13, align 8
-  br label %if.end
-
-if.end:                                           ; preds = %if.else, %while.exit
-  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
-  ret void
-
-while.cond:                                       ; preds = %while.body, %if.then
-  %list_iterator7 = load ptr, ptr %list_iterator, align 8
-  %call8 = call ptr @_ZN12ListIteratorIcE4nextEv(ptr %list_iterator7)
-  %while.tobool = icmp ne ptr %call8, null
-  br i1 %while.tobool, label %while.body, label %while.exit
-
-while.body:                                       ; preds = %while.cond
-  %i9 = load i64, ptr %i, align 4
-  %sub = sub i64 %i9, 1
-  store i64 %sub, ptr %i, align 1
-  %deref = load i8, ptr %call8, align 1
-  %load.struct10 = load %_Z6VectorIcE, ptr %0, align 8
-  %data11 = extractvalue %_Z6VectorIcE %load.struct10, 1
-  %i12 = load i64, ptr %i, align 4
-  %ptr.add = getelementptr inbounds i8, ptr %data11, i64 %i12
-  store i8 %deref, ptr %ptr.add, align 1
-  br label %while.cond
-
-while.exit:                                       ; preds = %while.cond
-  br label %if.end
-}
-
 define linkonce_odr ptr @_ZN6VectorI1TE3getEPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
 entry:
   ret ptr null
@@ -10854,286 +9912,194 @@ entry:
   %keywords_builder = alloca ptr, align 8
   store ptr %struct.region, ptr %keywords_builder, align 1
   %keywords_builder2 = load ptr, ptr %keywords_builder, align 8
-  %struct.region3 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
   %arg.tmp = alloca { ptr }, align 8
   store { ptr } { ptr @.sconst }, ptr %arg.tmp, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region3, ptr %1, ptr %arg.tmp)
-  call void @_ZN5ArrayI6StringE3addE6String(ptr %keywords_builder2, ptr %struct.region3)
-  %keywords_builder4 = load ptr, ptr %keywords_builder, align 8
-  %struct.region5 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
+  call void @_ZN5ArrayI6StringE3addE6String(ptr %keywords_builder2, ptr %arg.tmp)
+  %keywords_builder3 = load ptr, ptr %keywords_builder, align 8
+  %arg.tmp4 = alloca { ptr }, align 8
+  store { ptr } { ptr @.sconst.6 }, ptr %arg.tmp4, align 1
+  call void @_ZN5ArrayI6StringE3addE6String(ptr %keywords_builder3, ptr %arg.tmp4)
+  %keywords_builder5 = load ptr, ptr %keywords_builder, align 8
   %arg.tmp6 = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.8 }, ptr %arg.tmp6, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region5, ptr %1, ptr %arg.tmp6)
-  call void @_ZN5ArrayI6StringE3addE6String(ptr %keywords_builder4, ptr %struct.region5)
+  store { ptr } { ptr @.sconst.7 }, ptr %arg.tmp6, align 1
+  call void @_ZN5ArrayI6StringE3addE6String(ptr %keywords_builder5, ptr %arg.tmp6)
   %keywords_builder7 = load ptr, ptr %keywords_builder, align 8
-  %struct.region8 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  %arg.tmp9 = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.9 }, ptr %arg.tmp9, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region8, ptr %1, ptr %arg.tmp9)
-  call void @_ZN5ArrayI6StringE3addE6String(ptr %keywords_builder7, ptr %struct.region8)
-  %keywords_builder10 = load ptr, ptr %keywords_builder, align 8
-  %struct.region11 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
+  %arg.tmp8 = alloca { ptr }, align 8
+  store { ptr } { ptr @.sconst.8 }, ptr %arg.tmp8, align 1
+  call void @_ZN5ArrayI6StringE3addE6String(ptr %keywords_builder7, ptr %arg.tmp8)
+  %keywords_builder9 = load ptr, ptr %keywords_builder, align 8
+  %arg.tmp10 = alloca { ptr }, align 8
+  store { ptr } { ptr @.sconst.9 }, ptr %arg.tmp10, align 1
+  call void @_ZN5ArrayI6StringE3addE6String(ptr %keywords_builder9, ptr %arg.tmp10)
+  %keywords_builder11 = load ptr, ptr %keywords_builder, align 8
   %arg.tmp12 = alloca { ptr }, align 8
   store { ptr } { ptr @.sconst.10 }, ptr %arg.tmp12, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region11, ptr %1, ptr %arg.tmp12)
-  call void @_ZN5ArrayI6StringE3addE6String(ptr %keywords_builder10, ptr %struct.region11)
+  call void @_ZN5ArrayI6StringE3addE6String(ptr %keywords_builder11, ptr %arg.tmp12)
   %keywords_builder13 = load ptr, ptr %keywords_builder, align 8
-  %struct.region14 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  %arg.tmp15 = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.11 }, ptr %arg.tmp15, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region14, ptr %1, ptr %arg.tmp15)
-  call void @_ZN5ArrayI6StringE3addE6String(ptr %keywords_builder13, ptr %struct.region14)
-  %keywords_builder16 = load ptr, ptr %keywords_builder, align 8
-  %struct.region17 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
+  %arg.tmp14 = alloca { ptr }, align 8
+  store { ptr } { ptr @.sconst.11 }, ptr %arg.tmp14, align 1
+  call void @_ZN5ArrayI6StringE3addE6String(ptr %keywords_builder13, ptr %arg.tmp14)
+  %keywords_builder15 = load ptr, ptr %keywords_builder, align 8
+  %arg.tmp16 = alloca { ptr }, align 8
+  store { ptr } { ptr @.sconst.12 }, ptr %arg.tmp16, align 1
+  call void @_ZN5ArrayI6StringE3addE6String(ptr %keywords_builder15, ptr %arg.tmp16)
+  %keywords_builder17 = load ptr, ptr %keywords_builder, align 8
   %arg.tmp18 = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.12 }, ptr %arg.tmp18, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region17, ptr %1, ptr %arg.tmp18)
-  call void @_ZN5ArrayI6StringE3addE6String(ptr %keywords_builder16, ptr %struct.region17)
+  store { ptr } { ptr @.sconst.13 }, ptr %arg.tmp18, align 1
+  call void @_ZN5ArrayI6StringE3addE6String(ptr %keywords_builder17, ptr %arg.tmp18)
   %keywords_builder19 = load ptr, ptr %keywords_builder, align 8
-  %struct.region20 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  %arg.tmp21 = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.13 }, ptr %arg.tmp21, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region20, ptr %1, ptr %arg.tmp21)
-  call void @_ZN5ArrayI6StringE3addE6String(ptr %keywords_builder19, ptr %struct.region20)
-  %keywords_builder22 = load ptr, ptr %keywords_builder, align 8
-  %struct.region23 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
+  %arg.tmp20 = alloca { ptr }, align 8
+  store { ptr } { ptr @.sconst.14 }, ptr %arg.tmp20, align 1
+  call void @_ZN5ArrayI6StringE3addE6String(ptr %keywords_builder19, ptr %arg.tmp20)
+  %keywords_builder21 = load ptr, ptr %keywords_builder, align 8
+  %arg.tmp22 = alloca { ptr }, align 8
+  store { ptr } { ptr @.sconst.15 }, ptr %arg.tmp22, align 1
+  call void @_ZN5ArrayI6StringE3addE6String(ptr %keywords_builder21, ptr %arg.tmp22)
+  %keywords_builder23 = load ptr, ptr %keywords_builder, align 8
   %arg.tmp24 = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.14 }, ptr %arg.tmp24, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region23, ptr %1, ptr %arg.tmp24)
-  call void @_ZN5ArrayI6StringE3addE6String(ptr %keywords_builder22, ptr %struct.region23)
+  store { ptr } { ptr @.sconst.16 }, ptr %arg.tmp24, align 1
+  call void @_ZN5ArrayI6StringE3addE6String(ptr %keywords_builder23, ptr %arg.tmp24)
   %keywords_builder25 = load ptr, ptr %keywords_builder, align 8
-  %struct.region26 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  %arg.tmp27 = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.15 }, ptr %arg.tmp27, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region26, ptr %1, ptr %arg.tmp27)
-  call void @_ZN5ArrayI6StringE3addE6String(ptr %keywords_builder25, ptr %struct.region26)
-  %keywords_builder28 = load ptr, ptr %keywords_builder, align 8
-  %struct.region29 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
+  %arg.tmp26 = alloca { ptr }, align 8
+  store { ptr } { ptr @.sconst.17 }, ptr %arg.tmp26, align 1
+  call void @_ZN5ArrayI6StringE3addE6String(ptr %keywords_builder25, ptr %arg.tmp26)
+  %keywords_builder27 = load ptr, ptr %keywords_builder, align 8
+  %arg.tmp28 = alloca { ptr }, align 8
+  store { ptr } { ptr @.sconst.18 }, ptr %arg.tmp28, align 1
+  call void @_ZN5ArrayI6StringE3addE6String(ptr %keywords_builder27, ptr %arg.tmp28)
+  %keywords_builder29 = load ptr, ptr %keywords_builder, align 8
   %arg.tmp30 = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.16 }, ptr %arg.tmp30, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region29, ptr %1, ptr %arg.tmp30)
-  call void @_ZN5ArrayI6StringE3addE6String(ptr %keywords_builder28, ptr %struct.region29)
+  store { ptr } { ptr @.sconst.19 }, ptr %arg.tmp30, align 1
+  call void @_ZN5ArrayI6StringE3addE6String(ptr %keywords_builder29, ptr %arg.tmp30)
   %keywords_builder31 = load ptr, ptr %keywords_builder, align 8
-  %struct.region32 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  %arg.tmp33 = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.17 }, ptr %arg.tmp33, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region32, ptr %1, ptr %arg.tmp33)
-  call void @_ZN5ArrayI6StringE3addE6String(ptr %keywords_builder31, ptr %struct.region32)
-  %keywords_builder34 = load ptr, ptr %keywords_builder, align 8
-  %struct.region35 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
+  %arg.tmp32 = alloca { ptr }, align 8
+  store { ptr } { ptr @.sconst.20 }, ptr %arg.tmp32, align 1
+  call void @_ZN5ArrayI6StringE3addE6String(ptr %keywords_builder31, ptr %arg.tmp32)
+  %keywords_builder33 = load ptr, ptr %keywords_builder, align 8
+  %arg.tmp34 = alloca { ptr }, align 8
+  store { ptr } { ptr @.sconst.21 }, ptr %arg.tmp34, align 1
+  call void @_ZN5ArrayI6StringE3addE6String(ptr %keywords_builder33, ptr %arg.tmp34)
+  %keywords_builder35 = load ptr, ptr %keywords_builder, align 8
   %arg.tmp36 = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.18 }, ptr %arg.tmp36, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region35, ptr %1, ptr %arg.tmp36)
-  call void @_ZN5ArrayI6StringE3addE6String(ptr %keywords_builder34, ptr %struct.region35)
+  store { ptr } { ptr @.sconst.22 }, ptr %arg.tmp36, align 1
+  call void @_ZN5ArrayI6StringE3addE6String(ptr %keywords_builder35, ptr %arg.tmp36)
   %keywords_builder37 = load ptr, ptr %keywords_builder, align 8
-  %struct.region38 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  %arg.tmp39 = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.19 }, ptr %arg.tmp39, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region38, ptr %1, ptr %arg.tmp39)
-  call void @_ZN5ArrayI6StringE3addE6String(ptr %keywords_builder37, ptr %struct.region38)
-  %keywords_builder40 = load ptr, ptr %keywords_builder, align 8
-  %struct.region41 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
+  %arg.tmp38 = alloca { ptr }, align 8
+  store { ptr } { ptr @.sconst.23 }, ptr %arg.tmp38, align 1
+  call void @_ZN5ArrayI6StringE3addE6String(ptr %keywords_builder37, ptr %arg.tmp38)
+  %keywords_builder39 = load ptr, ptr %keywords_builder, align 8
+  %arg.tmp40 = alloca { ptr }, align 8
+  store { ptr } { ptr @.sconst.24 }, ptr %arg.tmp40, align 1
+  call void @_ZN5ArrayI6StringE3addE6String(ptr %keywords_builder39, ptr %arg.tmp40)
+  %keywords_builder41 = load ptr, ptr %keywords_builder, align 8
   %arg.tmp42 = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.20 }, ptr %arg.tmp42, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region41, ptr %1, ptr %arg.tmp42)
-  call void @_ZN5ArrayI6StringE3addE6String(ptr %keywords_builder40, ptr %struct.region41)
+  store { ptr } { ptr @.sconst.25 }, ptr %arg.tmp42, align 1
+  call void @_ZN5ArrayI6StringE3addE6String(ptr %keywords_builder41, ptr %arg.tmp42)
   %keywords_builder43 = load ptr, ptr %keywords_builder, align 8
-  %struct.region44 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  %arg.tmp45 = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.21 }, ptr %arg.tmp45, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region44, ptr %1, ptr %arg.tmp45)
-  call void @_ZN5ArrayI6StringE3addE6String(ptr %keywords_builder43, ptr %struct.region44)
-  %keywords_builder46 = load ptr, ptr %keywords_builder, align 8
-  %struct.region47 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
+  %arg.tmp44 = alloca { ptr }, align 8
+  store { ptr } { ptr @.sconst.26 }, ptr %arg.tmp44, align 1
+  call void @_ZN5ArrayI6StringE3addE6String(ptr %keywords_builder43, ptr %arg.tmp44)
+  %keywords_builder45 = load ptr, ptr %keywords_builder, align 8
+  %arg.tmp46 = alloca { ptr }, align 8
+  store { ptr } { ptr @.sconst.27 }, ptr %arg.tmp46, align 1
+  call void @_ZN5ArrayI6StringE3addE6String(ptr %keywords_builder45, ptr %arg.tmp46)
+  %keywords_builder47 = load ptr, ptr %keywords_builder, align 8
   %arg.tmp48 = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.22 }, ptr %arg.tmp48, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region47, ptr %1, ptr %arg.tmp48)
-  call void @_ZN5ArrayI6StringE3addE6String(ptr %keywords_builder46, ptr %struct.region47)
+  store { ptr } { ptr @.sconst.28 }, ptr %arg.tmp48, align 1
+  call void @_ZN5ArrayI6StringE3addE6String(ptr %keywords_builder47, ptr %arg.tmp48)
   %keywords_builder49 = load ptr, ptr %keywords_builder, align 8
-  %struct.region50 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  %arg.tmp51 = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.23 }, ptr %arg.tmp51, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region50, ptr %1, ptr %arg.tmp51)
-  call void @_ZN5ArrayI6StringE3addE6String(ptr %keywords_builder49, ptr %struct.region50)
-  %keywords_builder52 = load ptr, ptr %keywords_builder, align 8
-  %struct.region53 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
+  %arg.tmp50 = alloca { ptr }, align 8
+  store { ptr } { ptr @.sconst.29 }, ptr %arg.tmp50, align 1
+  call void @_ZN5ArrayI6StringE3addE6String(ptr %keywords_builder49, ptr %arg.tmp50)
+  %keywords_builder51 = load ptr, ptr %keywords_builder, align 8
+  %arg.tmp52 = alloca { ptr }, align 8
+  store { ptr } { ptr @.sconst.30 }, ptr %arg.tmp52, align 1
+  call void @_ZN5ArrayI6StringE3addE6String(ptr %keywords_builder51, ptr %arg.tmp52)
+  %keywords_builder53 = load ptr, ptr %keywords_builder, align 8
   %arg.tmp54 = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.24 }, ptr %arg.tmp54, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region53, ptr %1, ptr %arg.tmp54)
-  call void @_ZN5ArrayI6StringE3addE6String(ptr %keywords_builder52, ptr %struct.region53)
+  store { ptr } { ptr @.sconst.31 }, ptr %arg.tmp54, align 1
+  call void @_ZN5ArrayI6StringE3addE6String(ptr %keywords_builder53, ptr %arg.tmp54)
   %keywords_builder55 = load ptr, ptr %keywords_builder, align 8
-  %struct.region56 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  %arg.tmp57 = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.25 }, ptr %arg.tmp57, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region56, ptr %1, ptr %arg.tmp57)
-  call void @_ZN5ArrayI6StringE3addE6String(ptr %keywords_builder55, ptr %struct.region56)
-  %keywords_builder58 = load ptr, ptr %keywords_builder, align 8
-  %struct.region59 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
+  %arg.tmp56 = alloca { ptr }, align 8
+  store { ptr } { ptr @.sconst.32 }, ptr %arg.tmp56, align 1
+  call void @_ZN5ArrayI6StringE3addE6String(ptr %keywords_builder55, ptr %arg.tmp56)
+  %keywords_builder57 = load ptr, ptr %keywords_builder, align 8
+  %arg.tmp58 = alloca { ptr }, align 8
+  store { ptr } { ptr @.sconst.33 }, ptr %arg.tmp58, align 1
+  call void @_ZN5ArrayI6StringE3addE6String(ptr %keywords_builder57, ptr %arg.tmp58)
+  %keywords_builder59 = load ptr, ptr %keywords_builder, align 8
   %arg.tmp60 = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.26 }, ptr %arg.tmp60, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region59, ptr %1, ptr %arg.tmp60)
-  call void @_ZN5ArrayI6StringE3addE6String(ptr %keywords_builder58, ptr %struct.region59)
+  store { ptr } { ptr @.sconst.34 }, ptr %arg.tmp60, align 1
+  call void @_ZN5ArrayI6StringE3addE6String(ptr %keywords_builder59, ptr %arg.tmp60)
   %keywords_builder61 = load ptr, ptr %keywords_builder, align 8
-  %struct.region62 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  %arg.tmp63 = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.27 }, ptr %arg.tmp63, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region62, ptr %1, ptr %arg.tmp63)
-  call void @_ZN5ArrayI6StringE3addE6String(ptr %keywords_builder61, ptr %struct.region62)
-  %keywords_builder64 = load ptr, ptr %keywords_builder, align 8
-  %struct.region65 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
+  %arg.tmp62 = alloca { ptr }, align 8
+  store { ptr } { ptr @.sconst.35 }, ptr %arg.tmp62, align 1
+  call void @_ZN5ArrayI6StringE3addE6String(ptr %keywords_builder61, ptr %arg.tmp62)
+  %keywords_builder63 = load ptr, ptr %keywords_builder, align 8
+  %arg.tmp64 = alloca { ptr }, align 8
+  store { ptr } { ptr @.sconst.36 }, ptr %arg.tmp64, align 1
+  call void @_ZN5ArrayI6StringE3addE6String(ptr %keywords_builder63, ptr %arg.tmp64)
+  %keywords_builder65 = load ptr, ptr %keywords_builder, align 8
   %arg.tmp66 = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.28 }, ptr %arg.tmp66, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region65, ptr %1, ptr %arg.tmp66)
-  call void @_ZN5ArrayI6StringE3addE6String(ptr %keywords_builder64, ptr %struct.region65)
+  store { ptr } { ptr @.sconst.37 }, ptr %arg.tmp66, align 1
+  call void @_ZN5ArrayI6StringE3addE6String(ptr %keywords_builder65, ptr %arg.tmp66)
   %keywords_builder67 = load ptr, ptr %keywords_builder, align 8
-  %struct.region68 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  %arg.tmp69 = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.29 }, ptr %arg.tmp69, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region68, ptr %1, ptr %arg.tmp69)
-  call void @_ZN5ArrayI6StringE3addE6String(ptr %keywords_builder67, ptr %struct.region68)
-  %keywords_builder70 = load ptr, ptr %keywords_builder, align 8
-  %struct.region71 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
+  %arg.tmp68 = alloca { ptr }, align 8
+  store { ptr } { ptr @.sconst.38 }, ptr %arg.tmp68, align 1
+  call void @_ZN5ArrayI6StringE3addE6String(ptr %keywords_builder67, ptr %arg.tmp68)
+  %keywords_builder69 = load ptr, ptr %keywords_builder, align 8
+  %arg.tmp70 = alloca { ptr }, align 8
+  store { ptr } { ptr @.sconst.39 }, ptr %arg.tmp70, align 1
+  call void @_ZN5ArrayI6StringE3addE6String(ptr %keywords_builder69, ptr %arg.tmp70)
+  %keywords_builder71 = load ptr, ptr %keywords_builder, align 8
   %arg.tmp72 = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.30 }, ptr %arg.tmp72, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region71, ptr %1, ptr %arg.tmp72)
-  call void @_ZN5ArrayI6StringE3addE6String(ptr %keywords_builder70, ptr %struct.region71)
+  store { ptr } { ptr @.sconst.40 }, ptr %arg.tmp72, align 1
+  call void @_ZN5ArrayI6StringE3addE6String(ptr %keywords_builder71, ptr %arg.tmp72)
   %keywords_builder73 = load ptr, ptr %keywords_builder, align 8
-  %struct.region74 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  %arg.tmp75 = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.31 }, ptr %arg.tmp75, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region74, ptr %1, ptr %arg.tmp75)
-  call void @_ZN5ArrayI6StringE3addE6String(ptr %keywords_builder73, ptr %struct.region74)
-  %keywords_builder76 = load ptr, ptr %keywords_builder, align 8
-  %struct.region77 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
+  %arg.tmp74 = alloca { ptr }, align 8
+  store { ptr } { ptr @.sconst.41 }, ptr %arg.tmp74, align 1
+  call void @_ZN5ArrayI6StringE3addE6String(ptr %keywords_builder73, ptr %arg.tmp74)
+  %keywords_builder75 = load ptr, ptr %keywords_builder, align 8
+  %arg.tmp76 = alloca { ptr }, align 8
+  store { ptr } { ptr @.sconst.42 }, ptr %arg.tmp76, align 1
+  call void @_ZN5ArrayI6StringE3addE6String(ptr %keywords_builder75, ptr %arg.tmp76)
+  %keywords_builder77 = load ptr, ptr %keywords_builder, align 8
   %arg.tmp78 = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.32 }, ptr %arg.tmp78, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region77, ptr %1, ptr %arg.tmp78)
-  call void @_ZN5ArrayI6StringE3addE6String(ptr %keywords_builder76, ptr %struct.region77)
+  store { ptr } { ptr @.sconst.43 }, ptr %arg.tmp78, align 1
+  call void @_ZN5ArrayI6StringE3addE6String(ptr %keywords_builder77, ptr %arg.tmp78)
   %keywords_builder79 = load ptr, ptr %keywords_builder, align 8
-  %struct.region80 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  %arg.tmp81 = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.33 }, ptr %arg.tmp81, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region80, ptr %1, ptr %arg.tmp81)
-  call void @_ZN5ArrayI6StringE3addE6String(ptr %keywords_builder79, ptr %struct.region80)
-  %keywords_builder82 = load ptr, ptr %keywords_builder, align 8
-  %struct.region83 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
+  %arg.tmp80 = alloca { ptr }, align 8
+  store { ptr } { ptr @.sconst.44 }, ptr %arg.tmp80, align 1
+  call void @_ZN5ArrayI6StringE3addE6String(ptr %keywords_builder79, ptr %arg.tmp80)
+  %keywords_builder81 = load ptr, ptr %keywords_builder, align 8
+  %arg.tmp82 = alloca { ptr }, align 8
+  store { ptr } { ptr @.sconst.45 }, ptr %arg.tmp82, align 1
+  call void @_ZN5ArrayI6StringE3addE6String(ptr %keywords_builder81, ptr %arg.tmp82)
+  %keywords_builder83 = load ptr, ptr %keywords_builder, align 8
   %arg.tmp84 = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.34 }, ptr %arg.tmp84, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region83, ptr %1, ptr %arg.tmp84)
-  call void @_ZN5ArrayI6StringE3addE6String(ptr %keywords_builder82, ptr %struct.region83)
+  store { ptr } { ptr @.sconst.46 }, ptr %arg.tmp84, align 1
+  call void @_ZN5ArrayI6StringE3addE6String(ptr %keywords_builder83, ptr %arg.tmp84)
   %keywords_builder85 = load ptr, ptr %keywords_builder, align 8
-  %struct.region86 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  %arg.tmp87 = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.35 }, ptr %arg.tmp87, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region86, ptr %1, ptr %arg.tmp87)
-  call void @_ZN5ArrayI6StringE3addE6String(ptr %keywords_builder85, ptr %struct.region86)
-  %keywords_builder88 = load ptr, ptr %keywords_builder, align 8
-  %struct.region89 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
+  %arg.tmp86 = alloca { ptr }, align 8
+  store { ptr } { ptr @.sconst.47 }, ptr %arg.tmp86, align 1
+  call void @_ZN5ArrayI6StringE3addE6String(ptr %keywords_builder85, ptr %arg.tmp86)
+  %keywords_builder87 = load ptr, ptr %keywords_builder, align 8
+  %arg.tmp88 = alloca { ptr }, align 8
+  store { ptr } { ptr @.sconst.48 }, ptr %arg.tmp88, align 1
+  call void @_ZN5ArrayI6StringE3addE6String(ptr %keywords_builder87, ptr %arg.tmp88)
+  %keywords_builder89 = load ptr, ptr %keywords_builder, align 8
   %arg.tmp90 = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.36 }, ptr %arg.tmp90, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region89, ptr %1, ptr %arg.tmp90)
-  call void @_ZN5ArrayI6StringE3addE6String(ptr %keywords_builder88, ptr %struct.region89)
+  store { ptr } { ptr @.sconst.49 }, ptr %arg.tmp90, align 1
+  call void @_ZN5ArrayI6StringE3addE6String(ptr %keywords_builder89, ptr %arg.tmp90)
   %keywords_builder91 = load ptr, ptr %keywords_builder, align 8
-  %struct.region92 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  %arg.tmp93 = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.37 }, ptr %arg.tmp93, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region92, ptr %1, ptr %arg.tmp93)
-  call void @_ZN5ArrayI6StringE3addE6String(ptr %keywords_builder91, ptr %struct.region92)
+  %arg.tmp92 = alloca { ptr }, align 8
+  store { ptr } { ptr @.sconst.50 }, ptr %arg.tmp92, align 1
+  call void @_ZN5ArrayI6StringE3addE6String(ptr %keywords_builder91, ptr %arg.tmp92)
+  %struct.region93 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr (%_Z6VectorI6StringE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI6StringE }, ptr null, i64 0, i32 1) to i64))
   %keywords_builder94 = load ptr, ptr %keywords_builder, align 8
-  %struct.region95 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  %arg.tmp96 = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.38 }, ptr %arg.tmp96, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region95, ptr %1, ptr %arg.tmp96)
-  call void @_ZN5ArrayI6StringE3addE6String(ptr %keywords_builder94, ptr %struct.region95)
-  %keywords_builder97 = load ptr, ptr %keywords_builder, align 8
-  %struct.region98 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  %arg.tmp99 = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.39 }, ptr %arg.tmp99, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region98, ptr %1, ptr %arg.tmp99)
-  call void @_ZN5ArrayI6StringE3addE6String(ptr %keywords_builder97, ptr %struct.region98)
-  %keywords_builder100 = load ptr, ptr %keywords_builder, align 8
-  %struct.region101 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  %arg.tmp102 = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.40 }, ptr %arg.tmp102, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region101, ptr %1, ptr %arg.tmp102)
-  call void @_ZN5ArrayI6StringE3addE6String(ptr %keywords_builder100, ptr %struct.region101)
-  %keywords_builder103 = load ptr, ptr %keywords_builder, align 8
-  %struct.region104 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  %arg.tmp105 = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.41 }, ptr %arg.tmp105, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region104, ptr %1, ptr %arg.tmp105)
-  call void @_ZN5ArrayI6StringE3addE6String(ptr %keywords_builder103, ptr %struct.region104)
-  %keywords_builder106 = load ptr, ptr %keywords_builder, align 8
-  %struct.region107 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  %arg.tmp108 = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.42 }, ptr %arg.tmp108, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region107, ptr %1, ptr %arg.tmp108)
-  call void @_ZN5ArrayI6StringE3addE6String(ptr %keywords_builder106, ptr %struct.region107)
-  %keywords_builder109 = load ptr, ptr %keywords_builder, align 8
-  %struct.region110 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  %arg.tmp111 = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.43 }, ptr %arg.tmp111, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region110, ptr %1, ptr %arg.tmp111)
-  call void @_ZN5ArrayI6StringE3addE6String(ptr %keywords_builder109, ptr %struct.region110)
-  %keywords_builder112 = load ptr, ptr %keywords_builder, align 8
-  %struct.region113 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  %arg.tmp114 = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.44 }, ptr %arg.tmp114, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region113, ptr %1, ptr %arg.tmp114)
-  call void @_ZN5ArrayI6StringE3addE6String(ptr %keywords_builder112, ptr %struct.region113)
-  %keywords_builder115 = load ptr, ptr %keywords_builder, align 8
-  %struct.region116 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  %arg.tmp117 = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.45 }, ptr %arg.tmp117, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region116, ptr %1, ptr %arg.tmp117)
-  call void @_ZN5ArrayI6StringE3addE6String(ptr %keywords_builder115, ptr %struct.region116)
-  %keywords_builder118 = load ptr, ptr %keywords_builder, align 8
-  %struct.region119 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  %arg.tmp120 = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.46 }, ptr %arg.tmp120, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region119, ptr %1, ptr %arg.tmp120)
-  call void @_ZN5ArrayI6StringE3addE6String(ptr %keywords_builder118, ptr %struct.region119)
-  %keywords_builder121 = load ptr, ptr %keywords_builder, align 8
-  %struct.region122 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  %arg.tmp123 = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.47 }, ptr %arg.tmp123, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region122, ptr %1, ptr %arg.tmp123)
-  call void @_ZN5ArrayI6StringE3addE6String(ptr %keywords_builder121, ptr %struct.region122)
-  %keywords_builder124 = load ptr, ptr %keywords_builder, align 8
-  %struct.region125 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  %arg.tmp126 = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.48 }, ptr %arg.tmp126, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region125, ptr %1, ptr %arg.tmp126)
-  call void @_ZN5ArrayI6StringE3addE6String(ptr %keywords_builder124, ptr %struct.region125)
-  %keywords_builder127 = load ptr, ptr %keywords_builder, align 8
-  %struct.region128 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  %arg.tmp129 = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.49 }, ptr %arg.tmp129, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region128, ptr %1, ptr %arg.tmp129)
-  call void @_ZN5ArrayI6StringE3addE6String(ptr %keywords_builder127, ptr %struct.region128)
-  %keywords_builder130 = load ptr, ptr %keywords_builder, align 8
-  %struct.region131 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  %arg.tmp132 = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.50 }, ptr %arg.tmp132, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region131, ptr %1, ptr %arg.tmp132)
-  call void @_ZN5ArrayI6StringE3addE6String(ptr %keywords_builder130, ptr %struct.region131)
-  %keywords_builder133 = load ptr, ptr %keywords_builder, align 8
-  %struct.region134 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  %arg.tmp135 = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.51 }, ptr %arg.tmp135, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region134, ptr %1, ptr %arg.tmp135)
-  call void @_ZN5ArrayI6StringE3addE6String(ptr %keywords_builder133, ptr %struct.region134)
-  %keywords_builder136 = load ptr, ptr %keywords_builder, align 8
-  %struct.region137 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  %arg.tmp138 = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.52 }, ptr %arg.tmp138, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region137, ptr %1, ptr %arg.tmp138)
-  call void @_ZN5ArrayI6StringE3addE6String(ptr %keywords_builder136, ptr %struct.region137)
-  %struct.region139 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr (%_Z6VectorI6StringE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI6StringE }, ptr null, i64 0, i32 1) to i64))
-  %keywords_builder140 = load ptr, ptr %keywords_builder, align 8
-  call void @_ZN6VectorI6StringEC1EPN4scaly6memory4PageE5ArrayI6StringE(ptr %struct.region139, ptr %1, ptr %keywords_builder140)
-  %sret.body = load %_Z6VectorI6StringE, ptr %struct.region139, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.region139, i64 ptrtoint (ptr getelementptr (%_Z6VectorI6StringE, ptr null, i32 1) to i64), i1 false)
+  call void @_ZN6VectorI6StringEC1EPN4scaly6memory4PageE5ArrayI6StringE(ptr %struct.region93, ptr %1, ptr %keywords_builder94)
+  %sret.body = load %_Z6VectorI6StringE, ptr %struct.region93, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.region93, i64 ptrtoint (ptr getelementptr (%_Z6VectorI6StringE, ptr null, i32 1) to i64), i1 false)
   ret void
 }
 
@@ -12144,7 +11110,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.53)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.51)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -12648,7 +11614,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.54)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.52)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -13741,9 +12707,8 @@ choose.when337:                                   ; preds = %choose.end287
 
 define linkonce_odr void @_ZN6Parser13parse_privateEPN4scaly6memory4PageE(ptr noalias sret({ i8, [176 x i8] }) %0, ptr %1, ptr %2) {
 entry:
-  %tuple36 = alloca %_Z13PrivateSyntax, align 8
-  %tuple16 = alloca %_Z13InvalidSyntax, align 8
-  %arg.tmp15 = alloca { ptr }, align 8
+  %tuple34 = alloca %_Z13PrivateSyntax, align 8
+  %tuple14 = alloca %_Z13InvalidSyntax, align 8
   %variant.ptr9 = alloca %_Z11ParserError, align 8
   %sret.result = alloca { i8, [153 x i8] }, align 8
   %export_ = alloca %_Z12ExportSyntax, align 8
@@ -13753,11 +12718,9 @@ entry:
   %lexer = extractvalue %_Z6Parser %load.struct, 0
   %previous_position = extractvalue %_Z5Lexer %lexer, 4
   %field.inplace = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
   %arg.tmp = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.55 }, ptr %arg.tmp, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region, ptr %1, ptr %arg.tmp)
-  %call = call i1 @_ZN5Lexer13parse_keywordE6String(ptr %field.inplace, ptr %struct.region)
+  store { ptr } { ptr @.sconst.53 }, ptr %arg.tmp, align 1
+  %call = call i1 @_ZN5Lexer13parse_keywordE6String(ptr %field.inplace, ptr %arg.tmp)
   %bitnot = xor i1 %call, true
   br i1 %bitnot, label %if.then, label %if.end
 
@@ -13784,26 +12747,26 @@ if.end:                                           ; preds = %entry
   %throws.data.ptr = getelementptr inbounds i8, ptr %sret.result, i8 1
   switch i8 %tag, label %choose.else [
     i8 1, label %choose.when
-    i8 0, label %choose.when31
+    i8 0, label %choose.when29
   ]
 
-choose.end:                                       ; preds = %choose.else, %choose.when31, %choose.end4
-  %choose.value = phi %_Z12ExportSyntax [ %throws.success.val, %choose.when31 ], [ undef, %choose.end4 ], [ undef, %choose.else ]
-  %load.struct32 = load %_Z6Parser, ptr %2, align 8
-  %lexer33 = extractvalue %_Z6Parser %load.struct32, 0
-  %position34 = extractvalue %_Z5Lexer %lexer33, 3
-  %export_35 = load %_Z12ExportSyntax, ptr %export_, align 1
-  %tuple.field37 = getelementptr inbounds %_Z13PrivateSyntax, ptr %tuple36, i32 0, i32 0
-  store i64 %previous_position, ptr %tuple.field37, align 1
-  %tuple.field38 = getelementptr inbounds %_Z13PrivateSyntax, ptr %tuple36, i32 0, i32 1
-  store i64 %position34, ptr %tuple.field38, align 1
-  %tuple.field39 = getelementptr inbounds %_Z13PrivateSyntax, ptr %tuple36, i32 0, i32 2
-  store %_Z12ExportSyntax %export_35, ptr %tuple.field39, align 1
-  %tuple.val40 = load %_Z13PrivateSyntax, ptr %tuple36, align 4
+choose.end:                                       ; preds = %choose.else, %choose.when29, %choose.end4
+  %choose.value = phi %_Z12ExportSyntax [ %throws.success.val, %choose.when29 ], [ undef, %choose.end4 ], [ undef, %choose.else ]
+  %load.struct30 = load %_Z6Parser, ptr %2, align 8
+  %lexer31 = extractvalue %_Z6Parser %load.struct30, 0
+  %position32 = extractvalue %_Z5Lexer %lexer31, 3
+  %export_33 = load %_Z12ExportSyntax, ptr %export_, align 1
+  %tuple.field35 = getelementptr inbounds %_Z13PrivateSyntax, ptr %tuple34, i32 0, i32 0
+  store i64 %previous_position, ptr %tuple.field35, align 1
+  %tuple.field36 = getelementptr inbounds %_Z13PrivateSyntax, ptr %tuple34, i32 0, i32 1
+  store i64 %position32, ptr %tuple.field36, align 1
+  %tuple.field37 = getelementptr inbounds %_Z13PrivateSyntax, ptr %tuple34, i32 0, i32 2
+  store %_Z12ExportSyntax %export_33, ptr %tuple.field37, align 1
+  %tuple.val38 = load %_Z13PrivateSyntax, ptr %tuple34, align 4
   %ret.tag.ptr = getelementptr inbounds { i8, [176 x i8] }, ptr %0, i32 0, i32 0
   store i8 0, ptr %ret.tag.ptr, align 1
   %ret.data.ptr = getelementptr inbounds { i8, [176 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z13PrivateSyntax %tuple.val40, ptr %ret.data.ptr, align 1
+  store %_Z13PrivateSyntax %tuple.val38, ptr %ret.data.ptr, align 1
   ret void
 
 choose.else:                                      ; preds = %if.end
@@ -13816,7 +12779,7 @@ choose.when:                                      ; preds = %if.end
   %tag3 = load i8, ptr %tag.ptr, align 1
   switch i8 %tag3, label %choose.else5 [
     i8 0, label %choose.when6
-    i8 1, label %choose.when23
+    i8 1, label %choose.when21
   ]
 
 choose.end4:                                      ; preds = %choose.else5
@@ -13835,39 +12798,35 @@ choose.when6:                                     ; preds = %choose.when
   %load.struct11 = load %_Z6Parser, ptr %2, align 8
   %lexer12 = extractvalue %_Z6Parser %load.struct11, 0
   %position13 = extractvalue %_Z5Lexer %lexer12, 3
-  %struct.region14 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.56 }, ptr %arg.tmp15, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region14, ptr %1, ptr %arg.tmp15)
-  %tuple.field = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 0
+  %tuple.field = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 0
   store i64 %position, ptr %tuple.field, align 1
-  %tuple.field17 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 1
-  store i64 %position13, ptr %tuple.field17, align 1
-  %field.load = load { ptr }, ptr %struct.region14, align 8
-  %tuple.field18 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 2
-  store { ptr } %field.load, ptr %tuple.field18, align 1
-  %tuple.val19 = load %_Z13InvalidSyntax, ptr %tuple16, align 8
-  %variant.data.ptr20 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
-  store %_Z13InvalidSyntax %tuple.val19, ptr %variant.data.ptr20, align 1
-  %variant.val21 = load %_Z11ParserError, ptr %variant.ptr9, align 1
-  %throw.data.ptr22 = getelementptr inbounds { i8, [176 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val21, ptr %throw.data.ptr22, align 1
+  %tuple.field15 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 1
+  store i64 %position13, ptr %tuple.field15, align 1
+  %tuple.field16 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 2
+  store { ptr } { ptr @.sconst.54 }, ptr %tuple.field16, align 1
+  %tuple.val17 = load %_Z13InvalidSyntax, ptr %tuple14, align 8
+  %variant.data.ptr18 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
+  store %_Z13InvalidSyntax %tuple.val17, ptr %variant.data.ptr18, align 1
+  %variant.val19 = load %_Z11ParserError, ptr %variant.ptr9, align 1
+  %throw.data.ptr20 = getelementptr inbounds { i8, [176 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val19, ptr %throw.data.ptr20, align 1
   ret void
 
-choose.when23:                                    ; preds = %choose.when
-  %"variant.c_data().ptr24" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 1
-  %variant.val25 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr24", align 8
-  %throw.tag.ptr26 = getelementptr inbounds { i8, [176 x i8] }, ptr %0, i32 0, i32 0
-  store i8 1, ptr %throw.tag.ptr26, align 1
-  %variant.tag.ptr27 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 0
-  store i8 1, ptr %variant.tag.ptr27, align 1
-  %variant.data.ptr28 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
-  store %_Z13InvalidSyntax %variant.val25, ptr %variant.data.ptr28, align 1
-  %variant.val29 = load %_Z11ParserError, ptr %variant.ptr9, align 1
-  %throw.data.ptr30 = getelementptr inbounds { i8, [176 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val29, ptr %throw.data.ptr30, align 1
+choose.when21:                                    ; preds = %choose.when
+  %"variant.c_data().ptr22" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 1
+  %variant.val23 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr22", align 8
+  %throw.tag.ptr24 = getelementptr inbounds { i8, [176 x i8] }, ptr %0, i32 0, i32 0
+  store i8 1, ptr %throw.tag.ptr24, align 1
+  %variant.tag.ptr25 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 0
+  store i8 1, ptr %variant.tag.ptr25, align 1
+  %variant.data.ptr26 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
+  store %_Z13InvalidSyntax %variant.val23, ptr %variant.data.ptr26, align 1
+  %variant.val27 = load %_Z11ParserError, ptr %variant.ptr9, align 1
+  %throw.data.ptr28 = getelementptr inbounds { i8, [176 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val27, ptr %throw.data.ptr28, align 1
   ret void
 
-choose.when31:                                    ; preds = %if.end
+choose.when29:                                    ; preds = %if.end
   %throws.success.val = load %_Z12ExportSyntax, ptr %throws.data.ptr, align 1
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %export_, ptr align 1 %throws.data.ptr, i64 ptrtoint (ptr getelementptr (%_Z12ExportSyntax, ptr null, i32 1) to i64), i1 false)
   br label %choose.end
@@ -14449,7 +13408,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.57)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.55)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -14953,7 +13912,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.58)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.56)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -15984,18 +14943,17 @@ choose.when307:                                   ; preds = %choose.end257
 
 define linkonce_odr void @_ZN6Parser16parse_definitionEPN4scaly6memory4PageE(ptr noalias sret({ i8, [144 x i8] }) %0, ptr %1, ptr %2) {
 entry:
-  %tuple116 = alloca %_Z16DefinitionSyntax, align 8
-  %variant.ptr85 = alloca %_Z11ParserError, align 8
-  %sret.result70 = alloca { i8, [97 x i8] }, align 8
+  %tuple112 = alloca %_Z16DefinitionSyntax, align 8
+  %variant.ptr83 = alloca %_Z11ParserError, align 8
+  %sret.result68 = alloca { i8, [97 x i8] }, align 8
   %concept_ = alloca %_Z13ConceptSyntax, align 8
-  %variant.ptr59 = alloca %_Z11ParserError, align 8
+  %variant.ptr57 = alloca %_Z11ParserError, align 8
   %choose.union = alloca %_Z11ParserError, align 8
-  %sret.result41 = alloca { i8, [25 x i8] }, align 8
+  %sret.result39 = alloca { i8, [25 x i8] }, align 8
   %attributes = alloca ptr, align 8
-  %sret.result22 = alloca { i8, [25 x i8] }, align 8
+  %sret.result20 = alloca { i8, [25 x i8] }, align 8
   %parameters = alloca ptr, align 8
-  %tuple12 = alloca %_Z13InvalidSyntax, align 8
-  %arg.tmp11 = alloca { ptr }, align 8
+  %tuple10 = alloca %_Z13InvalidSyntax, align 8
   %sret.result = alloca { ptr }, align 8
   %tuple = alloca %_Z15DifferentSyntax, align 8
   %variant.ptr = alloca %_Z11ParserError, align 8
@@ -16003,11 +14961,9 @@ entry:
   %lexer = extractvalue %_Z6Parser %load.struct, 0
   %previous_position = extractvalue %_Z5Lexer %lexer, 4
   %field.inplace = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
   %arg.tmp = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.59 }, ptr %arg.tmp, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region, ptr %1, ptr %arg.tmp)
-  %call = call i1 @_ZN5Lexer13parse_keywordE6String(ptr %field.inplace, ptr %struct.region)
+  store { ptr } { ptr @.sconst.57 }, ptr %arg.tmp, align 1
+  %call = call i1 @_ZN5Lexer13parse_keywordE6String(ptr %field.inplace, ptr %arg.tmp)
   %bitnot = xor i1 %call, true
   br i1 %bitnot, label %if.then, label %if.end
 
@@ -16041,51 +14997,47 @@ if.then4:                                         ; preds = %if.end
   %load.struct8 = load %_Z6Parser, ptr %2, align 8
   %lexer9 = extractvalue %_Z6Parser %load.struct8, 0
   %position = extractvalue %_Z5Lexer %lexer9, 3
-  %struct.region10 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.60 }, ptr %arg.tmp11, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region10, ptr %1, ptr %arg.tmp11)
-  %tuple.field = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple12, i32 0, i32 0
+  %tuple.field = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple10, i32 0, i32 0
   store i64 %previous_position, ptr %tuple.field, align 1
-  %tuple.field13 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple12, i32 0, i32 1
-  store i64 %position, ptr %tuple.field13, align 1
-  %field.load = load { ptr }, ptr %struct.region10, align 8
-  %tuple.field14 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple12, i32 0, i32 2
-  store { ptr } %field.load, ptr %tuple.field14, align 1
-  %tuple.val15 = load %_Z13InvalidSyntax, ptr %tuple12, align 8
-  %variant.data.ptr16 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 1
-  store %_Z13InvalidSyntax %tuple.val15, ptr %variant.data.ptr16, align 1
-  %variant.val17 = load %_Z11ParserError, ptr %variant.ptr, align 1
-  %throw.data.ptr18 = getelementptr inbounds { i8, [144 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val17, ptr %throw.data.ptr18, align 1
+  %tuple.field11 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple10, i32 0, i32 1
+  store i64 %position, ptr %tuple.field11, align 1
+  %tuple.field12 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple10, i32 0, i32 2
+  store { ptr } { ptr @.sconst.58 }, ptr %tuple.field12, align 1
+  %tuple.val13 = load %_Z13InvalidSyntax, ptr %tuple10, align 8
+  %variant.data.ptr14 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 1
+  store %_Z13InvalidSyntax %tuple.val13, ptr %variant.data.ptr14, align 1
+  %variant.val15 = load %_Z11ParserError, ptr %variant.ptr, align 1
+  %throw.data.ptr16 = getelementptr inbounds { i8, [144 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val15, ptr %throw.data.ptr16, align 1
   ret void
 
 if.end5:                                          ; preds = %if.end
-  %load.struct19 = load %_Z6Parser, ptr %2, align 8
-  %lexer20 = extractvalue %_Z6Parser %load.struct19, 0
-  %position21 = extractvalue %_Z5Lexer %lexer20, 3
+  %load.struct17 = load %_Z6Parser, ptr %2, align 8
+  %lexer18 = extractvalue %_Z6Parser %load.struct17, 0
+  %position19 = extractvalue %_Z5Lexer %lexer18, 3
   store ptr null, ptr %parameters, align 1
-  call void @_ZN6Parser23parse_genericparametersEPN4scaly6memory4PageE(ptr noalias sret({ i8, [25 x i8] }) %sret.result22, ptr %1, ptr %2)
-  %tag = load i8, ptr %sret.result22, align 1
-  %throws.data.ptr = getelementptr inbounds i8, ptr %sret.result22, i8 1
+  call void @_ZN6Parser23parse_genericparametersEPN4scaly6memory4PageE(ptr noalias sret({ i8, [25 x i8] }) %sret.result20, ptr %1, ptr %2)
+  %tag = load i8, ptr %sret.result20, align 1
+  %throws.data.ptr = getelementptr inbounds i8, ptr %sret.result20, i8 1
   switch i8 %tag, label %choose.else [
     i8 1, label %choose.when
-    i8 0, label %choose.when31
+    i8 0, label %choose.when29
   ]
 
-choose.end:                                       ; preds = %choose.else, %choose.when31, %choose.end24
-  %choose.value = phi %_Z23GenericParametersSyntax [ %choose.arm.load, %choose.when31 ], [ undef, %choose.end24 ], [ undef, %choose.else ]
-  %field.inplace36 = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
-  %call37 = call i1 @_ZN5Lexer11parse_colonEv(ptr %field.inplace36)
-  %load.struct38 = load %_Z6Parser, ptr %2, align 8
-  %lexer39 = extractvalue %_Z6Parser %load.struct38, 0
-  %position40 = extractvalue %_Z5Lexer %lexer39, 3
+choose.end:                                       ; preds = %choose.else, %choose.when29, %choose.end22
+  %choose.value = phi %_Z23GenericParametersSyntax [ %choose.arm.load, %choose.when29 ], [ undef, %choose.end22 ], [ undef, %choose.else ]
+  %field.inplace34 = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
+  %call35 = call i1 @_ZN5Lexer11parse_colonEv(ptr %field.inplace34)
+  %load.struct36 = load %_Z6Parser, ptr %2, align 8
+  %lexer37 = extractvalue %_Z6Parser %load.struct36, 0
+  %position38 = extractvalue %_Z5Lexer %lexer37, 3
   store ptr null, ptr %attributes, align 1
-  call void @_ZN6Parser20parse_attribute_listEPN4scaly6memory4PageE(ptr noalias sret({ i8, [25 x i8] }) %sret.result41, ptr %1, ptr %2)
-  %tag42 = load i8, ptr %sret.result41, align 1
-  %throws.data.ptr43 = getelementptr inbounds i8, ptr %sret.result41, i8 1
-  switch i8 %tag42, label %choose.else45 [
-    i8 1, label %choose.when46
-    i8 0, label %choose.when64
+  call void @_ZN6Parser20parse_attribute_listEPN4scaly6memory4PageE(ptr noalias sret({ i8, [25 x i8] }) %sret.result39, ptr %1, ptr %2)
+  %tag40 = load i8, ptr %sret.result39, align 1
+  %throws.data.ptr41 = getelementptr inbounds i8, ptr %sret.result39, i8 1
+  switch i8 %tag40, label %choose.else43 [
+    i8 1, label %choose.when44
+    i8 0, label %choose.when62
   ]
 
 choose.else:                                      ; preds = %if.end5
@@ -16095,200 +15047,195 @@ choose.when:                                      ; preds = %if.end5
   %throws.err.val = load %_Z11ParserError, ptr %throws.data.ptr, align 1
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %variant.ptr, ptr align 1 %throws.data.ptr, i64 ptrtoint (ptr getelementptr (%_Z11ParserError, ptr null, i32 1) to i64), i1 false)
   %tag.ptr = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 0
-  %tag23 = load i8, ptr %tag.ptr, align 1
-  switch i8 %tag23, label %choose.else25 [
-    i8 0, label %choose.when26
-    i8 1, label %choose.when28
+  %tag21 = load i8, ptr %tag.ptr, align 1
+  switch i8 %tag21, label %choose.else23 [
+    i8 0, label %choose.when24
+    i8 1, label %choose.when26
   ]
 
-choose.end24:                                     ; preds = %choose.else25, %choose.when28, %choose.when26
+choose.end22:                                     ; preds = %choose.else23, %choose.when26, %choose.when24
   br label %choose.end
 
-choose.else25:                                    ; preds = %choose.when
-  br label %choose.end24
+choose.else23:                                    ; preds = %choose.when
+  br label %choose.end22
+
+choose.when24:                                    ; preds = %choose.when
+  %"variant.c_data().ptr" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 1
+  %variant.val25 = load %_Z15DifferentSyntax, ptr %"variant.c_data().ptr", align 1
+  br label %choose.end22
 
 choose.when26:                                    ; preds = %choose.when
-  %"variant.c_data().ptr" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 1
-  %variant.val27 = load %_Z15DifferentSyntax, ptr %"variant.c_data().ptr", align 1
-  br label %choose.end24
+  %"variant.c_data().ptr27" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 1
+  %variant.val28 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr27", align 8
+  br label %choose.end22
 
-choose.when28:                                    ; preds = %choose.when
-  %"variant.c_data().ptr29" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 1
-  %variant.val30 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr29", align 8
-  br label %choose.end24
-
-choose.when31:                                    ; preds = %if.end5
+choose.when29:                                    ; preds = %if.end5
   %throws.success.val = load %_Z23GenericParametersSyntax, ptr %throws.data.ptr, align 1
   %start = extractvalue %_Z23GenericParametersSyntax %throws.success.val, 0
   %end = extractvalue %_Z23GenericParametersSyntax %throws.success.val, 1
-  %parameters32 = extractvalue %_Z23GenericParametersSyntax %throws.success.val, 2
+  %parameters30 = extractvalue %_Z23GenericParametersSyntax %throws.success.val, 2
   %tuple.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr (%_Z23GenericParametersSyntax, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z23GenericParametersSyntax }, ptr null, i64 0, i32 1) to i64))
-  %tuple.field33 = getelementptr inbounds %_Z23GenericParametersSyntax, ptr %tuple.region, i32 0, i32 0
-  store i64 %start, ptr %tuple.field33, align 1
-  %tuple.field34 = getelementptr inbounds %_Z23GenericParametersSyntax, ptr %tuple.region, i32 0, i32 1
-  store i64 %end, ptr %tuple.field34, align 1
-  %tuple.field35 = getelementptr inbounds %_Z23GenericParametersSyntax, ptr %tuple.region, i32 0, i32 2
-  store ptr %parameters32, ptr %tuple.field35, align 1
+  %tuple.field31 = getelementptr inbounds %_Z23GenericParametersSyntax, ptr %tuple.region, i32 0, i32 0
+  store i64 %start, ptr %tuple.field31, align 1
+  %tuple.field32 = getelementptr inbounds %_Z23GenericParametersSyntax, ptr %tuple.region, i32 0, i32 1
+  store i64 %end, ptr %tuple.field32, align 1
+  %tuple.field33 = getelementptr inbounds %_Z23GenericParametersSyntax, ptr %tuple.region, i32 0, i32 2
+  store ptr %parameters30, ptr %tuple.field33, align 1
   store ptr %tuple.region, ptr %parameters, align 1
   %choose.arm.load = load %_Z23GenericParametersSyntax, ptr %tuple.region, align 8
   br label %choose.end
 
-choose.end44:                                     ; preds = %choose.else45, %choose.when64, %choose.end50
-  %choose.value66 = phi ptr [ %throws.success.val65, %choose.when64 ], [ undef, %choose.end50 ], [ undef, %choose.else45 ]
-  %load.struct67 = load %_Z6Parser, ptr %2, align 8
-  %lexer68 = extractvalue %_Z6Parser %load.struct67, 0
-  %position69 = extractvalue %_Z5Lexer %lexer68, 3
-  call void @_ZN6Parser13parse_conceptEPN4scaly6memory4PageE(ptr noalias sret({ i8, [97 x i8] }) %sret.result70, ptr %1, ptr %2)
-  %tag71 = load i8, ptr %sret.result70, align 1
-  %throws.data.ptr72 = getelementptr inbounds i8, ptr %sret.result70, i8 1
-  switch i8 %tag71, label %choose.else74 [
-    i8 1, label %choose.when75
-    i8 0, label %choose.when107
+choose.end42:                                     ; preds = %choose.else43, %choose.when62, %choose.end48
+  %choose.value64 = phi ptr [ %throws.success.val63, %choose.when62 ], [ undef, %choose.end48 ], [ undef, %choose.else43 ]
+  %load.struct65 = load %_Z6Parser, ptr %2, align 8
+  %lexer66 = extractvalue %_Z6Parser %load.struct65, 0
+  %position67 = extractvalue %_Z5Lexer %lexer66, 3
+  call void @_ZN6Parser13parse_conceptEPN4scaly6memory4PageE(ptr noalias sret({ i8, [97 x i8] }) %sret.result68, ptr %1, ptr %2)
+  %tag69 = load i8, ptr %sret.result68, align 1
+  %throws.data.ptr70 = getelementptr inbounds i8, ptr %sret.result68, i8 1
+  switch i8 %tag69, label %choose.else72 [
+    i8 1, label %choose.when73
+    i8 0, label %choose.when103
   ]
 
-choose.else45:                                    ; preds = %choose.end
-  br label %choose.end44
+choose.else43:                                    ; preds = %choose.end
+  br label %choose.end42
 
-choose.when46:                                    ; preds = %choose.end
-  %throws.err.val47 = load %_Z11ParserError, ptr %throws.data.ptr43, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %choose.union, ptr align 1 %throws.data.ptr43, i64 ptrtoint (ptr getelementptr (%_Z11ParserError, ptr null, i32 1) to i64), i1 false)
-  %tag.ptr48 = getelementptr inbounds %_Z11ParserError, ptr %choose.union, i32 0, i32 0
-  %tag49 = load i8, ptr %tag.ptr48, align 1
-  switch i8 %tag49, label %choose.else51 [
-    i8 0, label %choose.when52
-    i8 1, label %choose.when55
+choose.when44:                                    ; preds = %choose.end
+  %throws.err.val45 = load %_Z11ParserError, ptr %throws.data.ptr41, align 1
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %choose.union, ptr align 1 %throws.data.ptr41, i64 ptrtoint (ptr getelementptr (%_Z11ParserError, ptr null, i32 1) to i64), i1 false)
+  %tag.ptr46 = getelementptr inbounds %_Z11ParserError, ptr %choose.union, i32 0, i32 0
+  %tag47 = load i8, ptr %tag.ptr46, align 1
+  switch i8 %tag47, label %choose.else49 [
+    i8 0, label %choose.when50
+    i8 1, label %choose.when53
   ]
 
-choose.end50:                                     ; preds = %choose.else51, %choose.when52
-  br label %choose.end44
+choose.end48:                                     ; preds = %choose.else49, %choose.when50
+  br label %choose.end42
 
-choose.else51:                                    ; preds = %choose.when46
-  br label %choose.end50
+choose.else49:                                    ; preds = %choose.when44
+  br label %choose.end48
 
-choose.when52:                                    ; preds = %choose.when46
-  %"variant.c_data().ptr53" = getelementptr inbounds %_Z11ParserError, ptr %choose.union, i32 0, i32 1
-  %variant.val54 = load %_Z15DifferentSyntax, ptr %"variant.c_data().ptr53", align 1
-  br label %choose.end50
+choose.when50:                                    ; preds = %choose.when44
+  %"variant.c_data().ptr51" = getelementptr inbounds %_Z11ParserError, ptr %choose.union, i32 0, i32 1
+  %variant.val52 = load %_Z15DifferentSyntax, ptr %"variant.c_data().ptr51", align 1
+  br label %choose.end48
 
-choose.when55:                                    ; preds = %choose.when46
-  %"variant.c_data().ptr56" = getelementptr inbounds %_Z11ParserError, ptr %choose.union, i32 0, i32 1
-  %variant.val57 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr56", align 8
-  %throw.tag.ptr58 = getelementptr inbounds { i8, [144 x i8] }, ptr %0, i32 0, i32 0
-  store i8 1, ptr %throw.tag.ptr58, align 1
-  %variant.tag.ptr60 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr59, i32 0, i32 0
-  store i8 1, ptr %variant.tag.ptr60, align 1
-  %variant.data.ptr61 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr59, i32 0, i32 1
-  store %_Z13InvalidSyntax %variant.val57, ptr %variant.data.ptr61, align 1
-  %variant.val62 = load %_Z11ParserError, ptr %variant.ptr59, align 1
-  %throw.data.ptr63 = getelementptr inbounds { i8, [144 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val62, ptr %throw.data.ptr63, align 1
+choose.when53:                                    ; preds = %choose.when44
+  %"variant.c_data().ptr54" = getelementptr inbounds %_Z11ParserError, ptr %choose.union, i32 0, i32 1
+  %variant.val55 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr54", align 8
+  %throw.tag.ptr56 = getelementptr inbounds { i8, [144 x i8] }, ptr %0, i32 0, i32 0
+  store i8 1, ptr %throw.tag.ptr56, align 1
+  %variant.tag.ptr58 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr57, i32 0, i32 0
+  store i8 1, ptr %variant.tag.ptr58, align 1
+  %variant.data.ptr59 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr57, i32 0, i32 1
+  store %_Z13InvalidSyntax %variant.val55, ptr %variant.data.ptr59, align 1
+  %variant.val60 = load %_Z11ParserError, ptr %variant.ptr57, align 1
+  %throw.data.ptr61 = getelementptr inbounds { i8, [144 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val60, ptr %throw.data.ptr61, align 1
   ret void
 
-choose.when64:                                    ; preds = %choose.end
-  %throws.success.val65 = load ptr, ptr %throws.data.ptr43, align 1
-  store ptr %throws.success.val65, ptr %attributes, align 1
-  br label %choose.end44
+choose.when62:                                    ; preds = %choose.end
+  %throws.success.val63 = load ptr, ptr %throws.data.ptr41, align 1
+  store ptr %throws.success.val63, ptr %attributes, align 1
+  br label %choose.end42
 
-choose.end73:                                     ; preds = %choose.else74, %choose.when107, %choose.end79
-  %choose.value109 = phi %_Z13ConceptSyntax [ %throws.success.val108, %choose.when107 ], [ undef, %choose.end79 ], [ undef, %choose.else74 ]
-  %load.struct110 = load %_Z6Parser, ptr %2, align 8
-  %lexer111 = extractvalue %_Z6Parser %load.struct110, 0
-  %position112 = extractvalue %_Z5Lexer %lexer111, 3
-  %parameters113 = load ptr, ptr %parameters, align 8
-  %attributes114 = load ptr, ptr %attributes, align 8
-  %concept_115 = load %_Z13ConceptSyntax, ptr %concept_, align 1
-  %tuple.field117 = getelementptr inbounds %_Z16DefinitionSyntax, ptr %tuple116, i32 0, i32 0
-  store i64 %previous_position, ptr %tuple.field117, align 1
-  %tuple.field118 = getelementptr inbounds %_Z16DefinitionSyntax, ptr %tuple116, i32 0, i32 1
-  store i64 %position112, ptr %tuple.field118, align 1
-  %field.load119 = load { ptr }, ptr %sret.result, align 8
-  %tuple.field120 = getelementptr inbounds %_Z16DefinitionSyntax, ptr %tuple116, i32 0, i32 2
-  store { ptr } %field.load119, ptr %tuple.field120, align 1
-  %tuple.field121 = getelementptr inbounds %_Z16DefinitionSyntax, ptr %tuple116, i32 0, i32 3
-  store ptr %parameters113, ptr %tuple.field121, align 1
-  %tuple.field122 = getelementptr inbounds %_Z16DefinitionSyntax, ptr %tuple116, i32 0, i32 4
-  store ptr %attributes114, ptr %tuple.field122, align 1
-  %tuple.field123 = getelementptr inbounds %_Z16DefinitionSyntax, ptr %tuple116, i32 0, i32 5
-  store %_Z13ConceptSyntax %concept_115, ptr %tuple.field123, align 1
-  %tuple.val124 = load %_Z16DefinitionSyntax, ptr %tuple116, align 8
+choose.end71:                                     ; preds = %choose.else72, %choose.when103, %choose.end77
+  %choose.value105 = phi %_Z13ConceptSyntax [ %throws.success.val104, %choose.when103 ], [ undef, %choose.end77 ], [ undef, %choose.else72 ]
+  %load.struct106 = load %_Z6Parser, ptr %2, align 8
+  %lexer107 = extractvalue %_Z6Parser %load.struct106, 0
+  %position108 = extractvalue %_Z5Lexer %lexer107, 3
+  %parameters109 = load ptr, ptr %parameters, align 8
+  %attributes110 = load ptr, ptr %attributes, align 8
+  %concept_111 = load %_Z13ConceptSyntax, ptr %concept_, align 1
+  %tuple.field113 = getelementptr inbounds %_Z16DefinitionSyntax, ptr %tuple112, i32 0, i32 0
+  store i64 %previous_position, ptr %tuple.field113, align 1
+  %tuple.field114 = getelementptr inbounds %_Z16DefinitionSyntax, ptr %tuple112, i32 0, i32 1
+  store i64 %position108, ptr %tuple.field114, align 1
+  %field.load = load { ptr }, ptr %sret.result, align 8
+  %tuple.field115 = getelementptr inbounds %_Z16DefinitionSyntax, ptr %tuple112, i32 0, i32 2
+  store { ptr } %field.load, ptr %tuple.field115, align 1
+  %tuple.field116 = getelementptr inbounds %_Z16DefinitionSyntax, ptr %tuple112, i32 0, i32 3
+  store ptr %parameters109, ptr %tuple.field116, align 1
+  %tuple.field117 = getelementptr inbounds %_Z16DefinitionSyntax, ptr %tuple112, i32 0, i32 4
+  store ptr %attributes110, ptr %tuple.field117, align 1
+  %tuple.field118 = getelementptr inbounds %_Z16DefinitionSyntax, ptr %tuple112, i32 0, i32 5
+  store %_Z13ConceptSyntax %concept_111, ptr %tuple.field118, align 1
+  %tuple.val119 = load %_Z16DefinitionSyntax, ptr %tuple112, align 8
   %ret.tag.ptr = getelementptr inbounds { i8, [144 x i8] }, ptr %0, i32 0, i32 0
   store i8 0, ptr %ret.tag.ptr, align 1
   %ret.data.ptr = getelementptr inbounds { i8, [144 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z16DefinitionSyntax %tuple.val124, ptr %ret.data.ptr, align 1
+  store %_Z16DefinitionSyntax %tuple.val119, ptr %ret.data.ptr, align 1
   ret void
 
-choose.else74:                                    ; preds = %choose.end44
-  br label %choose.end73
+choose.else72:                                    ; preds = %choose.end42
+  br label %choose.end71
 
-choose.when75:                                    ; preds = %choose.end44
-  %throws.err.val76 = load %_Z11ParserError, ptr %throws.data.ptr72, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %variant.ptr59, ptr align 1 %throws.data.ptr72, i64 ptrtoint (ptr getelementptr (%_Z11ParserError, ptr null, i32 1) to i64), i1 false)
-  %tag.ptr77 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr59, i32 0, i32 0
-  %tag78 = load i8, ptr %tag.ptr77, align 1
-  switch i8 %tag78, label %choose.else80 [
-    i8 0, label %choose.when81
-    i8 1, label %choose.when99
+choose.when73:                                    ; preds = %choose.end42
+  %throws.err.val74 = load %_Z11ParserError, ptr %throws.data.ptr70, align 1
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %variant.ptr57, ptr align 1 %throws.data.ptr70, i64 ptrtoint (ptr getelementptr (%_Z11ParserError, ptr null, i32 1) to i64), i1 false)
+  %tag.ptr75 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr57, i32 0, i32 0
+  %tag76 = load i8, ptr %tag.ptr75, align 1
+  switch i8 %tag76, label %choose.else78 [
+    i8 0, label %choose.when79
+    i8 1, label %choose.when95
   ]
 
-choose.end79:                                     ; preds = %choose.else80
-  br label %choose.end73
+choose.end77:                                     ; preds = %choose.else78
+  br label %choose.end71
 
-choose.else80:                                    ; preds = %choose.when75
-  br label %choose.end79
+choose.else78:                                    ; preds = %choose.when73
+  br label %choose.end77
 
-choose.when81:                                    ; preds = %choose.when75
-  %"variant.c_data().ptr82" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr59, i32 0, i32 1
-  %variant.val83 = load %_Z15DifferentSyntax, ptr %"variant.c_data().ptr82", align 1
-  %throw.tag.ptr84 = getelementptr inbounds { i8, [144 x i8] }, ptr %0, i32 0, i32 0
-  store i8 1, ptr %throw.tag.ptr84, align 1
-  %variant.tag.ptr86 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr85, i32 0, i32 0
-  store i8 1, ptr %variant.tag.ptr86, align 1
-  %load.struct87 = load %_Z6Parser, ptr %2, align 8
-  %lexer88 = extractvalue %_Z6Parser %load.struct87, 0
-  %position89 = extractvalue %_Z5Lexer %lexer88, 3
-  %struct.region90 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.61 }, ptr %arg.tmp11, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region90, ptr %1, ptr %arg.tmp11)
-  %tuple.field91 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple12, i32 0, i32 0
-  store i64 %position69, ptr %tuple.field91, align 1
-  %tuple.field92 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple12, i32 0, i32 1
-  store i64 %position89, ptr %tuple.field92, align 1
-  %field.load93 = load { ptr }, ptr %struct.region90, align 8
-  %tuple.field94 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple12, i32 0, i32 2
-  store { ptr } %field.load93, ptr %tuple.field94, align 1
-  %tuple.val95 = load %_Z13InvalidSyntax, ptr %tuple12, align 8
-  %variant.data.ptr96 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr85, i32 0, i32 1
-  store %_Z13InvalidSyntax %tuple.val95, ptr %variant.data.ptr96, align 1
-  %variant.val97 = load %_Z11ParserError, ptr %variant.ptr85, align 1
-  %throw.data.ptr98 = getelementptr inbounds { i8, [144 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val97, ptr %throw.data.ptr98, align 1
+choose.when79:                                    ; preds = %choose.when73
+  %"variant.c_data().ptr80" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr57, i32 0, i32 1
+  %variant.val81 = load %_Z15DifferentSyntax, ptr %"variant.c_data().ptr80", align 1
+  %throw.tag.ptr82 = getelementptr inbounds { i8, [144 x i8] }, ptr %0, i32 0, i32 0
+  store i8 1, ptr %throw.tag.ptr82, align 1
+  %variant.tag.ptr84 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr83, i32 0, i32 0
+  store i8 1, ptr %variant.tag.ptr84, align 1
+  %load.struct85 = load %_Z6Parser, ptr %2, align 8
+  %lexer86 = extractvalue %_Z6Parser %load.struct85, 0
+  %position87 = extractvalue %_Z5Lexer %lexer86, 3
+  %tuple.field88 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple10, i32 0, i32 0
+  store i64 %position67, ptr %tuple.field88, align 1
+  %tuple.field89 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple10, i32 0, i32 1
+  store i64 %position87, ptr %tuple.field89, align 1
+  %tuple.field90 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple10, i32 0, i32 2
+  store { ptr } { ptr @.sconst.59 }, ptr %tuple.field90, align 1
+  %tuple.val91 = load %_Z13InvalidSyntax, ptr %tuple10, align 8
+  %variant.data.ptr92 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr83, i32 0, i32 1
+  store %_Z13InvalidSyntax %tuple.val91, ptr %variant.data.ptr92, align 1
+  %variant.val93 = load %_Z11ParserError, ptr %variant.ptr83, align 1
+  %throw.data.ptr94 = getelementptr inbounds { i8, [144 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val93, ptr %throw.data.ptr94, align 1
   ret void
 
-choose.when99:                                    ; preds = %choose.when75
-  %"variant.c_data().ptr100" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr59, i32 0, i32 1
-  %variant.val101 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr100", align 8
-  %throw.tag.ptr102 = getelementptr inbounds { i8, [144 x i8] }, ptr %0, i32 0, i32 0
-  store i8 1, ptr %throw.tag.ptr102, align 1
-  %variant.tag.ptr103 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr85, i32 0, i32 0
-  store i8 1, ptr %variant.tag.ptr103, align 1
-  %variant.data.ptr104 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr85, i32 0, i32 1
-  store %_Z13InvalidSyntax %variant.val101, ptr %variant.data.ptr104, align 1
-  %variant.val105 = load %_Z11ParserError, ptr %variant.ptr85, align 1
-  %throw.data.ptr106 = getelementptr inbounds { i8, [144 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val105, ptr %throw.data.ptr106, align 1
+choose.when95:                                    ; preds = %choose.when73
+  %"variant.c_data().ptr96" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr57, i32 0, i32 1
+  %variant.val97 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr96", align 8
+  %throw.tag.ptr98 = getelementptr inbounds { i8, [144 x i8] }, ptr %0, i32 0, i32 0
+  store i8 1, ptr %throw.tag.ptr98, align 1
+  %variant.tag.ptr99 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr83, i32 0, i32 0
+  store i8 1, ptr %variant.tag.ptr99, align 1
+  %variant.data.ptr100 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr83, i32 0, i32 1
+  store %_Z13InvalidSyntax %variant.val97, ptr %variant.data.ptr100, align 1
+  %variant.val101 = load %_Z11ParserError, ptr %variant.ptr83, align 1
+  %throw.data.ptr102 = getelementptr inbounds { i8, [144 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val101, ptr %throw.data.ptr102, align 1
   ret void
 
-choose.when107:                                   ; preds = %choose.end44
-  %throws.success.val108 = load %_Z13ConceptSyntax, ptr %throws.data.ptr72, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concept_, ptr align 1 %throws.data.ptr72, i64 ptrtoint (ptr getelementptr (%_Z13ConceptSyntax, ptr null, i32 1) to i64), i1 false)
-  br label %choose.end73
+choose.when103:                                   ; preds = %choose.end42
+  %throws.success.val104 = load %_Z13ConceptSyntax, ptr %throws.data.ptr70, align 1
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concept_, ptr align 1 %throws.data.ptr70, i64 ptrtoint (ptr getelementptr (%_Z13ConceptSyntax, ptr null, i32 1) to i64), i1 false)
+  br label %choose.end71
 }
 
 define linkonce_odr void @_ZN6Parser23parse_genericparametersEPN4scaly6memory4PageE(ptr noalias sret({ i8, [25 x i8] }) %0, ptr %1, ptr %2) {
 entry:
-  %tuple55 = alloca %_Z23GenericParametersSyntax, align 8
+  %tuple53 = alloca %_Z23GenericParametersSyntax, align 8
   %tuple15 = alloca %_Z13InvalidSyntax, align 8
-  %arg.tmp = alloca { ptr }, align 8
   %variant.ptr10 = alloca %_Z11ParserError, align 8
   %sret.result = alloca { i8, [25 x i8] }, align 8
   %parameters = alloca ptr, align 8
@@ -16366,16 +15313,12 @@ choose.when7:                                     ; preds = %choose.when
   %load.struct12 = load %_Z6Parser, ptr %2, align 8
   %lexer13 = extractvalue %_Z6Parser %load.struct12, 0
   %position14 = extractvalue %_Z5Lexer %lexer13, 3
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.62 }, ptr %arg.tmp, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region, ptr %1, ptr %arg.tmp)
   %tuple.field = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple15, i32 0, i32 0
   store i64 %position, ptr %tuple.field, align 1
   %tuple.field16 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple15, i32 0, i32 1
   store i64 %position14, ptr %tuple.field16, align 1
-  %field.load = load { ptr }, ptr %struct.region, align 8
   %tuple.field17 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple15, i32 0, i32 2
-  store { ptr } %field.load, ptr %tuple.field17, align 1
+  store { ptr } { ptr @.sconst.60 }, ptr %tuple.field17, align 1
   %tuple.val18 = load %_Z13InvalidSyntax, ptr %tuple15, align 8
   %variant.data.ptr19 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr10, i32 0, i32 1
   store %_Z13InvalidSyntax %tuple.val18, ptr %variant.data.ptr19, align 1
@@ -16411,40 +15354,36 @@ if.then35:                                        ; preds = %choose.end
   %load.struct39 = load %_Z6Parser, ptr %2, align 8
   %lexer40 = extractvalue %_Z6Parser %load.struct39, 0
   %position41 = extractvalue %_Z5Lexer %lexer40, 3
-  %struct.region42 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.63 }, ptr %arg.tmp, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region42, ptr %1, ptr %arg.tmp)
-  %tuple.field43 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple15, i32 0, i32 0
-  store i64 %previous_position, ptr %tuple.field43, align 1
-  %tuple.field44 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple15, i32 0, i32 1
-  store i64 %position41, ptr %tuple.field44, align 1
-  %field.load45 = load { ptr }, ptr %struct.region42, align 8
-  %tuple.field46 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple15, i32 0, i32 2
-  store { ptr } %field.load45, ptr %tuple.field46, align 1
-  %tuple.val47 = load %_Z13InvalidSyntax, ptr %tuple15, align 8
-  %variant.data.ptr48 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr10, i32 0, i32 1
-  store %_Z13InvalidSyntax %tuple.val47, ptr %variant.data.ptr48, align 1
-  %variant.val49 = load %_Z11ParserError, ptr %variant.ptr10, align 1
-  %throw.data.ptr50 = getelementptr inbounds { i8, [25 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val49, ptr %throw.data.ptr50, align 1
+  %tuple.field42 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple15, i32 0, i32 0
+  store i64 %previous_position, ptr %tuple.field42, align 1
+  %tuple.field43 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple15, i32 0, i32 1
+  store i64 %position41, ptr %tuple.field43, align 1
+  %tuple.field44 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple15, i32 0, i32 2
+  store { ptr } { ptr @.sconst.61 }, ptr %tuple.field44, align 1
+  %tuple.val45 = load %_Z13InvalidSyntax, ptr %tuple15, align 8
+  %variant.data.ptr46 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr10, i32 0, i32 1
+  store %_Z13InvalidSyntax %tuple.val45, ptr %variant.data.ptr46, align 1
+  %variant.val47 = load %_Z11ParserError, ptr %variant.ptr10, align 1
+  %throw.data.ptr48 = getelementptr inbounds { i8, [25 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val47, ptr %throw.data.ptr48, align 1
   ret void
 
 if.end36:                                         ; preds = %choose.end
-  %load.struct51 = load %_Z6Parser, ptr %2, align 8
-  %lexer52 = extractvalue %_Z6Parser %load.struct51, 0
-  %position53 = extractvalue %_Z5Lexer %lexer52, 3
-  %parameters54 = load ptr, ptr %parameters, align 8
-  %tuple.field56 = getelementptr inbounds %_Z23GenericParametersSyntax, ptr %tuple55, i32 0, i32 0
-  store i64 %previous_position, ptr %tuple.field56, align 1
-  %tuple.field57 = getelementptr inbounds %_Z23GenericParametersSyntax, ptr %tuple55, i32 0, i32 1
-  store i64 %position53, ptr %tuple.field57, align 1
-  %tuple.field58 = getelementptr inbounds %_Z23GenericParametersSyntax, ptr %tuple55, i32 0, i32 2
-  store ptr %parameters54, ptr %tuple.field58, align 1
-  %tuple.val59 = load %_Z23GenericParametersSyntax, ptr %tuple55, align 8
+  %load.struct49 = load %_Z6Parser, ptr %2, align 8
+  %lexer50 = extractvalue %_Z6Parser %load.struct49, 0
+  %position51 = extractvalue %_Z5Lexer %lexer50, 3
+  %parameters52 = load ptr, ptr %parameters, align 8
+  %tuple.field54 = getelementptr inbounds %_Z23GenericParametersSyntax, ptr %tuple53, i32 0, i32 0
+  store i64 %previous_position, ptr %tuple.field54, align 1
+  %tuple.field55 = getelementptr inbounds %_Z23GenericParametersSyntax, ptr %tuple53, i32 0, i32 1
+  store i64 %position51, ptr %tuple.field55, align 1
+  %tuple.field56 = getelementptr inbounds %_Z23GenericParametersSyntax, ptr %tuple53, i32 0, i32 2
+  store ptr %parameters52, ptr %tuple.field56, align 1
+  %tuple.val57 = load %_Z23GenericParametersSyntax, ptr %tuple53, align 8
   %ret.tag.ptr = getelementptr inbounds { i8, [25 x i8] }, ptr %0, i32 0, i32 0
   store i8 0, ptr %ret.tag.ptr, align 1
   %ret.data.ptr = getelementptr inbounds { i8, [25 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z23GenericParametersSyntax %tuple.val59, ptr %ret.data.ptr, align 1
+  store %_Z23GenericParametersSyntax %tuple.val57, ptr %ret.data.ptr, align 1
   ret void
 }
 
@@ -16633,7 +15572,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.64)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.62)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -17137,7 +16076,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.65)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.63)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -18100,7 +17039,6 @@ define linkonce_odr void @_ZN6Parser10parse_bodyEPN4scaly6memory4PageE(ptr noali
 entry:
   %tuple71 = alloca %_Z10BodySyntax, align 8
   %tuple59 = alloca %_Z13InvalidSyntax, align 8
-  %arg.tmp = alloca { ptr }, align 8
   %variant.ptr40 = alloca %_Z11ParserError, align 8
   %sret.result22 = alloca { i8, [25 x i8] }, align 8
   %members = alloca ptr, align 8
@@ -18261,16 +17199,12 @@ if.then52:                                        ; preds = %choose.end25
   %load.struct56 = load %_Z6Parser, ptr %2, align 8
   %lexer57 = extractvalue %_Z6Parser %load.struct56, 0
   %position58 = extractvalue %_Z5Lexer %lexer57, 3
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.66 }, ptr %arg.tmp, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region, ptr %1, ptr %arg.tmp)
   %tuple.field = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple59, i32 0, i32 0
   store i64 %previous_position, ptr %tuple.field, align 1
   %tuple.field60 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple59, i32 0, i32 1
   store i64 %position58, ptr %tuple.field60, align 1
-  %field.load = load { ptr }, ptr %struct.region, align 8
   %tuple.field61 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple59, i32 0, i32 2
-  store { ptr } %field.load, ptr %tuple.field61, align 1
+  store { ptr } { ptr @.sconst.64 }, ptr %tuple.field61, align 1
   %tuple.val62 = load %_Z13InvalidSyntax, ptr %tuple59, align 8
   %variant.data.ptr63 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr40, i32 0, i32 1
   store %_Z13InvalidSyntax %tuple.val62, ptr %variant.data.ptr63, align 1
@@ -18305,7 +17239,6 @@ define linkonce_odr void @_ZN6Parser15parse_namespaceEPN4scaly6memory4PageE(ptr 
 entry:
   %tuple71 = alloca %_Z15NamespaceSyntax, align 8
   %tuple59 = alloca %_Z13InvalidSyntax, align 8
-  %arg.tmp = alloca { ptr }, align 8
   %variant.ptr40 = alloca %_Z11ParserError, align 8
   %sret.result22 = alloca { i8, [25 x i8] }, align 8
   %declarations = alloca ptr, align 8
@@ -18466,16 +17399,12 @@ if.then52:                                        ; preds = %choose.end25
   %load.struct56 = load %_Z6Parser, ptr %2, align 8
   %lexer57 = extractvalue %_Z6Parser %load.struct56, 0
   %position58 = extractvalue %_Z5Lexer %lexer57, 3
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.67 }, ptr %arg.tmp, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region, ptr %1, ptr %arg.tmp)
   %tuple.field = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple59, i32 0, i32 0
   store i64 %previous_position, ptr %tuple.field, align 1
   %tuple.field60 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple59, i32 0, i32 1
   store i64 %position58, ptr %tuple.field60, align 1
-  %field.load = load { ptr }, ptr %struct.region, align 8
   %tuple.field61 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple59, i32 0, i32 2
-  store { ptr } %field.load, ptr %tuple.field61, align 1
+  store { ptr } { ptr @.sconst.65 }, ptr %tuple.field61, align 1
   %tuple.val62 = load %_Z13InvalidSyntax, ptr %tuple59, align 8
   %variant.data.ptr63 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr40, i32 0, i32 1
   store %_Z13InvalidSyntax %tuple.val62, ptr %variant.data.ptr63, align 1
@@ -18508,25 +17437,22 @@ if.end53:                                         ; preds = %choose.end25
 
 define linkonce_odr void @_ZN6Parser11parse_unionEPN4scaly6memory4PageE(ptr noalias sret({ i8, [32 x i8] }) %0, ptr %1, ptr %2) {
 entry:
-  %tuple108 = alloca %_Z11UnionSyntax, align 8
-  %sret.result79 = alloca { i8, [32 x i8] }, align 8
+  %tuple102 = alloca %_Z11UnionSyntax, align 8
+  %sret.result73 = alloca { i8, [32 x i8] }, align 8
   %body = alloca ptr, align 8
-  %variant.ptr31 = alloca %_Z11ParserError, align 8
+  %variant.ptr29 = alloca %_Z11ParserError, align 8
   %sret.result = alloca { i8, [25 x i8] }, align 8
   %variants = alloca ptr, align 8
-  %tuple15 = alloca %_Z13InvalidSyntax, align 8
-  %arg.tmp14 = alloca { ptr }, align 8
+  %tuple13 = alloca %_Z13InvalidSyntax, align 8
   %tuple = alloca %_Z15DifferentSyntax, align 8
   %variant.ptr = alloca %_Z11ParserError, align 8
   %load.struct = load %_Z6Parser, ptr %2, align 8
   %lexer = extractvalue %_Z6Parser %load.struct, 0
   %previous_position = extractvalue %_Z5Lexer %lexer, 4
   %field.inplace = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
   %arg.tmp = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.68 }, ptr %arg.tmp, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region, ptr %1, ptr %arg.tmp)
-  %call = call i1 @_ZN5Lexer13parse_keywordE6String(ptr %field.inplace, ptr %struct.region)
+  store { ptr } { ptr @.sconst.66 }, ptr %arg.tmp, align 1
+  %call = call i1 @_ZN5Lexer13parse_keywordE6String(ptr %field.inplace, ptr %arg.tmp)
   %bitnot = xor i1 %call, true
   br i1 %bitnot, label %if.then, label %if.end
 
@@ -18561,43 +17487,39 @@ if.then7:                                         ; preds = %if.end
   %load.struct11 = load %_Z6Parser, ptr %2, align 8
   %lexer12 = extractvalue %_Z6Parser %load.struct11, 0
   %position = extractvalue %_Z5Lexer %lexer12, 3
-  %struct.region13 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.69 }, ptr %arg.tmp14, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region13, ptr %1, ptr %arg.tmp14)
-  %tuple.field = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple15, i32 0, i32 0
+  %tuple.field = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple13, i32 0, i32 0
   store i64 %previous_position, ptr %tuple.field, align 1
-  %tuple.field16 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple15, i32 0, i32 1
-  store i64 %position, ptr %tuple.field16, align 1
-  %field.load = load { ptr }, ptr %struct.region13, align 8
-  %tuple.field17 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple15, i32 0, i32 2
-  store { ptr } %field.load, ptr %tuple.field17, align 1
-  %tuple.val18 = load %_Z13InvalidSyntax, ptr %tuple15, align 8
-  %variant.data.ptr19 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 1
-  store %_Z13InvalidSyntax %tuple.val18, ptr %variant.data.ptr19, align 1
-  %variant.val20 = load %_Z11ParserError, ptr %variant.ptr, align 1
-  %throw.data.ptr21 = getelementptr inbounds { i8, [32 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val20, ptr %throw.data.ptr21, align 1
+  %tuple.field14 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple13, i32 0, i32 1
+  store i64 %position, ptr %tuple.field14, align 1
+  %tuple.field15 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple13, i32 0, i32 2
+  store { ptr } { ptr @.sconst.67 }, ptr %tuple.field15, align 1
+  %tuple.val16 = load %_Z13InvalidSyntax, ptr %tuple13, align 8
+  %variant.data.ptr17 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 1
+  store %_Z13InvalidSyntax %tuple.val16, ptr %variant.data.ptr17, align 1
+  %variant.val18 = load %_Z11ParserError, ptr %variant.ptr, align 1
+  %throw.data.ptr19 = getelementptr inbounds { i8, [32 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val18, ptr %throw.data.ptr19, align 1
   ret void
 
 if.end8:                                          ; preds = %if.end
-  %load.struct22 = load %_Z6Parser, ptr %2, align 8
-  %lexer23 = extractvalue %_Z6Parser %load.struct22, 0
-  %position24 = extractvalue %_Z5Lexer %lexer23, 3
+  %load.struct20 = load %_Z6Parser, ptr %2, align 8
+  %lexer21 = extractvalue %_Z6Parser %load.struct20, 0
+  %position22 = extractvalue %_Z5Lexer %lexer21, 3
   call void @_ZN6Parser18parse_variant_listEPN4scaly6memory4PageE(ptr noalias sret({ i8, [25 x i8] }) %sret.result, ptr %1, ptr %2)
   %tag = load i8, ptr %sret.result, align 1
   %throws.data.ptr = getelementptr inbounds i8, ptr %sret.result, i8 1
   switch i8 %tag, label %choose.else [
     i8 1, label %choose.when
-    i8 0, label %choose.when53
+    i8 0, label %choose.when49
   ]
 
-choose.end:                                       ; preds = %choose.else, %choose.when53, %choose.end26
-  %choose.value = phi ptr [ %throws.success.val, %choose.when53 ], [ undef, %choose.end26 ], [ undef, %choose.else ]
-  %field.inplace54 = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
-  %call55 = call i8 @_ZN15ParserConstants11CHAR_RPARENEv()
-  %call56 = call i1 @_ZN5Lexer17parse_punctuationE2u8(ptr %field.inplace54, i8 %call55)
-  %bitnot57 = xor i1 %call56, true
-  br i1 %bitnot57, label %if.then58, label %if.end59
+choose.end:                                       ; preds = %choose.else, %choose.when49, %choose.end24
+  %choose.value = phi ptr [ %throws.success.val, %choose.when49 ], [ undef, %choose.end24 ], [ undef, %choose.else ]
+  %field.inplace50 = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
+  %call51 = call i8 @_ZN15ParserConstants11CHAR_RPARENEv()
+  %call52 = call i1 @_ZN5Lexer17parse_punctuationE2u8(ptr %field.inplace50, i8 %call51)
+  %bitnot53 = xor i1 %call52, true
+  br i1 %bitnot53, label %if.then54, label %if.end55
 
 choose.else:                                      ; preds = %if.end8
   br label %choose.end
@@ -18606,175 +17528,167 @@ choose.when:                                      ; preds = %if.end8
   %throws.err.val = load %_Z11ParserError, ptr %throws.data.ptr, align 1
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %variant.ptr, ptr align 1 %throws.data.ptr, i64 ptrtoint (ptr getelementptr (%_Z11ParserError, ptr null, i32 1) to i64), i1 false)
   %tag.ptr = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 0
-  %tag25 = load i8, ptr %tag.ptr, align 1
-  switch i8 %tag25, label %choose.else27 [
-    i8 0, label %choose.when28
-    i8 1, label %choose.when45
+  %tag23 = load i8, ptr %tag.ptr, align 1
+  switch i8 %tag23, label %choose.else25 [
+    i8 0, label %choose.when26
+    i8 1, label %choose.when41
   ]
 
-choose.end26:                                     ; preds = %choose.else27
+choose.end24:                                     ; preds = %choose.else25
   br label %choose.end
 
-choose.else27:                                    ; preds = %choose.when
-  br label %choose.end26
+choose.else25:                                    ; preds = %choose.when
+  br label %choose.end24
 
-choose.when28:                                    ; preds = %choose.when
+choose.when26:                                    ; preds = %choose.when
   %"variant.c_data().ptr" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 1
-  %variant.val29 = load %_Z15DifferentSyntax, ptr %"variant.c_data().ptr", align 1
-  %throw.tag.ptr30 = getelementptr inbounds { i8, [32 x i8] }, ptr %0, i32 0, i32 0
-  store i8 1, ptr %throw.tag.ptr30, align 1
-  %variant.tag.ptr32 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr31, i32 0, i32 0
-  store i8 1, ptr %variant.tag.ptr32, align 1
-  %load.struct33 = load %_Z6Parser, ptr %2, align 8
-  %lexer34 = extractvalue %_Z6Parser %load.struct33, 0
-  %position35 = extractvalue %_Z5Lexer %lexer34, 3
-  %struct.region36 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.70 }, ptr %arg.tmp14, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region36, ptr %1, ptr %arg.tmp14)
-  %tuple.field37 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple15, i32 0, i32 0
-  store i64 %position24, ptr %tuple.field37, align 1
-  %tuple.field38 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple15, i32 0, i32 1
-  store i64 %position35, ptr %tuple.field38, align 1
-  %field.load39 = load { ptr }, ptr %struct.region36, align 8
-  %tuple.field40 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple15, i32 0, i32 2
-  store { ptr } %field.load39, ptr %tuple.field40, align 1
-  %tuple.val41 = load %_Z13InvalidSyntax, ptr %tuple15, align 8
-  %variant.data.ptr42 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr31, i32 0, i32 1
-  store %_Z13InvalidSyntax %tuple.val41, ptr %variant.data.ptr42, align 1
-  %variant.val43 = load %_Z11ParserError, ptr %variant.ptr31, align 1
-  %throw.data.ptr44 = getelementptr inbounds { i8, [32 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val43, ptr %throw.data.ptr44, align 1
+  %variant.val27 = load %_Z15DifferentSyntax, ptr %"variant.c_data().ptr", align 1
+  %throw.tag.ptr28 = getelementptr inbounds { i8, [32 x i8] }, ptr %0, i32 0, i32 0
+  store i8 1, ptr %throw.tag.ptr28, align 1
+  %variant.tag.ptr30 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr29, i32 0, i32 0
+  store i8 1, ptr %variant.tag.ptr30, align 1
+  %load.struct31 = load %_Z6Parser, ptr %2, align 8
+  %lexer32 = extractvalue %_Z6Parser %load.struct31, 0
+  %position33 = extractvalue %_Z5Lexer %lexer32, 3
+  %tuple.field34 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple13, i32 0, i32 0
+  store i64 %position22, ptr %tuple.field34, align 1
+  %tuple.field35 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple13, i32 0, i32 1
+  store i64 %position33, ptr %tuple.field35, align 1
+  %tuple.field36 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple13, i32 0, i32 2
+  store { ptr } { ptr @.sconst.68 }, ptr %tuple.field36, align 1
+  %tuple.val37 = load %_Z13InvalidSyntax, ptr %tuple13, align 8
+  %variant.data.ptr38 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr29, i32 0, i32 1
+  store %_Z13InvalidSyntax %tuple.val37, ptr %variant.data.ptr38, align 1
+  %variant.val39 = load %_Z11ParserError, ptr %variant.ptr29, align 1
+  %throw.data.ptr40 = getelementptr inbounds { i8, [32 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val39, ptr %throw.data.ptr40, align 1
   ret void
 
-choose.when45:                                    ; preds = %choose.when
-  %"variant.c_data().ptr46" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 1
-  %variant.val47 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr46", align 8
-  %throw.tag.ptr48 = getelementptr inbounds { i8, [32 x i8] }, ptr %0, i32 0, i32 0
-  store i8 1, ptr %throw.tag.ptr48, align 1
-  %variant.tag.ptr49 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr31, i32 0, i32 0
-  store i8 1, ptr %variant.tag.ptr49, align 1
-  %variant.data.ptr50 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr31, i32 0, i32 1
-  store %_Z13InvalidSyntax %variant.val47, ptr %variant.data.ptr50, align 1
-  %variant.val51 = load %_Z11ParserError, ptr %variant.ptr31, align 1
-  %throw.data.ptr52 = getelementptr inbounds { i8, [32 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val51, ptr %throw.data.ptr52, align 1
+choose.when41:                                    ; preds = %choose.when
+  %"variant.c_data().ptr42" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 1
+  %variant.val43 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr42", align 8
+  %throw.tag.ptr44 = getelementptr inbounds { i8, [32 x i8] }, ptr %0, i32 0, i32 0
+  store i8 1, ptr %throw.tag.ptr44, align 1
+  %variant.tag.ptr45 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr29, i32 0, i32 0
+  store i8 1, ptr %variant.tag.ptr45, align 1
+  %variant.data.ptr46 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr29, i32 0, i32 1
+  store %_Z13InvalidSyntax %variant.val43, ptr %variant.data.ptr46, align 1
+  %variant.val47 = load %_Z11ParserError, ptr %variant.ptr29, align 1
+  %throw.data.ptr48 = getelementptr inbounds { i8, [32 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val47, ptr %throw.data.ptr48, align 1
   ret void
 
-choose.when53:                                    ; preds = %if.end8
+choose.when49:                                    ; preds = %if.end8
   %throws.success.val = load ptr, ptr %throws.data.ptr, align 1
   store ptr %throws.success.val, ptr %variants, align 1
   br label %choose.end
 
-if.then58:                                        ; preds = %choose.end
-  %throw.tag.ptr60 = getelementptr inbounds { i8, [32 x i8] }, ptr %0, i32 0, i32 0
-  store i8 1, ptr %throw.tag.ptr60, align 1
-  %variant.tag.ptr61 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr31, i32 0, i32 0
-  store i8 1, ptr %variant.tag.ptr61, align 1
-  %load.struct62 = load %_Z6Parser, ptr %2, align 8
-  %lexer63 = extractvalue %_Z6Parser %load.struct62, 0
-  %position64 = extractvalue %_Z5Lexer %lexer63, 3
-  %struct.region65 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.71 }, ptr %arg.tmp14, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region65, ptr %1, ptr %arg.tmp14)
-  %tuple.field66 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple15, i32 0, i32 0
-  store i64 %previous_position, ptr %tuple.field66, align 1
-  %tuple.field67 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple15, i32 0, i32 1
-  store i64 %position64, ptr %tuple.field67, align 1
-  %field.load68 = load { ptr }, ptr %struct.region65, align 8
-  %tuple.field69 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple15, i32 0, i32 2
-  store { ptr } %field.load68, ptr %tuple.field69, align 1
-  %tuple.val70 = load %_Z13InvalidSyntax, ptr %tuple15, align 8
-  %variant.data.ptr71 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr31, i32 0, i32 1
-  store %_Z13InvalidSyntax %tuple.val70, ptr %variant.data.ptr71, align 1
-  %variant.val72 = load %_Z11ParserError, ptr %variant.ptr31, align 1
-  %throw.data.ptr73 = getelementptr inbounds { i8, [32 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val72, ptr %throw.data.ptr73, align 1
+if.then54:                                        ; preds = %choose.end
+  %throw.tag.ptr56 = getelementptr inbounds { i8, [32 x i8] }, ptr %0, i32 0, i32 0
+  store i8 1, ptr %throw.tag.ptr56, align 1
+  %variant.tag.ptr57 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr29, i32 0, i32 0
+  store i8 1, ptr %variant.tag.ptr57, align 1
+  %load.struct58 = load %_Z6Parser, ptr %2, align 8
+  %lexer59 = extractvalue %_Z6Parser %load.struct58, 0
+  %position60 = extractvalue %_Z5Lexer %lexer59, 3
+  %tuple.field61 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple13, i32 0, i32 0
+  store i64 %previous_position, ptr %tuple.field61, align 1
+  %tuple.field62 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple13, i32 0, i32 1
+  store i64 %position60, ptr %tuple.field62, align 1
+  %tuple.field63 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple13, i32 0, i32 2
+  store { ptr } { ptr @.sconst.69 }, ptr %tuple.field63, align 1
+  %tuple.val64 = load %_Z13InvalidSyntax, ptr %tuple13, align 8
+  %variant.data.ptr65 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr29, i32 0, i32 1
+  store %_Z13InvalidSyntax %tuple.val64, ptr %variant.data.ptr65, align 1
+  %variant.val66 = load %_Z11ParserError, ptr %variant.ptr29, align 1
+  %throw.data.ptr67 = getelementptr inbounds { i8, [32 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val66, ptr %throw.data.ptr67, align 1
   ret void
 
-if.end59:                                         ; preds = %choose.end
-  %field.inplace74 = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
-  %call75 = call i1 @_ZN5Lexer11parse_colonEv(ptr %field.inplace74)
-  %load.struct76 = load %_Z6Parser, ptr %2, align 8
-  %lexer77 = extractvalue %_Z6Parser %load.struct76, 0
-  %position78 = extractvalue %_Z5Lexer %lexer77, 3
+if.end55:                                         ; preds = %choose.end
+  %field.inplace68 = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
+  %call69 = call i1 @_ZN5Lexer11parse_colonEv(ptr %field.inplace68)
+  %load.struct70 = load %_Z6Parser, ptr %2, align 8
+  %lexer71 = extractvalue %_Z6Parser %load.struct70, 0
+  %position72 = extractvalue %_Z5Lexer %lexer71, 3
   store ptr null, ptr %body, align 1
-  call void @_ZN6Parser10parse_bodyEPN4scaly6memory4PageE(ptr noalias sret({ i8, [32 x i8] }) %sret.result79, ptr %1, ptr %2)
-  %tag80 = load i8, ptr %sret.result79, align 1
-  %throws.data.ptr81 = getelementptr inbounds i8, ptr %sret.result79, i8 1
-  switch i8 %tag80, label %choose.else83 [
-    i8 1, label %choose.when84
-    i8 0, label %choose.when96
+  call void @_ZN6Parser10parse_bodyEPN4scaly6memory4PageE(ptr noalias sret({ i8, [32 x i8] }) %sret.result73, ptr %1, ptr %2)
+  %tag74 = load i8, ptr %sret.result73, align 1
+  %throws.data.ptr75 = getelementptr inbounds i8, ptr %sret.result73, i8 1
+  switch i8 %tag74, label %choose.else77 [
+    i8 1, label %choose.when78
+    i8 0, label %choose.when90
   ]
 
-choose.end82:                                     ; preds = %choose.else83, %choose.when96, %choose.end88
-  %choose.value102 = phi %_Z10BodySyntax [ %choose.arm.load, %choose.when96 ], [ undef, %choose.end88 ], [ undef, %choose.else83 ]
-  %load.struct103 = load %_Z6Parser, ptr %2, align 8
-  %lexer104 = extractvalue %_Z6Parser %load.struct103, 0
-  %position105 = extractvalue %_Z5Lexer %lexer104, 3
-  %variants106 = load ptr, ptr %variants, align 8
-  %body107 = load ptr, ptr %body, align 8
-  %tuple.field109 = getelementptr inbounds %_Z11UnionSyntax, ptr %tuple108, i32 0, i32 0
-  store i64 %previous_position, ptr %tuple.field109, align 1
-  %tuple.field110 = getelementptr inbounds %_Z11UnionSyntax, ptr %tuple108, i32 0, i32 1
-  store i64 %position105, ptr %tuple.field110, align 1
-  %tuple.field111 = getelementptr inbounds %_Z11UnionSyntax, ptr %tuple108, i32 0, i32 2
-  store ptr %variants106, ptr %tuple.field111, align 1
-  %tuple.field112 = getelementptr inbounds %_Z11UnionSyntax, ptr %tuple108, i32 0, i32 3
-  store ptr %body107, ptr %tuple.field112, align 1
-  %tuple.val113 = load %_Z11UnionSyntax, ptr %tuple108, align 8
+choose.end76:                                     ; preds = %choose.else77, %choose.when90, %choose.end82
+  %choose.value96 = phi %_Z10BodySyntax [ %choose.arm.load, %choose.when90 ], [ undef, %choose.end82 ], [ undef, %choose.else77 ]
+  %load.struct97 = load %_Z6Parser, ptr %2, align 8
+  %lexer98 = extractvalue %_Z6Parser %load.struct97, 0
+  %position99 = extractvalue %_Z5Lexer %lexer98, 3
+  %variants100 = load ptr, ptr %variants, align 8
+  %body101 = load ptr, ptr %body, align 8
+  %tuple.field103 = getelementptr inbounds %_Z11UnionSyntax, ptr %tuple102, i32 0, i32 0
+  store i64 %previous_position, ptr %tuple.field103, align 1
+  %tuple.field104 = getelementptr inbounds %_Z11UnionSyntax, ptr %tuple102, i32 0, i32 1
+  store i64 %position99, ptr %tuple.field104, align 1
+  %tuple.field105 = getelementptr inbounds %_Z11UnionSyntax, ptr %tuple102, i32 0, i32 2
+  store ptr %variants100, ptr %tuple.field105, align 1
+  %tuple.field106 = getelementptr inbounds %_Z11UnionSyntax, ptr %tuple102, i32 0, i32 3
+  store ptr %body101, ptr %tuple.field106, align 1
+  %tuple.val107 = load %_Z11UnionSyntax, ptr %tuple102, align 8
   %ret.tag.ptr = getelementptr inbounds { i8, [32 x i8] }, ptr %0, i32 0, i32 0
   store i8 0, ptr %ret.tag.ptr, align 1
   %ret.data.ptr = getelementptr inbounds { i8, [32 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11UnionSyntax %tuple.val113, ptr %ret.data.ptr, align 1
+  store %_Z11UnionSyntax %tuple.val107, ptr %ret.data.ptr, align 1
   ret void
 
-choose.else83:                                    ; preds = %if.end59
-  br label %choose.end82
+choose.else77:                                    ; preds = %if.end55
+  br label %choose.end76
 
-choose.when84:                                    ; preds = %if.end59
-  %throws.err.val85 = load %_Z11ParserError, ptr %throws.data.ptr81, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %variant.ptr31, ptr align 1 %throws.data.ptr81, i64 ptrtoint (ptr getelementptr (%_Z11ParserError, ptr null, i32 1) to i64), i1 false)
-  %tag.ptr86 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr31, i32 0, i32 0
-  %tag87 = load i8, ptr %tag.ptr86, align 1
-  switch i8 %tag87, label %choose.else89 [
-    i8 0, label %choose.when90
-    i8 1, label %choose.when93
+choose.when78:                                    ; preds = %if.end55
+  %throws.err.val79 = load %_Z11ParserError, ptr %throws.data.ptr75, align 1
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %variant.ptr29, ptr align 1 %throws.data.ptr75, i64 ptrtoint (ptr getelementptr (%_Z11ParserError, ptr null, i32 1) to i64), i1 false)
+  %tag.ptr80 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr29, i32 0, i32 0
+  %tag81 = load i8, ptr %tag.ptr80, align 1
+  switch i8 %tag81, label %choose.else83 [
+    i8 0, label %choose.when84
+    i8 1, label %choose.when87
   ]
 
-choose.end88:                                     ; preds = %choose.else89, %choose.when93, %choose.when90
+choose.end82:                                     ; preds = %choose.else83, %choose.when87, %choose.when84
+  br label %choose.end76
+
+choose.else83:                                    ; preds = %choose.when78
   br label %choose.end82
 
-choose.else89:                                    ; preds = %choose.when84
-  br label %choose.end88
+choose.when84:                                    ; preds = %choose.when78
+  %"variant.c_data().ptr85" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr29, i32 0, i32 1
+  %variant.val86 = load %_Z15DifferentSyntax, ptr %"variant.c_data().ptr85", align 1
+  br label %choose.end82
 
-choose.when90:                                    ; preds = %choose.when84
-  %"variant.c_data().ptr91" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr31, i32 0, i32 1
-  %variant.val92 = load %_Z15DifferentSyntax, ptr %"variant.c_data().ptr91", align 1
-  br label %choose.end88
+choose.when87:                                    ; preds = %choose.when78
+  %"variant.c_data().ptr88" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr29, i32 0, i32 1
+  %variant.val89 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr88", align 8
+  br label %choose.end82
 
-choose.when93:                                    ; preds = %choose.when84
-  %"variant.c_data().ptr94" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr31, i32 0, i32 1
-  %variant.val95 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr94", align 8
-  br label %choose.end88
-
-choose.when96:                                    ; preds = %if.end59
-  %throws.success.val97 = load %_Z10BodySyntax, ptr %throws.data.ptr81, align 1
-  %start = extractvalue %_Z10BodySyntax %throws.success.val97, 0
-  %end = extractvalue %_Z10BodySyntax %throws.success.val97, 1
-  %uses = extractvalue %_Z10BodySyntax %throws.success.val97, 2
-  %members = extractvalue %_Z10BodySyntax %throws.success.val97, 3
+choose.when90:                                    ; preds = %if.end55
+  %throws.success.val91 = load %_Z10BodySyntax, ptr %throws.data.ptr75, align 1
+  %start = extractvalue %_Z10BodySyntax %throws.success.val91, 0
+  %end = extractvalue %_Z10BodySyntax %throws.success.val91, 1
+  %uses = extractvalue %_Z10BodySyntax %throws.success.val91, 2
+  %members = extractvalue %_Z10BodySyntax %throws.success.val91, 3
   %tuple.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr (%_Z10BodySyntax, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z10BodySyntax }, ptr null, i64 0, i32 1) to i64))
-  %tuple.field98 = getelementptr inbounds %_Z10BodySyntax, ptr %tuple.region, i32 0, i32 0
-  store i64 %start, ptr %tuple.field98, align 1
-  %tuple.field99 = getelementptr inbounds %_Z10BodySyntax, ptr %tuple.region, i32 0, i32 1
-  store i64 %end, ptr %tuple.field99, align 1
-  %tuple.field100 = getelementptr inbounds %_Z10BodySyntax, ptr %tuple.region, i32 0, i32 2
-  store ptr %uses, ptr %tuple.field100, align 1
-  %tuple.field101 = getelementptr inbounds %_Z10BodySyntax, ptr %tuple.region, i32 0, i32 3
-  store ptr %members, ptr %tuple.field101, align 1
+  %tuple.field92 = getelementptr inbounds %_Z10BodySyntax, ptr %tuple.region, i32 0, i32 0
+  store i64 %start, ptr %tuple.field92, align 1
+  %tuple.field93 = getelementptr inbounds %_Z10BodySyntax, ptr %tuple.region, i32 0, i32 1
+  store i64 %end, ptr %tuple.field93, align 1
+  %tuple.field94 = getelementptr inbounds %_Z10BodySyntax, ptr %tuple.region, i32 0, i32 2
+  store ptr %uses, ptr %tuple.field94, align 1
+  %tuple.field95 = getelementptr inbounds %_Z10BodySyntax, ptr %tuple.region, i32 0, i32 3
+  store ptr %members, ptr %tuple.field95, align 1
   store ptr %tuple.region, ptr %body, align 1
   %choose.arm.load = load %_Z10BodySyntax, ptr %tuple.region, align 8
-  br label %choose.end82
+  br label %choose.end76
 }
 
 define linkonce_odr ptr @_ZN4ListI13VariantSyntaxE8get_headEPN4scaly6memory4PageE(ptr %0, ptr %1) {
@@ -18962,7 +17876,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.72)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.70)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -19466,7 +18380,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.73)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.71)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -20114,11 +19028,9 @@ entry:
   %lexer = extractvalue %_Z6Parser %load.struct, 0
   %previous_position = extractvalue %_Z5Lexer %lexer, 4
   %field.inplace = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
   %arg.tmp = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.74 }, ptr %arg.tmp, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region, ptr %1, ptr %arg.tmp)
-  %call = call i1 @_ZN5Lexer13parse_keywordE6String(ptr %field.inplace, ptr %struct.region)
+  store { ptr } { ptr @.sconst.72 }, ptr %arg.tmp, align 1
+  %call = call i1 @_ZN5Lexer13parse_keywordE6String(ptr %field.inplace, ptr %arg.tmp)
   %bitnot = xor i1 %call, true
   br i1 %bitnot, label %if.then, label %if.end
 
@@ -20400,7 +19312,6 @@ define linkonce_odr void @_ZN6Parser22parse_genericargumentsEPN4scaly6memory4Pag
 entry:
   %tuple41 = alloca %_Z22GenericArgumentsSyntax, align 8
   %tuple30 = alloca %_Z13InvalidSyntax, align 8
-  %arg.tmp = alloca { ptr }, align 8
   %variant.ptr13 = alloca %_Z11ParserError, align 8
   %sret.result = alloca { i8, [25 x i8] }, align 8
   %generics = alloca ptr, align 8
@@ -20501,16 +19412,12 @@ if.then23:                                        ; preds = %choose.end
   %load.struct27 = load %_Z6Parser, ptr %2, align 8
   %lexer28 = extractvalue %_Z6Parser %load.struct27, 0
   %position29 = extractvalue %_Z5Lexer %lexer28, 3
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.75 }, ptr %arg.tmp, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region, ptr %1, ptr %arg.tmp)
   %tuple.field = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple30, i32 0, i32 0
   store i64 %previous_position, ptr %tuple.field, align 1
   %tuple.field31 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple30, i32 0, i32 1
   store i64 %position29, ptr %tuple.field31, align 1
-  %field.load = load { ptr }, ptr %struct.region, align 8
   %tuple.field32 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple30, i32 0, i32 2
-  store { ptr } %field.load, ptr %tuple.field32, align 1
+  store { ptr } { ptr @.sconst.73 }, ptr %tuple.field32, align 1
   %tuple.val33 = load %_Z13InvalidSyntax, ptr %tuple30, align 8
   %variant.data.ptr34 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr13, i32 0, i32 1
   store %_Z13InvalidSyntax %tuple.val33, ptr %variant.data.ptr34, align 1
@@ -20723,7 +19630,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.76)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.74)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -21227,7 +20134,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.77)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.75)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -21804,7 +20711,6 @@ define linkonce_odr void @_ZN6Parser16parse_parametersEPN4scaly6memory4PageE(ptr
 entry:
   %tuple41 = alloca %_Z16ParametersSyntax, align 8
   %tuple30 = alloca %_Z13InvalidSyntax, align 8
-  %arg.tmp = alloca { ptr }, align 8
   %variant.ptr13 = alloca %_Z11ParserError, align 8
   %sret.result = alloca { i8, [25 x i8] }, align 8
   %items = alloca ptr, align 8
@@ -21905,16 +20811,12 @@ if.then23:                                        ; preds = %choose.end
   %load.struct27 = load %_Z6Parser, ptr %2, align 8
   %lexer28 = extractvalue %_Z6Parser %load.struct27, 0
   %position29 = extractvalue %_Z5Lexer %lexer28, 3
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.78 }, ptr %arg.tmp, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region, ptr %1, ptr %arg.tmp)
   %tuple.field = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple30, i32 0, i32 0
   store i64 %previous_position, ptr %tuple.field, align 1
   %tuple.field31 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple30, i32 0, i32 1
   store i64 %position29, ptr %tuple.field31, align 1
-  %field.load = load { ptr }, ptr %struct.region, align 8
   %tuple.field32 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple30, i32 0, i32 2
-  store { ptr } %field.load, ptr %tuple.field32, align 1
+  store { ptr } { ptr @.sconst.76 }, ptr %tuple.field32, align 1
   %tuple.val33 = load %_Z13InvalidSyntax, ptr %tuple30, align 8
   %variant.data.ptr34 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr13, i32 0, i32 1
   store %_Z13InvalidSyntax %tuple.val33, ptr %variant.data.ptr34, align 1
@@ -22127,7 +21029,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.79)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.77)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -22631,7 +21533,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.80)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.78)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -23143,12 +22045,11 @@ choose.when47:                                    ; preds = %choose.end
 
 define linkonce_odr void @_ZN6Parser13parse_returnsEPN4scaly6memory4PageE(ptr noalias sret({ i8, [96 x i8] }) %0, ptr %1, ptr %2) {
 entry:
-  %tuple66 = alloca %_Z13ReturnsSyntax, align 8
-  %variant.ptr53 = alloca %_Z11ParserError, align 8
-  %sret.result35 = alloca { i8, [25 x i8] }, align 8
+  %tuple64 = alloca %_Z13ReturnsSyntax, align 8
+  %variant.ptr51 = alloca %_Z11ParserError, align 8
+  %sret.result33 = alloca { i8, [25 x i8] }, align 8
   %attributes = alloca ptr, align 8
-  %tuple16 = alloca %_Z13InvalidSyntax, align 8
-  %arg.tmp15 = alloca { ptr }, align 8
+  %tuple14 = alloca %_Z13InvalidSyntax, align 8
   %variant.ptr9 = alloca %_Z11ParserError, align 8
   %sret.result = alloca { i8, [72 x i8] }, align 8
   %type = alloca %_Z10TypeSyntax, align 8
@@ -23158,11 +22059,9 @@ entry:
   %lexer = extractvalue %_Z6Parser %load.struct, 0
   %previous_position = extractvalue %_Z5Lexer %lexer, 4
   %field.inplace = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
   %arg.tmp = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.81 }, ptr %arg.tmp, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region, ptr %1, ptr %arg.tmp)
-  %call = call i1 @_ZN5Lexer13parse_keywordE6String(ptr %field.inplace, ptr %struct.region)
+  store { ptr } { ptr @.sconst.79 }, ptr %arg.tmp, align 1
+  %call = call i1 @_ZN5Lexer13parse_keywordE6String(ptr %field.inplace, ptr %arg.tmp)
   %bitnot = xor i1 %call, true
   br i1 %bitnot, label %if.then, label %if.end
 
@@ -23189,21 +22088,21 @@ if.end:                                           ; preds = %entry
   %throws.data.ptr = getelementptr inbounds i8, ptr %sret.result, i8 1
   switch i8 %tag, label %choose.else [
     i8 1, label %choose.when
-    i8 0, label %choose.when31
+    i8 0, label %choose.when29
   ]
 
-choose.end:                                       ; preds = %choose.else, %choose.when31, %choose.end4
-  %choose.value = phi %_Z10TypeSyntax [ %throws.success.val, %choose.when31 ], [ undef, %choose.end4 ], [ undef, %choose.else ]
-  %load.struct32 = load %_Z6Parser, ptr %2, align 8
-  %lexer33 = extractvalue %_Z6Parser %load.struct32, 0
-  %position34 = extractvalue %_Z5Lexer %lexer33, 3
+choose.end:                                       ; preds = %choose.else, %choose.when29, %choose.end4
+  %choose.value = phi %_Z10TypeSyntax [ %throws.success.val, %choose.when29 ], [ undef, %choose.end4 ], [ undef, %choose.else ]
+  %load.struct30 = load %_Z6Parser, ptr %2, align 8
+  %lexer31 = extractvalue %_Z6Parser %load.struct30, 0
+  %position32 = extractvalue %_Z5Lexer %lexer31, 3
   store ptr null, ptr %attributes, align 1
-  call void @_ZN6Parser20parse_attribute_listEPN4scaly6memory4PageE(ptr noalias sret({ i8, [25 x i8] }) %sret.result35, ptr %1, ptr %2)
-  %tag36 = load i8, ptr %sret.result35, align 1
-  %throws.data.ptr37 = getelementptr inbounds i8, ptr %sret.result35, i8 1
-  switch i8 %tag36, label %choose.else39 [
-    i8 1, label %choose.when40
-    i8 0, label %choose.when58
+  call void @_ZN6Parser20parse_attribute_listEPN4scaly6memory4PageE(ptr noalias sret({ i8, [25 x i8] }) %sret.result33, ptr %1, ptr %2)
+  %tag34 = load i8, ptr %sret.result33, align 1
+  %throws.data.ptr35 = getelementptr inbounds i8, ptr %sret.result33, i8 1
+  switch i8 %tag34, label %choose.else37 [
+    i8 1, label %choose.when38
+    i8 0, label %choose.when56
   ]
 
 choose.else:                                      ; preds = %if.end
@@ -23216,7 +22115,7 @@ choose.when:                                      ; preds = %if.end
   %tag3 = load i8, ptr %tag.ptr, align 1
   switch i8 %tag3, label %choose.else5 [
     i8 0, label %choose.when6
-    i8 1, label %choose.when23
+    i8 1, label %choose.when21
   ]
 
 choose.end4:                                      ; preds = %choose.else5
@@ -23235,117 +22134,112 @@ choose.when6:                                     ; preds = %choose.when
   %load.struct11 = load %_Z6Parser, ptr %2, align 8
   %lexer12 = extractvalue %_Z6Parser %load.struct11, 0
   %position13 = extractvalue %_Z5Lexer %lexer12, 3
-  %struct.region14 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.82 }, ptr %arg.tmp15, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region14, ptr %1, ptr %arg.tmp15)
-  %tuple.field = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 0
+  %tuple.field = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 0
   store i64 %position, ptr %tuple.field, align 1
-  %tuple.field17 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 1
-  store i64 %position13, ptr %tuple.field17, align 1
-  %field.load = load { ptr }, ptr %struct.region14, align 8
-  %tuple.field18 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 2
-  store { ptr } %field.load, ptr %tuple.field18, align 1
-  %tuple.val19 = load %_Z13InvalidSyntax, ptr %tuple16, align 8
-  %variant.data.ptr20 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
-  store %_Z13InvalidSyntax %tuple.val19, ptr %variant.data.ptr20, align 1
-  %variant.val21 = load %_Z11ParserError, ptr %variant.ptr9, align 1
-  %throw.data.ptr22 = getelementptr inbounds { i8, [96 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val21, ptr %throw.data.ptr22, align 1
+  %tuple.field15 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 1
+  store i64 %position13, ptr %tuple.field15, align 1
+  %tuple.field16 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 2
+  store { ptr } { ptr @.sconst.80 }, ptr %tuple.field16, align 1
+  %tuple.val17 = load %_Z13InvalidSyntax, ptr %tuple14, align 8
+  %variant.data.ptr18 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
+  store %_Z13InvalidSyntax %tuple.val17, ptr %variant.data.ptr18, align 1
+  %variant.val19 = load %_Z11ParserError, ptr %variant.ptr9, align 1
+  %throw.data.ptr20 = getelementptr inbounds { i8, [96 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val19, ptr %throw.data.ptr20, align 1
   ret void
 
-choose.when23:                                    ; preds = %choose.when
-  %"variant.c_data().ptr24" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 1
-  %variant.val25 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr24", align 8
-  %throw.tag.ptr26 = getelementptr inbounds { i8, [96 x i8] }, ptr %0, i32 0, i32 0
-  store i8 1, ptr %throw.tag.ptr26, align 1
-  %variant.tag.ptr27 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 0
-  store i8 1, ptr %variant.tag.ptr27, align 1
-  %variant.data.ptr28 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
-  store %_Z13InvalidSyntax %variant.val25, ptr %variant.data.ptr28, align 1
-  %variant.val29 = load %_Z11ParserError, ptr %variant.ptr9, align 1
-  %throw.data.ptr30 = getelementptr inbounds { i8, [96 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val29, ptr %throw.data.ptr30, align 1
+choose.when21:                                    ; preds = %choose.when
+  %"variant.c_data().ptr22" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 1
+  %variant.val23 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr22", align 8
+  %throw.tag.ptr24 = getelementptr inbounds { i8, [96 x i8] }, ptr %0, i32 0, i32 0
+  store i8 1, ptr %throw.tag.ptr24, align 1
+  %variant.tag.ptr25 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 0
+  store i8 1, ptr %variant.tag.ptr25, align 1
+  %variant.data.ptr26 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
+  store %_Z13InvalidSyntax %variant.val23, ptr %variant.data.ptr26, align 1
+  %variant.val27 = load %_Z11ParserError, ptr %variant.ptr9, align 1
+  %throw.data.ptr28 = getelementptr inbounds { i8, [96 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val27, ptr %throw.data.ptr28, align 1
   ret void
 
-choose.when31:                                    ; preds = %if.end
+choose.when29:                                    ; preds = %if.end
   %throws.success.val = load %_Z10TypeSyntax, ptr %throws.data.ptr, align 1
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %type, ptr align 1 %throws.data.ptr, i64 ptrtoint (ptr getelementptr (%_Z10TypeSyntax, ptr null, i32 1) to i64), i1 false)
   br label %choose.end
 
-choose.end38:                                     ; preds = %choose.else39, %choose.when58, %choose.end44
-  %choose.value60 = phi ptr [ %throws.success.val59, %choose.when58 ], [ undef, %choose.end44 ], [ undef, %choose.else39 ]
-  %load.struct61 = load %_Z6Parser, ptr %2, align 8
-  %lexer62 = extractvalue %_Z6Parser %load.struct61, 0
-  %position63 = extractvalue %_Z5Lexer %lexer62, 3
-  %type64 = load %_Z10TypeSyntax, ptr %type, align 8
-  %attributes65 = load ptr, ptr %attributes, align 8
-  %tuple.field67 = getelementptr inbounds %_Z13ReturnsSyntax, ptr %tuple66, i32 0, i32 0
-  store i64 %previous_position, ptr %tuple.field67, align 1
-  %tuple.field68 = getelementptr inbounds %_Z13ReturnsSyntax, ptr %tuple66, i32 0, i32 1
-  store i64 %position63, ptr %tuple.field68, align 1
-  %tuple.field69 = getelementptr inbounds %_Z13ReturnsSyntax, ptr %tuple66, i32 0, i32 2
-  store %_Z10TypeSyntax %type64, ptr %tuple.field69, align 1
-  %tuple.field70 = getelementptr inbounds %_Z13ReturnsSyntax, ptr %tuple66, i32 0, i32 3
-  store ptr %attributes65, ptr %tuple.field70, align 1
-  %tuple.val71 = load %_Z13ReturnsSyntax, ptr %tuple66, align 8
+choose.end36:                                     ; preds = %choose.else37, %choose.when56, %choose.end42
+  %choose.value58 = phi ptr [ %throws.success.val57, %choose.when56 ], [ undef, %choose.end42 ], [ undef, %choose.else37 ]
+  %load.struct59 = load %_Z6Parser, ptr %2, align 8
+  %lexer60 = extractvalue %_Z6Parser %load.struct59, 0
+  %position61 = extractvalue %_Z5Lexer %lexer60, 3
+  %type62 = load %_Z10TypeSyntax, ptr %type, align 8
+  %attributes63 = load ptr, ptr %attributes, align 8
+  %tuple.field65 = getelementptr inbounds %_Z13ReturnsSyntax, ptr %tuple64, i32 0, i32 0
+  store i64 %previous_position, ptr %tuple.field65, align 1
+  %tuple.field66 = getelementptr inbounds %_Z13ReturnsSyntax, ptr %tuple64, i32 0, i32 1
+  store i64 %position61, ptr %tuple.field66, align 1
+  %tuple.field67 = getelementptr inbounds %_Z13ReturnsSyntax, ptr %tuple64, i32 0, i32 2
+  store %_Z10TypeSyntax %type62, ptr %tuple.field67, align 1
+  %tuple.field68 = getelementptr inbounds %_Z13ReturnsSyntax, ptr %tuple64, i32 0, i32 3
+  store ptr %attributes63, ptr %tuple.field68, align 1
+  %tuple.val69 = load %_Z13ReturnsSyntax, ptr %tuple64, align 8
   %ret.tag.ptr = getelementptr inbounds { i8, [96 x i8] }, ptr %0, i32 0, i32 0
   store i8 0, ptr %ret.tag.ptr, align 1
   %ret.data.ptr = getelementptr inbounds { i8, [96 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z13ReturnsSyntax %tuple.val71, ptr %ret.data.ptr, align 1
+  store %_Z13ReturnsSyntax %tuple.val69, ptr %ret.data.ptr, align 1
   ret void
 
-choose.else39:                                    ; preds = %choose.end
-  br label %choose.end38
+choose.else37:                                    ; preds = %choose.end
+  br label %choose.end36
 
-choose.when40:                                    ; preds = %choose.end
-  %throws.err.val41 = load %_Z11ParserError, ptr %throws.data.ptr37, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %variant.ptr9, ptr align 1 %throws.data.ptr37, i64 ptrtoint (ptr getelementptr (%_Z11ParserError, ptr null, i32 1) to i64), i1 false)
-  %tag.ptr42 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 0
-  %tag43 = load i8, ptr %tag.ptr42, align 1
-  switch i8 %tag43, label %choose.else45 [
-    i8 0, label %choose.when46
-    i8 1, label %choose.when49
+choose.when38:                                    ; preds = %choose.end
+  %throws.err.val39 = load %_Z11ParserError, ptr %throws.data.ptr35, align 1
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %variant.ptr9, ptr align 1 %throws.data.ptr35, i64 ptrtoint (ptr getelementptr (%_Z11ParserError, ptr null, i32 1) to i64), i1 false)
+  %tag.ptr40 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 0
+  %tag41 = load i8, ptr %tag.ptr40, align 1
+  switch i8 %tag41, label %choose.else43 [
+    i8 0, label %choose.when44
+    i8 1, label %choose.when47
   ]
 
-choose.end44:                                     ; preds = %choose.else45, %choose.when46
-  br label %choose.end38
+choose.end42:                                     ; preds = %choose.else43, %choose.when44
+  br label %choose.end36
 
-choose.else45:                                    ; preds = %choose.when40
-  br label %choose.end44
+choose.else43:                                    ; preds = %choose.when38
+  br label %choose.end42
 
-choose.when46:                                    ; preds = %choose.when40
-  %"variant.c_data().ptr47" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
-  %variant.val48 = load %_Z15DifferentSyntax, ptr %"variant.c_data().ptr47", align 1
-  br label %choose.end44
+choose.when44:                                    ; preds = %choose.when38
+  %"variant.c_data().ptr45" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
+  %variant.val46 = load %_Z15DifferentSyntax, ptr %"variant.c_data().ptr45", align 1
+  br label %choose.end42
 
-choose.when49:                                    ; preds = %choose.when40
-  %"variant.c_data().ptr50" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
-  %variant.val51 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr50", align 8
-  %throw.tag.ptr52 = getelementptr inbounds { i8, [96 x i8] }, ptr %0, i32 0, i32 0
-  store i8 1, ptr %throw.tag.ptr52, align 1
-  %variant.tag.ptr54 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr53, i32 0, i32 0
-  store i8 1, ptr %variant.tag.ptr54, align 1
-  %variant.data.ptr55 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr53, i32 0, i32 1
-  store %_Z13InvalidSyntax %variant.val51, ptr %variant.data.ptr55, align 1
-  %variant.val56 = load %_Z11ParserError, ptr %variant.ptr53, align 1
-  %throw.data.ptr57 = getelementptr inbounds { i8, [96 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val56, ptr %throw.data.ptr57, align 1
+choose.when47:                                    ; preds = %choose.when38
+  %"variant.c_data().ptr48" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
+  %variant.val49 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr48", align 8
+  %throw.tag.ptr50 = getelementptr inbounds { i8, [96 x i8] }, ptr %0, i32 0, i32 0
+  store i8 1, ptr %throw.tag.ptr50, align 1
+  %variant.tag.ptr52 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr51, i32 0, i32 0
+  store i8 1, ptr %variant.tag.ptr52, align 1
+  %variant.data.ptr53 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr51, i32 0, i32 1
+  store %_Z13InvalidSyntax %variant.val49, ptr %variant.data.ptr53, align 1
+  %variant.val54 = load %_Z11ParserError, ptr %variant.ptr51, align 1
+  %throw.data.ptr55 = getelementptr inbounds { i8, [96 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val54, ptr %throw.data.ptr55, align 1
   ret void
 
-choose.when58:                                    ; preds = %choose.end
-  %throws.success.val59 = load ptr, ptr %throws.data.ptr37, align 1
-  store ptr %throws.success.val59, ptr %attributes, align 1
-  br label %choose.end38
+choose.when56:                                    ; preds = %choose.end
+  %throws.success.val57 = load ptr, ptr %throws.data.ptr35, align 1
+  store ptr %throws.success.val57, ptr %attributes, align 1
+  br label %choose.end36
 }
 
 define linkonce_odr void @_ZN6Parser12parse_throwsEPN4scaly6memory4PageE(ptr noalias sret({ i8, [96 x i8] }) %0, ptr %1, ptr %2) {
 entry:
-  %tuple66 = alloca %_Z12ThrowsSyntax, align 8
-  %variant.ptr53 = alloca %_Z11ParserError, align 8
-  %sret.result35 = alloca { i8, [25 x i8] }, align 8
+  %tuple64 = alloca %_Z12ThrowsSyntax, align 8
+  %variant.ptr51 = alloca %_Z11ParserError, align 8
+  %sret.result33 = alloca { i8, [25 x i8] }, align 8
   %attributes = alloca ptr, align 8
-  %tuple16 = alloca %_Z13InvalidSyntax, align 8
-  %arg.tmp15 = alloca { ptr }, align 8
+  %tuple14 = alloca %_Z13InvalidSyntax, align 8
   %variant.ptr9 = alloca %_Z11ParserError, align 8
   %sret.result = alloca { i8, [72 x i8] }, align 8
   %type = alloca %_Z10TypeSyntax, align 8
@@ -23355,11 +22249,9 @@ entry:
   %lexer = extractvalue %_Z6Parser %load.struct, 0
   %previous_position = extractvalue %_Z5Lexer %lexer, 4
   %field.inplace = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
   %arg.tmp = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.83 }, ptr %arg.tmp, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region, ptr %1, ptr %arg.tmp)
-  %call = call i1 @_ZN5Lexer13parse_keywordE6String(ptr %field.inplace, ptr %struct.region)
+  store { ptr } { ptr @.sconst.81 }, ptr %arg.tmp, align 1
+  %call = call i1 @_ZN5Lexer13parse_keywordE6String(ptr %field.inplace, ptr %arg.tmp)
   %bitnot = xor i1 %call, true
   br i1 %bitnot, label %if.then, label %if.end
 
@@ -23386,21 +22278,21 @@ if.end:                                           ; preds = %entry
   %throws.data.ptr = getelementptr inbounds i8, ptr %sret.result, i8 1
   switch i8 %tag, label %choose.else [
     i8 1, label %choose.when
-    i8 0, label %choose.when31
+    i8 0, label %choose.when29
   ]
 
-choose.end:                                       ; preds = %choose.else, %choose.when31, %choose.end4
-  %choose.value = phi %_Z10TypeSyntax [ %throws.success.val, %choose.when31 ], [ undef, %choose.end4 ], [ undef, %choose.else ]
-  %load.struct32 = load %_Z6Parser, ptr %2, align 8
-  %lexer33 = extractvalue %_Z6Parser %load.struct32, 0
-  %position34 = extractvalue %_Z5Lexer %lexer33, 3
+choose.end:                                       ; preds = %choose.else, %choose.when29, %choose.end4
+  %choose.value = phi %_Z10TypeSyntax [ %throws.success.val, %choose.when29 ], [ undef, %choose.end4 ], [ undef, %choose.else ]
+  %load.struct30 = load %_Z6Parser, ptr %2, align 8
+  %lexer31 = extractvalue %_Z6Parser %load.struct30, 0
+  %position32 = extractvalue %_Z5Lexer %lexer31, 3
   store ptr null, ptr %attributes, align 1
-  call void @_ZN6Parser20parse_attribute_listEPN4scaly6memory4PageE(ptr noalias sret({ i8, [25 x i8] }) %sret.result35, ptr %1, ptr %2)
-  %tag36 = load i8, ptr %sret.result35, align 1
-  %throws.data.ptr37 = getelementptr inbounds i8, ptr %sret.result35, i8 1
-  switch i8 %tag36, label %choose.else39 [
-    i8 1, label %choose.when40
-    i8 0, label %choose.when58
+  call void @_ZN6Parser20parse_attribute_listEPN4scaly6memory4PageE(ptr noalias sret({ i8, [25 x i8] }) %sret.result33, ptr %1, ptr %2)
+  %tag34 = load i8, ptr %sret.result33, align 1
+  %throws.data.ptr35 = getelementptr inbounds i8, ptr %sret.result33, i8 1
+  switch i8 %tag34, label %choose.else37 [
+    i8 1, label %choose.when38
+    i8 0, label %choose.when56
   ]
 
 choose.else:                                      ; preds = %if.end
@@ -23413,7 +22305,7 @@ choose.when:                                      ; preds = %if.end
   %tag3 = load i8, ptr %tag.ptr, align 1
   switch i8 %tag3, label %choose.else5 [
     i8 0, label %choose.when6
-    i8 1, label %choose.when23
+    i8 1, label %choose.when21
   ]
 
 choose.end4:                                      ; preds = %choose.else5
@@ -23432,107 +22324,103 @@ choose.when6:                                     ; preds = %choose.when
   %load.struct11 = load %_Z6Parser, ptr %2, align 8
   %lexer12 = extractvalue %_Z6Parser %load.struct11, 0
   %position13 = extractvalue %_Z5Lexer %lexer12, 3
-  %struct.region14 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.84 }, ptr %arg.tmp15, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region14, ptr %1, ptr %arg.tmp15)
-  %tuple.field = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 0
+  %tuple.field = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 0
   store i64 %position, ptr %tuple.field, align 1
-  %tuple.field17 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 1
-  store i64 %position13, ptr %tuple.field17, align 1
-  %field.load = load { ptr }, ptr %struct.region14, align 8
-  %tuple.field18 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 2
-  store { ptr } %field.load, ptr %tuple.field18, align 1
-  %tuple.val19 = load %_Z13InvalidSyntax, ptr %tuple16, align 8
-  %variant.data.ptr20 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
-  store %_Z13InvalidSyntax %tuple.val19, ptr %variant.data.ptr20, align 1
-  %variant.val21 = load %_Z11ParserError, ptr %variant.ptr9, align 1
-  %throw.data.ptr22 = getelementptr inbounds { i8, [96 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val21, ptr %throw.data.ptr22, align 1
+  %tuple.field15 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 1
+  store i64 %position13, ptr %tuple.field15, align 1
+  %tuple.field16 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 2
+  store { ptr } { ptr @.sconst.82 }, ptr %tuple.field16, align 1
+  %tuple.val17 = load %_Z13InvalidSyntax, ptr %tuple14, align 8
+  %variant.data.ptr18 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
+  store %_Z13InvalidSyntax %tuple.val17, ptr %variant.data.ptr18, align 1
+  %variant.val19 = load %_Z11ParserError, ptr %variant.ptr9, align 1
+  %throw.data.ptr20 = getelementptr inbounds { i8, [96 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val19, ptr %throw.data.ptr20, align 1
   ret void
 
-choose.when23:                                    ; preds = %choose.when
-  %"variant.c_data().ptr24" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 1
-  %variant.val25 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr24", align 8
-  %throw.tag.ptr26 = getelementptr inbounds { i8, [96 x i8] }, ptr %0, i32 0, i32 0
-  store i8 1, ptr %throw.tag.ptr26, align 1
-  %variant.tag.ptr27 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 0
-  store i8 1, ptr %variant.tag.ptr27, align 1
-  %variant.data.ptr28 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
-  store %_Z13InvalidSyntax %variant.val25, ptr %variant.data.ptr28, align 1
-  %variant.val29 = load %_Z11ParserError, ptr %variant.ptr9, align 1
-  %throw.data.ptr30 = getelementptr inbounds { i8, [96 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val29, ptr %throw.data.ptr30, align 1
+choose.when21:                                    ; preds = %choose.when
+  %"variant.c_data().ptr22" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 1
+  %variant.val23 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr22", align 8
+  %throw.tag.ptr24 = getelementptr inbounds { i8, [96 x i8] }, ptr %0, i32 0, i32 0
+  store i8 1, ptr %throw.tag.ptr24, align 1
+  %variant.tag.ptr25 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 0
+  store i8 1, ptr %variant.tag.ptr25, align 1
+  %variant.data.ptr26 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
+  store %_Z13InvalidSyntax %variant.val23, ptr %variant.data.ptr26, align 1
+  %variant.val27 = load %_Z11ParserError, ptr %variant.ptr9, align 1
+  %throw.data.ptr28 = getelementptr inbounds { i8, [96 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val27, ptr %throw.data.ptr28, align 1
   ret void
 
-choose.when31:                                    ; preds = %if.end
+choose.when29:                                    ; preds = %if.end
   %throws.success.val = load %_Z10TypeSyntax, ptr %throws.data.ptr, align 1
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %type, ptr align 1 %throws.data.ptr, i64 ptrtoint (ptr getelementptr (%_Z10TypeSyntax, ptr null, i32 1) to i64), i1 false)
   br label %choose.end
 
-choose.end38:                                     ; preds = %choose.else39, %choose.when58, %choose.end44
-  %choose.value60 = phi ptr [ %throws.success.val59, %choose.when58 ], [ undef, %choose.end44 ], [ undef, %choose.else39 ]
-  %load.struct61 = load %_Z6Parser, ptr %2, align 8
-  %lexer62 = extractvalue %_Z6Parser %load.struct61, 0
-  %position63 = extractvalue %_Z5Lexer %lexer62, 3
-  %type64 = load %_Z10TypeSyntax, ptr %type, align 8
-  %attributes65 = load ptr, ptr %attributes, align 8
-  %tuple.field67 = getelementptr inbounds %_Z12ThrowsSyntax, ptr %tuple66, i32 0, i32 0
-  store i64 %previous_position, ptr %tuple.field67, align 1
-  %tuple.field68 = getelementptr inbounds %_Z12ThrowsSyntax, ptr %tuple66, i32 0, i32 1
-  store i64 %position63, ptr %tuple.field68, align 1
-  %tuple.field69 = getelementptr inbounds %_Z12ThrowsSyntax, ptr %tuple66, i32 0, i32 2
-  store %_Z10TypeSyntax %type64, ptr %tuple.field69, align 1
-  %tuple.field70 = getelementptr inbounds %_Z12ThrowsSyntax, ptr %tuple66, i32 0, i32 3
-  store ptr %attributes65, ptr %tuple.field70, align 1
-  %tuple.val71 = load %_Z12ThrowsSyntax, ptr %tuple66, align 8
+choose.end36:                                     ; preds = %choose.else37, %choose.when56, %choose.end42
+  %choose.value58 = phi ptr [ %throws.success.val57, %choose.when56 ], [ undef, %choose.end42 ], [ undef, %choose.else37 ]
+  %load.struct59 = load %_Z6Parser, ptr %2, align 8
+  %lexer60 = extractvalue %_Z6Parser %load.struct59, 0
+  %position61 = extractvalue %_Z5Lexer %lexer60, 3
+  %type62 = load %_Z10TypeSyntax, ptr %type, align 8
+  %attributes63 = load ptr, ptr %attributes, align 8
+  %tuple.field65 = getelementptr inbounds %_Z12ThrowsSyntax, ptr %tuple64, i32 0, i32 0
+  store i64 %previous_position, ptr %tuple.field65, align 1
+  %tuple.field66 = getelementptr inbounds %_Z12ThrowsSyntax, ptr %tuple64, i32 0, i32 1
+  store i64 %position61, ptr %tuple.field66, align 1
+  %tuple.field67 = getelementptr inbounds %_Z12ThrowsSyntax, ptr %tuple64, i32 0, i32 2
+  store %_Z10TypeSyntax %type62, ptr %tuple.field67, align 1
+  %tuple.field68 = getelementptr inbounds %_Z12ThrowsSyntax, ptr %tuple64, i32 0, i32 3
+  store ptr %attributes63, ptr %tuple.field68, align 1
+  %tuple.val69 = load %_Z12ThrowsSyntax, ptr %tuple64, align 8
   %ret.tag.ptr = getelementptr inbounds { i8, [96 x i8] }, ptr %0, i32 0, i32 0
   store i8 0, ptr %ret.tag.ptr, align 1
   %ret.data.ptr = getelementptr inbounds { i8, [96 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z12ThrowsSyntax %tuple.val71, ptr %ret.data.ptr, align 1
+  store %_Z12ThrowsSyntax %tuple.val69, ptr %ret.data.ptr, align 1
   ret void
 
-choose.else39:                                    ; preds = %choose.end
-  br label %choose.end38
+choose.else37:                                    ; preds = %choose.end
+  br label %choose.end36
 
-choose.when40:                                    ; preds = %choose.end
-  %throws.err.val41 = load %_Z11ParserError, ptr %throws.data.ptr37, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %variant.ptr9, ptr align 1 %throws.data.ptr37, i64 ptrtoint (ptr getelementptr (%_Z11ParserError, ptr null, i32 1) to i64), i1 false)
-  %tag.ptr42 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 0
-  %tag43 = load i8, ptr %tag.ptr42, align 1
-  switch i8 %tag43, label %choose.else45 [
-    i8 0, label %choose.when46
-    i8 1, label %choose.when49
+choose.when38:                                    ; preds = %choose.end
+  %throws.err.val39 = load %_Z11ParserError, ptr %throws.data.ptr35, align 1
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %variant.ptr9, ptr align 1 %throws.data.ptr35, i64 ptrtoint (ptr getelementptr (%_Z11ParserError, ptr null, i32 1) to i64), i1 false)
+  %tag.ptr40 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 0
+  %tag41 = load i8, ptr %tag.ptr40, align 1
+  switch i8 %tag41, label %choose.else43 [
+    i8 0, label %choose.when44
+    i8 1, label %choose.when47
   ]
 
-choose.end44:                                     ; preds = %choose.else45, %choose.when46
-  br label %choose.end38
+choose.end42:                                     ; preds = %choose.else43, %choose.when44
+  br label %choose.end36
 
-choose.else45:                                    ; preds = %choose.when40
-  br label %choose.end44
+choose.else43:                                    ; preds = %choose.when38
+  br label %choose.end42
 
-choose.when46:                                    ; preds = %choose.when40
-  %"variant.c_data().ptr47" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
-  %variant.val48 = load %_Z15DifferentSyntax, ptr %"variant.c_data().ptr47", align 1
-  br label %choose.end44
+choose.when44:                                    ; preds = %choose.when38
+  %"variant.c_data().ptr45" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
+  %variant.val46 = load %_Z15DifferentSyntax, ptr %"variant.c_data().ptr45", align 1
+  br label %choose.end42
 
-choose.when49:                                    ; preds = %choose.when40
-  %"variant.c_data().ptr50" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
-  %variant.val51 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr50", align 8
-  %throw.tag.ptr52 = getelementptr inbounds { i8, [96 x i8] }, ptr %0, i32 0, i32 0
-  store i8 1, ptr %throw.tag.ptr52, align 1
-  %variant.tag.ptr54 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr53, i32 0, i32 0
-  store i8 1, ptr %variant.tag.ptr54, align 1
-  %variant.data.ptr55 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr53, i32 0, i32 1
-  store %_Z13InvalidSyntax %variant.val51, ptr %variant.data.ptr55, align 1
-  %variant.val56 = load %_Z11ParserError, ptr %variant.ptr53, align 1
-  %throw.data.ptr57 = getelementptr inbounds { i8, [96 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val56, ptr %throw.data.ptr57, align 1
+choose.when47:                                    ; preds = %choose.when38
+  %"variant.c_data().ptr48" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
+  %variant.val49 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr48", align 8
+  %throw.tag.ptr50 = getelementptr inbounds { i8, [96 x i8] }, ptr %0, i32 0, i32 0
+  store i8 1, ptr %throw.tag.ptr50, align 1
+  %variant.tag.ptr52 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr51, i32 0, i32 0
+  store i8 1, ptr %variant.tag.ptr52, align 1
+  %variant.data.ptr53 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr51, i32 0, i32 1
+  store %_Z13InvalidSyntax %variant.val49, ptr %variant.data.ptr53, align 1
+  %variant.val54 = load %_Z11ParserError, ptr %variant.ptr51, align 1
+  %throw.data.ptr55 = getelementptr inbounds { i8, [96 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val54, ptr %throw.data.ptr55, align 1
   ret void
 
-choose.when58:                                    ; preds = %choose.end
-  %throws.success.val59 = load ptr, ptr %throws.data.ptr37, align 1
-  store ptr %throws.success.val59, ptr %attributes, align 1
-  br label %choose.end38
+choose.when56:                                    ; preds = %choose.end
+  %throws.success.val57 = load ptr, ptr %throws.data.ptr35, align 1
+  store ptr %throws.success.val57, ptr %attributes, align 1
+  br label %choose.end36
 }
 
 define linkonce_odr ptr @_ZN4ListI9UseSyntaxE8get_headEPN4scaly6memory4PageE(ptr %0, ptr %1) {
@@ -23720,7 +22608,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.85)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.83)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -24224,7 +23112,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.86)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.84)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -24554,9 +23442,8 @@ choose.when13:                                    ; preds = %while.body
 
 define linkonce_odr void @_ZN6Parser9parse_useEPN4scaly6memory4PageE(ptr noalias sret({ i8, [48 x i8] }) %0, ptr %1, ptr %2) {
 entry:
-  %tuple38 = alloca %_Z9UseSyntax, align 8
-  %tuple16 = alloca %_Z13InvalidSyntax, align 8
-  %arg.tmp15 = alloca { ptr }, align 8
+  %tuple36 = alloca %_Z9UseSyntax, align 8
+  %tuple14 = alloca %_Z13InvalidSyntax, align 8
   %variant.ptr9 = alloca %_Z11ParserError, align 8
   %sret.result = alloca { i8, [32 x i8] }, align 8
   %name = alloca %_Z10NameSyntax, align 8
@@ -24566,11 +23453,9 @@ entry:
   %lexer = extractvalue %_Z6Parser %load.struct, 0
   %previous_position = extractvalue %_Z5Lexer %lexer, 4
   %field.inplace = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
   %arg.tmp = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.87 }, ptr %arg.tmp, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region, ptr %1, ptr %arg.tmp)
-  %call = call i1 @_ZN5Lexer13parse_keywordE6String(ptr %field.inplace, ptr %struct.region)
+  store { ptr } { ptr @.sconst.85 }, ptr %arg.tmp, align 1
+  %call = call i1 @_ZN5Lexer13parse_keywordE6String(ptr %field.inplace, ptr %arg.tmp)
   %bitnot = xor i1 %call, true
   br i1 %bitnot, label %if.then, label %if.end
 
@@ -24597,28 +23482,28 @@ if.end:                                           ; preds = %entry
   %throws.data.ptr = getelementptr inbounds i8, ptr %sret.result, i8 1
   switch i8 %tag, label %choose.else [
     i8 1, label %choose.when
-    i8 0, label %choose.when31
+    i8 0, label %choose.when29
   ]
 
-choose.end:                                       ; preds = %choose.else, %choose.when31, %choose.end4
-  %choose.value = phi %_Z10NameSyntax [ %throws.success.val, %choose.when31 ], [ undef, %choose.end4 ], [ undef, %choose.else ]
-  %field.inplace32 = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
-  %call33 = call i1 @_ZN5Lexer11parse_colonEv(ptr %field.inplace32)
-  %load.struct34 = load %_Z6Parser, ptr %2, align 8
-  %lexer35 = extractvalue %_Z6Parser %load.struct34, 0
-  %position36 = extractvalue %_Z5Lexer %lexer35, 3
-  %name37 = load %_Z10NameSyntax, ptr %name, align 8
-  %tuple.field39 = getelementptr inbounds %_Z9UseSyntax, ptr %tuple38, i32 0, i32 0
-  store i64 %previous_position, ptr %tuple.field39, align 1
-  %tuple.field40 = getelementptr inbounds %_Z9UseSyntax, ptr %tuple38, i32 0, i32 1
-  store i64 %position36, ptr %tuple.field40, align 1
-  %tuple.field41 = getelementptr inbounds %_Z9UseSyntax, ptr %tuple38, i32 0, i32 2
-  store %_Z10NameSyntax %name37, ptr %tuple.field41, align 1
-  %tuple.val42 = load %_Z9UseSyntax, ptr %tuple38, align 8
+choose.end:                                       ; preds = %choose.else, %choose.when29, %choose.end4
+  %choose.value = phi %_Z10NameSyntax [ %throws.success.val, %choose.when29 ], [ undef, %choose.end4 ], [ undef, %choose.else ]
+  %field.inplace30 = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
+  %call31 = call i1 @_ZN5Lexer11parse_colonEv(ptr %field.inplace30)
+  %load.struct32 = load %_Z6Parser, ptr %2, align 8
+  %lexer33 = extractvalue %_Z6Parser %load.struct32, 0
+  %position34 = extractvalue %_Z5Lexer %lexer33, 3
+  %name35 = load %_Z10NameSyntax, ptr %name, align 8
+  %tuple.field37 = getelementptr inbounds %_Z9UseSyntax, ptr %tuple36, i32 0, i32 0
+  store i64 %previous_position, ptr %tuple.field37, align 1
+  %tuple.field38 = getelementptr inbounds %_Z9UseSyntax, ptr %tuple36, i32 0, i32 1
+  store i64 %position34, ptr %tuple.field38, align 1
+  %tuple.field39 = getelementptr inbounds %_Z9UseSyntax, ptr %tuple36, i32 0, i32 2
+  store %_Z10NameSyntax %name35, ptr %tuple.field39, align 1
+  %tuple.val40 = load %_Z9UseSyntax, ptr %tuple36, align 8
   %ret.tag.ptr = getelementptr inbounds { i8, [48 x i8] }, ptr %0, i32 0, i32 0
   store i8 0, ptr %ret.tag.ptr, align 1
   %ret.data.ptr = getelementptr inbounds { i8, [48 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z9UseSyntax %tuple.val42, ptr %ret.data.ptr, align 1
+  store %_Z9UseSyntax %tuple.val40, ptr %ret.data.ptr, align 1
   ret void
 
 choose.else:                                      ; preds = %if.end
@@ -24631,7 +23516,7 @@ choose.when:                                      ; preds = %if.end
   %tag3 = load i8, ptr %tag.ptr, align 1
   switch i8 %tag3, label %choose.else5 [
     i8 0, label %choose.when6
-    i8 1, label %choose.when23
+    i8 1, label %choose.when21
   ]
 
 choose.end4:                                      ; preds = %choose.else5
@@ -24650,39 +23535,35 @@ choose.when6:                                     ; preds = %choose.when
   %load.struct11 = load %_Z6Parser, ptr %2, align 8
   %lexer12 = extractvalue %_Z6Parser %load.struct11, 0
   %position13 = extractvalue %_Z5Lexer %lexer12, 3
-  %struct.region14 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.88 }, ptr %arg.tmp15, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region14, ptr %1, ptr %arg.tmp15)
-  %tuple.field = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 0
+  %tuple.field = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 0
   store i64 %position, ptr %tuple.field, align 1
-  %tuple.field17 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 1
-  store i64 %position13, ptr %tuple.field17, align 1
-  %field.load = load { ptr }, ptr %struct.region14, align 8
-  %tuple.field18 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 2
-  store { ptr } %field.load, ptr %tuple.field18, align 1
-  %tuple.val19 = load %_Z13InvalidSyntax, ptr %tuple16, align 8
-  %variant.data.ptr20 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
-  store %_Z13InvalidSyntax %tuple.val19, ptr %variant.data.ptr20, align 1
-  %variant.val21 = load %_Z11ParserError, ptr %variant.ptr9, align 1
-  %throw.data.ptr22 = getelementptr inbounds { i8, [48 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val21, ptr %throw.data.ptr22, align 1
+  %tuple.field15 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 1
+  store i64 %position13, ptr %tuple.field15, align 1
+  %tuple.field16 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 2
+  store { ptr } { ptr @.sconst.86 }, ptr %tuple.field16, align 1
+  %tuple.val17 = load %_Z13InvalidSyntax, ptr %tuple14, align 8
+  %variant.data.ptr18 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
+  store %_Z13InvalidSyntax %tuple.val17, ptr %variant.data.ptr18, align 1
+  %variant.val19 = load %_Z11ParserError, ptr %variant.ptr9, align 1
+  %throw.data.ptr20 = getelementptr inbounds { i8, [48 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val19, ptr %throw.data.ptr20, align 1
   ret void
 
-choose.when23:                                    ; preds = %choose.when
-  %"variant.c_data().ptr24" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 1
-  %variant.val25 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr24", align 8
-  %throw.tag.ptr26 = getelementptr inbounds { i8, [48 x i8] }, ptr %0, i32 0, i32 0
-  store i8 1, ptr %throw.tag.ptr26, align 1
-  %variant.tag.ptr27 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 0
-  store i8 1, ptr %variant.tag.ptr27, align 1
-  %variant.data.ptr28 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
-  store %_Z13InvalidSyntax %variant.val25, ptr %variant.data.ptr28, align 1
-  %variant.val29 = load %_Z11ParserError, ptr %variant.ptr9, align 1
-  %throw.data.ptr30 = getelementptr inbounds { i8, [48 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val29, ptr %throw.data.ptr30, align 1
+choose.when21:                                    ; preds = %choose.when
+  %"variant.c_data().ptr22" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 1
+  %variant.val23 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr22", align 8
+  %throw.tag.ptr24 = getelementptr inbounds { i8, [48 x i8] }, ptr %0, i32 0, i32 0
+  store i8 1, ptr %throw.tag.ptr24, align 1
+  %variant.tag.ptr25 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 0
+  store i8 1, ptr %variant.tag.ptr25, align 1
+  %variant.data.ptr26 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
+  store %_Z13InvalidSyntax %variant.val23, ptr %variant.data.ptr26, align 1
+  %variant.val27 = load %_Z11ParserError, ptr %variant.ptr9, align 1
+  %throw.data.ptr28 = getelementptr inbounds { i8, [48 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val27, ptr %throw.data.ptr28, align 1
   ret void
 
-choose.when31:                                    ; preds = %if.end
+choose.when29:                                    ; preds = %if.end
   %throws.success.val = load %_Z10NameSyntax, ptr %throws.data.ptr, align 1
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %name, ptr align 1 %throws.data.ptr, i64 ptrtoint (ptr getelementptr (%_Z10NameSyntax, ptr null, i32 1) to i64), i1 false)
   br label %choose.end
@@ -24690,18 +23571,17 @@ choose.when31:                                    ; preds = %if.end
 
 define linkonce_odr void @_ZN6Parser15parse_implementEPN4scaly6memory4PageE(ptr noalias sret({ i8, [112 x i8] }) %0, ptr %1, ptr %2) {
 entry:
-  %tuple168 = alloca %_Z15ImplementSyntax, align 8
-  %variant.ptr133 = alloca %_Z11ParserError, align 8
-  %sret.result115 = alloca { i8, [25 x i8] }, align 8
+  %tuple162 = alloca %_Z15ImplementSyntax, align 8
+  %variant.ptr129 = alloca %_Z11ParserError, align 8
+  %sret.result111 = alloca { i8, [25 x i8] }, align 8
   %methods = alloca ptr, align 8
-  %variant.ptr104 = alloca %_Z11ParserError, align 8
-  %sret.result86 = alloca { i8, [25 x i8] }, align 8
+  %variant.ptr100 = alloca %_Z11ParserError, align 8
+  %sret.result82 = alloca { i8, [25 x i8] }, align 8
   %uses = alloca ptr, align 8
-  %variant.ptr53 = alloca %_Z11ParserError, align 8
-  %sret.result35 = alloca { i8, [25 x i8] }, align 8
+  %variant.ptr51 = alloca %_Z11ParserError, align 8
+  %sret.result33 = alloca { i8, [25 x i8] }, align 8
   %attributes = alloca ptr, align 8
-  %tuple16 = alloca %_Z13InvalidSyntax, align 8
-  %arg.tmp15 = alloca { ptr }, align 8
+  %tuple14 = alloca %_Z13InvalidSyntax, align 8
   %variant.ptr9 = alloca %_Z11ParserError, align 8
   %sret.result = alloca { i8, [72 x i8] }, align 8
   %type = alloca %_Z10TypeSyntax, align 8
@@ -24711,11 +23591,9 @@ entry:
   %lexer = extractvalue %_Z6Parser %load.struct, 0
   %previous_position = extractvalue %_Z5Lexer %lexer, 4
   %field.inplace = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
   %arg.tmp = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.89 }, ptr %arg.tmp, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region, ptr %1, ptr %arg.tmp)
-  %call = call i1 @_ZN5Lexer13parse_keywordE6String(ptr %field.inplace, ptr %struct.region)
+  store { ptr } { ptr @.sconst.87 }, ptr %arg.tmp, align 1
+  %call = call i1 @_ZN5Lexer13parse_keywordE6String(ptr %field.inplace, ptr %arg.tmp)
   %bitnot = xor i1 %call, true
   br i1 %bitnot, label %if.then, label %if.end
 
@@ -24742,21 +23620,21 @@ if.end:                                           ; preds = %entry
   %throws.data.ptr = getelementptr inbounds i8, ptr %sret.result, i8 1
   switch i8 %tag, label %choose.else [
     i8 1, label %choose.when
-    i8 0, label %choose.when31
+    i8 0, label %choose.when29
   ]
 
-choose.end:                                       ; preds = %choose.else, %choose.when31, %choose.end4
-  %choose.value = phi %_Z10TypeSyntax [ %throws.success.val, %choose.when31 ], [ undef, %choose.end4 ], [ undef, %choose.else ]
-  %load.struct32 = load %_Z6Parser, ptr %2, align 8
-  %lexer33 = extractvalue %_Z6Parser %load.struct32, 0
-  %position34 = extractvalue %_Z5Lexer %lexer33, 3
+choose.end:                                       ; preds = %choose.else, %choose.when29, %choose.end4
+  %choose.value = phi %_Z10TypeSyntax [ %throws.success.val, %choose.when29 ], [ undef, %choose.end4 ], [ undef, %choose.else ]
+  %load.struct30 = load %_Z6Parser, ptr %2, align 8
+  %lexer31 = extractvalue %_Z6Parser %load.struct30, 0
+  %position32 = extractvalue %_Z5Lexer %lexer31, 3
   store ptr null, ptr %attributes, align 1
-  call void @_ZN6Parser20parse_attribute_listEPN4scaly6memory4PageE(ptr noalias sret({ i8, [25 x i8] }) %sret.result35, ptr %1, ptr %2)
-  %tag36 = load i8, ptr %sret.result35, align 1
-  %throws.data.ptr37 = getelementptr inbounds i8, ptr %sret.result35, i8 1
-  switch i8 %tag36, label %choose.else39 [
-    i8 1, label %choose.when40
-    i8 0, label %choose.when58
+  call void @_ZN6Parser20parse_attribute_listEPN4scaly6memory4PageE(ptr noalias sret({ i8, [25 x i8] }) %sret.result33, ptr %1, ptr %2)
+  %tag34 = load i8, ptr %sret.result33, align 1
+  %throws.data.ptr35 = getelementptr inbounds i8, ptr %sret.result33, i8 1
+  switch i8 %tag34, label %choose.else37 [
+    i8 1, label %choose.when38
+    i8 0, label %choose.when56
   ]
 
 choose.else:                                      ; preds = %if.end
@@ -24769,7 +23647,7 @@ choose.when:                                      ; preds = %if.end
   %tag3 = load i8, ptr %tag.ptr, align 1
   switch i8 %tag3, label %choose.else5 [
     i8 0, label %choose.when6
-    i8 1, label %choose.when23
+    i8 1, label %choose.when21
   ]
 
 choose.end4:                                      ; preds = %choose.else5
@@ -24788,314 +23666,301 @@ choose.when6:                                     ; preds = %choose.when
   %load.struct11 = load %_Z6Parser, ptr %2, align 8
   %lexer12 = extractvalue %_Z6Parser %load.struct11, 0
   %position13 = extractvalue %_Z5Lexer %lexer12, 3
-  %struct.region14 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.90 }, ptr %arg.tmp15, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region14, ptr %1, ptr %arg.tmp15)
-  %tuple.field = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 0
+  %tuple.field = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 0
   store i64 %position, ptr %tuple.field, align 1
-  %tuple.field17 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 1
-  store i64 %position13, ptr %tuple.field17, align 1
-  %field.load = load { ptr }, ptr %struct.region14, align 8
-  %tuple.field18 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 2
-  store { ptr } %field.load, ptr %tuple.field18, align 1
-  %tuple.val19 = load %_Z13InvalidSyntax, ptr %tuple16, align 8
-  %variant.data.ptr20 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
-  store %_Z13InvalidSyntax %tuple.val19, ptr %variant.data.ptr20, align 1
-  %variant.val21 = load %_Z11ParserError, ptr %variant.ptr9, align 1
-  %throw.data.ptr22 = getelementptr inbounds { i8, [112 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val21, ptr %throw.data.ptr22, align 1
+  %tuple.field15 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 1
+  store i64 %position13, ptr %tuple.field15, align 1
+  %tuple.field16 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 2
+  store { ptr } { ptr @.sconst.88 }, ptr %tuple.field16, align 1
+  %tuple.val17 = load %_Z13InvalidSyntax, ptr %tuple14, align 8
+  %variant.data.ptr18 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
+  store %_Z13InvalidSyntax %tuple.val17, ptr %variant.data.ptr18, align 1
+  %variant.val19 = load %_Z11ParserError, ptr %variant.ptr9, align 1
+  %throw.data.ptr20 = getelementptr inbounds { i8, [112 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val19, ptr %throw.data.ptr20, align 1
   ret void
 
-choose.when23:                                    ; preds = %choose.when
-  %"variant.c_data().ptr24" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 1
-  %variant.val25 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr24", align 8
-  %throw.tag.ptr26 = getelementptr inbounds { i8, [112 x i8] }, ptr %0, i32 0, i32 0
-  store i8 1, ptr %throw.tag.ptr26, align 1
-  %variant.tag.ptr27 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 0
-  store i8 1, ptr %variant.tag.ptr27, align 1
-  %variant.data.ptr28 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
-  store %_Z13InvalidSyntax %variant.val25, ptr %variant.data.ptr28, align 1
-  %variant.val29 = load %_Z11ParserError, ptr %variant.ptr9, align 1
-  %throw.data.ptr30 = getelementptr inbounds { i8, [112 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val29, ptr %throw.data.ptr30, align 1
+choose.when21:                                    ; preds = %choose.when
+  %"variant.c_data().ptr22" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 1
+  %variant.val23 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr22", align 8
+  %throw.tag.ptr24 = getelementptr inbounds { i8, [112 x i8] }, ptr %0, i32 0, i32 0
+  store i8 1, ptr %throw.tag.ptr24, align 1
+  %variant.tag.ptr25 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 0
+  store i8 1, ptr %variant.tag.ptr25, align 1
+  %variant.data.ptr26 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
+  store %_Z13InvalidSyntax %variant.val23, ptr %variant.data.ptr26, align 1
+  %variant.val27 = load %_Z11ParserError, ptr %variant.ptr9, align 1
+  %throw.data.ptr28 = getelementptr inbounds { i8, [112 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val27, ptr %throw.data.ptr28, align 1
   ret void
 
-choose.when31:                                    ; preds = %if.end
+choose.when29:                                    ; preds = %if.end
   %throws.success.val = load %_Z10TypeSyntax, ptr %throws.data.ptr, align 1
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %type, ptr align 1 %throws.data.ptr, i64 ptrtoint (ptr getelementptr (%_Z10TypeSyntax, ptr null, i32 1) to i64), i1 false)
   br label %choose.end
 
-choose.end38:                                     ; preds = %choose.else39, %choose.when58, %choose.end44
-  %choose.value60 = phi ptr [ %throws.success.val59, %choose.when58 ], [ undef, %choose.end44 ], [ undef, %choose.else39 ]
+choose.end36:                                     ; preds = %choose.else37, %choose.when56, %choose.end42
+  %choose.value58 = phi ptr [ %throws.success.val57, %choose.when56 ], [ undef, %choose.end42 ], [ undef, %choose.else37 ]
+  %field.inplace59 = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
+  %call60 = call i1 @_ZN5Lexer11parse_colonEv(ptr %field.inplace59)
   %field.inplace61 = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
-  %call62 = call i1 @_ZN5Lexer11parse_colonEv(ptr %field.inplace61)
-  %field.inplace63 = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
-  %call64 = call i8 @_ZN15ParserConstants11CHAR_LBRACEEv()
-  %call65 = call i1 @_ZN5Lexer17parse_punctuationE2u8(ptr %field.inplace63, i8 %call64)
-  %bitnot66 = xor i1 %call65, true
-  br i1 %bitnot66, label %if.then67, label %if.end68
+  %call62 = call i8 @_ZN15ParserConstants11CHAR_LBRACEEv()
+  %call63 = call i1 @_ZN5Lexer17parse_punctuationE2u8(ptr %field.inplace61, i8 %call62)
+  %bitnot64 = xor i1 %call63, true
+  br i1 %bitnot64, label %if.then65, label %if.end66
 
-choose.else39:                                    ; preds = %choose.end
-  br label %choose.end38
+choose.else37:                                    ; preds = %choose.end
+  br label %choose.end36
 
-choose.when40:                                    ; preds = %choose.end
-  %throws.err.val41 = load %_Z11ParserError, ptr %throws.data.ptr37, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %variant.ptr9, ptr align 1 %throws.data.ptr37, i64 ptrtoint (ptr getelementptr (%_Z11ParserError, ptr null, i32 1) to i64), i1 false)
-  %tag.ptr42 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 0
-  %tag43 = load i8, ptr %tag.ptr42, align 1
-  switch i8 %tag43, label %choose.else45 [
-    i8 0, label %choose.when46
-    i8 1, label %choose.when49
+choose.when38:                                    ; preds = %choose.end
+  %throws.err.val39 = load %_Z11ParserError, ptr %throws.data.ptr35, align 1
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %variant.ptr9, ptr align 1 %throws.data.ptr35, i64 ptrtoint (ptr getelementptr (%_Z11ParserError, ptr null, i32 1) to i64), i1 false)
+  %tag.ptr40 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 0
+  %tag41 = load i8, ptr %tag.ptr40, align 1
+  switch i8 %tag41, label %choose.else43 [
+    i8 0, label %choose.when44
+    i8 1, label %choose.when47
   ]
 
-choose.end44:                                     ; preds = %choose.else45, %choose.when46
-  br label %choose.end38
+choose.end42:                                     ; preds = %choose.else43, %choose.when44
+  br label %choose.end36
 
-choose.else45:                                    ; preds = %choose.when40
-  br label %choose.end44
+choose.else43:                                    ; preds = %choose.when38
+  br label %choose.end42
 
-choose.when46:                                    ; preds = %choose.when40
-  %"variant.c_data().ptr47" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
-  %variant.val48 = load %_Z15DifferentSyntax, ptr %"variant.c_data().ptr47", align 1
-  br label %choose.end44
+choose.when44:                                    ; preds = %choose.when38
+  %"variant.c_data().ptr45" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
+  %variant.val46 = load %_Z15DifferentSyntax, ptr %"variant.c_data().ptr45", align 1
+  br label %choose.end42
 
-choose.when49:                                    ; preds = %choose.when40
-  %"variant.c_data().ptr50" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
-  %variant.val51 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr50", align 8
-  %throw.tag.ptr52 = getelementptr inbounds { i8, [112 x i8] }, ptr %0, i32 0, i32 0
-  store i8 1, ptr %throw.tag.ptr52, align 1
-  %variant.tag.ptr54 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr53, i32 0, i32 0
-  store i8 1, ptr %variant.tag.ptr54, align 1
-  %variant.data.ptr55 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr53, i32 0, i32 1
-  store %_Z13InvalidSyntax %variant.val51, ptr %variant.data.ptr55, align 1
-  %variant.val56 = load %_Z11ParserError, ptr %variant.ptr53, align 1
-  %throw.data.ptr57 = getelementptr inbounds { i8, [112 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val56, ptr %throw.data.ptr57, align 1
+choose.when47:                                    ; preds = %choose.when38
+  %"variant.c_data().ptr48" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
+  %variant.val49 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr48", align 8
+  %throw.tag.ptr50 = getelementptr inbounds { i8, [112 x i8] }, ptr %0, i32 0, i32 0
+  store i8 1, ptr %throw.tag.ptr50, align 1
+  %variant.tag.ptr52 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr51, i32 0, i32 0
+  store i8 1, ptr %variant.tag.ptr52, align 1
+  %variant.data.ptr53 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr51, i32 0, i32 1
+  store %_Z13InvalidSyntax %variant.val49, ptr %variant.data.ptr53, align 1
+  %variant.val54 = load %_Z11ParserError, ptr %variant.ptr51, align 1
+  %throw.data.ptr55 = getelementptr inbounds { i8, [112 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val54, ptr %throw.data.ptr55, align 1
   ret void
 
-choose.when58:                                    ; preds = %choose.end
-  %throws.success.val59 = load ptr, ptr %throws.data.ptr37, align 1
-  store ptr %throws.success.val59, ptr %attributes, align 1
-  br label %choose.end38
+choose.when56:                                    ; preds = %choose.end
+  %throws.success.val57 = load ptr, ptr %throws.data.ptr35, align 1
+  store ptr %throws.success.val57, ptr %attributes, align 1
+  br label %choose.end36
 
-if.then67:                                        ; preds = %choose.end38
-  %throw.tag.ptr69 = getelementptr inbounds { i8, [112 x i8] }, ptr %0, i32 0, i32 0
-  store i8 1, ptr %throw.tag.ptr69, align 1
-  %variant.tag.ptr70 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr53, i32 0, i32 0
-  store i8 1, ptr %variant.tag.ptr70, align 1
-  %load.struct71 = load %_Z6Parser, ptr %2, align 8
-  %lexer72 = extractvalue %_Z6Parser %load.struct71, 0
-  %position73 = extractvalue %_Z5Lexer %lexer72, 3
-  %struct.region74 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.91 }, ptr %arg.tmp15, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region74, ptr %1, ptr %arg.tmp15)
-  %tuple.field75 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 0
-  store i64 %previous_position, ptr %tuple.field75, align 1
-  %tuple.field76 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 1
-  store i64 %position73, ptr %tuple.field76, align 1
-  %field.load77 = load { ptr }, ptr %struct.region74, align 8
-  %tuple.field78 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 2
-  store { ptr } %field.load77, ptr %tuple.field78, align 1
-  %tuple.val79 = load %_Z13InvalidSyntax, ptr %tuple16, align 8
-  %variant.data.ptr80 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr53, i32 0, i32 1
-  store %_Z13InvalidSyntax %tuple.val79, ptr %variant.data.ptr80, align 1
-  %variant.val81 = load %_Z11ParserError, ptr %variant.ptr53, align 1
-  %throw.data.ptr82 = getelementptr inbounds { i8, [112 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val81, ptr %throw.data.ptr82, align 1
+if.then65:                                        ; preds = %choose.end36
+  %throw.tag.ptr67 = getelementptr inbounds { i8, [112 x i8] }, ptr %0, i32 0, i32 0
+  store i8 1, ptr %throw.tag.ptr67, align 1
+  %variant.tag.ptr68 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr51, i32 0, i32 0
+  store i8 1, ptr %variant.tag.ptr68, align 1
+  %load.struct69 = load %_Z6Parser, ptr %2, align 8
+  %lexer70 = extractvalue %_Z6Parser %load.struct69, 0
+  %position71 = extractvalue %_Z5Lexer %lexer70, 3
+  %tuple.field72 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 0
+  store i64 %previous_position, ptr %tuple.field72, align 1
+  %tuple.field73 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 1
+  store i64 %position71, ptr %tuple.field73, align 1
+  %tuple.field74 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 2
+  store { ptr } { ptr @.sconst.89 }, ptr %tuple.field74, align 1
+  %tuple.val75 = load %_Z13InvalidSyntax, ptr %tuple14, align 8
+  %variant.data.ptr76 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr51, i32 0, i32 1
+  store %_Z13InvalidSyntax %tuple.val75, ptr %variant.data.ptr76, align 1
+  %variant.val77 = load %_Z11ParserError, ptr %variant.ptr51, align 1
+  %throw.data.ptr78 = getelementptr inbounds { i8, [112 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val77, ptr %throw.data.ptr78, align 1
   ret void
 
-if.end68:                                         ; preds = %choose.end38
-  %load.struct83 = load %_Z6Parser, ptr %2, align 8
-  %lexer84 = extractvalue %_Z6Parser %load.struct83, 0
-  %position85 = extractvalue %_Z5Lexer %lexer84, 3
+if.end66:                                         ; preds = %choose.end36
+  %load.struct79 = load %_Z6Parser, ptr %2, align 8
+  %lexer80 = extractvalue %_Z6Parser %load.struct79, 0
+  %position81 = extractvalue %_Z5Lexer %lexer80, 3
   store ptr null, ptr %uses, align 1
-  call void @_ZN6Parser14parse_use_listEPN4scaly6memory4PageE(ptr noalias sret({ i8, [25 x i8] }) %sret.result86, ptr %1, ptr %2)
-  %tag87 = load i8, ptr %sret.result86, align 1
-  %throws.data.ptr88 = getelementptr inbounds i8, ptr %sret.result86, i8 1
-  switch i8 %tag87, label %choose.else90 [
-    i8 1, label %choose.when91
-    i8 0, label %choose.when109
+  call void @_ZN6Parser14parse_use_listEPN4scaly6memory4PageE(ptr noalias sret({ i8, [25 x i8] }) %sret.result82, ptr %1, ptr %2)
+  %tag83 = load i8, ptr %sret.result82, align 1
+  %throws.data.ptr84 = getelementptr inbounds i8, ptr %sret.result82, i8 1
+  switch i8 %tag83, label %choose.else86 [
+    i8 1, label %choose.when87
+    i8 0, label %choose.when105
   ]
 
-choose.end89:                                     ; preds = %choose.else90, %choose.when109, %choose.end95
-  %choose.value111 = phi ptr [ %throws.success.val110, %choose.when109 ], [ undef, %choose.end95 ], [ undef, %choose.else90 ]
-  %load.struct112 = load %_Z6Parser, ptr %2, align 8
-  %lexer113 = extractvalue %_Z6Parser %load.struct112, 0
-  %position114 = extractvalue %_Z5Lexer %lexer113, 3
+choose.end85:                                     ; preds = %choose.else86, %choose.when105, %choose.end91
+  %choose.value107 = phi ptr [ %throws.success.val106, %choose.when105 ], [ undef, %choose.end91 ], [ undef, %choose.else86 ]
+  %load.struct108 = load %_Z6Parser, ptr %2, align 8
+  %lexer109 = extractvalue %_Z6Parser %load.struct108, 0
+  %position110 = extractvalue %_Z5Lexer %lexer109, 3
   store ptr null, ptr %methods, align 1
-  call void @_ZN6Parser17parse_method_listEPN4scaly6memory4PageE(ptr noalias sret({ i8, [25 x i8] }) %sret.result115, ptr %1, ptr %2)
-  %tag116 = load i8, ptr %sret.result115, align 1
-  %throws.data.ptr117 = getelementptr inbounds i8, ptr %sret.result115, i8 1
-  switch i8 %tag116, label %choose.else119 [
-    i8 1, label %choose.when120
-    i8 0, label %choose.when138
+  call void @_ZN6Parser17parse_method_listEPN4scaly6memory4PageE(ptr noalias sret({ i8, [25 x i8] }) %sret.result111, ptr %1, ptr %2)
+  %tag112 = load i8, ptr %sret.result111, align 1
+  %throws.data.ptr113 = getelementptr inbounds i8, ptr %sret.result111, i8 1
+  switch i8 %tag112, label %choose.else115 [
+    i8 1, label %choose.when116
+    i8 0, label %choose.when134
   ]
 
-choose.else90:                                    ; preds = %if.end68
-  br label %choose.end89
+choose.else86:                                    ; preds = %if.end66
+  br label %choose.end85
 
-choose.when91:                                    ; preds = %if.end68
-  %throws.err.val92 = load %_Z11ParserError, ptr %throws.data.ptr88, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %variant.ptr53, ptr align 1 %throws.data.ptr88, i64 ptrtoint (ptr getelementptr (%_Z11ParserError, ptr null, i32 1) to i64), i1 false)
-  %tag.ptr93 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr53, i32 0, i32 0
-  %tag94 = load i8, ptr %tag.ptr93, align 1
-  switch i8 %tag94, label %choose.else96 [
-    i8 0, label %choose.when97
-    i8 1, label %choose.when100
+choose.when87:                                    ; preds = %if.end66
+  %throws.err.val88 = load %_Z11ParserError, ptr %throws.data.ptr84, align 1
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %variant.ptr51, ptr align 1 %throws.data.ptr84, i64 ptrtoint (ptr getelementptr (%_Z11ParserError, ptr null, i32 1) to i64), i1 false)
+  %tag.ptr89 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr51, i32 0, i32 0
+  %tag90 = load i8, ptr %tag.ptr89, align 1
+  switch i8 %tag90, label %choose.else92 [
+    i8 0, label %choose.when93
+    i8 1, label %choose.when96
   ]
 
-choose.end95:                                     ; preds = %choose.else96, %choose.when97
-  br label %choose.end89
+choose.end91:                                     ; preds = %choose.else92, %choose.when93
+  br label %choose.end85
 
-choose.else96:                                    ; preds = %choose.when91
-  br label %choose.end95
+choose.else92:                                    ; preds = %choose.when87
+  br label %choose.end91
 
-choose.when97:                                    ; preds = %choose.when91
-  %"variant.c_data().ptr98" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr53, i32 0, i32 1
-  %variant.val99 = load %_Z15DifferentSyntax, ptr %"variant.c_data().ptr98", align 1
-  br label %choose.end95
+choose.when93:                                    ; preds = %choose.when87
+  %"variant.c_data().ptr94" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr51, i32 0, i32 1
+  %variant.val95 = load %_Z15DifferentSyntax, ptr %"variant.c_data().ptr94", align 1
+  br label %choose.end91
 
-choose.when100:                                   ; preds = %choose.when91
-  %"variant.c_data().ptr101" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr53, i32 0, i32 1
-  %variant.val102 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr101", align 8
-  %throw.tag.ptr103 = getelementptr inbounds { i8, [112 x i8] }, ptr %0, i32 0, i32 0
-  store i8 1, ptr %throw.tag.ptr103, align 1
-  %variant.tag.ptr105 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr104, i32 0, i32 0
-  store i8 1, ptr %variant.tag.ptr105, align 1
-  %variant.data.ptr106 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr104, i32 0, i32 1
-  store %_Z13InvalidSyntax %variant.val102, ptr %variant.data.ptr106, align 1
-  %variant.val107 = load %_Z11ParserError, ptr %variant.ptr104, align 1
-  %throw.data.ptr108 = getelementptr inbounds { i8, [112 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val107, ptr %throw.data.ptr108, align 1
+choose.when96:                                    ; preds = %choose.when87
+  %"variant.c_data().ptr97" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr51, i32 0, i32 1
+  %variant.val98 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr97", align 8
+  %throw.tag.ptr99 = getelementptr inbounds { i8, [112 x i8] }, ptr %0, i32 0, i32 0
+  store i8 1, ptr %throw.tag.ptr99, align 1
+  %variant.tag.ptr101 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr100, i32 0, i32 0
+  store i8 1, ptr %variant.tag.ptr101, align 1
+  %variant.data.ptr102 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr100, i32 0, i32 1
+  store %_Z13InvalidSyntax %variant.val98, ptr %variant.data.ptr102, align 1
+  %variant.val103 = load %_Z11ParserError, ptr %variant.ptr100, align 1
+  %throw.data.ptr104 = getelementptr inbounds { i8, [112 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val103, ptr %throw.data.ptr104, align 1
   ret void
 
-choose.when109:                                   ; preds = %if.end68
-  %throws.success.val110 = load ptr, ptr %throws.data.ptr88, align 1
-  store ptr %throws.success.val110, ptr %uses, align 1
-  br label %choose.end89
+choose.when105:                                   ; preds = %if.end66
+  %throws.success.val106 = load ptr, ptr %throws.data.ptr84, align 1
+  store ptr %throws.success.val106, ptr %uses, align 1
+  br label %choose.end85
 
-choose.end118:                                    ; preds = %choose.else119, %choose.when138, %choose.end124
-  %choose.value140 = phi ptr [ %throws.success.val139, %choose.when138 ], [ undef, %choose.end124 ], [ undef, %choose.else119 ]
-  %field.inplace141 = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
-  %call142 = call i8 @_ZN15ParserConstants11CHAR_RBRACEEv()
-  %call143 = call i1 @_ZN5Lexer17parse_punctuationE2u8(ptr %field.inplace141, i8 %call142)
-  %bitnot144 = xor i1 %call143, true
-  br i1 %bitnot144, label %if.then145, label %if.end146
+choose.end114:                                    ; preds = %choose.else115, %choose.when134, %choose.end120
+  %choose.value136 = phi ptr [ %throws.success.val135, %choose.when134 ], [ undef, %choose.end120 ], [ undef, %choose.else115 ]
+  %field.inplace137 = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
+  %call138 = call i8 @_ZN15ParserConstants11CHAR_RBRACEEv()
+  %call139 = call i1 @_ZN5Lexer17parse_punctuationE2u8(ptr %field.inplace137, i8 %call138)
+  %bitnot140 = xor i1 %call139, true
+  br i1 %bitnot140, label %if.then141, label %if.end142
 
-choose.else119:                                   ; preds = %choose.end89
-  br label %choose.end118
+choose.else115:                                   ; preds = %choose.end85
+  br label %choose.end114
 
-choose.when120:                                   ; preds = %choose.end89
-  %throws.err.val121 = load %_Z11ParserError, ptr %throws.data.ptr117, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %variant.ptr104, ptr align 1 %throws.data.ptr117, i64 ptrtoint (ptr getelementptr (%_Z11ParserError, ptr null, i32 1) to i64), i1 false)
-  %tag.ptr122 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr104, i32 0, i32 0
-  %tag123 = load i8, ptr %tag.ptr122, align 1
-  switch i8 %tag123, label %choose.else125 [
-    i8 0, label %choose.when126
-    i8 1, label %choose.when129
+choose.when116:                                   ; preds = %choose.end85
+  %throws.err.val117 = load %_Z11ParserError, ptr %throws.data.ptr113, align 1
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %variant.ptr100, ptr align 1 %throws.data.ptr113, i64 ptrtoint (ptr getelementptr (%_Z11ParserError, ptr null, i32 1) to i64), i1 false)
+  %tag.ptr118 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr100, i32 0, i32 0
+  %tag119 = load i8, ptr %tag.ptr118, align 1
+  switch i8 %tag119, label %choose.else121 [
+    i8 0, label %choose.when122
+    i8 1, label %choose.when125
   ]
 
-choose.end124:                                    ; preds = %choose.else125, %choose.when126
-  br label %choose.end118
+choose.end120:                                    ; preds = %choose.else121, %choose.when122
+  br label %choose.end114
 
-choose.else125:                                   ; preds = %choose.when120
-  br label %choose.end124
+choose.else121:                                   ; preds = %choose.when116
+  br label %choose.end120
 
-choose.when126:                                   ; preds = %choose.when120
-  %"variant.c_data().ptr127" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr104, i32 0, i32 1
-  %variant.val128 = load %_Z15DifferentSyntax, ptr %"variant.c_data().ptr127", align 1
-  br label %choose.end124
+choose.when122:                                   ; preds = %choose.when116
+  %"variant.c_data().ptr123" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr100, i32 0, i32 1
+  %variant.val124 = load %_Z15DifferentSyntax, ptr %"variant.c_data().ptr123", align 1
+  br label %choose.end120
 
-choose.when129:                                   ; preds = %choose.when120
-  %"variant.c_data().ptr130" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr104, i32 0, i32 1
-  %variant.val131 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr130", align 8
-  %throw.tag.ptr132 = getelementptr inbounds { i8, [112 x i8] }, ptr %0, i32 0, i32 0
-  store i8 1, ptr %throw.tag.ptr132, align 1
-  %variant.tag.ptr134 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr133, i32 0, i32 0
-  store i8 1, ptr %variant.tag.ptr134, align 1
-  %variant.data.ptr135 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr133, i32 0, i32 1
-  store %_Z13InvalidSyntax %variant.val131, ptr %variant.data.ptr135, align 1
-  %variant.val136 = load %_Z11ParserError, ptr %variant.ptr133, align 1
-  %throw.data.ptr137 = getelementptr inbounds { i8, [112 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val136, ptr %throw.data.ptr137, align 1
+choose.when125:                                   ; preds = %choose.when116
+  %"variant.c_data().ptr126" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr100, i32 0, i32 1
+  %variant.val127 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr126", align 8
+  %throw.tag.ptr128 = getelementptr inbounds { i8, [112 x i8] }, ptr %0, i32 0, i32 0
+  store i8 1, ptr %throw.tag.ptr128, align 1
+  %variant.tag.ptr130 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr129, i32 0, i32 0
+  store i8 1, ptr %variant.tag.ptr130, align 1
+  %variant.data.ptr131 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr129, i32 0, i32 1
+  store %_Z13InvalidSyntax %variant.val127, ptr %variant.data.ptr131, align 1
+  %variant.val132 = load %_Z11ParserError, ptr %variant.ptr129, align 1
+  %throw.data.ptr133 = getelementptr inbounds { i8, [112 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val132, ptr %throw.data.ptr133, align 1
   ret void
 
-choose.when138:                                   ; preds = %choose.end89
-  %throws.success.val139 = load ptr, ptr %throws.data.ptr117, align 1
-  store ptr %throws.success.val139, ptr %methods, align 1
-  br label %choose.end118
+choose.when134:                                   ; preds = %choose.end85
+  %throws.success.val135 = load ptr, ptr %throws.data.ptr113, align 1
+  store ptr %throws.success.val135, ptr %methods, align 1
+  br label %choose.end114
 
-if.then145:                                       ; preds = %choose.end118
-  %throw.tag.ptr147 = getelementptr inbounds { i8, [112 x i8] }, ptr %0, i32 0, i32 0
-  store i8 1, ptr %throw.tag.ptr147, align 1
-  %variant.tag.ptr148 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr133, i32 0, i32 0
-  store i8 1, ptr %variant.tag.ptr148, align 1
-  %load.struct149 = load %_Z6Parser, ptr %2, align 8
-  %lexer150 = extractvalue %_Z6Parser %load.struct149, 0
-  %position151 = extractvalue %_Z5Lexer %lexer150, 3
-  %struct.region152 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.92 }, ptr %arg.tmp15, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region152, ptr %1, ptr %arg.tmp15)
-  %tuple.field153 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 0
-  store i64 %previous_position, ptr %tuple.field153, align 1
-  %tuple.field154 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 1
-  store i64 %position151, ptr %tuple.field154, align 1
-  %field.load155 = load { ptr }, ptr %struct.region152, align 8
-  %tuple.field156 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 2
-  store { ptr } %field.load155, ptr %tuple.field156, align 1
-  %tuple.val157 = load %_Z13InvalidSyntax, ptr %tuple16, align 8
-  %variant.data.ptr158 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr133, i32 0, i32 1
-  store %_Z13InvalidSyntax %tuple.val157, ptr %variant.data.ptr158, align 1
-  %variant.val159 = load %_Z11ParserError, ptr %variant.ptr133, align 1
-  %throw.data.ptr160 = getelementptr inbounds { i8, [112 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val159, ptr %throw.data.ptr160, align 1
+if.then141:                                       ; preds = %choose.end114
+  %throw.tag.ptr143 = getelementptr inbounds { i8, [112 x i8] }, ptr %0, i32 0, i32 0
+  store i8 1, ptr %throw.tag.ptr143, align 1
+  %variant.tag.ptr144 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr129, i32 0, i32 0
+  store i8 1, ptr %variant.tag.ptr144, align 1
+  %load.struct145 = load %_Z6Parser, ptr %2, align 8
+  %lexer146 = extractvalue %_Z6Parser %load.struct145, 0
+  %position147 = extractvalue %_Z5Lexer %lexer146, 3
+  %tuple.field148 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 0
+  store i64 %previous_position, ptr %tuple.field148, align 1
+  %tuple.field149 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 1
+  store i64 %position147, ptr %tuple.field149, align 1
+  %tuple.field150 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 2
+  store { ptr } { ptr @.sconst.90 }, ptr %tuple.field150, align 1
+  %tuple.val151 = load %_Z13InvalidSyntax, ptr %tuple14, align 8
+  %variant.data.ptr152 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr129, i32 0, i32 1
+  store %_Z13InvalidSyntax %tuple.val151, ptr %variant.data.ptr152, align 1
+  %variant.val153 = load %_Z11ParserError, ptr %variant.ptr129, align 1
+  %throw.data.ptr154 = getelementptr inbounds { i8, [112 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val153, ptr %throw.data.ptr154, align 1
   ret void
 
-if.end146:                                        ; preds = %choose.end118
-  %load.struct161 = load %_Z6Parser, ptr %2, align 8
-  %lexer162 = extractvalue %_Z6Parser %load.struct161, 0
-  %position163 = extractvalue %_Z5Lexer %lexer162, 3
-  %type164 = load %_Z10TypeSyntax, ptr %type, align 8
-  %attributes165 = load ptr, ptr %attributes, align 8
-  %uses166 = load ptr, ptr %uses, align 8
-  %methods167 = load ptr, ptr %methods, align 8
-  %tuple.field169 = getelementptr inbounds %_Z15ImplementSyntax, ptr %tuple168, i32 0, i32 0
-  store i64 %previous_position, ptr %tuple.field169, align 1
-  %tuple.field170 = getelementptr inbounds %_Z15ImplementSyntax, ptr %tuple168, i32 0, i32 1
-  store i64 %position163, ptr %tuple.field170, align 1
-  %tuple.field171 = getelementptr inbounds %_Z15ImplementSyntax, ptr %tuple168, i32 0, i32 2
-  store %_Z10TypeSyntax %type164, ptr %tuple.field171, align 1
-  %tuple.field172 = getelementptr inbounds %_Z15ImplementSyntax, ptr %tuple168, i32 0, i32 3
-  store ptr %attributes165, ptr %tuple.field172, align 1
-  %tuple.field173 = getelementptr inbounds %_Z15ImplementSyntax, ptr %tuple168, i32 0, i32 4
-  store ptr %uses166, ptr %tuple.field173, align 1
-  %tuple.field174 = getelementptr inbounds %_Z15ImplementSyntax, ptr %tuple168, i32 0, i32 5
-  store ptr %methods167, ptr %tuple.field174, align 1
-  %tuple.val175 = load %_Z15ImplementSyntax, ptr %tuple168, align 8
+if.end142:                                        ; preds = %choose.end114
+  %load.struct155 = load %_Z6Parser, ptr %2, align 8
+  %lexer156 = extractvalue %_Z6Parser %load.struct155, 0
+  %position157 = extractvalue %_Z5Lexer %lexer156, 3
+  %type158 = load %_Z10TypeSyntax, ptr %type, align 8
+  %attributes159 = load ptr, ptr %attributes, align 8
+  %uses160 = load ptr, ptr %uses, align 8
+  %methods161 = load ptr, ptr %methods, align 8
+  %tuple.field163 = getelementptr inbounds %_Z15ImplementSyntax, ptr %tuple162, i32 0, i32 0
+  store i64 %previous_position, ptr %tuple.field163, align 1
+  %tuple.field164 = getelementptr inbounds %_Z15ImplementSyntax, ptr %tuple162, i32 0, i32 1
+  store i64 %position157, ptr %tuple.field164, align 1
+  %tuple.field165 = getelementptr inbounds %_Z15ImplementSyntax, ptr %tuple162, i32 0, i32 2
+  store %_Z10TypeSyntax %type158, ptr %tuple.field165, align 1
+  %tuple.field166 = getelementptr inbounds %_Z15ImplementSyntax, ptr %tuple162, i32 0, i32 3
+  store ptr %attributes159, ptr %tuple.field166, align 1
+  %tuple.field167 = getelementptr inbounds %_Z15ImplementSyntax, ptr %tuple162, i32 0, i32 4
+  store ptr %uses160, ptr %tuple.field167, align 1
+  %tuple.field168 = getelementptr inbounds %_Z15ImplementSyntax, ptr %tuple162, i32 0, i32 5
+  store ptr %methods161, ptr %tuple.field168, align 1
+  %tuple.val169 = load %_Z15ImplementSyntax, ptr %tuple162, align 8
   %ret.tag.ptr = getelementptr inbounds { i8, [112 x i8] }, ptr %0, i32 0, i32 0
   store i8 0, ptr %ret.tag.ptr, align 1
   %ret.data.ptr = getelementptr inbounds { i8, [112 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z15ImplementSyntax %tuple.val175, ptr %ret.data.ptr, align 1
+  store %_Z15ImplementSyntax %tuple.val169, ptr %ret.data.ptr, align 1
   ret void
 }
 
 define linkonce_odr void @_ZN6Parser11parse_traitEPN4scaly6memory4PageE(ptr noalias sret({ i8, [80 x i8] }) %0, ptr %1, ptr %2) {
 entry:
-  %tuple193 = alloca %_Z11TraitSyntax, align 8
-  %variant.ptr157 = alloca %_Z11ParserError, align 8
-  %sret.result139 = alloca { i8, [25 x i8] }, align 8
+  %tuple187 = alloca %_Z11TraitSyntax, align 8
+  %variant.ptr153 = alloca %_Z11ParserError, align 8
+  %sret.result135 = alloca { i8, [25 x i8] }, align 8
   %functions = alloca ptr, align 8
-  %variant.ptr128 = alloca %_Z11ParserError, align 8
-  %sret.result110 = alloca { i8, [25 x i8] }, align 8
+  %variant.ptr124 = alloca %_Z11ParserError, align 8
+  %sret.result106 = alloca { i8, [25 x i8] }, align 8
   %uses = alloca ptr, align 8
-  %variant.ptr79 = alloca %_Z11ParserError, align 8
+  %variant.ptr77 = alloca %_Z11ParserError, align 8
   %choose.union = alloca %_Z11ParserError, align 8
-  %sret.result61 = alloca { i8, [25 x i8] }, align 8
+  %sret.result59 = alloca { i8, [25 x i8] }, align 8
   %attributes = alloca ptr, align 8
-  %sret.result35 = alloca { i8, [25 x i8] }, align 8
+  %sret.result33 = alloca { i8, [25 x i8] }, align 8
   %extension = alloca ptr, align 8
-  %tuple16 = alloca %_Z13InvalidSyntax, align 8
-  %arg.tmp15 = alloca { ptr }, align 8
+  %tuple14 = alloca %_Z13InvalidSyntax, align 8
   %variant.ptr9 = alloca %_Z11ParserError, align 8
   %sret.result = alloca { i8, [32 x i8] }, align 8
   %name = alloca %_Z10NameSyntax, align 8
@@ -25105,11 +23970,9 @@ entry:
   %lexer = extractvalue %_Z6Parser %load.struct, 0
   %previous_position = extractvalue %_Z5Lexer %lexer, 4
   %field.inplace = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
   %arg.tmp = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.93 }, ptr %arg.tmp, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region, ptr %1, ptr %arg.tmp)
-  %call = call i1 @_ZN5Lexer13parse_keywordE6String(ptr %field.inplace, ptr %struct.region)
+  store { ptr } { ptr @.sconst.91 }, ptr %arg.tmp, align 1
+  %call = call i1 @_ZN5Lexer13parse_keywordE6String(ptr %field.inplace, ptr %arg.tmp)
   %bitnot = xor i1 %call, true
   br i1 %bitnot, label %if.then, label %if.end
 
@@ -25136,21 +23999,21 @@ if.end:                                           ; preds = %entry
   %throws.data.ptr = getelementptr inbounds i8, ptr %sret.result, i8 1
   switch i8 %tag, label %choose.else [
     i8 1, label %choose.when
-    i8 0, label %choose.when31
+    i8 0, label %choose.when29
   ]
 
-choose.end:                                       ; preds = %choose.else, %choose.when31, %choose.end4
-  %choose.value = phi %_Z10NameSyntax [ %throws.success.val, %choose.when31 ], [ undef, %choose.end4 ], [ undef, %choose.else ]
-  %load.struct32 = load %_Z6Parser, ptr %2, align 8
-  %lexer33 = extractvalue %_Z6Parser %load.struct32, 0
-  %position34 = extractvalue %_Z5Lexer %lexer33, 3
+choose.end:                                       ; preds = %choose.else, %choose.when29, %choose.end4
+  %choose.value = phi %_Z10NameSyntax [ %throws.success.val, %choose.when29 ], [ undef, %choose.end4 ], [ undef, %choose.else ]
+  %load.struct30 = load %_Z6Parser, ptr %2, align 8
+  %lexer31 = extractvalue %_Z6Parser %load.struct30, 0
+  %position32 = extractvalue %_Z5Lexer %lexer31, 3
   store ptr null, ptr %extension, align 1
-  call void @_ZN6Parser13parse_extendsEPN4scaly6memory4PageE(ptr noalias sret({ i8, [25 x i8] }) %sret.result35, ptr %1, ptr %2)
-  %tag36 = load i8, ptr %sret.result35, align 1
-  %throws.data.ptr37 = getelementptr inbounds i8, ptr %sret.result35, i8 1
-  switch i8 %tag36, label %choose.else39 [
-    i8 1, label %choose.when40
-    i8 0, label %choose.when52
+  call void @_ZN6Parser13parse_extendsEPN4scaly6memory4PageE(ptr noalias sret({ i8, [25 x i8] }) %sret.result33, ptr %1, ptr %2)
+  %tag34 = load i8, ptr %sret.result33, align 1
+  %throws.data.ptr35 = getelementptr inbounds i8, ptr %sret.result33, i8 1
+  switch i8 %tag34, label %choose.else37 [
+    i8 1, label %choose.when38
+    i8 0, label %choose.when50
   ]
 
 choose.else:                                      ; preds = %if.end
@@ -25163,7 +24026,7 @@ choose.when:                                      ; preds = %if.end
   %tag3 = load i8, ptr %tag.ptr, align 1
   switch i8 %tag3, label %choose.else5 [
     i8 0, label %choose.when6
-    i8 1, label %choose.when23
+    i8 1, label %choose.when21
   ]
 
 choose.end4:                                      ; preds = %choose.else5
@@ -25182,354 +24045,342 @@ choose.when6:                                     ; preds = %choose.when
   %load.struct11 = load %_Z6Parser, ptr %2, align 8
   %lexer12 = extractvalue %_Z6Parser %load.struct11, 0
   %position13 = extractvalue %_Z5Lexer %lexer12, 3
-  %struct.region14 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.94 }, ptr %arg.tmp15, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region14, ptr %1, ptr %arg.tmp15)
-  %tuple.field = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 0
+  %tuple.field = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 0
   store i64 %position, ptr %tuple.field, align 1
-  %tuple.field17 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 1
-  store i64 %position13, ptr %tuple.field17, align 1
-  %field.load = load { ptr }, ptr %struct.region14, align 8
-  %tuple.field18 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 2
-  store { ptr } %field.load, ptr %tuple.field18, align 1
-  %tuple.val19 = load %_Z13InvalidSyntax, ptr %tuple16, align 8
-  %variant.data.ptr20 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
-  store %_Z13InvalidSyntax %tuple.val19, ptr %variant.data.ptr20, align 1
-  %variant.val21 = load %_Z11ParserError, ptr %variant.ptr9, align 1
-  %throw.data.ptr22 = getelementptr inbounds { i8, [80 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val21, ptr %throw.data.ptr22, align 1
+  %tuple.field15 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 1
+  store i64 %position13, ptr %tuple.field15, align 1
+  %tuple.field16 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 2
+  store { ptr } { ptr @.sconst.92 }, ptr %tuple.field16, align 1
+  %tuple.val17 = load %_Z13InvalidSyntax, ptr %tuple14, align 8
+  %variant.data.ptr18 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
+  store %_Z13InvalidSyntax %tuple.val17, ptr %variant.data.ptr18, align 1
+  %variant.val19 = load %_Z11ParserError, ptr %variant.ptr9, align 1
+  %throw.data.ptr20 = getelementptr inbounds { i8, [80 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val19, ptr %throw.data.ptr20, align 1
   ret void
 
-choose.when23:                                    ; preds = %choose.when
-  %"variant.c_data().ptr24" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 1
-  %variant.val25 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr24", align 8
-  %throw.tag.ptr26 = getelementptr inbounds { i8, [80 x i8] }, ptr %0, i32 0, i32 0
-  store i8 1, ptr %throw.tag.ptr26, align 1
-  %variant.tag.ptr27 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 0
-  store i8 1, ptr %variant.tag.ptr27, align 1
-  %variant.data.ptr28 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
-  store %_Z13InvalidSyntax %variant.val25, ptr %variant.data.ptr28, align 1
-  %variant.val29 = load %_Z11ParserError, ptr %variant.ptr9, align 1
-  %throw.data.ptr30 = getelementptr inbounds { i8, [80 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val29, ptr %throw.data.ptr30, align 1
+choose.when21:                                    ; preds = %choose.when
+  %"variant.c_data().ptr22" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 1
+  %variant.val23 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr22", align 8
+  %throw.tag.ptr24 = getelementptr inbounds { i8, [80 x i8] }, ptr %0, i32 0, i32 0
+  store i8 1, ptr %throw.tag.ptr24, align 1
+  %variant.tag.ptr25 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 0
+  store i8 1, ptr %variant.tag.ptr25, align 1
+  %variant.data.ptr26 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
+  store %_Z13InvalidSyntax %variant.val23, ptr %variant.data.ptr26, align 1
+  %variant.val27 = load %_Z11ParserError, ptr %variant.ptr9, align 1
+  %throw.data.ptr28 = getelementptr inbounds { i8, [80 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val27, ptr %throw.data.ptr28, align 1
   ret void
 
-choose.when31:                                    ; preds = %if.end
+choose.when29:                                    ; preds = %if.end
   %throws.success.val = load %_Z10NameSyntax, ptr %throws.data.ptr, align 1
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %name, ptr align 1 %throws.data.ptr, i64 ptrtoint (ptr getelementptr (%_Z10NameSyntax, ptr null, i32 1) to i64), i1 false)
   br label %choose.end
 
-choose.end38:                                     ; preds = %choose.else39, %choose.when52, %choose.end44
-  %choose.value57 = phi %_Z13ExtendsSyntax [ %choose.arm.load, %choose.when52 ], [ undef, %choose.end44 ], [ undef, %choose.else39 ]
-  %load.struct58 = load %_Z6Parser, ptr %2, align 8
-  %lexer59 = extractvalue %_Z6Parser %load.struct58, 0
-  %position60 = extractvalue %_Z5Lexer %lexer59, 3
+choose.end36:                                     ; preds = %choose.else37, %choose.when50, %choose.end42
+  %choose.value55 = phi %_Z13ExtendsSyntax [ %choose.arm.load, %choose.when50 ], [ undef, %choose.end42 ], [ undef, %choose.else37 ]
+  %load.struct56 = load %_Z6Parser, ptr %2, align 8
+  %lexer57 = extractvalue %_Z6Parser %load.struct56, 0
+  %position58 = extractvalue %_Z5Lexer %lexer57, 3
   store ptr null, ptr %attributes, align 1
-  call void @_ZN6Parser20parse_attribute_listEPN4scaly6memory4PageE(ptr noalias sret({ i8, [25 x i8] }) %sret.result61, ptr %1, ptr %2)
-  %tag62 = load i8, ptr %sret.result61, align 1
-  %throws.data.ptr63 = getelementptr inbounds i8, ptr %sret.result61, i8 1
-  switch i8 %tag62, label %choose.else65 [
-    i8 1, label %choose.when66
-    i8 0, label %choose.when84
+  call void @_ZN6Parser20parse_attribute_listEPN4scaly6memory4PageE(ptr noalias sret({ i8, [25 x i8] }) %sret.result59, ptr %1, ptr %2)
+  %tag60 = load i8, ptr %sret.result59, align 1
+  %throws.data.ptr61 = getelementptr inbounds i8, ptr %sret.result59, i8 1
+  switch i8 %tag60, label %choose.else63 [
+    i8 1, label %choose.when64
+    i8 0, label %choose.when82
   ]
 
-choose.else39:                                    ; preds = %choose.end
-  br label %choose.end38
+choose.else37:                                    ; preds = %choose.end
+  br label %choose.end36
 
-choose.when40:                                    ; preds = %choose.end
-  %throws.err.val41 = load %_Z11ParserError, ptr %throws.data.ptr37, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %variant.ptr9, ptr align 1 %throws.data.ptr37, i64 ptrtoint (ptr getelementptr (%_Z11ParserError, ptr null, i32 1) to i64), i1 false)
-  %tag.ptr42 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 0
-  %tag43 = load i8, ptr %tag.ptr42, align 1
-  switch i8 %tag43, label %choose.else45 [
-    i8 0, label %choose.when46
-    i8 1, label %choose.when49
+choose.when38:                                    ; preds = %choose.end
+  %throws.err.val39 = load %_Z11ParserError, ptr %throws.data.ptr35, align 1
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %variant.ptr9, ptr align 1 %throws.data.ptr35, i64 ptrtoint (ptr getelementptr (%_Z11ParserError, ptr null, i32 1) to i64), i1 false)
+  %tag.ptr40 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 0
+  %tag41 = load i8, ptr %tag.ptr40, align 1
+  switch i8 %tag41, label %choose.else43 [
+    i8 0, label %choose.when44
+    i8 1, label %choose.when47
   ]
 
-choose.end44:                                     ; preds = %choose.else45, %choose.when49, %choose.when46
-  br label %choose.end38
+choose.end42:                                     ; preds = %choose.else43, %choose.when47, %choose.when44
+  br label %choose.end36
 
-choose.else45:                                    ; preds = %choose.when40
-  br label %choose.end44
+choose.else43:                                    ; preds = %choose.when38
+  br label %choose.end42
 
-choose.when46:                                    ; preds = %choose.when40
-  %"variant.c_data().ptr47" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
-  %variant.val48 = load %_Z15DifferentSyntax, ptr %"variant.c_data().ptr47", align 1
-  br label %choose.end44
+choose.when44:                                    ; preds = %choose.when38
+  %"variant.c_data().ptr45" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
+  %variant.val46 = load %_Z15DifferentSyntax, ptr %"variant.c_data().ptr45", align 1
+  br label %choose.end42
 
-choose.when49:                                    ; preds = %choose.when40
-  %"variant.c_data().ptr50" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
-  %variant.val51 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr50", align 8
-  br label %choose.end44
+choose.when47:                                    ; preds = %choose.when38
+  %"variant.c_data().ptr48" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
+  %variant.val49 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr48", align 8
+  br label %choose.end42
 
-choose.when52:                                    ; preds = %choose.end
-  %throws.success.val53 = load %_Z13ExtendsSyntax, ptr %throws.data.ptr37, align 1
-  %start = extractvalue %_Z13ExtendsSyntax %throws.success.val53, 0
-  %end = extractvalue %_Z13ExtendsSyntax %throws.success.val53, 1
-  %extensions = extractvalue %_Z13ExtendsSyntax %throws.success.val53, 2
+choose.when50:                                    ; preds = %choose.end
+  %throws.success.val51 = load %_Z13ExtendsSyntax, ptr %throws.data.ptr35, align 1
+  %start = extractvalue %_Z13ExtendsSyntax %throws.success.val51, 0
+  %end = extractvalue %_Z13ExtendsSyntax %throws.success.val51, 1
+  %extensions = extractvalue %_Z13ExtendsSyntax %throws.success.val51, 2
   %tuple.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr (%_Z13ExtendsSyntax, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z13ExtendsSyntax }, ptr null, i64 0, i32 1) to i64))
-  %tuple.field54 = getelementptr inbounds %_Z13ExtendsSyntax, ptr %tuple.region, i32 0, i32 0
-  store i64 %start, ptr %tuple.field54, align 1
-  %tuple.field55 = getelementptr inbounds %_Z13ExtendsSyntax, ptr %tuple.region, i32 0, i32 1
-  store i64 %end, ptr %tuple.field55, align 1
-  %tuple.field56 = getelementptr inbounds %_Z13ExtendsSyntax, ptr %tuple.region, i32 0, i32 2
-  store ptr %extensions, ptr %tuple.field56, align 1
+  %tuple.field52 = getelementptr inbounds %_Z13ExtendsSyntax, ptr %tuple.region, i32 0, i32 0
+  store i64 %start, ptr %tuple.field52, align 1
+  %tuple.field53 = getelementptr inbounds %_Z13ExtendsSyntax, ptr %tuple.region, i32 0, i32 1
+  store i64 %end, ptr %tuple.field53, align 1
+  %tuple.field54 = getelementptr inbounds %_Z13ExtendsSyntax, ptr %tuple.region, i32 0, i32 2
+  store ptr %extensions, ptr %tuple.field54, align 1
   store ptr %tuple.region, ptr %extension, align 1
   %choose.arm.load = load %_Z13ExtendsSyntax, ptr %tuple.region, align 8
-  br label %choose.end38
+  br label %choose.end36
 
-choose.end64:                                     ; preds = %choose.else65, %choose.when84, %choose.end70
-  %choose.value86 = phi ptr [ %throws.success.val85, %choose.when84 ], [ undef, %choose.end70 ], [ undef, %choose.else65 ]
-  %field.inplace87 = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
-  %call88 = call i8 @_ZN15ParserConstants11CHAR_LBRACEEv()
-  %call89 = call i1 @_ZN5Lexer17parse_punctuationE2u8(ptr %field.inplace87, i8 %call88)
-  %bitnot90 = xor i1 %call89, true
-  br i1 %bitnot90, label %if.then91, label %if.end92
+choose.end62:                                     ; preds = %choose.else63, %choose.when82, %choose.end68
+  %choose.value84 = phi ptr [ %throws.success.val83, %choose.when82 ], [ undef, %choose.end68 ], [ undef, %choose.else63 ]
+  %field.inplace85 = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
+  %call86 = call i8 @_ZN15ParserConstants11CHAR_LBRACEEv()
+  %call87 = call i1 @_ZN5Lexer17parse_punctuationE2u8(ptr %field.inplace85, i8 %call86)
+  %bitnot88 = xor i1 %call87, true
+  br i1 %bitnot88, label %if.then89, label %if.end90
 
-choose.else65:                                    ; preds = %choose.end38
-  br label %choose.end64
+choose.else63:                                    ; preds = %choose.end36
+  br label %choose.end62
 
-choose.when66:                                    ; preds = %choose.end38
-  %throws.err.val67 = load %_Z11ParserError, ptr %throws.data.ptr63, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %choose.union, ptr align 1 %throws.data.ptr63, i64 ptrtoint (ptr getelementptr (%_Z11ParserError, ptr null, i32 1) to i64), i1 false)
-  %tag.ptr68 = getelementptr inbounds %_Z11ParserError, ptr %choose.union, i32 0, i32 0
-  %tag69 = load i8, ptr %tag.ptr68, align 1
-  switch i8 %tag69, label %choose.else71 [
-    i8 0, label %choose.when72
-    i8 1, label %choose.when75
+choose.when64:                                    ; preds = %choose.end36
+  %throws.err.val65 = load %_Z11ParserError, ptr %throws.data.ptr61, align 1
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %choose.union, ptr align 1 %throws.data.ptr61, i64 ptrtoint (ptr getelementptr (%_Z11ParserError, ptr null, i32 1) to i64), i1 false)
+  %tag.ptr66 = getelementptr inbounds %_Z11ParserError, ptr %choose.union, i32 0, i32 0
+  %tag67 = load i8, ptr %tag.ptr66, align 1
+  switch i8 %tag67, label %choose.else69 [
+    i8 0, label %choose.when70
+    i8 1, label %choose.when73
   ]
 
-choose.end70:                                     ; preds = %choose.else71, %choose.when72
-  br label %choose.end64
+choose.end68:                                     ; preds = %choose.else69, %choose.when70
+  br label %choose.end62
 
-choose.else71:                                    ; preds = %choose.when66
-  br label %choose.end70
+choose.else69:                                    ; preds = %choose.when64
+  br label %choose.end68
 
-choose.when72:                                    ; preds = %choose.when66
-  %"variant.c_data().ptr73" = getelementptr inbounds %_Z11ParserError, ptr %choose.union, i32 0, i32 1
-  %variant.val74 = load %_Z15DifferentSyntax, ptr %"variant.c_data().ptr73", align 1
-  br label %choose.end70
+choose.when70:                                    ; preds = %choose.when64
+  %"variant.c_data().ptr71" = getelementptr inbounds %_Z11ParserError, ptr %choose.union, i32 0, i32 1
+  %variant.val72 = load %_Z15DifferentSyntax, ptr %"variant.c_data().ptr71", align 1
+  br label %choose.end68
 
-choose.when75:                                    ; preds = %choose.when66
-  %"variant.c_data().ptr76" = getelementptr inbounds %_Z11ParserError, ptr %choose.union, i32 0, i32 1
-  %variant.val77 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr76", align 8
-  %throw.tag.ptr78 = getelementptr inbounds { i8, [80 x i8] }, ptr %0, i32 0, i32 0
-  store i8 1, ptr %throw.tag.ptr78, align 1
-  %variant.tag.ptr80 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr79, i32 0, i32 0
-  store i8 1, ptr %variant.tag.ptr80, align 1
-  %variant.data.ptr81 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr79, i32 0, i32 1
-  store %_Z13InvalidSyntax %variant.val77, ptr %variant.data.ptr81, align 1
-  %variant.val82 = load %_Z11ParserError, ptr %variant.ptr79, align 1
-  %throw.data.ptr83 = getelementptr inbounds { i8, [80 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val82, ptr %throw.data.ptr83, align 1
+choose.when73:                                    ; preds = %choose.when64
+  %"variant.c_data().ptr74" = getelementptr inbounds %_Z11ParserError, ptr %choose.union, i32 0, i32 1
+  %variant.val75 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr74", align 8
+  %throw.tag.ptr76 = getelementptr inbounds { i8, [80 x i8] }, ptr %0, i32 0, i32 0
+  store i8 1, ptr %throw.tag.ptr76, align 1
+  %variant.tag.ptr78 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr77, i32 0, i32 0
+  store i8 1, ptr %variant.tag.ptr78, align 1
+  %variant.data.ptr79 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr77, i32 0, i32 1
+  store %_Z13InvalidSyntax %variant.val75, ptr %variant.data.ptr79, align 1
+  %variant.val80 = load %_Z11ParserError, ptr %variant.ptr77, align 1
+  %throw.data.ptr81 = getelementptr inbounds { i8, [80 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val80, ptr %throw.data.ptr81, align 1
   ret void
 
-choose.when84:                                    ; preds = %choose.end38
-  %throws.success.val85 = load ptr, ptr %throws.data.ptr63, align 1
-  store ptr %throws.success.val85, ptr %attributes, align 1
-  br label %choose.end64
+choose.when82:                                    ; preds = %choose.end36
+  %throws.success.val83 = load ptr, ptr %throws.data.ptr61, align 1
+  store ptr %throws.success.val83, ptr %attributes, align 1
+  br label %choose.end62
 
-if.then91:                                        ; preds = %choose.end64
-  %throw.tag.ptr93 = getelementptr inbounds { i8, [80 x i8] }, ptr %0, i32 0, i32 0
-  store i8 1, ptr %throw.tag.ptr93, align 1
-  %variant.tag.ptr94 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr79, i32 0, i32 0
-  store i8 1, ptr %variant.tag.ptr94, align 1
-  %load.struct95 = load %_Z6Parser, ptr %2, align 8
-  %lexer96 = extractvalue %_Z6Parser %load.struct95, 0
-  %position97 = extractvalue %_Z5Lexer %lexer96, 3
-  %struct.region98 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.95 }, ptr %arg.tmp15, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region98, ptr %1, ptr %arg.tmp15)
-  %tuple.field99 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 0
-  store i64 %previous_position, ptr %tuple.field99, align 1
-  %tuple.field100 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 1
-  store i64 %position97, ptr %tuple.field100, align 1
-  %field.load101 = load { ptr }, ptr %struct.region98, align 8
-  %tuple.field102 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 2
-  store { ptr } %field.load101, ptr %tuple.field102, align 1
-  %tuple.val103 = load %_Z13InvalidSyntax, ptr %tuple16, align 8
-  %variant.data.ptr104 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr79, i32 0, i32 1
-  store %_Z13InvalidSyntax %tuple.val103, ptr %variant.data.ptr104, align 1
-  %variant.val105 = load %_Z11ParserError, ptr %variant.ptr79, align 1
-  %throw.data.ptr106 = getelementptr inbounds { i8, [80 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val105, ptr %throw.data.ptr106, align 1
+if.then89:                                        ; preds = %choose.end62
+  %throw.tag.ptr91 = getelementptr inbounds { i8, [80 x i8] }, ptr %0, i32 0, i32 0
+  store i8 1, ptr %throw.tag.ptr91, align 1
+  %variant.tag.ptr92 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr77, i32 0, i32 0
+  store i8 1, ptr %variant.tag.ptr92, align 1
+  %load.struct93 = load %_Z6Parser, ptr %2, align 8
+  %lexer94 = extractvalue %_Z6Parser %load.struct93, 0
+  %position95 = extractvalue %_Z5Lexer %lexer94, 3
+  %tuple.field96 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 0
+  store i64 %previous_position, ptr %tuple.field96, align 1
+  %tuple.field97 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 1
+  store i64 %position95, ptr %tuple.field97, align 1
+  %tuple.field98 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 2
+  store { ptr } { ptr @.sconst.93 }, ptr %tuple.field98, align 1
+  %tuple.val99 = load %_Z13InvalidSyntax, ptr %tuple14, align 8
+  %variant.data.ptr100 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr77, i32 0, i32 1
+  store %_Z13InvalidSyntax %tuple.val99, ptr %variant.data.ptr100, align 1
+  %variant.val101 = load %_Z11ParserError, ptr %variant.ptr77, align 1
+  %throw.data.ptr102 = getelementptr inbounds { i8, [80 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val101, ptr %throw.data.ptr102, align 1
   ret void
 
-if.end92:                                         ; preds = %choose.end64
-  %load.struct107 = load %_Z6Parser, ptr %2, align 8
-  %lexer108 = extractvalue %_Z6Parser %load.struct107, 0
-  %position109 = extractvalue %_Z5Lexer %lexer108, 3
+if.end90:                                         ; preds = %choose.end62
+  %load.struct103 = load %_Z6Parser, ptr %2, align 8
+  %lexer104 = extractvalue %_Z6Parser %load.struct103, 0
+  %position105 = extractvalue %_Z5Lexer %lexer104, 3
   store ptr null, ptr %uses, align 1
-  call void @_ZN6Parser14parse_use_listEPN4scaly6memory4PageE(ptr noalias sret({ i8, [25 x i8] }) %sret.result110, ptr %1, ptr %2)
-  %tag111 = load i8, ptr %sret.result110, align 1
-  %throws.data.ptr112 = getelementptr inbounds i8, ptr %sret.result110, i8 1
-  switch i8 %tag111, label %choose.else114 [
-    i8 1, label %choose.when115
-    i8 0, label %choose.when133
+  call void @_ZN6Parser14parse_use_listEPN4scaly6memory4PageE(ptr noalias sret({ i8, [25 x i8] }) %sret.result106, ptr %1, ptr %2)
+  %tag107 = load i8, ptr %sret.result106, align 1
+  %throws.data.ptr108 = getelementptr inbounds i8, ptr %sret.result106, i8 1
+  switch i8 %tag107, label %choose.else110 [
+    i8 1, label %choose.when111
+    i8 0, label %choose.when129
   ]
 
-choose.end113:                                    ; preds = %choose.else114, %choose.when133, %choose.end119
-  %choose.value135 = phi ptr [ %throws.success.val134, %choose.when133 ], [ undef, %choose.end119 ], [ undef, %choose.else114 ]
-  %load.struct136 = load %_Z6Parser, ptr %2, align 8
-  %lexer137 = extractvalue %_Z6Parser %load.struct136, 0
-  %position138 = extractvalue %_Z5Lexer %lexer137, 3
+choose.end109:                                    ; preds = %choose.else110, %choose.when129, %choose.end115
+  %choose.value131 = phi ptr [ %throws.success.val130, %choose.when129 ], [ undef, %choose.end115 ], [ undef, %choose.else110 ]
+  %load.struct132 = load %_Z6Parser, ptr %2, align 8
+  %lexer133 = extractvalue %_Z6Parser %load.struct132, 0
+  %position134 = extractvalue %_Z5Lexer %lexer133, 3
   store ptr null, ptr %functions, align 1
-  call void @_ZN6Parser17parse_method_listEPN4scaly6memory4PageE(ptr noalias sret({ i8, [25 x i8] }) %sret.result139, ptr %1, ptr %2)
-  %tag140 = load i8, ptr %sret.result139, align 1
-  %throws.data.ptr141 = getelementptr inbounds i8, ptr %sret.result139, i8 1
-  switch i8 %tag140, label %choose.else143 [
-    i8 1, label %choose.when144
-    i8 0, label %choose.when162
+  call void @_ZN6Parser17parse_method_listEPN4scaly6memory4PageE(ptr noalias sret({ i8, [25 x i8] }) %sret.result135, ptr %1, ptr %2)
+  %tag136 = load i8, ptr %sret.result135, align 1
+  %throws.data.ptr137 = getelementptr inbounds i8, ptr %sret.result135, i8 1
+  switch i8 %tag136, label %choose.else139 [
+    i8 1, label %choose.when140
+    i8 0, label %choose.when158
   ]
 
-choose.else114:                                   ; preds = %if.end92
-  br label %choose.end113
+choose.else110:                                   ; preds = %if.end90
+  br label %choose.end109
 
-choose.when115:                                   ; preds = %if.end92
-  %throws.err.val116 = load %_Z11ParserError, ptr %throws.data.ptr112, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %variant.ptr79, ptr align 1 %throws.data.ptr112, i64 ptrtoint (ptr getelementptr (%_Z11ParserError, ptr null, i32 1) to i64), i1 false)
-  %tag.ptr117 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr79, i32 0, i32 0
-  %tag118 = load i8, ptr %tag.ptr117, align 1
-  switch i8 %tag118, label %choose.else120 [
-    i8 0, label %choose.when121
-    i8 1, label %choose.when124
+choose.when111:                                   ; preds = %if.end90
+  %throws.err.val112 = load %_Z11ParserError, ptr %throws.data.ptr108, align 1
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %variant.ptr77, ptr align 1 %throws.data.ptr108, i64 ptrtoint (ptr getelementptr (%_Z11ParserError, ptr null, i32 1) to i64), i1 false)
+  %tag.ptr113 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr77, i32 0, i32 0
+  %tag114 = load i8, ptr %tag.ptr113, align 1
+  switch i8 %tag114, label %choose.else116 [
+    i8 0, label %choose.when117
+    i8 1, label %choose.when120
   ]
 
-choose.end119:                                    ; preds = %choose.else120, %choose.when121
-  br label %choose.end113
+choose.end115:                                    ; preds = %choose.else116, %choose.when117
+  br label %choose.end109
 
-choose.else120:                                   ; preds = %choose.when115
-  br label %choose.end119
+choose.else116:                                   ; preds = %choose.when111
+  br label %choose.end115
 
-choose.when121:                                   ; preds = %choose.when115
-  %"variant.c_data().ptr122" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr79, i32 0, i32 1
-  %variant.val123 = load %_Z15DifferentSyntax, ptr %"variant.c_data().ptr122", align 1
-  br label %choose.end119
+choose.when117:                                   ; preds = %choose.when111
+  %"variant.c_data().ptr118" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr77, i32 0, i32 1
+  %variant.val119 = load %_Z15DifferentSyntax, ptr %"variant.c_data().ptr118", align 1
+  br label %choose.end115
 
-choose.when124:                                   ; preds = %choose.when115
-  %"variant.c_data().ptr125" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr79, i32 0, i32 1
-  %variant.val126 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr125", align 8
-  %throw.tag.ptr127 = getelementptr inbounds { i8, [80 x i8] }, ptr %0, i32 0, i32 0
-  store i8 1, ptr %throw.tag.ptr127, align 1
-  %variant.tag.ptr129 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr128, i32 0, i32 0
-  store i8 1, ptr %variant.tag.ptr129, align 1
-  %variant.data.ptr130 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr128, i32 0, i32 1
-  store %_Z13InvalidSyntax %variant.val126, ptr %variant.data.ptr130, align 1
-  %variant.val131 = load %_Z11ParserError, ptr %variant.ptr128, align 1
-  %throw.data.ptr132 = getelementptr inbounds { i8, [80 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val131, ptr %throw.data.ptr132, align 1
+choose.when120:                                   ; preds = %choose.when111
+  %"variant.c_data().ptr121" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr77, i32 0, i32 1
+  %variant.val122 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr121", align 8
+  %throw.tag.ptr123 = getelementptr inbounds { i8, [80 x i8] }, ptr %0, i32 0, i32 0
+  store i8 1, ptr %throw.tag.ptr123, align 1
+  %variant.tag.ptr125 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr124, i32 0, i32 0
+  store i8 1, ptr %variant.tag.ptr125, align 1
+  %variant.data.ptr126 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr124, i32 0, i32 1
+  store %_Z13InvalidSyntax %variant.val122, ptr %variant.data.ptr126, align 1
+  %variant.val127 = load %_Z11ParserError, ptr %variant.ptr124, align 1
+  %throw.data.ptr128 = getelementptr inbounds { i8, [80 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val127, ptr %throw.data.ptr128, align 1
   ret void
 
-choose.when133:                                   ; preds = %if.end92
-  %throws.success.val134 = load ptr, ptr %throws.data.ptr112, align 1
-  store ptr %throws.success.val134, ptr %uses, align 1
-  br label %choose.end113
+choose.when129:                                   ; preds = %if.end90
+  %throws.success.val130 = load ptr, ptr %throws.data.ptr108, align 1
+  store ptr %throws.success.val130, ptr %uses, align 1
+  br label %choose.end109
 
-choose.end142:                                    ; preds = %choose.else143, %choose.when162, %choose.end148
-  %choose.value164 = phi ptr [ %throws.success.val163, %choose.when162 ], [ undef, %choose.end148 ], [ undef, %choose.else143 ]
-  %field.inplace165 = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
-  %call166 = call i8 @_ZN15ParserConstants11CHAR_RBRACEEv()
-  %call167 = call i1 @_ZN5Lexer17parse_punctuationE2u8(ptr %field.inplace165, i8 %call166)
-  %bitnot168 = xor i1 %call167, true
-  br i1 %bitnot168, label %if.then169, label %if.end170
+choose.end138:                                    ; preds = %choose.else139, %choose.when158, %choose.end144
+  %choose.value160 = phi ptr [ %throws.success.val159, %choose.when158 ], [ undef, %choose.end144 ], [ undef, %choose.else139 ]
+  %field.inplace161 = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
+  %call162 = call i8 @_ZN15ParserConstants11CHAR_RBRACEEv()
+  %call163 = call i1 @_ZN5Lexer17parse_punctuationE2u8(ptr %field.inplace161, i8 %call162)
+  %bitnot164 = xor i1 %call163, true
+  br i1 %bitnot164, label %if.then165, label %if.end166
 
-choose.else143:                                   ; preds = %choose.end113
-  br label %choose.end142
+choose.else139:                                   ; preds = %choose.end109
+  br label %choose.end138
 
-choose.when144:                                   ; preds = %choose.end113
-  %throws.err.val145 = load %_Z11ParserError, ptr %throws.data.ptr141, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %variant.ptr128, ptr align 1 %throws.data.ptr141, i64 ptrtoint (ptr getelementptr (%_Z11ParserError, ptr null, i32 1) to i64), i1 false)
-  %tag.ptr146 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr128, i32 0, i32 0
-  %tag147 = load i8, ptr %tag.ptr146, align 1
-  switch i8 %tag147, label %choose.else149 [
-    i8 0, label %choose.when150
-    i8 1, label %choose.when153
+choose.when140:                                   ; preds = %choose.end109
+  %throws.err.val141 = load %_Z11ParserError, ptr %throws.data.ptr137, align 1
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %variant.ptr124, ptr align 1 %throws.data.ptr137, i64 ptrtoint (ptr getelementptr (%_Z11ParserError, ptr null, i32 1) to i64), i1 false)
+  %tag.ptr142 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr124, i32 0, i32 0
+  %tag143 = load i8, ptr %tag.ptr142, align 1
+  switch i8 %tag143, label %choose.else145 [
+    i8 0, label %choose.when146
+    i8 1, label %choose.when149
   ]
 
-choose.end148:                                    ; preds = %choose.else149, %choose.when150
-  br label %choose.end142
+choose.end144:                                    ; preds = %choose.else145, %choose.when146
+  br label %choose.end138
 
-choose.else149:                                   ; preds = %choose.when144
-  br label %choose.end148
+choose.else145:                                   ; preds = %choose.when140
+  br label %choose.end144
 
-choose.when150:                                   ; preds = %choose.when144
-  %"variant.c_data().ptr151" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr128, i32 0, i32 1
-  %variant.val152 = load %_Z15DifferentSyntax, ptr %"variant.c_data().ptr151", align 1
-  br label %choose.end148
+choose.when146:                                   ; preds = %choose.when140
+  %"variant.c_data().ptr147" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr124, i32 0, i32 1
+  %variant.val148 = load %_Z15DifferentSyntax, ptr %"variant.c_data().ptr147", align 1
+  br label %choose.end144
 
-choose.when153:                                   ; preds = %choose.when144
-  %"variant.c_data().ptr154" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr128, i32 0, i32 1
-  %variant.val155 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr154", align 8
-  %throw.tag.ptr156 = getelementptr inbounds { i8, [80 x i8] }, ptr %0, i32 0, i32 0
-  store i8 1, ptr %throw.tag.ptr156, align 1
-  %variant.tag.ptr158 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr157, i32 0, i32 0
-  store i8 1, ptr %variant.tag.ptr158, align 1
-  %variant.data.ptr159 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr157, i32 0, i32 1
-  store %_Z13InvalidSyntax %variant.val155, ptr %variant.data.ptr159, align 1
-  %variant.val160 = load %_Z11ParserError, ptr %variant.ptr157, align 1
-  %throw.data.ptr161 = getelementptr inbounds { i8, [80 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val160, ptr %throw.data.ptr161, align 1
+choose.when149:                                   ; preds = %choose.when140
+  %"variant.c_data().ptr150" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr124, i32 0, i32 1
+  %variant.val151 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr150", align 8
+  %throw.tag.ptr152 = getelementptr inbounds { i8, [80 x i8] }, ptr %0, i32 0, i32 0
+  store i8 1, ptr %throw.tag.ptr152, align 1
+  %variant.tag.ptr154 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr153, i32 0, i32 0
+  store i8 1, ptr %variant.tag.ptr154, align 1
+  %variant.data.ptr155 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr153, i32 0, i32 1
+  store %_Z13InvalidSyntax %variant.val151, ptr %variant.data.ptr155, align 1
+  %variant.val156 = load %_Z11ParserError, ptr %variant.ptr153, align 1
+  %throw.data.ptr157 = getelementptr inbounds { i8, [80 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val156, ptr %throw.data.ptr157, align 1
   ret void
 
-choose.when162:                                   ; preds = %choose.end113
-  %throws.success.val163 = load ptr, ptr %throws.data.ptr141, align 1
-  store ptr %throws.success.val163, ptr %functions, align 1
-  br label %choose.end142
+choose.when158:                                   ; preds = %choose.end109
+  %throws.success.val159 = load ptr, ptr %throws.data.ptr137, align 1
+  store ptr %throws.success.val159, ptr %functions, align 1
+  br label %choose.end138
 
-if.then169:                                       ; preds = %choose.end142
-  %throw.tag.ptr171 = getelementptr inbounds { i8, [80 x i8] }, ptr %0, i32 0, i32 0
-  store i8 1, ptr %throw.tag.ptr171, align 1
-  %variant.tag.ptr172 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr157, i32 0, i32 0
-  store i8 1, ptr %variant.tag.ptr172, align 1
-  %load.struct173 = load %_Z6Parser, ptr %2, align 8
-  %lexer174 = extractvalue %_Z6Parser %load.struct173, 0
-  %position175 = extractvalue %_Z5Lexer %lexer174, 3
-  %struct.region176 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.96 }, ptr %arg.tmp15, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region176, ptr %1, ptr %arg.tmp15)
-  %tuple.field177 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 0
-  store i64 %previous_position, ptr %tuple.field177, align 1
-  %tuple.field178 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 1
-  store i64 %position175, ptr %tuple.field178, align 1
-  %field.load179 = load { ptr }, ptr %struct.region176, align 8
-  %tuple.field180 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 2
-  store { ptr } %field.load179, ptr %tuple.field180, align 1
-  %tuple.val181 = load %_Z13InvalidSyntax, ptr %tuple16, align 8
-  %variant.data.ptr182 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr157, i32 0, i32 1
-  store %_Z13InvalidSyntax %tuple.val181, ptr %variant.data.ptr182, align 1
-  %variant.val183 = load %_Z11ParserError, ptr %variant.ptr157, align 1
-  %throw.data.ptr184 = getelementptr inbounds { i8, [80 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val183, ptr %throw.data.ptr184, align 1
+if.then165:                                       ; preds = %choose.end138
+  %throw.tag.ptr167 = getelementptr inbounds { i8, [80 x i8] }, ptr %0, i32 0, i32 0
+  store i8 1, ptr %throw.tag.ptr167, align 1
+  %variant.tag.ptr168 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr153, i32 0, i32 0
+  store i8 1, ptr %variant.tag.ptr168, align 1
+  %load.struct169 = load %_Z6Parser, ptr %2, align 8
+  %lexer170 = extractvalue %_Z6Parser %load.struct169, 0
+  %position171 = extractvalue %_Z5Lexer %lexer170, 3
+  %tuple.field172 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 0
+  store i64 %previous_position, ptr %tuple.field172, align 1
+  %tuple.field173 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 1
+  store i64 %position171, ptr %tuple.field173, align 1
+  %tuple.field174 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 2
+  store { ptr } { ptr @.sconst.94 }, ptr %tuple.field174, align 1
+  %tuple.val175 = load %_Z13InvalidSyntax, ptr %tuple14, align 8
+  %variant.data.ptr176 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr153, i32 0, i32 1
+  store %_Z13InvalidSyntax %tuple.val175, ptr %variant.data.ptr176, align 1
+  %variant.val177 = load %_Z11ParserError, ptr %variant.ptr153, align 1
+  %throw.data.ptr178 = getelementptr inbounds { i8, [80 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val177, ptr %throw.data.ptr178, align 1
   ret void
 
-if.end170:                                        ; preds = %choose.end142
-  %load.struct185 = load %_Z6Parser, ptr %2, align 8
-  %lexer186 = extractvalue %_Z6Parser %load.struct185, 0
-  %position187 = extractvalue %_Z5Lexer %lexer186, 3
-  %name188 = load %_Z10NameSyntax, ptr %name, align 8
-  %extension189 = load ptr, ptr %extension, align 8
-  %attributes190 = load ptr, ptr %attributes, align 8
-  %uses191 = load ptr, ptr %uses, align 8
-  %functions192 = load ptr, ptr %functions, align 8
-  %tuple.field194 = getelementptr inbounds %_Z11TraitSyntax, ptr %tuple193, i32 0, i32 0
-  store i64 %previous_position, ptr %tuple.field194, align 1
-  %tuple.field195 = getelementptr inbounds %_Z11TraitSyntax, ptr %tuple193, i32 0, i32 1
-  store i64 %position187, ptr %tuple.field195, align 1
-  %tuple.field196 = getelementptr inbounds %_Z11TraitSyntax, ptr %tuple193, i32 0, i32 2
-  store %_Z10NameSyntax %name188, ptr %tuple.field196, align 1
-  %tuple.field197 = getelementptr inbounds %_Z11TraitSyntax, ptr %tuple193, i32 0, i32 3
-  store ptr %extension189, ptr %tuple.field197, align 1
-  %tuple.field198 = getelementptr inbounds %_Z11TraitSyntax, ptr %tuple193, i32 0, i32 4
-  store ptr %attributes190, ptr %tuple.field198, align 1
-  %tuple.field199 = getelementptr inbounds %_Z11TraitSyntax, ptr %tuple193, i32 0, i32 5
-  store ptr %uses191, ptr %tuple.field199, align 1
-  %tuple.field200 = getelementptr inbounds %_Z11TraitSyntax, ptr %tuple193, i32 0, i32 6
-  store ptr %functions192, ptr %tuple.field200, align 1
-  %tuple.val201 = load %_Z11TraitSyntax, ptr %tuple193, align 8
+if.end166:                                        ; preds = %choose.end138
+  %load.struct179 = load %_Z6Parser, ptr %2, align 8
+  %lexer180 = extractvalue %_Z6Parser %load.struct179, 0
+  %position181 = extractvalue %_Z5Lexer %lexer180, 3
+  %name182 = load %_Z10NameSyntax, ptr %name, align 8
+  %extension183 = load ptr, ptr %extension, align 8
+  %attributes184 = load ptr, ptr %attributes, align 8
+  %uses185 = load ptr, ptr %uses, align 8
+  %functions186 = load ptr, ptr %functions, align 8
+  %tuple.field188 = getelementptr inbounds %_Z11TraitSyntax, ptr %tuple187, i32 0, i32 0
+  store i64 %previous_position, ptr %tuple.field188, align 1
+  %tuple.field189 = getelementptr inbounds %_Z11TraitSyntax, ptr %tuple187, i32 0, i32 1
+  store i64 %position181, ptr %tuple.field189, align 1
+  %tuple.field190 = getelementptr inbounds %_Z11TraitSyntax, ptr %tuple187, i32 0, i32 2
+  store %_Z10NameSyntax %name182, ptr %tuple.field190, align 1
+  %tuple.field191 = getelementptr inbounds %_Z11TraitSyntax, ptr %tuple187, i32 0, i32 3
+  store ptr %extension183, ptr %tuple.field191, align 1
+  %tuple.field192 = getelementptr inbounds %_Z11TraitSyntax, ptr %tuple187, i32 0, i32 4
+  store ptr %attributes184, ptr %tuple.field192, align 1
+  %tuple.field193 = getelementptr inbounds %_Z11TraitSyntax, ptr %tuple187, i32 0, i32 5
+  store ptr %uses185, ptr %tuple.field193, align 1
+  %tuple.field194 = getelementptr inbounds %_Z11TraitSyntax, ptr %tuple187, i32 0, i32 6
+  store ptr %functions186, ptr %tuple.field194, align 1
+  %tuple.val195 = load %_Z11TraitSyntax, ptr %tuple187, align 8
   %ret.tag.ptr = getelementptr inbounds { i8, [80 x i8] }, ptr %0, i32 0, i32 0
   store i8 0, ptr %ret.tag.ptr, align 1
   %ret.data.ptr = getelementptr inbounds { i8, [80 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11TraitSyntax %tuple.val201, ptr %ret.data.ptr, align 1
+  store %_Z11TraitSyntax %tuple.val195, ptr %ret.data.ptr, align 1
   ret void
 }
 
@@ -25718,7 +24569,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.97)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.95)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -26222,7 +25073,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.98)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.96)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -26940,7 +25791,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.99)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.97)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -27444,7 +26295,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.100)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.98)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -27774,9 +26625,8 @@ choose.when13:                                    ; preds = %while.body
 
 define linkonce_odr void @_ZN6Parser10parse_initEPN4scaly6memory4PageE(ptr noalias sret({ i8, [72 x i8] }) %0, ptr %1, ptr %2) {
 entry:
-  %tuple91 = alloca %_Z10InitSyntax, align 8
-  %tuple65 = alloca %_Z13InvalidSyntax, align 8
-  %arg.tmp64 = alloca { ptr }, align 8
+  %tuple89 = alloca %_Z10InitSyntax, align 8
+  %tuple63 = alloca %_Z13InvalidSyntax, align 8
   %variant.ptr58 = alloca %_Z11ParserError, align 8
   %choose.union49 = alloca %_Z11ParserError, align 8
   %sret.result42 = alloca { i8, [33 x i8] }, align 8
@@ -27792,11 +26642,9 @@ entry:
   %lexer = extractvalue %_Z6Parser %load.struct, 0
   %previous_position = extractvalue %_Z5Lexer %lexer, 4
   %field.inplace = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
   %arg.tmp = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.101 }, ptr %arg.tmp, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region, ptr %1, ptr %arg.tmp)
-  %call = call i1 @_ZN5Lexer13parse_keywordE6String(ptr %field.inplace, ptr %struct.region)
+  store { ptr } { ptr @.sconst.99 }, ptr %arg.tmp, align 1
+  %call = call i1 @_ZN5Lexer13parse_keywordE6String(ptr %field.inplace, ptr %arg.tmp)
   %bitnot = xor i1 %call, true
   br i1 %bitnot, label %if.then, label %if.end
 
@@ -27890,7 +26738,7 @@ choose.end18:                                     ; preds = %choose.else19, %cho
   %throws.data.ptr44 = getelementptr inbounds i8, ptr %sret.result42, i8 1
   switch i8 %tag43, label %choose.else46 [
     i8 1, label %choose.when47
-    i8 0, label %choose.when80
+    i8 0, label %choose.when78
   ]
 
 choose.else19:                                    ; preds = %choose.end
@@ -27930,31 +26778,31 @@ choose.when32:                                    ; preds = %choose.end
   %choose.arm.load35 = load %_Z18ParameterSetSyntax, ptr %tuple.region34, align 1
   br label %choose.end18
 
-choose.end45:                                     ; preds = %choose.else46, %choose.when80, %choose.end52
-  %choose.value82 = phi %_Z12ActionSyntax [ %throws.success.val81, %choose.when80 ], [ undef, %choose.end52 ], [ undef, %choose.else46 ]
-  %field.inplace83 = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
-  %call84 = call i1 @_ZN5Lexer11parse_colonEv(ptr %field.inplace83)
-  %load.struct85 = load %_Z6Parser, ptr %2, align 8
-  %lexer86 = extractvalue %_Z6Parser %load.struct85, 0
-  %position87 = extractvalue %_Z5Lexer %lexer86, 3
-  %lifetime88 = load ptr, ptr %lifetime, align 8
-  %parameters89 = load ptr, ptr %parameters, align 8
-  %action90 = load %_Z12ActionSyntax, ptr %action, align 1
-  %tuple.field92 = getelementptr inbounds %_Z10InitSyntax, ptr %tuple91, i32 0, i32 0
-  store i64 %previous_position, ptr %tuple.field92, align 1
-  %tuple.field93 = getelementptr inbounds %_Z10InitSyntax, ptr %tuple91, i32 0, i32 1
-  store i64 %position87, ptr %tuple.field93, align 1
-  %tuple.field94 = getelementptr inbounds %_Z10InitSyntax, ptr %tuple91, i32 0, i32 2
-  store ptr %lifetime88, ptr %tuple.field94, align 1
-  %tuple.field95 = getelementptr inbounds %_Z10InitSyntax, ptr %tuple91, i32 0, i32 3
-  store ptr %parameters89, ptr %tuple.field95, align 1
-  %tuple.field96 = getelementptr inbounds %_Z10InitSyntax, ptr %tuple91, i32 0, i32 4
-  store %_Z12ActionSyntax %action90, ptr %tuple.field96, align 1
-  %tuple.val97 = load %_Z10InitSyntax, ptr %tuple91, align 8
+choose.end45:                                     ; preds = %choose.else46, %choose.when78, %choose.end52
+  %choose.value80 = phi %_Z12ActionSyntax [ %throws.success.val79, %choose.when78 ], [ undef, %choose.end52 ], [ undef, %choose.else46 ]
+  %field.inplace81 = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
+  %call82 = call i1 @_ZN5Lexer11parse_colonEv(ptr %field.inplace81)
+  %load.struct83 = load %_Z6Parser, ptr %2, align 8
+  %lexer84 = extractvalue %_Z6Parser %load.struct83, 0
+  %position85 = extractvalue %_Z5Lexer %lexer84, 3
+  %lifetime86 = load ptr, ptr %lifetime, align 8
+  %parameters87 = load ptr, ptr %parameters, align 8
+  %action88 = load %_Z12ActionSyntax, ptr %action, align 1
+  %tuple.field90 = getelementptr inbounds %_Z10InitSyntax, ptr %tuple89, i32 0, i32 0
+  store i64 %previous_position, ptr %tuple.field90, align 1
+  %tuple.field91 = getelementptr inbounds %_Z10InitSyntax, ptr %tuple89, i32 0, i32 1
+  store i64 %position85, ptr %tuple.field91, align 1
+  %tuple.field92 = getelementptr inbounds %_Z10InitSyntax, ptr %tuple89, i32 0, i32 2
+  store ptr %lifetime86, ptr %tuple.field92, align 1
+  %tuple.field93 = getelementptr inbounds %_Z10InitSyntax, ptr %tuple89, i32 0, i32 3
+  store ptr %parameters87, ptr %tuple.field93, align 1
+  %tuple.field94 = getelementptr inbounds %_Z10InitSyntax, ptr %tuple89, i32 0, i32 4
+  store %_Z12ActionSyntax %action88, ptr %tuple.field94, align 1
+  %tuple.val95 = load %_Z10InitSyntax, ptr %tuple89, align 8
   %ret.tag.ptr = getelementptr inbounds { i8, [72 x i8] }, ptr %0, i32 0, i32 0
   store i8 0, ptr %ret.tag.ptr, align 1
   %ret.data.ptr = getelementptr inbounds { i8, [72 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z10InitSyntax %tuple.val97, ptr %ret.data.ptr, align 1
+  store %_Z10InitSyntax %tuple.val95, ptr %ret.data.ptr, align 1
   ret void
 
 choose.else46:                                    ; preds = %choose.end18
@@ -27967,7 +26815,7 @@ choose.when47:                                    ; preds = %choose.end18
   %tag51 = load i8, ptr %tag.ptr50, align 1
   switch i8 %tag51, label %choose.else53 [
     i8 0, label %choose.when54
-    i8 1, label %choose.when72
+    i8 1, label %choose.when70
   ]
 
 choose.end52:                                     ; preds = %choose.else53
@@ -27986,49 +26834,44 @@ choose.when54:                                    ; preds = %choose.when47
   %load.struct60 = load %_Z6Parser, ptr %2, align 8
   %lexer61 = extractvalue %_Z6Parser %load.struct60, 0
   %position62 = extractvalue %_Z5Lexer %lexer61, 3
-  %struct.region63 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.102 }, ptr %arg.tmp64, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region63, ptr %1, ptr %arg.tmp64)
-  %tuple.field = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple65, i32 0, i32 0
+  %tuple.field = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple63, i32 0, i32 0
   store i64 %position41, ptr %tuple.field, align 1
-  %tuple.field66 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple65, i32 0, i32 1
-  store i64 %position62, ptr %tuple.field66, align 1
-  %field.load = load { ptr }, ptr %struct.region63, align 8
-  %tuple.field67 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple65, i32 0, i32 2
-  store { ptr } %field.load, ptr %tuple.field67, align 1
-  %tuple.val68 = load %_Z13InvalidSyntax, ptr %tuple65, align 8
-  %variant.data.ptr69 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr58, i32 0, i32 1
-  store %_Z13InvalidSyntax %tuple.val68, ptr %variant.data.ptr69, align 1
-  %variant.val70 = load %_Z11ParserError, ptr %variant.ptr58, align 1
-  %throw.data.ptr71 = getelementptr inbounds { i8, [72 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val70, ptr %throw.data.ptr71, align 1
+  %tuple.field64 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple63, i32 0, i32 1
+  store i64 %position62, ptr %tuple.field64, align 1
+  %tuple.field65 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple63, i32 0, i32 2
+  store { ptr } { ptr @.sconst.100 }, ptr %tuple.field65, align 1
+  %tuple.val66 = load %_Z13InvalidSyntax, ptr %tuple63, align 8
+  %variant.data.ptr67 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr58, i32 0, i32 1
+  store %_Z13InvalidSyntax %tuple.val66, ptr %variant.data.ptr67, align 1
+  %variant.val68 = load %_Z11ParserError, ptr %variant.ptr58, align 1
+  %throw.data.ptr69 = getelementptr inbounds { i8, [72 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val68, ptr %throw.data.ptr69, align 1
   ret void
 
-choose.when72:                                    ; preds = %choose.when47
-  %"variant.c_data().ptr73" = getelementptr inbounds %_Z11ParserError, ptr %choose.union49, i32 0, i32 1
-  %variant.val74 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr73", align 8
-  %throw.tag.ptr75 = getelementptr inbounds { i8, [72 x i8] }, ptr %0, i32 0, i32 0
-  store i8 1, ptr %throw.tag.ptr75, align 1
-  %variant.tag.ptr76 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr58, i32 0, i32 0
-  store i8 1, ptr %variant.tag.ptr76, align 1
-  %variant.data.ptr77 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr58, i32 0, i32 1
-  store %_Z13InvalidSyntax %variant.val74, ptr %variant.data.ptr77, align 1
-  %variant.val78 = load %_Z11ParserError, ptr %variant.ptr58, align 1
-  %throw.data.ptr79 = getelementptr inbounds { i8, [72 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val78, ptr %throw.data.ptr79, align 1
+choose.when70:                                    ; preds = %choose.when47
+  %"variant.c_data().ptr71" = getelementptr inbounds %_Z11ParserError, ptr %choose.union49, i32 0, i32 1
+  %variant.val72 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr71", align 8
+  %throw.tag.ptr73 = getelementptr inbounds { i8, [72 x i8] }, ptr %0, i32 0, i32 0
+  store i8 1, ptr %throw.tag.ptr73, align 1
+  %variant.tag.ptr74 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr58, i32 0, i32 0
+  store i8 1, ptr %variant.tag.ptr74, align 1
+  %variant.data.ptr75 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr58, i32 0, i32 1
+  store %_Z13InvalidSyntax %variant.val72, ptr %variant.data.ptr75, align 1
+  %variant.val76 = load %_Z11ParserError, ptr %variant.ptr58, align 1
+  %throw.data.ptr77 = getelementptr inbounds { i8, [72 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val76, ptr %throw.data.ptr77, align 1
   ret void
 
-choose.when80:                                    ; preds = %choose.end18
-  %throws.success.val81 = load %_Z12ActionSyntax, ptr %throws.data.ptr44, align 1
+choose.when78:                                    ; preds = %choose.end18
+  %throws.success.val79 = load %_Z12ActionSyntax, ptr %throws.data.ptr44, align 1
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %action, ptr align 1 %throws.data.ptr44, i64 ptrtoint (ptr getelementptr (%_Z12ActionSyntax, ptr null, i32 1) to i64), i1 false)
   br label %choose.end45
 }
 
 define linkonce_odr void @_ZN6Parser12parse_deinitEPN4scaly6memory4PageE(ptr noalias sret({ i8, [56 x i8] }) %0, ptr %1, ptr %2) {
 entry:
-  %tuple40 = alloca %_Z12DeInitSyntax, align 8
-  %tuple18 = alloca %_Z13InvalidSyntax, align 8
-  %arg.tmp17 = alloca { ptr }, align 8
+  %tuple38 = alloca %_Z12DeInitSyntax, align 8
+  %tuple16 = alloca %_Z13InvalidSyntax, align 8
   %variant.ptr11 = alloca %_Z11ParserError, align 8
   %sret.result = alloca { i8, [33 x i8] }, align 8
   %action = alloca %_Z12ActionSyntax, align 8
@@ -28038,11 +26881,9 @@ entry:
   %lexer = extractvalue %_Z6Parser %load.struct, 0
   %previous_position = extractvalue %_Z5Lexer %lexer, 4
   %field.inplace = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
   %arg.tmp = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.103 }, ptr %arg.tmp, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region, ptr %1, ptr %arg.tmp)
-  %call = call i1 @_ZN5Lexer13parse_keywordE6String(ptr %field.inplace, ptr %struct.region)
+  store { ptr } { ptr @.sconst.101 }, ptr %arg.tmp, align 1
+  %call = call i1 @_ZN5Lexer13parse_keywordE6String(ptr %field.inplace, ptr %arg.tmp)
   %bitnot = xor i1 %call, true
   br i1 %bitnot, label %if.then, label %if.end
 
@@ -28071,28 +26912,28 @@ if.end:                                           ; preds = %entry
   %throws.data.ptr = getelementptr inbounds i8, ptr %sret.result, i8 1
   switch i8 %tag, label %choose.else [
     i8 1, label %choose.when
-    i8 0, label %choose.when33
+    i8 0, label %choose.when31
   ]
 
-choose.end:                                       ; preds = %choose.else, %choose.when33, %choose.end6
-  %choose.value = phi %_Z12ActionSyntax [ %throws.success.val, %choose.when33 ], [ undef, %choose.end6 ], [ undef, %choose.else ]
-  %field.inplace34 = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
-  %call35 = call i1 @_ZN5Lexer11parse_colonEv(ptr %field.inplace34)
-  %load.struct36 = load %_Z6Parser, ptr %2, align 8
-  %lexer37 = extractvalue %_Z6Parser %load.struct36, 0
-  %position38 = extractvalue %_Z5Lexer %lexer37, 3
-  %action39 = load %_Z12ActionSyntax, ptr %action, align 1
-  %tuple.field41 = getelementptr inbounds %_Z12DeInitSyntax, ptr %tuple40, i32 0, i32 0
-  store i64 %previous_position, ptr %tuple.field41, align 1
-  %tuple.field42 = getelementptr inbounds %_Z12DeInitSyntax, ptr %tuple40, i32 0, i32 1
-  store i64 %position38, ptr %tuple.field42, align 1
-  %tuple.field43 = getelementptr inbounds %_Z12DeInitSyntax, ptr %tuple40, i32 0, i32 2
-  store %_Z12ActionSyntax %action39, ptr %tuple.field43, align 1
-  %tuple.val44 = load %_Z12DeInitSyntax, ptr %tuple40, align 4
+choose.end:                                       ; preds = %choose.else, %choose.when31, %choose.end6
+  %choose.value = phi %_Z12ActionSyntax [ %throws.success.val, %choose.when31 ], [ undef, %choose.end6 ], [ undef, %choose.else ]
+  %field.inplace32 = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
+  %call33 = call i1 @_ZN5Lexer11parse_colonEv(ptr %field.inplace32)
+  %load.struct34 = load %_Z6Parser, ptr %2, align 8
+  %lexer35 = extractvalue %_Z6Parser %load.struct34, 0
+  %position36 = extractvalue %_Z5Lexer %lexer35, 3
+  %action37 = load %_Z12ActionSyntax, ptr %action, align 1
+  %tuple.field39 = getelementptr inbounds %_Z12DeInitSyntax, ptr %tuple38, i32 0, i32 0
+  store i64 %previous_position, ptr %tuple.field39, align 1
+  %tuple.field40 = getelementptr inbounds %_Z12DeInitSyntax, ptr %tuple38, i32 0, i32 1
+  store i64 %position36, ptr %tuple.field40, align 1
+  %tuple.field41 = getelementptr inbounds %_Z12DeInitSyntax, ptr %tuple38, i32 0, i32 2
+  store %_Z12ActionSyntax %action37, ptr %tuple.field41, align 1
+  %tuple.val42 = load %_Z12DeInitSyntax, ptr %tuple38, align 4
   %ret.tag.ptr = getelementptr inbounds { i8, [56 x i8] }, ptr %0, i32 0, i32 0
   store i8 0, ptr %ret.tag.ptr, align 1
   %ret.data.ptr = getelementptr inbounds { i8, [56 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z12DeInitSyntax %tuple.val44, ptr %ret.data.ptr, align 1
+  store %_Z12DeInitSyntax %tuple.val42, ptr %ret.data.ptr, align 1
   ret void
 
 choose.else:                                      ; preds = %if.end
@@ -28105,7 +26946,7 @@ choose.when:                                      ; preds = %if.end
   %tag5 = load i8, ptr %tag.ptr, align 1
   switch i8 %tag5, label %choose.else7 [
     i8 0, label %choose.when8
-    i8 1, label %choose.when25
+    i8 1, label %choose.when23
   ]
 
 choose.end6:                                      ; preds = %choose.else7
@@ -28124,39 +26965,35 @@ choose.when8:                                     ; preds = %choose.when
   %load.struct13 = load %_Z6Parser, ptr %2, align 8
   %lexer14 = extractvalue %_Z6Parser %load.struct13, 0
   %position15 = extractvalue %_Z5Lexer %lexer14, 3
-  %struct.region16 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.104 }, ptr %arg.tmp17, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region16, ptr %1, ptr %arg.tmp17)
-  %tuple.field = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple18, i32 0, i32 0
+  %tuple.field = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 0
   store i64 %position, ptr %tuple.field, align 1
-  %tuple.field19 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple18, i32 0, i32 1
-  store i64 %position15, ptr %tuple.field19, align 1
-  %field.load = load { ptr }, ptr %struct.region16, align 8
-  %tuple.field20 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple18, i32 0, i32 2
-  store { ptr } %field.load, ptr %tuple.field20, align 1
-  %tuple.val21 = load %_Z13InvalidSyntax, ptr %tuple18, align 8
-  %variant.data.ptr22 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr11, i32 0, i32 1
-  store %_Z13InvalidSyntax %tuple.val21, ptr %variant.data.ptr22, align 1
-  %variant.val23 = load %_Z11ParserError, ptr %variant.ptr11, align 1
-  %throw.data.ptr24 = getelementptr inbounds { i8, [56 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val23, ptr %throw.data.ptr24, align 1
+  %tuple.field17 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 1
+  store i64 %position15, ptr %tuple.field17, align 1
+  %tuple.field18 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 2
+  store { ptr } { ptr @.sconst.102 }, ptr %tuple.field18, align 1
+  %tuple.val19 = load %_Z13InvalidSyntax, ptr %tuple16, align 8
+  %variant.data.ptr20 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr11, i32 0, i32 1
+  store %_Z13InvalidSyntax %tuple.val19, ptr %variant.data.ptr20, align 1
+  %variant.val21 = load %_Z11ParserError, ptr %variant.ptr11, align 1
+  %throw.data.ptr22 = getelementptr inbounds { i8, [56 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val21, ptr %throw.data.ptr22, align 1
   ret void
 
-choose.when25:                                    ; preds = %choose.when
-  %"variant.c_data().ptr26" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 1
-  %variant.val27 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr26", align 8
-  %throw.tag.ptr28 = getelementptr inbounds { i8, [56 x i8] }, ptr %0, i32 0, i32 0
-  store i8 1, ptr %throw.tag.ptr28, align 1
-  %variant.tag.ptr29 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr11, i32 0, i32 0
-  store i8 1, ptr %variant.tag.ptr29, align 1
-  %variant.data.ptr30 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr11, i32 0, i32 1
-  store %_Z13InvalidSyntax %variant.val27, ptr %variant.data.ptr30, align 1
-  %variant.val31 = load %_Z11ParserError, ptr %variant.ptr11, align 1
-  %throw.data.ptr32 = getelementptr inbounds { i8, [56 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val31, ptr %throw.data.ptr32, align 1
+choose.when23:                                    ; preds = %choose.when
+  %"variant.c_data().ptr24" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 1
+  %variant.val25 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr24", align 8
+  %throw.tag.ptr26 = getelementptr inbounds { i8, [56 x i8] }, ptr %0, i32 0, i32 0
+  store i8 1, ptr %throw.tag.ptr26, align 1
+  %variant.tag.ptr27 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr11, i32 0, i32 0
+  store i8 1, ptr %variant.tag.ptr27, align 1
+  %variant.data.ptr28 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr11, i32 0, i32 1
+  store %_Z13InvalidSyntax %variant.val25, ptr %variant.data.ptr28, align 1
+  %variant.val29 = load %_Z11ParserError, ptr %variant.ptr11, align 1
+  %throw.data.ptr30 = getelementptr inbounds { i8, [56 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val29, ptr %throw.data.ptr30, align 1
   ret void
 
-choose.when33:                                    ; preds = %if.end
+choose.when31:                                    ; preds = %if.end
   %throws.success.val = load %_Z12ActionSyntax, ptr %throws.data.ptr, align 1
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %action, ptr align 1 %throws.data.ptr, i64 ptrtoint (ptr getelementptr (%_Z12ActionSyntax, ptr null, i32 1) to i64), i1 false)
   br label %choose.end
@@ -28164,9 +27001,8 @@ choose.when33:                                    ; preds = %if.end
 
 define linkonce_odr void @_ZN6Parser14parse_functionEPN4scaly6memory4PageE(ptr noalias sret({ i8, [152 x i8] }) %0, ptr %1, ptr %2) {
 entry:
-  %tuple36 = alloca %_Z14FunctionSyntax, align 8
-  %tuple16 = alloca %_Z13InvalidSyntax, align 8
-  %arg.tmp15 = alloca { ptr }, align 8
+  %tuple34 = alloca %_Z14FunctionSyntax, align 8
+  %tuple14 = alloca %_Z13InvalidSyntax, align 8
   %variant.ptr9 = alloca %_Z11ParserError, align 8
   %sret.result = alloca { i8, [129 x i8] }, align 8
   %target = alloca %_Z12TargetSyntax, align 8
@@ -28176,11 +27012,9 @@ entry:
   %lexer = extractvalue %_Z6Parser %load.struct, 0
   %previous_position = extractvalue %_Z5Lexer %lexer, 4
   %field.inplace = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
   %arg.tmp = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.105 }, ptr %arg.tmp, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region, ptr %1, ptr %arg.tmp)
-  %call = call i1 @_ZN5Lexer13parse_keywordE6String(ptr %field.inplace, ptr %struct.region)
+  store { ptr } { ptr @.sconst.103 }, ptr %arg.tmp, align 1
+  %call = call i1 @_ZN5Lexer13parse_keywordE6String(ptr %field.inplace, ptr %arg.tmp)
   %bitnot = xor i1 %call, true
   br i1 %bitnot, label %if.then, label %if.end
 
@@ -28207,26 +27041,26 @@ if.end:                                           ; preds = %entry
   %throws.data.ptr = getelementptr inbounds i8, ptr %sret.result, i8 1
   switch i8 %tag, label %choose.else [
     i8 1, label %choose.when
-    i8 0, label %choose.when31
+    i8 0, label %choose.when29
   ]
 
-choose.end:                                       ; preds = %choose.else, %choose.when31, %choose.end4
-  %choose.value = phi %_Z12TargetSyntax [ %throws.success.val, %choose.when31 ], [ undef, %choose.end4 ], [ undef, %choose.else ]
-  %load.struct32 = load %_Z6Parser, ptr %2, align 8
-  %lexer33 = extractvalue %_Z6Parser %load.struct32, 0
-  %position34 = extractvalue %_Z5Lexer %lexer33, 3
-  %target35 = load %_Z12TargetSyntax, ptr %target, align 1
-  %tuple.field37 = getelementptr inbounds %_Z14FunctionSyntax, ptr %tuple36, i32 0, i32 0
-  store i64 %previous_position, ptr %tuple.field37, align 1
-  %tuple.field38 = getelementptr inbounds %_Z14FunctionSyntax, ptr %tuple36, i32 0, i32 1
-  store i64 %position34, ptr %tuple.field38, align 1
-  %tuple.field39 = getelementptr inbounds %_Z14FunctionSyntax, ptr %tuple36, i32 0, i32 2
-  store %_Z12TargetSyntax %target35, ptr %tuple.field39, align 1
-  %tuple.val40 = load %_Z14FunctionSyntax, ptr %tuple36, align 4
+choose.end:                                       ; preds = %choose.else, %choose.when29, %choose.end4
+  %choose.value = phi %_Z12TargetSyntax [ %throws.success.val, %choose.when29 ], [ undef, %choose.end4 ], [ undef, %choose.else ]
+  %load.struct30 = load %_Z6Parser, ptr %2, align 8
+  %lexer31 = extractvalue %_Z6Parser %load.struct30, 0
+  %position32 = extractvalue %_Z5Lexer %lexer31, 3
+  %target33 = load %_Z12TargetSyntax, ptr %target, align 1
+  %tuple.field35 = getelementptr inbounds %_Z14FunctionSyntax, ptr %tuple34, i32 0, i32 0
+  store i64 %previous_position, ptr %tuple.field35, align 1
+  %tuple.field36 = getelementptr inbounds %_Z14FunctionSyntax, ptr %tuple34, i32 0, i32 1
+  store i64 %position32, ptr %tuple.field36, align 1
+  %tuple.field37 = getelementptr inbounds %_Z14FunctionSyntax, ptr %tuple34, i32 0, i32 2
+  store %_Z12TargetSyntax %target33, ptr %tuple.field37, align 1
+  %tuple.val38 = load %_Z14FunctionSyntax, ptr %tuple34, align 4
   %ret.tag.ptr = getelementptr inbounds { i8, [152 x i8] }, ptr %0, i32 0, i32 0
   store i8 0, ptr %ret.tag.ptr, align 1
   %ret.data.ptr = getelementptr inbounds { i8, [152 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z14FunctionSyntax %tuple.val40, ptr %ret.data.ptr, align 1
+  store %_Z14FunctionSyntax %tuple.val38, ptr %ret.data.ptr, align 1
   ret void
 
 choose.else:                                      ; preds = %if.end
@@ -28239,7 +27073,7 @@ choose.when:                                      ; preds = %if.end
   %tag3 = load i8, ptr %tag.ptr, align 1
   switch i8 %tag3, label %choose.else5 [
     i8 0, label %choose.when6
-    i8 1, label %choose.when23
+    i8 1, label %choose.when21
   ]
 
 choose.end4:                                      ; preds = %choose.else5
@@ -28258,39 +27092,35 @@ choose.when6:                                     ; preds = %choose.when
   %load.struct11 = load %_Z6Parser, ptr %2, align 8
   %lexer12 = extractvalue %_Z6Parser %load.struct11, 0
   %position13 = extractvalue %_Z5Lexer %lexer12, 3
-  %struct.region14 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.106 }, ptr %arg.tmp15, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region14, ptr %1, ptr %arg.tmp15)
-  %tuple.field = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 0
+  %tuple.field = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 0
   store i64 %position, ptr %tuple.field, align 1
-  %tuple.field17 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 1
-  store i64 %position13, ptr %tuple.field17, align 1
-  %field.load = load { ptr }, ptr %struct.region14, align 8
-  %tuple.field18 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 2
-  store { ptr } %field.load, ptr %tuple.field18, align 1
-  %tuple.val19 = load %_Z13InvalidSyntax, ptr %tuple16, align 8
-  %variant.data.ptr20 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
-  store %_Z13InvalidSyntax %tuple.val19, ptr %variant.data.ptr20, align 1
-  %variant.val21 = load %_Z11ParserError, ptr %variant.ptr9, align 1
-  %throw.data.ptr22 = getelementptr inbounds { i8, [152 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val21, ptr %throw.data.ptr22, align 1
+  %tuple.field15 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 1
+  store i64 %position13, ptr %tuple.field15, align 1
+  %tuple.field16 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 2
+  store { ptr } { ptr @.sconst.104 }, ptr %tuple.field16, align 1
+  %tuple.val17 = load %_Z13InvalidSyntax, ptr %tuple14, align 8
+  %variant.data.ptr18 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
+  store %_Z13InvalidSyntax %tuple.val17, ptr %variant.data.ptr18, align 1
+  %variant.val19 = load %_Z11ParserError, ptr %variant.ptr9, align 1
+  %throw.data.ptr20 = getelementptr inbounds { i8, [152 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val19, ptr %throw.data.ptr20, align 1
   ret void
 
-choose.when23:                                    ; preds = %choose.when
-  %"variant.c_data().ptr24" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 1
-  %variant.val25 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr24", align 8
-  %throw.tag.ptr26 = getelementptr inbounds { i8, [152 x i8] }, ptr %0, i32 0, i32 0
-  store i8 1, ptr %throw.tag.ptr26, align 1
-  %variant.tag.ptr27 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 0
-  store i8 1, ptr %variant.tag.ptr27, align 1
-  %variant.data.ptr28 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
-  store %_Z13InvalidSyntax %variant.val25, ptr %variant.data.ptr28, align 1
-  %variant.val29 = load %_Z11ParserError, ptr %variant.ptr9, align 1
-  %throw.data.ptr30 = getelementptr inbounds { i8, [152 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val29, ptr %throw.data.ptr30, align 1
+choose.when21:                                    ; preds = %choose.when
+  %"variant.c_data().ptr22" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 1
+  %variant.val23 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr22", align 8
+  %throw.tag.ptr24 = getelementptr inbounds { i8, [152 x i8] }, ptr %0, i32 0, i32 0
+  store i8 1, ptr %throw.tag.ptr24, align 1
+  %variant.tag.ptr25 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 0
+  store i8 1, ptr %variant.tag.ptr25, align 1
+  %variant.data.ptr26 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
+  store %_Z13InvalidSyntax %variant.val23, ptr %variant.data.ptr26, align 1
+  %variant.val27 = load %_Z11ParserError, ptr %variant.ptr9, align 1
+  %throw.data.ptr28 = getelementptr inbounds { i8, [152 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val27, ptr %throw.data.ptr28, align 1
   ret void
 
-choose.when31:                                    ; preds = %if.end
+choose.when29:                                    ; preds = %if.end
   %throws.success.val = load %_Z12TargetSyntax, ptr %throws.data.ptr, align 1
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %target, ptr align 1 %throws.data.ptr, i64 ptrtoint (ptr getelementptr (%_Z12TargetSyntax, ptr null, i32 1) to i64), i1 false)
   br label %choose.end
@@ -28298,9 +27128,8 @@ choose.when31:                                    ; preds = %if.end
 
 define linkonce_odr void @_ZN6Parser15parse_procedureEPN4scaly6memory4PageE(ptr noalias sret({ i8, [152 x i8] }) %0, ptr %1, ptr %2) {
 entry:
-  %tuple36 = alloca %_Z15ProcedureSyntax, align 8
-  %tuple16 = alloca %_Z13InvalidSyntax, align 8
-  %arg.tmp15 = alloca { ptr }, align 8
+  %tuple34 = alloca %_Z15ProcedureSyntax, align 8
+  %tuple14 = alloca %_Z13InvalidSyntax, align 8
   %variant.ptr9 = alloca %_Z11ParserError, align 8
   %sret.result = alloca { i8, [129 x i8] }, align 8
   %target = alloca %_Z12TargetSyntax, align 8
@@ -28310,11 +27139,9 @@ entry:
   %lexer = extractvalue %_Z6Parser %load.struct, 0
   %previous_position = extractvalue %_Z5Lexer %lexer, 4
   %field.inplace = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
   %arg.tmp = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.107 }, ptr %arg.tmp, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region, ptr %1, ptr %arg.tmp)
-  %call = call i1 @_ZN5Lexer13parse_keywordE6String(ptr %field.inplace, ptr %struct.region)
+  store { ptr } { ptr @.sconst.105 }, ptr %arg.tmp, align 1
+  %call = call i1 @_ZN5Lexer13parse_keywordE6String(ptr %field.inplace, ptr %arg.tmp)
   %bitnot = xor i1 %call, true
   br i1 %bitnot, label %if.then, label %if.end
 
@@ -28341,26 +27168,26 @@ if.end:                                           ; preds = %entry
   %throws.data.ptr = getelementptr inbounds i8, ptr %sret.result, i8 1
   switch i8 %tag, label %choose.else [
     i8 1, label %choose.when
-    i8 0, label %choose.when31
+    i8 0, label %choose.when29
   ]
 
-choose.end:                                       ; preds = %choose.else, %choose.when31, %choose.end4
-  %choose.value = phi %_Z12TargetSyntax [ %throws.success.val, %choose.when31 ], [ undef, %choose.end4 ], [ undef, %choose.else ]
-  %load.struct32 = load %_Z6Parser, ptr %2, align 8
-  %lexer33 = extractvalue %_Z6Parser %load.struct32, 0
-  %position34 = extractvalue %_Z5Lexer %lexer33, 3
-  %target35 = load %_Z12TargetSyntax, ptr %target, align 1
-  %tuple.field37 = getelementptr inbounds %_Z15ProcedureSyntax, ptr %tuple36, i32 0, i32 0
-  store i64 %previous_position, ptr %tuple.field37, align 1
-  %tuple.field38 = getelementptr inbounds %_Z15ProcedureSyntax, ptr %tuple36, i32 0, i32 1
-  store i64 %position34, ptr %tuple.field38, align 1
-  %tuple.field39 = getelementptr inbounds %_Z15ProcedureSyntax, ptr %tuple36, i32 0, i32 2
-  store %_Z12TargetSyntax %target35, ptr %tuple.field39, align 1
-  %tuple.val40 = load %_Z15ProcedureSyntax, ptr %tuple36, align 4
+choose.end:                                       ; preds = %choose.else, %choose.when29, %choose.end4
+  %choose.value = phi %_Z12TargetSyntax [ %throws.success.val, %choose.when29 ], [ undef, %choose.end4 ], [ undef, %choose.else ]
+  %load.struct30 = load %_Z6Parser, ptr %2, align 8
+  %lexer31 = extractvalue %_Z6Parser %load.struct30, 0
+  %position32 = extractvalue %_Z5Lexer %lexer31, 3
+  %target33 = load %_Z12TargetSyntax, ptr %target, align 1
+  %tuple.field35 = getelementptr inbounds %_Z15ProcedureSyntax, ptr %tuple34, i32 0, i32 0
+  store i64 %previous_position, ptr %tuple.field35, align 1
+  %tuple.field36 = getelementptr inbounds %_Z15ProcedureSyntax, ptr %tuple34, i32 0, i32 1
+  store i64 %position32, ptr %tuple.field36, align 1
+  %tuple.field37 = getelementptr inbounds %_Z15ProcedureSyntax, ptr %tuple34, i32 0, i32 2
+  store %_Z12TargetSyntax %target33, ptr %tuple.field37, align 1
+  %tuple.val38 = load %_Z15ProcedureSyntax, ptr %tuple34, align 4
   %ret.tag.ptr = getelementptr inbounds { i8, [152 x i8] }, ptr %0, i32 0, i32 0
   store i8 0, ptr %ret.tag.ptr, align 1
   %ret.data.ptr = getelementptr inbounds { i8, [152 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z15ProcedureSyntax %tuple.val40, ptr %ret.data.ptr, align 1
+  store %_Z15ProcedureSyntax %tuple.val38, ptr %ret.data.ptr, align 1
   ret void
 
 choose.else:                                      ; preds = %if.end
@@ -28373,7 +27200,7 @@ choose.when:                                      ; preds = %if.end
   %tag3 = load i8, ptr %tag.ptr, align 1
   switch i8 %tag3, label %choose.else5 [
     i8 0, label %choose.when6
-    i8 1, label %choose.when23
+    i8 1, label %choose.when21
   ]
 
 choose.end4:                                      ; preds = %choose.else5
@@ -28392,39 +27219,35 @@ choose.when6:                                     ; preds = %choose.when
   %load.struct11 = load %_Z6Parser, ptr %2, align 8
   %lexer12 = extractvalue %_Z6Parser %load.struct11, 0
   %position13 = extractvalue %_Z5Lexer %lexer12, 3
-  %struct.region14 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.108 }, ptr %arg.tmp15, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region14, ptr %1, ptr %arg.tmp15)
-  %tuple.field = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 0
+  %tuple.field = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 0
   store i64 %position, ptr %tuple.field, align 1
-  %tuple.field17 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 1
-  store i64 %position13, ptr %tuple.field17, align 1
-  %field.load = load { ptr }, ptr %struct.region14, align 8
-  %tuple.field18 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 2
-  store { ptr } %field.load, ptr %tuple.field18, align 1
-  %tuple.val19 = load %_Z13InvalidSyntax, ptr %tuple16, align 8
-  %variant.data.ptr20 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
-  store %_Z13InvalidSyntax %tuple.val19, ptr %variant.data.ptr20, align 1
-  %variant.val21 = load %_Z11ParserError, ptr %variant.ptr9, align 1
-  %throw.data.ptr22 = getelementptr inbounds { i8, [152 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val21, ptr %throw.data.ptr22, align 1
+  %tuple.field15 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 1
+  store i64 %position13, ptr %tuple.field15, align 1
+  %tuple.field16 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 2
+  store { ptr } { ptr @.sconst.106 }, ptr %tuple.field16, align 1
+  %tuple.val17 = load %_Z13InvalidSyntax, ptr %tuple14, align 8
+  %variant.data.ptr18 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
+  store %_Z13InvalidSyntax %tuple.val17, ptr %variant.data.ptr18, align 1
+  %variant.val19 = load %_Z11ParserError, ptr %variant.ptr9, align 1
+  %throw.data.ptr20 = getelementptr inbounds { i8, [152 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val19, ptr %throw.data.ptr20, align 1
   ret void
 
-choose.when23:                                    ; preds = %choose.when
-  %"variant.c_data().ptr24" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 1
-  %variant.val25 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr24", align 8
-  %throw.tag.ptr26 = getelementptr inbounds { i8, [152 x i8] }, ptr %0, i32 0, i32 0
-  store i8 1, ptr %throw.tag.ptr26, align 1
-  %variant.tag.ptr27 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 0
-  store i8 1, ptr %variant.tag.ptr27, align 1
-  %variant.data.ptr28 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
-  store %_Z13InvalidSyntax %variant.val25, ptr %variant.data.ptr28, align 1
-  %variant.val29 = load %_Z11ParserError, ptr %variant.ptr9, align 1
-  %throw.data.ptr30 = getelementptr inbounds { i8, [152 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val29, ptr %throw.data.ptr30, align 1
+choose.when21:                                    ; preds = %choose.when
+  %"variant.c_data().ptr22" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 1
+  %variant.val23 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr22", align 8
+  %throw.tag.ptr24 = getelementptr inbounds { i8, [152 x i8] }, ptr %0, i32 0, i32 0
+  store i8 1, ptr %throw.tag.ptr24, align 1
+  %variant.tag.ptr25 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 0
+  store i8 1, ptr %variant.tag.ptr25, align 1
+  %variant.data.ptr26 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
+  store %_Z13InvalidSyntax %variant.val23, ptr %variant.data.ptr26, align 1
+  %variant.val27 = load %_Z11ParserError, ptr %variant.ptr9, align 1
+  %throw.data.ptr28 = getelementptr inbounds { i8, [152 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val27, ptr %throw.data.ptr28, align 1
   ret void
 
-choose.when31:                                    ; preds = %if.end
+choose.when29:                                    ; preds = %if.end
   %throws.success.val = load %_Z12TargetSyntax, ptr %throws.data.ptr, align 1
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %target, ptr align 1 %throws.data.ptr, i64 ptrtoint (ptr getelementptr (%_Z12TargetSyntax, ptr null, i32 1) to i64), i1 false)
   br label %choose.end
@@ -28432,9 +27255,8 @@ choose.when31:                                    ; preds = %if.end
 
 define linkonce_odr void @_ZN6Parser14parse_operatorEPN4scaly6memory4PageE(ptr noalias sret({ i8, [152 x i8] }) %0, ptr %1, ptr %2) {
 entry:
-  %tuple36 = alloca %_Z14OperatorSyntax, align 8
-  %tuple16 = alloca %_Z13InvalidSyntax, align 8
-  %arg.tmp15 = alloca { ptr }, align 8
+  %tuple34 = alloca %_Z14OperatorSyntax, align 8
+  %tuple14 = alloca %_Z13InvalidSyntax, align 8
   %variant.ptr9 = alloca %_Z11ParserError, align 8
   %sret.result = alloca { i8, [129 x i8] }, align 8
   %target = alloca %_Z12TargetSyntax, align 8
@@ -28444,11 +27266,9 @@ entry:
   %lexer = extractvalue %_Z6Parser %load.struct, 0
   %previous_position = extractvalue %_Z5Lexer %lexer, 4
   %field.inplace = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
   %arg.tmp = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.109 }, ptr %arg.tmp, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region, ptr %1, ptr %arg.tmp)
-  %call = call i1 @_ZN5Lexer13parse_keywordE6String(ptr %field.inplace, ptr %struct.region)
+  store { ptr } { ptr @.sconst.107 }, ptr %arg.tmp, align 1
+  %call = call i1 @_ZN5Lexer13parse_keywordE6String(ptr %field.inplace, ptr %arg.tmp)
   %bitnot = xor i1 %call, true
   br i1 %bitnot, label %if.then, label %if.end
 
@@ -28475,26 +27295,26 @@ if.end:                                           ; preds = %entry
   %throws.data.ptr = getelementptr inbounds i8, ptr %sret.result, i8 1
   switch i8 %tag, label %choose.else [
     i8 1, label %choose.when
-    i8 0, label %choose.when31
+    i8 0, label %choose.when29
   ]
 
-choose.end:                                       ; preds = %choose.else, %choose.when31, %choose.end4
-  %choose.value = phi %_Z12TargetSyntax [ %throws.success.val, %choose.when31 ], [ undef, %choose.end4 ], [ undef, %choose.else ]
-  %load.struct32 = load %_Z6Parser, ptr %2, align 8
-  %lexer33 = extractvalue %_Z6Parser %load.struct32, 0
-  %position34 = extractvalue %_Z5Lexer %lexer33, 3
-  %target35 = load %_Z12TargetSyntax, ptr %target, align 1
-  %tuple.field37 = getelementptr inbounds %_Z14OperatorSyntax, ptr %tuple36, i32 0, i32 0
-  store i64 %previous_position, ptr %tuple.field37, align 1
-  %tuple.field38 = getelementptr inbounds %_Z14OperatorSyntax, ptr %tuple36, i32 0, i32 1
-  store i64 %position34, ptr %tuple.field38, align 1
-  %tuple.field39 = getelementptr inbounds %_Z14OperatorSyntax, ptr %tuple36, i32 0, i32 2
-  store %_Z12TargetSyntax %target35, ptr %tuple.field39, align 1
-  %tuple.val40 = load %_Z14OperatorSyntax, ptr %tuple36, align 4
+choose.end:                                       ; preds = %choose.else, %choose.when29, %choose.end4
+  %choose.value = phi %_Z12TargetSyntax [ %throws.success.val, %choose.when29 ], [ undef, %choose.end4 ], [ undef, %choose.else ]
+  %load.struct30 = load %_Z6Parser, ptr %2, align 8
+  %lexer31 = extractvalue %_Z6Parser %load.struct30, 0
+  %position32 = extractvalue %_Z5Lexer %lexer31, 3
+  %target33 = load %_Z12TargetSyntax, ptr %target, align 1
+  %tuple.field35 = getelementptr inbounds %_Z14OperatorSyntax, ptr %tuple34, i32 0, i32 0
+  store i64 %previous_position, ptr %tuple.field35, align 1
+  %tuple.field36 = getelementptr inbounds %_Z14OperatorSyntax, ptr %tuple34, i32 0, i32 1
+  store i64 %position32, ptr %tuple.field36, align 1
+  %tuple.field37 = getelementptr inbounds %_Z14OperatorSyntax, ptr %tuple34, i32 0, i32 2
+  store %_Z12TargetSyntax %target33, ptr %tuple.field37, align 1
+  %tuple.val38 = load %_Z14OperatorSyntax, ptr %tuple34, align 4
   %ret.tag.ptr = getelementptr inbounds { i8, [152 x i8] }, ptr %0, i32 0, i32 0
   store i8 0, ptr %ret.tag.ptr, align 1
   %ret.data.ptr = getelementptr inbounds { i8, [152 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z14OperatorSyntax %tuple.val40, ptr %ret.data.ptr, align 1
+  store %_Z14OperatorSyntax %tuple.val38, ptr %ret.data.ptr, align 1
   ret void
 
 choose.else:                                      ; preds = %if.end
@@ -28507,7 +27327,7 @@ choose.when:                                      ; preds = %if.end
   %tag3 = load i8, ptr %tag.ptr, align 1
   switch i8 %tag3, label %choose.else5 [
     i8 0, label %choose.when6
-    i8 1, label %choose.when23
+    i8 1, label %choose.when21
   ]
 
 choose.end4:                                      ; preds = %choose.else5
@@ -28526,39 +27346,35 @@ choose.when6:                                     ; preds = %choose.when
   %load.struct11 = load %_Z6Parser, ptr %2, align 8
   %lexer12 = extractvalue %_Z6Parser %load.struct11, 0
   %position13 = extractvalue %_Z5Lexer %lexer12, 3
-  %struct.region14 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.110 }, ptr %arg.tmp15, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region14, ptr %1, ptr %arg.tmp15)
-  %tuple.field = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 0
+  %tuple.field = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 0
   store i64 %position, ptr %tuple.field, align 1
-  %tuple.field17 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 1
-  store i64 %position13, ptr %tuple.field17, align 1
-  %field.load = load { ptr }, ptr %struct.region14, align 8
-  %tuple.field18 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 2
-  store { ptr } %field.load, ptr %tuple.field18, align 1
-  %tuple.val19 = load %_Z13InvalidSyntax, ptr %tuple16, align 8
-  %variant.data.ptr20 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
-  store %_Z13InvalidSyntax %tuple.val19, ptr %variant.data.ptr20, align 1
-  %variant.val21 = load %_Z11ParserError, ptr %variant.ptr9, align 1
-  %throw.data.ptr22 = getelementptr inbounds { i8, [152 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val21, ptr %throw.data.ptr22, align 1
+  %tuple.field15 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 1
+  store i64 %position13, ptr %tuple.field15, align 1
+  %tuple.field16 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 2
+  store { ptr } { ptr @.sconst.108 }, ptr %tuple.field16, align 1
+  %tuple.val17 = load %_Z13InvalidSyntax, ptr %tuple14, align 8
+  %variant.data.ptr18 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
+  store %_Z13InvalidSyntax %tuple.val17, ptr %variant.data.ptr18, align 1
+  %variant.val19 = load %_Z11ParserError, ptr %variant.ptr9, align 1
+  %throw.data.ptr20 = getelementptr inbounds { i8, [152 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val19, ptr %throw.data.ptr20, align 1
   ret void
 
-choose.when23:                                    ; preds = %choose.when
-  %"variant.c_data().ptr24" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 1
-  %variant.val25 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr24", align 8
-  %throw.tag.ptr26 = getelementptr inbounds { i8, [152 x i8] }, ptr %0, i32 0, i32 0
-  store i8 1, ptr %throw.tag.ptr26, align 1
-  %variant.tag.ptr27 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 0
-  store i8 1, ptr %variant.tag.ptr27, align 1
-  %variant.data.ptr28 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
-  store %_Z13InvalidSyntax %variant.val25, ptr %variant.data.ptr28, align 1
-  %variant.val29 = load %_Z11ParserError, ptr %variant.ptr9, align 1
-  %throw.data.ptr30 = getelementptr inbounds { i8, [152 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val29, ptr %throw.data.ptr30, align 1
+choose.when21:                                    ; preds = %choose.when
+  %"variant.c_data().ptr22" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 1
+  %variant.val23 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr22", align 8
+  %throw.tag.ptr24 = getelementptr inbounds { i8, [152 x i8] }, ptr %0, i32 0, i32 0
+  store i8 1, ptr %throw.tag.ptr24, align 1
+  %variant.tag.ptr25 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 0
+  store i8 1, ptr %variant.tag.ptr25, align 1
+  %variant.data.ptr26 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
+  store %_Z13InvalidSyntax %variant.val23, ptr %variant.data.ptr26, align 1
+  %variant.val27 = load %_Z11ParserError, ptr %variant.ptr9, align 1
+  %throw.data.ptr28 = getelementptr inbounds { i8, [152 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val27, ptr %throw.data.ptr28, align 1
   ret void
 
-choose.when31:                                    ; preds = %if.end
+choose.when29:                                    ; preds = %if.end
   %throws.success.val = load %_Z12TargetSyntax, ptr %throws.data.ptr, align 1
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %target, ptr align 1 %throws.data.ptr, i64 ptrtoint (ptr getelementptr (%_Z12TargetSyntax, ptr null, i32 1) to i64), i1 false)
   br label %choose.end
@@ -28711,7 +27527,6 @@ define linkonce_odr void @_ZN6Parser11parse_namedEPN4scaly6memory4PageE(ptr noal
 entry:
   %tuple36 = alloca %_Z11NamedSyntax, align 8
   %tuple16 = alloca %_Z13InvalidSyntax, align 8
-  %arg.tmp = alloca { ptr }, align 8
   %variant.ptr11 = alloca %_Z11ParserError, align 8
   %sret.result4 = alloca { i8, [104 x i8] }, align 8
   %routine = alloca %_Z13RoutineSyntax, align 8
@@ -28764,16 +27579,16 @@ choose.end:                                       ; preds = %choose.else, %choos
   store i64 %previous_position, ptr %tuple.field37, align 1
   %tuple.field38 = getelementptr inbounds %_Z11NamedSyntax, ptr %tuple36, i32 0, i32 1
   store i64 %position34, ptr %tuple.field38, align 1
-  %field.load39 = load { ptr }, ptr %sret.result, align 8
-  %tuple.field40 = getelementptr inbounds %_Z11NamedSyntax, ptr %tuple36, i32 0, i32 2
-  store { ptr } %field.load39, ptr %tuple.field40, align 1
-  %tuple.field41 = getelementptr inbounds %_Z11NamedSyntax, ptr %tuple36, i32 0, i32 3
-  store %_Z13RoutineSyntax %routine35, ptr %tuple.field41, align 1
-  %tuple.val42 = load %_Z11NamedSyntax, ptr %tuple36, align 8
+  %field.load = load { ptr }, ptr %sret.result, align 8
+  %tuple.field39 = getelementptr inbounds %_Z11NamedSyntax, ptr %tuple36, i32 0, i32 2
+  store { ptr } %field.load, ptr %tuple.field39, align 1
+  %tuple.field40 = getelementptr inbounds %_Z11NamedSyntax, ptr %tuple36, i32 0, i32 3
+  store %_Z13RoutineSyntax %routine35, ptr %tuple.field40, align 1
+  %tuple.val41 = load %_Z11NamedSyntax, ptr %tuple36, align 8
   %ret.tag.ptr = getelementptr inbounds { i8, [128 x i8] }, ptr %0, i32 0, i32 0
   store i8 0, ptr %ret.tag.ptr, align 1
   %ret.data.ptr = getelementptr inbounds { i8, [128 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11NamedSyntax %tuple.val42, ptr %ret.data.ptr, align 1
+  store %_Z11NamedSyntax %tuple.val41, ptr %ret.data.ptr, align 1
   ret void
 
 choose.else:                                      ; preds = %if.end
@@ -28805,16 +27620,12 @@ choose.when8:                                     ; preds = %choose.when
   %load.struct13 = load %_Z6Parser, ptr %2, align 8
   %lexer14 = extractvalue %_Z6Parser %load.struct13, 0
   %position15 = extractvalue %_Z5Lexer %lexer14, 3
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.111 }, ptr %arg.tmp, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region, ptr %1, ptr %arg.tmp)
   %tuple.field = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 0
   store i64 %position, ptr %tuple.field, align 1
   %tuple.field17 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 1
   store i64 %position15, ptr %tuple.field17, align 1
-  %field.load = load { ptr }, ptr %struct.region, align 8
   %tuple.field18 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 2
-  store { ptr } %field.load, ptr %tuple.field18, align 1
+  store { ptr } { ptr @.sconst.109 }, ptr %tuple.field18, align 1
   %tuple.val19 = load %_Z13InvalidSyntax, ptr %tuple16, align 8
   %variant.data.ptr20 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr11, i32 0, i32 1
   store %_Z13InvalidSyntax %tuple.val19, ptr %variant.data.ptr20, align 1
@@ -28847,7 +27658,6 @@ define linkonce_odr void @_ZN6Parser13parse_routineEPN4scaly6memory4PageE(ptr no
 entry:
   %tuple210 = alloca %_Z13RoutineSyntax, align 8
   %tuple = alloca %_Z13InvalidSyntax, align 8
-  %arg.tmp = alloca { ptr }, align 8
   %variant.ptr178 = alloca %_Z11ParserError, align 8
   %choose.union169 = alloca %_Z11ParserError, align 8
   %sret.result162 = alloca { i8, [34 x i8] }, align 8
@@ -29296,16 +28106,12 @@ choose.when174:                                   ; preds = %choose.when167
   %load.struct180 = load %_Z6Parser, ptr %2, align 8
   %lexer181 = extractvalue %_Z6Parser %load.struct180, 0
   %position182 = extractvalue %_Z5Lexer %lexer181, 3
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.112 }, ptr %arg.tmp, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region, ptr %1, ptr %arg.tmp)
   %tuple.field183 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple, i32 0, i32 0
   store i64 %position161, ptr %tuple.field183, align 1
   %tuple.field184 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple, i32 0, i32 1
   store i64 %position182, ptr %tuple.field184, align 1
-  %field.load = load { ptr }, ptr %struct.region, align 8
   %tuple.field185 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple, i32 0, i32 2
-  store { ptr } %field.load, ptr %tuple.field185, align 1
+  store { ptr } { ptr @.sconst.110 }, ptr %tuple.field185, align 1
   %tuple.val = load %_Z13InvalidSyntax, ptr %tuple, align 8
   %variant.data.ptr186 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr178, i32 0, i32 1
   store %_Z13InvalidSyntax %tuple.val, ptr %variant.data.ptr186, align 1
@@ -29610,11 +28416,9 @@ entry:
   %lexer = extractvalue %_Z6Parser %load.struct, 0
   %previous_position = extractvalue %_Z5Lexer %lexer, 4
   %field.inplace = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
   %arg.tmp = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.113 }, ptr %arg.tmp, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region, ptr %1, ptr %arg.tmp)
-  %call = call i1 @_ZN5Lexer13parse_keywordE6String(ptr %field.inplace, ptr %struct.region)
+  store { ptr } { ptr @.sconst.111 }, ptr %arg.tmp, align 1
+  %call = call i1 @_ZN5Lexer13parse_keywordE6String(ptr %field.inplace, ptr %arg.tmp)
   %bitnot = xor i1 %call, true
   br i1 %bitnot, label %if.then, label %if.end
 
@@ -29657,11 +28461,9 @@ entry:
   %lexer = extractvalue %_Z6Parser %load.struct, 0
   %previous_position = extractvalue %_Z5Lexer %lexer, 4
   %field.inplace = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
   %arg.tmp = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.114 }, ptr %arg.tmp, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region, ptr %1, ptr %arg.tmp)
-  %call = call i1 @_ZN5Lexer13parse_keywordE6String(ptr %field.inplace, ptr %struct.region)
+  store { ptr } { ptr @.sconst.112 }, ptr %arg.tmp, align 1
+  %call = call i1 @_ZN5Lexer13parse_keywordE6String(ptr %field.inplace, ptr %arg.tmp)
   %bitnot = xor i1 %call, true
   br i1 %bitnot, label %if.then, label %if.end
 
@@ -29704,11 +28506,9 @@ entry:
   %lexer = extractvalue %_Z6Parser %load.struct, 0
   %previous_position = extractvalue %_Z5Lexer %lexer, 4
   %field.inplace = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
   %arg.tmp = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.115 }, ptr %arg.tmp, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region, ptr %1, ptr %arg.tmp)
-  %call = call i1 @_ZN5Lexer13parse_keywordE6String(ptr %field.inplace, ptr %struct.region)
+  store { ptr } { ptr @.sconst.113 }, ptr %arg.tmp, align 1
+  %call = call i1 @_ZN5Lexer13parse_keywordE6String(ptr %field.inplace, ptr %arg.tmp)
   %bitnot = xor i1 %call, true
   br i1 %bitnot, label %if.then, label %if.end
 
@@ -29754,11 +28554,9 @@ entry:
   %lexer = extractvalue %_Z6Parser %load.struct, 0
   %previous_position = extractvalue %_Z5Lexer %lexer, 4
   %field.inplace = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
   %arg.tmp = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.116 }, ptr %arg.tmp, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region, ptr %1, ptr %arg.tmp)
-  %call = call i1 @_ZN5Lexer13parse_keywordE6String(ptr %field.inplace, ptr %struct.region)
+  store { ptr } { ptr @.sconst.114 }, ptr %arg.tmp, align 1
+  %call = call i1 @_ZN5Lexer13parse_keywordE6String(ptr %field.inplace, ptr %arg.tmp)
   %bitnot = xor i1 %call, true
   br i1 %bitnot, label %if.then, label %if.end
 
@@ -30037,7 +28835,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.117)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.115)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -30541,7 +29339,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.118)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.116)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -30929,15 +29727,14 @@ choose.when3:                                     ; preds = %entry
 
 define linkonce_odr void @_ZN6Parser11parse_macroEPN4scaly6memory4PageE(ptr noalias sret({ i8, [72 x i8] }) %0, ptr %1, ptr %2) {
 entry:
-  %tuple100 = alloca %_Z11MacroSyntax, align 8
-  %variant.ptr70 = alloca %_Z11ParserError, align 8
-  %sret.result55 = alloca { i8, [25 x i8] }, align 8
+  %tuple94 = alloca %_Z11MacroSyntax, align 8
+  %variant.ptr66 = alloca %_Z11ParserError, align 8
+  %sret.result51 = alloca { i8, [25 x i8] }, align 8
   %rule = alloca ptr, align 8
-  %variant.ptr29 = alloca %_Z11ParserError, align 8
-  %sret.result22 = alloca { i8, [33 x i8] }, align 8
+  %variant.ptr27 = alloca %_Z11ParserError, align 8
+  %sret.result20 = alloca { i8, [33 x i8] }, align 8
   %model = alloca %_Z11ModelSyntax, align 8
-  %tuple12 = alloca %_Z13InvalidSyntax, align 8
-  %arg.tmp11 = alloca { ptr }, align 8
+  %tuple10 = alloca %_Z13InvalidSyntax, align 8
   %sret.result = alloca { ptr }, align 8
   %tuple = alloca %_Z15DifferentSyntax, align 8
   %variant.ptr = alloca %_Z11ParserError, align 8
@@ -30945,11 +29742,9 @@ entry:
   %lexer = extractvalue %_Z6Parser %load.struct, 0
   %previous_position = extractvalue %_Z5Lexer %lexer, 4
   %field.inplace = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
   %arg.tmp = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.119 }, ptr %arg.tmp, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region, ptr %1, ptr %arg.tmp)
-  %call = call i1 @_ZN5Lexer13parse_keywordE6String(ptr %field.inplace, ptr %struct.region)
+  store { ptr } { ptr @.sconst.117 }, ptr %arg.tmp, align 1
+  %call = call i1 @_ZN5Lexer13parse_keywordE6String(ptr %field.inplace, ptr %arg.tmp)
   %bitnot = xor i1 %call, true
   br i1 %bitnot, label %if.then, label %if.end
 
@@ -30983,47 +29778,43 @@ if.then4:                                         ; preds = %if.end
   %load.struct8 = load %_Z6Parser, ptr %2, align 8
   %lexer9 = extractvalue %_Z6Parser %load.struct8, 0
   %position = extractvalue %_Z5Lexer %lexer9, 3
-  %struct.region10 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.120 }, ptr %arg.tmp11, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region10, ptr %1, ptr %arg.tmp11)
-  %tuple.field = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple12, i32 0, i32 0
+  %tuple.field = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple10, i32 0, i32 0
   store i64 %previous_position, ptr %tuple.field, align 1
-  %tuple.field13 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple12, i32 0, i32 1
-  store i64 %position, ptr %tuple.field13, align 1
-  %field.load = load { ptr }, ptr %struct.region10, align 8
-  %tuple.field14 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple12, i32 0, i32 2
-  store { ptr } %field.load, ptr %tuple.field14, align 1
-  %tuple.val15 = load %_Z13InvalidSyntax, ptr %tuple12, align 8
-  %variant.data.ptr16 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 1
-  store %_Z13InvalidSyntax %tuple.val15, ptr %variant.data.ptr16, align 1
-  %variant.val17 = load %_Z11ParserError, ptr %variant.ptr, align 1
-  %throw.data.ptr18 = getelementptr inbounds { i8, [72 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val17, ptr %throw.data.ptr18, align 1
+  %tuple.field11 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple10, i32 0, i32 1
+  store i64 %position, ptr %tuple.field11, align 1
+  %tuple.field12 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple10, i32 0, i32 2
+  store { ptr } { ptr @.sconst.118 }, ptr %tuple.field12, align 1
+  %tuple.val13 = load %_Z13InvalidSyntax, ptr %tuple10, align 8
+  %variant.data.ptr14 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 1
+  store %_Z13InvalidSyntax %tuple.val13, ptr %variant.data.ptr14, align 1
+  %variant.val15 = load %_Z11ParserError, ptr %variant.ptr, align 1
+  %throw.data.ptr16 = getelementptr inbounds { i8, [72 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val15, ptr %throw.data.ptr16, align 1
   ret void
 
 if.end5:                                          ; preds = %if.end
-  %load.struct19 = load %_Z6Parser, ptr %2, align 8
-  %lexer20 = extractvalue %_Z6Parser %load.struct19, 0
-  %position21 = extractvalue %_Z5Lexer %lexer20, 3
-  call void @_ZN6Parser11parse_modelEPN4scaly6memory4PageE(ptr noalias sret({ i8, [33 x i8] }) %sret.result22, ptr %1, ptr %2)
-  %tag = load i8, ptr %sret.result22, align 1
-  %throws.data.ptr = getelementptr inbounds i8, ptr %sret.result22, i8 1
+  %load.struct17 = load %_Z6Parser, ptr %2, align 8
+  %lexer18 = extractvalue %_Z6Parser %load.struct17, 0
+  %position19 = extractvalue %_Z5Lexer %lexer18, 3
+  call void @_ZN6Parser11parse_modelEPN4scaly6memory4PageE(ptr noalias sret({ i8, [33 x i8] }) %sret.result20, ptr %1, ptr %2)
+  %tag = load i8, ptr %sret.result20, align 1
+  %throws.data.ptr = getelementptr inbounds i8, ptr %sret.result20, i8 1
   switch i8 %tag, label %choose.else [
     i8 1, label %choose.when
-    i8 0, label %choose.when51
+    i8 0, label %choose.when47
   ]
 
-choose.end:                                       ; preds = %choose.else, %choose.when51, %choose.end24
-  %choose.value = phi %_Z11ModelSyntax [ %throws.success.val, %choose.when51 ], [ undef, %choose.end24 ], [ undef, %choose.else ]
-  %load.struct52 = load %_Z6Parser, ptr %2, align 8
-  %lexer53 = extractvalue %_Z6Parser %load.struct52, 0
-  %position54 = extractvalue %_Z5Lexer %lexer53, 3
-  call void @_ZN6Parser18parse_operand_listEPN4scaly6memory4PageE(ptr noalias sret({ i8, [25 x i8] }) %sret.result55, ptr %1, ptr %2)
-  %tag56 = load i8, ptr %sret.result55, align 1
-  %throws.data.ptr57 = getelementptr inbounds i8, ptr %sret.result55, i8 1
-  switch i8 %tag56, label %choose.else59 [
-    i8 1, label %choose.when60
-    i8 0, label %choose.when92
+choose.end:                                       ; preds = %choose.else, %choose.when47, %choose.end22
+  %choose.value = phi %_Z11ModelSyntax [ %throws.success.val, %choose.when47 ], [ undef, %choose.end22 ], [ undef, %choose.else ]
+  %load.struct48 = load %_Z6Parser, ptr %2, align 8
+  %lexer49 = extractvalue %_Z6Parser %load.struct48, 0
+  %position50 = extractvalue %_Z5Lexer %lexer49, 3
+  call void @_ZN6Parser18parse_operand_listEPN4scaly6memory4PageE(ptr noalias sret({ i8, [25 x i8] }) %sret.result51, ptr %1, ptr %2)
+  %tag52 = load i8, ptr %sret.result51, align 1
+  %throws.data.ptr53 = getelementptr inbounds i8, ptr %sret.result51, i8 1
+  switch i8 %tag52, label %choose.else55 [
+    i8 1, label %choose.when56
+    i8 0, label %choose.when86
   ]
 
 choose.else:                                      ; preds = %if.end5
@@ -31033,155 +29824,147 @@ choose.when:                                      ; preds = %if.end5
   %throws.err.val = load %_Z11ParserError, ptr %throws.data.ptr, align 1
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %variant.ptr, ptr align 1 %throws.data.ptr, i64 ptrtoint (ptr getelementptr (%_Z11ParserError, ptr null, i32 1) to i64), i1 false)
   %tag.ptr = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 0
-  %tag23 = load i8, ptr %tag.ptr, align 1
-  switch i8 %tag23, label %choose.else25 [
-    i8 0, label %choose.when26
-    i8 1, label %choose.when43
+  %tag21 = load i8, ptr %tag.ptr, align 1
+  switch i8 %tag21, label %choose.else23 [
+    i8 0, label %choose.when24
+    i8 1, label %choose.when39
   ]
 
-choose.end24:                                     ; preds = %choose.else25
+choose.end22:                                     ; preds = %choose.else23
   br label %choose.end
 
-choose.else25:                                    ; preds = %choose.when
-  br label %choose.end24
+choose.else23:                                    ; preds = %choose.when
+  br label %choose.end22
 
-choose.when26:                                    ; preds = %choose.when
+choose.when24:                                    ; preds = %choose.when
   %"variant.c_data().ptr" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 1
-  %variant.val27 = load %_Z15DifferentSyntax, ptr %"variant.c_data().ptr", align 1
-  %throw.tag.ptr28 = getelementptr inbounds { i8, [72 x i8] }, ptr %0, i32 0, i32 0
-  store i8 1, ptr %throw.tag.ptr28, align 1
-  %variant.tag.ptr30 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr29, i32 0, i32 0
-  store i8 1, ptr %variant.tag.ptr30, align 1
-  %load.struct31 = load %_Z6Parser, ptr %2, align 8
-  %lexer32 = extractvalue %_Z6Parser %load.struct31, 0
-  %position33 = extractvalue %_Z5Lexer %lexer32, 3
-  %struct.region34 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.121 }, ptr %arg.tmp11, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region34, ptr %1, ptr %arg.tmp11)
-  %tuple.field35 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple12, i32 0, i32 0
-  store i64 %position21, ptr %tuple.field35, align 1
-  %tuple.field36 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple12, i32 0, i32 1
-  store i64 %position33, ptr %tuple.field36, align 1
-  %field.load37 = load { ptr }, ptr %struct.region34, align 8
-  %tuple.field38 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple12, i32 0, i32 2
-  store { ptr } %field.load37, ptr %tuple.field38, align 1
-  %tuple.val39 = load %_Z13InvalidSyntax, ptr %tuple12, align 8
-  %variant.data.ptr40 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr29, i32 0, i32 1
-  store %_Z13InvalidSyntax %tuple.val39, ptr %variant.data.ptr40, align 1
-  %variant.val41 = load %_Z11ParserError, ptr %variant.ptr29, align 1
-  %throw.data.ptr42 = getelementptr inbounds { i8, [72 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val41, ptr %throw.data.ptr42, align 1
+  %variant.val25 = load %_Z15DifferentSyntax, ptr %"variant.c_data().ptr", align 1
+  %throw.tag.ptr26 = getelementptr inbounds { i8, [72 x i8] }, ptr %0, i32 0, i32 0
+  store i8 1, ptr %throw.tag.ptr26, align 1
+  %variant.tag.ptr28 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr27, i32 0, i32 0
+  store i8 1, ptr %variant.tag.ptr28, align 1
+  %load.struct29 = load %_Z6Parser, ptr %2, align 8
+  %lexer30 = extractvalue %_Z6Parser %load.struct29, 0
+  %position31 = extractvalue %_Z5Lexer %lexer30, 3
+  %tuple.field32 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple10, i32 0, i32 0
+  store i64 %position19, ptr %tuple.field32, align 1
+  %tuple.field33 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple10, i32 0, i32 1
+  store i64 %position31, ptr %tuple.field33, align 1
+  %tuple.field34 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple10, i32 0, i32 2
+  store { ptr } { ptr @.sconst.119 }, ptr %tuple.field34, align 1
+  %tuple.val35 = load %_Z13InvalidSyntax, ptr %tuple10, align 8
+  %variant.data.ptr36 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr27, i32 0, i32 1
+  store %_Z13InvalidSyntax %tuple.val35, ptr %variant.data.ptr36, align 1
+  %variant.val37 = load %_Z11ParserError, ptr %variant.ptr27, align 1
+  %throw.data.ptr38 = getelementptr inbounds { i8, [72 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val37, ptr %throw.data.ptr38, align 1
   ret void
 
-choose.when43:                                    ; preds = %choose.when
-  %"variant.c_data().ptr44" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 1
-  %variant.val45 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr44", align 8
-  %throw.tag.ptr46 = getelementptr inbounds { i8, [72 x i8] }, ptr %0, i32 0, i32 0
-  store i8 1, ptr %throw.tag.ptr46, align 1
-  %variant.tag.ptr47 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr29, i32 0, i32 0
-  store i8 1, ptr %variant.tag.ptr47, align 1
-  %variant.data.ptr48 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr29, i32 0, i32 1
-  store %_Z13InvalidSyntax %variant.val45, ptr %variant.data.ptr48, align 1
-  %variant.val49 = load %_Z11ParserError, ptr %variant.ptr29, align 1
-  %throw.data.ptr50 = getelementptr inbounds { i8, [72 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val49, ptr %throw.data.ptr50, align 1
+choose.when39:                                    ; preds = %choose.when
+  %"variant.c_data().ptr40" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 1
+  %variant.val41 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr40", align 8
+  %throw.tag.ptr42 = getelementptr inbounds { i8, [72 x i8] }, ptr %0, i32 0, i32 0
+  store i8 1, ptr %throw.tag.ptr42, align 1
+  %variant.tag.ptr43 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr27, i32 0, i32 0
+  store i8 1, ptr %variant.tag.ptr43, align 1
+  %variant.data.ptr44 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr27, i32 0, i32 1
+  store %_Z13InvalidSyntax %variant.val41, ptr %variant.data.ptr44, align 1
+  %variant.val45 = load %_Z11ParserError, ptr %variant.ptr27, align 1
+  %throw.data.ptr46 = getelementptr inbounds { i8, [72 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val45, ptr %throw.data.ptr46, align 1
   ret void
 
-choose.when51:                                    ; preds = %if.end5
+choose.when47:                                    ; preds = %if.end5
   %throws.success.val = load %_Z11ModelSyntax, ptr %throws.data.ptr, align 1
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %model, ptr align 1 %throws.data.ptr, i64 ptrtoint (ptr getelementptr (%_Z11ModelSyntax, ptr null, i32 1) to i64), i1 false)
   br label %choose.end
 
-choose.end58:                                     ; preds = %choose.else59, %choose.when92, %choose.end64
-  %choose.value94 = phi ptr [ %throws.success.val93, %choose.when92 ], [ undef, %choose.end64 ], [ undef, %choose.else59 ]
-  %load.struct95 = load %_Z6Parser, ptr %2, align 8
-  %lexer96 = extractvalue %_Z6Parser %load.struct95, 0
-  %position97 = extractvalue %_Z5Lexer %lexer96, 3
-  %model98 = load %_Z11ModelSyntax, ptr %model, align 1
-  %rule99 = load ptr, ptr %rule, align 8
-  %tuple.field101 = getelementptr inbounds %_Z11MacroSyntax, ptr %tuple100, i32 0, i32 0
-  store i64 %previous_position, ptr %tuple.field101, align 1
-  %tuple.field102 = getelementptr inbounds %_Z11MacroSyntax, ptr %tuple100, i32 0, i32 1
-  store i64 %position97, ptr %tuple.field102, align 1
-  %field.load103 = load { ptr }, ptr %sret.result, align 8
-  %tuple.field104 = getelementptr inbounds %_Z11MacroSyntax, ptr %tuple100, i32 0, i32 2
-  store { ptr } %field.load103, ptr %tuple.field104, align 1
-  %tuple.field105 = getelementptr inbounds %_Z11MacroSyntax, ptr %tuple100, i32 0, i32 3
-  store %_Z11ModelSyntax %model98, ptr %tuple.field105, align 1
-  %tuple.field106 = getelementptr inbounds %_Z11MacroSyntax, ptr %tuple100, i32 0, i32 4
-  store ptr %rule99, ptr %tuple.field106, align 1
-  %tuple.val107 = load %_Z11MacroSyntax, ptr %tuple100, align 8
+choose.end54:                                     ; preds = %choose.else55, %choose.when86, %choose.end60
+  %choose.value88 = phi ptr [ %throws.success.val87, %choose.when86 ], [ undef, %choose.end60 ], [ undef, %choose.else55 ]
+  %load.struct89 = load %_Z6Parser, ptr %2, align 8
+  %lexer90 = extractvalue %_Z6Parser %load.struct89, 0
+  %position91 = extractvalue %_Z5Lexer %lexer90, 3
+  %model92 = load %_Z11ModelSyntax, ptr %model, align 1
+  %rule93 = load ptr, ptr %rule, align 8
+  %tuple.field95 = getelementptr inbounds %_Z11MacroSyntax, ptr %tuple94, i32 0, i32 0
+  store i64 %previous_position, ptr %tuple.field95, align 1
+  %tuple.field96 = getelementptr inbounds %_Z11MacroSyntax, ptr %tuple94, i32 0, i32 1
+  store i64 %position91, ptr %tuple.field96, align 1
+  %field.load = load { ptr }, ptr %sret.result, align 8
+  %tuple.field97 = getelementptr inbounds %_Z11MacroSyntax, ptr %tuple94, i32 0, i32 2
+  store { ptr } %field.load, ptr %tuple.field97, align 1
+  %tuple.field98 = getelementptr inbounds %_Z11MacroSyntax, ptr %tuple94, i32 0, i32 3
+  store %_Z11ModelSyntax %model92, ptr %tuple.field98, align 1
+  %tuple.field99 = getelementptr inbounds %_Z11MacroSyntax, ptr %tuple94, i32 0, i32 4
+  store ptr %rule93, ptr %tuple.field99, align 1
+  %tuple.val100 = load %_Z11MacroSyntax, ptr %tuple94, align 8
   %ret.tag.ptr = getelementptr inbounds { i8, [72 x i8] }, ptr %0, i32 0, i32 0
   store i8 0, ptr %ret.tag.ptr, align 1
   %ret.data.ptr = getelementptr inbounds { i8, [72 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11MacroSyntax %tuple.val107, ptr %ret.data.ptr, align 1
+  store %_Z11MacroSyntax %tuple.val100, ptr %ret.data.ptr, align 1
   ret void
 
-choose.else59:                                    ; preds = %choose.end
-  br label %choose.end58
+choose.else55:                                    ; preds = %choose.end
+  br label %choose.end54
 
-choose.when60:                                    ; preds = %choose.end
-  %throws.err.val61 = load %_Z11ParserError, ptr %throws.data.ptr57, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %variant.ptr29, ptr align 1 %throws.data.ptr57, i64 ptrtoint (ptr getelementptr (%_Z11ParserError, ptr null, i32 1) to i64), i1 false)
-  %tag.ptr62 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr29, i32 0, i32 0
-  %tag63 = load i8, ptr %tag.ptr62, align 1
-  switch i8 %tag63, label %choose.else65 [
-    i8 0, label %choose.when66
-    i8 1, label %choose.when84
+choose.when56:                                    ; preds = %choose.end
+  %throws.err.val57 = load %_Z11ParserError, ptr %throws.data.ptr53, align 1
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %variant.ptr27, ptr align 1 %throws.data.ptr53, i64 ptrtoint (ptr getelementptr (%_Z11ParserError, ptr null, i32 1) to i64), i1 false)
+  %tag.ptr58 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr27, i32 0, i32 0
+  %tag59 = load i8, ptr %tag.ptr58, align 1
+  switch i8 %tag59, label %choose.else61 [
+    i8 0, label %choose.when62
+    i8 1, label %choose.when78
   ]
 
-choose.end64:                                     ; preds = %choose.else65
-  br label %choose.end58
+choose.end60:                                     ; preds = %choose.else61
+  br label %choose.end54
 
-choose.else65:                                    ; preds = %choose.when60
-  br label %choose.end64
+choose.else61:                                    ; preds = %choose.when56
+  br label %choose.end60
 
-choose.when66:                                    ; preds = %choose.when60
-  %"variant.c_data().ptr67" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr29, i32 0, i32 1
-  %variant.val68 = load %_Z15DifferentSyntax, ptr %"variant.c_data().ptr67", align 1
-  %throw.tag.ptr69 = getelementptr inbounds { i8, [72 x i8] }, ptr %0, i32 0, i32 0
-  store i8 1, ptr %throw.tag.ptr69, align 1
-  %variant.tag.ptr71 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr70, i32 0, i32 0
-  store i8 1, ptr %variant.tag.ptr71, align 1
-  %load.struct72 = load %_Z6Parser, ptr %2, align 8
-  %lexer73 = extractvalue %_Z6Parser %load.struct72, 0
-  %position74 = extractvalue %_Z5Lexer %lexer73, 3
-  %struct.region75 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.122 }, ptr %arg.tmp11, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region75, ptr %1, ptr %arg.tmp11)
-  %tuple.field76 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple12, i32 0, i32 0
-  store i64 %position54, ptr %tuple.field76, align 1
-  %tuple.field77 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple12, i32 0, i32 1
-  store i64 %position74, ptr %tuple.field77, align 1
-  %field.load78 = load { ptr }, ptr %struct.region75, align 8
-  %tuple.field79 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple12, i32 0, i32 2
-  store { ptr } %field.load78, ptr %tuple.field79, align 1
-  %tuple.val80 = load %_Z13InvalidSyntax, ptr %tuple12, align 8
-  %variant.data.ptr81 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr70, i32 0, i32 1
-  store %_Z13InvalidSyntax %tuple.val80, ptr %variant.data.ptr81, align 1
-  %variant.val82 = load %_Z11ParserError, ptr %variant.ptr70, align 1
-  %throw.data.ptr83 = getelementptr inbounds { i8, [72 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val82, ptr %throw.data.ptr83, align 1
+choose.when62:                                    ; preds = %choose.when56
+  %"variant.c_data().ptr63" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr27, i32 0, i32 1
+  %variant.val64 = load %_Z15DifferentSyntax, ptr %"variant.c_data().ptr63", align 1
+  %throw.tag.ptr65 = getelementptr inbounds { i8, [72 x i8] }, ptr %0, i32 0, i32 0
+  store i8 1, ptr %throw.tag.ptr65, align 1
+  %variant.tag.ptr67 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr66, i32 0, i32 0
+  store i8 1, ptr %variant.tag.ptr67, align 1
+  %load.struct68 = load %_Z6Parser, ptr %2, align 8
+  %lexer69 = extractvalue %_Z6Parser %load.struct68, 0
+  %position70 = extractvalue %_Z5Lexer %lexer69, 3
+  %tuple.field71 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple10, i32 0, i32 0
+  store i64 %position50, ptr %tuple.field71, align 1
+  %tuple.field72 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple10, i32 0, i32 1
+  store i64 %position70, ptr %tuple.field72, align 1
+  %tuple.field73 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple10, i32 0, i32 2
+  store { ptr } { ptr @.sconst.120 }, ptr %tuple.field73, align 1
+  %tuple.val74 = load %_Z13InvalidSyntax, ptr %tuple10, align 8
+  %variant.data.ptr75 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr66, i32 0, i32 1
+  store %_Z13InvalidSyntax %tuple.val74, ptr %variant.data.ptr75, align 1
+  %variant.val76 = load %_Z11ParserError, ptr %variant.ptr66, align 1
+  %throw.data.ptr77 = getelementptr inbounds { i8, [72 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val76, ptr %throw.data.ptr77, align 1
   ret void
 
-choose.when84:                                    ; preds = %choose.when60
-  %"variant.c_data().ptr85" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr29, i32 0, i32 1
-  %variant.val86 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr85", align 8
-  %throw.tag.ptr87 = getelementptr inbounds { i8, [72 x i8] }, ptr %0, i32 0, i32 0
-  store i8 1, ptr %throw.tag.ptr87, align 1
-  %variant.tag.ptr88 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr70, i32 0, i32 0
-  store i8 1, ptr %variant.tag.ptr88, align 1
-  %variant.data.ptr89 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr70, i32 0, i32 1
-  store %_Z13InvalidSyntax %variant.val86, ptr %variant.data.ptr89, align 1
-  %variant.val90 = load %_Z11ParserError, ptr %variant.ptr70, align 1
-  %throw.data.ptr91 = getelementptr inbounds { i8, [72 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val90, ptr %throw.data.ptr91, align 1
+choose.when78:                                    ; preds = %choose.when56
+  %"variant.c_data().ptr79" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr27, i32 0, i32 1
+  %variant.val80 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr79", align 8
+  %throw.tag.ptr81 = getelementptr inbounds { i8, [72 x i8] }, ptr %0, i32 0, i32 0
+  store i8 1, ptr %throw.tag.ptr81, align 1
+  %variant.tag.ptr82 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr66, i32 0, i32 0
+  store i8 1, ptr %variant.tag.ptr82, align 1
+  %variant.data.ptr83 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr66, i32 0, i32 1
+  store %_Z13InvalidSyntax %variant.val80, ptr %variant.data.ptr83, align 1
+  %variant.val84 = load %_Z11ParserError, ptr %variant.ptr66, align 1
+  %throw.data.ptr85 = getelementptr inbounds { i8, [72 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val84, ptr %throw.data.ptr85, align 1
   ret void
 
-choose.when92:                                    ; preds = %choose.end
-  %throws.success.val93 = load ptr, ptr %throws.data.ptr57, align 1
-  store ptr %throws.success.val93, ptr %rule, align 1
-  br label %choose.end58
+choose.when86:                                    ; preds = %choose.end
+  %throws.success.val87 = load ptr, ptr %throws.data.ptr53, align 1
+  store ptr %throws.success.val87, ptr %rule, align 1
+  br label %choose.end54
 }
 
 define linkonce_odr ptr @_ZN4ListI15AttributeSyntaxE8get_headEPN4scaly6memory4PageE(ptr %0, ptr %1) {
@@ -31369,7 +30152,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.123)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.121)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -31873,7 +30656,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.124)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.122)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -32205,7 +30988,6 @@ define linkonce_odr void @_ZN6Parser15parse_attributeEPN4scaly6memory4PageE(ptr 
 entry:
   %tuple35 = alloca %_Z15AttributeSyntax, align 8
   %tuple15 = alloca %_Z13InvalidSyntax, align 8
-  %arg.tmp = alloca { ptr }, align 8
   %variant.ptr10 = alloca %_Z11ParserError, align 8
   %sret.result3 = alloca { i8, [33 x i8] }, align 8
   %model = alloca %_Z11ModelSyntax, align 8
@@ -32257,16 +31039,16 @@ choose.end:                                       ; preds = %choose.else, %choos
   store i64 %previous_position, ptr %tuple.field36, align 1
   %tuple.field37 = getelementptr inbounds %_Z15AttributeSyntax, ptr %tuple35, i32 0, i32 1
   store i64 %position33, ptr %tuple.field37, align 1
-  %field.load38 = load { ptr }, ptr %sret.result, align 8
-  %tuple.field39 = getelementptr inbounds %_Z15AttributeSyntax, ptr %tuple35, i32 0, i32 2
-  store { ptr } %field.load38, ptr %tuple.field39, align 1
-  %tuple.field40 = getelementptr inbounds %_Z15AttributeSyntax, ptr %tuple35, i32 0, i32 3
-  store %_Z11ModelSyntax %model34, ptr %tuple.field40, align 1
-  %tuple.val41 = load %_Z15AttributeSyntax, ptr %tuple35, align 8
+  %field.load = load { ptr }, ptr %sret.result, align 8
+  %tuple.field38 = getelementptr inbounds %_Z15AttributeSyntax, ptr %tuple35, i32 0, i32 2
+  store { ptr } %field.load, ptr %tuple.field38, align 1
+  %tuple.field39 = getelementptr inbounds %_Z15AttributeSyntax, ptr %tuple35, i32 0, i32 3
+  store %_Z11ModelSyntax %model34, ptr %tuple.field39, align 1
+  %tuple.val40 = load %_Z15AttributeSyntax, ptr %tuple35, align 8
   %ret.tag.ptr = getelementptr inbounds { i8, [64 x i8] }, ptr %0, i32 0, i32 0
   store i8 0, ptr %ret.tag.ptr, align 1
   %ret.data.ptr = getelementptr inbounds { i8, [64 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z15AttributeSyntax %tuple.val41, ptr %ret.data.ptr, align 1
+  store %_Z15AttributeSyntax %tuple.val40, ptr %ret.data.ptr, align 1
   ret void
 
 choose.else:                                      ; preds = %if.end
@@ -32298,16 +31080,12 @@ choose.when7:                                     ; preds = %choose.when
   %load.struct12 = load %_Z6Parser, ptr %2, align 8
   %lexer13 = extractvalue %_Z6Parser %load.struct12, 0
   %position14 = extractvalue %_Z5Lexer %lexer13, 3
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.125 }, ptr %arg.tmp, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region, ptr %1, ptr %arg.tmp)
   %tuple.field = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple15, i32 0, i32 0
   store i64 %position, ptr %tuple.field, align 1
   %tuple.field16 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple15, i32 0, i32 1
   store i64 %position14, ptr %tuple.field16, align 1
-  %field.load = load { ptr }, ptr %struct.region, align 8
   %tuple.field17 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple15, i32 0, i32 2
-  store { ptr } %field.load, ptr %tuple.field17, align 1
+  store { ptr } { ptr @.sconst.123 }, ptr %tuple.field17, align 1
   %tuple.val18 = load %_Z13InvalidSyntax, ptr %tuple15, align 8
   %variant.data.ptr19 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr10, i32 0, i32 1
   store %_Z13InvalidSyntax %tuple.val18, ptr %variant.data.ptr19, align 1
@@ -32605,9 +31383,8 @@ choose.when97:                                    ; preds = %choose.end47
 
 define linkonce_odr void @_ZN6Parser12parse_moduleEPN4scaly6memory4PageE(ptr noalias sret({ i8, [25 x i8] }) %0, ptr %1, ptr %2) {
 entry:
-  %tuple22 = alloca %_Z12ModuleSyntax, align 8
-  %tuple12 = alloca %_Z13InvalidSyntax, align 8
-  %arg.tmp11 = alloca { ptr }, align 8
+  %tuple20 = alloca %_Z12ModuleSyntax, align 8
+  %tuple10 = alloca %_Z13InvalidSyntax, align 8
   %sret.result = alloca { ptr }, align 8
   %tuple = alloca %_Z15DifferentSyntax, align 8
   %variant.ptr = alloca %_Z11ParserError, align 8
@@ -32615,11 +31392,9 @@ entry:
   %lexer = extractvalue %_Z6Parser %load.struct, 0
   %previous_position = extractvalue %_Z5Lexer %lexer, 4
   %field.inplace = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
   %arg.tmp = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.126 }, ptr %arg.tmp, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region, ptr %1, ptr %arg.tmp)
-  %call = call i1 @_ZN5Lexer13parse_keywordE6String(ptr %field.inplace, ptr %struct.region)
+  store { ptr } { ptr @.sconst.124 }, ptr %arg.tmp, align 1
+  %call = call i1 @_ZN5Lexer13parse_keywordE6String(ptr %field.inplace, ptr %arg.tmp)
   %bitnot = xor i1 %call, true
   br i1 %bitnot, label %if.then, label %if.end
 
@@ -32653,40 +31428,36 @@ if.then4:                                         ; preds = %if.end
   %load.struct8 = load %_Z6Parser, ptr %2, align 8
   %lexer9 = extractvalue %_Z6Parser %load.struct8, 0
   %position = extractvalue %_Z5Lexer %lexer9, 3
-  %struct.region10 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.127 }, ptr %arg.tmp11, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region10, ptr %1, ptr %arg.tmp11)
-  %tuple.field = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple12, i32 0, i32 0
+  %tuple.field = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple10, i32 0, i32 0
   store i64 %previous_position, ptr %tuple.field, align 1
-  %tuple.field13 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple12, i32 0, i32 1
-  store i64 %position, ptr %tuple.field13, align 1
-  %field.load = load { ptr }, ptr %struct.region10, align 8
-  %tuple.field14 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple12, i32 0, i32 2
-  store { ptr } %field.load, ptr %tuple.field14, align 1
-  %tuple.val15 = load %_Z13InvalidSyntax, ptr %tuple12, align 8
-  %variant.data.ptr16 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 1
-  store %_Z13InvalidSyntax %tuple.val15, ptr %variant.data.ptr16, align 1
-  %variant.val17 = load %_Z11ParserError, ptr %variant.ptr, align 1
-  %throw.data.ptr18 = getelementptr inbounds { i8, [25 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val17, ptr %throw.data.ptr18, align 1
+  %tuple.field11 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple10, i32 0, i32 1
+  store i64 %position, ptr %tuple.field11, align 1
+  %tuple.field12 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple10, i32 0, i32 2
+  store { ptr } { ptr @.sconst.125 }, ptr %tuple.field12, align 1
+  %tuple.val13 = load %_Z13InvalidSyntax, ptr %tuple10, align 8
+  %variant.data.ptr14 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 1
+  store %_Z13InvalidSyntax %tuple.val13, ptr %variant.data.ptr14, align 1
+  %variant.val15 = load %_Z11ParserError, ptr %variant.ptr, align 1
+  %throw.data.ptr16 = getelementptr inbounds { i8, [25 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val15, ptr %throw.data.ptr16, align 1
   ret void
 
 if.end5:                                          ; preds = %if.end
-  %load.struct19 = load %_Z6Parser, ptr %2, align 8
-  %lexer20 = extractvalue %_Z6Parser %load.struct19, 0
-  %position21 = extractvalue %_Z5Lexer %lexer20, 3
-  %tuple.field23 = getelementptr inbounds %_Z12ModuleSyntax, ptr %tuple22, i32 0, i32 0
-  store i64 %previous_position, ptr %tuple.field23, align 1
-  %tuple.field24 = getelementptr inbounds %_Z12ModuleSyntax, ptr %tuple22, i32 0, i32 1
-  store i64 %position21, ptr %tuple.field24, align 1
-  %field.load25 = load { ptr }, ptr %sret.result, align 8
-  %tuple.field26 = getelementptr inbounds %_Z12ModuleSyntax, ptr %tuple22, i32 0, i32 2
-  store { ptr } %field.load25, ptr %tuple.field26, align 1
-  %tuple.val27 = load %_Z12ModuleSyntax, ptr %tuple22, align 8
+  %load.struct17 = load %_Z6Parser, ptr %2, align 8
+  %lexer18 = extractvalue %_Z6Parser %load.struct17, 0
+  %position19 = extractvalue %_Z5Lexer %lexer18, 3
+  %tuple.field21 = getelementptr inbounds %_Z12ModuleSyntax, ptr %tuple20, i32 0, i32 0
+  store i64 %previous_position, ptr %tuple.field21, align 1
+  %tuple.field22 = getelementptr inbounds %_Z12ModuleSyntax, ptr %tuple20, i32 0, i32 1
+  store i64 %position19, ptr %tuple.field22, align 1
+  %field.load = load { ptr }, ptr %sret.result, align 8
+  %tuple.field23 = getelementptr inbounds %_Z12ModuleSyntax, ptr %tuple20, i32 0, i32 2
+  store { ptr } %field.load, ptr %tuple.field23, align 1
+  %tuple.val24 = load %_Z12ModuleSyntax, ptr %tuple20, align 8
   %ret.tag.ptr = getelementptr inbounds { i8, [25 x i8] }, ptr %0, i32 0, i32 0
   store i8 0, ptr %ret.tag.ptr, align 1
   %ret.data.ptr = getelementptr inbounds { i8, [25 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z12ModuleSyntax %tuple.val27, ptr %ret.data.ptr, align 1
+  store %_Z12ModuleSyntax %tuple.val24, ptr %ret.data.ptr, align 1
   ret void
 }
 
@@ -32875,7 +31646,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.128)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.126)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -33379,7 +32150,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.129)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.127)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -33709,11 +32480,10 @@ choose.when13:                                    ; preds = %while.body
 
 define linkonce_odr void @_ZN6Parser13parse_packageEPN4scaly6memory4PageE(ptr noalias sret({ i8, [56 x i8] }) %0, ptr %1, ptr %2) {
 entry:
-  %tuple66 = alloca %_Z13PackageSyntax, align 8
-  %sret.result35 = alloca { i8, [40 x i8] }, align 8
+  %tuple64 = alloca %_Z13PackageSyntax, align 8
+  %sret.result33 = alloca { i8, [40 x i8] }, align 8
   %version = alloca ptr, align 8
-  %tuple16 = alloca %_Z13InvalidSyntax, align 8
-  %arg.tmp15 = alloca { ptr }, align 8
+  %tuple14 = alloca %_Z13InvalidSyntax, align 8
   %variant.ptr9 = alloca %_Z11ParserError, align 8
   %sret.result = alloca { i8, [32 x i8] }, align 8
   %name = alloca %_Z10NameSyntax, align 8
@@ -33723,11 +32493,9 @@ entry:
   %lexer = extractvalue %_Z6Parser %load.struct, 0
   %previous_position = extractvalue %_Z5Lexer %lexer, 4
   %field.inplace = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
   %arg.tmp = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.130 }, ptr %arg.tmp, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region, ptr %1, ptr %arg.tmp)
-  %call = call i1 @_ZN5Lexer13parse_keywordE6String(ptr %field.inplace, ptr %struct.region)
+  store { ptr } { ptr @.sconst.128 }, ptr %arg.tmp, align 1
+  %call = call i1 @_ZN5Lexer13parse_keywordE6String(ptr %field.inplace, ptr %arg.tmp)
   %bitnot = xor i1 %call, true
   br i1 %bitnot, label %if.then, label %if.end
 
@@ -33754,21 +32522,21 @@ if.end:                                           ; preds = %entry
   %throws.data.ptr = getelementptr inbounds i8, ptr %sret.result, i8 1
   switch i8 %tag, label %choose.else [
     i8 1, label %choose.when
-    i8 0, label %choose.when31
+    i8 0, label %choose.when29
   ]
 
-choose.end:                                       ; preds = %choose.else, %choose.when31, %choose.end4
-  %choose.value = phi %_Z10NameSyntax [ %throws.success.val, %choose.when31 ], [ undef, %choose.end4 ], [ undef, %choose.else ]
-  %load.struct32 = load %_Z6Parser, ptr %2, align 8
-  %lexer33 = extractvalue %_Z6Parser %load.struct32, 0
-  %position34 = extractvalue %_Z5Lexer %lexer33, 3
+choose.end:                                       ; preds = %choose.else, %choose.when29, %choose.end4
+  %choose.value = phi %_Z10NameSyntax [ %throws.success.val, %choose.when29 ], [ undef, %choose.end4 ], [ undef, %choose.else ]
+  %load.struct30 = load %_Z6Parser, ptr %2, align 8
+  %lexer31 = extractvalue %_Z6Parser %load.struct30, 0
+  %position32 = extractvalue %_Z5Lexer %lexer31, 3
   store ptr null, ptr %version, align 1
-  call void @_ZN6Parser13parse_versionEPN4scaly6memory4PageE(ptr noalias sret({ i8, [40 x i8] }) %sret.result35, ptr %1, ptr %2)
-  %tag36 = load i8, ptr %sret.result35, align 1
-  %throws.data.ptr37 = getelementptr inbounds i8, ptr %sret.result35, i8 1
-  switch i8 %tag36, label %choose.else39 [
-    i8 1, label %choose.when40
-    i8 0, label %choose.when52
+  call void @_ZN6Parser13parse_versionEPN4scaly6memory4PageE(ptr noalias sret({ i8, [40 x i8] }) %sret.result33, ptr %1, ptr %2)
+  %tag34 = load i8, ptr %sret.result33, align 1
+  %throws.data.ptr35 = getelementptr inbounds i8, ptr %sret.result33, i8 1
+  switch i8 %tag34, label %choose.else37 [
+    i8 1, label %choose.when38
+    i8 0, label %choose.when50
   ]
 
 choose.else:                                      ; preds = %if.end
@@ -33781,7 +32549,7 @@ choose.when:                                      ; preds = %if.end
   %tag3 = load i8, ptr %tag.ptr, align 1
   switch i8 %tag3, label %choose.else5 [
     i8 0, label %choose.when6
-    i8 1, label %choose.when23
+    i8 1, label %choose.when21
   ]
 
 choose.end4:                                      ; preds = %choose.else5
@@ -33800,114 +32568,110 @@ choose.when6:                                     ; preds = %choose.when
   %load.struct11 = load %_Z6Parser, ptr %2, align 8
   %lexer12 = extractvalue %_Z6Parser %load.struct11, 0
   %position13 = extractvalue %_Z5Lexer %lexer12, 3
-  %struct.region14 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.131 }, ptr %arg.tmp15, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region14, ptr %1, ptr %arg.tmp15)
-  %tuple.field = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 0
+  %tuple.field = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 0
   store i64 %position, ptr %tuple.field, align 1
-  %tuple.field17 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 1
-  store i64 %position13, ptr %tuple.field17, align 1
-  %field.load = load { ptr }, ptr %struct.region14, align 8
-  %tuple.field18 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 2
-  store { ptr } %field.load, ptr %tuple.field18, align 1
-  %tuple.val19 = load %_Z13InvalidSyntax, ptr %tuple16, align 8
-  %variant.data.ptr20 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
-  store %_Z13InvalidSyntax %tuple.val19, ptr %variant.data.ptr20, align 1
-  %variant.val21 = load %_Z11ParserError, ptr %variant.ptr9, align 1
-  %throw.data.ptr22 = getelementptr inbounds { i8, [56 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val21, ptr %throw.data.ptr22, align 1
+  %tuple.field15 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 1
+  store i64 %position13, ptr %tuple.field15, align 1
+  %tuple.field16 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 2
+  store { ptr } { ptr @.sconst.129 }, ptr %tuple.field16, align 1
+  %tuple.val17 = load %_Z13InvalidSyntax, ptr %tuple14, align 8
+  %variant.data.ptr18 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
+  store %_Z13InvalidSyntax %tuple.val17, ptr %variant.data.ptr18, align 1
+  %variant.val19 = load %_Z11ParserError, ptr %variant.ptr9, align 1
+  %throw.data.ptr20 = getelementptr inbounds { i8, [56 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val19, ptr %throw.data.ptr20, align 1
   ret void
 
-choose.when23:                                    ; preds = %choose.when
-  %"variant.c_data().ptr24" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 1
-  %variant.val25 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr24", align 8
-  %throw.tag.ptr26 = getelementptr inbounds { i8, [56 x i8] }, ptr %0, i32 0, i32 0
-  store i8 1, ptr %throw.tag.ptr26, align 1
-  %variant.tag.ptr27 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 0
-  store i8 1, ptr %variant.tag.ptr27, align 1
-  %variant.data.ptr28 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
-  store %_Z13InvalidSyntax %variant.val25, ptr %variant.data.ptr28, align 1
-  %variant.val29 = load %_Z11ParserError, ptr %variant.ptr9, align 1
-  %throw.data.ptr30 = getelementptr inbounds { i8, [56 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val29, ptr %throw.data.ptr30, align 1
+choose.when21:                                    ; preds = %choose.when
+  %"variant.c_data().ptr22" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 1
+  %variant.val23 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr22", align 8
+  %throw.tag.ptr24 = getelementptr inbounds { i8, [56 x i8] }, ptr %0, i32 0, i32 0
+  store i8 1, ptr %throw.tag.ptr24, align 1
+  %variant.tag.ptr25 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 0
+  store i8 1, ptr %variant.tag.ptr25, align 1
+  %variant.data.ptr26 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
+  store %_Z13InvalidSyntax %variant.val23, ptr %variant.data.ptr26, align 1
+  %variant.val27 = load %_Z11ParserError, ptr %variant.ptr9, align 1
+  %throw.data.ptr28 = getelementptr inbounds { i8, [56 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val27, ptr %throw.data.ptr28, align 1
   ret void
 
-choose.when31:                                    ; preds = %if.end
+choose.when29:                                    ; preds = %if.end
   %throws.success.val = load %_Z10NameSyntax, ptr %throws.data.ptr, align 1
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %name, ptr align 1 %throws.data.ptr, i64 ptrtoint (ptr getelementptr (%_Z10NameSyntax, ptr null, i32 1) to i64), i1 false)
   br label %choose.end
 
-choose.end38:                                     ; preds = %choose.else39, %choose.when52, %choose.end44
-  %choose.value58 = phi %_Z13VersionSyntax [ %choose.arm.load, %choose.when52 ], [ undef, %choose.end44 ], [ undef, %choose.else39 ]
-  %field.inplace59 = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
-  %call60 = call i1 @_ZN5Lexer11parse_colonEv(ptr %field.inplace59)
-  %load.struct61 = load %_Z6Parser, ptr %2, align 8
-  %lexer62 = extractvalue %_Z6Parser %load.struct61, 0
-  %position63 = extractvalue %_Z5Lexer %lexer62, 3
-  %name64 = load %_Z10NameSyntax, ptr %name, align 8
-  %version65 = load ptr, ptr %version, align 8
-  %tuple.field67 = getelementptr inbounds %_Z13PackageSyntax, ptr %tuple66, i32 0, i32 0
-  store i64 %previous_position, ptr %tuple.field67, align 1
-  %tuple.field68 = getelementptr inbounds %_Z13PackageSyntax, ptr %tuple66, i32 0, i32 1
-  store i64 %position63, ptr %tuple.field68, align 1
-  %tuple.field69 = getelementptr inbounds %_Z13PackageSyntax, ptr %tuple66, i32 0, i32 2
-  store %_Z10NameSyntax %name64, ptr %tuple.field69, align 1
-  %tuple.field70 = getelementptr inbounds %_Z13PackageSyntax, ptr %tuple66, i32 0, i32 3
-  store ptr %version65, ptr %tuple.field70, align 1
-  %tuple.val71 = load %_Z13PackageSyntax, ptr %tuple66, align 8
+choose.end36:                                     ; preds = %choose.else37, %choose.when50, %choose.end42
+  %choose.value56 = phi %_Z13VersionSyntax [ %choose.arm.load, %choose.when50 ], [ undef, %choose.end42 ], [ undef, %choose.else37 ]
+  %field.inplace57 = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
+  %call58 = call i1 @_ZN5Lexer11parse_colonEv(ptr %field.inplace57)
+  %load.struct59 = load %_Z6Parser, ptr %2, align 8
+  %lexer60 = extractvalue %_Z6Parser %load.struct59, 0
+  %position61 = extractvalue %_Z5Lexer %lexer60, 3
+  %name62 = load %_Z10NameSyntax, ptr %name, align 8
+  %version63 = load ptr, ptr %version, align 8
+  %tuple.field65 = getelementptr inbounds %_Z13PackageSyntax, ptr %tuple64, i32 0, i32 0
+  store i64 %previous_position, ptr %tuple.field65, align 1
+  %tuple.field66 = getelementptr inbounds %_Z13PackageSyntax, ptr %tuple64, i32 0, i32 1
+  store i64 %position61, ptr %tuple.field66, align 1
+  %tuple.field67 = getelementptr inbounds %_Z13PackageSyntax, ptr %tuple64, i32 0, i32 2
+  store %_Z10NameSyntax %name62, ptr %tuple.field67, align 1
+  %tuple.field68 = getelementptr inbounds %_Z13PackageSyntax, ptr %tuple64, i32 0, i32 3
+  store ptr %version63, ptr %tuple.field68, align 1
+  %tuple.val69 = load %_Z13PackageSyntax, ptr %tuple64, align 8
   %ret.tag.ptr = getelementptr inbounds { i8, [56 x i8] }, ptr %0, i32 0, i32 0
   store i8 0, ptr %ret.tag.ptr, align 1
   %ret.data.ptr = getelementptr inbounds { i8, [56 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z13PackageSyntax %tuple.val71, ptr %ret.data.ptr, align 1
+  store %_Z13PackageSyntax %tuple.val69, ptr %ret.data.ptr, align 1
   ret void
 
-choose.else39:                                    ; preds = %choose.end
-  br label %choose.end38
+choose.else37:                                    ; preds = %choose.end
+  br label %choose.end36
 
-choose.when40:                                    ; preds = %choose.end
-  %throws.err.val41 = load %_Z11ParserError, ptr %throws.data.ptr37, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %variant.ptr9, ptr align 1 %throws.data.ptr37, i64 ptrtoint (ptr getelementptr (%_Z11ParserError, ptr null, i32 1) to i64), i1 false)
-  %tag.ptr42 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 0
-  %tag43 = load i8, ptr %tag.ptr42, align 1
-  switch i8 %tag43, label %choose.else45 [
-    i8 0, label %choose.when46
-    i8 1, label %choose.when49
+choose.when38:                                    ; preds = %choose.end
+  %throws.err.val39 = load %_Z11ParserError, ptr %throws.data.ptr35, align 1
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %variant.ptr9, ptr align 1 %throws.data.ptr35, i64 ptrtoint (ptr getelementptr (%_Z11ParserError, ptr null, i32 1) to i64), i1 false)
+  %tag.ptr40 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 0
+  %tag41 = load i8, ptr %tag.ptr40, align 1
+  switch i8 %tag41, label %choose.else43 [
+    i8 0, label %choose.when44
+    i8 1, label %choose.when47
   ]
 
-choose.end44:                                     ; preds = %choose.else45, %choose.when49, %choose.when46
-  br label %choose.end38
+choose.end42:                                     ; preds = %choose.else43, %choose.when47, %choose.when44
+  br label %choose.end36
 
-choose.else45:                                    ; preds = %choose.when40
-  br label %choose.end44
+choose.else43:                                    ; preds = %choose.when38
+  br label %choose.end42
 
-choose.when46:                                    ; preds = %choose.when40
-  %"variant.c_data().ptr47" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
-  %variant.val48 = load %_Z15DifferentSyntax, ptr %"variant.c_data().ptr47", align 1
-  br label %choose.end44
+choose.when44:                                    ; preds = %choose.when38
+  %"variant.c_data().ptr45" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
+  %variant.val46 = load %_Z15DifferentSyntax, ptr %"variant.c_data().ptr45", align 1
+  br label %choose.end42
 
-choose.when49:                                    ; preds = %choose.when40
-  %"variant.c_data().ptr50" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
-  %variant.val51 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr50", align 8
-  br label %choose.end44
+choose.when47:                                    ; preds = %choose.when38
+  %"variant.c_data().ptr48" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
+  %variant.val49 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr48", align 8
+  br label %choose.end42
 
-choose.when52:                                    ; preds = %choose.end
-  %throws.success.val53 = load %_Z13VersionSyntax, ptr %throws.data.ptr37, align 1
-  %start = extractvalue %_Z13VersionSyntax %throws.success.val53, 0
-  %end = extractvalue %_Z13VersionSyntax %throws.success.val53, 1
-  %majorMinor = extractvalue %_Z13VersionSyntax %throws.success.val53, 2
-  %patch = extractvalue %_Z13VersionSyntax %throws.success.val53, 3
+choose.when50:                                    ; preds = %choose.end
+  %throws.success.val51 = load %_Z13VersionSyntax, ptr %throws.data.ptr35, align 1
+  %start = extractvalue %_Z13VersionSyntax %throws.success.val51, 0
+  %end = extractvalue %_Z13VersionSyntax %throws.success.val51, 1
+  %majorMinor = extractvalue %_Z13VersionSyntax %throws.success.val51, 2
+  %patch = extractvalue %_Z13VersionSyntax %throws.success.val51, 3
   %tuple.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr (%_Z13VersionSyntax, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z13VersionSyntax }, ptr null, i64 0, i32 1) to i64))
-  %tuple.field54 = getelementptr inbounds %_Z13VersionSyntax, ptr %tuple.region, i32 0, i32 0
-  store i64 %start, ptr %tuple.field54, align 1
-  %tuple.field55 = getelementptr inbounds %_Z13VersionSyntax, ptr %tuple.region, i32 0, i32 1
-  store i64 %end, ptr %tuple.field55, align 1
-  %tuple.field56 = getelementptr inbounds %_Z13VersionSyntax, ptr %tuple.region, i32 0, i32 2
-  store %_Z7Literal %majorMinor, ptr %tuple.field56, align 1
-  %tuple.field57 = getelementptr inbounds %_Z13VersionSyntax, ptr %tuple.region, i32 0, i32 3
-  store %_Z7Literal %patch, ptr %tuple.field57, align 1
+  %tuple.field52 = getelementptr inbounds %_Z13VersionSyntax, ptr %tuple.region, i32 0, i32 0
+  store i64 %start, ptr %tuple.field52, align 1
+  %tuple.field53 = getelementptr inbounds %_Z13VersionSyntax, ptr %tuple.region, i32 0, i32 1
+  store i64 %end, ptr %tuple.field53, align 1
+  %tuple.field54 = getelementptr inbounds %_Z13VersionSyntax, ptr %tuple.region, i32 0, i32 2
+  store %_Z7Literal %majorMinor, ptr %tuple.field54, align 1
+  %tuple.field55 = getelementptr inbounds %_Z13VersionSyntax, ptr %tuple.region, i32 0, i32 3
+  store %_Z7Literal %patch, ptr %tuple.field55, align 1
   store ptr %tuple.region, ptr %version, align 1
   %choose.arm.load = load %_Z13VersionSyntax, ptr %tuple.region, align 4
-  br label %choose.end38
+  br label %choose.end36
 }
 
 define linkonce_odr void @_ZN6Parser13parse_versionEPN4scaly6memory4PageE(ptr noalias sret({ i8, [40 x i8] }) %0, ptr %1, ptr %2) {
@@ -33916,7 +32680,6 @@ entry:
   %sret.result9 = alloca { i8, [25 x i8] }, align 8
   %patch = alloca %_Z7Literal, align 8
   %tuple = alloca %_Z13InvalidSyntax, align 8
-  %arg.tmp = alloca { ptr }, align 8
   %variant.ptr = alloca %_Z11ParserError, align 8
   %load.struct = load %_Z6Parser, ptr %2, align 8
   %lexer = extractvalue %_Z6Parser %load.struct, 0
@@ -33963,16 +32726,12 @@ if.then:                                          ; preds = %choose.end
   %load.struct4 = load %_Z6Parser, ptr %2, align 8
   %lexer5 = extractvalue %_Z6Parser %load.struct4, 0
   %position = extractvalue %_Z5Lexer %lexer5, 3
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.132 }, ptr %arg.tmp, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region, ptr %1, ptr %arg.tmp)
   %tuple.field = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple, i32 0, i32 0
   store i64 %previous_position, ptr %tuple.field, align 1
   %tuple.field6 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple, i32 0, i32 1
   store i64 %position, ptr %tuple.field6, align 1
-  %field.load = load { ptr }, ptr %struct.region, align 8
   %tuple.field7 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple, i32 0, i32 2
-  store { ptr } %field.load, ptr %tuple.field7, align 1
+  store { ptr } { ptr @.sconst.130 }, ptr %tuple.field7, align 1
   %tuple.val = load %_Z13InvalidSyntax, ptr %tuple, align 8
   %variant.data.ptr = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 1
   store %_Z13InvalidSyntax %tuple.val, ptr %variant.data.ptr, align 1
@@ -34031,9 +32790,8 @@ choose.when18:                                    ; preds = %if.end
 
 define linkonce_odr void @_ZN6Parser17parse_initializerEPN4scaly6memory4PageE(ptr noalias sret({ i8, [25 x i8] }) %0, ptr %1, ptr %2) {
 entry:
-  %tuple55 = alloca %_Z17InitializerSyntax, align 8
+  %tuple53 = alloca %_Z17InitializerSyntax, align 8
   %tuple15 = alloca %_Z13InvalidSyntax, align 8
-  %arg.tmp = alloca { ptr }, align 8
   %variant.ptr10 = alloca %_Z11ParserError, align 8
   %sret.result = alloca { i8, [25 x i8] }, align 8
   %operands = alloca ptr, align 8
@@ -34111,16 +32869,12 @@ choose.when7:                                     ; preds = %choose.when
   %load.struct12 = load %_Z6Parser, ptr %2, align 8
   %lexer13 = extractvalue %_Z6Parser %load.struct12, 0
   %position14 = extractvalue %_Z5Lexer %lexer13, 3
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.133 }, ptr %arg.tmp, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region, ptr %1, ptr %arg.tmp)
   %tuple.field = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple15, i32 0, i32 0
   store i64 %position, ptr %tuple.field, align 1
   %tuple.field16 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple15, i32 0, i32 1
   store i64 %position14, ptr %tuple.field16, align 1
-  %field.load = load { ptr }, ptr %struct.region, align 8
   %tuple.field17 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple15, i32 0, i32 2
-  store { ptr } %field.load, ptr %tuple.field17, align 1
+  store { ptr } { ptr @.sconst.131 }, ptr %tuple.field17, align 1
   %tuple.val18 = load %_Z13InvalidSyntax, ptr %tuple15, align 8
   %variant.data.ptr19 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr10, i32 0, i32 1
   store %_Z13InvalidSyntax %tuple.val18, ptr %variant.data.ptr19, align 1
@@ -34156,40 +32910,36 @@ if.then35:                                        ; preds = %choose.end
   %load.struct39 = load %_Z6Parser, ptr %2, align 8
   %lexer40 = extractvalue %_Z6Parser %load.struct39, 0
   %position41 = extractvalue %_Z5Lexer %lexer40, 3
-  %struct.region42 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.134 }, ptr %arg.tmp, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region42, ptr %1, ptr %arg.tmp)
-  %tuple.field43 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple15, i32 0, i32 0
-  store i64 %previous_position, ptr %tuple.field43, align 1
-  %tuple.field44 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple15, i32 0, i32 1
-  store i64 %position41, ptr %tuple.field44, align 1
-  %field.load45 = load { ptr }, ptr %struct.region42, align 8
-  %tuple.field46 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple15, i32 0, i32 2
-  store { ptr } %field.load45, ptr %tuple.field46, align 1
-  %tuple.val47 = load %_Z13InvalidSyntax, ptr %tuple15, align 8
-  %variant.data.ptr48 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr10, i32 0, i32 1
-  store %_Z13InvalidSyntax %tuple.val47, ptr %variant.data.ptr48, align 1
-  %variant.val49 = load %_Z11ParserError, ptr %variant.ptr10, align 1
-  %throw.data.ptr50 = getelementptr inbounds { i8, [25 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val49, ptr %throw.data.ptr50, align 1
+  %tuple.field42 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple15, i32 0, i32 0
+  store i64 %previous_position, ptr %tuple.field42, align 1
+  %tuple.field43 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple15, i32 0, i32 1
+  store i64 %position41, ptr %tuple.field43, align 1
+  %tuple.field44 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple15, i32 0, i32 2
+  store { ptr } { ptr @.sconst.132 }, ptr %tuple.field44, align 1
+  %tuple.val45 = load %_Z13InvalidSyntax, ptr %tuple15, align 8
+  %variant.data.ptr46 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr10, i32 0, i32 1
+  store %_Z13InvalidSyntax %tuple.val45, ptr %variant.data.ptr46, align 1
+  %variant.val47 = load %_Z11ParserError, ptr %variant.ptr10, align 1
+  %throw.data.ptr48 = getelementptr inbounds { i8, [25 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val47, ptr %throw.data.ptr48, align 1
   ret void
 
 if.end36:                                         ; preds = %choose.end
-  %load.struct51 = load %_Z6Parser, ptr %2, align 8
-  %lexer52 = extractvalue %_Z6Parser %load.struct51, 0
-  %position53 = extractvalue %_Z5Lexer %lexer52, 3
-  %operands54 = load ptr, ptr %operands, align 8
-  %tuple.field56 = getelementptr inbounds %_Z17InitializerSyntax, ptr %tuple55, i32 0, i32 0
-  store i64 %previous_position, ptr %tuple.field56, align 1
-  %tuple.field57 = getelementptr inbounds %_Z17InitializerSyntax, ptr %tuple55, i32 0, i32 1
-  store i64 %position53, ptr %tuple.field57, align 1
-  %tuple.field58 = getelementptr inbounds %_Z17InitializerSyntax, ptr %tuple55, i32 0, i32 2
-  store ptr %operands54, ptr %tuple.field58, align 1
-  %tuple.val59 = load %_Z17InitializerSyntax, ptr %tuple55, align 8
+  %load.struct49 = load %_Z6Parser, ptr %2, align 8
+  %lexer50 = extractvalue %_Z6Parser %load.struct49, 0
+  %position51 = extractvalue %_Z5Lexer %lexer50, 3
+  %operands52 = load ptr, ptr %operands, align 8
+  %tuple.field54 = getelementptr inbounds %_Z17InitializerSyntax, ptr %tuple53, i32 0, i32 0
+  store i64 %previous_position, ptr %tuple.field54, align 1
+  %tuple.field55 = getelementptr inbounds %_Z17InitializerSyntax, ptr %tuple53, i32 0, i32 1
+  store i64 %position51, ptr %tuple.field55, align 1
+  %tuple.field56 = getelementptr inbounds %_Z17InitializerSyntax, ptr %tuple53, i32 0, i32 2
+  store ptr %operands52, ptr %tuple.field56, align 1
+  %tuple.val57 = load %_Z17InitializerSyntax, ptr %tuple53, align 8
   %ret.tag.ptr = getelementptr inbounds { i8, [25 x i8] }, ptr %0, i32 0, i32 0
   store i8 0, ptr %ret.tag.ptr, align 1
   %ret.data.ptr = getelementptr inbounds { i8, [25 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z17InitializerSyntax %tuple.val59, ptr %ret.data.ptr, align 1
+  store %_Z17InitializerSyntax %tuple.val57, ptr %ret.data.ptr, align 1
   ret void
 }
 
@@ -34378,7 +33128,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.135)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.133)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -34882,7 +33632,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.136)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.134)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -35514,7 +34264,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.137)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.135)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -36018,7 +34768,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.138)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.136)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -36350,7 +35100,6 @@ define linkonce_odr void @_ZN6Parser18parse_memberaccessEPN4scaly6memory4PageE(p
 entry:
   %tuple35 = alloca %_Z18MemberAccessSyntax, align 8
   %tuple15 = alloca %_Z13InvalidSyntax, align 8
-  %arg.tmp = alloca { ptr }, align 8
   %variant.ptr10 = alloca %_Z11ParserError, align 8
   %sret.result = alloca { i8, [32 x i8] }, align 8
   %name = alloca %_Z10NameSyntax, align 8
@@ -36439,16 +35188,12 @@ choose.when7:                                     ; preds = %choose.when
   %load.struct12 = load %_Z6Parser, ptr %2, align 8
   %lexer13 = extractvalue %_Z6Parser %load.struct12, 0
   %position14 = extractvalue %_Z5Lexer %lexer13, 3
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.139 }, ptr %arg.tmp, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region, ptr %1, ptr %arg.tmp)
   %tuple.field = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple15, i32 0, i32 0
   store i64 %position, ptr %tuple.field, align 1
   %tuple.field16 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple15, i32 0, i32 1
   store i64 %position14, ptr %tuple.field16, align 1
-  %field.load = load { ptr }, ptr %struct.region, align 8
   %tuple.field17 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple15, i32 0, i32 2
-  store { ptr } %field.load, ptr %tuple.field17, align 1
+  store { ptr } { ptr @.sconst.137 }, ptr %tuple.field17, align 1
   %tuple.val18 = load %_Z13InvalidSyntax, ptr %tuple15, align 8
   %variant.data.ptr19 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr10, i32 0, i32 1
   store %_Z13InvalidSyntax %tuple.val18, ptr %variant.data.ptr19, align 1
@@ -37668,7 +36413,6 @@ define linkonce_odr void @_ZN6Parser12parse_objectEPN4scaly6memory4PageE(ptr noa
 entry:
   %tuple41 = alloca %_Z12ObjectSyntax, align 8
   %tuple30 = alloca %_Z13InvalidSyntax, align 8
-  %arg.tmp = alloca { ptr }, align 8
   %variant.ptr13 = alloca %_Z11ParserError, align 8
   %sret.result = alloca { i8, [25 x i8] }, align 8
   %components = alloca ptr, align 8
@@ -37769,16 +36513,12 @@ if.then23:                                        ; preds = %choose.end
   %load.struct27 = load %_Z6Parser, ptr %2, align 8
   %lexer28 = extractvalue %_Z6Parser %load.struct27, 0
   %position29 = extractvalue %_Z5Lexer %lexer28, 3
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.140 }, ptr %arg.tmp, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region, ptr %1, ptr %arg.tmp)
   %tuple.field = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple30, i32 0, i32 0
   store i64 %previous_position, ptr %tuple.field, align 1
   %tuple.field31 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple30, i32 0, i32 1
   store i64 %position29, ptr %tuple.field31, align 1
-  %field.load = load { ptr }, ptr %struct.region, align 8
   %tuple.field32 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple30, i32 0, i32 2
-  store { ptr } %field.load, ptr %tuple.field32, align 1
+  store { ptr } { ptr @.sconst.138 }, ptr %tuple.field32, align 1
   %tuple.val33 = load %_Z13InvalidSyntax, ptr %tuple30, align 8
   %variant.data.ptr34 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr13, i32 0, i32 1
   store %_Z13InvalidSyntax %tuple.val33, ptr %variant.data.ptr34, align 1
@@ -37991,7 +36731,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.141)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.139)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -38495,7 +37235,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.142)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.140)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -39019,7 +37759,6 @@ entry:
   %sret.result33 = alloca { i8, [25 x i8] }, align 8
   %attributes = alloca ptr, align 8
   %tuple14 = alloca %_Z13InvalidSyntax, align 8
-  %arg.tmp = alloca { ptr }, align 8
   %variant.ptr9 = alloca %_Z11ParserError, align 8
   %sret.result = alloca { i8, [25 x i8] }, align 8
   %value = alloca ptr, align 8
@@ -39102,16 +37841,12 @@ choose.when6:                                     ; preds = %choose.when
   %load.struct11 = load %_Z6Parser, ptr %2, align 8
   %lexer12 = extractvalue %_Z6Parser %load.struct11, 0
   %position13 = extractvalue %_Z5Lexer %lexer12, 3
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.143 }, ptr %arg.tmp, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region, ptr %1, ptr %arg.tmp)
   %tuple.field = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 0
   store i64 %position, ptr %tuple.field, align 1
   %tuple.field15 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 1
   store i64 %position13, ptr %tuple.field15, align 1
-  %field.load = load { ptr }, ptr %struct.region, align 8
   %tuple.field16 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 2
-  store { ptr } %field.load, ptr %tuple.field16, align 1
+  store { ptr } { ptr @.sconst.141 }, ptr %tuple.field16, align 1
   %tuple.val17 = load %_Z13InvalidSyntax, ptr %tuple14, align 8
   %variant.data.ptr18 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
   store %_Z13InvalidSyntax %tuple.val17, ptr %variant.data.ptr18, align 1
@@ -39207,11 +37942,10 @@ choose.when56:                                    ; preds = %choose.end
 
 define linkonce_odr void @_ZN6Parser12parse_vectorEPN4scaly6memory4PageE(ptr noalias sret({ i8, [32 x i8] }) %0, ptr %1, ptr %2) {
 entry:
-  %tuple79 = alloca %_Z12VectorSyntax, align 8
-  %sret.result54 = alloca { i8, [25 x i8] }, align 8
+  %tuple77 = alloca %_Z12VectorSyntax, align 8
+  %sret.result52 = alloca { i8, [25 x i8] }, align 8
   %lifetime = alloca ptr, align 8
   %tuple15 = alloca %_Z13InvalidSyntax, align 8
-  %arg.tmp = alloca { ptr }, align 8
   %variant.ptr10 = alloca %_Z11ParserError, align 8
   %sret.result = alloca { i8, [25 x i8] }, align 8
   %elements = alloca ptr, align 8
@@ -39289,16 +38023,12 @@ choose.when7:                                     ; preds = %choose.when
   %load.struct12 = load %_Z6Parser, ptr %2, align 8
   %lexer13 = extractvalue %_Z6Parser %load.struct12, 0
   %position14 = extractvalue %_Z5Lexer %lexer13, 3
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.144 }, ptr %arg.tmp, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region, ptr %1, ptr %arg.tmp)
   %tuple.field = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple15, i32 0, i32 0
   store i64 %position, ptr %tuple.field, align 1
   %tuple.field16 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple15, i32 0, i32 1
   store i64 %position14, ptr %tuple.field16, align 1
-  %field.load = load { ptr }, ptr %struct.region, align 8
   %tuple.field17 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple15, i32 0, i32 2
-  store { ptr } %field.load, ptr %tuple.field17, align 1
+  store { ptr } { ptr @.sconst.142 }, ptr %tuple.field17, align 1
   %tuple.val18 = load %_Z13InvalidSyntax, ptr %tuple15, align 8
   %variant.data.ptr19 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr10, i32 0, i32 1
   store %_Z13InvalidSyntax %tuple.val18, ptr %variant.data.ptr19, align 1
@@ -39334,95 +38064,91 @@ if.then35:                                        ; preds = %choose.end
   %load.struct39 = load %_Z6Parser, ptr %2, align 8
   %lexer40 = extractvalue %_Z6Parser %load.struct39, 0
   %position41 = extractvalue %_Z5Lexer %lexer40, 3
-  %struct.region42 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.145 }, ptr %arg.tmp, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region42, ptr %1, ptr %arg.tmp)
-  %tuple.field43 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple15, i32 0, i32 0
-  store i64 %previous_position, ptr %tuple.field43, align 1
-  %tuple.field44 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple15, i32 0, i32 1
-  store i64 %position41, ptr %tuple.field44, align 1
-  %field.load45 = load { ptr }, ptr %struct.region42, align 8
-  %tuple.field46 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple15, i32 0, i32 2
-  store { ptr } %field.load45, ptr %tuple.field46, align 1
-  %tuple.val47 = load %_Z13InvalidSyntax, ptr %tuple15, align 8
-  %variant.data.ptr48 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr10, i32 0, i32 1
-  store %_Z13InvalidSyntax %tuple.val47, ptr %variant.data.ptr48, align 1
-  %variant.val49 = load %_Z11ParserError, ptr %variant.ptr10, align 1
-  %throw.data.ptr50 = getelementptr inbounds { i8, [32 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val49, ptr %throw.data.ptr50, align 1
+  %tuple.field42 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple15, i32 0, i32 0
+  store i64 %previous_position, ptr %tuple.field42, align 1
+  %tuple.field43 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple15, i32 0, i32 1
+  store i64 %position41, ptr %tuple.field43, align 1
+  %tuple.field44 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple15, i32 0, i32 2
+  store { ptr } { ptr @.sconst.143 }, ptr %tuple.field44, align 1
+  %tuple.val45 = load %_Z13InvalidSyntax, ptr %tuple15, align 8
+  %variant.data.ptr46 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr10, i32 0, i32 1
+  store %_Z13InvalidSyntax %tuple.val45, ptr %variant.data.ptr46, align 1
+  %variant.val47 = load %_Z11ParserError, ptr %variant.ptr10, align 1
+  %throw.data.ptr48 = getelementptr inbounds { i8, [32 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val47, ptr %throw.data.ptr48, align 1
   ret void
 
 if.end36:                                         ; preds = %choose.end
-  %load.struct51 = load %_Z6Parser, ptr %2, align 8
-  %lexer52 = extractvalue %_Z6Parser %load.struct51, 0
-  %position53 = extractvalue %_Z5Lexer %lexer52, 3
+  %load.struct49 = load %_Z6Parser, ptr %2, align 8
+  %lexer50 = extractvalue %_Z6Parser %load.struct49, 0
+  %position51 = extractvalue %_Z5Lexer %lexer50, 3
   store ptr null, ptr %lifetime, align 1
-  call void @_ZN6Parser14parse_lifetimeEPN4scaly6memory4PageE(ptr noalias sret({ i8, [25 x i8] }) %sret.result54, ptr %1, ptr %2)
-  %tag55 = load i8, ptr %sret.result54, align 1
-  %throws.data.ptr56 = getelementptr inbounds i8, ptr %sret.result54, i8 1
-  switch i8 %tag55, label %choose.else58 [
-    i8 1, label %choose.when59
-    i8 0, label %choose.when71
+  call void @_ZN6Parser14parse_lifetimeEPN4scaly6memory4PageE(ptr noalias sret({ i8, [25 x i8] }) %sret.result52, ptr %1, ptr %2)
+  %tag53 = load i8, ptr %sret.result52, align 1
+  %throws.data.ptr54 = getelementptr inbounds i8, ptr %sret.result52, i8 1
+  switch i8 %tag53, label %choose.else56 [
+    i8 1, label %choose.when57
+    i8 0, label %choose.when69
   ]
 
-choose.end57:                                     ; preds = %choose.else58, %choose.when71, %choose.end63
-  %choose.value73 = phi %_Z14LifetimeSyntax [ %choose.arm.load, %choose.when71 ], [ undef, %choose.end63 ], [ undef, %choose.else58 ]
-  %load.struct74 = load %_Z6Parser, ptr %2, align 8
-  %lexer75 = extractvalue %_Z6Parser %load.struct74, 0
-  %position76 = extractvalue %_Z5Lexer %lexer75, 3
-  %elements77 = load ptr, ptr %elements, align 8
-  %lifetime78 = load ptr, ptr %lifetime, align 8
-  %tuple.field80 = getelementptr inbounds %_Z12VectorSyntax, ptr %tuple79, i32 0, i32 0
-  store i64 %previous_position, ptr %tuple.field80, align 1
-  %tuple.field81 = getelementptr inbounds %_Z12VectorSyntax, ptr %tuple79, i32 0, i32 1
-  store i64 %position76, ptr %tuple.field81, align 1
-  %tuple.field82 = getelementptr inbounds %_Z12VectorSyntax, ptr %tuple79, i32 0, i32 2
-  store ptr %elements77, ptr %tuple.field82, align 1
-  %tuple.field83 = getelementptr inbounds %_Z12VectorSyntax, ptr %tuple79, i32 0, i32 3
-  store ptr %lifetime78, ptr %tuple.field83, align 1
-  %tuple.val84 = load %_Z12VectorSyntax, ptr %tuple79, align 8
+choose.end55:                                     ; preds = %choose.else56, %choose.when69, %choose.end61
+  %choose.value71 = phi %_Z14LifetimeSyntax [ %choose.arm.load, %choose.when69 ], [ undef, %choose.end61 ], [ undef, %choose.else56 ]
+  %load.struct72 = load %_Z6Parser, ptr %2, align 8
+  %lexer73 = extractvalue %_Z6Parser %load.struct72, 0
+  %position74 = extractvalue %_Z5Lexer %lexer73, 3
+  %elements75 = load ptr, ptr %elements, align 8
+  %lifetime76 = load ptr, ptr %lifetime, align 8
+  %tuple.field78 = getelementptr inbounds %_Z12VectorSyntax, ptr %tuple77, i32 0, i32 0
+  store i64 %previous_position, ptr %tuple.field78, align 1
+  %tuple.field79 = getelementptr inbounds %_Z12VectorSyntax, ptr %tuple77, i32 0, i32 1
+  store i64 %position74, ptr %tuple.field79, align 1
+  %tuple.field80 = getelementptr inbounds %_Z12VectorSyntax, ptr %tuple77, i32 0, i32 2
+  store ptr %elements75, ptr %tuple.field80, align 1
+  %tuple.field81 = getelementptr inbounds %_Z12VectorSyntax, ptr %tuple77, i32 0, i32 3
+  store ptr %lifetime76, ptr %tuple.field81, align 1
+  %tuple.val82 = load %_Z12VectorSyntax, ptr %tuple77, align 8
   %ret.tag.ptr = getelementptr inbounds { i8, [32 x i8] }, ptr %0, i32 0, i32 0
   store i8 0, ptr %ret.tag.ptr, align 1
   %ret.data.ptr = getelementptr inbounds { i8, [32 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z12VectorSyntax %tuple.val84, ptr %ret.data.ptr, align 1
+  store %_Z12VectorSyntax %tuple.val82, ptr %ret.data.ptr, align 1
   ret void
 
-choose.else58:                                    ; preds = %if.end36
-  br label %choose.end57
+choose.else56:                                    ; preds = %if.end36
+  br label %choose.end55
 
-choose.when59:                                    ; preds = %if.end36
-  %throws.err.val60 = load %_Z11ParserError, ptr %throws.data.ptr56, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %variant.ptr10, ptr align 1 %throws.data.ptr56, i64 ptrtoint (ptr getelementptr (%_Z11ParserError, ptr null, i32 1) to i64), i1 false)
-  %tag.ptr61 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr10, i32 0, i32 0
-  %tag62 = load i8, ptr %tag.ptr61, align 1
-  switch i8 %tag62, label %choose.else64 [
-    i8 0, label %choose.when65
-    i8 1, label %choose.when68
+choose.when57:                                    ; preds = %if.end36
+  %throws.err.val58 = load %_Z11ParserError, ptr %throws.data.ptr54, align 1
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %variant.ptr10, ptr align 1 %throws.data.ptr54, i64 ptrtoint (ptr getelementptr (%_Z11ParserError, ptr null, i32 1) to i64), i1 false)
+  %tag.ptr59 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr10, i32 0, i32 0
+  %tag60 = load i8, ptr %tag.ptr59, align 1
+  switch i8 %tag60, label %choose.else62 [
+    i8 0, label %choose.when63
+    i8 1, label %choose.when66
   ]
 
-choose.end63:                                     ; preds = %choose.else64, %choose.when68, %choose.when65
-  br label %choose.end57
+choose.end61:                                     ; preds = %choose.else62, %choose.when66, %choose.when63
+  br label %choose.end55
 
-choose.else64:                                    ; preds = %choose.when59
-  br label %choose.end63
+choose.else62:                                    ; preds = %choose.when57
+  br label %choose.end61
 
-choose.when65:                                    ; preds = %choose.when59
-  %"variant.c_data().ptr66" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr10, i32 0, i32 1
-  %variant.val67 = load %_Z15DifferentSyntax, ptr %"variant.c_data().ptr66", align 1
-  br label %choose.end63
+choose.when63:                                    ; preds = %choose.when57
+  %"variant.c_data().ptr64" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr10, i32 0, i32 1
+  %variant.val65 = load %_Z15DifferentSyntax, ptr %"variant.c_data().ptr64", align 1
+  br label %choose.end61
 
-choose.when68:                                    ; preds = %choose.when59
-  %"variant.c_data().ptr69" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr10, i32 0, i32 1
-  %variant.val70 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr69", align 8
-  br label %choose.end63
+choose.when66:                                    ; preds = %choose.when57
+  %"variant.c_data().ptr67" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr10, i32 0, i32 1
+  %variant.val68 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr67", align 8
+  br label %choose.end61
 
-choose.when71:                                    ; preds = %if.end36
-  %throws.success.val72 = load %_Z14LifetimeSyntax, ptr %throws.data.ptr56, align 1
+choose.when69:                                    ; preds = %if.end36
+  %throws.success.val70 = load %_Z14LifetimeSyntax, ptr %throws.data.ptr54, align 1
   %tuple.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr (%_Z14LifetimeSyntax, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z14LifetimeSyntax }, ptr null, i64 0, i32 1) to i64))
-  store %_Z14LifetimeSyntax %throws.success.val72, ptr %tuple.region, align 1
+  store %_Z14LifetimeSyntax %throws.success.val70, ptr %tuple.region, align 1
   store ptr %tuple.region, ptr %lifetime, align 1
   %choose.arm.load = load %_Z14LifetimeSyntax, ptr %tuple.region, align 1
-  br label %choose.end57
+  br label %choose.end55
 }
 
 define linkonce_odr ptr @_ZN4ListI13ElementSyntaxE8get_headEPN4scaly6memory4PageE(ptr %0, ptr %1) {
@@ -39610,7 +38336,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.146)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.144)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -40114,7 +38840,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.147)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.145)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -40566,14 +39292,13 @@ choose.when24:                                    ; preds = %choose.end
 
 define linkonce_odr void @_ZN6Parser8parse_ifEPN4scaly6memory4PageE(ptr noalias sret({ i8, [112 x i8] }) %0, ptr %1, ptr %2) {
 entry:
-  %tuple127 = alloca %_Z8IfSyntax, align 8
-  %sret.result97 = alloca { i8, [80 x i8] }, align 8
+  %tuple121 = alloca %_Z8IfSyntax, align 8
+  %sret.result91 = alloca { i8, [80 x i8] }, align 8
   %alternative = alloca ptr, align 8
-  %variant.ptr69 = alloca %_Z11ParserError, align 8
-  %sret.result54 = alloca { i8, [80 x i8] }, align 8
+  %variant.ptr65 = alloca %_Z11ParserError, align 8
+  %sret.result50 = alloca { i8, [80 x i8] }, align 8
   %consequent = alloca %_Z10ThenSyntax, align 8
-  %tuple16 = alloca %_Z13InvalidSyntax, align 8
-  %arg.tmp15 = alloca { ptr }, align 8
+  %tuple14 = alloca %_Z13InvalidSyntax, align 8
   %variant.ptr9 = alloca %_Z11ParserError, align 8
   %sret.result = alloca { i8, [25 x i8] }, align 8
   %condition = alloca ptr, align 8
@@ -40583,11 +39308,9 @@ entry:
   %lexer = extractvalue %_Z6Parser %load.struct, 0
   %previous_position = extractvalue %_Z5Lexer %lexer, 4
   %field.inplace = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
   %arg.tmp = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.148 }, ptr %arg.tmp, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region, ptr %1, ptr %arg.tmp)
-  %call = call i1 @_ZN5Lexer13parse_keywordE6String(ptr %field.inplace, ptr %struct.region)
+  store { ptr } { ptr @.sconst.146 }, ptr %arg.tmp, align 1
+  %call = call i1 @_ZN5Lexer13parse_keywordE6String(ptr %field.inplace, ptr %arg.tmp)
   %bitnot = xor i1 %call, true
   br i1 %bitnot, label %if.then, label %if.end
 
@@ -40614,15 +39337,15 @@ if.end:                                           ; preds = %entry
   %throws.data.ptr = getelementptr inbounds i8, ptr %sret.result, i8 1
   switch i8 %tag, label %choose.else [
     i8 1, label %choose.when
-    i8 0, label %choose.when31
+    i8 0, label %choose.when29
   ]
 
-choose.end:                                       ; preds = %choose.else, %choose.when31, %choose.end4
-  %choose.value = phi ptr [ %throws.success.val, %choose.when31 ], [ undef, %choose.end4 ], [ undef, %choose.else ]
-  %field.inplace32 = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
-  %call33 = call i1 @_ZN5Lexer11parse_colonEv(ptr %field.inplace32)
-  %bitnot34 = xor i1 %call33, true
-  br i1 %bitnot34, label %if.then35, label %if.end36
+choose.end:                                       ; preds = %choose.else, %choose.when29, %choose.end4
+  %choose.value = phi ptr [ %throws.success.val, %choose.when29 ], [ undef, %choose.end4 ], [ undef, %choose.else ]
+  %field.inplace30 = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
+  %call31 = call i1 @_ZN5Lexer11parse_colonEv(ptr %field.inplace30)
+  %bitnot32 = xor i1 %call31, true
+  br i1 %bitnot32, label %if.then33, label %if.end34
 
 choose.else:                                      ; preds = %if.end
   br label %choose.end
@@ -40634,7 +39357,7 @@ choose.when:                                      ; preds = %if.end
   %tag3 = load i8, ptr %tag.ptr, align 1
   switch i8 %tag3, label %choose.else5 [
     i8 0, label %choose.when6
-    i8 1, label %choose.when23
+    i8 1, label %choose.when21
   ]
 
 choose.end4:                                      ; preds = %choose.else5
@@ -40653,230 +39376,218 @@ choose.when6:                                     ; preds = %choose.when
   %load.struct11 = load %_Z6Parser, ptr %2, align 8
   %lexer12 = extractvalue %_Z6Parser %load.struct11, 0
   %position13 = extractvalue %_Z5Lexer %lexer12, 3
-  %struct.region14 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.149 }, ptr %arg.tmp15, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region14, ptr %1, ptr %arg.tmp15)
-  %tuple.field = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 0
+  %tuple.field = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 0
   store i64 %position, ptr %tuple.field, align 1
-  %tuple.field17 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 1
-  store i64 %position13, ptr %tuple.field17, align 1
-  %field.load = load { ptr }, ptr %struct.region14, align 8
-  %tuple.field18 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 2
-  store { ptr } %field.load, ptr %tuple.field18, align 1
-  %tuple.val19 = load %_Z13InvalidSyntax, ptr %tuple16, align 8
-  %variant.data.ptr20 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
-  store %_Z13InvalidSyntax %tuple.val19, ptr %variant.data.ptr20, align 1
-  %variant.val21 = load %_Z11ParserError, ptr %variant.ptr9, align 1
-  %throw.data.ptr22 = getelementptr inbounds { i8, [112 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val21, ptr %throw.data.ptr22, align 1
+  %tuple.field15 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 1
+  store i64 %position13, ptr %tuple.field15, align 1
+  %tuple.field16 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 2
+  store { ptr } { ptr @.sconst.147 }, ptr %tuple.field16, align 1
+  %tuple.val17 = load %_Z13InvalidSyntax, ptr %tuple14, align 8
+  %variant.data.ptr18 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
+  store %_Z13InvalidSyntax %tuple.val17, ptr %variant.data.ptr18, align 1
+  %variant.val19 = load %_Z11ParserError, ptr %variant.ptr9, align 1
+  %throw.data.ptr20 = getelementptr inbounds { i8, [112 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val19, ptr %throw.data.ptr20, align 1
   ret void
 
-choose.when23:                                    ; preds = %choose.when
-  %"variant.c_data().ptr24" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 1
-  %variant.val25 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr24", align 8
-  %throw.tag.ptr26 = getelementptr inbounds { i8, [112 x i8] }, ptr %0, i32 0, i32 0
-  store i8 1, ptr %throw.tag.ptr26, align 1
-  %variant.tag.ptr27 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 0
-  store i8 1, ptr %variant.tag.ptr27, align 1
-  %variant.data.ptr28 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
-  store %_Z13InvalidSyntax %variant.val25, ptr %variant.data.ptr28, align 1
-  %variant.val29 = load %_Z11ParserError, ptr %variant.ptr9, align 1
-  %throw.data.ptr30 = getelementptr inbounds { i8, [112 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val29, ptr %throw.data.ptr30, align 1
+choose.when21:                                    ; preds = %choose.when
+  %"variant.c_data().ptr22" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 1
+  %variant.val23 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr22", align 8
+  %throw.tag.ptr24 = getelementptr inbounds { i8, [112 x i8] }, ptr %0, i32 0, i32 0
+  store i8 1, ptr %throw.tag.ptr24, align 1
+  %variant.tag.ptr25 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 0
+  store i8 1, ptr %variant.tag.ptr25, align 1
+  %variant.data.ptr26 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
+  store %_Z13InvalidSyntax %variant.val23, ptr %variant.data.ptr26, align 1
+  %variant.val27 = load %_Z11ParserError, ptr %variant.ptr9, align 1
+  %throw.data.ptr28 = getelementptr inbounds { i8, [112 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val27, ptr %throw.data.ptr28, align 1
   ret void
 
-choose.when31:                                    ; preds = %if.end
+choose.when29:                                    ; preds = %if.end
   %throws.success.val = load ptr, ptr %throws.data.ptr, align 1
   store ptr %throws.success.val, ptr %condition, align 1
   br label %choose.end
 
-if.then35:                                        ; preds = %choose.end
-  %throw.tag.ptr37 = getelementptr inbounds { i8, [112 x i8] }, ptr %0, i32 0, i32 0
-  store i8 1, ptr %throw.tag.ptr37, align 1
-  %variant.tag.ptr38 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 0
-  store i8 1, ptr %variant.tag.ptr38, align 1
-  %load.struct39 = load %_Z6Parser, ptr %2, align 8
-  %lexer40 = extractvalue %_Z6Parser %load.struct39, 0
-  %position41 = extractvalue %_Z5Lexer %lexer40, 3
-  %struct.region42 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.150 }, ptr %arg.tmp15, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region42, ptr %1, ptr %arg.tmp15)
-  %tuple.field43 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 0
-  store i64 %previous_position, ptr %tuple.field43, align 1
-  %tuple.field44 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 1
-  store i64 %position41, ptr %tuple.field44, align 1
-  %field.load45 = load { ptr }, ptr %struct.region42, align 8
-  %tuple.field46 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 2
-  store { ptr } %field.load45, ptr %tuple.field46, align 1
-  %tuple.val47 = load %_Z13InvalidSyntax, ptr %tuple16, align 8
-  %variant.data.ptr48 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
-  store %_Z13InvalidSyntax %tuple.val47, ptr %variant.data.ptr48, align 1
-  %variant.val49 = load %_Z11ParserError, ptr %variant.ptr9, align 1
-  %throw.data.ptr50 = getelementptr inbounds { i8, [112 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val49, ptr %throw.data.ptr50, align 1
+if.then33:                                        ; preds = %choose.end
+  %throw.tag.ptr35 = getelementptr inbounds { i8, [112 x i8] }, ptr %0, i32 0, i32 0
+  store i8 1, ptr %throw.tag.ptr35, align 1
+  %variant.tag.ptr36 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 0
+  store i8 1, ptr %variant.tag.ptr36, align 1
+  %load.struct37 = load %_Z6Parser, ptr %2, align 8
+  %lexer38 = extractvalue %_Z6Parser %load.struct37, 0
+  %position39 = extractvalue %_Z5Lexer %lexer38, 3
+  %tuple.field40 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 0
+  store i64 %previous_position, ptr %tuple.field40, align 1
+  %tuple.field41 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 1
+  store i64 %position39, ptr %tuple.field41, align 1
+  %tuple.field42 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 2
+  store { ptr } { ptr @.sconst.148 }, ptr %tuple.field42, align 1
+  %tuple.val43 = load %_Z13InvalidSyntax, ptr %tuple14, align 8
+  %variant.data.ptr44 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
+  store %_Z13InvalidSyntax %tuple.val43, ptr %variant.data.ptr44, align 1
+  %variant.val45 = load %_Z11ParserError, ptr %variant.ptr9, align 1
+  %throw.data.ptr46 = getelementptr inbounds { i8, [112 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val45, ptr %throw.data.ptr46, align 1
   ret void
 
-if.end36:                                         ; preds = %choose.end
-  %load.struct51 = load %_Z6Parser, ptr %2, align 8
-  %lexer52 = extractvalue %_Z6Parser %load.struct51, 0
-  %position53 = extractvalue %_Z5Lexer %lexer52, 3
-  call void @_ZN6Parser10parse_thenEPN4scaly6memory4PageE(ptr noalias sret({ i8, [80 x i8] }) %sret.result54, ptr %1, ptr %2)
-  %tag55 = load i8, ptr %sret.result54, align 1
-  %throws.data.ptr56 = getelementptr inbounds i8, ptr %sret.result54, i8 1
-  switch i8 %tag55, label %choose.else58 [
-    i8 1, label %choose.when59
-    i8 0, label %choose.when91
+if.end34:                                         ; preds = %choose.end
+  %load.struct47 = load %_Z6Parser, ptr %2, align 8
+  %lexer48 = extractvalue %_Z6Parser %load.struct47, 0
+  %position49 = extractvalue %_Z5Lexer %lexer48, 3
+  call void @_ZN6Parser10parse_thenEPN4scaly6memory4PageE(ptr noalias sret({ i8, [80 x i8] }) %sret.result50, ptr %1, ptr %2)
+  %tag51 = load i8, ptr %sret.result50, align 1
+  %throws.data.ptr52 = getelementptr inbounds i8, ptr %sret.result50, i8 1
+  switch i8 %tag51, label %choose.else54 [
+    i8 1, label %choose.when55
+    i8 0, label %choose.when85
   ]
 
-choose.end57:                                     ; preds = %choose.else58, %choose.when91, %choose.end63
-  %choose.value93 = phi %_Z10ThenSyntax [ %throws.success.val92, %choose.when91 ], [ undef, %choose.end63 ], [ undef, %choose.else58 ]
-  %load.struct94 = load %_Z6Parser, ptr %2, align 8
-  %lexer95 = extractvalue %_Z6Parser %load.struct94, 0
-  %position96 = extractvalue %_Z5Lexer %lexer95, 3
+choose.end53:                                     ; preds = %choose.else54, %choose.when85, %choose.end59
+  %choose.value87 = phi %_Z10ThenSyntax [ %throws.success.val86, %choose.when85 ], [ undef, %choose.end59 ], [ undef, %choose.else54 ]
+  %load.struct88 = load %_Z6Parser, ptr %2, align 8
+  %lexer89 = extractvalue %_Z6Parser %load.struct88, 0
+  %position90 = extractvalue %_Z5Lexer %lexer89, 3
   store ptr null, ptr %alternative, align 1
-  call void @_ZN6Parser10parse_elseEPN4scaly6memory4PageE(ptr noalias sret({ i8, [80 x i8] }) %sret.result97, ptr %1, ptr %2)
-  %tag98 = load i8, ptr %sret.result97, align 1
-  %throws.data.ptr99 = getelementptr inbounds i8, ptr %sret.result97, i8 1
-  switch i8 %tag98, label %choose.else101 [
-    i8 1, label %choose.when102
-    i8 0, label %choose.when114
+  call void @_ZN6Parser10parse_elseEPN4scaly6memory4PageE(ptr noalias sret({ i8, [80 x i8] }) %sret.result91, ptr %1, ptr %2)
+  %tag92 = load i8, ptr %sret.result91, align 1
+  %throws.data.ptr93 = getelementptr inbounds i8, ptr %sret.result91, i8 1
+  switch i8 %tag92, label %choose.else95 [
+    i8 1, label %choose.when96
+    i8 0, label %choose.when108
   ]
 
-choose.else58:                                    ; preds = %if.end36
-  br label %choose.end57
+choose.else54:                                    ; preds = %if.end34
+  br label %choose.end53
 
-choose.when59:                                    ; preds = %if.end36
-  %throws.err.val60 = load %_Z11ParserError, ptr %throws.data.ptr56, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %variant.ptr9, ptr align 1 %throws.data.ptr56, i64 ptrtoint (ptr getelementptr (%_Z11ParserError, ptr null, i32 1) to i64), i1 false)
-  %tag.ptr61 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 0
-  %tag62 = load i8, ptr %tag.ptr61, align 1
-  switch i8 %tag62, label %choose.else64 [
-    i8 0, label %choose.when65
-    i8 1, label %choose.when83
+choose.when55:                                    ; preds = %if.end34
+  %throws.err.val56 = load %_Z11ParserError, ptr %throws.data.ptr52, align 1
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %variant.ptr9, ptr align 1 %throws.data.ptr52, i64 ptrtoint (ptr getelementptr (%_Z11ParserError, ptr null, i32 1) to i64), i1 false)
+  %tag.ptr57 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 0
+  %tag58 = load i8, ptr %tag.ptr57, align 1
+  switch i8 %tag58, label %choose.else60 [
+    i8 0, label %choose.when61
+    i8 1, label %choose.when77
   ]
 
-choose.end63:                                     ; preds = %choose.else64
-  br label %choose.end57
+choose.end59:                                     ; preds = %choose.else60
+  br label %choose.end53
 
-choose.else64:                                    ; preds = %choose.when59
-  br label %choose.end63
+choose.else60:                                    ; preds = %choose.when55
+  br label %choose.end59
 
-choose.when65:                                    ; preds = %choose.when59
-  %"variant.c_data().ptr66" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
-  %variant.val67 = load %_Z15DifferentSyntax, ptr %"variant.c_data().ptr66", align 1
-  %throw.tag.ptr68 = getelementptr inbounds { i8, [112 x i8] }, ptr %0, i32 0, i32 0
-  store i8 1, ptr %throw.tag.ptr68, align 1
-  %variant.tag.ptr70 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr69, i32 0, i32 0
-  store i8 1, ptr %variant.tag.ptr70, align 1
-  %load.struct71 = load %_Z6Parser, ptr %2, align 8
-  %lexer72 = extractvalue %_Z6Parser %load.struct71, 0
-  %position73 = extractvalue %_Z5Lexer %lexer72, 3
-  %struct.region74 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.151 }, ptr %arg.tmp15, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region74, ptr %1, ptr %arg.tmp15)
-  %tuple.field75 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 0
-  store i64 %position53, ptr %tuple.field75, align 1
-  %tuple.field76 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 1
-  store i64 %position73, ptr %tuple.field76, align 1
-  %field.load77 = load { ptr }, ptr %struct.region74, align 8
-  %tuple.field78 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 2
-  store { ptr } %field.load77, ptr %tuple.field78, align 1
-  %tuple.val79 = load %_Z13InvalidSyntax, ptr %tuple16, align 8
-  %variant.data.ptr80 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr69, i32 0, i32 1
-  store %_Z13InvalidSyntax %tuple.val79, ptr %variant.data.ptr80, align 1
-  %variant.val81 = load %_Z11ParserError, ptr %variant.ptr69, align 1
-  %throw.data.ptr82 = getelementptr inbounds { i8, [112 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val81, ptr %throw.data.ptr82, align 1
+choose.when61:                                    ; preds = %choose.when55
+  %"variant.c_data().ptr62" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
+  %variant.val63 = load %_Z15DifferentSyntax, ptr %"variant.c_data().ptr62", align 1
+  %throw.tag.ptr64 = getelementptr inbounds { i8, [112 x i8] }, ptr %0, i32 0, i32 0
+  store i8 1, ptr %throw.tag.ptr64, align 1
+  %variant.tag.ptr66 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr65, i32 0, i32 0
+  store i8 1, ptr %variant.tag.ptr66, align 1
+  %load.struct67 = load %_Z6Parser, ptr %2, align 8
+  %lexer68 = extractvalue %_Z6Parser %load.struct67, 0
+  %position69 = extractvalue %_Z5Lexer %lexer68, 3
+  %tuple.field70 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 0
+  store i64 %position49, ptr %tuple.field70, align 1
+  %tuple.field71 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 1
+  store i64 %position69, ptr %tuple.field71, align 1
+  %tuple.field72 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 2
+  store { ptr } { ptr @.sconst.149 }, ptr %tuple.field72, align 1
+  %tuple.val73 = load %_Z13InvalidSyntax, ptr %tuple14, align 8
+  %variant.data.ptr74 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr65, i32 0, i32 1
+  store %_Z13InvalidSyntax %tuple.val73, ptr %variant.data.ptr74, align 1
+  %variant.val75 = load %_Z11ParserError, ptr %variant.ptr65, align 1
+  %throw.data.ptr76 = getelementptr inbounds { i8, [112 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val75, ptr %throw.data.ptr76, align 1
   ret void
 
-choose.when83:                                    ; preds = %choose.when59
-  %"variant.c_data().ptr84" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
-  %variant.val85 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr84", align 8
-  %throw.tag.ptr86 = getelementptr inbounds { i8, [112 x i8] }, ptr %0, i32 0, i32 0
-  store i8 1, ptr %throw.tag.ptr86, align 1
-  %variant.tag.ptr87 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr69, i32 0, i32 0
-  store i8 1, ptr %variant.tag.ptr87, align 1
-  %variant.data.ptr88 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr69, i32 0, i32 1
-  store %_Z13InvalidSyntax %variant.val85, ptr %variant.data.ptr88, align 1
-  %variant.val89 = load %_Z11ParserError, ptr %variant.ptr69, align 1
-  %throw.data.ptr90 = getelementptr inbounds { i8, [112 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val89, ptr %throw.data.ptr90, align 1
+choose.when77:                                    ; preds = %choose.when55
+  %"variant.c_data().ptr78" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
+  %variant.val79 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr78", align 8
+  %throw.tag.ptr80 = getelementptr inbounds { i8, [112 x i8] }, ptr %0, i32 0, i32 0
+  store i8 1, ptr %throw.tag.ptr80, align 1
+  %variant.tag.ptr81 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr65, i32 0, i32 0
+  store i8 1, ptr %variant.tag.ptr81, align 1
+  %variant.data.ptr82 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr65, i32 0, i32 1
+  store %_Z13InvalidSyntax %variant.val79, ptr %variant.data.ptr82, align 1
+  %variant.val83 = load %_Z11ParserError, ptr %variant.ptr65, align 1
+  %throw.data.ptr84 = getelementptr inbounds { i8, [112 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val83, ptr %throw.data.ptr84, align 1
   ret void
 
-choose.when91:                                    ; preds = %if.end36
-  %throws.success.val92 = load %_Z10ThenSyntax, ptr %throws.data.ptr56, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %consequent, ptr align 1 %throws.data.ptr56, i64 ptrtoint (ptr getelementptr (%_Z10ThenSyntax, ptr null, i32 1) to i64), i1 false)
-  br label %choose.end57
+choose.when85:                                    ; preds = %if.end34
+  %throws.success.val86 = load %_Z10ThenSyntax, ptr %throws.data.ptr52, align 1
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %consequent, ptr align 1 %throws.data.ptr52, i64 ptrtoint (ptr getelementptr (%_Z10ThenSyntax, ptr null, i32 1) to i64), i1 false)
+  br label %choose.end53
 
-choose.end100:                                    ; preds = %choose.else101, %choose.when114, %choose.end106
-  %choose.value120 = phi %_Z10ElseSyntax [ %choose.arm.load, %choose.when114 ], [ undef, %choose.end106 ], [ undef, %choose.else101 ]
-  %load.struct121 = load %_Z6Parser, ptr %2, align 8
-  %lexer122 = extractvalue %_Z6Parser %load.struct121, 0
-  %position123 = extractvalue %_Z5Lexer %lexer122, 3
-  %condition124 = load ptr, ptr %condition, align 8
-  %consequent125 = load %_Z10ThenSyntax, ptr %consequent, align 4
-  %alternative126 = load ptr, ptr %alternative, align 8
-  %tuple.field128 = getelementptr inbounds %_Z8IfSyntax, ptr %tuple127, i32 0, i32 0
-  store i64 %previous_position, ptr %tuple.field128, align 1
-  %tuple.field129 = getelementptr inbounds %_Z8IfSyntax, ptr %tuple127, i32 0, i32 1
-  store i64 %position123, ptr %tuple.field129, align 1
-  %tuple.field130 = getelementptr inbounds %_Z8IfSyntax, ptr %tuple127, i32 0, i32 2
-  store ptr %condition124, ptr %tuple.field130, align 1
-  %tuple.field131 = getelementptr inbounds %_Z8IfSyntax, ptr %tuple127, i32 0, i32 3
-  store %_Z10ThenSyntax %consequent125, ptr %tuple.field131, align 1
-  %tuple.field132 = getelementptr inbounds %_Z8IfSyntax, ptr %tuple127, i32 0, i32 4
-  store ptr %alternative126, ptr %tuple.field132, align 1
-  %tuple.val133 = load %_Z8IfSyntax, ptr %tuple127, align 8
+choose.end94:                                     ; preds = %choose.else95, %choose.when108, %choose.end100
+  %choose.value114 = phi %_Z10ElseSyntax [ %choose.arm.load, %choose.when108 ], [ undef, %choose.end100 ], [ undef, %choose.else95 ]
+  %load.struct115 = load %_Z6Parser, ptr %2, align 8
+  %lexer116 = extractvalue %_Z6Parser %load.struct115, 0
+  %position117 = extractvalue %_Z5Lexer %lexer116, 3
+  %condition118 = load ptr, ptr %condition, align 8
+  %consequent119 = load %_Z10ThenSyntax, ptr %consequent, align 4
+  %alternative120 = load ptr, ptr %alternative, align 8
+  %tuple.field122 = getelementptr inbounds %_Z8IfSyntax, ptr %tuple121, i32 0, i32 0
+  store i64 %previous_position, ptr %tuple.field122, align 1
+  %tuple.field123 = getelementptr inbounds %_Z8IfSyntax, ptr %tuple121, i32 0, i32 1
+  store i64 %position117, ptr %tuple.field123, align 1
+  %tuple.field124 = getelementptr inbounds %_Z8IfSyntax, ptr %tuple121, i32 0, i32 2
+  store ptr %condition118, ptr %tuple.field124, align 1
+  %tuple.field125 = getelementptr inbounds %_Z8IfSyntax, ptr %tuple121, i32 0, i32 3
+  store %_Z10ThenSyntax %consequent119, ptr %tuple.field125, align 1
+  %tuple.field126 = getelementptr inbounds %_Z8IfSyntax, ptr %tuple121, i32 0, i32 4
+  store ptr %alternative120, ptr %tuple.field126, align 1
+  %tuple.val127 = load %_Z8IfSyntax, ptr %tuple121, align 8
   %ret.tag.ptr = getelementptr inbounds { i8, [112 x i8] }, ptr %0, i32 0, i32 0
   store i8 0, ptr %ret.tag.ptr, align 1
   %ret.data.ptr = getelementptr inbounds { i8, [112 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z8IfSyntax %tuple.val133, ptr %ret.data.ptr, align 1
+  store %_Z8IfSyntax %tuple.val127, ptr %ret.data.ptr, align 1
   ret void
 
-choose.else101:                                   ; preds = %choose.end57
-  br label %choose.end100
+choose.else95:                                    ; preds = %choose.end53
+  br label %choose.end94
 
-choose.when102:                                   ; preds = %choose.end57
-  %throws.err.val103 = load %_Z11ParserError, ptr %throws.data.ptr99, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %variant.ptr69, ptr align 1 %throws.data.ptr99, i64 ptrtoint (ptr getelementptr (%_Z11ParserError, ptr null, i32 1) to i64), i1 false)
-  %tag.ptr104 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr69, i32 0, i32 0
-  %tag105 = load i8, ptr %tag.ptr104, align 1
-  switch i8 %tag105, label %choose.else107 [
-    i8 0, label %choose.when108
-    i8 1, label %choose.when111
+choose.when96:                                    ; preds = %choose.end53
+  %throws.err.val97 = load %_Z11ParserError, ptr %throws.data.ptr93, align 1
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %variant.ptr65, ptr align 1 %throws.data.ptr93, i64 ptrtoint (ptr getelementptr (%_Z11ParserError, ptr null, i32 1) to i64), i1 false)
+  %tag.ptr98 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr65, i32 0, i32 0
+  %tag99 = load i8, ptr %tag.ptr98, align 1
+  switch i8 %tag99, label %choose.else101 [
+    i8 0, label %choose.when102
+    i8 1, label %choose.when105
   ]
 
-choose.end106:                                    ; preds = %choose.else107, %choose.when111, %choose.when108
+choose.end100:                                    ; preds = %choose.else101, %choose.when105, %choose.when102
+  br label %choose.end94
+
+choose.else101:                                   ; preds = %choose.when96
   br label %choose.end100
 
-choose.else107:                                   ; preds = %choose.when102
-  br label %choose.end106
+choose.when102:                                   ; preds = %choose.when96
+  %"variant.c_data().ptr103" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr65, i32 0, i32 1
+  %variant.val104 = load %_Z15DifferentSyntax, ptr %"variant.c_data().ptr103", align 1
+  br label %choose.end100
 
-choose.when108:                                   ; preds = %choose.when102
-  %"variant.c_data().ptr109" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr69, i32 0, i32 1
-  %variant.val110 = load %_Z15DifferentSyntax, ptr %"variant.c_data().ptr109", align 1
-  br label %choose.end106
+choose.when105:                                   ; preds = %choose.when96
+  %"variant.c_data().ptr106" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr65, i32 0, i32 1
+  %variant.val107 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr106", align 8
+  br label %choose.end100
 
-choose.when111:                                   ; preds = %choose.when102
-  %"variant.c_data().ptr112" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr69, i32 0, i32 1
-  %variant.val113 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr112", align 8
-  br label %choose.end106
-
-choose.when114:                                   ; preds = %choose.end57
-  %throws.success.val115 = load %_Z10ElseSyntax, ptr %throws.data.ptr99, align 1
-  %start = extractvalue %_Z10ElseSyntax %throws.success.val115, 0
-  %end = extractvalue %_Z10ElseSyntax %throws.success.val115, 1
-  %alternative116 = extractvalue %_Z10ElseSyntax %throws.success.val115, 2
+choose.when108:                                   ; preds = %choose.end53
+  %throws.success.val109 = load %_Z10ElseSyntax, ptr %throws.data.ptr93, align 1
+  %start = extractvalue %_Z10ElseSyntax %throws.success.val109, 0
+  %end = extractvalue %_Z10ElseSyntax %throws.success.val109, 1
+  %alternative110 = extractvalue %_Z10ElseSyntax %throws.success.val109, 2
   %tuple.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr (%_Z10ElseSyntax, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z10ElseSyntax }, ptr null, i64 0, i32 1) to i64))
-  %tuple.field117 = getelementptr inbounds %_Z10ElseSyntax, ptr %tuple.region, i32 0, i32 0
-  store i64 %start, ptr %tuple.field117, align 1
-  %tuple.field118 = getelementptr inbounds %_Z10ElseSyntax, ptr %tuple.region, i32 0, i32 1
-  store i64 %end, ptr %tuple.field118, align 1
-  %tuple.field119 = getelementptr inbounds %_Z10ElseSyntax, ptr %tuple.region, i32 0, i32 2
-  store %_Z15StatementSyntax %alternative116, ptr %tuple.field119, align 1
+  %tuple.field111 = getelementptr inbounds %_Z10ElseSyntax, ptr %tuple.region, i32 0, i32 0
+  store i64 %start, ptr %tuple.field111, align 1
+  %tuple.field112 = getelementptr inbounds %_Z10ElseSyntax, ptr %tuple.region, i32 0, i32 1
+  store i64 %end, ptr %tuple.field112, align 1
+  %tuple.field113 = getelementptr inbounds %_Z10ElseSyntax, ptr %tuple.region, i32 0, i32 2
+  store %_Z15StatementSyntax %alternative110, ptr %tuple.field113, align 1
   store ptr %tuple.region, ptr %alternative, align 1
   %choose.arm.load = load %_Z10ElseSyntax, ptr %tuple.region, align 4
-  br label %choose.end100
+  br label %choose.end94
 }
 
 define linkonce_odr void @_ZN6Parser10parse_thenEPN4scaly6memory4PageE(ptr noalias sret({ i8, [80 x i8] }) %0, ptr %1, ptr %2) {
@@ -40936,9 +39647,8 @@ choose.when3:                                     ; preds = %entry
 
 define linkonce_odr void @_ZN6Parser10parse_elseEPN4scaly6memory4PageE(ptr noalias sret({ i8, [80 x i8] }) %0, ptr %1, ptr %2) {
 entry:
-  %tuple44 = alloca %_Z10ElseSyntax, align 8
-  %tuple24 = alloca %_Z13InvalidSyntax, align 8
-  %arg.tmp23 = alloca { ptr }, align 8
+  %tuple42 = alloca %_Z10ElseSyntax, align 8
+  %tuple22 = alloca %_Z13InvalidSyntax, align 8
   %variant.ptr17 = alloca %_Z11ParserError, align 8
   %sret.result10 = alloca { i8, [57 x i8] }, align 8
   %alternative = alloca %_Z15StatementSyntax, align 8
@@ -40956,11 +39666,9 @@ entry:
   %field.inplace1 = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
   %call = call i1 @_ZN5Lexer11parse_colonEv(ptr %field.inplace1)
   %field.inplace2 = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
   %arg.tmp = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.152 }, ptr %arg.tmp, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region, ptr %1, ptr %arg.tmp)
-  %call3 = call i1 @_ZN5Lexer13parse_keywordE6String(ptr %field.inplace2, ptr %struct.region)
+  store { ptr } { ptr @.sconst.150 }, ptr %arg.tmp, align 1
+  %call3 = call i1 @_ZN5Lexer13parse_keywordE6String(ptr %field.inplace2, ptr %arg.tmp)
   %bitnot = xor i1 %call3, true
   br i1 %bitnot, label %if.then, label %if.end
 
@@ -40993,27 +39701,27 @@ if.end:                                           ; preds = %entry
   %throws.data.ptr = getelementptr inbounds i8, ptr %sret.result10, i8 1
   switch i8 %tag, label %choose.else [
     i8 1, label %choose.when
-    i8 0, label %choose.when39
+    i8 0, label %choose.when37
   ]
 
-choose.end:                                       ; preds = %choose.else, %choose.when39, %choose.end12
-  %choose.value = phi %_Z15StatementSyntax [ %throws.success.val, %choose.when39 ], [ undef, %choose.end12 ], [ undef, %choose.else ]
-  %load.struct40 = load %_Z6Parser, ptr %2, align 8
-  %lexer41 = extractvalue %_Z6Parser %load.struct40, 0
-  %position42 = extractvalue %_Z5Lexer %lexer41, 3
-  %alternative43 = load %_Z15StatementSyntax, ptr %alternative, align 1
-  %tuple.field45 = getelementptr inbounds %_Z10ElseSyntax, ptr %tuple44, i32 0, i32 0
-  store i64 %previous_position, ptr %tuple.field45, align 1
-  %tuple.field46 = getelementptr inbounds %_Z10ElseSyntax, ptr %tuple44, i32 0, i32 1
-  store i64 %position42, ptr %tuple.field46, align 1
-  %tuple.field47 = getelementptr inbounds %_Z10ElseSyntax, ptr %tuple44, i32 0, i32 2
-  store %_Z15StatementSyntax %alternative43, ptr %tuple.field47, align 1
-  %tuple.val48 = load %_Z10ElseSyntax, ptr %tuple44, align 4
+choose.end:                                       ; preds = %choose.else, %choose.when37, %choose.end12
+  %choose.value = phi %_Z15StatementSyntax [ %throws.success.val, %choose.when37 ], [ undef, %choose.end12 ], [ undef, %choose.else ]
+  %load.struct38 = load %_Z6Parser, ptr %2, align 8
+  %lexer39 = extractvalue %_Z6Parser %load.struct38, 0
+  %position40 = extractvalue %_Z5Lexer %lexer39, 3
+  %alternative41 = load %_Z15StatementSyntax, ptr %alternative, align 1
+  %tuple.field43 = getelementptr inbounds %_Z10ElseSyntax, ptr %tuple42, i32 0, i32 0
+  store i64 %previous_position, ptr %tuple.field43, align 1
+  %tuple.field44 = getelementptr inbounds %_Z10ElseSyntax, ptr %tuple42, i32 0, i32 1
+  store i64 %position40, ptr %tuple.field44, align 1
+  %tuple.field45 = getelementptr inbounds %_Z10ElseSyntax, ptr %tuple42, i32 0, i32 2
+  store %_Z15StatementSyntax %alternative41, ptr %tuple.field45, align 1
+  %tuple.val46 = load %_Z10ElseSyntax, ptr %tuple42, align 4
   call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   %ret.tag.ptr = getelementptr inbounds { i8, [80 x i8] }, ptr %0, i32 0, i32 0
   store i8 0, ptr %ret.tag.ptr, align 1
   %ret.data.ptr = getelementptr inbounds { i8, [80 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z10ElseSyntax %tuple.val48, ptr %ret.data.ptr, align 1
+  store %_Z10ElseSyntax %tuple.val46, ptr %ret.data.ptr, align 1
   ret void
 
 choose.else:                                      ; preds = %if.end
@@ -41026,7 +39734,7 @@ choose.when:                                      ; preds = %if.end
   %tag11 = load i8, ptr %tag.ptr, align 1
   switch i8 %tag11, label %choose.else13 [
     i8 0, label %choose.when14
-    i8 1, label %choose.when31
+    i8 1, label %choose.when29
   ]
 
 choose.end12:                                     ; preds = %choose.else13
@@ -41045,41 +39753,37 @@ choose.when14:                                    ; preds = %choose.when
   %load.struct19 = load %_Z6Parser, ptr %2, align 8
   %lexer20 = extractvalue %_Z6Parser %load.struct19, 0
   %position21 = extractvalue %_Z5Lexer %lexer20, 3
-  %struct.region22 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.153 }, ptr %arg.tmp23, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region22, ptr %1, ptr %arg.tmp23)
-  %tuple.field = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple24, i32 0, i32 0
+  %tuple.field = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple22, i32 0, i32 0
   store i64 %position, ptr %tuple.field, align 1
-  %tuple.field25 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple24, i32 0, i32 1
-  store i64 %position21, ptr %tuple.field25, align 1
-  %field.load = load { ptr }, ptr %struct.region22, align 8
-  %tuple.field26 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple24, i32 0, i32 2
-  store { ptr } %field.load, ptr %tuple.field26, align 1
-  %tuple.val27 = load %_Z13InvalidSyntax, ptr %tuple24, align 8
-  %variant.data.ptr28 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr17, i32 0, i32 1
-  store %_Z13InvalidSyntax %tuple.val27, ptr %variant.data.ptr28, align 1
-  %variant.val29 = load %_Z11ParserError, ptr %variant.ptr17, align 1
-  %throw.data.ptr30 = getelementptr inbounds { i8, [80 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val29, ptr %throw.data.ptr30, align 1
+  %tuple.field23 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple22, i32 0, i32 1
+  store i64 %position21, ptr %tuple.field23, align 1
+  %tuple.field24 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple22, i32 0, i32 2
+  store { ptr } { ptr @.sconst.151 }, ptr %tuple.field24, align 1
+  %tuple.val25 = load %_Z13InvalidSyntax, ptr %tuple22, align 8
+  %variant.data.ptr26 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr17, i32 0, i32 1
+  store %_Z13InvalidSyntax %tuple.val25, ptr %variant.data.ptr26, align 1
+  %variant.val27 = load %_Z11ParserError, ptr %variant.ptr17, align 1
+  %throw.data.ptr28 = getelementptr inbounds { i8, [80 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val27, ptr %throw.data.ptr28, align 1
   call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   ret void
 
-choose.when31:                                    ; preds = %choose.when
-  %"variant.c_data().ptr32" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 1
-  %variant.val33 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr32", align 8
-  %throw.tag.ptr34 = getelementptr inbounds { i8, [80 x i8] }, ptr %0, i32 0, i32 0
-  store i8 1, ptr %throw.tag.ptr34, align 1
-  %variant.tag.ptr35 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr17, i32 0, i32 0
-  store i8 1, ptr %variant.tag.ptr35, align 1
-  %variant.data.ptr36 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr17, i32 0, i32 1
-  store %_Z13InvalidSyntax %variant.val33, ptr %variant.data.ptr36, align 1
-  %variant.val37 = load %_Z11ParserError, ptr %variant.ptr17, align 1
-  %throw.data.ptr38 = getelementptr inbounds { i8, [80 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val37, ptr %throw.data.ptr38, align 1
+choose.when29:                                    ; preds = %choose.when
+  %"variant.c_data().ptr30" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 1
+  %variant.val31 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr30", align 8
+  %throw.tag.ptr32 = getelementptr inbounds { i8, [80 x i8] }, ptr %0, i32 0, i32 0
+  store i8 1, ptr %throw.tag.ptr32, align 1
+  %variant.tag.ptr33 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr17, i32 0, i32 0
+  store i8 1, ptr %variant.tag.ptr33, align 1
+  %variant.data.ptr34 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr17, i32 0, i32 1
+  store %_Z13InvalidSyntax %variant.val31, ptr %variant.data.ptr34, align 1
+  %variant.val35 = load %_Z11ParserError, ptr %variant.ptr17, align 1
+  %throw.data.ptr36 = getelementptr inbounds { i8, [80 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val35, ptr %throw.data.ptr36, align 1
   call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   ret void
 
-choose.when39:                                    ; preds = %if.end
+choose.when37:                                    ; preds = %if.end
   %throws.success.val = load %_Z15StatementSyntax, ptr %throws.data.ptr, align 1
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %alternative, ptr align 1 %throws.data.ptr, i64 ptrtoint (ptr getelementptr (%_Z15StatementSyntax, ptr null, i32 1) to i64), i1 false)
   br label %choose.end
@@ -41087,14 +39791,13 @@ choose.when39:                                    ; preds = %if.end
 
 define linkonce_odr void @_ZN6Parser11parse_matchEPN4scaly6memory4PageE(ptr noalias sret({ i8, [40 x i8] }) %0, ptr %1, ptr %2) {
 entry:
-  %tuple127 = alloca %_Z11MatchSyntax, align 8
-  %sret.result97 = alloca { i8, [80 x i8] }, align 8
+  %tuple121 = alloca %_Z11MatchSyntax, align 8
+  %sret.result91 = alloca { i8, [80 x i8] }, align 8
   %alternative = alloca ptr, align 8
-  %variant.ptr69 = alloca %_Z11ParserError, align 8
-  %sret.result54 = alloca { i8, [25 x i8] }, align 8
+  %variant.ptr65 = alloca %_Z11ParserError, align 8
+  %sret.result50 = alloca { i8, [25 x i8] }, align 8
   %branches = alloca ptr, align 8
-  %tuple16 = alloca %_Z13InvalidSyntax, align 8
-  %arg.tmp15 = alloca { ptr }, align 8
+  %tuple14 = alloca %_Z13InvalidSyntax, align 8
   %variant.ptr9 = alloca %_Z11ParserError, align 8
   %sret.result = alloca { i8, [25 x i8] }, align 8
   %scrutinee = alloca ptr, align 8
@@ -41104,11 +39807,9 @@ entry:
   %lexer = extractvalue %_Z6Parser %load.struct, 0
   %previous_position = extractvalue %_Z5Lexer %lexer, 4
   %field.inplace = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
   %arg.tmp = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.154 }, ptr %arg.tmp, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region, ptr %1, ptr %arg.tmp)
-  %call = call i1 @_ZN5Lexer13parse_keywordE6String(ptr %field.inplace, ptr %struct.region)
+  store { ptr } { ptr @.sconst.152 }, ptr %arg.tmp, align 1
+  %call = call i1 @_ZN5Lexer13parse_keywordE6String(ptr %field.inplace, ptr %arg.tmp)
   %bitnot = xor i1 %call, true
   br i1 %bitnot, label %if.then, label %if.end
 
@@ -41135,15 +39836,15 @@ if.end:                                           ; preds = %entry
   %throws.data.ptr = getelementptr inbounds i8, ptr %sret.result, i8 1
   switch i8 %tag, label %choose.else [
     i8 1, label %choose.when
-    i8 0, label %choose.when31
+    i8 0, label %choose.when29
   ]
 
-choose.end:                                       ; preds = %choose.else, %choose.when31, %choose.end4
-  %choose.value = phi ptr [ %throws.success.val, %choose.when31 ], [ undef, %choose.end4 ], [ undef, %choose.else ]
-  %field.inplace32 = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
-  %call33 = call i1 @_ZN5Lexer11parse_colonEv(ptr %field.inplace32)
-  %bitnot34 = xor i1 %call33, true
-  br i1 %bitnot34, label %if.then35, label %if.end36
+choose.end:                                       ; preds = %choose.else, %choose.when29, %choose.end4
+  %choose.value = phi ptr [ %throws.success.val, %choose.when29 ], [ undef, %choose.end4 ], [ undef, %choose.else ]
+  %field.inplace30 = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
+  %call31 = call i1 @_ZN5Lexer11parse_colonEv(ptr %field.inplace30)
+  %bitnot32 = xor i1 %call31, true
+  br i1 %bitnot32, label %if.then33, label %if.end34
 
 choose.else:                                      ; preds = %if.end
   br label %choose.end
@@ -41155,7 +39856,7 @@ choose.when:                                      ; preds = %if.end
   %tag3 = load i8, ptr %tag.ptr, align 1
   switch i8 %tag3, label %choose.else5 [
     i8 0, label %choose.when6
-    i8 1, label %choose.when23
+    i8 1, label %choose.when21
   ]
 
 choose.end4:                                      ; preds = %choose.else5
@@ -41174,230 +39875,218 @@ choose.when6:                                     ; preds = %choose.when
   %load.struct11 = load %_Z6Parser, ptr %2, align 8
   %lexer12 = extractvalue %_Z6Parser %load.struct11, 0
   %position13 = extractvalue %_Z5Lexer %lexer12, 3
-  %struct.region14 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.155 }, ptr %arg.tmp15, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region14, ptr %1, ptr %arg.tmp15)
-  %tuple.field = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 0
+  %tuple.field = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 0
   store i64 %position, ptr %tuple.field, align 1
-  %tuple.field17 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 1
-  store i64 %position13, ptr %tuple.field17, align 1
-  %field.load = load { ptr }, ptr %struct.region14, align 8
-  %tuple.field18 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 2
-  store { ptr } %field.load, ptr %tuple.field18, align 1
-  %tuple.val19 = load %_Z13InvalidSyntax, ptr %tuple16, align 8
-  %variant.data.ptr20 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
-  store %_Z13InvalidSyntax %tuple.val19, ptr %variant.data.ptr20, align 1
-  %variant.val21 = load %_Z11ParserError, ptr %variant.ptr9, align 1
-  %throw.data.ptr22 = getelementptr inbounds { i8, [40 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val21, ptr %throw.data.ptr22, align 1
+  %tuple.field15 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 1
+  store i64 %position13, ptr %tuple.field15, align 1
+  %tuple.field16 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 2
+  store { ptr } { ptr @.sconst.153 }, ptr %tuple.field16, align 1
+  %tuple.val17 = load %_Z13InvalidSyntax, ptr %tuple14, align 8
+  %variant.data.ptr18 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
+  store %_Z13InvalidSyntax %tuple.val17, ptr %variant.data.ptr18, align 1
+  %variant.val19 = load %_Z11ParserError, ptr %variant.ptr9, align 1
+  %throw.data.ptr20 = getelementptr inbounds { i8, [40 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val19, ptr %throw.data.ptr20, align 1
   ret void
 
-choose.when23:                                    ; preds = %choose.when
-  %"variant.c_data().ptr24" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 1
-  %variant.val25 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr24", align 8
-  %throw.tag.ptr26 = getelementptr inbounds { i8, [40 x i8] }, ptr %0, i32 0, i32 0
-  store i8 1, ptr %throw.tag.ptr26, align 1
-  %variant.tag.ptr27 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 0
-  store i8 1, ptr %variant.tag.ptr27, align 1
-  %variant.data.ptr28 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
-  store %_Z13InvalidSyntax %variant.val25, ptr %variant.data.ptr28, align 1
-  %variant.val29 = load %_Z11ParserError, ptr %variant.ptr9, align 1
-  %throw.data.ptr30 = getelementptr inbounds { i8, [40 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val29, ptr %throw.data.ptr30, align 1
+choose.when21:                                    ; preds = %choose.when
+  %"variant.c_data().ptr22" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 1
+  %variant.val23 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr22", align 8
+  %throw.tag.ptr24 = getelementptr inbounds { i8, [40 x i8] }, ptr %0, i32 0, i32 0
+  store i8 1, ptr %throw.tag.ptr24, align 1
+  %variant.tag.ptr25 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 0
+  store i8 1, ptr %variant.tag.ptr25, align 1
+  %variant.data.ptr26 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
+  store %_Z13InvalidSyntax %variant.val23, ptr %variant.data.ptr26, align 1
+  %variant.val27 = load %_Z11ParserError, ptr %variant.ptr9, align 1
+  %throw.data.ptr28 = getelementptr inbounds { i8, [40 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val27, ptr %throw.data.ptr28, align 1
   ret void
 
-choose.when31:                                    ; preds = %if.end
+choose.when29:                                    ; preds = %if.end
   %throws.success.val = load ptr, ptr %throws.data.ptr, align 1
   store ptr %throws.success.val, ptr %scrutinee, align 1
   br label %choose.end
 
-if.then35:                                        ; preds = %choose.end
-  %throw.tag.ptr37 = getelementptr inbounds { i8, [40 x i8] }, ptr %0, i32 0, i32 0
-  store i8 1, ptr %throw.tag.ptr37, align 1
-  %variant.tag.ptr38 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 0
-  store i8 1, ptr %variant.tag.ptr38, align 1
-  %load.struct39 = load %_Z6Parser, ptr %2, align 8
-  %lexer40 = extractvalue %_Z6Parser %load.struct39, 0
-  %position41 = extractvalue %_Z5Lexer %lexer40, 3
-  %struct.region42 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.156 }, ptr %arg.tmp15, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region42, ptr %1, ptr %arg.tmp15)
-  %tuple.field43 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 0
-  store i64 %previous_position, ptr %tuple.field43, align 1
-  %tuple.field44 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 1
-  store i64 %position41, ptr %tuple.field44, align 1
-  %field.load45 = load { ptr }, ptr %struct.region42, align 8
-  %tuple.field46 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 2
-  store { ptr } %field.load45, ptr %tuple.field46, align 1
-  %tuple.val47 = load %_Z13InvalidSyntax, ptr %tuple16, align 8
-  %variant.data.ptr48 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
-  store %_Z13InvalidSyntax %tuple.val47, ptr %variant.data.ptr48, align 1
-  %variant.val49 = load %_Z11ParserError, ptr %variant.ptr9, align 1
-  %throw.data.ptr50 = getelementptr inbounds { i8, [40 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val49, ptr %throw.data.ptr50, align 1
+if.then33:                                        ; preds = %choose.end
+  %throw.tag.ptr35 = getelementptr inbounds { i8, [40 x i8] }, ptr %0, i32 0, i32 0
+  store i8 1, ptr %throw.tag.ptr35, align 1
+  %variant.tag.ptr36 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 0
+  store i8 1, ptr %variant.tag.ptr36, align 1
+  %load.struct37 = load %_Z6Parser, ptr %2, align 8
+  %lexer38 = extractvalue %_Z6Parser %load.struct37, 0
+  %position39 = extractvalue %_Z5Lexer %lexer38, 3
+  %tuple.field40 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 0
+  store i64 %previous_position, ptr %tuple.field40, align 1
+  %tuple.field41 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 1
+  store i64 %position39, ptr %tuple.field41, align 1
+  %tuple.field42 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 2
+  store { ptr } { ptr @.sconst.154 }, ptr %tuple.field42, align 1
+  %tuple.val43 = load %_Z13InvalidSyntax, ptr %tuple14, align 8
+  %variant.data.ptr44 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
+  store %_Z13InvalidSyntax %tuple.val43, ptr %variant.data.ptr44, align 1
+  %variant.val45 = load %_Z11ParserError, ptr %variant.ptr9, align 1
+  %throw.data.ptr46 = getelementptr inbounds { i8, [40 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val45, ptr %throw.data.ptr46, align 1
   ret void
 
-if.end36:                                         ; preds = %choose.end
-  %load.struct51 = load %_Z6Parser, ptr %2, align 8
-  %lexer52 = extractvalue %_Z6Parser %load.struct51, 0
-  %position53 = extractvalue %_Z5Lexer %lexer52, 3
-  call void @_ZN6Parser17parse_branch_listEPN4scaly6memory4PageE(ptr noalias sret({ i8, [25 x i8] }) %sret.result54, ptr %1, ptr %2)
-  %tag55 = load i8, ptr %sret.result54, align 1
-  %throws.data.ptr56 = getelementptr inbounds i8, ptr %sret.result54, i8 1
-  switch i8 %tag55, label %choose.else58 [
-    i8 1, label %choose.when59
-    i8 0, label %choose.when91
+if.end34:                                         ; preds = %choose.end
+  %load.struct47 = load %_Z6Parser, ptr %2, align 8
+  %lexer48 = extractvalue %_Z6Parser %load.struct47, 0
+  %position49 = extractvalue %_Z5Lexer %lexer48, 3
+  call void @_ZN6Parser17parse_branch_listEPN4scaly6memory4PageE(ptr noalias sret({ i8, [25 x i8] }) %sret.result50, ptr %1, ptr %2)
+  %tag51 = load i8, ptr %sret.result50, align 1
+  %throws.data.ptr52 = getelementptr inbounds i8, ptr %sret.result50, i8 1
+  switch i8 %tag51, label %choose.else54 [
+    i8 1, label %choose.when55
+    i8 0, label %choose.when85
   ]
 
-choose.end57:                                     ; preds = %choose.else58, %choose.when91, %choose.end63
-  %choose.value93 = phi ptr [ %throws.success.val92, %choose.when91 ], [ undef, %choose.end63 ], [ undef, %choose.else58 ]
-  %load.struct94 = load %_Z6Parser, ptr %2, align 8
-  %lexer95 = extractvalue %_Z6Parser %load.struct94, 0
-  %position96 = extractvalue %_Z5Lexer %lexer95, 3
+choose.end53:                                     ; preds = %choose.else54, %choose.when85, %choose.end59
+  %choose.value87 = phi ptr [ %throws.success.val86, %choose.when85 ], [ undef, %choose.end59 ], [ undef, %choose.else54 ]
+  %load.struct88 = load %_Z6Parser, ptr %2, align 8
+  %lexer89 = extractvalue %_Z6Parser %load.struct88, 0
+  %position90 = extractvalue %_Z5Lexer %lexer89, 3
   store ptr null, ptr %alternative, align 1
-  call void @_ZN6Parser10parse_elseEPN4scaly6memory4PageE(ptr noalias sret({ i8, [80 x i8] }) %sret.result97, ptr %1, ptr %2)
-  %tag98 = load i8, ptr %sret.result97, align 1
-  %throws.data.ptr99 = getelementptr inbounds i8, ptr %sret.result97, i8 1
-  switch i8 %tag98, label %choose.else101 [
-    i8 1, label %choose.when102
-    i8 0, label %choose.when114
+  call void @_ZN6Parser10parse_elseEPN4scaly6memory4PageE(ptr noalias sret({ i8, [80 x i8] }) %sret.result91, ptr %1, ptr %2)
+  %tag92 = load i8, ptr %sret.result91, align 1
+  %throws.data.ptr93 = getelementptr inbounds i8, ptr %sret.result91, i8 1
+  switch i8 %tag92, label %choose.else95 [
+    i8 1, label %choose.when96
+    i8 0, label %choose.when108
   ]
 
-choose.else58:                                    ; preds = %if.end36
-  br label %choose.end57
+choose.else54:                                    ; preds = %if.end34
+  br label %choose.end53
 
-choose.when59:                                    ; preds = %if.end36
-  %throws.err.val60 = load %_Z11ParserError, ptr %throws.data.ptr56, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %variant.ptr9, ptr align 1 %throws.data.ptr56, i64 ptrtoint (ptr getelementptr (%_Z11ParserError, ptr null, i32 1) to i64), i1 false)
-  %tag.ptr61 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 0
-  %tag62 = load i8, ptr %tag.ptr61, align 1
-  switch i8 %tag62, label %choose.else64 [
-    i8 0, label %choose.when65
-    i8 1, label %choose.when83
+choose.when55:                                    ; preds = %if.end34
+  %throws.err.val56 = load %_Z11ParserError, ptr %throws.data.ptr52, align 1
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %variant.ptr9, ptr align 1 %throws.data.ptr52, i64 ptrtoint (ptr getelementptr (%_Z11ParserError, ptr null, i32 1) to i64), i1 false)
+  %tag.ptr57 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 0
+  %tag58 = load i8, ptr %tag.ptr57, align 1
+  switch i8 %tag58, label %choose.else60 [
+    i8 0, label %choose.when61
+    i8 1, label %choose.when77
   ]
 
-choose.end63:                                     ; preds = %choose.else64
-  br label %choose.end57
+choose.end59:                                     ; preds = %choose.else60
+  br label %choose.end53
 
-choose.else64:                                    ; preds = %choose.when59
-  br label %choose.end63
+choose.else60:                                    ; preds = %choose.when55
+  br label %choose.end59
 
-choose.when65:                                    ; preds = %choose.when59
-  %"variant.c_data().ptr66" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
-  %variant.val67 = load %_Z15DifferentSyntax, ptr %"variant.c_data().ptr66", align 1
-  %throw.tag.ptr68 = getelementptr inbounds { i8, [40 x i8] }, ptr %0, i32 0, i32 0
-  store i8 1, ptr %throw.tag.ptr68, align 1
-  %variant.tag.ptr70 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr69, i32 0, i32 0
-  store i8 1, ptr %variant.tag.ptr70, align 1
-  %load.struct71 = load %_Z6Parser, ptr %2, align 8
-  %lexer72 = extractvalue %_Z6Parser %load.struct71, 0
-  %position73 = extractvalue %_Z5Lexer %lexer72, 3
-  %struct.region74 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.157 }, ptr %arg.tmp15, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region74, ptr %1, ptr %arg.tmp15)
-  %tuple.field75 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 0
-  store i64 %position53, ptr %tuple.field75, align 1
-  %tuple.field76 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 1
-  store i64 %position73, ptr %tuple.field76, align 1
-  %field.load77 = load { ptr }, ptr %struct.region74, align 8
-  %tuple.field78 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 2
-  store { ptr } %field.load77, ptr %tuple.field78, align 1
-  %tuple.val79 = load %_Z13InvalidSyntax, ptr %tuple16, align 8
-  %variant.data.ptr80 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr69, i32 0, i32 1
-  store %_Z13InvalidSyntax %tuple.val79, ptr %variant.data.ptr80, align 1
-  %variant.val81 = load %_Z11ParserError, ptr %variant.ptr69, align 1
-  %throw.data.ptr82 = getelementptr inbounds { i8, [40 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val81, ptr %throw.data.ptr82, align 1
+choose.when61:                                    ; preds = %choose.when55
+  %"variant.c_data().ptr62" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
+  %variant.val63 = load %_Z15DifferentSyntax, ptr %"variant.c_data().ptr62", align 1
+  %throw.tag.ptr64 = getelementptr inbounds { i8, [40 x i8] }, ptr %0, i32 0, i32 0
+  store i8 1, ptr %throw.tag.ptr64, align 1
+  %variant.tag.ptr66 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr65, i32 0, i32 0
+  store i8 1, ptr %variant.tag.ptr66, align 1
+  %load.struct67 = load %_Z6Parser, ptr %2, align 8
+  %lexer68 = extractvalue %_Z6Parser %load.struct67, 0
+  %position69 = extractvalue %_Z5Lexer %lexer68, 3
+  %tuple.field70 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 0
+  store i64 %position49, ptr %tuple.field70, align 1
+  %tuple.field71 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 1
+  store i64 %position69, ptr %tuple.field71, align 1
+  %tuple.field72 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 2
+  store { ptr } { ptr @.sconst.155 }, ptr %tuple.field72, align 1
+  %tuple.val73 = load %_Z13InvalidSyntax, ptr %tuple14, align 8
+  %variant.data.ptr74 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr65, i32 0, i32 1
+  store %_Z13InvalidSyntax %tuple.val73, ptr %variant.data.ptr74, align 1
+  %variant.val75 = load %_Z11ParserError, ptr %variant.ptr65, align 1
+  %throw.data.ptr76 = getelementptr inbounds { i8, [40 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val75, ptr %throw.data.ptr76, align 1
   ret void
 
-choose.when83:                                    ; preds = %choose.when59
-  %"variant.c_data().ptr84" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
-  %variant.val85 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr84", align 8
-  %throw.tag.ptr86 = getelementptr inbounds { i8, [40 x i8] }, ptr %0, i32 0, i32 0
-  store i8 1, ptr %throw.tag.ptr86, align 1
-  %variant.tag.ptr87 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr69, i32 0, i32 0
-  store i8 1, ptr %variant.tag.ptr87, align 1
-  %variant.data.ptr88 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr69, i32 0, i32 1
-  store %_Z13InvalidSyntax %variant.val85, ptr %variant.data.ptr88, align 1
-  %variant.val89 = load %_Z11ParserError, ptr %variant.ptr69, align 1
-  %throw.data.ptr90 = getelementptr inbounds { i8, [40 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val89, ptr %throw.data.ptr90, align 1
+choose.when77:                                    ; preds = %choose.when55
+  %"variant.c_data().ptr78" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
+  %variant.val79 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr78", align 8
+  %throw.tag.ptr80 = getelementptr inbounds { i8, [40 x i8] }, ptr %0, i32 0, i32 0
+  store i8 1, ptr %throw.tag.ptr80, align 1
+  %variant.tag.ptr81 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr65, i32 0, i32 0
+  store i8 1, ptr %variant.tag.ptr81, align 1
+  %variant.data.ptr82 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr65, i32 0, i32 1
+  store %_Z13InvalidSyntax %variant.val79, ptr %variant.data.ptr82, align 1
+  %variant.val83 = load %_Z11ParserError, ptr %variant.ptr65, align 1
+  %throw.data.ptr84 = getelementptr inbounds { i8, [40 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val83, ptr %throw.data.ptr84, align 1
   ret void
 
-choose.when91:                                    ; preds = %if.end36
-  %throws.success.val92 = load ptr, ptr %throws.data.ptr56, align 1
-  store ptr %throws.success.val92, ptr %branches, align 1
-  br label %choose.end57
+choose.when85:                                    ; preds = %if.end34
+  %throws.success.val86 = load ptr, ptr %throws.data.ptr52, align 1
+  store ptr %throws.success.val86, ptr %branches, align 1
+  br label %choose.end53
 
-choose.end100:                                    ; preds = %choose.else101, %choose.when114, %choose.end106
-  %choose.value120 = phi %_Z10ElseSyntax [ %choose.arm.load, %choose.when114 ], [ undef, %choose.end106 ], [ undef, %choose.else101 ]
-  %load.struct121 = load %_Z6Parser, ptr %2, align 8
-  %lexer122 = extractvalue %_Z6Parser %load.struct121, 0
-  %position123 = extractvalue %_Z5Lexer %lexer122, 3
-  %scrutinee124 = load ptr, ptr %scrutinee, align 8
-  %branches125 = load ptr, ptr %branches, align 8
-  %alternative126 = load ptr, ptr %alternative, align 8
-  %tuple.field128 = getelementptr inbounds %_Z11MatchSyntax, ptr %tuple127, i32 0, i32 0
-  store i64 %previous_position, ptr %tuple.field128, align 1
-  %tuple.field129 = getelementptr inbounds %_Z11MatchSyntax, ptr %tuple127, i32 0, i32 1
-  store i64 %position123, ptr %tuple.field129, align 1
-  %tuple.field130 = getelementptr inbounds %_Z11MatchSyntax, ptr %tuple127, i32 0, i32 2
-  store ptr %scrutinee124, ptr %tuple.field130, align 1
-  %tuple.field131 = getelementptr inbounds %_Z11MatchSyntax, ptr %tuple127, i32 0, i32 3
-  store ptr %branches125, ptr %tuple.field131, align 1
-  %tuple.field132 = getelementptr inbounds %_Z11MatchSyntax, ptr %tuple127, i32 0, i32 4
-  store ptr %alternative126, ptr %tuple.field132, align 1
-  %tuple.val133 = load %_Z11MatchSyntax, ptr %tuple127, align 8
+choose.end94:                                     ; preds = %choose.else95, %choose.when108, %choose.end100
+  %choose.value114 = phi %_Z10ElseSyntax [ %choose.arm.load, %choose.when108 ], [ undef, %choose.end100 ], [ undef, %choose.else95 ]
+  %load.struct115 = load %_Z6Parser, ptr %2, align 8
+  %lexer116 = extractvalue %_Z6Parser %load.struct115, 0
+  %position117 = extractvalue %_Z5Lexer %lexer116, 3
+  %scrutinee118 = load ptr, ptr %scrutinee, align 8
+  %branches119 = load ptr, ptr %branches, align 8
+  %alternative120 = load ptr, ptr %alternative, align 8
+  %tuple.field122 = getelementptr inbounds %_Z11MatchSyntax, ptr %tuple121, i32 0, i32 0
+  store i64 %previous_position, ptr %tuple.field122, align 1
+  %tuple.field123 = getelementptr inbounds %_Z11MatchSyntax, ptr %tuple121, i32 0, i32 1
+  store i64 %position117, ptr %tuple.field123, align 1
+  %tuple.field124 = getelementptr inbounds %_Z11MatchSyntax, ptr %tuple121, i32 0, i32 2
+  store ptr %scrutinee118, ptr %tuple.field124, align 1
+  %tuple.field125 = getelementptr inbounds %_Z11MatchSyntax, ptr %tuple121, i32 0, i32 3
+  store ptr %branches119, ptr %tuple.field125, align 1
+  %tuple.field126 = getelementptr inbounds %_Z11MatchSyntax, ptr %tuple121, i32 0, i32 4
+  store ptr %alternative120, ptr %tuple.field126, align 1
+  %tuple.val127 = load %_Z11MatchSyntax, ptr %tuple121, align 8
   %ret.tag.ptr = getelementptr inbounds { i8, [40 x i8] }, ptr %0, i32 0, i32 0
   store i8 0, ptr %ret.tag.ptr, align 1
   %ret.data.ptr = getelementptr inbounds { i8, [40 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11MatchSyntax %tuple.val133, ptr %ret.data.ptr, align 1
+  store %_Z11MatchSyntax %tuple.val127, ptr %ret.data.ptr, align 1
   ret void
 
-choose.else101:                                   ; preds = %choose.end57
-  br label %choose.end100
+choose.else95:                                    ; preds = %choose.end53
+  br label %choose.end94
 
-choose.when102:                                   ; preds = %choose.end57
-  %throws.err.val103 = load %_Z11ParserError, ptr %throws.data.ptr99, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %variant.ptr69, ptr align 1 %throws.data.ptr99, i64 ptrtoint (ptr getelementptr (%_Z11ParserError, ptr null, i32 1) to i64), i1 false)
-  %tag.ptr104 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr69, i32 0, i32 0
-  %tag105 = load i8, ptr %tag.ptr104, align 1
-  switch i8 %tag105, label %choose.else107 [
-    i8 0, label %choose.when108
-    i8 1, label %choose.when111
+choose.when96:                                    ; preds = %choose.end53
+  %throws.err.val97 = load %_Z11ParserError, ptr %throws.data.ptr93, align 1
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %variant.ptr65, ptr align 1 %throws.data.ptr93, i64 ptrtoint (ptr getelementptr (%_Z11ParserError, ptr null, i32 1) to i64), i1 false)
+  %tag.ptr98 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr65, i32 0, i32 0
+  %tag99 = load i8, ptr %tag.ptr98, align 1
+  switch i8 %tag99, label %choose.else101 [
+    i8 0, label %choose.when102
+    i8 1, label %choose.when105
   ]
 
-choose.end106:                                    ; preds = %choose.else107, %choose.when111, %choose.when108
+choose.end100:                                    ; preds = %choose.else101, %choose.when105, %choose.when102
+  br label %choose.end94
+
+choose.else101:                                   ; preds = %choose.when96
   br label %choose.end100
 
-choose.else107:                                   ; preds = %choose.when102
-  br label %choose.end106
+choose.when102:                                   ; preds = %choose.when96
+  %"variant.c_data().ptr103" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr65, i32 0, i32 1
+  %variant.val104 = load %_Z15DifferentSyntax, ptr %"variant.c_data().ptr103", align 1
+  br label %choose.end100
 
-choose.when108:                                   ; preds = %choose.when102
-  %"variant.c_data().ptr109" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr69, i32 0, i32 1
-  %variant.val110 = load %_Z15DifferentSyntax, ptr %"variant.c_data().ptr109", align 1
-  br label %choose.end106
+choose.when105:                                   ; preds = %choose.when96
+  %"variant.c_data().ptr106" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr65, i32 0, i32 1
+  %variant.val107 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr106", align 8
+  br label %choose.end100
 
-choose.when111:                                   ; preds = %choose.when102
-  %"variant.c_data().ptr112" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr69, i32 0, i32 1
-  %variant.val113 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr112", align 8
-  br label %choose.end106
-
-choose.when114:                                   ; preds = %choose.end57
-  %throws.success.val115 = load %_Z10ElseSyntax, ptr %throws.data.ptr99, align 1
-  %start = extractvalue %_Z10ElseSyntax %throws.success.val115, 0
-  %end = extractvalue %_Z10ElseSyntax %throws.success.val115, 1
-  %alternative116 = extractvalue %_Z10ElseSyntax %throws.success.val115, 2
+choose.when108:                                   ; preds = %choose.end53
+  %throws.success.val109 = load %_Z10ElseSyntax, ptr %throws.data.ptr93, align 1
+  %start = extractvalue %_Z10ElseSyntax %throws.success.val109, 0
+  %end = extractvalue %_Z10ElseSyntax %throws.success.val109, 1
+  %alternative110 = extractvalue %_Z10ElseSyntax %throws.success.val109, 2
   %tuple.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr (%_Z10ElseSyntax, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z10ElseSyntax }, ptr null, i64 0, i32 1) to i64))
-  %tuple.field117 = getelementptr inbounds %_Z10ElseSyntax, ptr %tuple.region, i32 0, i32 0
-  store i64 %start, ptr %tuple.field117, align 1
-  %tuple.field118 = getelementptr inbounds %_Z10ElseSyntax, ptr %tuple.region, i32 0, i32 1
-  store i64 %end, ptr %tuple.field118, align 1
-  %tuple.field119 = getelementptr inbounds %_Z10ElseSyntax, ptr %tuple.region, i32 0, i32 2
-  store %_Z15StatementSyntax %alternative116, ptr %tuple.field119, align 1
+  %tuple.field111 = getelementptr inbounds %_Z10ElseSyntax, ptr %tuple.region, i32 0, i32 0
+  store i64 %start, ptr %tuple.field111, align 1
+  %tuple.field112 = getelementptr inbounds %_Z10ElseSyntax, ptr %tuple.region, i32 0, i32 1
+  store i64 %end, ptr %tuple.field112, align 1
+  %tuple.field113 = getelementptr inbounds %_Z10ElseSyntax, ptr %tuple.region, i32 0, i32 2
+  store %_Z15StatementSyntax %alternative110, ptr %tuple.field113, align 1
   store ptr %tuple.region, ptr %alternative, align 1
   %choose.arm.load = load %_Z10ElseSyntax, ptr %tuple.region, align 4
-  br label %choose.end100
+  br label %choose.end94
 }
 
 define linkonce_odr ptr @_ZN4ListI12BranchSyntaxE8get_headEPN4scaly6memory4PageE(ptr %0, ptr %1) {
@@ -41585,7 +40274,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.158)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.156)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -42089,7 +40778,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.159)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.157)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -42419,12 +41108,11 @@ choose.when13:                                    ; preds = %while.body
 
 define linkonce_odr void @_ZN6Parser12parse_branchEPN4scaly6memory4PageE(ptr noalias sret({ i8, [88 x i8] }) %0, ptr %1, ptr %2) {
 entry:
-  %tuple57 = alloca %_Z12BranchSyntax, align 8
+  %tuple55 = alloca %_Z12BranchSyntax, align 8
   %variant.ptr27 = alloca %_Z11ParserError, align 8
   %sret.result14 = alloca { i8, [57 x i8] }, align 8
   %consequent = alloca %_Z15StatementSyntax, align 8
   %tuple = alloca %_Z13InvalidSyntax, align 8
-  %arg.tmp = alloca { ptr }, align 8
   %variant.ptr = alloca %_Z11ParserError, align 8
   %load.struct = load %_Z6Parser, ptr %2, align 8
   %lexer = extractvalue %_Z6Parser %load.struct, 0
@@ -42473,16 +41161,12 @@ if.then:                                          ; preds = %choose.end
   %load.struct5 = load %_Z6Parser, ptr %2, align 8
   %lexer6 = extractvalue %_Z6Parser %load.struct5, 0
   %position7 = extractvalue %_Z5Lexer %lexer6, 3
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.160 }, ptr %arg.tmp, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region, ptr %1, ptr %arg.tmp)
   %tuple.field = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple, i32 0, i32 0
   store i64 %previous_position, ptr %tuple.field, align 1
   %tuple.field8 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple, i32 0, i32 1
   store i64 %position7, ptr %tuple.field8, align 1
-  %field.load = load { ptr }, ptr %struct.region, align 8
   %tuple.field9 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple, i32 0, i32 2
-  store { ptr } %field.load, ptr %tuple.field9, align 1
+  store { ptr } { ptr @.sconst.158 }, ptr %tuple.field9, align 1
   %tuple.val = load %_Z13InvalidSyntax, ptr %tuple, align 8
   %variant.data.ptr = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 1
   store %_Z13InvalidSyntax %tuple.val, ptr %variant.data.ptr, align 1
@@ -42500,29 +41184,29 @@ if.end:                                           ; preds = %choose.end
   %throws.data.ptr16 = getelementptr inbounds i8, ptr %sret.result14, i8 1
   switch i8 %tag15, label %choose.else18 [
     i8 1, label %choose.when19
-    i8 0, label %choose.when49
+    i8 0, label %choose.when47
   ]
 
-choose.end17:                                     ; preds = %choose.else18, %choose.when49, %choose.end22
-  %choose.value51 = phi %_Z15StatementSyntax [ %throws.success.val50, %choose.when49 ], [ undef, %choose.end22 ], [ undef, %choose.else18 ]
-  %load.struct52 = load %_Z6Parser, ptr %2, align 8
-  %lexer53 = extractvalue %_Z6Parser %load.struct52, 0
-  %position54 = extractvalue %_Z5Lexer %lexer53, 3
-  %cases55 = load ptr, ptr %cases, align 8
-  %consequent56 = load %_Z15StatementSyntax, ptr %consequent, align 1
-  %tuple.field58 = getelementptr inbounds %_Z12BranchSyntax, ptr %tuple57, i32 0, i32 0
-  store i64 %previous_position, ptr %tuple.field58, align 1
-  %tuple.field59 = getelementptr inbounds %_Z12BranchSyntax, ptr %tuple57, i32 0, i32 1
-  store i64 %position54, ptr %tuple.field59, align 1
-  %tuple.field60 = getelementptr inbounds %_Z12BranchSyntax, ptr %tuple57, i32 0, i32 2
-  store ptr %cases55, ptr %tuple.field60, align 1
-  %tuple.field61 = getelementptr inbounds %_Z12BranchSyntax, ptr %tuple57, i32 0, i32 3
-  store %_Z15StatementSyntax %consequent56, ptr %tuple.field61, align 1
-  %tuple.val62 = load %_Z12BranchSyntax, ptr %tuple57, align 8
+choose.end17:                                     ; preds = %choose.else18, %choose.when47, %choose.end22
+  %choose.value49 = phi %_Z15StatementSyntax [ %throws.success.val48, %choose.when47 ], [ undef, %choose.end22 ], [ undef, %choose.else18 ]
+  %load.struct50 = load %_Z6Parser, ptr %2, align 8
+  %lexer51 = extractvalue %_Z6Parser %load.struct50, 0
+  %position52 = extractvalue %_Z5Lexer %lexer51, 3
+  %cases53 = load ptr, ptr %cases, align 8
+  %consequent54 = load %_Z15StatementSyntax, ptr %consequent, align 1
+  %tuple.field56 = getelementptr inbounds %_Z12BranchSyntax, ptr %tuple55, i32 0, i32 0
+  store i64 %previous_position, ptr %tuple.field56, align 1
+  %tuple.field57 = getelementptr inbounds %_Z12BranchSyntax, ptr %tuple55, i32 0, i32 1
+  store i64 %position52, ptr %tuple.field57, align 1
+  %tuple.field58 = getelementptr inbounds %_Z12BranchSyntax, ptr %tuple55, i32 0, i32 2
+  store ptr %cases53, ptr %tuple.field58, align 1
+  %tuple.field59 = getelementptr inbounds %_Z12BranchSyntax, ptr %tuple55, i32 0, i32 3
+  store %_Z15StatementSyntax %consequent54, ptr %tuple.field59, align 1
+  %tuple.val60 = load %_Z12BranchSyntax, ptr %tuple55, align 8
   %ret.tag.ptr = getelementptr inbounds { i8, [88 x i8] }, ptr %0, i32 0, i32 0
   store i8 0, ptr %ret.tag.ptr, align 1
   %ret.data.ptr = getelementptr inbounds { i8, [88 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z12BranchSyntax %tuple.val62, ptr %ret.data.ptr, align 1
+  store %_Z12BranchSyntax %tuple.val60, ptr %ret.data.ptr, align 1
   ret void
 
 choose.else18:                                    ; preds = %if.end
@@ -42535,7 +41219,7 @@ choose.when19:                                    ; preds = %if.end
   %tag21 = load i8, ptr %tag.ptr, align 1
   switch i8 %tag21, label %choose.else23 [
     i8 0, label %choose.when24
-    i8 1, label %choose.when41
+    i8 1, label %choose.when39
   ]
 
 choose.end22:                                     ; preds = %choose.else23
@@ -42554,40 +41238,36 @@ choose.when24:                                    ; preds = %choose.when19
   %load.struct29 = load %_Z6Parser, ptr %2, align 8
   %lexer30 = extractvalue %_Z6Parser %load.struct29, 0
   %position31 = extractvalue %_Z5Lexer %lexer30, 3
-  %struct.region32 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.161 }, ptr %arg.tmp, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region32, ptr %1, ptr %arg.tmp)
-  %tuple.field33 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple, i32 0, i32 0
-  store i64 %position13, ptr %tuple.field33, align 1
-  %tuple.field34 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple, i32 0, i32 1
-  store i64 %position31, ptr %tuple.field34, align 1
-  %field.load35 = load { ptr }, ptr %struct.region32, align 8
-  %tuple.field36 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple, i32 0, i32 2
-  store { ptr } %field.load35, ptr %tuple.field36, align 1
-  %tuple.val37 = load %_Z13InvalidSyntax, ptr %tuple, align 8
-  %variant.data.ptr38 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr27, i32 0, i32 1
-  store %_Z13InvalidSyntax %tuple.val37, ptr %variant.data.ptr38, align 1
-  %variant.val39 = load %_Z11ParserError, ptr %variant.ptr27, align 1
-  %throw.data.ptr40 = getelementptr inbounds { i8, [88 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val39, ptr %throw.data.ptr40, align 1
+  %tuple.field32 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple, i32 0, i32 0
+  store i64 %position13, ptr %tuple.field32, align 1
+  %tuple.field33 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple, i32 0, i32 1
+  store i64 %position31, ptr %tuple.field33, align 1
+  %tuple.field34 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple, i32 0, i32 2
+  store { ptr } { ptr @.sconst.159 }, ptr %tuple.field34, align 1
+  %tuple.val35 = load %_Z13InvalidSyntax, ptr %tuple, align 8
+  %variant.data.ptr36 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr27, i32 0, i32 1
+  store %_Z13InvalidSyntax %tuple.val35, ptr %variant.data.ptr36, align 1
+  %variant.val37 = load %_Z11ParserError, ptr %variant.ptr27, align 1
+  %throw.data.ptr38 = getelementptr inbounds { i8, [88 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val37, ptr %throw.data.ptr38, align 1
   ret void
 
-choose.when41:                                    ; preds = %choose.when19
-  %"variant.c_data().ptr42" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 1
-  %variant.val43 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr42", align 8
-  %throw.tag.ptr44 = getelementptr inbounds { i8, [88 x i8] }, ptr %0, i32 0, i32 0
-  store i8 1, ptr %throw.tag.ptr44, align 1
-  %variant.tag.ptr45 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr27, i32 0, i32 0
-  store i8 1, ptr %variant.tag.ptr45, align 1
-  %variant.data.ptr46 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr27, i32 0, i32 1
-  store %_Z13InvalidSyntax %variant.val43, ptr %variant.data.ptr46, align 1
-  %variant.val47 = load %_Z11ParserError, ptr %variant.ptr27, align 1
-  %throw.data.ptr48 = getelementptr inbounds { i8, [88 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val47, ptr %throw.data.ptr48, align 1
+choose.when39:                                    ; preds = %choose.when19
+  %"variant.c_data().ptr40" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 1
+  %variant.val41 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr40", align 8
+  %throw.tag.ptr42 = getelementptr inbounds { i8, [88 x i8] }, ptr %0, i32 0, i32 0
+  store i8 1, ptr %throw.tag.ptr42, align 1
+  %variant.tag.ptr43 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr27, i32 0, i32 0
+  store i8 1, ptr %variant.tag.ptr43, align 1
+  %variant.data.ptr44 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr27, i32 0, i32 1
+  store %_Z13InvalidSyntax %variant.val41, ptr %variant.data.ptr44, align 1
+  %variant.val45 = load %_Z11ParserError, ptr %variant.ptr27, align 1
+  %throw.data.ptr46 = getelementptr inbounds { i8, [88 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val45, ptr %throw.data.ptr46, align 1
   ret void
 
-choose.when49:                                    ; preds = %if.end
-  %throws.success.val50 = load %_Z15StatementSyntax, ptr %throws.data.ptr16, align 1
+choose.when47:                                    ; preds = %if.end
+  %throws.success.val48 = load %_Z15StatementSyntax, ptr %throws.data.ptr16, align 1
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %consequent, ptr align 1 %throws.data.ptr16, i64 ptrtoint (ptr getelementptr (%_Z15StatementSyntax, ptr null, i32 1) to i64), i1 false)
   br label %choose.end17
 }
@@ -42777,7 +41457,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.162)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.160)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -43281,7 +41961,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.163)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.161)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -43611,9 +42291,8 @@ choose.when13:                                    ; preds = %while.body
 
 define linkonce_odr void @_ZN6Parser10parse_caseEPN4scaly6memory4PageE(ptr noalias sret({ i8, [25 x i8] }) %0, ptr %1, ptr %2) {
 entry:
-  %tuple36 = alloca %_Z10CaseSyntax, align 8
-  %tuple16 = alloca %_Z13InvalidSyntax, align 8
-  %arg.tmp15 = alloca { ptr }, align 8
+  %tuple34 = alloca %_Z10CaseSyntax, align 8
+  %tuple14 = alloca %_Z13InvalidSyntax, align 8
   %variant.ptr9 = alloca %_Z11ParserError, align 8
   %sret.result = alloca { i8, [25 x i8] }, align 8
   %condition = alloca ptr, align 8
@@ -43623,11 +42302,9 @@ entry:
   %lexer = extractvalue %_Z6Parser %load.struct, 0
   %previous_position = extractvalue %_Z5Lexer %lexer, 4
   %field.inplace = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
   %arg.tmp = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.164 }, ptr %arg.tmp, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region, ptr %1, ptr %arg.tmp)
-  %call = call i1 @_ZN5Lexer13parse_keywordE6String(ptr %field.inplace, ptr %struct.region)
+  store { ptr } { ptr @.sconst.162 }, ptr %arg.tmp, align 1
+  %call = call i1 @_ZN5Lexer13parse_keywordE6String(ptr %field.inplace, ptr %arg.tmp)
   %bitnot = xor i1 %call, true
   br i1 %bitnot, label %if.then, label %if.end
 
@@ -43654,26 +42331,26 @@ if.end:                                           ; preds = %entry
   %throws.data.ptr = getelementptr inbounds i8, ptr %sret.result, i8 1
   switch i8 %tag, label %choose.else [
     i8 1, label %choose.when
-    i8 0, label %choose.when31
+    i8 0, label %choose.when29
   ]
 
-choose.end:                                       ; preds = %choose.else, %choose.when31, %choose.end4
-  %choose.value = phi ptr [ %throws.success.val, %choose.when31 ], [ undef, %choose.end4 ], [ undef, %choose.else ]
-  %load.struct32 = load %_Z6Parser, ptr %2, align 8
-  %lexer33 = extractvalue %_Z6Parser %load.struct32, 0
-  %position34 = extractvalue %_Z5Lexer %lexer33, 3
-  %condition35 = load ptr, ptr %condition, align 8
-  %tuple.field37 = getelementptr inbounds %_Z10CaseSyntax, ptr %tuple36, i32 0, i32 0
-  store i64 %previous_position, ptr %tuple.field37, align 1
-  %tuple.field38 = getelementptr inbounds %_Z10CaseSyntax, ptr %tuple36, i32 0, i32 1
-  store i64 %position34, ptr %tuple.field38, align 1
-  %tuple.field39 = getelementptr inbounds %_Z10CaseSyntax, ptr %tuple36, i32 0, i32 2
-  store ptr %condition35, ptr %tuple.field39, align 1
-  %tuple.val40 = load %_Z10CaseSyntax, ptr %tuple36, align 8
+choose.end:                                       ; preds = %choose.else, %choose.when29, %choose.end4
+  %choose.value = phi ptr [ %throws.success.val, %choose.when29 ], [ undef, %choose.end4 ], [ undef, %choose.else ]
+  %load.struct30 = load %_Z6Parser, ptr %2, align 8
+  %lexer31 = extractvalue %_Z6Parser %load.struct30, 0
+  %position32 = extractvalue %_Z5Lexer %lexer31, 3
+  %condition33 = load ptr, ptr %condition, align 8
+  %tuple.field35 = getelementptr inbounds %_Z10CaseSyntax, ptr %tuple34, i32 0, i32 0
+  store i64 %previous_position, ptr %tuple.field35, align 1
+  %tuple.field36 = getelementptr inbounds %_Z10CaseSyntax, ptr %tuple34, i32 0, i32 1
+  store i64 %position32, ptr %tuple.field36, align 1
+  %tuple.field37 = getelementptr inbounds %_Z10CaseSyntax, ptr %tuple34, i32 0, i32 2
+  store ptr %condition33, ptr %tuple.field37, align 1
+  %tuple.val38 = load %_Z10CaseSyntax, ptr %tuple34, align 8
   %ret.tag.ptr = getelementptr inbounds { i8, [25 x i8] }, ptr %0, i32 0, i32 0
   store i8 0, ptr %ret.tag.ptr, align 1
   %ret.data.ptr = getelementptr inbounds { i8, [25 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z10CaseSyntax %tuple.val40, ptr %ret.data.ptr, align 1
+  store %_Z10CaseSyntax %tuple.val38, ptr %ret.data.ptr, align 1
   ret void
 
 choose.else:                                      ; preds = %if.end
@@ -43686,7 +42363,7 @@ choose.when:                                      ; preds = %if.end
   %tag3 = load i8, ptr %tag.ptr, align 1
   switch i8 %tag3, label %choose.else5 [
     i8 0, label %choose.when6
-    i8 1, label %choose.when23
+    i8 1, label %choose.when21
   ]
 
 choose.end4:                                      ; preds = %choose.else5
@@ -43705,39 +42382,35 @@ choose.when6:                                     ; preds = %choose.when
   %load.struct11 = load %_Z6Parser, ptr %2, align 8
   %lexer12 = extractvalue %_Z6Parser %load.struct11, 0
   %position13 = extractvalue %_Z5Lexer %lexer12, 3
-  %struct.region14 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.165 }, ptr %arg.tmp15, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region14, ptr %1, ptr %arg.tmp15)
-  %tuple.field = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 0
+  %tuple.field = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 0
   store i64 %position, ptr %tuple.field, align 1
-  %tuple.field17 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 1
-  store i64 %position13, ptr %tuple.field17, align 1
-  %field.load = load { ptr }, ptr %struct.region14, align 8
-  %tuple.field18 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 2
-  store { ptr } %field.load, ptr %tuple.field18, align 1
-  %tuple.val19 = load %_Z13InvalidSyntax, ptr %tuple16, align 8
-  %variant.data.ptr20 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
-  store %_Z13InvalidSyntax %tuple.val19, ptr %variant.data.ptr20, align 1
-  %variant.val21 = load %_Z11ParserError, ptr %variant.ptr9, align 1
-  %throw.data.ptr22 = getelementptr inbounds { i8, [25 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val21, ptr %throw.data.ptr22, align 1
+  %tuple.field15 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 1
+  store i64 %position13, ptr %tuple.field15, align 1
+  %tuple.field16 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 2
+  store { ptr } { ptr @.sconst.163 }, ptr %tuple.field16, align 1
+  %tuple.val17 = load %_Z13InvalidSyntax, ptr %tuple14, align 8
+  %variant.data.ptr18 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
+  store %_Z13InvalidSyntax %tuple.val17, ptr %variant.data.ptr18, align 1
+  %variant.val19 = load %_Z11ParserError, ptr %variant.ptr9, align 1
+  %throw.data.ptr20 = getelementptr inbounds { i8, [25 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val19, ptr %throw.data.ptr20, align 1
   ret void
 
-choose.when23:                                    ; preds = %choose.when
-  %"variant.c_data().ptr24" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 1
-  %variant.val25 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr24", align 8
-  %throw.tag.ptr26 = getelementptr inbounds { i8, [25 x i8] }, ptr %0, i32 0, i32 0
-  store i8 1, ptr %throw.tag.ptr26, align 1
-  %variant.tag.ptr27 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 0
-  store i8 1, ptr %variant.tag.ptr27, align 1
-  %variant.data.ptr28 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
-  store %_Z13InvalidSyntax %variant.val25, ptr %variant.data.ptr28, align 1
-  %variant.val29 = load %_Z11ParserError, ptr %variant.ptr9, align 1
-  %throw.data.ptr30 = getelementptr inbounds { i8, [25 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val29, ptr %throw.data.ptr30, align 1
+choose.when21:                                    ; preds = %choose.when
+  %"variant.c_data().ptr22" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 1
+  %variant.val23 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr22", align 8
+  %throw.tag.ptr24 = getelementptr inbounds { i8, [25 x i8] }, ptr %0, i32 0, i32 0
+  store i8 1, ptr %throw.tag.ptr24, align 1
+  %variant.tag.ptr25 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 0
+  store i8 1, ptr %variant.tag.ptr25, align 1
+  %variant.data.ptr26 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
+  store %_Z13InvalidSyntax %variant.val23, ptr %variant.data.ptr26, align 1
+  %variant.val27 = load %_Z11ParserError, ptr %variant.ptr9, align 1
+  %throw.data.ptr28 = getelementptr inbounds { i8, [25 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val27, ptr %throw.data.ptr28, align 1
   ret void
 
-choose.when31:                                    ; preds = %if.end
+choose.when29:                                    ; preds = %if.end
   %throws.success.val = load ptr, ptr %throws.data.ptr, align 1
   store ptr %throws.success.val, ptr %condition, align 1
   br label %choose.end
@@ -43745,15 +42418,14 @@ choose.when31:                                    ; preds = %if.end
 
 define linkonce_odr void @_ZN6Parser11parse_whileEPN4scaly6memory4PageE(ptr noalias sret({ i8, [128 x i8] }) %0, ptr %1, ptr %2) {
 entry:
-  %tuple129 = alloca %_Z11WhileSyntax, align 8
-  %variant.ptr98 = alloca %_Z11ParserError, align 8
+  %tuple123 = alloca %_Z11WhileSyntax, align 8
+  %variant.ptr94 = alloca %_Z11ParserError, align 8
   %choose.union = alloca %_Z11ParserError, align 8
-  %sret.result83 = alloca { i8, [33 x i8] }, align 8
+  %sret.result79 = alloca { i8, [33 x i8] }, align 8
   %action = alloca %_Z12ActionSyntax, align 8
-  %sret.result54 = alloca { i8, [25 x i8] }, align 8
+  %sret.result50 = alloca { i8, [25 x i8] }, align 8
   %name = alloca ptr, align 8
-  %tuple16 = alloca %_Z13InvalidSyntax, align 8
-  %arg.tmp15 = alloca { ptr }, align 8
+  %tuple14 = alloca %_Z13InvalidSyntax, align 8
   %variant.ptr9 = alloca %_Z11ParserError, align 8
   %sret.result = alloca { i8, [57 x i8] }, align 8
   %condition = alloca %_Z15ConditionSyntax, align 8
@@ -43763,11 +42435,9 @@ entry:
   %lexer = extractvalue %_Z6Parser %load.struct, 0
   %previous_position = extractvalue %_Z5Lexer %lexer, 4
   %field.inplace = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
   %arg.tmp = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.166 }, ptr %arg.tmp, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region, ptr %1, ptr %arg.tmp)
-  %call = call i1 @_ZN5Lexer13parse_keywordE6String(ptr %field.inplace, ptr %struct.region)
+  store { ptr } { ptr @.sconst.164 }, ptr %arg.tmp, align 1
+  %call = call i1 @_ZN5Lexer13parse_keywordE6String(ptr %field.inplace, ptr %arg.tmp)
   %bitnot = xor i1 %call, true
   br i1 %bitnot, label %if.then, label %if.end
 
@@ -43794,15 +42464,15 @@ if.end:                                           ; preds = %entry
   %throws.data.ptr = getelementptr inbounds i8, ptr %sret.result, i8 1
   switch i8 %tag, label %choose.else [
     i8 1, label %choose.when
-    i8 0, label %choose.when31
+    i8 0, label %choose.when29
   ]
 
-choose.end:                                       ; preds = %choose.else, %choose.when31, %choose.end4
-  %choose.value = phi %_Z15ConditionSyntax [ %throws.success.val, %choose.when31 ], [ undef, %choose.end4 ], [ undef, %choose.else ]
-  %field.inplace32 = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
-  %call33 = call i1 @_ZN5Lexer11parse_colonEv(ptr %field.inplace32)
-  %bitnot34 = xor i1 %call33, true
-  br i1 %bitnot34, label %if.then35, label %if.end36
+choose.end:                                       ; preds = %choose.else, %choose.when29, %choose.end4
+  %choose.value = phi %_Z15ConditionSyntax [ %throws.success.val, %choose.when29 ], [ undef, %choose.end4 ], [ undef, %choose.else ]
+  %field.inplace30 = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
+  %call31 = call i1 @_ZN5Lexer11parse_colonEv(ptr %field.inplace30)
+  %bitnot32 = xor i1 %call31, true
+  br i1 %bitnot32, label %if.then33, label %if.end34
 
 choose.else:                                      ; preds = %if.end
   br label %choose.end
@@ -43814,7 +42484,7 @@ choose.when:                                      ; preds = %if.end
   %tag3 = load i8, ptr %tag.ptr, align 1
   switch i8 %tag3, label %choose.else5 [
     i8 0, label %choose.when6
-    i8 1, label %choose.when23
+    i8 1, label %choose.when21
   ]
 
 choose.end4:                                      ; preds = %choose.else5
@@ -43833,244 +42503,231 @@ choose.when6:                                     ; preds = %choose.when
   %load.struct11 = load %_Z6Parser, ptr %2, align 8
   %lexer12 = extractvalue %_Z6Parser %load.struct11, 0
   %position13 = extractvalue %_Z5Lexer %lexer12, 3
-  %struct.region14 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.167 }, ptr %arg.tmp15, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region14, ptr %1, ptr %arg.tmp15)
-  %tuple.field = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 0
+  %tuple.field = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 0
   store i64 %position, ptr %tuple.field, align 1
-  %tuple.field17 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 1
-  store i64 %position13, ptr %tuple.field17, align 1
-  %field.load = load { ptr }, ptr %struct.region14, align 8
-  %tuple.field18 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 2
-  store { ptr } %field.load, ptr %tuple.field18, align 1
-  %tuple.val19 = load %_Z13InvalidSyntax, ptr %tuple16, align 8
-  %variant.data.ptr20 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
-  store %_Z13InvalidSyntax %tuple.val19, ptr %variant.data.ptr20, align 1
-  %variant.val21 = load %_Z11ParserError, ptr %variant.ptr9, align 1
-  %throw.data.ptr22 = getelementptr inbounds { i8, [128 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val21, ptr %throw.data.ptr22, align 1
+  %tuple.field15 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 1
+  store i64 %position13, ptr %tuple.field15, align 1
+  %tuple.field16 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 2
+  store { ptr } { ptr @.sconst.165 }, ptr %tuple.field16, align 1
+  %tuple.val17 = load %_Z13InvalidSyntax, ptr %tuple14, align 8
+  %variant.data.ptr18 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
+  store %_Z13InvalidSyntax %tuple.val17, ptr %variant.data.ptr18, align 1
+  %variant.val19 = load %_Z11ParserError, ptr %variant.ptr9, align 1
+  %throw.data.ptr20 = getelementptr inbounds { i8, [128 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val19, ptr %throw.data.ptr20, align 1
   ret void
 
-choose.when23:                                    ; preds = %choose.when
-  %"variant.c_data().ptr24" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 1
-  %variant.val25 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr24", align 8
-  %throw.tag.ptr26 = getelementptr inbounds { i8, [128 x i8] }, ptr %0, i32 0, i32 0
-  store i8 1, ptr %throw.tag.ptr26, align 1
-  %variant.tag.ptr27 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 0
-  store i8 1, ptr %variant.tag.ptr27, align 1
-  %variant.data.ptr28 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
-  store %_Z13InvalidSyntax %variant.val25, ptr %variant.data.ptr28, align 1
-  %variant.val29 = load %_Z11ParserError, ptr %variant.ptr9, align 1
-  %throw.data.ptr30 = getelementptr inbounds { i8, [128 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val29, ptr %throw.data.ptr30, align 1
+choose.when21:                                    ; preds = %choose.when
+  %"variant.c_data().ptr22" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 1
+  %variant.val23 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr22", align 8
+  %throw.tag.ptr24 = getelementptr inbounds { i8, [128 x i8] }, ptr %0, i32 0, i32 0
+  store i8 1, ptr %throw.tag.ptr24, align 1
+  %variant.tag.ptr25 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 0
+  store i8 1, ptr %variant.tag.ptr25, align 1
+  %variant.data.ptr26 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
+  store %_Z13InvalidSyntax %variant.val23, ptr %variant.data.ptr26, align 1
+  %variant.val27 = load %_Z11ParserError, ptr %variant.ptr9, align 1
+  %throw.data.ptr28 = getelementptr inbounds { i8, [128 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val27, ptr %throw.data.ptr28, align 1
   ret void
 
-choose.when31:                                    ; preds = %if.end
+choose.when29:                                    ; preds = %if.end
   %throws.success.val = load %_Z15ConditionSyntax, ptr %throws.data.ptr, align 1
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %condition, ptr align 1 %throws.data.ptr, i64 ptrtoint (ptr getelementptr (%_Z15ConditionSyntax, ptr null, i32 1) to i64), i1 false)
   br label %choose.end
 
-if.then35:                                        ; preds = %choose.end
-  %throw.tag.ptr37 = getelementptr inbounds { i8, [128 x i8] }, ptr %0, i32 0, i32 0
-  store i8 1, ptr %throw.tag.ptr37, align 1
-  %variant.tag.ptr38 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 0
-  store i8 1, ptr %variant.tag.ptr38, align 1
-  %load.struct39 = load %_Z6Parser, ptr %2, align 8
-  %lexer40 = extractvalue %_Z6Parser %load.struct39, 0
-  %position41 = extractvalue %_Z5Lexer %lexer40, 3
-  %struct.region42 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.168 }, ptr %arg.tmp15, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region42, ptr %1, ptr %arg.tmp15)
-  %tuple.field43 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 0
-  store i64 %previous_position, ptr %tuple.field43, align 1
-  %tuple.field44 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 1
-  store i64 %position41, ptr %tuple.field44, align 1
-  %field.load45 = load { ptr }, ptr %struct.region42, align 8
-  %tuple.field46 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 2
-  store { ptr } %field.load45, ptr %tuple.field46, align 1
-  %tuple.val47 = load %_Z13InvalidSyntax, ptr %tuple16, align 8
-  %variant.data.ptr48 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
-  store %_Z13InvalidSyntax %tuple.val47, ptr %variant.data.ptr48, align 1
-  %variant.val49 = load %_Z11ParserError, ptr %variant.ptr9, align 1
-  %throw.data.ptr50 = getelementptr inbounds { i8, [128 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val49, ptr %throw.data.ptr50, align 1
+if.then33:                                        ; preds = %choose.end
+  %throw.tag.ptr35 = getelementptr inbounds { i8, [128 x i8] }, ptr %0, i32 0, i32 0
+  store i8 1, ptr %throw.tag.ptr35, align 1
+  %variant.tag.ptr36 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 0
+  store i8 1, ptr %variant.tag.ptr36, align 1
+  %load.struct37 = load %_Z6Parser, ptr %2, align 8
+  %lexer38 = extractvalue %_Z6Parser %load.struct37, 0
+  %position39 = extractvalue %_Z5Lexer %lexer38, 3
+  %tuple.field40 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 0
+  store i64 %previous_position, ptr %tuple.field40, align 1
+  %tuple.field41 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 1
+  store i64 %position39, ptr %tuple.field41, align 1
+  %tuple.field42 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 2
+  store { ptr } { ptr @.sconst.166 }, ptr %tuple.field42, align 1
+  %tuple.val43 = load %_Z13InvalidSyntax, ptr %tuple14, align 8
+  %variant.data.ptr44 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
+  store %_Z13InvalidSyntax %tuple.val43, ptr %variant.data.ptr44, align 1
+  %variant.val45 = load %_Z11ParserError, ptr %variant.ptr9, align 1
+  %throw.data.ptr46 = getelementptr inbounds { i8, [128 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val45, ptr %throw.data.ptr46, align 1
   ret void
 
-if.end36:                                         ; preds = %choose.end
-  %load.struct51 = load %_Z6Parser, ptr %2, align 8
-  %lexer52 = extractvalue %_Z6Parser %load.struct51, 0
-  %position53 = extractvalue %_Z5Lexer %lexer52, 3
+if.end34:                                         ; preds = %choose.end
+  %load.struct47 = load %_Z6Parser, ptr %2, align 8
+  %lexer48 = extractvalue %_Z6Parser %load.struct47, 0
+  %position49 = extractvalue %_Z5Lexer %lexer48, 3
   store ptr null, ptr %name, align 1
-  call void @_ZN6Parser11parse_labelEPN4scaly6memory4PageE(ptr noalias sret({ i8, [25 x i8] }) %sret.result54, ptr %1, ptr %2)
-  %tag55 = load i8, ptr %sret.result54, align 1
-  %throws.data.ptr56 = getelementptr inbounds i8, ptr %sret.result54, i8 1
-  switch i8 %tag55, label %choose.else58 [
-    i8 1, label %choose.when59
-    i8 0, label %choose.when71
+  call void @_ZN6Parser11parse_labelEPN4scaly6memory4PageE(ptr noalias sret({ i8, [25 x i8] }) %sret.result50, ptr %1, ptr %2)
+  %tag51 = load i8, ptr %sret.result50, align 1
+  %throws.data.ptr52 = getelementptr inbounds i8, ptr %sret.result50, i8 1
+  switch i8 %tag51, label %choose.else54 [
+    i8 1, label %choose.when55
+    i8 0, label %choose.when67
   ]
 
-choose.end57:                                     ; preds = %choose.else58, %choose.when71, %choose.end63
-  %choose.value77 = phi %_Z11LabelSyntax [ %choose.arm.load, %choose.when71 ], [ undef, %choose.end63 ], [ undef, %choose.else58 ]
-  %field.inplace78 = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
-  %call79 = call i1 @_ZN5Lexer11parse_colonEv(ptr %field.inplace78)
-  %load.struct80 = load %_Z6Parser, ptr %2, align 8
-  %lexer81 = extractvalue %_Z6Parser %load.struct80, 0
-  %position82 = extractvalue %_Z5Lexer %lexer81, 3
-  call void @_ZN6Parser12parse_actionEPN4scaly6memory4PageE(ptr noalias sret({ i8, [33 x i8] }) %sret.result83, ptr %1, ptr %2)
-  %tag84 = load i8, ptr %sret.result83, align 1
-  %throws.data.ptr85 = getelementptr inbounds i8, ptr %sret.result83, i8 1
-  switch i8 %tag84, label %choose.else87 [
-    i8 1, label %choose.when88
-    i8 0, label %choose.when120
+choose.end53:                                     ; preds = %choose.else54, %choose.when67, %choose.end59
+  %choose.value73 = phi %_Z11LabelSyntax [ %choose.arm.load, %choose.when67 ], [ undef, %choose.end59 ], [ undef, %choose.else54 ]
+  %field.inplace74 = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
+  %call75 = call i1 @_ZN5Lexer11parse_colonEv(ptr %field.inplace74)
+  %load.struct76 = load %_Z6Parser, ptr %2, align 8
+  %lexer77 = extractvalue %_Z6Parser %load.struct76, 0
+  %position78 = extractvalue %_Z5Lexer %lexer77, 3
+  call void @_ZN6Parser12parse_actionEPN4scaly6memory4PageE(ptr noalias sret({ i8, [33 x i8] }) %sret.result79, ptr %1, ptr %2)
+  %tag80 = load i8, ptr %sret.result79, align 1
+  %throws.data.ptr81 = getelementptr inbounds i8, ptr %sret.result79, i8 1
+  switch i8 %tag80, label %choose.else83 [
+    i8 1, label %choose.when84
+    i8 0, label %choose.when114
   ]
 
-choose.else58:                                    ; preds = %if.end36
-  br label %choose.end57
+choose.else54:                                    ; preds = %if.end34
+  br label %choose.end53
 
-choose.when59:                                    ; preds = %if.end36
-  %throws.err.val60 = load %_Z11ParserError, ptr %throws.data.ptr56, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %variant.ptr9, ptr align 1 %throws.data.ptr56, i64 ptrtoint (ptr getelementptr (%_Z11ParserError, ptr null, i32 1) to i64), i1 false)
-  %tag.ptr61 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 0
-  %tag62 = load i8, ptr %tag.ptr61, align 1
-  switch i8 %tag62, label %choose.else64 [
-    i8 0, label %choose.when65
-    i8 1, label %choose.when68
+choose.when55:                                    ; preds = %if.end34
+  %throws.err.val56 = load %_Z11ParserError, ptr %throws.data.ptr52, align 1
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %variant.ptr9, ptr align 1 %throws.data.ptr52, i64 ptrtoint (ptr getelementptr (%_Z11ParserError, ptr null, i32 1) to i64), i1 false)
+  %tag.ptr57 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 0
+  %tag58 = load i8, ptr %tag.ptr57, align 1
+  switch i8 %tag58, label %choose.else60 [
+    i8 0, label %choose.when61
+    i8 1, label %choose.when64
   ]
 
-choose.end63:                                     ; preds = %choose.else64, %choose.when68, %choose.when65
-  br label %choose.end57
+choose.end59:                                     ; preds = %choose.else60, %choose.when64, %choose.when61
+  br label %choose.end53
 
-choose.else64:                                    ; preds = %choose.when59
-  br label %choose.end63
+choose.else60:                                    ; preds = %choose.when55
+  br label %choose.end59
 
-choose.when65:                                    ; preds = %choose.when59
-  %"variant.c_data().ptr66" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
-  %variant.val67 = load %_Z15DifferentSyntax, ptr %"variant.c_data().ptr66", align 1
-  br label %choose.end63
+choose.when61:                                    ; preds = %choose.when55
+  %"variant.c_data().ptr62" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
+  %variant.val63 = load %_Z15DifferentSyntax, ptr %"variant.c_data().ptr62", align 1
+  br label %choose.end59
 
-choose.when68:                                    ; preds = %choose.when59
-  %"variant.c_data().ptr69" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
-  %variant.val70 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr69", align 8
-  br label %choose.end63
+choose.when64:                                    ; preds = %choose.when55
+  %"variant.c_data().ptr65" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
+  %variant.val66 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr65", align 8
+  br label %choose.end59
 
-choose.when71:                                    ; preds = %if.end36
-  %throws.success.val72 = load %_Z11LabelSyntax, ptr %throws.data.ptr56, align 1
-  %start = extractvalue %_Z11LabelSyntax %throws.success.val72, 0
-  %end = extractvalue %_Z11LabelSyntax %throws.success.val72, 1
-  %name73 = extractvalue %_Z11LabelSyntax %throws.success.val72, 2
+choose.when67:                                    ; preds = %if.end34
+  %throws.success.val68 = load %_Z11LabelSyntax, ptr %throws.data.ptr52, align 1
+  %start = extractvalue %_Z11LabelSyntax %throws.success.val68, 0
+  %end = extractvalue %_Z11LabelSyntax %throws.success.val68, 1
+  %name69 = extractvalue %_Z11LabelSyntax %throws.success.val68, 2
   %tuple.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr (%_Z11LabelSyntax, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z11LabelSyntax }, ptr null, i64 0, i32 1) to i64))
-  %tuple.field74 = getelementptr inbounds %_Z11LabelSyntax, ptr %tuple.region, i32 0, i32 0
-  store i64 %start, ptr %tuple.field74, align 1
-  %tuple.field75 = getelementptr inbounds %_Z11LabelSyntax, ptr %tuple.region, i32 0, i32 1
-  store i64 %end, ptr %tuple.field75, align 1
-  %tuple.field76 = getelementptr inbounds %_Z11LabelSyntax, ptr %tuple.region, i32 0, i32 2
-  store { ptr } %name73, ptr %tuple.field76, align 1
+  %tuple.field70 = getelementptr inbounds %_Z11LabelSyntax, ptr %tuple.region, i32 0, i32 0
+  store i64 %start, ptr %tuple.field70, align 1
+  %tuple.field71 = getelementptr inbounds %_Z11LabelSyntax, ptr %tuple.region, i32 0, i32 1
+  store i64 %end, ptr %tuple.field71, align 1
+  %tuple.field72 = getelementptr inbounds %_Z11LabelSyntax, ptr %tuple.region, i32 0, i32 2
+  store { ptr } %name69, ptr %tuple.field72, align 1
   store ptr %tuple.region, ptr %name, align 1
   %choose.arm.load = load %_Z11LabelSyntax, ptr %tuple.region, align 8
-  br label %choose.end57
+  br label %choose.end53
 
-choose.end86:                                     ; preds = %choose.else87, %choose.when120, %choose.end92
-  %choose.value122 = phi %_Z12ActionSyntax [ %throws.success.val121, %choose.when120 ], [ undef, %choose.end92 ], [ undef, %choose.else87 ]
-  %load.struct123 = load %_Z6Parser, ptr %2, align 8
-  %lexer124 = extractvalue %_Z6Parser %load.struct123, 0
-  %position125 = extractvalue %_Z5Lexer %lexer124, 3
-  %condition126 = load %_Z15ConditionSyntax, ptr %condition, align 1
-  %name127 = load ptr, ptr %name, align 8
-  %action128 = load %_Z12ActionSyntax, ptr %action, align 1
-  %tuple.field130 = getelementptr inbounds %_Z11WhileSyntax, ptr %tuple129, i32 0, i32 0
-  store i64 %previous_position, ptr %tuple.field130, align 1
-  %tuple.field131 = getelementptr inbounds %_Z11WhileSyntax, ptr %tuple129, i32 0, i32 1
-  store i64 %position125, ptr %tuple.field131, align 1
-  %tuple.field132 = getelementptr inbounds %_Z11WhileSyntax, ptr %tuple129, i32 0, i32 2
-  store %_Z15ConditionSyntax %condition126, ptr %tuple.field132, align 1
-  %tuple.field133 = getelementptr inbounds %_Z11WhileSyntax, ptr %tuple129, i32 0, i32 3
-  store ptr %name127, ptr %tuple.field133, align 1
-  %tuple.field134 = getelementptr inbounds %_Z11WhileSyntax, ptr %tuple129, i32 0, i32 4
-  store %_Z12ActionSyntax %action128, ptr %tuple.field134, align 1
-  %tuple.val135 = load %_Z11WhileSyntax, ptr %tuple129, align 8
+choose.end82:                                     ; preds = %choose.else83, %choose.when114, %choose.end88
+  %choose.value116 = phi %_Z12ActionSyntax [ %throws.success.val115, %choose.when114 ], [ undef, %choose.end88 ], [ undef, %choose.else83 ]
+  %load.struct117 = load %_Z6Parser, ptr %2, align 8
+  %lexer118 = extractvalue %_Z6Parser %load.struct117, 0
+  %position119 = extractvalue %_Z5Lexer %lexer118, 3
+  %condition120 = load %_Z15ConditionSyntax, ptr %condition, align 1
+  %name121 = load ptr, ptr %name, align 8
+  %action122 = load %_Z12ActionSyntax, ptr %action, align 1
+  %tuple.field124 = getelementptr inbounds %_Z11WhileSyntax, ptr %tuple123, i32 0, i32 0
+  store i64 %previous_position, ptr %tuple.field124, align 1
+  %tuple.field125 = getelementptr inbounds %_Z11WhileSyntax, ptr %tuple123, i32 0, i32 1
+  store i64 %position119, ptr %tuple.field125, align 1
+  %tuple.field126 = getelementptr inbounds %_Z11WhileSyntax, ptr %tuple123, i32 0, i32 2
+  store %_Z15ConditionSyntax %condition120, ptr %tuple.field126, align 1
+  %tuple.field127 = getelementptr inbounds %_Z11WhileSyntax, ptr %tuple123, i32 0, i32 3
+  store ptr %name121, ptr %tuple.field127, align 1
+  %tuple.field128 = getelementptr inbounds %_Z11WhileSyntax, ptr %tuple123, i32 0, i32 4
+  store %_Z12ActionSyntax %action122, ptr %tuple.field128, align 1
+  %tuple.val129 = load %_Z11WhileSyntax, ptr %tuple123, align 8
   %ret.tag.ptr = getelementptr inbounds { i8, [128 x i8] }, ptr %0, i32 0, i32 0
   store i8 0, ptr %ret.tag.ptr, align 1
   %ret.data.ptr = getelementptr inbounds { i8, [128 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11WhileSyntax %tuple.val135, ptr %ret.data.ptr, align 1
+  store %_Z11WhileSyntax %tuple.val129, ptr %ret.data.ptr, align 1
   ret void
 
-choose.else87:                                    ; preds = %choose.end57
-  br label %choose.end86
+choose.else83:                                    ; preds = %choose.end53
+  br label %choose.end82
 
-choose.when88:                                    ; preds = %choose.end57
-  %throws.err.val89 = load %_Z11ParserError, ptr %throws.data.ptr85, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %choose.union, ptr align 1 %throws.data.ptr85, i64 ptrtoint (ptr getelementptr (%_Z11ParserError, ptr null, i32 1) to i64), i1 false)
-  %tag.ptr90 = getelementptr inbounds %_Z11ParserError, ptr %choose.union, i32 0, i32 0
-  %tag91 = load i8, ptr %tag.ptr90, align 1
-  switch i8 %tag91, label %choose.else93 [
-    i8 0, label %choose.when94
-    i8 1, label %choose.when112
+choose.when84:                                    ; preds = %choose.end53
+  %throws.err.val85 = load %_Z11ParserError, ptr %throws.data.ptr81, align 1
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %choose.union, ptr align 1 %throws.data.ptr81, i64 ptrtoint (ptr getelementptr (%_Z11ParserError, ptr null, i32 1) to i64), i1 false)
+  %tag.ptr86 = getelementptr inbounds %_Z11ParserError, ptr %choose.union, i32 0, i32 0
+  %tag87 = load i8, ptr %tag.ptr86, align 1
+  switch i8 %tag87, label %choose.else89 [
+    i8 0, label %choose.when90
+    i8 1, label %choose.when106
   ]
 
-choose.end92:                                     ; preds = %choose.else93
-  br label %choose.end86
+choose.end88:                                     ; preds = %choose.else89
+  br label %choose.end82
 
-choose.else93:                                    ; preds = %choose.when88
-  br label %choose.end92
+choose.else89:                                    ; preds = %choose.when84
+  br label %choose.end88
 
-choose.when94:                                    ; preds = %choose.when88
-  %"variant.c_data().ptr95" = getelementptr inbounds %_Z11ParserError, ptr %choose.union, i32 0, i32 1
-  %variant.val96 = load %_Z15DifferentSyntax, ptr %"variant.c_data().ptr95", align 1
-  %throw.tag.ptr97 = getelementptr inbounds { i8, [128 x i8] }, ptr %0, i32 0, i32 0
-  store i8 1, ptr %throw.tag.ptr97, align 1
-  %variant.tag.ptr99 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr98, i32 0, i32 0
-  store i8 1, ptr %variant.tag.ptr99, align 1
-  %load.struct100 = load %_Z6Parser, ptr %2, align 8
-  %lexer101 = extractvalue %_Z6Parser %load.struct100, 0
-  %position102 = extractvalue %_Z5Lexer %lexer101, 3
-  %struct.region103 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.169 }, ptr %arg.tmp15, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region103, ptr %1, ptr %arg.tmp15)
-  %tuple.field104 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 0
-  store i64 %position82, ptr %tuple.field104, align 1
-  %tuple.field105 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 1
-  store i64 %position102, ptr %tuple.field105, align 1
-  %field.load106 = load { ptr }, ptr %struct.region103, align 8
-  %tuple.field107 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 2
-  store { ptr } %field.load106, ptr %tuple.field107, align 1
-  %tuple.val108 = load %_Z13InvalidSyntax, ptr %tuple16, align 8
-  %variant.data.ptr109 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr98, i32 0, i32 1
-  store %_Z13InvalidSyntax %tuple.val108, ptr %variant.data.ptr109, align 1
-  %variant.val110 = load %_Z11ParserError, ptr %variant.ptr98, align 1
-  %throw.data.ptr111 = getelementptr inbounds { i8, [128 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val110, ptr %throw.data.ptr111, align 1
+choose.when90:                                    ; preds = %choose.when84
+  %"variant.c_data().ptr91" = getelementptr inbounds %_Z11ParserError, ptr %choose.union, i32 0, i32 1
+  %variant.val92 = load %_Z15DifferentSyntax, ptr %"variant.c_data().ptr91", align 1
+  %throw.tag.ptr93 = getelementptr inbounds { i8, [128 x i8] }, ptr %0, i32 0, i32 0
+  store i8 1, ptr %throw.tag.ptr93, align 1
+  %variant.tag.ptr95 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr94, i32 0, i32 0
+  store i8 1, ptr %variant.tag.ptr95, align 1
+  %load.struct96 = load %_Z6Parser, ptr %2, align 8
+  %lexer97 = extractvalue %_Z6Parser %load.struct96, 0
+  %position98 = extractvalue %_Z5Lexer %lexer97, 3
+  %tuple.field99 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 0
+  store i64 %position78, ptr %tuple.field99, align 1
+  %tuple.field100 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 1
+  store i64 %position98, ptr %tuple.field100, align 1
+  %tuple.field101 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 2
+  store { ptr } { ptr @.sconst.167 }, ptr %tuple.field101, align 1
+  %tuple.val102 = load %_Z13InvalidSyntax, ptr %tuple14, align 8
+  %variant.data.ptr103 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr94, i32 0, i32 1
+  store %_Z13InvalidSyntax %tuple.val102, ptr %variant.data.ptr103, align 1
+  %variant.val104 = load %_Z11ParserError, ptr %variant.ptr94, align 1
+  %throw.data.ptr105 = getelementptr inbounds { i8, [128 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val104, ptr %throw.data.ptr105, align 1
   ret void
 
-choose.when112:                                   ; preds = %choose.when88
-  %"variant.c_data().ptr113" = getelementptr inbounds %_Z11ParserError, ptr %choose.union, i32 0, i32 1
-  %variant.val114 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr113", align 8
-  %throw.tag.ptr115 = getelementptr inbounds { i8, [128 x i8] }, ptr %0, i32 0, i32 0
-  store i8 1, ptr %throw.tag.ptr115, align 1
-  %variant.tag.ptr116 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr98, i32 0, i32 0
-  store i8 1, ptr %variant.tag.ptr116, align 1
-  %variant.data.ptr117 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr98, i32 0, i32 1
-  store %_Z13InvalidSyntax %variant.val114, ptr %variant.data.ptr117, align 1
-  %variant.val118 = load %_Z11ParserError, ptr %variant.ptr98, align 1
-  %throw.data.ptr119 = getelementptr inbounds { i8, [128 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val118, ptr %throw.data.ptr119, align 1
+choose.when106:                                   ; preds = %choose.when84
+  %"variant.c_data().ptr107" = getelementptr inbounds %_Z11ParserError, ptr %choose.union, i32 0, i32 1
+  %variant.val108 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr107", align 8
+  %throw.tag.ptr109 = getelementptr inbounds { i8, [128 x i8] }, ptr %0, i32 0, i32 0
+  store i8 1, ptr %throw.tag.ptr109, align 1
+  %variant.tag.ptr110 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr94, i32 0, i32 0
+  store i8 1, ptr %variant.tag.ptr110, align 1
+  %variant.data.ptr111 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr94, i32 0, i32 1
+  store %_Z13InvalidSyntax %variant.val108, ptr %variant.data.ptr111, align 1
+  %variant.val112 = load %_Z11ParserError, ptr %variant.ptr94, align 1
+  %throw.data.ptr113 = getelementptr inbounds { i8, [128 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val112, ptr %throw.data.ptr113, align 1
   ret void
 
-choose.when120:                                   ; preds = %choose.end57
-  %throws.success.val121 = load %_Z12ActionSyntax, ptr %throws.data.ptr85, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %action, ptr align 1 %throws.data.ptr85, i64 ptrtoint (ptr getelementptr (%_Z12ActionSyntax, ptr null, i32 1) to i64), i1 false)
-  br label %choose.end86
+choose.when114:                                   ; preds = %choose.end53
+  %throws.success.val115 = load %_Z12ActionSyntax, ptr %throws.data.ptr81, align 1
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %action, ptr align 1 %throws.data.ptr81, i64 ptrtoint (ptr getelementptr (%_Z12ActionSyntax, ptr null, i32 1) to i64), i1 false)
+  br label %choose.end82
 }
 
 define linkonce_odr void @_ZN6Parser12parse_chooseEPN4scaly6memory4PageE(ptr noalias sret({ i8, [40 x i8] }) %0, ptr %1, ptr %2) {
 entry:
-  %tuple113 = alloca %_Z12ChooseSyntax, align 8
-  %sret.result83 = alloca { i8, [80 x i8] }, align 8
+  %tuple109 = alloca %_Z12ChooseSyntax, align 8
+  %sret.result79 = alloca { i8, [80 x i8] }, align 8
   %alternative = alloca ptr, align 8
-  %variant.ptr72 = alloca %_Z11ParserError, align 8
-  %sret.result54 = alloca { i8, [25 x i8] }, align 8
+  %variant.ptr68 = alloca %_Z11ParserError, align 8
+  %sret.result50 = alloca { i8, [25 x i8] }, align 8
   %cases = alloca ptr, align 8
-  %tuple16 = alloca %_Z13InvalidSyntax, align 8
-  %arg.tmp15 = alloca { ptr }, align 8
+  %tuple14 = alloca %_Z13InvalidSyntax, align 8
   %variant.ptr9 = alloca %_Z11ParserError, align 8
   %sret.result = alloca { i8, [25 x i8] }, align 8
   %condition = alloca ptr, align 8
@@ -44080,11 +42737,9 @@ entry:
   %lexer = extractvalue %_Z6Parser %load.struct, 0
   %previous_position = extractvalue %_Z5Lexer %lexer, 4
   %field.inplace = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
   %arg.tmp = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.170 }, ptr %arg.tmp, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region, ptr %1, ptr %arg.tmp)
-  %call = call i1 @_ZN5Lexer13parse_keywordE6String(ptr %field.inplace, ptr %struct.region)
+  store { ptr } { ptr @.sconst.168 }, ptr %arg.tmp, align 1
+  %call = call i1 @_ZN5Lexer13parse_keywordE6String(ptr %field.inplace, ptr %arg.tmp)
   %bitnot = xor i1 %call, true
   br i1 %bitnot, label %if.then, label %if.end
 
@@ -44111,15 +42766,15 @@ if.end:                                           ; preds = %entry
   %throws.data.ptr = getelementptr inbounds i8, ptr %sret.result, i8 1
   switch i8 %tag, label %choose.else [
     i8 1, label %choose.when
-    i8 0, label %choose.when31
+    i8 0, label %choose.when29
   ]
 
-choose.end:                                       ; preds = %choose.else, %choose.when31, %choose.end4
-  %choose.value = phi ptr [ %throws.success.val, %choose.when31 ], [ undef, %choose.end4 ], [ undef, %choose.else ]
-  %field.inplace32 = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
-  %call33 = call i1 @_ZN5Lexer11parse_colonEv(ptr %field.inplace32)
-  %bitnot34 = xor i1 %call33, true
-  br i1 %bitnot34, label %if.then35, label %if.end36
+choose.end:                                       ; preds = %choose.else, %choose.when29, %choose.end4
+  %choose.value = phi ptr [ %throws.success.val, %choose.when29 ], [ undef, %choose.end4 ], [ undef, %choose.else ]
+  %field.inplace30 = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
+  %call31 = call i1 @_ZN5Lexer11parse_colonEv(ptr %field.inplace30)
+  %bitnot32 = xor i1 %call31, true
+  br i1 %bitnot32, label %if.then33, label %if.end34
 
 choose.else:                                      ; preds = %if.end
   br label %choose.end
@@ -44131,7 +42786,7 @@ choose.when:                                      ; preds = %if.end
   %tag3 = load i8, ptr %tag.ptr, align 1
   switch i8 %tag3, label %choose.else5 [
     i8 0, label %choose.when6
-    i8 1, label %choose.when23
+    i8 1, label %choose.when21
   ]
 
 choose.end4:                                      ; preds = %choose.else5
@@ -44150,220 +42805,211 @@ choose.when6:                                     ; preds = %choose.when
   %load.struct11 = load %_Z6Parser, ptr %2, align 8
   %lexer12 = extractvalue %_Z6Parser %load.struct11, 0
   %position13 = extractvalue %_Z5Lexer %lexer12, 3
-  %struct.region14 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.171 }, ptr %arg.tmp15, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region14, ptr %1, ptr %arg.tmp15)
-  %tuple.field = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 0
+  %tuple.field = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 0
   store i64 %position, ptr %tuple.field, align 1
-  %tuple.field17 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 1
-  store i64 %position13, ptr %tuple.field17, align 1
-  %field.load = load { ptr }, ptr %struct.region14, align 8
-  %tuple.field18 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 2
-  store { ptr } %field.load, ptr %tuple.field18, align 1
-  %tuple.val19 = load %_Z13InvalidSyntax, ptr %tuple16, align 8
-  %variant.data.ptr20 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
-  store %_Z13InvalidSyntax %tuple.val19, ptr %variant.data.ptr20, align 1
-  %variant.val21 = load %_Z11ParserError, ptr %variant.ptr9, align 1
-  %throw.data.ptr22 = getelementptr inbounds { i8, [40 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val21, ptr %throw.data.ptr22, align 1
+  %tuple.field15 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 1
+  store i64 %position13, ptr %tuple.field15, align 1
+  %tuple.field16 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 2
+  store { ptr } { ptr @.sconst.169 }, ptr %tuple.field16, align 1
+  %tuple.val17 = load %_Z13InvalidSyntax, ptr %tuple14, align 8
+  %variant.data.ptr18 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
+  store %_Z13InvalidSyntax %tuple.val17, ptr %variant.data.ptr18, align 1
+  %variant.val19 = load %_Z11ParserError, ptr %variant.ptr9, align 1
+  %throw.data.ptr20 = getelementptr inbounds { i8, [40 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val19, ptr %throw.data.ptr20, align 1
   ret void
 
-choose.when23:                                    ; preds = %choose.when
-  %"variant.c_data().ptr24" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 1
-  %variant.val25 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr24", align 8
-  %throw.tag.ptr26 = getelementptr inbounds { i8, [40 x i8] }, ptr %0, i32 0, i32 0
-  store i8 1, ptr %throw.tag.ptr26, align 1
-  %variant.tag.ptr27 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 0
-  store i8 1, ptr %variant.tag.ptr27, align 1
-  %variant.data.ptr28 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
-  store %_Z13InvalidSyntax %variant.val25, ptr %variant.data.ptr28, align 1
-  %variant.val29 = load %_Z11ParserError, ptr %variant.ptr9, align 1
-  %throw.data.ptr30 = getelementptr inbounds { i8, [40 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val29, ptr %throw.data.ptr30, align 1
+choose.when21:                                    ; preds = %choose.when
+  %"variant.c_data().ptr22" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 1
+  %variant.val23 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr22", align 8
+  %throw.tag.ptr24 = getelementptr inbounds { i8, [40 x i8] }, ptr %0, i32 0, i32 0
+  store i8 1, ptr %throw.tag.ptr24, align 1
+  %variant.tag.ptr25 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 0
+  store i8 1, ptr %variant.tag.ptr25, align 1
+  %variant.data.ptr26 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
+  store %_Z13InvalidSyntax %variant.val23, ptr %variant.data.ptr26, align 1
+  %variant.val27 = load %_Z11ParserError, ptr %variant.ptr9, align 1
+  %throw.data.ptr28 = getelementptr inbounds { i8, [40 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val27, ptr %throw.data.ptr28, align 1
   ret void
 
-choose.when31:                                    ; preds = %if.end
+choose.when29:                                    ; preds = %if.end
   %throws.success.val = load ptr, ptr %throws.data.ptr, align 1
   store ptr %throws.success.val, ptr %condition, align 1
   br label %choose.end
 
-if.then35:                                        ; preds = %choose.end
-  %throw.tag.ptr37 = getelementptr inbounds { i8, [40 x i8] }, ptr %0, i32 0, i32 0
-  store i8 1, ptr %throw.tag.ptr37, align 1
-  %variant.tag.ptr38 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 0
-  store i8 1, ptr %variant.tag.ptr38, align 1
-  %load.struct39 = load %_Z6Parser, ptr %2, align 8
-  %lexer40 = extractvalue %_Z6Parser %load.struct39, 0
-  %position41 = extractvalue %_Z5Lexer %lexer40, 3
-  %struct.region42 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.172 }, ptr %arg.tmp15, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region42, ptr %1, ptr %arg.tmp15)
-  %tuple.field43 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 0
-  store i64 %previous_position, ptr %tuple.field43, align 1
-  %tuple.field44 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 1
-  store i64 %position41, ptr %tuple.field44, align 1
-  %field.load45 = load { ptr }, ptr %struct.region42, align 8
-  %tuple.field46 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 2
-  store { ptr } %field.load45, ptr %tuple.field46, align 1
-  %tuple.val47 = load %_Z13InvalidSyntax, ptr %tuple16, align 8
-  %variant.data.ptr48 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
-  store %_Z13InvalidSyntax %tuple.val47, ptr %variant.data.ptr48, align 1
-  %variant.val49 = load %_Z11ParserError, ptr %variant.ptr9, align 1
-  %throw.data.ptr50 = getelementptr inbounds { i8, [40 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val49, ptr %throw.data.ptr50, align 1
+if.then33:                                        ; preds = %choose.end
+  %throw.tag.ptr35 = getelementptr inbounds { i8, [40 x i8] }, ptr %0, i32 0, i32 0
+  store i8 1, ptr %throw.tag.ptr35, align 1
+  %variant.tag.ptr36 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 0
+  store i8 1, ptr %variant.tag.ptr36, align 1
+  %load.struct37 = load %_Z6Parser, ptr %2, align 8
+  %lexer38 = extractvalue %_Z6Parser %load.struct37, 0
+  %position39 = extractvalue %_Z5Lexer %lexer38, 3
+  %tuple.field40 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 0
+  store i64 %previous_position, ptr %tuple.field40, align 1
+  %tuple.field41 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 1
+  store i64 %position39, ptr %tuple.field41, align 1
+  %tuple.field42 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 2
+  store { ptr } { ptr @.sconst.170 }, ptr %tuple.field42, align 1
+  %tuple.val43 = load %_Z13InvalidSyntax, ptr %tuple14, align 8
+  %variant.data.ptr44 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
+  store %_Z13InvalidSyntax %tuple.val43, ptr %variant.data.ptr44, align 1
+  %variant.val45 = load %_Z11ParserError, ptr %variant.ptr9, align 1
+  %throw.data.ptr46 = getelementptr inbounds { i8, [40 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val45, ptr %throw.data.ptr46, align 1
   ret void
 
-if.end36:                                         ; preds = %choose.end
-  %load.struct51 = load %_Z6Parser, ptr %2, align 8
-  %lexer52 = extractvalue %_Z6Parser %load.struct51, 0
-  %position53 = extractvalue %_Z5Lexer %lexer52, 3
+if.end34:                                         ; preds = %choose.end
+  %load.struct47 = load %_Z6Parser, ptr %2, align 8
+  %lexer48 = extractvalue %_Z6Parser %load.struct47, 0
+  %position49 = extractvalue %_Z5Lexer %lexer48, 3
   store ptr null, ptr %cases, align 1
-  call void @_ZN6Parser15parse_when_listEPN4scaly6memory4PageE(ptr noalias sret({ i8, [25 x i8] }) %sret.result54, ptr %1, ptr %2)
-  %tag55 = load i8, ptr %sret.result54, align 1
-  %throws.data.ptr56 = getelementptr inbounds i8, ptr %sret.result54, i8 1
-  switch i8 %tag55, label %choose.else58 [
-    i8 1, label %choose.when59
-    i8 0, label %choose.when77
+  call void @_ZN6Parser15parse_when_listEPN4scaly6memory4PageE(ptr noalias sret({ i8, [25 x i8] }) %sret.result50, ptr %1, ptr %2)
+  %tag51 = load i8, ptr %sret.result50, align 1
+  %throws.data.ptr52 = getelementptr inbounds i8, ptr %sret.result50, i8 1
+  switch i8 %tag51, label %choose.else54 [
+    i8 1, label %choose.when55
+    i8 0, label %choose.when73
   ]
 
-choose.end57:                                     ; preds = %choose.else58, %choose.when77, %choose.end63
-  %choose.value79 = phi ptr [ %throws.success.val78, %choose.when77 ], [ undef, %choose.end63 ], [ undef, %choose.else58 ]
-  %load.struct80 = load %_Z6Parser, ptr %2, align 8
-  %lexer81 = extractvalue %_Z6Parser %load.struct80, 0
-  %position82 = extractvalue %_Z5Lexer %lexer81, 3
+choose.end53:                                     ; preds = %choose.else54, %choose.when73, %choose.end59
+  %choose.value75 = phi ptr [ %throws.success.val74, %choose.when73 ], [ undef, %choose.end59 ], [ undef, %choose.else54 ]
+  %load.struct76 = load %_Z6Parser, ptr %2, align 8
+  %lexer77 = extractvalue %_Z6Parser %load.struct76, 0
+  %position78 = extractvalue %_Z5Lexer %lexer77, 3
   store ptr null, ptr %alternative, align 1
-  call void @_ZN6Parser10parse_elseEPN4scaly6memory4PageE(ptr noalias sret({ i8, [80 x i8] }) %sret.result83, ptr %1, ptr %2)
-  %tag84 = load i8, ptr %sret.result83, align 1
-  %throws.data.ptr85 = getelementptr inbounds i8, ptr %sret.result83, i8 1
-  switch i8 %tag84, label %choose.else87 [
-    i8 1, label %choose.when88
-    i8 0, label %choose.when100
+  call void @_ZN6Parser10parse_elseEPN4scaly6memory4PageE(ptr noalias sret({ i8, [80 x i8] }) %sret.result79, ptr %1, ptr %2)
+  %tag80 = load i8, ptr %sret.result79, align 1
+  %throws.data.ptr81 = getelementptr inbounds i8, ptr %sret.result79, i8 1
+  switch i8 %tag80, label %choose.else83 [
+    i8 1, label %choose.when84
+    i8 0, label %choose.when96
   ]
 
-choose.else58:                                    ; preds = %if.end36
-  br label %choose.end57
+choose.else54:                                    ; preds = %if.end34
+  br label %choose.end53
 
-choose.when59:                                    ; preds = %if.end36
-  %throws.err.val60 = load %_Z11ParserError, ptr %throws.data.ptr56, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %variant.ptr9, ptr align 1 %throws.data.ptr56, i64 ptrtoint (ptr getelementptr (%_Z11ParserError, ptr null, i32 1) to i64), i1 false)
-  %tag.ptr61 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 0
-  %tag62 = load i8, ptr %tag.ptr61, align 1
-  switch i8 %tag62, label %choose.else64 [
-    i8 0, label %choose.when65
-    i8 1, label %choose.when68
+choose.when55:                                    ; preds = %if.end34
+  %throws.err.val56 = load %_Z11ParserError, ptr %throws.data.ptr52, align 1
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %variant.ptr9, ptr align 1 %throws.data.ptr52, i64 ptrtoint (ptr getelementptr (%_Z11ParserError, ptr null, i32 1) to i64), i1 false)
+  %tag.ptr57 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 0
+  %tag58 = load i8, ptr %tag.ptr57, align 1
+  switch i8 %tag58, label %choose.else60 [
+    i8 0, label %choose.when61
+    i8 1, label %choose.when64
   ]
 
-choose.end63:                                     ; preds = %choose.else64, %choose.when65
-  br label %choose.end57
+choose.end59:                                     ; preds = %choose.else60, %choose.when61
+  br label %choose.end53
 
-choose.else64:                                    ; preds = %choose.when59
-  br label %choose.end63
+choose.else60:                                    ; preds = %choose.when55
+  br label %choose.end59
 
-choose.when65:                                    ; preds = %choose.when59
-  %"variant.c_data().ptr66" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
-  %variant.val67 = load %_Z15DifferentSyntax, ptr %"variant.c_data().ptr66", align 1
-  br label %choose.end63
+choose.when61:                                    ; preds = %choose.when55
+  %"variant.c_data().ptr62" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
+  %variant.val63 = load %_Z15DifferentSyntax, ptr %"variant.c_data().ptr62", align 1
+  br label %choose.end59
 
-choose.when68:                                    ; preds = %choose.when59
-  %"variant.c_data().ptr69" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
-  %variant.val70 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr69", align 8
-  %throw.tag.ptr71 = getelementptr inbounds { i8, [40 x i8] }, ptr %0, i32 0, i32 0
-  store i8 1, ptr %throw.tag.ptr71, align 1
-  %variant.tag.ptr73 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr72, i32 0, i32 0
-  store i8 1, ptr %variant.tag.ptr73, align 1
-  %variant.data.ptr74 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr72, i32 0, i32 1
-  store %_Z13InvalidSyntax %variant.val70, ptr %variant.data.ptr74, align 1
-  %variant.val75 = load %_Z11ParserError, ptr %variant.ptr72, align 1
-  %throw.data.ptr76 = getelementptr inbounds { i8, [40 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val75, ptr %throw.data.ptr76, align 1
+choose.when64:                                    ; preds = %choose.when55
+  %"variant.c_data().ptr65" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
+  %variant.val66 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr65", align 8
+  %throw.tag.ptr67 = getelementptr inbounds { i8, [40 x i8] }, ptr %0, i32 0, i32 0
+  store i8 1, ptr %throw.tag.ptr67, align 1
+  %variant.tag.ptr69 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr68, i32 0, i32 0
+  store i8 1, ptr %variant.tag.ptr69, align 1
+  %variant.data.ptr70 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr68, i32 0, i32 1
+  store %_Z13InvalidSyntax %variant.val66, ptr %variant.data.ptr70, align 1
+  %variant.val71 = load %_Z11ParserError, ptr %variant.ptr68, align 1
+  %throw.data.ptr72 = getelementptr inbounds { i8, [40 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val71, ptr %throw.data.ptr72, align 1
   ret void
 
-choose.when77:                                    ; preds = %if.end36
-  %throws.success.val78 = load ptr, ptr %throws.data.ptr56, align 1
-  store ptr %throws.success.val78, ptr %cases, align 1
-  br label %choose.end57
+choose.when73:                                    ; preds = %if.end34
+  %throws.success.val74 = load ptr, ptr %throws.data.ptr52, align 1
+  store ptr %throws.success.val74, ptr %cases, align 1
+  br label %choose.end53
 
-choose.end86:                                     ; preds = %choose.else87, %choose.when100, %choose.end92
-  %choose.value106 = phi %_Z10ElseSyntax [ %choose.arm.load, %choose.when100 ], [ undef, %choose.end92 ], [ undef, %choose.else87 ]
-  %load.struct107 = load %_Z6Parser, ptr %2, align 8
-  %lexer108 = extractvalue %_Z6Parser %load.struct107, 0
-  %position109 = extractvalue %_Z5Lexer %lexer108, 3
-  %condition110 = load ptr, ptr %condition, align 8
-  %cases111 = load ptr, ptr %cases, align 8
-  %alternative112 = load ptr, ptr %alternative, align 8
-  %tuple.field114 = getelementptr inbounds %_Z12ChooseSyntax, ptr %tuple113, i32 0, i32 0
-  store i64 %previous_position, ptr %tuple.field114, align 1
-  %tuple.field115 = getelementptr inbounds %_Z12ChooseSyntax, ptr %tuple113, i32 0, i32 1
-  store i64 %position109, ptr %tuple.field115, align 1
-  %tuple.field116 = getelementptr inbounds %_Z12ChooseSyntax, ptr %tuple113, i32 0, i32 2
-  store ptr %condition110, ptr %tuple.field116, align 1
-  %tuple.field117 = getelementptr inbounds %_Z12ChooseSyntax, ptr %tuple113, i32 0, i32 3
-  store ptr %cases111, ptr %tuple.field117, align 1
-  %tuple.field118 = getelementptr inbounds %_Z12ChooseSyntax, ptr %tuple113, i32 0, i32 4
-  store ptr %alternative112, ptr %tuple.field118, align 1
-  %tuple.val119 = load %_Z12ChooseSyntax, ptr %tuple113, align 8
+choose.end82:                                     ; preds = %choose.else83, %choose.when96, %choose.end88
+  %choose.value102 = phi %_Z10ElseSyntax [ %choose.arm.load, %choose.when96 ], [ undef, %choose.end88 ], [ undef, %choose.else83 ]
+  %load.struct103 = load %_Z6Parser, ptr %2, align 8
+  %lexer104 = extractvalue %_Z6Parser %load.struct103, 0
+  %position105 = extractvalue %_Z5Lexer %lexer104, 3
+  %condition106 = load ptr, ptr %condition, align 8
+  %cases107 = load ptr, ptr %cases, align 8
+  %alternative108 = load ptr, ptr %alternative, align 8
+  %tuple.field110 = getelementptr inbounds %_Z12ChooseSyntax, ptr %tuple109, i32 0, i32 0
+  store i64 %previous_position, ptr %tuple.field110, align 1
+  %tuple.field111 = getelementptr inbounds %_Z12ChooseSyntax, ptr %tuple109, i32 0, i32 1
+  store i64 %position105, ptr %tuple.field111, align 1
+  %tuple.field112 = getelementptr inbounds %_Z12ChooseSyntax, ptr %tuple109, i32 0, i32 2
+  store ptr %condition106, ptr %tuple.field112, align 1
+  %tuple.field113 = getelementptr inbounds %_Z12ChooseSyntax, ptr %tuple109, i32 0, i32 3
+  store ptr %cases107, ptr %tuple.field113, align 1
+  %tuple.field114 = getelementptr inbounds %_Z12ChooseSyntax, ptr %tuple109, i32 0, i32 4
+  store ptr %alternative108, ptr %tuple.field114, align 1
+  %tuple.val115 = load %_Z12ChooseSyntax, ptr %tuple109, align 8
   %ret.tag.ptr = getelementptr inbounds { i8, [40 x i8] }, ptr %0, i32 0, i32 0
   store i8 0, ptr %ret.tag.ptr, align 1
   %ret.data.ptr = getelementptr inbounds { i8, [40 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z12ChooseSyntax %tuple.val119, ptr %ret.data.ptr, align 1
+  store %_Z12ChooseSyntax %tuple.val115, ptr %ret.data.ptr, align 1
   ret void
 
-choose.else87:                                    ; preds = %choose.end57
-  br label %choose.end86
+choose.else83:                                    ; preds = %choose.end53
+  br label %choose.end82
 
-choose.when88:                                    ; preds = %choose.end57
-  %throws.err.val89 = load %_Z11ParserError, ptr %throws.data.ptr85, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %variant.ptr72, ptr align 1 %throws.data.ptr85, i64 ptrtoint (ptr getelementptr (%_Z11ParserError, ptr null, i32 1) to i64), i1 false)
-  %tag.ptr90 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr72, i32 0, i32 0
-  %tag91 = load i8, ptr %tag.ptr90, align 1
-  switch i8 %tag91, label %choose.else93 [
-    i8 0, label %choose.when94
-    i8 1, label %choose.when97
+choose.when84:                                    ; preds = %choose.end53
+  %throws.err.val85 = load %_Z11ParserError, ptr %throws.data.ptr81, align 1
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %variant.ptr68, ptr align 1 %throws.data.ptr81, i64 ptrtoint (ptr getelementptr (%_Z11ParserError, ptr null, i32 1) to i64), i1 false)
+  %tag.ptr86 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr68, i32 0, i32 0
+  %tag87 = load i8, ptr %tag.ptr86, align 1
+  switch i8 %tag87, label %choose.else89 [
+    i8 0, label %choose.when90
+    i8 1, label %choose.when93
   ]
 
-choose.end92:                                     ; preds = %choose.else93, %choose.when97, %choose.when94
-  br label %choose.end86
+choose.end88:                                     ; preds = %choose.else89, %choose.when93, %choose.when90
+  br label %choose.end82
 
-choose.else93:                                    ; preds = %choose.when88
-  br label %choose.end92
+choose.else89:                                    ; preds = %choose.when84
+  br label %choose.end88
 
-choose.when94:                                    ; preds = %choose.when88
-  %"variant.c_data().ptr95" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr72, i32 0, i32 1
-  %variant.val96 = load %_Z15DifferentSyntax, ptr %"variant.c_data().ptr95", align 1
-  br label %choose.end92
+choose.when90:                                    ; preds = %choose.when84
+  %"variant.c_data().ptr91" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr68, i32 0, i32 1
+  %variant.val92 = load %_Z15DifferentSyntax, ptr %"variant.c_data().ptr91", align 1
+  br label %choose.end88
 
-choose.when97:                                    ; preds = %choose.when88
-  %"variant.c_data().ptr98" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr72, i32 0, i32 1
-  %variant.val99 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr98", align 8
-  br label %choose.end92
+choose.when93:                                    ; preds = %choose.when84
+  %"variant.c_data().ptr94" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr68, i32 0, i32 1
+  %variant.val95 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr94", align 8
+  br label %choose.end88
 
-choose.when100:                                   ; preds = %choose.end57
-  %throws.success.val101 = load %_Z10ElseSyntax, ptr %throws.data.ptr85, align 1
-  %start = extractvalue %_Z10ElseSyntax %throws.success.val101, 0
-  %end = extractvalue %_Z10ElseSyntax %throws.success.val101, 1
-  %alternative102 = extractvalue %_Z10ElseSyntax %throws.success.val101, 2
+choose.when96:                                    ; preds = %choose.end53
+  %throws.success.val97 = load %_Z10ElseSyntax, ptr %throws.data.ptr81, align 1
+  %start = extractvalue %_Z10ElseSyntax %throws.success.val97, 0
+  %end = extractvalue %_Z10ElseSyntax %throws.success.val97, 1
+  %alternative98 = extractvalue %_Z10ElseSyntax %throws.success.val97, 2
   %tuple.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr (%_Z10ElseSyntax, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z10ElseSyntax }, ptr null, i64 0, i32 1) to i64))
-  %tuple.field103 = getelementptr inbounds %_Z10ElseSyntax, ptr %tuple.region, i32 0, i32 0
-  store i64 %start, ptr %tuple.field103, align 1
-  %tuple.field104 = getelementptr inbounds %_Z10ElseSyntax, ptr %tuple.region, i32 0, i32 1
-  store i64 %end, ptr %tuple.field104, align 1
-  %tuple.field105 = getelementptr inbounds %_Z10ElseSyntax, ptr %tuple.region, i32 0, i32 2
-  store %_Z15StatementSyntax %alternative102, ptr %tuple.field105, align 1
+  %tuple.field99 = getelementptr inbounds %_Z10ElseSyntax, ptr %tuple.region, i32 0, i32 0
+  store i64 %start, ptr %tuple.field99, align 1
+  %tuple.field100 = getelementptr inbounds %_Z10ElseSyntax, ptr %tuple.region, i32 0, i32 1
+  store i64 %end, ptr %tuple.field100, align 1
+  %tuple.field101 = getelementptr inbounds %_Z10ElseSyntax, ptr %tuple.region, i32 0, i32 2
+  store %_Z15StatementSyntax %alternative98, ptr %tuple.field101, align 1
   store ptr %tuple.region, ptr %alternative, align 1
   %choose.arm.load = load %_Z10ElseSyntax, ptr %tuple.region, align 4
-  br label %choose.end86
+  br label %choose.end82
 }
 
 define linkonce_odr void @_ZN6Parser9parse_tryEPN4scaly6memory4PageE(ptr noalias sret({ i8, [104 x i8] }) %0, ptr %1, ptr %2) {
 entry:
-  %tuple138 = alloca %_Z9TrySyntax, align 8
-  %sret.result106 = alloca { i8, [80 x i8] }, align 8
+  %tuple134 = alloca %_Z9TrySyntax, align 8
+  %sret.result102 = alloca { i8, [80 x i8] }, align 8
   %dropper = alloca ptr, align 8
-  %variant.ptr95 = alloca %_Z11ParserError, align 8
-  %sret.result77 = alloca { i8, [25 x i8] }, align 8
+  %variant.ptr91 = alloca %_Z11ParserError, align 8
+  %sret.result73 = alloca { i8, [25 x i8] }, align 8
   %cases = alloca ptr, align 8
-  %tuple37 = alloca %_Z13InvalidSyntax, align 8
-  %arg.tmp36 = alloca { ptr }, align 8
+  %tuple35 = alloca %_Z13InvalidSyntax, align 8
   %variant.ptr30 = alloca %_Z11ParserError, align 8
   %choose.union = alloca %_Z11ParserError, align 8
   %sret.result15 = alloca { i8, [57 x i8] }, align 8
@@ -44376,11 +43022,9 @@ entry:
   %lexer = extractvalue %_Z6Parser %load.struct, 0
   %previous_position = extractvalue %_Z5Lexer %lexer, 4
   %field.inplace = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
   %arg.tmp = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.173 }, ptr %arg.tmp, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region, ptr %1, ptr %arg.tmp)
-  %call = call i1 @_ZN5Lexer13parse_keywordE6String(ptr %field.inplace, ptr %struct.region)
+  store { ptr } { ptr @.sconst.171 }, ptr %arg.tmp, align 1
+  %call = call i1 @_ZN5Lexer13parse_keywordE6String(ptr %field.inplace, ptr %arg.tmp)
   %bitnot = xor i1 %call, true
   br i1 %bitnot, label %if.then, label %if.end
 
@@ -44421,7 +43065,7 @@ choose.end:                                       ; preds = %choose.else, %choos
   %throws.data.ptr17 = getelementptr inbounds i8, ptr %sret.result15, i8 1
   switch i8 %tag16, label %choose.else19 [
     i8 1, label %choose.when20
-    i8 0, label %choose.when52
+    i8 0, label %choose.when50
   ]
 
 choose.else:                                      ; preds = %if.end
@@ -44461,12 +43105,12 @@ choose.when11:                                    ; preds = %if.end
   %choose.arm.load = load %_Z14LifetimeSyntax, ptr %tuple.region, align 1
   br label %choose.end
 
-choose.end18:                                     ; preds = %choose.else19, %choose.when52, %choose.end24
-  %choose.value54 = phi %_Z15ConditionSyntax [ %throws.success.val53, %choose.when52 ], [ undef, %choose.end24 ], [ undef, %choose.else19 ]
-  %field.inplace55 = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
-  %call56 = call i1 @_ZN5Lexer11parse_colonEv(ptr %field.inplace55)
-  %bitnot57 = xor i1 %call56, true
-  br i1 %bitnot57, label %if.then58, label %if.end59
+choose.end18:                                     ; preds = %choose.else19, %choose.when50, %choose.end24
+  %choose.value52 = phi %_Z15ConditionSyntax [ %throws.success.val51, %choose.when50 ], [ undef, %choose.end24 ], [ undef, %choose.else19 ]
+  %field.inplace53 = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
+  %call54 = call i1 @_ZN5Lexer11parse_colonEv(ptr %field.inplace53)
+  %bitnot55 = xor i1 %call54, true
+  br i1 %bitnot55, label %if.then56, label %if.end57
 
 choose.else19:                                    ; preds = %choose.end
   br label %choose.end18
@@ -44478,7 +43122,7 @@ choose.when20:                                    ; preds = %choose.end
   %tag23 = load i8, ptr %tag.ptr22, align 1
   switch i8 %tag23, label %choose.else25 [
     i8 0, label %choose.when26
-    i8 1, label %choose.when44
+    i8 1, label %choose.when42
   ]
 
 choose.end24:                                     ; preds = %choose.else25
@@ -44497,211 +43141,203 @@ choose.when26:                                    ; preds = %choose.when20
   %load.struct32 = load %_Z6Parser, ptr %2, align 8
   %lexer33 = extractvalue %_Z6Parser %load.struct32, 0
   %position34 = extractvalue %_Z5Lexer %lexer33, 3
-  %struct.region35 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.174 }, ptr %arg.tmp36, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region35, ptr %1, ptr %arg.tmp36)
-  %tuple.field = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple37, i32 0, i32 0
+  %tuple.field = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple35, i32 0, i32 0
   store i64 %position14, ptr %tuple.field, align 1
-  %tuple.field38 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple37, i32 0, i32 1
-  store i64 %position34, ptr %tuple.field38, align 1
-  %field.load = load { ptr }, ptr %struct.region35, align 8
-  %tuple.field39 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple37, i32 0, i32 2
-  store { ptr } %field.load, ptr %tuple.field39, align 1
-  %tuple.val40 = load %_Z13InvalidSyntax, ptr %tuple37, align 8
-  %variant.data.ptr41 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr30, i32 0, i32 1
-  store %_Z13InvalidSyntax %tuple.val40, ptr %variant.data.ptr41, align 1
-  %variant.val42 = load %_Z11ParserError, ptr %variant.ptr30, align 1
-  %throw.data.ptr43 = getelementptr inbounds { i8, [104 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val42, ptr %throw.data.ptr43, align 1
+  %tuple.field36 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple35, i32 0, i32 1
+  store i64 %position34, ptr %tuple.field36, align 1
+  %tuple.field37 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple35, i32 0, i32 2
+  store { ptr } { ptr @.sconst.172 }, ptr %tuple.field37, align 1
+  %tuple.val38 = load %_Z13InvalidSyntax, ptr %tuple35, align 8
+  %variant.data.ptr39 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr30, i32 0, i32 1
+  store %_Z13InvalidSyntax %tuple.val38, ptr %variant.data.ptr39, align 1
+  %variant.val40 = load %_Z11ParserError, ptr %variant.ptr30, align 1
+  %throw.data.ptr41 = getelementptr inbounds { i8, [104 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val40, ptr %throw.data.ptr41, align 1
   ret void
 
-choose.when44:                                    ; preds = %choose.when20
-  %"variant.c_data().ptr45" = getelementptr inbounds %_Z11ParserError, ptr %choose.union, i32 0, i32 1
-  %variant.val46 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr45", align 8
-  %throw.tag.ptr47 = getelementptr inbounds { i8, [104 x i8] }, ptr %0, i32 0, i32 0
-  store i8 1, ptr %throw.tag.ptr47, align 1
-  %variant.tag.ptr48 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr30, i32 0, i32 0
-  store i8 1, ptr %variant.tag.ptr48, align 1
-  %variant.data.ptr49 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr30, i32 0, i32 1
-  store %_Z13InvalidSyntax %variant.val46, ptr %variant.data.ptr49, align 1
-  %variant.val50 = load %_Z11ParserError, ptr %variant.ptr30, align 1
-  %throw.data.ptr51 = getelementptr inbounds { i8, [104 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val50, ptr %throw.data.ptr51, align 1
+choose.when42:                                    ; preds = %choose.when20
+  %"variant.c_data().ptr43" = getelementptr inbounds %_Z11ParserError, ptr %choose.union, i32 0, i32 1
+  %variant.val44 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr43", align 8
+  %throw.tag.ptr45 = getelementptr inbounds { i8, [104 x i8] }, ptr %0, i32 0, i32 0
+  store i8 1, ptr %throw.tag.ptr45, align 1
+  %variant.tag.ptr46 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr30, i32 0, i32 0
+  store i8 1, ptr %variant.tag.ptr46, align 1
+  %variant.data.ptr47 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr30, i32 0, i32 1
+  store %_Z13InvalidSyntax %variant.val44, ptr %variant.data.ptr47, align 1
+  %variant.val48 = load %_Z11ParserError, ptr %variant.ptr30, align 1
+  %throw.data.ptr49 = getelementptr inbounds { i8, [104 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val48, ptr %throw.data.ptr49, align 1
   ret void
 
-choose.when52:                                    ; preds = %choose.end
-  %throws.success.val53 = load %_Z15ConditionSyntax, ptr %throws.data.ptr17, align 1
+choose.when50:                                    ; preds = %choose.end
+  %throws.success.val51 = load %_Z15ConditionSyntax, ptr %throws.data.ptr17, align 1
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %condition, ptr align 1 %throws.data.ptr17, i64 ptrtoint (ptr getelementptr (%_Z15ConditionSyntax, ptr null, i32 1) to i64), i1 false)
   br label %choose.end18
 
-if.then58:                                        ; preds = %choose.end18
-  %throw.tag.ptr60 = getelementptr inbounds { i8, [104 x i8] }, ptr %0, i32 0, i32 0
-  store i8 1, ptr %throw.tag.ptr60, align 1
-  %variant.tag.ptr61 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr30, i32 0, i32 0
-  store i8 1, ptr %variant.tag.ptr61, align 1
-  %load.struct62 = load %_Z6Parser, ptr %2, align 8
-  %lexer63 = extractvalue %_Z6Parser %load.struct62, 0
-  %position64 = extractvalue %_Z5Lexer %lexer63, 3
-  %struct.region65 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.175 }, ptr %arg.tmp36, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region65, ptr %1, ptr %arg.tmp36)
-  %tuple.field66 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple37, i32 0, i32 0
-  store i64 %previous_position, ptr %tuple.field66, align 1
-  %tuple.field67 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple37, i32 0, i32 1
-  store i64 %position64, ptr %tuple.field67, align 1
-  %field.load68 = load { ptr }, ptr %struct.region65, align 8
-  %tuple.field69 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple37, i32 0, i32 2
-  store { ptr } %field.load68, ptr %tuple.field69, align 1
-  %tuple.val70 = load %_Z13InvalidSyntax, ptr %tuple37, align 8
-  %variant.data.ptr71 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr30, i32 0, i32 1
-  store %_Z13InvalidSyntax %tuple.val70, ptr %variant.data.ptr71, align 1
-  %variant.val72 = load %_Z11ParserError, ptr %variant.ptr30, align 1
-  %throw.data.ptr73 = getelementptr inbounds { i8, [104 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val72, ptr %throw.data.ptr73, align 1
+if.then56:                                        ; preds = %choose.end18
+  %throw.tag.ptr58 = getelementptr inbounds { i8, [104 x i8] }, ptr %0, i32 0, i32 0
+  store i8 1, ptr %throw.tag.ptr58, align 1
+  %variant.tag.ptr59 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr30, i32 0, i32 0
+  store i8 1, ptr %variant.tag.ptr59, align 1
+  %load.struct60 = load %_Z6Parser, ptr %2, align 8
+  %lexer61 = extractvalue %_Z6Parser %load.struct60, 0
+  %position62 = extractvalue %_Z5Lexer %lexer61, 3
+  %tuple.field63 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple35, i32 0, i32 0
+  store i64 %previous_position, ptr %tuple.field63, align 1
+  %tuple.field64 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple35, i32 0, i32 1
+  store i64 %position62, ptr %tuple.field64, align 1
+  %tuple.field65 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple35, i32 0, i32 2
+  store { ptr } { ptr @.sconst.173 }, ptr %tuple.field65, align 1
+  %tuple.val66 = load %_Z13InvalidSyntax, ptr %tuple35, align 8
+  %variant.data.ptr67 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr30, i32 0, i32 1
+  store %_Z13InvalidSyntax %tuple.val66, ptr %variant.data.ptr67, align 1
+  %variant.val68 = load %_Z11ParserError, ptr %variant.ptr30, align 1
+  %throw.data.ptr69 = getelementptr inbounds { i8, [104 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val68, ptr %throw.data.ptr69, align 1
   ret void
 
-if.end59:                                         ; preds = %choose.end18
-  %load.struct74 = load %_Z6Parser, ptr %2, align 8
-  %lexer75 = extractvalue %_Z6Parser %load.struct74, 0
-  %position76 = extractvalue %_Z5Lexer %lexer75, 3
+if.end57:                                         ; preds = %choose.end18
+  %load.struct70 = load %_Z6Parser, ptr %2, align 8
+  %lexer71 = extractvalue %_Z6Parser %load.struct70, 0
+  %position72 = extractvalue %_Z5Lexer %lexer71, 3
   store ptr null, ptr %cases, align 1
-  call void @_ZN6Parser15parse_when_listEPN4scaly6memory4PageE(ptr noalias sret({ i8, [25 x i8] }) %sret.result77, ptr %1, ptr %2)
-  %tag78 = load i8, ptr %sret.result77, align 1
-  %throws.data.ptr79 = getelementptr inbounds i8, ptr %sret.result77, i8 1
-  switch i8 %tag78, label %choose.else81 [
-    i8 1, label %choose.when82
-    i8 0, label %choose.when100
+  call void @_ZN6Parser15parse_when_listEPN4scaly6memory4PageE(ptr noalias sret({ i8, [25 x i8] }) %sret.result73, ptr %1, ptr %2)
+  %tag74 = load i8, ptr %sret.result73, align 1
+  %throws.data.ptr75 = getelementptr inbounds i8, ptr %sret.result73, i8 1
+  switch i8 %tag74, label %choose.else77 [
+    i8 1, label %choose.when78
+    i8 0, label %choose.when96
   ]
 
-choose.end80:                                     ; preds = %choose.else81, %choose.when100, %choose.end86
-  %choose.value102 = phi ptr [ %throws.success.val101, %choose.when100 ], [ undef, %choose.end86 ], [ undef, %choose.else81 ]
-  %load.struct103 = load %_Z6Parser, ptr %2, align 8
-  %lexer104 = extractvalue %_Z6Parser %load.struct103, 0
-  %position105 = extractvalue %_Z5Lexer %lexer104, 3
+choose.end76:                                     ; preds = %choose.else77, %choose.when96, %choose.end82
+  %choose.value98 = phi ptr [ %throws.success.val97, %choose.when96 ], [ undef, %choose.end82 ], [ undef, %choose.else77 ]
+  %load.struct99 = load %_Z6Parser, ptr %2, align 8
+  %lexer100 = extractvalue %_Z6Parser %load.struct99, 0
+  %position101 = extractvalue %_Z5Lexer %lexer100, 3
   store ptr null, ptr %dropper, align 1
-  call void @_ZN6Parser10parse_elseEPN4scaly6memory4PageE(ptr noalias sret({ i8, [80 x i8] }) %sret.result106, ptr %1, ptr %2)
-  %tag107 = load i8, ptr %sret.result106, align 1
-  %throws.data.ptr108 = getelementptr inbounds i8, ptr %sret.result106, i8 1
-  switch i8 %tag107, label %choose.else110 [
-    i8 1, label %choose.when111
-    i8 0, label %choose.when123
+  call void @_ZN6Parser10parse_elseEPN4scaly6memory4PageE(ptr noalias sret({ i8, [80 x i8] }) %sret.result102, ptr %1, ptr %2)
+  %tag103 = load i8, ptr %sret.result102, align 1
+  %throws.data.ptr104 = getelementptr inbounds i8, ptr %sret.result102, i8 1
+  switch i8 %tag103, label %choose.else106 [
+    i8 1, label %choose.when107
+    i8 0, label %choose.when119
   ]
 
-choose.else81:                                    ; preds = %if.end59
-  br label %choose.end80
+choose.else77:                                    ; preds = %if.end57
+  br label %choose.end76
 
-choose.when82:                                    ; preds = %if.end59
-  %throws.err.val83 = load %_Z11ParserError, ptr %throws.data.ptr79, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %variant.ptr30, ptr align 1 %throws.data.ptr79, i64 ptrtoint (ptr getelementptr (%_Z11ParserError, ptr null, i32 1) to i64), i1 false)
-  %tag.ptr84 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr30, i32 0, i32 0
-  %tag85 = load i8, ptr %tag.ptr84, align 1
-  switch i8 %tag85, label %choose.else87 [
-    i8 0, label %choose.when88
-    i8 1, label %choose.when91
+choose.when78:                                    ; preds = %if.end57
+  %throws.err.val79 = load %_Z11ParserError, ptr %throws.data.ptr75, align 1
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %variant.ptr30, ptr align 1 %throws.data.ptr75, i64 ptrtoint (ptr getelementptr (%_Z11ParserError, ptr null, i32 1) to i64), i1 false)
+  %tag.ptr80 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr30, i32 0, i32 0
+  %tag81 = load i8, ptr %tag.ptr80, align 1
+  switch i8 %tag81, label %choose.else83 [
+    i8 0, label %choose.when84
+    i8 1, label %choose.when87
   ]
 
-choose.end86:                                     ; preds = %choose.else87, %choose.when88
-  br label %choose.end80
+choose.end82:                                     ; preds = %choose.else83, %choose.when84
+  br label %choose.end76
 
-choose.else87:                                    ; preds = %choose.when82
-  br label %choose.end86
+choose.else83:                                    ; preds = %choose.when78
+  br label %choose.end82
 
-choose.when88:                                    ; preds = %choose.when82
-  %"variant.c_data().ptr89" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr30, i32 0, i32 1
-  %variant.val90 = load %_Z15DifferentSyntax, ptr %"variant.c_data().ptr89", align 1
-  br label %choose.end86
+choose.when84:                                    ; preds = %choose.when78
+  %"variant.c_data().ptr85" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr30, i32 0, i32 1
+  %variant.val86 = load %_Z15DifferentSyntax, ptr %"variant.c_data().ptr85", align 1
+  br label %choose.end82
 
-choose.when91:                                    ; preds = %choose.when82
-  %"variant.c_data().ptr92" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr30, i32 0, i32 1
-  %variant.val93 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr92", align 8
-  %throw.tag.ptr94 = getelementptr inbounds { i8, [104 x i8] }, ptr %0, i32 0, i32 0
-  store i8 1, ptr %throw.tag.ptr94, align 1
-  %variant.tag.ptr96 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr95, i32 0, i32 0
-  store i8 1, ptr %variant.tag.ptr96, align 1
-  %variant.data.ptr97 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr95, i32 0, i32 1
-  store %_Z13InvalidSyntax %variant.val93, ptr %variant.data.ptr97, align 1
-  %variant.val98 = load %_Z11ParserError, ptr %variant.ptr95, align 1
-  %throw.data.ptr99 = getelementptr inbounds { i8, [104 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val98, ptr %throw.data.ptr99, align 1
+choose.when87:                                    ; preds = %choose.when78
+  %"variant.c_data().ptr88" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr30, i32 0, i32 1
+  %variant.val89 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr88", align 8
+  %throw.tag.ptr90 = getelementptr inbounds { i8, [104 x i8] }, ptr %0, i32 0, i32 0
+  store i8 1, ptr %throw.tag.ptr90, align 1
+  %variant.tag.ptr92 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr91, i32 0, i32 0
+  store i8 1, ptr %variant.tag.ptr92, align 1
+  %variant.data.ptr93 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr91, i32 0, i32 1
+  store %_Z13InvalidSyntax %variant.val89, ptr %variant.data.ptr93, align 1
+  %variant.val94 = load %_Z11ParserError, ptr %variant.ptr91, align 1
+  %throw.data.ptr95 = getelementptr inbounds { i8, [104 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val94, ptr %throw.data.ptr95, align 1
   ret void
 
-choose.when100:                                   ; preds = %if.end59
-  %throws.success.val101 = load ptr, ptr %throws.data.ptr79, align 1
-  store ptr %throws.success.val101, ptr %cases, align 1
-  br label %choose.end80
+choose.when96:                                    ; preds = %if.end57
+  %throws.success.val97 = load ptr, ptr %throws.data.ptr75, align 1
+  store ptr %throws.success.val97, ptr %cases, align 1
+  br label %choose.end76
 
-choose.end109:                                    ; preds = %choose.else110, %choose.when123, %choose.end115
-  %choose.value130 = phi %_Z10ElseSyntax [ %choose.arm.load129, %choose.when123 ], [ undef, %choose.end115 ], [ undef, %choose.else110 ]
-  %load.struct131 = load %_Z6Parser, ptr %2, align 8
-  %lexer132 = extractvalue %_Z6Parser %load.struct131, 0
-  %position133 = extractvalue %_Z5Lexer %lexer132, 3
-  %lifetime134 = load ptr, ptr %lifetime, align 8
-  %condition135 = load %_Z15ConditionSyntax, ptr %condition, align 1
-  %cases136 = load ptr, ptr %cases, align 8
-  %dropper137 = load ptr, ptr %dropper, align 8
-  %tuple.field139 = getelementptr inbounds %_Z9TrySyntax, ptr %tuple138, i32 0, i32 0
-  store i64 %previous_position, ptr %tuple.field139, align 1
-  %tuple.field140 = getelementptr inbounds %_Z9TrySyntax, ptr %tuple138, i32 0, i32 1
-  store i64 %position133, ptr %tuple.field140, align 1
-  %tuple.field141 = getelementptr inbounds %_Z9TrySyntax, ptr %tuple138, i32 0, i32 2
-  store ptr %lifetime134, ptr %tuple.field141, align 1
-  %tuple.field142 = getelementptr inbounds %_Z9TrySyntax, ptr %tuple138, i32 0, i32 3
-  store %_Z15ConditionSyntax %condition135, ptr %tuple.field142, align 1
-  %tuple.field143 = getelementptr inbounds %_Z9TrySyntax, ptr %tuple138, i32 0, i32 4
-  store ptr %cases136, ptr %tuple.field143, align 1
-  %tuple.field144 = getelementptr inbounds %_Z9TrySyntax, ptr %tuple138, i32 0, i32 5
-  store ptr %dropper137, ptr %tuple.field144, align 1
-  %tuple.val145 = load %_Z9TrySyntax, ptr %tuple138, align 8
+choose.end105:                                    ; preds = %choose.else106, %choose.when119, %choose.end111
+  %choose.value126 = phi %_Z10ElseSyntax [ %choose.arm.load125, %choose.when119 ], [ undef, %choose.end111 ], [ undef, %choose.else106 ]
+  %load.struct127 = load %_Z6Parser, ptr %2, align 8
+  %lexer128 = extractvalue %_Z6Parser %load.struct127, 0
+  %position129 = extractvalue %_Z5Lexer %lexer128, 3
+  %lifetime130 = load ptr, ptr %lifetime, align 8
+  %condition131 = load %_Z15ConditionSyntax, ptr %condition, align 1
+  %cases132 = load ptr, ptr %cases, align 8
+  %dropper133 = load ptr, ptr %dropper, align 8
+  %tuple.field135 = getelementptr inbounds %_Z9TrySyntax, ptr %tuple134, i32 0, i32 0
+  store i64 %previous_position, ptr %tuple.field135, align 1
+  %tuple.field136 = getelementptr inbounds %_Z9TrySyntax, ptr %tuple134, i32 0, i32 1
+  store i64 %position129, ptr %tuple.field136, align 1
+  %tuple.field137 = getelementptr inbounds %_Z9TrySyntax, ptr %tuple134, i32 0, i32 2
+  store ptr %lifetime130, ptr %tuple.field137, align 1
+  %tuple.field138 = getelementptr inbounds %_Z9TrySyntax, ptr %tuple134, i32 0, i32 3
+  store %_Z15ConditionSyntax %condition131, ptr %tuple.field138, align 1
+  %tuple.field139 = getelementptr inbounds %_Z9TrySyntax, ptr %tuple134, i32 0, i32 4
+  store ptr %cases132, ptr %tuple.field139, align 1
+  %tuple.field140 = getelementptr inbounds %_Z9TrySyntax, ptr %tuple134, i32 0, i32 5
+  store ptr %dropper133, ptr %tuple.field140, align 1
+  %tuple.val141 = load %_Z9TrySyntax, ptr %tuple134, align 8
   %ret.tag.ptr = getelementptr inbounds { i8, [104 x i8] }, ptr %0, i32 0, i32 0
   store i8 0, ptr %ret.tag.ptr, align 1
   %ret.data.ptr = getelementptr inbounds { i8, [104 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z9TrySyntax %tuple.val145, ptr %ret.data.ptr, align 1
+  store %_Z9TrySyntax %tuple.val141, ptr %ret.data.ptr, align 1
   ret void
 
-choose.else110:                                   ; preds = %choose.end80
-  br label %choose.end109
+choose.else106:                                   ; preds = %choose.end76
+  br label %choose.end105
 
-choose.when111:                                   ; preds = %choose.end80
-  %throws.err.val112 = load %_Z11ParserError, ptr %throws.data.ptr108, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %variant.ptr95, ptr align 1 %throws.data.ptr108, i64 ptrtoint (ptr getelementptr (%_Z11ParserError, ptr null, i32 1) to i64), i1 false)
-  %tag.ptr113 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr95, i32 0, i32 0
-  %tag114 = load i8, ptr %tag.ptr113, align 1
-  switch i8 %tag114, label %choose.else116 [
-    i8 0, label %choose.when117
-    i8 1, label %choose.when120
+choose.when107:                                   ; preds = %choose.end76
+  %throws.err.val108 = load %_Z11ParserError, ptr %throws.data.ptr104, align 1
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %variant.ptr91, ptr align 1 %throws.data.ptr104, i64 ptrtoint (ptr getelementptr (%_Z11ParserError, ptr null, i32 1) to i64), i1 false)
+  %tag.ptr109 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr91, i32 0, i32 0
+  %tag110 = load i8, ptr %tag.ptr109, align 1
+  switch i8 %tag110, label %choose.else112 [
+    i8 0, label %choose.when113
+    i8 1, label %choose.when116
   ]
 
-choose.end115:                                    ; preds = %choose.else116, %choose.when120, %choose.when117
-  br label %choose.end109
+choose.end111:                                    ; preds = %choose.else112, %choose.when116, %choose.when113
+  br label %choose.end105
 
-choose.else116:                                   ; preds = %choose.when111
-  br label %choose.end115
+choose.else112:                                   ; preds = %choose.when107
+  br label %choose.end111
 
-choose.when117:                                   ; preds = %choose.when111
-  %"variant.c_data().ptr118" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr95, i32 0, i32 1
-  %variant.val119 = load %_Z15DifferentSyntax, ptr %"variant.c_data().ptr118", align 1
-  br label %choose.end115
+choose.when113:                                   ; preds = %choose.when107
+  %"variant.c_data().ptr114" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr91, i32 0, i32 1
+  %variant.val115 = load %_Z15DifferentSyntax, ptr %"variant.c_data().ptr114", align 1
+  br label %choose.end111
 
-choose.when120:                                   ; preds = %choose.when111
-  %"variant.c_data().ptr121" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr95, i32 0, i32 1
-  %variant.val122 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr121", align 8
-  br label %choose.end115
+choose.when116:                                   ; preds = %choose.when107
+  %"variant.c_data().ptr117" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr91, i32 0, i32 1
+  %variant.val118 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr117", align 8
+  br label %choose.end111
 
-choose.when123:                                   ; preds = %choose.end80
-  %throws.success.val124 = load %_Z10ElseSyntax, ptr %throws.data.ptr108, align 1
-  %start = extractvalue %_Z10ElseSyntax %throws.success.val124, 0
-  %end = extractvalue %_Z10ElseSyntax %throws.success.val124, 1
-  %alternative = extractvalue %_Z10ElseSyntax %throws.success.val124, 2
-  %tuple.region125 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr (%_Z10ElseSyntax, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z10ElseSyntax }, ptr null, i64 0, i32 1) to i64))
-  %tuple.field126 = getelementptr inbounds %_Z10ElseSyntax, ptr %tuple.region125, i32 0, i32 0
-  store i64 %start, ptr %tuple.field126, align 1
-  %tuple.field127 = getelementptr inbounds %_Z10ElseSyntax, ptr %tuple.region125, i32 0, i32 1
-  store i64 %end, ptr %tuple.field127, align 1
-  %tuple.field128 = getelementptr inbounds %_Z10ElseSyntax, ptr %tuple.region125, i32 0, i32 2
-  store %_Z15StatementSyntax %alternative, ptr %tuple.field128, align 1
-  store ptr %tuple.region125, ptr %dropper, align 1
-  %choose.arm.load129 = load %_Z10ElseSyntax, ptr %tuple.region125, align 4
-  br label %choose.end109
+choose.when119:                                   ; preds = %choose.end76
+  %throws.success.val120 = load %_Z10ElseSyntax, ptr %throws.data.ptr104, align 1
+  %start = extractvalue %_Z10ElseSyntax %throws.success.val120, 0
+  %end = extractvalue %_Z10ElseSyntax %throws.success.val120, 1
+  %alternative = extractvalue %_Z10ElseSyntax %throws.success.val120, 2
+  %tuple.region121 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr (%_Z10ElseSyntax, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z10ElseSyntax }, ptr null, i64 0, i32 1) to i64))
+  %tuple.field122 = getelementptr inbounds %_Z10ElseSyntax, ptr %tuple.region121, i32 0, i32 0
+  store i64 %start, ptr %tuple.field122, align 1
+  %tuple.field123 = getelementptr inbounds %_Z10ElseSyntax, ptr %tuple.region121, i32 0, i32 1
+  store i64 %end, ptr %tuple.field123, align 1
+  %tuple.field124 = getelementptr inbounds %_Z10ElseSyntax, ptr %tuple.region121, i32 0, i32 2
+  store %_Z15StatementSyntax %alternative, ptr %tuple.field124, align 1
+  store ptr %tuple.region121, ptr %dropper, align 1
+  %choose.arm.load125 = load %_Z10ElseSyntax, ptr %tuple.region121, align 4
+  br label %choose.end105
 }
 
 define linkonce_odr void @_ZN6Parser15parse_conditionEPN4scaly6memory4PageE(ptr noalias sret({ i8, [57 x i8] }) %0, ptr %1, ptr %2) {
@@ -45032,7 +43668,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.176)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.174)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -45536,7 +44172,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.177)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.175)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -45866,15 +44502,14 @@ choose.when13:                                    ; preds = %while.body
 
 define linkonce_odr void @_ZN6Parser10parse_whenEPN4scaly6memory4PageE(ptr noalias sret({ i8, [120 x i8] }) %0, ptr %1, ptr %2) {
 entry:
-  %tuple123 = alloca %_Z10WhenSyntax, align 8
-  %variant.ptr91 = alloca %_Z11ParserError, align 8
-  %sret.result76 = alloca { i8, [57 x i8] }, align 8
+  %tuple115 = alloca %_Z10WhenSyntax, align 8
+  %variant.ptr85 = alloca %_Z11ParserError, align 8
+  %sret.result70 = alloca { i8, [57 x i8] }, align 8
   %statement = alloca %_Z15StatementSyntax, align 8
-  %variant.ptr48 = alloca %_Z11ParserError, align 8
-  %sret.result41 = alloca { i8, [32 x i8] }, align 8
+  %variant.ptr44 = alloca %_Z11ParserError, align 8
+  %sret.result37 = alloca { i8, [32 x i8] }, align 8
   %variant = alloca %_Z10NameSyntax, align 8
-  %tuple12 = alloca %_Z13InvalidSyntax, align 8
-  %arg.tmp11 = alloca { ptr }, align 8
+  %tuple10 = alloca %_Z13InvalidSyntax, align 8
   %sret.result = alloca { ptr }, align 8
   %tuple = alloca %_Z15DifferentSyntax, align 8
   %variant.ptr = alloca %_Z11ParserError, align 8
@@ -45882,11 +44517,9 @@ entry:
   %lexer = extractvalue %_Z6Parser %load.struct, 0
   %previous_position = extractvalue %_Z5Lexer %lexer, 4
   %field.inplace = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
   %arg.tmp = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.178 }, ptr %arg.tmp, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region, ptr %1, ptr %arg.tmp)
-  %call = call i1 @_ZN5Lexer13parse_keywordE6String(ptr %field.inplace, ptr %struct.region)
+  store { ptr } { ptr @.sconst.176 }, ptr %arg.tmp, align 1
+  %call = call i1 @_ZN5Lexer13parse_keywordE6String(ptr %field.inplace, ptr %arg.tmp)
   %bitnot = xor i1 %call, true
   br i1 %bitnot, label %if.then, label %if.end
 
@@ -45920,241 +44553,225 @@ if.then4:                                         ; preds = %if.end
   %load.struct8 = load %_Z6Parser, ptr %2, align 8
   %lexer9 = extractvalue %_Z6Parser %load.struct8, 0
   %position = extractvalue %_Z5Lexer %lexer9, 3
-  %struct.region10 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.179 }, ptr %arg.tmp11, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region10, ptr %1, ptr %arg.tmp11)
-  %tuple.field = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple12, i32 0, i32 0
+  %tuple.field = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple10, i32 0, i32 0
   store i64 %previous_position, ptr %tuple.field, align 1
-  %tuple.field13 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple12, i32 0, i32 1
-  store i64 %position, ptr %tuple.field13, align 1
-  %field.load = load { ptr }, ptr %struct.region10, align 8
-  %tuple.field14 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple12, i32 0, i32 2
-  store { ptr } %field.load, ptr %tuple.field14, align 1
-  %tuple.val15 = load %_Z13InvalidSyntax, ptr %tuple12, align 8
-  %variant.data.ptr16 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 1
-  store %_Z13InvalidSyntax %tuple.val15, ptr %variant.data.ptr16, align 1
-  %variant.val17 = load %_Z11ParserError, ptr %variant.ptr, align 1
-  %throw.data.ptr18 = getelementptr inbounds { i8, [120 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val17, ptr %throw.data.ptr18, align 1
+  %tuple.field11 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple10, i32 0, i32 1
+  store i64 %position, ptr %tuple.field11, align 1
+  %tuple.field12 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple10, i32 0, i32 2
+  store { ptr } { ptr @.sconst.177 }, ptr %tuple.field12, align 1
+  %tuple.val13 = load %_Z13InvalidSyntax, ptr %tuple10, align 8
+  %variant.data.ptr14 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 1
+  store %_Z13InvalidSyntax %tuple.val13, ptr %variant.data.ptr14, align 1
+  %variant.val15 = load %_Z11ParserError, ptr %variant.ptr, align 1
+  %throw.data.ptr16 = getelementptr inbounds { i8, [120 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val15, ptr %throw.data.ptr16, align 1
   ret void
 
 if.end5:                                          ; preds = %if.end
-  %field.inplace19 = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
-  %call20 = call i1 @_ZN5Lexer11parse_colonEv(ptr %field.inplace19)
-  %bitnot21 = xor i1 %call20, true
-  br i1 %bitnot21, label %if.then22, label %if.end23
+  %field.inplace17 = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
+  %call18 = call i1 @_ZN5Lexer11parse_colonEv(ptr %field.inplace17)
+  %bitnot19 = xor i1 %call18, true
+  br i1 %bitnot19, label %if.then20, label %if.end21
 
-if.then22:                                        ; preds = %if.end5
-  %throw.tag.ptr24 = getelementptr inbounds { i8, [120 x i8] }, ptr %0, i32 0, i32 0
-  store i8 1, ptr %throw.tag.ptr24, align 1
-  %variant.tag.ptr25 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 0
-  store i8 1, ptr %variant.tag.ptr25, align 1
-  %load.struct26 = load %_Z6Parser, ptr %2, align 8
-  %lexer27 = extractvalue %_Z6Parser %load.struct26, 0
-  %position28 = extractvalue %_Z5Lexer %lexer27, 3
-  %struct.region29 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.180 }, ptr %arg.tmp11, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region29, ptr %1, ptr %arg.tmp11)
-  %tuple.field30 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple12, i32 0, i32 0
-  store i64 %previous_position, ptr %tuple.field30, align 1
-  %tuple.field31 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple12, i32 0, i32 1
-  store i64 %position28, ptr %tuple.field31, align 1
-  %field.load32 = load { ptr }, ptr %struct.region29, align 8
-  %tuple.field33 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple12, i32 0, i32 2
-  store { ptr } %field.load32, ptr %tuple.field33, align 1
-  %tuple.val34 = load %_Z13InvalidSyntax, ptr %tuple12, align 8
-  %variant.data.ptr35 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 1
-  store %_Z13InvalidSyntax %tuple.val34, ptr %variant.data.ptr35, align 1
-  %variant.val36 = load %_Z11ParserError, ptr %variant.ptr, align 1
-  %throw.data.ptr37 = getelementptr inbounds { i8, [120 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val36, ptr %throw.data.ptr37, align 1
+if.then20:                                        ; preds = %if.end5
+  %throw.tag.ptr22 = getelementptr inbounds { i8, [120 x i8] }, ptr %0, i32 0, i32 0
+  store i8 1, ptr %throw.tag.ptr22, align 1
+  %variant.tag.ptr23 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 0
+  store i8 1, ptr %variant.tag.ptr23, align 1
+  %load.struct24 = load %_Z6Parser, ptr %2, align 8
+  %lexer25 = extractvalue %_Z6Parser %load.struct24, 0
+  %position26 = extractvalue %_Z5Lexer %lexer25, 3
+  %tuple.field27 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple10, i32 0, i32 0
+  store i64 %previous_position, ptr %tuple.field27, align 1
+  %tuple.field28 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple10, i32 0, i32 1
+  store i64 %position26, ptr %tuple.field28, align 1
+  %tuple.field29 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple10, i32 0, i32 2
+  store { ptr } { ptr @.sconst.178 }, ptr %tuple.field29, align 1
+  %tuple.val30 = load %_Z13InvalidSyntax, ptr %tuple10, align 8
+  %variant.data.ptr31 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 1
+  store %_Z13InvalidSyntax %tuple.val30, ptr %variant.data.ptr31, align 1
+  %variant.val32 = load %_Z11ParserError, ptr %variant.ptr, align 1
+  %throw.data.ptr33 = getelementptr inbounds { i8, [120 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val32, ptr %throw.data.ptr33, align 1
   ret void
 
-if.end23:                                         ; preds = %if.end5
-  %load.struct38 = load %_Z6Parser, ptr %2, align 8
-  %lexer39 = extractvalue %_Z6Parser %load.struct38, 0
-  %position40 = extractvalue %_Z5Lexer %lexer39, 3
-  call void @_ZN6Parser10parse_nameEPN4scaly6memory4PageE(ptr noalias sret({ i8, [32 x i8] }) %sret.result41, ptr %1, ptr %2)
-  %tag = load i8, ptr %sret.result41, align 1
-  %throws.data.ptr = getelementptr inbounds i8, ptr %sret.result41, i8 1
+if.end21:                                         ; preds = %if.end5
+  %load.struct34 = load %_Z6Parser, ptr %2, align 8
+  %lexer35 = extractvalue %_Z6Parser %load.struct34, 0
+  %position36 = extractvalue %_Z5Lexer %lexer35, 3
+  call void @_ZN6Parser10parse_nameEPN4scaly6memory4PageE(ptr noalias sret({ i8, [32 x i8] }) %sret.result37, ptr %1, ptr %2)
+  %tag = load i8, ptr %sret.result37, align 1
+  %throws.data.ptr = getelementptr inbounds i8, ptr %sret.result37, i8 1
   switch i8 %tag, label %choose.else [
     i8 1, label %choose.when
-    i8 0, label %choose.when70
+    i8 0, label %choose.when64
   ]
 
-choose.end:                                       ; preds = %choose.else, %choose.when70, %choose.end43
-  %choose.value = phi %_Z10NameSyntax [ %throws.success.val, %choose.when70 ], [ undef, %choose.end43 ], [ undef, %choose.else ]
-  %field.inplace71 = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
-  %call72 = call i1 @_ZN5Lexer11parse_colonEv(ptr %field.inplace71)
-  %load.struct73 = load %_Z6Parser, ptr %2, align 8
-  %lexer74 = extractvalue %_Z6Parser %load.struct73, 0
-  %position75 = extractvalue %_Z5Lexer %lexer74, 3
-  call void @_ZN6Parser15parse_statementEPN4scaly6memory4PageE(ptr noalias sret({ i8, [57 x i8] }) %sret.result76, ptr %1, ptr %2)
-  %tag77 = load i8, ptr %sret.result76, align 1
-  %throws.data.ptr78 = getelementptr inbounds i8, ptr %sret.result76, i8 1
-  switch i8 %tag77, label %choose.else80 [
-    i8 1, label %choose.when81
-    i8 0, label %choose.when113
+choose.end:                                       ; preds = %choose.else, %choose.when64, %choose.end39
+  %choose.value = phi %_Z10NameSyntax [ %throws.success.val, %choose.when64 ], [ undef, %choose.end39 ], [ undef, %choose.else ]
+  %field.inplace65 = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
+  %call66 = call i1 @_ZN5Lexer11parse_colonEv(ptr %field.inplace65)
+  %load.struct67 = load %_Z6Parser, ptr %2, align 8
+  %lexer68 = extractvalue %_Z6Parser %load.struct67, 0
+  %position69 = extractvalue %_Z5Lexer %lexer68, 3
+  call void @_ZN6Parser15parse_statementEPN4scaly6memory4PageE(ptr noalias sret({ i8, [57 x i8] }) %sret.result70, ptr %1, ptr %2)
+  %tag71 = load i8, ptr %sret.result70, align 1
+  %throws.data.ptr72 = getelementptr inbounds i8, ptr %sret.result70, i8 1
+  switch i8 %tag71, label %choose.else74 [
+    i8 1, label %choose.when75
+    i8 0, label %choose.when105
   ]
 
-choose.else:                                      ; preds = %if.end23
+choose.else:                                      ; preds = %if.end21
   br label %choose.end
 
-choose.when:                                      ; preds = %if.end23
+choose.when:                                      ; preds = %if.end21
   %throws.err.val = load %_Z11ParserError, ptr %throws.data.ptr, align 1
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %variant.ptr, ptr align 1 %throws.data.ptr, i64 ptrtoint (ptr getelementptr (%_Z11ParserError, ptr null, i32 1) to i64), i1 false)
   %tag.ptr = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 0
-  %tag42 = load i8, ptr %tag.ptr, align 1
-  switch i8 %tag42, label %choose.else44 [
-    i8 0, label %choose.when45
-    i8 1, label %choose.when62
+  %tag38 = load i8, ptr %tag.ptr, align 1
+  switch i8 %tag38, label %choose.else40 [
+    i8 0, label %choose.when41
+    i8 1, label %choose.when56
   ]
 
-choose.end43:                                     ; preds = %choose.else44
+choose.end39:                                     ; preds = %choose.else40
   br label %choose.end
 
-choose.else44:                                    ; preds = %choose.when
-  br label %choose.end43
+choose.else40:                                    ; preds = %choose.when
+  br label %choose.end39
 
-choose.when45:                                    ; preds = %choose.when
+choose.when41:                                    ; preds = %choose.when
   %"variant.c_data().ptr" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 1
-  %variant.val46 = load %_Z15DifferentSyntax, ptr %"variant.c_data().ptr", align 1
-  %throw.tag.ptr47 = getelementptr inbounds { i8, [120 x i8] }, ptr %0, i32 0, i32 0
-  store i8 1, ptr %throw.tag.ptr47, align 1
-  %variant.tag.ptr49 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr48, i32 0, i32 0
-  store i8 1, ptr %variant.tag.ptr49, align 1
-  %load.struct50 = load %_Z6Parser, ptr %2, align 8
-  %lexer51 = extractvalue %_Z6Parser %load.struct50, 0
-  %position52 = extractvalue %_Z5Lexer %lexer51, 3
-  %struct.region53 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.181 }, ptr %arg.tmp11, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region53, ptr %1, ptr %arg.tmp11)
-  %tuple.field54 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple12, i32 0, i32 0
-  store i64 %position40, ptr %tuple.field54, align 1
-  %tuple.field55 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple12, i32 0, i32 1
-  store i64 %position52, ptr %tuple.field55, align 1
-  %field.load56 = load { ptr }, ptr %struct.region53, align 8
-  %tuple.field57 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple12, i32 0, i32 2
-  store { ptr } %field.load56, ptr %tuple.field57, align 1
-  %tuple.val58 = load %_Z13InvalidSyntax, ptr %tuple12, align 8
-  %variant.data.ptr59 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr48, i32 0, i32 1
-  store %_Z13InvalidSyntax %tuple.val58, ptr %variant.data.ptr59, align 1
-  %variant.val60 = load %_Z11ParserError, ptr %variant.ptr48, align 1
-  %throw.data.ptr61 = getelementptr inbounds { i8, [120 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val60, ptr %throw.data.ptr61, align 1
+  %variant.val42 = load %_Z15DifferentSyntax, ptr %"variant.c_data().ptr", align 1
+  %throw.tag.ptr43 = getelementptr inbounds { i8, [120 x i8] }, ptr %0, i32 0, i32 0
+  store i8 1, ptr %throw.tag.ptr43, align 1
+  %variant.tag.ptr45 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr44, i32 0, i32 0
+  store i8 1, ptr %variant.tag.ptr45, align 1
+  %load.struct46 = load %_Z6Parser, ptr %2, align 8
+  %lexer47 = extractvalue %_Z6Parser %load.struct46, 0
+  %position48 = extractvalue %_Z5Lexer %lexer47, 3
+  %tuple.field49 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple10, i32 0, i32 0
+  store i64 %position36, ptr %tuple.field49, align 1
+  %tuple.field50 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple10, i32 0, i32 1
+  store i64 %position48, ptr %tuple.field50, align 1
+  %tuple.field51 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple10, i32 0, i32 2
+  store { ptr } { ptr @.sconst.179 }, ptr %tuple.field51, align 1
+  %tuple.val52 = load %_Z13InvalidSyntax, ptr %tuple10, align 8
+  %variant.data.ptr53 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr44, i32 0, i32 1
+  store %_Z13InvalidSyntax %tuple.val52, ptr %variant.data.ptr53, align 1
+  %variant.val54 = load %_Z11ParserError, ptr %variant.ptr44, align 1
+  %throw.data.ptr55 = getelementptr inbounds { i8, [120 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val54, ptr %throw.data.ptr55, align 1
   ret void
 
-choose.when62:                                    ; preds = %choose.when
-  %"variant.c_data().ptr63" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 1
-  %variant.val64 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr63", align 8
-  %throw.tag.ptr65 = getelementptr inbounds { i8, [120 x i8] }, ptr %0, i32 0, i32 0
-  store i8 1, ptr %throw.tag.ptr65, align 1
-  %variant.tag.ptr66 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr48, i32 0, i32 0
-  store i8 1, ptr %variant.tag.ptr66, align 1
-  %variant.data.ptr67 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr48, i32 0, i32 1
-  store %_Z13InvalidSyntax %variant.val64, ptr %variant.data.ptr67, align 1
-  %variant.val68 = load %_Z11ParserError, ptr %variant.ptr48, align 1
-  %throw.data.ptr69 = getelementptr inbounds { i8, [120 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val68, ptr %throw.data.ptr69, align 1
+choose.when56:                                    ; preds = %choose.when
+  %"variant.c_data().ptr57" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 1
+  %variant.val58 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr57", align 8
+  %throw.tag.ptr59 = getelementptr inbounds { i8, [120 x i8] }, ptr %0, i32 0, i32 0
+  store i8 1, ptr %throw.tag.ptr59, align 1
+  %variant.tag.ptr60 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr44, i32 0, i32 0
+  store i8 1, ptr %variant.tag.ptr60, align 1
+  %variant.data.ptr61 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr44, i32 0, i32 1
+  store %_Z13InvalidSyntax %variant.val58, ptr %variant.data.ptr61, align 1
+  %variant.val62 = load %_Z11ParserError, ptr %variant.ptr44, align 1
+  %throw.data.ptr63 = getelementptr inbounds { i8, [120 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val62, ptr %throw.data.ptr63, align 1
   ret void
 
-choose.when70:                                    ; preds = %if.end23
+choose.when64:                                    ; preds = %if.end21
   %throws.success.val = load %_Z10NameSyntax, ptr %throws.data.ptr, align 1
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %variant, ptr align 1 %throws.data.ptr, i64 ptrtoint (ptr getelementptr (%_Z10NameSyntax, ptr null, i32 1) to i64), i1 false)
   br label %choose.end
 
-choose.end79:                                     ; preds = %choose.else80, %choose.when113, %choose.end85
-  %choose.value115 = phi %_Z15StatementSyntax [ %throws.success.val114, %choose.when113 ], [ undef, %choose.end85 ], [ undef, %choose.else80 ]
-  %field.inplace116 = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
-  %call117 = call i1 @_ZN5Lexer11parse_colonEv(ptr %field.inplace116)
-  %load.struct118 = load %_Z6Parser, ptr %2, align 8
-  %lexer119 = extractvalue %_Z6Parser %load.struct118, 0
-  %position120 = extractvalue %_Z5Lexer %lexer119, 3
-  %variant121 = load %_Z10NameSyntax, ptr %variant, align 8
-  %statement122 = load %_Z15StatementSyntax, ptr %statement, align 1
-  %tuple.field124 = getelementptr inbounds %_Z10WhenSyntax, ptr %tuple123, i32 0, i32 0
-  store i64 %previous_position, ptr %tuple.field124, align 1
-  %tuple.field125 = getelementptr inbounds %_Z10WhenSyntax, ptr %tuple123, i32 0, i32 1
-  store i64 %position120, ptr %tuple.field125, align 1
-  %field.load126 = load { ptr }, ptr %sret.result, align 8
-  %tuple.field127 = getelementptr inbounds %_Z10WhenSyntax, ptr %tuple123, i32 0, i32 2
-  store { ptr } %field.load126, ptr %tuple.field127, align 1
-  %tuple.field128 = getelementptr inbounds %_Z10WhenSyntax, ptr %tuple123, i32 0, i32 3
-  store %_Z10NameSyntax %variant121, ptr %tuple.field128, align 1
-  %tuple.field129 = getelementptr inbounds %_Z10WhenSyntax, ptr %tuple123, i32 0, i32 4
-  store %_Z15StatementSyntax %statement122, ptr %tuple.field129, align 1
-  %tuple.val130 = load %_Z10WhenSyntax, ptr %tuple123, align 8
+choose.end73:                                     ; preds = %choose.else74, %choose.when105, %choose.end79
+  %choose.value107 = phi %_Z15StatementSyntax [ %throws.success.val106, %choose.when105 ], [ undef, %choose.end79 ], [ undef, %choose.else74 ]
+  %field.inplace108 = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
+  %call109 = call i1 @_ZN5Lexer11parse_colonEv(ptr %field.inplace108)
+  %load.struct110 = load %_Z6Parser, ptr %2, align 8
+  %lexer111 = extractvalue %_Z6Parser %load.struct110, 0
+  %position112 = extractvalue %_Z5Lexer %lexer111, 3
+  %variant113 = load %_Z10NameSyntax, ptr %variant, align 8
+  %statement114 = load %_Z15StatementSyntax, ptr %statement, align 1
+  %tuple.field116 = getelementptr inbounds %_Z10WhenSyntax, ptr %tuple115, i32 0, i32 0
+  store i64 %previous_position, ptr %tuple.field116, align 1
+  %tuple.field117 = getelementptr inbounds %_Z10WhenSyntax, ptr %tuple115, i32 0, i32 1
+  store i64 %position112, ptr %tuple.field117, align 1
+  %field.load = load { ptr }, ptr %sret.result, align 8
+  %tuple.field118 = getelementptr inbounds %_Z10WhenSyntax, ptr %tuple115, i32 0, i32 2
+  store { ptr } %field.load, ptr %tuple.field118, align 1
+  %tuple.field119 = getelementptr inbounds %_Z10WhenSyntax, ptr %tuple115, i32 0, i32 3
+  store %_Z10NameSyntax %variant113, ptr %tuple.field119, align 1
+  %tuple.field120 = getelementptr inbounds %_Z10WhenSyntax, ptr %tuple115, i32 0, i32 4
+  store %_Z15StatementSyntax %statement114, ptr %tuple.field120, align 1
+  %tuple.val121 = load %_Z10WhenSyntax, ptr %tuple115, align 8
   %ret.tag.ptr = getelementptr inbounds { i8, [120 x i8] }, ptr %0, i32 0, i32 0
   store i8 0, ptr %ret.tag.ptr, align 1
   %ret.data.ptr = getelementptr inbounds { i8, [120 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z10WhenSyntax %tuple.val130, ptr %ret.data.ptr, align 1
+  store %_Z10WhenSyntax %tuple.val121, ptr %ret.data.ptr, align 1
   ret void
 
-choose.else80:                                    ; preds = %choose.end
-  br label %choose.end79
+choose.else74:                                    ; preds = %choose.end
+  br label %choose.end73
 
-choose.when81:                                    ; preds = %choose.end
-  %throws.err.val82 = load %_Z11ParserError, ptr %throws.data.ptr78, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %variant.ptr48, ptr align 1 %throws.data.ptr78, i64 ptrtoint (ptr getelementptr (%_Z11ParserError, ptr null, i32 1) to i64), i1 false)
-  %tag.ptr83 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr48, i32 0, i32 0
-  %tag84 = load i8, ptr %tag.ptr83, align 1
-  switch i8 %tag84, label %choose.else86 [
-    i8 0, label %choose.when87
-    i8 1, label %choose.when105
+choose.when75:                                    ; preds = %choose.end
+  %throws.err.val76 = load %_Z11ParserError, ptr %throws.data.ptr72, align 1
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %variant.ptr44, ptr align 1 %throws.data.ptr72, i64 ptrtoint (ptr getelementptr (%_Z11ParserError, ptr null, i32 1) to i64), i1 false)
+  %tag.ptr77 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr44, i32 0, i32 0
+  %tag78 = load i8, ptr %tag.ptr77, align 1
+  switch i8 %tag78, label %choose.else80 [
+    i8 0, label %choose.when81
+    i8 1, label %choose.when97
   ]
 
-choose.end85:                                     ; preds = %choose.else86
+choose.end79:                                     ; preds = %choose.else80
+  br label %choose.end73
+
+choose.else80:                                    ; preds = %choose.when75
   br label %choose.end79
 
-choose.else86:                                    ; preds = %choose.when81
-  br label %choose.end85
+choose.when81:                                    ; preds = %choose.when75
+  %"variant.c_data().ptr82" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr44, i32 0, i32 1
+  %variant.val83 = load %_Z15DifferentSyntax, ptr %"variant.c_data().ptr82", align 1
+  %throw.tag.ptr84 = getelementptr inbounds { i8, [120 x i8] }, ptr %0, i32 0, i32 0
+  store i8 1, ptr %throw.tag.ptr84, align 1
+  %variant.tag.ptr86 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr85, i32 0, i32 0
+  store i8 1, ptr %variant.tag.ptr86, align 1
+  %load.struct87 = load %_Z6Parser, ptr %2, align 8
+  %lexer88 = extractvalue %_Z6Parser %load.struct87, 0
+  %position89 = extractvalue %_Z5Lexer %lexer88, 3
+  %tuple.field90 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple10, i32 0, i32 0
+  store i64 %position69, ptr %tuple.field90, align 1
+  %tuple.field91 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple10, i32 0, i32 1
+  store i64 %position89, ptr %tuple.field91, align 1
+  %tuple.field92 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple10, i32 0, i32 2
+  store { ptr } { ptr @.sconst.180 }, ptr %tuple.field92, align 1
+  %tuple.val93 = load %_Z13InvalidSyntax, ptr %tuple10, align 8
+  %variant.data.ptr94 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr85, i32 0, i32 1
+  store %_Z13InvalidSyntax %tuple.val93, ptr %variant.data.ptr94, align 1
+  %variant.val95 = load %_Z11ParserError, ptr %variant.ptr85, align 1
+  %throw.data.ptr96 = getelementptr inbounds { i8, [120 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val95, ptr %throw.data.ptr96, align 1
+  ret void
 
-choose.when87:                                    ; preds = %choose.when81
-  %"variant.c_data().ptr88" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr48, i32 0, i32 1
-  %variant.val89 = load %_Z15DifferentSyntax, ptr %"variant.c_data().ptr88", align 1
-  %throw.tag.ptr90 = getelementptr inbounds { i8, [120 x i8] }, ptr %0, i32 0, i32 0
-  store i8 1, ptr %throw.tag.ptr90, align 1
-  %variant.tag.ptr92 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr91, i32 0, i32 0
-  store i8 1, ptr %variant.tag.ptr92, align 1
-  %load.struct93 = load %_Z6Parser, ptr %2, align 8
-  %lexer94 = extractvalue %_Z6Parser %load.struct93, 0
-  %position95 = extractvalue %_Z5Lexer %lexer94, 3
-  %struct.region96 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.182 }, ptr %arg.tmp11, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region96, ptr %1, ptr %arg.tmp11)
-  %tuple.field97 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple12, i32 0, i32 0
-  store i64 %position75, ptr %tuple.field97, align 1
-  %tuple.field98 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple12, i32 0, i32 1
-  store i64 %position95, ptr %tuple.field98, align 1
-  %field.load99 = load { ptr }, ptr %struct.region96, align 8
-  %tuple.field100 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple12, i32 0, i32 2
-  store { ptr } %field.load99, ptr %tuple.field100, align 1
-  %tuple.val101 = load %_Z13InvalidSyntax, ptr %tuple12, align 8
-  %variant.data.ptr102 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr91, i32 0, i32 1
-  store %_Z13InvalidSyntax %tuple.val101, ptr %variant.data.ptr102, align 1
-  %variant.val103 = load %_Z11ParserError, ptr %variant.ptr91, align 1
+choose.when97:                                    ; preds = %choose.when75
+  %"variant.c_data().ptr98" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr44, i32 0, i32 1
+  %variant.val99 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr98", align 8
+  %throw.tag.ptr100 = getelementptr inbounds { i8, [120 x i8] }, ptr %0, i32 0, i32 0
+  store i8 1, ptr %throw.tag.ptr100, align 1
+  %variant.tag.ptr101 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr85, i32 0, i32 0
+  store i8 1, ptr %variant.tag.ptr101, align 1
+  %variant.data.ptr102 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr85, i32 0, i32 1
+  store %_Z13InvalidSyntax %variant.val99, ptr %variant.data.ptr102, align 1
+  %variant.val103 = load %_Z11ParserError, ptr %variant.ptr85, align 1
   %throw.data.ptr104 = getelementptr inbounds { i8, [120 x i8] }, ptr %0, i32 0, i32 1
   store %_Z11ParserError %variant.val103, ptr %throw.data.ptr104, align 1
   ret void
 
-choose.when105:                                   ; preds = %choose.when81
-  %"variant.c_data().ptr106" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr48, i32 0, i32 1
-  %variant.val107 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr106", align 8
-  %throw.tag.ptr108 = getelementptr inbounds { i8, [120 x i8] }, ptr %0, i32 0, i32 0
-  store i8 1, ptr %throw.tag.ptr108, align 1
-  %variant.tag.ptr109 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr91, i32 0, i32 0
-  store i8 1, ptr %variant.tag.ptr109, align 1
-  %variant.data.ptr110 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr91, i32 0, i32 1
-  store %_Z13InvalidSyntax %variant.val107, ptr %variant.data.ptr110, align 1
-  %variant.val111 = load %_Z11ParserError, ptr %variant.ptr91, align 1
-  %throw.data.ptr112 = getelementptr inbounds { i8, [120 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val111, ptr %throw.data.ptr112, align 1
-  ret void
-
-choose.when113:                                   ; preds = %choose.end
-  %throws.success.val114 = load %_Z15StatementSyntax, ptr %throws.data.ptr78, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %statement, ptr align 1 %throws.data.ptr78, i64 ptrtoint (ptr getelementptr (%_Z15StatementSyntax, ptr null, i32 1) to i64), i1 false)
-  br label %choose.end79
+choose.when105:                                   ; preds = %choose.end
+  %throws.success.val106 = load %_Z15StatementSyntax, ptr %throws.data.ptr72, align 1
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %statement, ptr align 1 %throws.data.ptr72, i64 ptrtoint (ptr getelementptr (%_Z15StatementSyntax, ptr null, i32 1) to i64), i1 false)
+  br label %choose.end73
 }
 
 define linkonce_odr ptr @_ZN4ListI15StatementSyntaxE8get_headEPN4scaly6memory4PageE(ptr %0, ptr %1) {
@@ -46342,7 +44959,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.183)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.181)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -46846,7 +45463,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.184)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.182)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -47815,9 +46432,8 @@ choose.when277:                                   ; preds = %choose.end227
 
 define linkonce_odr void @_ZN6Parser9parse_letEPN4scaly6memory4PageE(ptr noalias sret({ i8, [56 x i8] }) %0, ptr %1, ptr %2) {
 entry:
-  %tuple36 = alloca %_Z9LetSyntax, align 8
-  %tuple16 = alloca %_Z13InvalidSyntax, align 8
-  %arg.tmp15 = alloca { ptr }, align 8
+  %tuple34 = alloca %_Z9LetSyntax, align 8
+  %tuple14 = alloca %_Z13InvalidSyntax, align 8
   %variant.ptr9 = alloca %_Z11ParserError, align 8
   %sret.result = alloca { i8, [40 x i8] }, align 8
   %binding = alloca %_Z13BindingSyntax, align 8
@@ -47827,11 +46443,9 @@ entry:
   %lexer = extractvalue %_Z6Parser %load.struct, 0
   %previous_position = extractvalue %_Z5Lexer %lexer, 4
   %field.inplace = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
   %arg.tmp = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.185 }, ptr %arg.tmp, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region, ptr %1, ptr %arg.tmp)
-  %call = call i1 @_ZN5Lexer13parse_keywordE6String(ptr %field.inplace, ptr %struct.region)
+  store { ptr } { ptr @.sconst.183 }, ptr %arg.tmp, align 1
+  %call = call i1 @_ZN5Lexer13parse_keywordE6String(ptr %field.inplace, ptr %arg.tmp)
   %bitnot = xor i1 %call, true
   br i1 %bitnot, label %if.then, label %if.end
 
@@ -47858,26 +46472,26 @@ if.end:                                           ; preds = %entry
   %throws.data.ptr = getelementptr inbounds i8, ptr %sret.result, i8 1
   switch i8 %tag, label %choose.else [
     i8 1, label %choose.when
-    i8 0, label %choose.when31
+    i8 0, label %choose.when29
   ]
 
-choose.end:                                       ; preds = %choose.else, %choose.when31, %choose.end4
-  %choose.value = phi %_Z13BindingSyntax [ %throws.success.val, %choose.when31 ], [ undef, %choose.end4 ], [ undef, %choose.else ]
-  %load.struct32 = load %_Z6Parser, ptr %2, align 8
-  %lexer33 = extractvalue %_Z6Parser %load.struct32, 0
-  %position34 = extractvalue %_Z5Lexer %lexer33, 3
-  %binding35 = load %_Z13BindingSyntax, ptr %binding, align 8
-  %tuple.field37 = getelementptr inbounds %_Z9LetSyntax, ptr %tuple36, i32 0, i32 0
-  store i64 %previous_position, ptr %tuple.field37, align 1
-  %tuple.field38 = getelementptr inbounds %_Z9LetSyntax, ptr %tuple36, i32 0, i32 1
-  store i64 %position34, ptr %tuple.field38, align 1
-  %tuple.field39 = getelementptr inbounds %_Z9LetSyntax, ptr %tuple36, i32 0, i32 2
-  store %_Z13BindingSyntax %binding35, ptr %tuple.field39, align 1
-  %tuple.val40 = load %_Z9LetSyntax, ptr %tuple36, align 8
+choose.end:                                       ; preds = %choose.else, %choose.when29, %choose.end4
+  %choose.value = phi %_Z13BindingSyntax [ %throws.success.val, %choose.when29 ], [ undef, %choose.end4 ], [ undef, %choose.else ]
+  %load.struct30 = load %_Z6Parser, ptr %2, align 8
+  %lexer31 = extractvalue %_Z6Parser %load.struct30, 0
+  %position32 = extractvalue %_Z5Lexer %lexer31, 3
+  %binding33 = load %_Z13BindingSyntax, ptr %binding, align 8
+  %tuple.field35 = getelementptr inbounds %_Z9LetSyntax, ptr %tuple34, i32 0, i32 0
+  store i64 %previous_position, ptr %tuple.field35, align 1
+  %tuple.field36 = getelementptr inbounds %_Z9LetSyntax, ptr %tuple34, i32 0, i32 1
+  store i64 %position32, ptr %tuple.field36, align 1
+  %tuple.field37 = getelementptr inbounds %_Z9LetSyntax, ptr %tuple34, i32 0, i32 2
+  store %_Z13BindingSyntax %binding33, ptr %tuple.field37, align 1
+  %tuple.val38 = load %_Z9LetSyntax, ptr %tuple34, align 8
   %ret.tag.ptr = getelementptr inbounds { i8, [56 x i8] }, ptr %0, i32 0, i32 0
   store i8 0, ptr %ret.tag.ptr, align 1
   %ret.data.ptr = getelementptr inbounds { i8, [56 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z9LetSyntax %tuple.val40, ptr %ret.data.ptr, align 1
+  store %_Z9LetSyntax %tuple.val38, ptr %ret.data.ptr, align 1
   ret void
 
 choose.else:                                      ; preds = %if.end
@@ -47890,7 +46504,7 @@ choose.when:                                      ; preds = %if.end
   %tag3 = load i8, ptr %tag.ptr, align 1
   switch i8 %tag3, label %choose.else5 [
     i8 0, label %choose.when6
-    i8 1, label %choose.when23
+    i8 1, label %choose.when21
   ]
 
 choose.end4:                                      ; preds = %choose.else5
@@ -47909,39 +46523,35 @@ choose.when6:                                     ; preds = %choose.when
   %load.struct11 = load %_Z6Parser, ptr %2, align 8
   %lexer12 = extractvalue %_Z6Parser %load.struct11, 0
   %position13 = extractvalue %_Z5Lexer %lexer12, 3
-  %struct.region14 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.186 }, ptr %arg.tmp15, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region14, ptr %1, ptr %arg.tmp15)
-  %tuple.field = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 0
+  %tuple.field = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 0
   store i64 %position, ptr %tuple.field, align 1
-  %tuple.field17 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 1
-  store i64 %position13, ptr %tuple.field17, align 1
-  %field.load = load { ptr }, ptr %struct.region14, align 8
-  %tuple.field18 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 2
-  store { ptr } %field.load, ptr %tuple.field18, align 1
-  %tuple.val19 = load %_Z13InvalidSyntax, ptr %tuple16, align 8
-  %variant.data.ptr20 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
-  store %_Z13InvalidSyntax %tuple.val19, ptr %variant.data.ptr20, align 1
-  %variant.val21 = load %_Z11ParserError, ptr %variant.ptr9, align 1
-  %throw.data.ptr22 = getelementptr inbounds { i8, [56 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val21, ptr %throw.data.ptr22, align 1
+  %tuple.field15 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 1
+  store i64 %position13, ptr %tuple.field15, align 1
+  %tuple.field16 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 2
+  store { ptr } { ptr @.sconst.184 }, ptr %tuple.field16, align 1
+  %tuple.val17 = load %_Z13InvalidSyntax, ptr %tuple14, align 8
+  %variant.data.ptr18 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
+  store %_Z13InvalidSyntax %tuple.val17, ptr %variant.data.ptr18, align 1
+  %variant.val19 = load %_Z11ParserError, ptr %variant.ptr9, align 1
+  %throw.data.ptr20 = getelementptr inbounds { i8, [56 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val19, ptr %throw.data.ptr20, align 1
   ret void
 
-choose.when23:                                    ; preds = %choose.when
-  %"variant.c_data().ptr24" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 1
-  %variant.val25 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr24", align 8
-  %throw.tag.ptr26 = getelementptr inbounds { i8, [56 x i8] }, ptr %0, i32 0, i32 0
-  store i8 1, ptr %throw.tag.ptr26, align 1
-  %variant.tag.ptr27 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 0
-  store i8 1, ptr %variant.tag.ptr27, align 1
-  %variant.data.ptr28 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
-  store %_Z13InvalidSyntax %variant.val25, ptr %variant.data.ptr28, align 1
-  %variant.val29 = load %_Z11ParserError, ptr %variant.ptr9, align 1
-  %throw.data.ptr30 = getelementptr inbounds { i8, [56 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val29, ptr %throw.data.ptr30, align 1
+choose.when21:                                    ; preds = %choose.when
+  %"variant.c_data().ptr22" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 1
+  %variant.val23 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr22", align 8
+  %throw.tag.ptr24 = getelementptr inbounds { i8, [56 x i8] }, ptr %0, i32 0, i32 0
+  store i8 1, ptr %throw.tag.ptr24, align 1
+  %variant.tag.ptr25 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 0
+  store i8 1, ptr %variant.tag.ptr25, align 1
+  %variant.data.ptr26 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
+  store %_Z13InvalidSyntax %variant.val23, ptr %variant.data.ptr26, align 1
+  %variant.val27 = load %_Z11ParserError, ptr %variant.ptr9, align 1
+  %throw.data.ptr28 = getelementptr inbounds { i8, [56 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val27, ptr %throw.data.ptr28, align 1
   ret void
 
-choose.when31:                                    ; preds = %if.end
+choose.when29:                                    ; preds = %if.end
   %throws.success.val = load %_Z13BindingSyntax, ptr %throws.data.ptr, align 1
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %binding, ptr align 1 %throws.data.ptr, i64 ptrtoint (ptr getelementptr (%_Z13BindingSyntax, ptr null, i32 1) to i64), i1 false)
   br label %choose.end
@@ -47949,9 +46559,8 @@ choose.when31:                                    ; preds = %if.end
 
 define linkonce_odr void @_ZN6Parser9parse_varEPN4scaly6memory4PageE(ptr noalias sret({ i8, [56 x i8] }) %0, ptr %1, ptr %2) {
 entry:
-  %tuple36 = alloca %_Z9VarSyntax, align 8
-  %tuple16 = alloca %_Z13InvalidSyntax, align 8
-  %arg.tmp15 = alloca { ptr }, align 8
+  %tuple34 = alloca %_Z9VarSyntax, align 8
+  %tuple14 = alloca %_Z13InvalidSyntax, align 8
   %variant.ptr9 = alloca %_Z11ParserError, align 8
   %sret.result = alloca { i8, [40 x i8] }, align 8
   %binding = alloca %_Z13BindingSyntax, align 8
@@ -47961,11 +46570,9 @@ entry:
   %lexer = extractvalue %_Z6Parser %load.struct, 0
   %previous_position = extractvalue %_Z5Lexer %lexer, 4
   %field.inplace = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
   %arg.tmp = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.187 }, ptr %arg.tmp, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region, ptr %1, ptr %arg.tmp)
-  %call = call i1 @_ZN5Lexer13parse_keywordE6String(ptr %field.inplace, ptr %struct.region)
+  store { ptr } { ptr @.sconst.185 }, ptr %arg.tmp, align 1
+  %call = call i1 @_ZN5Lexer13parse_keywordE6String(ptr %field.inplace, ptr %arg.tmp)
   %bitnot = xor i1 %call, true
   br i1 %bitnot, label %if.then, label %if.end
 
@@ -47992,26 +46599,26 @@ if.end:                                           ; preds = %entry
   %throws.data.ptr = getelementptr inbounds i8, ptr %sret.result, i8 1
   switch i8 %tag, label %choose.else [
     i8 1, label %choose.when
-    i8 0, label %choose.when31
+    i8 0, label %choose.when29
   ]
 
-choose.end:                                       ; preds = %choose.else, %choose.when31, %choose.end4
-  %choose.value = phi %_Z13BindingSyntax [ %throws.success.val, %choose.when31 ], [ undef, %choose.end4 ], [ undef, %choose.else ]
-  %load.struct32 = load %_Z6Parser, ptr %2, align 8
-  %lexer33 = extractvalue %_Z6Parser %load.struct32, 0
-  %position34 = extractvalue %_Z5Lexer %lexer33, 3
-  %binding35 = load %_Z13BindingSyntax, ptr %binding, align 8
-  %tuple.field37 = getelementptr inbounds %_Z9VarSyntax, ptr %tuple36, i32 0, i32 0
-  store i64 %previous_position, ptr %tuple.field37, align 1
-  %tuple.field38 = getelementptr inbounds %_Z9VarSyntax, ptr %tuple36, i32 0, i32 1
-  store i64 %position34, ptr %tuple.field38, align 1
-  %tuple.field39 = getelementptr inbounds %_Z9VarSyntax, ptr %tuple36, i32 0, i32 2
-  store %_Z13BindingSyntax %binding35, ptr %tuple.field39, align 1
-  %tuple.val40 = load %_Z9VarSyntax, ptr %tuple36, align 8
+choose.end:                                       ; preds = %choose.else, %choose.when29, %choose.end4
+  %choose.value = phi %_Z13BindingSyntax [ %throws.success.val, %choose.when29 ], [ undef, %choose.end4 ], [ undef, %choose.else ]
+  %load.struct30 = load %_Z6Parser, ptr %2, align 8
+  %lexer31 = extractvalue %_Z6Parser %load.struct30, 0
+  %position32 = extractvalue %_Z5Lexer %lexer31, 3
+  %binding33 = load %_Z13BindingSyntax, ptr %binding, align 8
+  %tuple.field35 = getelementptr inbounds %_Z9VarSyntax, ptr %tuple34, i32 0, i32 0
+  store i64 %previous_position, ptr %tuple.field35, align 1
+  %tuple.field36 = getelementptr inbounds %_Z9VarSyntax, ptr %tuple34, i32 0, i32 1
+  store i64 %position32, ptr %tuple.field36, align 1
+  %tuple.field37 = getelementptr inbounds %_Z9VarSyntax, ptr %tuple34, i32 0, i32 2
+  store %_Z13BindingSyntax %binding33, ptr %tuple.field37, align 1
+  %tuple.val38 = load %_Z9VarSyntax, ptr %tuple34, align 8
   %ret.tag.ptr = getelementptr inbounds { i8, [56 x i8] }, ptr %0, i32 0, i32 0
   store i8 0, ptr %ret.tag.ptr, align 1
   %ret.data.ptr = getelementptr inbounds { i8, [56 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z9VarSyntax %tuple.val40, ptr %ret.data.ptr, align 1
+  store %_Z9VarSyntax %tuple.val38, ptr %ret.data.ptr, align 1
   ret void
 
 choose.else:                                      ; preds = %if.end
@@ -48024,7 +46631,7 @@ choose.when:                                      ; preds = %if.end
   %tag3 = load i8, ptr %tag.ptr, align 1
   switch i8 %tag3, label %choose.else5 [
     i8 0, label %choose.when6
-    i8 1, label %choose.when23
+    i8 1, label %choose.when21
   ]
 
 choose.end4:                                      ; preds = %choose.else5
@@ -48043,39 +46650,35 @@ choose.when6:                                     ; preds = %choose.when
   %load.struct11 = load %_Z6Parser, ptr %2, align 8
   %lexer12 = extractvalue %_Z6Parser %load.struct11, 0
   %position13 = extractvalue %_Z5Lexer %lexer12, 3
-  %struct.region14 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.188 }, ptr %arg.tmp15, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region14, ptr %1, ptr %arg.tmp15)
-  %tuple.field = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 0
+  %tuple.field = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 0
   store i64 %position, ptr %tuple.field, align 1
-  %tuple.field17 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 1
-  store i64 %position13, ptr %tuple.field17, align 1
-  %field.load = load { ptr }, ptr %struct.region14, align 8
-  %tuple.field18 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 2
-  store { ptr } %field.load, ptr %tuple.field18, align 1
-  %tuple.val19 = load %_Z13InvalidSyntax, ptr %tuple16, align 8
-  %variant.data.ptr20 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
-  store %_Z13InvalidSyntax %tuple.val19, ptr %variant.data.ptr20, align 1
-  %variant.val21 = load %_Z11ParserError, ptr %variant.ptr9, align 1
-  %throw.data.ptr22 = getelementptr inbounds { i8, [56 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val21, ptr %throw.data.ptr22, align 1
+  %tuple.field15 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 1
+  store i64 %position13, ptr %tuple.field15, align 1
+  %tuple.field16 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 2
+  store { ptr } { ptr @.sconst.186 }, ptr %tuple.field16, align 1
+  %tuple.val17 = load %_Z13InvalidSyntax, ptr %tuple14, align 8
+  %variant.data.ptr18 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
+  store %_Z13InvalidSyntax %tuple.val17, ptr %variant.data.ptr18, align 1
+  %variant.val19 = load %_Z11ParserError, ptr %variant.ptr9, align 1
+  %throw.data.ptr20 = getelementptr inbounds { i8, [56 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val19, ptr %throw.data.ptr20, align 1
   ret void
 
-choose.when23:                                    ; preds = %choose.when
-  %"variant.c_data().ptr24" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 1
-  %variant.val25 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr24", align 8
-  %throw.tag.ptr26 = getelementptr inbounds { i8, [56 x i8] }, ptr %0, i32 0, i32 0
-  store i8 1, ptr %throw.tag.ptr26, align 1
-  %variant.tag.ptr27 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 0
-  store i8 1, ptr %variant.tag.ptr27, align 1
-  %variant.data.ptr28 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
-  store %_Z13InvalidSyntax %variant.val25, ptr %variant.data.ptr28, align 1
-  %variant.val29 = load %_Z11ParserError, ptr %variant.ptr9, align 1
-  %throw.data.ptr30 = getelementptr inbounds { i8, [56 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val29, ptr %throw.data.ptr30, align 1
+choose.when21:                                    ; preds = %choose.when
+  %"variant.c_data().ptr22" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 1
+  %variant.val23 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr22", align 8
+  %throw.tag.ptr24 = getelementptr inbounds { i8, [56 x i8] }, ptr %0, i32 0, i32 0
+  store i8 1, ptr %throw.tag.ptr24, align 1
+  %variant.tag.ptr25 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 0
+  store i8 1, ptr %variant.tag.ptr25, align 1
+  %variant.data.ptr26 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
+  store %_Z13InvalidSyntax %variant.val23, ptr %variant.data.ptr26, align 1
+  %variant.val27 = load %_Z11ParserError, ptr %variant.ptr9, align 1
+  %throw.data.ptr28 = getelementptr inbounds { i8, [56 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val27, ptr %throw.data.ptr28, align 1
   ret void
 
-choose.when31:                                    ; preds = %if.end
+choose.when29:                                    ; preds = %if.end
   %throws.success.val = load %_Z13BindingSyntax, ptr %throws.data.ptr, align 1
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %binding, ptr align 1 %throws.data.ptr, i64 ptrtoint (ptr getelementptr (%_Z13BindingSyntax, ptr null, i32 1) to i64), i1 false)
   br label %choose.end
@@ -48083,9 +46686,8 @@ choose.when31:                                    ; preds = %if.end
 
 define linkonce_odr void @_ZN6Parser13parse_mutableEPN4scaly6memory4PageE(ptr noalias sret({ i8, [56 x i8] }) %0, ptr %1, ptr %2) {
 entry:
-  %tuple36 = alloca %_Z13MutableSyntax, align 8
-  %tuple16 = alloca %_Z13InvalidSyntax, align 8
-  %arg.tmp15 = alloca { ptr }, align 8
+  %tuple34 = alloca %_Z13MutableSyntax, align 8
+  %tuple14 = alloca %_Z13InvalidSyntax, align 8
   %variant.ptr9 = alloca %_Z11ParserError, align 8
   %sret.result = alloca { i8, [40 x i8] }, align 8
   %binding = alloca %_Z13BindingSyntax, align 8
@@ -48095,11 +46697,9 @@ entry:
   %lexer = extractvalue %_Z6Parser %load.struct, 0
   %previous_position = extractvalue %_Z5Lexer %lexer, 4
   %field.inplace = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
   %arg.tmp = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.189 }, ptr %arg.tmp, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region, ptr %1, ptr %arg.tmp)
-  %call = call i1 @_ZN5Lexer13parse_keywordE6String(ptr %field.inplace, ptr %struct.region)
+  store { ptr } { ptr @.sconst.187 }, ptr %arg.tmp, align 1
+  %call = call i1 @_ZN5Lexer13parse_keywordE6String(ptr %field.inplace, ptr %arg.tmp)
   %bitnot = xor i1 %call, true
   br i1 %bitnot, label %if.then, label %if.end
 
@@ -48126,26 +46726,26 @@ if.end:                                           ; preds = %entry
   %throws.data.ptr = getelementptr inbounds i8, ptr %sret.result, i8 1
   switch i8 %tag, label %choose.else [
     i8 1, label %choose.when
-    i8 0, label %choose.when31
+    i8 0, label %choose.when29
   ]
 
-choose.end:                                       ; preds = %choose.else, %choose.when31, %choose.end4
-  %choose.value = phi %_Z13BindingSyntax [ %throws.success.val, %choose.when31 ], [ undef, %choose.end4 ], [ undef, %choose.else ]
-  %load.struct32 = load %_Z6Parser, ptr %2, align 8
-  %lexer33 = extractvalue %_Z6Parser %load.struct32, 0
-  %position34 = extractvalue %_Z5Lexer %lexer33, 3
-  %binding35 = load %_Z13BindingSyntax, ptr %binding, align 8
-  %tuple.field37 = getelementptr inbounds %_Z13MutableSyntax, ptr %tuple36, i32 0, i32 0
-  store i64 %previous_position, ptr %tuple.field37, align 1
-  %tuple.field38 = getelementptr inbounds %_Z13MutableSyntax, ptr %tuple36, i32 0, i32 1
-  store i64 %position34, ptr %tuple.field38, align 1
-  %tuple.field39 = getelementptr inbounds %_Z13MutableSyntax, ptr %tuple36, i32 0, i32 2
-  store %_Z13BindingSyntax %binding35, ptr %tuple.field39, align 1
-  %tuple.val40 = load %_Z13MutableSyntax, ptr %tuple36, align 8
+choose.end:                                       ; preds = %choose.else, %choose.when29, %choose.end4
+  %choose.value = phi %_Z13BindingSyntax [ %throws.success.val, %choose.when29 ], [ undef, %choose.end4 ], [ undef, %choose.else ]
+  %load.struct30 = load %_Z6Parser, ptr %2, align 8
+  %lexer31 = extractvalue %_Z6Parser %load.struct30, 0
+  %position32 = extractvalue %_Z5Lexer %lexer31, 3
+  %binding33 = load %_Z13BindingSyntax, ptr %binding, align 8
+  %tuple.field35 = getelementptr inbounds %_Z13MutableSyntax, ptr %tuple34, i32 0, i32 0
+  store i64 %previous_position, ptr %tuple.field35, align 1
+  %tuple.field36 = getelementptr inbounds %_Z13MutableSyntax, ptr %tuple34, i32 0, i32 1
+  store i64 %position32, ptr %tuple.field36, align 1
+  %tuple.field37 = getelementptr inbounds %_Z13MutableSyntax, ptr %tuple34, i32 0, i32 2
+  store %_Z13BindingSyntax %binding33, ptr %tuple.field37, align 1
+  %tuple.val38 = load %_Z13MutableSyntax, ptr %tuple34, align 8
   %ret.tag.ptr = getelementptr inbounds { i8, [56 x i8] }, ptr %0, i32 0, i32 0
   store i8 0, ptr %ret.tag.ptr, align 1
   %ret.data.ptr = getelementptr inbounds { i8, [56 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z13MutableSyntax %tuple.val40, ptr %ret.data.ptr, align 1
+  store %_Z13MutableSyntax %tuple.val38, ptr %ret.data.ptr, align 1
   ret void
 
 choose.else:                                      ; preds = %if.end
@@ -48158,7 +46758,7 @@ choose.when:                                      ; preds = %if.end
   %tag3 = load i8, ptr %tag.ptr, align 1
   switch i8 %tag3, label %choose.else5 [
     i8 0, label %choose.when6
-    i8 1, label %choose.when23
+    i8 1, label %choose.when21
   ]
 
 choose.end4:                                      ; preds = %choose.else5
@@ -48177,39 +46777,35 @@ choose.when6:                                     ; preds = %choose.when
   %load.struct11 = load %_Z6Parser, ptr %2, align 8
   %lexer12 = extractvalue %_Z6Parser %load.struct11, 0
   %position13 = extractvalue %_Z5Lexer %lexer12, 3
-  %struct.region14 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.190 }, ptr %arg.tmp15, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region14, ptr %1, ptr %arg.tmp15)
-  %tuple.field = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 0
+  %tuple.field = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 0
   store i64 %position, ptr %tuple.field, align 1
-  %tuple.field17 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 1
-  store i64 %position13, ptr %tuple.field17, align 1
-  %field.load = load { ptr }, ptr %struct.region14, align 8
-  %tuple.field18 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 2
-  store { ptr } %field.load, ptr %tuple.field18, align 1
-  %tuple.val19 = load %_Z13InvalidSyntax, ptr %tuple16, align 8
-  %variant.data.ptr20 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
-  store %_Z13InvalidSyntax %tuple.val19, ptr %variant.data.ptr20, align 1
-  %variant.val21 = load %_Z11ParserError, ptr %variant.ptr9, align 1
-  %throw.data.ptr22 = getelementptr inbounds { i8, [56 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val21, ptr %throw.data.ptr22, align 1
+  %tuple.field15 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 1
+  store i64 %position13, ptr %tuple.field15, align 1
+  %tuple.field16 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 2
+  store { ptr } { ptr @.sconst.188 }, ptr %tuple.field16, align 1
+  %tuple.val17 = load %_Z13InvalidSyntax, ptr %tuple14, align 8
+  %variant.data.ptr18 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
+  store %_Z13InvalidSyntax %tuple.val17, ptr %variant.data.ptr18, align 1
+  %variant.val19 = load %_Z11ParserError, ptr %variant.ptr9, align 1
+  %throw.data.ptr20 = getelementptr inbounds { i8, [56 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val19, ptr %throw.data.ptr20, align 1
   ret void
 
-choose.when23:                                    ; preds = %choose.when
-  %"variant.c_data().ptr24" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 1
-  %variant.val25 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr24", align 8
-  %throw.tag.ptr26 = getelementptr inbounds { i8, [56 x i8] }, ptr %0, i32 0, i32 0
-  store i8 1, ptr %throw.tag.ptr26, align 1
-  %variant.tag.ptr27 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 0
-  store i8 1, ptr %variant.tag.ptr27, align 1
-  %variant.data.ptr28 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
-  store %_Z13InvalidSyntax %variant.val25, ptr %variant.data.ptr28, align 1
-  %variant.val29 = load %_Z11ParserError, ptr %variant.ptr9, align 1
-  %throw.data.ptr30 = getelementptr inbounds { i8, [56 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val29, ptr %throw.data.ptr30, align 1
+choose.when21:                                    ; preds = %choose.when
+  %"variant.c_data().ptr22" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 1
+  %variant.val23 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr22", align 8
+  %throw.tag.ptr24 = getelementptr inbounds { i8, [56 x i8] }, ptr %0, i32 0, i32 0
+  store i8 1, ptr %throw.tag.ptr24, align 1
+  %variant.tag.ptr25 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 0
+  store i8 1, ptr %variant.tag.ptr25, align 1
+  %variant.data.ptr26 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
+  store %_Z13InvalidSyntax %variant.val23, ptr %variant.data.ptr26, align 1
+  %variant.val27 = load %_Z11ParserError, ptr %variant.ptr9, align 1
+  %throw.data.ptr28 = getelementptr inbounds { i8, [56 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val27, ptr %throw.data.ptr28, align 1
   ret void
 
-choose.when31:                                    ; preds = %if.end
+choose.when29:                                    ; preds = %if.end
   %throws.success.val = load %_Z13BindingSyntax, ptr %throws.data.ptr, align 1
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %binding, ptr align 1 %throws.data.ptr, i64 ptrtoint (ptr getelementptr (%_Z13BindingSyntax, ptr null, i32 1) to i64), i1 false)
   br label %choose.end
@@ -48396,7 +46992,6 @@ define linkonce_odr void @_ZN6Parser23parse_bindingannotationEPN4scaly6memory4Pa
 entry:
   %tuple34 = alloca %_Z23BindingAnnotationSyntax, align 8
   %tuple14 = alloca %_Z13InvalidSyntax, align 8
-  %arg.tmp = alloca { ptr }, align 8
   %variant.ptr9 = alloca %_Z11ParserError, align 8
   %sret.result = alloca { i8, [73 x i8] }, align 8
   %spec = alloca %_Z17BindingSpecSyntax, align 8
@@ -48484,16 +47079,12 @@ choose.when6:                                     ; preds = %choose.when
   %load.struct11 = load %_Z6Parser, ptr %2, align 8
   %lexer12 = extractvalue %_Z6Parser %load.struct11, 0
   %position13 = extractvalue %_Z5Lexer %lexer12, 3
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.191 }, ptr %arg.tmp, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region, ptr %1, ptr %arg.tmp)
   %tuple.field = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 0
   store i64 %position, ptr %tuple.field, align 1
   %tuple.field15 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 1
   store i64 %position13, ptr %tuple.field15, align 1
-  %field.load = load { ptr }, ptr %struct.region, align 8
   %tuple.field16 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 2
-  store { ptr } %field.load, ptr %tuple.field16, align 1
+  store { ptr } { ptr @.sconst.189 }, ptr %tuple.field16, align 1
   %tuple.val17 = load %_Z13InvalidSyntax, ptr %tuple14, align 8
   %variant.data.ptr18 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
   store %_Z13InvalidSyntax %tuple.val17, ptr %variant.data.ptr18, align 1
@@ -48707,7 +47298,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.192)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.190)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -49211,7 +47802,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.193)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.191)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -49748,7 +48339,6 @@ define linkonce_odr void @_ZN6Parser11parse_arrayEPN4scaly6memory4PageE(ptr noal
 entry:
   %tuple41 = alloca %_Z11ArraySyntax, align 8
   %tuple30 = alloca %_Z13InvalidSyntax, align 8
-  %arg.tmp = alloca { ptr }, align 8
   %variant.ptr13 = alloca %_Z11ParserError, align 8
   %sret.result = alloca { i8, [25 x i8] }, align 8
   %members = alloca ptr, align 8
@@ -49849,16 +48439,12 @@ if.then23:                                        ; preds = %choose.end
   %load.struct27 = load %_Z6Parser, ptr %2, align 8
   %lexer28 = extractvalue %_Z6Parser %load.struct27, 0
   %position29 = extractvalue %_Z5Lexer %lexer28, 3
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.194 }, ptr %arg.tmp, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region, ptr %1, ptr %arg.tmp)
   %tuple.field = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple30, i32 0, i32 0
   store i64 %previous_position, ptr %tuple.field, align 1
   %tuple.field31 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple30, i32 0, i32 1
   store i64 %position29, ptr %tuple.field31, align 1
-  %field.load = load { ptr }, ptr %struct.region, align 8
   %tuple.field32 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple30, i32 0, i32 2
-  store { ptr } %field.load, ptr %tuple.field32, align 1
+  store { ptr } { ptr @.sconst.192 }, ptr %tuple.field32, align 1
   %tuple.val33 = load %_Z13InvalidSyntax, ptr %tuple30, align 8
   %variant.data.ptr34 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr13, i32 0, i32 1
   store %_Z13InvalidSyntax %tuple.val33, ptr %variant.data.ptr34, align 1
@@ -49890,7 +48476,6 @@ define linkonce_odr void @_ZN6Parser15parse_structureEPN4scaly6memory4PageE(ptr 
 entry:
   %tuple41 = alloca %_Z15StructureSyntax, align 8
   %tuple30 = alloca %_Z13InvalidSyntax, align 8
-  %arg.tmp = alloca { ptr }, align 8
   %variant.ptr13 = alloca %_Z11ParserError, align 8
   %sret.result = alloca { i8, [25 x i8] }, align 8
   %parts = alloca ptr, align 8
@@ -49991,16 +48576,12 @@ if.then23:                                        ; preds = %choose.end
   %load.struct27 = load %_Z6Parser, ptr %2, align 8
   %lexer28 = extractvalue %_Z6Parser %load.struct27, 0
   %position29 = extractvalue %_Z5Lexer %lexer28, 3
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.195 }, ptr %arg.tmp, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region, ptr %1, ptr %arg.tmp)
   %tuple.field = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple30, i32 0, i32 0
   store i64 %previous_position, ptr %tuple.field, align 1
   %tuple.field31 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple30, i32 0, i32 1
   store i64 %position29, ptr %tuple.field31, align 1
-  %field.load = load { ptr }, ptr %struct.region, align 8
   %tuple.field32 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple30, i32 0, i32 2
-  store { ptr } %field.load, ptr %tuple.field32, align 1
+  store { ptr } { ptr @.sconst.193 }, ptr %tuple.field32, align 1
   %tuple.val33 = load %_Z13InvalidSyntax, ptr %tuple30, align 8
   %variant.data.ptr34 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr13, i32 0, i32 1
   store %_Z13InvalidSyntax %tuple.val33, ptr %variant.data.ptr34, align 1
@@ -50213,7 +48794,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.196)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.194)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -50717,7 +49298,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.197)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.195)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -51190,9 +49771,8 @@ choose.when37:                                    ; preds = %choose.end
 
 define linkonce_odr void @_ZN6Parser11parse_fieldEPN4scaly6memory4PageE(ptr noalias sret({ i8, [144 x i8] }) %0, ptr %1, ptr %2) {
 entry:
-  %tuple36 = alloca %_Z11FieldSyntax, align 8
-  %tuple16 = alloca %_Z13InvalidSyntax, align 8
-  %arg.tmp15 = alloca { ptr }, align 8
+  %tuple34 = alloca %_Z11FieldSyntax, align 8
+  %tuple14 = alloca %_Z13InvalidSyntax, align 8
   %variant.ptr9 = alloca %_Z11ParserError, align 8
   %sret.result = alloca { i8, [128 x i8] }, align 8
   %property = alloca %_Z14PropertySyntax, align 8
@@ -51202,11 +49782,9 @@ entry:
   %lexer = extractvalue %_Z6Parser %load.struct, 0
   %previous_position = extractvalue %_Z5Lexer %lexer, 4
   %field.inplace = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
   %arg.tmp = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.198 }, ptr %arg.tmp, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region, ptr %1, ptr %arg.tmp)
-  %call = call i1 @_ZN5Lexer13parse_keywordE6String(ptr %field.inplace, ptr %struct.region)
+  store { ptr } { ptr @.sconst.196 }, ptr %arg.tmp, align 1
+  %call = call i1 @_ZN5Lexer13parse_keywordE6String(ptr %field.inplace, ptr %arg.tmp)
   %bitnot = xor i1 %call, true
   br i1 %bitnot, label %if.then, label %if.end
 
@@ -51233,26 +49811,26 @@ if.end:                                           ; preds = %entry
   %throws.data.ptr = getelementptr inbounds i8, ptr %sret.result, i8 1
   switch i8 %tag, label %choose.else [
     i8 1, label %choose.when
-    i8 0, label %choose.when31
+    i8 0, label %choose.when29
   ]
 
-choose.end:                                       ; preds = %choose.else, %choose.when31, %choose.end4
-  %choose.value = phi %_Z14PropertySyntax [ %throws.success.val, %choose.when31 ], [ undef, %choose.end4 ], [ undef, %choose.else ]
-  %load.struct32 = load %_Z6Parser, ptr %2, align 8
-  %lexer33 = extractvalue %_Z6Parser %load.struct32, 0
-  %position34 = extractvalue %_Z5Lexer %lexer33, 3
-  %property35 = load %_Z14PropertySyntax, ptr %property, align 8
-  %tuple.field37 = getelementptr inbounds %_Z11FieldSyntax, ptr %tuple36, i32 0, i32 0
-  store i64 %previous_position, ptr %tuple.field37, align 1
-  %tuple.field38 = getelementptr inbounds %_Z11FieldSyntax, ptr %tuple36, i32 0, i32 1
-  store i64 %position34, ptr %tuple.field38, align 1
-  %tuple.field39 = getelementptr inbounds %_Z11FieldSyntax, ptr %tuple36, i32 0, i32 2
-  store %_Z14PropertySyntax %property35, ptr %tuple.field39, align 1
-  %tuple.val40 = load %_Z11FieldSyntax, ptr %tuple36, align 8
+choose.end:                                       ; preds = %choose.else, %choose.when29, %choose.end4
+  %choose.value = phi %_Z14PropertySyntax [ %throws.success.val, %choose.when29 ], [ undef, %choose.end4 ], [ undef, %choose.else ]
+  %load.struct30 = load %_Z6Parser, ptr %2, align 8
+  %lexer31 = extractvalue %_Z6Parser %load.struct30, 0
+  %position32 = extractvalue %_Z5Lexer %lexer31, 3
+  %property33 = load %_Z14PropertySyntax, ptr %property, align 8
+  %tuple.field35 = getelementptr inbounds %_Z11FieldSyntax, ptr %tuple34, i32 0, i32 0
+  store i64 %previous_position, ptr %tuple.field35, align 1
+  %tuple.field36 = getelementptr inbounds %_Z11FieldSyntax, ptr %tuple34, i32 0, i32 1
+  store i64 %position32, ptr %tuple.field36, align 1
+  %tuple.field37 = getelementptr inbounds %_Z11FieldSyntax, ptr %tuple34, i32 0, i32 2
+  store %_Z14PropertySyntax %property33, ptr %tuple.field37, align 1
+  %tuple.val38 = load %_Z11FieldSyntax, ptr %tuple34, align 8
   %ret.tag.ptr = getelementptr inbounds { i8, [144 x i8] }, ptr %0, i32 0, i32 0
   store i8 0, ptr %ret.tag.ptr, align 1
   %ret.data.ptr = getelementptr inbounds { i8, [144 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11FieldSyntax %tuple.val40, ptr %ret.data.ptr, align 1
+  store %_Z11FieldSyntax %tuple.val38, ptr %ret.data.ptr, align 1
   ret void
 
 choose.else:                                      ; preds = %if.end
@@ -51265,7 +49843,7 @@ choose.when:                                      ; preds = %if.end
   %tag3 = load i8, ptr %tag.ptr, align 1
   switch i8 %tag3, label %choose.else5 [
     i8 0, label %choose.when6
-    i8 1, label %choose.when23
+    i8 1, label %choose.when21
   ]
 
 choose.end4:                                      ; preds = %choose.else5
@@ -51284,39 +49862,35 @@ choose.when6:                                     ; preds = %choose.when
   %load.struct11 = load %_Z6Parser, ptr %2, align 8
   %lexer12 = extractvalue %_Z6Parser %load.struct11, 0
   %position13 = extractvalue %_Z5Lexer %lexer12, 3
-  %struct.region14 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.199 }, ptr %arg.tmp15, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region14, ptr %1, ptr %arg.tmp15)
-  %tuple.field = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 0
+  %tuple.field = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 0
   store i64 %position, ptr %tuple.field, align 1
-  %tuple.field17 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 1
-  store i64 %position13, ptr %tuple.field17, align 1
-  %field.load = load { ptr }, ptr %struct.region14, align 8
-  %tuple.field18 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 2
-  store { ptr } %field.load, ptr %tuple.field18, align 1
-  %tuple.val19 = load %_Z13InvalidSyntax, ptr %tuple16, align 8
-  %variant.data.ptr20 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
-  store %_Z13InvalidSyntax %tuple.val19, ptr %variant.data.ptr20, align 1
-  %variant.val21 = load %_Z11ParserError, ptr %variant.ptr9, align 1
-  %throw.data.ptr22 = getelementptr inbounds { i8, [144 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val21, ptr %throw.data.ptr22, align 1
+  %tuple.field15 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 1
+  store i64 %position13, ptr %tuple.field15, align 1
+  %tuple.field16 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 2
+  store { ptr } { ptr @.sconst.197 }, ptr %tuple.field16, align 1
+  %tuple.val17 = load %_Z13InvalidSyntax, ptr %tuple14, align 8
+  %variant.data.ptr18 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
+  store %_Z13InvalidSyntax %tuple.val17, ptr %variant.data.ptr18, align 1
+  %variant.val19 = load %_Z11ParserError, ptr %variant.ptr9, align 1
+  %throw.data.ptr20 = getelementptr inbounds { i8, [144 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val19, ptr %throw.data.ptr20, align 1
   ret void
 
-choose.when23:                                    ; preds = %choose.when
-  %"variant.c_data().ptr24" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 1
-  %variant.val25 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr24", align 8
-  %throw.tag.ptr26 = getelementptr inbounds { i8, [144 x i8] }, ptr %0, i32 0, i32 0
-  store i8 1, ptr %throw.tag.ptr26, align 1
-  %variant.tag.ptr27 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 0
-  store i8 1, ptr %variant.tag.ptr27, align 1
-  %variant.data.ptr28 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
-  store %_Z13InvalidSyntax %variant.val25, ptr %variant.data.ptr28, align 1
-  %variant.val29 = load %_Z11ParserError, ptr %variant.ptr9, align 1
-  %throw.data.ptr30 = getelementptr inbounds { i8, [144 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val29, ptr %throw.data.ptr30, align 1
+choose.when21:                                    ; preds = %choose.when
+  %"variant.c_data().ptr22" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 1
+  %variant.val23 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr22", align 8
+  %throw.tag.ptr24 = getelementptr inbounds { i8, [144 x i8] }, ptr %0, i32 0, i32 0
+  store i8 1, ptr %throw.tag.ptr24, align 1
+  %variant.tag.ptr25 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 0
+  store i8 1, ptr %variant.tag.ptr25, align 1
+  %variant.data.ptr26 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
+  store %_Z13InvalidSyntax %variant.val23, ptr %variant.data.ptr26, align 1
+  %variant.val27 = load %_Z11ParserError, ptr %variant.ptr9, align 1
+  %throw.data.ptr28 = getelementptr inbounds { i8, [144 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val27, ptr %throw.data.ptr28, align 1
   ret void
 
-choose.when31:                                    ; preds = %if.end
+choose.when29:                                    ; preds = %if.end
   %throws.success.val = load %_Z14PropertySyntax, ptr %throws.data.ptr, align 1
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %property, ptr align 1 %throws.data.ptr, i64 ptrtoint (ptr getelementptr (%_Z14PropertySyntax, ptr null, i32 1) to i64), i1 false)
   br label %choose.end
@@ -51507,7 +50081,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.200)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.198)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -52011,7 +50585,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.201)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.199)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -52349,7 +50923,6 @@ entry:
   %sret.result35 = alloca { i8, [25 x i8] }, align 8
   %initializer = alloca ptr, align 8
   %tuple16 = alloca %_Z13InvalidSyntax, align 8
-  %arg.tmp = alloca { ptr }, align 8
   %variant.ptr11 = alloca %_Z11ParserError, align 8
   %sret.result4 = alloca { i8, [88 x i8] }, align 8
   %annotation = alloca %_Z20TypeAnnotationSyntax, align 8
@@ -52435,16 +51008,12 @@ choose.when8:                                     ; preds = %choose.when
   %load.struct13 = load %_Z6Parser, ptr %2, align 8
   %lexer14 = extractvalue %_Z6Parser %load.struct13, 0
   %position15 = extractvalue %_Z5Lexer %lexer14, 3
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.202 }, ptr %arg.tmp, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region, ptr %1, ptr %arg.tmp)
   %tuple.field = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 0
   store i64 %position, ptr %tuple.field, align 1
   %tuple.field17 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 1
   store i64 %position15, ptr %tuple.field17, align 1
-  %field.load = load { ptr }, ptr %struct.region, align 8
   %tuple.field18 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 2
-  store { ptr } %field.load, ptr %tuple.field18, align 1
+  store { ptr } { ptr @.sconst.200 }, ptr %tuple.field18, align 1
   %tuple.val19 = load %_Z13InvalidSyntax, ptr %tuple16, align 8
   %variant.data.ptr20 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr11, i32 0, i32 1
   store %_Z13InvalidSyntax %tuple.val19, ptr %variant.data.ptr20, align 1
@@ -52548,20 +51117,20 @@ choose.end69:                                     ; preds = %choose.else70, %cho
   store i64 %previous_position, ptr %tuple.field99, align 1
   %tuple.field100 = getelementptr inbounds %_Z14PropertySyntax, ptr %tuple98, i32 0, i32 1
   store i64 %position94, ptr %tuple.field100, align 1
-  %field.load101 = load { ptr }, ptr %sret.result, align 8
-  %tuple.field102 = getelementptr inbounds %_Z14PropertySyntax, ptr %tuple98, i32 0, i32 2
-  store { ptr } %field.load101, ptr %tuple.field102, align 1
-  %tuple.field103 = getelementptr inbounds %_Z14PropertySyntax, ptr %tuple98, i32 0, i32 3
-  store %_Z20TypeAnnotationSyntax %annotation95, ptr %tuple.field103, align 1
-  %tuple.field104 = getelementptr inbounds %_Z14PropertySyntax, ptr %tuple98, i32 0, i32 4
-  store ptr %initializer96, ptr %tuple.field104, align 1
-  %tuple.field105 = getelementptr inbounds %_Z14PropertySyntax, ptr %tuple98, i32 0, i32 5
-  store ptr %attributes97, ptr %tuple.field105, align 1
-  %tuple.val106 = load %_Z14PropertySyntax, ptr %tuple98, align 8
+  %field.load = load { ptr }, ptr %sret.result, align 8
+  %tuple.field101 = getelementptr inbounds %_Z14PropertySyntax, ptr %tuple98, i32 0, i32 2
+  store { ptr } %field.load, ptr %tuple.field101, align 1
+  %tuple.field102 = getelementptr inbounds %_Z14PropertySyntax, ptr %tuple98, i32 0, i32 3
+  store %_Z20TypeAnnotationSyntax %annotation95, ptr %tuple.field102, align 1
+  %tuple.field103 = getelementptr inbounds %_Z14PropertySyntax, ptr %tuple98, i32 0, i32 4
+  store ptr %initializer96, ptr %tuple.field103, align 1
+  %tuple.field104 = getelementptr inbounds %_Z14PropertySyntax, ptr %tuple98, i32 0, i32 5
+  store ptr %attributes97, ptr %tuple.field104, align 1
+  %tuple.val105 = load %_Z14PropertySyntax, ptr %tuple98, align 8
   %ret.tag.ptr = getelementptr inbounds { i8, [128 x i8] }, ptr %0, i32 0, i32 0
   store i8 0, ptr %ret.tag.ptr, align 1
   %ret.data.ptr = getelementptr inbounds { i8, [128 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z14PropertySyntax %tuple.val106, ptr %ret.data.ptr, align 1
+  store %_Z14PropertySyntax %tuple.val105, ptr %ret.data.ptr, align 1
   ret void
 
 choose.else70:                                    ; preds = %choose.end38
@@ -52612,7 +51181,6 @@ define linkonce_odr void @_ZN6Parser20parse_typeannotationEPN4scaly6memory4PageE
 entry:
   %tuple34 = alloca %_Z20TypeAnnotationSyntax, align 8
   %tuple14 = alloca %_Z13InvalidSyntax, align 8
-  %arg.tmp = alloca { ptr }, align 8
   %variant.ptr9 = alloca %_Z11ParserError, align 8
   %sret.result = alloca { i8, [72 x i8] }, align 8
   %type = alloca %_Z10TypeSyntax, align 8
@@ -52700,16 +51268,12 @@ choose.when6:                                     ; preds = %choose.when
   %load.struct11 = load %_Z6Parser, ptr %2, align 8
   %lexer12 = extractvalue %_Z6Parser %load.struct11, 0
   %position13 = extractvalue %_Z5Lexer %lexer12, 3
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.203 }, ptr %arg.tmp, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region, ptr %1, ptr %arg.tmp)
   %tuple.field = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 0
   store i64 %position, ptr %tuple.field, align 1
   %tuple.field15 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 1
   store i64 %position13, ptr %tuple.field15, align 1
-  %field.load = load { ptr }, ptr %struct.region, align 8
   %tuple.field16 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 2
-  store { ptr } %field.load, ptr %tuple.field16, align 1
+  store { ptr } { ptr @.sconst.201 }, ptr %tuple.field16, align 1
   %tuple.val17 = load %_Z13InvalidSyntax, ptr %tuple14, align 8
   %variant.data.ptr18 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
   store %_Z13InvalidSyntax %tuple.val17, ptr %variant.data.ptr18, align 1
@@ -52749,11 +51313,9 @@ entry:
   %lexer = extractvalue %_Z6Parser %load.struct, 0
   %previous_position = extractvalue %_Z5Lexer %lexer, 4
   %field.inplace = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
   %arg.tmp = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.204 }, ptr %arg.tmp, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region, ptr %1, ptr %arg.tmp)
-  %call = call i1 @_ZN5Lexer13parse_keywordE6String(ptr %field.inplace, ptr %struct.region)
+  store { ptr } { ptr @.sconst.202 }, ptr %arg.tmp, align 1
+  %call = call i1 @_ZN5Lexer13parse_keywordE6String(ptr %field.inplace, ptr %arg.tmp)
   %bitnot = xor i1 %call, true
   br i1 %bitnot, label %if.then, label %if.end
 
@@ -52864,11 +51426,9 @@ entry:
   %lexer = extractvalue %_Z6Parser %load.struct, 0
   %previous_position = extractvalue %_Z5Lexer %lexer, 4
   %field.inplace = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
   %arg.tmp = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.205 }, ptr %arg.tmp, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region, ptr %1, ptr %arg.tmp)
-  %call = call i1 @_ZN5Lexer13parse_keywordE6String(ptr %field.inplace, ptr %struct.region)
+  store { ptr } { ptr @.sconst.203 }, ptr %arg.tmp, align 1
+  %call = call i1 @_ZN5Lexer13parse_keywordE6String(ptr %field.inplace, ptr %arg.tmp)
   %bitnot = xor i1 %call, true
   br i1 %bitnot, label %if.then, label %if.end
 
@@ -53026,9 +51586,8 @@ choose.when41:                                    ; preds = %choose.end
 
 define linkonce_odr void @_ZN6Parser10parse_loopEPN4scaly6memory4PageE(ptr noalias sret({ i8, [25 x i8] }) %0, ptr %1, ptr %2) {
 entry:
-  %tuple22 = alloca %_Z10LoopSyntax, align 8
-  %tuple12 = alloca %_Z13InvalidSyntax, align 8
-  %arg.tmp11 = alloca { ptr }, align 8
+  %tuple20 = alloca %_Z10LoopSyntax, align 8
+  %tuple10 = alloca %_Z13InvalidSyntax, align 8
   %sret.result = alloca { ptr }, align 8
   %tuple = alloca %_Z15DifferentSyntax, align 8
   %variant.ptr = alloca %_Z11ParserError, align 8
@@ -53036,11 +51595,9 @@ entry:
   %lexer = extractvalue %_Z6Parser %load.struct, 0
   %previous_position = extractvalue %_Z5Lexer %lexer, 4
   %field.inplace = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
   %arg.tmp = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.206 }, ptr %arg.tmp, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region, ptr %1, ptr %arg.tmp)
-  %call = call i1 @_ZN5Lexer13parse_keywordE6String(ptr %field.inplace, ptr %struct.region)
+  store { ptr } { ptr @.sconst.204 }, ptr %arg.tmp, align 1
+  %call = call i1 @_ZN5Lexer13parse_keywordE6String(ptr %field.inplace, ptr %arg.tmp)
   %bitnot = xor i1 %call, true
   br i1 %bitnot, label %if.then, label %if.end
 
@@ -53074,40 +51631,36 @@ if.then4:                                         ; preds = %if.end
   %load.struct8 = load %_Z6Parser, ptr %2, align 8
   %lexer9 = extractvalue %_Z6Parser %load.struct8, 0
   %position = extractvalue %_Z5Lexer %lexer9, 3
-  %struct.region10 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.207 }, ptr %arg.tmp11, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region10, ptr %1, ptr %arg.tmp11)
-  %tuple.field = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple12, i32 0, i32 0
+  %tuple.field = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple10, i32 0, i32 0
   store i64 %previous_position, ptr %tuple.field, align 1
-  %tuple.field13 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple12, i32 0, i32 1
-  store i64 %position, ptr %tuple.field13, align 1
-  %field.load = load { ptr }, ptr %struct.region10, align 8
-  %tuple.field14 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple12, i32 0, i32 2
-  store { ptr } %field.load, ptr %tuple.field14, align 1
-  %tuple.val15 = load %_Z13InvalidSyntax, ptr %tuple12, align 8
-  %variant.data.ptr16 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 1
-  store %_Z13InvalidSyntax %tuple.val15, ptr %variant.data.ptr16, align 1
-  %variant.val17 = load %_Z11ParserError, ptr %variant.ptr, align 1
-  %throw.data.ptr18 = getelementptr inbounds { i8, [25 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val17, ptr %throw.data.ptr18, align 1
+  %tuple.field11 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple10, i32 0, i32 1
+  store i64 %position, ptr %tuple.field11, align 1
+  %tuple.field12 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple10, i32 0, i32 2
+  store { ptr } { ptr @.sconst.205 }, ptr %tuple.field12, align 1
+  %tuple.val13 = load %_Z13InvalidSyntax, ptr %tuple10, align 8
+  %variant.data.ptr14 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 1
+  store %_Z13InvalidSyntax %tuple.val13, ptr %variant.data.ptr14, align 1
+  %variant.val15 = load %_Z11ParserError, ptr %variant.ptr, align 1
+  %throw.data.ptr16 = getelementptr inbounds { i8, [25 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val15, ptr %throw.data.ptr16, align 1
   ret void
 
 if.end5:                                          ; preds = %if.end
-  %load.struct19 = load %_Z6Parser, ptr %2, align 8
-  %lexer20 = extractvalue %_Z6Parser %load.struct19, 0
-  %position21 = extractvalue %_Z5Lexer %lexer20, 3
-  %tuple.field23 = getelementptr inbounds %_Z10LoopSyntax, ptr %tuple22, i32 0, i32 0
-  store i64 %previous_position, ptr %tuple.field23, align 1
-  %tuple.field24 = getelementptr inbounds %_Z10LoopSyntax, ptr %tuple22, i32 0, i32 1
-  store i64 %position21, ptr %tuple.field24, align 1
-  %field.load25 = load { ptr }, ptr %sret.result, align 8
-  %tuple.field26 = getelementptr inbounds %_Z10LoopSyntax, ptr %tuple22, i32 0, i32 2
-  store { ptr } %field.load25, ptr %tuple.field26, align 1
-  %tuple.val27 = load %_Z10LoopSyntax, ptr %tuple22, align 8
+  %load.struct17 = load %_Z6Parser, ptr %2, align 8
+  %lexer18 = extractvalue %_Z6Parser %load.struct17, 0
+  %position19 = extractvalue %_Z5Lexer %lexer18, 3
+  %tuple.field21 = getelementptr inbounds %_Z10LoopSyntax, ptr %tuple20, i32 0, i32 0
+  store i64 %previous_position, ptr %tuple.field21, align 1
+  %tuple.field22 = getelementptr inbounds %_Z10LoopSyntax, ptr %tuple20, i32 0, i32 1
+  store i64 %position19, ptr %tuple.field22, align 1
+  %field.load = load { ptr }, ptr %sret.result, align 8
+  %tuple.field23 = getelementptr inbounds %_Z10LoopSyntax, ptr %tuple20, i32 0, i32 2
+  store { ptr } %field.load, ptr %tuple.field23, align 1
+  %tuple.val24 = load %_Z10LoopSyntax, ptr %tuple20, align 8
   %ret.tag.ptr = getelementptr inbounds { i8, [25 x i8] }, ptr %0, i32 0, i32 0
   store i8 0, ptr %ret.tag.ptr, align 1
   %ret.data.ptr = getelementptr inbounds { i8, [25 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z10LoopSyntax %tuple.val27, ptr %ret.data.ptr, align 1
+  store %_Z10LoopSyntax %tuple.val24, ptr %ret.data.ptr, align 1
   ret void
 }
 
@@ -53123,11 +51676,9 @@ entry:
   %lexer = extractvalue %_Z6Parser %load.struct, 0
   %previous_position = extractvalue %_Z5Lexer %lexer, 4
   %field.inplace = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
   %arg.tmp = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.208 }, ptr %arg.tmp, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region, ptr %1, ptr %arg.tmp)
-  %call = call i1 @_ZN5Lexer13parse_keywordE6String(ptr %field.inplace, ptr %struct.region)
+  store { ptr } { ptr @.sconst.206 }, ptr %arg.tmp, align 1
+  %call = call i1 @_ZN5Lexer13parse_keywordE6String(ptr %field.inplace, ptr %arg.tmp)
   %bitnot = xor i1 %call, true
   br i1 %bitnot, label %if.then, label %if.end
 
@@ -53233,11 +51784,9 @@ entry:
   %lexer = extractvalue %_Z6Parser %load.struct, 0
   %previous_position = extractvalue %_Z5Lexer %lexer, 4
   %field.inplace = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
   %arg.tmp = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.209 }, ptr %arg.tmp, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region, ptr %1, ptr %arg.tmp)
-  %call = call i1 @_ZN5Lexer13parse_keywordE6String(ptr %field.inplace, ptr %struct.region)
+  store { ptr } { ptr @.sconst.207 }, ptr %arg.tmp, align 1
+  %call = call i1 @_ZN5Lexer13parse_keywordE6String(ptr %field.inplace, ptr %arg.tmp)
   %bitnot = xor i1 %call, true
   br i1 %bitnot, label %if.then, label %if.end
 
@@ -53333,12 +51882,11 @@ choose.when17:                                    ; preds = %if.end
 
 define linkonce_odr void @_ZN6Parser12parse_lambdaEPN4scaly6memory4PageE(ptr noalias sret({ i8, [64 x i8] }) %0, ptr %1, ptr %2) {
 entry:
-  %tuple98 = alloca %_Z12LambdaSyntax, align 8
-  %variant.ptr68 = alloca %_Z11ParserError, align 8
-  %sret.result53 = alloca { i8, [33 x i8] }, align 8
+  %tuple94 = alloca %_Z12LambdaSyntax, align 8
+  %variant.ptr66 = alloca %_Z11ParserError, align 8
+  %sret.result51 = alloca { i8, [33 x i8] }, align 8
   %block = alloca %_Z12ActionSyntax, align 8
   %tuple15 = alloca %_Z13InvalidSyntax, align 8
-  %arg.tmp = alloca { ptr }, align 8
   %variant.ptr10 = alloca %_Z11ParserError, align 8
   %sret.result = alloca { i8, [25 x i8] }, align 8
   %input = alloca ptr, align 8
@@ -53415,16 +51963,12 @@ choose.when7:                                     ; preds = %choose.when
   %load.struct12 = load %_Z6Parser, ptr %2, align 8
   %lexer13 = extractvalue %_Z6Parser %load.struct12, 0
   %position14 = extractvalue %_Z5Lexer %lexer13, 3
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.210 }, ptr %arg.tmp, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region, ptr %1, ptr %arg.tmp)
   %tuple.field = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple15, i32 0, i32 0
   store i64 %position, ptr %tuple.field, align 1
   %tuple.field16 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple15, i32 0, i32 1
   store i64 %position14, ptr %tuple.field16, align 1
-  %field.load = load { ptr }, ptr %struct.region, align 8
   %tuple.field17 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple15, i32 0, i32 2
-  store { ptr } %field.load, ptr %tuple.field17, align 1
+  store { ptr } { ptr @.sconst.208 }, ptr %tuple.field17, align 1
   %tuple.val18 = load %_Z13InvalidSyntax, ptr %tuple15, align 8
   %variant.data.ptr19 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr10, i32 0, i32 1
   store %_Z13InvalidSyntax %tuple.val18, ptr %variant.data.ptr19, align 1
@@ -53460,143 +52004,134 @@ if.then34:                                        ; preds = %choose.end
   %load.struct38 = load %_Z6Parser, ptr %2, align 8
   %lexer39 = extractvalue %_Z6Parser %load.struct38, 0
   %position40 = extractvalue %_Z5Lexer %lexer39, 3
-  %struct.region41 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.211 }, ptr %arg.tmp, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region41, ptr %1, ptr %arg.tmp)
-  %tuple.field42 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple15, i32 0, i32 0
-  store i64 %previous_position, ptr %tuple.field42, align 1
-  %tuple.field43 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple15, i32 0, i32 1
-  store i64 %position40, ptr %tuple.field43, align 1
-  %field.load44 = load { ptr }, ptr %struct.region41, align 8
-  %tuple.field45 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple15, i32 0, i32 2
-  store { ptr } %field.load44, ptr %tuple.field45, align 1
-  %tuple.val46 = load %_Z13InvalidSyntax, ptr %tuple15, align 8
-  %variant.data.ptr47 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr10, i32 0, i32 1
-  store %_Z13InvalidSyntax %tuple.val46, ptr %variant.data.ptr47, align 1
-  %variant.val48 = load %_Z11ParserError, ptr %variant.ptr10, align 1
-  %throw.data.ptr49 = getelementptr inbounds { i8, [64 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val48, ptr %throw.data.ptr49, align 1
+  %tuple.field41 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple15, i32 0, i32 0
+  store i64 %previous_position, ptr %tuple.field41, align 1
+  %tuple.field42 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple15, i32 0, i32 1
+  store i64 %position40, ptr %tuple.field42, align 1
+  %tuple.field43 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple15, i32 0, i32 2
+  store { ptr } { ptr @.sconst.209 }, ptr %tuple.field43, align 1
+  %tuple.val44 = load %_Z13InvalidSyntax, ptr %tuple15, align 8
+  %variant.data.ptr45 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr10, i32 0, i32 1
+  store %_Z13InvalidSyntax %tuple.val44, ptr %variant.data.ptr45, align 1
+  %variant.val46 = load %_Z11ParserError, ptr %variant.ptr10, align 1
+  %throw.data.ptr47 = getelementptr inbounds { i8, [64 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val46, ptr %throw.data.ptr47, align 1
   ret void
 
 if.end35:                                         ; preds = %choose.end
-  %load.struct50 = load %_Z6Parser, ptr %2, align 8
-  %lexer51 = extractvalue %_Z6Parser %load.struct50, 0
-  %position52 = extractvalue %_Z5Lexer %lexer51, 3
-  call void @_ZN6Parser12parse_actionEPN4scaly6memory4PageE(ptr noalias sret({ i8, [33 x i8] }) %sret.result53, ptr %1, ptr %2)
-  %tag54 = load i8, ptr %sret.result53, align 1
-  %throws.data.ptr55 = getelementptr inbounds i8, ptr %sret.result53, i8 1
-  switch i8 %tag54, label %choose.else57 [
-    i8 1, label %choose.when58
-    i8 0, label %choose.when90
+  %load.struct48 = load %_Z6Parser, ptr %2, align 8
+  %lexer49 = extractvalue %_Z6Parser %load.struct48, 0
+  %position50 = extractvalue %_Z5Lexer %lexer49, 3
+  call void @_ZN6Parser12parse_actionEPN4scaly6memory4PageE(ptr noalias sret({ i8, [33 x i8] }) %sret.result51, ptr %1, ptr %2)
+  %tag52 = load i8, ptr %sret.result51, align 1
+  %throws.data.ptr53 = getelementptr inbounds i8, ptr %sret.result51, i8 1
+  switch i8 %tag52, label %choose.else55 [
+    i8 1, label %choose.when56
+    i8 0, label %choose.when86
   ]
 
-choose.end56:                                     ; preds = %choose.else57, %choose.when90, %choose.end62
-  %choose.value92 = phi %_Z12ActionSyntax [ %throws.success.val91, %choose.when90 ], [ undef, %choose.end62 ], [ undef, %choose.else57 ]
-  %load.struct93 = load %_Z6Parser, ptr %2, align 8
-  %lexer94 = extractvalue %_Z6Parser %load.struct93, 0
-  %position95 = extractvalue %_Z5Lexer %lexer94, 3
-  %input96 = load ptr, ptr %input, align 8
-  %block97 = load %_Z12ActionSyntax, ptr %block, align 1
-  %tuple.field99 = getelementptr inbounds %_Z12LambdaSyntax, ptr %tuple98, i32 0, i32 0
-  store i64 %previous_position, ptr %tuple.field99, align 1
-  %tuple.field100 = getelementptr inbounds %_Z12LambdaSyntax, ptr %tuple98, i32 0, i32 1
-  store i64 %position95, ptr %tuple.field100, align 1
-  %tuple.field101 = getelementptr inbounds %_Z12LambdaSyntax, ptr %tuple98, i32 0, i32 2
-  store ptr %input96, ptr %tuple.field101, align 1
-  %tuple.field102 = getelementptr inbounds %_Z12LambdaSyntax, ptr %tuple98, i32 0, i32 3
-  store %_Z12ActionSyntax %block97, ptr %tuple.field102, align 1
-  %tuple.val103 = load %_Z12LambdaSyntax, ptr %tuple98, align 8
+choose.end54:                                     ; preds = %choose.else55, %choose.when86, %choose.end60
+  %choose.value88 = phi %_Z12ActionSyntax [ %throws.success.val87, %choose.when86 ], [ undef, %choose.end60 ], [ undef, %choose.else55 ]
+  %load.struct89 = load %_Z6Parser, ptr %2, align 8
+  %lexer90 = extractvalue %_Z6Parser %load.struct89, 0
+  %position91 = extractvalue %_Z5Lexer %lexer90, 3
+  %input92 = load ptr, ptr %input, align 8
+  %block93 = load %_Z12ActionSyntax, ptr %block, align 1
+  %tuple.field95 = getelementptr inbounds %_Z12LambdaSyntax, ptr %tuple94, i32 0, i32 0
+  store i64 %previous_position, ptr %tuple.field95, align 1
+  %tuple.field96 = getelementptr inbounds %_Z12LambdaSyntax, ptr %tuple94, i32 0, i32 1
+  store i64 %position91, ptr %tuple.field96, align 1
+  %tuple.field97 = getelementptr inbounds %_Z12LambdaSyntax, ptr %tuple94, i32 0, i32 2
+  store ptr %input92, ptr %tuple.field97, align 1
+  %tuple.field98 = getelementptr inbounds %_Z12LambdaSyntax, ptr %tuple94, i32 0, i32 3
+  store %_Z12ActionSyntax %block93, ptr %tuple.field98, align 1
+  %tuple.val99 = load %_Z12LambdaSyntax, ptr %tuple94, align 8
   %ret.tag.ptr = getelementptr inbounds { i8, [64 x i8] }, ptr %0, i32 0, i32 0
   store i8 0, ptr %ret.tag.ptr, align 1
   %ret.data.ptr = getelementptr inbounds { i8, [64 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z12LambdaSyntax %tuple.val103, ptr %ret.data.ptr, align 1
+  store %_Z12LambdaSyntax %tuple.val99, ptr %ret.data.ptr, align 1
   ret void
 
-choose.else57:                                    ; preds = %if.end35
-  br label %choose.end56
+choose.else55:                                    ; preds = %if.end35
+  br label %choose.end54
 
-choose.when58:                                    ; preds = %if.end35
-  %throws.err.val59 = load %_Z11ParserError, ptr %throws.data.ptr55, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %variant.ptr10, ptr align 1 %throws.data.ptr55, i64 ptrtoint (ptr getelementptr (%_Z11ParserError, ptr null, i32 1) to i64), i1 false)
-  %tag.ptr60 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr10, i32 0, i32 0
-  %tag61 = load i8, ptr %tag.ptr60, align 1
-  switch i8 %tag61, label %choose.else63 [
-    i8 0, label %choose.when64
-    i8 1, label %choose.when82
+choose.when56:                                    ; preds = %if.end35
+  %throws.err.val57 = load %_Z11ParserError, ptr %throws.data.ptr53, align 1
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %variant.ptr10, ptr align 1 %throws.data.ptr53, i64 ptrtoint (ptr getelementptr (%_Z11ParserError, ptr null, i32 1) to i64), i1 false)
+  %tag.ptr58 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr10, i32 0, i32 0
+  %tag59 = load i8, ptr %tag.ptr58, align 1
+  switch i8 %tag59, label %choose.else61 [
+    i8 0, label %choose.when62
+    i8 1, label %choose.when78
   ]
 
-choose.end62:                                     ; preds = %choose.else63
-  br label %choose.end56
+choose.end60:                                     ; preds = %choose.else61
+  br label %choose.end54
 
-choose.else63:                                    ; preds = %choose.when58
-  br label %choose.end62
+choose.else61:                                    ; preds = %choose.when56
+  br label %choose.end60
 
-choose.when64:                                    ; preds = %choose.when58
-  %"variant.c_data().ptr65" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr10, i32 0, i32 1
-  %variant.val66 = load %_Z15DifferentSyntax, ptr %"variant.c_data().ptr65", align 1
-  %throw.tag.ptr67 = getelementptr inbounds { i8, [64 x i8] }, ptr %0, i32 0, i32 0
-  store i8 1, ptr %throw.tag.ptr67, align 1
-  %variant.tag.ptr69 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr68, i32 0, i32 0
-  store i8 1, ptr %variant.tag.ptr69, align 1
-  %load.struct70 = load %_Z6Parser, ptr %2, align 8
-  %lexer71 = extractvalue %_Z6Parser %load.struct70, 0
-  %position72 = extractvalue %_Z5Lexer %lexer71, 3
-  %struct.region73 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.212 }, ptr %arg.tmp, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region73, ptr %1, ptr %arg.tmp)
-  %tuple.field74 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple15, i32 0, i32 0
-  store i64 %position52, ptr %tuple.field74, align 1
-  %tuple.field75 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple15, i32 0, i32 1
-  store i64 %position72, ptr %tuple.field75, align 1
-  %field.load76 = load { ptr }, ptr %struct.region73, align 8
-  %tuple.field77 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple15, i32 0, i32 2
-  store { ptr } %field.load76, ptr %tuple.field77, align 1
-  %tuple.val78 = load %_Z13InvalidSyntax, ptr %tuple15, align 8
-  %variant.data.ptr79 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr68, i32 0, i32 1
-  store %_Z13InvalidSyntax %tuple.val78, ptr %variant.data.ptr79, align 1
-  %variant.val80 = load %_Z11ParserError, ptr %variant.ptr68, align 1
-  %throw.data.ptr81 = getelementptr inbounds { i8, [64 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val80, ptr %throw.data.ptr81, align 1
+choose.when62:                                    ; preds = %choose.when56
+  %"variant.c_data().ptr63" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr10, i32 0, i32 1
+  %variant.val64 = load %_Z15DifferentSyntax, ptr %"variant.c_data().ptr63", align 1
+  %throw.tag.ptr65 = getelementptr inbounds { i8, [64 x i8] }, ptr %0, i32 0, i32 0
+  store i8 1, ptr %throw.tag.ptr65, align 1
+  %variant.tag.ptr67 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr66, i32 0, i32 0
+  store i8 1, ptr %variant.tag.ptr67, align 1
+  %load.struct68 = load %_Z6Parser, ptr %2, align 8
+  %lexer69 = extractvalue %_Z6Parser %load.struct68, 0
+  %position70 = extractvalue %_Z5Lexer %lexer69, 3
+  %tuple.field71 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple15, i32 0, i32 0
+  store i64 %position50, ptr %tuple.field71, align 1
+  %tuple.field72 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple15, i32 0, i32 1
+  store i64 %position70, ptr %tuple.field72, align 1
+  %tuple.field73 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple15, i32 0, i32 2
+  store { ptr } { ptr @.sconst.210 }, ptr %tuple.field73, align 1
+  %tuple.val74 = load %_Z13InvalidSyntax, ptr %tuple15, align 8
+  %variant.data.ptr75 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr66, i32 0, i32 1
+  store %_Z13InvalidSyntax %tuple.val74, ptr %variant.data.ptr75, align 1
+  %variant.val76 = load %_Z11ParserError, ptr %variant.ptr66, align 1
+  %throw.data.ptr77 = getelementptr inbounds { i8, [64 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val76, ptr %throw.data.ptr77, align 1
   ret void
 
-choose.when82:                                    ; preds = %choose.when58
-  %"variant.c_data().ptr83" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr10, i32 0, i32 1
-  %variant.val84 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr83", align 8
-  %throw.tag.ptr85 = getelementptr inbounds { i8, [64 x i8] }, ptr %0, i32 0, i32 0
-  store i8 1, ptr %throw.tag.ptr85, align 1
-  %variant.tag.ptr86 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr68, i32 0, i32 0
-  store i8 1, ptr %variant.tag.ptr86, align 1
-  %variant.data.ptr87 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr68, i32 0, i32 1
-  store %_Z13InvalidSyntax %variant.val84, ptr %variant.data.ptr87, align 1
-  %variant.val88 = load %_Z11ParserError, ptr %variant.ptr68, align 1
-  %throw.data.ptr89 = getelementptr inbounds { i8, [64 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val88, ptr %throw.data.ptr89, align 1
+choose.when78:                                    ; preds = %choose.when56
+  %"variant.c_data().ptr79" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr10, i32 0, i32 1
+  %variant.val80 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr79", align 8
+  %throw.tag.ptr81 = getelementptr inbounds { i8, [64 x i8] }, ptr %0, i32 0, i32 0
+  store i8 1, ptr %throw.tag.ptr81, align 1
+  %variant.tag.ptr82 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr66, i32 0, i32 0
+  store i8 1, ptr %variant.tag.ptr82, align 1
+  %variant.data.ptr83 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr66, i32 0, i32 1
+  store %_Z13InvalidSyntax %variant.val80, ptr %variant.data.ptr83, align 1
+  %variant.val84 = load %_Z11ParserError, ptr %variant.ptr66, align 1
+  %throw.data.ptr85 = getelementptr inbounds { i8, [64 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val84, ptr %throw.data.ptr85, align 1
   ret void
 
-choose.when90:                                    ; preds = %if.end35
-  %throws.success.val91 = load %_Z12ActionSyntax, ptr %throws.data.ptr55, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %block, ptr align 1 %throws.data.ptr55, i64 ptrtoint (ptr getelementptr (%_Z12ActionSyntax, ptr null, i32 1) to i64), i1 false)
-  br label %choose.end56
+choose.when86:                                    ; preds = %if.end35
+  %throws.success.val87 = load %_Z12ActionSyntax, ptr %throws.data.ptr53, align 1
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %block, ptr align 1 %throws.data.ptr53, i64 ptrtoint (ptr getelementptr (%_Z12ActionSyntax, ptr null, i32 1) to i64), i1 false)
+  br label %choose.end54
 }
 
 define linkonce_odr void @_ZN6Parser9parse_forEPN4scaly6memory4PageE(ptr noalias sret({ i8, [88 x i8] }) %0, ptr %1, ptr %2) {
 entry:
-  %tuple202 = alloca %_Z9ForSyntax, align 8
-  %variant.ptr170 = alloca %_Z11ParserError, align 8
+  %tuple191 = alloca %_Z9ForSyntax, align 8
+  %variant.ptr161 = alloca %_Z11ParserError, align 8
   %choose.union = alloca %_Z11ParserError, align 8
-  %sret.result155 = alloca { i8, [33 x i8] }, align 8
+  %sret.result146 = alloca { i8, [33 x i8] }, align 8
   %action = alloca %_Z12ActionSyntax, align 8
-  %sret.result122 = alloca { i8, [25 x i8] }, align 8
+  %sret.result113 = alloca { i8, [25 x i8] }, align 8
   %name = alloca ptr, align 8
-  %variant.ptr75 = alloca %_Z11ParserError, align 8
-  %sret.result60 = alloca { i8, [25 x i8] }, align 8
+  %variant.ptr70 = alloca %_Z11ParserError, align 8
+  %sret.result55 = alloca { i8, [25 x i8] }, align 8
   %operation = alloca ptr, align 8
-  %arg.tmp48 = alloca { ptr }, align 8
-  %variant.ptr42 = alloca %_Z11ParserError, align 8
-  %sret.result22 = alloca { i8, [88 x i8] }, align 8
+  %variant.ptr40 = alloca %_Z11ParserError, align 8
+  %arg.tmp34 = alloca { ptr }, align 8
+  %sret.result20 = alloca { i8, [88 x i8] }, align 8
   %annotation = alloca ptr, align 8
-  %tuple12 = alloca %_Z13InvalidSyntax, align 8
-  %arg.tmp11 = alloca { ptr }, align 8
+  %tuple10 = alloca %_Z13InvalidSyntax, align 8
   %sret.result = alloca { ptr }, align 8
   %tuple = alloca %_Z15DifferentSyntax, align 8
   %variant.ptr = alloca %_Z11ParserError, align 8
@@ -53604,11 +52139,9 @@ entry:
   %lexer = extractvalue %_Z6Parser %load.struct, 0
   %previous_position = extractvalue %_Z5Lexer %lexer, 4
   %field.inplace = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
   %arg.tmp = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.213 }, ptr %arg.tmp, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region, ptr %1, ptr %arg.tmp)
-  %call = call i1 @_ZN5Lexer13parse_keywordE6String(ptr %field.inplace, ptr %struct.region)
+  store { ptr } { ptr @.sconst.211 }, ptr %arg.tmp, align 1
+  %call = call i1 @_ZN5Lexer13parse_keywordE6String(ptr %field.inplace, ptr %arg.tmp)
   %bitnot = xor i1 %call, true
   br i1 %bitnot, label %if.then, label %if.end
 
@@ -53642,46 +52175,40 @@ if.then4:                                         ; preds = %if.end
   %load.struct8 = load %_Z6Parser, ptr %2, align 8
   %lexer9 = extractvalue %_Z6Parser %load.struct8, 0
   %position = extractvalue %_Z5Lexer %lexer9, 3
-  %struct.region10 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.214 }, ptr %arg.tmp11, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region10, ptr %1, ptr %arg.tmp11)
-  %tuple.field = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple12, i32 0, i32 0
+  %tuple.field = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple10, i32 0, i32 0
   store i64 %previous_position, ptr %tuple.field, align 1
-  %tuple.field13 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple12, i32 0, i32 1
-  store i64 %position, ptr %tuple.field13, align 1
-  %field.load = load { ptr }, ptr %struct.region10, align 8
-  %tuple.field14 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple12, i32 0, i32 2
-  store { ptr } %field.load, ptr %tuple.field14, align 1
-  %tuple.val15 = load %_Z13InvalidSyntax, ptr %tuple12, align 8
-  %variant.data.ptr16 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 1
-  store %_Z13InvalidSyntax %tuple.val15, ptr %variant.data.ptr16, align 1
-  %variant.val17 = load %_Z11ParserError, ptr %variant.ptr, align 1
-  %throw.data.ptr18 = getelementptr inbounds { i8, [88 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val17, ptr %throw.data.ptr18, align 1
+  %tuple.field11 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple10, i32 0, i32 1
+  store i64 %position, ptr %tuple.field11, align 1
+  %tuple.field12 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple10, i32 0, i32 2
+  store { ptr } { ptr @.sconst.212 }, ptr %tuple.field12, align 1
+  %tuple.val13 = load %_Z13InvalidSyntax, ptr %tuple10, align 8
+  %variant.data.ptr14 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 1
+  store %_Z13InvalidSyntax %tuple.val13, ptr %variant.data.ptr14, align 1
+  %variant.val15 = load %_Z11ParserError, ptr %variant.ptr, align 1
+  %throw.data.ptr16 = getelementptr inbounds { i8, [88 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val15, ptr %throw.data.ptr16, align 1
   ret void
 
 if.end5:                                          ; preds = %if.end
-  %load.struct19 = load %_Z6Parser, ptr %2, align 8
-  %lexer20 = extractvalue %_Z6Parser %load.struct19, 0
-  %position21 = extractvalue %_Z5Lexer %lexer20, 3
+  %load.struct17 = load %_Z6Parser, ptr %2, align 8
+  %lexer18 = extractvalue %_Z6Parser %load.struct17, 0
+  %position19 = extractvalue %_Z5Lexer %lexer18, 3
   store ptr null, ptr %annotation, align 1
-  call void @_ZN6Parser20parse_typeannotationEPN4scaly6memory4PageE(ptr noalias sret({ i8, [88 x i8] }) %sret.result22, ptr %1, ptr %2)
-  %tag = load i8, ptr %sret.result22, align 1
-  %throws.data.ptr = getelementptr inbounds i8, ptr %sret.result22, i8 1
+  call void @_ZN6Parser20parse_typeannotationEPN4scaly6memory4PageE(ptr noalias sret({ i8, [88 x i8] }) %sret.result20, ptr %1, ptr %2)
+  %tag = load i8, ptr %sret.result20, align 1
+  %throws.data.ptr = getelementptr inbounds i8, ptr %sret.result20, i8 1
   switch i8 %tag, label %choose.else [
     i8 1, label %choose.when
-    i8 0, label %choose.when31
+    i8 0, label %choose.when29
   ]
 
-choose.end:                                       ; preds = %choose.else, %choose.when31, %choose.end24
-  %choose.value = phi %_Z20TypeAnnotationSyntax [ %choose.arm.load, %choose.when31 ], [ undef, %choose.end24 ], [ undef, %choose.else ]
-  %field.inplace35 = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
-  %struct.region36 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.215 }, ptr %arg.tmp11, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region36, ptr %1, ptr %arg.tmp11)
-  %call37 = call i1 @_ZN5Lexer13parse_keywordE6String(ptr %field.inplace35, ptr %struct.region36)
-  %bitnot38 = xor i1 %call37, true
-  br i1 %bitnot38, label %if.then39, label %if.end40
+choose.end:                                       ; preds = %choose.else, %choose.when29, %choose.end22
+  %choose.value = phi %_Z20TypeAnnotationSyntax [ %choose.arm.load, %choose.when29 ], [ undef, %choose.end22 ], [ undef, %choose.else ]
+  %field.inplace33 = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
+  store { ptr } { ptr @.sconst.213 }, ptr %arg.tmp34, align 1
+  %call35 = call i1 @_ZN5Lexer13parse_keywordE6String(ptr %field.inplace33, ptr %arg.tmp34)
+  %bitnot36 = xor i1 %call35, true
+  br i1 %bitnot36, label %if.then37, label %if.end38
 
 choose.else:                                      ; preds = %if.end5
   br label %choose.end
@@ -53690,357 +52217,340 @@ choose.when:                                      ; preds = %if.end5
   %throws.err.val = load %_Z11ParserError, ptr %throws.data.ptr, align 1
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %variant.ptr, ptr align 1 %throws.data.ptr, i64 ptrtoint (ptr getelementptr (%_Z11ParserError, ptr null, i32 1) to i64), i1 false)
   %tag.ptr = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 0
-  %tag23 = load i8, ptr %tag.ptr, align 1
-  switch i8 %tag23, label %choose.else25 [
-    i8 0, label %choose.when26
-    i8 1, label %choose.when28
+  %tag21 = load i8, ptr %tag.ptr, align 1
+  switch i8 %tag21, label %choose.else23 [
+    i8 0, label %choose.when24
+    i8 1, label %choose.when26
   ]
 
-choose.end24:                                     ; preds = %choose.else25, %choose.when28, %choose.when26
+choose.end22:                                     ; preds = %choose.else23, %choose.when26, %choose.when24
   br label %choose.end
 
-choose.else25:                                    ; preds = %choose.when
-  br label %choose.end24
+choose.else23:                                    ; preds = %choose.when
+  br label %choose.end22
+
+choose.when24:                                    ; preds = %choose.when
+  %"variant.c_data().ptr" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 1
+  %variant.val25 = load %_Z15DifferentSyntax, ptr %"variant.c_data().ptr", align 1
+  br label %choose.end22
 
 choose.when26:                                    ; preds = %choose.when
-  %"variant.c_data().ptr" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 1
-  %variant.val27 = load %_Z15DifferentSyntax, ptr %"variant.c_data().ptr", align 1
-  br label %choose.end24
+  %"variant.c_data().ptr27" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 1
+  %variant.val28 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr27", align 8
+  br label %choose.end22
 
-choose.when28:                                    ; preds = %choose.when
-  %"variant.c_data().ptr29" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 1
-  %variant.val30 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr29", align 8
-  br label %choose.end24
-
-choose.when31:                                    ; preds = %if.end5
+choose.when29:                                    ; preds = %if.end5
   %throws.success.val = load %_Z20TypeAnnotationSyntax, ptr %throws.data.ptr, align 1
   %start = extractvalue %_Z20TypeAnnotationSyntax %throws.success.val, 0
   %end = extractvalue %_Z20TypeAnnotationSyntax %throws.success.val, 1
   %type = extractvalue %_Z20TypeAnnotationSyntax %throws.success.val, 2
   %tuple.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr (%_Z20TypeAnnotationSyntax, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z20TypeAnnotationSyntax }, ptr null, i64 0, i32 1) to i64))
-  %tuple.field32 = getelementptr inbounds %_Z20TypeAnnotationSyntax, ptr %tuple.region, i32 0, i32 0
-  store i64 %start, ptr %tuple.field32, align 1
-  %tuple.field33 = getelementptr inbounds %_Z20TypeAnnotationSyntax, ptr %tuple.region, i32 0, i32 1
-  store i64 %end, ptr %tuple.field33, align 1
-  %tuple.field34 = getelementptr inbounds %_Z20TypeAnnotationSyntax, ptr %tuple.region, i32 0, i32 2
-  store %_Z10TypeSyntax %type, ptr %tuple.field34, align 1
+  %tuple.field30 = getelementptr inbounds %_Z20TypeAnnotationSyntax, ptr %tuple.region, i32 0, i32 0
+  store i64 %start, ptr %tuple.field30, align 1
+  %tuple.field31 = getelementptr inbounds %_Z20TypeAnnotationSyntax, ptr %tuple.region, i32 0, i32 1
+  store i64 %end, ptr %tuple.field31, align 1
+  %tuple.field32 = getelementptr inbounds %_Z20TypeAnnotationSyntax, ptr %tuple.region, i32 0, i32 2
+  store %_Z10TypeSyntax %type, ptr %tuple.field32, align 1
   store ptr %tuple.region, ptr %annotation, align 1
   %choose.arm.load = load %_Z20TypeAnnotationSyntax, ptr %tuple.region, align 8
   br label %choose.end
 
-if.then39:                                        ; preds = %choose.end
-  %throw.tag.ptr41 = getelementptr inbounds { i8, [88 x i8] }, ptr %0, i32 0, i32 0
-  store i8 1, ptr %throw.tag.ptr41, align 1
-  %variant.tag.ptr43 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr42, i32 0, i32 0
-  store i8 1, ptr %variant.tag.ptr43, align 1
-  %load.struct44 = load %_Z6Parser, ptr %2, align 8
-  %lexer45 = extractvalue %_Z6Parser %load.struct44, 0
-  %position46 = extractvalue %_Z5Lexer %lexer45, 3
-  %struct.region47 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.216 }, ptr %arg.tmp48, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region47, ptr %1, ptr %arg.tmp48)
-  %tuple.field49 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple12, i32 0, i32 0
-  store i64 %previous_position, ptr %tuple.field49, align 1
-  %tuple.field50 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple12, i32 0, i32 1
-  store i64 %position46, ptr %tuple.field50, align 1
-  %field.load51 = load { ptr }, ptr %struct.region47, align 8
-  %tuple.field52 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple12, i32 0, i32 2
-  store { ptr } %field.load51, ptr %tuple.field52, align 1
-  %tuple.val53 = load %_Z13InvalidSyntax, ptr %tuple12, align 8
-  %variant.data.ptr54 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr42, i32 0, i32 1
-  store %_Z13InvalidSyntax %tuple.val53, ptr %variant.data.ptr54, align 1
-  %variant.val55 = load %_Z11ParserError, ptr %variant.ptr42, align 1
-  %throw.data.ptr56 = getelementptr inbounds { i8, [88 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val55, ptr %throw.data.ptr56, align 1
+if.then37:                                        ; preds = %choose.end
+  %throw.tag.ptr39 = getelementptr inbounds { i8, [88 x i8] }, ptr %0, i32 0, i32 0
+  store i8 1, ptr %throw.tag.ptr39, align 1
+  %variant.tag.ptr41 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr40, i32 0, i32 0
+  store i8 1, ptr %variant.tag.ptr41, align 1
+  %load.struct42 = load %_Z6Parser, ptr %2, align 8
+  %lexer43 = extractvalue %_Z6Parser %load.struct42, 0
+  %position44 = extractvalue %_Z5Lexer %lexer43, 3
+  %tuple.field45 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple10, i32 0, i32 0
+  store i64 %previous_position, ptr %tuple.field45, align 1
+  %tuple.field46 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple10, i32 0, i32 1
+  store i64 %position44, ptr %tuple.field46, align 1
+  %tuple.field47 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple10, i32 0, i32 2
+  store { ptr } { ptr @.sconst.214 }, ptr %tuple.field47, align 1
+  %tuple.val48 = load %_Z13InvalidSyntax, ptr %tuple10, align 8
+  %variant.data.ptr49 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr40, i32 0, i32 1
+  store %_Z13InvalidSyntax %tuple.val48, ptr %variant.data.ptr49, align 1
+  %variant.val50 = load %_Z11ParserError, ptr %variant.ptr40, align 1
+  %throw.data.ptr51 = getelementptr inbounds { i8, [88 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val50, ptr %throw.data.ptr51, align 1
   ret void
 
-if.end40:                                         ; preds = %choose.end
-  %load.struct57 = load %_Z6Parser, ptr %2, align 8
-  %lexer58 = extractvalue %_Z6Parser %load.struct57, 0
-  %position59 = extractvalue %_Z5Lexer %lexer58, 3
-  call void @_ZN6Parser18parse_operand_listEPN4scaly6memory4PageE(ptr noalias sret({ i8, [25 x i8] }) %sret.result60, ptr %1, ptr %2)
-  %tag61 = load i8, ptr %sret.result60, align 1
-  %throws.data.ptr62 = getelementptr inbounds i8, ptr %sret.result60, i8 1
-  switch i8 %tag61, label %choose.else64 [
-    i8 1, label %choose.when65
-    i8 0, label %choose.when97
+if.end38:                                         ; preds = %choose.end
+  %load.struct52 = load %_Z6Parser, ptr %2, align 8
+  %lexer53 = extractvalue %_Z6Parser %load.struct52, 0
+  %position54 = extractvalue %_Z5Lexer %lexer53, 3
+  call void @_ZN6Parser18parse_operand_listEPN4scaly6memory4PageE(ptr noalias sret({ i8, [25 x i8] }) %sret.result55, ptr %1, ptr %2)
+  %tag56 = load i8, ptr %sret.result55, align 1
+  %throws.data.ptr57 = getelementptr inbounds i8, ptr %sret.result55, i8 1
+  switch i8 %tag56, label %choose.else59 [
+    i8 1, label %choose.when60
+    i8 0, label %choose.when90
   ]
 
-choose.end63:                                     ; preds = %choose.else64, %choose.when97, %choose.end69
-  %choose.value99 = phi ptr [ %throws.success.val98, %choose.when97 ], [ undef, %choose.end69 ], [ undef, %choose.else64 ]
-  %field.inplace100 = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
-  %call101 = call i1 @_ZN5Lexer11parse_colonEv(ptr %field.inplace100)
-  %bitnot102 = xor i1 %call101, true
-  br i1 %bitnot102, label %if.then103, label %if.end104
+choose.end58:                                     ; preds = %choose.else59, %choose.when90, %choose.end64
+  %choose.value92 = phi ptr [ %throws.success.val91, %choose.when90 ], [ undef, %choose.end64 ], [ undef, %choose.else59 ]
+  %field.inplace93 = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
+  %call94 = call i1 @_ZN5Lexer11parse_colonEv(ptr %field.inplace93)
+  %bitnot95 = xor i1 %call94, true
+  br i1 %bitnot95, label %if.then96, label %if.end97
 
-choose.else64:                                    ; preds = %if.end40
-  br label %choose.end63
+choose.else59:                                    ; preds = %if.end38
+  br label %choose.end58
 
-choose.when65:                                    ; preds = %if.end40
-  %throws.err.val66 = load %_Z11ParserError, ptr %throws.data.ptr62, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %variant.ptr42, ptr align 1 %throws.data.ptr62, i64 ptrtoint (ptr getelementptr (%_Z11ParserError, ptr null, i32 1) to i64), i1 false)
-  %tag.ptr67 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr42, i32 0, i32 0
-  %tag68 = load i8, ptr %tag.ptr67, align 1
-  switch i8 %tag68, label %choose.else70 [
-    i8 0, label %choose.when71
-    i8 1, label %choose.when89
+choose.when60:                                    ; preds = %if.end38
+  %throws.err.val61 = load %_Z11ParserError, ptr %throws.data.ptr57, align 1
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %variant.ptr40, ptr align 1 %throws.data.ptr57, i64 ptrtoint (ptr getelementptr (%_Z11ParserError, ptr null, i32 1) to i64), i1 false)
+  %tag.ptr62 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr40, i32 0, i32 0
+  %tag63 = load i8, ptr %tag.ptr62, align 1
+  switch i8 %tag63, label %choose.else65 [
+    i8 0, label %choose.when66
+    i8 1, label %choose.when82
   ]
 
-choose.end69:                                     ; preds = %choose.else70
-  br label %choose.end63
+choose.end64:                                     ; preds = %choose.else65
+  br label %choose.end58
 
-choose.else70:                                    ; preds = %choose.when65
-  br label %choose.end69
+choose.else65:                                    ; preds = %choose.when60
+  br label %choose.end64
 
-choose.when71:                                    ; preds = %choose.when65
-  %"variant.c_data().ptr72" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr42, i32 0, i32 1
-  %variant.val73 = load %_Z15DifferentSyntax, ptr %"variant.c_data().ptr72", align 1
-  %throw.tag.ptr74 = getelementptr inbounds { i8, [88 x i8] }, ptr %0, i32 0, i32 0
-  store i8 1, ptr %throw.tag.ptr74, align 1
-  %variant.tag.ptr76 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr75, i32 0, i32 0
-  store i8 1, ptr %variant.tag.ptr76, align 1
-  %load.struct77 = load %_Z6Parser, ptr %2, align 8
-  %lexer78 = extractvalue %_Z6Parser %load.struct77, 0
-  %position79 = extractvalue %_Z5Lexer %lexer78, 3
-  %struct.region80 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.217 }, ptr %arg.tmp48, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region80, ptr %1, ptr %arg.tmp48)
-  %tuple.field81 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple12, i32 0, i32 0
-  store i64 %position59, ptr %tuple.field81, align 1
-  %tuple.field82 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple12, i32 0, i32 1
-  store i64 %position79, ptr %tuple.field82, align 1
-  %field.load83 = load { ptr }, ptr %struct.region80, align 8
-  %tuple.field84 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple12, i32 0, i32 2
-  store { ptr } %field.load83, ptr %tuple.field84, align 1
-  %tuple.val85 = load %_Z13InvalidSyntax, ptr %tuple12, align 8
-  %variant.data.ptr86 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr75, i32 0, i32 1
-  store %_Z13InvalidSyntax %tuple.val85, ptr %variant.data.ptr86, align 1
-  %variant.val87 = load %_Z11ParserError, ptr %variant.ptr75, align 1
-  %throw.data.ptr88 = getelementptr inbounds { i8, [88 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val87, ptr %throw.data.ptr88, align 1
+choose.when66:                                    ; preds = %choose.when60
+  %"variant.c_data().ptr67" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr40, i32 0, i32 1
+  %variant.val68 = load %_Z15DifferentSyntax, ptr %"variant.c_data().ptr67", align 1
+  %throw.tag.ptr69 = getelementptr inbounds { i8, [88 x i8] }, ptr %0, i32 0, i32 0
+  store i8 1, ptr %throw.tag.ptr69, align 1
+  %variant.tag.ptr71 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr70, i32 0, i32 0
+  store i8 1, ptr %variant.tag.ptr71, align 1
+  %load.struct72 = load %_Z6Parser, ptr %2, align 8
+  %lexer73 = extractvalue %_Z6Parser %load.struct72, 0
+  %position74 = extractvalue %_Z5Lexer %lexer73, 3
+  %tuple.field75 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple10, i32 0, i32 0
+  store i64 %position54, ptr %tuple.field75, align 1
+  %tuple.field76 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple10, i32 0, i32 1
+  store i64 %position74, ptr %tuple.field76, align 1
+  %tuple.field77 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple10, i32 0, i32 2
+  store { ptr } { ptr @.sconst.215 }, ptr %tuple.field77, align 1
+  %tuple.val78 = load %_Z13InvalidSyntax, ptr %tuple10, align 8
+  %variant.data.ptr79 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr70, i32 0, i32 1
+  store %_Z13InvalidSyntax %tuple.val78, ptr %variant.data.ptr79, align 1
+  %variant.val80 = load %_Z11ParserError, ptr %variant.ptr70, align 1
+  %throw.data.ptr81 = getelementptr inbounds { i8, [88 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val80, ptr %throw.data.ptr81, align 1
   ret void
 
-choose.when89:                                    ; preds = %choose.when65
-  %"variant.c_data().ptr90" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr42, i32 0, i32 1
-  %variant.val91 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr90", align 8
-  %throw.tag.ptr92 = getelementptr inbounds { i8, [88 x i8] }, ptr %0, i32 0, i32 0
-  store i8 1, ptr %throw.tag.ptr92, align 1
-  %variant.tag.ptr93 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr75, i32 0, i32 0
-  store i8 1, ptr %variant.tag.ptr93, align 1
-  %variant.data.ptr94 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr75, i32 0, i32 1
-  store %_Z13InvalidSyntax %variant.val91, ptr %variant.data.ptr94, align 1
-  %variant.val95 = load %_Z11ParserError, ptr %variant.ptr75, align 1
-  %throw.data.ptr96 = getelementptr inbounds { i8, [88 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val95, ptr %throw.data.ptr96, align 1
+choose.when82:                                    ; preds = %choose.when60
+  %"variant.c_data().ptr83" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr40, i32 0, i32 1
+  %variant.val84 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr83", align 8
+  %throw.tag.ptr85 = getelementptr inbounds { i8, [88 x i8] }, ptr %0, i32 0, i32 0
+  store i8 1, ptr %throw.tag.ptr85, align 1
+  %variant.tag.ptr86 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr70, i32 0, i32 0
+  store i8 1, ptr %variant.tag.ptr86, align 1
+  %variant.data.ptr87 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr70, i32 0, i32 1
+  store %_Z13InvalidSyntax %variant.val84, ptr %variant.data.ptr87, align 1
+  %variant.val88 = load %_Z11ParserError, ptr %variant.ptr70, align 1
+  %throw.data.ptr89 = getelementptr inbounds { i8, [88 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val88, ptr %throw.data.ptr89, align 1
   ret void
 
-choose.when97:                                    ; preds = %if.end40
-  %throws.success.val98 = load ptr, ptr %throws.data.ptr62, align 1
-  store ptr %throws.success.val98, ptr %operation, align 1
-  br label %choose.end63
+choose.when90:                                    ; preds = %if.end38
+  %throws.success.val91 = load ptr, ptr %throws.data.ptr57, align 1
+  store ptr %throws.success.val91, ptr %operation, align 1
+  br label %choose.end58
 
-if.then103:                                       ; preds = %choose.end63
-  %throw.tag.ptr105 = getelementptr inbounds { i8, [88 x i8] }, ptr %0, i32 0, i32 0
-  store i8 1, ptr %throw.tag.ptr105, align 1
-  %variant.tag.ptr106 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr75, i32 0, i32 0
-  store i8 1, ptr %variant.tag.ptr106, align 1
-  %load.struct107 = load %_Z6Parser, ptr %2, align 8
-  %lexer108 = extractvalue %_Z6Parser %load.struct107, 0
-  %position109 = extractvalue %_Z5Lexer %lexer108, 3
-  %struct.region110 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.218 }, ptr %arg.tmp48, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region110, ptr %1, ptr %arg.tmp48)
-  %tuple.field111 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple12, i32 0, i32 0
-  store i64 %previous_position, ptr %tuple.field111, align 1
-  %tuple.field112 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple12, i32 0, i32 1
-  store i64 %position109, ptr %tuple.field112, align 1
-  %field.load113 = load { ptr }, ptr %struct.region110, align 8
-  %tuple.field114 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple12, i32 0, i32 2
-  store { ptr } %field.load113, ptr %tuple.field114, align 1
-  %tuple.val115 = load %_Z13InvalidSyntax, ptr %tuple12, align 8
-  %variant.data.ptr116 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr75, i32 0, i32 1
-  store %_Z13InvalidSyntax %tuple.val115, ptr %variant.data.ptr116, align 1
-  %variant.val117 = load %_Z11ParserError, ptr %variant.ptr75, align 1
-  %throw.data.ptr118 = getelementptr inbounds { i8, [88 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val117, ptr %throw.data.ptr118, align 1
+if.then96:                                        ; preds = %choose.end58
+  %throw.tag.ptr98 = getelementptr inbounds { i8, [88 x i8] }, ptr %0, i32 0, i32 0
+  store i8 1, ptr %throw.tag.ptr98, align 1
+  %variant.tag.ptr99 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr70, i32 0, i32 0
+  store i8 1, ptr %variant.tag.ptr99, align 1
+  %load.struct100 = load %_Z6Parser, ptr %2, align 8
+  %lexer101 = extractvalue %_Z6Parser %load.struct100, 0
+  %position102 = extractvalue %_Z5Lexer %lexer101, 3
+  %tuple.field103 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple10, i32 0, i32 0
+  store i64 %previous_position, ptr %tuple.field103, align 1
+  %tuple.field104 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple10, i32 0, i32 1
+  store i64 %position102, ptr %tuple.field104, align 1
+  %tuple.field105 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple10, i32 0, i32 2
+  store { ptr } { ptr @.sconst.216 }, ptr %tuple.field105, align 1
+  %tuple.val106 = load %_Z13InvalidSyntax, ptr %tuple10, align 8
+  %variant.data.ptr107 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr70, i32 0, i32 1
+  store %_Z13InvalidSyntax %tuple.val106, ptr %variant.data.ptr107, align 1
+  %variant.val108 = load %_Z11ParserError, ptr %variant.ptr70, align 1
+  %throw.data.ptr109 = getelementptr inbounds { i8, [88 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val108, ptr %throw.data.ptr109, align 1
   ret void
 
-if.end104:                                        ; preds = %choose.end63
-  %load.struct119 = load %_Z6Parser, ptr %2, align 8
-  %lexer120 = extractvalue %_Z6Parser %load.struct119, 0
-  %position121 = extractvalue %_Z5Lexer %lexer120, 3
+if.end97:                                         ; preds = %choose.end58
+  %load.struct110 = load %_Z6Parser, ptr %2, align 8
+  %lexer111 = extractvalue %_Z6Parser %load.struct110, 0
+  %position112 = extractvalue %_Z5Lexer %lexer111, 3
   store ptr null, ptr %name, align 1
-  call void @_ZN6Parser11parse_labelEPN4scaly6memory4PageE(ptr noalias sret({ i8, [25 x i8] }) %sret.result122, ptr %1, ptr %2)
-  %tag123 = load i8, ptr %sret.result122, align 1
-  %throws.data.ptr124 = getelementptr inbounds i8, ptr %sret.result122, i8 1
-  switch i8 %tag123, label %choose.else126 [
+  call void @_ZN6Parser11parse_labelEPN4scaly6memory4PageE(ptr noalias sret({ i8, [25 x i8] }) %sret.result113, ptr %1, ptr %2)
+  %tag114 = load i8, ptr %sret.result113, align 1
+  %throws.data.ptr115 = getelementptr inbounds i8, ptr %sret.result113, i8 1
+  switch i8 %tag114, label %choose.else117 [
+    i8 1, label %choose.when118
+    i8 0, label %choose.when130
+  ]
+
+choose.end116:                                    ; preds = %choose.else117, %choose.when130, %choose.end122
+  %choose.value140 = phi %_Z11LabelSyntax [ %choose.arm.load139, %choose.when130 ], [ undef, %choose.end122 ], [ undef, %choose.else117 ]
+  %field.inplace141 = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
+  %call142 = call i1 @_ZN5Lexer11parse_colonEv(ptr %field.inplace141)
+  %load.struct143 = load %_Z6Parser, ptr %2, align 8
+  %lexer144 = extractvalue %_Z6Parser %load.struct143, 0
+  %position145 = extractvalue %_Z5Lexer %lexer144, 3
+  call void @_ZN6Parser12parse_actionEPN4scaly6memory4PageE(ptr noalias sret({ i8, [33 x i8] }) %sret.result146, ptr %1, ptr %2)
+  %tag147 = load i8, ptr %sret.result146, align 1
+  %throws.data.ptr148 = getelementptr inbounds i8, ptr %sret.result146, i8 1
+  switch i8 %tag147, label %choose.else150 [
+    i8 1, label %choose.when151
+    i8 0, label %choose.when181
+  ]
+
+choose.else117:                                   ; preds = %if.end97
+  br label %choose.end116
+
+choose.when118:                                   ; preds = %if.end97
+  %throws.err.val119 = load %_Z11ParserError, ptr %throws.data.ptr115, align 1
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %variant.ptr70, ptr align 1 %throws.data.ptr115, i64 ptrtoint (ptr getelementptr (%_Z11ParserError, ptr null, i32 1) to i64), i1 false)
+  %tag.ptr120 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr70, i32 0, i32 0
+  %tag121 = load i8, ptr %tag.ptr120, align 1
+  switch i8 %tag121, label %choose.else123 [
+    i8 0, label %choose.when124
     i8 1, label %choose.when127
-    i8 0, label %choose.when139
   ]
 
-choose.end125:                                    ; preds = %choose.else126, %choose.when139, %choose.end131
-  %choose.value149 = phi %_Z11LabelSyntax [ %choose.arm.load148, %choose.when139 ], [ undef, %choose.end131 ], [ undef, %choose.else126 ]
-  %field.inplace150 = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
-  %call151 = call i1 @_ZN5Lexer11parse_colonEv(ptr %field.inplace150)
-  %load.struct152 = load %_Z6Parser, ptr %2, align 8
-  %lexer153 = extractvalue %_Z6Parser %load.struct152, 0
-  %position154 = extractvalue %_Z5Lexer %lexer153, 3
-  call void @_ZN6Parser12parse_actionEPN4scaly6memory4PageE(ptr noalias sret({ i8, [33 x i8] }) %sret.result155, ptr %1, ptr %2)
-  %tag156 = load i8, ptr %sret.result155, align 1
-  %throws.data.ptr157 = getelementptr inbounds i8, ptr %sret.result155, i8 1
-  switch i8 %tag156, label %choose.else159 [
-    i8 1, label %choose.when160
-    i8 0, label %choose.when192
-  ]
+choose.end122:                                    ; preds = %choose.else123, %choose.when127, %choose.when124
+  br label %choose.end116
 
-choose.else126:                                   ; preds = %if.end104
-  br label %choose.end125
+choose.else123:                                   ; preds = %choose.when118
+  br label %choose.end122
 
-choose.when127:                                   ; preds = %if.end104
-  %throws.err.val128 = load %_Z11ParserError, ptr %throws.data.ptr124, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %variant.ptr75, ptr align 1 %throws.data.ptr124, i64 ptrtoint (ptr getelementptr (%_Z11ParserError, ptr null, i32 1) to i64), i1 false)
-  %tag.ptr129 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr75, i32 0, i32 0
-  %tag130 = load i8, ptr %tag.ptr129, align 1
-  switch i8 %tag130, label %choose.else132 [
-    i8 0, label %choose.when133
-    i8 1, label %choose.when136
-  ]
+choose.when124:                                   ; preds = %choose.when118
+  %"variant.c_data().ptr125" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr70, i32 0, i32 1
+  %variant.val126 = load %_Z15DifferentSyntax, ptr %"variant.c_data().ptr125", align 1
+  br label %choose.end122
 
-choose.end131:                                    ; preds = %choose.else132, %choose.when136, %choose.when133
-  br label %choose.end125
+choose.when127:                                   ; preds = %choose.when118
+  %"variant.c_data().ptr128" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr70, i32 0, i32 1
+  %variant.val129 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr128", align 8
+  br label %choose.end122
 
-choose.else132:                                   ; preds = %choose.when127
-  br label %choose.end131
+choose.when130:                                   ; preds = %if.end97
+  %throws.success.val131 = load %_Z11LabelSyntax, ptr %throws.data.ptr115, align 1
+  %start132 = extractvalue %_Z11LabelSyntax %throws.success.val131, 0
+  %end133 = extractvalue %_Z11LabelSyntax %throws.success.val131, 1
+  %name134 = extractvalue %_Z11LabelSyntax %throws.success.val131, 2
+  %tuple.region135 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr (%_Z11LabelSyntax, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z11LabelSyntax }, ptr null, i64 0, i32 1) to i64))
+  %tuple.field136 = getelementptr inbounds %_Z11LabelSyntax, ptr %tuple.region135, i32 0, i32 0
+  store i64 %start132, ptr %tuple.field136, align 1
+  %tuple.field137 = getelementptr inbounds %_Z11LabelSyntax, ptr %tuple.region135, i32 0, i32 1
+  store i64 %end133, ptr %tuple.field137, align 1
+  %tuple.field138 = getelementptr inbounds %_Z11LabelSyntax, ptr %tuple.region135, i32 0, i32 2
+  store { ptr } %name134, ptr %tuple.field138, align 1
+  store ptr %tuple.region135, ptr %name, align 1
+  %choose.arm.load139 = load %_Z11LabelSyntax, ptr %tuple.region135, align 8
+  br label %choose.end116
 
-choose.when133:                                   ; preds = %choose.when127
-  %"variant.c_data().ptr134" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr75, i32 0, i32 1
-  %variant.val135 = load %_Z15DifferentSyntax, ptr %"variant.c_data().ptr134", align 1
-  br label %choose.end131
-
-choose.when136:                                   ; preds = %choose.when127
-  %"variant.c_data().ptr137" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr75, i32 0, i32 1
-  %variant.val138 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr137", align 8
-  br label %choose.end131
-
-choose.when139:                                   ; preds = %if.end104
-  %throws.success.val140 = load %_Z11LabelSyntax, ptr %throws.data.ptr124, align 1
-  %start141 = extractvalue %_Z11LabelSyntax %throws.success.val140, 0
-  %end142 = extractvalue %_Z11LabelSyntax %throws.success.val140, 1
-  %name143 = extractvalue %_Z11LabelSyntax %throws.success.val140, 2
-  %tuple.region144 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr (%_Z11LabelSyntax, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z11LabelSyntax }, ptr null, i64 0, i32 1) to i64))
-  %tuple.field145 = getelementptr inbounds %_Z11LabelSyntax, ptr %tuple.region144, i32 0, i32 0
-  store i64 %start141, ptr %tuple.field145, align 1
-  %tuple.field146 = getelementptr inbounds %_Z11LabelSyntax, ptr %tuple.region144, i32 0, i32 1
-  store i64 %end142, ptr %tuple.field146, align 1
-  %tuple.field147 = getelementptr inbounds %_Z11LabelSyntax, ptr %tuple.region144, i32 0, i32 2
-  store { ptr } %name143, ptr %tuple.field147, align 1
-  store ptr %tuple.region144, ptr %name, align 1
-  %choose.arm.load148 = load %_Z11LabelSyntax, ptr %tuple.region144, align 8
-  br label %choose.end125
-
-choose.end158:                                    ; preds = %choose.else159, %choose.when192, %choose.end164
-  %choose.value194 = phi %_Z12ActionSyntax [ %throws.success.val193, %choose.when192 ], [ undef, %choose.end164 ], [ undef, %choose.else159 ]
-  %load.struct195 = load %_Z6Parser, ptr %2, align 8
-  %lexer196 = extractvalue %_Z6Parser %load.struct195, 0
-  %position197 = extractvalue %_Z5Lexer %lexer196, 3
-  %annotation198 = load ptr, ptr %annotation, align 8
-  %operation199 = load ptr, ptr %operation, align 8
-  %name200 = load ptr, ptr %name, align 8
-  %action201 = load %_Z12ActionSyntax, ptr %action, align 1
-  %tuple.field203 = getelementptr inbounds %_Z9ForSyntax, ptr %tuple202, i32 0, i32 0
-  store i64 %previous_position, ptr %tuple.field203, align 1
-  %tuple.field204 = getelementptr inbounds %_Z9ForSyntax, ptr %tuple202, i32 0, i32 1
-  store i64 %position197, ptr %tuple.field204, align 1
-  %field.load205 = load { ptr }, ptr %sret.result, align 8
-  %tuple.field206 = getelementptr inbounds %_Z9ForSyntax, ptr %tuple202, i32 0, i32 2
-  store { ptr } %field.load205, ptr %tuple.field206, align 1
-  %tuple.field207 = getelementptr inbounds %_Z9ForSyntax, ptr %tuple202, i32 0, i32 3
-  store ptr %annotation198, ptr %tuple.field207, align 1
-  %tuple.field208 = getelementptr inbounds %_Z9ForSyntax, ptr %tuple202, i32 0, i32 4
-  store ptr %operation199, ptr %tuple.field208, align 1
-  %tuple.field209 = getelementptr inbounds %_Z9ForSyntax, ptr %tuple202, i32 0, i32 5
-  store ptr %name200, ptr %tuple.field209, align 1
-  %tuple.field210 = getelementptr inbounds %_Z9ForSyntax, ptr %tuple202, i32 0, i32 6
-  store %_Z12ActionSyntax %action201, ptr %tuple.field210, align 1
-  %tuple.val211 = load %_Z9ForSyntax, ptr %tuple202, align 8
+choose.end149:                                    ; preds = %choose.else150, %choose.when181, %choose.end155
+  %choose.value183 = phi %_Z12ActionSyntax [ %throws.success.val182, %choose.when181 ], [ undef, %choose.end155 ], [ undef, %choose.else150 ]
+  %load.struct184 = load %_Z6Parser, ptr %2, align 8
+  %lexer185 = extractvalue %_Z6Parser %load.struct184, 0
+  %position186 = extractvalue %_Z5Lexer %lexer185, 3
+  %annotation187 = load ptr, ptr %annotation, align 8
+  %operation188 = load ptr, ptr %operation, align 8
+  %name189 = load ptr, ptr %name, align 8
+  %action190 = load %_Z12ActionSyntax, ptr %action, align 1
+  %tuple.field192 = getelementptr inbounds %_Z9ForSyntax, ptr %tuple191, i32 0, i32 0
+  store i64 %previous_position, ptr %tuple.field192, align 1
+  %tuple.field193 = getelementptr inbounds %_Z9ForSyntax, ptr %tuple191, i32 0, i32 1
+  store i64 %position186, ptr %tuple.field193, align 1
+  %field.load = load { ptr }, ptr %sret.result, align 8
+  %tuple.field194 = getelementptr inbounds %_Z9ForSyntax, ptr %tuple191, i32 0, i32 2
+  store { ptr } %field.load, ptr %tuple.field194, align 1
+  %tuple.field195 = getelementptr inbounds %_Z9ForSyntax, ptr %tuple191, i32 0, i32 3
+  store ptr %annotation187, ptr %tuple.field195, align 1
+  %tuple.field196 = getelementptr inbounds %_Z9ForSyntax, ptr %tuple191, i32 0, i32 4
+  store ptr %operation188, ptr %tuple.field196, align 1
+  %tuple.field197 = getelementptr inbounds %_Z9ForSyntax, ptr %tuple191, i32 0, i32 5
+  store ptr %name189, ptr %tuple.field197, align 1
+  %tuple.field198 = getelementptr inbounds %_Z9ForSyntax, ptr %tuple191, i32 0, i32 6
+  store %_Z12ActionSyntax %action190, ptr %tuple.field198, align 1
+  %tuple.val199 = load %_Z9ForSyntax, ptr %tuple191, align 8
   %ret.tag.ptr = getelementptr inbounds { i8, [88 x i8] }, ptr %0, i32 0, i32 0
   store i8 0, ptr %ret.tag.ptr, align 1
   %ret.data.ptr = getelementptr inbounds { i8, [88 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z9ForSyntax %tuple.val211, ptr %ret.data.ptr, align 1
+  store %_Z9ForSyntax %tuple.val199, ptr %ret.data.ptr, align 1
   ret void
 
-choose.else159:                                   ; preds = %choose.end125
-  br label %choose.end158
+choose.else150:                                   ; preds = %choose.end116
+  br label %choose.end149
 
-choose.when160:                                   ; preds = %choose.end125
-  %throws.err.val161 = load %_Z11ParserError, ptr %throws.data.ptr157, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %choose.union, ptr align 1 %throws.data.ptr157, i64 ptrtoint (ptr getelementptr (%_Z11ParserError, ptr null, i32 1) to i64), i1 false)
-  %tag.ptr162 = getelementptr inbounds %_Z11ParserError, ptr %choose.union, i32 0, i32 0
-  %tag163 = load i8, ptr %tag.ptr162, align 1
-  switch i8 %tag163, label %choose.else165 [
-    i8 0, label %choose.when166
-    i8 1, label %choose.when184
+choose.when151:                                   ; preds = %choose.end116
+  %throws.err.val152 = load %_Z11ParserError, ptr %throws.data.ptr148, align 1
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %choose.union, ptr align 1 %throws.data.ptr148, i64 ptrtoint (ptr getelementptr (%_Z11ParserError, ptr null, i32 1) to i64), i1 false)
+  %tag.ptr153 = getelementptr inbounds %_Z11ParserError, ptr %choose.union, i32 0, i32 0
+  %tag154 = load i8, ptr %tag.ptr153, align 1
+  switch i8 %tag154, label %choose.else156 [
+    i8 0, label %choose.when157
+    i8 1, label %choose.when173
   ]
 
-choose.end164:                                    ; preds = %choose.else165
-  br label %choose.end158
+choose.end155:                                    ; preds = %choose.else156
+  br label %choose.end149
 
-choose.else165:                                   ; preds = %choose.when160
-  br label %choose.end164
+choose.else156:                                   ; preds = %choose.when151
+  br label %choose.end155
 
-choose.when166:                                   ; preds = %choose.when160
-  %"variant.c_data().ptr167" = getelementptr inbounds %_Z11ParserError, ptr %choose.union, i32 0, i32 1
-  %variant.val168 = load %_Z15DifferentSyntax, ptr %"variant.c_data().ptr167", align 1
-  %throw.tag.ptr169 = getelementptr inbounds { i8, [88 x i8] }, ptr %0, i32 0, i32 0
-  store i8 1, ptr %throw.tag.ptr169, align 1
-  %variant.tag.ptr171 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr170, i32 0, i32 0
-  store i8 1, ptr %variant.tag.ptr171, align 1
-  %load.struct172 = load %_Z6Parser, ptr %2, align 8
-  %lexer173 = extractvalue %_Z6Parser %load.struct172, 0
-  %position174 = extractvalue %_Z5Lexer %lexer173, 3
-  %struct.region175 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.219 }, ptr %arg.tmp48, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region175, ptr %1, ptr %arg.tmp48)
-  %tuple.field176 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple12, i32 0, i32 0
-  store i64 %position154, ptr %tuple.field176, align 1
-  %tuple.field177 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple12, i32 0, i32 1
-  store i64 %position174, ptr %tuple.field177, align 1
-  %field.load178 = load { ptr }, ptr %struct.region175, align 8
-  %tuple.field179 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple12, i32 0, i32 2
-  store { ptr } %field.load178, ptr %tuple.field179, align 1
-  %tuple.val180 = load %_Z13InvalidSyntax, ptr %tuple12, align 8
-  %variant.data.ptr181 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr170, i32 0, i32 1
-  store %_Z13InvalidSyntax %tuple.val180, ptr %variant.data.ptr181, align 1
-  %variant.val182 = load %_Z11ParserError, ptr %variant.ptr170, align 1
-  %throw.data.ptr183 = getelementptr inbounds { i8, [88 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val182, ptr %throw.data.ptr183, align 1
+choose.when157:                                   ; preds = %choose.when151
+  %"variant.c_data().ptr158" = getelementptr inbounds %_Z11ParserError, ptr %choose.union, i32 0, i32 1
+  %variant.val159 = load %_Z15DifferentSyntax, ptr %"variant.c_data().ptr158", align 1
+  %throw.tag.ptr160 = getelementptr inbounds { i8, [88 x i8] }, ptr %0, i32 0, i32 0
+  store i8 1, ptr %throw.tag.ptr160, align 1
+  %variant.tag.ptr162 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr161, i32 0, i32 0
+  store i8 1, ptr %variant.tag.ptr162, align 1
+  %load.struct163 = load %_Z6Parser, ptr %2, align 8
+  %lexer164 = extractvalue %_Z6Parser %load.struct163, 0
+  %position165 = extractvalue %_Z5Lexer %lexer164, 3
+  %tuple.field166 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple10, i32 0, i32 0
+  store i64 %position145, ptr %tuple.field166, align 1
+  %tuple.field167 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple10, i32 0, i32 1
+  store i64 %position165, ptr %tuple.field167, align 1
+  %tuple.field168 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple10, i32 0, i32 2
+  store { ptr } { ptr @.sconst.217 }, ptr %tuple.field168, align 1
+  %tuple.val169 = load %_Z13InvalidSyntax, ptr %tuple10, align 8
+  %variant.data.ptr170 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr161, i32 0, i32 1
+  store %_Z13InvalidSyntax %tuple.val169, ptr %variant.data.ptr170, align 1
+  %variant.val171 = load %_Z11ParserError, ptr %variant.ptr161, align 1
+  %throw.data.ptr172 = getelementptr inbounds { i8, [88 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val171, ptr %throw.data.ptr172, align 1
   ret void
 
-choose.when184:                                   ; preds = %choose.when160
-  %"variant.c_data().ptr185" = getelementptr inbounds %_Z11ParserError, ptr %choose.union, i32 0, i32 1
-  %variant.val186 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr185", align 8
-  %throw.tag.ptr187 = getelementptr inbounds { i8, [88 x i8] }, ptr %0, i32 0, i32 0
-  store i8 1, ptr %throw.tag.ptr187, align 1
-  %variant.tag.ptr188 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr170, i32 0, i32 0
-  store i8 1, ptr %variant.tag.ptr188, align 1
-  %variant.data.ptr189 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr170, i32 0, i32 1
-  store %_Z13InvalidSyntax %variant.val186, ptr %variant.data.ptr189, align 1
-  %variant.val190 = load %_Z11ParserError, ptr %variant.ptr170, align 1
-  %throw.data.ptr191 = getelementptr inbounds { i8, [88 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val190, ptr %throw.data.ptr191, align 1
+choose.when173:                                   ; preds = %choose.when151
+  %"variant.c_data().ptr174" = getelementptr inbounds %_Z11ParserError, ptr %choose.union, i32 0, i32 1
+  %variant.val175 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr174", align 8
+  %throw.tag.ptr176 = getelementptr inbounds { i8, [88 x i8] }, ptr %0, i32 0, i32 0
+  store i8 1, ptr %throw.tag.ptr176, align 1
+  %variant.tag.ptr177 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr161, i32 0, i32 0
+  store i8 1, ptr %variant.tag.ptr177, align 1
+  %variant.data.ptr178 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr161, i32 0, i32 1
+  store %_Z13InvalidSyntax %variant.val175, ptr %variant.data.ptr178, align 1
+  %variant.val179 = load %_Z11ParserError, ptr %variant.ptr161, align 1
+  %throw.data.ptr180 = getelementptr inbounds { i8, [88 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val179, ptr %throw.data.ptr180, align 1
   ret void
 
-choose.when192:                                   ; preds = %choose.end125
-  %throws.success.val193 = load %_Z12ActionSyntax, ptr %throws.data.ptr157, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %action, ptr align 1 %throws.data.ptr157, i64 ptrtoint (ptr getelementptr (%_Z12ActionSyntax, ptr null, i32 1) to i64), i1 false)
-  br label %choose.end158
+choose.when181:                                   ; preds = %choose.end116
+  %throws.success.val182 = load %_Z12ActionSyntax, ptr %throws.data.ptr148, align 1
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %action, ptr align 1 %throws.data.ptr148, i64 ptrtoint (ptr getelementptr (%_Z12ActionSyntax, ptr null, i32 1) to i64), i1 false)
+  br label %choose.end149
 }
 
 define linkonce_odr void @_ZN6Parser11parse_labelEPN4scaly6memory4PageE(ptr noalias sret({ i8, [25 x i8] }) %0, ptr %1, ptr %2) {
 entry:
-  %tuple22 = alloca %_Z11LabelSyntax, align 8
-  %tuple12 = alloca %_Z13InvalidSyntax, align 8
-  %arg.tmp11 = alloca { ptr }, align 8
+  %tuple20 = alloca %_Z11LabelSyntax, align 8
+  %tuple10 = alloca %_Z13InvalidSyntax, align 8
   %sret.result = alloca { ptr }, align 8
   %tuple = alloca %_Z15DifferentSyntax, align 8
   %variant.ptr = alloca %_Z11ParserError, align 8
@@ -54048,11 +52558,9 @@ entry:
   %lexer = extractvalue %_Z6Parser %load.struct, 0
   %previous_position = extractvalue %_Z5Lexer %lexer, 4
   %field.inplace = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
   %arg.tmp = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.220 }, ptr %arg.tmp, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region, ptr %1, ptr %arg.tmp)
-  %call = call i1 @_ZN5Lexer13parse_keywordE6String(ptr %field.inplace, ptr %struct.region)
+  store { ptr } { ptr @.sconst.218 }, ptr %arg.tmp, align 1
+  %call = call i1 @_ZN5Lexer13parse_keywordE6String(ptr %field.inplace, ptr %arg.tmp)
   %bitnot = xor i1 %call, true
   br i1 %bitnot, label %if.then, label %if.end
 
@@ -54086,48 +52594,43 @@ if.then4:                                         ; preds = %if.end
   %load.struct8 = load %_Z6Parser, ptr %2, align 8
   %lexer9 = extractvalue %_Z6Parser %load.struct8, 0
   %position = extractvalue %_Z5Lexer %lexer9, 3
-  %struct.region10 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.221 }, ptr %arg.tmp11, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region10, ptr %1, ptr %arg.tmp11)
-  %tuple.field = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple12, i32 0, i32 0
+  %tuple.field = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple10, i32 0, i32 0
   store i64 %previous_position, ptr %tuple.field, align 1
-  %tuple.field13 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple12, i32 0, i32 1
-  store i64 %position, ptr %tuple.field13, align 1
-  %field.load = load { ptr }, ptr %struct.region10, align 8
-  %tuple.field14 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple12, i32 0, i32 2
-  store { ptr } %field.load, ptr %tuple.field14, align 1
-  %tuple.val15 = load %_Z13InvalidSyntax, ptr %tuple12, align 8
-  %variant.data.ptr16 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 1
-  store %_Z13InvalidSyntax %tuple.val15, ptr %variant.data.ptr16, align 1
-  %variant.val17 = load %_Z11ParserError, ptr %variant.ptr, align 1
-  %throw.data.ptr18 = getelementptr inbounds { i8, [25 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val17, ptr %throw.data.ptr18, align 1
+  %tuple.field11 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple10, i32 0, i32 1
+  store i64 %position, ptr %tuple.field11, align 1
+  %tuple.field12 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple10, i32 0, i32 2
+  store { ptr } { ptr @.sconst.219 }, ptr %tuple.field12, align 1
+  %tuple.val13 = load %_Z13InvalidSyntax, ptr %tuple10, align 8
+  %variant.data.ptr14 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 1
+  store %_Z13InvalidSyntax %tuple.val13, ptr %variant.data.ptr14, align 1
+  %variant.val15 = load %_Z11ParserError, ptr %variant.ptr, align 1
+  %throw.data.ptr16 = getelementptr inbounds { i8, [25 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val15, ptr %throw.data.ptr16, align 1
   ret void
 
 if.end5:                                          ; preds = %if.end
-  %load.struct19 = load %_Z6Parser, ptr %2, align 8
-  %lexer20 = extractvalue %_Z6Parser %load.struct19, 0
-  %position21 = extractvalue %_Z5Lexer %lexer20, 3
-  %tuple.field23 = getelementptr inbounds %_Z11LabelSyntax, ptr %tuple22, i32 0, i32 0
-  store i64 %previous_position, ptr %tuple.field23, align 1
-  %tuple.field24 = getelementptr inbounds %_Z11LabelSyntax, ptr %tuple22, i32 0, i32 1
-  store i64 %position21, ptr %tuple.field24, align 1
-  %field.load25 = load { ptr }, ptr %sret.result, align 8
-  %tuple.field26 = getelementptr inbounds %_Z11LabelSyntax, ptr %tuple22, i32 0, i32 2
-  store { ptr } %field.load25, ptr %tuple.field26, align 1
-  %tuple.val27 = load %_Z11LabelSyntax, ptr %tuple22, align 8
+  %load.struct17 = load %_Z6Parser, ptr %2, align 8
+  %lexer18 = extractvalue %_Z6Parser %load.struct17, 0
+  %position19 = extractvalue %_Z5Lexer %lexer18, 3
+  %tuple.field21 = getelementptr inbounds %_Z11LabelSyntax, ptr %tuple20, i32 0, i32 0
+  store i64 %previous_position, ptr %tuple.field21, align 1
+  %tuple.field22 = getelementptr inbounds %_Z11LabelSyntax, ptr %tuple20, i32 0, i32 1
+  store i64 %position19, ptr %tuple.field22, align 1
+  %field.load = load { ptr }, ptr %sret.result, align 8
+  %tuple.field23 = getelementptr inbounds %_Z11LabelSyntax, ptr %tuple20, i32 0, i32 2
+  store { ptr } %field.load, ptr %tuple.field23, align 1
+  %tuple.val24 = load %_Z11LabelSyntax, ptr %tuple20, align 8
   %ret.tag.ptr = getelementptr inbounds { i8, [25 x i8] }, ptr %0, i32 0, i32 0
   store i8 0, ptr %ret.tag.ptr, align 1
   %ret.data.ptr = getelementptr inbounds { i8, [25 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11LabelSyntax %tuple.val27, ptr %ret.data.ptr, align 1
+  store %_Z11LabelSyntax %tuple.val24, ptr %ret.data.ptr, align 1
   ret void
 }
 
 define linkonce_odr void @_ZN6Parser12parse_repeatEPN4scaly6memory4PageE(ptr noalias sret({ i8, [64 x i8] }) %0, ptr %1, ptr %2) {
 entry:
-  %tuple66 = alloca %_Z12RepeatSyntax, align 8
-  %tuple42 = alloca %_Z13InvalidSyntax, align 8
-  %arg.tmp41 = alloca { ptr }, align 8
+  %tuple64 = alloca %_Z12RepeatSyntax, align 8
+  %tuple40 = alloca %_Z13InvalidSyntax, align 8
   %variant.ptr35 = alloca %_Z11ParserError, align 8
   %choose.union = alloca %_Z11ParserError, align 8
   %sret.result20 = alloca { i8, [33 x i8] }, align 8
@@ -54140,11 +52643,9 @@ entry:
   %lexer = extractvalue %_Z6Parser %load.struct, 0
   %previous_position = extractvalue %_Z5Lexer %lexer, 4
   %field.inplace = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
   %arg.tmp = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.222 }, ptr %arg.tmp, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region, ptr %1, ptr %arg.tmp)
-  %call = call i1 @_ZN5Lexer13parse_keywordE6String(ptr %field.inplace, ptr %struct.region)
+  store { ptr } { ptr @.sconst.220 }, ptr %arg.tmp, align 1
+  %call = call i1 @_ZN5Lexer13parse_keywordE6String(ptr %field.inplace, ptr %arg.tmp)
   %bitnot = xor i1 %call, true
   br i1 %bitnot, label %if.then, label %if.end
 
@@ -54187,7 +52688,7 @@ choose.end:                                       ; preds = %choose.else, %choos
   %throws.data.ptr22 = getelementptr inbounds i8, ptr %sret.result20, i8 1
   switch i8 %tag21, label %choose.else24 [
     i8 1, label %choose.when25
-    i8 0, label %choose.when58
+    i8 0, label %choose.when56
   ]
 
 choose.else:                                      ; preds = %if.end
@@ -54235,26 +52736,26 @@ choose.when11:                                    ; preds = %if.end
   %choose.arm.load = load %_Z11LabelSyntax, ptr %tuple.region, align 8
   br label %choose.end
 
-choose.end23:                                     ; preds = %choose.else24, %choose.when58, %choose.end29
-  %choose.value60 = phi %_Z12ActionSyntax [ %throws.success.val59, %choose.when58 ], [ undef, %choose.end29 ], [ undef, %choose.else24 ]
-  %load.struct61 = load %_Z6Parser, ptr %2, align 8
-  %lexer62 = extractvalue %_Z6Parser %load.struct61, 0
-  %position63 = extractvalue %_Z5Lexer %lexer62, 3
-  %name64 = load ptr, ptr %name, align 8
-  %action65 = load %_Z12ActionSyntax, ptr %action, align 1
-  %tuple.field67 = getelementptr inbounds %_Z12RepeatSyntax, ptr %tuple66, i32 0, i32 0
-  store i64 %previous_position, ptr %tuple.field67, align 1
-  %tuple.field68 = getelementptr inbounds %_Z12RepeatSyntax, ptr %tuple66, i32 0, i32 1
-  store i64 %position63, ptr %tuple.field68, align 1
-  %tuple.field69 = getelementptr inbounds %_Z12RepeatSyntax, ptr %tuple66, i32 0, i32 2
-  store ptr %name64, ptr %tuple.field69, align 1
-  %tuple.field70 = getelementptr inbounds %_Z12RepeatSyntax, ptr %tuple66, i32 0, i32 3
-  store %_Z12ActionSyntax %action65, ptr %tuple.field70, align 1
-  %tuple.val71 = load %_Z12RepeatSyntax, ptr %tuple66, align 8
+choose.end23:                                     ; preds = %choose.else24, %choose.when56, %choose.end29
+  %choose.value58 = phi %_Z12ActionSyntax [ %throws.success.val57, %choose.when56 ], [ undef, %choose.end29 ], [ undef, %choose.else24 ]
+  %load.struct59 = load %_Z6Parser, ptr %2, align 8
+  %lexer60 = extractvalue %_Z6Parser %load.struct59, 0
+  %position61 = extractvalue %_Z5Lexer %lexer60, 3
+  %name62 = load ptr, ptr %name, align 8
+  %action63 = load %_Z12ActionSyntax, ptr %action, align 1
+  %tuple.field65 = getelementptr inbounds %_Z12RepeatSyntax, ptr %tuple64, i32 0, i32 0
+  store i64 %previous_position, ptr %tuple.field65, align 1
+  %tuple.field66 = getelementptr inbounds %_Z12RepeatSyntax, ptr %tuple64, i32 0, i32 1
+  store i64 %position61, ptr %tuple.field66, align 1
+  %tuple.field67 = getelementptr inbounds %_Z12RepeatSyntax, ptr %tuple64, i32 0, i32 2
+  store ptr %name62, ptr %tuple.field67, align 1
+  %tuple.field68 = getelementptr inbounds %_Z12RepeatSyntax, ptr %tuple64, i32 0, i32 3
+  store %_Z12ActionSyntax %action63, ptr %tuple.field68, align 1
+  %tuple.val69 = load %_Z12RepeatSyntax, ptr %tuple64, align 8
   %ret.tag.ptr = getelementptr inbounds { i8, [64 x i8] }, ptr %0, i32 0, i32 0
   store i8 0, ptr %ret.tag.ptr, align 1
   %ret.data.ptr = getelementptr inbounds { i8, [64 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z12RepeatSyntax %tuple.val71, ptr %ret.data.ptr, align 1
+  store %_Z12RepeatSyntax %tuple.val69, ptr %ret.data.ptr, align 1
   ret void
 
 choose.else24:                                    ; preds = %choose.end
@@ -54267,7 +52768,7 @@ choose.when25:                                    ; preds = %choose.end
   %tag28 = load i8, ptr %tag.ptr27, align 1
   switch i8 %tag28, label %choose.else30 [
     i8 0, label %choose.when31
-    i8 1, label %choose.when50
+    i8 1, label %choose.when48
   ]
 
 choose.end29:                                     ; preds = %choose.else30
@@ -54286,40 +52787,36 @@ choose.when31:                                    ; preds = %choose.when25
   %load.struct37 = load %_Z6Parser, ptr %2, align 8
   %lexer38 = extractvalue %_Z6Parser %load.struct37, 0
   %position39 = extractvalue %_Z5Lexer %lexer38, 3
-  %struct.region40 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.223 }, ptr %arg.tmp41, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region40, ptr %1, ptr %arg.tmp41)
-  %tuple.field43 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple42, i32 0, i32 0
-  store i64 %position19, ptr %tuple.field43, align 1
-  %tuple.field44 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple42, i32 0, i32 1
-  store i64 %position39, ptr %tuple.field44, align 1
-  %field.load = load { ptr }, ptr %struct.region40, align 8
-  %tuple.field45 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple42, i32 0, i32 2
-  store { ptr } %field.load, ptr %tuple.field45, align 1
-  %tuple.val46 = load %_Z13InvalidSyntax, ptr %tuple42, align 8
-  %variant.data.ptr47 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr35, i32 0, i32 1
-  store %_Z13InvalidSyntax %tuple.val46, ptr %variant.data.ptr47, align 1
-  %variant.val48 = load %_Z11ParserError, ptr %variant.ptr35, align 1
-  %throw.data.ptr49 = getelementptr inbounds { i8, [64 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val48, ptr %throw.data.ptr49, align 1
+  %tuple.field41 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple40, i32 0, i32 0
+  store i64 %position19, ptr %tuple.field41, align 1
+  %tuple.field42 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple40, i32 0, i32 1
+  store i64 %position39, ptr %tuple.field42, align 1
+  %tuple.field43 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple40, i32 0, i32 2
+  store { ptr } { ptr @.sconst.221 }, ptr %tuple.field43, align 1
+  %tuple.val44 = load %_Z13InvalidSyntax, ptr %tuple40, align 8
+  %variant.data.ptr45 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr35, i32 0, i32 1
+  store %_Z13InvalidSyntax %tuple.val44, ptr %variant.data.ptr45, align 1
+  %variant.val46 = load %_Z11ParserError, ptr %variant.ptr35, align 1
+  %throw.data.ptr47 = getelementptr inbounds { i8, [64 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val46, ptr %throw.data.ptr47, align 1
   ret void
 
-choose.when50:                                    ; preds = %choose.when25
-  %"variant.c_data().ptr51" = getelementptr inbounds %_Z11ParserError, ptr %choose.union, i32 0, i32 1
-  %variant.val52 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr51", align 8
-  %throw.tag.ptr53 = getelementptr inbounds { i8, [64 x i8] }, ptr %0, i32 0, i32 0
-  store i8 1, ptr %throw.tag.ptr53, align 1
-  %variant.tag.ptr54 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr35, i32 0, i32 0
-  store i8 1, ptr %variant.tag.ptr54, align 1
-  %variant.data.ptr55 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr35, i32 0, i32 1
-  store %_Z13InvalidSyntax %variant.val52, ptr %variant.data.ptr55, align 1
-  %variant.val56 = load %_Z11ParserError, ptr %variant.ptr35, align 1
-  %throw.data.ptr57 = getelementptr inbounds { i8, [64 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val56, ptr %throw.data.ptr57, align 1
+choose.when48:                                    ; preds = %choose.when25
+  %"variant.c_data().ptr49" = getelementptr inbounds %_Z11ParserError, ptr %choose.union, i32 0, i32 1
+  %variant.val50 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr49", align 8
+  %throw.tag.ptr51 = getelementptr inbounds { i8, [64 x i8] }, ptr %0, i32 0, i32 0
+  store i8 1, ptr %throw.tag.ptr51, align 1
+  %variant.tag.ptr52 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr35, i32 0, i32 0
+  store i8 1, ptr %variant.tag.ptr52, align 1
+  %variant.data.ptr53 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr35, i32 0, i32 1
+  store %_Z13InvalidSyntax %variant.val50, ptr %variant.data.ptr53, align 1
+  %variant.val54 = load %_Z11ParserError, ptr %variant.ptr35, align 1
+  %throw.data.ptr55 = getelementptr inbounds { i8, [64 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val54, ptr %throw.data.ptr55, align 1
   ret void
 
-choose.when58:                                    ; preds = %choose.end
-  %throws.success.val59 = load %_Z12ActionSyntax, ptr %throws.data.ptr22, align 1
+choose.when56:                                    ; preds = %choose.end
+  %throws.success.val57 = load %_Z12ActionSyntax, ptr %throws.data.ptr22, align 1
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %action, ptr align 1 %throws.data.ptr22, i64 ptrtoint (ptr getelementptr (%_Z12ActionSyntax, ptr null, i32 1) to i64), i1 false)
   br label %choose.end23
 }
@@ -54509,7 +53006,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.224)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.222)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -55013,7 +53510,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.225)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.223)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -55603,12 +54100,11 @@ choose.when3:                                     ; preds = %entry
 
 define linkonce_odr void @_ZN6Parser9parse_setEPN4scaly6memory4PageE(ptr noalias sret({ i8, [32 x i8] }) %0, ptr %1, ptr %2) {
 entry:
-  %tuple99 = alloca %_Z9SetSyntax, align 8
-  %variant.ptr69 = alloca %_Z11ParserError, align 8
-  %sret.result54 = alloca { i8, [25 x i8] }, align 8
+  %tuple93 = alloca %_Z9SetSyntax, align 8
+  %variant.ptr65 = alloca %_Z11ParserError, align 8
+  %sret.result50 = alloca { i8, [25 x i8] }, align 8
   %source = alloca ptr, align 8
-  %tuple16 = alloca %_Z13InvalidSyntax, align 8
-  %arg.tmp15 = alloca { ptr }, align 8
+  %tuple14 = alloca %_Z13InvalidSyntax, align 8
   %variant.ptr9 = alloca %_Z11ParserError, align 8
   %sret.result = alloca { i8, [25 x i8] }, align 8
   %target = alloca ptr, align 8
@@ -55618,11 +54114,9 @@ entry:
   %lexer = extractvalue %_Z6Parser %load.struct, 0
   %previous_position = extractvalue %_Z5Lexer %lexer, 4
   %field.inplace = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
   %arg.tmp = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.226 }, ptr %arg.tmp, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region, ptr %1, ptr %arg.tmp)
-  %call = call i1 @_ZN5Lexer13parse_keywordE6String(ptr %field.inplace, ptr %struct.region)
+  store { ptr } { ptr @.sconst.224 }, ptr %arg.tmp, align 1
+  %call = call i1 @_ZN5Lexer13parse_keywordE6String(ptr %field.inplace, ptr %arg.tmp)
   %bitnot = xor i1 %call, true
   br i1 %bitnot, label %if.then, label %if.end
 
@@ -55649,15 +54143,15 @@ if.end:                                           ; preds = %entry
   %throws.data.ptr = getelementptr inbounds i8, ptr %sret.result, i8 1
   switch i8 %tag, label %choose.else [
     i8 1, label %choose.when
-    i8 0, label %choose.when31
+    i8 0, label %choose.when29
   ]
 
-choose.end:                                       ; preds = %choose.else, %choose.when31, %choose.end4
-  %choose.value = phi ptr [ %throws.success.val, %choose.when31 ], [ undef, %choose.end4 ], [ undef, %choose.else ]
-  %field.inplace32 = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
-  %call33 = call i1 @_ZN5Lexer11parse_colonEv(ptr %field.inplace32)
-  %bitnot34 = xor i1 %call33, true
-  br i1 %bitnot34, label %if.then35, label %if.end36
+choose.end:                                       ; preds = %choose.else, %choose.when29, %choose.end4
+  %choose.value = phi ptr [ %throws.success.val, %choose.when29 ], [ undef, %choose.end4 ], [ undef, %choose.else ]
+  %field.inplace30 = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
+  %call31 = call i1 @_ZN5Lexer11parse_colonEv(ptr %field.inplace30)
+  %bitnot32 = xor i1 %call31, true
+  br i1 %bitnot32, label %if.then33, label %if.end34
 
 choose.else:                                      ; preds = %if.end
   br label %choose.end
@@ -55669,7 +54163,7 @@ choose.when:                                      ; preds = %if.end
   %tag3 = load i8, ptr %tag.ptr, align 1
   switch i8 %tag3, label %choose.else5 [
     i8 0, label %choose.when6
-    i8 1, label %choose.when23
+    i8 1, label %choose.when21
   ]
 
 choose.end4:                                      ; preds = %choose.else5
@@ -55688,175 +54182,162 @@ choose.when6:                                     ; preds = %choose.when
   %load.struct11 = load %_Z6Parser, ptr %2, align 8
   %lexer12 = extractvalue %_Z6Parser %load.struct11, 0
   %position13 = extractvalue %_Z5Lexer %lexer12, 3
-  %struct.region14 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.227 }, ptr %arg.tmp15, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region14, ptr %1, ptr %arg.tmp15)
-  %tuple.field = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 0
+  %tuple.field = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 0
   store i64 %position, ptr %tuple.field, align 1
-  %tuple.field17 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 1
-  store i64 %position13, ptr %tuple.field17, align 1
-  %field.load = load { ptr }, ptr %struct.region14, align 8
-  %tuple.field18 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 2
-  store { ptr } %field.load, ptr %tuple.field18, align 1
-  %tuple.val19 = load %_Z13InvalidSyntax, ptr %tuple16, align 8
-  %variant.data.ptr20 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
-  store %_Z13InvalidSyntax %tuple.val19, ptr %variant.data.ptr20, align 1
-  %variant.val21 = load %_Z11ParserError, ptr %variant.ptr9, align 1
-  %throw.data.ptr22 = getelementptr inbounds { i8, [32 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val21, ptr %throw.data.ptr22, align 1
+  %tuple.field15 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 1
+  store i64 %position13, ptr %tuple.field15, align 1
+  %tuple.field16 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 2
+  store { ptr } { ptr @.sconst.225 }, ptr %tuple.field16, align 1
+  %tuple.val17 = load %_Z13InvalidSyntax, ptr %tuple14, align 8
+  %variant.data.ptr18 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
+  store %_Z13InvalidSyntax %tuple.val17, ptr %variant.data.ptr18, align 1
+  %variant.val19 = load %_Z11ParserError, ptr %variant.ptr9, align 1
+  %throw.data.ptr20 = getelementptr inbounds { i8, [32 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val19, ptr %throw.data.ptr20, align 1
   ret void
 
-choose.when23:                                    ; preds = %choose.when
-  %"variant.c_data().ptr24" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 1
-  %variant.val25 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr24", align 8
-  %throw.tag.ptr26 = getelementptr inbounds { i8, [32 x i8] }, ptr %0, i32 0, i32 0
-  store i8 1, ptr %throw.tag.ptr26, align 1
-  %variant.tag.ptr27 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 0
-  store i8 1, ptr %variant.tag.ptr27, align 1
-  %variant.data.ptr28 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
-  store %_Z13InvalidSyntax %variant.val25, ptr %variant.data.ptr28, align 1
-  %variant.val29 = load %_Z11ParserError, ptr %variant.ptr9, align 1
-  %throw.data.ptr30 = getelementptr inbounds { i8, [32 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val29, ptr %throw.data.ptr30, align 1
+choose.when21:                                    ; preds = %choose.when
+  %"variant.c_data().ptr22" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 1
+  %variant.val23 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr22", align 8
+  %throw.tag.ptr24 = getelementptr inbounds { i8, [32 x i8] }, ptr %0, i32 0, i32 0
+  store i8 1, ptr %throw.tag.ptr24, align 1
+  %variant.tag.ptr25 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 0
+  store i8 1, ptr %variant.tag.ptr25, align 1
+  %variant.data.ptr26 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
+  store %_Z13InvalidSyntax %variant.val23, ptr %variant.data.ptr26, align 1
+  %variant.val27 = load %_Z11ParserError, ptr %variant.ptr9, align 1
+  %throw.data.ptr28 = getelementptr inbounds { i8, [32 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val27, ptr %throw.data.ptr28, align 1
   ret void
 
-choose.when31:                                    ; preds = %if.end
+choose.when29:                                    ; preds = %if.end
   %throws.success.val = load ptr, ptr %throws.data.ptr, align 1
   store ptr %throws.success.val, ptr %target, align 1
   br label %choose.end
 
-if.then35:                                        ; preds = %choose.end
-  %throw.tag.ptr37 = getelementptr inbounds { i8, [32 x i8] }, ptr %0, i32 0, i32 0
-  store i8 1, ptr %throw.tag.ptr37, align 1
-  %variant.tag.ptr38 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 0
-  store i8 1, ptr %variant.tag.ptr38, align 1
-  %load.struct39 = load %_Z6Parser, ptr %2, align 8
-  %lexer40 = extractvalue %_Z6Parser %load.struct39, 0
-  %position41 = extractvalue %_Z5Lexer %lexer40, 3
-  %struct.region42 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.228 }, ptr %arg.tmp15, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region42, ptr %1, ptr %arg.tmp15)
-  %tuple.field43 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 0
-  store i64 %previous_position, ptr %tuple.field43, align 1
-  %tuple.field44 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 1
-  store i64 %position41, ptr %tuple.field44, align 1
-  %field.load45 = load { ptr }, ptr %struct.region42, align 8
-  %tuple.field46 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 2
-  store { ptr } %field.load45, ptr %tuple.field46, align 1
-  %tuple.val47 = load %_Z13InvalidSyntax, ptr %tuple16, align 8
-  %variant.data.ptr48 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
-  store %_Z13InvalidSyntax %tuple.val47, ptr %variant.data.ptr48, align 1
-  %variant.val49 = load %_Z11ParserError, ptr %variant.ptr9, align 1
-  %throw.data.ptr50 = getelementptr inbounds { i8, [32 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val49, ptr %throw.data.ptr50, align 1
+if.then33:                                        ; preds = %choose.end
+  %throw.tag.ptr35 = getelementptr inbounds { i8, [32 x i8] }, ptr %0, i32 0, i32 0
+  store i8 1, ptr %throw.tag.ptr35, align 1
+  %variant.tag.ptr36 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 0
+  store i8 1, ptr %variant.tag.ptr36, align 1
+  %load.struct37 = load %_Z6Parser, ptr %2, align 8
+  %lexer38 = extractvalue %_Z6Parser %load.struct37, 0
+  %position39 = extractvalue %_Z5Lexer %lexer38, 3
+  %tuple.field40 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 0
+  store i64 %previous_position, ptr %tuple.field40, align 1
+  %tuple.field41 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 1
+  store i64 %position39, ptr %tuple.field41, align 1
+  %tuple.field42 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 2
+  store { ptr } { ptr @.sconst.226 }, ptr %tuple.field42, align 1
+  %tuple.val43 = load %_Z13InvalidSyntax, ptr %tuple14, align 8
+  %variant.data.ptr44 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
+  store %_Z13InvalidSyntax %tuple.val43, ptr %variant.data.ptr44, align 1
+  %variant.val45 = load %_Z11ParserError, ptr %variant.ptr9, align 1
+  %throw.data.ptr46 = getelementptr inbounds { i8, [32 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val45, ptr %throw.data.ptr46, align 1
   ret void
 
-if.end36:                                         ; preds = %choose.end
-  %load.struct51 = load %_Z6Parser, ptr %2, align 8
-  %lexer52 = extractvalue %_Z6Parser %load.struct51, 0
-  %position53 = extractvalue %_Z5Lexer %lexer52, 3
-  call void @_ZN6Parser18parse_operand_listEPN4scaly6memory4PageE(ptr noalias sret({ i8, [25 x i8] }) %sret.result54, ptr %1, ptr %2)
-  %tag55 = load i8, ptr %sret.result54, align 1
-  %throws.data.ptr56 = getelementptr inbounds i8, ptr %sret.result54, i8 1
-  switch i8 %tag55, label %choose.else58 [
-    i8 1, label %choose.when59
-    i8 0, label %choose.when91
+if.end34:                                         ; preds = %choose.end
+  %load.struct47 = load %_Z6Parser, ptr %2, align 8
+  %lexer48 = extractvalue %_Z6Parser %load.struct47, 0
+  %position49 = extractvalue %_Z5Lexer %lexer48, 3
+  call void @_ZN6Parser18parse_operand_listEPN4scaly6memory4PageE(ptr noalias sret({ i8, [25 x i8] }) %sret.result50, ptr %1, ptr %2)
+  %tag51 = load i8, ptr %sret.result50, align 1
+  %throws.data.ptr52 = getelementptr inbounds i8, ptr %sret.result50, i8 1
+  switch i8 %tag51, label %choose.else54 [
+    i8 1, label %choose.when55
+    i8 0, label %choose.when85
   ]
 
-choose.end57:                                     ; preds = %choose.else58, %choose.when91, %choose.end63
-  %choose.value93 = phi ptr [ %throws.success.val92, %choose.when91 ], [ undef, %choose.end63 ], [ undef, %choose.else58 ]
-  %load.struct94 = load %_Z6Parser, ptr %2, align 8
-  %lexer95 = extractvalue %_Z6Parser %load.struct94, 0
-  %position96 = extractvalue %_Z5Lexer %lexer95, 3
-  %target97 = load ptr, ptr %target, align 8
-  %source98 = load ptr, ptr %source, align 8
-  %tuple.field100 = getelementptr inbounds %_Z9SetSyntax, ptr %tuple99, i32 0, i32 0
-  store i64 %previous_position, ptr %tuple.field100, align 1
-  %tuple.field101 = getelementptr inbounds %_Z9SetSyntax, ptr %tuple99, i32 0, i32 1
-  store i64 %position96, ptr %tuple.field101, align 1
-  %tuple.field102 = getelementptr inbounds %_Z9SetSyntax, ptr %tuple99, i32 0, i32 2
-  store ptr %target97, ptr %tuple.field102, align 1
-  %tuple.field103 = getelementptr inbounds %_Z9SetSyntax, ptr %tuple99, i32 0, i32 3
-  store ptr %source98, ptr %tuple.field103, align 1
-  %tuple.val104 = load %_Z9SetSyntax, ptr %tuple99, align 8
+choose.end53:                                     ; preds = %choose.else54, %choose.when85, %choose.end59
+  %choose.value87 = phi ptr [ %throws.success.val86, %choose.when85 ], [ undef, %choose.end59 ], [ undef, %choose.else54 ]
+  %load.struct88 = load %_Z6Parser, ptr %2, align 8
+  %lexer89 = extractvalue %_Z6Parser %load.struct88, 0
+  %position90 = extractvalue %_Z5Lexer %lexer89, 3
+  %target91 = load ptr, ptr %target, align 8
+  %source92 = load ptr, ptr %source, align 8
+  %tuple.field94 = getelementptr inbounds %_Z9SetSyntax, ptr %tuple93, i32 0, i32 0
+  store i64 %previous_position, ptr %tuple.field94, align 1
+  %tuple.field95 = getelementptr inbounds %_Z9SetSyntax, ptr %tuple93, i32 0, i32 1
+  store i64 %position90, ptr %tuple.field95, align 1
+  %tuple.field96 = getelementptr inbounds %_Z9SetSyntax, ptr %tuple93, i32 0, i32 2
+  store ptr %target91, ptr %tuple.field96, align 1
+  %tuple.field97 = getelementptr inbounds %_Z9SetSyntax, ptr %tuple93, i32 0, i32 3
+  store ptr %source92, ptr %tuple.field97, align 1
+  %tuple.val98 = load %_Z9SetSyntax, ptr %tuple93, align 8
   %ret.tag.ptr = getelementptr inbounds { i8, [32 x i8] }, ptr %0, i32 0, i32 0
   store i8 0, ptr %ret.tag.ptr, align 1
   %ret.data.ptr = getelementptr inbounds { i8, [32 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z9SetSyntax %tuple.val104, ptr %ret.data.ptr, align 1
+  store %_Z9SetSyntax %tuple.val98, ptr %ret.data.ptr, align 1
   ret void
 
-choose.else58:                                    ; preds = %if.end36
-  br label %choose.end57
+choose.else54:                                    ; preds = %if.end34
+  br label %choose.end53
 
-choose.when59:                                    ; preds = %if.end36
-  %throws.err.val60 = load %_Z11ParserError, ptr %throws.data.ptr56, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %variant.ptr9, ptr align 1 %throws.data.ptr56, i64 ptrtoint (ptr getelementptr (%_Z11ParserError, ptr null, i32 1) to i64), i1 false)
-  %tag.ptr61 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 0
-  %tag62 = load i8, ptr %tag.ptr61, align 1
-  switch i8 %tag62, label %choose.else64 [
-    i8 0, label %choose.when65
-    i8 1, label %choose.when83
+choose.when55:                                    ; preds = %if.end34
+  %throws.err.val56 = load %_Z11ParserError, ptr %throws.data.ptr52, align 1
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %variant.ptr9, ptr align 1 %throws.data.ptr52, i64 ptrtoint (ptr getelementptr (%_Z11ParserError, ptr null, i32 1) to i64), i1 false)
+  %tag.ptr57 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 0
+  %tag58 = load i8, ptr %tag.ptr57, align 1
+  switch i8 %tag58, label %choose.else60 [
+    i8 0, label %choose.when61
+    i8 1, label %choose.when77
   ]
 
-choose.end63:                                     ; preds = %choose.else64
-  br label %choose.end57
+choose.end59:                                     ; preds = %choose.else60
+  br label %choose.end53
 
-choose.else64:                                    ; preds = %choose.when59
-  br label %choose.end63
+choose.else60:                                    ; preds = %choose.when55
+  br label %choose.end59
 
-choose.when65:                                    ; preds = %choose.when59
-  %"variant.c_data().ptr66" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
-  %variant.val67 = load %_Z15DifferentSyntax, ptr %"variant.c_data().ptr66", align 1
-  %throw.tag.ptr68 = getelementptr inbounds { i8, [32 x i8] }, ptr %0, i32 0, i32 0
-  store i8 1, ptr %throw.tag.ptr68, align 1
-  %variant.tag.ptr70 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr69, i32 0, i32 0
-  store i8 1, ptr %variant.tag.ptr70, align 1
-  %load.struct71 = load %_Z6Parser, ptr %2, align 8
-  %lexer72 = extractvalue %_Z6Parser %load.struct71, 0
-  %position73 = extractvalue %_Z5Lexer %lexer72, 3
-  %struct.region74 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.229 }, ptr %arg.tmp15, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region74, ptr %1, ptr %arg.tmp15)
-  %tuple.field75 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 0
-  store i64 %position53, ptr %tuple.field75, align 1
-  %tuple.field76 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 1
-  store i64 %position73, ptr %tuple.field76, align 1
-  %field.load77 = load { ptr }, ptr %struct.region74, align 8
-  %tuple.field78 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 2
-  store { ptr } %field.load77, ptr %tuple.field78, align 1
-  %tuple.val79 = load %_Z13InvalidSyntax, ptr %tuple16, align 8
-  %variant.data.ptr80 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr69, i32 0, i32 1
-  store %_Z13InvalidSyntax %tuple.val79, ptr %variant.data.ptr80, align 1
-  %variant.val81 = load %_Z11ParserError, ptr %variant.ptr69, align 1
-  %throw.data.ptr82 = getelementptr inbounds { i8, [32 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val81, ptr %throw.data.ptr82, align 1
+choose.when61:                                    ; preds = %choose.when55
+  %"variant.c_data().ptr62" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
+  %variant.val63 = load %_Z15DifferentSyntax, ptr %"variant.c_data().ptr62", align 1
+  %throw.tag.ptr64 = getelementptr inbounds { i8, [32 x i8] }, ptr %0, i32 0, i32 0
+  store i8 1, ptr %throw.tag.ptr64, align 1
+  %variant.tag.ptr66 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr65, i32 0, i32 0
+  store i8 1, ptr %variant.tag.ptr66, align 1
+  %load.struct67 = load %_Z6Parser, ptr %2, align 8
+  %lexer68 = extractvalue %_Z6Parser %load.struct67, 0
+  %position69 = extractvalue %_Z5Lexer %lexer68, 3
+  %tuple.field70 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 0
+  store i64 %position49, ptr %tuple.field70, align 1
+  %tuple.field71 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 1
+  store i64 %position69, ptr %tuple.field71, align 1
+  %tuple.field72 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 2
+  store { ptr } { ptr @.sconst.227 }, ptr %tuple.field72, align 1
+  %tuple.val73 = load %_Z13InvalidSyntax, ptr %tuple14, align 8
+  %variant.data.ptr74 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr65, i32 0, i32 1
+  store %_Z13InvalidSyntax %tuple.val73, ptr %variant.data.ptr74, align 1
+  %variant.val75 = load %_Z11ParserError, ptr %variant.ptr65, align 1
+  %throw.data.ptr76 = getelementptr inbounds { i8, [32 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val75, ptr %throw.data.ptr76, align 1
   ret void
 
-choose.when83:                                    ; preds = %choose.when59
-  %"variant.c_data().ptr84" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
-  %variant.val85 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr84", align 8
-  %throw.tag.ptr86 = getelementptr inbounds { i8, [32 x i8] }, ptr %0, i32 0, i32 0
-  store i8 1, ptr %throw.tag.ptr86, align 1
-  %variant.tag.ptr87 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr69, i32 0, i32 0
-  store i8 1, ptr %variant.tag.ptr87, align 1
-  %variant.data.ptr88 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr69, i32 0, i32 1
-  store %_Z13InvalidSyntax %variant.val85, ptr %variant.data.ptr88, align 1
-  %variant.val89 = load %_Z11ParserError, ptr %variant.ptr69, align 1
-  %throw.data.ptr90 = getelementptr inbounds { i8, [32 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val89, ptr %throw.data.ptr90, align 1
+choose.when77:                                    ; preds = %choose.when55
+  %"variant.c_data().ptr78" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
+  %variant.val79 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr78", align 8
+  %throw.tag.ptr80 = getelementptr inbounds { i8, [32 x i8] }, ptr %0, i32 0, i32 0
+  store i8 1, ptr %throw.tag.ptr80, align 1
+  %variant.tag.ptr81 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr65, i32 0, i32 0
+  store i8 1, ptr %variant.tag.ptr81, align 1
+  %variant.data.ptr82 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr65, i32 0, i32 1
+  store %_Z13InvalidSyntax %variant.val79, ptr %variant.data.ptr82, align 1
+  %variant.val83 = load %_Z11ParserError, ptr %variant.ptr65, align 1
+  %throw.data.ptr84 = getelementptr inbounds { i8, [32 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val83, ptr %throw.data.ptr84, align 1
   ret void
 
-choose.when91:                                    ; preds = %if.end36
-  %throws.success.val92 = load ptr, ptr %throws.data.ptr56, align 1
-  store ptr %throws.success.val92, ptr %source, align 1
-  br label %choose.end57
+choose.when85:                                    ; preds = %if.end34
+  %throws.success.val86 = load ptr, ptr %throws.data.ptr52, align 1
+  store ptr %throws.success.val86, ptr %source, align 1
+  br label %choose.end53
 }
 
 define linkonce_odr void @_ZN6Parser11parse_blockEPN4scaly6memory4PageE(ptr noalias sret({ i8, [32 x i8] }) %0, ptr %1, ptr %2) {
 entry:
   %tuple71 = alloca %_Z11BlockSyntax, align 8
   %tuple59 = alloca %_Z13InvalidSyntax, align 8
-  %arg.tmp = alloca { ptr }, align 8
   %variant.ptr40 = alloca %_Z11ParserError, align 8
   %sret.result22 = alloca { i8, [25 x i8] }, align 8
   %statements = alloca ptr, align 8
@@ -56017,16 +54498,12 @@ if.then52:                                        ; preds = %choose.end25
   %load.struct56 = load %_Z6Parser, ptr %2, align 8
   %lexer57 = extractvalue %_Z6Parser %load.struct56, 0
   %position58 = extractvalue %_Z5Lexer %lexer57, 3
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.230 }, ptr %arg.tmp, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region, ptr %1, ptr %arg.tmp)
   %tuple.field = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple59, i32 0, i32 0
   store i64 %previous_position, ptr %tuple.field, align 1
   %tuple.field60 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple59, i32 0, i32 1
   store i64 %position58, ptr %tuple.field60, align 1
-  %field.load = load { ptr }, ptr %struct.region, align 8
   %tuple.field61 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple59, i32 0, i32 2
-  store { ptr } %field.load, ptr %tuple.field61, align 1
+  store { ptr } { ptr @.sconst.228 }, ptr %tuple.field61, align 1
   %tuple.val62 = load %_Z13InvalidSyntax, ptr %tuple59, align 8
   %variant.data.ptr63 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr40, i32 0, i32 1
   store %_Z13InvalidSyntax %tuple.val62, ptr %variant.data.ptr63, align 1
@@ -56059,9 +54536,8 @@ if.end53:                                         ; preds = %choose.end25
 
 define linkonce_odr void @_ZN6Parser12parse_sizeofEPN4scaly6memory4PageE(ptr noalias sret({ i8, [88 x i8] }) %0, ptr %1, ptr %2) {
 entry:
-  %tuple36 = alloca %_Z12SizeOfSyntax, align 8
-  %tuple16 = alloca %_Z13InvalidSyntax, align 8
-  %arg.tmp15 = alloca { ptr }, align 8
+  %tuple34 = alloca %_Z12SizeOfSyntax, align 8
+  %tuple14 = alloca %_Z13InvalidSyntax, align 8
   %variant.ptr9 = alloca %_Z11ParserError, align 8
   %sret.result = alloca { i8, [72 x i8] }, align 8
   %type = alloca %_Z10TypeSyntax, align 8
@@ -56071,11 +54547,9 @@ entry:
   %lexer = extractvalue %_Z6Parser %load.struct, 0
   %previous_position = extractvalue %_Z5Lexer %lexer, 4
   %field.inplace = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
   %arg.tmp = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.231 }, ptr %arg.tmp, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region, ptr %1, ptr %arg.tmp)
-  %call = call i1 @_ZN5Lexer13parse_keywordE6String(ptr %field.inplace, ptr %struct.region)
+  store { ptr } { ptr @.sconst.229 }, ptr %arg.tmp, align 1
+  %call = call i1 @_ZN5Lexer13parse_keywordE6String(ptr %field.inplace, ptr %arg.tmp)
   %bitnot = xor i1 %call, true
   br i1 %bitnot, label %if.then, label %if.end
 
@@ -56102,26 +54576,26 @@ if.end:                                           ; preds = %entry
   %throws.data.ptr = getelementptr inbounds i8, ptr %sret.result, i8 1
   switch i8 %tag, label %choose.else [
     i8 1, label %choose.when
-    i8 0, label %choose.when31
+    i8 0, label %choose.when29
   ]
 
-choose.end:                                       ; preds = %choose.else, %choose.when31, %choose.end4
-  %choose.value = phi %_Z10TypeSyntax [ %throws.success.val, %choose.when31 ], [ undef, %choose.end4 ], [ undef, %choose.else ]
-  %load.struct32 = load %_Z6Parser, ptr %2, align 8
-  %lexer33 = extractvalue %_Z6Parser %load.struct32, 0
-  %position34 = extractvalue %_Z5Lexer %lexer33, 3
-  %type35 = load %_Z10TypeSyntax, ptr %type, align 8
-  %tuple.field37 = getelementptr inbounds %_Z12SizeOfSyntax, ptr %tuple36, i32 0, i32 0
-  store i64 %previous_position, ptr %tuple.field37, align 1
-  %tuple.field38 = getelementptr inbounds %_Z12SizeOfSyntax, ptr %tuple36, i32 0, i32 1
-  store i64 %position34, ptr %tuple.field38, align 1
-  %tuple.field39 = getelementptr inbounds %_Z12SizeOfSyntax, ptr %tuple36, i32 0, i32 2
-  store %_Z10TypeSyntax %type35, ptr %tuple.field39, align 1
-  %tuple.val40 = load %_Z12SizeOfSyntax, ptr %tuple36, align 8
+choose.end:                                       ; preds = %choose.else, %choose.when29, %choose.end4
+  %choose.value = phi %_Z10TypeSyntax [ %throws.success.val, %choose.when29 ], [ undef, %choose.end4 ], [ undef, %choose.else ]
+  %load.struct30 = load %_Z6Parser, ptr %2, align 8
+  %lexer31 = extractvalue %_Z6Parser %load.struct30, 0
+  %position32 = extractvalue %_Z5Lexer %lexer31, 3
+  %type33 = load %_Z10TypeSyntax, ptr %type, align 8
+  %tuple.field35 = getelementptr inbounds %_Z12SizeOfSyntax, ptr %tuple34, i32 0, i32 0
+  store i64 %previous_position, ptr %tuple.field35, align 1
+  %tuple.field36 = getelementptr inbounds %_Z12SizeOfSyntax, ptr %tuple34, i32 0, i32 1
+  store i64 %position32, ptr %tuple.field36, align 1
+  %tuple.field37 = getelementptr inbounds %_Z12SizeOfSyntax, ptr %tuple34, i32 0, i32 2
+  store %_Z10TypeSyntax %type33, ptr %tuple.field37, align 1
+  %tuple.val38 = load %_Z12SizeOfSyntax, ptr %tuple34, align 8
   %ret.tag.ptr = getelementptr inbounds { i8, [88 x i8] }, ptr %0, i32 0, i32 0
   store i8 0, ptr %ret.tag.ptr, align 1
   %ret.data.ptr = getelementptr inbounds { i8, [88 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z12SizeOfSyntax %tuple.val40, ptr %ret.data.ptr, align 1
+  store %_Z12SizeOfSyntax %tuple.val38, ptr %ret.data.ptr, align 1
   ret void
 
 choose.else:                                      ; preds = %if.end
@@ -56134,7 +54608,7 @@ choose.when:                                      ; preds = %if.end
   %tag3 = load i8, ptr %tag.ptr, align 1
   switch i8 %tag3, label %choose.else5 [
     i8 0, label %choose.when6
-    i8 1, label %choose.when23
+    i8 1, label %choose.when21
   ]
 
 choose.end4:                                      ; preds = %choose.else5
@@ -56153,39 +54627,35 @@ choose.when6:                                     ; preds = %choose.when
   %load.struct11 = load %_Z6Parser, ptr %2, align 8
   %lexer12 = extractvalue %_Z6Parser %load.struct11, 0
   %position13 = extractvalue %_Z5Lexer %lexer12, 3
-  %struct.region14 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.232 }, ptr %arg.tmp15, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region14, ptr %1, ptr %arg.tmp15)
-  %tuple.field = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 0
+  %tuple.field = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 0
   store i64 %position, ptr %tuple.field, align 1
-  %tuple.field17 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 1
-  store i64 %position13, ptr %tuple.field17, align 1
-  %field.load = load { ptr }, ptr %struct.region14, align 8
-  %tuple.field18 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 2
-  store { ptr } %field.load, ptr %tuple.field18, align 1
-  %tuple.val19 = load %_Z13InvalidSyntax, ptr %tuple16, align 8
-  %variant.data.ptr20 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
-  store %_Z13InvalidSyntax %tuple.val19, ptr %variant.data.ptr20, align 1
-  %variant.val21 = load %_Z11ParserError, ptr %variant.ptr9, align 1
-  %throw.data.ptr22 = getelementptr inbounds { i8, [88 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val21, ptr %throw.data.ptr22, align 1
+  %tuple.field15 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 1
+  store i64 %position13, ptr %tuple.field15, align 1
+  %tuple.field16 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 2
+  store { ptr } { ptr @.sconst.230 }, ptr %tuple.field16, align 1
+  %tuple.val17 = load %_Z13InvalidSyntax, ptr %tuple14, align 8
+  %variant.data.ptr18 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
+  store %_Z13InvalidSyntax %tuple.val17, ptr %variant.data.ptr18, align 1
+  %variant.val19 = load %_Z11ParserError, ptr %variant.ptr9, align 1
+  %throw.data.ptr20 = getelementptr inbounds { i8, [88 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val19, ptr %throw.data.ptr20, align 1
   ret void
 
-choose.when23:                                    ; preds = %choose.when
-  %"variant.c_data().ptr24" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 1
-  %variant.val25 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr24", align 8
-  %throw.tag.ptr26 = getelementptr inbounds { i8, [88 x i8] }, ptr %0, i32 0, i32 0
-  store i8 1, ptr %throw.tag.ptr26, align 1
-  %variant.tag.ptr27 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 0
-  store i8 1, ptr %variant.tag.ptr27, align 1
-  %variant.data.ptr28 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
-  store %_Z13InvalidSyntax %variant.val25, ptr %variant.data.ptr28, align 1
-  %variant.val29 = load %_Z11ParserError, ptr %variant.ptr9, align 1
-  %throw.data.ptr30 = getelementptr inbounds { i8, [88 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val29, ptr %throw.data.ptr30, align 1
+choose.when21:                                    ; preds = %choose.when
+  %"variant.c_data().ptr22" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 1
+  %variant.val23 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr22", align 8
+  %throw.tag.ptr24 = getelementptr inbounds { i8, [88 x i8] }, ptr %0, i32 0, i32 0
+  store i8 1, ptr %throw.tag.ptr24, align 1
+  %variant.tag.ptr25 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 0
+  store i8 1, ptr %variant.tag.ptr25, align 1
+  %variant.data.ptr26 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
+  store %_Z13InvalidSyntax %variant.val23, ptr %variant.data.ptr26, align 1
+  %variant.val27 = load %_Z11ParserError, ptr %variant.ptr9, align 1
+  %throw.data.ptr28 = getelementptr inbounds { i8, [88 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val27, ptr %throw.data.ptr28, align 1
   ret void
 
-choose.when31:                                    ; preds = %if.end
+choose.when29:                                    ; preds = %if.end
   %throws.success.val = load %_Z10TypeSyntax, ptr %throws.data.ptr, align 1
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %type, ptr align 1 %throws.data.ptr, i64 ptrtoint (ptr getelementptr (%_Z10TypeSyntax, ptr null, i32 1) to i64), i1 false)
   br label %choose.end
@@ -56193,9 +54663,8 @@ choose.when31:                                    ; preds = %if.end
 
 define linkonce_odr void @_ZN6Parser13parse_alignofEPN4scaly6memory4PageE(ptr noalias sret({ i8, [88 x i8] }) %0, ptr %1, ptr %2) {
 entry:
-  %tuple36 = alloca %_Z13AlignOfSyntax, align 8
-  %tuple16 = alloca %_Z13InvalidSyntax, align 8
-  %arg.tmp15 = alloca { ptr }, align 8
+  %tuple34 = alloca %_Z13AlignOfSyntax, align 8
+  %tuple14 = alloca %_Z13InvalidSyntax, align 8
   %variant.ptr9 = alloca %_Z11ParserError, align 8
   %sret.result = alloca { i8, [72 x i8] }, align 8
   %type = alloca %_Z10TypeSyntax, align 8
@@ -56205,11 +54674,9 @@ entry:
   %lexer = extractvalue %_Z6Parser %load.struct, 0
   %previous_position = extractvalue %_Z5Lexer %lexer, 4
   %field.inplace = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
   %arg.tmp = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.233 }, ptr %arg.tmp, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region, ptr %1, ptr %arg.tmp)
-  %call = call i1 @_ZN5Lexer13parse_keywordE6String(ptr %field.inplace, ptr %struct.region)
+  store { ptr } { ptr @.sconst.231 }, ptr %arg.tmp, align 1
+  %call = call i1 @_ZN5Lexer13parse_keywordE6String(ptr %field.inplace, ptr %arg.tmp)
   %bitnot = xor i1 %call, true
   br i1 %bitnot, label %if.then, label %if.end
 
@@ -56236,26 +54703,26 @@ if.end:                                           ; preds = %entry
   %throws.data.ptr = getelementptr inbounds i8, ptr %sret.result, i8 1
   switch i8 %tag, label %choose.else [
     i8 1, label %choose.when
-    i8 0, label %choose.when31
+    i8 0, label %choose.when29
   ]
 
-choose.end:                                       ; preds = %choose.else, %choose.when31, %choose.end4
-  %choose.value = phi %_Z10TypeSyntax [ %throws.success.val, %choose.when31 ], [ undef, %choose.end4 ], [ undef, %choose.else ]
-  %load.struct32 = load %_Z6Parser, ptr %2, align 8
-  %lexer33 = extractvalue %_Z6Parser %load.struct32, 0
-  %position34 = extractvalue %_Z5Lexer %lexer33, 3
-  %type35 = load %_Z10TypeSyntax, ptr %type, align 8
-  %tuple.field37 = getelementptr inbounds %_Z13AlignOfSyntax, ptr %tuple36, i32 0, i32 0
-  store i64 %previous_position, ptr %tuple.field37, align 1
-  %tuple.field38 = getelementptr inbounds %_Z13AlignOfSyntax, ptr %tuple36, i32 0, i32 1
-  store i64 %position34, ptr %tuple.field38, align 1
-  %tuple.field39 = getelementptr inbounds %_Z13AlignOfSyntax, ptr %tuple36, i32 0, i32 2
-  store %_Z10TypeSyntax %type35, ptr %tuple.field39, align 1
-  %tuple.val40 = load %_Z13AlignOfSyntax, ptr %tuple36, align 8
+choose.end:                                       ; preds = %choose.else, %choose.when29, %choose.end4
+  %choose.value = phi %_Z10TypeSyntax [ %throws.success.val, %choose.when29 ], [ undef, %choose.end4 ], [ undef, %choose.else ]
+  %load.struct30 = load %_Z6Parser, ptr %2, align 8
+  %lexer31 = extractvalue %_Z6Parser %load.struct30, 0
+  %position32 = extractvalue %_Z5Lexer %lexer31, 3
+  %type33 = load %_Z10TypeSyntax, ptr %type, align 8
+  %tuple.field35 = getelementptr inbounds %_Z13AlignOfSyntax, ptr %tuple34, i32 0, i32 0
+  store i64 %previous_position, ptr %tuple.field35, align 1
+  %tuple.field36 = getelementptr inbounds %_Z13AlignOfSyntax, ptr %tuple34, i32 0, i32 1
+  store i64 %position32, ptr %tuple.field36, align 1
+  %tuple.field37 = getelementptr inbounds %_Z13AlignOfSyntax, ptr %tuple34, i32 0, i32 2
+  store %_Z10TypeSyntax %type33, ptr %tuple.field37, align 1
+  %tuple.val38 = load %_Z13AlignOfSyntax, ptr %tuple34, align 8
   %ret.tag.ptr = getelementptr inbounds { i8, [88 x i8] }, ptr %0, i32 0, i32 0
   store i8 0, ptr %ret.tag.ptr, align 1
   %ret.data.ptr = getelementptr inbounds { i8, [88 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z13AlignOfSyntax %tuple.val40, ptr %ret.data.ptr, align 1
+  store %_Z13AlignOfSyntax %tuple.val38, ptr %ret.data.ptr, align 1
   ret void
 
 choose.else:                                      ; preds = %if.end
@@ -56268,7 +54735,7 @@ choose.when:                                      ; preds = %if.end
   %tag3 = load i8, ptr %tag.ptr, align 1
   switch i8 %tag3, label %choose.else5 [
     i8 0, label %choose.when6
-    i8 1, label %choose.when23
+    i8 1, label %choose.when21
   ]
 
 choose.end4:                                      ; preds = %choose.else5
@@ -56287,39 +54754,35 @@ choose.when6:                                     ; preds = %choose.when
   %load.struct11 = load %_Z6Parser, ptr %2, align 8
   %lexer12 = extractvalue %_Z6Parser %load.struct11, 0
   %position13 = extractvalue %_Z5Lexer %lexer12, 3
-  %struct.region14 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.234 }, ptr %arg.tmp15, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region14, ptr %1, ptr %arg.tmp15)
-  %tuple.field = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 0
+  %tuple.field = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 0
   store i64 %position, ptr %tuple.field, align 1
-  %tuple.field17 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 1
-  store i64 %position13, ptr %tuple.field17, align 1
-  %field.load = load { ptr }, ptr %struct.region14, align 8
-  %tuple.field18 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 2
-  store { ptr } %field.load, ptr %tuple.field18, align 1
-  %tuple.val19 = load %_Z13InvalidSyntax, ptr %tuple16, align 8
-  %variant.data.ptr20 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
-  store %_Z13InvalidSyntax %tuple.val19, ptr %variant.data.ptr20, align 1
-  %variant.val21 = load %_Z11ParserError, ptr %variant.ptr9, align 1
-  %throw.data.ptr22 = getelementptr inbounds { i8, [88 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val21, ptr %throw.data.ptr22, align 1
+  %tuple.field15 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 1
+  store i64 %position13, ptr %tuple.field15, align 1
+  %tuple.field16 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 2
+  store { ptr } { ptr @.sconst.232 }, ptr %tuple.field16, align 1
+  %tuple.val17 = load %_Z13InvalidSyntax, ptr %tuple14, align 8
+  %variant.data.ptr18 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
+  store %_Z13InvalidSyntax %tuple.val17, ptr %variant.data.ptr18, align 1
+  %variant.val19 = load %_Z11ParserError, ptr %variant.ptr9, align 1
+  %throw.data.ptr20 = getelementptr inbounds { i8, [88 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val19, ptr %throw.data.ptr20, align 1
   ret void
 
-choose.when23:                                    ; preds = %choose.when
-  %"variant.c_data().ptr24" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 1
-  %variant.val25 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr24", align 8
-  %throw.tag.ptr26 = getelementptr inbounds { i8, [88 x i8] }, ptr %0, i32 0, i32 0
-  store i8 1, ptr %throw.tag.ptr26, align 1
-  %variant.tag.ptr27 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 0
-  store i8 1, ptr %variant.tag.ptr27, align 1
-  %variant.data.ptr28 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
-  store %_Z13InvalidSyntax %variant.val25, ptr %variant.data.ptr28, align 1
-  %variant.val29 = load %_Z11ParserError, ptr %variant.ptr9, align 1
-  %throw.data.ptr30 = getelementptr inbounds { i8, [88 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val29, ptr %throw.data.ptr30, align 1
+choose.when21:                                    ; preds = %choose.when
+  %"variant.c_data().ptr22" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 1
+  %variant.val23 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr22", align 8
+  %throw.tag.ptr24 = getelementptr inbounds { i8, [88 x i8] }, ptr %0, i32 0, i32 0
+  store i8 1, ptr %throw.tag.ptr24, align 1
+  %variant.tag.ptr25 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 0
+  store i8 1, ptr %variant.tag.ptr25, align 1
+  %variant.data.ptr26 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
+  store %_Z13InvalidSyntax %variant.val23, ptr %variant.data.ptr26, align 1
+  %variant.val27 = load %_Z11ParserError, ptr %variant.ptr9, align 1
+  %throw.data.ptr28 = getelementptr inbounds { i8, [88 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val27, ptr %throw.data.ptr28, align 1
   ret void
 
-choose.when31:                                    ; preds = %if.end
+choose.when29:                                    ; preds = %if.end
   %throws.success.val = load %_Z10TypeSyntax, ptr %throws.data.ptr, align 1
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %type, ptr align 1 %throws.data.ptr, i64 ptrtoint (ptr getelementptr (%_Z10TypeSyntax, ptr null, i32 1) to i64), i1 false)
   br label %choose.end
@@ -56327,9 +54790,8 @@ choose.when31:                                    ; preds = %if.end
 
 define linkonce_odr void @_ZN6Parser8parse_isEPN4scaly6memory4PageE(ptr noalias sret({ i8, [48 x i8] }) %0, ptr %1, ptr %2) {
 entry:
-  %tuple36 = alloca %_Z8IsSyntax, align 8
-  %tuple16 = alloca %_Z13InvalidSyntax, align 8
-  %arg.tmp15 = alloca { ptr }, align 8
+  %tuple34 = alloca %_Z8IsSyntax, align 8
+  %tuple14 = alloca %_Z13InvalidSyntax, align 8
   %variant.ptr9 = alloca %_Z11ParserError, align 8
   %sret.result = alloca { i8, [32 x i8] }, align 8
   %name = alloca %_Z10NameSyntax, align 8
@@ -56339,11 +54801,9 @@ entry:
   %lexer = extractvalue %_Z6Parser %load.struct, 0
   %previous_position = extractvalue %_Z5Lexer %lexer, 4
   %field.inplace = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
   %arg.tmp = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.235 }, ptr %arg.tmp, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region, ptr %1, ptr %arg.tmp)
-  %call = call i1 @_ZN5Lexer13parse_keywordE6String(ptr %field.inplace, ptr %struct.region)
+  store { ptr } { ptr @.sconst.233 }, ptr %arg.tmp, align 1
+  %call = call i1 @_ZN5Lexer13parse_keywordE6String(ptr %field.inplace, ptr %arg.tmp)
   %bitnot = xor i1 %call, true
   br i1 %bitnot, label %if.then, label %if.end
 
@@ -56370,26 +54830,26 @@ if.end:                                           ; preds = %entry
   %throws.data.ptr = getelementptr inbounds i8, ptr %sret.result, i8 1
   switch i8 %tag, label %choose.else [
     i8 1, label %choose.when
-    i8 0, label %choose.when31
+    i8 0, label %choose.when29
   ]
 
-choose.end:                                       ; preds = %choose.else, %choose.when31, %choose.end4
-  %choose.value = phi %_Z10NameSyntax [ %throws.success.val, %choose.when31 ], [ undef, %choose.end4 ], [ undef, %choose.else ]
-  %load.struct32 = load %_Z6Parser, ptr %2, align 8
-  %lexer33 = extractvalue %_Z6Parser %load.struct32, 0
-  %position34 = extractvalue %_Z5Lexer %lexer33, 3
-  %name35 = load %_Z10NameSyntax, ptr %name, align 8
-  %tuple.field37 = getelementptr inbounds %_Z8IsSyntax, ptr %tuple36, i32 0, i32 0
-  store i64 %previous_position, ptr %tuple.field37, align 1
-  %tuple.field38 = getelementptr inbounds %_Z8IsSyntax, ptr %tuple36, i32 0, i32 1
-  store i64 %position34, ptr %tuple.field38, align 1
-  %tuple.field39 = getelementptr inbounds %_Z8IsSyntax, ptr %tuple36, i32 0, i32 2
-  store %_Z10NameSyntax %name35, ptr %tuple.field39, align 1
-  %tuple.val40 = load %_Z8IsSyntax, ptr %tuple36, align 8
+choose.end:                                       ; preds = %choose.else, %choose.when29, %choose.end4
+  %choose.value = phi %_Z10NameSyntax [ %throws.success.val, %choose.when29 ], [ undef, %choose.end4 ], [ undef, %choose.else ]
+  %load.struct30 = load %_Z6Parser, ptr %2, align 8
+  %lexer31 = extractvalue %_Z6Parser %load.struct30, 0
+  %position32 = extractvalue %_Z5Lexer %lexer31, 3
+  %name33 = load %_Z10NameSyntax, ptr %name, align 8
+  %tuple.field35 = getelementptr inbounds %_Z8IsSyntax, ptr %tuple34, i32 0, i32 0
+  store i64 %previous_position, ptr %tuple.field35, align 1
+  %tuple.field36 = getelementptr inbounds %_Z8IsSyntax, ptr %tuple34, i32 0, i32 1
+  store i64 %position32, ptr %tuple.field36, align 1
+  %tuple.field37 = getelementptr inbounds %_Z8IsSyntax, ptr %tuple34, i32 0, i32 2
+  store %_Z10NameSyntax %name33, ptr %tuple.field37, align 1
+  %tuple.val38 = load %_Z8IsSyntax, ptr %tuple34, align 8
   %ret.tag.ptr = getelementptr inbounds { i8, [48 x i8] }, ptr %0, i32 0, i32 0
   store i8 0, ptr %ret.tag.ptr, align 1
   %ret.data.ptr = getelementptr inbounds { i8, [48 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z8IsSyntax %tuple.val40, ptr %ret.data.ptr, align 1
+  store %_Z8IsSyntax %tuple.val38, ptr %ret.data.ptr, align 1
   ret void
 
 choose.else:                                      ; preds = %if.end
@@ -56402,7 +54862,7 @@ choose.when:                                      ; preds = %if.end
   %tag3 = load i8, ptr %tag.ptr, align 1
   switch i8 %tag3, label %choose.else5 [
     i8 0, label %choose.when6
-    i8 1, label %choose.when23
+    i8 1, label %choose.when21
   ]
 
 choose.end4:                                      ; preds = %choose.else5
@@ -56421,39 +54881,35 @@ choose.when6:                                     ; preds = %choose.when
   %load.struct11 = load %_Z6Parser, ptr %2, align 8
   %lexer12 = extractvalue %_Z6Parser %load.struct11, 0
   %position13 = extractvalue %_Z5Lexer %lexer12, 3
-  %struct.region14 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.236 }, ptr %arg.tmp15, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region14, ptr %1, ptr %arg.tmp15)
-  %tuple.field = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 0
+  %tuple.field = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 0
   store i64 %position, ptr %tuple.field, align 1
-  %tuple.field17 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 1
-  store i64 %position13, ptr %tuple.field17, align 1
-  %field.load = load { ptr }, ptr %struct.region14, align 8
-  %tuple.field18 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 2
-  store { ptr } %field.load, ptr %tuple.field18, align 1
-  %tuple.val19 = load %_Z13InvalidSyntax, ptr %tuple16, align 8
-  %variant.data.ptr20 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
-  store %_Z13InvalidSyntax %tuple.val19, ptr %variant.data.ptr20, align 1
-  %variant.val21 = load %_Z11ParserError, ptr %variant.ptr9, align 1
-  %throw.data.ptr22 = getelementptr inbounds { i8, [48 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val21, ptr %throw.data.ptr22, align 1
+  %tuple.field15 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 1
+  store i64 %position13, ptr %tuple.field15, align 1
+  %tuple.field16 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 2
+  store { ptr } { ptr @.sconst.234 }, ptr %tuple.field16, align 1
+  %tuple.val17 = load %_Z13InvalidSyntax, ptr %tuple14, align 8
+  %variant.data.ptr18 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
+  store %_Z13InvalidSyntax %tuple.val17, ptr %variant.data.ptr18, align 1
+  %variant.val19 = load %_Z11ParserError, ptr %variant.ptr9, align 1
+  %throw.data.ptr20 = getelementptr inbounds { i8, [48 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val19, ptr %throw.data.ptr20, align 1
   ret void
 
-choose.when23:                                    ; preds = %choose.when
-  %"variant.c_data().ptr24" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 1
-  %variant.val25 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr24", align 8
-  %throw.tag.ptr26 = getelementptr inbounds { i8, [48 x i8] }, ptr %0, i32 0, i32 0
-  store i8 1, ptr %throw.tag.ptr26, align 1
-  %variant.tag.ptr27 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 0
-  store i8 1, ptr %variant.tag.ptr27, align 1
-  %variant.data.ptr28 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
-  store %_Z13InvalidSyntax %variant.val25, ptr %variant.data.ptr28, align 1
-  %variant.val29 = load %_Z11ParserError, ptr %variant.ptr9, align 1
-  %throw.data.ptr30 = getelementptr inbounds { i8, [48 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val29, ptr %throw.data.ptr30, align 1
+choose.when21:                                    ; preds = %choose.when
+  %"variant.c_data().ptr22" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 1
+  %variant.val23 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr22", align 8
+  %throw.tag.ptr24 = getelementptr inbounds { i8, [48 x i8] }, ptr %0, i32 0, i32 0
+  store i8 1, ptr %throw.tag.ptr24, align 1
+  %variant.tag.ptr25 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 0
+  store i8 1, ptr %variant.tag.ptr25, align 1
+  %variant.data.ptr26 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
+  store %_Z13InvalidSyntax %variant.val23, ptr %variant.data.ptr26, align 1
+  %variant.val27 = load %_Z11ParserError, ptr %variant.ptr9, align 1
+  %throw.data.ptr28 = getelementptr inbounds { i8, [48 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val27, ptr %throw.data.ptr28, align 1
   ret void
 
-choose.when31:                                    ; preds = %if.end
+choose.when29:                                    ; preds = %if.end
   %throws.success.val = load %_Z10NameSyntax, ptr %throws.data.ptr, align 1
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %name, ptr align 1 %throws.data.ptr, i64 ptrtoint (ptr getelementptr (%_Z10NameSyntax, ptr null, i32 1) to i64), i1 false)
   br label %choose.end
@@ -56461,9 +54917,8 @@ choose.when31:                                    ; preds = %if.end
 
 define linkonce_odr void @_ZN6Parser8parse_asEPN4scaly6memory4PageE(ptr noalias sret({ i8, [88 x i8] }) %0, ptr %1, ptr %2) {
 entry:
-  %tuple36 = alloca %_Z8AsSyntax, align 8
-  %tuple16 = alloca %_Z13InvalidSyntax, align 8
-  %arg.tmp15 = alloca { ptr }, align 8
+  %tuple34 = alloca %_Z8AsSyntax, align 8
+  %tuple14 = alloca %_Z13InvalidSyntax, align 8
   %variant.ptr9 = alloca %_Z11ParserError, align 8
   %sret.result = alloca { i8, [72 x i8] }, align 8
   %type = alloca %_Z10TypeSyntax, align 8
@@ -56473,11 +54928,9 @@ entry:
   %lexer = extractvalue %_Z6Parser %load.struct, 0
   %previous_position = extractvalue %_Z5Lexer %lexer, 4
   %field.inplace = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
   %arg.tmp = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.237 }, ptr %arg.tmp, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region, ptr %1, ptr %arg.tmp)
-  %call = call i1 @_ZN5Lexer13parse_keywordE6String(ptr %field.inplace, ptr %struct.region)
+  store { ptr } { ptr @.sconst.235 }, ptr %arg.tmp, align 1
+  %call = call i1 @_ZN5Lexer13parse_keywordE6String(ptr %field.inplace, ptr %arg.tmp)
   %bitnot = xor i1 %call, true
   br i1 %bitnot, label %if.then, label %if.end
 
@@ -56504,26 +54957,26 @@ if.end:                                           ; preds = %entry
   %throws.data.ptr = getelementptr inbounds i8, ptr %sret.result, i8 1
   switch i8 %tag, label %choose.else [
     i8 1, label %choose.when
-    i8 0, label %choose.when31
+    i8 0, label %choose.when29
   ]
 
-choose.end:                                       ; preds = %choose.else, %choose.when31, %choose.end4
-  %choose.value = phi %_Z10TypeSyntax [ %throws.success.val, %choose.when31 ], [ undef, %choose.end4 ], [ undef, %choose.else ]
-  %load.struct32 = load %_Z6Parser, ptr %2, align 8
-  %lexer33 = extractvalue %_Z6Parser %load.struct32, 0
-  %position34 = extractvalue %_Z5Lexer %lexer33, 3
-  %type35 = load %_Z10TypeSyntax, ptr %type, align 8
-  %tuple.field37 = getelementptr inbounds %_Z8AsSyntax, ptr %tuple36, i32 0, i32 0
-  store i64 %previous_position, ptr %tuple.field37, align 1
-  %tuple.field38 = getelementptr inbounds %_Z8AsSyntax, ptr %tuple36, i32 0, i32 1
-  store i64 %position34, ptr %tuple.field38, align 1
-  %tuple.field39 = getelementptr inbounds %_Z8AsSyntax, ptr %tuple36, i32 0, i32 2
-  store %_Z10TypeSyntax %type35, ptr %tuple.field39, align 1
-  %tuple.val40 = load %_Z8AsSyntax, ptr %tuple36, align 8
+choose.end:                                       ; preds = %choose.else, %choose.when29, %choose.end4
+  %choose.value = phi %_Z10TypeSyntax [ %throws.success.val, %choose.when29 ], [ undef, %choose.end4 ], [ undef, %choose.else ]
+  %load.struct30 = load %_Z6Parser, ptr %2, align 8
+  %lexer31 = extractvalue %_Z6Parser %load.struct30, 0
+  %position32 = extractvalue %_Z5Lexer %lexer31, 3
+  %type33 = load %_Z10TypeSyntax, ptr %type, align 8
+  %tuple.field35 = getelementptr inbounds %_Z8AsSyntax, ptr %tuple34, i32 0, i32 0
+  store i64 %previous_position, ptr %tuple.field35, align 1
+  %tuple.field36 = getelementptr inbounds %_Z8AsSyntax, ptr %tuple34, i32 0, i32 1
+  store i64 %position32, ptr %tuple.field36, align 1
+  %tuple.field37 = getelementptr inbounds %_Z8AsSyntax, ptr %tuple34, i32 0, i32 2
+  store %_Z10TypeSyntax %type33, ptr %tuple.field37, align 1
+  %tuple.val38 = load %_Z8AsSyntax, ptr %tuple34, align 8
   %ret.tag.ptr = getelementptr inbounds { i8, [88 x i8] }, ptr %0, i32 0, i32 0
   store i8 0, ptr %ret.tag.ptr, align 1
   %ret.data.ptr = getelementptr inbounds { i8, [88 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z8AsSyntax %tuple.val40, ptr %ret.data.ptr, align 1
+  store %_Z8AsSyntax %tuple.val38, ptr %ret.data.ptr, align 1
   ret void
 
 choose.else:                                      ; preds = %if.end
@@ -56536,7 +54989,7 @@ choose.when:                                      ; preds = %if.end
   %tag3 = load i8, ptr %tag.ptr, align 1
   switch i8 %tag3, label %choose.else5 [
     i8 0, label %choose.when6
-    i8 1, label %choose.when23
+    i8 1, label %choose.when21
   ]
 
 choose.end4:                                      ; preds = %choose.else5
@@ -56555,39 +55008,35 @@ choose.when6:                                     ; preds = %choose.when
   %load.struct11 = load %_Z6Parser, ptr %2, align 8
   %lexer12 = extractvalue %_Z6Parser %load.struct11, 0
   %position13 = extractvalue %_Z5Lexer %lexer12, 3
-  %struct.region14 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.238 }, ptr %arg.tmp15, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region14, ptr %1, ptr %arg.tmp15)
-  %tuple.field = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 0
+  %tuple.field = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 0
   store i64 %position, ptr %tuple.field, align 1
-  %tuple.field17 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 1
-  store i64 %position13, ptr %tuple.field17, align 1
-  %field.load = load { ptr }, ptr %struct.region14, align 8
-  %tuple.field18 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple16, i32 0, i32 2
-  store { ptr } %field.load, ptr %tuple.field18, align 1
-  %tuple.val19 = load %_Z13InvalidSyntax, ptr %tuple16, align 8
-  %variant.data.ptr20 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
-  store %_Z13InvalidSyntax %tuple.val19, ptr %variant.data.ptr20, align 1
-  %variant.val21 = load %_Z11ParserError, ptr %variant.ptr9, align 1
-  %throw.data.ptr22 = getelementptr inbounds { i8, [88 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val21, ptr %throw.data.ptr22, align 1
+  %tuple.field15 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 1
+  store i64 %position13, ptr %tuple.field15, align 1
+  %tuple.field16 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple14, i32 0, i32 2
+  store { ptr } { ptr @.sconst.236 }, ptr %tuple.field16, align 1
+  %tuple.val17 = load %_Z13InvalidSyntax, ptr %tuple14, align 8
+  %variant.data.ptr18 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
+  store %_Z13InvalidSyntax %tuple.val17, ptr %variant.data.ptr18, align 1
+  %variant.val19 = load %_Z11ParserError, ptr %variant.ptr9, align 1
+  %throw.data.ptr20 = getelementptr inbounds { i8, [88 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val19, ptr %throw.data.ptr20, align 1
   ret void
 
-choose.when23:                                    ; preds = %choose.when
-  %"variant.c_data().ptr24" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 1
-  %variant.val25 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr24", align 8
-  %throw.tag.ptr26 = getelementptr inbounds { i8, [88 x i8] }, ptr %0, i32 0, i32 0
-  store i8 1, ptr %throw.tag.ptr26, align 1
-  %variant.tag.ptr27 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 0
-  store i8 1, ptr %variant.tag.ptr27, align 1
-  %variant.data.ptr28 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
-  store %_Z13InvalidSyntax %variant.val25, ptr %variant.data.ptr28, align 1
-  %variant.val29 = load %_Z11ParserError, ptr %variant.ptr9, align 1
-  %throw.data.ptr30 = getelementptr inbounds { i8, [88 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val29, ptr %throw.data.ptr30, align 1
+choose.when21:                                    ; preds = %choose.when
+  %"variant.c_data().ptr22" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 1
+  %variant.val23 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr22", align 8
+  %throw.tag.ptr24 = getelementptr inbounds { i8, [88 x i8] }, ptr %0, i32 0, i32 0
+  store i8 1, ptr %throw.tag.ptr24, align 1
+  %variant.tag.ptr25 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 0
+  store i8 1, ptr %variant.tag.ptr25, align 1
+  %variant.data.ptr26 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr9, i32 0, i32 1
+  store %_Z13InvalidSyntax %variant.val23, ptr %variant.data.ptr26, align 1
+  %variant.val27 = load %_Z11ParserError, ptr %variant.ptr9, align 1
+  %throw.data.ptr28 = getelementptr inbounds { i8, [88 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val27, ptr %throw.data.ptr28, align 1
   ret void
 
-choose.when31:                                    ; preds = %if.end
+choose.when29:                                    ; preds = %if.end
   %throws.success.val = load %_Z10TypeSyntax, ptr %throws.data.ptr, align 1
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %type, ptr align 1 %throws.data.ptr, i64 ptrtoint (ptr getelementptr (%_Z10TypeSyntax, ptr null, i32 1) to i64), i1 false)
   br label %choose.end
@@ -56778,7 +55227,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.239)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.237)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -57282,7 +55731,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.240)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.238)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -58146,7 +56595,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.241)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.239)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -58650,7 +57099,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.242)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.240)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -58982,7 +57431,6 @@ define linkonce_odr void @_ZN6Parser15parse_extensionEPN4scaly6memory4PageE(ptr 
 entry:
   %tuple21 = alloca %_Z15ExtensionSyntax, align 8
   %tuple11 = alloca %_Z13InvalidSyntax, align 8
-  %arg.tmp = alloca { ptr }, align 8
   %sret.result = alloca { ptr }, align 8
   %tuple = alloca %_Z15DifferentSyntax, align 8
   %variant.ptr = alloca %_Z11ParserError, align 8
@@ -59025,16 +57473,12 @@ if.then5:                                         ; preds = %if.end
   %load.struct9 = load %_Z6Parser, ptr %2, align 8
   %lexer10 = extractvalue %_Z6Parser %load.struct9, 0
   %position = extractvalue %_Z5Lexer %lexer10, 3
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.243 }, ptr %arg.tmp, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region, ptr %1, ptr %arg.tmp)
   %tuple.field = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple11, i32 0, i32 0
   store i64 %previous_position, ptr %tuple.field, align 1
   %tuple.field12 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple11, i32 0, i32 1
   store i64 %position, ptr %tuple.field12, align 1
-  %field.load = load { ptr }, ptr %struct.region, align 8
   %tuple.field13 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple11, i32 0, i32 2
-  store { ptr } %field.load, ptr %tuple.field13, align 1
+  store { ptr } { ptr @.sconst.241 }, ptr %tuple.field13, align 1
   %tuple.val14 = load %_Z13InvalidSyntax, ptr %tuple11, align 8
   %variant.data.ptr15 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 1
   store %_Z13InvalidSyntax %tuple.val14, ptr %variant.data.ptr15, align 1
@@ -59051,14 +57495,14 @@ if.end6:                                          ; preds = %if.end
   store i64 %previous_position, ptr %tuple.field22, align 1
   %tuple.field23 = getelementptr inbounds %_Z15ExtensionSyntax, ptr %tuple21, i32 0, i32 1
   store i64 %position20, ptr %tuple.field23, align 1
-  %field.load24 = load { ptr }, ptr %sret.result, align 8
-  %tuple.field25 = getelementptr inbounds %_Z15ExtensionSyntax, ptr %tuple21, i32 0, i32 2
-  store { ptr } %field.load24, ptr %tuple.field25, align 1
-  %tuple.val26 = load %_Z15ExtensionSyntax, ptr %tuple21, align 8
+  %field.load = load { ptr }, ptr %sret.result, align 8
+  %tuple.field24 = getelementptr inbounds %_Z15ExtensionSyntax, ptr %tuple21, i32 0, i32 2
+  store { ptr } %field.load, ptr %tuple.field24, align 1
+  %tuple.val25 = load %_Z15ExtensionSyntax, ptr %tuple21, align 8
   %ret.tag.ptr = getelementptr inbounds { i8, [25 x i8] }, ptr %0, i32 0, i32 0
   store i8 0, ptr %ret.tag.ptr, align 1
   %ret.data.ptr = getelementptr inbounds { i8, [25 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z15ExtensionSyntax %tuple.val26, ptr %ret.data.ptr, align 1
+  store %_Z15ExtensionSyntax %tuple.val25, ptr %ret.data.ptr, align 1
   ret void
 }
 
@@ -59421,7 +57865,6 @@ define linkonce_odr void @_ZN6Parser15parse_referenceEPN4scaly6memory4PageE(ptr 
 entry:
   %tuple21 = alloca %_Z15ReferenceSyntax, align 8
   %tuple11 = alloca %_Z13InvalidSyntax, align 8
-  %arg.tmp = alloca { ptr }, align 8
   %sret.result = alloca { ptr }, align 8
   %tuple = alloca %_Z15DifferentSyntax, align 8
   %variant.ptr = alloca %_Z11ParserError, align 8
@@ -59464,16 +57907,12 @@ if.then5:                                         ; preds = %if.end
   %load.struct9 = load %_Z6Parser, ptr %2, align 8
   %lexer10 = extractvalue %_Z6Parser %load.struct9, 0
   %position = extractvalue %_Z5Lexer %lexer10, 3
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } { ptr @.sconst.244 }, ptr %arg.tmp, align 1
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region, ptr %1, ptr %arg.tmp)
   %tuple.field = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple11, i32 0, i32 0
   store i64 %previous_position, ptr %tuple.field, align 1
   %tuple.field12 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple11, i32 0, i32 1
   store i64 %position, ptr %tuple.field12, align 1
-  %field.load = load { ptr }, ptr %struct.region, align 8
   %tuple.field13 = getelementptr inbounds %_Z13InvalidSyntax, ptr %tuple11, i32 0, i32 2
-  store { ptr } %field.load, ptr %tuple.field13, align 1
+  store { ptr } { ptr @.sconst.242 }, ptr %tuple.field13, align 1
   %tuple.val14 = load %_Z13InvalidSyntax, ptr %tuple11, align 8
   %variant.data.ptr15 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 1
   store %_Z13InvalidSyntax %tuple.val14, ptr %variant.data.ptr15, align 1
@@ -59490,14 +57929,14 @@ if.end6:                                          ; preds = %if.end
   store i64 %previous_position, ptr %tuple.field22, align 1
   %tuple.field23 = getelementptr inbounds %_Z15ReferenceSyntax, ptr %tuple21, i32 0, i32 1
   store i64 %position20, ptr %tuple.field23, align 1
-  %field.load24 = load { ptr }, ptr %sret.result, align 8
-  %tuple.field25 = getelementptr inbounds %_Z15ReferenceSyntax, ptr %tuple21, i32 0, i32 2
-  store { ptr } %field.load24, ptr %tuple.field25, align 1
-  %tuple.val26 = load %_Z15ReferenceSyntax, ptr %tuple21, align 8
+  %field.load = load { ptr }, ptr %sret.result, align 8
+  %tuple.field24 = getelementptr inbounds %_Z15ReferenceSyntax, ptr %tuple21, i32 0, i32 2
+  store { ptr } %field.load, ptr %tuple.field24, align 1
+  %tuple.val25 = load %_Z15ReferenceSyntax, ptr %tuple21, align 8
   %ret.tag.ptr = getelementptr inbounds { i8, [25 x i8] }, ptr %0, i32 0, i32 0
   store i8 0, ptr %ret.tag.ptr, align 1
   %ret.data.ptr = getelementptr inbounds { i8, [25 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z15ReferenceSyntax %tuple.val26, ptr %ret.data.ptr, align 1
+  store %_Z15ReferenceSyntax %tuple.val25, ptr %ret.data.ptr, align 1
   ret void
 }
 
@@ -59665,7 +58104,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.245)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.243)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -60169,7 +58608,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.246)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.244)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -60580,7 +59019,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.247)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.245)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -61084,7 +59523,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.248)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.246)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -61495,7 +59934,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.249)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.247)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -61999,7 +60438,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.250)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.248)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -62410,7 +60849,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.251)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.249)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -62914,7 +61353,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.252)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.250)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -63325,7 +61764,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.253)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.251)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -63829,7 +62268,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.254)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.252)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -64240,7 +62679,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.255)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.253)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -64744,7 +63183,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.256)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.254)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -65155,7 +63594,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.257)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.255)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -65659,7 +64098,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.258)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.256)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -66070,7 +64509,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.259)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.257)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -66574,7 +65013,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.260)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.258)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -66985,7 +65424,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.261)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.259)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -67489,7 +65928,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.262)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.260)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -67900,7 +66339,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.263)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.261)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -68404,7 +66843,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.264)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.262)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -68815,7 +67254,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.265)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.263)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -69319,7 +67758,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.266)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.264)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -69730,7 +68169,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.267)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.265)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -70234,7 +68673,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.268)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.266)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -70645,7 +69084,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.269)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.267)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -71149,7 +69588,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.270)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.268)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -71560,7 +69999,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.271)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.269)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -72064,7 +70503,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.272)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.270)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -72475,7 +70914,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.273)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.271)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -72979,7 +71418,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.274)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.272)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -73390,7 +71829,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.275)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.273)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -73894,7 +72333,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.276)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.274)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -74305,7 +72744,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.277)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.275)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -74809,7 +73248,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.278)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.276)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -75664,7 +74103,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.279)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.277)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -76168,7 +74607,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.280)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.278)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -76579,7 +75018,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.281)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.279)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -77083,7 +75522,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.282)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.280)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -77667,7 +76106,7 @@ if.end92:                                         ; preds = %if.end36
   call void @_ZN6VectorI6StringEC1EPN4scaly6memory4PageEm(ptr %struct.region94, ptr %0, i64 1)
   store ptr %struct.region94, ptr %gens_holder, align 1
   %inner_path = load ptr, ptr %gens_holder, align 8
-  store { ptr } { ptr @.sconst.283 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.281 }, ptr %arg.tmp, align 1
   call void @_ZN6VectorI6StringE3putEm6String(ptr %inner_path, i64 0, ptr %arg.tmp)
   %load.struct95 = load %_Z10TypeSyntax, ptr %1, align 8
   %start96 = extractvalue %_Z10TypeSyntax %load.struct95, 0
@@ -77823,6 +76262,948 @@ if.end20:                                         ; preds = %if.then19, %while.b
   %add = add i64 %i24, 1
   store i64 %add, ptr %i, align 1
   br label %while.cond
+}
+
+define linkonce_odr ptr @_ZN6VectorIcE3getEPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
+entry:
+  %load.struct = load %_Z6VectorIcE, ptr %1, align 8
+  %length = extractvalue %_Z6VectorIcE %load.struct, 0
+  %ge = icmp uge i64 %2, %length
+  br i1 %ge, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret ptr null
+
+if.end:                                           ; preds = %entry
+  %load.struct1 = load %_Z6VectorIcE, ptr %1, align 8
+  %data = extractvalue %_Z6VectorIcE %load.struct1, 1
+  %ptr.add = getelementptr inbounds i8, ptr %data, i64 %2
+  ret ptr %ptr.add
+}
+
+define linkonce_odr ptr @_ZN6VectorIcE7get_ptrEm(ptr %0, i64 %1) {
+entry:
+  %load.struct = load %_Z6VectorIcE, ptr %0, align 8
+  %length = extractvalue %_Z6VectorIcE %load.struct, 0
+  %ge = icmp uge i64 %1, %length
+  br i1 %ge, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret ptr null
+
+if.end:                                           ; preds = %entry
+  %load.struct1 = load %_Z6VectorIcE, ptr %0, align 8
+  %data = extractvalue %_Z6VectorIcE %load.struct1, 1
+  %ptr.add = getelementptr inbounds i8, ptr %data, i64 %1
+  ret ptr %ptr.add
+}
+
+define linkonce_odr void @_ZN6VectorIcE3putEmc(ptr %0, i64 %1, i8 %2) {
+entry:
+  %load.struct = load %_Z6VectorIcE, ptr %0, align 8
+  %length = extractvalue %_Z6VectorIcE %load.struct, 0
+  %ge = icmp uge i64 %1, %length
+  br i1 %ge, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.282)
+  call void @_Z12scaly_eputnlv()
+  call void @exit(i64 15)
+  br label %if.end
+
+if.end:                                           ; preds = %if.then, %entry
+  %load.struct1 = load %_Z6VectorIcE, ptr %0, align 8
+  %data = extractvalue %_Z6VectorIcE %load.struct1, 1
+  %ptr.add = getelementptr inbounds i8, ptr %data, i64 %1
+  store i8 %2, ptr %ptr.add, align 1
+  ret void
+}
+
+define linkonce_odr ptr @_ZN14VectorIteratorIcE4nextEv(ptr %0) {
+entry:
+  %load.struct = load %_Z14VectorIteratorIcE, ptr %0, align 8
+  %vector = extractvalue %_Z14VectorIteratorIcE %load.struct, 0
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret ptr null
+
+if.end:                                           ; preds = %entry
+  %load.struct1 = load %_Z14VectorIteratorIcE, ptr %0, align 8
+  %position = extractvalue %_Z14VectorIteratorIcE %load.struct1, 1
+  %load.struct2 = load %_Z14VectorIteratorIcE, ptr %0, align 8
+  %vector3 = extractvalue %_Z14VectorIteratorIcE %load.struct2, 0
+  %deref = load %_Z6VectorIcE, ptr %vector3, align 8
+  %length = extractvalue %_Z6VectorIcE %deref, 0
+  %eq4 = icmp eq i64 %position, %length
+  br i1 %eq4, label %if.then5, label %if.end6
+
+if.then5:                                         ; preds = %if.end
+  ret ptr null
+
+if.end6:                                          ; preds = %if.end
+  %load.struct7 = load %_Z14VectorIteratorIcE, ptr %0, align 8
+  %position8 = extractvalue %_Z14VectorIteratorIcE %load.struct7, 1
+  %add = add i64 %position8, 1
+  %position9 = getelementptr inbounds %_Z14VectorIteratorIcE, ptr %0, i32 0, i32 1
+  store i64 %add, ptr %position9, align 4
+  %field.inplace = getelementptr inbounds %_Z14VectorIteratorIcE, ptr %0, i32 0, i32 0
+  %deref.recv = load ptr, ptr %field.inplace, align 8
+  %load.struct10 = load %_Z14VectorIteratorIcE, ptr %0, align 8
+  %position11 = extractvalue %_Z14VectorIteratorIcE %load.struct10, 1
+  %sub = sub i64 %position11, 1
+  %call = call ptr @_ZN6VectorIcE7get_ptrEm(ptr %deref.recv, i64 %sub)
+  ret ptr %call
+}
+
+define linkonce_odr void @_ZN14VectorIteratorIcEC1EP6VectorIcE(ptr %0, ptr %1) {
+entry:
+  %vector = getelementptr inbounds %_Z14VectorIteratorIcE, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %vector, align 8
+  %position = getelementptr inbounds %_Z14VectorIteratorIcE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 4
+  ret void
+}
+
+define linkonce_odr void @_ZN14VectorIteratorIcEC1Ev(ptr %0) {
+entry:
+  ret void
+}
+
+define linkonce_odr void @_ZN6VectorIcE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z14VectorIteratorIcE) %0, ptr %1, ptr %2) {
+entry:
+  %struct.init = alloca %_Z14VectorIteratorIcE, align 8
+  call void @_ZN14VectorIteratorIcEC1EP6VectorIcE(ptr %struct.init, ptr %2)
+  %sret.body = load %_Z14VectorIteratorIcE, ptr %struct.init, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z14VectorIteratorIcE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN6VectorIcE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2) {
+entry:
+  %load.struct = load %_Z6VectorIcE, ptr %2, align 8
+  %data = extractvalue %_Z6VectorIcE %load.struct, 1
+  %load.struct1 = load %_Z6VectorIcE, ptr %2, align 8
+  %length = extractvalue %_Z6VectorIcE %load.struct1, 0
+  %tuple = alloca { ptr, i64 }, align 8
+  %tuple.field = getelementptr inbounds { ptr, i64 }, ptr %tuple, i32 0, i32 0
+  store ptr %data, ptr %tuple.field, align 1
+  %tuple.field2 = getelementptr inbounds { ptr, i64 }, ptr %tuple, i32 0, i32 1
+  store i64 %length, ptr %tuple.field2, align 1
+  %tuple.val = load { ptr, i64 }, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr ({ ptr, i64 }, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN6VectorIcEC1Ev(ptr %0) {
+entry:
+  %length = getelementptr inbounds %_Z6VectorIcE, ptr %0, i32 0, i32 0
+  store i64 0, ptr %length, align 4
+  %data = getelementptr inbounds %_Z6VectorIcE, ptr %0, i32 0, i32 1
+  store ptr null, ptr %data, align 8
+  ret void
+}
+
+define linkonce_odr void @_ZN6VectorIcEC1EPcm(ptr %0, ptr %1, i64 %2) {
+entry:
+  %length = getelementptr inbounds %_Z6VectorIcE, ptr %0, i32 0, i32 0
+  store i64 %2, ptr %length, align 4
+  %data = getelementptr inbounds %_Z6VectorIcE, ptr %0, i32 0, i32 1
+  store ptr %1, ptr %data, align 8
+  ret void
+}
+
+define linkonce_odr void @_ZN6VectorIcEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
+entry:
+  %length = getelementptr inbounds %_Z6VectorIcE, ptr %0, i32 0, i32 0
+  store i64 %2, ptr %length, align 4
+  %gt = icmp ugt i64 %2, 0
+  br i1 %gt, label %if.then, label %if.else
+
+if.then:                                          ; preds = %entry
+  %mul = mul i64 %2, ptrtoint (ptr getelementptr (i8, ptr null, i32 1) to i64)
+  %call = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 %mul, i64 1)
+  %data = getelementptr inbounds %_Z6VectorIcE, ptr %0, i32 0, i32 1
+  store ptr %call, ptr %data, align 8
+  %field.inplace = getelementptr inbounds %_Z6VectorIcE, ptr %0, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace, align 8
+  %mul1 = mul i64 %2, ptrtoint (ptr getelementptr (i8, ptr null, i32 1) to i64)
+  %call2 = call ptr @memset(ptr %deref.recv, i64 0, i64 %mul1)
+  br label %if.end
+
+if.else:                                          ; preds = %entry
+  %data3 = getelementptr inbounds %_Z6VectorIcE, ptr %0, i32 0, i32 1
+  store ptr null, ptr %data3, align 8
+  br label %if.end
+
+if.end:                                           ; preds = %if.else, %if.then
+  %if.value = phi ptr [ %call2, %if.then ], [ null, %if.else ]
+  ret void
+}
+
+define linkonce_odr void @_ZN6VectorIcEC1EPN4scaly6memory4PageEPcm(ptr %0, ptr %1, ptr %2, i64 %3) {
+entry:
+  %length = getelementptr inbounds %_Z6VectorIcE, ptr %0, i32 0, i32 0
+  store i64 %3, ptr %length, align 4
+  %gt = icmp ugt i64 %3, 0
+  br i1 %gt, label %if.then, label %if.else
+
+if.then:                                          ; preds = %entry
+  %mul = mul i64 %3, ptrtoint (ptr getelementptr (i8, ptr null, i32 1) to i64)
+  %call = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 %mul, i64 1)
+  %data = getelementptr inbounds %_Z6VectorIcE, ptr %0, i32 0, i32 1
+  store ptr %call, ptr %data, align 8
+  %field.inplace = getelementptr inbounds %_Z6VectorIcE, ptr %0, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace, align 8
+  %mul1 = mul i64 %3, ptrtoint (ptr getelementptr (i8, ptr null, i32 1) to i64)
+  %call2 = call ptr @memcpy(ptr %deref.recv, ptr %2, i64 %mul1)
+  br label %if.end
+
+if.else:                                          ; preds = %entry
+  %data3 = getelementptr inbounds %_Z6VectorIcE, ptr %0, i32 0, i32 1
+  store ptr null, ptr %data3, align 8
+  br label %if.end
+
+if.end:                                           ; preds = %if.else, %if.then
+  %if.value = phi ptr [ %call2, %if.then ], [ null, %if.else ]
+  ret void
+}
+
+define linkonce_odr void @_ZN6VectorIcEC1EPN4scaly6memory4PageE6VectorIcE(ptr %0, ptr %1, ptr %2) {
+entry:
+  %load.struct = load %_Z6VectorIcE, ptr %2, align 8
+  %length = extractvalue %_Z6VectorIcE %load.struct, 0
+  %length1 = getelementptr inbounds %_Z6VectorIcE, ptr %0, i32 0, i32 0
+  store i64 %length, ptr %length1, align 4
+  %load.struct2 = load %_Z6VectorIcE, ptr %0, align 8
+  %length3 = extractvalue %_Z6VectorIcE %load.struct2, 0
+  %gt = icmp ugt i64 %length3, 0
+  br i1 %gt, label %if.then, label %if.else
+
+if.then:                                          ; preds = %entry
+  %load.struct4 = load %_Z6VectorIcE, ptr %0, align 8
+  %length5 = extractvalue %_Z6VectorIcE %load.struct4, 0
+  %mul = mul i64 %length5, ptrtoint (ptr getelementptr (i8, ptr null, i32 1) to i64)
+  %call = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 %mul, i64 1)
+  %data = getelementptr inbounds %_Z6VectorIcE, ptr %0, i32 0, i32 1
+  store ptr %call, ptr %data, align 8
+  %field.inplace = getelementptr inbounds %_Z6VectorIcE, ptr %0, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace, align 8
+  %field.inplace6 = getelementptr inbounds %_Z6VectorIcE, ptr %2, i32 0, i32 1
+  %deref.recv7 = load ptr, ptr %field.inplace6, align 8
+  %load.struct8 = load %_Z6VectorIcE, ptr %0, align 8
+  %length9 = extractvalue %_Z6VectorIcE %load.struct8, 0
+  %mul10 = mul i64 %length9, ptrtoint (ptr getelementptr (i8, ptr null, i32 1) to i64)
+  %call11 = call ptr @memcpy(ptr %deref.recv, ptr %deref.recv7, i64 %mul10)
+  br label %if.end
+
+if.else:                                          ; preds = %entry
+  %data12 = getelementptr inbounds %_Z6VectorIcE, ptr %0, i32 0, i32 1
+  store ptr null, ptr %data12, align 8
+  br label %if.end
+
+if.end:                                           ; preds = %if.else, %if.then
+  %if.value = phi ptr [ %call11, %if.then ], [ null, %if.else ]
+  ret void
+}
+
+define linkonce_odr ptr @_ZN5ArrayIcE10get_bufferEv(ptr %0) {
+entry:
+  %load.struct = load %_Z5ArrayIcE, ptr %0, align 8
+  %vector = extractvalue %_Z5ArrayIcE %load.struct, 1
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret ptr null
+
+if.end:                                           ; preds = %entry
+  %load.struct1 = load %_Z5ArrayIcE, ptr %0, align 8
+  %vector2 = extractvalue %_Z5ArrayIcE %load.struct1, 1
+  %deref = load %_Z6VectorIcE, ptr %vector2, align 8
+  %data = extractvalue %_Z6VectorIcE %deref, 1
+  ret ptr %data
+}
+
+define linkonce_odr i64 @_ZN5ArrayIcE10get_lengthEv(ptr %0) {
+entry:
+  %load.struct = load %_Z5ArrayIcE, ptr %0, align 8
+  %length = extractvalue %_Z5ArrayIcE %load.struct, 0
+  ret i64 %length
+}
+
+define linkonce_odr i64 @_ZN5ArrayIcE12get_capacityEv(ptr %0) {
+entry:
+  %load.struct = load %_Z5ArrayIcE, ptr %0, align 8
+  %vector = extractvalue %_Z5ArrayIcE %load.struct, 1
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret i64 0
+
+if.end:                                           ; preds = %entry
+  %load.struct1 = load %_Z5ArrayIcE, ptr %0, align 8
+  %vector2 = extractvalue %_Z5ArrayIcE %load.struct1, 1
+  %deref = load %_Z6VectorIcE, ptr %vector2, align 8
+  %length = extractvalue %_Z6VectorIcE %deref, 0
+  ret i64 %length
+}
+
+define linkonce_odr void @_ZN5ArrayIcE10reallocateEv(ptr %0) {
+entry:
+  %call = call ptr @_ZN4Page3getEPv(ptr %0)
+  %length = alloca i64, align 8
+  store i64 0, ptr %length, align 1
+  %load.struct = load %_Z5ArrayIcE, ptr %0, align 8
+  %vector = extractvalue %_Z5ArrayIcE %load.struct, 1
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %if.then, label %if.else
+
+if.then:                                          ; preds = %entry
+  %call1 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call)
+  %call2 = call i64 @_ZN4Page12get_capacityEm(ptr %call1, i64 1)
+  %sub = sub i64 %call2, ptrtoint (ptr getelementptr (%_Z6VectorIcE, ptr null, i32 1) to i64)
+  %udiv = udiv i64 %sub, ptrtoint (ptr getelementptr (i8, ptr null, i32 1) to i64)
+  store i64 %udiv, ptr %length, align 1
+  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call1, i64 ptrtoint (ptr getelementptr (%_Z6VectorIcE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorIcE }, ptr null, i64 0, i32 1) to i64))
+  %length3 = load i64, ptr %length, align 4
+  call void @_ZN6VectorIcEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call1, i64 %length3)
+  %vector4 = getelementptr inbounds %_Z5ArrayIcE, ptr %0, i32 0, i32 1
+  store ptr %struct.region, ptr %vector4, align 8
+  br label %if.end
+
+if.else:                                          ; preds = %entry
+  %load.struct5 = load %_Z5ArrayIcE, ptr %0, align 8
+  %vector6 = extractvalue %_Z5ArrayIcE %load.struct5, 1
+  %deref = load %_Z6VectorIcE, ptr %vector6, align 8
+  %length7 = extractvalue %_Z6VectorIcE %deref, 0
+  %mul = mul i64 %length7, 2
+  store i64 %mul, ptr %length, align 1
+  %call8 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call)
+  %struct.region9 = call ptr @_ZN4Page8allocateEmm(ptr %call8, i64 ptrtoint (ptr getelementptr (%_Z6VectorIcE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorIcE }, ptr null, i64 0, i32 1) to i64))
+  %length10 = load i64, ptr %length, align 4
+  call void @_ZN6VectorIcEC1EPN4scaly6memory4PageEm(ptr %struct.region9, ptr %call8, i64 %length10)
+  %load.struct11 = load %_Z5ArrayIcE, ptr %0, align 8
+  %vector12 = extractvalue %_Z5ArrayIcE %load.struct11, 1
+  %deref13 = load %_Z6VectorIcE, ptr %vector12, align 8
+  %length14 = extractvalue %_Z6VectorIcE %deref13, 0
+  %mul15 = mul i64 %length14, ptrtoint (ptr getelementptr (i8, ptr null, i32 1) to i64)
+  %field.inplace = getelementptr inbounds %_Z6VectorIcE, ptr %struct.region9, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace, align 8
+  %field.inplace16 = getelementptr inbounds %_Z5ArrayIcE, ptr %0, i32 0, i32 1
+  %load.struct17 = load %_Z5ArrayIcE, ptr %0, align 8
+  %vector18 = extractvalue %_Z5ArrayIcE %load.struct17, 1
+  %deref19 = load %_Z6VectorIcE, ptr %vector18, align 8
+  %data = extractvalue %_Z6VectorIcE %deref19, 1
+  %call20 = call ptr @memcpy(ptr %deref.recv, ptr %data, i64 %mul15)
+  %load.struct21 = load %_Z5ArrayIcE, ptr %0, align 8
+  %vector22 = extractvalue %_Z5ArrayIcE %load.struct21, 1
+  %call23 = call ptr @_ZN4Page3getEPv(ptr %vector22)
+  call void @_ZN4Page25deallocate_exclusive_pageEP4Page(ptr %call, ptr %call23)
+  %vector24 = getelementptr inbounds %_Z5ArrayIcE, ptr %0, i32 0, i32 1
+  store ptr %struct.region9, ptr %vector24, align 8
+  br label %if.end
+
+if.end:                                           ; preds = %if.else, %if.then
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayIcE3addEc(ptr %0, i8 %1) {
+entry:
+  %load.struct = load %_Z5ArrayIcE, ptr %0, align 8
+  %vector = extractvalue %_Z5ArrayIcE %load.struct, 1
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %lor.end, label %lor.rhs
+
+lor.rhs:                                          ; preds = %entry
+  %load.struct1 = load %_Z5ArrayIcE, ptr %0, align 8
+  %length = extractvalue %_Z5ArrayIcE %load.struct1, 0
+  %load.struct2 = load %_Z5ArrayIcE, ptr %0, align 8
+  %vector3 = extractvalue %_Z5ArrayIcE %load.struct2, 1
+  %deref = load %_Z6VectorIcE, ptr %vector3, align 8
+  %length4 = extractvalue %_Z6VectorIcE %deref, 0
+  %eq5 = icmp eq i64 %length, %length4
+  br label %lor.end
+
+lor.end:                                          ; preds = %lor.rhs, %entry
+  %lor.result = phi i1 [ true, %entry ], [ %eq5, %lor.rhs ]
+  br i1 %lor.result, label %if.then, label %if.end
+
+if.then:                                          ; preds = %lor.end
+  call void @_ZN5ArrayIcE10reallocateEv(ptr %0)
+  br label %if.end
+
+if.end:                                           ; preds = %if.then, %lor.end
+  %load.struct6 = load %_Z5ArrayIcE, ptr %0, align 8
+  %vector7 = extractvalue %_Z5ArrayIcE %load.struct6, 1
+  %deref8 = load %_Z6VectorIcE, ptr %vector7, align 8
+  %data = extractvalue %_Z6VectorIcE %deref8, 1
+  %load.struct9 = load %_Z5ArrayIcE, ptr %0, align 8
+  %length10 = extractvalue %_Z5ArrayIcE %load.struct9, 0
+  %ptr.add = getelementptr inbounds i8, ptr %data, i64 %length10
+  store i8 %1, ptr %ptr.add, align 1
+  %load.struct11 = load %_Z5ArrayIcE, ptr %0, align 8
+  %length12 = extractvalue %_Z5ArrayIcE %load.struct11, 0
+  %add = add i64 %length12, 1
+  %length13 = getelementptr inbounds %_Z5ArrayIcE, ptr %0, i32 0, i32 0
+  store i64 %add, ptr %length13, align 4
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayIcE3addE6VectorIcE(ptr %0, ptr %1) {
+entry:
+  %own_page = alloca ptr, align 8
+  %load.struct = load %_Z5ArrayIcE, ptr %0, align 8
+  %length = extractvalue %_Z5ArrayIcE %load.struct, 0
+  %load.struct1 = load %_Z6VectorIcE, ptr %1, align 8
+  %length2 = extractvalue %_Z6VectorIcE %load.struct1, 0
+  %add = add i64 %length, %length2
+  %new_length = alloca i64, align 8
+  store i64 %add, ptr %new_length, align 1
+  %new_length3 = load i64, ptr %new_length, align 4
+  %load.struct4 = load %_Z5ArrayIcE, ptr %0, align 8
+  %length5 = extractvalue %_Z5ArrayIcE %load.struct4, 0
+  %lt = icmp ult i64 %new_length3, %length5
+  br i1 %lt, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  call void @exit(i64 14)
+  br label %if.end
+
+if.end:                                           ; preds = %if.then, %entry
+  %load.struct6 = load %_Z5ArrayIcE, ptr %0, align 8
+  %vector = extractvalue %_Z5ArrayIcE %load.struct6, 1
+  %eq = icmp eq ptr %vector, null
+  br i1 %eq, label %lor.end, label %lor.rhs
+
+lor.rhs:                                          ; preds = %if.end
+  %new_length7 = load i64, ptr %new_length, align 4
+  %load.struct8 = load %_Z5ArrayIcE, ptr %0, align 8
+  %vector9 = extractvalue %_Z5ArrayIcE %load.struct8, 1
+  %deref = load %_Z6VectorIcE, ptr %vector9, align 8
+  %length10 = extractvalue %_Z6VectorIcE %deref, 0
+  %gt = icmp ugt i64 %new_length7, %length10
+  br label %lor.end
+
+lor.end:                                          ; preds = %lor.rhs, %if.end
+  %lor.result = phi i1 [ true, %if.end ], [ %gt, %lor.rhs ]
+  br i1 %lor.result, label %if.then11, label %if.end12
+
+if.then11:                                        ; preds = %lor.end
+  call void @_ZN5ArrayIcE10reallocateEv(ptr %0)
+  br label %if.end12
+
+if.end12:                                         ; preds = %if.then11, %lor.end
+  %new_length13 = load i64, ptr %new_length, align 4
+  %load.struct14 = load %_Z5ArrayIcE, ptr %0, align 8
+  %vector15 = extractvalue %_Z5ArrayIcE %load.struct14, 1
+  %deref16 = load %_Z6VectorIcE, ptr %vector15, align 8
+  %length17 = extractvalue %_Z6VectorIcE %deref16, 0
+  %gt18 = icmp ugt i64 %new_length13, %length17
+  br i1 %gt18, label %if.then19, label %if.end20
+
+if.then19:                                        ; preds = %if.end12
+  %call = call ptr @_ZN4Page3getEPv(ptr %0)
+  store ptr %call, ptr %own_page, align 1
+  %own_page21 = load ptr, ptr %own_page, align 8
+  %new_length22 = load i64, ptr %new_length, align 4
+  %mul = mul i64 %new_length22, ptrtoint (ptr getelementptr (i8, ptr null, i32 1) to i64)
+  %call23 = call ptr @_ZN4Page8allocateEmm(ptr %own_page21, i64 %mul, i64 1)
+  %load.struct24 = load %_Z5ArrayIcE, ptr %0, align 8
+  %length25 = extractvalue %_Z5ArrayIcE %load.struct24, 0
+  %mul26 = mul i64 %length25, ptrtoint (ptr getelementptr (i8, ptr null, i32 1) to i64)
+  %load.struct27 = load %_Z5ArrayIcE, ptr %0, align 8
+  %length28 = extractvalue %_Z5ArrayIcE %load.struct27, 0
+  %gt29 = icmp ugt i64 %length28, 0
+  br i1 %gt29, label %if.then30, label %if.end31
+
+if.end20:                                         ; preds = %if.end31, %if.end12
+  %load.struct48 = load %_Z6VectorIcE, ptr %1, align 8
+  %length49 = extractvalue %_Z6VectorIcE %load.struct48, 0
+  %gt50 = icmp ugt i64 %length49, 0
+  br i1 %gt50, label %if.then51, label %if.end52
+
+if.then30:                                        ; preds = %if.then19
+  %field.inplace = getelementptr inbounds %_Z5ArrayIcE, ptr %0, i32 0, i32 1
+  %load.struct32 = load %_Z5ArrayIcE, ptr %0, align 8
+  %vector33 = extractvalue %_Z5ArrayIcE %load.struct32, 1
+  %deref34 = load %_Z6VectorIcE, ptr %vector33, align 8
+  %data = extractvalue %_Z6VectorIcE %deref34, 1
+  %call35 = call ptr @memcpy(ptr %call23, ptr %data, i64 %mul26)
+  br label %if.end31
+
+if.end31:                                         ; preds = %if.then30, %if.then19
+  %load.struct36 = load %_Z5ArrayIcE, ptr %0, align 8
+  %vector37 = extractvalue %_Z5ArrayIcE %load.struct36, 1
+  %deref38 = load %_Z6VectorIcE, ptr %vector37, align 8
+  %data39 = extractvalue %_Z6VectorIcE %deref38, 1
+  %call40 = call ptr @_ZN4Page3getEPv(ptr %data39)
+  %own_page41 = load ptr, ptr %own_page, align 8
+  call void @_ZN4Page25deallocate_exclusive_pageEP4Page(ptr %own_page41, ptr %call40)
+  %vector42 = getelementptr inbounds %_Z5ArrayIcE, ptr %0, i32 0, i32 1
+  %field.deref = load ptr, ptr %vector42, align 8
+  %data43 = getelementptr inbounds %_Z6VectorIcE, ptr %field.deref, i32 0, i32 1
+  store ptr %call23, ptr %data43, align 8
+  %new_length44 = load i64, ptr %new_length, align 4
+  %vector45 = getelementptr inbounds %_Z5ArrayIcE, ptr %0, i32 0, i32 1
+  %field.deref46 = load ptr, ptr %vector45, align 8
+  %length47 = getelementptr inbounds %_Z6VectorIcE, ptr %field.deref46, i32 0, i32 0
+  store i64 %new_length44, ptr %length47, align 4
+  br label %if.end20
+
+if.then51:                                        ; preds = %if.end20
+  %load.struct53 = load %_Z5ArrayIcE, ptr %0, align 8
+  %vector54 = extractvalue %_Z5ArrayIcE %load.struct53, 1
+  %deref55 = load %_Z6VectorIcE, ptr %vector54, align 8
+  %data56 = extractvalue %_Z6VectorIcE %deref55, 1
+  %load.struct57 = load %_Z5ArrayIcE, ptr %0, align 8
+  %length58 = extractvalue %_Z5ArrayIcE %load.struct57, 0
+  %mul59 = mul i64 %length58, ptrtoint (ptr getelementptr (i8, ptr null, i32 1) to i64)
+  %ptr.add = getelementptr inbounds i8, ptr %data56, i64 %mul59
+  %field.inplace60 = getelementptr inbounds %_Z6VectorIcE, ptr %1, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace60, align 8
+  %load.struct61 = load %_Z6VectorIcE, ptr %1, align 8
+  %length62 = extractvalue %_Z6VectorIcE %load.struct61, 0
+  %mul63 = mul i64 %length62, ptrtoint (ptr getelementptr (i8, ptr null, i32 1) to i64)
+  %call64 = call ptr @memcpy(ptr %ptr.add, ptr %deref.recv, i64 %mul63)
+  br label %if.end52
+
+if.end52:                                         ; preds = %if.then51, %if.end20
+  %load.struct65 = load %_Z5ArrayIcE, ptr %0, align 8
+  %length66 = extractvalue %_Z5ArrayIcE %load.struct65, 0
+  %load.struct67 = load %_Z6VectorIcE, ptr %1, align 8
+  %length68 = extractvalue %_Z6VectorIcE %load.struct67, 0
+  %add69 = add i64 %length66, %length68
+  %length70 = getelementptr inbounds %_Z5ArrayIcE, ptr %0, i32 0, i32 0
+  store i64 %add69, ptr %length70, align 4
+  ret void
+}
+
+define linkonce_odr ptr @_ZN5ArrayIcE3getEPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
+entry:
+  %load.struct = load %_Z5ArrayIcE, ptr %1, align 8
+  %length = extractvalue %_Z5ArrayIcE %load.struct, 0
+  %ge = icmp uge i64 %2, %length
+  br i1 %ge, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret ptr null
+
+if.end:                                           ; preds = %entry
+  %load.struct1 = load %_Z5ArrayIcE, ptr %1, align 8
+  %vector = extractvalue %_Z5ArrayIcE %load.struct1, 1
+  %deref = load %_Z6VectorIcE, ptr %vector, align 8
+  %data = extractvalue %_Z6VectorIcE %deref, 1
+  %ptr.add = getelementptr inbounds i8, ptr %data, i64 %2
+  ret ptr %ptr.add
+}
+
+define linkonce_odr void @_ZN5ArrayIcE3putEmc(ptr %0, i64 %1, i8 %2) {
+entry:
+  %load.struct = load %_Z5ArrayIcE, ptr %0, align 8
+  %length = extractvalue %_Z5ArrayIcE %load.struct, 0
+  %ge = icmp uge i64 %1, %length
+  br i1 %ge, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.283)
+  call void @_Z12scaly_eputnlv()
+  call void @exit(i64 15)
+  br label %if.end
+
+if.end:                                           ; preds = %if.then, %entry
+  %load.struct1 = load %_Z5ArrayIcE, ptr %0, align 8
+  %vector = extractvalue %_Z5ArrayIcE %load.struct1, 1
+  %deref = load %_Z6VectorIcE, ptr %vector, align 8
+  %data = extractvalue %_Z6VectorIcE %deref, 1
+  %ptr.add = getelementptr inbounds i8, ptr %data, i64 %1
+  store i8 %2, ptr %ptr.add, align 1
+  ret void
+}
+
+define linkonce_odr ptr @_ZN13ArrayIteratorIcE4nextEv(ptr %0) {
+entry:
+  %load.struct = load %_Z13ArrayIteratorIcE, ptr %0, align 8
+  %array = extractvalue %_Z13ArrayIteratorIcE %load.struct, 0
+  %eq = icmp eq ptr %array, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret ptr null
+
+if.end:                                           ; preds = %entry
+  %load.struct1 = load %_Z13ArrayIteratorIcE, ptr %0, align 8
+  %position = extractvalue %_Z13ArrayIteratorIcE %load.struct1, 1
+  %load.struct2 = load %_Z13ArrayIteratorIcE, ptr %0, align 8
+  %array3 = extractvalue %_Z13ArrayIteratorIcE %load.struct2, 0
+  %deref = load %_Z5ArrayIcE, ptr %array3, align 8
+  %length = extractvalue %_Z5ArrayIcE %deref, 0
+  %eq4 = icmp eq i64 %position, %length
+  br i1 %eq4, label %if.then5, label %if.end6
+
+if.then5:                                         ; preds = %if.end
+  ret ptr null
+
+if.end6:                                          ; preds = %if.end
+  %load.struct7 = load %_Z13ArrayIteratorIcE, ptr %0, align 8
+  %position8 = extractvalue %_Z13ArrayIteratorIcE %load.struct7, 1
+  %add = add i64 %position8, 1
+  %position9 = getelementptr inbounds %_Z13ArrayIteratorIcE, ptr %0, i32 0, i32 1
+  store i64 %add, ptr %position9, align 4
+  %field.inplace = getelementptr inbounds %_Z13ArrayIteratorIcE, ptr %0, i32 0, i32 0
+  %deref.recv = load ptr, ptr %field.inplace, align 8
+  %call = call ptr @_ZN5ArrayIcE10get_bufferEv(ptr %deref.recv)
+  %load.struct10 = load %_Z13ArrayIteratorIcE, ptr %0, align 8
+  %position11 = extractvalue %_Z13ArrayIteratorIcE %load.struct10, 1
+  %sub = sub i64 %position11, 1
+  %ptr.add = getelementptr inbounds i8, ptr %call, i64 %sub
+  ret ptr %ptr.add
+}
+
+define linkonce_odr void @_ZN13ArrayIteratorIcEC1EP5ArrayIcE(ptr %0, ptr %1) {
+entry:
+  %array = getelementptr inbounds %_Z13ArrayIteratorIcE, ptr %0, i32 0, i32 0
+  store ptr %1, ptr %array, align 8
+  %position = getelementptr inbounds %_Z13ArrayIteratorIcE, ptr %0, i32 0, i32 1
+  store i64 0, ptr %position, align 4
+  ret void
+}
+
+define linkonce_odr void @_ZN13ArrayIteratorIcEC1Ev(ptr %0) {
+entry:
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayIcE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z13ArrayIteratorIcE) %0, ptr %1, ptr %2) {
+entry:
+  %struct.init = alloca %_Z13ArrayIteratorIcE, align 8
+  call void @_ZN13ArrayIteratorIcEC1EP5ArrayIcE(ptr %struct.init, ptr %2)
+  %sret.body = load %_Z13ArrayIteratorIcE, ptr %struct.init, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z13ArrayIteratorIcE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayIcEC1Ev(ptr %0) {
+entry:
+  %length = getelementptr inbounds %_Z5ArrayIcE, ptr %0, i32 0, i32 0
+  store i64 0, ptr %length, align 4
+  %vector = getelementptr inbounds %_Z5ArrayIcE, ptr %0, i32 0, i32 1
+  store ptr null, ptr %vector, align 8
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayIcEC1Em(ptr %0, i64 %1) {
+entry:
+  %length = getelementptr inbounds %_Z5ArrayIcE, ptr %0, i32 0, i32 0
+  store i64 0, ptr %length, align 4
+  %vector = getelementptr inbounds %_Z5ArrayIcE, ptr %0, i32 0, i32 1
+  store ptr null, ptr %vector, align 8
+  %call = call ptr @_ZN4Page3getEPv(ptr %0)
+  %call1 = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %call)
+  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call1, i64 ptrtoint (ptr getelementptr (%_Z6VectorIcE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorIcE }, ptr null, i64 0, i32 1) to i64))
+  call void @_ZN6VectorIcEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call1, i64 %1)
+  %vector2 = getelementptr inbounds %_Z5ArrayIcE, ptr %0, i32 0, i32 1
+  store ptr %struct.region, ptr %vector2, align 8
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayIcEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
+entry:
+  %length = getelementptr inbounds %_Z5ArrayIcE, ptr %0, i32 0, i32 0
+  store i64 0, ptr %length, align 4
+  %vector = getelementptr inbounds %_Z5ArrayIcE, ptr %0, i32 0, i32 1
+  store ptr null, ptr %vector, align 8
+  ret void
+}
+
+define linkonce_odr void @_ZN5ArrayIcEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
+entry:
+  %length = getelementptr inbounds %_Z5ArrayIcE, ptr %0, i32 0, i32 0
+  store i64 0, ptr %length, align 4
+  %vector = getelementptr inbounds %_Z5ArrayIcE, ptr %0, i32 0, i32 1
+  store ptr null, ptr %vector, align 8
+  %call = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %1)
+  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorIcE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorIcE }, ptr null, i64 0, i32 1) to i64))
+  call void @_ZN6VectorIcEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call, i64 %2)
+  %vector1 = getelementptr inbounds %_Z5ArrayIcE, ptr %0, i32 0, i32 1
+  store ptr %struct.region, ptr %vector1, align 8
+  ret void
+}
+
+define linkonce_odr void @_ZN6VectorIcEC1EPN4scaly6memory4PageE5ArrayIcE(ptr %0, ptr %1, ptr %2) {
+entry:
+  %load.struct = load %_Z5ArrayIcE, ptr %2, align 8
+  %length = extractvalue %_Z5ArrayIcE %load.struct, 0
+  %length1 = getelementptr inbounds %_Z6VectorIcE, ptr %0, i32 0, i32 0
+  store i64 %length, ptr %length1, align 4
+  %load.struct2 = load %_Z6VectorIcE, ptr %0, align 8
+  %length3 = extractvalue %_Z6VectorIcE %load.struct2, 0
+  %gt = icmp ugt i64 %length3, 0
+  br i1 %gt, label %if.then, label %if.else
+
+if.then:                                          ; preds = %entry
+  %load.struct4 = load %_Z6VectorIcE, ptr %0, align 8
+  %length5 = extractvalue %_Z6VectorIcE %load.struct4, 0
+  %mul = mul i64 %length5, ptrtoint (ptr getelementptr (i8, ptr null, i32 1) to i64)
+  %call = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 %mul, i64 1)
+  %data = getelementptr inbounds %_Z6VectorIcE, ptr %0, i32 0, i32 1
+  store ptr %call, ptr %data, align 8
+  %load.struct6 = load %_Z5ArrayIcE, ptr %2, align 8
+  %vector = extractvalue %_Z5ArrayIcE %load.struct6, 1
+  %field.inplace = getelementptr inbounds %_Z6VectorIcE, ptr %0, i32 0, i32 1
+  %deref.recv = load ptr, ptr %field.inplace, align 8
+  %field.inplace7 = getelementptr inbounds %_Z6VectorIcE, ptr %vector, i32 0, i32 1
+  %deref.recv8 = load ptr, ptr %field.inplace7, align 8
+  %load.struct9 = load %_Z6VectorIcE, ptr %0, align 8
+  %length10 = extractvalue %_Z6VectorIcE %load.struct9, 0
+  %mul11 = mul i64 %length10, ptrtoint (ptr getelementptr (i8, ptr null, i32 1) to i64)
+  %call12 = call ptr @memcpy(ptr %deref.recv, ptr %deref.recv8, i64 %mul11)
+  br label %if.end
+
+if.else:                                          ; preds = %entry
+  %data13 = getelementptr inbounds %_Z6VectorIcE, ptr %0, i32 0, i32 1
+  store ptr null, ptr %data13, align 8
+  br label %if.end
+
+if.end:                                           ; preds = %if.else, %if.then
+  %if.value = phi ptr [ %call12, %if.then ], [ null, %if.else ]
+  ret void
+}
+
+define linkonce_odr ptr @_ZN4ListIcE8get_headEPN4scaly6memory4PageE(ptr %0, ptr %1) {
+entry:
+  %load.struct = load %_Z4ListIcE, ptr %1, align 8
+  %head = extractvalue %_Z4ListIcE %load.struct, 0
+  %eq = icmp eq ptr %head, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret ptr null
+
+if.end:                                           ; preds = %entry
+  %addr.gep = getelementptr inbounds %_Z4ListIcE, ptr %1, i32 0, i32 0
+  %addr.gep1 = getelementptr inbounds %_Z4NodeIcE, ptr %addr.gep, i32 0, i32 0
+  ret ptr %addr.gep1
+}
+
+define linkonce_odr ptr @_ZN12ListIteratorIcE4nextEv(ptr %0) {
+entry:
+  %old_current = alloca ptr, align 8
+  %load.struct = load %_Z12ListIteratorIcE, ptr %0, align 8
+  %current = extractvalue %_Z12ListIteratorIcE %load.struct, 0
+  %ne = icmp ne ptr %current, null
+  br i1 %ne, label %if.then, label %if.else
+
+if.then:                                          ; preds = %entry
+  %load.struct1 = load %_Z12ListIteratorIcE, ptr %0, align 8
+  %current2 = extractvalue %_Z12ListIteratorIcE %load.struct1, 0
+  store ptr %current2, ptr %old_current, align 1
+  %load.struct3 = load %_Z12ListIteratorIcE, ptr %0, align 8
+  %current4 = extractvalue %_Z12ListIteratorIcE %load.struct3, 0
+  %deref = load %_Z4NodeIcE, ptr %current4, align 8
+  %next = extractvalue %_Z4NodeIcE %deref, 1
+  %current5 = getelementptr inbounds %_Z12ListIteratorIcE, ptr %0, i32 0, i32 0
+  store ptr %next, ptr %current5, align 8
+  %old_current6 = load ptr, ptr %old_current, align 8
+  %addr.gep = getelementptr inbounds %_Z4NodeIcE, ptr %old_current6, i32 0, i32 0
+  ret ptr %addr.gep
+
+if.else:                                          ; preds = %entry
+  ret ptr null
+
+if.end:                                           ; No predecessors!
+  ret ptr null
+}
+
+define linkonce_odr void @_ZN12ListIteratorIcEC1Ev(ptr %0) {
+entry:
+  ret void
+}
+
+define linkonce_odr i64 @_ZN4ListIcE5countEv(ptr %0) {
+entry:
+  %local_page = call ptr @_Z21scaly_alloc_root_pagev()
+  %sret.result = alloca %_Z12ListIteratorIcE, align 8
+  call void @_ZN4ListIcE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorIcE) %sret.result, ptr %local_page, ptr %0)
+  %list_iterator = alloca ptr, align 8
+  store ptr %sret.result, ptr %list_iterator, align 1
+  %i = alloca i64, align 8
+  store i64 0, ptr %i, align 1
+  br label %while.cond
+
+while.cond:                                       ; preds = %while.body, %entry
+  %list_iterator1 = load ptr, ptr %list_iterator, align 8
+  %call = call ptr @_ZN12ListIteratorIcE4nextEv(ptr %list_iterator1)
+  %ne = icmp ne ptr %call, null
+  br i1 %ne, label %while.body, label %while.exit
+
+while.body:                                       ; preds = %while.cond
+  %i2 = load i64, ptr %i, align 4
+  %add = add i64 %i2, 1
+  store i64 %add, ptr %i, align 1
+  br label %while.cond
+
+while.exit:                                       ; preds = %while.cond
+  %i3 = load i64, ptr %i, align 4
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
+  ret i64 %i3
+}
+
+define linkonce_odr i1 @_ZN4ListIcE6removeEc(ptr %0, i8 %1) {
+entry:
+  %load.struct = load %_Z4ListIcE, ptr %0, align 8
+  %head = extractvalue %_Z4ListIcE %load.struct, 0
+  %node = alloca ptr, align 8
+  store ptr %head, ptr %node, align 1
+  %previous_node = alloca ptr, align 8
+  store ptr null, ptr %previous_node, align 1
+  br label %while.cond
+
+while.cond:                                       ; preds = %if.end, %entry
+  %node1 = load ptr, ptr %node, align 8
+  %ne = icmp ne ptr %node1, null
+  br i1 %ne, label %while.body, label %while.exit
+
+while.body:                                       ; preds = %while.cond
+  %node2 = load ptr, ptr %node, align 8
+  %load.struct3 = load %_Z4NodeIcE, ptr %node2, align 8
+  %element = extractvalue %_Z4NodeIcE %load.struct3, 0
+  %eq = icmp eq i8 %element, %1
+  br i1 %eq, label %if.then, label %if.end
+
+while.exit:                                       ; preds = %while.cond
+  ret i1 false
+
+if.then:                                          ; preds = %while.body
+  %previous_node4 = load ptr, ptr %previous_node, align 8
+  %ne5 = icmp ne ptr %previous_node4, null
+  br i1 %ne5, label %if.then6, label %if.end7
+
+if.end:                                           ; preds = %while.body
+  %node18 = load ptr, ptr %node, align 8
+  store ptr %node18, ptr %previous_node, align 1
+  %node19 = load ptr, ptr %node, align 8
+  %load.struct20 = load %_Z4NodeIcE, ptr %node19, align 8
+  %next21 = extractvalue %_Z4NodeIcE %load.struct20, 1
+  store ptr %next21, ptr %node, align 1
+  br label %while.cond
+
+if.then6:                                         ; preds = %if.then
+  %node8 = load ptr, ptr %node, align 8
+  %load.struct9 = load %_Z4NodeIcE, ptr %node8, align 8
+  %next = extractvalue %_Z4NodeIcE %load.struct9, 1
+  %ptr.load = load ptr, ptr %previous_node, align 8
+  %next10 = getelementptr inbounds %_Z4NodeIcE, ptr %ptr.load, i32 0, i32 1
+  store ptr %next, ptr %next10, align 8
+  br label %if.end7
+
+if.end7:                                          ; preds = %if.then6, %if.then
+  %node11 = load ptr, ptr %node, align 8
+  %load.struct12 = load %_Z4ListIcE, ptr %0, align 8
+  %head13 = extractvalue %_Z4ListIcE %load.struct12, 0
+  %eq14 = icmp eq ptr %node11, %head13
+  br i1 %eq14, label %if.then15, label %if.end16
+
+if.then15:                                        ; preds = %if.end7
+  %head17 = getelementptr inbounds %_Z4ListIcE, ptr %0, i32 0, i32 0
+  store ptr null, ptr %head17, align 8
+  br label %if.end16
+
+if.end16:                                         ; preds = %if.then15, %if.end7
+  ret i1 true
+}
+
+define linkonce_odr void @_ZN4ListIcE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorIcE) %0, ptr %1, ptr %2) {
+entry:
+  %load.struct = load %_Z4ListIcE, ptr %2, align 8
+  %head = extractvalue %_Z4ListIcE %load.struct, 0
+  %tuple = alloca %_Z12ListIteratorIcE, align 8
+  %tuple.field = getelementptr inbounds %_Z12ListIteratorIcE, ptr %tuple, i32 0, i32 0
+  store ptr %head, ptr %tuple.field, align 1
+  %tuple.val = load %_Z12ListIteratorIcE, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z12ListIteratorIcE, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN4ListIcE3addEc(ptr %0, i8 %1) {
+entry:
+  %load.struct = load %_Z4ListIcE, ptr %0, align 8
+  %head = extractvalue %_Z4ListIcE %load.struct, 0
+  %own_page = call ptr @_Z3getPv(ptr %0)
+  %tuple.region = call ptr @_ZN4Page8allocateEmm(ptr %own_page, i64 ptrtoint (ptr getelementptr (%_Z4NodeIcE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z4NodeIcE }, ptr null, i64 0, i32 1) to i64))
+  %tuple.field = getelementptr inbounds %_Z4NodeIcE, ptr %tuple.region, i32 0, i32 0
+  store i8 %1, ptr %tuple.field, align 1
+  %tuple.field1 = getelementptr inbounds %_Z4NodeIcE, ptr %tuple.region, i32 0, i32 1
+  store ptr %head, ptr %tuple.field1, align 1
+  %head2 = getelementptr inbounds %_Z4ListIcE, ptr %0, i32 0, i32 0
+  store ptr %tuple.region, ptr %head2, align 8
+  ret void
+}
+
+define linkonce_odr void @_ZN4ListIcEC1Ev(ptr %0) {
+entry:
+  ret void
+}
+
+define linkonce_odr void @_ZN6VectorIcEC1EPN4scaly6memory4PageE4ListIcE(ptr %0, ptr %1, ptr %2) {
+entry:
+  %i = alloca i64, align 8
+  %list_iterator = alloca ptr, align 8
+  %local_page = call ptr @_Z21scaly_alloc_root_pagev()
+  %sret.result = alloca %_Z12ListIteratorIcE, align 8
+  %call = call i64 @_ZN4ListIcE5countEv(ptr %2)
+  %length = getelementptr inbounds %_Z6VectorIcE, ptr %0, i32 0, i32 0
+  store i64 %call, ptr %length, align 4
+  %load.struct = load %_Z6VectorIcE, ptr %0, align 8
+  %length1 = extractvalue %_Z6VectorIcE %load.struct, 0
+  %gt = icmp ugt i64 %length1, 0
+  br i1 %gt, label %if.then, label %if.else
+
+if.then:                                          ; preds = %entry
+  %load.struct2 = load %_Z6VectorIcE, ptr %0, align 8
+  %length3 = extractvalue %_Z6VectorIcE %load.struct2, 0
+  %mul = mul i64 %length3, ptrtoint (ptr getelementptr (i8, ptr null, i32 1) to i64)
+  %call4 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 %mul, i64 1)
+  %data = getelementptr inbounds %_Z6VectorIcE, ptr %0, i32 0, i32 1
+  store ptr %call4, ptr %data, align 8
+  call void @_ZN4ListIcE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorIcE) %sret.result, ptr %local_page, ptr %2)
+  store ptr %sret.result, ptr %list_iterator, align 1
+  %load.struct5 = load %_Z6VectorIcE, ptr %0, align 8
+  %length6 = extractvalue %_Z6VectorIcE %load.struct5, 0
+  store i64 %length6, ptr %i, align 1
+  br label %while.cond
+
+if.else:                                          ; preds = %entry
+  %data13 = getelementptr inbounds %_Z6VectorIcE, ptr %0, i32 0, i32 1
+  store ptr null, ptr %data13, align 8
+  br label %if.end
+
+if.end:                                           ; preds = %if.else, %while.exit
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
+  ret void
+
+while.cond:                                       ; preds = %while.body, %if.then
+  %list_iterator7 = load ptr, ptr %list_iterator, align 8
+  %call8 = call ptr @_ZN12ListIteratorIcE4nextEv(ptr %list_iterator7)
+  %while.tobool = icmp ne ptr %call8, null
+  br i1 %while.tobool, label %while.body, label %while.exit
+
+while.body:                                       ; preds = %while.cond
+  %i9 = load i64, ptr %i, align 4
+  %sub = sub i64 %i9, 1
+  store i64 %sub, ptr %i, align 1
+  %deref = load i8, ptr %call8, align 1
+  %load.struct10 = load %_Z6VectorIcE, ptr %0, align 8
+  %data11 = extractvalue %_Z6VectorIcE %load.struct10, 1
+  %i12 = load i64, ptr %i, align 4
+  %ptr.add = getelementptr inbounds i8, ptr %data11, i64 %i12
+  store i8 %deref, ptr %ptr.add, align 1
+  br label %while.cond
+
+while.exit:                                       ; preds = %while.cond
+  br label %if.end
 }
 
 define linkonce_odr void @_ZN7Modeler16handle_componentEPN4scaly6memory4PageE15ComponentSyntax(ptr noalias sret(%_Z9Component) %0, ptr %1, ptr %2) {

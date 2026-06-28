@@ -100,7 +100,7 @@ define Parser
     {
         var keywords_builder Array[String]()
 "   (apply-to-selected-children "keyword" (lambda (keyword) ($
-"        keywords_builder.add(String(\""(id keyword)"\"))
+"        keywords_builder.add(\""(id keyword)"\")
 "   )))
 "        Vector[String]#(keywords_builder)
     }
@@ -264,7 +264,7 @@ define Parser
 "            {
                 choose err
                     when d: Different
-                        throw ParserError.Invalid(InvalidSyntax(" prop "_start, lexer.position, String(\"expected "(link content)"\")))
+                        throw ParserError.Invalid(InvalidSyntax(" prop "_start, lexer.position, \"expected "(link content)"\"))
                     when i: Invalid
                         throw ParserError.Invalid(i)
             }
@@ -293,7 +293,7 @@ define Parser
                         (("keyword")
                             ($
 "
-        if ~lexer.parse_keyword(String#(\""(id (element-with-id (link content)))"\"))"
+        if ~lexer.parse_keyword(\""(id (element-with-id (link content)))"\")"
                                 (if (equal? 1 (child-number content))
                                     (if (peek? syntax)
                                         "
@@ -306,7 +306,7 @@ define Parser
             throw ParserError.Different(DifferentSyntax())
 ")
                                     ($ "
-            throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String(\"expected '"(id (element-with-id (link content)))"'\")))
+            throw ParserError.Invalid(InvalidSyntax(start, lexer.position, \"expected '"(id (element-with-id (link content)))"'\"))
 ")
                                 )
                             )
@@ -327,7 +327,7 @@ define Parser
             throw ParserError.Different(DifferentSyntax())
 "
                                         ($ "
-            throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String(\"expected '"(value (element-with-id (link content)))"'\")))
+            throw ParserError.Invalid(InvalidSyntax(start, lexer.position, \"expected '"(value (element-with-id (link content)))"'\"))
 ")
                                     )
                                 )
@@ -349,7 +349,7 @@ define Parser
             throw ParserError.Different(DifferentSyntax())
 "
                                         "
-            throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String(\"expected colon or newline\")))
+            throw ParserError.Invalid(InvalidSyntax(start, lexer.position, \"expected colon or newline\"))
 ")
                                 )
                             )
@@ -365,7 +365,7 @@ define Parser
             throw ParserError.Different(DifferentSyntax())
 "
                                     "
-            throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String(\"expected identifier\")))
+            throw ParserError.Invalid(InvalidSyntax(start, lexer.position, \"expected identifier\"))
 ")
                             ))
                         )
@@ -380,7 +380,7 @@ define Parser
             throw ParserError.Different(DifferentSyntax())
 "
                                     "
-            throw ParserError.Invalid(InvalidSyntax(start, lexer.position, String(\"expected attribute\")))
+            throw ParserError.Invalid(InvalidSyntax(start, lexer.position, \"expected attribute\"))
 ")
                             ))
                         )
@@ -413,7 +413,7 @@ define Parser
 function test() returns int
 {
     ; Test 1: Parse a simple literal
-    var parser Parser(String(\"42\"))
+    var parser Parser(\"42\")
     choose parser.parse_literal$()
         when err: Error
             return 1
@@ -424,7 +424,7 @@ function test() returns int
         }
 
     ; Test 2: Parse an identifier expression
-    set parser: Parser(String(\"foo\"))
+    set parser: Parser(\"foo\")
     choose parser.parse_name$()
         when err: Error
             return 3
@@ -435,7 +435,7 @@ function test() returns int
         }
 
     ; Test 3: Parse a function definition
-    set parser: Parser(String(\"function hello() returns int 42\"))
+    set parser: Parser(\"function hello() returns int 42\")
     choose parser.parse_function$()
         when err: Error
             return 5
@@ -446,7 +446,7 @@ function test() returns int
         }
 
     ; Test 4: Parse a structure definition
-    set parser: Parser(String(\"define a ()\"))
+    set parser: Parser(\"define a ()\")
     choose parser.parse_definition$()
         when err: Error
             return 7
@@ -457,7 +457,7 @@ function test() returns int
         }
 
     ; Test 5: Parse a structure with properties
-    set parser: Parser(String(\"define Point (x: int, y: int)\"))
+    set parser: Parser(\"define Point (x: int, y: int)\")
     choose parser.parse_definition$()
         when err: Error
             return 9
@@ -468,7 +468,7 @@ function test() returns int
         }
 
     ; Test 6: Parse a union definition
-    set parser: Parser(String(\"define Option union (Some: int, None)\"))
+    set parser: Parser(\"define Option union (Some: int, None)\")
     choose parser.parse_definition$()
         when err: Error
             return 11
