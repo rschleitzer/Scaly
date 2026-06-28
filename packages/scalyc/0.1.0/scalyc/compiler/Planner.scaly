@@ -15639,10 +15639,32 @@ define Planner
             ; Symptom: extract_program_name#'s implicit-return substring was
             ; silently elided (bare `ret void`). Mirrors stage-0's page-param
             ; binding in planFunction (Planner.cpp implicit `rp`).
+            ; The page param's name: explicit when `#` set page_parameter, else
+            ; the implicit "rp" when the page is INFERRED (de-sigiled decl with
+            ; function_needs_caller_page true — mirrors the s131 page_param_ref
+            ; inference below). Registering it as a pointer[Page] local lets a
+            ; de-sigiled body pass `rp` as an explicit value arg
+            ; (`x.substring(rp, ...)`), not only as the `^rp` lifetime. Without
+            ; this a de-sigiled fn that uses `rp` explicitly mis-plans the
+            ; operand and emit_call drops the call (the s152 symptom), which only
+            ; surfaces in the self-built compiler (seed_root emits the de-sigiled
+            ; body wrong → stage1 mis-resolves the dropped call). NEUTRAL on
+            ; sigiled source: page_parameter is set, so the implicit branch
+            ; never fires; it also defines `rp` for any already-no-`#`
+            ; non-primitive-returning fn (a latent consistency fix).
+            var pp_name_ref: ref[String]? null
             if f.page_parameter <> null
+                set pp_name_ref: f.page_parameter
+            if f.page_parameter = null
+                if Planner.function_needs_caller_page(f)
+                {
+                    var rp_holder Vector[String]^rp(1)
+                    rp_holder.put(0, String^rp("rp"))
+                    set pp_name_ref: rp_holder.get(0)
+                }
+            if pp_name_ref <> null
             {
-                let pp_ref f.page_parameter
-                let pp_name (*pp_ref)
+                let pp_name (*pp_name_ref)
                 let pp_page_ty PlannedType(
                     f.span,
                     String^rp("Page"),
