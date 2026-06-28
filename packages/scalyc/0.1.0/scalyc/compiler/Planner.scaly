@@ -1053,7 +1053,7 @@ define Planner
         ; calling record_function on every package-defined Function,
         ; which lands in instantiated_functions and is then emitted
         ; by the Emitter as both declaration and definition.
-        function plan_loaded_packages#(rp, this: Planner)
+        function plan_loaded_packages(this: Planner)
         {
             var pi: size_t 0
             while pi < loaded_packages.length
@@ -1245,8 +1245,7 @@ define Planner
         ; (build_package_search_paths#, build_package_file_path#)
         ; are retained for callers that want to discover candidate
         ; files before parsing them externally.
-        function load_package_on_demand#(
-            rp,
+        function load_package_on_demand(
             this: Planner,
             name: String
         ) returns ref[Module]?
@@ -1258,8 +1257,7 @@ define Planner
         ; module inside an already-mounted package, keyed by the
         ; full file path ("BasePath/ModuleName.scaly"). Callers
         ; pre-populate via register_loaded_module.
-        function load_intra_package_module#(
-            rp,
+        function load_intra_package_module(
             this: Planner,
             base_path: String,
             module_name: String
@@ -1346,7 +1344,7 @@ define Planner
         ; Parameter items and return types are built with Type.name
         ; Vectors so resolve_type_base recognises them correctly.
         ; ================================================================
-        function register_runtime_functions#(rp, this: Planner)
+        function register_runtime_functions(this: Planner)
         {
             ; All Vector / String / Type containers must live on `rp`
             ; (the Planner's owning page) — `$` would put them on this
@@ -1612,8 +1610,7 @@ define Planner
         ; its input matches arg_types (after skipping any implicit
         ; page parameter, which is already excluded from input by the
         ; Modeler). `exact_only` selects types_equal vs types_compatible.
-        function check_initializer_match#(
-            rp,
+        function check_initializer_match(
             this: Planner,
             ini: Initializer,
             arg_types: Vector[PlannedType],
@@ -1685,8 +1682,7 @@ define Planner
             false
         }
 
-        function find_initializer#(
-            rp,
+        function find_initializer(
             this: Planner,
             struct_name: String,
             arg_types: Vector[PlannedType]
@@ -1865,8 +1861,7 @@ define Planner
         ; variant. Returns null when the concept isn't a union, the
         ; variant doesn't exist, or the variant has no payload (tag-only
         ; variants like Option.None).
-        function lookup_variant_type#(
-            rp,
+        function lookup_variant_type(
             this: Planner,
             union_name: String,
             variant_name: String
@@ -2311,8 +2306,7 @@ define Planner
             true
         }
 
-        function check_function_match#(
-            rp,
+        function check_function_match(
             this: Planner,
             f: Function,
             arg_types: Vector[PlannedType],
@@ -2526,7 +2520,7 @@ define Planner
         ; scan in stage-0's name-only Namespace path (Planner.cpp:8663-8674).
         ; Kept out of collapse_operand_sequence# (its frame is the heaviest
         ; in the compiler) so stage-1 emits it correctly into stage-2.
-        function is_namespace_this_method#(rp, this: Planner, prefix: String, suffix: String) returns bool
+        function is_namespace_this_method(this: Planner, prefix: String, suffix: String) returns bool
         {
             let ns_chk this.lookup_namespace_concept(prefix)
             if ns_chk <> null
@@ -2582,8 +2576,7 @@ define Planner
         ; block then rebuilds the namespaced mangled name. Kept whole here so
         ; collapse_operand_sequence# adds no locals (its s178 alloca pool
         ; mis-aliases any added there — see the call site).
-        function resolve_namespace_this_method#(
-            rp,
+        function resolve_namespace_this_method(
             this: Planner,
             prefix: String,
             suffix: String,
@@ -2615,8 +2608,7 @@ define Planner
         ; statement — adding a branch there perturbed its s178 alloca pool.
         ; Try the normal this-implicit overload first; if that misses, try the
         ; namespace this-method-with-explicit-receiver form.
-        function resolve_dotted_call#(
-            rp,
+        function resolve_dotted_call(
             this: Planner,
             prefix: String,
             suffix: String,
@@ -2639,8 +2631,7 @@ define Planner
         ; Returns null when no overload matches; callers fall back to a
         ; fresh type variable so the constraint solver can recover.
         ; ================================================================
-        function resolve_function_call#(
-            rp,
+        function resolve_function_call(
             this: Planner,
             name: String,
             arg_types: Vector[PlannedType]
@@ -7182,8 +7173,7 @@ define Planner
 
         ; check_operator_match: test a single Operator candidate against
         ; argument types. Same shape as check_function_match.
-        function check_operator_match#(
-            rp,
+        function check_operator_match(
             this: Planner,
             o: Operator,
             arg_types: Vector[PlannedType],
@@ -7262,8 +7252,7 @@ define Planner
             r
         }
 
-        function resolve_prefix_operator_call#(
-            rp,
+        function resolve_prefix_operator_call(
             this: Planner,
             name: String,
             operand: PlannedType
@@ -7316,8 +7305,7 @@ define Planner
 
         ; resolve_operator_call: two-pass overload resolution for binary
         ; operators keyed on the operator symbol registry.
-        function resolve_operator_call#(
-            rp,
+        function resolve_operator_call(
             this: Planner,
             name: String,
             left: PlannedType,
@@ -7509,8 +7497,7 @@ define Planner
         ; bool so lookup_method# can pick the right overload among several
         ; same-named methods. `exact_only` selects types_equal (pass 1) vs
         ; types_compatible (pass 2).
-        function method_params_match#(
-            rp,
+        function method_params_match(
             this: Planner,
             f: Function,
             arg_types: Vector[PlannedType],
@@ -7569,8 +7556,7 @@ define Planner
         ; at a PlannedFunction — we leave it null for now; wiring it up
         ; requires caching planned methods per struct, which we don't
         ; do yet.
-        function lookup_method#(
-            rp,
+        function lookup_method(
             this: Planner,
             struct_type: PlannedType,
             method_name: String,
@@ -8652,7 +8638,7 @@ define Planner
         ; if any constraint failed to unify. Constraints are cleared on
         ; success so subsequent add_equality_constraint / solve cycles
         ; start fresh.
-        function solve_and_apply#(rp, this: Planner) returns bool
+        function solve_and_apply(this: Planner) returns bool
         {
             if constraints.length = 0
                 return true
@@ -12076,8 +12062,7 @@ define Planner
         ; with no value. Returns null when the shape doesn't match so
         ; the caller falls back to plan_operand#. Locals win — a
         ; shadowing local binding disqualifies the union lookup.
-        function try_plan_unit_variant#(
-            rp,
+        function try_plan_unit_variant(
             this: Planner,
             t: Type,
             loc: Span
@@ -13554,7 +13539,7 @@ define Planner
         ; re-stamped (everything else copied verbatim): rebuilding the
         ; result_type, which embeds the Lifetime union, by value trips the
         ; s34/s196 union-struct-copy ABI hazard and crashes the emitter.
-        function restamp_operand_life#(rp, this: Planner, op: PlannedOperand, new_life: Lifetime) returns ref[PlannedOperand]?
+        function restamp_operand_life(this: Planner, op: PlannedOperand, new_life: Lifetime) returns ref[PlannedOperand]?
         {
             if Planner.result_owns_page_guts(op.result_type) = false
                 return null
@@ -13639,7 +13624,7 @@ define Planner
         ; verbatim — restamp_operand_life# returns null for them. Bound-local
         ; args (a Variable) are likewise kept (their own binding is promoted via
         ; the name-graph); only INLINE constructions are restamped here.
-        function restamp_args#(rp, this: Planner, args: Vector[PlannedOperand], new_life: Lifetime) returns ref[Vector[PlannedOperand]]?
+        function restamp_args(this: Planner, args: Vector[PlannedOperand], new_life: Lifetime) returns ref[Vector[PlannedOperand]]?
         {
             var out Vector[PlannedOperand]^rp(args.length)
             var i: size_t 0
@@ -13658,7 +13643,7 @@ define Planner
             }
             &out
         }
-        function restamp_components#(rp, this: Planner, comps: Vector[PlannedComponent], new_life: Lifetime) returns ref[Vector[PlannedComponent]]?
+        function restamp_components(this: Planner, comps: Vector[PlannedComponent], new_life: Lifetime) returns ref[Vector[PlannedComponent]]?
         {
             var out Vector[PlannedComponent]^rp(comps.length)
             var i: size_t 0
@@ -13696,7 +13681,7 @@ define Planner
         ; caller keeps the operand verbatim, so sigiled source whose nested
         ; constructions carry explicit #/^ lifetimes stays byte-identical). All
         ; rebuilds copy PlannedType/String fields verbatim (s34/s196 hazard).
-        function promote_escaping_guts#(rp, this: Planner, op: PlannedOperand, new_life: Lifetime) returns ref[PlannedOperand]?
+        function promote_escaping_guts(this: Planner, op: PlannedOperand, new_life: Lifetime) returns ref[PlannedOperand]?
         {
             choose op.expr
                 when c: PlannedCall
@@ -13786,7 +13771,7 @@ define Planner
                     return null
             null
         }
-        function promote_escaping_args#(rp, this: Planner, args: Vector[PlannedOperand], new_life: Lifetime) returns ref[Vector[PlannedOperand]]?
+        function promote_escaping_args(this: Planner, args: Vector[PlannedOperand], new_life: Lifetime) returns ref[Vector[PlannedOperand]]?
         {
             var changed false
             var out Vector[PlannedOperand]^rp(args.length)
