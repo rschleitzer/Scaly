@@ -1270,7 +1270,7 @@ function handle_statements(syntax: ref[Vector[StatementSyntax]]?) returns Vector
                                                     group_ops.put(gi, *opp)
                                                 set gi: gi + 1
                                             }
-                                            result.add(Statement.Action(Action(group_ops, Vector[Operand]#(0))))
+                                            result.add(Statement.Action(Action(group_ops, Vector[Operand](0))))
                                             set groups_emitted: groups_emitted + 1
                                             set group_start: bi + 1
                                         }
@@ -1289,7 +1289,7 @@ function handle_statements(syntax: ref[Vector[StatementSyntax]]?) returns Vector
                                             tail_ops.put(ti, *opp2)
                                         set ti: ti + 1
                                     }
-                                    result.add(Statement.Action(Action(tail_ops, Vector[Operand]#(0))))
+                                    result.add(Statement.Action(Action(tail_ops, Vector[Operand](0))))
                                     set groups_emitted: groups_emitted + 1
                                 }
                                 if groups_emitted > 1

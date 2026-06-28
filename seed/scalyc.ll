@@ -81388,6 +81388,7 @@ entry:
   %deref.tmp136 = alloca %_Z7Operand, align 8
   %arg.tmp = alloca %_Z9Statement, align 8
   %tuple = alloca %_Z6Action, align 8
+  %local_page = call ptr @_Z21scaly_alloc_root_pagev()
   %variant.ptr = alloca %_Z9Statement, align 8
   %gi = alloca i64, align 8
   %group_ops = alloca ptr, align 8
@@ -81414,6 +81415,7 @@ if.then:                                          ; preds = %entry
   call void @_ZN6VectorI9StatementEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %1, i64 0)
   %sret.body = load %_Z6VectorI9StatementE, ptr %struct.region, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.region, i64 ptrtoint (ptr getelementptr (%_Z6VectorI9StatementE, ptr null, i32 1) to i64), i1 false)
+  call void @_Z23scaly_release_root_pageP4Page(ptr %local_page)
   ret void
 
 if.end:                                           ; preds = %entry
@@ -81444,6 +81446,7 @@ while.exit:                                       ; preds = %while.cond
   %struct.region169 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr (%_Z6VectorI9StatementE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI9StatementE }, ptr null, i64 0, i32 1) to i64))
   %result170 = load ptr, ptr %result, align 8
   call void @_ZN6VectorI9StatementEC1EPN4scaly6memory4PageE5ArrayI9StatementE(ptr %struct.region169, ptr %1, ptr %result170)
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   %sret.body171 = load %_Z6VectorI9StatementE, ptr %struct.region169, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.region169, i64 ptrtoint (ptr getelementptr (%_Z6VectorI9StatementE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -81658,8 +81661,8 @@ while.exit84:                                     ; preds = %while.cond82
   %variant.tag.ptr = getelementptr inbounds %_Z9Statement, ptr %variant.ptr, i32 0, i32 0
   store i8 0, ptr %variant.tag.ptr, align 1
   %group_ops100 = load ptr, ptr %group_ops, align 8
-  %struct.region101 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr (%_Z6VectorI7OperandE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI7OperandE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI7OperandEC1EPN4scaly6memory4PageEm(ptr %struct.region101, ptr %1, i64 0)
+  %struct.region101 = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 ptrtoint (ptr getelementptr (%_Z6VectorI7OperandE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI7OperandE }, ptr null, i64 0, i32 1) to i64))
+  call void @_ZN6VectorI7OperandEC1EPN4scaly6memory4PageEm(ptr %struct.region101, ptr %local_page, i64 0)
   %field.load = load %_Z6VectorI7OperandE, ptr %group_ops100, align 8
   %tuple.field102 = getelementptr inbounds %_Z6Action, ptr %tuple, i32 0, i32 0
   store %_Z6VectorI7OperandE %field.load, ptr %tuple.field102, align 1
@@ -81728,8 +81731,8 @@ while.exit125:                                    ; preds = %while.cond123
   %variant.tag.ptr141 = getelementptr inbounds %_Z9Statement, ptr %variant.ptr140, i32 0, i32 0
   store i8 0, ptr %variant.tag.ptr141, align 1
   %tail_ops142 = load ptr, ptr %group_ops, align 8
-  %struct.region143 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr (%_Z6VectorI7OperandE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI7OperandE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI7OperandEC1EPN4scaly6memory4PageEm(ptr %struct.region143, ptr %1, i64 0)
+  %struct.region143 = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 ptrtoint (ptr getelementptr (%_Z6VectorI7OperandE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI7OperandE }, ptr null, i64 0, i32 1) to i64))
+  call void @_ZN6VectorI7OperandEC1EPN4scaly6memory4PageEm(ptr %struct.region143, ptr %local_page, i64 0)
   %field.load145 = load %_Z6VectorI7OperandE, ptr %tail_ops142, align 8
   %tuple.field146 = getelementptr inbounds %_Z6Action, ptr %tuple144, i32 0, i32 0
   store %_Z6VectorI7OperandE %field.load145, ptr %tuple.field146, align 1
