@@ -2468,10 +2468,10 @@ function scaly_home_base() returns String
 {
     let home getenv "SCALY_HOME"
     if home = null
-        return String^rp("")
+        return ""
     var home_str String(home)
     if home_str.get_length() = 0
-        return String^rp("")
+        return ""
     var sb StringBuilder()
     sb.append home_str
     sb.append("/" as char)

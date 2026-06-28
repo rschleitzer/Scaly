@@ -1003,7 +1003,7 @@ define Planner
                         let last_ptr path.get(path.length - 1)
                         if last_ptr <> null
                             program_use_aliases.add((*last_ptr))
-                        var ns_name String^this("")
+                        var ns_name ""
                         if path.length > 1
                         {
                             let ns_ptr path.get(path.length - 2)
@@ -1037,7 +1037,7 @@ define Planner
                 }
                 set i: i + 1
             }
-            String^rp("")
+            ""
         }
 
         ; is_program_use_alias: linear scan of program_use_aliases.
@@ -1194,7 +1194,7 @@ define Planner
         function build_package_search_paths(this: Planner) returns Vector[String]
         {
             var paths Array[String]$()
-            paths.add(String^rp("packages"))
+            paths.add("packages")
 
             var i: size_t 0
             while i < search_paths.length
@@ -1374,7 +1374,7 @@ define Planner
 
             ; aligned_alloc(alignment: size_t, size: size_t) -> pointer[void]
             var aa_size_path Vector[String]^rp(1)
-            aa_size_path.put(0, String^rp("size_t"))
+            aa_size_path.put(0, "size_t")
             var aa_size_holder Vector[Type]^rp(1)
             aa_size_holder.put(0, Type(
                 Span(0, 0), aa_size_path, null,
@@ -1383,7 +1383,7 @@ define Planner
             let aa_size_ref aa_size_holder.get 0
 
             var aa_void_path Vector[String]^rp(1)
-            aa_void_path.put(0, String^rp("void"))
+            aa_void_path.put(0, "void")
             var aa_void_holder Vector[Type]^rp(1)
             aa_void_holder.put(0, Type(
                 Span(0, 0), aa_void_path, null,
@@ -1395,7 +1395,7 @@ define Planner
             let aa_ptr_gens_ref aa_ptr_gens_holder.get 0
 
             var aa_ptr_path Vector[String]^rp(1)
-            aa_ptr_path.put(0, String^rp("pointer"))
+            aa_ptr_path.put(0, "pointer")
             var aa_ptr_void_holder Vector[Type]^rp(1)
             aa_ptr_void_holder.put(0, Type(
                 Span(0, 0), aa_ptr_path, aa_ptr_gens_ref,
@@ -1404,9 +1404,9 @@ define Planner
             let aa_ptr_void_ref aa_ptr_void_holder.get 0
 
             var aa_alignment_name Vector[String]^rp(1)
-            aa_alignment_name.put(0, String^rp("alignment"))
+            aa_alignment_name.put(0, "alignment")
             var aa_size_name Vector[String]^rp(1)
-            aa_size_name.put(0, String^rp("size"))
+            aa_size_name.put(0, "size")
 
             var aa_inputs Vector[Item]^rp(2)
             aa_inputs.put(0, Item(
@@ -1423,7 +1423,7 @@ define Planner
             ))
             let aligned_alloc_fn Function(
                 Span(0, 0), false, false,
-                String^rp("aligned_alloc"),
+                "aligned_alloc",
                 Vector[GenericParameter]^rp(0),
                 null,
                 aa_inputs,
@@ -1436,7 +1436,7 @@ define Planner
 
             ; free(ptr: pointer[void])
             var free_ptr_name Vector[String]^rp(1)
-            free_ptr_name.put(0, String^rp("ptr"))
+            free_ptr_name.put(0, "ptr")
             var free_inputs Vector[Item]^rp(1)
             free_inputs.put(0, Item(
                 Span(0, 0), false,
@@ -1446,7 +1446,7 @@ define Planner
             ))
             let free_fn Function(
                 Span(0, 0), false, false,
-                String^rp("free"),
+                "free",
                 Vector[GenericParameter]^rp(0),
                 null,
                 free_inputs,
@@ -1459,7 +1459,7 @@ define Planner
 
             ; exit(code: int)
             var int_path Vector[String]^rp(1)
-            int_path.put(0, String^rp("int"))
+            int_path.put(0, "int")
             var int_holder Vector[Type]^rp(1)
             int_holder.put(0, Type(
                 Span(0, 0), int_path, null,
@@ -1468,7 +1468,7 @@ define Planner
             let int_ref int_holder.get 0
 
             var exit_code_name Vector[String]^rp(1)
-            exit_code_name.put(0, String^rp("code"))
+            exit_code_name.put(0, "code")
             var exit_inputs Vector[Item]^rp(1)
             exit_inputs.put(0, Item(
                 Span(0, 0), false,
@@ -1478,7 +1478,7 @@ define Planner
             ))
             let exit_fn Function(
                 Span(0, 0), false, false,
-                String^rp("exit"),
+                "exit",
                 Vector[GenericParameter]^rp(0),
                 null,
                 exit_inputs,
@@ -2241,7 +2241,7 @@ define Planner
                 &args_holder,
                 Lifetime.Unspecified(Unspecified()),
                 null,
-                String^rp(""),
+                "",
                 null
             )
         }
@@ -2526,7 +2526,7 @@ define Planner
                 ; a use-imported alias matching f.name (s192 — use-aliased
                 ; bare calls must mangle `_ZN<ns><fn>E…` like the member's
                 ; definition, not the free `_Z<fn>…` which links nowhere).
-                var ns_for_mangle String^rp("")
+                var ns_for_mangle ""
                 if is_namespace_sibling
                 {
                     let cnsn (*current_namespace_name)
@@ -2553,7 +2553,7 @@ define Planner
                         null,
                         Lifetime.Unspecified(Unspecified()),
                         null,
-                        String^rp(""),
+                        "",
                         null
                     ))
                     let ns_parent_ref ns_parent_holder.get 0
@@ -3067,8 +3067,8 @@ define Planner
         function lambda_head_name(this: Planner, op: PlannedOperand) returns String
         {
             if op.member_access <> null
-                return String^rp("")
-            var nm String^rp("")
+                return ""
+            var nm ""
             choose op.expr
                 when lht: PlannedType
                 {
@@ -3080,10 +3080,10 @@ define Planner
                 else
                     0
             if nm.get_length() = 0
-                return String^rp("")
+                return ""
             if this.lookup_lambda_model(nm) <> null
                 return nm
-            String^rp("")
+            ""
         }
 
         ; Resolve a Phase-1 lambda call `name(args)` into a direct call to the
@@ -3321,8 +3321,8 @@ define Planner
                                 var ic_args_holder Vector[PlannedOperand]^rp(ic_args)
                                 let ic_call PlannedCall(
                                     ic_head.loc,
-                                    String^rp("__jit_indirect"),
-                                    String^rp(""),
+                                    "__jit_indirect",
+                                    "",
                                     false,
                                     false,
                                     false,
@@ -3348,7 +3348,7 @@ define Planner
                         ; [callee, arg0, arg1, ...]; the emitter reconstructs
                         ; the LLVM function type from the planned arg types +
                         ; the delegate's return type.
-                        var ic_del_name String^rp("")
+                        var ic_del_name ""
                         choose ic_head.expr
                             when v: Variable
                                 if this.is_delegate_type(v.variable_type.name)
@@ -3397,8 +3397,8 @@ define Planner
                                 var dc_args_holder Vector[PlannedOperand]^rp(dc_args)
                                 let dc_call PlannedCall(
                                     ic_head.loc,
-                                    String^rp("indirect"),
-                                    String^rp(""),
+                                    "indirect",
+                                    "",
                                     false,
                                     false,
                                     false,
@@ -4469,7 +4469,7 @@ define Planner
                 {
                     let second (*second_ptr)
                     var is_call: bool false
-                    var fn_name: String String^rp("")
+                    var fn_name: String ""
 
                     ; Method-call branch FIRST: a PlannedType operand
                     ; carrying a method member_access (e.g. `cli.main`,
@@ -4535,7 +4535,7 @@ define Planner
                         var is_variant_ctor: bool false
                         var ctor_struct_type: PlannedType Planner.make_void_type()
                         var ctor_union_type: PlannedType Planner.make_void_type()
-                        var ctor_variant_name: String String^rp("")
+                        var ctor_variant_name: String ""
                         var ctor_variant_tag: size_t 0
 
                         ; Resolve struct construction regardless of lifetime.
@@ -4671,7 +4671,7 @@ define Planner
                                                 null,
                                                 Lifetime.Unspecified(Unspecified()),
                                                 null,
-                                                String^rp(""),
+                                                "",
                                                 null
                                             )
                                             set ctor_variant_name: suffix
@@ -4818,7 +4818,7 @@ define Planner
 
                                     let ctor_call PlannedCall(
                                         second.loc,
-                                        String^rp("init"),
+                                        "init",
                                         c1_mangled,
                                         false,
                                         false,
@@ -5280,7 +5280,7 @@ define Planner
                                             if mm.requires_page_param
                                             {
                                                 var pp_h_a Vector[String]^rp(1)
-                                                pp_h_a.put(0, String^rp("rp"))
+                                                pp_h_a.put(0, "rp")
                                                 set pp_ref_a: pp_h_a.get(0)
                                             }
                                             this.record_function(PlannedFunction(
@@ -5421,7 +5421,7 @@ define Planner
                                                     if mm3.requires_page_param
                                                     {
                                                         var pp_h_b Vector[String]^rp(1)
-                                                        pp_h_b.put(0, String^rp("rp"))
+                                                        pp_h_b.put(0, "rp")
                                                         set pp_ref_b: pp_h_b.get(0)
                                                     }
                                                     this.record_function(PlannedFunction(
@@ -5470,7 +5470,7 @@ define Planner
                         ; segment to the mangled name, so the suffix-only
                         ; resolve already returns the right MethodMatch
                         ; for `compiler.test()` etc.
-                        var ns_mangled: String String^rp("")
+                        var ns_mangled: String ""
                         var has_ns_mangled: bool false
                         ; Hoisted out of the nested ns-resolution block so the
                         ; call_requires_page computation below can honor the
@@ -5493,7 +5493,7 @@ define Planner
                         ; for the call's sret slot undersizes it and the callee's
                         ; write overflows into adjacent stack. Prefer the member's
                         ; own return type.
-                        var ns_return_type: PlannedType this.fresh_type_var(String^rp(""))
+                        var ns_return_type: PlannedType this.fresh_type_var("")
                         var ns_return_valid: bool false
                         if match_ref = null
                         {
@@ -5562,7 +5562,7 @@ define Planner
                                                 null,
                                                 Lifetime.Unspecified(Unspecified()),
                                                 null,
-                                                String^rp(""),
+                                                "",
                                                 null
                                             ))
                                             let ns_parent_ref ns_parent_holder.get 0
@@ -5919,7 +5919,7 @@ define Planner
                                                 if ns_has_page
                                                 {
                                                     var pp_h Vector[String]^rp(1)
-                                                    pp_h.put(0, String^rp("rp"))
+                                                    pp_h.put(0, "rp")
                                                     set pp_ref: pp_h.get(0)
                                                 }
                                                 this.record_function(PlannedFunction(
@@ -6024,7 +6024,7 @@ define Planner
                                                 null,
                                                 Lifetime.Unspecified(Unspecified()),
                                                 null,
-                                                String^rp(""),
+                                                "",
                                                 null
                                             ))
                                             let sparent_ref sparent_holder.get 0
@@ -6098,7 +6098,7 @@ define Planner
                                                 if s_pp
                                                 {
                                                     var spph Vector[String]^rp(1)
-                                                    spph.put(0, String^rp("rp"))
+                                                    spph.put(0, "rp")
                                                     set spp_ref: spph.get(0)
                                                 }
                                                 let sextern PlannedImplementation.Extern(
@@ -6174,7 +6174,7 @@ define Planner
                                                                 result.loc,
                                                                 PlannedExpression.Variable(PlannedVariable(
                                                                     result.loc,
-                                                                    String^rp("this"),
+                                                                    "this",
                                                                     this_ty,
                                                                     false
                                                                 )),
@@ -6193,7 +6193,7 @@ define Planner
                         }
 
                         var rt: PlannedType this.fresh_type_var("")
-                        var mangled: String String^rp("")
+                        var mangled: String ""
                         if match_ref <> null
                         {
                             let m (*match_ref)
@@ -6370,7 +6370,7 @@ define Planner
                                 {
                                     var bv_found: bool false
                                     var bv_tag: size_t 0
-                                    var bv_union_name String^rp("")
+                                    var bv_union_name ""
                                     var bvi: size_t 0
                                     while bvi < concepts.length
                                     {
@@ -6399,7 +6399,7 @@ define Planner
                                             null,
                                             Lifetime.Unspecified(Unspecified()),
                                             null,
-                                            String^rp(""),
+                                            "",
                                             null
                                         )
                                         var bv_payload: ref[PlannedOperand]? null
@@ -7011,7 +7011,7 @@ define Planner
                         when ty: PlannedType
                             ty.name
                         else
-                            String^rp("")
+                            ""
 
                     ; s189: rhs is itself a prefix operator (`x & ~y`,
                     ; `b.bitmap & ~((1 as u64) << slot)`). Grab the prefix
@@ -8396,18 +8396,18 @@ define Planner
             ; Build the result type: pointer[Page].
             let page_ty PlannedType(
                 loc,
-                String^rp("Page"),
-                String^rp(""),
+                "Page",
+                "",
                 null,
                 Lifetime.Unspecified(Unspecified()),
                 null,
-                String^rp(""),
+                "",
                 null
             )
             let result_type Planner.make_pointer_type(page_ty)
 
             ; Plan the `this` variable operand to pass as the argument.
-            let this_var PlannedVariable(loc, String^rp("this"), this_ty, false)
+            let this_var PlannedVariable(loc, "this", this_ty, false)
             let this_operand PlannedOperand(
                 loc,
                 PlannedExpression.Variable this_var,
@@ -8421,8 +8421,8 @@ define Planner
             ; Mangle as a call to Page.get(pointer[void]).
             let call this.make_planned_call(
                 loc,
-                String^rp("get"),
-                String^rp("_ZN4scaly6memory4Page3getEPv"),
+                "get",
+                "_ZN4scaly6memory4Page3getEPv",
                 result_type,
                 args_vec
             )
@@ -8920,11 +8920,11 @@ define Planner
             PlannedType(
                 Span(0, 0),
                 String^rp(debug_name),
-                String^rp(""),
+                "",
                 null,
                 Lifetime.Unspecified(Unspecified()),
                 null,
-                String^rp(""),
+                "",
                 tv_ref
             )
         }
@@ -9108,11 +9108,11 @@ define Planner
                             probe_holder.put(0, PlannedType(
                                 after_subst.loc,
                                 after_subst.name,
-                                String^rp(""),
+                                "",
                                 null,
                                 after_subst.life,
                                 null,
-                                String^rp(""),
+                                "",
                                 null
                             ))
                             let elem_mangled Planner.encode_type((*probe_holder.get(0)))
@@ -9124,7 +9124,7 @@ define Planner
                                 null,
                                 after_subst.life,
                                 null,
-                                String^rp(""),
+                                "",
                                 null
                             ))
                             var ptr_sb StringBuilder()
@@ -9132,7 +9132,7 @@ define Planner
                             ptr_sb.append elem_mangled
                             return PlannedType(
                                 after_subst.loc,
-                                String^rp("pointer"),
+                                "pointer",
                                 ptr_sb.to_string^rp(),
                                 &elem_holder,
                                 after_subst.life,
@@ -9661,7 +9661,7 @@ define Planner
                             i.span,
                             Planner.make_void_type(),
                             0,
-                            String^rp(""),
+                            "",
                             null,
                             true
                         )
@@ -11218,8 +11218,8 @@ define Planner
             var is_iterator_loop: bool false
             var iterator_type: PlannedType Planner.make_void_type()
             var element_type: PlannedType Planner.make_void_type()
-            var get_iter_name: String String^rp("")
-            var next_name: String String^rp("")
+            var get_iter_name: String ""
+            var next_name: String ""
 
             if is_integer
             {
@@ -11397,7 +11397,7 @@ define Planner
             var variant_type: PlannedType Planner.make_void_type()
             var variant_tag: size_t 0
 
-            var variant_name: String String^rp("")
+            var variant_name: String ""
             if w.variant.length > 0
             {
                 let last_ptr w.variant.get(w.variant.length - 1)
@@ -12461,7 +12461,7 @@ define Planner
                 null,
                 Lifetime.Unspecified(Unspecified()),
                 null,
-                String^rp(""),
+                "",
                 null
             )
             let unit_vc PlannedVariantConstruction(
@@ -12601,7 +12601,7 @@ define Planner
             ; emit no value.
             if b.operation.length = 1
             {
-                var del_name String^rp("")
+                var del_name ""
                 if b.item.type <> null
                 {
                     let ann (*b.item.type)
@@ -12617,7 +12617,7 @@ define Planner
                             when dl: Lambda
                             {
                                 var dparams this.delegate_param_types(del_name)
-                                var base_name String^rp("lam")
+                                var base_name "lam"
                                 if b.item.name <> null
                                     set base_name: String^rp((*b.item.name))
                                 let del_pt this.plan_type((*b.item.type))
@@ -13034,7 +13034,7 @@ define Planner
                         var promoted_done false
                         if base_is_this
                         {
-                            let ref_life Lifetime.Reference(scalyc.compiler.Model.Reference(action_loc, String^rp("this")))
+                            let ref_life Lifetime.Reference(scalyc.compiler.Model.Reference(action_loc, "this"))
                             let promoted this.restamp_operand_life(planned_source_collapsed, ref_life)
                             if promoted <> null
                             {
@@ -13043,7 +13043,7 @@ define Planner
                             }
                         }
                         if promoted_done = false
-                            this.add_diagnostic(action_loc, String^rp("reference into a local ($) page escapes via store - allocate the target with '#' (caller page) or '^name' (region) so it outlives the use"))
+                            this.add_diagnostic(action_loc, "reference into a local ($) page escapes via store - allocate the target with '#' (caller page) or '^name' (region) so it outlives the use")
                     }
                 }
 
@@ -13570,7 +13570,7 @@ define Planner
                     let cur_fn instantiated_functions.get escape_fn_index
                     if cur_fn <> null
                         set this.file: String^this(cur_fn.file)
-                    this.add_diagnostic(call.loc, String^this("reference into a local ($) page escapes via call - the callee stores it into memory that outlives this frame; allocate with '#' (caller page) or '^name' (region)"))
+                    this.add_diagnostic(call.loc, "reference into a local ($) page escapes via call - the callee stores it into memory that outlives this frame; allocate with '#' (caller page) or '^name' (region)")
                     set escape_found: true
                 }
             }
@@ -14598,7 +14598,7 @@ define Planner
                                         set lci: lci + 1
                                     }
                                     if is_stack_closure
-                                        this.add_diagnostic(r.span, String^rp("a closure bound to a local lives on the stack frame and cannot be returned - return the lambda directly (return \\x: ...) so it is allocated on the caller's region"))
+                                        this.add_diagnostic(r.span, "a closure bound to a local lives on the stack frame and cannot be returned - return the lambda directly (return \\x: ...) so it is allocated on the caller's region")
                                 }
                             }
                         }
@@ -14651,7 +14651,7 @@ define Planner
                         if promoted <> null
                             set planned_collapsed: (*promoted)
                         else
-                            this.add_diagnostic(r.span, String^rp("reference into a local ($) page escapes via return - allocate the target with '#' (caller page) or '^name' (region) so it outlives the use"))
+                            this.add_diagnostic(r.span, "reference into a local ($) page escapes via return - allocate the target with '#' (caller page) or '^name' (region) so it outlives the use")
                     }
                 }
 
@@ -15100,7 +15100,7 @@ define Planner
                                 0
                 }
             }
-            String^rp("")
+            ""
         }
         ; UNIFIED value-flow extractor (page-inference name-graph). Given a
         ; value's operand sequence `ops`, collect every bare-local NAME whose
@@ -16079,7 +16079,7 @@ define Planner
                 if Planner.function_needs_caller_page(this, f)
                 {
                     var rp_holder Vector[String]^rp(1)
-                    rp_holder.put(0, String^rp("rp"))
+                    rp_holder.put(0, "rp")
                     set pp_name_ref: rp_holder.get(0)
                 }
             if pp_name_ref <> null
@@ -16087,12 +16087,12 @@ define Planner
                 let pp_name (*pp_name_ref)
                 let pp_page_ty PlannedType(
                     f.span,
-                    String^rp("Page"),
-                    String^rp(""),
+                    "Page",
+                    "",
                     null,
                     Lifetime.Unspecified(Unspecified()),
                     null,
-                    String^rp(""),
+                    "",
                     null
                 )
                 let pp_ptr_ty Planner.make_pointer_type(pp_page_ty)
@@ -16264,7 +16264,7 @@ define Planner
                 if Planner.function_needs_caller_page(this, f)
                 {
                     var pp_holder Vector[String]^rp(1)
-                    pp_holder.put(0, String^rp("rp"))
+                    pp_holder.put(0, "rp")
                     set page_param_ref: pp_holder.get(0)
                 }
             }
@@ -16320,12 +16320,12 @@ define Planner
             {
                 let page_struct_ty PlannedType(
                     ini.span,
-                    String^rp("scaly.memory.Page"),
-                    String^rp("N4scaly6memory4PageE"),
+                    "scaly.memory.Page",
+                    "N4scaly6memory4PageE",
                     null,
                     Lifetime.Unspecified(Unspecified()),
                     null,
-                    String^rp(""),
+                    "",
                     null
                 )
                 let page_ptr_ty Planner.make_pointer_type(page_struct_ty)
@@ -16414,7 +16414,7 @@ define Planner
                         var synth_items Array[PlannedItem]$()
 
                         var this_name_holder Vector[String]^rp(1)
-                        this_name_holder.put(0, String^rp("this"))
+                        this_name_holder.put(0, "this")
                         var this_ty_holder Vector[PlannedType]^rp(1)
                         this_ty_holder.put(0, p)
                         synth_items.add(PlannedItem(
@@ -16429,12 +16429,12 @@ define Planner
                         {
                             let page_struct_ty PlannedType(
                                 ini.span,
-                                String^rp("scaly.memory.Page"),
-                                String^rp("N4scaly6memory4PageE"),
+                                "scaly.memory.Page",
+                                "N4scaly6memory4PageE",
                                 null,
                                 Lifetime.Unspecified(Unspecified()),
                                 null,
-                                String^rp(""),
+                                "",
                                 null
                             )
                             let page_ptr_ty Planner.make_pointer_type(page_struct_ty)
@@ -16468,7 +16468,7 @@ define Planner
                             ini.span,
                             ini.private_,
                             false,
-                            String^rp("init"),
+                            "init",
                             mangled,
                             null,
                             &synth_input_holder,
@@ -16734,7 +16734,7 @@ define Planner
                 gens_ref,
                 Lifetime.Unspecified(Unspecified()),
                 null,
-                String^rp(""),
+                "",
                 null
             ))
             let parent_ref parent_holder.get 0
@@ -16900,7 +16900,7 @@ define Planner
                 null,
                 Lifetime.Unspecified(Unspecified()),
                 null,
-                String^rp(""),
+                "",
                 null
             ))
             let parent_ref parent_holder.get 0
@@ -17299,7 +17299,7 @@ define Planner
                 null,
                 Lifetime.Unspecified(Unspecified()),
                 null,
-                String^rp(""),
+                "",
                 null
             ))
             let parent_ref parent_holder.get 0
@@ -17697,7 +17697,7 @@ define Planner
                         let last_ptr path.get(path.length - 1)
                         if last_ptr <> null
                             program_use_aliases.add((*last_ptr))
-                        var ns_name String^this("")
+                        var ns_name ""
                         if path.length > 1
                         {
                             let ns_ptr path.get(path.length - 2)
@@ -17794,7 +17794,7 @@ define Planner
                                 if Planner.needs_implicit_return_page(synth_fn)
                                 {
                                     var pp_holder Vector[String]^rp(1)
-                                    pp_holder.put(0, String^rp("rp"))
+                                    pp_holder.put(0, "rp")
                                     set op_page_param: pp_holder.get(0)
                                 }
                                 var op_can_throw: bool false
@@ -18135,7 +18135,7 @@ define Planner
                 u_gens_ref,
                 Lifetime.Unspecified(Unspecified()),
                 null,
-                String^rp(""),
+                "",
                 null
             ))
             let u_parent_ref u_parent_holder.get 0
@@ -18432,27 +18432,27 @@ define Planner
     {
         ; Built-in primitive types.
         if type_value.name.equals("void")
-            return String^rp("v")
+            return "v"
         if type_value.name.equals("bool")
-            return String^rp("b")
+            return "b"
         if type_value.name.equals("char")
-            return String^rp("c")
+            return "c"
         if type_value.name.equals("int")
-            return String^rp("i")
+            return "i"
         if type_value.name.equals("uint")
-            return String^rp("j")
+            return "j"
         if type_value.name.equals("long")
-            return String^rp("l")
+            return "l"
         if type_value.name.equals("ulong")
-            return String^rp("m")
+            return "m"
         if type_value.name.equals("float")
-            return String^rp("f")
+            return "f"
         if type_value.name.equals("double")
-            return String^rp("d")
+            return "d"
         if type_value.name.equals("size")
-            return String^rp("m")
+            return "m"
         if type_value.name.equals("size_t")
-            return String^rp("m")
+            return "m"
 
         ; pointer[T] -> "P" + encode_type(T)
         if type_value.name.equals("pointer")
@@ -18713,49 +18713,49 @@ define Planner
     function operator_code(name: String) returns String
     {
         if name.equals("+")
-            return String^rp("pl")
+            return "pl"
         if name.equals("-")
-            return String^rp("mi")
+            return "mi"
         if name.equals("*")
-            return String^rp("ml")
+            return "ml"
         if name.equals("/")
-            return String^rp("dv")
+            return "dv"
         if name.equals("%")
-            return String^rp("rm")
+            return "rm"
         if name.equals("==")
-            return String^rp("eq")
+            return "eq"
         if name.equals("!=")
-            return String^rp("ne")
+            return "ne"
         if name.equals("<")
-            return String^rp("lt")
+            return "lt"
         if name.equals(">")
-            return String^rp("gt")
+            return "gt"
         if name.equals("<=")
-            return String^rp("le")
+            return "le"
         if name.equals(">=")
-            return String^rp("ge")
+            return "ge"
         if name.equals("&&")
-            return String^rp("aa")
+            return "aa"
         if name.equals("||")
-            return String^rp("oo")
+            return "oo"
         if name.equals("!")
-            return String^rp("nt")
+            return "nt"
         if name.equals("&")
-            return String^rp("an")
+            return "an"
         if name.equals("|")
-            return String^rp("or")
+            return "or"
         if name.equals("^")
-            return String^rp("eo")
+            return "eo"
         if name.equals("~")
-            return String^rp("co")
+            return "co"
         if name.equals("<<")
-            return String^rp("ls")
+            return "ls"
         if name.equals(">>")
-            return String^rp("rs")
+            return "rs"
         if name.equals("[]")
-            return String^rp("ix")
+            return "ix"
         if name.equals("()")
-            return String^rp("cl")
+            return "cl"
 
         ; Vendor extension for operators without a dedicated code.
         var sb StringBuilder()
@@ -18899,39 +18899,39 @@ define Planner
         }
 
         if base.equals("int")
-            return String^rp("i64")
+            return "i64"
         if base.equals("i64")
-            return String^rp("i64")
+            return "i64"
         if base.equals("i32")
-            return String^rp("i32")
+            return "i32"
         if base.equals("i16")
-            return String^rp("i16")
+            return "i16"
         if base.equals("i8")
-            return String^rp("i8")
+            return "i8"
         if base.equals("size_t")
-            return String^rp("u64")
+            return "u64"
         if base.equals("size")
-            return String^rp("u64")
+            return "u64"
         if base.equals("u64")
-            return String^rp("u64")
+            return "u64"
         if base.equals("usize")
-            return String^rp("u64")
+            return "u64"
         if base.equals("u32")
-            return String^rp("u32")
+            return "u32"
         if base.equals("u16")
-            return String^rp("u16")
+            return "u16"
         if base.equals("u8")
-            return String^rp("u8")
+            return "u8"
         if base.equals("char")
-            return String^rp("u8")
+            return "u8"
         if base.equals("double")
-            return String^rp("f64")
+            return "f64"
         if base.equals("f64")
-            return String^rp("f64")
+            return "f64"
         if base.equals("float")
-            return String^rp("f32")
+            return "f32"
         if base.equals("f32")
-            return String^rp("f32")
+            return "f32"
 
         String^rp(base)
     }
@@ -19896,7 +19896,7 @@ define Planner
             null,
             Lifetime.Unspecified(Unspecified()),
             null,
-            String^rp(""),
+            "",
             null
         )
     }
@@ -19933,12 +19933,12 @@ define Planner
         sb.append inner.mangled_name
         PlannedType(
             Span(0, 0),
-            String^rp("pointer"),
+            "pointer",
             sb.to_string^rp(),
             &gens,
             Lifetime.Unspecified(Unspecified()),
             null,
-            String^rp(""),
+            "",
             null
         )
     }
@@ -20002,21 +20002,21 @@ define Planner
     function matrix_single_int_size(nm: scalyc.compiler.Plan.PlannedMatrix) returns String
     {
         if nm.operations = null
-            return String^rp("")
+            return ""
         let rows (*nm.operations)
         if rows.length <> 1
-            return String^rp("")
+            return ""
         let row0_ptr rows.get 0
         if row0_ptr = null
-            return String^rp("")
+            return ""
         let row0 (*row0_ptr)
         if row0.length <> 1
-            return String^rp("")
+            return ""
         let cell_ptr row0.get 0
         if cell_ptr = null
-            return String^rp("")
+            return ""
         let cell (*cell_ptr)
-        var out String^rp("")
+        var out ""
         choose cell.expr
             when c: scalyc.compiler.Plan.PlannedConstant
             {
@@ -20179,7 +20179,7 @@ define Planner
             set resolved_gens: &result
         }
 
-        var mangled String^rp("")
+        var mangled ""
         if joined.equals("pointer")
         {
             if resolved_gens <> null
@@ -20226,7 +20226,7 @@ define Planner
             resolved_gens,
             t.lifetime,
             null,
-            String^rp(""),
+            "",
             null
         )
     }
@@ -20454,18 +20454,18 @@ define Planner
             if q_ptr <> null
             {
                 let q (*q_ptr)
-                fresh_vars.put(i, TypeVariable(next_id_start + i, String^rp("")))
+                fresh_vars.put(i, TypeVariable(next_id_start + i, ""))
                 let fresh_ptr fresh_vars.get i
                 if fresh_ptr <> null
                 {
                     let new_var_ty PlannedType(
                         Span(0, 0),
-                        String^rp(""),
-                        String^rp(""),
+                        "",
+                        "",
                         null,
                         Lifetime.Unspecified(Unspecified()),
                         null,
-                        String^rp(""),
+                        "",
                         fresh_ptr
                     )
                     subst_arr.add(KeyValuePair[size_t, PlannedType](q.id, new_var_ty))
@@ -20497,7 +20497,7 @@ define Planner
             {
                 let id *id_ptr
                 if Planner.id_list_contains(free_in_env, id) = false
-                    quantified_arr.add(TypeVariable(id, String^rp("")))
+                    quantified_arr.add(TypeVariable(id, ""))
             }
             set i: i + 1
         }
@@ -22095,23 +22095,23 @@ define Planner
         var gens Vector[PlannedType]^rp(1)
         let i8_ty PlannedType(
             sp,
-            String^rp("i8"),
-            String^rp("a"),
+            "i8",
+            "a",
             null,
             Lifetime.Unspecified(Unspecified()),
             null,
-            String^rp(""),
+            "",
             null
         )
         gens.put(0, i8_ty)
         PlannedType(
             sp,
-            String^rp("pointer"),
-            String^rp("Pa"),
+            "pointer",
+            "Pa",
             &gens,
             Lifetime.Unspecified(Unspecified()),
             null,
-            String^rp(""),
+            "",
             null
         )
     }
@@ -22124,23 +22124,23 @@ define Planner
         var gens Vector[PlannedType]^rp(1)
         let void_ty PlannedType(
             sp,
-            String^rp("void"),
-            String^rp("v"),
+            "void",
+            "v",
             null,
             Lifetime.Unspecified(Unspecified()),
             null,
-            String^rp(""),
+            "",
             null
         )
         gens.put(0, void_ty)
         PlannedType(
             sp,
-            String^rp("pointer"),
-            String^rp("Pv"),
+            "pointer",
+            "Pv",
             &gens,
             Lifetime.Unspecified(Unspecified()),
             null,
-            String^rp(""),
+            "",
             null
         )
     }
@@ -22155,67 +22155,67 @@ define Planner
             when b: BooleanConstant
                 PlannedType(
                     b.span,
-                    String^rp("bool"),
-                    String^rp("b"),
+                    "bool",
+                    "b",
                     null,
                     Lifetime.Unspecified(Unspecified()),
                     null,
-                    String^rp(""),
+                    "",
                     null
                 )
             when i: IntegerConstant
                 PlannedType(
                     i.span,
-                    String^rp("int"),
-                    String^rp("i"),
+                    "int",
+                    "i",
                     null,
                     Lifetime.Unspecified(Unspecified()),
                     null,
-                    String^rp(""),
+                    "",
                     null
                 )
             when h: HexConstant
                 PlannedType(
                     h.span,
-                    String^rp("u64"),
-                    String^rp("u64"),
+                    "u64",
+                    "u64",
                     null,
                     Lifetime.Unspecified(Unspecified()),
                     null,
-                    String^rp(""),
+                    "",
                     null
                 )
             when f: FloatingPointConstant
                 PlannedType(
                     f.span,
-                    String^rp("f64"),
-                    String^rp("f64"),
+                    "f64",
+                    "f64",
                     null,
                     Lifetime.Unspecified(Unspecified()),
                     null,
-                    String^rp(""),
+                    "",
                     null
                 )
             when ch: CharacterConstant
                 PlannedType(
                     ch.span,
-                    String^rp("char"),
-                    String^rp("c"),
+                    "char",
+                    "c",
                     null,
                     Lifetime.Unspecified(Unspecified()),
                     null,
-                    String^rp(""),
+                    "",
                     null
                 )
             when s: StringConstant
                 PlannedType(
                     s.span,
-                    String^rp("String"),
-                    String^rp("6String"),
+                    "String",
+                    "6String",
                     null,
                     Lifetime.Unspecified(Unspecified()),
                     null,
-                    String^rp(""),
+                    "",
                     null
                 )
             when fr: FragmentConstant

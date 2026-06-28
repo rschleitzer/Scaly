@@ -270,10 +270,10 @@ define cli
     {
         let home getenv "SCALY_HOME"
         if home = null
-            return String^rp("/tmp/libscaly.a")
+            return "/tmp/libscaly.a"
         var home_str String(home)
         if home_str.get_length() = 0
-            return String^rp("/tmp/libscaly.a")
+            return "/tmp/libscaly.a"
         var sb StringBuilder()
         sb.append home_str
         sb.append "/lib/libscaly.a"
@@ -291,10 +291,10 @@ define cli
         if name = null
             set name: getenv("CC")
         if name = null
-            return String^rp("clang")
+            return "clang"
         var s String(name)
         if s.get_length() = 0
-            return String^rp("clang")
+            return "clang"
         String^rp(name)
     }
 

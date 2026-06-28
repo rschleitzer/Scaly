@@ -8,7 +8,7 @@ define Path
         let path_as_c_string path.to_c_string$()
         let directory_name_as_c_string dirname(path_as_c_string as pointer[char])
         if strcmp(directory_name_as_c_string, ".") = 0
-            return String^rp("")
+            return ""
 
         String^rp(directory_name_as_c_string)
     }
