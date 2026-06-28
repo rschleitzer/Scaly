@@ -2265,6 +2265,90 @@ define Planner
         ; check_function_match#'s arity + per-param comparison exactly so the
         ; rebuild always agrees. plan_type# is side-effect-free (no
         ; instantiation — pass 3 keeps using check_function_match# directly).
+        ; candidate_matches_string_i8: a String argument prefers a
+        ; pointer[i8] parameter — the pre-feature representation of a string
+        ; literal (before string literals became real String values). Matches
+        ; only when EVERY argument is either exactly the parameter type OR a
+        ; String against a pointer[i8] parameter, AND at least one String→i8
+        ; substitution occurs. Used as a resolution tie-break between the
+        ; exact pass (which still picks a real String-parameter overload like
+        ; `append(String)`) and the general compatible pass (which would let a
+        ; namespace member like Console.print(pointer[const_char]) win for a
+        ; bare `print("x")` and then free-mangle to a phantom symbol).
+        function candidate_matches_string_i8(
+            this: Planner,
+            f: Function,
+            arg_types: Vector[PlannedType]
+        ) returns bool
+        {
+            var param_start: size_t 0
+            if f.input.length > 0
+            {
+                let first_ptr f.input.get 0
+                if first_ptr <> null
+                    if first_ptr.name <> null
+                    {
+                        let fname (*first_ptr.name)
+                        if fname.equals(String("this"))
+                            set param_start: 1
+                    }
+            }
+            if f.input.length - param_start <> arg_types.length
+                return false
+            var any_string_i8: bool false
+            var all_ok: bool true
+            var j: size_t 0
+            while j < arg_types.length
+            {
+                let p_ptr f.input.get(j + param_start)
+                let a_ptr arg_types.get j
+                if p_ptr = null
+                    return false
+                if a_ptr = null
+                    return false
+                if p_ptr.type <> null
+                {
+                    let planned_p this.plan_type((*p_ptr.type))
+                    let arg (*a_ptr)
+                    var ok: bool Planner.types_equal(planned_p, arg)
+                    if ok = false
+                        if arg.name.equals(String("String"))
+                            if Planner.type_is_i8_pointer(planned_p)
+                            {
+                                set ok: true
+                                set any_string_i8: true
+                            }
+                    if ok = false
+                        set all_ok: false
+                }
+                set j: j + 1
+            }
+            if all_ok = false
+                return false
+            any_string_i8
+        }
+
+        ; type_is_i8_pointer: pointer[i8] specifically (the canonical string
+        ; literal target). Distinct from type_is_cstr_pointer, which also
+        ; accepts const_char/char/u8.
+        function type_is_i8_pointer(t: PlannedType) returns bool
+        {
+            var result: bool false
+            if t.name.equals(String("pointer"))
+                if t.generics <> null
+                {
+                    let gs (*t.generics)
+                    if gs.length > 0
+                    {
+                        let ip gs.get 0
+                        if ip <> null
+                            if (*ip).name.equals(String("i8"))
+                                set result: true
+                    }
+                }
+            result
+        }
+
         function candidate_matches(
             this: Planner,
             f: Function,
@@ -2673,6 +2757,26 @@ define Planner
                 set i: i + 1
             }
 
+            ; Pass 1.5: a String argument prefers a pointer[i8] overload (its
+            ; pre-feature representation) over a pointer[const_char] one. Keeps
+            ; `print("x")` resolving to the prelude print(pointer[i8]) instead
+            ; of a namespace member Console.print(pointer[const_char]) that the
+            ; general compatible pass would otherwise pick and free-mangle to a
+            ; phantom `_Z5printP10const_char`. A real String-parameter overload
+            ; already won in Pass 1, so this never displaces e.g. append(String).
+            var i15: size_t 0
+            while i15 < candidates.length
+            {
+                let f_ptr candidates.get i15
+                if f_ptr <> null
+                {
+                    let f (*f_ptr)
+                    if this.candidate_matches_string_i8(f, arg_types)
+                        return this.check_function_match(f, arg_types, false)
+                }
+                set i15: i15 + 1
+            }
+
             ; Pass 2: compatible matches (types_compatible, allows widening).
             var k: size_t 0
             while k < candidates.length
@@ -2861,6 +2965,98 @@ define Planner
                 null,
                 false
             )
+        }
+
+        ; True when t is pointer[const_char] / pointer[i8] / pointer[char] /
+        ; pointer[u8] — a C-string parameter position. A String argument bound
+        ; to such a parameter must be lowered to its c_data content pointer.
+        function type_is_cstr_pointer(t: PlannedType) returns bool
+        {
+            var result: bool false
+            if t.name.equals(String("pointer"))
+                if t.generics <> null
+                {
+                    let gs (*t.generics)
+                    if gs.length > 0
+                    {
+                        let ip gs.get 0
+                        if ip <> null
+                        {
+                            let inner (*ip)
+                            if inner.name.equals(String("const_char"))
+                                set result: true
+                            if inner.name.equals(String("i8"))
+                                set result: true
+                            if inner.name.equals(String("char"))
+                                set result: true
+                            if inner.name.equals(String("u8"))
+                                set result: true
+                        }
+                    }
+                }
+            result
+        }
+
+        ; coerce_string_args_to_cstr: for a resolved call, wrap each String
+        ; argument whose matched parameter is a pointer[const_char]-like type
+        ; in a PlannedAs(target = param_type). emit_as then lowers the String
+        ; to its NUL-terminated c_data pointer (a constant to the plain .str
+        ; global; a variable via get_buffer). This decision MUST live in the
+        ; planner: at the LLVM level a by-value String parameter and a
+        ; const_char parameter are both `ptr`, and a generic instantiated
+        ; method's parameter is not present in current_plan.functions — so the
+        ; emitter cannot tell them apart. Here the substituted parameter type
+        ; is known. param_types excludes `this` in every resolution path, so
+        ; the user arguments are tail-aligned (a prepended receiver, present
+        ; for an instance-method dispatch, is absorbed by the offset).
+        function coerce_string_args_to_cstr(
+            this: Planner,
+            args: Vector[PlannedOperand],
+            param_types: Vector[PlannedType]
+        ) returns Vector[PlannedOperand]
+        {
+            if param_types.length = 0
+                return Vector[PlannedOperand]^rp(args)
+            if args.length < param_types.length
+                return Vector[PlannedOperand]^rp(args)
+            let offset args.length - param_types.length
+            var out Array[PlannedOperand]$()
+            var ai: size_t 0
+            while ai < args.length
+            {
+                let ap args.get ai
+                if ap <> null
+                {
+                    let a (*ap)
+                    var wrapped: bool false
+                    if ai >= offset
+                    {
+                        let pp param_types.get(ai - offset)
+                        if pp <> null
+                        {
+                            let pt (*pp)
+                            if a.result_type.name.equals(String("String"))
+                                if Planner.type_is_cstr_pointer(pt)
+                                {
+                                    var ah Vector[PlannedOperand]^rp(1)
+                                    ah.put(0, a)
+                                    let casted PlannedAs(a.loc, pt, ah.get 0)
+                                    out.add(PlannedOperand(
+                                        a.loc,
+                                        PlannedExpression.As casted,
+                                        null,
+                                        pt
+                                    ))
+                                    set wrapped: true
+                                }
+                        }
+                    }
+                    if wrapped = false
+                        out.add a
+                }
+                set ai: ai + 1
+            }
+            Vector[PlannedOperand]^rp(out)
         }
 
         ; If `op` is a Phase-1 lambda binding name used as a callable head (a
@@ -5283,6 +5479,22 @@ define Planner
                         ; gets the page in its name but the call omits the rp
                         ; argument (wrong slot / missing page).
                         var ns_mangled_page: bool false
+                        ; The actual namespace member's planned parameter types,
+                        ; recorded when the s129 dotted re-mangle resolves to a
+                        ; namespace member (used_ns_local). Used to drive the
+                        ; String→const_char argument coercion correctly even when
+                        ; the bare-name match picked a wrong same-named overload.
+                        var ns_coerce_params Array[PlannedType]$()
+                        var ns_coerce_valid: bool false
+                        ; The namespace member's actual return type, captured on
+                        ; the s129 dotted re-mangle. The bare-name match may have
+                        ; picked a wrong same-named overload whose return type
+                        ; maps to the { ptr } cross-package placeholder; using it
+                        ; for the call's sret slot undersizes it and the callee's
+                        ; write overflows into adjacent stack. Prefer the member's
+                        ; own return type.
+                        var ns_return_type: PlannedType this.fresh_type_var(String^rp(""))
+                        var ns_return_valid: bool false
                         if match_ref = null
                         {
                             let dot_idx fn_name.last_index_of(46 as u8)
@@ -5488,6 +5700,10 @@ define Planner
                                                                                                 ity_holder.get 0,
                                                                                                 null
                                                                                             ))
+                                                                                            ; Record this member's planned param
+                                                                                            ; for the String→const_char coercion.
+                                                                                            ns_coerce_params.add planned_p
+                                                                                            set ns_coerce_valid: true
                                                                                         }
                                                                                     }
                                                                                     set pi_ns: pi_ns + 1
@@ -5497,6 +5713,16 @@ define Planner
                                                                                     set used_ns_page: true
                                                                                 if Planner.function_needs_caller_page(this, nf)
                                                                                     set used_ns_page: true
+                                                                                ; Capture the member's real return type so
+                                                                                ; the call's sret slot is sized correctly
+                                                                                ; (the bare-name match may have a wrong one).
+                                                                                if nf.returns_ <> null
+                                                                                {
+                                                                                    let nf_rt this.plan_type#((*nf.returns_))
+                                                                                    this.ensure_type_layout nf_rt
+                                                                                    set ns_return_type: nf_rt
+                                                                                    set ns_return_valid: true
+                                                                                }
                                                                             }
                                                                         }
                                                                     }
@@ -5976,6 +6202,13 @@ define Planner
                         }
                         if has_ns_mangled
                             set mangled: ns_mangled
+                        ; When the dotted re-mangle resolved to a namespace
+                        ; member, use ITS return type for the call's sret slot —
+                        ; the bare-name match's return type can be a wrong
+                        ; same-named overload's (s129), undersizing the sret.
+                        if has_ns_mangled
+                            if ns_return_valid
+                                set rt: ns_return_type
 
                         ; Flatten the tuple argument into a list of
                         ; individual PlannedOperand values so the emitter
@@ -6014,6 +6247,28 @@ define Planner
                             else
                                 args_arr.add second
                         var call_args Vector[PlannedOperand]^rp(args_arr)
+                        ; String → const_char argument coercion: wrap a String
+                        ; argument bound to a pointer[const_char]-like parameter
+                        ; in a PlannedAs so emit_as lowers it to a c_data pointer.
+                        ; For a namespace-qualified call (`json.get(msg, "k")`)
+                        ; the bare-name resolution may have matched a same-named
+                        ; overload with a String parameter (the s129 collision),
+                        ; so match_ref.parameter_types is wrong; the s129 path
+                        ; recorded the actual namespace member's planned params
+                        ; in ns_coerce_params — prefer those when present.
+                        if has_ns_mangled
+                            if ns_coerce_valid
+                            {
+                                var ns_cp_holder Vector[PlannedType]^rp(ns_coerce_params)
+                                set call_args: this.coerce_string_args_to_cstr(call_args, ns_cp_holder)
+                            }
+                        if has_ns_mangled = false
+                            if match_ref <> null
+                            {
+                                let mm_cc (*match_ref)
+                                if mm_cc.parameter_types <> null
+                                    set call_args: this.coerce_string_args_to_cstr(call_args, (*mm_cc.parameter_types))
+                            }
                         ; Propagate the matched function's page-param
                         ; requirement to the PlannedCall so emit_call
                         ; prepends the rp arg. Required for in-namespace
@@ -18841,6 +19096,39 @@ define Planner
                 return true
         }
 
+        ; Rule 2b: a String value is compatible with pointer[const_char]
+        ; (= pointer[i8]/char/u8): it coerces to its NUL-terminated content
+        ; pointer (c_data) for C/extern interop. Lets a String literal flow
+        ; into scaly_eputs / String() ctor / equals(cstr) etc. The Emitter
+        ; emits a plain NUL-terminated cstr global for a String CONSTANT in
+        ; such a position (byte-identical to the pre-feature cstr).
+        if arg_type.name.equals("String")
+        {
+            if param_type.name.equals("pointer")
+            {
+                if param_type.generics <> null
+                {
+                    let pgs (*param_type.generics)
+                    if pgs.length > 0
+                    {
+                        let pinner_ptr pgs.get 0
+                        if pinner_ptr <> null
+                        {
+                            let pinner (*pinner_ptr)
+                            if pinner.name.equals("const_char")
+                                return true
+                            if pinner.name.equals("i8")
+                                return true
+                            if pinner.name.equals("char")
+                                return true
+                            if pinner.name.equals("u8")
+                                return true
+                        }
+                    }
+                }
+            }
+        }
+
         ; Rule 3: arg is pointer[T], param is T — implicit deref. Handles
         ; passing `this` (a pointer) to a function expecting the value type.
         if arg_type.name.equals("pointer")
@@ -21920,7 +22208,16 @@ define Planner
                     null
                 )
             when s: StringConstant
-                Planner.make_cstring_type(s.span)
+                PlannedType(
+                    s.span,
+                    String^rp("String"),
+                    String^rp("6String"),
+                    null,
+                    Lifetime.Unspecified(Unspecified()),
+                    null,
+                    String^rp(""),
+                    null
+                )
             when fr: FragmentConstant
                 Planner.make_cstring_type(fr.span)
             when n: NullConstant

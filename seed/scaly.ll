@@ -133,31 +133,30 @@ source_filename = "scaly"
 @"8SEEK_END" = constant i64 2
 @"4F_OK" = constant i64 0
 @"4F_OK.1" = constant i64 0
-@.str = private unnamed_addr constant [3 x i8] c"\\n\00", align 1
-@.str.2 = private unnamed_addr constant [53 x i8] c"scaly_release_root_page: LIFO violation \E2\80\94 release=\00", align 1
-@.str.3 = private unnamed_addr constant [6 x i8] c" top=\00", align 1
-@.str.4 = private unnamed_addr constant [30 x i8] c"scaly_trace_root: UNBALANCED \00", align 1
-@.str.5 = private unnamed_addr constant [7 x i8] c" push=\00", align 1
-@.str.6 = private unnamed_addr constant [6 x i8] c" pop=\00", align 1
-@.str.7 = private unnamed_addr constant [7 x i8] c" leak=\00", align 1
-@.str.8 = private unnamed_addr constant [50 x i8] c"scaly_trace_root: all root-page push/pop balanced\00", align 1
-@.str.9 = private unnamed_addr constant [17 x i8] c"SCALY_TRACE_ROOT\00", align 1
-@.str.10 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
-@.str.11 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
-@.str.12 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
-@.str.13 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
-@.str.14 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
-@.str.15 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
-@.str.16 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
-@.str.17 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
-@.str.18 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
-@.str.19 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
-@.str.20 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
-@.str.21 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
-@.str.22 = private unnamed_addr constant [3 x i8] c"rb\00", align 1
-@.str.23 = private unnamed_addr constant [3 x i8] c"wb\00", align 1
-@.str.24 = private unnamed_addr constant [2 x i8] c".\00", align 1
-@.str.25 = private unnamed_addr constant [1 x i8] zeroinitializer, align 1
+@.sconst = private constant [4 x i8] c"\02\\n\00"
+@.str = private unnamed_addr constant [53 x i8] c"scaly_release_root_page: LIFO violation \E2\80\94 release=\00", align 1
+@.str.2 = private unnamed_addr constant [6 x i8] c" top=\00", align 1
+@.str.3 = private unnamed_addr constant [30 x i8] c"scaly_trace_root: UNBALANCED \00", align 1
+@.str.4 = private unnamed_addr constant [7 x i8] c" push=\00", align 1
+@.str.5 = private unnamed_addr constant [6 x i8] c" pop=\00", align 1
+@.str.6 = private unnamed_addr constant [7 x i8] c" leak=\00", align 1
+@.str.7 = private unnamed_addr constant [50 x i8] c"scaly_trace_root: all root-page push/pop balanced\00", align 1
+@.str.8 = private unnamed_addr constant [17 x i8] c"SCALY_TRACE_ROOT\00", align 1
+@.str.9 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
+@.str.10 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
+@.str.11 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
+@.str.12 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
+@.str.13 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
+@.str.14 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
+@.str.15 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
+@.str.16 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
+@.str.17 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
+@.str.18 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
+@.str.19 = private unnamed_addr constant [32 x i8] c"Vector.put: index out of bounds\00", align 1
+@.str.20 = private unnamed_addr constant [31 x i8] c"Array.put: index out of bounds\00", align 1
+@.str.21 = private unnamed_addr constant [3 x i8] c"rb\00", align 1
+@.str.22 = private unnamed_addr constant [3 x i8] c"wb\00", align 1
+@.str.23 = private unnamed_addr constant [2 x i8] c".\00", align 1
 
 declare ptr @memcpy(...)
 
@@ -803,7 +802,9 @@ entry:
 
 define linkonce_odr void @_Z12scaly_eputnlv() {
 entry:
-  %call = call i64 @write(i64 2, ptr @.str, i64 1)
+  %arg.tmp = alloca { ptr }, align 8
+  store { ptr } { ptr @.sconst }, ptr %arg.tmp, align 1
+  %call = call i64 @write(i64 2, ptr %arg.tmp, i64 1)
   ret void
 }
 
@@ -1210,9 +1211,9 @@ entry:
   br i1 %ne, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.2)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str)
   call void @_Z11scaly_eputpPv(ptr %0)
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.3)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.2)
   %global.load1 = load ptr, ptr @stack_top, align 8
   call void @_Z11scaly_eputpPv(ptr %global.load1)
   call void @_Z12scaly_eputnlv()
@@ -1456,16 +1457,16 @@ if.then:                                          ; preds = %while.body
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp6, ptr align 1 %ptr.add, i64 ptrtoint (ptr getelementptr (%_Z10TraceEntry, ptr null, i32 1) to i64), i1 false)
   %grp.deref.val9 = load %_Z10TraceEntry, ptr %deref.tmp6, align 8
   %pop_count10 = extractvalue %_Z10TraceEntry %grp.deref.val9, 2
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.4)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.3)
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp6, ptr align 1 %ptr.add, i64 ptrtoint (ptr getelementptr (%_Z10TraceEntry, ptr null, i32 1) to i64), i1 false)
   %grp.deref.val11 = load %_Z10TraceEntry, ptr %deref.tmp6, align 8
   %name = extractvalue %_Z10TraceEntry %grp.deref.val11, 0
   call void @_Z11scaly_eputsP10const_char(ptr %name)
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.5)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.4)
   call void @_Z11scaly_eputi3i64(i64 %push_count8)
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.6)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.5)
   call void @_Z11scaly_eputi3i64(i64 %pop_count10)
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.7)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.6)
   %sub = sub i64 %push_count8, %pop_count10
   call void @_Z11scaly_eputi3i64(i64 %sub)
   call void @_Z12scaly_eputnlv()
@@ -1482,7 +1483,7 @@ if.then14:                                        ; preds = %while.exit
   ret void
 
 if.end15:                                         ; preds = %while.exit
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.8)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.7)
   call void @_Z12scaly_eputnlv()
   ret void
 }
@@ -1498,7 +1499,7 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   store i64 1, ptr @trace_atexit_registered, align 4
-  %call = call ptr @getenv(ptr @.str.9)
+  %call = call ptr @getenv(ptr @.str.8)
   %eq = icmp eq ptr %call, null
   br i1 %eq, label %if.then1, label %if.end2
 
@@ -1660,7 +1661,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.10)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.9)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -2162,7 +2163,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.11)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.10)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -2797,7 +2798,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.12)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.11)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -3299,7 +3300,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.13)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.12)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -3893,19 +3894,13 @@ entry:
   ret void
 }
 
-define linkonce_odr void @_ZN13StringBuilder6appendEP10const_char(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN13StringBuilder6appendE6String(ptr %0, ptr %1) {
 entry:
-  %struct.init = alloca %_Z6VectorIcE, align 8
-  %call = call i64 @strlen(ptr %1)
-  %eq = icmp eq i64 %call, 0
-  br i1 %eq, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  ret void
-
-if.end:                                           ; preds = %entry
   %field.inplace = getelementptr inbounds %_Z13StringBuilder, ptr %0, i32 0, i32 0
-  call void @_ZN6VectorIcEC1EPcm(ptr %struct.init, ptr %1, i64 %call)
+  %struct.init = alloca %_Z6VectorIcE, align 8
+  %call = call ptr @_ZN6String10get_bufferEv(ptr %1)
+  %call1 = call i64 @_ZN6String10get_lengthEv(ptr %1)
+  call void @_ZN6VectorIcEC1EPcm(ptr %struct.init, ptr %call, i64 %call1)
   call void @_ZN5ArrayIcE3addE6VectorIcE(ptr %field.inplace, ptr %struct.init)
   ret void
 }
@@ -3952,7 +3947,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.14)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.13)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -4700,7 +4695,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.15)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.14)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -5008,7 +5003,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.16)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.15)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -5433,7 +5428,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.17)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.16)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -6302,7 +6297,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.18)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.17)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -6610,7 +6605,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.19)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.18)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -7537,7 +7532,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.20)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.19)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -8285,7 +8280,7 @@ entry:
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.21)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.20)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 15)
   br label %if.end
@@ -8818,59 +8813,6 @@ if.end3:                                          ; preds = %if.end
   %zext = zext i32 %call6 to i64
   %eq7 = icmp eq i64 %zext, 0
   ret i1 %eq7
-}
-
-define linkonce_odr i1 @_ZN6String11starts_withEP10const_char(ptr %0, ptr %1) {
-entry:
-  %call = call i64 @_ZN6String10get_lengthEv(ptr %0)
-  %call1 = call i64 @strlen(ptr %1)
-  %gt = icmp ugt i64 %call1, %call
-  br i1 %gt, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  ret i1 false
-
-if.end:                                           ; preds = %entry
-  %eq = icmp eq i64 %call1, 0
-  br i1 %eq, label %if.then2, label %if.end3
-
-if.then2:                                         ; preds = %if.end
-  ret i1 true
-
-if.end3:                                          ; preds = %if.end
-  %call4 = call ptr @_ZN6String10get_bufferEv(ptr %0)
-  %call5 = call i32 @memcmp(ptr %call4, ptr %1, i64 %call1)
-  %zext = zext i32 %call5 to i64
-  %eq6 = icmp eq i64 %zext, 0
-  ret i1 %eq6
-}
-
-define linkonce_odr i1 @_ZN6String9ends_withEP10const_char(ptr %0, ptr %1) {
-entry:
-  %call = call i64 @_ZN6String10get_lengthEv(ptr %0)
-  %call1 = call i64 @strlen(ptr %1)
-  %gt = icmp ugt i64 %call1, %call
-  br i1 %gt, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  ret i1 false
-
-if.end:                                           ; preds = %entry
-  %eq = icmp eq i64 %call1, 0
-  br i1 %eq, label %if.then2, label %if.end3
-
-if.then2:                                         ; preds = %if.end
-  ret i1 true
-
-if.end3:                                          ; preds = %if.end
-  %call4 = call ptr @_ZN6String10get_bufferEv(ptr %0)
-  %ptr.add = getelementptr inbounds i8, ptr %call4, i64 %call
-  %neg = sub i64 0, %call1
-  %ptr.sub = getelementptr inbounds i8, ptr %ptr.add, i64 %neg
-  %call5 = call i32 @memcmp(ptr %ptr.sub, ptr %1, i64 %call1)
-  %zext = zext i32 %call5 to i64
-  %eq6 = icmp eq i64 %zext, 0
-  ret i1 %eq6
 }
 
 define linkonce_odr i1 @_ZN6String9ends_withE6String(ptr %0, ptr %1) {
@@ -11292,6 +11234,59 @@ entry:
   ret void
 }
 
+define linkonce_odr i1 @_ZN6String11starts_withEP10const_char(ptr %0, ptr %1) {
+entry:
+  %call = call i64 @_ZN6String10get_lengthEv(ptr %0)
+  %call1 = call i64 @strlen(ptr %1)
+  %gt = icmp ugt i64 %call1, %call
+  br i1 %gt, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret i1 false
+
+if.end:                                           ; preds = %entry
+  %eq = icmp eq i64 %call1, 0
+  br i1 %eq, label %if.then2, label %if.end3
+
+if.then2:                                         ; preds = %if.end
+  ret i1 true
+
+if.end3:                                          ; preds = %if.end
+  %call4 = call ptr @_ZN6String10get_bufferEv(ptr %0)
+  %call5 = call i32 @memcmp(ptr %call4, ptr %1, i64 %call1)
+  %zext = zext i32 %call5 to i64
+  %eq6 = icmp eq i64 %zext, 0
+  ret i1 %eq6
+}
+
+define linkonce_odr i1 @_ZN6String9ends_withEP10const_char(ptr %0, ptr %1) {
+entry:
+  %call = call i64 @_ZN6String10get_lengthEv(ptr %0)
+  %call1 = call i64 @strlen(ptr %1)
+  %gt = icmp ugt i64 %call1, %call
+  br i1 %gt, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret i1 false
+
+if.end:                                           ; preds = %entry
+  %eq = icmp eq i64 %call1, 0
+  br i1 %eq, label %if.then2, label %if.end3
+
+if.then2:                                         ; preds = %if.end
+  ret i1 true
+
+if.end3:                                          ; preds = %if.end
+  %call4 = call ptr @_ZN6String10get_bufferEv(ptr %0)
+  %ptr.add = getelementptr inbounds i8, ptr %call4, i64 %call
+  %neg = sub i64 0, %call1
+  %ptr.sub = getelementptr inbounds i8, ptr %ptr.add, i64 %neg
+  %call5 = call i32 @memcmp(ptr %ptr.sub, ptr %1, i64 %call1)
+  %zext = zext i32 %call5 to i64
+  %eq6 = icmp eq i64 %zext, 0
+  ret i1 %eq6
+}
+
 define linkonce_odr i64 @_ZN6String13last_index_ofE2u8(ptr %0, i8 %1) {
 entry:
   %i = alloca i64, align 8
@@ -11854,13 +11849,19 @@ entry:
   ret void
 }
 
-define linkonce_odr void @_ZN13StringBuilder6appendE6String(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN13StringBuilder6appendEP10const_char(ptr %0, ptr %1) {
 entry:
-  %field.inplace = getelementptr inbounds %_Z13StringBuilder, ptr %0, i32 0, i32 0
   %struct.init = alloca %_Z6VectorIcE, align 8
-  %call = call ptr @_ZN6String10get_bufferEv(ptr %1)
-  %call1 = call i64 @_ZN6String10get_lengthEv(ptr %1)
-  call void @_ZN6VectorIcEC1EPcm(ptr %struct.init, ptr %call, i64 %call1)
+  %call = call i64 @strlen(ptr %1)
+  %eq = icmp eq i64 %call, 0
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret void
+
+if.end:                                           ; preds = %entry
+  %field.inplace = getelementptr inbounds %_Z13StringBuilder, ptr %0, i32 0, i32 0
+  call void @_ZN6VectorIcEC1EPcm(ptr %struct.init, ptr %1, i64 %call)
   call void @_ZN5ArrayIcE3addE6VectorIcE(ptr %field.inplace, ptr %struct.init)
   ret void
 }
@@ -12117,7 +12118,7 @@ entry:
   %struct.init = alloca %_Z6String, align 8
   %local_page = call ptr @_Z21scaly_alloc_root_pagev()
   %call = call ptr @_ZN6String11to_c_stringEPN4scaly6memory4PageE(ptr %local_page, ptr %2)
-  %call1 = call ptr @fopen(ptr %call, ptr @.str.22)
+  %call1 = call ptr @fopen(ptr %call, ptr @.str.21)
   %file = alloca ptr, align 8
   store ptr %call1, ptr %file, align 1
   %file2 = load ptr, ptr %file, align 8
@@ -12159,7 +12160,7 @@ define linkonce_odr i1 @_ZN4File17write_from_stringE6String6String(ptr %0, ptr %
 entry:
   %local_page = call ptr @_Z21scaly_alloc_root_pagev()
   %call = call ptr @_ZN6String11to_c_stringEPN4scaly6memory4PageE(ptr %local_page, ptr %0)
-  %call1 = call ptr @fopen(ptr %call, ptr @.str.23)
+  %call1 = call ptr @fopen(ptr %call, ptr @.str.22)
   %file = alloca ptr, align 8
   store ptr %call1, ptr %file, align 1
   %file2 = load ptr, ptr %file, align 8
@@ -12235,16 +12236,18 @@ entry:
 
 define linkonce_odr void @_ZN4Path18get_directory_nameEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z6String) %0, ptr %1, ptr %2) {
 entry:
+  %arg.tmp = alloca { ptr }, align 8
   %local_page = call ptr @_Z21scaly_alloc_root_pagev()
   %call = call ptr @_ZN6String11to_c_stringEPN4scaly6memory4PageE(ptr %local_page, ptr %2)
   %call1 = call ptr @dirname(ptr %call)
-  %call2 = call i64 @strcmp(ptr %call1, ptr @.str.24)
+  %call2 = call i64 @strcmp(ptr %call1, ptr @.str.23)
   %eq = icmp eq i64 %call2, 0
   br i1 %eq, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
   %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr (%_Z6String, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6String }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6StringC1EPN4scaly6memory4PageEP10const_char(ptr %struct.region, ptr %1, ptr @.str.25)
+  store { ptr } zeroinitializer, ptr %arg.tmp, align 1
+  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region, ptr %1, ptr %arg.tmp)
   call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   %sret.body = load %_Z6String, ptr %struct.region, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.region, i64 ptrtoint (ptr getelementptr (%_Z6String, ptr null, i32 1) to i64), i1 false)

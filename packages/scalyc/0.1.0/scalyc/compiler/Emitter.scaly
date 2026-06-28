@@ -3147,8 +3147,13 @@ define Emitter
         var func_cstr func.mangled_name.c_data()
         if func.name.equals(String("main"))
         {
+            ; "main" is a String constant under the string-literal-as-constant
+            ; feature; func_cstr is a pointer[const_char] (from c_data()). The
+            ; explicit cast routes the literal through emit_as so it lowers to
+            ; the plain .str global rather than storing the String struct's
+            ; { ptr } into the cstr slot (which corrupts the emitted symbol).
             if func.mangled_name.starts_with("_ZN") = false
-                set func_cstr: "main"
+                set func_cstr: ("main" as pointer[const_char])
         }
 
         var is_extern: bool false
@@ -3645,6 +3650,74 @@ define Emitter
     ; Constant Emission
     ; ========================================================================
 
+    ; Emit a String literal as a compile-time CONSTANT: a private global
+    ; [varint(len)][content][NUL] in .rodata, returning a String { ptr }
+    ; value pointing at the varint start. No page, no allocation, immortal.
+    ; The trailing NUL (uncounted, the s186 over-allocation contract) keeps
+    ; c_data() zero-copy for C/extern interop; the empty string is just
+    ; { null } (get_length treats null as 0). Mirrors String.init#'s LEB128
+    ; varint exactly so get_length/get_buffer decode it.
+    function emit_string_constant(this, value: String) returns LLVMValueRef
+    {
+        let i8ty LLVMInt8TypeInContext(context)
+        let ptrty LLVMPointerTypeInContext(context, 0)
+
+        let content_len value.get_length()
+        if content_len = 0
+        {
+            var nullvals Vector[LLVMValueRef](1)
+            nullvals.put(0, LLVMConstNull(ptrty))
+            return LLVMConstStructInContext(context, nullvals.data, 1, 0)
+        }
+
+        ; count varint bytes (LEB128)
+        var rest content_len
+        var vcount: size_t 1
+        while rest >= (0x80 as size_t)
+        {
+            set rest: rest >> (7 as size_t)
+            set vcount: vcount + (1 as size_t)
+        }
+        let total vcount + content_len + (1 as size_t)
+        var bytes Vector[LLVMValueRef](total)
+
+        ; write the varint, mirroring String.init# exactly
+        var wrest content_len
+        var wi: size_t 0
+        while wrest >= (0x80 as size_t)
+        {
+            bytes.put(wi, LLVMConstInt(i8ty, wrest | (0x80 as size_t), 0))
+            set wrest: wrest >> (7 as size_t)
+            set wi: wi + (1 as size_t)
+        }
+        bytes.put(wi, LLVMConstInt(i8ty, wrest, 0))
+        set wi: wi + (1 as size_t)
+
+        ; content bytes
+        let buf value.get_buffer()
+        var ci: size_t 0
+        while ci < content_len
+        {
+            let b *(buf + ci)
+            bytes.put(wi, LLVMConstInt(i8ty, b as size_t, 0))
+            set wi: wi + (1 as size_t)
+            set ci: ci + (1 as size_t)
+        }
+        ; trailing NUL (not counted in the varint length)
+        bytes.put(wi, LLVMConstInt(i8ty, 0 as size_t, 0))
+
+        let arr_ty LLVMArrayType(i8ty, total as int)
+        let arr LLVMConstArray(i8ty, bytes.data, total as int)
+        let g LLVMAddGlobal(llvm_module, arr_ty, ".sconst")
+        LLVMSetInitializer(g, arr)
+        LLVMSetGlobalConstant(g, 1)
+        LLVMSetLinkage(g, LLVMLinkage.Private())
+
+        var dvals Vector[LLVMValueRef](1)
+        dvals.put(0, g)
+        LLVMConstStructInContext(context, dvals.data, 1, 0)
+    }
+
     ; Emit a constant value
     function emit_constant(this, const: PlannedConstant, result_type: PlannedType) returns LLVMValueRef
     {
@@ -3687,9 +3760,13 @@ define Emitter
             }
             when s: String
             {
-                ; Emit as a private global [N x i8] and return a ptr
-                ; (CreateGlobalStringPtr). Inlined [N x i8] would mismatch
-                ; ptr-typed parameters at call sites.
+                ; String-typed position → a real String { ptr } constant
+                ; (varint global). Otherwise (pointer[const_char]/i8 position
+                ; — extern args, String() ctor, equals(cstr), const_char
+                ; returns) emit the plain NUL-terminated cstr global as
+                ; before, byte-identical.
+                if result_type.name.equals(String("String"))
+                    return this.emit_string_constant(s.value)
                 return LLVMBuildGlobalStringPtr(builder, s.value.c_data(), ".str")
             }
             when c: Character
@@ -5441,6 +5518,93 @@ define Emitter
         struct_ptr
     }
 
+    ; True when t is pointer[const_char] / pointer[i8] / pointer[char] /
+    ; pointer[u8] — i.e. a C-string position. The planner wraps a String
+    ; argument bound to such a parameter in a PlannedAs(target = t); emit_as
+    ; uses this to lower the String to its c_data content pointer.
+    function target_is_cstr_pointer(this, t: PlannedType) returns bool
+    {
+        var result: bool false
+        if t.name.equals(String("pointer"))
+            if t.generics <> null
+            {
+                let gs (*t.generics)
+                if gs.length > 0
+                {
+                    let ip gs.get 0
+                    if ip <> null
+                    {
+                        let inner (*ip)
+                        if inner.name.equals(String("const_char"))
+                            set result: true
+                        if inner.name.equals(String("i8"))
+                            set result: true
+                        if inner.name.equals(String("char"))
+                            set result: true
+                        if inner.name.equals(String("u8"))
+                            set result: true
+                    }
+                }
+            }
+        result
+    }
+
+    ; A private module-level `[1 x i8] c"\00"` global, the canonical valid
+    ; empty C string. An empty Scaly String is `{ null }` (the s186 design),
+    ; so its get_buffer()/c_data() yields null — but a C callee that
+    ; dereferences the pointer (LLVMBuildCall2 reads name[0]) needs a valid
+    ; "\0". Built once and reused (keyed by name in the module).
+    function get_or_build_empty_cstr(this) returns LLVMValueRef
+    {
+        var g LLVMGetNamedGlobal(llvm_module, ".scaly.empty.cstr")
+        if g.handle <> null
+            return g
+        let i8ty LLVMInt8TypeInContext(context)
+        let arr_ty LLVMArrayType(i8ty, 1)
+        var vals Vector[LLVMValueRef](1)
+        vals.put(0, LLVMConstInt(i8ty, 0 as size_t, 0))
+        let arr LLVMConstArray(i8ty, vals.data, 1)
+        set g: LLVMAddGlobal(llvm_module, arr_ty, ".scaly.empty.cstr")
+        LLVMSetInitializer(g, arr)
+        LLVMSetGlobalConstant(g, 1)
+        LLVMSetLinkage(g, LLVMLinkage.Private())
+        g
+    }
+
+    ; Coerce a runtime String VALUE to its NUL-terminated content pointer
+    ; (c_data) for a pointer[const_char] parameter, by calling get_buffer
+    ; (which skips the varint prefix). Used when a String VARIABLE — not a
+    ; constant — flows into a const_char position (e.g. `var name "x";
+    ; LLVMBuildCall2(.., name)`). A String constant takes the cheaper cstr-
+    ; global fast path in emit_as instead.
+    function coerce_string_value_to_cstr(this, sval: LLVMValueRef) returns LLVMValueRef
+    {
+        let ptrty LLVMPointerTypeInContext(context, 0)
+        ; s34: copy the single-ptr-field struct PARAM into a local var before
+        ; passing it to an LLVM-C extern, else it miscompiles (garbage handle).
+        var sv sval
+        var this_ptr sv
+        if LLVMGetTypeKind(LLVMTypeOf sv) = LLVMTypeKind.Struct()
+        {
+            let tmp acquire_temp(LLVMTypeOf sv, "str.coerce")
+            LLVMBuildStore(builder, sv, tmp)
+            set this_ptr: tmp
+        }
+        var gb_params Vector[LLVMTypeRef](1)
+        gb_params.put(0, ptrty)
+        let gb_ty LLVMFunctionType(ptrty, gb_params.data, 1, 0)
+        var gb LLVMGetNamedFunction(llvm_module, "_ZN6String10get_bufferEv")
+        if gb.handle = null
+            set gb: LLVMAddFunction(llvm_module, "_ZN6String10get_bufferEv", gb_ty)
+        var ca Vector[LLVMValueRef](1)
+        ca.put(0, this_ptr)
+        let buf LLVMBuildCall2(builder, gb_ty, gb, ca.data, 1, "cstr")
+        ; An empty String ({ null }) yields a null buffer; substitute the
+        ; valid empty-cstr global so a dereferencing C callee is safe.
+        let nn LLVMBuildIsNotNull(builder, buf, "cstr.nn")
+        LLVMBuildSelect(builder, nn, buf, this.get_or_build_empty_cstr(), "cstr.g")
+    }
+
     ; Emit a function/operator call
     function emit_call(this, call: PlannedCall) returns LLVMValueRef
     {
@@ -6002,6 +6166,14 @@ define Emitter
                     }
                 }
 
+                ; (String → const_char coercion is handled planner-side: a
+                ; String argument bound to a pointer[const_char]-like param is
+                ; wrapped in a PlannedAs, and emit_as lowers it — constant to
+                ; the plain .str global, variable via get_buffer. The emitter
+                ; cannot decide this itself: a by-value String param and a
+                ; const_char param are both `ptr` at the LLVM level, and a
+                ; generic instantiated method's param is invisible to a scan of
+                ; current_plan.functions.)
                 if direct_alloca = false
                     set arg_value: emit_operand(arg_operand)
 
@@ -9652,7 +9824,35 @@ define Emitter
         if as_expr.value = null
             return LLVMValueRef null
 
-        let src_value emit_operand(as_expr.value.unwrap())
+        let as_inner as_expr.value.unwrap()
+
+        ; String → pointer[const_char] coercion. The planner wraps a String
+        ; argument matched to a pointer[const_char]-like parameter in a
+        ; PlannedAs (the LLVM-level `ptr` is ambiguous between a by-value
+        ; String and a const_char, so the decision is made planner-side where
+        ; the substituted param type is known). A String CONSTANT lowers to
+        ; the plain NUL-terminated cstr global — byte-identical to the
+        ; pre-feature const_char literal, zero runtime cost. The String
+        ; VARIABLE case is handled below (struct value → get_buffer).
+        if this.target_is_cstr_pointer(as_expr.target_type)
+            if as_inner.member_access = null
+                choose as_inner.expr
+                    when as_c: Constant
+                        choose as_c.value
+                            when as_s: String
+                            {
+                                ; Empty String constant → the valid empty-cstr
+                                ; global (c_data() is null for the empty String).
+                                if as_s.value.get_length() = 0
+                                    return this.get_or_build_empty_cstr()
+                                return LLVMBuildGlobalStringPtr(builder, as_s.value.c_data(), ".str")
+                            }
+                            else
+                                0
+                    else
+                        0
+
+        let src_value emit_operand(as_inner)
         if src_value.handle = null
             return LLVMValueRef null
 
@@ -9677,6 +9877,15 @@ define Emitter
         let int_kind LLVMTypeKind.Integer()
         let float_kind LLVMTypeKind.Float()
         let double_kind LLVMTypeKind.Double()
+
+        ; String VARIABLE → pointer[const_char]: the value is a by-value
+        ; String struct; hand over its c_data content pointer (get_buffer
+        ; skips the varint length prefix). The constant case took the .str
+        ; fast path above.
+        if src_kind = LLVMTypeKind.Struct()
+            if dst_kind = ptr_kind
+                if this.target_is_cstr_pointer(as_expr.target_type)
+                    return this.coerce_string_value_to_cstr(src_value)
 
         ; Pointer to pointer: bitcast
         if src_kind = ptr_kind
