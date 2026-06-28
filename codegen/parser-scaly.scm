@@ -96,7 +96,7 @@ define Parser
         set keywords: initialize_keywords#()
     }
 
-    function initialize_keywords_index#(rp, this: Parser) returns Vector[String]
+    function initialize_keywords_index(this: Parser) returns Vector[String]
     {
         var keywords_builder Array[String]()
 "   (apply-to-selected-children "keyword" (lambda (keyword) ($
@@ -105,13 +105,13 @@ define Parser
 "        Vector[String]#(keywords_builder)
     }
 
-    function initialize_keywords#(rp, this: Parser) returns HashSet[String]
+    function initialize_keywords(this: Parser) returns HashSet[String]
     {
         var hash_set_builder HashSetBuilder[String](keywords_index)
         HashSet[String]#(hash_set_builder)
     }
 
-    function parse_literal_token#(rp, this: Parser) returns Literal throws ParserError
+    function parse_literal_token(this: Parser) returns Literal throws ParserError
     {
         choose lexer.token
             when empty: Empty
@@ -182,7 +182,7 @@ define Parser
     }
 "       ) "")
 "
-    function parse_"(downcase-string (id syntax))"#(rp, this: Parser) returns "(id syntax)"Syntax throws ParserError
+    function parse_"(downcase-string (id syntax))"(this: Parser) returns "(id syntax)"Syntax throws ParserError
     {
 "       (if (abstract? syntax)
             ;; Abstract syntax - try each alternative
