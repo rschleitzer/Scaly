@@ -21066,6 +21066,236 @@ define Planner
                 0
         false
     }
+    ; ---- body-`#`-scan: does a function body construct anything with a
+    ; Call (`#`) lifetime? A `#` construction (`Vector[T]#(acc)`, `String#(...)`)
+    ; allocates on the CALLER's page (rp), so the function must receive rp even
+    ; when its declared return type is a PRIMITIVE (ref/pointer) that
+    ; needs_implicit_return_page does not cover. This is exactly the
+    ; `parse_X_list` shape: `returns ref[Vector[XSyntax]]?` with an implicit
+    ; return `Vector[XSyntax]#(acc)`. Mirrors the body-`^rp` walker above but
+    ; tests `Lifetime.Call` on a Type AND on a Matrix.life (a GENERIC
+    ; construction `Vector[T]#(...)` carries its lifetime on the Matrix operand
+    ; per s107, not the bare Type). Structurally identical recursion.
+    ;
+    ; NEUTRAL on the sigiled source: any function with a `#` construction in its
+    ; body is already a `#` decl there (the `#` needs an rp to allocate on), so
+    ; page_parameter is set and has_page is true regardless — this clause only
+    ; ever ADDS a page for a DE-SIGILED primitive-returning function whose body
+    ; keeps a genuine caller-page `#` construction.
+    function lifetime_is_call(lt: Lifetime) returns bool
+    {
+        choose lt
+            when c: Call
+                return true
+            else
+                return false
+        false
+    }
+    function type_has_call_lifetime(t: scalyc.compiler.Model.Type) returns bool
+        Planner.lifetime_is_call(t.lifetime)
+    function ops_have_call_life(ops: Vector[Operand]) returns bool
+    {
+        var i: size_t 0
+        while i < ops.length
+        {
+            let op_ptr ops.get i
+            if op_ptr <> null
+                if Planner.operand_has_call_life(op_ptr.unwrap())
+                    return true
+            set i: i + 1
+        }
+        false
+    }
+    function binding_has_call_life(b: Binding) returns bool
+    {
+        Planner.ops_have_call_life(b.operation)
+    }
+    function statement_has_call_life(s: Statement) returns bool
+    {
+        choose s
+            when a: Action
+            {
+                if Planner.ops_have_call_life(a.source)
+                    return true
+                if Planner.ops_have_call_life(a.target)
+                    return true
+            }
+            when bd: Binding
+                if Planner.binding_has_call_life(bd)
+                    return true
+            when r: Return
+                if Planner.ops_have_call_life(r.result)
+                    return true
+            when th: Throw
+                if Planner.ops_have_call_life(th.result)
+                    return true
+            when br: Break
+                if Planner.ops_have_call_life(br.result)
+                    return true
+            else
+                0
+        false
+    }
+    function action_has_call_life(a: Action) returns bool
+    {
+        if Planner.ops_have_call_life(a.source)
+            return true
+        Planner.ops_have_call_life(a.target)
+    }
+    function operand_has_call_life(op: Operand) returns bool
+    {
+        choose op.expression
+            when t: scalyc.compiler.Model.Type
+                if Planner.type_has_call_lifetime(t)
+                    return true
+            when tup: Tuple
+            {
+                var i: size_t 0
+                while i < tup.components.length
+                {
+                    let cp tup.components.get i
+                    if cp <> null
+                        if Planner.ops_have_call_life((*cp).value)
+                            return true
+                    set i: i + 1
+                }
+            }
+            when mx: Matrix
+            {
+                if Planner.lifetime_is_call(mx.life)
+                    return true
+                var i: size_t 0
+                while i < mx.operations.length
+                {
+                    let rp_ptr mx.operations.get i
+                    if rp_ptr <> null
+                        if Planner.ops_have_call_life((*rp_ptr))
+                            return true
+                    set i: i + 1
+                }
+            }
+            when b: Block
+            {
+                var i: size_t 0
+                while i < b.statements.length
+                {
+                    let sp b.statements.get i
+                    if sp <> null
+                        if Planner.statement_has_call_life(sp.unwrap())
+                            return true
+                    set i: i + 1
+                }
+            }
+            when iff: scalyc.compiler.Model.If
+            {
+                if Planner.ops_have_call_life(iff.condition)
+                    return true
+                if Planner.statement_has_call_life(iff.consequent)
+                    return true
+                if iff.alternative <> null
+                    if Planner.statement_has_call_life((*iff.alternative))
+                        return true
+            }
+            when ch: Choose
+            {
+                if Planner.ops_have_call_life(ch.condition)
+                    return true
+                var i: size_t 0
+                while i < ch.cases.length
+                {
+                    let wp ch.cases.get i
+                    if wp <> null
+                        if Planner.statement_has_call_life((*wp).consequent)
+                            return true
+                    set i: i + 1
+                }
+                if ch.alternative <> null
+                    if Planner.statement_has_call_life((*ch.alternative))
+                        return true
+            }
+            when m: Match
+            {
+                if Planner.ops_have_call_life(m.condition)
+                    return true
+                var i: size_t 0
+                while i < m.branches.length
+                {
+                    let bp m.branches.get i
+                    if bp <> null
+                        if Planner.statement_has_call_life((*bp).consequent)
+                            return true
+                    set i: i + 1
+                }
+                if m.alternative <> null
+                    if Planner.statement_has_call_life((*m.alternative))
+                        return true
+            }
+            when fo: For
+            {
+                if Planner.ops_have_call_life(fo.expression)
+                    return true
+                if Planner.action_has_call_life(fo.action)
+                    return true
+            }
+            when wh: While
+            {
+                if Planner.binding_has_call_life(wh.condition)
+                    return true
+                if Planner.action_has_call_life(wh.action)
+                    return true
+            }
+            when rep: Repeat
+                if Planner.action_has_call_life(rep.action)
+                    return true
+            when tr: Try
+            {
+                if Planner.binding_has_call_life(tr.binding)
+                    return true
+                var i: size_t 0
+                while i < tr.catches.length
+                {
+                    let wp tr.catches.get i
+                    if wp <> null
+                        if Planner.statement_has_call_life((*wp).consequent)
+                            return true
+                    set i: i + 1
+                }
+                if tr.alternative <> null
+                    if Planner.statement_has_call_life((*tr.alternative))
+                        return true
+            }
+            when nw: New
+            {
+                if Planner.type_has_call_lifetime(nw.type)
+                    return true
+                var i: size_t 0
+                while i < nw.arguments.components.length
+                {
+                    let cp nw.arguments.components.get i
+                    if cp <> null
+                        if Planner.ops_have_call_life((*cp).value)
+                            return true
+                    set i: i + 1
+                }
+            }
+            when lam: Lambda
+                if Planner.action_has_call_life(lam.body)
+                    return true
+            else
+                0
+        false
+    }
+    function body_has_call_lifetime(func: Function) returns bool
+    {
+        if Planner.is_extern_impl(func.implementation)
+            return false
+        choose func.implementation
+            when a: Action
+                return Planner.action_has_call_life(a)
+            else
+                0
+        false
+    }
     ; ---- transitive page-need walker: does a function body MENTION any name in
     ; a set? A sibling CALL's name rides either a member_access hop
     ; (`this.collect_flow_locals(...)`) or a dotted Type-name segment
@@ -21337,6 +21567,20 @@ define Planner
             return true
         if Planner.body_references_rp(func)
             return true
+        ; body-`#`-scan, GATED on a ref/pointer return type. A `parse_X_list`
+        ; returns `ref[Vector[XSyntax]]?` (a primitive ref → needs_implicit_return_page
+        ; is false) and builds the returned `Vector[XSyntax]#(acc)` on the caller
+        ; page; the `#` construction needs rp. The ref/pointer gate confines this
+        ; to that caller-page-ref-return shape — WITHOUT it the scan also flips
+        ; void / value-returning helpers that merely build a transient `#` value
+        ; (e.g. scalyls's rpc/server handlers), whose non-flagged callers then do
+        ; not forward rp. NEUTRAL on sigiled source: such a function is already a
+        ; `#` decl (the `#` needs an rp), so page_parameter is set and has_page is
+        ; true regardless.
+        if func.returns_ <> null
+            if Planner.is_ref_or_pointer_type((*func.returns_))
+                if Planner.body_has_call_lifetime(func)
+                    return true
         Planner.static_name_in_set(pl.transitive_page_names, func.name)
     }
 
