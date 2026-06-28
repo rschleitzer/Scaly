@@ -114,58 +114,58 @@ define cli
             let arg_ptr *(argv + i)
             var arg String(arg_ptr)
 
-            if arg.starts_with(String("-"))
+            if arg.starts_with("-")
             {
                 ; Option flag
-                if arg.equals(String("-h")) | arg.equals(String("--help"))
+                if arg.equals("-h") | arg.equals("--help")
                 {
                     set opts.show_help: true
                 }
-                else if arg.equals(String("-v")) | arg.equals(String("--verbose"))
+                else if arg.equals("-v") | arg.equals("--verbose")
                 {
                     set opts.verbose: true
                 }
-                else if arg.equals(String("-S"))
+                else if arg.equals("-S")
                 {
                     set opts.emit_ir: true
                 }
-                else if arg.equals(String("-c"))
+                else if arg.equals("-c")
                 {
                     set opts.compile_only: true
                 }
-                else if arg.equals(String("-g"))
+                else if arg.equals("-g")
                 {
                     set opts.debug: true
                 }
-                else if arg.equals(String("--lex"))
+                else if arg.equals("--lex")
                 {
                     set opts.lex_only: true
                 }
-                else if arg.equals(String("--parse"))
+                else if arg.equals("--parse")
                 {
                     set opts.parse_only: true
                 }
-                else if arg.equals(String("--model"))
+                else if arg.equals("--model")
                 {
                     set opts.model_only: true
                 }
-                else if arg.equals(String("--plan"))
+                else if arg.equals("--plan")
                 {
                     set opts.plan_only: true
                 }
-                else if arg.equals(String("--no-prelude"))
+                else if arg.equals("--no-prelude")
                 {
                     set opts.no_prelude: true
                 }
-                else if arg.equals(String("--no-tests"))
+                else if arg.equals("--no-tests")
                 {
                     set opts.no_tests: true
                 }
-                else if arg.equals(String("--jit"))
+                else if arg.equals("--jit")
                 {
                     set opts.jit_program: true
                 }
-                else if arg.equals(String("-o"))
+                else if arg.equals("-o")
                 {
                     ; Output file - next argument is the filename
                     set i: i + 1
@@ -176,10 +176,10 @@ define cli
                     }
                     else
                     {
-                        set opts.error_message: String("-o requires a filename")
+                        set opts.error_message: "-o requires a filename"
                     }
                 }
-                else if arg.equals(String("--run"))
+                else if arg.equals("--run")
                 {
                     ; JIT mode - next argument is the function name to execute
                     set i: i + 1
@@ -191,16 +191,16 @@ define cli
                     }
                     else
                     {
-                        set opts.error_message: String("--run requires a function name")
+                        set opts.error_message: "--run requires a function name"
                     }
                 }
-                else if arg.starts_with(String("-L")) & arg.get_length() > 2
+                else if arg.starts_with("-L") & arg.get_length() > 2
                 {
                     ; Library search path: -L<path> (prefix-form, like clang).
                     ; Forwarded verbatim to the clang link command.
                     opts.library_paths.add(String(arg_ptr + 2))
                 }
-                else if arg.starts_with(String("-l")) & arg.get_length() > 2
+                else if arg.starts_with("-l") & arg.get_length() > 2
                 {
                     ; Library name: -l<name> (prefix-form, like clang).
                     opts.libraries.add(String(arg_ptr + 2))
@@ -208,7 +208,7 @@ define cli
                 else
                 {
                     ; Unknown option
-                    set opts.error_message: String("Unknown option: ")
+                    set opts.error_message: "Unknown option: "
                     ; TODO: append arg to error message
                 }
             }
@@ -216,13 +216,13 @@ define cli
             {
                 ; Treat positional .a / .o args as extra link inputs so
                 ; stage-1 self-build can pass libscalyc.a directly.
-                if arg.ends_with(String(".a")) | arg.ends_with(String(".o"))
+                if arg.ends_with(".a") | arg.ends_with(".o")
                 {
                     opts.extra_objects.add(String(arg_ptr))
                 }
                 else if opts.has_input()
                 {
-                    set opts.error_message: String("Multiple input files not yet supported")
+                    set opts.error_message: "Multiple input files not yet supported"
                 }
                 else
                 {
@@ -451,7 +451,7 @@ define cli
         {
             ; Find the mangled name of the requested function in the plan
             ; (mirrors ModuleTests.cpp's name->MangledName scan).
-            var target_mangled String("")
+            var target_mangled ""
             if plan.functions <> null
             {
                 for f in plan.functions
@@ -487,7 +487,7 @@ define cli
             var prog_config EmitterConfig$()
             set prog_config.emit_debug_info: false
             var prog_emitter Emitter.Emitter(prog_config)
-            let prog_rc prog_emitter.jit_run(plan, program_name, String("main"))
+            let prog_rc prog_emitter.jit_run(plan, program_name, "main")
             return prog_rc as int
         }
 
@@ -554,7 +554,7 @@ define cli
         }
 
         ; Emit object file to fixed temp path, link with clang, then unlink temp.
-        var tmp_obj String("/tmp/scalyc_out.o")
+        var tmp_obj "/tmp/scalyc_out.o"
         let obj_ok emitter.write_object_to_file tmp_obj
         if obj_ok = false
         {
@@ -784,7 +784,7 @@ define cli
     function format_size(n: size_t) returns String
     {
         if n = 0
-            return String("0")
+            return "0"
         var value n
         var digits Array[char]$()
         while value > 0
@@ -869,14 +869,14 @@ define cli
             return -4
 
         ; Test 2: Test extract_program_name
-        var path1 String("/path/to/hello.scaly")
+        var path1 "/path/to/hello.scaly"
         var name1 cli.extract_program_name(path1)
-        if name1.equals(String("hello")) = false
+        if name1.equals("hello") = false
             return -10
 
-        var path2 String("simple.scaly")
+        var path2 "simple.scaly"
         var name2 cli.extract_program_name(path2)
-        if name2.equals(String("simple")) = false
+        if name2.equals("simple") = false
             return -11
 
         ; Test 3: Test pipeline on a minimal program
@@ -897,7 +897,7 @@ define cli
     function test_hello_scaly() returns int
     {
         ; Path to hello.scaly (relative to scalyc/build where tests run)
-        var file_path String("../../hello.scaly")
+        var file_path "../../hello.scaly"
 
         ; Read the file
         var source File.read_to_string(file_path)
@@ -918,7 +918,7 @@ define cli
             }
 
         ; Stage 2: Build model
-        var program_name String("hello")
+        var program_name "hello"
         let model Modeler.build_program(file_path, program_name, syntax, true)
 
         ; Stage 3: Plan
@@ -943,7 +943,7 @@ define cli
     function test_pipeline() returns int
     {
         ; Minimal valid Scaly program
-        var source String("function test_func() returns int { 42 }")
+        var source "function test_func() returns int { 42 }"
 
         ; Stage 1: Parse
         var p parser.Parser(source)
@@ -959,8 +959,8 @@ define cli
             }
 
         ; Stage 2: Build model
-        var file_name String("test.scaly")
-        var program_name String("test")
+        var file_name "test.scaly"
+        var program_name "test"
         let model Modeler.build_program(file_name, program_name, syntax, true)
 
         ; Stage 3: Plan

@@ -346,7 +346,7 @@ function handle_type(syntax: TypeSyntax) returns ref[Type]?
     var inner_holder Vector[Type]^rp(1)
     inner_holder.put(0, base_type)
     var inner_path Vector[String](1)
-    inner_path.put(0, String("Option"))
+    inner_path.put(0, "Option")
     Type(
         Span(syntax.start, syntax.end),
         inner_path,
@@ -490,9 +490,9 @@ function handle_expression(syntax: ExpressionSyntax) returns Expression
             if name_syntax.extensions = null
             {
                 let loc Span(name_syntax.start, name_syntax.end)
-                if name_syntax.name.equals(String("true"))
+                if name_syntax.name.equals("true")
                     return Expression.Constant(Constant.Boolean(BooleanConstant(loc, true)))
-                if name_syntax.name.equals(String("false"))
+                if name_syntax.name.equals("false")
                     return Expression.Constant(Constant.Boolean(BooleanConstant(loc, false)))
             }
 
@@ -618,12 +618,12 @@ function handle_lambda(syntax: LambdaSyntax) returns Lambda
             if op_ptr <> null
             {
                 let op (*op_ptr)
-                var param_name: String String("")
+                var param_name: String ""
                 choose op.expression
                     when name_syn: NameSyntax
                         set param_name: String(name_syn.name)
                     else
-                        set param_name: String("")
+                        set param_name: ""
                 var name_holder Vector[String]^rp(1)
                 name_holder.put(0, String(param_name))
                 input.put(i, Item(
@@ -650,7 +650,7 @@ function handle_lambda(syntax: LambdaSyntax) returns Lambda
 function handle_repeat(syntax: RepeatSyntax) returns Repeat
 {
     let body handle_action(syntax.action)
-    var repeat_label: String String("")
+    var repeat_label: String ""
     if syntax.name <> null
         set repeat_label: (*syntax.name).name
     Repeat(
@@ -858,7 +858,7 @@ function handle_for(syntax: ForSyntax) returns For
 {
     let expr handle_operands(syntax.operation)
     let body handle_action(syntax.action)
-    var for_label: String String("")
+    var for_label: String ""
     if syntax.name <> null
         set for_label: (*syntax.name).name
 
@@ -875,7 +875,7 @@ function handle_while(syntax: WhileSyntax) returns While
 {
     let cond handle_condition(syntax.condition)
     let body handle_action(syntax.action)
-    var while_label: String String("")
+    var while_label: String ""
     if syntax.name <> null
         set while_label: (*syntax.name).name
 
@@ -895,7 +895,7 @@ function handle_condition(syntax: ConditionSyntax) returns Binding
             let operands handle_operands(op.operands)
             Binding(
                 Span(op.start, op.end),
-                String("const"),
+                "const",
                 Item(Span(op.start, op.end), false, null, null, Vector[Attribute](0)),
                 operands
             )
@@ -906,13 +906,13 @@ function handle_condition(syntax: ConditionSyntax) returns Binding
             let operation handle_operands(let_syntax.binding.operation)
             Binding(
                 Span(let_syntax.start, let_syntax.end),
-                String("const"),
+                "const",
                 item,
                 operation
             )
         }
         else
-            Binding(Span(0, 0), String("const"), Item(Span(0, 0), false, null, null, Vector[Attribute](0)), Vector[Operand](0))
+            Binding(Span(0, 0), "const", Item(Span(0, 0), false, null, null, Vector[Attribute](0)), Vector[Operand](0))
 }
 
 function handle_try(syntax: TrySyntax) returns Try
@@ -1120,7 +1120,7 @@ function handle_command(syntax: StatementSyntax) returns Statement
             let operation handle_operands(let_syntax.binding.operation)
             Statement.Binding(Binding(
                 Span(let_syntax.start, let_syntax.end),
-                String("const"),
+                "const",
                 item,
                 operation
             ))
@@ -1131,7 +1131,7 @@ function handle_command(syntax: StatementSyntax) returns Statement
             let operation handle_operands(var_syntax.binding.operation)
             Statement.Binding(Binding(
                 Span(var_syntax.start, var_syntax.end),
-                String("var"),
+                "var",
                 item,
                 operation
             ))
@@ -1142,7 +1142,7 @@ function handle_command(syntax: StatementSyntax) returns Statement
             let operation handle_operands(mut_syntax.binding.operation)
             Statement.Binding(Binding(
                 Span(mut_syntax.start, mut_syntax.end),
-                String("mutable"),
+                "mutable",
                 item,
                 operation
             ))
@@ -1156,14 +1156,14 @@ function handle_command(syntax: StatementSyntax) returns Statement
         when break_syntax: BreakSyntax
         {
             let result handle_operands(break_syntax.result)
-            var break_label: String String("")
+            var break_label: String ""
             if break_syntax.name <> null
                 set break_label: (*break_syntax.name).name
             Statement.Break(Break(Span(break_syntax.start, break_syntax.end), result, break_label))
         }
         when continue_syntax: ContinueSyntax
         {
-            var continue_label: String String("")
+            var continue_label: String ""
             if continue_syntax.name <> null
                 set continue_label: (*continue_syntax.name).name
             Statement.Continue(Continue(Span(continue_syntax.start, continue_syntax.end), continue_label))
@@ -1632,7 +1632,7 @@ function build_function(start: size_t, end_pos: size_t, syntax: TargetSyntax, is
                 if first_has_name_no_type = false
                 {
                     var holder Vector[String]^rp(1)
-                    holder.put(0, String("rp"))
+                    holder.put(0, "rp")
                     set page_param: holder.get(0)
                 }
             }
@@ -2484,7 +2484,7 @@ function scaly_home_base() returns String
 procedure handle_package_decl(pkg_syntax: PackageSyntax, packages: ref[Array[Module]])
 {
     let pkg_name pkg_syntax.name.name
-    var version_str String("0.1.0")
+    var version_str "0.1.0"
     if pkg_syntax.version <> null
         set version_str: format_version(pkg_syntax.version.unwrap())
 
@@ -2664,7 +2664,7 @@ function build_program(file_name: String, program_name: String, syntax: ProgramS
         prelude_sb.append(scaly_home_base())
         prelude_sb.append "packages/scaly/0.1.0/scaly"
         let prelude_path prelude_sb.to_string()
-        let prelude_module build_referenced_module(prelude_path, String("prelude"), false)
+        let prelude_module build_referenced_module(prelude_path, "prelude", false)
 
         if prelude_module.members.length > 0
         {
@@ -2709,13 +2709,13 @@ function build_program(file_name: String, program_name: String, syntax: ProgramS
 function test() returns int
 {
     ; Test 200: Boolean constant - "true" maps to BooleanConstant with value=true
-    var parser Parser(String("true"))
+    var parser Parser("true")
     choose parser.parse_program()
         when err: Error
             return 200
         when syntax: Success
         {
-            let program build_program(String("t1.scaly"), String("t1"), syntax, true)
+            let program build_program("t1.scaly", "t1", syntax, true)
             if program.statements.length <> 1
                 return 201
 
@@ -2754,13 +2754,13 @@ function test() returns int
         }
 
     ; Test 210: Integer literal - "42" maps to IntegerConstant
-    set parser: Parser(String("42"))
+    set parser: Parser("42")
     choose parser.parse_program()
         when err: Error
             return 210
         when syntax: Success
         {
-            let program build_program(String("t2.scaly"), String("t2"), syntax, true)
+            let program build_program("t2.scaly", "t2", syntax, true)
             if program.statements.length <> 1
                 return 211
 
@@ -2791,13 +2791,13 @@ function test() returns int
         }
 
     ; Test 220: String literal - "\"hello\"" maps to StringConstant
-    set parser: Parser(String("\"hello\""))
+    set parser: Parser("\"hello\"")
     choose parser.parse_program()
         when err: Error
             return 220
         when syntax: Success
         {
-            let program build_program(String("t3.scaly"), String("t3"), syntax, true)
+            let program build_program("t3.scaly", "t3", syntax, true)
             if program.statements.length <> 1
                 return 221
 
@@ -2828,13 +2828,13 @@ function test() returns int
         }
 
     ; Test 230: Let binding - binding_type="const", item.name="x"
-    set parser: Parser(String("let x 42"))
+    set parser: Parser("let x 42")
     choose parser.parse_program()
         when err: Error
             return 230
         when syntax: Success
         {
-            let program build_program(String("t4.scaly"), String("t4"), syntax, true)
+            let program build_program("t4.scaly", "t4", syntax, true)
             if program.statements.length <> 1
                 return 231
 
@@ -2846,13 +2846,13 @@ function test() returns int
             choose stmt
                 when binding: Binding
                 {
-                    if binding.binding_type.equals(String("const")) = false
+                    if binding.binding_type.equals("const") = false
                         return 233
 
                     if binding.item.name = null
                         return 234
 
-                    if (*binding.item.name).equals(String("x")) = false
+                    if (*binding.item.name).equals("x") = false
                         return 235
 
                 }
@@ -2861,13 +2861,13 @@ function test() returns int
         }
 
     ; Test 240: Var binding with type - binding_type="var", name="y", type path=["int"]
-    set parser: Parser(String("var y: int 0"))
+    set parser: Parser("var y: int 0")
     choose parser.parse_program()
         when err: Error
             return 240
         when syntax: Success
         {
-            let program build_program(String("t5.scaly"), String("t5"), syntax, true)
+            let program build_program("t5.scaly", "t5", syntax, true)
             if program.statements.length <> 1
                 return 241
 
@@ -2879,13 +2879,13 @@ function test() returns int
             choose stmt
                 when binding: Binding
                 {
-                    if binding.binding_type.equals(String("var")) = false
+                    if binding.binding_type.equals("var") = false
                         return 243
 
                     if binding.item.name = null
                         return 244
 
-                    if (*binding.item.name).equals(String("y")) = false
+                    if (*binding.item.name).equals("y") = false
                         return 245
 
                     if binding.item.type = null
@@ -2899,7 +2899,7 @@ function test() returns int
                     if type_name_ptr = null
                         return 248
 
-                    if (*type_name_ptr).equals(String("int")) = false
+                    if (*type_name_ptr).equals("int") = false
                         return 249
 
                 }
@@ -2908,13 +2908,13 @@ function test() returns int
         }
 
     ; Test 250: Name expression - "foo" maps to Expression.Type with path=["foo"]
-    set parser: Parser(String("foo"))
+    set parser: Parser("foo")
     choose parser.parse_program()
         when err: Error
             return 250
         when syntax: Success
         {
-            let program build_program(String("t6.scaly"), String("t6"), syntax, true)
+            let program build_program("t6.scaly", "t6", syntax, true)
             if program.statements.length <> 1
                 return 251
 
@@ -2941,7 +2941,7 @@ function test() returns int
                             if name_ptr = null
                                 return 255
 
-                            if (*name_ptr).equals(String("foo")) = false
+                            if (*name_ptr).equals("foo") = false
                                 return 256
 
                         }
@@ -2953,13 +2953,13 @@ function test() returns int
         }
 
     ; Test 260: If expression - top-level if produces Expression.If
-    set parser: Parser(String("if true\n    1\nelse\n    0"))
+    set parser: Parser("if true\n    1\nelse\n    0")
     choose parser.parse_program()
         when err: Error
             return 260
         when syntax: Success
         {
-            let program build_program(String("t7.scaly"), String("t7"), syntax, true)
+            let program build_program("t7.scaly", "t7", syntax, true)
             if program.statements.length <> 1
                 return 261
 
@@ -2986,13 +2986,13 @@ function test() returns int
         }
 
     ; Test 270: Function definition - pure=true, name="answer"
-    set parser: Parser(String("function answer() returns int\n    42"))
+    set parser: Parser("function answer() returns int\n    42")
     choose parser.parse_program()
         when err: Error
             return 270
         when syntax: Success
         {
-            let program build_program(String("t8.scaly"), String("t8"), syntax, true)
+            let program build_program("t8.scaly", "t8", syntax, true)
             if program.module_.members.length <> 1
                 return 271
 
@@ -3004,7 +3004,7 @@ function test() returns int
             choose member
                 when fn: Function
                 {
-                    if fn.name.equals(String("answer")) = false
+                    if fn.name.equals("answer") = false
                         return 273
 
                     if fn.pure = false
@@ -3016,13 +3016,13 @@ function test() returns int
         }
 
     ; Test 280: Procedure definition - pure=false, name="mutate"
-    set parser: Parser(String("procedure mutate(this)\n    0"))
+    set parser: Parser("procedure mutate(this)\n    0")
     choose parser.parse_program()
         when err: Error
             return 280
         when syntax: Success
         {
-            let program build_program(String("t9.scaly"), String("t9"), syntax, true)
+            let program build_program("t9.scaly", "t9", syntax, true)
             if program.module_.members.length <> 1
                 return 281
 
@@ -3034,7 +3034,7 @@ function test() returns int
             choose member
                 when fn: Function
                 {
-                    if fn.name.equals(String("mutate")) = false
+                    if fn.name.equals("mutate") = false
                         return 283
 
                     if fn.pure = true
@@ -3046,13 +3046,13 @@ function test() returns int
         }
 
     ; Test 290: Structure definition - Concept with Definition.Structure
-    set parser: Parser(String("define Point(x: int, y: int)"))
+    set parser: Parser("define Point(x: int, y: int)")
     choose parser.parse_program()
         when err: Error
             return 290
         when syntax: Success
         {
-            let program build_program(String("t10.scaly"), String("t10"), syntax, true)
+            let program build_program("t10.scaly", "t10", syntax, true)
             if program.module_.members.length <> 1
                 return 291
 
@@ -3064,7 +3064,7 @@ function test() returns int
             choose member
                 when concept: Concept
                 {
-                    if concept.name.equals(String("Point")) = false
+                    if concept.name.equals("Point") = false
                         return 293
 
                     choose concept.definition
@@ -3082,13 +3082,13 @@ function test() returns int
         }
 
     ; Test 297: Union definition - Concept with Definition.Union and 2 variants
-    set parser: Parser(String("define Option union(Some: int, None)"))
+    set parser: Parser("define Option union(Some: int, None)")
     choose parser.parse_program()
         when err: Error
             return 297
         when syntax: Success
         {
-            let program build_program(String("t11.scaly"), String("t11"), syntax, true)
+            let program build_program("t11.scaly", "t11", syntax, true)
             if program.module_.members.length <> 1
                 return 298
 
@@ -3100,7 +3100,7 @@ function test() returns int
             choose member
                 when concept: Concept
                 {
-                    if concept.name.equals(String("Option")) = false
+                    if concept.name.equals("Option") = false
                         return 300
 
                     choose concept.definition
