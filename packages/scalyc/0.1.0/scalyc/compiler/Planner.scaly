@@ -492,6 +492,16 @@ define Planner
         ; generics here instead of the threaded rp (which may be a
         ; transient sub-computation page); see the s100-class note there.
         owning_page: pointer[scaly.memory.Page]
+
+        ; Transitive page-need set (interprocedural escape forwarding). Names
+        ; of functions that need the caller's page ONLY because their body
+        ; forwards rp to a sibling that needs one (the escape-machinery
+        ; dispatchers: collect_flow_stmt, collect_returns_*, scan_top_level_
+        ; returns — void, no own ^rp, but they thread rp down to a void ^rp
+        ; storer like add_escaping_*). Computed once by build_transitive_page_
+        ; set after registration; consulted by function_needs_caller_page.
+        transitive_page_names: Array[String]
+        transitive_page_built: bool
     )
     {
         init#(page, filename: String)
@@ -541,6 +551,8 @@ define Planner
             set escape_checking: false
             set escape_found: false
             set escape_fn_index: 0
+            set transitive_page_names: Array[String]^page()
+            set transitive_page_built: false
 
             ; Seed the function registry with C-runtime externs so name
             ; lookups for aligned_alloc/free/exit succeed from day one.
@@ -2375,7 +2387,7 @@ define Planner
             var has_page: bool false
             if f.page_parameter <> null
                 set has_page: true
-            if Planner.function_needs_caller_page(f)
+            if Planner.function_needs_caller_page(this, f)
                 set has_page: true
 
             ; Extern C functions use their unmangled name so the linker
@@ -5483,7 +5495,7 @@ define Planner
                                                                                 set used_ns_local: true
                                                                                 if nf.page_parameter <> null
                                                                                     set used_ns_page: true
-                                                                                if Planner.function_needs_caller_page(nf)
+                                                                                if Planner.function_needs_caller_page(this, nf)
                                                                                     set used_ns_page: true
                                                                             }
                                                                         }
@@ -5822,7 +5834,7 @@ define Planner
                                             var s_pp: bool false
                                             if sfn.page_parameter <> null
                                                 set s_pp: true
-                                            if Planner.function_needs_caller_page(sfn)
+                                            if Planner.function_needs_caller_page(this, sfn)
                                                 set s_pp: true
                                             let smangled Planner.mangle_function(
                                                 suffix, &sitems_holder, sparent_ref, s_pp
@@ -8000,7 +8012,7 @@ define Planner
             ; user-defined struct/union gets an `_rp` page parameter
             ; injected at planFunction time (Planner.cpp:11697). Mirror
             ; that here so the mangled name matches the emitted function.
-            if Planner.function_needs_caller_page(f)
+            if Planner.function_needs_caller_page(this, f)
                 set has_page: true
             ; s106: mangle against the auto-derefed receiver type.
             ; struct_type may be pointer[Foo] / ref[Foo]; the Itanium
@@ -15622,7 +15634,7 @@ define Planner
             if f.page_parameter <> null
                 set pp_name_ref: f.page_parameter
             if f.page_parameter = null
-                if Planner.function_needs_caller_page(f)
+                if Planner.function_needs_caller_page(this, f)
                 {
                     var rp_holder Vector[String]^rp(1)
                     rp_holder.put(0, String^rp("rp"))
@@ -15735,7 +15747,7 @@ define Planner
             var has_page: bool false
             if f.page_parameter <> null
                 set has_page: true
-            if Planner.function_needs_caller_page(f)
+            if Planner.function_needs_caller_page(this, f)
                 set has_page: true
 
             ; Extern C functions keep their unmangled name so LLVM can
@@ -15807,7 +15819,7 @@ define Planner
             }
             if f.page_parameter = null
             {
-                if Planner.function_needs_caller_page(f)
+                if Planner.function_needs_caller_page(this, f)
                 {
                     var pp_holder Vector[String]^rp(1)
                     pp_holder.put(0, String^rp("rp"))
@@ -17258,6 +17270,18 @@ define Planner
 
             this.register_module_concepts(m)
 
+            ; Build the transitive page-need set once, after the first (top-
+            ; level) module's whole tree is registered (siblings were seeded
+            ; before plan_module). The set names the escape-machinery
+            ; dispatchers that forward rp to a void ^rp storer; consulted by
+            ; function_needs_caller_page so they keep a page even after the
+            ; explicit `#`/rp is removed from their declaration.
+            if transitive_page_built = false
+            {
+                this.build_transitive_page_set()
+                set transitive_page_built: true
+            }
+
             var functions Array[PlannedFunction]$()
             var operators Array[PlannedOperator]$()
             var pl_concepts Array[PlannedConcept]$()
@@ -17799,6 +17823,124 @@ define Planner
                 next_type_var_id,
                 &constraints_holder
             )
+        }
+
+        ; Collect every Function member of a concept (struct/union) into acc.
+        ; Mirrors collect_methods_in# but takes no name filter.
+        function gather_member_functions(this: Planner, members: Vector[Member], acc: Array[Function])
+        {
+            var i: size_t 0
+            while i < members.length
+            {
+                let mp members.get i
+                if mp <> null
+                    choose (*mp)
+                        when f: Function
+                        {
+                            acc.add f
+                            0
+                        }
+                        else
+                            0
+                set i: i + 1
+            }
+        }
+
+        ; build_transitive_page_set: compute, by a fixpoint over the call graph,
+        ; the set of functions that need the caller's page ONLY because they
+        ; forward rp to a sibling that needs one. SEED = void functions that
+        ; directly build a ^rp value (the persistent storers add_escaping_* and
+        ; the collect_*/promote_* leaves). PROPAGATE = any function whose own
+        ; page-need is NOT already implied by its return type / ref-param
+        ; storage / own ^rp, but whose body CALLS a function already in the set,
+        ; needs one too (it threads rp down). The direct-checks gate keeps the
+        ; already-page-bearing planning spine out of the set, bounding it to the
+        ; void dispatcher cluster. NEUTRAL on the sigiled source: every function
+        ; added is still `#` there (it forwards rp today), so has_page is
+        ; unchanged; the set only matters once the explicit `#`/rp is removed.
+        function build_transitive_page_set(this: Planner)
+        {
+            var all Array[Function]$()
+            var fi: size_t 0
+            while fi < model_functions.length
+            {
+                let kvp model_functions.get fi
+                if kvp <> null
+                    all.add((*kvp).value)
+                set fi: fi + 1
+            }
+            var cdi: size_t 0
+            while cdi < concepts.length
+            {
+                let cp concepts.get cdi
+                if cp <> null
+                {
+                    let c (*cp).value
+                    choose c.definition
+                        when s: Structure
+                        {
+                            this.gather_member_functions(s.members, all)
+                            0
+                        }
+                        when u: scalyc.compiler.Model.Union
+                        {
+                            this.gather_member_functions(u.members, all)
+                            0
+                        }
+                        else
+                            0
+                }
+                set cdi: cdi + 1
+            }
+
+            ; Seed: void ^rp storers.
+            var si: size_t 0
+            while si < all.length
+            {
+                let fp all.get si
+                if fp <> null
+                {
+                    let f (*fp)
+                    if f.returns_ = null
+                        if Planner.body_references_rp(f)
+                            if this.array_contains_name(transitive_page_names, f.name) = false
+                                transitive_page_names.add(String^this(f.name))
+                }
+                set si: si + 1
+            }
+
+            ; Fixpoint propagation up the call graph.
+            var grew: bool true
+            while grew
+            {
+                set grew: false
+                var ii: size_t 0
+                while ii < all.length
+                {
+                    let fp all.get ii
+                    if fp <> null
+                    {
+                        let f (*fp)
+                        if this.array_contains_name(transitive_page_names, f.name) = false
+                        {
+                            var direct: bool false
+                            if Planner.needs_implicit_return_page(f)
+                                set direct: true
+                            if Planner.proc_needs_caller_page_for_storage(f)
+                                set direct: true
+                            if Planner.body_references_rp(f)
+                                set direct: true
+                            if direct = false
+                                if Planner.impl_mentions_set(f.implementation, transitive_page_names)
+                                {
+                                    transitive_page_names.add(String^this(f.name))
+                                    set grew: true
+                                }
+                        }
+                    }
+                    set ii: ii + 1
+                }
+            }
         }
     }
 
@@ -20893,19 +21035,278 @@ define Planner
                 0
         false
     }
+    ; ---- transitive page-need walker: does a function body MENTION any name in
+    ; a set? A sibling CALL's name rides either a member_access hop
+    ; (`this.collect_flow_locals(...)`) or a dotted Type-name segment
+    ; (`recv.method`), so both are checked. Structurally mirrors the ^rp walker
+    ; above. Over-approximate (a coincidental type/variable reference also
+    ; matches) — safe, since the set holds only cluster method names and a match
+    ; only ever ADDS a page (NEUTRAL on the sigiled source). Used by
+    ; build_transitive_page_set's fixpoint.
+    function static_name_in_set(names: Array[String], n: String) returns bool
+    {
+        var i: size_t 0
+        while i < names.length
+        {
+            let p names.get i
+            if p <> null
+                if (*p).equals(n)
+                    return true
+            set i: i + 1
+        }
+        false
+    }
+    function type_name_mentions_set(t: scalyc.compiler.Model.Type, names: Array[String]) returns bool
+    {
+        var i: size_t 0
+        while i < t.name.length
+        {
+            let np t.name.get i
+            if np <> null
+                if Planner.static_name_in_set(names, (*np))
+                    return true
+            set i: i + 1
+        }
+        false
+    }
+    function ops_mention_set(ops: Vector[Operand], names: Array[String]) returns bool
+    {
+        var i: size_t 0
+        while i < ops.length
+        {
+            let op_ptr ops.get i
+            if op_ptr <> null
+                if Planner.operand_mentions_set(op_ptr.unwrap(), names)
+                    return true
+            set i: i + 1
+        }
+        false
+    }
+    function binding_mentions_set(b: Binding, names: Array[String]) returns bool
+    {
+        Planner.ops_mention_set(b.operation, names)
+    }
+    function statement_mentions_set(s: Statement, names: Array[String]) returns bool
+    {
+        choose s
+            when a: Action
+            {
+                if Planner.ops_mention_set(a.source, names)
+                    return true
+                if Planner.ops_mention_set(a.target, names)
+                    return true
+            }
+            when bd: Binding
+                if Planner.binding_mentions_set(bd, names)
+                    return true
+            when r: Return
+                if Planner.ops_mention_set(r.result, names)
+                    return true
+            when th: Throw
+                if Planner.ops_mention_set(th.result, names)
+                    return true
+            when br: Break
+                if Planner.ops_mention_set(br.result, names)
+                    return true
+            else
+                0
+        false
+    }
+    function action_mentions_set(a: Action, names: Array[String]) returns bool
+    {
+        if Planner.ops_mention_set(a.source, names)
+            return true
+        Planner.ops_mention_set(a.target, names)
+    }
+    function operand_mentions_set(op: Operand, names: Array[String]) returns bool
+    {
+        if op.member_access <> null
+        {
+            let ma (*op.member_access)
+            var mi: size_t 0
+            while mi < ma.length
+            {
+                let hp ma.get mi
+                if hp <> null
+                    if Planner.static_name_in_set(names, (*hp))
+                        return true
+                set mi: mi + 1
+            }
+        }
+        choose op.expression
+            when t: scalyc.compiler.Model.Type
+                if Planner.type_name_mentions_set(t, names)
+                    return true
+            when tup: Tuple
+            {
+                var i: size_t 0
+                while i < tup.components.length
+                {
+                    let cp tup.components.get i
+                    if cp <> null
+                        if Planner.ops_mention_set((*cp).value, names)
+                            return true
+                    set i: i + 1
+                }
+            }
+            when mx: Matrix
+            {
+                var i: size_t 0
+                while i < mx.operations.length
+                {
+                    let rp_ptr mx.operations.get i
+                    if rp_ptr <> null
+                        if Planner.ops_mention_set((*rp_ptr), names)
+                            return true
+                    set i: i + 1
+                }
+            }
+            when b: Block
+            {
+                var i: size_t 0
+                while i < b.statements.length
+                {
+                    let sp b.statements.get i
+                    if sp <> null
+                        if Planner.statement_mentions_set(sp.unwrap(), names)
+                            return true
+                    set i: i + 1
+                }
+            }
+            when iff: scalyc.compiler.Model.If
+            {
+                if Planner.ops_mention_set(iff.condition, names)
+                    return true
+                if Planner.statement_mentions_set(iff.consequent, names)
+                    return true
+                if iff.alternative <> null
+                    if Planner.statement_mentions_set((*iff.alternative), names)
+                        return true
+            }
+            when ch: Choose
+            {
+                if Planner.ops_mention_set(ch.condition, names)
+                    return true
+                var i: size_t 0
+                while i < ch.cases.length
+                {
+                    let wp ch.cases.get i
+                    if wp <> null
+                        if Planner.statement_mentions_set((*wp).consequent, names)
+                            return true
+                    set i: i + 1
+                }
+                if ch.alternative <> null
+                    if Planner.statement_mentions_set((*ch.alternative), names)
+                        return true
+            }
+            when m: Match
+            {
+                if Planner.ops_mention_set(m.condition, names)
+                    return true
+                var i: size_t 0
+                while i < m.branches.length
+                {
+                    let bp m.branches.get i
+                    if bp <> null
+                        if Planner.statement_mentions_set((*bp).consequent, names)
+                            return true
+                    set i: i + 1
+                }
+                if m.alternative <> null
+                    if Planner.statement_mentions_set((*m.alternative), names)
+                        return true
+            }
+            when fo: For
+            {
+                if Planner.ops_mention_set(fo.expression, names)
+                    return true
+                if Planner.action_mentions_set(fo.action, names)
+                    return true
+            }
+            when wh: While
+            {
+                if Planner.binding_mentions_set(wh.condition, names)
+                    return true
+                if Planner.action_mentions_set(wh.action, names)
+                    return true
+            }
+            when rep: Repeat
+                if Planner.action_mentions_set(rep.action, names)
+                    return true
+            when tr: Try
+            {
+                if Planner.binding_mentions_set(tr.binding, names)
+                    return true
+                var i: size_t 0
+                while i < tr.catches.length
+                {
+                    let wp tr.catches.get i
+                    if wp <> null
+                        if Planner.statement_mentions_set((*wp).consequent, names)
+                            return true
+                    set i: i + 1
+                }
+                if tr.alternative <> null
+                    if Planner.statement_mentions_set((*tr.alternative), names)
+                        return true
+            }
+            when az: As
+                if Planner.type_name_mentions_set(az.target_type, names)
+                    return true
+            when nw: New
+            {
+                if Planner.type_name_mentions_set(nw.type, names)
+                    return true
+                var i: size_t 0
+                while i < nw.arguments.components.length
+                {
+                    let cp nw.arguments.components.get i
+                    if cp <> null
+                        if Planner.ops_mention_set((*cp).value, names)
+                            return true
+                    set i: i + 1
+                }
+            }
+            when so: SizeOf
+                if Planner.type_name_mentions_set(so.type, names)
+                    return true
+            when ao: AlignOf
+                if Planner.type_name_mentions_set(ao.type, names)
+                    return true
+            when lam: Lambda
+                if Planner.action_mentions_set(lam.body, names)
+                    return true
+            else
+                0
+        false
+    }
+    function impl_mentions_set(impl: Implementation, names: Array[String]) returns bool
+    {
+        choose impl
+            when a: Action
+                return Planner.action_mentions_set(a, names)
+            else
+                0
+        false
+    }
     ; Unified page-decision predicate: a function needs the caller's page (rp)
     ; either to allocate a returned struct/union (needs_implicit_return_page), to
     ; store freshly-built values into a ref/pointer out-parameter
-    ; (proc_needs_caller_page_for_storage), or to build a `^rp`-lifetime value in
-    ; its body (body_references_rp). Consulted at every has_page /
-    ; page_param_ref / requires_page_param site.
-    function function_needs_caller_page(func: Function) returns bool
+    ; (proc_needs_caller_page_for_storage), to build a `^rp`-lifetime value in
+    ; its body (body_references_rp), or — transitively — to forward rp to a
+    ; sibling that does (transitive_page_names, built by build_transitive_page_
+    ; set). Consulted at every has_page / page_param_ref / requires_page_param
+    ; site; `pl` supplies the precomputed transitive set.
+    function function_needs_caller_page(pl: Planner, func: Function) returns bool
     {
         if Planner.needs_implicit_return_page(func)
             return true
         if Planner.proc_needs_caller_page_for_storage(func)
             return true
-        Planner.body_references_rp(func)
+        if Planner.body_references_rp(func)
+            return true
+        Planner.static_name_in_set(pl.transitive_page_names, func.name)
     }
 
     ; ========================================================================
