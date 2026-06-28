@@ -300,7 +300,7 @@ define cli
 
     ; Run the compiler with parsed options
     ; Returns 0 on success, non-zero on error
-    function run#(opts: Options) returns int
+    function run(opts: Options) returns int
     {
         if opts.show_help
         {
@@ -686,7 +686,7 @@ define cli
     ; s194: format a single parse error as `file:line:col: <message>`,
     ; mirroring print_diagnostics#'s offset→line/col walk (numeric LF
     ; compare — `"\n" as char` mis-compiles under stage-1).
-    function print_parse_error#(file_path: String, source: String, offset: size_t, message: String)
+    function print_parse_error(file_path: String, source: String, offset: size_t, message: String)
     {
         var line: size_t 1
         var col: size_t 1
@@ -719,7 +719,7 @@ define cli
         Console.println(msg_str.to_c_string())
     }
 
-    function print_diagnostics#(planner: ref[Planner.Planner], file_path: String, source: String)
+    function print_diagnostics(planner: ref[Planner.Planner], file_path: String, source: String)
     {
         var di: size_t 0
         while di < planner.diagnostics.length
@@ -894,7 +894,7 @@ define cli
     }
 
     ; Test compiling hello.scaly from disk
-    function test_hello_scaly#() returns int
+    function test_hello_scaly() returns int
     {
         ; Path to hello.scaly (relative to scalyc/build where tests run)
         var file_path String("../../hello.scaly")
@@ -940,7 +940,7 @@ define cli
     }
 
     ; Test the compilation pipeline on a minimal program
-    function test_pipeline#() returns int
+    function test_pipeline() returns int
     {
         ; Minimal valid Scaly program
         var source String("function test_func() returns int { 42 }")
