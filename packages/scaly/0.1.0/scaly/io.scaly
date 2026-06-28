@@ -63,8 +63,8 @@ define io
     function test_file_string() returns int
     {
         ; Test File API with String
-        var test_path String("/tmp/scaly_string_test.txt")
-        var test_content String("Hello from String-based I/O!")
+        var test_path "/tmp/scaly_string_test.txt"
+        var test_content "Hello from String-based I/O!"
 
         ; Write using String API
         if File.write_from_string(test_path, test_content) = false
@@ -84,12 +84,12 @@ define io
     function test_file_exists() returns int
     {
         ; Test File.exists with a file we know exists
-        var test_path String("/tmp/scaly_string_test.txt")
+        var test_path "/tmp/scaly_string_test.txt"
         if File.exists(test_path) = false
             return -30
 
         ; Test with a file that doesn't exist
-        var nonexistent String("/tmp/scaly_nonexistent_file_12345.txt")
+        var nonexistent "/tmp/scaly_nonexistent_file_12345.txt"
         if File.exists(nonexistent) = true
             return -31
 
@@ -99,7 +99,7 @@ define io
     function test_directory() returns int
     {
         ; Test Directory.exists with /tmp which should exist
-        var tmp_path String("/tmp")
+        var tmp_path "/tmp"
         if Directory.exists(tmp_path) = false
             return -40
 
@@ -108,12 +108,12 @@ define io
             return -41
 
         ; Test with a nonexistent path
-        var nonexistent String("/nonexistent_dir_12345")
+        var nonexistent "/nonexistent_dir_12345"
         if Directory.is_directory(nonexistent) = true
             return -42
 
         ; Test that a file is not a directory
-        var file_path String("/tmp/scaly_string_test.txt")
+        var file_path "/tmp/scaly_string_test.txt"
         if Directory.is_directory(file_path) = true
             return -43
 
@@ -123,23 +123,23 @@ define io
     function test_path() returns int
     {
         ; Test Path.join
-        var dir String("/tmp")
-        var file String("test.txt")
+        var dir "/tmp"
+        var file "test.txt"
         var joined Path.join$(dir, file)
-        var expected String("/tmp/test.txt")
+        var expected "/tmp/test.txt"
         if joined.equals(expected) = false
             return -50
 
         ; Test Path.get_file_name
-        var full_path String("/tmp/test.txt")
+        var full_path "/tmp/test.txt"
         var file_name Path.get_file_name$(full_path)
-        var expected_name String("test.txt")
+        var expected_name "test.txt"
         if file_name.equals(expected_name) = false
             return -51
 
         ; Test Path.get_directory_name
         var dir_name Path.get_directory_name$(full_path)
-        var expected_dir String("/tmp")
+        var expected_dir "/tmp"
         if dir_name.equals(expected_dir) = false
             return -52
 

@@ -68,7 +68,7 @@ define containers
 
     function test_string_simple() returns int
     {
-        var s String("Hello world!")
+        var s "Hello world!"
         let length s.get_length()
         if length <> 12
             return -100
@@ -78,21 +78,21 @@ define containers
 
     function test_string() returns int
     {
-        var string String("Hello world!")
+        var string "Hello world!"
         let length string.get_length()
         if length <> 12
             return -7
 
-        var long_string String("1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890")
+        var long_string "1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"
         if long_string.get_length() <> 130
             return -8
 
-        var semi String(";")
-        var dot String(".")
+        var semi ";"
+        var dot "."
         if semi.equals(dot)
             return -9
 
-        var semi2 String(";")
+        var semi2 ";"
         if semi.equals(semi2) <> true
             return -10
 
@@ -168,34 +168,34 @@ define containers
     function test_hash_set() returns int
     {
         var array Array[String]()
-        array.add(String("using"))
-        array.add(String("namespace"))
-        array.add(String("typedef"))
+        array.add("using")
+        array.add("namespace")
+        array.add("typedef")
         let vector Vector[String](*array)
         var keywords_builder HashSetBuilder[String](vector)
-        if keywords_builder.contains(String("using")) = false
+        if keywords_builder.contains("using") = false
             return -19
 
-        if keywords_builder.contains(String("namespace")) = false
+        if keywords_builder.contains("namespace") = false
             return -20
 
-        if keywords_builder.contains(String("typedef")) = false
+        if keywords_builder.contains("typedef") = false
             return -21
 
-        if keywords_builder.contains(String("nix"))
+        if keywords_builder.contains("nix")
             return -22
 
         var keywords HashSet[String](*keywords_builder)
-        if keywords.contains(String("using")) = false
+        if keywords.contains("using") = false
             return -23
 
-        if keywords.contains(String("namespace")) = false
+        if keywords.contains("namespace") = false
             return -24
 
-        if keywords.contains(String("typedef")) = false
+        if keywords.contains("typedef") = false
             return -25
 
-        if keywords.contains(String("nix"))
+        if keywords.contains("nix")
             return -26
 
         0
@@ -205,58 +205,58 @@ define containers
     {
         {
             var array Array[KeyValuePair[String, int]]()
-            array.add(KeyValuePair[String, int](String("using"), 1))
-            array.add(KeyValuePair[String, int](String("namespace"), 2))
-            array.add(KeyValuePair[String, int](String("typedef"), 3))
+            array.add(KeyValuePair[String, int]("using", 1))
+            array.add(KeyValuePair[String, int]("namespace", 2))
+            array.add(KeyValuePair[String, int]("typedef", 3))
             let vector Vector[KeyValuePair[String, int]](*array)
             var keywords_builder HashMapBuilder[String, int](vector)
-            if keywords_builder.contains(String("using")) = false
+            if keywords_builder.contains("using") = false
                 return -27
 
-            if keywords_builder.contains(String("namespace")) = false
+            if keywords_builder.contains("namespace") = false
                 return -28
 
-            if keywords_builder.contains(String("typedef")) = false
+            if keywords_builder.contains("typedef") = false
                 return -29
 
-            if keywords_builder.contains(String("nix"))
+            if keywords_builder.contains("nix")
                 return -30
 
-            if *((*keywords_builder)[String("using")]) <> 1
+            if *((*keywords_builder)["using"]) <> 1
                 return -31
 
-            if *((*keywords_builder)[String("namespace")]) <> 2
+            if *((*keywords_builder)["namespace"]) <> 2
                 return -32
 
-            if *((*keywords_builder)[String("typedef")]) <> 3
+            if *((*keywords_builder)["typedef"]) <> 3
                 return -33
 
-            if ((*keywords_builder)[String("nix")]) <> null
+            if ((*keywords_builder)["nix"]) <> null
                 return -34
 
             var keywords HashMap[String, int](*keywords_builder)
-            if keywords.contains(String("using")) = false
+            if keywords.contains("using") = false
                 return -35
 
-            if keywords.contains(String("namespace")) = false
+            if keywords.contains("namespace") = false
                 return -36
 
-            if keywords.contains(String("typedef")) = false
+            if keywords.contains("typedef") = false
                 return -37
 
-            if keywords.contains(String("nix"))
+            if keywords.contains("nix")
                 return -38
 
-            if *(keywords[String("using")]) <> 1
+            if *(keywords["using"]) <> 1
                 return -39
 
-            if *(keywords[String("namespace")]) <> 2
+            if *(keywords["namespace"]) <> 2
                 return -40
 
-            if *(keywords[String("typedef")]) <> 3
+            if *(keywords["typedef"]) <> 3
                 return -41
 
-            if (keywords[String("nix")]) <> null
+            if (keywords["nix"]) <> null
                 return -42
 
         }
@@ -388,7 +388,7 @@ define containers
             return -55
 
         ; Test String slice
-        var s String("Hello")
+        var s "Hello"
         let str_slice s.as_slice()
         if str_slice.length <> 5
             return -56
@@ -400,7 +400,7 @@ define containers
             return -58
 
         ; Test slice equality
-        var s2 String("Hello")
+        var s2 "Hello"
         let str_slice2 s2.as_slice()
         if (str_slice == str_slice2) = false
             return -59
@@ -477,7 +477,7 @@ define containers
 
     function test_string_operations() returns int
     {
-        var s String("Hello, World!")
+        var s "Hello, World!"
 
         ; Test contains(char)
         if s.contains("H" as char) = false
@@ -490,15 +490,15 @@ define containers
             return -202
 
         ; Test contains(String)
-        var hello String("Hello")
+        var hello "Hello"
         if s.contains(hello) = false
             return -203
 
-        var world String("World")
+        var world "World"
         if s.contains(world) = false
             return -204
 
-        var foo String("foo")
+        var foo "foo"
         if s.contains(foo)
             return -205
 
@@ -519,11 +519,11 @@ define containers
         if s.ends_with("!") = false
             return -210
 
-        var exclaim String("!")
+        var exclaim "!"
         if s.ends_with(exclaim) = false
             return -211
 
-        var ending String("World!")
+        var ending "World!"
         if s.ends_with(ending) = false
             return -212
 
