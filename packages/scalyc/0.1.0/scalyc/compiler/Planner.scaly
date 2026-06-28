@@ -12827,6 +12827,17 @@ define Planner
                                 let pr this.restamp_operand_life(planned_source_collapsed, cl)
                                 if pr <> null
                                     set planned_source_collapsed: (*pr)
+                                ; Nested-guts promotion (mirrors plan_return#):
+                                ; restamp_operand_life# only flips a TOP-LEVEL
+                                ; PlannedCall/PlannedTuple, so a variant-construction
+                                ; source (`set ret_deep: Literal.Integer(IntegerLiteral(
+                                ; String(..))))`) with a fresh Local String buried in
+                                ; its payload is missed. promote_escaping_guts# reaches
+                                ; PlannedVariantConstruction payloads. NEUTRAL on
+                                ; sigiled source (already-Call leaves not re-flipped).
+                                let pg this.promote_escaping_guts(planned_source_collapsed, cl)
+                                if pg <> null
+                                    set planned_source_collapsed: (*pg)
                             }
                         }
                         else

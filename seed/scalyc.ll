@@ -144589,11 +144589,12 @@ while.exit:                                       ; preds = %while.cond
 
 define linkonce_odr void @_ZN7Planner11plan_actionEPN4scaly6memory4PageE6Action(ptr noalias sret(%_Z13PlannedAction) %0, ptr %1, ptr %2, ptr %3) {
 entry:
-  %tuple159 = alloca %_Z13PlannedAction, align 8
+  %tuple165 = alloca %_Z13PlannedAction, align 8
   %target_vec = alloca ptr, align 8
   %target_holder = alloca ptr, align 8
   %source_holder = alloca ptr, align 8
-  %deref.tmp142 = alloca %_Z14PlannedOperand, align 8
+  %deref.tmp148 = alloca %_Z14PlannedOperand, align 8
+  %deref.tmp127 = alloca %_Z14PlannedOperand, align 8
   %deref.tmp121 = alloca %_Z14PlannedOperand, align 8
   %tuple111 = alloca %_Z4Call, align 8
   %arg.tmp103 = alloca { ptr }, align 8
@@ -144834,7 +144835,7 @@ if.then78:                                        ; preds = %if.end16
   br i1 %call82, label %if.then83, label %if.end84
 
 if.end79:                                         ; preds = %if.end84, %if.end16
-  br i1 %promote_tail_return, label %if.then123, label %if.end124
+  br i1 %promote_tail_return, label %if.then129, label %if.end130
 
 if.then83:                                        ; preds = %if.then78
   %load.struct85 = load %_Z14PlannedOperand, ptr %sret.result5, align 8
@@ -144850,7 +144851,7 @@ if.end84:                                         ; preds = %choose.end90, %if.t
   br label %if.end79
 
 choose.end90:                                     ; preds = %choose.else91, %if.end108
-  %choose.value122 = phi %_Z14PlannedOperand [ %choose.arm.load, %if.end108 ], [ undef, %choose.else91 ]
+  %choose.value128 = phi %_Z14PlannedOperand [ %choose.arm.load, %if.end108 ], [ undef, %choose.else91 ]
   br label %if.end84
 
 choose.else91:                                    ; preds = %if.then83
@@ -144901,8 +144902,8 @@ if.then107:                                       ; preds = %if.end106
   %ne118 = icmp ne ptr %call117, null
   br i1 %ne118, label %if.then119, label %if.end120
 
-if.end108:                                        ; preds = %if.end120, %if.end106
-  %choose.arm.load = load %_Z14PlannedOperand, ptr %deref.tmp121, align 8
+if.end108:                                        ; preds = %if.end126, %if.end106
+  %choose.arm.load = load %_Z14PlannedOperand, ptr %deref.tmp127, align 8
   br label %choose.end90
 
 if.then119:                                       ; preds = %if.then107
@@ -144911,84 +144912,96 @@ if.then119:                                       ; preds = %if.then107
   br label %if.end120
 
 if.end120:                                        ; preds = %if.then119, %if.then107
+  %planned_source_collapsed122 = load ptr, ptr %planned_source_collapsed, align 8
+  store %_Z8Lifetime %variant.val115, ptr %variant.ptr, align 1
+  %call123 = call ptr @_ZN7Planner21promote_escaping_gutsEPN4scaly6memory4PageE14PlannedOperand8Lifetime(ptr %1, ptr %2, ptr %planned_source_collapsed122, ptr %variant.ptr)
+  %ne124 = icmp ne ptr %call123, null
+  br i1 %ne124, label %if.then125, label %if.end126
+
+if.then125:                                       ; preds = %if.end120
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp127, ptr align 1 %call123, i64 ptrtoint (ptr getelementptr (%_Z14PlannedOperand, ptr null, i32 1) to i64), i1 false)
+  store ptr %deref.tmp127, ptr %planned_source_collapsed, align 1
+  br label %if.end126
+
+if.end126:                                        ; preds = %if.then125, %if.end120
   br label %if.end108
 
-if.then123:                                       ; preds = %if.end79
-  %load.struct125 = load %_Z6Action, ptr %3, align 8
-  %target126 = extractvalue %_Z6Action %load.struct125, 1
-  %length127 = extractvalue %_Z6VectorI7OperandE %target126, 0
-  %eq128 = icmp eq i64 %length127, 0
-  br i1 %eq128, label %if.then129, label %if.end130
+if.then129:                                       ; preds = %if.end79
+  %load.struct131 = load %_Z6Action, ptr %3, align 8
+  %target132 = extractvalue %_Z6Action %load.struct131, 1
+  %length133 = extractvalue %_Z6VectorI7OperandE %target132, 0
+  %eq134 = icmp eq i64 %length133, 0
+  br i1 %eq134, label %if.then135, label %if.end136
 
-if.end124:                                        ; preds = %if.end130, %if.end79
-  %planned_source_collapsed143 = load ptr, ptr %planned_source_collapsed, align 8
-  %load.struct144 = load %_Z14PlannedOperand, ptr %planned_source_collapsed143, align 8
-  %result_type = extractvalue %_Z14PlannedOperand %load.struct144, 3
-  %struct.region145 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr (%_Z6VectorI14PlannedOperandE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI14PlannedOperandE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI14PlannedOperandEC1EPN4scaly6memory4PageEm(ptr %struct.region145, ptr %1, i64 1)
-  store ptr %struct.region145, ptr %source_holder, align 1
-  %source_holder146 = load ptr, ptr %source_holder, align 8
-  %planned_source_collapsed147 = load ptr, ptr %planned_source_collapsed, align 8
-  call void @_ZN6VectorI14PlannedOperandE3putEm14PlannedOperand(ptr %source_holder146, i64 0, ptr %planned_source_collapsed147)
+if.end130:                                        ; preds = %if.end136, %if.end79
+  %planned_source_collapsed149 = load ptr, ptr %planned_source_collapsed, align 8
+  %load.struct150 = load %_Z14PlannedOperand, ptr %planned_source_collapsed149, align 8
+  %result_type = extractvalue %_Z14PlannedOperand %load.struct150, 3
+  %struct.region151 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr (%_Z6VectorI14PlannedOperandE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI14PlannedOperandE }, ptr null, i64 0, i32 1) to i64))
+  call void @_ZN6VectorI14PlannedOperandEC1EPN4scaly6memory4PageEm(ptr %struct.region151, ptr %1, i64 1)
+  store ptr %struct.region151, ptr %source_holder, align 1
+  %source_holder152 = load ptr, ptr %source_holder, align 8
+  %planned_source_collapsed153 = load ptr, ptr %planned_source_collapsed, align 8
+  call void @_ZN6VectorI14PlannedOperandE3putEm14PlannedOperand(ptr %source_holder152, i64 0, ptr %planned_source_collapsed153)
   store ptr null, ptr %target_holder, align 1
-  %load.struct148 = load %_Z6Action, ptr %3, align 8
-  %target149 = extractvalue %_Z6Action %load.struct148, 1
-  %length150 = extractvalue %_Z6VectorI7OperandE %target149, 0
-  %gt151 = icmp ugt i64 %length150, 0
-  br i1 %gt151, label %if.then152, label %if.end153
+  %load.struct154 = load %_Z6Action, ptr %3, align 8
+  %target155 = extractvalue %_Z6Action %load.struct154, 1
+  %length156 = extractvalue %_Z6VectorI7OperandE %target155, 0
+  %gt157 = icmp ugt i64 %length156, 0
+  br i1 %gt157, label %if.then158, label %if.end159
 
-if.then129:                                       ; preds = %if.then123
-  %variant.tag.ptr131 = getelementptr inbounds %_Z8Lifetime, ptr %variant.ptr, i32 0, i32 0
-  store i8 1, ptr %variant.tag.ptr131, align 1
-  %action_loc132 = load %_Z4Span, ptr %action_loc, align 4
-  %tuple.field133 = getelementptr inbounds %_Z4Call, ptr %tuple111, i32 0, i32 0
-  store %_Z4Span %action_loc132, ptr %tuple.field133, align 1
-  %tuple.val134 = load %_Z4Call, ptr %tuple111, align 4
-  %variant.data.ptr135 = getelementptr inbounds %_Z8Lifetime, ptr %variant.ptr, i32 0, i32 1
-  store %_Z4Call %tuple.val134, ptr %variant.data.ptr135, align 1
-  %variant.val136 = load %_Z8Lifetime, ptr %variant.ptr, align 1
-  %planned_source_collapsed137 = load ptr, ptr %planned_source_collapsed, align 8
-  store %_Z8Lifetime %variant.val136, ptr %variant.ptr, align 1
-  %call138 = call ptr @_ZN7Planner20promote_tail_operandEPN4scaly6memory4PageE14PlannedOperand8Lifetime(ptr %1, ptr %2, ptr %planned_source_collapsed137, ptr %variant.ptr)
-  %ne139 = icmp ne ptr %call138, null
-  br i1 %ne139, label %if.then140, label %if.end141
+if.then135:                                       ; preds = %if.then129
+  %variant.tag.ptr137 = getelementptr inbounds %_Z8Lifetime, ptr %variant.ptr, i32 0, i32 0
+  store i8 1, ptr %variant.tag.ptr137, align 1
+  %action_loc138 = load %_Z4Span, ptr %action_loc, align 4
+  %tuple.field139 = getelementptr inbounds %_Z4Call, ptr %tuple111, i32 0, i32 0
+  store %_Z4Span %action_loc138, ptr %tuple.field139, align 1
+  %tuple.val140 = load %_Z4Call, ptr %tuple111, align 4
+  %variant.data.ptr141 = getelementptr inbounds %_Z8Lifetime, ptr %variant.ptr, i32 0, i32 1
+  store %_Z4Call %tuple.val140, ptr %variant.data.ptr141, align 1
+  %variant.val142 = load %_Z8Lifetime, ptr %variant.ptr, align 1
+  %planned_source_collapsed143 = load ptr, ptr %planned_source_collapsed, align 8
+  store %_Z8Lifetime %variant.val142, ptr %variant.ptr, align 1
+  %call144 = call ptr @_ZN7Planner20promote_tail_operandEPN4scaly6memory4PageE14PlannedOperand8Lifetime(ptr %1, ptr %2, ptr %planned_source_collapsed143, ptr %variant.ptr)
+  %ne145 = icmp ne ptr %call144, null
+  br i1 %ne145, label %if.then146, label %if.end147
 
-if.end130:                                        ; preds = %if.end141, %if.then123
-  br label %if.end124
-
-if.then140:                                       ; preds = %if.then129
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp142, ptr align 1 %call138, i64 ptrtoint (ptr getelementptr (%_Z14PlannedOperand, ptr null, i32 1) to i64), i1 false)
-  store ptr %deref.tmp142, ptr %planned_source_collapsed, align 1
-  br label %if.end141
-
-if.end141:                                        ; preds = %if.then140, %if.then129
+if.end136:                                        ; preds = %if.end147, %if.then129
   br label %if.end130
 
-if.then152:                                       ; preds = %if.end124
-  %struct.region154 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr (%_Z6VectorI14PlannedOperandE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI14PlannedOperandE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI14PlannedOperandEC1EPN4scaly6memory4PageEm(ptr %struct.region154, ptr %1, i64 1)
-  store ptr %struct.region154, ptr %target_vec, align 1
-  %target_vec155 = load ptr, ptr %target_vec, align 8
-  call void @_ZN6VectorI14PlannedOperandE3putEm14PlannedOperand(ptr %target_vec155, i64 0, ptr %sret.result5)
+if.then146:                                       ; preds = %if.then135
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp148, ptr align 1 %call144, i64 ptrtoint (ptr getelementptr (%_Z14PlannedOperand, ptr null, i32 1) to i64), i1 false)
+  store ptr %deref.tmp148, ptr %planned_source_collapsed, align 1
+  br label %if.end147
+
+if.end147:                                        ; preds = %if.then146, %if.then135
+  br label %if.end136
+
+if.then158:                                       ; preds = %if.end130
+  %struct.region160 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr (%_Z6VectorI14PlannedOperandE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI14PlannedOperandE }, ptr null, i64 0, i32 1) to i64))
+  call void @_ZN6VectorI14PlannedOperandEC1EPN4scaly6memory4PageEm(ptr %struct.region160, ptr %1, i64 1)
+  store ptr %struct.region160, ptr %target_vec, align 1
+  %target_vec161 = load ptr, ptr %target_vec, align 8
+  call void @_ZN6VectorI14PlannedOperandE3putEm14PlannedOperand(ptr %target_vec161, i64 0, ptr %sret.result5)
   %addr.heap = load ptr, ptr %target_vec, align 8
   store ptr %addr.heap, ptr %target_holder, align 1
-  br label %if.end153
+  br label %if.end159
 
-if.end153:                                        ; preds = %if.then152, %if.end124
-  %action_loc156 = load %_Z4Span, ptr %action_loc, align 4
-  %addr.heap157 = load ptr, ptr %source_holder, align 8
-  %target_holder158 = load ptr, ptr %target_holder, align 8
-  %tuple.field160 = getelementptr inbounds %_Z13PlannedAction, ptr %tuple159, i32 0, i32 0
-  store %_Z4Span %action_loc156, ptr %tuple.field160, align 1
-  %tuple.field161 = getelementptr inbounds %_Z13PlannedAction, ptr %tuple159, i32 0, i32 1
-  store ptr %addr.heap157, ptr %tuple.field161, align 1
-  %tuple.field162 = getelementptr inbounds %_Z13PlannedAction, ptr %tuple159, i32 0, i32 2
-  store ptr %target_holder158, ptr %tuple.field162, align 1
-  %tuple.field163 = getelementptr inbounds %_Z13PlannedAction, ptr %tuple159, i32 0, i32 3
-  store %_Z11PlannedType %result_type, ptr %tuple.field163, align 1
-  %tuple.val164 = load %_Z13PlannedAction, ptr %tuple159, align 8
+if.end159:                                        ; preds = %if.then158, %if.end130
+  %action_loc162 = load %_Z4Span, ptr %action_loc, align 4
+  %addr.heap163 = load ptr, ptr %source_holder, align 8
+  %target_holder164 = load ptr, ptr %target_holder, align 8
+  %tuple.field166 = getelementptr inbounds %_Z13PlannedAction, ptr %tuple165, i32 0, i32 0
+  store %_Z4Span %action_loc162, ptr %tuple.field166, align 1
+  %tuple.field167 = getelementptr inbounds %_Z13PlannedAction, ptr %tuple165, i32 0, i32 1
+  store ptr %addr.heap163, ptr %tuple.field167, align 1
+  %tuple.field168 = getelementptr inbounds %_Z13PlannedAction, ptr %tuple165, i32 0, i32 2
+  store ptr %target_holder164, ptr %tuple.field168, align 1
+  %tuple.field169 = getelementptr inbounds %_Z13PlannedAction, ptr %tuple165, i32 0, i32 3
+  store %_Z11PlannedType %result_type, ptr %tuple.field169, align 1
+  %tuple.val170 = load %_Z13PlannedAction, ptr %tuple165, align 8
   call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
-  store %_Z13PlannedAction %tuple.val164, ptr %0, align 1
+  store %_Z13PlannedAction %tuple.val170, ptr %0, align 1
   ret void
 }
 
@@ -152696,6 +152709,355 @@ choose.when32:                                    ; preds = %if.then22
   ret i1 true
 }
 
+define linkonce_odr ptr @_ZN7Planner21promote_escaping_gutsEPN4scaly6memory4PageE14PlannedOperand8Lifetime(ptr %0, ptr %1, ptr %2, ptr %3) {
+entry:
+  %variant.ptr133 = alloca %_Z17PlannedExpression, align 8
+  %deref.tmp117 = alloca %_Z14PlannedOperand, align 8
+  %variant.ptr94 = alloca %_Z17PlannedExpression, align 8
+  %choose.union66 = alloca %_Z8Lifetime, align 8
+  %out_region = alloca i1, align 1
+  %variant.ptr = alloca %_Z17PlannedExpression, align 8
+  %h = alloca ptr, align 8
+  %choose.union12 = alloca %_Z8Lifetime, align 8
+  %arg.tmp = alloca %_Z11PlannedType, align 8
+  %out_life = alloca %_Z8Lifetime, align 8
+  %deref.tmp = alloca %_Z6VectorI6StringE, align 8
+  %new_args = alloca ptr, align 8
+  %changed = alloca i1, align 1
+  %load.struct = load %_Z14PlannedOperand, ptr %2, align 8
+  %expr = extractvalue %_Z14PlannedOperand %load.struct, 1
+  %choose.union = alloca %_Z17PlannedExpression, align 8
+  store %_Z17PlannedExpression %expr, ptr %choose.union, align 1
+  %tag.ptr = getelementptr inbounds %_Z17PlannedExpression, ptr %choose.union, i32 0, i32 0
+  %tag = load i8, ptr %tag.ptr, align 1
+  switch i8 %tag, label %choose.else [
+    i8 4, label %choose.when
+    i8 5, label %choose.when52
+    i8 20, label %choose.when110
+  ]
+
+choose.end:                                       ; No predecessors!
+  ret ptr null
+
+choose.else:                                      ; preds = %entry
+  ret ptr null
+
+choose.when:                                      ; preds = %entry
+  %"variant.c_data().ptr" = getelementptr inbounds %_Z17PlannedExpression, ptr %choose.union, i32 0, i32 1
+  %variant.val = load %_Z11PlannedCall, ptr %"variant.c_data().ptr", align 8
+  %is_operator = extractvalue %_Z11PlannedCall %variant.val, 4
+  br i1 %is_operator, label %if.then, label %if.end
+
+if.then:                                          ; preds = %choose.when
+  ret ptr null
+
+if.end:                                           ; preds = %choose.when
+  store i1 false, ptr %changed, align 1
+  %args = extractvalue %_Z11PlannedCall %variant.val, 7
+  store ptr %args, ptr %new_args, align 1
+  %args1 = extractvalue %_Z11PlannedCall %variant.val, 7
+  %ne = icmp ne ptr %args1, null
+  br i1 %ne, label %if.then2, label %if.end3
+
+if.then2:                                         ; preds = %if.end
+  %args4 = extractvalue %_Z11PlannedCall %variant.val, 7
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp, ptr align 1 %args4, i64 ptrtoint (ptr getelementptr (%_Z6VectorI6StringE, ptr null, i32 1) to i64), i1 false)
+  %call = call ptr @_ZN7Planner21promote_escaping_argsEPN4scaly6memory4PageE6VectorI14PlannedOperandE8Lifetime(ptr %0, ptr %1, ptr %deref.tmp, ptr %3)
+  %ne5 = icmp ne ptr %call, null
+  br i1 %ne5, label %if.then6, label %if.end7
+
+if.end3:                                          ; preds = %if.end7, %if.end
+  %life = extractvalue %_Z11PlannedCall %variant.val, 9
+  store %_Z8Lifetime %life, ptr %out_life, align 1
+  %result_type = extractvalue %_Z11PlannedCall %variant.val, 8
+  store %_Z11PlannedType %result_type, ptr %arg.tmp, align 1
+  %call8 = call i1 @_ZN7Planner21result_owns_page_gutsE11PlannedType(ptr %arg.tmp)
+  br i1 %call8, label %if.then9, label %if.end10
+
+if.then6:                                         ; preds = %if.then2
+  store ptr %call, ptr %new_args, align 1
+  store i1 true, ptr %changed, align 1
+  br label %if.end7
+
+if.end7:                                          ; preds = %if.then6, %if.then2
+  br label %if.end3
+
+if.then9:                                         ; preds = %if.end3
+  %life11 = extractvalue %_Z11PlannedCall %variant.val, 9
+  store %_Z8Lifetime %life11, ptr %choose.union12, align 1
+  %tag.ptr13 = getelementptr inbounds %_Z8Lifetime, ptr %choose.union12, i32 0, i32 0
+  %tag14 = load i8, ptr %tag.ptr13, align 1
+  switch i8 %tag14, label %choose.else16 [
+    i8 2, label %choose.when17
+  ]
+
+if.end10:                                         ; preds = %choose.end15, %if.end3
+  %changed20 = load i1, ptr %changed, align 1
+  %eq = icmp eq i1 %changed20, false
+  br i1 %eq, label %if.then21, label %if.end22
+
+choose.end15:                                     ; preds = %choose.else16, %choose.when17
+  %choose.value = phi i64 [ 0, %choose.else16 ], [ undef, %choose.when17 ]
+  br label %if.end10
+
+choose.else16:                                    ; preds = %if.then9
+  br label %choose.end15
+
+choose.when17:                                    ; preds = %if.then9
+  %"variant.c_data().ptr18" = getelementptr inbounds %_Z8Lifetime, ptr %choose.union12, i32 0, i32 1
+  %variant.val19 = load %_Z5Local, ptr %"variant.c_data().ptr18", align 4
+  %set.load = load %_Z8Lifetime, ptr %3, align 1
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %out_life, ptr align 1 %3, i64 ptrtoint (ptr getelementptr (%_Z8Lifetime, ptr null, i32 1) to i64), i1 false)
+  store i1 true, ptr %changed, align 1
+  br label %choose.end15
+
+if.then21:                                        ; preds = %if.end10
+  ret ptr null
+
+if.end22:                                         ; preds = %if.end10
+  %loc = extractvalue %_Z11PlannedCall %variant.val, 0
+  %name = extractvalue %_Z11PlannedCall %variant.val, 1
+  %mangled_name = extractvalue %_Z11PlannedCall %variant.val, 2
+  %is_intrinsic = extractvalue %_Z11PlannedCall %variant.val, 3
+  %is_operator23 = extractvalue %_Z11PlannedCall %variant.val, 4
+  %can_throw = extractvalue %_Z11PlannedCall %variant.val, 5
+  %requires_page_param = extractvalue %_Z11PlannedCall %variant.val, 6
+  %new_args24 = load ptr, ptr %new_args, align 8
+  %result_type25 = extractvalue %_Z11PlannedCall %variant.val, 8
+  %out_life26 = load %_Z8Lifetime, ptr %out_life, align 1
+  %throws_type = extractvalue %_Z11PlannedCall %variant.val, 10
+  %is_indirect = extractvalue %_Z11PlannedCall %variant.val, 11
+  %tuple.region = call ptr @_ZN4Page8allocateEmm(ptr %0, i64 ptrtoint (ptr getelementptr (%_Z11PlannedCall, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z11PlannedCall }, ptr null, i64 0, i32 1) to i64))
+  %tuple.field = getelementptr inbounds %_Z11PlannedCall, ptr %tuple.region, i32 0, i32 0
+  store %_Z4Span %loc, ptr %tuple.field, align 1
+  %tuple.field27 = getelementptr inbounds %_Z11PlannedCall, ptr %tuple.region, i32 0, i32 1
+  store { ptr } %name, ptr %tuple.field27, align 1
+  %tuple.field28 = getelementptr inbounds %_Z11PlannedCall, ptr %tuple.region, i32 0, i32 2
+  store { ptr } %mangled_name, ptr %tuple.field28, align 1
+  %tuple.field29 = getelementptr inbounds %_Z11PlannedCall, ptr %tuple.region, i32 0, i32 3
+  store i1 %is_intrinsic, ptr %tuple.field29, align 1
+  %tuple.field30 = getelementptr inbounds %_Z11PlannedCall, ptr %tuple.region, i32 0, i32 4
+  store i1 %is_operator23, ptr %tuple.field30, align 1
+  %tuple.field31 = getelementptr inbounds %_Z11PlannedCall, ptr %tuple.region, i32 0, i32 5
+  store i1 %can_throw, ptr %tuple.field31, align 1
+  %tuple.field32 = getelementptr inbounds %_Z11PlannedCall, ptr %tuple.region, i32 0, i32 6
+  store i1 %requires_page_param, ptr %tuple.field32, align 1
+  %tuple.field33 = getelementptr inbounds %_Z11PlannedCall, ptr %tuple.region, i32 0, i32 7
+  store ptr %new_args24, ptr %tuple.field33, align 1
+  %tuple.field34 = getelementptr inbounds %_Z11PlannedCall, ptr %tuple.region, i32 0, i32 8
+  store %_Z11PlannedType %result_type25, ptr %tuple.field34, align 1
+  %tuple.field35 = getelementptr inbounds %_Z11PlannedCall, ptr %tuple.region, i32 0, i32 9
+  store %_Z8Lifetime %out_life26, ptr %tuple.field35, align 1
+  %tuple.field36 = getelementptr inbounds %_Z11PlannedCall, ptr %tuple.region, i32 0, i32 10
+  store ptr %throws_type, ptr %tuple.field36, align 1
+  %tuple.field37 = getelementptr inbounds %_Z11PlannedCall, ptr %tuple.region, i32 0, i32 11
+  store i1 %is_indirect, ptr %tuple.field37, align 1
+  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %0, i64 ptrtoint (ptr getelementptr (%_Z6VectorI14PlannedOperandE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI14PlannedOperandE }, ptr null, i64 0, i32 1) to i64))
+  call void @_ZN6VectorI14PlannedOperandEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %0, i64 1)
+  store ptr %struct.region, ptr %h, align 1
+  %h38 = load ptr, ptr %h, align 8
+  %load.struct39 = load %_Z14PlannedOperand, ptr %2, align 8
+  %loc40 = extractvalue %_Z14PlannedOperand %load.struct39, 0
+  %variant.tag.ptr = getelementptr inbounds %_Z17PlannedExpression, ptr %variant.ptr, i32 0, i32 0
+  store i8 4, ptr %variant.tag.ptr, align 1
+  %variant.data.ptr = getelementptr inbounds %_Z17PlannedExpression, ptr %variant.ptr, i32 0, i32 1
+  %variant.payload = load %_Z11PlannedCall, ptr %tuple.region, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %variant.data.ptr, ptr align 1 %tuple.region, i64 ptrtoint (ptr getelementptr (%_Z11PlannedCall, ptr null, i32 1) to i64), i1 false)
+  %variant.val41 = load %_Z17PlannedExpression, ptr %variant.ptr, align 1
+  %load.struct42 = load %_Z14PlannedOperand, ptr %2, align 8
+  %member_access = extractvalue %_Z14PlannedOperand %load.struct42, 2
+  %load.struct43 = load %_Z14PlannedOperand, ptr %2, align 8
+  %result_type44 = extractvalue %_Z14PlannedOperand %load.struct43, 3
+  %tuple.region45 = call ptr @_ZN4Page8allocateEmm(ptr %0, i64 ptrtoint (ptr getelementptr (%_Z14PlannedOperand, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z14PlannedOperand }, ptr null, i64 0, i32 1) to i64))
+  %tuple.field46 = getelementptr inbounds %_Z14PlannedOperand, ptr %tuple.region45, i32 0, i32 0
+  store %_Z4Span %loc40, ptr %tuple.field46, align 1
+  %tuple.field47 = getelementptr inbounds %_Z14PlannedOperand, ptr %tuple.region45, i32 0, i32 1
+  store %_Z17PlannedExpression %variant.val41, ptr %tuple.field47, align 1
+  %tuple.field48 = getelementptr inbounds %_Z14PlannedOperand, ptr %tuple.region45, i32 0, i32 2
+  store ptr %member_access, ptr %tuple.field48, align 1
+  %tuple.field49 = getelementptr inbounds %_Z14PlannedOperand, ptr %tuple.region45, i32 0, i32 3
+  store %_Z11PlannedType %result_type44, ptr %tuple.field49, align 1
+  call void @_ZN6VectorI14PlannedOperandE3putEm14PlannedOperand(ptr %h38, i64 0, ptr %tuple.region45)
+  %h50 = load ptr, ptr %h, align 8
+  %call51 = call ptr @_ZN6VectorI14PlannedOperandE3getEPN4scaly6memory4PageEm(ptr %0, ptr %h50, i64 0)
+  ret ptr %call51
+
+choose.when52:                                    ; preds = %entry
+  %"variant.c_data().ptr53" = getelementptr inbounds %_Z17PlannedExpression, ptr %choose.union, i32 0, i32 1
+  %variant.val54 = load %_Z12PlannedTuple, ptr %"variant.c_data().ptr53", align 8
+  store i1 false, ptr %changed, align 1
+  %components = extractvalue %_Z12PlannedTuple %variant.val54, 1
+  store ptr %components, ptr %new_args, align 1
+  %components55 = extractvalue %_Z12PlannedTuple %variant.val54, 1
+  %ne56 = icmp ne ptr %components55, null
+  br i1 %ne56, label %if.then57, label %if.end58
+
+if.then57:                                        ; preds = %choose.when52
+  %components59 = extractvalue %_Z12PlannedTuple %variant.val54, 1
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp, ptr align 1 %components59, i64 ptrtoint (ptr getelementptr (%_Z6VectorI6StringE, ptr null, i32 1) to i64), i1 false)
+  %call60 = call ptr @_ZN7Planner27promote_escaping_componentsEPN4scaly6memory4PageE6VectorI16PlannedComponentE8Lifetime(ptr %0, ptr %1, ptr %deref.tmp, ptr %3)
+  %ne61 = icmp ne ptr %call60, null
+  br i1 %ne61, label %if.then62, label %if.end63
+
+if.end58:                                         ; preds = %if.end63, %choose.when52
+  %life64 = extractvalue %_Z12PlannedTuple %variant.val54, 4
+  store %_Z8Lifetime %life64, ptr %out_life, align 1
+  %is_region_alloc = extractvalue %_Z12PlannedTuple %variant.val54, 3
+  store i1 %is_region_alloc, ptr %out_region, align 1
+  %life65 = extractvalue %_Z12PlannedTuple %variant.val54, 4
+  store %_Z8Lifetime %life65, ptr %choose.union66, align 1
+  %tag.ptr67 = getelementptr inbounds %_Z8Lifetime, ptr %choose.union66, i32 0, i32 0
+  %tag68 = load i8, ptr %tag.ptr67, align 1
+  switch i8 %tag68, label %choose.else70 [
+    i8 2, label %choose.when71
+  ]
+
+if.then62:                                        ; preds = %if.then57
+  store ptr %call60, ptr %new_args, align 1
+  store i1 true, ptr %changed, align 1
+  br label %if.end63
+
+if.end63:                                         ; preds = %if.then62, %if.then57
+  br label %if.end58
+
+choose.end69:                                     ; preds = %choose.else70, %choose.when71
+  %choose.value75 = phi i64 [ 0, %choose.else70 ], [ undef, %choose.when71 ]
+  %changed76 = load i1, ptr %changed, align 1
+  %eq77 = icmp eq i1 %changed76, false
+  br i1 %eq77, label %if.then78, label %if.end79
+
+choose.else70:                                    ; preds = %if.end58
+  br label %choose.end69
+
+choose.when71:                                    ; preds = %if.end58
+  %"variant.c_data().ptr72" = getelementptr inbounds %_Z8Lifetime, ptr %choose.union66, i32 0, i32 1
+  %variant.val73 = load %_Z5Local, ptr %"variant.c_data().ptr72", align 4
+  %set.load74 = load %_Z8Lifetime, ptr %3, align 1
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %out_life, ptr align 1 %3, i64 ptrtoint (ptr getelementptr (%_Z8Lifetime, ptr null, i32 1) to i64), i1 false)
+  store i1 true, ptr %out_region, align 1
+  store i1 true, ptr %changed, align 1
+  br label %choose.end69
+
+if.then78:                                        ; preds = %choose.end69
+  ret ptr null
+
+if.end79:                                         ; preds = %choose.end69
+  %loc80 = extractvalue %_Z12PlannedTuple %variant.val54, 0
+  %new_comps = load ptr, ptr %new_args, align 8
+  %tuple_type = extractvalue %_Z12PlannedTuple %variant.val54, 2
+  %out_region81 = load i1, ptr %out_region, align 1
+  %out_life82 = load %_Z8Lifetime, ptr %out_life, align 1
+  %region_arg = extractvalue %_Z12PlannedTuple %variant.val54, 5
+  %tuple.region83 = call ptr @_ZN4Page8allocateEmm(ptr %0, i64 ptrtoint (ptr getelementptr (%_Z12PlannedTuple, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z12PlannedTuple }, ptr null, i64 0, i32 1) to i64))
+  %tuple.field84 = getelementptr inbounds %_Z12PlannedTuple, ptr %tuple.region83, i32 0, i32 0
+  store %_Z4Span %loc80, ptr %tuple.field84, align 1
+  %tuple.field85 = getelementptr inbounds %_Z12PlannedTuple, ptr %tuple.region83, i32 0, i32 1
+  store ptr %new_comps, ptr %tuple.field85, align 1
+  %tuple.field86 = getelementptr inbounds %_Z12PlannedTuple, ptr %tuple.region83, i32 0, i32 2
+  store %_Z11PlannedType %tuple_type, ptr %tuple.field86, align 1
+  %tuple.field87 = getelementptr inbounds %_Z12PlannedTuple, ptr %tuple.region83, i32 0, i32 3
+  store i1 %out_region81, ptr %tuple.field87, align 1
+  %tuple.field88 = getelementptr inbounds %_Z12PlannedTuple, ptr %tuple.region83, i32 0, i32 4
+  store %_Z8Lifetime %out_life82, ptr %tuple.field88, align 1
+  %tuple.field89 = getelementptr inbounds %_Z12PlannedTuple, ptr %tuple.region83, i32 0, i32 5
+  store ptr %region_arg, ptr %tuple.field89, align 1
+  %struct.region90 = call ptr @_ZN4Page8allocateEmm(ptr %0, i64 ptrtoint (ptr getelementptr (%_Z6VectorI14PlannedOperandE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI14PlannedOperandE }, ptr null, i64 0, i32 1) to i64))
+  call void @_ZN6VectorI14PlannedOperandEC1EPN4scaly6memory4PageEm(ptr %struct.region90, ptr %0, i64 1)
+  store ptr %struct.region90, ptr %h, align 1
+  %h91 = load ptr, ptr %h, align 8
+  %load.struct92 = load %_Z14PlannedOperand, ptr %2, align 8
+  %loc93 = extractvalue %_Z14PlannedOperand %load.struct92, 0
+  %variant.tag.ptr95 = getelementptr inbounds %_Z17PlannedExpression, ptr %variant.ptr94, i32 0, i32 0
+  store i8 5, ptr %variant.tag.ptr95, align 1
+  %variant.data.ptr96 = getelementptr inbounds %_Z17PlannedExpression, ptr %variant.ptr94, i32 0, i32 1
+  %variant.payload97 = load %_Z12PlannedTuple, ptr %tuple.region83, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %variant.data.ptr96, ptr align 1 %tuple.region83, i64 ptrtoint (ptr getelementptr (%_Z12PlannedTuple, ptr null, i32 1) to i64), i1 false)
+  %variant.val98 = load %_Z17PlannedExpression, ptr %variant.ptr94, align 1
+  %load.struct99 = load %_Z14PlannedOperand, ptr %2, align 8
+  %member_access100 = extractvalue %_Z14PlannedOperand %load.struct99, 2
+  %load.struct101 = load %_Z14PlannedOperand, ptr %2, align 8
+  %result_type102 = extractvalue %_Z14PlannedOperand %load.struct101, 3
+  %tuple.region103 = call ptr @_ZN4Page8allocateEmm(ptr %0, i64 ptrtoint (ptr getelementptr (%_Z14PlannedOperand, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z14PlannedOperand }, ptr null, i64 0, i32 1) to i64))
+  %tuple.field104 = getelementptr inbounds %_Z14PlannedOperand, ptr %tuple.region103, i32 0, i32 0
+  store %_Z4Span %loc93, ptr %tuple.field104, align 1
+  %tuple.field105 = getelementptr inbounds %_Z14PlannedOperand, ptr %tuple.region103, i32 0, i32 1
+  store %_Z17PlannedExpression %variant.val98, ptr %tuple.field105, align 1
+  %tuple.field106 = getelementptr inbounds %_Z14PlannedOperand, ptr %tuple.region103, i32 0, i32 2
+  store ptr %member_access100, ptr %tuple.field106, align 1
+  %tuple.field107 = getelementptr inbounds %_Z14PlannedOperand, ptr %tuple.region103, i32 0, i32 3
+  store %_Z11PlannedType %result_type102, ptr %tuple.field107, align 1
+  call void @_ZN6VectorI14PlannedOperandE3putEm14PlannedOperand(ptr %h91, i64 0, ptr %tuple.region103)
+  %h108 = load ptr, ptr %h, align 8
+  %call109 = call ptr @_ZN6VectorI14PlannedOperandE3getEPN4scaly6memory4PageEm(ptr %0, ptr %h108, i64 0)
+  ret ptr %call109
+
+choose.when110:                                   ; preds = %entry
+  %"variant.c_data().ptr111" = getelementptr inbounds %_Z17PlannedExpression, ptr %choose.union, i32 0, i32 1
+  %variant.val112 = load %_Z26PlannedVariantConstruction, ptr %"variant.c_data().ptr111", align 8
+  %value = extractvalue %_Z26PlannedVariantConstruction %variant.val112, 4
+  %eq113 = icmp eq ptr %value, null
+  br i1 %eq113, label %if.then114, label %if.end115
+
+if.then114:                                       ; preds = %choose.when110
+  ret ptr null
+
+if.end115:                                        ; preds = %choose.when110
+  %value116 = extractvalue %_Z26PlannedVariantConstruction %variant.val112, 4
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp117, ptr align 1 %value116, i64 ptrtoint (ptr getelementptr (%_Z14PlannedOperand, ptr null, i32 1) to i64), i1 false)
+  %call118 = call ptr @_ZN7Planner21promote_escaping_gutsEPN4scaly6memory4PageE14PlannedOperand8Lifetime(ptr %0, ptr %1, ptr %deref.tmp117, ptr %3)
+  %eq119 = icmp eq ptr %call118, null
+  br i1 %eq119, label %if.then120, label %if.end121
+
+if.then120:                                       ; preds = %if.end115
+  ret ptr null
+
+if.end121:                                        ; preds = %if.end115
+  %loc122 = extractvalue %_Z26PlannedVariantConstruction %variant.val112, 0
+  %union_type = extractvalue %_Z26PlannedVariantConstruction %variant.val112, 1
+  %variant_name = extractvalue %_Z26PlannedVariantConstruction %variant.val112, 2
+  %variant_tag = extractvalue %_Z26PlannedVariantConstruction %variant.val112, 3
+  %tuple.region123 = call ptr @_ZN4Page8allocateEmm(ptr %0, i64 ptrtoint (ptr getelementptr (%_Z26PlannedVariantConstruction, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z26PlannedVariantConstruction }, ptr null, i64 0, i32 1) to i64))
+  %tuple.field124 = getelementptr inbounds %_Z26PlannedVariantConstruction, ptr %tuple.region123, i32 0, i32 0
+  store %_Z4Span %loc122, ptr %tuple.field124, align 1
+  %tuple.field125 = getelementptr inbounds %_Z26PlannedVariantConstruction, ptr %tuple.region123, i32 0, i32 1
+  store %_Z11PlannedType %union_type, ptr %tuple.field125, align 1
+  %tuple.field126 = getelementptr inbounds %_Z26PlannedVariantConstruction, ptr %tuple.region123, i32 0, i32 2
+  store { ptr } %variant_name, ptr %tuple.field126, align 1
+  %tuple.field127 = getelementptr inbounds %_Z26PlannedVariantConstruction, ptr %tuple.region123, i32 0, i32 3
+  store i64 %variant_tag, ptr %tuple.field127, align 1
+  %tuple.field128 = getelementptr inbounds %_Z26PlannedVariantConstruction, ptr %tuple.region123, i32 0, i32 4
+  store ptr %call118, ptr %tuple.field128, align 1
+  %struct.region129 = call ptr @_ZN4Page8allocateEmm(ptr %0, i64 ptrtoint (ptr getelementptr (%_Z6VectorI14PlannedOperandE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI14PlannedOperandE }, ptr null, i64 0, i32 1) to i64))
+  call void @_ZN6VectorI14PlannedOperandEC1EPN4scaly6memory4PageEm(ptr %struct.region129, ptr %0, i64 1)
+  store ptr %struct.region129, ptr %new_args, align 1
+  %h130 = load ptr, ptr %new_args, align 8
+  %load.struct131 = load %_Z14PlannedOperand, ptr %2, align 8
+  %loc132 = extractvalue %_Z14PlannedOperand %load.struct131, 0
+  %variant.tag.ptr134 = getelementptr inbounds %_Z17PlannedExpression, ptr %variant.ptr133, i32 0, i32 0
+  store i8 20, ptr %variant.tag.ptr134, align 1
+  %variant.data.ptr135 = getelementptr inbounds %_Z17PlannedExpression, ptr %variant.ptr133, i32 0, i32 1
+  %variant.payload136 = load %_Z26PlannedVariantConstruction, ptr %tuple.region123, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %variant.data.ptr135, ptr align 1 %tuple.region123, i64 ptrtoint (ptr getelementptr (%_Z26PlannedVariantConstruction, ptr null, i32 1) to i64), i1 false)
+  %variant.val137 = load %_Z17PlannedExpression, ptr %variant.ptr133, align 1
+  %load.struct138 = load %_Z14PlannedOperand, ptr %2, align 8
+  %member_access139 = extractvalue %_Z14PlannedOperand %load.struct138, 2
+  %load.struct140 = load %_Z14PlannedOperand, ptr %2, align 8
+  %result_type141 = extractvalue %_Z14PlannedOperand %load.struct140, 3
+  %tuple.region142 = call ptr @_ZN4Page8allocateEmm(ptr %0, i64 ptrtoint (ptr getelementptr (%_Z14PlannedOperand, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z14PlannedOperand }, ptr null, i64 0, i32 1) to i64))
+  %tuple.field143 = getelementptr inbounds %_Z14PlannedOperand, ptr %tuple.region142, i32 0, i32 0
+  store %_Z4Span %loc132, ptr %tuple.field143, align 1
+  %tuple.field144 = getelementptr inbounds %_Z14PlannedOperand, ptr %tuple.region142, i32 0, i32 1
+  store %_Z17PlannedExpression %variant.val137, ptr %tuple.field144, align 1
+  %tuple.field145 = getelementptr inbounds %_Z14PlannedOperand, ptr %tuple.region142, i32 0, i32 2
+  store ptr %member_access139, ptr %tuple.field145, align 1
+  %tuple.field146 = getelementptr inbounds %_Z14PlannedOperand, ptr %tuple.region142, i32 0, i32 3
+  store %_Z11PlannedType %result_type141, ptr %tuple.field146, align 1
+  call void @_ZN6VectorI14PlannedOperandE3putEm14PlannedOperand(ptr %h130, i64 0, ptr %tuple.region142)
+  %h147 = load ptr, ptr %new_args, align 8
+  %call148 = call ptr @_ZN6VectorI14PlannedOperandE3getEPN4scaly6memory4PageEm(ptr %0, ptr %h147, i64 0)
+  ret ptr %call148
+}
+
 define linkonce_odr i1 @_ZN7Planner34operand_is_local_page_constructionE14PlannedOperand(ptr %0, ptr %1) {
 entry:
   %choose.union20 = alloca %_Z8Lifetime, align 8
@@ -154766,355 +155128,6 @@ if.then23:                                        ; preds = %while.exit
 if.end24:                                         ; preds = %while.exit
   %addr.heap = load ptr, ptr %out, align 8
   ret ptr %addr.heap
-}
-
-define linkonce_odr ptr @_ZN7Planner21promote_escaping_gutsEPN4scaly6memory4PageE14PlannedOperand8Lifetime(ptr %0, ptr %1, ptr %2, ptr %3) {
-entry:
-  %variant.ptr133 = alloca %_Z17PlannedExpression, align 8
-  %deref.tmp117 = alloca %_Z14PlannedOperand, align 8
-  %variant.ptr94 = alloca %_Z17PlannedExpression, align 8
-  %choose.union66 = alloca %_Z8Lifetime, align 8
-  %out_region = alloca i1, align 1
-  %variant.ptr = alloca %_Z17PlannedExpression, align 8
-  %h = alloca ptr, align 8
-  %choose.union12 = alloca %_Z8Lifetime, align 8
-  %arg.tmp = alloca %_Z11PlannedType, align 8
-  %out_life = alloca %_Z8Lifetime, align 8
-  %deref.tmp = alloca %_Z6VectorI6StringE, align 8
-  %new_args = alloca ptr, align 8
-  %changed = alloca i1, align 1
-  %load.struct = load %_Z14PlannedOperand, ptr %2, align 8
-  %expr = extractvalue %_Z14PlannedOperand %load.struct, 1
-  %choose.union = alloca %_Z17PlannedExpression, align 8
-  store %_Z17PlannedExpression %expr, ptr %choose.union, align 1
-  %tag.ptr = getelementptr inbounds %_Z17PlannedExpression, ptr %choose.union, i32 0, i32 0
-  %tag = load i8, ptr %tag.ptr, align 1
-  switch i8 %tag, label %choose.else [
-    i8 4, label %choose.when
-    i8 5, label %choose.when52
-    i8 20, label %choose.when110
-  ]
-
-choose.end:                                       ; No predecessors!
-  ret ptr null
-
-choose.else:                                      ; preds = %entry
-  ret ptr null
-
-choose.when:                                      ; preds = %entry
-  %"variant.c_data().ptr" = getelementptr inbounds %_Z17PlannedExpression, ptr %choose.union, i32 0, i32 1
-  %variant.val = load %_Z11PlannedCall, ptr %"variant.c_data().ptr", align 8
-  %is_operator = extractvalue %_Z11PlannedCall %variant.val, 4
-  br i1 %is_operator, label %if.then, label %if.end
-
-if.then:                                          ; preds = %choose.when
-  ret ptr null
-
-if.end:                                           ; preds = %choose.when
-  store i1 false, ptr %changed, align 1
-  %args = extractvalue %_Z11PlannedCall %variant.val, 7
-  store ptr %args, ptr %new_args, align 1
-  %args1 = extractvalue %_Z11PlannedCall %variant.val, 7
-  %ne = icmp ne ptr %args1, null
-  br i1 %ne, label %if.then2, label %if.end3
-
-if.then2:                                         ; preds = %if.end
-  %args4 = extractvalue %_Z11PlannedCall %variant.val, 7
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp, ptr align 1 %args4, i64 ptrtoint (ptr getelementptr (%_Z6VectorI6StringE, ptr null, i32 1) to i64), i1 false)
-  %call = call ptr @_ZN7Planner21promote_escaping_argsEPN4scaly6memory4PageE6VectorI14PlannedOperandE8Lifetime(ptr %0, ptr %1, ptr %deref.tmp, ptr %3)
-  %ne5 = icmp ne ptr %call, null
-  br i1 %ne5, label %if.then6, label %if.end7
-
-if.end3:                                          ; preds = %if.end7, %if.end
-  %life = extractvalue %_Z11PlannedCall %variant.val, 9
-  store %_Z8Lifetime %life, ptr %out_life, align 1
-  %result_type = extractvalue %_Z11PlannedCall %variant.val, 8
-  store %_Z11PlannedType %result_type, ptr %arg.tmp, align 1
-  %call8 = call i1 @_ZN7Planner21result_owns_page_gutsE11PlannedType(ptr %arg.tmp)
-  br i1 %call8, label %if.then9, label %if.end10
-
-if.then6:                                         ; preds = %if.then2
-  store ptr %call, ptr %new_args, align 1
-  store i1 true, ptr %changed, align 1
-  br label %if.end7
-
-if.end7:                                          ; preds = %if.then6, %if.then2
-  br label %if.end3
-
-if.then9:                                         ; preds = %if.end3
-  %life11 = extractvalue %_Z11PlannedCall %variant.val, 9
-  store %_Z8Lifetime %life11, ptr %choose.union12, align 1
-  %tag.ptr13 = getelementptr inbounds %_Z8Lifetime, ptr %choose.union12, i32 0, i32 0
-  %tag14 = load i8, ptr %tag.ptr13, align 1
-  switch i8 %tag14, label %choose.else16 [
-    i8 2, label %choose.when17
-  ]
-
-if.end10:                                         ; preds = %choose.end15, %if.end3
-  %changed20 = load i1, ptr %changed, align 1
-  %eq = icmp eq i1 %changed20, false
-  br i1 %eq, label %if.then21, label %if.end22
-
-choose.end15:                                     ; preds = %choose.else16, %choose.when17
-  %choose.value = phi i64 [ 0, %choose.else16 ], [ undef, %choose.when17 ]
-  br label %if.end10
-
-choose.else16:                                    ; preds = %if.then9
-  br label %choose.end15
-
-choose.when17:                                    ; preds = %if.then9
-  %"variant.c_data().ptr18" = getelementptr inbounds %_Z8Lifetime, ptr %choose.union12, i32 0, i32 1
-  %variant.val19 = load %_Z5Local, ptr %"variant.c_data().ptr18", align 4
-  %set.load = load %_Z8Lifetime, ptr %3, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %out_life, ptr align 1 %3, i64 ptrtoint (ptr getelementptr (%_Z8Lifetime, ptr null, i32 1) to i64), i1 false)
-  store i1 true, ptr %changed, align 1
-  br label %choose.end15
-
-if.then21:                                        ; preds = %if.end10
-  ret ptr null
-
-if.end22:                                         ; preds = %if.end10
-  %loc = extractvalue %_Z11PlannedCall %variant.val, 0
-  %name = extractvalue %_Z11PlannedCall %variant.val, 1
-  %mangled_name = extractvalue %_Z11PlannedCall %variant.val, 2
-  %is_intrinsic = extractvalue %_Z11PlannedCall %variant.val, 3
-  %is_operator23 = extractvalue %_Z11PlannedCall %variant.val, 4
-  %can_throw = extractvalue %_Z11PlannedCall %variant.val, 5
-  %requires_page_param = extractvalue %_Z11PlannedCall %variant.val, 6
-  %new_args24 = load ptr, ptr %new_args, align 8
-  %result_type25 = extractvalue %_Z11PlannedCall %variant.val, 8
-  %out_life26 = load %_Z8Lifetime, ptr %out_life, align 1
-  %throws_type = extractvalue %_Z11PlannedCall %variant.val, 10
-  %is_indirect = extractvalue %_Z11PlannedCall %variant.val, 11
-  %tuple.region = call ptr @_ZN4Page8allocateEmm(ptr %0, i64 ptrtoint (ptr getelementptr (%_Z11PlannedCall, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z11PlannedCall }, ptr null, i64 0, i32 1) to i64))
-  %tuple.field = getelementptr inbounds %_Z11PlannedCall, ptr %tuple.region, i32 0, i32 0
-  store %_Z4Span %loc, ptr %tuple.field, align 1
-  %tuple.field27 = getelementptr inbounds %_Z11PlannedCall, ptr %tuple.region, i32 0, i32 1
-  store { ptr } %name, ptr %tuple.field27, align 1
-  %tuple.field28 = getelementptr inbounds %_Z11PlannedCall, ptr %tuple.region, i32 0, i32 2
-  store { ptr } %mangled_name, ptr %tuple.field28, align 1
-  %tuple.field29 = getelementptr inbounds %_Z11PlannedCall, ptr %tuple.region, i32 0, i32 3
-  store i1 %is_intrinsic, ptr %tuple.field29, align 1
-  %tuple.field30 = getelementptr inbounds %_Z11PlannedCall, ptr %tuple.region, i32 0, i32 4
-  store i1 %is_operator23, ptr %tuple.field30, align 1
-  %tuple.field31 = getelementptr inbounds %_Z11PlannedCall, ptr %tuple.region, i32 0, i32 5
-  store i1 %can_throw, ptr %tuple.field31, align 1
-  %tuple.field32 = getelementptr inbounds %_Z11PlannedCall, ptr %tuple.region, i32 0, i32 6
-  store i1 %requires_page_param, ptr %tuple.field32, align 1
-  %tuple.field33 = getelementptr inbounds %_Z11PlannedCall, ptr %tuple.region, i32 0, i32 7
-  store ptr %new_args24, ptr %tuple.field33, align 1
-  %tuple.field34 = getelementptr inbounds %_Z11PlannedCall, ptr %tuple.region, i32 0, i32 8
-  store %_Z11PlannedType %result_type25, ptr %tuple.field34, align 1
-  %tuple.field35 = getelementptr inbounds %_Z11PlannedCall, ptr %tuple.region, i32 0, i32 9
-  store %_Z8Lifetime %out_life26, ptr %tuple.field35, align 1
-  %tuple.field36 = getelementptr inbounds %_Z11PlannedCall, ptr %tuple.region, i32 0, i32 10
-  store ptr %throws_type, ptr %tuple.field36, align 1
-  %tuple.field37 = getelementptr inbounds %_Z11PlannedCall, ptr %tuple.region, i32 0, i32 11
-  store i1 %is_indirect, ptr %tuple.field37, align 1
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %0, i64 ptrtoint (ptr getelementptr (%_Z6VectorI14PlannedOperandE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI14PlannedOperandE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI14PlannedOperandEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %0, i64 1)
-  store ptr %struct.region, ptr %h, align 1
-  %h38 = load ptr, ptr %h, align 8
-  %load.struct39 = load %_Z14PlannedOperand, ptr %2, align 8
-  %loc40 = extractvalue %_Z14PlannedOperand %load.struct39, 0
-  %variant.tag.ptr = getelementptr inbounds %_Z17PlannedExpression, ptr %variant.ptr, i32 0, i32 0
-  store i8 4, ptr %variant.tag.ptr, align 1
-  %variant.data.ptr = getelementptr inbounds %_Z17PlannedExpression, ptr %variant.ptr, i32 0, i32 1
-  %variant.payload = load %_Z11PlannedCall, ptr %tuple.region, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %variant.data.ptr, ptr align 1 %tuple.region, i64 ptrtoint (ptr getelementptr (%_Z11PlannedCall, ptr null, i32 1) to i64), i1 false)
-  %variant.val41 = load %_Z17PlannedExpression, ptr %variant.ptr, align 1
-  %load.struct42 = load %_Z14PlannedOperand, ptr %2, align 8
-  %member_access = extractvalue %_Z14PlannedOperand %load.struct42, 2
-  %load.struct43 = load %_Z14PlannedOperand, ptr %2, align 8
-  %result_type44 = extractvalue %_Z14PlannedOperand %load.struct43, 3
-  %tuple.region45 = call ptr @_ZN4Page8allocateEmm(ptr %0, i64 ptrtoint (ptr getelementptr (%_Z14PlannedOperand, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z14PlannedOperand }, ptr null, i64 0, i32 1) to i64))
-  %tuple.field46 = getelementptr inbounds %_Z14PlannedOperand, ptr %tuple.region45, i32 0, i32 0
-  store %_Z4Span %loc40, ptr %tuple.field46, align 1
-  %tuple.field47 = getelementptr inbounds %_Z14PlannedOperand, ptr %tuple.region45, i32 0, i32 1
-  store %_Z17PlannedExpression %variant.val41, ptr %tuple.field47, align 1
-  %tuple.field48 = getelementptr inbounds %_Z14PlannedOperand, ptr %tuple.region45, i32 0, i32 2
-  store ptr %member_access, ptr %tuple.field48, align 1
-  %tuple.field49 = getelementptr inbounds %_Z14PlannedOperand, ptr %tuple.region45, i32 0, i32 3
-  store %_Z11PlannedType %result_type44, ptr %tuple.field49, align 1
-  call void @_ZN6VectorI14PlannedOperandE3putEm14PlannedOperand(ptr %h38, i64 0, ptr %tuple.region45)
-  %h50 = load ptr, ptr %h, align 8
-  %call51 = call ptr @_ZN6VectorI14PlannedOperandE3getEPN4scaly6memory4PageEm(ptr %0, ptr %h50, i64 0)
-  ret ptr %call51
-
-choose.when52:                                    ; preds = %entry
-  %"variant.c_data().ptr53" = getelementptr inbounds %_Z17PlannedExpression, ptr %choose.union, i32 0, i32 1
-  %variant.val54 = load %_Z12PlannedTuple, ptr %"variant.c_data().ptr53", align 8
-  store i1 false, ptr %changed, align 1
-  %components = extractvalue %_Z12PlannedTuple %variant.val54, 1
-  store ptr %components, ptr %new_args, align 1
-  %components55 = extractvalue %_Z12PlannedTuple %variant.val54, 1
-  %ne56 = icmp ne ptr %components55, null
-  br i1 %ne56, label %if.then57, label %if.end58
-
-if.then57:                                        ; preds = %choose.when52
-  %components59 = extractvalue %_Z12PlannedTuple %variant.val54, 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp, ptr align 1 %components59, i64 ptrtoint (ptr getelementptr (%_Z6VectorI6StringE, ptr null, i32 1) to i64), i1 false)
-  %call60 = call ptr @_ZN7Planner27promote_escaping_componentsEPN4scaly6memory4PageE6VectorI16PlannedComponentE8Lifetime(ptr %0, ptr %1, ptr %deref.tmp, ptr %3)
-  %ne61 = icmp ne ptr %call60, null
-  br i1 %ne61, label %if.then62, label %if.end63
-
-if.end58:                                         ; preds = %if.end63, %choose.when52
-  %life64 = extractvalue %_Z12PlannedTuple %variant.val54, 4
-  store %_Z8Lifetime %life64, ptr %out_life, align 1
-  %is_region_alloc = extractvalue %_Z12PlannedTuple %variant.val54, 3
-  store i1 %is_region_alloc, ptr %out_region, align 1
-  %life65 = extractvalue %_Z12PlannedTuple %variant.val54, 4
-  store %_Z8Lifetime %life65, ptr %choose.union66, align 1
-  %tag.ptr67 = getelementptr inbounds %_Z8Lifetime, ptr %choose.union66, i32 0, i32 0
-  %tag68 = load i8, ptr %tag.ptr67, align 1
-  switch i8 %tag68, label %choose.else70 [
-    i8 2, label %choose.when71
-  ]
-
-if.then62:                                        ; preds = %if.then57
-  store ptr %call60, ptr %new_args, align 1
-  store i1 true, ptr %changed, align 1
-  br label %if.end63
-
-if.end63:                                         ; preds = %if.then62, %if.then57
-  br label %if.end58
-
-choose.end69:                                     ; preds = %choose.else70, %choose.when71
-  %choose.value75 = phi i64 [ 0, %choose.else70 ], [ undef, %choose.when71 ]
-  %changed76 = load i1, ptr %changed, align 1
-  %eq77 = icmp eq i1 %changed76, false
-  br i1 %eq77, label %if.then78, label %if.end79
-
-choose.else70:                                    ; preds = %if.end58
-  br label %choose.end69
-
-choose.when71:                                    ; preds = %if.end58
-  %"variant.c_data().ptr72" = getelementptr inbounds %_Z8Lifetime, ptr %choose.union66, i32 0, i32 1
-  %variant.val73 = load %_Z5Local, ptr %"variant.c_data().ptr72", align 4
-  %set.load74 = load %_Z8Lifetime, ptr %3, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %out_life, ptr align 1 %3, i64 ptrtoint (ptr getelementptr (%_Z8Lifetime, ptr null, i32 1) to i64), i1 false)
-  store i1 true, ptr %out_region, align 1
-  store i1 true, ptr %changed, align 1
-  br label %choose.end69
-
-if.then78:                                        ; preds = %choose.end69
-  ret ptr null
-
-if.end79:                                         ; preds = %choose.end69
-  %loc80 = extractvalue %_Z12PlannedTuple %variant.val54, 0
-  %new_comps = load ptr, ptr %new_args, align 8
-  %tuple_type = extractvalue %_Z12PlannedTuple %variant.val54, 2
-  %out_region81 = load i1, ptr %out_region, align 1
-  %out_life82 = load %_Z8Lifetime, ptr %out_life, align 1
-  %region_arg = extractvalue %_Z12PlannedTuple %variant.val54, 5
-  %tuple.region83 = call ptr @_ZN4Page8allocateEmm(ptr %0, i64 ptrtoint (ptr getelementptr (%_Z12PlannedTuple, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z12PlannedTuple }, ptr null, i64 0, i32 1) to i64))
-  %tuple.field84 = getelementptr inbounds %_Z12PlannedTuple, ptr %tuple.region83, i32 0, i32 0
-  store %_Z4Span %loc80, ptr %tuple.field84, align 1
-  %tuple.field85 = getelementptr inbounds %_Z12PlannedTuple, ptr %tuple.region83, i32 0, i32 1
-  store ptr %new_comps, ptr %tuple.field85, align 1
-  %tuple.field86 = getelementptr inbounds %_Z12PlannedTuple, ptr %tuple.region83, i32 0, i32 2
-  store %_Z11PlannedType %tuple_type, ptr %tuple.field86, align 1
-  %tuple.field87 = getelementptr inbounds %_Z12PlannedTuple, ptr %tuple.region83, i32 0, i32 3
-  store i1 %out_region81, ptr %tuple.field87, align 1
-  %tuple.field88 = getelementptr inbounds %_Z12PlannedTuple, ptr %tuple.region83, i32 0, i32 4
-  store %_Z8Lifetime %out_life82, ptr %tuple.field88, align 1
-  %tuple.field89 = getelementptr inbounds %_Z12PlannedTuple, ptr %tuple.region83, i32 0, i32 5
-  store ptr %region_arg, ptr %tuple.field89, align 1
-  %struct.region90 = call ptr @_ZN4Page8allocateEmm(ptr %0, i64 ptrtoint (ptr getelementptr (%_Z6VectorI14PlannedOperandE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI14PlannedOperandE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI14PlannedOperandEC1EPN4scaly6memory4PageEm(ptr %struct.region90, ptr %0, i64 1)
-  store ptr %struct.region90, ptr %h, align 1
-  %h91 = load ptr, ptr %h, align 8
-  %load.struct92 = load %_Z14PlannedOperand, ptr %2, align 8
-  %loc93 = extractvalue %_Z14PlannedOperand %load.struct92, 0
-  %variant.tag.ptr95 = getelementptr inbounds %_Z17PlannedExpression, ptr %variant.ptr94, i32 0, i32 0
-  store i8 5, ptr %variant.tag.ptr95, align 1
-  %variant.data.ptr96 = getelementptr inbounds %_Z17PlannedExpression, ptr %variant.ptr94, i32 0, i32 1
-  %variant.payload97 = load %_Z12PlannedTuple, ptr %tuple.region83, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %variant.data.ptr96, ptr align 1 %tuple.region83, i64 ptrtoint (ptr getelementptr (%_Z12PlannedTuple, ptr null, i32 1) to i64), i1 false)
-  %variant.val98 = load %_Z17PlannedExpression, ptr %variant.ptr94, align 1
-  %load.struct99 = load %_Z14PlannedOperand, ptr %2, align 8
-  %member_access100 = extractvalue %_Z14PlannedOperand %load.struct99, 2
-  %load.struct101 = load %_Z14PlannedOperand, ptr %2, align 8
-  %result_type102 = extractvalue %_Z14PlannedOperand %load.struct101, 3
-  %tuple.region103 = call ptr @_ZN4Page8allocateEmm(ptr %0, i64 ptrtoint (ptr getelementptr (%_Z14PlannedOperand, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z14PlannedOperand }, ptr null, i64 0, i32 1) to i64))
-  %tuple.field104 = getelementptr inbounds %_Z14PlannedOperand, ptr %tuple.region103, i32 0, i32 0
-  store %_Z4Span %loc93, ptr %tuple.field104, align 1
-  %tuple.field105 = getelementptr inbounds %_Z14PlannedOperand, ptr %tuple.region103, i32 0, i32 1
-  store %_Z17PlannedExpression %variant.val98, ptr %tuple.field105, align 1
-  %tuple.field106 = getelementptr inbounds %_Z14PlannedOperand, ptr %tuple.region103, i32 0, i32 2
-  store ptr %member_access100, ptr %tuple.field106, align 1
-  %tuple.field107 = getelementptr inbounds %_Z14PlannedOperand, ptr %tuple.region103, i32 0, i32 3
-  store %_Z11PlannedType %result_type102, ptr %tuple.field107, align 1
-  call void @_ZN6VectorI14PlannedOperandE3putEm14PlannedOperand(ptr %h91, i64 0, ptr %tuple.region103)
-  %h108 = load ptr, ptr %h, align 8
-  %call109 = call ptr @_ZN6VectorI14PlannedOperandE3getEPN4scaly6memory4PageEm(ptr %0, ptr %h108, i64 0)
-  ret ptr %call109
-
-choose.when110:                                   ; preds = %entry
-  %"variant.c_data().ptr111" = getelementptr inbounds %_Z17PlannedExpression, ptr %choose.union, i32 0, i32 1
-  %variant.val112 = load %_Z26PlannedVariantConstruction, ptr %"variant.c_data().ptr111", align 8
-  %value = extractvalue %_Z26PlannedVariantConstruction %variant.val112, 4
-  %eq113 = icmp eq ptr %value, null
-  br i1 %eq113, label %if.then114, label %if.end115
-
-if.then114:                                       ; preds = %choose.when110
-  ret ptr null
-
-if.end115:                                        ; preds = %choose.when110
-  %value116 = extractvalue %_Z26PlannedVariantConstruction %variant.val112, 4
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp117, ptr align 1 %value116, i64 ptrtoint (ptr getelementptr (%_Z14PlannedOperand, ptr null, i32 1) to i64), i1 false)
-  %call118 = call ptr @_ZN7Planner21promote_escaping_gutsEPN4scaly6memory4PageE14PlannedOperand8Lifetime(ptr %0, ptr %1, ptr %deref.tmp117, ptr %3)
-  %eq119 = icmp eq ptr %call118, null
-  br i1 %eq119, label %if.then120, label %if.end121
-
-if.then120:                                       ; preds = %if.end115
-  ret ptr null
-
-if.end121:                                        ; preds = %if.end115
-  %loc122 = extractvalue %_Z26PlannedVariantConstruction %variant.val112, 0
-  %union_type = extractvalue %_Z26PlannedVariantConstruction %variant.val112, 1
-  %variant_name = extractvalue %_Z26PlannedVariantConstruction %variant.val112, 2
-  %variant_tag = extractvalue %_Z26PlannedVariantConstruction %variant.val112, 3
-  %tuple.region123 = call ptr @_ZN4Page8allocateEmm(ptr %0, i64 ptrtoint (ptr getelementptr (%_Z26PlannedVariantConstruction, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z26PlannedVariantConstruction }, ptr null, i64 0, i32 1) to i64))
-  %tuple.field124 = getelementptr inbounds %_Z26PlannedVariantConstruction, ptr %tuple.region123, i32 0, i32 0
-  store %_Z4Span %loc122, ptr %tuple.field124, align 1
-  %tuple.field125 = getelementptr inbounds %_Z26PlannedVariantConstruction, ptr %tuple.region123, i32 0, i32 1
-  store %_Z11PlannedType %union_type, ptr %tuple.field125, align 1
-  %tuple.field126 = getelementptr inbounds %_Z26PlannedVariantConstruction, ptr %tuple.region123, i32 0, i32 2
-  store { ptr } %variant_name, ptr %tuple.field126, align 1
-  %tuple.field127 = getelementptr inbounds %_Z26PlannedVariantConstruction, ptr %tuple.region123, i32 0, i32 3
-  store i64 %variant_tag, ptr %tuple.field127, align 1
-  %tuple.field128 = getelementptr inbounds %_Z26PlannedVariantConstruction, ptr %tuple.region123, i32 0, i32 4
-  store ptr %call118, ptr %tuple.field128, align 1
-  %struct.region129 = call ptr @_ZN4Page8allocateEmm(ptr %0, i64 ptrtoint (ptr getelementptr (%_Z6VectorI14PlannedOperandE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI14PlannedOperandE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI14PlannedOperandEC1EPN4scaly6memory4PageEm(ptr %struct.region129, ptr %0, i64 1)
-  store ptr %struct.region129, ptr %new_args, align 1
-  %h130 = load ptr, ptr %new_args, align 8
-  %load.struct131 = load %_Z14PlannedOperand, ptr %2, align 8
-  %loc132 = extractvalue %_Z14PlannedOperand %load.struct131, 0
-  %variant.tag.ptr134 = getelementptr inbounds %_Z17PlannedExpression, ptr %variant.ptr133, i32 0, i32 0
-  store i8 20, ptr %variant.tag.ptr134, align 1
-  %variant.data.ptr135 = getelementptr inbounds %_Z17PlannedExpression, ptr %variant.ptr133, i32 0, i32 1
-  %variant.payload136 = load %_Z26PlannedVariantConstruction, ptr %tuple.region123, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %variant.data.ptr135, ptr align 1 %tuple.region123, i64 ptrtoint (ptr getelementptr (%_Z26PlannedVariantConstruction, ptr null, i32 1) to i64), i1 false)
-  %variant.val137 = load %_Z17PlannedExpression, ptr %variant.ptr133, align 1
-  %load.struct138 = load %_Z14PlannedOperand, ptr %2, align 8
-  %member_access139 = extractvalue %_Z14PlannedOperand %load.struct138, 2
-  %load.struct140 = load %_Z14PlannedOperand, ptr %2, align 8
-  %result_type141 = extractvalue %_Z14PlannedOperand %load.struct140, 3
-  %tuple.region142 = call ptr @_ZN4Page8allocateEmm(ptr %0, i64 ptrtoint (ptr getelementptr (%_Z14PlannedOperand, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z14PlannedOperand }, ptr null, i64 0, i32 1) to i64))
-  %tuple.field143 = getelementptr inbounds %_Z14PlannedOperand, ptr %tuple.region142, i32 0, i32 0
-  store %_Z4Span %loc132, ptr %tuple.field143, align 1
-  %tuple.field144 = getelementptr inbounds %_Z14PlannedOperand, ptr %tuple.region142, i32 0, i32 1
-  store %_Z17PlannedExpression %variant.val137, ptr %tuple.field144, align 1
-  %tuple.field145 = getelementptr inbounds %_Z14PlannedOperand, ptr %tuple.region142, i32 0, i32 2
-  store ptr %member_access139, ptr %tuple.field145, align 1
-  %tuple.field146 = getelementptr inbounds %_Z14PlannedOperand, ptr %tuple.region142, i32 0, i32 3
-  store %_Z11PlannedType %result_type141, ptr %tuple.field146, align 1
-  call void @_ZN6VectorI14PlannedOperandE3putEm14PlannedOperand(ptr %h130, i64 0, ptr %tuple.region142)
-  %h147 = load ptr, ptr %new_args, align 8
-  %call148 = call ptr @_ZN6VectorI14PlannedOperandE3getEPN4scaly6memory4PageEm(ptr %0, ptr %h147, i64 0)
-  ret ptr %call148
 }
 
 define linkonce_odr ptr @_ZN7Planner22promote_tail_statementEPN4scaly6memory4PageE16PlannedStatement8Lifetime(ptr %0, ptr %1, ptr %2, ptr %3) {
