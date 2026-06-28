@@ -198,12 +198,12 @@ define cli
                 {
                     ; Library search path: -L<path> (prefix-form, like clang).
                     ; Forwarded verbatim to the clang link command.
-                    opts.library_paths.add(String#(arg_ptr + 2))
+                    opts.library_paths.add(String(arg_ptr + 2))
                 }
                 else if arg.starts_with(String("-l")) & arg.get_length() > 2
                 {
                     ; Library name: -l<name> (prefix-form, like clang).
-                    opts.libraries.add(String#(arg_ptr + 2))
+                    opts.libraries.add(String(arg_ptr + 2))
                 }
                 else
                 {
@@ -218,7 +218,7 @@ define cli
                 ; stage-1 self-build can pass libscalyc.a directly.
                 if arg.ends_with(String(".a")) | arg.ends_with(String(".o"))
                 {
-                    opts.extra_objects.add(String#(arg_ptr))
+                    opts.extra_objects.add(String(arg_ptr))
                 }
                 else if opts.has_input()
                 {

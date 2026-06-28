@@ -346,7 +346,7 @@ function handle_type(syntax: TypeSyntax) returns ref[Type]?
     var inner_holder Vector[Type]^rp(1)
     inner_holder.put(0, base_type)
     var inner_path Vector[String](1)
-    inner_path.put(0, String#("Option"))
+    inner_path.put(0, String("Option"))
     Type(
         Span(syntax.start, syntax.end),
         inner_path,
@@ -625,7 +625,7 @@ function handle_lambda(syntax: LambdaSyntax) returns Lambda
                     else
                         set param_name: String("")
                 var name_holder Vector[String]^rp(1)
-                name_holder.put(0, String#(param_name))
+                name_holder.put(0, String(param_name))
                 input.put(i, Item(
                     Span(op.start, op.end),
                     false,
@@ -1096,7 +1096,7 @@ function handle_binding_item(syntax: BindingSyntax) returns Item
     }
 
     var name_holder Vector[String]^rp(1)
-    name_holder.put(0, String#(syntax.name))
+    name_holder.put(0, String(syntax.name))
     Item(
         Span(syntax.start, syntax.end),
         false,
@@ -1342,7 +1342,7 @@ function handle_item(is_private: bool, syntax: ItemSyntax) returns Item
     }
 
     var name_holder Vector[String]^rp(1)
-    name_holder.put(0, String#(syntax.name))
+    name_holder.put(0, String(syntax.name))
     Item(
         Span(syntax.start, syntax.end),
         is_private,
@@ -1614,7 +1614,7 @@ function build_function(start: size_t, end_pos: size_t, syntax: TargetSyntax, is
                         if first_ptr.name <> null
                         {
                             var holder Vector[String]^rp(1)
-                            holder.put(0, String#((*first_ptr.name)))
+                            holder.put(0, String((*first_ptr.name)))
                             set page_param: holder.get(0)
                         }
                     }
@@ -1632,7 +1632,7 @@ function build_function(start: size_t, end_pos: size_t, syntax: TargetSyntax, is
                 if first_has_name_no_type = false
                 {
                     var holder Vector[String]^rp(1)
-                    holder.put(0, String#("rp"))
+                    holder.put(0, String("rp"))
                     set page_param: holder.get(0)
                 }
             }
@@ -1856,7 +1856,7 @@ function handle_initializer(syntax: InitSyntax, is_private: bool) returns Initia
                     if first_ptr.name <> null
                     {
                         var holder Vector[String]^rp(1)
-                        holder.put(0, String#((*first_ptr.name)))
+                        holder.put(0, String((*first_ptr.name)))
                         set page_param: holder.get(0)
                     }
                 }
