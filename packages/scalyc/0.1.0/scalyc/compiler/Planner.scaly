@@ -14440,7 +14440,22 @@ define Planner
             ; drops the error value entirely (status byte stored, data left
             ; uninitialised → caller reads a garbage variant tag).
             let planned_flat this.plan_operands(t.result)
-            let planned_collapsed this.collapse_operand_sequence(planned_flat)
+            var planned_collapsed this.collapse_operand_sequence(planned_flat)
+            ; A thrown value escapes the frame exactly like a returned one: it
+            ; travels up the stack via the throws Result-wrapper sret. A fresh
+            ; Local-life heap construction buried in its fields (e.g. the error
+            ; message String in `throw E.Invalid(InvalidSyntax(.., String(..)))`)
+            ; would dangle once this frame's local page is freed. Promote those
+            ; guts to the caller page (rp), mirroring plan_return#'s nested-guts
+            ; promotion. NEUTRAL on sigiled source (an already-Call `String#`
+            ; leaf is not re-flipped; returns null when nothing is promotable).
+            if planned_flat.length > 0
+            {
+                let throw_call_life Lifetime.Call(scalyc.compiler.Model.Call(t.span))
+                let throw_promoted this.promote_escaping_guts(planned_collapsed, throw_call_life)
+                if throw_promoted <> null
+                    set planned_collapsed: (*throw_promoted)
+            }
             var holder Vector[PlannedOperand]^rp(1)
             if planned_flat.length > 0
                 holder.put(0, planned_collapsed)
