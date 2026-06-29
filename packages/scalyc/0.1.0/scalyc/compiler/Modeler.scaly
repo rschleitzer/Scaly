@@ -2574,7 +2574,7 @@ function format_version(version_ref: ref[VersionSyntax]) returns String
             sb.append i.value
         else
             sb.append "0"
-    sb.to_string^rp()
+    sb.to_string()
 }
 
 ; Resolve the base directory that the `packages/` tree lives under. When the
@@ -2594,7 +2594,7 @@ function scaly_home_base() returns String
     var sb StringBuilder()
     sb.append home_str
     sb.append("/" as char)
-    sb.to_string^rp()
+    sb.to_string()
 }
 
 ; Try `<base>/<name>/<version>/<name>.scaly`. Returns true and writes the
