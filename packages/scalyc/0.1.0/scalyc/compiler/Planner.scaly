@@ -12828,7 +12828,23 @@ define Planner
             if b.item.name <> null
             {
                 let bn (*b.item.name)
+                ; Escape soundness step 3 (provenance through a binding): a
+                ; binding whose initializer is a REFERENCE into a local page
+                ; (`let r &b`, result_type pointer[T{Local}]) is NOT a
+                ; relocatable allocation — its pointee is frame-bound. Gap-1
+                ; promotion would bogusly flip the outer `&`-call life to Call
+                ; and mark the name promoted, so `return r` would SKIP the
+                ; escape check (silent use-after-free). Suppress promotion for
+                ; such bindings; the Local-inner survives on binding_type and
+                ; the return/store/pass check fires at the use site.
+                var do_promote false
                 if this.array_contains_name(escaping_return_locals, bn)
+                {
+                    set do_promote: true
+                    if Planner.is_local_ref_pointer(collapsed.result_type)
+                        set do_promote: false
+                }
+                if do_promote
                 {
                     let promote_life Lifetime.Call(scalyc.compiler.Model.Call(b.span))
                     let promoted_init this.restamp_operand_life(collapsed, promote_life)
@@ -13449,6 +13465,46 @@ define Planner
                 }
             }
             false
+        }
+
+        ; is_local_ref_pointer: the REFERENCE half of is_reference_to_local_
+        ; page# — true ONLY when `t` is a pointer/ref whose inner pointee has
+        ; Local life (a genuine `&<frame-local>` reference). It deliberately
+        ; OMITS the leading `t.life==Local` clause, which also matches a Local-
+        ; life VALUE type (e.g. a type-metadata PlannedType returned by copy
+        ; into sret — find_break_type_in_*). Used by plan_binding#'s step-3
+        ; gap-1 exclusion: a binding holding such a reference is not a
+        ; relocatable allocation and must not be promoted, but a Local-life
+        ; value binding stays promotable (returned by copy, no dangle).
+        function is_local_ref_pointer(t: PlannedType) returns bool
+        {
+            var result false
+            var is_ref_like false
+            if t.name.equals("pointer")
+                set is_ref_like: true
+            if t.name.equals("ref")
+                set is_ref_like: true
+            if is_ref_like
+            {
+                if t.generics <> null
+                {
+                    let gens (*t.generics)
+                    if gens.length > (0 as size_t)
+                    {
+                        let inner_ptr gens.get 0
+                        if inner_ptr <> null
+                        {
+                            let inner (*inner_ptr)
+                            choose inner.life
+                                when loc: Local
+                                    set result: true
+                                else
+                                    0
+                        }
+                    }
+                }
+            }
+            result
         }
 
         ; ================================================================

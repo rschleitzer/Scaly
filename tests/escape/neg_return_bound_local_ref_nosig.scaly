@@ -1,0 +1,24 @@
+; ESCAPE (negative, NO-SIGIL): provenance flows through a binding. Taking
+; `&<frame-local>` into a `let`, then returning that binding, still escapes —
+; the bound pointer points into this frame and dangles at function exit.
+; Escape soundness step 3: the gap-1 backward-promotion must NOT promote a
+; binding whose initializer is a Local-page reference (it is not a relocatable
+; allocation); the Local pointee survives on the binding type so the return
+; check fires. Mirrors neg_return_local_ptr with an intervening binding.
+define Box
+(
+    v: int
+)
+
+function leak() returns pointer[Box]
+{
+    let b Box(5)
+    let r &b
+    return r
+}
+
+function main() returns int
+{
+    let p leak()
+    return (*p).v
+}
