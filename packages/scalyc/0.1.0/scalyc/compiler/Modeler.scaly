@@ -1822,6 +1822,35 @@ function handle_operator(syntax: OperatorSyntax, is_private: bool) returns Opera
 ; Initializer handling
 ; ============================================================================
 
+; True when `t` is exactly `pointer[Page]` (or `pointer[scaly.memory.Page]`),
+; the typed form of the implicit init page parameter. Used to peel a
+; de-sigiled `init(page: pointer[Page], ...)` exactly like `init#(page, ...)`.
+function type_is_pointer_page(t: Type) returns bool
+{
+    if t.name.length <> 1
+        return false
+    let outer_ptr t.name.get 0
+    if outer_ptr = null
+        return false
+    if (*outer_ptr).equals("pointer") = false
+        return false
+    if t.generics = null
+        return false
+    let gens (*t.generics)
+    if gens.length <> 1
+        return false
+    let inner_ptr gens.get 0
+    if inner_ptr = null
+        return false
+    let inner (*inner_ptr)
+    if inner.name.length = 0
+        return false
+    let last_seg inner.name.get(inner.name.length - 1)
+    if last_seg = null
+        return false
+    (*last_seg).equals("Page")
+}
+
 function handle_initializer(syntax: InitSyntax, is_private: bool) returns Initializer
 {
     var input Vector[Item](0)
@@ -1839,11 +1868,12 @@ function handle_initializer(syntax: InitSyntax, is_private: bool) returns Initia
     var final_input: Vector[Item] input
     ; Decide whether to peel an implicit page parameter. Two triggers:
     ; (1) the `#` (Call) lifetime sigil — `init#(page, ...)`.
-    ; (2) Task 4 de-sigiled form — a TYPELESS first parameter named `page` or
-    ;     `rp` (`init(page, length)` / `init(rp, builder)`). A real user
-    ;     parameter is TYPED, so this is unambiguous: BlockWatermark's
-    ;     `init(p: pointer[Page], ...)` has a typed first param and is NOT
-    ;     peeled, and `init(size: size_t)` keeps `size` as a user arg.
+    ; (2) Task 4 de-sigiled form — a first parameter named `page` or `rp` that
+    ;     is either TYPELESS (`init(page, length)` / `init(rp, builder)`) or
+    ;     typed exactly `pointer[Page]` (`init(page: pointer[Page], ...)`). The
+    ;     name+type pairing is unambiguous: a real user `pointer[Page]` param
+    ;     under any other name is NOT peeled, and `init(size: size_t)` keeps
+    ;     `size` as a user arg.
     var should_peel: bool false
     if syntax.lifetime <> null
     {
@@ -1861,15 +1891,26 @@ function handle_initializer(syntax: InitSyntax, is_private: bool) returns Initia
             let fp0 input.get 0
             if fp0 <> null
             {
-                if fp0.type = null
+                if fp0.name <> null
                 {
-                    if fp0.name <> null
+                    let pn0 (*fp0.name)
+                    var name_is_page: bool false
+                    if pn0.equals("page")
+                        set name_is_page: true
+                    if pn0.equals("rp")
+                        set name_is_page: true
+                    if name_is_page
                     {
-                        let pn0 (*fp0.name)
-                        if pn0.equals("page")
+                        ; (2a) typeless page/rp param
+                        if fp0.type = null
                             set should_peel: true
-                        if pn0.equals("rp")
-                            set should_peel: true
+                        ; (2b) typed pointer[Page] page/rp param
+                        if fp0.type <> null
+                        {
+                            let ty0 (*fp0.type)
+                            if type_is_pointer_page(ty0)
+                                set should_peel: true
+                        }
                     }
                 }
             }
