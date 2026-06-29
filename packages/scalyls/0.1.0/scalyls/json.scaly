@@ -219,7 +219,7 @@ define json
         json.expect(p, 0x7B as u8)         ; '{'
         json.skip_ws p
 
-        var members List[JsonMember]$()
+        var members List[JsonMember]()
         var count: size_t 0
 
         if json.peek(p) = (0x7D as u8)     ; empty object '}'
@@ -267,7 +267,7 @@ define json
         json.expect(p, 0x5B as u8)         ; '['
         json.skip_ws p
 
-        var items List[JsonValue]$()
+        var items List[JsonValue]()
         var count: size_t 0
 
         if json.peek(p) = (0x5D as u8)     ; empty array ']'
@@ -631,7 +631,7 @@ define json
         }
 
         ; Collect digits least-significant first, then emit reversed.
-        var digits Array[char]$()
+        var digits Array[char]()
         while value > 0
         {
             let digit ((value % 10) as char) + (0x30 as char)

@@ -63,7 +63,7 @@ define diagnostics
         var first true
         let path diagnostics.strip_uri#(uri)
 
-        var p parser.Parser$(text)
+        var p parser.Parser(text)
         choose p.parse_program#()
             when err: Error
             {
@@ -86,7 +86,7 @@ define diagnostics
                 let prog_name "document"
                 let model Modeler.build_program#(path, prog_name, program, true)
 
-                var planner Planner.Planner$(path)
+                var planner Planner.Planner(path)
                 diagnostics.register_packages(&planner, &model)
                 let plan planner.plan_program model
 

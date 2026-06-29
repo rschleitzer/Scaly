@@ -178,7 +178,7 @@ define semantic
     ; Run the full pipeline and walk the Plan for the type at `offset`.
     function resolve_at#(rp, source: String, path: String, mode: size_t, offset: size_t) returns String
     {
-        var p parser.Parser$(source)
+        var p parser.Parser(source)
         var result ""
         choose p.parse_program#()
             when err: Error
@@ -187,7 +187,7 @@ define semantic
             {
                 let prog_name "document"
                 let model Modeler.build_program#(path, prog_name, program, true)
-                var planner Planner.Planner$(path)
+                var planner Planner.Planner(path)
                 diagnostics.register_packages(&planner, &model)
                 let plan planner.plan_program model
                 if plan <> null

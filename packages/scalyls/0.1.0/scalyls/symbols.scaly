@@ -113,7 +113,7 @@ define symbols
         var sb StringBuilder#()
         sb.append(0x5B as char)                    ; [
 
-        var p parser.Parser$(source)
+        var p parser.Parser(source)
         choose p.parse_program#()
             when err: Error {}
             when program: Success
@@ -550,7 +550,7 @@ define symbols
         var sb StringBuilder#()
         sb.append(0x5B as char)                    ; [
 
-        var p parser.Parser$(source)
+        var p parser.Parser(source)
         choose p.parse_program#()
             when err: Error {}
             when program: Success
@@ -1857,7 +1857,7 @@ define symbols
     function scope_table#(rp, source: String) returns String
     {
         var sb StringBuilder#()
-        var p parser.Parser$(source)
+        var p parser.Parser(source)
         choose p.parse_program#()
             when err: Error {}
             when program: Success
@@ -2132,7 +2132,7 @@ define symbols
         var sb StringBuilder#()
         sb.append(0x5B as char)                    ; [
 
-        var p parser.Parser$(source)
+        var p parser.Parser(source)
         choose p.parse_program#()
             when err: Error {}
             when program: Success
@@ -2879,7 +2879,7 @@ define symbols
     ; or a method's return type. "" when the concept or member is not found here.
     function member_type#(rp, source: String, type_name: String, member_name: String) returns String
     {
-        var p parser.Parser$(source)
+        var p parser.Parser(source)
         var result ""
         choose p.parse_program#()
             when err: Error
@@ -3128,7 +3128,7 @@ define symbols
     ; found / no return type.
     function function_return_type#(rp, source: String, fname: String) returns String
     {
-        var p parser.Parser$(source)
+        var p parser.Parser(source)
         var result ""
         choose p.parse_program#()
             when err: Error
@@ -3484,7 +3484,7 @@ define symbols
     ; non-empty string), distinguishing it from the not-found "".
     function member_completions#(rp, source: String, receiver: String) returns String
     {
-        var p parser.Parser$(source)
+        var p parser.Parser(source)
         var result ""
         choose p.parse_program#()
             when err: Error
@@ -3722,7 +3722,7 @@ define symbols
     function hover_at#(rp, source: String, line: size_t, character: size_t) returns String
     {
         let offset symbols.position_to_offset#(source, line, character)
-        var p parser.Parser$(source)
+        var p parser.Parser(source)
         var result ""
         choose p.parse_program#()
             when err: Error
@@ -4083,7 +4083,7 @@ define symbols
     ; `name`, or "" on no match / parse error.
     function find_definition#(rp, source: String, uri: String, name: String) returns String
     {
-        var p parser.Parser$(source)
+        var p parser.Parser(source)
         var result ""
         choose p.parse_program#()
             when err: Error
@@ -5232,7 +5232,7 @@ define symbols
         let home getenv "SCALY_HOME"
         if home = null
             return ""
-        var home_str String$(home)
+        var home_str String(home)
         if home_str.get_length() = (0 as size_t)
             return ""
         var sb StringBuilder#()
@@ -5482,7 +5482,7 @@ define symbols
     ; builders below concatenate fragments rather than comma-joining.
     function workspace_symbols_in_file#(rp, source: String, uri: String) returns String
     {
-        var p parser.Parser$(source)
+        var p parser.Parser(source)
         var sb StringBuilder#()
         choose p.parse_program#()
             when err: Error {}
@@ -8056,7 +8056,7 @@ define symbols
     function binding_map#(rp, source: String) returns String
     {
         var sb StringBuilder#()
-        var p parser.Parser$(source)
+        var p parser.Parser(source)
         choose p.parse_program#()
             when err: Error {}
             when program: Success
@@ -8798,7 +8798,7 @@ define symbols
     ; procedure / operator / method named `name`, or "" on no match / parse error.
     function find_signature#(rp, source: String, name: String, active: size_t) returns String
     {
-        var p parser.Parser$(source)
+        var p parser.Parser(source)
         var result ""
         choose p.parse_program#()
             when err: Error

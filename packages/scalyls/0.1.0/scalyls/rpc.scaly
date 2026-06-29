@@ -71,7 +71,7 @@ define rpc
         ; ---- headers: read lines until a blank line ----
         while true
         {
-            var line StringBuilder$()
+            var line StringBuilder()
             var eof false
 
             while true
@@ -139,7 +139,7 @@ define rpc
     {
         let len body.get_length()
 
-        var sb StringBuilder$()
+        var sb StringBuilder()
         sb.append "Content-Length: "
         ; A StringBuilder mutated across a function boundary does not
         ; propagate (the receiver is copied), so the size is formatted
@@ -185,7 +185,7 @@ define rpc
 
         var sb StringBuilder#()
         var value n
-        var digits Array[char]$()
+        var digits Array[char]()
         while value > (0 as size_t)
         {
             let digit ((value % 10) as char) + (0x30 as char)
@@ -246,7 +246,7 @@ define rpc
 
         while true
         {
-            var line StringBuilder$()
+            var line StringBuilder()
             var eof false
 
             while true
@@ -317,7 +317,7 @@ define rpc
     {
         let len body.get_length()
 
-        var sb StringBuilder$()
+        var sb StringBuilder()
         sb.append "Content-Length: "
         sb.append(rpc.format_size#(len))
         sb.append(13 as char)
