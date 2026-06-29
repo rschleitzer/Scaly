@@ -1224,13 +1224,13 @@ define Planner
             version: String
         ) returns String
         {
-            let step1 Path.join^rp(base, name)
-            let step2 Path.join^rp(step1, version)
+            let step1 Path.join(base, name)
+            let step2 Path.join(step1, version)
             var file_sb StringBuilder()
             file_sb.append name
             file_sb.append ".scaly"
             let file_part file_sb.to_string^rp()
-            Path.join^rp(step2, file_part)
+            Path.join(step2, file_part)
         }
 
         ; register_loaded_package: pre-populate the package cache.
@@ -1287,7 +1287,7 @@ define Planner
             name_sb.append module_name
             name_sb.append ".scaly"
             let file_part name_sb.to_string^rp()
-            let mod_path Path.join^rp(base_path, file_part)
+            let mod_path Path.join(base_path, file_part)
 
             this.lookup_loaded_module_path(mod_path)
         }
@@ -2244,7 +2244,7 @@ define Planner
 
             PlannedType(
                 loc,
-                String^rp(concept_name),
+                String(concept_name),
                 mangled,
                 &args_holder,
                 Lifetime.Unspecified(Unspecified()),
@@ -2556,7 +2556,7 @@ define Planner
                     var ns_parent_holder Vector[PlannedType]^rp(1)
                     ns_parent_holder.put(0, PlannedType(
                         Span(0, 0),
-                        String^rp(cnsn),
+                        String(cnsn),
                         Planner.encode_name cnsn,
                         null,
                         Lifetime.Unspecified(Unspecified()),
@@ -3150,7 +3150,7 @@ define Planner
                         {
                             let lc_cap_ty (*lc_cap_lb).binding_type
                             let lc_cap_mut (*lc_cap_lb).is_mutable
-                            let lc_cap_var PlannedVariable(head_loc, String^rp(lc_capn), lc_cap_ty, lc_cap_mut)
+                            let lc_cap_var PlannedVariable(head_loc, String(lc_capn), lc_cap_ty, lc_cap_mut)
                             lc_full_args.add(PlannedOperand(head_loc, PlannedExpression.Variable lc_cap_var, null, lc_cap_ty))
                         }
                     }
@@ -5577,7 +5577,7 @@ define Planner
                                             var ns_parent_holder Vector[PlannedType]^rp(1)
                                             ns_parent_holder.put(0, PlannedType(
                                                 result.loc,
-                                                String^rp(prefix),
+                                                String(prefix),
                                                 Planner.encode_name prefix,
                                                 null,
                                                 Lifetime.Unspecified(Unspecified()),
@@ -6039,7 +6039,7 @@ define Planner
                                             var sparent_holder Vector[PlannedType]^rp(1)
                                             sparent_holder.put(0, PlannedType(
                                                 result.loc,
-                                                String^rp(prefix),
+                                                String(prefix),
                                                 Planner.encode_name prefix,
                                                 null,
                                                 Lifetime.Unspecified(Unspecified()),
@@ -8939,7 +8939,7 @@ define Planner
             let tv_ref holder.get 0
             PlannedType(
                 Span(0, 0),
-                String^rp(debug_name),
+                String(debug_name),
                 "",
                 null,
                 Lifetime.Unspecified(Unspecified()),
@@ -9092,7 +9092,7 @@ define Planner
                         return PlannedType(
                             after_subst.loc,
                             after_subst.name,
-                            sb.to_string^rp(),
+                            sb.to_string(),
                             &canon_gens,
                             after_subst.life,
                             after_subst.origin,
@@ -9153,11 +9153,11 @@ define Planner
                             return PlannedType(
                                 after_subst.loc,
                                 "pointer",
-                                ptr_sb.to_string^rp(),
+                                ptr_sb.to_string(),
                                 &elem_holder,
                                 after_subst.life,
                                 null,
-                                String^rp(size_name),
+                                String(size_name),
                                 null
                             )
                         }
@@ -10917,7 +10917,7 @@ define Planner
                         {
                             let cty (*lb).binding_type
                             let cmut (*lb).is_mutable
-                            let cvar PlannedVariable(lam.span, String^rp(cn), cty, cmut)
+                            let cvar PlannedVariable(lam.span, String(cn), cty, cmut)
                             let cop PlannedOperand(lam.span, PlannedExpression.Variable cvar, null, cty)
                             cap_ops.add cop
                             cap_tys.add cty
@@ -17217,7 +17217,7 @@ define Planner
             var parent_holder Vector[PlannedType]^rp(1)
             parent_holder.put(0, PlannedType(
                 s.span,
-                String^rp(name),
+                String(name),
                 mangled,
                 gens_ref,
                 Lifetime.Unspecified(Unspecified()),
@@ -17285,7 +17285,7 @@ define Planner
                 s.span,
                 s.private_,
                 false,
-                String^rp(name),
+                String(name),
                 mangled,
                 &props_holder,
                 &inits_holder,
@@ -17383,7 +17383,7 @@ define Planner
             var parent_holder Vector[PlannedType]^rp(1)
             parent_holder.put(0, PlannedType(
                 s.span,
-                String^rp(name),
+                String(name),
                 mangled,
                 null,
                 Lifetime.Unspecified(Unspecified()),
@@ -17423,7 +17423,7 @@ define Planner
                 s.span,
                 s.private_,
                 false,
-                String^rp(name),
+                String(name),
                 mangled,
                 &props_holder,
                 &inits_holder,
@@ -17750,7 +17750,7 @@ define Planner
                 set mangled: String^rp(name)
             let result PlannedGlobal(
                 g.span,
-                String^rp(name),
+                String(name),
                 mangled,
                 planned_type,
                 &value_holder,
@@ -17782,7 +17782,7 @@ define Planner
             var parent_holder Vector[PlannedType]^rp(1)
             parent_holder.put(0, PlannedType(
                 ns.span,
-                String^rp(name),
+                String(name),
                 ns_mangled,
                 null,
                 Lifetime.Unspecified(Unspecified()),
@@ -17853,7 +17853,7 @@ define Planner
 
             PlannedNamespace(
                 ns.span,
-                String^rp(name),
+                String(name),
                 ns_mangled,
                 null,
                 &funcs_holder,
@@ -18618,7 +18618,7 @@ define Planner
             var u_parent_holder Vector[PlannedType]^rp(1)
             u_parent_holder.put(0, PlannedType(
                 u.span,
-                String^rp(name),
+                String(name),
                 u_mangled,
                 u_gens_ref,
                 Lifetime.Unspecified(Unspecified()),
@@ -18664,7 +18664,7 @@ define Planner
             let result scalyc.compiler.Plan.PlannedUnion(
                 u.span,
                 u.private_,
-                String^rp(name),
+                String(name),
                 u_mangled,
                 &vs_holder,
                 &methods_holder,
@@ -20379,8 +20379,8 @@ define Planner
     {
         PlannedType(
             Span(0, 0),
-            String^rp(name),
-            String^rp(mangled),
+            String(name),
+            String(mangled),
             null,
             Lifetime.Unspecified(Unspecified()),
             null,
@@ -20422,7 +20422,7 @@ define Planner
         PlannedType(
             Span(0, 0),
             "pointer",
-            sb.to_string^rp(),
+            sb.to_string(),
             &gens,
             Lifetime.Unspecified(Unspecified()),
             null,
@@ -20444,12 +20444,12 @@ define Planner
     {
         let local_inner PlannedType(
             inner.loc,
-            String^rp(inner.name),
-            String^rp(inner.mangled_name),
+            String(inner.name),
+            String(inner.mangled_name),
             inner.generics,
             Lifetime.Local(scalyc.compiler.Model.Local(inner.loc)),
             inner.origin,
-            String^rp(inner.array_size),
+            String(inner.array_size),
             inner.variable
         )
         Planner.make_pointer_type(local_inner)
@@ -20476,24 +20476,24 @@ define Planner
         let inner (*inner_ptr)
         let local_inner PlannedType(
             inner.loc,
-            String^rp(inner.name),
-            String^rp(inner.mangled_name),
+            String(inner.name),
+            String(inner.mangled_name),
             inner.generics,
             Lifetime.Local(scalyc.compiler.Model.Local(inner.loc)),
             inner.origin,
-            String^rp(inner.array_size),
+            String(inner.array_size),
             inner.variable
         )
         var new_gens Vector[PlannedType]^rp(1)
         new_gens.put(0, local_inner)
         PlannedType(
             t.loc,
-            String^rp(t.name),
-            String^rp(t.mangled_name),
+            String(t.name),
+            String(t.mangled_name),
             &new_gens,
             t.life,
             t.origin,
-            String^rp(t.array_size),
+            String(t.array_size),
             t.variable
         )
     }
@@ -20531,12 +20531,12 @@ define Planner
         }
         PlannedType(
             t.loc,
-            String^rp(t.name),
-            String^rp(t.mangled_name),
+            String(t.name),
+            String(t.mangled_name),
             gens_ref,
             t.life,
             t.origin,
-            String^rp(t.array_size),
+            String(t.array_size),
             t.variable
         )
     }
