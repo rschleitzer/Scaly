@@ -11,29 +11,29 @@ define StringBuilder
 
     init (page)
     {
-        set buffer: Array[char]^page()
+        set buffer: Array[char]^this()
     }
 
     init (page, size: size_t)
     {
-        set buffer: Array[char]^page(size)
+        set buffer: Array[char]^this(size)
     }
 
     init (page, character: char)
     {
-        set buffer: Array[char]^page()
+        set buffer: Array[char]^this()
         append character
     }
 
     init (page, string: String)
     {
-        set buffer: Array[char]^page()
+        set buffer: Array[char]^this()
         append string
     }
 
     init (page, c_string: pointer[const_char])
     {
-        set buffer: Array[char]^page()
+        set buffer: Array[char]^this()
         append c_string
     }
 
