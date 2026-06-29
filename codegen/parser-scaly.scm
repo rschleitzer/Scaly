@@ -92,8 +92,8 @@ define Parser
     init(rp, text: String)
     {
         set lexer: Lexer(text)
-        set keywords_index: initialize_keywords_index#()
-        set keywords: initialize_keywords#()
+        set keywords_index: initialize_keywords_index()
+        set keywords: initialize_keywords()
     }
 
     function initialize_keywords_index(this: Parser) returns Vector[String]

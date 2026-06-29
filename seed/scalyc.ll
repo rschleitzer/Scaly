@@ -57946,15 +57946,17 @@ entry:
   %field.load = load %_Z5Lexer, ptr %ctor.heap, align 8
   store %_Z5Lexer %field.load, ptr %lexer, align 8
   %sret.result = alloca %_Z6VectorI6StringE, align 8
-  call void @_ZN6Parser25initialize_keywords_indexEPN4scaly6memory4PageE(ptr noalias sret(%_Z6VectorI6StringE) %sret.result, ptr %1, ptr %0)
+  %own_page = call ptr @_Z3getPv(ptr %0)
+  call void @_ZN6Parser25initialize_keywords_indexEPN4scaly6memory4PageE(ptr noalias sret(%_Z6VectorI6StringE) %sret.result, ptr %own_page, ptr %0)
   %keywords_index = getelementptr inbounds %_Z6Parser, ptr %0, i32 0, i32 1
   %field.load1 = load %_Z6VectorI6StringE, ptr %sret.result, align 8
   store %_Z6VectorI6StringE %field.load1, ptr %keywords_index, align 8
   %sret.result2 = alloca %_Z7HashSetI6StringE, align 8
-  call void @_ZN6Parser19initialize_keywordsEPN4scaly6memory4PageE(ptr noalias sret(%_Z7HashSetI6StringE) %sret.result2, ptr %1, ptr %0)
+  %own_page3 = call ptr @_Z3getPv(ptr %0)
+  call void @_ZN6Parser19initialize_keywordsEPN4scaly6memory4PageE(ptr noalias sret(%_Z7HashSetI6StringE) %sret.result2, ptr %own_page3, ptr %0)
   %keywords = getelementptr inbounds %_Z6Parser, ptr %0, i32 0, i32 2
-  %field.load3 = load %_Z7HashSetI6StringE, ptr %sret.result2, align 8
-  store %_Z7HashSetI6StringE %field.load3, ptr %keywords, align 8
+  %field.load4 = load %_Z7HashSetI6StringE, ptr %sret.result2, align 8
+  store %_Z7HashSetI6StringE %field.load4, ptr %keywords, align 8
   ret void
 }
 
@@ -85523,7 +85525,7 @@ if.then23:                                        ; preds = %if.end
   ret void
 
 if.end24:                                         ; preds = %if.end
-  call void @_ZN4File14read_to_stringEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result25, ptr %1, ptr %sret.result)
+  call void @_ZN4File14read_to_stringEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result25, ptr %local_page, ptr %sret.result)
   store ptr %sret.result25, ptr %contents, align 1
   %contents26 = load ptr, ptr %contents, align 8
   %call27 = call i64 @_ZN6String10get_lengthEv(ptr %contents26)
