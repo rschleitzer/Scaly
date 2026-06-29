@@ -113,7 +113,7 @@ define json
     }
 
     ; Returns a copy of the string payload, or an empty String otherwise.
-    function as_string#(rp, this: JsonValue) returns String
+    function as_string(rp, this: JsonValue) returns String
     {
         choose this
             when s: Str
@@ -314,7 +314,7 @@ define json
         }
 
         json.advance p                    ; opening quote
-        var sb StringBuilder#()
+        var sb StringBuilder()
 
         while true
         {
@@ -322,13 +322,13 @@ define json
             if c = (0 as u8)            ; EOF before close
             {
                 set p.ok: false
-                return sb.to_string#()
+                return sb.to_string()
             }
 
             if c = (0x22 as u8)         ; closing quote
             {
                 json.advance p
-                return sb.to_string#()
+                return sb.to_string()
             }
 
             if c = (0x5C as u8)            ; backslash escape
@@ -345,7 +345,7 @@ define json
             }
         }
 
-        sb.to_string#()
+        sb.to_string()
     }
 
     ; Maps an escape letter to its byte. For \u, reads four hex digits and
@@ -388,7 +388,7 @@ define json
         e as char
     }
 
-    function parse_number(p: pointer[JsonParser]) returns i64
+    function parse_number#(p: pointer[JsonParser]) returns i64
     {
         var negative false
         if json.peek(p) = (0x2D as u8)  ; '-'
@@ -498,14 +498,14 @@ define json
     ; returns String pieces (a StringBuilder does not propagate when passed
     ; across a function boundary). This relies on two stage-0 planner fixes
     ; (s197): a method call on a call result with a lifetime — e.g.
-    ; sb.append(json.format_i64#(n)) is fine, but `expr#(x).to_c_string$()`
+    ; sb.append(json.format_i64(n)) is fine, but `expr(x).to_c_string$()`
     ; was dropped — and a recursive namespace call whose first param is
-    ; named `this` (json.stringify#(...) calling itself). Both are now
+    ; named `this` (json.stringify(...) calling itself). Both are now
     ; handled; see Planner.cpp processChainedMethodCalls + the namespace
     ; sibling arg-count match.
     ; ====================================================================
 
-    function stringify#(rp, this: JsonValue) returns String
+    function stringify(rp, this: JsonValue) returns String
     {
         ; Every arm uses an explicit `return`: in a choose that mixes
         ; explicit-return arms with bare-expression arms, the bare arms
@@ -520,12 +520,12 @@ define json
                 return "false"
             }
             when n: Number
-                return json.format_i64#(n)
+                return json.format_i64(n)
             when s: Str
-                return json.quote_string#(s)
+                return json.quote_string(s)
             when arr: Array
             {
-                var sb StringBuilder#()
+                var sb StringBuilder()
                 sb.append(0x5B as char)    ; '['
                 var i: size_t 0
                 while i < arr.count
@@ -533,15 +533,15 @@ define json
                     if i > (0 as size_t)
                         sb.append(0x2C as char)       ; ','
 
-                    sb.append(json.stringify#(*(arr.items + i)))
+                    sb.append(json.stringify(*(arr.items + i)))
                     set i: i + 1
                 }
                 sb.append(0x5D as char)    ; ']'
-                return sb.to_string#()
+                return sb.to_string()
             }
             when obj: Object
             {
-                var sb StringBuilder#()
+                var sb StringBuilder()
                 sb.append(0x7B as char)    ; '{'
                 var i: size_t 0
                 while i < obj.count
@@ -550,22 +550,22 @@ define json
                         sb.append(0x2C as char)
 
                     let mm (*(obj.members + i))
-                    sb.append(json.quote_string#(mm.key))
+                    sb.append(json.quote_string(mm.key))
                     sb.append(0x3A as char)           ; ':'
-                    sb.append(json.stringify#(mm.value))
+                    sb.append(json.stringify(mm.value))
                     set i: i + 1
                 }
                 sb.append(0x7D as char)    ; '}'
-                return sb.to_string#()
+                return sb.to_string()
             }
             else
                 return "null"
     }
 
     ; Quote and escape a string into a "..."-wrapped JSON string literal.
-    function quote_string#(rp, s: String) returns String
+    function quote_string(rp, s: String) returns String
     {
-        var sb StringBuilder#()
+        var sb StringBuilder()
         sb.append(0x22 as char)            ; opening '"'
         let len s.get_length()
         var i: size_t 0
@@ -614,15 +614,15 @@ define json
             set i: i + 1
         }
         sb.append(0x22 as char)            ; closing '"'
-        sb.to_string#()
+        sb.to_string()
     }
 
-    function format_i64#(rp, n: i64) returns String
+    function format_i64(rp, n: i64) returns String
     {
         if n = 0
             return "0"
 
-        var sb StringBuilder#()
+        var sb StringBuilder()
         var value n
         if value < 0
         {
@@ -647,6 +647,6 @@ define json
             if d <> null
                 sb.append(*d)
         }
-        sb.to_string#()
+        sb.to_string()
     }
 }

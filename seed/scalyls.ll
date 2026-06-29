@@ -2464,7 +2464,7 @@ lor.end:                                          ; preds = %lor.rhs, %if.end29
 if.then37:                                        ; preds = %lor.end
   %variant.tag.ptr39 = getelementptr inbounds %_Z9JsonValue, ptr %sret.result, i32 0, i32 0
   store i8 2, ptr %variant.tag.ptr39, align 1
-  %call40 = call i64 @_ZN4json12parse_numberEP10JsonParser(ptr %2)
+  %call40 = call i64 @_ZN4json12parse_numberEPN4scaly6memory4PageEP10JsonParser(ptr %1, ptr %2)
   %variant.data.ptr41 = getelementptr inbounds %_Z9JsonValue, ptr %sret.result, i32 0, i32 1
   store i64 %call40, ptr %variant.data.ptr41, align 1
   %variant.val42 = load %_Z9JsonValue, ptr %sret.result, align 1
@@ -2830,6 +2830,7 @@ entry:
   %sret.result10 = alloca { ptr }, align 8
   %sret.result = alloca { ptr }, align 8
   %sb = alloca ptr, align 8
+  %local_page = call ptr @_Z21scaly_alloc_root_pagev()
   %struct.init = alloca { ptr }, align 8
   %call = call i8 @_ZN4json4peekEP10JsonParser(ptr %2)
   %ne = icmp ne i8 %call, 34
@@ -2842,12 +2843,13 @@ if.then:                                          ; preds = %entry
   store ptr null, ptr %tuple.field, align 8
   %sret.body = load { ptr }, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z23scaly_release_root_pageP4Page(ptr %local_page)
   ret void
 
 if.end:                                           ; preds = %entry
   call void @_ZN4json7advanceEP10JsonParser(ptr %2)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN13StringBuilderC1EPN4scaly6memory4PageE(ptr %struct.region, ptr %1)
+  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
+  call void @_ZN13StringBuilderC1EPN4scaly6memory4PageE(ptr %struct.region, ptr %local_page)
   store ptr %struct.region, ptr %sb, align 1
   br label %while.cond
 
@@ -2862,6 +2864,7 @@ while.body:                                       ; preds = %while.cond
 while.exit:                                       ; preds = %while.cond
   %sb21 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result20, ptr %1, ptr %sb21)
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   %sret.body22 = load { ptr }, ptr %sret.result20, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result20, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -2871,6 +2874,7 @@ if.then2:                                         ; preds = %while.body
   store i1 false, ptr %ok4, align 1
   %sb5 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sb5)
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   %sret.body6 = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -2883,6 +2887,7 @@ if.then8:                                         ; preds = %if.end3
   call void @_ZN4json7advanceEP10JsonParser(ptr %2)
   %sb11 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result10, ptr %1, ptr %sb11)
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   %sret.body12 = load { ptr }, ptr %sret.result10, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result10, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -2980,18 +2985,18 @@ lor.end:                                          ; preds = %lor.rhs, %entry
   ret i1 %lor.result
 }
 
-define linkonce_odr i64 @_ZN4json12parse_numberEP10JsonParser(ptr %0) {
+define linkonce_odr i64 @_ZN4json12parse_numberEPN4scaly6memory4PageEP10JsonParser(ptr %0, ptr %1) {
 entry:
   %value = alloca i64, align 8
   %negative = alloca i1, align 1
   store i1 false, ptr %negative, align 1
-  %call = call i8 @_ZN4json4peekEP10JsonParser(ptr %0)
+  %call = call i8 @_ZN4json4peekEP10JsonParser(ptr %1)
   %eq = icmp eq i8 %call, 45
   br i1 %eq, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
   store i1 true, ptr %negative, align 1
-  call void @_ZN4json7advanceEP10JsonParser(ptr %0)
+  call void @_ZN4json7advanceEP10JsonParser(ptr %1)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -2999,28 +3004,28 @@ if.end:                                           ; preds = %if.then, %entry
   br label %while.cond
 
 while.cond:                                       ; preds = %while.body, %if.end
-  %call1 = call i8 @_ZN4json4peekEP10JsonParser(ptr %0)
+  %call1 = call i8 @_ZN4json4peekEP10JsonParser(ptr %1)
   %call2 = call i1 @_ZN4json8is_digitE2u8(i8 %call1)
   br i1 %call2, label %while.body, label %while.exit
 
 while.body:                                       ; preds = %while.cond
   %value3 = load i64, ptr %value, align 4
   %mul = mul i64 %value3, 10
-  %call4 = call i8 @_ZN4json4peekEP10JsonParser(ptr %0)
+  %call4 = call i8 @_ZN4json4peekEP10JsonParser(ptr %1)
   %sub = sub i8 %call4, 48
   %as.zext = zext i8 %sub to i64
   %add = add i64 %mul, %as.zext
   store i64 %add, ptr %value, align 1
-  call void @_ZN4json7advanceEP10JsonParser(ptr %0)
+  call void @_ZN4json7advanceEP10JsonParser(ptr %1)
   br label %while.cond
 
 while.exit:                                       ; preds = %while.cond
-  %call5 = call i8 @_ZN4json4peekEP10JsonParser(ptr %0)
+  %call5 = call i8 @_ZN4json4peekEP10JsonParser(ptr %1)
   %eq6 = icmp eq i8 %call5, 46
   br i1 %eq6, label %if.then7, label %if.end8
 
 if.then7:                                         ; preds = %while.exit
-  call void @_ZN4json7advanceEP10JsonParser(ptr %0)
+  call void @_ZN4json7advanceEP10JsonParser(ptr %1)
   br label %while.cond9
 
 if.end8:                                          ; preds = %while.exit11, %while.exit
@@ -3028,12 +3033,12 @@ if.end8:                                          ; preds = %while.exit11, %whil
   br i1 %negative14, label %if.then15, label %if.end16
 
 while.cond9:                                      ; preds = %while.body10, %if.then7
-  %call12 = call i8 @_ZN4json4peekEP10JsonParser(ptr %0)
+  %call12 = call i8 @_ZN4json4peekEP10JsonParser(ptr %1)
   %call13 = call i1 @_ZN4json8is_digitE2u8(i8 %call12)
   br i1 %call13, label %while.body10, label %while.exit11
 
 while.body10:                                     ; preds = %while.cond9
-  call void @_ZN4json7advanceEP10JsonParser(ptr %0)
+  call void @_ZN4json7advanceEP10JsonParser(ptr %1)
   br label %while.cond9
 
 while.exit11:                                     ; preds = %while.cond9
@@ -3526,16 +3531,18 @@ entry:
   %digits = alloca ptr, align 8
   %value = alloca i64, align 8
   %sb = alloca ptr, align 8
+  %local_page = call ptr @_Z21scaly_alloc_root_pagev()
   %eq = icmp eq i64 %2, 0
   br i1 %eq, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
   store { ptr } { ptr @.sconst.8 }, ptr %0, align 1
+  call void @_Z23scaly_release_root_pageP4Page(ptr %local_page)
   ret void
 
 if.end:                                           ; preds = %entry
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN13StringBuilderC1EPN4scaly6memory4PageE(ptr %struct.region, ptr %1)
+  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
+  call void @_ZN13StringBuilderC1EPN4scaly6memory4PageE(ptr %struct.region, ptr %local_page)
   store ptr %struct.region, ptr %sb, align 1
   store i64 %2, ptr %value, align 1
   %value1 = load i64, ptr %value, align 4
@@ -3601,6 +3608,7 @@ while.body14:                                     ; preds = %while.cond13
 while.exit15:                                     ; preds = %while.cond13
   %sb25 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sb25)
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -3618,8 +3626,9 @@ if.end23:                                         ; preds = %if.then22, %while.b
 define linkonce_odr void @_ZN4json12quote_stringEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2) {
 entry:
   %sret.result = alloca { ptr }, align 8
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN13StringBuilderC1EPN4scaly6memory4PageE(ptr %struct.region, ptr %1)
+  %local_page = call ptr @_Z21scaly_alloc_root_pagev()
+  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
+  call void @_ZN13StringBuilderC1EPN4scaly6memory4PageE(ptr %struct.region, ptr %local_page)
   %sb = alloca ptr, align 8
   store ptr %struct.region, ptr %sb, align 1
   %sb1 = load ptr, ptr %sb, align 8
@@ -3645,6 +3654,7 @@ while.exit:                                       ; preds = %while.cond
   call void @_ZN13StringBuilder6appendEc(ptr %sb33, i8 34)
   %sb34 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sb34)
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -3735,6 +3745,7 @@ entry:
   %deref.tmp = alloca %_Z9JsonValue, align 8
   %i = alloca i64, align 8
   %sb = alloca ptr, align 8
+  %local_page = call ptr @_Z21scaly_alloc_root_pagev()
   %arg.tmp = alloca { ptr }, align 8
   %sret.result = alloca { ptr }, align 8
   %tag.ptr = getelementptr inbounds %_Z9JsonValue, ptr %2, i32 0, i32 0
@@ -3749,9 +3760,11 @@ entry:
   ]
 
 choose.end:                                       ; No predecessors!
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   ret void
 
 choose.else:                                      ; preds = %entry
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   store { ptr } { ptr @.sconst.7 }, ptr %0, align 1
   ret void
 
@@ -3759,6 +3772,7 @@ choose.when:                                      ; preds = %entry
   %"variant.c_data().ptr" = getelementptr inbounds %_Z9JsonValue, ptr %2, i32 0, i32 1
   %variant.val = load %_Z8JsonNull, ptr %"variant.c_data().ptr", align 1
   store { ptr } { ptr @.sconst }, ptr %0, align 1
+  call void @_Z23scaly_release_root_pageP4Page(ptr %local_page)
   ret void
 
 choose.when1:                                     ; preds = %entry
@@ -3768,10 +3782,12 @@ choose.when1:                                     ; preds = %entry
 
 if.then:                                          ; preds = %choose.when1
   store { ptr } { ptr @.sconst.5 }, ptr %0, align 1
+  call void @_Z23scaly_release_root_pageP4Page(ptr %local_page)
   ret void
 
 if.end:                                           ; preds = %choose.when1
   store { ptr } { ptr @.sconst.6 }, ptr %0, align 1
+  call void @_Z23scaly_release_root_pageP4Page(ptr %local_page)
   ret void
 
 choose.when4:                                     ; preds = %entry
@@ -3780,6 +3796,7 @@ choose.when4:                                     ; preds = %entry
   call void @_ZN4json10format_i64EPN4scaly6memory4PageE3i64(ptr noalias sret({ ptr }) %sret.result, ptr %1, i64 %variant.val6)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z23scaly_release_root_pageP4Page(ptr %local_page)
   ret void
 
 choose.when7:                                     ; preds = %entry
@@ -3789,13 +3806,14 @@ choose.when7:                                     ; preds = %entry
   call void @_ZN4json12quote_stringEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %arg.tmp)
   %sret.body10 = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z23scaly_release_root_pageP4Page(ptr %local_page)
   ret void
 
 choose.when11:                                    ; preds = %entry
   %"variant.c_data().ptr12" = getelementptr inbounds %_Z9JsonValue, ptr %2, i32 0, i32 1
   %variant.val13 = load %_Z9JsonArray, ptr %"variant.c_data().ptr12", align 8
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN13StringBuilderC1EPN4scaly6memory4PageE(ptr %struct.region, ptr %1)
+  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
+  call void @_ZN13StringBuilderC1EPN4scaly6memory4PageE(ptr %struct.region, ptr %local_page)
   store ptr %struct.region, ptr %sb, align 1
   %sb14 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb14, i8 91)
@@ -3818,6 +3836,7 @@ while.exit:                                       ; preds = %while.cond
   call void @_ZN13StringBuilder6appendEc(ptr %sb23, i8 93)
   %sb24 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %arg.tmp, ptr %1, ptr %sb24)
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   %sret.body25 = load { ptr }, ptr %arg.tmp, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %arg.tmp, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -3833,7 +3852,7 @@ if.end18:                                         ; preds = %if.then17, %while.b
   %i21 = load i64, ptr %i, align 4
   %ptr.add = getelementptr inbounds %_Z9JsonValue, ptr %items, i64 %i21
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp, ptr align 1 %ptr.add, i64 ptrtoint (ptr getelementptr (%_Z9JsonValue, ptr null, i32 1) to i64), i1 false)
-  call void @_ZN4json9stringifyEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %deref.tmp)
+  call void @_ZN4json9stringifyEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %local_page, ptr %deref.tmp)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb20, ptr %sret.result)
   %i22 = load i64, ptr %i, align 4
   %add = add i64 %i22, 1
@@ -3843,8 +3862,8 @@ if.end18:                                         ; preds = %if.then17, %while.b
 choose.when26:                                    ; preds = %entry
   %"variant.c_data().ptr27" = getelementptr inbounds %_Z9JsonValue, ptr %2, i32 0, i32 1
   %variant.val28 = load %_Z10JsonObject, ptr %"variant.c_data().ptr27", align 8
-  %struct.region29 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN13StringBuilderC1EPN4scaly6memory4PageE(ptr %struct.region29, ptr %1)
+  %struct.region29 = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
+  call void @_ZN13StringBuilderC1EPN4scaly6memory4PageE(ptr %struct.region29, ptr %local_page)
   store ptr %struct.region29, ptr %sb, align 1
   %sb30 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb30, i8 123)
@@ -3867,6 +3886,7 @@ while.exit33:                                     ; preds = %while.cond31
   call void @_ZN13StringBuilder6appendEc(ptr %sb54, i8 125)
   %sb56 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result55, ptr %1, ptr %sb56)
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   %sret.body57 = load { ptr }, ptr %sret.result55, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result55, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -3885,14 +3905,14 @@ if.end40:                                         ; preds = %if.then39, %while.b
   %sb45 = load ptr, ptr %sb, align 8
   %key = extractvalue %_Z10JsonMember %grp.deref.val, 0
   store { ptr } %key, ptr %arg.tmp47, align 1
-  call void @_ZN4json12quote_stringEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result46, ptr %1, ptr %arg.tmp47)
+  call void @_ZN4json12quote_stringEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result46, ptr %local_page, ptr %arg.tmp47)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb45, ptr %sret.result46)
   %sb48 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb48, i8 58)
   %sb49 = load ptr, ptr %sb, align 8
   %value = extractvalue %_Z10JsonMember %grp.deref.val, 1
   store %_Z9JsonValue %value, ptr %arg.tmp51, align 1
-  call void @_ZN4json9stringifyEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result50, ptr %1, ptr %arg.tmp51)
+  call void @_ZN4json9stringifyEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result50, ptr %local_page, ptr %arg.tmp51)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb49, ptr %sret.result50)
   %i52 = load i64, ptr %i, align 4
   %add53 = add i64 %i52, 1
