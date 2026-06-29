@@ -786,7 +786,7 @@ define cli
         if n = 0
             return "0"
         var value n
-        var digits Array[char]$()
+        var digits Array[char]()
         while value > 0
         {
             let digit ((value % 10) as char) + 48 as char

@@ -1913,7 +1913,7 @@ define Emitter
             ; scan would free in-flight working slots (the enclosing
             ; choose's union slot between arms, while-condition
             ; temps) that no local references.
-            var cands Array[size_t]$()
+            var cands Array[size_t]()
             var di: size_t mark
             while di < local_var_values.length
             {

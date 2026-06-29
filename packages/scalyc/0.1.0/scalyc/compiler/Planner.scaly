@@ -797,7 +797,7 @@ define Planner
         ; monomorphization against the declared signature).
         function delegate_param_types(this: Planner, name: String) returns Vector[PlannedType]
         {
-            var result Array[PlannedType]$()
+            var result Array[PlannedType]()
             let c this.lookup_concept(name)
             if c <> null
                 choose (*c).definition
@@ -1193,7 +1193,7 @@ define Planner
         ; add_package_search_path.
         function build_package_search_paths(this: Planner) returns Vector[String]
         {
-            var paths Array[String]$()
+            var paths Array[String]()
             paths.add("packages")
 
             var i: size_t 0
@@ -1305,7 +1305,7 @@ define Planner
         ; argument-type compatibility.
         function lookup_functions(this: Planner, name: String) returns Vector[Function]
         {
-            var matches Array[Function]$()
+            var matches Array[Function]()
             var cur model_function_index.lookup_head name
             while cur <> (0 - 1) as i64
             {
@@ -1319,7 +1319,7 @@ define Planner
 
         function lookup_operators(this: Planner, name: String) returns Vector[Operator]
         {
-            var matches Array[Operator]$()
+            var matches Array[Operator]()
             var cur model_operator_index.lookup_head name
             while cur <> (0 - 1) as i64
             {
@@ -1531,7 +1531,7 @@ define Planner
             method_name: String
         ) returns Vector[Function]
         {
-            var matches Array[Function]$()
+            var matches Array[Function]()
             ; s106: when struct_name is namespaced under "scaly." or
             ; "scalyc.", retry with the bare type name if the qualified
             ; name doesn't match. Mirrors Planner.cpp:1447-1453.
@@ -1750,7 +1750,7 @@ define Planner
                                 let ini (*init_ptr)
                                 if ini.input.length = arg_types.length
                                 {
-                                    var param_types_arr Array[PlannedType]$()
+                                    var param_types_arr Array[PlannedType]()
                                     var pi: size_t 0
                                     while pi < ini.input.length
                                     {
@@ -1946,7 +1946,7 @@ define Planner
             actual: PlannedType
         ) returns Vector[KeyValuePair[String, PlannedType]]
         {
-            var result Array[KeyValuePair[String, PlannedType]]$()
+            var result Array[KeyValuePair[String, PlannedType]]()
 
             if Planner.is_generic_type_param_name(pattern.name)
             {
@@ -2017,7 +2017,7 @@ define Planner
             arg_types: Vector[PlannedType]
         ) returns Vector[KeyValuePair[String, PlannedType]]
         {
-            var result Array[KeyValuePair[String, PlannedType]]$()
+            var result Array[KeyValuePair[String, PlannedType]]()
             if param_types.length <> arg_types.length
                 return Vector[KeyValuePair[String, PlannedType]]^rp(result)
 
@@ -2428,7 +2428,7 @@ define Planner
             if expected_arity <> arg_types.length
                 return null
 
-            var planned_params_arr Array[PlannedType]$()
+            var planned_params_arr Array[PlannedType]()
             var j: size_t 0
             while j < arg_types.length
             {
@@ -2557,7 +2557,7 @@ define Planner
                         null
                     ))
                     let ns_parent_ref ns_parent_holder.get 0
-                    var items_arr Array[PlannedItem]$()
+                    var items_arr Array[PlannedItem]()
                     var pi2: size_t 0
                     while pi2 < params_holder.length
                     {
@@ -2683,7 +2683,7 @@ define Planner
             {
                 if this.is_namespace_this_method(prefix, suffix)
                 {
-                    var tail_arr Array[PlannedType]$()
+                    var tail_arr Array[PlannedType]()
                     var tci: size_t 1
                     while tci < arg_types.length
                     {
@@ -2823,7 +2823,7 @@ define Planner
                         let expected_arity f.input.length - param_start2
                         if expected_arity = arg_types.length
                         {
-                            var param_types_arr Array[PlannedType]$()
+                            var param_types_arr Array[PlannedType]()
                             var pi: size_t param_start2
                             while pi < f.input.length
                             {
@@ -3020,7 +3020,7 @@ define Planner
             if args.length < param_types.length
                 return Vector[PlannedOperand]^rp(args)
             let offset args.length - param_types.length
-            var out Array[PlannedOperand]$()
+            var out Array[PlannedOperand]()
             var ai: size_t 0
             while ai < args.length
             {
@@ -3095,8 +3095,8 @@ define Planner
         ; in scope) and prepended as leading arguments (capture by value).
         function resolve_lambda_call(this: Planner, head_loc: Span, lc_name: String, lc_lam: Lambda, lc_tp: PlannedTuple) returns PlannedOperand
         {
-            var lc_arg_ops Array[PlannedOperand]$()
-            var lc_arg_types Array[PlannedType]$()
+            var lc_arg_ops Array[PlannedOperand]()
+            var lc_arg_types Array[PlannedType]()
             if lc_tp.components <> null
             {
                 let lc_comps (*lc_tp.components)
@@ -3126,7 +3126,7 @@ define Planner
             ; Prepend the captured values (looked up at the call site, where they
             ; are in scope) as leading arguments — they map to the synthesized
             ; function's leading capture parameters.
-            var lc_full_args Array[PlannedOperand]$()
+            var lc_full_args Array[PlannedOperand]()
             if lc_mono.captures <> null
             {
                 let lc_caps (*lc_mono.captures)
@@ -3245,7 +3245,7 @@ define Planner
                                     null,
                                     void_ty
                                 )
-                                var two_arr Array[PlannedOperand]$()
+                                var two_arr Array[PlannedOperand]()
                                 two_arr.add only_op
                                 two_arr.add tuple_op
                                 var two_vec Vector[PlannedOperand]^rp(two_arr)
@@ -3365,7 +3365,7 @@ define Planner
                                     0
                             if dcall_is_tuple
                             {
-                                var dc_args Array[PlannedOperand]$()
+                                var dc_args Array[PlannedOperand]()
                                 dc_args.add ic_head
                                 choose ic_tail.expr
                                     when dtp: PlannedTuple
@@ -3482,7 +3482,7 @@ define Planner
                                 ; pair replaced by the single resolved call
                                 ; operand, then recurse on the strictly-shorter
                                 ; list.
-                                var lp_new Array[PlannedOperand]$()
+                                var lp_new Array[PlannedOperand]()
                                 var lp_k: size_t 0
                                 while lp_k < ops.length
                                 {
@@ -3560,7 +3560,7 @@ define Planner
 
             if has_gen_combo
             {
-                var merged_arr2 Array[PlannedOperand]$()
+                var merged_arr2 Array[PlannedOperand]()
                 var ci2: size_t 0
                 while ci2 < ops.length
                 {
@@ -3596,7 +3596,7 @@ define Planner
                                                     ; resolve correctly. Mirrors stage-0
                                                     ; Planner.cpp:7180-7214 (extractTypeFromRow).
                                                     var ok_extract: bool true
-                                                    var gens_arr Array[Type]$()
+                                                    var gens_arr Array[Type]()
                                                     if nm2.operations <> null
                                                     {
                                                         let rows (*nm2.operations)
@@ -3852,7 +3852,7 @@ define Planner
                 ; current op: if it is a Type AND the next op is a
                 ; lifetime marker, append the merged Type and skip
                 ; both. Otherwise append unmodified.
-                var merged_arr Array[PlannedOperand]$()
+                var merged_arr Array[PlannedOperand]()
                 var mi: size_t 0
                 while mi < ops.length
                 {
@@ -4151,7 +4151,7 @@ define Planner
                             }
                         }
 
-                        var rest_arr Array[PlannedOperand]$()
+                        var rest_arr Array[PlannedOperand]()
                         var r: size_t 1
                         while r < consumed
                         {
@@ -4327,7 +4327,7 @@ define Planner
                         ; with the prefix call as the new first operand.
                         if consumed >= ops.length
                             return prefix_op
-                        var cont_arr Array[PlannedOperand]$()
+                        var cont_arr Array[PlannedOperand]()
                         cont_arr.add prefix_op
                         var cc: size_t consumed
                         while cc < ops.length
@@ -4446,7 +4446,7 @@ define Planner
                                 null,
                                 sa_arg_op.result_type
                             )
-                            var sa_arr Array[PlannedOperand]$()
+                            var sa_arr Array[PlannedOperand]()
                             sa_arr.add result
                             sa_arr.add sa_tuple_op
                             var sa_vec Vector[PlannedOperand]^rp(sa_arr)
@@ -4752,7 +4752,7 @@ define Planner
                                         "init", &init_input_holder, parent_ref, has_page_param
                                     )
 
-                                    var ctor_call_args Array[PlannedOperand]$()
+                                    var ctor_call_args Array[PlannedOperand]()
                                     choose second.expr
                                         when tp_args: PlannedTuple
                                         {
@@ -4838,7 +4838,7 @@ define Planner
                                     ))
                                     if ops.length > 2
                                     {
-                                        var remaining_c Array[PlannedOperand]$()
+                                        var remaining_c Array[PlannedOperand]()
                                         remaining_c.add result
                                         var rrc: size_t 2
                                         while rrc < ops.length
@@ -4877,7 +4877,7 @@ define Planner
                                     if tp.components <> null
                                     {
                                         let comps_in (*tp.components)
-                                        var new_comps Array[PlannedComponent]$()
+                                        var new_comps Array[PlannedComponent]()
                                         var ci: size_t 0
                                         while ci < comps_in.length
                                         {
@@ -4961,7 +4961,7 @@ define Planner
                             ))
                             if ops.length > 2
                             {
-                                var remaining Array[PlannedOperand]$()
+                                var remaining Array[PlannedOperand]()
                                 remaining.add result
                                 var rr: size_t 2
                                 while rr < ops.length
@@ -5029,7 +5029,7 @@ define Planner
                             ))
                             if ops.length > 2
                             {
-                                var remaining Array[PlannedOperand]$()
+                                var remaining Array[PlannedOperand]()
                                 remaining.add result
                                 var rr: size_t 2
                                 while rr < ops.length
@@ -5061,7 +5061,7 @@ define Planner
                         ; the call, and the entire `let X = f(...)` binding
                         ; plus any `if X = ...` follower silently
                         ; vanish from the IR.
-                        var arg_types_arr_s90 Array[PlannedType]$()
+                        var arg_types_arr_s90 Array[PlannedType]()
                         choose second.expr
                             when tp_s90: PlannedTuple
                             {
@@ -5231,7 +5231,7 @@ define Planner
                                         ; dotted-namespace dedup at line ~2949).
                                         if this.has_recorded_function(mm.mangled_name) = false
                                         {
-                                            var items_arr Array[PlannedItem]$()
+                                            var items_arr Array[PlannedItem]()
                                             var this_type_holder Vector[PlannedType]^rp(1)
                                             this_type_holder.put(0, local.binding_type)
                                             items_arr.add(PlannedItem(
@@ -5339,7 +5339,7 @@ define Planner
                                             {
                                                 let mm3 (*mm_ref)
                                                 ; Build truncated chain (drop last hop).
-                                                var trunc_arr Array[PlannedMemberAccess]$()
+                                                var trunc_arr Array[PlannedMemberAccess]()
                                                 var ti: size_t 0
                                                 while ti + 1 < ma_outer.length
                                                 {
@@ -5377,7 +5377,7 @@ define Planner
                                                 ; recorded.
                                                 if this.has_recorded_function(mm3.mangled_name) = false
                                                 {
-                                                    var items_arr2 Array[PlannedItem]$()
+                                                    var items_arr2 Array[PlannedItem]()
                                                     var this_type_holder2 Vector[PlannedType]^rp(1)
                                                     this_type_holder2.put(0, recv_type)
                                                     items_arr2.add(PlannedItem(
@@ -5484,7 +5484,7 @@ define Planner
                         ; namespace member (used_ns_local). Used to drive the
                         ; String→const_char argument coercion correctly even when
                         ; the bare-name match picked a wrong same-named overload.
-                        var ns_coerce_params Array[PlannedType]$()
+                        var ns_coerce_params Array[PlannedType]()
                         var ns_coerce_valid: bool false
                         ; The namespace member's actual return type, captured on
                         ; the s129 dotted re-mangle. The bare-name match may have
@@ -5600,7 +5600,7 @@ define Planner
                                             ; than `...P10const_char`, and
                                             ; the link fails against
                                             ; libscaly's `..P10const_char`.
-                                            var items_arr Array[PlannedItem]$()
+                                            var items_arr Array[PlannedItem]()
                                             var used_ns_local: bool false
                                             ; When the prefix namespace declares
                                             ; the member itself (used_ns_local),
@@ -6028,7 +6028,7 @@ define Planner
                                                 null
                                             ))
                                             let sparent_ref sparent_holder.get 0
-                                            var sitems_arr Array[PlannedItem]$()
+                                            var sitems_arr Array[PlannedItem]()
                                             var spi: size_t 0
                                             while spi < sfn.input.length
                                             {
@@ -6218,7 +6218,7 @@ define Planner
                         ; receiver (s75), prepend the receiver as
                         ; argument 0; the callee declared `this` as the
                         ; first param.
-                        var args_arr Array[PlannedOperand]$()
+                        var args_arr Array[PlannedOperand]()
                         if is_method_dispatch
                             args_arr.add receiver_op
                         choose second.expr
@@ -6424,7 +6424,7 @@ define Planner
                                         ))
                                         if ops.length > 2
                                         {
-                                            var bv_remaining Array[PlannedOperand]$()
+                                            var bv_remaining Array[PlannedOperand]()
                                             bv_remaining.add result
                                             var bv_rr: size_t 2
                                             while bv_rr < ops.length
@@ -6659,7 +6659,7 @@ define Planner
                                                         ; dropped. Mirror the non-
                                                         ; chained call branch at
                                                         ; line ~3815.
-                                                        var chained_args_arr Array[PlannedOperand]$()
+                                                        var chained_args_arr Array[PlannedOperand]()
                                                         chained_args_arr.add result
                                                         choose next_args.expr
                                                             when chained_tp: PlannedTuple
@@ -6784,7 +6784,7 @@ define Planner
                         ; and recurse.
                         if next_idx < ops.length
                         {
-                            var remaining Array[PlannedOperand]$()
+                            var remaining Array[PlannedOperand]()
                             remaining.add result
                             var r: size_t next_idx
                             while r < ops.length
@@ -6838,7 +6838,7 @@ define Planner
                                 null,
                                 void_ty_l
                             )
-                            var two_arr_l Array[PlannedOperand]$()
+                            var two_arr_l Array[PlannedOperand]()
                             two_arr_l.add result
                             two_arr_l.add tuple_op_l
                             var two_vec_l Vector[PlannedOperand]^rp(two_arr_l)
@@ -7037,7 +7037,7 @@ define Planner
                             let pfx_operand_ptr ops.get(i + 2)
                             if pfx_operand_ptr <> null
                             {
-                                var pfx_arr Array[PlannedOperand]$()
+                                var pfx_arr Array[PlannedOperand]()
                                 pfx_arr.add rhs
                                 pfx_arr.add((*pfx_operand_ptr))
                                 var pfx_vec Vector[PlannedOperand]^rp(pfx_arr)
@@ -7109,7 +7109,7 @@ define Planner
                                         0
                                 if is_tuple_after
                                 {
-                                    var sub_arr Array[PlannedOperand]$()
+                                    var sub_arr Array[PlannedOperand]()
                                     sub_arr.add rhs
                                     sub_arr.add after_op
                                     var sub_vec Vector[PlannedOperand]^rp(sub_arr)
@@ -7143,7 +7143,7 @@ define Planner
                                         0
                                 if is_as_after
                                 {
-                                    var as_arr Array[PlannedOperand]$()
+                                    var as_arr Array[PlannedOperand]()
                                     as_arr.add rhs
                                     as_arr.add as_op
                                     var as_vec Vector[PlannedOperand]^rp(as_arr)
@@ -7189,7 +7189,7 @@ define Planner
                                             null,
                                             void_ty_r
                                         )
-                                        var two_arr_r Array[PlannedOperand]$()
+                                        var two_arr_r Array[PlannedOperand]()
                                         two_arr_r.add rhs
                                         two_arr_r.add tuple_op_r
                                         var two_vec_r Vector[PlannedOperand]^rp(two_arr_r)
@@ -7306,7 +7306,7 @@ define Planner
                                                             set bnd: bnd + 2
                                                     }
                                                 }
-                                                var right_arr Array[PlannedOperand]$()
+                                                var right_arr Array[PlannedOperand]()
                                                 right_arr.add rhs
                                                 var rr: size_t prec_next
                                                 while rr < climb_b
@@ -7699,7 +7699,7 @@ define Planner
                         let expected_arity o.input.length - param_start2
                         if expected_arity = arg_types.length
                         {
-                            var param_types_arr Array[PlannedType]$()
+                            var param_types_arr Array[PlannedType]()
                             var pi: size_t param_start2
                             while pi < o.input.length
                             {
@@ -8119,7 +8119,7 @@ define Planner
                                 {
                                     instantiating_methods.add li_smangled
                                     var li_args_holder Vector[PlannedType]^rp(li_gens)
-                                    var li_snap Array[KeyValuePair[String, PlannedType]]$()
+                                    var li_snap Array[KeyValuePair[String, PlannedType]]()
                                     var li_si: size_t 0
                                     while li_si < type_substitutions.length
                                     {
@@ -8174,8 +8174,8 @@ define Planner
             ; the substitution list: keep ambient entries whose key is NOT a
             ; receiver param, then append the receiver bindings; restore the
             ; full ambient list afterward.
-            var rb_names Array[String]$()
-            var rb_vals Array[PlannedType]$()
+            var rb_names Array[String]()
+            var rb_vals Array[PlannedType]()
             let conc_ref this.lookup_concept(lookup_st.name)
             if conc_ref <> null
             {
@@ -8207,7 +8207,7 @@ define Planner
                 }
             }
             ; Snapshot ambient substitutions for restore.
-            var subst_snapshot Array[KeyValuePair[String, PlannedType]]$()
+            var subst_snapshot Array[KeyValuePair[String, PlannedType]]()
             var ssi: size_t 0
             while ssi < type_substitutions.length
             {
@@ -8278,7 +8278,7 @@ define Planner
             }
 
             ; Collect planned parameter types (excluding this).
-            var params_arr Array[PlannedType]$()
+            var params_arr Array[PlannedType]()
             var i: size_t param_start
             while i < f.input.length
             {
@@ -8518,7 +8518,7 @@ define Planner
             members: Vector[String]
         ) returns Vector[PlannedMemberAccess]
         {
-            var result Array[PlannedMemberAccess]$()
+            var result Array[PlannedMemberAccess]()
             var current: PlannedType base_type
 
             var i: size_t 0
@@ -8670,8 +8670,8 @@ define Planner
                             ; Receiver bindings shadow ambient same-named
                             ; entries (s167 first-wins rebuild pattern
                             ; from lookup_method#).
-                            var ps_names Array[String]$()
-                            var ps_vals Array[PlannedType]$()
+                            var ps_names Array[String]()
+                            var ps_vals Array[PlannedType]()
                             let pconc_ref this.lookup_concept(lookup_type.name)
                             if pconc_ref <> null
                             {
@@ -8703,7 +8703,7 @@ define Planner
                                 }
                             }
                             var did_subst: bool false
-                            var ps_snapshot Array[KeyValuePair[String, PlannedType]]$()
+                            var ps_snapshot Array[KeyValuePair[String, PlannedType]]()
                             if ps_names.length > 0
                             {
                                 var psi: size_t 0
@@ -9914,7 +9914,7 @@ define Planner
                     if local <> null
                     {
                         let lb (*local)
-                        var rest_arr Array[String]$()
+                        var rest_arr Array[String]()
                         var k: size_t 1
                         while k < t.name.length
                         {
@@ -10071,7 +10071,7 @@ define Planner
                                         let prop_ref2 this.lookup_property(inner2.name, first_name)
                                         if prop_ref2 <> null
                                         {
-                                            var all_arr Array[String]$()
+                                            var all_arr Array[String]()
                                             var k2: size_t 0
                                             while k2 < t.name.length
                                             {
@@ -10544,7 +10544,7 @@ define Planner
             ; captures set (best-effort: inner bindings declared inside
             ; the body can leak in, but it's a safe over-approximation
             ; that the emitter can intersect with the real scope).
-            var free_names Array[String]$()
+            var free_names Array[String]()
             if planned_body.source <> null
             {
                 let src (*planned_body.source)
@@ -10558,7 +10558,7 @@ define Planner
                 }
             }
 
-            var captures_arr Array[String]$()
+            var captures_arr Array[String]()
             var fi: size_t 0
             while fi < free_names.length
             {
@@ -10644,7 +10644,7 @@ define Planner
             ; scope. Captures become leading parameters; the call site passes
             ; the captured VALUES as leading args (capture by value).
             this.push_scope()
-            var pnames Array[String]$()
+            var pnames Array[String]()
             var p1i: size_t 0
             while p1i < lam.input.length
             {
@@ -10669,14 +10669,14 @@ define Planner
                 set p1i: p1i + 1
             }
             let body1 this.plan_action(lam.body)
-            var free Array[String]$()
-            var body_bound Array[String]$()
+            var free Array[String]()
+            var body_bound Array[String]()
             this.collect_lambda_names_ops(body1.source, free, body_bound)
             this.collect_lambda_names_ops(body1.target, free, body_bound)
             this.pop_scope()
 
-            var cap_names Array[String]$()
-            var cap_types Array[PlannedType]$()
+            var cap_names Array[String]()
+            var cap_types Array[PlannedType]()
             var fi: size_t 0
             while fi < free.length
             {
@@ -10780,7 +10780,7 @@ define Planner
 
             ; ---- Pass 2: plan with captures + params as parameters.
             this.push_scope()
-            var item_arr Array[PlannedItem]$()
+            var item_arr Array[PlannedItem]()
             var ci: size_t 0
             while ci < cap_names.length
             {
@@ -10870,8 +10870,8 @@ define Planner
         function make_closure(this: Planner, base_name: String, lam: Lambda, dparams: Vector[PlannedType], dret: PlannedType, del_pt: PlannedType, life: Lifetime) returns PlannedClosure
         {
             let mono this.monomorphize_lambda(base_name, lam, dparams)
-            var cap_ops Array[PlannedOperand]$()
-            var cap_tys Array[PlannedType]$()
+            var cap_ops Array[PlannedOperand]()
+            var cap_tys Array[PlannedType]()
             if mono.captures <> null
             {
                 let caps (*mono.captures)
@@ -11230,7 +11230,7 @@ define Planner
                 ; get_iterator / next are zero-arg (only `this`), so an
                 ; empty arg_types list drives lookup_method#'s overload
                 ; selection.
-                var no_args_arr Array[PlannedType]$()
+                var no_args_arr Array[PlannedType]()
                 let no_args Vector[PlannedType]^rp(no_args_arr)
                 let get_iter_match this.lookup_method(iter_type, "get_iterator", no_args)
                 if get_iter_match <> null
@@ -11341,7 +11341,7 @@ define Planner
                 }
             }
 
-            var catches_arr Array[PlannedWhen]$()
+            var catches_arr Array[PlannedWhen]()
             var ci: size_t 0
             while ci < t.catches.length
             {
@@ -11629,7 +11629,7 @@ define Planner
                 else
                     0
 
-            var cases_arr Array[PlannedWhen]$()
+            var cases_arr Array[PlannedWhen]()
             var i: size_t 0
             while i < c.cases.length
             {
@@ -11720,7 +11720,7 @@ define Planner
 
         function plan_branch(this: Planner, b: Branch) returns PlannedBranch
         {
-            var cases_arr Array[PlannedCase]$()
+            var cases_arr Array[PlannedCase]()
             var i: size_t 0
             while i < b.cases.length
             {
@@ -11749,7 +11749,7 @@ define Planner
             let collapsed_cond this.collapse_operand_sequence(planned_cond)
             let cond_type collapsed_cond.result_type
 
-            var branches_arr Array[PlannedBranch]$()
+            var branches_arr Array[PlannedBranch]()
             var i: size_t 0
             while i < m.branches.length
             {
@@ -12052,7 +12052,7 @@ define Planner
 
         function plan_tuple(this: Planner, t: Tuple) returns PlannedTuple
         {
-            var comps_arr Array[PlannedComponent]$()
+            var comps_arr Array[PlannedComponent]()
             var i: size_t 0
             while i < t.components.length
             {
@@ -12108,7 +12108,7 @@ define Planner
 
         function plan_matrix(this: Planner, m: Matrix) returns scalyc.compiler.Plan.PlannedMatrix
         {
-            var rows_arr Array[Vector[PlannedOperand]]$()
+            var rows_arr Array[Vector[PlannedOperand]]()
             var i: size_t 0
             while i < m.operations.length
             {
@@ -12144,7 +12144,7 @@ define Planner
             ; Verify the target type has a matching initializer. A New
             ; with no matching init is a hard error — record it so the
             ; emitter doesn't silently produce an empty struct value.
-            var arg_types_arr Array[PlannedType]$()
+            var arg_types_arr Array[PlannedType]()
             if planned_args.components <> null
             {
                 let comps (*planned_args.components)
@@ -12624,7 +12624,7 @@ define Planner
                                 let dret this.delegate_return_type(del_name)
                                 let clo this.make_closure(base_name, dl, dparams, dret, del_pt, Lifetime.Local(scalyc.compiler.Model.Local(b.span)))
                                 let fref_op PlannedOperand(b.span, PlannedExpression.Closure clo, null, del_pt)
-                                var op_arr Array[PlannedOperand]$()
+                                var op_arr Array[PlannedOperand]()
                                 op_arr.add fref_op
                                 var op_vec Vector[PlannedOperand]^rp(op_arr)
                                 var name_ref: ref[String]? null
@@ -16411,7 +16411,7 @@ define Planner
                     if parent <> null
                     {
                         let p (*parent)
-                        var synth_items Array[PlannedItem]$()
+                        var synth_items Array[PlannedItem]()
 
                         var this_name_holder Vector[String]^rp(1)
                         this_name_holder.put(0, "this")
@@ -16646,7 +16646,7 @@ define Planner
         ; ================================================================
         function plan_structure(this: Planner, s: Structure, name: String) returns PlannedStructure
         {
-            var planned_props Array[PlannedProperty]$()
+            var planned_props Array[PlannedProperty]()
             var i: size_t 0
             while i < s.properties.length
             {
@@ -16668,7 +16668,7 @@ define Planner
             ; written back. (PlannedProperty is stored by value in the
             ; Vector; in-place mutation would require reaching through
             ; the heap, so a copy-with-new-offset is cleaner.)
-            var props_with_offsets Array[PlannedProperty]$()
+            var props_with_offsets Array[PlannedProperty]()
             var j: size_t 0
             while j < planned_props.length
             {
@@ -16702,7 +16702,7 @@ define Planner
             ; Build the struct's own PlannedType (name + resolved
             ; generics) before planning methods so method mangling
             ; can encode the parent.
-            var gens_arr Array[PlannedType]$()
+            var gens_arr Array[PlannedType]()
             let c_for_gens_ref this.lookup_concept(name)
             if c_for_gens_ref <> null
             {
@@ -16740,9 +16740,9 @@ define Planner
             let parent_ref parent_holder.get 0
 
             ; Plan methods, operators, initializers, deinitializer.
-            var planned_methods Array[PlannedFunction]$()
-            var planned_operators Array[PlannedOperator]$()
-            var planned_initializers Array[PlannedInitializer]$()
+            var planned_methods Array[PlannedFunction]()
+            var planned_operators Array[PlannedOperator]()
+            var planned_initializers Array[PlannedInitializer]()
             var deinit_ref: ref[PlannedDeInitializer]? null
 
             var mi: size_t 0
@@ -16840,7 +16840,7 @@ define Planner
         ; and the real body is resolved cross-unit at link time.
         function plan_structure_layout_opt(this: Planner, s: Structure, name: String, plan_inits: bool) returns PlannedStructure
         {
-            var planned_props Array[PlannedProperty]$()
+            var planned_props Array[PlannedProperty]()
             var i: size_t 0
             while i < s.properties.length
             {
@@ -16856,7 +16856,7 @@ define Planner
             var props_initial Vector[PlannedProperty]^rp(planned_props)
             let offsets Planner.compute_property_offsets(&props_initial)
 
-            var props_with_offsets Array[PlannedProperty]$()
+            var props_with_offsets Array[PlannedProperty]()
             var j: size_t 0
             while j < planned_props.length
             {
@@ -16911,7 +16911,7 @@ define Planner
             ; can't resolve outside their normal walk and would crash
             ; mid-emit. Initializers are simpler (just `set field: ...`
             ; over the struct's own fields) and safe to walk here.
-            var planned_initializers Array[PlannedInitializer]$()
+            var planned_initializers Array[PlannedInitializer]()
             if plan_inits
             {
                 var ii: size_t 0
@@ -17312,9 +17312,9 @@ define Planner
             name_box.put(0, name)
             set current_namespace_name: name_box.get(0)
 
-            var functions Array[PlannedFunction]$()
-            var operators Array[PlannedOperator]$()
-            var concepts Array[PlannedConcept]$()
+            var functions Array[PlannedFunction]()
+            var operators Array[PlannedOperator]()
+            var concepts Array[PlannedConcept]()
 
             var i: size_t 0
             while i < ns.members.length
@@ -17724,10 +17724,10 @@ define Planner
                 set transitive_page_built: true
             }
 
-            var functions Array[PlannedFunction]$()
-            var operators Array[PlannedOperator]$()
-            var pl_concepts Array[PlannedConcept]$()
-            var sub_modules Array[PlannedModule]$()
+            var functions Array[PlannedFunction]()
+            var operators Array[PlannedOperator]()
+            var pl_concepts Array[PlannedConcept]()
+            var sub_modules Array[PlannedModule]()
 
             var mi: size_t 0
             while mi < m.modules.length
@@ -18056,7 +18056,7 @@ define Planner
         ; plan_structure_layout_opt#).
         function plan_union_opt(this: Planner, u: scalyc.compiler.Model.Union, name: String, plan_methods: bool) returns scalyc.compiler.Plan.PlannedUnion
         {
-            var planned_vs Array[PlannedVariant]$()
+            var planned_vs Array[PlannedVariant]()
             var tag: int 0
             var i: size_t 0
             while i < u.variants.length
@@ -18103,7 +18103,7 @@ define Planner
 
             ; Build the union's own PlannedType + mangled_name upfront
             ; so method planning can mangle methods with this as parent.
-            var u_gens_arr Array[PlannedType]$()
+            var u_gens_arr Array[PlannedType]()
             let u_concept_ref this.lookup_concept(name)
             if u_concept_ref <> null
             {
@@ -18141,8 +18141,8 @@ define Planner
             let u_parent_ref u_parent_holder.get 0
 
             ; Plan methods and operators declared on the union.
-            var planned_methods Array[PlannedFunction]$()
-            var planned_operators Array[PlannedOperator]$()
+            var planned_methods Array[PlannedFunction]()
+            var planned_operators Array[PlannedOperator]()
             if plan_methods
             {
                 var mi: size_t 0
@@ -18302,7 +18302,7 @@ define Planner
         ; unchanged; the set only matters once the explicit `#`/rp is removed.
         function build_transitive_page_set(this: Planner)
         {
-            var all Array[Function]$()
+            var all Array[Function]()
             var fi: size_t 0
             while fi < model_functions.length
             {
@@ -19696,7 +19696,7 @@ define Planner
     ; the public free_type_vars wrapper dedupes.
     function free_type_vars_with_dups(t: PlannedType) returns Vector[size_t]
     {
-        var acc Array[size_t]$()
+        var acc Array[size_t]()
         if t.variable <> null
         {
             let tv (*t.variable)
@@ -19734,7 +19734,7 @@ define Planner
     function free_type_vars(t: PlannedType) returns Vector[size_t]
     {
         let with_dups Planner.free_type_vars_with_dups(t)
-        var acc Array[size_t]$()
+        var acc Array[size_t]()
         var i: size_t 0
         while i < with_dups.length
         {
@@ -19961,7 +19961,7 @@ define Planner
             let gs (*t.generics)
             if gs.length > 0
             {
-                var arr Array[PlannedType]$()
+                var arr Array[PlannedType]()
                 var i: size_t 0
                 while i < gs.length
                 {
@@ -20060,7 +20060,7 @@ define Planner
                                     choose cell1.expr
                                         when nested_matrix: scalyc.compiler.Plan.PlannedMatrix
                                         {
-                                            var nested_gens Array[Type]$()
+                                            var nested_gens Array[Type]()
                                             var ok: bool true
                                             if nested_matrix.operations <> null
                                             {
@@ -20446,7 +20446,7 @@ define Planner
         ; Allocate stable storage for the fresh TypeVariables so their
         ; addresses can be embedded in the substitution-target PlannedTypes.
         var fresh_vars Vector[TypeVariable]^rp(quants.length)
-        var subst_arr Array[KeyValuePair[size_t, PlannedType]]$()
+        var subst_arr Array[KeyValuePair[size_t, PlannedType]]()
         var i: size_t 0
         while i < quants.length
         {
@@ -20488,7 +20488,7 @@ define Planner
     ) returns TypeScheme
     {
         let all_free Planner.free_type_vars(t)
-        var quantified_arr Array[TypeVariable]$()
+        var quantified_arr Array[TypeVariable]()
         var i: size_t 0
         while i < all_free.length
         {
@@ -20748,7 +20748,7 @@ define Planner
         s2: Vector[KeyValuePair[size_t, PlannedType]]
     ) returns Vector[KeyValuePair[size_t, PlannedType]]
     {
-        var temp Array[KeyValuePair[size_t, PlannedType]]$()
+        var temp Array[KeyValuePair[size_t, PlannedType]]()
 
         var i: size_t 0
         while i < s1.length
@@ -22037,7 +22037,7 @@ define Planner
     ; a nested side-effecting match expression.
     function extract_tuple_arg_types(tuple_val: PlannedTuple) returns Vector[PlannedType]
     {
-        var temp Array[PlannedType]$()
+        var temp Array[PlannedType]()
         if tuple_val.components <> null
         {
             let comps (*tuple_val.components)
@@ -22345,7 +22345,7 @@ define Planner
 
         let result StringBuilder()
         var value n
-        var digits Array[char]$()
+        var digits Array[char]()
 
         while value > 0
         {
@@ -22480,7 +22480,7 @@ define Planner
             return 14
 
         ; mangle_structure with one int generic arg: Vector[int] -> _Z6VectorIiE.
-        var gens_vec Vector[PlannedType]$(1)
+        var gens_vec Vector[PlannedType](1)
         gens_vec.put(0, int_ty)
         let mangled_vec Planner.mangle_structure("Vector", &gens_vec)
         if mangled_vec.equals("_Z6VectorIiE") = false
@@ -22498,7 +22498,7 @@ define Planner
 
         ; mangle_function - 'this' is implicit; drops out of the name.
         let this_name "this"
-        var this_only Vector[PlannedItem]$(1)
+        var this_only Vector[PlannedItem](1)
         this_only.put(0, PlannedItem(Span(0, 0), false, &this_name, &foo_ty, null))
         let mf_this Planner.mangle_function("bar", &this_only, &foo_ty, false)
         if mf_this.equals("_ZN3Foo3barEv") = false
@@ -22511,7 +22511,7 @@ define Planner
 
         ; mangle_function - free with int param -> _Z3fooi.
         let x_name "x"
-        var one_int Vector[PlannedItem]$(1)
+        var one_int Vector[PlannedItem](1)
         one_int.put(0, PlannedItem(Span(0, 0), false, &x_name, &int_ty, null))
         let mf_i Planner.mangle_function("foo", &one_int, null, false)
         if mf_i.equals("_Z3fooi") = false
@@ -22536,7 +22536,7 @@ define Planner
             return 24
 
         ; mangle_operator - member + on Foo with (this, int) -> _ZN3FooplEi.
-        var this_int Vector[PlannedItem]$(2)
+        var this_int Vector[PlannedItem](2)
         this_int.put(0, PlannedItem(Span(0, 0), false, &this_name, &foo_ty, null))
         this_int.put(1, PlannedItem(Span(0, 0), false, &x_name, &int_ty, null))
         let mop_member Planner.mangle_operator("+", &this_int, &foo_ty)
@@ -22554,7 +22554,7 @@ define Planner
             return 27
 
         ; get_readable_name - generic: Vector[int] -> "Vector[int]".
-        var vec_gens Vector[PlannedType]$(1)
+        var vec_gens Vector[PlannedType](1)
         vec_gens.put(0, int_ty)
         let vec_ty PlannedType(
             Span(0, 0),
@@ -22616,7 +22616,7 @@ define Planner
             return 36
 
         ; types_equal - structurally equal generics.
-        var vec_gens2 Vector[PlannedType]$(1)
+        var vec_gens2 Vector[PlannedType](1)
         vec_gens2.put(0, int_ty)
         let vec_ty2 PlannedType(
             Span(0, 0),
@@ -22632,7 +22632,7 @@ define Planner
             return 37
 
         ; types_equal - same outer name, different generic arg.
-        var vec_gens_b Vector[PlannedType]$(1)
+        var vec_gens_b Vector[PlannedType](1)
         vec_gens_b.put(0, bool_ty)
         let vec_bool_ty PlannedType(
             Span(0, 0),
@@ -22677,7 +22677,7 @@ define Planner
             return 43
 
         ; types_compatible - pointer[int] arg can pass where int expected (implicit deref).
-        var ptr_int_gens Vector[PlannedType]$(1)
+        var ptr_int_gens Vector[PlannedType](1)
         ptr_int_gens.put(0, int_ty)
         let ptr_int_ty PlannedType(
             Span(0, 0),
@@ -22703,7 +22703,7 @@ define Planner
             "",
             null
         )
-        var ptr_void_gens Vector[PlannedType]$(1)
+        var ptr_void_gens Vector[PlannedType](1)
         ptr_void_gens.put(0, void_ty)
         let ptr_void_ty PlannedType(
             Span(0, 0),
@@ -22739,7 +22739,7 @@ define Planner
             "",
             null
         )
-        var ptr_cc_gens Vector[PlannedType]$(1)
+        var ptr_cc_gens Vector[PlannedType](1)
         ptr_cc_gens.put(0, const_char_ty)
         let ptr_cc_ty PlannedType(
             Span(0, 0),
@@ -22751,7 +22751,7 @@ define Planner
             "",
             null
         )
-        var ptr_i8_gens Vector[PlannedType]$(1)
+        var ptr_i8_gens Vector[PlannedType](1)
         ptr_i8_gens.put(0, i8_ty)
         let ptr_i8_ty PlannedType(
             Span(0, 0),
@@ -22814,7 +22814,7 @@ define Planner
             return 58
 
         ; get_pointer_element_type - Option[pointer[int]] -> int.
-        var opt_gens Vector[PlannedType]$(1)
+        var opt_gens Vector[PlannedType](1)
         opt_gens.put(0, ptr_int_ty)
         let opt_ptr_int_ty PlannedType(
             Span(0, 0),
@@ -22895,11 +22895,11 @@ define Planner
             null,
             bool_ty
         )
-        var v1 Vector[PlannedOperand]$(1)
+        var v1 Vector[PlannedOperand](1)
         v1.put(0, int_op)
-        var v2 Vector[PlannedOperand]$(1)
+        var v2 Vector[PlannedOperand](1)
         v2.put(0, bool_op)
-        var comps Vector[PlannedComponent]$(2)
+        var comps Vector[PlannedComponent](2)
         comps.put(0, PlannedComponent(Span(0, 0), null, &v1, null))
         comps.put(1, PlannedComponent(Span(0, 0), null, &v2, null))
         let tpl PlannedTuple(
@@ -22980,7 +22980,7 @@ define Planner
             return 87
 
         ; occurs_in - hidden inside a generic argument.
-        var vec_with_var Vector[PlannedType]$(1)
+        var vec_with_var Vector[PlannedType](1)
         vec_with_var.put(0, var_ty)
         let vec_of_t_ty PlannedType(
             Span(0, 0),
@@ -23004,7 +23004,7 @@ define Planner
             return 91
 
         ; join_dotted_name - joins a Vector[String] with dots.
-        var parts Vector[String]$(3)
+        var parts Vector[String](3)
         parts.put(0, "scaly")
         parts.put(1, "containers")
         parts.put(2, "String")
@@ -23026,9 +23026,9 @@ define Planner
             false,
             false,
             "foo",
-            Vector[GenericParameter]$(0),
+            Vector[GenericParameter](0),
             null,
-            Vector[Item]$(0),
+            Vector[Item](0),
             null,
             null,
             Lifetime.Unspecified(Unspecified()),
@@ -23043,9 +23043,9 @@ define Planner
             false,
             false,
             "bar",
-            Vector[GenericParameter]$(0),
+            Vector[GenericParameter](0),
             null,
-            Vector[Item]$(0),
+            Vector[Item](0),
             null,
             null,
             Lifetime.Unspecified(Unspecified()),
@@ -23055,7 +23055,7 @@ define Planner
             return 97
 
         ; needs_implicit_return_page - returns primitive "int" -> false.
-        var int_return_parts Vector[String]$(1)
+        var int_return_parts Vector[String](1)
         int_return_parts.put(0, "int")
         let int_return_ty Type(
             Span(0, 0),
@@ -23068,9 +23068,9 @@ define Planner
             false,
             false,
             "baz",
-            Vector[GenericParameter]$(0),
+            Vector[GenericParameter](0),
             null,
-            Vector[Item]$(0),
+            Vector[Item](0),
             &int_return_ty,
             null,
             Lifetime.Unspecified(Unspecified()),
@@ -23080,7 +23080,7 @@ define Planner
             return 98
 
         ; needs_implicit_return_page - returns generic param "T" -> false.
-        var t_return_parts Vector[String]$(1)
+        var t_return_parts Vector[String](1)
         t_return_parts.put(0, "T")
         let t_return_ty Type(
             Span(0, 0),
@@ -23093,9 +23093,9 @@ define Planner
             false,
             false,
             "qux",
-            Vector[GenericParameter]$(0),
+            Vector[GenericParameter](0),
             null,
-            Vector[Item]$(0),
+            Vector[Item](0),
             &t_return_ty,
             null,
             Lifetime.Unspecified(Unspecified()),
@@ -23105,7 +23105,7 @@ define Planner
             return 99
 
         ; needs_implicit_return_page - returns "Foo" (user type) -> true.
-        var foo_return_parts Vector[String]$(1)
+        var foo_return_parts Vector[String](1)
         foo_return_parts.put(0, "Foo")
         let foo_return_ty Type(
             Span(0, 0),
@@ -23118,9 +23118,9 @@ define Planner
             false,
             false,
             "make_foo",
-            Vector[GenericParameter]$(0),
+            Vector[GenericParameter](0),
             null,
-            Vector[Item]$(0),
+            Vector[Item](0),
             &foo_return_ty,
             null,
             Lifetime.Unspecified(Unspecified()),
@@ -23135,13 +23135,13 @@ define Planner
             return 101
 
         ; apply_substitution - unbound variable stays as-is.
-        var empty_sub Vector[KeyValuePair[size_t, PlannedType]]$(0)
+        var empty_sub Vector[KeyValuePair[size_t, PlannedType]](0)
         let sub_var Planner.apply_substitution(var_ty, &empty_sub)
         if sub_var.variable = null
             return 102
 
         ; apply_substitution - bound variable gets replaced.
-        var sub1 Vector[KeyValuePair[size_t, PlannedType]]$(1)
+        var sub1 Vector[KeyValuePair[size_t, PlannedType]](1)
         sub1.put(0, KeyValuePair[size_t, PlannedType](7, int_ty))
         let sub_hit Planner.apply_substitution(var_ty, &sub1)
         if sub_hit.name.equals("int") = false
@@ -23175,7 +23175,7 @@ define Planner
             "",
             &tv8
         )
-        var sub_chain Vector[KeyValuePair[size_t, PlannedType]]$(2)
+        var sub_chain Vector[KeyValuePair[size_t, PlannedType]](2)
         sub_chain.put(0, KeyValuePair[size_t, PlannedType](7, var_ty8))
         sub_chain.put(1, KeyValuePair[size_t, PlannedType](8, int_ty))
         let sub_chained Planner.apply_substitution(var_ty, &sub_chain)
@@ -23184,9 +23184,9 @@ define Planner
 
         ; compose_substitutions - S2 ∘ S1: S1={T7 -> T8}, S2={T8 -> int}
         ; Expected: T7 -> int (applied), T8 -> int (carried over from S2).
-        var s1_vec Vector[KeyValuePair[size_t, PlannedType]]$(1)
+        var s1_vec Vector[KeyValuePair[size_t, PlannedType]](1)
         s1_vec.put(0, KeyValuePair[size_t, PlannedType](7, var_ty8))
-        var s2_vec Vector[KeyValuePair[size_t, PlannedType]]$(1)
+        var s2_vec Vector[KeyValuePair[size_t, PlannedType]](1)
         s2_vec.put(0, KeyValuePair[size_t, PlannedType](8, int_ty))
         let composed Planner.compose_substitutions(s1_vec, s2_vec)
         if composed.length <> 2
@@ -23206,9 +23206,9 @@ define Planner
             return 113
 
         ; compose with duplicate key: S1 wins.
-        var s1_dup Vector[KeyValuePair[size_t, PlannedType]]$(1)
+        var s1_dup Vector[KeyValuePair[size_t, PlannedType]](1)
         s1_dup.put(0, KeyValuePair[size_t, PlannedType](7, int_ty))
-        var s2_dup Vector[KeyValuePair[size_t, PlannedType]]$(1)
+        var s2_dup Vector[KeyValuePair[size_t, PlannedType]](1)
         s2_dup.put(0, KeyValuePair[size_t, PlannedType](7, bool_ty))
         let dup_comp Planner.compose_substitutions(s1_dup, s2_dup)
         if dup_comp.length <> 1
@@ -23228,7 +23228,7 @@ define Planner
 
         ; Struct with two int properties: offsets 0, 8; size 16; align 8
         ; (int is 8 bytes per s103).
-        var two_ints Vector[PlannedProperty]$(2)
+        var two_ints Vector[PlannedProperty](2)
         two_ints.put(0, PlannedProperty(
             Span(0, 0), false, "x", "",
             int_ty, null, null, 0
@@ -23258,7 +23258,7 @@ define Planner
 
         ; Mixed struct: bool then int — padding puts int at offset 8
         ; (8-byte alignment for int per s103).
-        var bool_then_int Vector[PlannedProperty]$(2)
+        var bool_then_int Vector[PlannedProperty](2)
         bool_then_int.put(0, PlannedProperty(
             Span(0, 0), false, "flag", "",
             bool_ty, null, null, 0
@@ -23348,7 +23348,7 @@ define Planner
             return 149
 
         ; unify - name mismatch with matching arity → null.
-        var list_gens Vector[PlannedType]$(1)
+        var list_gens Vector[PlannedType](1)
         list_gens.put(0, int_ty)
         let list_int_ty PlannedType(
             Span(0, 0),
@@ -23371,7 +23371,7 @@ define Planner
             return 152
 
         ; solve_constraints - single T7 = int → binds T7 to int.
-        var one_eq Vector[TypeConstraint]$(1)
+        var one_eq Vector[TypeConstraint](1)
         one_eq.put(0, TypeConstraint.Equality(
             EqualityConstraint(var_ty, int_ty, Span(0, 0), "")
         ))
@@ -23385,7 +23385,7 @@ define Planner
             return 155
 
         ; solve_constraints - chain T7 = T8, T8 = int → T7 resolves to int.
-        var chain Vector[TypeConstraint]$(2)
+        var chain Vector[TypeConstraint](2)
         chain.put(0, TypeConstraint.Equality(
             EqualityConstraint(var_ty, var_ty8, Span(0, 0), "")
         ))
@@ -23400,7 +23400,7 @@ define Planner
             return 157
 
         ; solve_constraints - conflicting: T7 = int, T7 = bool → null.
-        var conflict Vector[TypeConstraint]$(2)
+        var conflict Vector[TypeConstraint](2)
         conflict.put(0, TypeConstraint.Equality(
             EqualityConstraint(var_ty, int_ty, Span(0, 0), "")
         ))
@@ -23431,7 +23431,7 @@ define Planner
             return 163
 
         ; free_type_vars - dedupes repeated variables inside nested generics.
-        var two_t Vector[PlannedType]$(2)
+        var two_t Vector[PlannedType](2)
         two_t.put(0, var_ty)
         two_t.put(1, var_ty)
         let pair_of_t_ty PlannedType(
@@ -23449,7 +23449,7 @@ define Planner
             return 164
 
         ; id_list_contains - basic sanity checks.
-        var ids_37 Vector[size_t]$(2)
+        var ids_37 Vector[size_t](2)
         ids_37.put(0, 3)
         ids_37.put(1, 7)
         if Planner.id_list_contains(ids_37, 3) = false
@@ -23458,7 +23458,7 @@ define Planner
             return 166
 
         ; generalize - concrete type has no quantified vars.
-        var empty_env Vector[size_t]$(0)
+        var empty_env Vector[size_t](0)
         let sch_int Planner.generalize(int_ty, empty_env)
         if sch_int.quantified = null
             return 167
@@ -23480,7 +23480,7 @@ define Planner
             return 172
 
         ; generalize - variable present in env is NOT quantified.
-        var env_with_7 Vector[size_t]$(1)
+        var env_with_7 Vector[size_t](1)
         env_with_7.put(0, 7)
         let sch_in_env Planner.generalize(var_ty, env_with_7)
         if sch_in_env.quantified = null
@@ -23511,7 +23511,7 @@ define Planner
         ; lookup_local_in_scope - hit, miss.
         let lb_x LocalBinding(int_ty, false, false)
         let lb_y LocalBinding(bool_ty, true, true)
-        var scope1 Vector[KeyValuePair[String, LocalBinding]]$(2)
+        var scope1 Vector[KeyValuePair[String, LocalBinding]](2)
         scope1.put(0, KeyValuePair[String, LocalBinding]("x", lb_x))
         scope1.put(1, KeyValuePair[String, LocalBinding]("y", lb_y))
         let hit_x Planner.lookup_local_in_scope(scope1, "x")
@@ -23525,11 +23525,11 @@ define Planner
         ; lookup_local_in_stack - innermost shadows outer.
         let lb_x_outer LocalBinding(int_ty, false, false)
         let lb_x_inner LocalBinding(bool_ty, true, false)
-        var outer_scope Vector[KeyValuePair[String, LocalBinding]]$(1)
+        var outer_scope Vector[KeyValuePair[String, LocalBinding]](1)
         outer_scope.put(0, KeyValuePair[String, LocalBinding]("x", lb_x_outer))
-        var inner_scope Vector[KeyValuePair[String, LocalBinding]]$(1)
+        var inner_scope Vector[KeyValuePair[String, LocalBinding]](1)
         inner_scope.put(0, KeyValuePair[String, LocalBinding]("x", lb_x_inner))
-        var stack Vector[Vector[KeyValuePair[String, LocalBinding]]]$(2)
+        var stack Vector[Vector[KeyValuePair[String, LocalBinding]]](2)
         stack.put(0, outer_scope)
         stack.put(1, inner_scope)
         let resolved Planner.lookup_local_in_stack(stack, "x")
@@ -23539,7 +23539,7 @@ define Planner
             return 184
 
         ; resolve_type_base - simple path.
-        var int_name_vec Vector[String]$(1)
+        var int_name_vec Vector[String](1)
         int_name_vec.put(0, "int")
         let int_type Type(
             Span(0, 0),
@@ -23554,7 +23554,7 @@ define Planner
             return 186
 
         ; resolve_type_base - dotted name.
-        var str_name_vec Vector[String]$(3)
+        var str_name_vec Vector[String](3)
         str_name_vec.put(0, "scaly")
         str_name_vec.put(1, "containers")
         str_name_vec.put(2, "String")
@@ -23569,9 +23569,9 @@ define Planner
             return 187
 
         ; resolve_type_base - pointer[int] gets "P" mangled prefix.
-        var ptr_name_vec Vector[String]$(1)
+        var ptr_name_vec Vector[String](1)
         ptr_name_vec.put(0, "pointer")
-        var ptr_inner_gens Vector[Type]$(1)
+        var ptr_inner_gens Vector[Type](1)
         ptr_inner_gens.put(0, int_type)
         let ptr_type Type(
             Span(0, 0),
@@ -23598,7 +23598,7 @@ define Planner
             return 193
 
         ; name_substitution_lookup - hit/miss.
-        var t_subst Vector[KeyValuePair[String, PlannedType]]$(1)
+        var t_subst Vector[KeyValuePair[String, PlannedType]](1)
         t_subst.put(0, KeyValuePair[String, PlannedType]("T", int_ty))
         let hit_t Planner.name_substitution_lookup(t_subst, "T")
         if hit_t = null
@@ -23624,7 +23624,7 @@ define Planner
             return 197
 
         ; apply_name_substitution - Vector[T] → Vector[int].
-        var vec_t_gens_ns Vector[PlannedType]$(1)
+        var vec_t_gens_ns Vector[PlannedType](1)
         vec_t_gens_ns.put(0, t_ty)
         let vec_t_ns_ty PlannedType(
             Span(0, 0),
@@ -23812,10 +23812,10 @@ define Planner
 
         ; With T → int substitution active, Vector[T] becomes Vector[int].
         p2.define_type_substitution("T", int_ty)
-        var vec_t_path Vector[String]$(1)
+        var vec_t_path Vector[String](1)
         vec_t_path.put(0, "Vector")
-        var vec_t_generics Vector[Type]$(1)
-        var t_path Vector[String]$(1)
+        var vec_t_generics Vector[Type](1)
+        var t_path Vector[String](1)
         t_path.put(0, "T")
         vec_t_generics.put(0, Type(
             Span(0, 0),
@@ -23850,7 +23850,7 @@ define Planner
             false,
             &("x"),
             &int_type,
-            Vector[Attribute]$(0)
+            Vector[Attribute](0)
         )
         let pl_item p2.plan_item(model_item)
         if pl_item.name = null
@@ -23868,7 +23868,7 @@ define Planner
             true,
             null,
             null,
-            Vector[Attribute]$(0)
+            Vector[Attribute](0)
         )
         let pl_bare p2.plan_item(bare_item)
         if pl_bare.name <> null
@@ -23879,7 +23879,7 @@ define Planner
             return 247
 
         ; plan_items: batch over a two-Item Vector.
-        var model_items Vector[Item]$(2)
+        var model_items Vector[Item](2)
         model_items.put(0, model_item)
         model_items.put(1, bare_item)
         let pl_items p2.plan_items(model_items)
@@ -23914,7 +23914,7 @@ define Planner
             Expression.Constant(Constant.Boolean(BooleanConstant(Span(0, 0), true))),
             null
         )
-        var model_ops Vector[Operand]$(2)
+        var model_ops Vector[Operand](2)
         model_ops.put(0, op_42)
         model_ops.put(1, op_true)
         let po_batch p2.plan_operands(model_ops)
@@ -23931,7 +23931,7 @@ define Planner
         ;   - registers x in the current scope
         var p3 Planner.Planner("test3.scaly")
         p3.push_scope()
-        var init_ops Vector[Operand]$(1)
+        var init_ops Vector[Operand](1)
         init_ops.put(0, op_42)
         let model_bind Binding(
             Span(0, 0),
@@ -23941,7 +23941,7 @@ define Planner
                 false,
                 &("x"),
                 &int_type,
-                Vector[Attribute]$(0)
+                Vector[Attribute](0)
             ),
             init_ops
         )
@@ -23969,7 +23969,7 @@ define Planner
         ; ====================================================================
 
         ; An Action: source = [42], target = [] → PlannedAction with result_type int.
-        let model_action Action(init_ops, Vector[Operand]$(0))
+        let model_action Action(init_ops, Vector[Operand](0))
         let pl_act p3.plan_action(model_action)
         if pl_act.result_type.name.equals("int") = false
             return 262
@@ -24005,7 +24005,7 @@ define Planner
             return 266
 
         ; plan_block: a block with one Action statement.
-        var stmts_vec Vector[Statement]$(1)
+        var stmts_vec Vector[Statement](1)
         stmts_vec.put(0, stmt_action)
         let model_block Block(Span(0, 0), stmts_vec)
         let pl_block p3.plan_block(model_block)
@@ -24021,7 +24021,7 @@ define Planner
             "x",
             &int_type,
             null,
-            Vector[Attribute]$(0)
+            Vector[Attribute](0)
         )
         let pl_prop p3.plan_property(model_prop)
         if pl_prop.name.equals("x") = false
@@ -24036,7 +24036,7 @@ define Planner
             Span(0, 0),
             "Some",
             &int_type,
-            Vector[Attribute]$(0)
+            Vector[Attribute](0)
         )
         let pl_variant p3.plan_variant(model_variant, 1)
         if pl_variant.name.equals("Some") = false
@@ -24047,20 +24047,20 @@ define Planner
             return 274
 
         ; plan_function - extern "foo(x: int) returns int".
-        var x_params Vector[Item]$(1)
+        var x_params Vector[Item](1)
         x_params.put(0, Item(
             Span(0, 0),
             false,
             &("x"),
             &int_type,
-            Vector[Attribute]$(0)
+            Vector[Attribute](0)
         ))
         let model_fn Function(
             Span(0, 0),
             false,
             true,
             "foo",
-            Vector[GenericParameter]$(0),
+            Vector[GenericParameter](0),
             null,
             x_params,
             &int_type,
@@ -24081,18 +24081,18 @@ define Planner
             return 279
 
         ; plan_structure - empty Structure: size 0, alignment 1.
-        var empty_kvps Vector[KeyValuePair[String, scalyc.compiler.Model.Nameable]]$(0)
-        var empty_builder HashMapBuilder[String, scalyc.compiler.Model.Nameable]$(empty_kvps)
-        var empty_symbols HashMap[String, scalyc.compiler.Model.Nameable]$(empty_builder)
+        var empty_kvps Vector[KeyValuePair[String, scalyc.compiler.Model.Nameable]](0)
+        var empty_builder HashMapBuilder[String, scalyc.compiler.Model.Nameable](empty_kvps)
+        var empty_symbols HashMap[String, scalyc.compiler.Model.Nameable](empty_builder)
         let empty_struct Structure(
             Span(0, 0),
             false,
-            Vector[Property]$(0),
-            Vector[scalyc.compiler.Model.Module]$(0),
-            Vector[scalyc.compiler.Model.Use]$(0),
-            Vector[scalyc.compiler.Model.Initializer]$(0),
+            Vector[Property](0),
+            Vector[scalyc.compiler.Model.Module](0),
+            Vector[scalyc.compiler.Model.Use](0),
+            Vector[scalyc.compiler.Model.Initializer](0),
             null,
-            Vector[scalyc.compiler.Model.Member]$(0),
+            Vector[scalyc.compiler.Model.Member](0),
             empty_symbols
         )
         let pl_struct p3.plan_structure(empty_struct, "Foo")
@@ -24118,26 +24118,26 @@ define Planner
             return 284
 
         ; plan_operator - operator + with (this, int) parameters.
-        var plus_params Vector[Item]$(2)
+        var plus_params Vector[Item](2)
         plus_params.put(0, Item(
             Span(0, 0),
             false,
             &("this"),
             null,
-            Vector[Attribute]$(0)
+            Vector[Attribute](0)
         ))
         plus_params.put(1, Item(
             Span(0, 0),
             false,
             &("other"),
             &int_type,
-            Vector[Attribute]$(0)
+            Vector[Attribute](0)
         ))
         let model_op Operator(
             Span(0, 0),
             false,
             "+",
-            Vector[GenericParameter]$(0),
+            Vector[GenericParameter](0),
             plus_params,
             &int_type,
             null,
@@ -24157,10 +24157,10 @@ define Planner
         ; Lambda: `\: 42` — no params, body is an Action returning 42.
         ; ====================================================================
         var p4 Planner.Planner("test_lambda.scaly")
-        let lam_body Action(init_ops, Vector[Operand]$(0))
+        let lam_body Action(init_ops, Vector[Operand](0))
         let model_lam Lambda(
             Span(0, 0),
-            Vector[Item]$(0),
+            Vector[Item](0),
             lam_body
         )
         let pl_lam p4.plan_lambda(model_lam)
