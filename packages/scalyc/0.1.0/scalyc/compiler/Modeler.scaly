@@ -1633,6 +1633,60 @@ function build_function(start: size_t, end_pos: size_t, syntax: TargetSyntax, is
                 }
             }
 
+            ; Task 4: de-sigiled function(page/rp, ...) — peel a typeless or
+            ; pointer[Page]-typed first param named page/rp even without the
+            ; `#` (Call) sigil. Mirrors the handle_initializer peel. has_page is
+            ; driven by page_parameter (Planner.scaly:2480), so a de-sigiled
+            ; `function to_c_string(page, ...)` models identically to the `#`
+            ; form. Dormant on sigiled source (those keep is_call_life true).
+            if is_call_life = false
+            {
+                if input.length > 0
+                {
+                    let dfp0 input.get 0
+                    if dfp0 <> null
+                    {
+                        if dfp0.name <> null
+                        {
+                            let dpn0 (*dfp0.name)
+                            var d_name_is_page: bool false
+                            if dpn0.equals("page")
+                                set d_name_is_page: true
+                            if dpn0.equals("rp")
+                                set d_name_is_page: true
+                            if d_name_is_page
+                            {
+                                var d_should_peel: bool false
+                                if dfp0.type = null
+                                    set d_should_peel: true
+                                if dfp0.type <> null
+                                {
+                                    let dty0 (*dfp0.type)
+                                    if type_is_pointer_page(dty0)
+                                        set d_should_peel: true
+                                }
+                                if d_should_peel
+                                {
+                                    var d_holder Vector[String]^rp(1)
+                                    d_holder.put(0, String(dpn0))
+                                    set page_param: d_holder.get(0)
+                                    var d_rest Vector[Item](input.length - 1)
+                                    var dk: size_t 1
+                                    while dk < input.length
+                                    {
+                                        let dip input.get dk
+                                        if dip <> null
+                                            d_rest.put(dk - 1, (*dip))
+                                        set dk: dk + 1
+                                    }
+                                    set final_input: d_rest
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
             ; Extract generic parameter names from syntax.generics if
             ; present. Each GenericArgument's TypeSyntax is a bare
             ; name — we pull it out and build a GenericParameter.
