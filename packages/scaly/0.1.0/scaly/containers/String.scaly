@@ -204,7 +204,7 @@ define String (data: pointer[u8](null))
     function c_data(this: String) returns pointer[const_char]
         get_buffer() as pointer[const_char]
 
-    function to_c_string#(page, this: String) returns pointer[const_char]
+    function to_c_string(page, this: String) returns pointer[const_char]
     {
         var length: size_t 0
         var bit_count: size_t 0
