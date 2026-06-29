@@ -64,7 +64,7 @@ define rpc
 
     ; Read one framed message. Returns the JSON body as a String on the
     ; caller's page, or an empty String at EOF / on a malformed frame.
-    function read_message#(rp) returns String
+    function read_message(rp) returns String
     {
         var content_length: size_t 0
 
@@ -144,7 +144,7 @@ define rpc
         ; A StringBuilder mutated across a function boundary does not
         ; propagate (the receiver is copied), so the size is formatted
         ; into its own String and appended by value.
-        sb.append(rpc.format_size#(len))
+        sb.append(rpc.format_size(len))
         sb.append(13 as char)              ; CR
         sb.append(10 as char)              ; LF
         sb.append(13 as char)              ; CR
@@ -178,12 +178,12 @@ define rpc
         }
     }
 
-    function format_size#(rp, n: size_t) returns String
+    function format_size(rp, n: size_t) returns String
     {
         if n = (0 as size_t)
             return "0"
 
-        var sb StringBuilder#()
+        var sb StringBuilder()
         var value n
         var digits Array[char]()
         while value > (0 as size_t)
@@ -201,7 +201,7 @@ define rpc
             if d <> null
                 sb.append(*d)
         }
-        sb.to_string#()
+        sb.to_string()
     }
 
     ; ====================================================================
@@ -240,7 +240,7 @@ define rpc
         }
     }
 
-    function read_message_fd#(rp, fd: int) returns String
+    function read_message_fd(rp, fd: int) returns String
     {
         var content_length: size_t 0
 
@@ -319,7 +319,7 @@ define rpc
 
         var sb StringBuilder()
         sb.append "Content-Length: "
-        sb.append(rpc.format_size#(len))
+        sb.append(rpc.format_size(len))
         sb.append(13 as char)
         sb.append(10 as char)
         sb.append(13 as char)

@@ -111,13 +111,13 @@ define worker
     ; set — is reclaimed on return, every iteration.
     function serve_one(in_fd: int, out_fd: int) returns bool
     {
-        let kind rpc.read_message_fd#(in_fd)
+        let kind rpc.read_message_fd(in_fd)
         if kind.get_length() = (0 as size_t)
             return false
 
-        let uri rpc.read_message_fd#(in_fd)
-        let doctext rpc.read_message_fd#(in_fd)
-        let position rpc.read_message_fd#(in_fd)
+        let uri rpc.read_message_fd(in_fd)
+        let doctext rpc.read_message_fd(in_fd)
+        let position rpc.read_message_fd(in_fd)
 
         ; workspace/symbol: the `uri` frame carries the workspace ROOT path and
         ; `position` the query; there is no single document. Handle it before
@@ -125,22 +125,22 @@ define worker
         ; root directory as a file).
         if kind.equals("w")
         {
-            rpc.write_message_fd(out_fd, symbols.workspace_symbols#(uri, position))
+            rpc.write_message_fd(out_fd, symbols.workspace_symbols(uri, position))
             return true
         }
 
         ; Resolve the document source: prefer the parent's in-memory copy
         ; (sees unsaved edits); fall back to reading the file from disk when
         ; the parent has no buffer for this uri (empty doctext frame).
-        let path diagnostics.strip_uri#(uri)
+        let path diagnostics.strip_uri(uri)
         var source doctext
         if source.get_length() = (0 as size_t)
-            set source: File.read_to_string#(path)
+            set source: File.read_to_string(path)
 
         ; documentSymbol: outline of the resolved source.
         if kind.equals("s")
         {
-            rpc.write_message_fd(out_fd, symbols.document_symbols#(source))
+            rpc.write_message_fd(out_fd, symbols.document_symbols(source))
             return true
         }
 
@@ -149,14 +149,14 @@ define worker
         ; all-names list (the editor prefix-filters either way).
         if kind.equals("c")
         {
-            rpc.write_message_fd(out_fd, symbols.completion_packed#(source, uri, position))
+            rpc.write_message_fd(out_fd, symbols.completion_packed(source, uri, position))
             return true
         }
 
         ; hover: symbol under the packed "<line> <char>" cursor position.
         if kind.equals("h")
         {
-            rpc.write_message_fd(out_fd, symbols.hover_packed#(source, position))
+            rpc.write_message_fd(out_fd, symbols.hover_packed(source, position))
             return true
         }
 
@@ -165,7 +165,7 @@ define worker
         ; sibling .scaly files in the same directory tree (cross-file).
         if kind.equals("g")
         {
-            rpc.write_message_fd(out_fd, symbols.definition_workspace_packed#(source, uri, position))
+            rpc.write_message_fd(out_fd, symbols.definition_workspace_packed(source, uri, position))
             return true
         }
 
@@ -173,14 +173,14 @@ define worker
         ; result Locations refer back to `uri`.
         if kind.equals("r")
         {
-            rpc.write_message_fd(out_fd, symbols.references_packed#(source, uri, position))
+            rpc.write_message_fd(out_fd, symbols.references_packed(source, uri, position))
             return true
         }
 
         ; documentHighlight: occurrences in the current document (range-only).
         if kind.equals("l")
         {
-            rpc.write_message_fd(out_fd, symbols.highlights_packed#(source, position))
+            rpc.write_message_fd(out_fd, symbols.highlights_packed(source, position))
             return true
         }
 
@@ -189,21 +189,21 @@ define worker
         ; WorkspaceEdit refers back to `uri`.
         if kind.equals("n")
         {
-            rpc.write_message_fd(out_fd, symbols.rename_packed#(source, uri, position))
+            rpc.write_message_fd(out_fd, symbols.rename_packed(source, uri, position))
             return true
         }
 
         ; prepareRename: the range of the renameable identifier at the cursor.
         if kind.equals("p")
         {
-            rpc.write_message_fd(out_fd, symbols.prepare_rename_packed#(source, position))
+            rpc.write_message_fd(out_fd, symbols.prepare_rename_packed(source, position))
             return true
         }
 
         ; signatureHelp: the parameter list of the call enclosing the cursor.
         if kind.equals("f")
         {
-            rpc.write_message_fd(out_fd, symbols.signature_packed#(source, uri, position))
+            rpc.write_message_fd(out_fd, symbols.signature_packed(source, uri, position))
             return true
         }
 
@@ -211,7 +211,7 @@ define worker
         ; "<sl> <sc> <el> <ec>" range.
         if kind.equals("y")
         {
-            rpc.write_message_fd(out_fd, symbols.inlay_hints_packed#(source, uri, position))
+            rpc.write_message_fd(out_fd, symbols.inlay_hints_packed(source, uri, position))
             return true
         }
 
@@ -219,7 +219,7 @@ define worker
         ; no position).
         if kind.equals("o")
         {
-            rpc.write_message_fd(out_fd, symbols.folding_ranges#(source))
+            rpc.write_message_fd(out_fd, symbols.folding_ranges(source))
             return true
         }
 
@@ -227,7 +227,7 @@ define worker
         ; (uri-only, no position).
         if kind.equals("t")
         {
-            rpc.write_message_fd(out_fd, symbols.semantic_tokens#(source, uri))
+            rpc.write_message_fd(out_fd, symbols.semantic_tokens(source, uri))
             return true
         }
 
@@ -238,11 +238,11 @@ define worker
         ; the server falls back to the lexical hover on an empty reply.
         if kind.equals("x")
         {
-            rpc.write_message_fd(out_fd, semantic.semantic_type_framed#(source, uri, position))
+            rpc.write_message_fd(out_fd, semantic.semantic_type_framed(source, uri, position))
             return true
         }
 
-        rpc.write_message_fd(out_fd, diagnostics.publish_diagnostics#(uri, source))
+        rpc.write_message_fd(out_fd, diagnostics.publish_diagnostics(uri, source))
         true
     }
 
@@ -331,91 +331,91 @@ define worker
     ; payload, or an empty-diagnostics clear payload if the worker is
     ; unavailable / crashed / hung (and respawns it next time). The text is
     ; the editor's latest buffer (the position frame is unused for diagnostics).
-    function analyze#(rp, uri: String, text: String) returns String
-        worker.exchange#("d", uri, text, "", diagnostics.clear_diagnostics#(uri))
+    function analyze(rp, uri: String, text: String) returns String
+        worker.exchange("d", uri, text, "", diagnostics.clear_diagnostics(uri))
 
     ; Build the documentSymbol result for `uri` in the worker. `text` is the
     ; in-memory document copy (empty -> worker reads disk). Returns the JSON
     ; array; an empty array `[]` if the worker is unavailable/crashed/hung.
-    function symbols#(rp, uri: String, text: String) returns String
-        worker.exchange#("s", uri, text, "", "[]")
+    function symbols(rp, uri: String, text: String) returns String
+        worker.exchange("s", uri, text, "", "[]")
 
     ; Hover for `uri` at the packed "<line> <char>" position. `text` is the
     ; in-memory document copy (empty -> worker reads disk). Returns the LSP
     ; hover object, or "" (empty) if unavailable / no symbol at the cursor.
-    function hover#(rp, uri: String, text: String, packed: String) returns String
-        worker.exchange#("h", uri, text, packed, "")
+    function hover(rp, uri: String, text: String, packed: String) returns String
+        worker.exchange("h", uri, text, packed, "")
 
     ; Go-to-definition for `uri` at the packed "<line> <char>" position.
     ; `text` is the in-memory copy (empty -> worker reads disk). Returns the
     ; LSP Location object, or "" if unavailable / no matching declaration.
-    function definition#(rp, uri: String, text: String, packed: String) returns String
-        worker.exchange#("g", uri, text, packed, "")
+    function definition(rp, uri: String, text: String, packed: String) returns String
+        worker.exchange("g", uri, text, packed, "")
 
     ; Find-all-references for `uri` at the packed "<line> <char>" position.
     ; `text` is the in-memory copy (empty -> worker reads disk). Returns the
     ; LSP Location[] array; `[]` if unavailable / crashed / hung / no identifier.
-    function references#(rp, uri: String, text: String, packed: String) returns String
-        worker.exchange#("r", uri, text, packed, "[]")
+    function references(rp, uri: String, text: String, packed: String) returns String
+        worker.exchange("r", uri, text, packed, "[]")
 
     ; documentHighlight for `uri` at the packed "<line> <char>" position.
     ; `text` is the in-memory copy (empty -> worker reads disk). Returns the
     ; LSP DocumentHighlight[] array (ranges only); `[]` if unavailable / none.
-    function highlights#(rp, uri: String, text: String, packed: String) returns String
-        worker.exchange#("l", uri, text, packed, "[]")
+    function highlights(rp, uri: String, text: String, packed: String) returns String
+        worker.exchange("l", uri, text, packed, "[]")
 
     ; Completion for `uri` at the packed "<line> <char>" position. `text` is
     ; the in-memory copy (empty -> worker reads disk). Returns the members of
     ; the `.`-qualified receiver under the cursor when it names a declared
     ; concept, else a CompletionItem[] of every declared name; `[]` if
     ; unavailable.
-    function completion#(rp, uri: String, text: String, packed: String) returns String
-        worker.exchange#("c", uri, text, packed, "[]")
+    function completion(rp, uri: String, text: String, packed: String) returns String
+        worker.exchange("c", uri, text, packed, "[]")
 
     ; Rename for `uri`. `packed` is "<line> <char> <newName>". `text` is the
     ; in-memory copy (empty -> worker reads disk). Returns the LSP
     ; WorkspaceEdit, or "" if unavailable / no identifier at the cursor.
-    function rename#(rp, uri: String, text: String, packed: String) returns String
-        worker.exchange#("n", uri, text, packed, "")
+    function rename(rp, uri: String, text: String, packed: String) returns String
+        worker.exchange("n", uri, text, packed, "")
 
     ; prepareRename for `uri` at the packed "<line> <char>" position. `text`
     ; is the in-memory copy (empty -> worker reads disk). Returns the LSP Range
     ; of the renameable identifier, or "" if unavailable / not renameable.
-    function prepare_rename#(rp, uri: String, text: String, packed: String) returns String
-        worker.exchange#("p", uri, text, packed, "")
+    function prepare_rename(rp, uri: String, text: String, packed: String) returns String
+        worker.exchange("p", uri, text, packed, "")
 
     ; signatureHelp for `uri` at the packed "<line> <char>" position. `text`
     ; is the in-memory copy (empty -> worker reads disk). Returns the LSP
     ; SignatureHelp, or "" if unavailable / cursor not inside a known call.
-    function signature_help#(rp, uri: String, text: String, packed: String) returns String
-        worker.exchange#("f", uri, text, packed, "")
+    function signature_help(rp, uri: String, text: String, packed: String) returns String
+        worker.exchange("f", uri, text, packed, "")
 
     ; inlayHint for `uri` over the packed "<sl> <sc> <el> <ec>" range. `text` is
     ; the in-memory copy (empty -> worker reads disk). Returns the LSP
     ; InlayHint[] array; `[]` if unavailable / crashed / hung.
-    function inlay_hints#(rp, uri: String, text: String, packed: String) returns String
-        worker.exchange#("y", uri, text, packed, "[]")
+    function inlay_hints(rp, uri: String, text: String, packed: String) returns String
+        worker.exchange("y", uri, text, packed, "[]")
 
     ; foldingRange for `uri` (uri-only, no position). `text` is the in-memory
     ; copy (empty -> worker reads disk). Returns the LSP FoldingRange[] array;
     ; `[]` if unavailable / crashed / hung.
-    function folding#(rp, uri: String, text: String) returns String
-        worker.exchange#("o", uri, text, "", "[]")
+    function folding(rp, uri: String, text: String) returns String
+        worker.exchange("o", uri, text, "", "[]")
 
     ; Semantic type at the packed "<line> <char>" position. `text` is the
     ; in-memory copy (empty -> worker reads disk). Returns the framed reply
     ; "1<name>" on a hit, "0" on a miss, or "" if unavailable / crashed / hung
     ; (the server decodes the tag and falls back to the lexical hover).
-    function semantic_type#(rp, uri: String, text: String, packed: String) returns String
-        worker.exchange#("x", uri, text, packed, "")
+    function semantic_type(rp, uri: String, text: String, packed: String) returns String
+        worker.exchange("x", uri, text, packed, "")
 
     ; semanticTokens for `uri` (uri-only, no position). `text` is the in-memory
     ; copy (empty -> worker reads disk). Returns the LSP {"data":[...]} object;
     ; an empty-data object if unavailable / crashed / hung. The fallback is
     ; built with quote BYTES (string-literal escapes are not decoded).
-    function semantic_tokens#(rp, uri: String, text: String) returns String
+    function semantic_tokens(rp, uri: String, text: String) returns String
     {
-        var fb StringBuilder#()
+        var fb StringBuilder()
         fb.append(0x7B as char)                    ; {
         fb.append(0x22 as char)                    ; "
         fb.append "data"
@@ -424,15 +424,15 @@ define worker
         fb.append(0x5B as char)                    ; [
         fb.append(0x5D as char)                    ; ]
         fb.append(0x7D as char)                    ; }
-        worker.exchange#("t", uri, text, "", fb.to_string#())
+        worker.exchange("t", uri, text, "", fb.to_string())
     }
 
     ; workspace/symbol: search every .scaly file under `root` for declarations
     ; matching `query`. `root` rides in the uri frame, `query` in the position
     ; frame; the text frame is unused. Returns SymbolInformation[]; `[]` if
     ; unavailable / no root / no match.
-    function workspace_symbols#(rp, root: String, query: String) returns String
-        worker.exchange#("w", root, "", query, "[]")
+    function workspace_symbols(rp, root: String, query: String) returns String
+        worker.exchange("w", root, "", query, "[]")
 
     ; Send one (kind,uri,text,position) request to the worker and return its
     ; framed reply, or `fallback` if the worker is unavailable / crashed /
@@ -440,7 +440,7 @@ define worker
     ; and the request retried once on a fresh worker, so a transient crash is
     ; invisible to the editor. A deterministically-crashing input falls
     ; through to the fallback after the retry (bounded — no respawn storm).
-    function exchange#(rp, kind: pointer[const_char], uri: String, text: String, position: String, fallback: String) returns String
+    function exchange(rp, kind: pointer[const_char], uri: String, text: String, position: String, fallback: String) returns String
     {
         var attempts: int 0
         while attempts < 2
@@ -453,7 +453,7 @@ define worker
 
             ; Send the request as four raw frames: kind, uri, doc text,
             ; packed cursor position.
-            let kind_str String#(kind)
+            let kind_str String(kind)
             rpc.write_message_fd(worker_in, kind_str)
             rpc.write_message_fd(worker_in, uri)
             rpc.write_message_fd(worker_in, text)
@@ -471,7 +471,7 @@ define worker
                 return fallback
             }
 
-            let resp rpc.read_message_fd#(worker_out)
+            let resp rpc.read_message_fd(worker_out)
             ; Non-empty = a real answer.
             if resp.get_length() > (0 as size_t)
                 return resp

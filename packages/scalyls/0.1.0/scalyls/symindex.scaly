@@ -102,7 +102,7 @@ define symindex
                 let s idx_slots + i
                 if s.used
                 {
-                    let sp String#(s.path_data as pointer[const_char], s.path_len)
+                    let sp String(s.path_data as pointer[const_char], s.path_len)
                     if sp.equals(path)
                         return i
                 }
@@ -129,14 +129,14 @@ define symindex
     ; The cached blob for `path` (a fresh copy on the caller's page), or "" on a
     ; miss. Callers should gate on valid() first; an empty blob is a legitimate
     ; cached value (a file with no symbols).
-    function get_blob#(rp, path: String) returns String
+    function get_blob(rp, path: String) returns String
     {
         let idx symindex.find path
         if idx >= 0
         {
             let s idx_slots + idx
             if s.blob_data <> null
-                return String#(s.blob_data as pointer[const_char], s.blob_len)
+                return String(s.blob_data as pointer[const_char], s.blob_len)
         }
         ""
     }

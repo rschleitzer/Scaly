@@ -81,10 +81,10 @@ define docstore
 
     ; The workspace root path (a fresh copy on the caller's page), or "" when
     ; initialize provided none.
-    function workspace_root#(rp) returns String
+    function workspace_root(rp) returns String
     {
         if ws_root_data <> null
-            return String#(ws_root_data as pointer[const_char], ws_root_len)
+            return String(ws_root_data as pointer[const_char], ws_root_len)
         ""
     }
     ; Lazily allocate + zero the slot array on first use. A malloc failure
@@ -125,7 +125,7 @@ define docstore
                 let s doc_slots + i
                 if s.used
                 {
-                    let su String#(s.uri_data as pointer[const_char], s.uri_len)
+                    let su String(s.uri_data as pointer[const_char], s.uri_len)
                     if su.equals(uri)
                         return i
                 }
@@ -233,14 +233,14 @@ define docstore
 
     ; The stored text for `uri` (a fresh copy on the caller's page), or an
     ; empty String on a miss. The worker treats empty as "read from disk".
-    function get#(rp, uri: String) returns String
+    function get(rp, uri: String) returns String
     {
         let idx docstore.find uri
         if idx >= 0
         {
             let s doc_slots + idx
             if s.text_data <> null
-                return String#(s.text_data as pointer[const_char], s.text_len)
+                return String(s.text_data as pointer[const_char], s.text_len)
         }
         ""
     }
