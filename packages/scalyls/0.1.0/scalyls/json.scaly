@@ -173,13 +173,13 @@ define json
     ; Parsing
     ; ====================================================================
 
-    function parse#(rp, source: String) returns JsonValue
+    function parse(rp, source: String) returns JsonValue
     {
         var p JsonParser(source, 0 as size_t, true)
-        json.parse_value#(&p)
+        json.parse_value(&p)
     }
 
-    function parse_value#(rp, p: pointer[JsonParser]) returns JsonValue
+    function parse_value(rp, p: pointer[JsonParser]) returns JsonValue
     {
         json.skip_ws p
         let c json.peek p
@@ -190,13 +190,13 @@ define json
         }
 
         if c = (0x7B as u8)             ; '{'
-            return json.parse_object#(p)
+            return json.parse_object(p)
 
         if c = (0x5B as u8)             ; '['
-            return json.parse_array#(p)
+            return json.parse_array(p)
 
         if c = (0x22 as u8)             ; '"'
-            return JsonValue.Str(json.parse_string#(p))
+            return JsonValue.Str(json.parse_string(p))
 
         if json.match_literal(p, "true")
             return JsonValue.Bool true
@@ -214,7 +214,7 @@ define json
         json.null_value()
     }
 
-    function parse_object#(rp, p: pointer[JsonParser]) returns JsonValue
+    function parse_object(rp, p: pointer[JsonParser]) returns JsonValue
     {
         json.expect(p, 0x7B as u8)         ; '{'
         json.skip_ws p
@@ -262,7 +262,7 @@ define json
         JsonValue.Object(JsonObject(count, buf))
     }
 
-    function parse_array#(rp, p: pointer[JsonParser]) returns JsonValue
+    function parse_array(rp, p: pointer[JsonParser]) returns JsonValue
     {
         json.expect(p, 0x5B as u8)         ; '['
         json.skip_ws p
@@ -305,7 +305,7 @@ define json
         JsonValue.Array(JsonArray(count, buf))
     }
 
-    function parse_string#(rp, p: pointer[JsonParser]) returns String
+    function parse_string(rp, p: pointer[JsonParser]) returns String
     {
         if json.peek(p) <> (0x22 as u8)   ; must open with '"'
         {
@@ -388,7 +388,7 @@ define json
         e as char
     }
 
-    function parse_number#(p: pointer[JsonParser]) returns i64
+    function parse_number(p: pointer[JsonParser]) returns i64
     {
         var negative false
         if json.peek(p) = (0x2D as u8)  ; '-'
