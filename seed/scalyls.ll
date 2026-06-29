@@ -2464,7 +2464,7 @@ lor.end:                                          ; preds = %lor.rhs, %if.end29
 if.then37:                                        ; preds = %lor.end
   %variant.tag.ptr39 = getelementptr inbounds %_Z9JsonValue, ptr %sret.result, i32 0, i32 0
   store i8 2, ptr %variant.tag.ptr39, align 1
-  %call40 = call i64 @_ZN4json12parse_numberEPN4scaly6memory4PageEP10JsonParser(ptr %1, ptr %2)
+  %call40 = call i64 @_ZN4json12parse_numberEP10JsonParser(ptr %2)
   %variant.data.ptr41 = getelementptr inbounds %_Z9JsonValue, ptr %sret.result, i32 0, i32 1
   store i64 %call40, ptr %variant.data.ptr41, align 1
   %variant.val42 = load %_Z9JsonValue, ptr %sret.result, align 1
@@ -2985,18 +2985,18 @@ lor.end:                                          ; preds = %lor.rhs, %entry
   ret i1 %lor.result
 }
 
-define linkonce_odr i64 @_ZN4json12parse_numberEPN4scaly6memory4PageEP10JsonParser(ptr %0, ptr %1) {
+define linkonce_odr i64 @_ZN4json12parse_numberEP10JsonParser(ptr %0) {
 entry:
   %value = alloca i64, align 8
   %negative = alloca i1, align 1
   store i1 false, ptr %negative, align 1
-  %call = call i8 @_ZN4json4peekEP10JsonParser(ptr %1)
+  %call = call i8 @_ZN4json4peekEP10JsonParser(ptr %0)
   %eq = icmp eq i8 %call, 45
   br i1 %eq, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
   store i1 true, ptr %negative, align 1
-  call void @_ZN4json7advanceEP10JsonParser(ptr %1)
+  call void @_ZN4json7advanceEP10JsonParser(ptr %0)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -3004,28 +3004,28 @@ if.end:                                           ; preds = %if.then, %entry
   br label %while.cond
 
 while.cond:                                       ; preds = %while.body, %if.end
-  %call1 = call i8 @_ZN4json4peekEP10JsonParser(ptr %1)
+  %call1 = call i8 @_ZN4json4peekEP10JsonParser(ptr %0)
   %call2 = call i1 @_ZN4json8is_digitE2u8(i8 %call1)
   br i1 %call2, label %while.body, label %while.exit
 
 while.body:                                       ; preds = %while.cond
   %value3 = load i64, ptr %value, align 4
   %mul = mul i64 %value3, 10
-  %call4 = call i8 @_ZN4json4peekEP10JsonParser(ptr %1)
+  %call4 = call i8 @_ZN4json4peekEP10JsonParser(ptr %0)
   %sub = sub i8 %call4, 48
   %as.zext = zext i8 %sub to i64
   %add = add i64 %mul, %as.zext
   store i64 %add, ptr %value, align 1
-  call void @_ZN4json7advanceEP10JsonParser(ptr %1)
+  call void @_ZN4json7advanceEP10JsonParser(ptr %0)
   br label %while.cond
 
 while.exit:                                       ; preds = %while.cond
-  %call5 = call i8 @_ZN4json4peekEP10JsonParser(ptr %1)
+  %call5 = call i8 @_ZN4json4peekEP10JsonParser(ptr %0)
   %eq6 = icmp eq i8 %call5, 46
   br i1 %eq6, label %if.then7, label %if.end8
 
 if.then7:                                         ; preds = %while.exit
-  call void @_ZN4json7advanceEP10JsonParser(ptr %1)
+  call void @_ZN4json7advanceEP10JsonParser(ptr %0)
   br label %while.cond9
 
 if.end8:                                          ; preds = %while.exit11, %while.exit
@@ -3033,12 +3033,12 @@ if.end8:                                          ; preds = %while.exit11, %whil
   br i1 %negative14, label %if.then15, label %if.end16
 
 while.cond9:                                      ; preds = %while.body10, %if.then7
-  %call12 = call i8 @_ZN4json4peekEP10JsonParser(ptr %1)
+  %call12 = call i8 @_ZN4json4peekEP10JsonParser(ptr %0)
   %call13 = call i1 @_ZN4json8is_digitE2u8(i8 %call12)
   br i1 %call13, label %while.body10, label %while.exit11
 
 while.body10:                                     ; preds = %while.cond9
-  call void @_ZN4json7advanceEP10JsonParser(ptr %1)
+  call void @_ZN4json7advanceEP10JsonParser(ptr %0)
   br label %while.cond9
 
 while.exit11:                                     ; preds = %while.cond9
