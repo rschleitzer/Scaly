@@ -2601,7 +2601,7 @@ function build_referenced_module(path: String, name: String, is_private: bool) r
     if contents.get_length() = 0
         return empty_module
 
-    var p Parser#(contents)
+    var p Parser(contents)
     var syntax: ProgramSyntax
     choose p.parse_program#()
         when err: Error
