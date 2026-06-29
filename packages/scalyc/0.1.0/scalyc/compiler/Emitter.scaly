@@ -316,7 +316,7 @@ define RegionInfo
     named_region_values: ref[Array[LLVMValueRef]]?
 )
 {
-    init#(page: pointer[Page])
+    init(page: pointer[Page])
     {
         set local_page: LLVMValueRef(null)
         set return_page: LLVMValueRef(null)
@@ -482,7 +482,7 @@ define Emitter
     page_restore_watermark: LLVMValueRef
 )
 {
-    init#(page: pointer[Page], cfg: EmitterConfig)
+    init(page: pointer[Page], cfg: EmitterConfig)
     {
         set config: cfg
         set context: LLVMContextRef(null)
