@@ -117,7 +117,6 @@ struct NameSyntax;
 struct ExtensionSyntax;
 struct LifetimeSyntax;
 struct CallSyntax;
-struct LocalSyntax;
 struct ReferenceSyntax;
 struct ThrownSyntax;
 struct EmptySyntax;
@@ -150,18 +149,13 @@ struct ReferenceSyntax {
     llvm::StringRef location;
 };
 
-struct LocalSyntax {
-    size_t Start;
-    size_t End;
-};
-
 struct CallSyntax {
     size_t Start;
     size_t End;
 };
 
 struct LifetimeSyntax {
-    std::variant<CallSyntax, LocalSyntax, ReferenceSyntax, ThrownSyntax> Value;
+    std::variant<CallSyntax, ReferenceSyntax, ThrownSyntax> Value;
 };
 
 struct ExtensionSyntax {

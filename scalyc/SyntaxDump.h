@@ -59,12 +59,6 @@ public:
         key("location"); strVal(N.location);
         nl(); Indent--; indent(); OS << "}";
     }
-    void dump(const LocalSyntax &N) {
-        OS << "{"; nl(); Indent++;
-        key("node"); OS << "\"Local\","; nl();
-        dumpSpan(N.Start, N.End);
-        nl(); Indent--; indent(); OS << "}";
-    }
     void dump(const CallSyntax &N) {
         OS << "{"; nl(); Indent++;
         key("node"); OS << "\"Call\","; nl();

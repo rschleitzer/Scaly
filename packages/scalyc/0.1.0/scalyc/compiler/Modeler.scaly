@@ -26,7 +26,6 @@ use scaly.compiler.Model.CharacterConstant
 use scaly.compiler.Model.FragmentConstant
 use scaly.compiler.Model.Unspecified
 use scaly.compiler.Model.Call
-use scaly.compiler.Model.Local
 use scaly.compiler.Model.Reference
 use scaly.compiler.Model.Thrown
 use scaly.compiler.Model.Lifetime
@@ -94,7 +93,6 @@ use scaly.compiler.Syntax.HexLiteral
 use scaly.compiler.Syntax.LiteralSyntax
 use scaly.compiler.Syntax.LifetimeSyntax
 use scaly.compiler.Syntax.CallSyntax
-use scaly.compiler.Syntax.LocalSyntax
 use scaly.compiler.Syntax.ReferenceSyntax
 use scaly.compiler.Syntax.ThrownSyntax
 use scaly.compiler.Syntax.NameSyntax
@@ -260,8 +258,6 @@ function handle_lifetime(syntax: ref[LifetimeSyntax]?) returns Lifetime
     choose lifetime_syntax
         when call: CallSyntax
             Lifetime.Call(Call(Span(call.start, call.end)))
-        when local: LocalSyntax
-            Lifetime.Local(Local(Span(local.start, local.end)))
         when ref: ReferenceSyntax
             Lifetime.Reference(Reference(Span(ref.start, ref.end), ref.location))
         when thrown: ThrownSyntax

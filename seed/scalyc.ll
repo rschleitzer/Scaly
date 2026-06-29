@@ -352,7 +352,6 @@ source_filename = "scalyc"
 %_Z5ArrayI15ExtensionSyntaxE = type { i64, ptr }
 %_Z13ArrayIteratorI15ExtensionSyntaxE = type { ptr, i64 }
 %_Z10CallSyntax = type { i64, i64 }
-%_Z11LocalSyntax = type { i64, i64 }
 %_Z15ReferenceSyntax = type { i64, i64, { ptr } }
 %_Z12ThrownSyntax = type { i64, i64 }
 %_Z6VectorI6VectorI7OperandEE = type { i64, ptr }
@@ -505,7 +504,6 @@ source_filename = "scalyc"
 %_Z14StringConstant = type { %_Z4Span, { ptr } }
 %_Z6Thrown = type { %_Z4Span }
 %_Z9Reference = type { %_Z4Span, { ptr } }
-%_Z5Local = type { %_Z4Span }
 %_Z4Call = type { %_Z4Span }
 %_Z11Unspecified = type {}
 %_Z6VectorI4TypeE = type { i64, ptr }
@@ -788,6 +786,7 @@ source_filename = "scalyc"
 %_Z4NodeI16PlannedComponentE = type { %_Z16PlannedComponent, ptr }
 %_Z12ListIteratorI16PlannedComponentE = type { ptr }
 %_Z19PlannedMemberAccess = type { { ptr }, i64, i1, i1, %_Z11PlannedType, %_Z11PlannedType }
+%_Z5Local = type { %_Z4Span }
 %_Z17PlannedExternImpl = type { %_Z4Span }
 %_Z13PlannedMatrix = type { %_Z4Span, ptr, %_Z11PlannedType, %_Z8Lifetime }
 %_Z6VectorI19PlannedMemberAccessE = type { i64, ptr }
@@ -1604,7 +1603,7 @@ source_filename = "scalyc"
 @.sconst.587 = private constant [5 x i8] c"\03var\00"
 @.sconst.588 = private constant [6 x i8] c"\04this\00"
 @.sconst.589 = private constant [6 x i8] c"\04this\00"
-@.sconst.590 = private constant [140 x i8] c"\89\01reference into a local ($) page escapes via store - allocate the target with '#' (caller page) or '^name' (region) so it outlives the use\00"
+@.sconst.590 = private constant [136 x i8] c"\85\01reference into a local page escapes via store - allocate the target with '#' (caller page) or '^name' (region) so it outlives the use\00"
 @.sconst.591 = private constant [7 x i8] c"\05Slice\00"
 @.sconst.592 = private constant [9 x i8] c"\07pointer\00"
 @.sconst.593 = private constant [5 x i8] c"\03ref\00"
@@ -1619,11 +1618,11 @@ source_filename = "scalyc"
 @.sconst.602 = private constant [5 x i8] c"\03ref\00"
 @.sconst.603 = private constant [6 x i8] c"\04LLVM\00"
 @.sconst.604 = private constant [8 x i8] c"\06Option\00"
-@.sconst.605 = private constant [164 x i8] c"\A1\01reference into a local ($) page escapes via call - the callee stores it into memory that outlives this frame; allocate with '#' (caller page) or '^name' (region)\00"
+@.sconst.605 = private constant [160 x i8] c"\9D\01reference into a local page escapes via call - the callee stores it into memory that outlives this frame; allocate with '#' (caller page) or '^name' (region)\00"
 @.sconst.606 = private constant [6 x i8] c"\04init\00"
 @.sconst.607 = private constant [5 x i8] c"\03ret\00"
 @.sconst.608 = private constant [166 x i8] c"\A3\01a closure bound to a local lives on the stack frame and cannot be returned - return the lambda directly (return \\\\x: ...) so it is allocated on the caller's region\00"
-@.sconst.609 = private constant [141 x i8] c"\8A\01reference into a local ($) page escapes via return - allocate the target with '#' (caller page) or '^name' (region) so it outlives the use\00"
+@.sconst.609 = private constant [137 x i8] c"\86\01reference into a local page escapes via return - allocate the target with '#' (caller page) or '^name' (region) so it outlives the use\00"
 @.sconst.610 = private constant [5 x i8] c"\03get\00"
 @.sconst.611 = private constant [5 x i8] c"\03get\00"
 @.sconst.612 = private constant [3 x i8] c"\01*\00"
@@ -57512,8 +57511,6 @@ if.end6:                                          ; preds = %if.end
 define linkonce_odr void @_ZN6Parser14parse_lifetimeEPN4scaly6memory4PageE(ptr noalias sret({ i8, [25 x i8] }) %0, ptr %1, ptr %2) {
 entry:
   %tuple = alloca %_Z15DifferentSyntax, align 8
-  %variant.ptr89 = alloca %_Z11ParserError, align 8
-  %sret.result74 = alloca { i8, [25 x i8] }, align 8
   %variant.ptr59 = alloca %_Z11ParserError, align 8
   %sret.result44 = alloca { i8, [25 x i8] }, align 8
   %variant.ptr29 = alloca %_Z11ParserError, align 8
@@ -57531,7 +57528,7 @@ entry:
   ]
 
 choose.end:                                       ; preds = %choose.else, %choose.end2
-  call void @_ZN6Parser11parse_localEPN4scaly6memory4PageE(ptr noalias sret({ i8, [25 x i8] }) %sret.result14, ptr %1, ptr %2)
+  call void @_ZN6Parser15parse_referenceEPN4scaly6memory4PageE(ptr noalias sret({ i8, [25 x i8] }) %sret.result14, ptr %1, ptr %2)
   %tag15 = load i8, ptr %sret.result14, align 1
   %throws.data.ptr16 = getelementptr inbounds i8, ptr %sret.result14, i8 1
   switch i8 %tag15, label %choose.else18 [
@@ -57591,7 +57588,7 @@ choose.when9:                                     ; preds = %entry
   ret void
 
 choose.end17:                                     ; preds = %choose.else18, %choose.end23
-  call void @_ZN6Parser15parse_referenceEPN4scaly6memory4PageE(ptr noalias sret({ i8, [25 x i8] }) %sret.result44, ptr %1, ptr %2)
+  call void @_ZN6Parser12parse_thrownEPN4scaly6memory4PageE(ptr noalias sret({ i8, [25 x i8] }) %sret.result44, ptr %1, ptr %2)
   %tag45 = load i8, ptr %sret.result44, align 1
   %throws.data.ptr46 = getelementptr inbounds i8, ptr %sret.result44, i8 1
   switch i8 %tag45, label %choose.else48 [
@@ -57638,11 +57635,11 @@ choose.when34:                                    ; preds = %choose.when19
   br label %choose.end23
 
 choose.when37:                                    ; preds = %choose.end
-  %throws.success.val38 = load %_Z11LocalSyntax, ptr %throws.data.ptr16, align 1
+  %throws.success.val38 = load %_Z15ReferenceSyntax, ptr %throws.data.ptr16, align 1
   %variant.tag.ptr39 = getelementptr inbounds %_Z14LifetimeSyntax, ptr %variant.ptr10, i32 0, i32 0
   store i8 1, ptr %variant.tag.ptr39, align 1
   %variant.data.ptr40 = getelementptr inbounds %_Z14LifetimeSyntax, ptr %variant.ptr10, i32 0, i32 1
-  store %_Z11LocalSyntax %throws.success.val38, ptr %variant.data.ptr40, align 1
+  store %_Z15ReferenceSyntax %throws.success.val38, ptr %variant.data.ptr40, align 1
   %variant.val41 = load %_Z14LifetimeSyntax, ptr %variant.ptr10, align 1
   %ret.tag.ptr42 = getelementptr inbounds { i8, [25 x i8] }, ptr %0, i32 0, i32 0
   store i8 0, ptr %ret.tag.ptr42, align 1
@@ -57651,13 +57648,18 @@ choose.when37:                                    ; preds = %choose.end
   ret void
 
 choose.end47:                                     ; preds = %choose.else48, %choose.end53
-  call void @_ZN6Parser12parse_thrownEPN4scaly6memory4PageE(ptr noalias sret({ i8, [25 x i8] }) %sret.result74, ptr %1, ptr %2)
-  %tag75 = load i8, ptr %sret.result74, align 1
-  %throws.data.ptr76 = getelementptr inbounds i8, ptr %sret.result74, i8 1
-  switch i8 %tag75, label %choose.else78 [
-    i8 1, label %choose.when79
-    i8 0, label %choose.when97
-  ]
+  %throw.tag.ptr74 = getelementptr inbounds { i8, [25 x i8] }, ptr %0, i32 0, i32 0
+  store i8 1, ptr %throw.tag.ptr74, align 1
+  %variant.tag.ptr75 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr59, i32 0, i32 0
+  store i8 0, ptr %variant.tag.ptr75, align 1
+  store %_Z15DifferentSyntax zeroinitializer, ptr %tuple, align 1
+  %tuple.val = load %_Z15DifferentSyntax, ptr %tuple, align 1
+  %variant.data.ptr76 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr59, i32 0, i32 1
+  store %_Z15DifferentSyntax %tuple.val, ptr %variant.data.ptr76, align 1
+  %variant.val77 = load %_Z11ParserError, ptr %variant.ptr59, align 1
+  %throw.data.ptr78 = getelementptr inbounds { i8, [25 x i8] }, ptr %0, i32 0, i32 1
+  store %_Z11ParserError %variant.val77, ptr %throw.data.ptr78, align 1
+  ret void
 
 choose.else48:                                    ; preds = %choose.end17
   br label %choose.end47
@@ -57698,81 +57700,16 @@ choose.when64:                                    ; preds = %choose.when49
   br label %choose.end53
 
 choose.when67:                                    ; preds = %choose.end17
-  %throws.success.val68 = load %_Z15ReferenceSyntax, ptr %throws.data.ptr46, align 1
+  %throws.success.val68 = load %_Z12ThrownSyntax, ptr %throws.data.ptr46, align 1
   %variant.tag.ptr69 = getelementptr inbounds %_Z14LifetimeSyntax, ptr %variant.ptr10, i32 0, i32 0
   store i8 2, ptr %variant.tag.ptr69, align 1
   %variant.data.ptr70 = getelementptr inbounds %_Z14LifetimeSyntax, ptr %variant.ptr10, i32 0, i32 1
-  store %_Z15ReferenceSyntax %throws.success.val68, ptr %variant.data.ptr70, align 1
+  store %_Z12ThrownSyntax %throws.success.val68, ptr %variant.data.ptr70, align 1
   %variant.val71 = load %_Z14LifetimeSyntax, ptr %variant.ptr10, align 1
   %ret.tag.ptr72 = getelementptr inbounds { i8, [25 x i8] }, ptr %0, i32 0, i32 0
   store i8 0, ptr %ret.tag.ptr72, align 1
   %ret.data.ptr73 = getelementptr inbounds { i8, [25 x i8] }, ptr %0, i32 0, i32 1
   store %_Z14LifetimeSyntax %variant.val71, ptr %ret.data.ptr73, align 1
-  ret void
-
-choose.end77:                                     ; preds = %choose.else78, %choose.end83
-  %throw.tag.ptr104 = getelementptr inbounds { i8, [25 x i8] }, ptr %0, i32 0, i32 0
-  store i8 1, ptr %throw.tag.ptr104, align 1
-  %variant.tag.ptr105 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr89, i32 0, i32 0
-  store i8 0, ptr %variant.tag.ptr105, align 1
-  store %_Z15DifferentSyntax zeroinitializer, ptr %tuple, align 1
-  %tuple.val = load %_Z15DifferentSyntax, ptr %tuple, align 1
-  %variant.data.ptr106 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr89, i32 0, i32 1
-  store %_Z15DifferentSyntax %tuple.val, ptr %variant.data.ptr106, align 1
-  %variant.val107 = load %_Z11ParserError, ptr %variant.ptr89, align 1
-  %throw.data.ptr108 = getelementptr inbounds { i8, [25 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val107, ptr %throw.data.ptr108, align 1
-  ret void
-
-choose.else78:                                    ; preds = %choose.end47
-  br label %choose.end77
-
-choose.when79:                                    ; preds = %choose.end47
-  %throws.err.val80 = load %_Z11ParserError, ptr %throws.data.ptr76, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %variant.ptr59, ptr align 1 %throws.data.ptr76, i64 ptrtoint (ptr getelementptr (%_Z11ParserError, ptr null, i32 1) to i64), i1 false)
-  %tag.ptr81 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr59, i32 0, i32 0
-  %tag82 = load i8, ptr %tag.ptr81, align 1
-  switch i8 %tag82, label %choose.else84 [
-    i8 1, label %choose.when85
-    i8 0, label %choose.when94
-  ]
-
-choose.end83:                                     ; preds = %choose.else84, %choose.when94
-  br label %choose.end77
-
-choose.else84:                                    ; preds = %choose.when79
-  br label %choose.end83
-
-choose.when85:                                    ; preds = %choose.when79
-  %"variant.c_data().ptr86" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr59, i32 0, i32 1
-  %variant.val87 = load %_Z13InvalidSyntax, ptr %"variant.c_data().ptr86", align 8
-  %throw.tag.ptr88 = getelementptr inbounds { i8, [25 x i8] }, ptr %0, i32 0, i32 0
-  store i8 1, ptr %throw.tag.ptr88, align 1
-  %variant.tag.ptr90 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr89, i32 0, i32 0
-  store i8 1, ptr %variant.tag.ptr90, align 1
-  %variant.data.ptr91 = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr89, i32 0, i32 1
-  store %_Z13InvalidSyntax %variant.val87, ptr %variant.data.ptr91, align 1
-  %variant.val92 = load %_Z11ParserError, ptr %variant.ptr89, align 1
-  %throw.data.ptr93 = getelementptr inbounds { i8, [25 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val92, ptr %throw.data.ptr93, align 1
-  ret void
-
-choose.when94:                                    ; preds = %choose.when79
-  %"variant.c_data().ptr95" = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr59, i32 0, i32 1
-  %variant.val96 = load %_Z15DifferentSyntax, ptr %"variant.c_data().ptr95", align 1
-  br label %choose.end83
-
-choose.when97:                                    ; preds = %choose.end47
-  %throws.success.val98 = load %_Z12ThrownSyntax, ptr %throws.data.ptr76, align 1
-  %variant.tag.ptr99 = getelementptr inbounds %_Z14LifetimeSyntax, ptr %variant.ptr10, i32 0, i32 0
-  store i8 3, ptr %variant.tag.ptr99, align 1
-  %variant.data.ptr100 = getelementptr inbounds %_Z14LifetimeSyntax, ptr %variant.ptr10, i32 0, i32 1
-  store %_Z12ThrownSyntax %throws.success.val98, ptr %variant.data.ptr100, align 1
-  %variant.val101 = load %_Z14LifetimeSyntax, ptr %variant.ptr10, align 1
-  %ret.tag.ptr102 = getelementptr inbounds { i8, [25 x i8] }, ptr %0, i32 0, i32 0
-  store i8 0, ptr %ret.tag.ptr102, align 1
-  %ret.data.ptr103 = getelementptr inbounds { i8, [25 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z14LifetimeSyntax %variant.val101, ptr %ret.data.ptr103, align 1
   ret void
 }
 
@@ -57817,50 +57754,6 @@ if.end:                                           ; preds = %entry
   store i8 0, ptr %ret.tag.ptr, align 1
   %ret.data.ptr = getelementptr inbounds { i8, [25 x i8] }, ptr %0, i32 0, i32 1
   store %_Z10CallSyntax %tuple.val6, ptr %ret.data.ptr, align 1
-  ret void
-}
-
-define linkonce_odr void @_ZN6Parser11parse_localEPN4scaly6memory4PageE(ptr noalias sret({ i8, [25 x i8] }) %0, ptr %1, ptr %2) {
-entry:
-  %tuple4 = alloca %_Z11LocalSyntax, align 8
-  %tuple = alloca %_Z15DifferentSyntax, align 8
-  %variant.ptr = alloca %_Z11ParserError, align 8
-  %load.struct = load %_Z6Parser, ptr %2, align 8
-  %lexer = extractvalue %_Z6Parser %load.struct, 0
-  %previous_position = extractvalue %_Z5Lexer %lexer, 4
-  %field.inplace = getelementptr inbounds %_Z6Parser, ptr %2, i32 0, i32 0
-  %call = call i8 @_ZN15ParserConstants11CHAR_DOLLAREv()
-  %call1 = call i1 @_ZN5Lexer17parse_punctuationE2u8(ptr %field.inplace, i8 %call)
-  %bitnot = xor i1 %call1, true
-  br i1 %bitnot, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  %throw.tag.ptr = getelementptr inbounds { i8, [25 x i8] }, ptr %0, i32 0, i32 0
-  store i8 1, ptr %throw.tag.ptr, align 1
-  %variant.tag.ptr = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 0
-  store i8 0, ptr %variant.tag.ptr, align 1
-  store %_Z15DifferentSyntax zeroinitializer, ptr %tuple, align 1
-  %tuple.val = load %_Z15DifferentSyntax, ptr %tuple, align 1
-  %variant.data.ptr = getelementptr inbounds %_Z11ParserError, ptr %variant.ptr, i32 0, i32 1
-  store %_Z15DifferentSyntax %tuple.val, ptr %variant.data.ptr, align 1
-  %variant.val = load %_Z11ParserError, ptr %variant.ptr, align 1
-  %throw.data.ptr = getelementptr inbounds { i8, [25 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11ParserError %variant.val, ptr %throw.data.ptr, align 1
-  ret void
-
-if.end:                                           ; preds = %entry
-  %load.struct2 = load %_Z6Parser, ptr %2, align 8
-  %lexer3 = extractvalue %_Z6Parser %load.struct2, 0
-  %position = extractvalue %_Z5Lexer %lexer3, 3
-  %tuple.field = getelementptr inbounds %_Z11LocalSyntax, ptr %tuple4, i32 0, i32 0
-  store i64 %previous_position, ptr %tuple.field, align 1
-  %tuple.field5 = getelementptr inbounds %_Z11LocalSyntax, ptr %tuple4, i32 0, i32 1
-  store i64 %position, ptr %tuple.field5, align 1
-  %tuple.val6 = load %_Z11LocalSyntax, ptr %tuple4, align 4
-  %ret.tag.ptr = getelementptr inbounds { i8, [25 x i8] }, ptr %0, i32 0, i32 0
-  store i8 0, ptr %ret.tag.ptr, align 1
-  %ret.data.ptr = getelementptr inbounds { i8, [25 x i8] }, ptr %0, i32 0, i32 1
-  store %_Z11LocalSyntax %tuple.val6, ptr %ret.data.ptr, align 1
   ret void
 }
 
@@ -73923,12 +73816,10 @@ if.end112:                                        ; preds = %if.then111, %lor.en
 
 define linkonce_odr void @_ZN7Modeler15handle_lifetimeEPN4scaly6memory4PageE6OptionIR14LifetimeSyntaxE(ptr noalias sret(%_Z8Lifetime) %0, ptr %1, ptr %2) {
 entry:
-  %variant.ptr58 = alloca %_Z8Lifetime, align 8
-  %tuple52 = alloca %_Z6Thrown, align 8
-  %variant.ptr45 = alloca %_Z8Lifetime, align 8
-  %tuple35 = alloca %_Z9Reference, align 8
-  %variant.ptr28 = alloca %_Z8Lifetime, align 8
-  %tuple19 = alloca %_Z5Local, align 8
+  %variant.ptr42 = alloca %_Z8Lifetime, align 8
+  %tuple36 = alloca %_Z6Thrown, align 8
+  %variant.ptr29 = alloca %_Z8Lifetime, align 8
+  %tuple19 = alloca %_Z9Reference, align 8
   %variant.ptr12 = alloca %_Z8Lifetime, align 8
   %tuple4 = alloca %_Z4Call, align 8
   %deref.tmp = alloca %_Z14LifetimeSyntax, align 8
@@ -73957,23 +73848,22 @@ if.end:                                           ; preds = %entry
   switch i8 %tag, label %choose.else [
     i8 0, label %choose.when
     i8 1, label %choose.when9
-    i8 2, label %choose.when25
-    i8 3, label %choose.when42
+    i8 2, label %choose.when26
   ]
 
-choose.end:                                       ; preds = %choose.else, %choose.when42, %choose.when25, %choose.when9, %choose.when
-  %choose.value = phi %_Z8Lifetime [ %variant.val8, %choose.when ], [ %variant.val24, %choose.when9 ], [ %variant.val41, %choose.when25 ], [ %variant.val57, %choose.when42 ], [ %variant.val62, %choose.else ]
+choose.end:                                       ; preds = %choose.else, %choose.when26, %choose.when9, %choose.when
+  %choose.value = phi %_Z8Lifetime [ %variant.val8, %choose.when ], [ %variant.val25, %choose.when9 ], [ %variant.val41, %choose.when26 ], [ %variant.val46, %choose.else ]
   store %_Z8Lifetime %choose.value, ptr %0, align 1
   ret void
 
 choose.else:                                      ; preds = %if.end
-  %variant.tag.ptr59 = getelementptr inbounds %_Z8Lifetime, ptr %variant.ptr58, i32 0, i32 0
-  store i8 0, ptr %variant.tag.ptr59, align 1
+  %variant.tag.ptr43 = getelementptr inbounds %_Z8Lifetime, ptr %variant.ptr42, i32 0, i32 0
+  store i8 0, ptr %variant.tag.ptr43, align 1
   store %_Z11Unspecified zeroinitializer, ptr %tuple, align 1
-  %tuple.val60 = load %_Z11Unspecified, ptr %tuple, align 1
-  %variant.data.ptr61 = getelementptr inbounds %_Z8Lifetime, ptr %variant.ptr58, i32 0, i32 1
-  store %_Z11Unspecified %tuple.val60, ptr %variant.data.ptr61, align 1
-  %variant.val62 = load %_Z8Lifetime, ptr %variant.ptr58, align 1
+  %tuple.val44 = load %_Z11Unspecified, ptr %tuple, align 1
+  %variant.data.ptr45 = getelementptr inbounds %_Z8Lifetime, ptr %variant.ptr42, i32 0, i32 1
+  store %_Z11Unspecified %tuple.val44, ptr %variant.data.ptr45, align 1
+  %variant.val46 = load %_Z8Lifetime, ptr %variant.ptr42, align 1
   br label %choose.end
 
 choose.when:                                      ; preds = %if.end
@@ -73999,68 +73889,47 @@ choose.when:                                      ; preds = %if.end
 
 choose.when9:                                     ; preds = %if.end
   %"variant.c_data().ptr10" = getelementptr inbounds %_Z14LifetimeSyntax, ptr %deref.tmp, i32 0, i32 1
-  %variant.val11 = load %_Z11LocalSyntax, ptr %"variant.c_data().ptr10", align 4
+  %variant.val11 = load %_Z15ReferenceSyntax, ptr %"variant.c_data().ptr10", align 8
   %variant.tag.ptr13 = getelementptr inbounds %_Z8Lifetime, ptr %variant.ptr12, i32 0, i32 0
-  store i8 2, ptr %variant.tag.ptr13, align 1
-  %start14 = extractvalue %_Z11LocalSyntax %variant.val11, 0
-  %end15 = extractvalue %_Z11LocalSyntax %variant.val11, 1
+  store i8 3, ptr %variant.tag.ptr13, align 1
+  %start14 = extractvalue %_Z15ReferenceSyntax %variant.val11, 0
+  %end15 = extractvalue %_Z15ReferenceSyntax %variant.val11, 1
   %tuple.region16 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr (%_Z4Span, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z4Span }, ptr null, i64 0, i32 1) to i64))
   %tuple.field17 = getelementptr inbounds %_Z4Span, ptr %tuple.region16, i32 0, i32 0
   store i64 %start14, ptr %tuple.field17, align 1
   %tuple.field18 = getelementptr inbounds %_Z4Span, ptr %tuple.region16, i32 0, i32 1
   store i64 %end15, ptr %tuple.field18, align 1
+  %location = extractvalue %_Z15ReferenceSyntax %variant.val11, 2
   %field.load20 = load %_Z4Span, ptr %tuple.region16, align 4
-  %tuple.field21 = getelementptr inbounds %_Z5Local, ptr %tuple19, i32 0, i32 0
+  %tuple.field21 = getelementptr inbounds %_Z9Reference, ptr %tuple19, i32 0, i32 0
   store %_Z4Span %field.load20, ptr %tuple.field21, align 1
-  %tuple.val22 = load %_Z5Local, ptr %tuple19, align 4
-  %variant.data.ptr23 = getelementptr inbounds %_Z8Lifetime, ptr %variant.ptr12, i32 0, i32 1
-  store %_Z5Local %tuple.val22, ptr %variant.data.ptr23, align 1
-  %variant.val24 = load %_Z8Lifetime, ptr %variant.ptr12, align 1
+  %tuple.field22 = getelementptr inbounds %_Z9Reference, ptr %tuple19, i32 0, i32 1
+  store { ptr } %location, ptr %tuple.field22, align 1
+  %tuple.val23 = load %_Z9Reference, ptr %tuple19, align 8
+  %variant.data.ptr24 = getelementptr inbounds %_Z8Lifetime, ptr %variant.ptr12, i32 0, i32 1
+  store %_Z9Reference %tuple.val23, ptr %variant.data.ptr24, align 1
+  %variant.val25 = load %_Z8Lifetime, ptr %variant.ptr12, align 1
   br label %choose.end
 
-choose.when25:                                    ; preds = %if.end
-  %"variant.c_data().ptr26" = getelementptr inbounds %_Z14LifetimeSyntax, ptr %deref.tmp, i32 0, i32 1
-  %variant.val27 = load %_Z15ReferenceSyntax, ptr %"variant.c_data().ptr26", align 8
-  %variant.tag.ptr29 = getelementptr inbounds %_Z8Lifetime, ptr %variant.ptr28, i32 0, i32 0
-  store i8 3, ptr %variant.tag.ptr29, align 1
-  %start30 = extractvalue %_Z15ReferenceSyntax %variant.val27, 0
-  %end31 = extractvalue %_Z15ReferenceSyntax %variant.val27, 1
-  %tuple.region32 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr (%_Z4Span, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z4Span }, ptr null, i64 0, i32 1) to i64))
-  %tuple.field33 = getelementptr inbounds %_Z4Span, ptr %tuple.region32, i32 0, i32 0
-  store i64 %start30, ptr %tuple.field33, align 1
-  %tuple.field34 = getelementptr inbounds %_Z4Span, ptr %tuple.region32, i32 0, i32 1
-  store i64 %end31, ptr %tuple.field34, align 1
-  %location = extractvalue %_Z15ReferenceSyntax %variant.val27, 2
-  %field.load36 = load %_Z4Span, ptr %tuple.region32, align 4
-  %tuple.field37 = getelementptr inbounds %_Z9Reference, ptr %tuple35, i32 0, i32 0
-  store %_Z4Span %field.load36, ptr %tuple.field37, align 1
-  %tuple.field38 = getelementptr inbounds %_Z9Reference, ptr %tuple35, i32 0, i32 1
-  store { ptr } %location, ptr %tuple.field38, align 1
-  %tuple.val39 = load %_Z9Reference, ptr %tuple35, align 8
-  %variant.data.ptr40 = getelementptr inbounds %_Z8Lifetime, ptr %variant.ptr28, i32 0, i32 1
-  store %_Z9Reference %tuple.val39, ptr %variant.data.ptr40, align 1
-  %variant.val41 = load %_Z8Lifetime, ptr %variant.ptr28, align 1
-  br label %choose.end
-
-choose.when42:                                    ; preds = %if.end
-  %"variant.c_data().ptr43" = getelementptr inbounds %_Z14LifetimeSyntax, ptr %deref.tmp, i32 0, i32 1
-  %variant.val44 = load %_Z12ThrownSyntax, ptr %"variant.c_data().ptr43", align 4
-  %variant.tag.ptr46 = getelementptr inbounds %_Z8Lifetime, ptr %variant.ptr45, i32 0, i32 0
-  store i8 4, ptr %variant.tag.ptr46, align 1
-  %start47 = extractvalue %_Z12ThrownSyntax %variant.val44, 0
-  %end48 = extractvalue %_Z12ThrownSyntax %variant.val44, 1
-  %tuple.region49 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr (%_Z4Span, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z4Span }, ptr null, i64 0, i32 1) to i64))
-  %tuple.field50 = getelementptr inbounds %_Z4Span, ptr %tuple.region49, i32 0, i32 0
-  store i64 %start47, ptr %tuple.field50, align 1
-  %tuple.field51 = getelementptr inbounds %_Z4Span, ptr %tuple.region49, i32 0, i32 1
-  store i64 %end48, ptr %tuple.field51, align 1
-  %field.load53 = load %_Z4Span, ptr %tuple.region49, align 4
-  %tuple.field54 = getelementptr inbounds %_Z6Thrown, ptr %tuple52, i32 0, i32 0
-  store %_Z4Span %field.load53, ptr %tuple.field54, align 1
-  %tuple.val55 = load %_Z6Thrown, ptr %tuple52, align 4
-  %variant.data.ptr56 = getelementptr inbounds %_Z8Lifetime, ptr %variant.ptr45, i32 0, i32 1
-  store %_Z6Thrown %tuple.val55, ptr %variant.data.ptr56, align 1
-  %variant.val57 = load %_Z8Lifetime, ptr %variant.ptr45, align 1
+choose.when26:                                    ; preds = %if.end
+  %"variant.c_data().ptr27" = getelementptr inbounds %_Z14LifetimeSyntax, ptr %deref.tmp, i32 0, i32 1
+  %variant.val28 = load %_Z12ThrownSyntax, ptr %"variant.c_data().ptr27", align 4
+  %variant.tag.ptr30 = getelementptr inbounds %_Z8Lifetime, ptr %variant.ptr29, i32 0, i32 0
+  store i8 4, ptr %variant.tag.ptr30, align 1
+  %start31 = extractvalue %_Z12ThrownSyntax %variant.val28, 0
+  %end32 = extractvalue %_Z12ThrownSyntax %variant.val28, 1
+  %tuple.region33 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr (%_Z4Span, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z4Span }, ptr null, i64 0, i32 1) to i64))
+  %tuple.field34 = getelementptr inbounds %_Z4Span, ptr %tuple.region33, i32 0, i32 0
+  store i64 %start31, ptr %tuple.field34, align 1
+  %tuple.field35 = getelementptr inbounds %_Z4Span, ptr %tuple.region33, i32 0, i32 1
+  store i64 %end32, ptr %tuple.field35, align 1
+  %field.load37 = load %_Z4Span, ptr %tuple.region33, align 4
+  %tuple.field38 = getelementptr inbounds %_Z6Thrown, ptr %tuple36, i32 0, i32 0
+  store %_Z4Span %field.load37, ptr %tuple.field38, align 1
+  %tuple.val39 = load %_Z6Thrown, ptr %tuple36, align 4
+  %variant.data.ptr40 = getelementptr inbounds %_Z8Lifetime, ptr %variant.ptr29, i32 0, i32 1
+  store %_Z6Thrown %tuple.val39, ptr %variant.data.ptr40, align 1
+  %variant.val41 = load %_Z8Lifetime, ptr %variant.ptr29, align 1
   br label %choose.end
 }
 

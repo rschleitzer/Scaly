@@ -249,8 +249,6 @@ Lifetime Modeler::handleLifetime(const LifetimeSyntax *Syntax) {
         using T = std::decay_t<decltype(L)>;
         if constexpr (std::is_same_v<T, CallSyntax>) {
             return CallLifetime{Span{L.Start, L.End}};
-        } else if constexpr (std::is_same_v<T, LocalSyntax>) {
-            return LocalLifetime{Span{L.Start, L.End}};
         } else if constexpr (std::is_same_v<T, ReferenceSyntax>) {
             return ReferenceLifetime{Span{L.Start, L.End}, std::string(L.location)};
         } else if constexpr (std::is_same_v<T, ThrownSyntax>) {
@@ -1299,10 +1297,6 @@ llvm::Expected<Initializer> Modeler::handleInitializer(
         if (std::holds_alternative<CallSyntax>(Life)) {
             // init# - valid, first parameter is page name
             // Will extract page name from first parameter below
-        } else if (std::holds_alternative<LocalSyntax>(Life)) {
-            return makeInvalidInitLifetimeError(File,
-                Span{Syntax.Start, Syntax.End},
-                "init$ is reserved - use init# for page parameter");
         } else if (std::holds_alternative<ReferenceSyntax>(Life)) {
             return makeInvalidInitLifetimeError(File,
                 Span{Syntax.Start, Syntax.End},
@@ -1389,10 +1383,6 @@ llvm::Expected<Function> Modeler::buildFunction(size_t Start, size_t End,
                 if (std::holds_alternative<CallSyntax>(Life)) {
                     // function# - valid, first parameter is page name
                     // Will extract page name from first parameter below
-                } else if (std::holds_alternative<LocalSyntax>(Life)) {
-                    return makeInvalidInitLifetimeError(File,
-                        Span{Start, End},
-                        "function$ is not supported - use function# for page parameter");
                 } else if (std::holds_alternative<ReferenceSyntax>(Life)) {
                     return makeInvalidInitLifetimeError(File,
                         Span{Start, End},

@@ -13074,7 +13074,7 @@ define Planner
                             }
                         }
                         if promoted_done = false
-                            this.add_diagnostic(action_loc, "reference into a local ($) page escapes via store - allocate the target with '#' (caller page) or '^name' (region) so it outlives the use")
+                            this.add_diagnostic(action_loc, "reference into a local page escapes via store - allocate the target with '#' (caller page) or '^name' (region) so it outlives the use")
                     }
                 }
 
@@ -13835,7 +13835,7 @@ define Planner
                     let cur_fn instantiated_functions.get escape_fn_index
                     if cur_fn <> null
                         set this.file: String^this(cur_fn.file)
-                    this.add_diagnostic(call.loc, "reference into a local ($) page escapes via call - the callee stores it into memory that outlives this frame; allocate with '#' (caller page) or '^name' (region)")
+                    this.add_diagnostic(call.loc, "reference into a local page escapes via call - the callee stores it into memory that outlives this frame; allocate with '#' (caller page) or '^name' (region)")
                     set escape_found: true
                 }
             }
@@ -14916,7 +14916,7 @@ define Planner
                         if promoted <> null
                             set planned_collapsed: (*promoted)
                         else
-                            this.add_diagnostic(r.span, "reference into a local ($) page escapes via return - allocate the target with '#' (caller page) or '^name' (region) so it outlives the use")
+                            this.add_diagnostic(r.span, "reference into a local page escapes via return - allocate the target with '#' (caller page) or '^name' (region) so it outlives the use")
                     }
                 }
 

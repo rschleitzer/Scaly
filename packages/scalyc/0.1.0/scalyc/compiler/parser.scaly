@@ -4929,16 +4929,6 @@ define Parser
             }
             when node: Success
                 return LifetimeSyntax.Call(node)
-        choose parse_local()
-            when err: Error
-            {
-                choose err
-                    when i: Invalid
-                        throw ParserError.Invalid(i)
-                    when d: Different {}
-            }
-            when node: Success
-                return LifetimeSyntax.Local(node)
         choose parse_reference()
             when err: Error
             {
@@ -4972,18 +4962,6 @@ define Parser
         let end lexer.position
 
         CallSyntax(start, end)
-    }
-
-    function parse_local(this: Parser) returns LocalSyntax throws ParserError
-    {
-        let start lexer.previous_position
-
-        if ~lexer.parse_punctuation(ParserConstants.CHAR_DOLLAR())
-            throw ParserError.Different(DifferentSyntax())
-
-        let end lexer.position
-
-        LocalSyntax(start, end)
     }
 
     function parse_reference(this: Parser) returns ReferenceSyntax throws ParserError

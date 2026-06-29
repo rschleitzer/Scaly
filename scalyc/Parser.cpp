@@ -4073,14 +4073,6 @@ llvm::Expected<LifetimeSyntax> Parser::parseLifetime() {
             return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
     }
     {
-        auto Result = parseLocal();
-        if (Result)
-            return LifetimeSyntax{std::move(*Result)};
-        std::string ErrMsg = llvm::toString(Result.takeError());
-        if (ErrMsg != "different syntax")
-            return llvm::make_error<llvm::StringError>(ErrMsg, llvm::inconvertibleErrorCode());
-    }
-    {
         auto Result = parseReference();
         if (Result)
             return LifetimeSyntax{std::move(*Result)};
@@ -4109,18 +4101,6 @@ llvm::Expected<CallSyntax> Parser::parseCall() {
     size_t End = Lex.position();
 
     return CallSyntax{Start, End};
-
-}
-
-llvm::Expected<LocalSyntax> Parser::parseLocal() {
-    size_t Start = Lex.previousPosition();
-
-    if (!Lex.parsePunctuation('$'))
-        return different();
-
-    size_t End = Lex.position();
-
-    return LocalSyntax{Start, End};
 
 }
 

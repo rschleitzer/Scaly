@@ -159,7 +159,6 @@ private:
     llvm::Expected<ExtensionSyntax> parseExtension();
     llvm::Expected<LifetimeSyntax> parseLifetime();
     llvm::Expected<CallSyntax> parseCall();
-    llvm::Expected<LocalSyntax> parseLocal();
     llvm::Expected<ReferenceSyntax> parseReference();
     llvm::Expected<ThrownSyntax> parseThrown();
     llvm::Expected<EmptySyntax> parseEmpty();

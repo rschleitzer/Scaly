@@ -50,12 +50,6 @@ define ReferenceSyntax
     location: String
 )
 
-define LocalSyntax
-(
-    start: size_t
-    end: size_t
-)
-
 define CallSyntax
 (
     start: size_t
@@ -64,7 +58,6 @@ define CallSyntax
 
 define LifetimeSyntax union (
     Call: CallSyntax
-    Local: LocalSyntax
     Reference: ReferenceSyntax
     Thrown: ThrownSyntax
 )

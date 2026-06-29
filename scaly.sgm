@@ -583,15 +583,11 @@
 
 <syntax id = Lifetime                              abstract
     <content link = Call
-    <content link = Local
     <content link = Reference
     <content link = Thrown
 
 <syntax id = Call
     <content link = hash
-
-<syntax id = Local
-    <content link = dollar
 
 <syntax id = Reference
     <content link = caret
@@ -660,7 +656,6 @@
 <punctuation id = right_curly       value = "}"
 <punctuation id = left_bracket      value = "["
 <punctuation id = right_bracket     value = "]"
-<punctuation id = dollar            value = "$"
 <punctuation id = hash              value = "#"
 <punctuation id = caret             value = "^"
 <punctuation id = backslash         value = "\\"
