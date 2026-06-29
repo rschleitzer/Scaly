@@ -5741,7 +5741,7 @@ define Planner
                                                                                 ; (the bare-name match may have a wrong one).
                                                                                 if nf.returns_ <> null
                                                                                 {
-                                                                                    let nf_rt this.plan_type#((*nf.returns_))
+                                                                                    let nf_rt this.plan_type((*nf.returns_))
                                                                                     this.ensure_type_layout nf_rt
                                                                                     set ns_return_type: nf_rt
                                                                                     set ns_return_valid: true
@@ -17897,7 +17897,7 @@ define Planner
             ; duplicate entries. This makes cross-module struct types
             ; (e.g. EmitterConfig referenced from cli.scaly) map_type-
             ; resolvable without walking the module's method bodies.
-            this.register_struct_layouts_in_module#(sub)
+            this.register_struct_layouts_in_module(sub)
         }
 
         ; Helper for plan_namespace#: walk ns.modules and route each

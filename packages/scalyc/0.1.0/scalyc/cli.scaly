@@ -880,12 +880,12 @@ define cli
             return -11
 
         ; Test 3: Test pipeline on a minimal program
-        var result cli.test_pipeline#()
+        var result cli.test_pipeline()
         if result <> 0
             return result - 100
 
         ; Test 4: Test pipeline on hello.scaly from disk
-        set result: cli.test_hello_scaly#()
+        set result: cli.test_hello_scaly()
         if result <> 0
             return result - 200
 
