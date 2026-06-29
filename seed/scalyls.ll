@@ -4687,7 +4687,7 @@ if.then:                                          ; preds = %entry
 if.end:                                           ; preds = %entry
   %call1 = call i64 @_ZN6String10get_lengthEv(ptr %2)
   %sub = sub i64 %call1, 7
-  call void @_ZN6String9substringEPN4scaly6memory4PageEP4Pagemm(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2, ptr %1, i64 7, i64 %sub)
+  call void @_ZN6String9substringEPN4scaly6memory4PageEmm(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2, i64 7, i64 %sub)
   %sret.body2 = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -36305,7 +36305,7 @@ entry:
   ret void
 }
 
-declare void @_ZN6String9substringEPN4scaly6memory4PageEP4Pagemm(ptr noalias sret({ ptr }), ptr, ptr, ptr, i64, i64)
+declare void @_ZN6String9substringEPN4scaly6memory4PageEmm(ptr noalias sret({ ptr }), ptr, ptr, i64, i64)
 
 declare void @_ZN13StringBuilder6appendEP10const_char(ptr, ptr)
 
@@ -49807,7 +49807,7 @@ while.exit9:                                      ; preds = %while.cond7
   %end23 = load i64, ptr %end, align 4
   %start24 = load i64, ptr %start, align 4
   %sub = sub i64 %end23, %start24
-  call void @_ZN6String9substringEPN4scaly6memory4PageEP4Pagemm(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2, ptr %1, i64 %start22, i64 %sub)
+  call void @_ZN6String9substringEPN4scaly6memory4PageEmm(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2, i64 %start22, i64 %sub)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -82782,7 +82782,7 @@ if.then2:                                         ; preds = %if.end
 if.end3:                                          ; preds = %if.end
   %call4 = call i64 @_ZN6String10get_lengthEv(ptr %2)
   %sub = sub i64 %call4, 1
-  call void @_ZN6String9substringEPN4scaly6memory4PageEP4Pagemm(ptr noalias sret({ ptr }) %sret.result, ptr %local_page, ptr %2, ptr %1, i64 1, i64 %sub)
+  call void @_ZN6String9substringEPN4scaly6memory4PageEmm(ptr noalias sret({ ptr }) %sret.result, ptr %local_page, ptr %2, i64 1, i64 %sub)
   %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
   call void @_ZN13StringBuilderC1EPN4scaly6memory4PageE(ptr %struct.region, ptr %local_page)
   store ptr %struct.region, ptr %sb, align 1

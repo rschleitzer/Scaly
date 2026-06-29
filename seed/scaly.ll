@@ -10100,12 +10100,12 @@ entry:
   ret i64 %call
 }
 
-define linkonce_odr void @_ZN6String9substringEPN4scaly6memory4PageEP4Pagemm(ptr noalias sret(%_Z6String) %0, ptr %1, ptr %2, ptr %3, i64 %4, i64 %5) {
+define linkonce_odr void @_ZN6String9substringEPN4scaly6memory4PageEmm(ptr noalias sret(%_Z6String) %0, ptr %1, ptr %2, i64 %3, i64 %4) {
 entry:
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %3, i64 ptrtoint (ptr getelementptr (%_Z6String, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6String }, ptr null, i64 0, i32 1) to i64))
+  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr (%_Z6String, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6String }, ptr null, i64 0, i32 1) to i64))
   %call = call ptr @_ZN6String10get_bufferEv(ptr %2)
-  %ptr.add = getelementptr inbounds i8, ptr %call, i64 %4
-  call void @_ZN6StringC1EPN4scaly6memory4PageEP10const_charm(ptr %struct.region, ptr %3, ptr %ptr.add, i64 %5)
+  %ptr.add = getelementptr inbounds i8, ptr %call, i64 %3
+  call void @_ZN6StringC1EPN4scaly6memory4PageEP10const_charm(ptr %struct.region, ptr %1, ptr %ptr.add, i64 %4)
   %sret.body = load %_Z6String, ptr %struct.region, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.region, i64 ptrtoint (ptr getelementptr (%_Z6String, ptr null, i32 1) to i64), i1 false)
   ret void

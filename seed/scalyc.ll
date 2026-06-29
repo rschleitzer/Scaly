@@ -103961,9 +103961,9 @@ if.end175:                                        ; preds = %if.end180, %if.then
   br label %if.end171
 
 if.then179:                                       ; preds = %if.then174
-  call void @_ZN6String9substringEPN4scaly6memory4PageEP4Pagemm(ptr noalias sret({ ptr }) %sret.result118, ptr %local_page, ptr %canonical_name, ptr %1, i64 0, i64 %call172)
+  call void @_ZN6String9substringEPN4scaly6memory4PageEmm(ptr noalias sret({ ptr }) %sret.result118, ptr %local_page, ptr %canonical_name, i64 0, i64 %call172)
   %sub = sub i64 %call177, %add176
-  call void @_ZN6String9substringEPN4scaly6memory4PageEP4Pagemm(ptr noalias sret({ ptr }) %sret.result181, ptr %local_page, ptr %canonical_name, ptr %1, i64 %add176, i64 %sub)
+  call void @_ZN6String9substringEPN4scaly6memory4PageEmm(ptr noalias sret({ ptr }) %sret.result181, ptr %local_page, ptr %canonical_name, i64 %add176, i64 %sub)
   %call182 = call ptr @_ZN7Planner14lookup_conceptEPN4scaly6memory4PageE6String(ptr %1, ptr %2, ptr %sret.result118)
   %ne183 = icmp ne ptr %call182, null
   br i1 %ne183, label %if.then184, label %if.end185
@@ -104038,9 +104038,9 @@ if.end202:                                        ; preds = %if.end207, %if.then
 
 if.then206:                                       ; preds = %if.then201
   %sub208 = sub i64 %call204, %add203
-  call void @_ZN6String9substringEPN4scaly6memory4PageEP4Pagemm(ptr noalias sret({ ptr }) %sret.result118, ptr %1, ptr %canonical_name, ptr %1, i64 %add203, i64 %sub208)
+  call void @_ZN6String9substringEPN4scaly6memory4PageEmm(ptr noalias sret({ ptr }) %sret.result118, ptr %1, ptr %canonical_name, i64 %add203, i64 %sub208)
   store i1 false, ptr %vc_is_union, align 1
-  call void @_ZN6String9substringEPN4scaly6memory4PageEP4Pagemm(ptr noalias sret({ ptr }) %sret.result181, ptr %local_page, ptr %canonical_name, ptr %1, i64 0, i64 %call199)
+  call void @_ZN6String9substringEPN4scaly6memory4PageEmm(ptr noalias sret({ ptr }) %sret.result181, ptr %local_page, ptr %canonical_name, i64 0, i64 %call199)
   %call209 = call ptr @_ZN7Planner24lookup_namespace_conceptEPN4scaly6memory4PageE6String(ptr %1, ptr %2, ptr %sret.result181)
   %ne210 = icmp ne ptr %call209, null
   br i1 %ne210, label %if.then211, label %if.end212
@@ -107335,7 +107335,7 @@ declare i1 @_ZN6String11starts_withE6String(ptr, ptr)
 
 declare i64 @_ZN6String13last_index_ofE2u8(ptr, i8)
 
-declare void @_ZN6String9substringEPN4scaly6memory4PageEP4Pagemm(ptr noalias sret({ ptr }), ptr, ptr, ptr, i64, i64)
+declare void @_ZN6String9substringEPN4scaly6memory4PageEmm(ptr noalias sret({ ptr }), ptr, ptr, i64, i64)
 
 define linkonce_odr void @_ZN7Planner14lookup_methodsEPN4scaly6memory4PageE6String6String(ptr noalias sret(%_Z6VectorI8FunctionE) %0, ptr %1, ptr %2, ptr %3, ptr %4) {
 entry:
@@ -107401,7 +107401,7 @@ if.then14:                                        ; preds = %if.then11
   %add = add i64 %call13, 1
   %call16 = call i64 @_ZN6String10get_lengthEv(ptr %3)
   %sub = sub i64 %call16, %add
-  call void @_ZN6String9substringEPN4scaly6memory4PageEP4Pagemm(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %3, ptr %1, i64 %add, i64 %sub)
+  call void @_ZN6String9substringEPN4scaly6memory4PageEmm(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %3, i64 %add, i64 %sub)
   %call17 = call ptr @_ZN7Planner14lookup_conceptEPN4scaly6memory4PageE6String(ptr %1, ptr %2, ptr %sret.result)
   store ptr %call17, ptr %concept_ref, align 1
   br label %if.end15
@@ -121343,12 +121343,12 @@ if.end1724:                                       ; preds = %if.end1728, %if.end
   br i1 %is_struct_ctor1776, label %if.then1777, label %if.end1778
 
 if.then1727:                                      ; preds = %if.then1723
-  call void @_ZN6String9substringEPN4scaly6memory4PageEP4Pagemm(ptr noalias sret({ ptr }) %sret.result1729, ptr %1, ptr %fn_name, ptr %1, i64 0, i64 %call1725)
+  call void @_ZN6String9substringEPN4scaly6memory4PageEmm(ptr noalias sret({ ptr }) %sret.result1729, ptr %1, ptr %fn_name, i64 0, i64 %call1725)
   %add1731 = add i64 %call1725, 1
   %call1732 = call i64 @_ZN6String10get_lengthEv(ptr %fn_name)
   %sub1733 = sub i64 %call1732, %call1725
   %sub1734 = sub i64 %sub1733, 1
-  call void @_ZN6String9substringEPN4scaly6memory4PageEP4Pagemm(ptr noalias sret({ ptr }) %sret.result1730, ptr %1, ptr %fn_name, ptr %1, i64 %add1731, i64 %sub1734)
+  call void @_ZN6String9substringEPN4scaly6memory4PageEmm(ptr noalias sret({ ptr }) %sret.result1730, ptr %1, ptr %fn_name, i64 %add1731, i64 %sub1734)
   %call1735 = call ptr @_ZN7Planner14lookup_conceptEPN4scaly6memory4PageE6String(ptr %1, ptr %2, ptr %sret.result1729)
   %ne1736 = icmp ne ptr %call1735, null
   br i1 %ne1736, label %if.then1737, label %if.end1738
@@ -122359,12 +122359,12 @@ if.end2263:                                       ; preds = %if.end2267, %choose
   br i1 %eq2520, label %if.then2521, label %if.end2522
 
 if.then2266:                                      ; preds = %if.then2262
-  call void @_ZN6String9substringEPN4scaly6memory4PageEP4Pagemm(ptr noalias sret({ ptr }) %sret.result1729, ptr %1, ptr %fn_name, ptr %1, i64 0, i64 %call2264)
+  call void @_ZN6String9substringEPN4scaly6memory4PageEmm(ptr noalias sret({ ptr }) %sret.result1729, ptr %1, ptr %fn_name, i64 0, i64 %call2264)
   %add2268 = add i64 %call2264, 1
   %call2269 = call i64 @_ZN6String10get_lengthEv(ptr %fn_name)
   %sub2270 = sub i64 %call2269, %call2264
   %sub2271 = sub i64 %sub2270, 1
-  call void @_ZN6String9substringEPN4scaly6memory4PageEP4Pagemm(ptr noalias sret({ ptr }) %sret.result1730, ptr %1, ptr %fn_name, ptr %1, i64 %add2268, i64 %sub2271)
+  call void @_ZN6String9substringEPN4scaly6memory4PageEmm(ptr noalias sret({ ptr }) %sret.result1730, ptr %1, ptr %fn_name, i64 %add2268, i64 %sub2271)
   %call2272 = call ptr @_ZN7Planner20lookup_local_bindingEPN4scaly6memory4PageE6String(ptr %1, ptr %2, ptr %sret.result1729)
   %ne2273 = icmp ne ptr %call2272, null
   br i1 %ne2273, label %if.then2274, label %if.end2275
@@ -123174,12 +123174,12 @@ if.end2721:                                       ; preds = %if.end2725, %if.end
   br i1 %eq3334, label %if.then3335, label %if.end3336
 
 if.then2724:                                      ; preds = %if.then2720
-  call void @_ZN6String9substringEPN4scaly6memory4PageEP4Pagemm(ptr noalias sret({ ptr }) %arg.tmp2716, ptr %1, ptr %fn_name, ptr %1, i64 0, i64 %call2722)
+  call void @_ZN6String9substringEPN4scaly6memory4PageEmm(ptr noalias sret({ ptr }) %arg.tmp2716, ptr %1, ptr %fn_name, i64 0, i64 %call2722)
   %add2727 = add i64 %call2722, 1
   %call2728 = call i64 @_ZN6String10get_lengthEv(ptr %fn_name)
   %sub2729 = sub i64 %call2728, %call2722
   %sub2730 = sub i64 %sub2729, 1
-  call void @_ZN6String9substringEPN4scaly6memory4PageEP4Pagemm(ptr noalias sret({ ptr }) %sret.result2726, ptr %1, ptr %fn_name, ptr %1, i64 %add2727, i64 %sub2730)
+  call void @_ZN6String9substringEPN4scaly6memory4PageEmm(ptr noalias sret({ ptr }) %sret.result2726, ptr %1, ptr %fn_name, i64 %add2727, i64 %sub2730)
   %call2731 = call ptr @_ZN7Planner19resolve_dotted_callEPN4scaly6memory4PageE6String6String6VectorI11PlannedTypeE(ptr %1, ptr %2, ptr %arg.tmp2716, ptr %sret.result2726, ptr %struct.region2257)
   store ptr %call2731, ptr %two_vec, align 1
   %match_ref2732 = load ptr, ptr %two_vec, align 8
@@ -135764,7 +135764,7 @@ if.end109:                                        ; preds = %if.then102
 
 if.then113:                                       ; preds = %if.then108
   %field.inplace116 = getelementptr inbounds %_Z11PlannedType, ptr %2, i32 0, i32 1
-  call void @_ZN6String9substringEPN4scaly6memory4PageEP4Pagemm(ptr noalias sret({ ptr }) %sret.result115, ptr %local_page, ptr %field.inplace116, ptr %1, i64 0, i64 %call111)
+  call void @_ZN6String9substringEPN4scaly6memory4PageEmm(ptr noalias sret({ ptr }) %sret.result115, ptr %local_page, ptr %field.inplace116, i64 0, i64 %call111)
   %set.load = load { ptr }, ptr %sret.result115, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %sret.result92, ptr align 1 %sret.result115, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   br label %if.end114
@@ -170416,7 +170416,7 @@ if.end3:                                          ; preds = %if.end
   %add = add i64 %call1, 1
   %call6 = call i64 @_ZN6String10get_lengthEv(ptr %2)
   %sub = sub i64 %call6, %add
-  call void @_ZN6String9substringEPN4scaly6memory4PageEP4Pagemm(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2, ptr %1, i64 %add, i64 %sub)
+  call void @_ZN6String9substringEPN4scaly6memory4PageEmm(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2, i64 %add, i64 %sub)
   %sret.body7 = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -170859,7 +170859,7 @@ if.then2:                                         ; preds = %if.then
   %add = add i64 %call1, 1
   %call4 = call i64 @_ZN6String10get_lengthEv(ptr %2)
   %sub = sub i64 %call4, %add
-  call void @_ZN6String9substringEPN4scaly6memory4PageEP4Pagemm(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2, ptr %1, i64 %add, i64 %sub)
+  call void @_ZN6String9substringEPN4scaly6memory4PageEmm(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2, i64 %add, i64 %sub)
   %set.load = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %base, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   br label %if.end3
@@ -215336,7 +215336,7 @@ if.end30:                                         ; preds = %while.exit16
   %end32 = load i64, ptr %end, align 4
   %start33 = load i64, ptr %start, align 4
   %sub34 = sub i64 %end32, %start33
-  call void @_ZN6String9substringEPN4scaly6memory4PageEP4Pagemm(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2, ptr %1, i64 %start31, i64 %sub34)
+  call void @_ZN6String9substringEPN4scaly6memory4PageEmm(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2, i64 %start31, i64 %sub34)
   %sret.body35 = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
