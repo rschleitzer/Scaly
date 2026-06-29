@@ -11880,7 +11880,8 @@ entry:
 
 define linkonce_odr void @_ZN13StringBuilderC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
 entry:
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr (%_Z5ArrayIcE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5ArrayIcE }, ptr null, i64 0, i32 1) to i64))
+  %own_page = call ptr @_Z3getPv(ptr %0)
+  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %own_page, i64 ptrtoint (ptr getelementptr (%_Z5ArrayIcE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5ArrayIcE }, ptr null, i64 0, i32 1) to i64))
   %tuple.field = getelementptr inbounds %_Z5ArrayIcE, ptr %struct.region, i32 0, i32 0
   store i64 0, ptr %tuple.field, align 4
   %tuple.field1 = getelementptr inbounds %_Z5ArrayIcE, ptr %struct.region, i32 0, i32 1
@@ -11893,7 +11894,8 @@ entry:
 
 define linkonce_odr void @_ZN13StringBuilderC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
 entry:
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr (%_Z5ArrayIcE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5ArrayIcE }, ptr null, i64 0, i32 1) to i64))
+  %own_page = call ptr @_Z3getPv(ptr %0)
+  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %own_page, i64 ptrtoint (ptr getelementptr (%_Z5ArrayIcE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5ArrayIcE }, ptr null, i64 0, i32 1) to i64))
   call void @_ZN5ArrayIcEC1Em(ptr %struct.region, i64 %2)
   %buffer = getelementptr inbounds %_Z13StringBuilder, ptr %0, i32 0, i32 0
   %field.load = load %_Z5ArrayIcE, ptr %struct.region, align 8
@@ -11903,7 +11905,8 @@ entry:
 
 define linkonce_odr void @_ZN13StringBuilderC1EPN4scaly6memory4PageEc(ptr %0, ptr %1, i8 %2) {
 entry:
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr (%_Z5ArrayIcE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5ArrayIcE }, ptr null, i64 0, i32 1) to i64))
+  %own_page = call ptr @_Z3getPv(ptr %0)
+  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %own_page, i64 ptrtoint (ptr getelementptr (%_Z5ArrayIcE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5ArrayIcE }, ptr null, i64 0, i32 1) to i64))
   %tuple.field = getelementptr inbounds %_Z5ArrayIcE, ptr %struct.region, i32 0, i32 0
   store i64 0, ptr %tuple.field, align 4
   %tuple.field1 = getelementptr inbounds %_Z5ArrayIcE, ptr %struct.region, i32 0, i32 1
@@ -11917,7 +11920,8 @@ entry:
 
 define linkonce_odr void @_ZN13StringBuilderC1EPN4scaly6memory4PageE6String(ptr %0, ptr %1, ptr %2) {
 entry:
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr (%_Z5ArrayIcE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5ArrayIcE }, ptr null, i64 0, i32 1) to i64))
+  %own_page = call ptr @_Z3getPv(ptr %0)
+  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %own_page, i64 ptrtoint (ptr getelementptr (%_Z5ArrayIcE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5ArrayIcE }, ptr null, i64 0, i32 1) to i64))
   %tuple.field = getelementptr inbounds %_Z5ArrayIcE, ptr %struct.region, i32 0, i32 0
   store i64 0, ptr %tuple.field, align 4
   %tuple.field1 = getelementptr inbounds %_Z5ArrayIcE, ptr %struct.region, i32 0, i32 1
@@ -11931,7 +11935,8 @@ entry:
 
 define linkonce_odr void @_ZN13StringBuilderC1EPN4scaly6memory4PageEP10const_char(ptr %0, ptr %1, ptr %2) {
 entry:
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr (%_Z5ArrayIcE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5ArrayIcE }, ptr null, i64 0, i32 1) to i64))
+  %own_page = call ptr @_Z3getPv(ptr %0)
+  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %own_page, i64 ptrtoint (ptr getelementptr (%_Z5ArrayIcE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5ArrayIcE }, ptr null, i64 0, i32 1) to i64))
   %tuple.field = getelementptr inbounds %_Z5ArrayIcE, ptr %struct.region, i32 0, i32 0
   store i64 0, ptr %tuple.field, align 4
   %tuple.field1 = getelementptr inbounds %_Z5ArrayIcE, ptr %struct.region, i32 0, i32 1
