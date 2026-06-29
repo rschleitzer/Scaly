@@ -93,7 +93,7 @@ define rpc
             if eof
                 return String()
 
-            let line_str line.to_string$()
+            let line_str line.to_string()
             if line_str.get_length() = (0 as size_t)   ; blank -> headers done
                 break
 
@@ -150,7 +150,7 @@ define rpc
         sb.append(13 as char)              ; CR
         sb.append(10 as char)              ; LF
 
-        rpc.write_all(sb.to_string$())
+        rpc.write_all(sb.to_string())
         rpc.write_all body
     }
 
@@ -268,7 +268,7 @@ define rpc
             if eof
                 return String()
 
-            let line_str line.to_string$()
+            let line_str line.to_string()
             if line_str.get_length() = (0 as size_t)
                 break
 
@@ -325,7 +325,7 @@ define rpc
         sb.append(13 as char)
         sb.append(10 as char)
 
-        rpc.write_all_fd(fd, sb.to_string$())
+        rpc.write_all_fd(fd, sb.to_string())
         rpc.write_all_fd(fd, body)
     }
 }
