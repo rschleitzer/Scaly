@@ -9,14 +9,14 @@ define Directory
     ; Check if a path exists (file or directory)
     function exists(path: String) returns bool
     {
-        let path_c_string path.to_c_string$()
+        let path_c_string path.to_c_string()
         access(path_c_string, F_OK) = 0
     }
 
     ; Check if a path is a directory (not a file)
     function is_directory(path: String) returns bool
     {
-        let path_c_string path.to_c_string$()
+        let path_c_string path.to_c_string()
         var dir opendir path_c_string
         if dir = null
             return false
@@ -27,13 +27,13 @@ define Directory
 
     function create(path: String) returns bool
     {
-        let path_c_string path.to_c_string$()
+        let path_c_string path.to_c_string()
         mkdir(path_c_string, 493) = 0 ; 0755 in octal = 493
     }
 
     function remove(path: String) returns bool
     {
-        let path_c_string path.to_c_string$()
+        let path_c_string path.to_c_string()
         rmdir(path_c_string) = 0
     }
 }

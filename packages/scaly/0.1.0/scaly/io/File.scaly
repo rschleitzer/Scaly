@@ -13,13 +13,13 @@ define File
 {
     function exists(path: String) returns bool
     {
-        let path_c_string path.to_c_string$()
+        let path_c_string path.to_c_string()
         access(path_c_string, F_OK) = 0
     }
 
     function read_to_string(path: String) returns String
     {
-        var file fopen(path.to_c_string$(), "rb")
+        var file fopen(path.to_c_string(), "rb")
         if file = null
             return String()
 
@@ -35,7 +35,7 @@ define File
 
     function write_from_string(path: String, contents: String) returns bool
     {
-        var file fopen(path.to_c_string$(), "wb")
+        var file fopen(path.to_c_string(), "wb")
         if file = null
             return false
 

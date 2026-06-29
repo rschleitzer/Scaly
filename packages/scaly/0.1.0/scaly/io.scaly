@@ -71,7 +71,7 @@ define io
             return -20
 
         ; Read back using String API
-        var read_content File.read_to_string$(test_path)
+        var read_content File.read_to_string(test_path)
         if read_content.get_length() <> test_content.get_length()
             return -21
 
@@ -125,20 +125,20 @@ define io
         ; Test Path.join
         var dir "/tmp"
         var file "test.txt"
-        var joined Path.join$(dir, file)
+        var joined Path.join(dir, file)
         var expected "/tmp/test.txt"
         if joined.equals(expected) = false
             return -50
 
         ; Test Path.get_file_name
         var full_path "/tmp/test.txt"
-        var file_name Path.get_file_name$(full_path)
+        var file_name Path.get_file_name(full_path)
         var expected_name "test.txt"
         if file_name.equals(expected_name) = false
             return -51
 
         ; Test Path.get_directory_name
-        var dir_name Path.get_directory_name$(full_path)
+        var dir_name Path.get_directory_name(full_path)
         var expected_dir "/tmp"
         if dir_name.equals(expected_dir) = false
             return -52

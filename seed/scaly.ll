@@ -12116,8 +12116,7 @@ define linkonce_odr void @_ZN4File14read_to_stringEPN4scaly6memory4PageE6String(
 entry:
   %ret = alloca ptr, align 8
   %struct.init = alloca %_Z6String, align 8
-  %local_page = call ptr @_Z21scaly_alloc_root_pagev()
-  %call = call ptr @_ZN6String11to_c_stringEPN4scaly6memory4PageE(ptr %local_page, ptr %2)
+  %call = call ptr @_ZN6String11to_c_stringEPN4scaly6memory4PageE(ptr %1, ptr %2)
   %call1 = call ptr @fopen(ptr %call, ptr @.str.21)
   %file = alloca ptr, align 8
   store ptr %call1, ptr %file, align 1
@@ -12128,7 +12127,6 @@ entry:
 if.then:                                          ; preds = %entry
   %tuple.field = getelementptr inbounds %_Z6String, ptr %struct.init, i32 0, i32 0
   store ptr null, ptr %tuple.field, align 8
-  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   %sret.body = load %_Z6String, ptr %struct.init, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.init, i64 ptrtoint (ptr getelementptr (%_Z6String, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -12150,7 +12148,6 @@ if.end:                                           ; preds = %entry
   %file12 = load ptr, ptr %file, align 8
   %call13 = call i64 @fclose(ptr %file12)
   %ret14 = load ptr, ptr %ret, align 8
-  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   %sret.body15 = load %_Z6String, ptr %ret14, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %ret14, i64 ptrtoint (ptr getelementptr (%_Z6String, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -12236,22 +12233,19 @@ entry:
 
 define linkonce_odr void @_ZN4Path18get_directory_nameEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z6String) %0, ptr %1, ptr %2) {
 entry:
-  %local_page = call ptr @_Z21scaly_alloc_root_pagev()
-  %call = call ptr @_ZN6String11to_c_stringEPN4scaly6memory4PageE(ptr %local_page, ptr %2)
+  %call = call ptr @_ZN6String11to_c_stringEPN4scaly6memory4PageE(ptr %1, ptr %2)
   %call1 = call ptr @dirname(ptr %call)
   %call2 = call i64 @strcmp(ptr %call1, ptr @.str.23)
   %eq = icmp eq i64 %call2, 0
   br i1 %eq, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   store { ptr } zeroinitializer, ptr %0, align 1
   ret void
 
 if.end:                                           ; preds = %entry
   %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr (%_Z6String, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6String }, ptr null, i64 0, i32 1) to i64))
   call void @_ZN6StringC1EPN4scaly6memory4PageEP10const_char(ptr %struct.region, ptr %1, ptr %call1)
-  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   %sret.body = load %_Z6String, ptr %struct.region, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.region, i64 ptrtoint (ptr getelementptr (%_Z6String, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -12259,12 +12253,10 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN4Path13get_file_nameEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z6String) %0, ptr %1, ptr %2) {
 entry:
-  %local_page = call ptr @_Z21scaly_alloc_root_pagev()
-  %call = call ptr @_ZN6String11to_c_stringEPN4scaly6memory4PageE(ptr %local_page, ptr %2)
+  %call = call ptr @_ZN6String11to_c_stringEPN4scaly6memory4PageE(ptr %1, ptr %2)
   %call1 = call ptr @basename(ptr %call)
   %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr (%_Z6String, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6String }, ptr null, i64 0, i32 1) to i64))
   call void @_ZN6StringC1EPN4scaly6memory4PageEP10const_char(ptr %struct.region, ptr %1, ptr %call1)
-  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   %sret.body = load %_Z6String, ptr %struct.region, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.region, i64 ptrtoint (ptr getelementptr (%_Z6String, ptr null, i32 1) to i64), i1 false)
   ret void
