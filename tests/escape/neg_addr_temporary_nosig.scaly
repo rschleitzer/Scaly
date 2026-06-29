@@ -1,0 +1,21 @@
+; ESCAPE (negative, NO-SIGIL): returning the address of a TEMPORARY (rvalue)
+; construction is a use-after-free — the temporary lives in this frame and dies
+; at function exit. Escape soundness step 2 infers that &<no-sigil construction>
+; points into this frame (Local pointee) so the checker REJECTS it. A #/^
+; construction would live on a caller/named page and be valid; this one has no
+; sigil (Unspecified life), so it is frame-bound.
+define Box
+(
+    v: int
+)
+
+function leak() returns pointer[Box]
+{
+    return &Box(5)
+}
+
+function main() returns int
+{
+    let p leak()
+    return (*p).v
+}

@@ -4287,17 +4287,19 @@ define Planner
                             ; types_compatible (s96 part 2) extends the
                             ; rule set so pointer[T] flows into ref[T] /
                             ; pointer[T] params.
-                            ; Escape soundness step 1: `&<bare frame-local>`
-                            ; produces a pointer into THIS frame, so stamp the
-                            ; pointee Local (make_pointer_to_local#) — the
-                            ; existing return/store/pass checks then promote-or-
-                            ; reject it, matching what `$` provided via the
-                            ; binding's Local life. Other `&` operands keep the
-                            ; plain pointer so value uses and #/^-allocated
-                            ; locals stay unaffected.
+                            ; Escape soundness steps 1+2: when `&<operand>`
+                            ; produces a pointer into THIS frame (bare frame
+                            ; local, frame value-struct field chain, or a frame
+                            ; temporary construction) stamp the pointee Local
+                            ; (make_pointer_to_local#) — the existing return/
+                            ; store/pass checks then promote-or-reject it,
+                            ; matching what `$` provided via the binding's Local
+                            ; life. Other `&` operands (pointer/ref bases that
+                            ; auto-deref out of the frame, #/^-allocated values)
+                            ; keep the plain pointer so value uses stay sound.
                             if prefix_name.equals("&")
                             {
-                                if this.operand_is_bare_frame_local(rest_result)
+                                if this.operand_addr_is_frame_local(rest_result)
                                     set rt: Planner.make_pointer_to_local(rest_result.result_type)
                                 else
                                     set rt: Planner.make_pointer_type(rest_result.result_type)
@@ -13245,23 +13247,169 @@ define Planner
                     return false
         }
 
-        ; True when `op` is a BARE frame-local Variable (no member-access
-        ; chain) — the `&op` target whose pointee lives in this frame. Kept
-        ; as its own single-exit helper (not inlined into the prefix-`&`
-        ; collapse block): a nested choose/if there is miscompiled by the
-        ; bootstrap lineage (the documented braceless-nest trap).
-        function operand_is_bare_frame_local(this: Planner, op: PlannedOperand) returns bool
+        ; base_is_value_struct: true when the local binding `name` stores a
+        ; VALUE struct in the frame — NOT a pointer/ref. Escape soundness
+        ; step 2: a frame-local pointer var (`var old_current current`,
+        ; `let p = ...`) has `.field` AUTO-DEREF to the pointed-to object,
+        ; which lives on a caller/heap page — `&p.field` is then a Caller
+        ; pointer, NOT a frame address. parent_type can't tell us this
+        ; (s173 records the UNWRAPPED type), so the base binding's stored
+        ; type is checked directly. Every compiler `return &base.field`
+        ; (HashMap/List iterators) has a pointer/ref/^rp base, so this
+        ; excludes them all.
+        function base_is_value_struct(this: Planner, name: String) returns bool
+        {
+            var result true
+            let lb this.lookup_local_binding(name)
+            if lb = null
+                set result: false
+            else
+            {
+                if lb.binding_type.name.equals("pointer")
+                    set result: false
+                if lb.binding_type.name.equals("ref")
+                    set result: false
+                ; A `ref[T]?` / `pointer[T]?` local (e.g. `let p v.get(i)`,
+                ; which returns ref[T]?) stores as an `Option` whose inner is
+                ; a ref/pointer (NPO) — `.field` auto-derefs OUT of the frame,
+                ; so `&p.field` is a Caller pointer, NOT Local. Exclude it.
+                ; Every compiler `return &kvp_ptr.value` (HashMap scope walk)
+                ; is this shape. An Option of a VALUE struct is a frame-
+                ; resident tagged union, so it stays flagged (sound).
+                if lb.binding_type.name.equals("Option")
+                {
+                    if this.option_inner_is_reference(lb.binding_type)
+                        set result: false
+                }
+            }
+            result
+        }
+
+        ; option_inner_is_reference: true when `t` is an Option whose first
+        ; generic argument is a `pointer`/`ref` — the NPO auto-deref shape.
+        function option_inner_is_reference(this: Planner, t: PlannedType) returns bool
         {
             var result false
-            if op.member_access = null
-                choose op.expr
-                    when v: Variable
+            if t.generics <> null
+            {
+                let gens (*t.generics)
+                if gens.length > 0
+                {
+                    let gp gens.get 0
+                    if gp <> null
                     {
-                        if this.binding_is_frame_local(v.name)
+                        if gp.name.equals("pointer")
+                            set result: true
+                        if gp.name.equals("ref")
                             set result: true
                     }
-                    else
-                        0
+                }
+            }
+            result
+        }
+
+        ; member_chain_all_fields: true when every member-access hop is a
+        ; plain field (or union-value) access — no method call. `&x.m()`
+        ; addresses a call result, not a frame field, so it is not flagged
+        ; here (rare; deferred to step 3). A null chain is vacuously true.
+        function member_chain_all_fields(this: Planner, op: PlannedOperand) returns bool
+        {
+            var result true
+            if op.member_access <> null
+            {
+                let chain (*op.member_access)
+                var i: size_t 0
+                while i < chain.length
+                {
+                    let hp chain.get i
+                    if hp <> null
+                    {
+                        if hp.is_method
+                            set result: false
+                    }
+                    set i: i + 1
+                }
+            }
+            result
+        }
+
+        ; construction_life_is_frame: true when a construction (PlannedCall
+        ; ctor / Tuple / VariantConstruction) lives in THIS frame — i.e. its
+        ; life is Unspecified (no sigil) or Local ($). A #/^ construction is
+        ; allocated on a caller/named page, so its address is Caller, not
+        ; Local. (this is ignored — kept a method to match the call style.)
+        function construction_life_is_frame(this: Planner, life: Lifetime) returns bool
+        {
+            var result false
+            choose life
+                when u: Unspecified
+                    set result: true
+                when l: Local
+                    set result: true
+                else
+                    0
+            result
+        }
+
+        ; True when `&op` produces a pointer into THIS frame — generalizes
+        ; the step-1 bare `&x` to field chains and address-of-temporary.
+        ; Kept as its own single-exit helper (not inlined into the prefix-`&`
+        ; collapse block): a nested choose/if there is miscompiled by the
+        ; bootstrap lineage (the documented braceless-nest trap). Cases:
+        ;   (1) bare `&x`            — x a frame-local of ANY type (the slot
+        ;                              itself is in the frame).
+        ;   (2) `&x.field-chain`     — x a frame-local VALUE struct, all hops
+        ;                              plain fields (base_is_value_struct +
+        ;                              member_chain_all_fields exclude every
+        ;                              compiler pointer/ref-base `&p.field`).
+        ;   (3) `&Box(5)` / `&(a,b)` — address of a frame TEMPORARY (no-sigil
+        ;                              or $ construction; #/^ live on a page).
+        ; `&<^rp-local>` (the slot is frame but the value is Caller) is NOT
+        ; flagged — binding_is_frame_local's {Unspecified,Local} gate excludes
+        ; Reference life; deferred to a later soundness step.
+        function operand_addr_is_frame_local(this: Planner, op: PlannedOperand) returns bool
+        {
+            var result false
+            choose op.expr
+                when v: Variable
+                {
+                    if this.binding_is_frame_local(v.name)
+                    {
+                        if op.member_access = null
+                            set result: true
+                        else
+                        {
+                            if this.base_is_value_struct(v.name)
+                            {
+                                if this.member_chain_all_fields(op)
+                                    set result: true
+                            }
+                        }
+                    }
+                }
+                when c: Call
+                {
+                    if op.member_access = null
+                    {
+                        if this.construction_life_is_frame(c.life)
+                            set result: true
+                    }
+                }
+                when t: Tuple
+                {
+                    if op.member_access = null
+                    {
+                        if this.construction_life_is_frame(t.life)
+                            set result: true
+                    }
+                }
+                when vc: VariantConstruction
+                {
+                    if op.member_access = null
+                        set result: true
+                }
+                else
+                    0
             result
         }
 

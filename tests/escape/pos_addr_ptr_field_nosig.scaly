@@ -1,0 +1,22 @@
+; OK (positive control, NO-SIGIL): &<pointer-local>.field auto-derefs the
+; pointer, so it addresses a field of the POINTED-TO object (on the caller's
+; page / heap), NOT a frame address. This is the List/HashMap iterator pattern
+; (`var cur = ptr; return &cur.field`). Escape soundness step 2 must NOT flag a
+; pointer-based field chain — only a value-struct base is frame-bound. Must
+; COMPILE.
+define Node
+(
+    element: int
+    next: pointer[Node]
+)
+
+function head_field(n: pointer[Node]) returns pointer[int]
+{
+    var cur n
+    return &cur.element
+}
+
+function main() returns int
+{
+    return 0
+}

@@ -1,0 +1,27 @@
+; ESCAPE (negative, NO-SIGIL): returning the address of a FIELD of a no-sigil
+; frame-local VALUE struct is a use-after-free — the struct (and its field)
+; live in this frame and die at function exit. Escape soundness step 2 infers
+; that &<frame-value-struct>.field points into this frame (Local pointee) so
+; the checker REJECTS it. The base is a value struct (not a pointer), so this
+; is distinct from the iterator `&ptr.field` deref chains, which are valid.
+define Inner
+(
+    n: int
+)
+
+define Outer
+(
+    inner: Inner
+)
+
+function leak() returns pointer[Inner]
+{
+    let o Outer(Inner(7))
+    return &o.inner
+}
+
+function main() returns int
+{
+    let p leak()
+    return (*p).n
+}
