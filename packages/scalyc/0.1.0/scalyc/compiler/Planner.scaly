@@ -17875,7 +17875,7 @@ define Planner
         ; A bare `plan_module(sub)` call (no `equals("X") = false`
         ; negation) avoids the stage-0 codegen SEGV that originally
         ; motivated the positive-enumeration allowlist.
-        function plan_namespace_module_one#(rp, this: Planner, sub: Module)
+        function plan_namespace_module_one(rp, this: Planner, sub: Module)
         {
             ; Walk EVERY sub-module of the namespace being compiled.
             ; Only the COMPILATION ROOT package's namespace modules reach
@@ -17908,7 +17908,7 @@ define Planner
         ; return into plan_namespace#'s own struct construction
         ; corrupts the frame on stage-0 codegen (session-43 pattern);
         ; the helper isolates the call.
-        function plan_namespace_modules#(rp, this: Planner, ns: Namespace)
+        function plan_namespace_modules(rp, this: Planner, ns: Namespace)
         {
             var mi: size_t 0
             while mi < ns.modules.length
