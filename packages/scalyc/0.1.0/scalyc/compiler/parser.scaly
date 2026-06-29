@@ -121,13 +121,13 @@ define Parser
         keywords_builder.add("when")
         keywords_builder.add("while")
         keywords_builder.add("package")
-        Vector[String]#(keywords_builder)
+        Vector[String](keywords_builder)
     }
 
     function initialize_keywords(this: Parser) returns HashSet[String]
     {
         var hash_set_builder HashSetBuilder[String](keywords_index)
-        HashSet[String]#(hash_set_builder)
+        HashSet[String](hash_set_builder)
     }
 
     function parse_literal_token(this: Parser) returns Literal throws ParserError
@@ -246,7 +246,7 @@ define Parser
                 when node: Success
                     acc.add(node)
         }
-        Vector[DeclarationSyntax]#(acc)
+        Vector[DeclarationSyntax](acc)
     }
 
     function parse_declaration(this: Parser) returns DeclarationSyntax throws ParserError
@@ -491,7 +491,7 @@ define Parser
                 when node: Success
                     acc.add(node)
         }
-        Vector[MemberSyntax]#(acc)
+        Vector[MemberSyntax](acc)
     }
 
     function parse_member(this: Parser) returns MemberSyntax throws ParserError
@@ -721,7 +721,7 @@ define Parser
                 when node: Success
                     acc.add(node)
         }
-        Vector[GenericParameterSyntax]#(acc)
+        Vector[GenericParameterSyntax](acc)
     }
 
     function parse_genericparameter(this: Parser) returns GenericParameterSyntax throws ParserError
@@ -1004,7 +1004,7 @@ define Parser
                 when node: Success
                     acc.add(node)
         }
-        Vector[VariantSyntax]#(acc)
+        Vector[VariantSyntax](acc)
     }
 
     function parse_variant(this: Parser) returns VariantSyntax throws ParserError
@@ -1194,7 +1194,7 @@ define Parser
                 when node: Success
                     acc.add(node)
         }
-        Vector[GenericArgumentSyntax]#(acc)
+        Vector[GenericArgumentSyntax](acc)
     }
 
     function parse_genericargument(this: Parser) returns GenericArgumentSyntax throws ParserError
@@ -1307,7 +1307,7 @@ define Parser
                 when node: Success
                     acc.add(node)
         }
-        Vector[ItemSyntax]#(acc)
+        Vector[ItemSyntax](acc)
     }
 
     function parse_item(this: Parser) returns ItemSyntax throws ParserError
@@ -1456,7 +1456,7 @@ define Parser
                 when node: Success
                     acc.add(node)
         }
-        Vector[UseSyntax]#(acc)
+        Vector[UseSyntax](acc)
     }
 
     function parse_use(this: Parser) returns UseSyntax throws ParserError
@@ -1669,7 +1669,7 @@ define Parser
                 when node: Success
                     acc.add(node)
         }
-        Vector[MethodSyntax]#(acc)
+        Vector[MethodSyntax](acc)
     }
 
     function parse_method(this: Parser) returns MethodSyntax throws ParserError
@@ -1733,7 +1733,7 @@ define Parser
                 when node: Success
                     acc.add(node)
         }
-        Vector[InitSyntax]#(acc)
+        Vector[InitSyntax](acc)
     }
 
     function parse_init(this: Parser) returns InitSyntax throws ParserError
@@ -2182,7 +2182,7 @@ define Parser
                 when node: Success
                     acc.add(node)
         }
-        Vector[ExtendSyntax]#(acc)
+        Vector[ExtendSyntax](acc)
     }
 
     function parse_extend(this: Parser) returns ExtendSyntax throws ParserError
@@ -2274,7 +2274,7 @@ define Parser
                 when node: Success
                     acc.add(node)
         }
-        Vector[AttributeSyntax]#(acc)
+        Vector[AttributeSyntax](acc)
     }
 
     function parse_attribute(this: Parser) returns AttributeSyntax throws ParserError
@@ -2391,7 +2391,7 @@ define Parser
                 when node: Success
                     acc.add(node)
         }
-        Vector[PackageSyntax]#(acc)
+        Vector[PackageSyntax](acc)
     }
 
     function parse_package(this: Parser) returns PackageSyntax throws ParserError
@@ -2515,7 +2515,7 @@ define Parser
                 when node: Success
                     acc.add(node)
         }
-        Vector[OperandSyntax]#(acc)
+        Vector[OperandSyntax](acc)
     }
 
     function parse_operand(this: Parser) returns OperandSyntax throws ParserError
@@ -2574,7 +2574,7 @@ define Parser
                 when node: Success
                     acc.add(node)
         }
-        Vector[MemberAccessSyntax]#(acc)
+        Vector[MemberAccessSyntax](acc)
     }
 
     function parse_memberaccess(this: Parser) returns MemberAccessSyntax throws ParserError
@@ -2858,7 +2858,7 @@ define Parser
                 when node: Success
                     acc.add(node)
         }
-        Vector[ComponentSyntax]#(acc)
+        Vector[ComponentSyntax](acc)
     }
 
     function parse_component(this: Parser) returns ComponentSyntax throws ParserError
@@ -3011,7 +3011,7 @@ define Parser
                 when node: Success
                     acc.add(node)
         }
-        Vector[ElementSyntax]#(acc)
+        Vector[ElementSyntax](acc)
     }
 
     function parse_element(this: Parser) returns ElementSyntax throws ParserError
@@ -3232,7 +3232,7 @@ define Parser
                 when node: Success
                     acc.add(node)
         }
-        Vector[BranchSyntax]#(acc)
+        Vector[BranchSyntax](acc)
     }
 
     function parse_branch(this: Parser) returns BranchSyntax throws ParserError
@@ -3295,7 +3295,7 @@ define Parser
                 when node: Success
                     acc.add(node)
         }
-        Vector[CaseSyntax]#(acc)
+        Vector[CaseSyntax](acc)
     }
 
     function parse_case(this: Parser) returns CaseSyntax throws ParserError
@@ -3552,7 +3552,7 @@ define Parser
                 when node: Success
                     acc.add(node)
         }
-        Vector[WhenSyntax]#(acc)
+        Vector[WhenSyntax](acc)
     }
 
     function parse_when(this: Parser) returns WhenSyntax throws ParserError
@@ -3632,7 +3632,7 @@ define Parser
                 when node: Success
                     acc.add(node)
         }
-        Vector[StatementSyntax]#(acc)
+        Vector[StatementSyntax](acc)
     }
 
     function parse_statement(this: Parser) returns StatementSyntax throws ParserError
@@ -3908,7 +3908,7 @@ define Parser
                 when node: Success
                     acc.add(node)
         }
-        Vector[BindingSpecSyntax]#(acc)
+        Vector[BindingSpecSyntax](acc)
     }
 
     function parse_bindingspec(this: Parser) returns BindingSpecSyntax throws ParserError
@@ -4028,7 +4028,7 @@ define Parser
                 when node: Success
                     acc.add(node)
         }
-        Vector[PartSyntax]#(acc)
+        Vector[PartSyntax](acc)
     }
 
     function parse_part(this: Parser) returns PartSyntax throws ParserError
@@ -4108,7 +4108,7 @@ define Parser
                 when node: Success
                     acc.add(node)
         }
-        Vector[PropertySyntax]#(acc)
+        Vector[PropertySyntax](acc)
     }
 
     function parse_property(this: Parser) returns PropertySyntax throws ParserError
@@ -4521,7 +4521,7 @@ define Parser
                 when node: Success
                     acc.add(node)
         }
-        Vector[ActionSyntax]#(acc)
+        Vector[ActionSyntax](acc)
     }
 
     function parse_action(this: Parser) returns ActionSyntax throws ParserError
@@ -4790,7 +4790,7 @@ define Parser
                 when node: Success
                     acc.add(node)
         }
-        Vector[TypeSyntax]#(acc)
+        Vector[TypeSyntax](acc)
     }
 
     function parse_type(this: Parser) returns TypeSyntax throws ParserError
@@ -4898,7 +4898,7 @@ define Parser
                 when node: Success
                     acc.add(node)
         }
-        Vector[ExtensionSyntax]#(acc)
+        Vector[ExtensionSyntax](acc)
     }
 
     function parse_extension(this: Parser) returns ExtensionSyntax throws ParserError

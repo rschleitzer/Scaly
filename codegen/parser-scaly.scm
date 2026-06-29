@@ -102,13 +102,13 @@ define Parser
 "   (apply-to-selected-children "keyword" (lambda (keyword) ($
 "        keywords_builder.add(\""(id keyword)"\")
 "   )))
-"        Vector[String]#(keywords_builder)
+"        Vector[String](keywords_builder)
     }
 
     function initialize_keywords(this: Parser) returns HashSet[String]
     {
         var hash_set_builder HashSetBuilder[String](keywords_index)
-        HashSet[String]#(hash_set_builder)
+        HashSet[String](hash_set_builder)
     }
 
     function parse_literal_token(this: Parser) returns Literal throws ParserError
@@ -178,7 +178,7 @@ define Parser
                 when node: Success
                     acc.add(node)
         }
-        Vector["(id syntax)"Syntax]#(acc)
+        Vector["(id syntax)"Syntax](acc)
     }
 "       ) "")
 "
