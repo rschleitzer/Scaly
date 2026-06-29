@@ -13044,8 +13044,18 @@ define Planner
             ; the CALLER's object), a module global, or through a pointer deref.
             ; A same-frame local's field (`var`/`let`) dies WITH the ref -> safe.
             ; Mirrors Planner.cpp planAction store check.
+            ; The source triggers when it is a DIRECT &<frame-local> reference
+            ; (is_reference_to_local_page) OR a read of a TAINTED local struct's
+            ; pointer field (hole-1 store: `let h Holder(&b); set this.p: h.p` —
+            ; h.p's static type is pointer[Box{Unspecified}], so the Local pointee
+            ; isn't on the field type; the per-fn taint set carries it instead).
+            var store_src_escapes false
+            if Planner.is_reference_to_local_page(planned_source_collapsed.result_type)
+                set store_src_escapes: true
+            if this.operand_reads_tainted_local_field(planned_source_collapsed)
+                set store_src_escapes: true
             if a.target.length > 0
-                if Planner.is_reference_to_local_page(planned_source_collapsed.result_type)
+                if store_src_escapes
                 {
                     var has_member false
                     if planned_target_collapsed.member_access <> null

@@ -1,0 +1,29 @@
+; ESCAPE (negative, NO-SIGIL): a frame-local struct's pointer FIELD holds
+; &<frame-local>; storing that field into a CALLER-held field (this.p) leaks a
+; dangling frame address (UAF). Hole-1 STORE case: the taint set carries the
+; Local pointee that h.p's static type (pointer[Box{Unspecified}]) does not.
+; Compiler MUST reject (escapes via store).
+define Box
+(
+    v: int
+)
+define Holder
+(
+    p: pointer[Box]
+)
+define Sink
+(
+    p: pointer[Box]
+)
+
+procedure stash(this: Sink)
+{
+    let b Box(5)
+    let h Holder(&b)
+    set this.p: h.p
+}
+
+function main() returns int
+{
+    return 0
+}
