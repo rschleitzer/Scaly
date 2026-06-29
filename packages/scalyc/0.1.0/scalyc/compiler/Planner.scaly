@@ -504,7 +504,7 @@ define Planner
         transitive_page_built: bool
     )
     {
-        init#(page, filename: String)
+        init(page, filename: String)
         {
             set owning_page: page
             set file: String^page(filename)

@@ -89,7 +89,7 @@ define Parser
     keywords: HashSet[String]
 )
 {
-    init#(rp, text: String)
+    init(rp, text: String)
     {
         set lexer: Lexer(text)
         set keywords_index: initialize_keywords_index#()
