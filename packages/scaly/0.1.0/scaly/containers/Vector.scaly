@@ -44,7 +44,7 @@ define Vector[T]
         set data: d
     }
 
-    init#(rp, len: size_t)
+    init (rp, len: size_t)
     {
         set length: len
         if len > 0
@@ -56,7 +56,7 @@ define Vector[T]
             set data: null
     }
 
-    init#(rp, arr: pointer[T], len: size_t)
+    init (rp, arr: pointer[T], len: size_t)
     {
         set length: len
         if len > 0
@@ -68,7 +68,7 @@ define Vector[T]
             set data: null
     }
 
-    init#(rp, other: Vector[T])
+    init (rp, other: Vector[T])
     {
         set length: other.length
         if length > 0
@@ -80,7 +80,7 @@ define Vector[T]
             set data: null
     }
 
-    init#(rp, array: Array[T])
+    init (rp, array: Array[T])
     {
         set length: array.length
         if length > 0
@@ -93,7 +93,7 @@ define Vector[T]
             set data: null
     }
 
-    init#(rp, list: List[T])
+    init (rp, list: List[T])
     {
         set length: list.count()
         if length > 0

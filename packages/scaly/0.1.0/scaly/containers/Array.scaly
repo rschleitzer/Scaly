@@ -49,13 +49,13 @@ define Array[T]
     }
 
     ; Page-aware initializers for use when Array is allocated on a specific page
-    init# (page)
+    init (page)
     {
         set length: 0
         set vector: null
     }
 
-    init# (page, size: size_t)
+    init (page, size: size_t)
     {
         set length: 0
         set vector: null
