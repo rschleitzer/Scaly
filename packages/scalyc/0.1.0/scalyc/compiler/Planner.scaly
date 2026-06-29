@@ -844,7 +844,7 @@ define Planner
                     }
                     else
                         0
-            Vector[PlannedType]^rp(result)
+            Vector[PlannedType](result)
         }
 
         function delegate_return_type(this: Planner, name: String) returns PlannedType
@@ -1040,7 +1040,7 @@ define Planner
                     {
                         let ns_ptr program_use_namespaces.get i
                         if ns_ptr <> null
-                            return String^rp((*ns_ptr))
+                            return String((*ns_ptr))
                     }
                 }
                 set i: i + 1
@@ -1213,7 +1213,7 @@ define Planner
                 set i: i + 1
             }
 
-            Vector[String]^rp(paths)
+            Vector[String](paths)
         }
 
         ; Compose "base/<name>/<version>/<name>.scaly" using Path.join#.
@@ -1322,7 +1322,7 @@ define Planner
                     matches.add kvp_ptr.value
                 set cur: model_function_index.next_of(cur as size_t)
             }
-            Vector[Function]^rp(matches)
+            Vector[Function](matches)
         }
 
         function lookup_operators(this: Planner, name: String) returns Vector[Operator]
@@ -1336,7 +1336,7 @@ define Planner
                     matches.add kvp_ptr.value
                 set cur: model_operator_index.next_of(cur as size_t)
             }
-            Vector[Operator]^rp(matches)
+            Vector[Operator](matches)
         }
 
         function is_function(this: Planner, name: String) returns bool
@@ -1421,13 +1421,13 @@ define Planner
                 Span(0, 0), false,
                 aa_alignment_name.get 0,
                 aa_size_ref,
-                Vector[Attribute]^rp(0)
+                Vector[Attribute](0)
             ))
             aa_inputs.put(1, Item(
                 Span(0, 0), false,
                 aa_size_name.get 0,
                 aa_size_ref,
-                Vector[Attribute]^rp(0)
+                Vector[Attribute](0)
             ))
             let aligned_alloc_fn Function(
                 Span(0, 0), false, false,
@@ -1450,7 +1450,7 @@ define Planner
                 Span(0, 0), false,
                 free_ptr_name.get 0,
                 aa_ptr_void_ref,
-                Vector[Attribute]^rp(0)
+                Vector[Attribute](0)
             ))
             let free_fn Function(
                 Span(0, 0), false, false,
@@ -1482,7 +1482,7 @@ define Planner
                 Span(0, 0), false,
                 exit_code_name.get 0,
                 int_ref,
-                Vector[Attribute]^rp(0)
+                Vector[Attribute](0)
             ))
             let exit_fn Function(
                 Span(0, 0), false, false,
@@ -1568,7 +1568,7 @@ define Planner
                 }
             }
             if concept_ref = null
-                return Vector[Function]^rp(matches)
+                return Vector[Function](matches)
 
             let c (*concept_ref)
             choose c.definition
@@ -1585,7 +1585,7 @@ define Planner
                 else
                     0
 
-            Vector[Function]^rp(matches)
+            Vector[Function](matches)
         }
 
         ; lookup_property: find a struct field by name. Returns a
@@ -3024,9 +3024,9 @@ define Planner
         ) returns Vector[PlannedOperand]
         {
             if param_types.length = 0
-                return Vector[PlannedOperand]^rp(args)
+                return Vector[PlannedOperand](args)
             if args.length < param_types.length
-                return Vector[PlannedOperand]^rp(args)
+                return Vector[PlannedOperand](args)
             let offset args.length - param_types.length
             var out Array[PlannedOperand]()
             var ai: size_t 0
@@ -3064,7 +3064,7 @@ define Planner
                 }
                 set ai: ai + 1
             }
-            Vector[PlannedOperand]^rp(out)
+            Vector[PlannedOperand](out)
         }
 
         ; If `op` is a Phase-1 lambda binding name used as a callable head (a
@@ -7805,7 +7805,7 @@ define Planner
             {
                 if has_explicit = false
                     sb.append "v"
-                return sb.to_string^rp()
+                return sb.to_string()
             }
 
             var i: size_t 0
@@ -7820,7 +7820,7 @@ define Planner
                 set i: i + 1
             }
 
-            sb.to_string^rp()
+            sb.to_string()
         }
 
         ; method_params_match: does method `f`'s declared parameter list
@@ -8922,7 +8922,7 @@ define Planner
                 set i: i + 1
             }
 
-            Vector[PlannedMemberAccess]^rp(result)
+            Vector[PlannedMemberAccess](result)
         }
 
         ; fresh_type_var: allocate a new type variable as a PlannedType
@@ -12610,7 +12610,7 @@ define Planner
                                         arr.add((*p))
                                     set i: i + 1
                                 }
-                                return Vector[PlannedOperand]^rp(arr)
+                                return Vector[PlannedOperand](arr)
                             }
                         }
                         else
@@ -15554,7 +15554,7 @@ define Planner
                                         {
                                             let rp_ptr t.name.get 0
                                             if rp_ptr <> null
-                                                return String^rp((*rp_ptr))
+                                                return String((*rp_ptr))
                                         }
                                 }
                             }
@@ -15577,7 +15577,7 @@ define Planner
                                             {
                                                 let rp2 t2.name.get 0
                                                 if rp2 <> null
-                                                    return String^rp((*rp2))
+                                                    return String((*rp2))
                                             }
                                     }
                                 }
@@ -16001,7 +16001,7 @@ define Planner
                     {
                         let s1 t1.name.get 0
                         if s1 <> null
-                            return String^rp((*s1))
+                            return String((*s1))
                     }
                 }
                 else
@@ -18898,11 +18898,11 @@ define Planner
     function strip_package_prefix(name: String) returns String
     {
         if name.starts_with("scaly.") = false
-            return String^rp(name)
+            return String(name)
 
         let last_dot name.last_index_of("." as u8)
         if last_dot < 0
-            return String^rp(name)
+            return String(name)
 
         let start (last_dot as size_t) + 1
         let len name.get_length() - start
@@ -18958,7 +18958,7 @@ define Planner
                         var sb StringBuilder()
                         sb.append("P" as char)
                         sb.append inner
-                        return sb.to_string^rp()
+                        return sb.to_string()
                     }
                 }
             }
@@ -18980,7 +18980,7 @@ define Planner
                         var sb StringBuilder()
                         sb.append("R" as char)
                         sb.append inner
-                        return sb.to_string^rp()
+                        return sb.to_string()
                     }
                 }
             }
@@ -19014,7 +19014,7 @@ define Planner
                     set i: i + 1
                 }
                 sb.append("E" as char)
-                return sb.to_string^rp()
+                return sb.to_string()
             }
         }
 
@@ -19032,7 +19032,7 @@ define Planner
         var sb StringBuilder()
         sb.append "_Z"
         sb.append encoded
-        sb.to_string^rp()
+        sb.to_string()
     }
 
     ; mangle_structure: "_Z" + name-with-length-prefix + optional "I...E" generic block.
@@ -19061,14 +19061,14 @@ define Planner
                     set i: i + 1
                 }
                 sb.append "E"
-                return sb.to_string^rp()
+                return sb.to_string()
             }
         }
 
         var sb StringBuilder()
         sb.append "_Z"
         sb.append(Planner.encode_name name)
-        sb.to_string^rp()
+        sb.to_string()
     }
 
     ; mangle_function: Itanium symbol for a function / method.
@@ -19152,7 +19152,7 @@ define Planner
         if has_explicit_params = false
             sb.append "v"
 
-        sb.to_string^rp()
+        sb.to_string()
     }
 
     ; mangle_free_function_from_types: build a free-function Itanium
@@ -19192,7 +19192,7 @@ define Planner
         if has_explicit = false
             sb.append "v"
 
-        sb.to_string^rp()
+        sb.to_string()
     }
 
     ; operator_code: map a Scaly operator name to its Itanium ABI two-letter
@@ -19249,7 +19249,7 @@ define Planner
         var sb StringBuilder()
         sb.append "v0"
         sb.append(Planner.encode_name name)
-        sb.to_string^rp()
+        sb.to_string()
     }
 
     ; mangle_operator: Itanium ABI symbol for an operator definition.
@@ -19326,7 +19326,7 @@ define Planner
         if has_params = false
             sb.append "v"
 
-        sb.to_string^rp()
+        sb.to_string()
     }
 
     ; ========================================================================
@@ -19362,10 +19362,10 @@ define Planner
                     set i: i + 1
                 }
                 sb.append "]"
-                return sb.to_string^rp()
+                return sb.to_string()
             }
         }
-        String^rp(type_value.name)
+        String(type_value.name)
     }
 
     ; normalize_type_name: canonicalise builtin aliases.
@@ -19421,7 +19421,7 @@ define Planner
         if base.equals("f32")
             return "f32"
 
-        String^rp(base)
+        String(base)
     }
 
     ; is_integer_type: is a normalized type name one of the integer family?
@@ -19995,7 +19995,7 @@ define Planner
     function compute_property_offsets(props: ref[Vector[PlannedProperty]]?) returns Vector[size_t]
     {
         if props = null
-            return Vector[size_t]^rp(0)
+            return Vector[size_t](0)
 
         let ps (*props)
         var result Vector[size_t]^rp(ps.length)
@@ -20214,7 +20214,7 @@ define Planner
                 set i: i + 1
             }
         }
-        Vector[size_t]^rp(acc)
+        Vector[size_t](acc)
     }
 
     ; free_type_vars: distinct type-var ids in `t`, in first-seen order.
@@ -20247,7 +20247,7 @@ define Planner
             }
             set i: i + 1
         }
-        Vector[size_t]^rp(acc)
+        Vector[size_t](acc)
     }
 
     ; name_substitution_lookup: linear scan by String key. Distinct from
@@ -21529,7 +21529,7 @@ define Planner
         if parts.length > 0
         {
             if parts.data = null
-                return sb.to_string^rp()
+                return sb.to_string()
         }
         var i: size_t 0
         while i < parts.length
@@ -21543,7 +21543,7 @@ define Planner
 
             set i: i + 1
         }
-        sb.to_string^rp()
+        sb.to_string()
     }
 
     ; is_extern_impl: detect the Extern variant of Implementation without
@@ -22659,7 +22659,7 @@ define Planner
                 set i: i + 1
             }
         }
-        Vector[PlannedType]^rp(temp)
+        Vector[PlannedType](temp)
     }
 
     ; extract_arg_types: flatten a function-call argument list (modelled as a
