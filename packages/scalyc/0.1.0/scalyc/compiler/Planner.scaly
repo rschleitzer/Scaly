@@ -1768,7 +1768,7 @@ define Planner
                                             if p_ptr.type <> null
                                             {
                                                 let pt (*p_ptr.type)
-                                                param_types_arr.add(this.plan_type#(pt))
+                                                param_types_arr.add(this.plan_type(pt))
                                             }
                                         }
                                         set pi: pi + 1
@@ -1927,7 +1927,7 @@ define Planner
                                     return null
                                 let vt (*v_ptr.type)
                                 var holder Vector[PlannedType]^rp(1)
-                                holder.put(0, this.plan_type#(vt))
+                                holder.put(0, this.plan_type(vt))
                                 return holder.get 0
                             }
                         }
@@ -2598,7 +2598,7 @@ define Planner
                 let tt (*f.throws_)
                 set can_throw: true
                 var th_holder Vector[PlannedType]^rp(1)
-                th_holder.put(0, this.plan_type#(tt))
+                th_holder.put(0, this.plan_type(tt))
                 set throws_ref: th_holder.get(0)
             }
 
@@ -2841,7 +2841,7 @@ define Planner
                                     if p_ptr.type <> null
                                     {
                                         let pt (*p_ptr.type)
-                                        param_types_arr.add(this.plan_type#(pt))
+                                        param_types_arr.add(this.plan_type(pt))
                                     }
                                 }
                                 set pi: pi + 1
@@ -6097,7 +6097,7 @@ define Planner
                                             {
                                                 set s_can_throw: true
                                                 var sth Vector[PlannedType]^rp(1)
-                                                sth.put(0, this.plan_type#((*sfn.throws_)))
+                                                sth.put(0, this.plan_type((*sfn.throws_)))
                                                 set s_throws: sth.get(0)
                                             }
                                             var srt_holder Vector[PlannedType]^rp(1)
@@ -6260,7 +6260,7 @@ define Planner
                                             if c.value <> null
                                             {
                                                 let v (*c.value)
-                                                args_arr.add(this.collapse_operand_sequence#(v))
+                                                args_arr.add(this.collapse_operand_sequence(v))
                                             }
                                         }
                                         set ci: ci + 1
@@ -6700,7 +6700,7 @@ define Planner
                                                                             if chained_c.value <> null
                                                                             {
                                                                                 let chained_v (*chained_c.value)
-                                                                                chained_args_arr.add(this.collapse_operand_sequence#(chained_v))
+                                                                                chained_args_arr.add(this.collapse_operand_sequence(chained_v))
                                                                             }
                                                                         }
                                                                         set chained_ci: chained_ci + 1
@@ -7563,10 +7563,10 @@ define Planner
             if o.returns_ <> null
             {
                 let rt (*o.returns_)
-                holder.put(0, this.plan_type#(rt))
+                holder.put(0, this.plan_type(rt))
             }
             if o.returns_ = null
-                holder.put(0, Planner.make_void_type#())
+                holder.put(0, Planner.make_void_type())
             holder.get 0
         }
 
@@ -7732,7 +7732,7 @@ define Planner
                                     if p_ptr.type <> null
                                     {
                                         let pt (*p_ptr.type)
-                                        param_types_arr.add(this.plan_type#(pt))
+                                        param_types_arr.add(this.plan_type(pt))
                                     }
                                 }
                                 set pi: pi + 1
@@ -7760,10 +7760,10 @@ define Planner
                                 if o.returns_ <> null
                                 {
                                     let rt_model (*o.returns_)
-                                    holder.put(0, this.plan_type#(rt_model))
+                                    holder.put(0, this.plan_type(rt_model))
                                 }
                                 if o.returns_ = null
-                                    holder.put(0, Planner.make_void_type#())
+                                    holder.put(0, Planner.make_void_type())
 
                                 set type_substitutions.length: saved_len
                                 set this.resolved_op_is_intrinsic: Planner.operator_is_intrinsic(o)
@@ -8311,7 +8311,7 @@ define Planner
                     if p_ptr.type <> null
                     {
                         let pt (*p_ptr.type)
-                        params_arr.add(this.plan_type#(pt))
+                        params_arr.add(this.plan_type(pt))
                     }
                 }
                 set i: i + 1
@@ -8351,7 +8351,7 @@ define Planner
                 let tt (*f.throws_)
                 set can_throw: true
                 var th_holder Vector[PlannedType]^rp(1)
-                th_holder.put(0, this.plan_type#(tt))
+                th_holder.put(0, this.plan_type(tt))
                 set throws_ref: th_holder.get(0)
             }
 
@@ -11382,7 +11382,7 @@ define Planner
                 if w_ptr <> null
                 {
                     let w (*w_ptr)
-                    catches_arr.add(this.plan_when#(w, union_for_catches, false, null))
+                    catches_arr.add(this.plan_when(w, union_for_catches, false, null))
                 }
                 set ci: ci + 1
             }
@@ -11670,7 +11670,7 @@ define Planner
                 if w_ptr <> null
                 {
                     let w (*w_ptr)
-                    cases_arr.add(this.plan_when#(w, union_type, is_throws_call, throws_ty_ref))
+                    cases_arr.add(this.plan_when(w, union_type, is_throws_call, throws_ty_ref))
                 }
                 set i: i + 1
             }
@@ -11761,7 +11761,7 @@ define Planner
                 if cs_ptr <> null
                 {
                     let cs (*cs_ptr)
-                    cases_arr.add(this.plan_case#(cs))
+                    cases_arr.add(this.plan_case(cs))
                 }
                 set i: i + 1
             }
@@ -12093,7 +12093,7 @@ define Planner
                 if c_ptr <> null
                 {
                     let c (*c_ptr)
-                    comps_arr.add(this.plan_component#(c))
+                    comps_arr.add(this.plan_component(c))
                 }
                 set i: i + 1
             }
@@ -16690,7 +16690,7 @@ define Planner
             if Planner.is_extern_impl(f.implementation)
                 mangled_holder.put(0, String(f.name))
             if Planner.is_extern_impl(f.implementation) = false
-                mangled_holder.put(0, Planner.mangle_function#(f.name, &input_holder, parent, has_page))
+                mangled_holder.put(0, Planner.mangle_function(f.name, &input_holder, parent, has_page))
             let mangled (*mangled_holder.get(0))
 
             var can_throw: bool false
@@ -17145,7 +17145,7 @@ define Planner
                 if p_ptr <> null
                 {
                     let p (*p_ptr)
-                    planned_props.add(this.plan_property#(p))
+                    planned_props.add(this.plan_property(p))
                 }
                 set i: i + 1
             }
@@ -17246,12 +17246,12 @@ define Planner
                     choose mem
                         when f: Function
                         {
-                            planned_methods.add(this.plan_function#(f, parent_ref))
+                            planned_methods.add(this.plan_function(f, parent_ref))
                             0
                         }
                         when o: Operator
                         {
-                            planned_operators.add(this.plan_operator#(o, parent_ref))
+                            planned_operators.add(this.plan_operator(o, parent_ref))
                             0
                         }
                         else
@@ -17267,7 +17267,7 @@ define Planner
                 if ii_ptr <> null
                 {
                     let ini (*ii_ptr)
-                    planned_initializers.add(this.plan_initializer#(ini, parent_ref))
+                    planned_initializers.add(this.plan_initializer(ini, parent_ref))
                 }
                 set ii: ii + 1
             }
@@ -17276,7 +17276,7 @@ define Planner
             {
                 let di (*s.deinitializer)
                 var dei_holder Vector[PlannedDeInitializer]^rp(1)
-                dei_holder.put(0, this.plan_deinitializer#(di, parent_ref))
+                dei_holder.put(0, this.plan_deinitializer(di, parent_ref))
                 set deinit_ref: dei_holder.get(0)
             }
 
@@ -17339,7 +17339,7 @@ define Planner
                 if p_ptr <> null
                 {
                     let p (*p_ptr)
-                    planned_props.add(this.plan_property#(p))
+                    planned_props.add(this.plan_property(p))
                 }
                 set i: i + 1
             }
@@ -17412,7 +17412,7 @@ define Planner
                     if ii_ptr <> null
                     {
                         let ini (*ii_ptr)
-                        planned_initializers.add(this.plan_initializer#(ini, parent_ref))
+                        planned_initializers.add(this.plan_initializer(ini, parent_ref))
                     }
                     set ii: ii + 1
                 }
@@ -17817,17 +17817,17 @@ define Planner
                     choose m
                         when f: Function
                         {
-                            functions.add(this.plan_function#(f, parent_ref))
+                            functions.add(this.plan_function(f, parent_ref))
                             0
                         }
                         when o: Operator
                         {
-                            operators.add(this.plan_operator#(o, parent_ref))
+                            operators.add(this.plan_operator(o, parent_ref))
                             0
                         }
                         when c: Concept
                         {
-                            concepts.add(this.plan_concept#(c))
+                            concepts.add(this.plan_concept(c))
                             0
                         }
                         else
@@ -18227,7 +18227,7 @@ define Planner
                 if sub_ptr <> null
                 {
                     let sub (*sub_ptr)
-                    sub_modules.add(this.plan_module#(sub))
+                    sub_modules.add(this.plan_module(sub))
                 }
                 set mi: mi + 1
             }
@@ -18242,7 +18242,7 @@ define Planner
                     choose mem
                         when f: Function
                         {
-                            functions.add(this.plan_function#(f, null))
+                            functions.add(this.plan_function(f, null))
                             0
                         }
                         when o: Operator
@@ -18314,7 +18314,7 @@ define Planner
                         }
                         when c: Concept
                         {
-                            pl_concepts.add(this.plan_concept#(c))
+                            pl_concepts.add(this.plan_concept(c))
                             0
                         }
                         else
@@ -18556,7 +18556,7 @@ define Planner
                 if v_ptr <> null
                 {
                     let v (*v_ptr)
-                    planned_vs.add(this.plan_variant#(v, tag))
+                    planned_vs.add(this.plan_variant(v, tag))
                     set tag: tag + 1
                 }
                 set i: i + 1
@@ -18646,12 +18646,12 @@ define Planner
                         choose mem
                             when f: Function
                             {
-                                planned_methods.add(this.plan_function#(f, u_parent_ref))
+                                planned_methods.add(this.plan_function(f, u_parent_ref))
                                 0
                             }
                             when o: Operator
                             {
-                                planned_operators.add(this.plan_operator#(o, u_parent_ref))
+                                planned_operators.add(this.plan_operator(o, u_parent_ref))
                                 0
                             }
                             else
@@ -20295,7 +20295,7 @@ define Planner
                     if inner_ptr <> null
                     {
                         let inner (*inner_ptr)
-                        conv.put(i, Planner.planned_type_to_model_type#(inner))
+                        conv.put(i, Planner.planned_type_to_model_type(inner))
                     }
                     set i: i + 1
                 }
@@ -20525,7 +20525,7 @@ define Planner
                 {
                     let gp gs.get i
                     if gp <> null
-                        arr.add(Planner.rehome_type#((*gp)))
+                        arr.add(Planner.rehome_type((*gp)))
                     set i: i + 1
                 }
                 var gh Vector[PlannedType]^rp(arr)
@@ -20688,7 +20688,7 @@ define Planner
                     when et: PlannedType
                     {
                         var holder Vector[Type]^rp(1)
-                        holder.put(0, Planner.planned_type_to_model_type#(et))
+                        holder.put(0, Planner.planned_type_to_model_type(et))
                         return holder.get 0
                     }
                     else
