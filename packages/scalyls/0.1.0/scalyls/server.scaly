@@ -44,7 +44,7 @@ define server
     function run()
     {
         ; Each message is read + dispatched inside process_one(), a plain
-        ; (non-#) helper. The message body — read via read_message#() onto
+        ; (non-#) helper. The message body — read via read_message() onto
         ; the HELPER's local page (rp resolves to the callee's own root
         ; page) — and everything the dispatch allocates on that page are
         ; reclaimed when process_one() returns, every iteration. Reading
@@ -59,7 +59,7 @@ define server
     ; this function's local page and is freed on return.
     function process_one() returns bool
     {
-        let body rpc.read_message#()
+        let body rpc.read_message()
         if body.get_length() = (0 as size_t)
             return false
 
@@ -69,10 +69,10 @@ define server
 
     function handle_message(body: String)
     {
-        let msg json.parse#(body)
+        let msg json.parse(body)
 
         let method_val json.get(msg, "method")
-        let method json.as_string#(method_val)
+        let method json.as_string(method_val)
 
         ; An `id` field marks a Request (needs a Response). Notifications
         ; carry no id. A comparison result bound straight to a `let`
@@ -88,14 +88,14 @@ define server
             ; Capture the workspace root (workspace/symbol carries no uri).
             server.capture_workspace_root msg
             if has_id
-                rpc.write_message(server.initialize_response#(id))
+                rpc.write_message(server.initialize_response(id))
             return
         }
 
         if method.equals("shutdown")
         {
             if has_id
-                rpc.write_message(server.null_result_response#(id))
+                rpc.write_message(server.null_result_response(id))
             return
         }
 
@@ -227,8 +227,8 @@ define server
     {
         let params json.get(msg, "params")
         let doc json.get(params, "textDocument")
-        let uri json.as_string#(json.get(doc, "uri"))
-        let text json.as_string#(json.get(doc, "text"))
+        let uri json.as_string(json.get(doc, "uri"))
+        let text json.as_string(json.get(doc, "text"))
         ; Remember the buffer so later navigation requests (which carry only a
         ; uri) see this text — including unsaved edits — instead of disk.
         docstore.put(uri, text)
@@ -239,7 +239,7 @@ define server
     {
         let params json.get(msg, "params")
         let doc json.get(params, "textDocument")
-        let uri json.as_string#(json.get(doc, "uri"))
+        let uri json.as_string(json.get(doc, "uri"))
 
         ; textDocumentSync = incremental: each contentChange is either a
         ; ranged edit (replace the [start,end) span with its text) or a
@@ -250,12 +250,12 @@ define server
         if n = (0 as size_t)
             return
 
-        var text docstore.get#(uri)
+        var text docstore.get(uri)
         var i: size_t 0
         while i < n
         {
             let change json.array_get(changes, i)
-            set text: server.apply_change#(text, change)
+            set text: server.apply_change(text, change)
             set i: i + 1
         }
         ; Store the rebuilt buffer so navigation sees this (unsaved) edit.
@@ -270,10 +270,10 @@ define server
     ; ONE BYTE AT A TIME (prefix, inserted text, suffix): a single
     ; StringBuilder.append of a large String hits the runtime's manual-grow
     ; crash (see symbols.scaly's STRING/JSON NOTE).
-    function apply_change#(rp, text: String, change: JsonValue) returns String
+    function apply_change(rp, text: String, change: JsonValue) returns String
     {
         let range json.get(change, "range")
-        let new_text json.as_string#(json.get(change, "text"))
+        let new_text json.as_string(json.get(change, "text"))
 
         if json.is_null(range)
             return new_text
@@ -284,10 +284,10 @@ define server
         let s_char json.as_i64(json.get(start, "character"))
         let e_line json.as_i64(json.get(end, "line"))
         let e_char json.as_i64(json.get(end, "character"))
-        let s_off symbols.position_to_offset#(text, s_line as size_t, s_char as size_t)
-        let e_off symbols.position_to_offset#(text, e_line as size_t, e_char as size_t)
+        let s_off symbols.position_to_offset(text, s_line as size_t, s_char as size_t)
+        let e_off symbols.position_to_offset(text, e_line as size_t, e_char as size_t)
 
-        var sb StringBuilder#()
+        var sb StringBuilder()
         var i: size_t 0
         while i < s_off
         {
@@ -308,7 +308,7 @@ define server
             sb.append(text.get(k) as char)
             set k: k + 1
         }
-        sb.to_string#()
+        sb.to_string()
     }
 
     ; documentSymbol: return the outline tree for the requested document.
@@ -319,12 +319,12 @@ define server
     {
         let params json.get(msg, "params")
         let doc json.get(params, "textDocument")
-        let uri json.as_string#(json.get(doc, "uri"))
+        let uri json.as_string(json.get(doc, "uri"))
         ; In-memory text (empty -> worker reads disk) so the outline reflects
         ; unsaved edits.
-        let text docstore.get#(uri)
-        let result worker.symbols#(uri, text)
-        rpc.write_message(server.document_symbol_response#(id, result))
+        let text docstore.get(uri)
+        let result worker.symbols(uri, text)
+        rpc.write_message(server.document_symbol_response(id, result))
     }
 
     ; foldingRange: collapsible regions of the document. Like documentSymbol
@@ -336,10 +336,10 @@ define server
     {
         let params json.get(msg, "params")
         let doc json.get(params, "textDocument")
-        let uri json.as_string#(json.get(doc, "uri"))
-        let text docstore.get#(uri)
-        let result worker.folding#(uri, text)
-        rpc.write_message(server.document_symbol_response#(id, result))
+        let uri json.as_string(json.get(doc, "uri"))
+        let text docstore.get(uri)
+        let result worker.folding(uri, text)
+        rpc.write_message(server.document_symbol_response(id, result))
     }
 
     ; semanticTokens/full: whole-document token classification for syntax
@@ -350,10 +350,10 @@ define server
     {
         let params json.get(msg, "params")
         let doc json.get(params, "textDocument")
-        let uri json.as_string#(json.get(doc, "uri"))
-        let text docstore.get#(uri)
-        let result worker.semantic_tokens#(uri, text)
-        rpc.write_message(server.document_symbol_response#(id, result))
+        let uri json.as_string(json.get(doc, "uri"))
+        let text docstore.get(uri)
+        let result worker.semantic_tokens(uri, text)
+        rpc.write_message(server.document_symbol_response(id, result))
     }
 
     ; hover: the request carries a uri + a {line,character} position. Pack the
@@ -364,35 +364,35 @@ define server
     {
         let params json.get(msg, "params")
         let doc json.get(params, "textDocument")
-        let uri json.as_string#(json.get(doc, "uri"))
+        let uri json.as_string(json.get(doc, "uri"))
         let position json.get(params, "position")
         let line json.as_i64(json.get(position, "line"))
         let character json.as_i64(json.get(position, "character"))
 
-        var pb StringBuilder#()
-        pb.append(json.format_i64#(line))
+        var pb StringBuilder()
+        pb.append(json.format_i64(line))
         pb.append(0x20 as char)                    ; space
-        pb.append(json.format_i64#(character))
-        let packed pb.to_string#()
+        pb.append(json.format_i64(character))
+        let packed pb.to_string()
 
-        let text docstore.get#(uri)
+        let text docstore.get(uri)
         ; PREFER the planner-resolved type (handles reassigned vars, generic
         ; element types, pointer/ref inner types, mid-chain calls). The
         ; semantic query runs the full pipeline in the worker and can
         ; crash/hang; on an empty/miss reply FALL BACK to the lexical hover
         ; walk (a separate worker round-trip, so a pipeline crash here never
         ; costs the lexical answer).
-        let sem worker.semantic_type#(uri, text, packed)
-        var value server.semantic_hover_from_framed#(sem)
+        let sem worker.semantic_type(uri, text, packed)
+        var value server.semantic_hover_from_framed(sem)
         if value.get_length() = (0 as size_t)
-            set value: worker.hover#(uri, text, packed)
-        rpc.write_message(server.hover_response#(id, value))
+            set value: worker.hover(uri, text, packed)
+        rpc.write_message(server.hover_response(id, value))
     }
 
     ; Decode the worker's framed semantic-type reply ("1<name>" hit / "0" miss
     ; / "" crash) into an LSP hover object, or "" on a miss/crash so the
     ; caller falls back to the lexical hover.
-    function semantic_hover_from_framed#(rp, framed: String) returns String
+    function semantic_hover_from_framed(rp, framed: String) returns String
     {
         if framed.get_length() = (0 as size_t)
             return ""
@@ -400,18 +400,18 @@ define server
         if tag <> (0x31 as u8)
             return ""
         let tname framed.substring(rp, 1 as size_t, framed.get_length() - (1 as size_t))
-        var sb StringBuilder#()
+        var sb StringBuilder()
         sb.append(0x7B as char)                    ; {
-        sb.append(server.key#("contents"))
+        sb.append(server.key("contents"))
         sb.append(0x7B as char)                    ; contents {
-        sb.append(server.key#("kind"))
-        sb.append(json.quote_string#("markdown"))
+        sb.append(server.key("kind"))
+        sb.append(json.quote_string("markdown"))
         sb.append(0x2C as char)
-        sb.append(server.key#("value"))
-        sb.append(json.quote_string#(tname))
+        sb.append(server.key("value"))
+        sb.append(json.quote_string(tname))
         sb.append(0x7D as char)                    ; }
         sb.append(0x7D as char)                    ; }
-        sb.to_string#()
+        sb.to_string()
     }
 
     ; definition: like hover, the request carries a uri + {line,character}.
@@ -422,20 +422,20 @@ define server
     {
         let params json.get(msg, "params")
         let doc json.get(params, "textDocument")
-        let uri json.as_string#(json.get(doc, "uri"))
+        let uri json.as_string(json.get(doc, "uri"))
         let position json.get(params, "position")
         let line json.as_i64(json.get(position, "line"))
         let character json.as_i64(json.get(position, "character"))
 
-        var pb StringBuilder#()
-        pb.append(json.format_i64#(line))
+        var pb StringBuilder()
+        pb.append(json.format_i64(line))
         pb.append(0x20 as char)                    ; space
-        pb.append(json.format_i64#(character))
-        let packed pb.to_string#()
+        pb.append(json.format_i64(character))
+        let packed pb.to_string()
 
-        let text docstore.get#(uri)
-        let result worker.definition#(uri, text, packed)
-        rpc.write_message(server.definition_response#(id, result))
+        let text docstore.get(uri)
+        let result worker.definition(uri, text, packed)
+        rpc.write_message(server.definition_response(id, result))
     }
 
     ; signatureHelp: the request carries a uri + {line,character}. Pack the
@@ -445,20 +445,20 @@ define server
     {
         let params json.get(msg, "params")
         let doc json.get(params, "textDocument")
-        let uri json.as_string#(json.get(doc, "uri"))
+        let uri json.as_string(json.get(doc, "uri"))
         let position json.get(params, "position")
         let line json.as_i64(json.get(position, "line"))
         let character json.as_i64(json.get(position, "character"))
 
-        var pb StringBuilder#()
-        pb.append(json.format_i64#(line))
+        var pb StringBuilder()
+        pb.append(json.format_i64(line))
         pb.append(0x20 as char)                    ; space
-        pb.append(json.format_i64#(character))
-        let packed pb.to_string#()
+        pb.append(json.format_i64(character))
+        let packed pb.to_string()
 
-        let text docstore.get#(uri)
-        let result worker.signature_help#(uri, text, packed)
-        rpc.write_message(server.hover_response#(id, result))
+        let text docstore.get(uri)
+        let result worker.signature_help(uri, text, packed)
+        rpc.write_message(server.hover_response(id, result))
     }
 
     ; inlayHint: the request carries a uri + a {start,end} range. Pack the range
@@ -469,7 +469,7 @@ define server
     {
         let params json.get(msg, "params")
         let doc json.get(params, "textDocument")
-        let uri json.as_string#(json.get(doc, "uri"))
+        let uri json.as_string(json.get(doc, "uri"))
         let range json.get(params, "range")
         let start json.get(range, "start")
         let end_ json.get(range, "end")
@@ -478,19 +478,19 @@ define server
         let el json.as_i64(json.get(end_, "line"))
         let ec json.as_i64(json.get(end_, "character"))
 
-        var pb StringBuilder#()
-        pb.append(json.format_i64#(sl))
+        var pb StringBuilder()
+        pb.append(json.format_i64(sl))
         pb.append(0x20 as char)
-        pb.append(json.format_i64#(sc))
+        pb.append(json.format_i64(sc))
         pb.append(0x20 as char)
-        pb.append(json.format_i64#(el))
+        pb.append(json.format_i64(el))
         pb.append(0x20 as char)
-        pb.append(json.format_i64#(ec))
-        let packed pb.to_string#()
+        pb.append(json.format_i64(ec))
+        let packed pb.to_string()
 
-        let text docstore.get#(uri)
-        let result worker.inlay_hints#(uri, text, packed)
-        rpc.write_message(server.document_symbol_response#(id, result))
+        let text docstore.get(uri)
+        let result worker.inlay_hints(uri, text, packed)
+        rpc.write_message(server.document_symbol_response(id, result))
     }
 
     ; references: the request carries a uri + {line,character} + a
@@ -502,7 +502,7 @@ define server
     {
         let params json.get(msg, "params")
         let doc json.get(params, "textDocument")
-        let uri json.as_string#(json.get(doc, "uri"))
+        let uri json.as_string(json.get(doc, "uri"))
         let position json.get(params, "position")
         let line json.as_i64(json.get(position, "line"))
         let character json.as_i64(json.get(position, "character"))
@@ -512,8 +512,8 @@ define server
         ; parent/sibling directory) instead of only the current file's dir tree.
         ; An empty root (no rootUri given) leaves a bare leading "\n" -> the
         ; worker falls back to the dir tree (Step 36 behavior).
-        let root docstore.workspace_root#()
-        var pb StringBuilder#()
+        let root docstore.workspace_root()
+        var pb StringBuilder()
         var ri: size_t 0
         let rn root.get_length()
         while ri < rn
@@ -522,17 +522,17 @@ define server
             set ri: ri + (1 as size_t)
         }
         pb.append(0x0A as char)                    ; \n  (root / position separator)
-        pb.append(json.format_i64#(line))
+        pb.append(json.format_i64(line))
         pb.append(0x20 as char)                    ; space
-        pb.append(json.format_i64#(character))
-        let packed pb.to_string#()
+        pb.append(json.format_i64(character))
+        let packed pb.to_string()
 
-        let text docstore.get#(uri)
-        let result worker.references#(uri, text, packed)
+        let text docstore.get(uri)
+        let result worker.references(uri, text, packed)
         ; document_symbol_response# wraps a pre-serialized JSON array as the
         ; result, appending it byte-at-a-time (a many-occurrence array can be
         ; large — same large-append hazard as the outline).
-        rpc.write_message(server.document_symbol_response#(id, result))
+        rpc.write_message(server.document_symbol_response(id, result))
     }
 
     ; documentHighlight: like references but the result ranges carry no uri
@@ -541,20 +541,20 @@ define server
     {
         let params json.get(msg, "params")
         let doc json.get(params, "textDocument")
-        let uri json.as_string#(json.get(doc, "uri"))
+        let uri json.as_string(json.get(doc, "uri"))
         let position json.get(params, "position")
         let line json.as_i64(json.get(position, "line"))
         let character json.as_i64(json.get(position, "character"))
 
-        var pb StringBuilder#()
-        pb.append(json.format_i64#(line))
+        var pb StringBuilder()
+        pb.append(json.format_i64(line))
         pb.append(0x20 as char)                    ; space
-        pb.append(json.format_i64#(character))
-        let packed pb.to_string#()
+        pb.append(json.format_i64(character))
+        let packed pb.to_string()
 
-        let text docstore.get#(uri)
-        let result worker.highlights#(uri, text, packed)
-        rpc.write_message(server.document_symbol_response#(id, result))
+        let text docstore.get(uri)
+        let result worker.highlights(uri, text, packed)
+        rpc.write_message(server.document_symbol_response(id, result))
     }
 
     ; completion: when a `.` precedes the cursor and its receiver names a
@@ -567,22 +567,22 @@ define server
     {
         let params json.get(msg, "params")
         let doc json.get(params, "textDocument")
-        let uri json.as_string#(json.get(doc, "uri"))
+        let uri json.as_string(json.get(doc, "uri"))
         let position json.get(params, "position")
         let line json.as_i64(json.get(position, "line"))
         let character json.as_i64(json.get(position, "character"))
 
-        var pb StringBuilder#()
-        pb.append(json.format_i64#(line))
+        var pb StringBuilder()
+        pb.append(json.format_i64(line))
         pb.append(0x20 as char)                    ; space
-        pb.append(json.format_i64#(character))
-        let packed pb.to_string#()
+        pb.append(json.format_i64(character))
+        let packed pb.to_string()
 
-        let text docstore.get#(uri)
+        let text docstore.get(uri)
         ; The CompletionItem[] array can be large (many names); reuse the
         ; byte-at-a-time array wrapper.
-        let result worker.completion#(uri, text, packed)
-        rpc.write_message(server.document_symbol_response#(id, result))
+        let result worker.completion(uri, text, packed)
+        rpc.write_message(server.document_symbol_response(id, result))
     }
 
     ; prepareRename: the request carries a uri + {line,character}. Pack the
@@ -593,20 +593,20 @@ define server
     {
         let params json.get(msg, "params")
         let doc json.get(params, "textDocument")
-        let uri json.as_string#(json.get(doc, "uri"))
+        let uri json.as_string(json.get(doc, "uri"))
         let position json.get(params, "position")
         let line json.as_i64(json.get(position, "line"))
         let character json.as_i64(json.get(position, "character"))
 
-        var pb StringBuilder#()
-        pb.append(json.format_i64#(line))
+        var pb StringBuilder()
+        pb.append(json.format_i64(line))
         pb.append(0x20 as char)                    ; space
-        pb.append(json.format_i64#(character))
-        let packed pb.to_string#()
+        pb.append(json.format_i64(character))
+        let packed pb.to_string()
 
-        let text docstore.get#(uri)
-        let result worker.prepare_rename#(uri, text, packed)
-        rpc.write_message(server.hover_response#(id, result))
+        let text docstore.get(uri)
+        let result worker.prepare_rename(uri, text, packed)
+        rpc.write_message(server.hover_response(id, result))
     }
 
     ; rename: the request carries a uri + {line,character} + a newName. Pack
@@ -618,17 +618,17 @@ define server
     {
         let params json.get(msg, "params")
         let doc json.get(params, "textDocument")
-        let uri json.as_string#(json.get(doc, "uri"))
+        let uri json.as_string(json.get(doc, "uri"))
         let position json.get(params, "position")
         let line json.as_i64(json.get(position, "line"))
         let character json.as_i64(json.get(position, "character"))
-        let new_name json.as_string#(json.get(params, "newName"))
+        let new_name json.as_string(json.get(params, "newName"))
 
         ; Prefix the workspace root as "<root>\n<line> <char> <newName>" so the
         ; worker can fan a module/file-wide rename out across the real root; an
         ; empty root falls back to the current file's dir tree (Step 36).
-        let root docstore.workspace_root#()
-        var pb StringBuilder#()
+        let root docstore.workspace_root()
+        var pb StringBuilder()
         var ri: size_t 0
         let rn root.get_length()
         while ri < rn
@@ -637,9 +637,9 @@ define server
             set ri: ri + (1 as size_t)
         }
         pb.append(0x0A as char)                    ; \n  (root / position separator)
-        pb.append(json.format_i64#(line))
+        pb.append(json.format_i64(line))
         pb.append(0x20 as char)                    ; space
-        pb.append(json.format_i64#(character))
+        pb.append(json.format_i64(character))
         pb.append(0x20 as char)                    ; space
         ; new_name is an identifier (no spaces). Append byte-at-a-time (small,
         ; but keeps to the no-StringBuilder.append(String) discipline).
@@ -650,16 +650,16 @@ define server
             pb.append(new_name.get(ni) as char)
             set ni: ni + 1
         }
-        let packed pb.to_string#()
+        let packed pb.to_string()
 
-        let text docstore.get#(uri)
-        let result worker.rename#(uri, text, packed)
+        let text docstore.get(uri)
+        let result worker.rename(uri, text, packed)
         ; Empty -> not renameable / worker unavailable -> null. A real
         ; WorkspaceEdit can be large, so wrap it byte-at-a-time.
         if result.get_length() = (0 as size_t)
-            rpc.write_message(server.null_result_response#(id))
+            rpc.write_message(server.null_result_response(id))
         if result.get_length() > (0 as size_t)
-            rpc.write_message(server.document_symbol_response#(id, result))
+            rpc.write_message(server.document_symbol_response(id, result))
     }
 
     ; workspace/symbol: search the whole workspace for declarations whose name
@@ -669,10 +669,10 @@ define server
     function handle_workspace_symbol(msg: JsonValue, id: i64)
     {
         let params json.get(msg, "params")
-        let query json.as_string#(json.get(params, "query"))
-        let root docstore.workspace_root#()
-        let result worker.workspace_symbols#(root, query)
-        rpc.write_message(server.document_symbol_response#(id, result))
+        let query json.as_string(json.get(params, "query"))
+        let root docstore.workspace_root()
+        let result worker.workspace_symbols(root, query)
+        rpc.write_message(server.document_symbol_response(id, result))
     }
 
     ; Capture the workspace root path from initialize params. Prefer rootUri
@@ -685,14 +685,14 @@ define server
         let root_uri_val json.get(params, "rootUri")
         if json.is_null(root_uri_val) = false
         {
-            docstore.set_workspace_root(symbols.uri_to_path#(json.as_string#(root_uri_val)))
+            docstore.set_workspace_root(symbols.uri_to_path(json.as_string(root_uri_val)))
             return
         }
 
         let root_path_val json.get(params, "rootPath")
         if json.is_null(root_path_val) = false
         {
-            docstore.set_workspace_root(json.as_string#(root_path_val))
+            docstore.set_workspace_root(json.as_string(root_path_val))
             return
         }
 
@@ -701,7 +701,7 @@ define server
             if json.array_length(folders) > (0 as size_t)
             {
                 let f0 json.array_get(folders, 0 as size_t)
-                docstore.set_workspace_root(symbols.uri_to_path#(json.as_string#(json.get(f0, "uri"))))
+                docstore.set_workspace_root(symbols.uri_to_path(json.as_string(json.get(f0, "uri"))))
             }
     }
 
@@ -711,10 +711,10 @@ define server
     {
         let params json.get(msg, "params")
         let doc json.get(params, "textDocument")
-        let uri json.as_string#(json.get(doc, "uri"))
+        let uri json.as_string(json.get(doc, "uri"))
         ; Drop the in-memory buffer; subsequent requests fall back to disk.
         docstore.remove uri
-        let payload diagnostics.clear_diagnostics#(uri)
+        let payload diagnostics.clear_diagnostics(uri)
         rpc.write_message payload
     }
 
@@ -723,7 +723,7 @@ define server
     ; bad document then loses only that one result, not the whole server.
     function publish_for(uri: String, text: String)
     {
-        let payload worker.analyze#(uri, text)
+        let payload worker.analyze(uri, text)
         rpc.write_message payload
     }
 
@@ -735,56 +735,56 @@ define server
     ; {"jsonrpc":"2.0","id":<id>,"result":{"capabilities":
     ;   {"textDocumentSync":1},"serverInfo":{"name":"scalyls",
     ;   "version":"0.1.0"}}}
-    function initialize_response#(rp, id: i64) returns String
+    function initialize_response(rp, id: i64) returns String
     {
-        var sb StringBuilder#()
+        var sb StringBuilder()
         sb.append(0x7B as char)                    ; {
-        sb.append(server.key#("jsonrpc"))
-        sb.append(server.quoted#("2.0"))
+        sb.append(server.key("jsonrpc"))
+        sb.append(server.quoted("2.0"))
         sb.append(0x2C as char)                    ; ,
-        sb.append(server.key#("id"))
-        sb.append(json.format_i64#(id))
+        sb.append(server.key("id"))
+        sb.append(json.format_i64(id))
         sb.append(0x2C as char)
-        sb.append(server.key#("result"))
+        sb.append(server.key("result"))
         sb.append(0x7B as char)                    ; result {
-        sb.append(server.key#("capabilities"))
+        sb.append(server.key("capabilities"))
         sb.append(0x7B as char)                    ; capabilities {
-        sb.append(server.key#("textDocumentSync"))
+        sb.append(server.key("textDocumentSync"))
         sb.append(0x32 as char)                    ; 2 = incremental
         sb.append(0x2C as char)
-        sb.append(server.key#("documentSymbolProvider"))
+        sb.append(server.key("documentSymbolProvider"))
         sb.append "true"
         sb.append(0x2C as char)
-        sb.append(server.key#("hoverProvider"))
+        sb.append(server.key("hoverProvider"))
         sb.append "true"
         sb.append(0x2C as char)
-        sb.append(server.key#("definitionProvider"))
+        sb.append(server.key("definitionProvider"))
         sb.append "true"
         sb.append(0x2C as char)
-        sb.append(server.key#("referencesProvider"))
+        sb.append(server.key("referencesProvider"))
         sb.append "true"
         sb.append(0x2C as char)
-        sb.append(server.key#("documentHighlightProvider"))
+        sb.append(server.key("documentHighlightProvider"))
         sb.append "true"
         sb.append(0x2C as char)
         ; completionProvider must be a CompletionOptions object (not a bool).
         ; Empty {} = no trigger chars; the editor invokes it on word typing.
-        sb.append(server.key#("completionProvider"))
+        sb.append(server.key("completionProvider"))
         sb.append(0x7B as char)                    ; {
         sb.append(0x7D as char)                    ; }
         sb.append(0x2C as char)
         ; renameProvider as RenameOptions {prepareProvider:true} so the editor
         ; also calls textDocument/prepareRename to validate + pre-fill.
-        sb.append(server.key#("renameProvider"))
+        sb.append(server.key("renameProvider"))
         sb.append(0x7B as char)                    ; {
-        sb.append(server.key#("prepareProvider"))
+        sb.append(server.key("prepareProvider"))
         sb.append "true"
         sb.append(0x7D as char)                    ; }
         sb.append(0x2C as char)
         ; signatureHelpProvider with ( and , as trigger / retrigger chars.
-        sb.append(server.key#("signatureHelpProvider"))
+        sb.append(server.key("signatureHelpProvider"))
         sb.append(0x7B as char)                    ; {
-        sb.append(server.key#("triggerCharacters"))
+        sb.append(server.key("triggerCharacters"))
         sb.append(0x5B as char)                    ; [
         sb.append(0x22 as char)                    ; "
         sb.append(0x28 as char)                    ; (
@@ -796,84 +796,84 @@ define server
         sb.append(0x5D as char)                    ; ]
         sb.append(0x7D as char)                    ; }
         sb.append(0x2C as char)
-        sb.append(server.key#("foldingRangeProvider"))
+        sb.append(server.key("foldingRangeProvider"))
         sb.append "true"
         sb.append(0x2C as char)
         ; semanticTokensProvider: legend (token types, no modifiers) + full.
         ; The token-type order MUST match symbols.semantic_tokens#'s indices:
         ;   0 keyword 1 type 2 function 3 variable 4 operator 5 string
         ;   6 number  7 comment 8 parameter 9 property
-        sb.append(server.key#("semanticTokensProvider"))
+        sb.append(server.key("semanticTokensProvider"))
         sb.append(0x7B as char)                    ; {
-        sb.append(server.key#("legend"))
+        sb.append(server.key("legend"))
         sb.append(0x7B as char)                    ; legend {
-        sb.append(server.key#("tokenTypes"))
+        sb.append(server.key("tokenTypes"))
         sb.append(0x5B as char)                    ; [
-        sb.append(server.quoted#("keyword"))
+        sb.append(server.quoted("keyword"))
         sb.append(0x2C as char)
-        sb.append(server.quoted#("type"))
+        sb.append(server.quoted("type"))
         sb.append(0x2C as char)
-        sb.append(server.quoted#("function"))
+        sb.append(server.quoted("function"))
         sb.append(0x2C as char)
-        sb.append(server.quoted#("variable"))
+        sb.append(server.quoted("variable"))
         sb.append(0x2C as char)
-        sb.append(server.quoted#("operator"))
+        sb.append(server.quoted("operator"))
         sb.append(0x2C as char)
-        sb.append(server.quoted#("string"))
+        sb.append(server.quoted("string"))
         sb.append(0x2C as char)
-        sb.append(server.quoted#("number"))
+        sb.append(server.quoted("number"))
         sb.append(0x2C as char)
-        sb.append(server.quoted#("comment"))
+        sb.append(server.quoted("comment"))
         sb.append(0x2C as char)
-        sb.append(server.quoted#("parameter"))
+        sb.append(server.quoted("parameter"))
         sb.append(0x2C as char)
-        sb.append(server.quoted#("property"))
+        sb.append(server.quoted("property"))
         sb.append(0x5D as char)                    ; ]
         sb.append(0x2C as char)
-        sb.append(server.key#("tokenModifiers"))
+        sb.append(server.key("tokenModifiers"))
         sb.append(0x5B as char)                    ; [
         sb.append(0x5D as char)                    ; ]
         sb.append(0x7D as char)                    ; } legend
         sb.append(0x2C as char)
-        sb.append(server.key#("full"))
+        sb.append(server.key("full"))
         sb.append "true"
         sb.append(0x7D as char)                    ; } semanticTokensProvider
         sb.append(0x2C as char)
-        sb.append(server.key#("workspaceSymbolProvider"))
+        sb.append(server.key("workspaceSymbolProvider"))
         sb.append "true"
         sb.append(0x2C as char)
-        sb.append(server.key#("inlayHintProvider"))
+        sb.append(server.key("inlayHintProvider"))
         sb.append "true"
         sb.append(0x7D as char)                    ; } capabilities
         sb.append(0x2C as char)
-        sb.append(server.key#("serverInfo"))
+        sb.append(server.key("serverInfo"))
         sb.append(0x7B as char)                    ; serverInfo {
-        sb.append(server.key#("name"))
-        sb.append(server.quoted#("scalyls"))
+        sb.append(server.key("name"))
+        sb.append(server.quoted("scalyls"))
         sb.append(0x2C as char)
-        sb.append(server.key#("version"))
-        sb.append(server.quoted#("0.1.0"))
+        sb.append(server.key("version"))
+        sb.append(server.quoted("0.1.0"))
         sb.append(0x7D as char)                    ; } serverInfo
         sb.append(0x7D as char)                    ; } result
         sb.append(0x7D as char)                    ; } root
-        sb.to_string#()
+        sb.to_string()
     }
 
     ; {"jsonrpc":"2.0","id":<id>,"result":null}
-    function null_result_response#(rp, id: i64) returns String
+    function null_result_response(rp, id: i64) returns String
     {
-        var sb StringBuilder#()
+        var sb StringBuilder()
         sb.append(0x7B as char)
-        sb.append(server.key#("jsonrpc"))
-        sb.append(server.quoted#("2.0"))
+        sb.append(server.key("jsonrpc"))
+        sb.append(server.quoted("2.0"))
         sb.append(0x2C as char)
-        sb.append(server.key#("id"))
-        sb.append(json.format_i64#(id))
+        sb.append(server.key("id"))
+        sb.append(json.format_i64(id))
         sb.append(0x2C as char)
-        sb.append(server.key#("result"))
+        sb.append(server.key("result"))
         sb.append "null"
         sb.append(0x7D as char)
-        sb.to_string#()
+        sb.to_string()
     }
 
     ; {"jsonrpc":"2.0","id":<id>,"result":<result>}  where <result> is a
@@ -886,17 +886,17 @@ define server
     ; exclusive page. This runs in the PARENT (no crash isolation), so the
     ; byte-at-a-time form is what keeps a large outline from killing the
     ; server. See symbols.scaly's STRING/JSON NOTE.
-    function document_symbol_response#(rp, id: i64, result: String) returns String
+    function document_symbol_response(rp, id: i64, result: String) returns String
     {
-        var sb StringBuilder#()
+        var sb StringBuilder()
         sb.append(0x7B as char)
-        sb.append(server.key#("jsonrpc"))
-        sb.append(server.quoted#("2.0"))
+        sb.append(server.key("jsonrpc"))
+        sb.append(server.quoted("2.0"))
         sb.append(0x2C as char)
-        sb.append(server.key#("id"))
-        sb.append(json.format_i64#(id))
+        sb.append(server.key("id"))
+        sb.append(json.format_i64(id))
         sb.append(0x2C as char)
-        sb.append(server.key#("result"))
+        sb.append(server.key("result"))
         var ci: size_t 0
         let cn result.get_length()
         while ci < cn
@@ -905,72 +905,72 @@ define server
             set ci: ci + 1
         }
         sb.append(0x7D as char)
-        sb.to_string#()
+        sb.to_string()
     }
 
     ; {"jsonrpc":"2.0","id":<id>,"result":<result>}  where <result> is the
     ; pre-serialized hover object, or null when empty (no symbol at cursor).
     ; Hover payloads are small, so a single append is fine here.
-    function hover_response#(rp, id: i64, result: String) returns String
+    function hover_response(rp, id: i64, result: String) returns String
     {
-        var sb StringBuilder#()
+        var sb StringBuilder()
         sb.append(0x7B as char)
-        sb.append(server.key#("jsonrpc"))
-        sb.append(server.quoted#("2.0"))
+        sb.append(server.key("jsonrpc"))
+        sb.append(server.quoted("2.0"))
         sb.append(0x2C as char)
-        sb.append(server.key#("id"))
-        sb.append(json.format_i64#(id))
+        sb.append(server.key("id"))
+        sb.append(json.format_i64(id))
         sb.append(0x2C as char)
-        sb.append(server.key#("result"))
+        sb.append(server.key("result"))
         if result.get_length() = (0 as size_t)
             sb.append "null"
         if result.get_length() > (0 as size_t)
             sb.append result
         sb.append(0x7D as char)
-        sb.to_string#()
+        sb.to_string()
     }
 
     ; {"jsonrpc":"2.0","id":<id>,"result":<result>}  where <result> is the
     ; pre-serialized Location object, or null when empty (no declaration found
     ; for the identifier under the cursor). A single Location is small, so a
     ; single append is fine here.
-    function definition_response#(rp, id: i64, result: String) returns String
+    function definition_response(rp, id: i64, result: String) returns String
     {
-        var sb StringBuilder#()
+        var sb StringBuilder()
         sb.append(0x7B as char)
-        sb.append(server.key#("jsonrpc"))
-        sb.append(server.quoted#("2.0"))
+        sb.append(server.key("jsonrpc"))
+        sb.append(server.quoted("2.0"))
         sb.append(0x2C as char)
-        sb.append(server.key#("id"))
-        sb.append(json.format_i64#(id))
+        sb.append(server.key("id"))
+        sb.append(json.format_i64(id))
         sb.append(0x2C as char)
-        sb.append(server.key#("result"))
+        sb.append(server.key("result"))
         if result.get_length() = (0 as size_t)
             sb.append "null"
         if result.get_length() > (0 as size_t)
             sb.append result
         sb.append(0x7D as char)
-        sb.to_string#()
+        sb.to_string()
     }
 
     ; `"key":`  (quoted key followed by a colon)
-    function key#(rp, k: pointer[const_char]) returns String
+    function key(rp, k: pointer[const_char]) returns String
     {
-        var sb StringBuilder#()
+        var sb StringBuilder()
         sb.append(0x22 as char)
         sb.append k
         sb.append(0x22 as char)
         sb.append(0x3A as char)                    ; :
-        sb.to_string#()
+        sb.to_string()
     }
 
     ; `"s"`  (quoted string literal; no escaping — fixed ASCII only)
-    function quoted#(rp, s: pointer[const_char]) returns String
+    function quoted(rp, s: pointer[const_char]) returns String
     {
-        var sb StringBuilder#()
+        var sb StringBuilder()
         sb.append(0x22 as char)
         sb.append s
         sb.append(0x22 as char)
-        sb.to_string#()
+        sb.to_string()
     }
 }
