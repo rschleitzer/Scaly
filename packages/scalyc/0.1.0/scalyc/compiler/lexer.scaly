@@ -803,16 +803,16 @@ define lexer
             choose token
                 when ident: Identifier
                 {
-                    let name String^rp(ident.name.get_buffer(), ident.name.length)
+                    let name String(ident.name.get_buffer(), ident.name.length)
                     if keywords.contains(name)
-                        return String^rp("", 0)
+                        return String("", 0)
 
                     empty()
                     return name
                 }
                 else {}
 
-            String^rp("", 0)
+            String("", 0)
         }
 
         ; Parser helper: peek identifier without consuming
@@ -825,10 +825,10 @@ define lexer
 
             choose token
                 when ident: Identifier
-                    return String^rp(ident.name.get_buffer(), ident.name.length)
+                    return String(ident.name.get_buffer(), ident.name.length)
                 else {}
 
-            String^rp("", 0)
+            String("", 0)
         }
 
         ; Parser helper: parse attribute
@@ -842,13 +842,13 @@ define lexer
             choose token
                 when attr: Attribute
                 {
-                    let name String^rp(attr.name.get_buffer(), attr.name.length)
+                    let name String(attr.name.get_buffer(), attr.name.length)
                     empty()
                     return name
                 }
                 else {}
 
-            String^rp("", 0)
+            String("", 0)
         }
 
         ; Parser helper: parse punctuation

@@ -277,7 +277,7 @@ define cli
         var sb StringBuilder()
         sb.append home_str
         sb.append "/lib/libscaly.a"
-        sb.to_string^rp()
+        sb.to_string()
     }
 
     ; Resolve the C compiler used to link the final executable. Honors
@@ -295,7 +295,7 @@ define cli
         var s String(name)
         if s.get_length() = 0
             return "clang"
-        String^rp(name)
+        String(name)
     }
 
     ; Run the compiler with parsed options
