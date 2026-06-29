@@ -13060,7 +13060,7 @@ define Planner
             ; h.p's static type is pointer[Box{Unspecified}], so the Local pointee
             ; isn't on the field type; the per-fn taint set carries it instead).
             var store_src_escapes false
-            if Planner.is_reference_to_local_page(planned_source_collapsed.result_type)
+            if Planner.region_of_operand(planned_source_collapsed) < Planner.required_region_for_escape()
                 set store_src_escapes: true
             if this.operand_reads_tainted_local_field(planned_source_collapsed)
                 set store_src_escapes: true
@@ -13512,6 +13512,32 @@ define Planner
             }
             false
         }
+
+        ; region_of_operand#: the single provenance chokepoint (Stage B). Returns
+        ; the region rank of the operand's pointee — TODAY a coarse {Local,Caller}
+        ; derived from the operand's result_type Local stamp (which already
+        ; encodes the step-1/2/3 address-of/deref/field/join provenance walk via
+        ; make_pointer_to_local#/make_ref_to_local_inner# + natural type flow).
+        ; The 4 bespoke escape sites route their reference-escape gate through
+        ; here so phase-5 (Stage D) refines the rank — ordered numeric ages from
+        ; signatures, field/inter-proc provenance — in ONE place instead of four.
+        ; NEUTRAL: region_of_operand(op) < required_region_for_escape() is
+        ; exactly today's is_reference_to_local_page(op.result_type) (rank Local
+        ; iff a frame pointee, else Caller; Caller < Static unused yet).
+        function region_of_operand(op: PlannedOperand) returns size_t
+        {
+            if Planner.is_reference_to_local_page(op.result_type)
+                return Planner.region_rank_local()
+            Planner.region_rank_caller()
+        }
+
+        ; required_region_for_escape#: the minimum pointee rank an escape sink
+        ; (return / store into Caller-lived memory / pass to a storing callee)
+        ; demands. TODAY constant Caller — anything Local-ranked escapes. Stage D
+        ; refines this per destination (the returned-into caller region, the
+        ; stored-into param's age, the callee's stored-dest age).
+        function required_region_for_escape() returns size_t
+            Planner.region_rank_caller()
 
         ; is_local_ref_pointer: the REFERENCE half of is_reference_to_local_
         ; page# — true ONLY when `t` is a pointer/ref whose inner pointee has
@@ -13981,7 +14007,7 @@ define Planner
             if arg_ptr = null
                 return
             let arg arg_ptr.unwrap()
-            if Planner.is_reference_to_local_page(arg.result_type)
+            if Planner.region_of_operand(arg) < Planner.required_region_for_escape()
             {
                 var violates false
                 if rec.dest_kind = 1
@@ -15058,7 +15084,7 @@ define Planner
             ; Unspecified. The latter closes `return Vector[T](0)` /
             ; `return SomeStruct(...)` directly-returned-construction dangling.
             var return_needs_promotion false
-            if Planner.is_reference_to_local_page(planned_collapsed.result_type)
+            if Planner.region_of_operand(planned_collapsed) < Planner.required_region_for_escape()
                 set return_needs_promotion: true
             if return_needs_promotion = false
                 if this.operand_is_local_page_construction(planned_collapsed)
