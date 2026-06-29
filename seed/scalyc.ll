@@ -9161,12 +9161,13 @@ if.then:                                          ; preds = %entry
   ret void
 
 if.end:                                           ; preds = %entry
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr (%_Z6VectorI6VectorI6StringEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI6VectorI6StringEE }, ptr null, i64 0, i32 1) to i64))
+  %own_page = call ptr @_Z3getPv(ptr %0)
+  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %own_page, i64 ptrtoint (ptr getelementptr (%_Z6VectorI6VectorI6StringEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI6VectorI6StringEE }, ptr null, i64 0, i32 1) to i64))
   %load.struct1 = load %_Z14HashSetBuilderI6StringE, ptr %2, align 8
   %slots2 = extractvalue %_Z14HashSetBuilderI6StringE %load.struct1, 1
   %deref = load %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %slots2, align 8
   %length3 = extractvalue %_Z6VectorI11BuilderListI4SlotI6StringEEE %deref, 0
-  call void @_ZN6VectorI6VectorI6StringEEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %1, i64 %length3)
+  call void @_ZN6VectorI6VectorI6StringEEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %own_page, i64 %length3)
   %slots4 = getelementptr inbounds %_Z7HashSetI6StringE, ptr %0, i32 0, i32 0
   store ptr %struct.region, ptr %slots4, align 8
   %load.struct5 = load %_Z14HashSetBuilderI6StringE, ptr %2, align 8
@@ -9211,8 +9212,8 @@ if.then13:                                        ; preds = %while.body
   br label %while.cond19
 
 if.end14:                                         ; preds = %if.end29, %while.body
-  %i35 = load i64, ptr %i, align 4
-  %add = add i64 %i35, 1
+  %i36 = load i64, ptr %i, align 4
+  %add = add i64 %i36, 1
   store i64 %add, ptr %i, align 1
   br label %while.cond
 
@@ -9238,11 +9239,12 @@ if.then28:                                        ; preds = %while.exit21
   %field.inplace30 = getelementptr inbounds %_Z7HashSetI6StringE, ptr %0, i32 0, i32 0
   %deref.recv31 = load ptr, ptr %field.inplace30, align 8
   %i32 = load i64, ptr %i, align 4
-  %struct.region33 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr (%_Z6VectorI6StringE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI6StringE }, ptr null, i64 0, i32 1) to i64))
-  %array34 = load ptr, ptr %array, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp, ptr align 1 %array34, i64 ptrtoint (ptr getelementptr (%_Z5ArrayI6StringE, ptr null, i32 1) to i64), i1 false)
-  call void @_ZN6VectorI6StringEC1EPN4scaly6memory4PageE5ArrayI6StringE(ptr %struct.region33, ptr %1, ptr %deref.tmp)
-  call void @_ZN6VectorI6VectorI6StringEE3putEm6VectorI6StringE(ptr %deref.recv31, i64 %i32, ptr %struct.region33)
+  %own_page33 = call ptr @_Z3getPv(ptr %0)
+  %struct.region34 = call ptr @_ZN4Page8allocateEmm(ptr %own_page33, i64 ptrtoint (ptr getelementptr (%_Z6VectorI6StringE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI6StringE }, ptr null, i64 0, i32 1) to i64))
+  %array35 = load ptr, ptr %array, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp, ptr align 1 %array35, i64 ptrtoint (ptr getelementptr (%_Z5ArrayI6StringE, ptr null, i32 1) to i64), i1 false)
+  call void @_ZN6VectorI6StringEC1EPN4scaly6memory4PageE5ArrayI6StringE(ptr %struct.region34, ptr %own_page33, ptr %deref.tmp)
+  call void @_ZN6VectorI6VectorI6StringEE3putEm6VectorI6StringE(ptr %deref.recv31, i64 %i32, ptr %struct.region34)
   br label %if.end29
 
 if.end29:                                         ; preds = %if.then28, %while.exit21
