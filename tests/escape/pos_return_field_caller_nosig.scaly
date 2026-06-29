@@ -1,0 +1,22 @@
+; POS (NO-SIGIL): a frame-local struct whose pointer field holds a CALLER-
+; provided pointer (a param, not a frame-local). Returning that field is safe
+; -> must compile. Guards the field-provenance check against over-rejection.
+define Box
+(
+    v: int
+)
+define Holder
+(
+    p: pointer[Box]
+)
+
+function fwd(b: pointer[Box]) returns pointer[Box]
+{
+    let h Holder(b)
+    return h.p
+}
+
+function main() returns int
+{
+    return 0
+}

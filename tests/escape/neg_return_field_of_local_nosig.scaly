@@ -1,0 +1,24 @@
+; ESCAPE (negative, NO-SIGIL): a frame-local struct's pointer FIELD holds
+; &<frame-local>; returning that field returns a dangling frame address (UAF).
+; Field provenance: the Local rank of the &b arg must flow into h.p so the
+; return check REJECTS. Currently a silent use-after-free.
+define Box
+(
+    v: int
+)
+define Holder
+(
+    p: pointer[Box]
+)
+
+function leak() returns pointer[Box]
+{
+    let b Box(5)
+    let h Holder(&b)
+    return h.p
+}
+
+function main() returns int
+{
+    return 0
+}

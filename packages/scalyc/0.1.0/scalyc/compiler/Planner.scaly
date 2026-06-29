@@ -329,6 +329,13 @@ define Planner
         ; escape diagnostic. Both truncated at each function boundary.
         escaping_return_locals: Array[String]
         promoted_binding_names: Array[String]
+        ; Hole-1 field provenance (escape soundness): names of frame-local
+        ; VALUE-struct bindings constructed with a Local-ref argument
+        ; (`let h Holder(&b)` where &b points into this frame). A later
+        ; `return h.field` / store / pass of a reference-like field of such a
+        ; binding hands out a frame address -> rejected. Coarse (taints the
+        ; whole binding, not a specific field); truncated per function.
+        local_tainted_struct_bindings: Array[String]
         ; deep-R2 store-escape: locals bound with an escaping init lifetime
         ; (`^name`/`#`) or already-promoted, into which a put/add stores a value
         ; that must therefore also live on a non-local page.
@@ -523,6 +530,7 @@ define Planner
             set local_closure_names: Array[String]^page()
             set escaping_return_locals: Array[String]^page()
             set promoted_binding_names: Array[String]^page()
+            set local_tainted_struct_bindings: Array[String]^page()
             set escaping_targets: Array[String]^page()
             set promote_tail_return: false
             set instantiated_functions: Array[PlannedFunction]^page()
@@ -12875,6 +12883,24 @@ define Planner
                 }
             }
 
+            ; Hole-1 field provenance: a `let h Holder(&b)` binding where the
+            ; construction received a &<frame-local> argument now holds a frame
+            ; address in one of h's pointer fields. The binding lives in this
+            ; frame as a VALUE struct (collapsed.result_type not pointer/ref/
+            ; Option-of-ref). Taint h so a later `return h.field` is rejected;
+            ; the Local rank that the field's static type cannot carry is
+            ; tracked through this per-function set instead. Coarse (whole
+            ; binding); a caller-ptr arg leaves the field at Caller rank
+            ; (is_local_ref_pointer false) so the positive case is untouched.
+            if b.item.name <> null
+            {
+                let tbn (*b.item.name)
+                if this.result_type_is_value_struct(collapsed.result_type)
+                    if this.construction_has_local_ref_arg(collapsed)
+                        if this.array_contains_name(local_tainted_struct_bindings, tbn) = false
+                            local_tainted_struct_bindings.add(String^rp(tbn))
+            }
+
             ; s192: stack array declaration `var buffer char[64]` (no
             ; init). The single operand collapses to a PlannedType that
             ; plan_type# rewrote to pointer[T] with array_size set; treat
@@ -13504,6 +13530,110 @@ define Planner
                     }
                 }
             }
+            result
+        }
+
+        ; result_type_is_value_struct: true when `t` is a by-VALUE struct held
+        ; in the frame — not a pointer/ref, and not an Option whose inner is a
+        ; reference (NPO auto-deref). The type-based twin of base_is_value_
+        ; struct# (which keys off a binding name); used at construction time in
+        ; plan_binding# before the local is defined.
+        function result_type_is_value_struct(this: Planner, t: PlannedType) returns bool
+        {
+            var result true
+            if t.name.equals("pointer")
+                set result: false
+            if t.name.equals("ref")
+                set result: false
+            if t.name.equals("Option")
+                if this.option_inner_is_reference(t)
+                    set result: false
+            result
+        }
+
+        ; Hole-1 field provenance: true when `op` is a construction (a
+        ; value-struct Tuple or an init# ctor Call) one of whose arguments is a
+        ; `&<frame-local>` reference (result_type is pointer/ref with Local
+        ; inner). Such an arg stores a frame address into one of the new
+        ; struct's pointer fields. Scans Tuple component value-operands and
+        ; Call args. Single-exit; only flat loops (no nested choose) to dodge
+        ; the bootstrap-nest miscompile.
+        function construction_has_local_ref_arg(this: Planner, op: PlannedOperand) returns bool
+        {
+            var result false
+            choose op.expr
+                when t: Tuple
+                {
+                    if t.components <> null
+                    {
+                        let comps (*t.components)
+                        var i: size_t 0
+                        while i < comps.length
+                        {
+                            let cp comps.get i
+                            if cp <> null
+                            {
+                                let comp (*cp)
+                                if comp.value <> null
+                                {
+                                    let vals (*comp.value)
+                                    var j: size_t 0
+                                    while j < vals.length
+                                    {
+                                        let vp vals.get j
+                                        if vp <> null
+                                            if Planner.is_local_ref_pointer(vp.result_type)
+                                                set result: true
+                                        set j: j + 1
+                                    }
+                                }
+                            }
+                            set i: i + 1
+                        }
+                    }
+                }
+                when c: Call
+                {
+                    if c.args <> null
+                    {
+                        let args (*c.args)
+                        var i: size_t 0
+                        while i < args.length
+                        {
+                            let ap args.get i
+                            if ap <> null
+                                if Planner.is_local_ref_pointer(ap.result_type)
+                                    set result: true
+                            set i: i + 1
+                        }
+                    }
+                }
+                else
+                    0
+            result
+        }
+
+        ; Hole-1 field provenance: true when `op` reads a reference-like FIELD
+        ; of a tainted frame-local value-struct binding (`h.p` where h was
+        ; constructed with a &<frame-local> arg). Returning / storing / passing
+        ; such a field hands out the frame address. Single-exit.
+        function operand_reads_tainted_local_field(this: Planner, op: PlannedOperand) returns bool
+        {
+            var result false
+            choose op.expr
+                when v: Variable
+                {
+                    if op.member_access <> null
+                    {
+                        let chain (*op.member_access)
+                        if chain.length > (0 as size_t)
+                            if this.array_contains_name(local_tainted_struct_bindings, v.name)
+                                if Planner.is_reference_like(op.result_type)
+                                    set result: true
+                    }
+                }
+                else
+                    0
             result
         }
 
@@ -14893,6 +15023,14 @@ define Planner
             if return_needs_promotion = false
                 if this.operand_is_local_page_construction(planned_collapsed)
                     set return_needs_promotion: true
+            ; Hole-1 field provenance: `return h.field` where h is a tainted
+            ; frame-local value struct (constructed with a &<frame-local> arg)
+            ; and the field is reference-like — the field holds a frame address.
+            ; restamp_operand_life# returns null for a member-access Variable, so
+            ; return_needs_promotion -> the hard escape diagnostic below.
+            if return_needs_promotion = false
+                if this.operand_reads_tainted_local_field(planned_collapsed)
+                    set return_needs_promotion: true
             if planned_flat.length > 0
                 if return_needs_promotion
                 {
@@ -14909,6 +15047,15 @@ define Planner
                         }
                         else
                             0
+                    ; Hole-1 field provenance: `return h.field` where h holds a
+                    ; &<frame-local> dangles even when the CONTAINER h was gap-1
+                    ; promoted to rp — the field still points into this frame.
+                    ; Bypass the already-promoted shortcut; restamp_operand_life#
+                    ; returns null for a member-access Variable, so the hard
+                    ; diagnostic below fires. (Suppressing the gap-1 promotion
+                    ; instead breaks the container's own rp guts — see cycle.)
+                    if this.operand_reads_tainted_local_field(planned_collapsed)
+                        set already_promoted: false
                     if already_promoted = false
                     {
                         let call_life Lifetime.Call(scalyc.compiler.Model.Call(r.span))
@@ -16399,6 +16546,7 @@ define Planner
             let saved_erl escaping_return_locals.length
             let saved_pbn promoted_binding_names.length
             let saved_etg escaping_targets.length
+            let saved_lts local_tainted_struct_bindings.length
             ; Page inference: a value stored through a ref/pointer out-parameter
             ; escapes to the caller, so seed those param names as escape targets.
             ; A later `param.add(v)` / `(*param).add(v)` then promotes v to the
@@ -16437,6 +16585,7 @@ define Planner
             set escaping_return_locals.length: saved_erl
             set promoted_binding_names.length: saved_pbn
             set escaping_targets.length: saved_etg
+            set local_tainted_struct_bindings.length: saved_lts
             set local_closure_names.length: saved_lcn
             set this.current_return_type: saved_return_type
 
