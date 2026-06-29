@@ -61,5 +61,5 @@ define StringBuilder
         buffer.get_length()
 
     function to_string(this: StringBuilder) returns String
-        String^rp(buffer.get_buffer(), buffer.get_length())
+        String(buffer.get_buffer(), buffer.get_length())
 }

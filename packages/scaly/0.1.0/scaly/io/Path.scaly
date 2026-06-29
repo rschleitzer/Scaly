@@ -10,28 +10,28 @@ define Path
         if strcmp(directory_name_as_c_string, ".") = 0
             return ""
 
-        String^rp(directory_name_as_c_string)
+        String(directory_name_as_c_string)
     }
 
     function get_file_name(path: String) returns String
     {
         let path_as_c_string path.to_c_string()
         let file_name_as_c_string basename(path_as_c_string as pointer[char])
-        String^rp(file_name_as_c_string)
+        String(file_name_as_c_string)
     }
 
     function join(path1: String, path2: String) returns String
     {
         if path1.get_length() = 0
-            return String^rp(path2)
+            return String(path2)
 
         var path StringBuilder()
         path.append path1
         if path2.get_length() = 0
-            return path.to_string^rp()
+            return path.to_string()
 
         path.append("/" as char)
         path.append path2
-        path.to_string^rp()
+        path.to_string()
     }
 }
