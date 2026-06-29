@@ -14493,6 +14493,17 @@ define Planner
                                     set is_ctor: true
                                 if c.name.equals("init")
                                     set is_ctor: true
+                                ; CALL-# de-sigil: a has_page function-call RESULT
+                                ; (lowercase, e.g. `arr.add(plan_type(pt))`)
+                                ; put/added into an escaping receiver must move to
+                                ; rp like the `#` form did. restamp_operand_life#
+                                ; self-gates (result_owns_page_guts + Local/
+                                ; Unspecified life), so an explicit-`#` call (Call
+                                ; life) returns null → kept verbatim → NEUTRAL on
+                                ; sigiled source; only a de-sigiled call (Design-B
+                                ; Local life) is flipped Local→Call (= rp).
+                                if c.requires_page_param
+                                    set is_ctor: true
                             }
                         }
                         when t: PlannedTuple

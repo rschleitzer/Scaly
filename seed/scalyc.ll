@@ -134427,11 +134427,11 @@ if.end5:                                          ; preds = %if.then
 
 define linkonce_odr ptr @_ZN7Planner28restamp_putadd_constructionsEPN4scaly6memory4PageE6VectorI14PlannedOperandE8Lifetime(ptr %0, ptr %1, ptr %2, ptr %3) {
 entry:
-  %arg.tmp46 = alloca %_Z14PlannedOperand, align 8
-  %arg.tmp33 = alloca %_Z14PlannedOperand, align 8
-  %deref.tmp31 = alloca %_Z14PlannedOperand, align 8
-  %arg.tmp27 = alloca %_Z14PlannedOperand, align 8
-  %deref.tmp25 = alloca %_Z14PlannedOperand, align 8
+  %arg.tmp48 = alloca %_Z14PlannedOperand, align 8
+  %arg.tmp35 = alloca %_Z14PlannedOperand, align 8
+  %deref.tmp33 = alloca %_Z14PlannedOperand, align 8
+  %arg.tmp29 = alloca %_Z14PlannedOperand, align 8
+  %deref.tmp27 = alloca %_Z14PlannedOperand, align 8
   %arg.tmp12 = alloca { ptr }, align 8
   %arg.tmp11 = alloca { ptr }, align 8
   %arg.tmp = alloca { ptr }, align 8
@@ -134475,20 +134475,20 @@ if.then:                                          ; preds = %while.body
   %tag = load i8, ptr %tag.ptr, align 1
   switch i8 %tag, label %choose.else [
     i8 4, label %choose.when
-    i8 5, label %choose.when16
+    i8 5, label %choose.when18
   ]
 
-if.end:                                           ; preds = %if.end30, %while.body
-  %i47 = load i64, ptr %i, align 4
-  %add = add i64 %i47, 1
+if.end:                                           ; preds = %if.end32, %while.body
+  %i49 = load i64, ptr %i, align 4
+  %add = add i64 %i49, 1
   store i64 %add, ptr %i, align 1
   br label %while.cond
 
-choose.end:                                       ; preds = %choose.else, %choose.when16, %if.end6
-  %choose.value = phi i1 [ true, %if.end6 ], [ true, %choose.when16 ], [ undef, %choose.else ]
-  %is_ctor19 = load i1, ptr %is_ctor, align 1
-  %eq20 = icmp eq i1 %is_ctor19, false
-  br i1 %eq20, label %if.then21, label %if.end22
+choose.end:                                       ; preds = %choose.else, %choose.when18, %if.end6
+  %choose.value = phi i1 [ true, %if.end6 ], [ true, %choose.when18 ], [ undef, %choose.else ]
+  %is_ctor21 = load i1, ptr %is_ctor, align 1
+  %eq22 = icmp eq i1 %is_ctor21, false
+  br i1 %eq22, label %if.then23, label %if.end24
 
 choose.else:                                      ; preds = %if.then
   br label %choose.end
@@ -134506,7 +134506,7 @@ if.then5:                                         ; preds = %choose.when
   %call7 = call i1 @_ZN7Planner19name_is_capitalizedE6String(ptr %1, ptr %arg.tmp)
   br i1 %call7, label %if.then8, label %if.end9
 
-if.end6:                                          ; preds = %if.end15, %choose.when
+if.end6:                                          ; preds = %if.end17, %choose.when
   br label %choose.end
 
 if.then8:                                         ; preds = %if.then5
@@ -134525,60 +134525,68 @@ if.then14:                                        ; preds = %if.end9
   br label %if.end15
 
 if.end15:                                         ; preds = %if.then14, %if.end9
+  %requires_page_param = extractvalue %_Z11PlannedCall %variant.val, 6
+  br i1 %requires_page_param, label %if.then16, label %if.end17
+
+if.then16:                                        ; preds = %if.end15
+  store i1 true, ptr %is_ctor, align 1
+  br label %if.end17
+
+if.end17:                                         ; preds = %if.then16, %if.end15
   br label %if.end6
 
-choose.when16:                                    ; preds = %if.then
-  %"variant.c_data().ptr17" = getelementptr inbounds %_Z17PlannedExpression, ptr %choose.union, i32 0, i32 1
-  %variant.val18 = load %_Z12PlannedTuple, ptr %"variant.c_data().ptr17", align 8
+choose.when18:                                    ; preds = %if.then
+  %"variant.c_data().ptr19" = getelementptr inbounds %_Z17PlannedExpression, ptr %choose.union, i32 0, i32 1
+  %variant.val20 = load %_Z12PlannedTuple, ptr %"variant.c_data().ptr19", align 8
   store i1 true, ptr %is_ctor, align 1
   br label %choose.end
 
-if.then21:                                        ; preds = %choose.end
-  %out23 = load ptr, ptr %out, align 8
-  %i24 = load i64, ptr %i, align 4
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp25, ptr align 1 %call, i64 ptrtoint (ptr getelementptr (%_Z14PlannedOperand, ptr null, i32 1) to i64), i1 false)
-  %grp.deref.val26 = load %_Z14PlannedOperand, ptr %deref.tmp25, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp27, ptr align 1 %deref.tmp25, i64 ptrtoint (ptr getelementptr (%_Z14PlannedOperand, ptr null, i32 1) to i64), i1 false)
-  call void @_ZN6VectorI14PlannedOperandE3putEm14PlannedOperand(ptr %out23, i64 %i24, ptr %arg.tmp27)
-  br label %if.end22
+if.then23:                                        ; preds = %choose.end
+  %out25 = load ptr, ptr %out, align 8
+  %i26 = load i64, ptr %i, align 4
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp27, ptr align 1 %call, i64 ptrtoint (ptr getelementptr (%_Z14PlannedOperand, ptr null, i32 1) to i64), i1 false)
+  %grp.deref.val28 = load %_Z14PlannedOperand, ptr %deref.tmp27, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp29, ptr align 1 %deref.tmp27, i64 ptrtoint (ptr getelementptr (%_Z14PlannedOperand, ptr null, i32 1) to i64), i1 false)
+  call void @_ZN6VectorI14PlannedOperandE3putEm14PlannedOperand(ptr %out25, i64 %i26, ptr %arg.tmp29)
+  br label %if.end24
 
-if.end22:                                         ; preds = %if.then21, %choose.end
-  %is_ctor28 = load i1, ptr %is_ctor, align 1
-  br i1 %is_ctor28, label %if.then29, label %if.end30
+if.end24:                                         ; preds = %if.then23, %choose.end
+  %is_ctor30 = load i1, ptr %is_ctor, align 1
+  br i1 %is_ctor30, label %if.then31, label %if.end32
 
-if.then29:                                        ; preds = %if.end22
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp31, ptr align 1 %call, i64 ptrtoint (ptr getelementptr (%_Z14PlannedOperand, ptr null, i32 1) to i64), i1 false)
-  %grp.deref.val32 = load %_Z14PlannedOperand, ptr %deref.tmp31, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp33, ptr align 1 %deref.tmp31, i64 ptrtoint (ptr getelementptr (%_Z14PlannedOperand, ptr null, i32 1) to i64), i1 false)
-  %call34 = call ptr @_ZN7Planner20restamp_operand_lifeEPN4scaly6memory4PageE14PlannedOperand8Lifetime(ptr %0, ptr %1, ptr %arg.tmp33, ptr %3)
-  %ne35 = icmp ne ptr %call34, null
-  br i1 %ne35, label %if.then36, label %if.end37
+if.then31:                                        ; preds = %if.end24
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp33, ptr align 1 %call, i64 ptrtoint (ptr getelementptr (%_Z14PlannedOperand, ptr null, i32 1) to i64), i1 false)
+  %grp.deref.val34 = load %_Z14PlannedOperand, ptr %deref.tmp33, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp35, ptr align 1 %deref.tmp33, i64 ptrtoint (ptr getelementptr (%_Z14PlannedOperand, ptr null, i32 1) to i64), i1 false)
+  %call36 = call ptr @_ZN7Planner20restamp_operand_lifeEPN4scaly6memory4PageE14PlannedOperand8Lifetime(ptr %0, ptr %1, ptr %arg.tmp35, ptr %3)
+  %ne37 = icmp ne ptr %call36, null
+  br i1 %ne37, label %if.then38, label %if.end39
 
-if.end30:                                         ; preds = %if.end42, %if.end22
+if.end32:                                         ; preds = %if.end44, %if.end24
   br label %if.end
 
-if.then36:                                        ; preds = %if.then29
-  %out38 = load ptr, ptr %out, align 8
-  %i39 = load i64, ptr %i, align 4
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp31, ptr align 1 %call34, i64 ptrtoint (ptr getelementptr (%_Z14PlannedOperand, ptr null, i32 1) to i64), i1 false)
-  call void @_ZN6VectorI14PlannedOperandE3putEm14PlannedOperand(ptr %out38, i64 %i39, ptr %deref.tmp31)
-  br label %if.end37
+if.then38:                                        ; preds = %if.then31
+  %out40 = load ptr, ptr %out, align 8
+  %i41 = load i64, ptr %i, align 4
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp33, ptr align 1 %call36, i64 ptrtoint (ptr getelementptr (%_Z14PlannedOperand, ptr null, i32 1) to i64), i1 false)
+  call void @_ZN6VectorI14PlannedOperandE3putEm14PlannedOperand(ptr %out40, i64 %i41, ptr %deref.tmp33)
+  br label %if.end39
 
-if.end37:                                         ; preds = %if.then36, %if.then29
-  %eq40 = icmp eq ptr %call34, null
-  br i1 %eq40, label %if.then41, label %if.end42
+if.end39:                                         ; preds = %if.then38, %if.then31
+  %eq42 = icmp eq ptr %call36, null
+  br i1 %eq42, label %if.then43, label %if.end44
 
-if.then41:                                        ; preds = %if.end37
-  %out43 = load ptr, ptr %out, align 8
-  %i44 = load i64, ptr %i, align 4
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp33, ptr align 1 %call, i64 ptrtoint (ptr getelementptr (%_Z14PlannedOperand, ptr null, i32 1) to i64), i1 false)
-  %grp.deref.val45 = load %_Z14PlannedOperand, ptr %arg.tmp33, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp46, ptr align 1 %arg.tmp33, i64 ptrtoint (ptr getelementptr (%_Z14PlannedOperand, ptr null, i32 1) to i64), i1 false)
-  call void @_ZN6VectorI14PlannedOperandE3putEm14PlannedOperand(ptr %out43, i64 %i44, ptr %arg.tmp46)
-  br label %if.end42
+if.then43:                                        ; preds = %if.end39
+  %out45 = load ptr, ptr %out, align 8
+  %i46 = load i64, ptr %i, align 4
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp35, ptr align 1 %call, i64 ptrtoint (ptr getelementptr (%_Z14PlannedOperand, ptr null, i32 1) to i64), i1 false)
+  %grp.deref.val47 = load %_Z14PlannedOperand, ptr %arg.tmp35, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp48, ptr align 1 %arg.tmp35, i64 ptrtoint (ptr getelementptr (%_Z14PlannedOperand, ptr null, i32 1) to i64), i1 false)
+  call void @_ZN6VectorI14PlannedOperandE3putEm14PlannedOperand(ptr %out45, i64 %i46, ptr %arg.tmp48)
+  br label %if.end44
 
-if.end42:                                         ; preds = %if.then41, %if.end37
-  br label %if.end30
+if.end44:                                         ; preds = %if.then43, %if.end39
+  br label %if.end32
 }
 
 declare i8 @_ZN6String3getEm(ptr, i64)
