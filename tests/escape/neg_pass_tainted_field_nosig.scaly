@@ -1,0 +1,29 @@
+; ESCAPE (negative, NO-SIGIL): a frame-local struct's pointer FIELD holds
+; &<frame-local>; passing that field to a callee that STORES it frame-externally
+; (into the caller-provided receiver's field) is a use-after-free. Hole-1 PASS
+; case: the field read carries the Local pointee on the operand type so the
+; interprocedural post-pass REJECTS. Compiler MUST reject (escapes via call).
+define Box
+(
+    v: int
+)
+define Holder
+(
+    b: pointer[Box]
+)
+{
+    procedure stash(this, p: pointer[Box])
+        set this.b: p
+}
+
+procedure fill(c: Holder)
+{
+    let bx Box(5)
+    let h Holder(&bx)
+    c.stash(h.b)
+}
+
+function main() returns int
+{
+    return 0
+}

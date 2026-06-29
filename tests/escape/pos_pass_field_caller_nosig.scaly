@@ -1,0 +1,27 @@
+; POS (NO-SIGIL): a frame-local struct whose pointer field holds a CALLER-
+; provided pointer (a param, not a frame-local). Passing that field to a storing
+; callee is safe -> must compile. Guards the hole-1 pass check against over-
+; rejection (h is NOT tainted: src is a parameter).
+define Box
+(
+    v: int
+)
+define Holder
+(
+    b: pointer[Box]
+)
+{
+    procedure stash(this, p: pointer[Box])
+        set this.b: p
+}
+
+procedure fwd(c: Holder, src: pointer[Box])
+{
+    let h Holder(src)
+    c.stash(h.b)
+}
+
+function main() returns int
+{
+    return 0
+}

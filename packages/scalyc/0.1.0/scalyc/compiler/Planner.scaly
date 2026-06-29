@@ -10001,6 +10001,16 @@ define Planner
                                 if last_ptr <> null
                                     set final_type: (*last_ptr).result_type
                             }
+                            ; Escape soundness (hole-1 pass-to-callee): a
+                            ; reference-like FIELD read off a TAINTED local
+                            ; struct binding carries that struct's captured
+                            ; &<frame-local>. Flip the inner pointee to Local on
+                            ; the operand TYPE so the uniform is_reference_to_
+                            ; local_page# check fires at the pass-to-callee POST-
+                            ; PASS (the per-fn taint set is gone by then), just as
+                            ; a direct &<frame-local> does. No-op unless first_name
+                            ; is tainted (none in non-test code).
+                            set final_type: this.taint_field_read_by_name(first_name, final_type)
                             return PlannedOperand(
                                 loc,
                                 PlannedExpression.Variable(PlannedVariable(
@@ -13644,6 +13654,26 @@ define Planner
                 }
                 else
                     0
+            result
+        }
+
+        ; taint_field_read_by_name#: at the member-access read site, if the base
+        ; local binding `name` is TAINTED (constructed with a &<frame-local> arg)
+        ; and the read FIELD type `t` is reference-like, return the same outer
+        ; type with the inner pointee flipped to Local — the field holds a frame
+        ; address, so the operand TYPE must carry that Local signal for the
+        ; pass-to-callee post-pass (which runs after the per-fn taint set is torn
+        ; down) to reject it via is_reference_to_local_page#. Identity (returns
+        ; `t`) unless `name` is in the taint set, so a no-op for all non-test
+        ; code (no tainted bindings there). Return/store are also covered by
+        ; operand_reads_tainted_local_field#; this additionally makes the
+        ; uniform check fire at the interprocedural call boundary.
+        function taint_field_read_by_name(this: Planner, name: String, t: PlannedType) returns PlannedType
+        {
+            var result: PlannedType t
+            if this.array_contains_name(local_tainted_struct_bindings, name)
+                if Planner.is_reference_like(t)
+                    set result: Planner.make_ref_to_local_inner(t)
             result
         }
 
@@ -20389,6 +20419,49 @@ define Planner
             inner.variable
         )
         Planner.make_pointer_type(local_inner)
+    }
+
+    ; make_ref_to_local_inner#: rebuild a reference-like type (pointer[X] or
+    ; ref[X]) PRESERVING its outer (pointer vs ref) and mangled name, but with
+    ; the inner pointee X carrying Local life — so is_reference_to_local_page#
+    ; (inner-Local clause) and is_local_ref_pointer# both fire. Unlike
+    ; make_pointer_to_local# (which takes a bare inner and always builds a
+    ; pointer) this is driven by an EXISTING reference type and keeps ref-ness,
+    ; used by the hole-1 pass case to mark a tainted field read on the operand
+    ; type itself. Inner rebuilt FRESH (String^rp copies — s34 ABI hazard).
+    function make_ref_to_local_inner(t: PlannedType) returns PlannedType
+    {
+        if t.generics = null
+            return t
+        let gens (*t.generics)
+        if gens.length = 0
+            return t
+        let inner_ptr gens.get 0
+        if inner_ptr = null
+            return t
+        let inner (*inner_ptr)
+        let local_inner PlannedType(
+            inner.loc,
+            String^rp(inner.name),
+            String^rp(inner.mangled_name),
+            inner.generics,
+            Lifetime.Local(scalyc.compiler.Model.Local(inner.loc)),
+            inner.origin,
+            String^rp(inner.array_size),
+            inner.variable
+        )
+        var new_gens Vector[PlannedType]^rp(1)
+        new_gens.put(0, local_inner)
+        PlannedType(
+            t.loc,
+            String^rp(t.name),
+            String^rp(t.mangled_name),
+            &new_gens,
+            t.life,
+            t.origin,
+            String^rp(t.array_size),
+            t.variable
+        )
     }
 
     ; rehome_type#: deep-copy a PlannedType onto `rp`, recursively
