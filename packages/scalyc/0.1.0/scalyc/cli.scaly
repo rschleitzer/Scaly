@@ -469,7 +469,7 @@ define cli
                 return 10
             }
 
-            var jit_config EmitterConfig$()
+            var jit_config EmitterConfig()
             set jit_config.emit_debug_info: false
             var jit_emitter Emitter.Emitter(jit_config)
             let jit_rc jit_emitter.jit_run(plan, program_name, target_mangled)
@@ -484,7 +484,7 @@ define cli
         ; ================================================================
         if opts.jit_program
         {
-            var prog_config EmitterConfig$()
+            var prog_config EmitterConfig()
             set prog_config.emit_debug_info: false
             var prog_emitter Emitter.Emitter(prog_config)
             let prog_rc prog_emitter.jit_run(plan, program_name, "main")
@@ -495,7 +495,7 @@ define cli
         ; Stage 4: Emit (LLVM IR generation)
         ; ================================================================
 
-        var config EmitterConfig$()
+        var config EmitterConfig()
         set config.emit_debug_info: opts.debug
         set config.skip_tests: opts.no_tests
 
@@ -928,7 +928,7 @@ define cli
             return -3  ; Planning failed
 
         ; Stage 4: Emit
-        var config EmitterConfig$()
+        var config EmitterConfig()
         set config.emit_debug_info: false
         var emitter Emitter.Emitter(config)
         let emit_result emitter.emit(plan, program_name)
@@ -970,7 +970,7 @@ define cli
             return -3  ; Planning failed
 
         ; Stage 4: Emit (just verify it doesn't crash)
-        var config EmitterConfig$()
+        var config EmitterConfig()
         set config.emit_debug_info: false
         var emitter Emitter.Emitter(config)
         let emit_result emitter.emit(plan, program_name)
