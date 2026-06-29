@@ -19,6 +19,6 @@ define Holder
 
 procedure leak_call(c: Holder)
 {
-    let bx Box$(5)
+    let bx Box(5)
     c.stash(&bx)
 }

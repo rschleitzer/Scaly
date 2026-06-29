@@ -13,9 +13,9 @@ define Holder
 
 function build() returns int
 {
-    let bx0 Box$(1)
+    let bx0 Box(1)
     var h Holder(&bx0)
-    let bx Box$(7)
+    let bx Box(7)
     set h.b: &bx
     return (*h.b).v
 }

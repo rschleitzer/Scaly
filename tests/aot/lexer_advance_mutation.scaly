@@ -30,7 +30,7 @@ define Parser
 }
 
 var dummy_char: char "X"
-var p Parser$(Lexer(&dummy_char))
+var p Parser(Lexer(&dummy_char))
 p.do_scan#()
 let done p.is_at_end()
 if done

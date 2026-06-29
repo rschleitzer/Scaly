@@ -28,7 +28,7 @@ define Outer
         inner.get_value()
 }
 
-var o Outer$(Inner(0))
+var o Outer(Inner(0))
 o.run_sibling()
 let v o.get_inner_value()
 if v = 42

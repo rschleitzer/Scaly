@@ -8,7 +8,7 @@ define Box
 
 function use_local() returns int
 {
-    let b Box$(5)
+    let b Box(5)
     return b.v
 }
 

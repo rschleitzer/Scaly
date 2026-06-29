@@ -9,6 +9,6 @@ define Box
 
 function leak() returns pointer[Box]
 {
-    let b Box$(5)
+    let b Box(5)
     return &b
 }

@@ -39,7 +39,7 @@ define Parser
 }
 
 var dummy_char: char "X"
-var p Parser$(Lexer(&dummy_char, 0))
+var p Parser(Lexer(&dummy_char, 0))
 let result p.do_advance#()
 if result
     print("42")

@@ -122,7 +122,7 @@ function main_test() returns int
     fb.append("FAIL ")
     fb.append(rpc.format_size#(rc as size_t))
     let msg fb.to_string#()
-    Console.println(msg.to_c_string$())
+    Console.println(msg.to_c_string())
     rc
 }
 
