@@ -229,7 +229,7 @@ define diagnostics
 
         ; 7 == length of "file://"
         let len uri.get_length()
-        uri.substring(rp, 7 as size_t, len - (7 as size_t))
+        uri.substring(7 as size_t, len - (7 as size_t))
     }
 
     ; `"key":`

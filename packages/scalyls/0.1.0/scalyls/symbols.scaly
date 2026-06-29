@@ -3475,7 +3475,7 @@ define symbols
                 set start: j + (1 as size_t)
             set j: j + 1
         }
-        name.substring(rp, start, end - start)
+        name.substring(start, end - start)
     }
 
     ; Parse the program and return the member CompletionItem[] of the concept

@@ -1562,7 +1562,7 @@ define Planner
                     {
                         let start (last_dot as size_t) + 1
                         let len struct_name.get_length() - start
-                        let bare struct_name.substring(rp, start, len)
+                        let bare struct_name.substring(start, len)
                         set concept_ref: this.lookup_concept(bare)
                     }
                 }
@@ -4665,9 +4665,8 @@ define Planner
                             if dot_idx > 0
                             {
                                 let dot_pos dot_idx as size_t
-                                let prefix fn_name.substring(rp, 0, dot_pos)
+                                let prefix fn_name.substring(0, dot_pos)
                                 let suffix fn_name.substring(
-                                    rp,
                                     dot_pos + 1,
                                     fn_name.get_length() - dot_pos - 1
                                 )
@@ -5137,9 +5136,8 @@ define Planner
                             if dot_idx > 0
                             {
                                 let dot_pos dot_idx as size_t
-                                let prefix fn_name.substring(rp, 0, dot_pos)
+                                let prefix fn_name.substring(0, dot_pos)
                                 let suffix fn_name.substring(
-                                    rp,
                                     dot_pos + 1,
                                     fn_name.get_length() - dot_pos - 1
                                 )
@@ -5524,9 +5522,8 @@ define Planner
                             if dot_idx > 0
                             {
                                 let dot_pos dot_idx as size_t
-                                let prefix fn_name.substring(rp, 0, dot_pos)
+                                let prefix fn_name.substring(0, dot_pos)
                                 let suffix fn_name.substring(
-                                    rp,
                                     dot_pos + 1,
                                     fn_name.get_length() - dot_pos - 1
                                 )
@@ -9203,8 +9200,8 @@ define Planner
                     let vc_total canonical_name.get_length()
                     if vc_total > vc_start
                     {
-                        let vc_prefix canonical_name.substring(rp, 0, vc_dot as size_t)
-                        let vc_suffix canonical_name.substring(rp, vc_start, vc_total - vc_start)
+                        let vc_prefix canonical_name.substring(0, vc_dot as size_t)
+                        let vc_suffix canonical_name.substring(vc_start, vc_total - vc_start)
                         let vc_union_ref this.lookup_concept(vc_prefix)
                         if vc_union_ref <> null
                         {
@@ -9235,7 +9232,7 @@ define Planner
                     let total canonical_name.get_length()
                     if total > start
                     {
-                        let suffix canonical_name.substring(rp, start, total - start)
+                        let suffix canonical_name.substring(start, total - start)
                         ; s182: Namespace-function pattern. A dotted name
                         ; like `NS.Thing` where the prefix is a Namespace
                         ; concept declaring a FUNCTION named `Thing` must
@@ -9253,7 +9250,7 @@ define Planner
                         ; (Planner.cpp:8604 vs 8754).
                         var nf_keep_dotted: bool false
                         let nf_ns_ref this.lookup_namespace_concept(
-                            canonical_name.substring(rp, 0, last_dot as size_t))
+                            canonical_name.substring(0, last_dot as size_t))
                         if nf_ns_ref <> null
                         {
                             let nf_conc (*nf_ns_ref)
@@ -16541,7 +16538,7 @@ define Planner
 
             ; s152: register the implicit page parameter (function#'s `rp`)
             ; as a pointer[Page] local so the body can pass it as an explicit
-            ; value argument — e.g. `file_path.substring(rp, start, length)`.
+            ; value argument — e.g. `file_path.substring(start, length)`.
             ; Without this `rp` doesn't resolve as a variable,
             ; plan_type_operand# mis-plans the operand, and emit_call drops
             ; the entire call (its arg emits a null handle, line ~3285).
@@ -16553,7 +16550,7 @@ define Planner
             ; function_needs_caller_page true — mirrors the s131 page_param_ref
             ; inference below). Registering it as a pointer[Page] local lets a
             ; de-sigiled body pass `rp` as an explicit value arg
-            ; (`x.substring(rp, ...)`), not only as the `^rp` lifetime. Without
+            ; (`x.substring(...)`), not only as the `^rp` lifetime. Without
             ; this a de-sigiled fn that uses `rp` explicitly mis-plans the
             ; operand and emit_call drops the call (the s152 symptom), which only
             ; surfaces in the self-built compiler (seed_root emits the de-sigiled
@@ -18909,7 +18906,7 @@ define Planner
 
         let start (last_dot as size_t) + 1
         let len name.get_length() - start
-        name.substring(rp, start, len)
+        name.substring(start, len)
     }
 
     ; encode_type: Itanium ABI type code.
@@ -18999,7 +18996,7 @@ define Planner
                 let dot_pos type_value.name.index_of("." as u8)
                 var base_name: String type_value.name
                 if dot_pos >= 0
-                    set base_name: type_value.name.substring(rp, 0, dot_pos as size_t)
+                    set base_name: type_value.name.substring(0, dot_pos as size_t)
 
                 var sb StringBuilder()
                 sb.append(Planner.encode_name base_name)
@@ -19385,7 +19382,7 @@ define Planner
             {
                 let start (last_dot as size_t) + 1
                 let len name.get_length() - start
-                set base: name.substring(rp, start, len)
+                set base: name.substring(start, len)
             }
         }
 

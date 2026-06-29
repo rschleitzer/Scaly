@@ -399,7 +399,7 @@ define server
         let tag framed.get(0 as size_t)
         if tag <> (0x31 as u8)
             return ""
-        let tname framed.substring(rp, 1 as size_t, framed.get_length() - (1 as size_t))
+        let tname framed.substring(1 as size_t, framed.get_length() - (1 as size_t))
         var sb StringBuilder()
         sb.append(0x7B as char)                    ; {
         sb.append(server.key("contents"))

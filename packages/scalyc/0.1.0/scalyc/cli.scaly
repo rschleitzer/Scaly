@@ -841,7 +841,7 @@ define cli
         if end <= start
             return file_path
 
-        file_path.substring(rp, start as size_t, (end - start) as size_t)
+        file_path.substring(start as size_t, (end - start) as size_t)
     }
 
     ; Main entry point
