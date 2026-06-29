@@ -241,8 +241,8 @@ define Parser
                                         "success"
                                         (let ((target (element-with-id (link content))))
                                             (if (abstract? target)
-                                                ($ (link content) "Syntax#(success)")
-                                                ($ (link content) "Syntax#(success.start, success.end"
+                                                ($ (link content) "Syntax(success)")
+                                                ($ (link content) "Syntax(success.start, success.end"
                                                    (apply-to-nodelist (properties target)
                                                        (lambda (p) ($ ", success." (property p))))
                                                    ")"))))
@@ -396,7 +396,7 @@ define Parser
                     (if (or (equal? (type content) "keyword") (equal? (type content) "punctuation"))
                         "true"
                         (if (and (equal? (type content) "syntax") (not (multiple? content)) (not (optional? content)) (is-recursive-ref? syntax content))
-                            ($ (link content)"Syntax#("(property content)")")
+                            ($ (link content)"Syntax("(property content)")")
                             (property content)))
                 )))
                 ")
