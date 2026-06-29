@@ -1,0 +1,27 @@
+; ESCAPE (negative, NO-SIGIL): passing &<no-sigil frame-local> to a callee that
+; STORES it frame-externally is a use-after-free. Escape soundness step 1 infers
+; the Local pointee so the interprocedural check still REJECTS. Mirrors
+; neg_pass_to_storing_callee without the $ sigil.
+define Box
+(
+    v: int
+)
+define Holder
+(
+    b: pointer[Box]
+)
+{
+    procedure stash(this, p: pointer[Box])
+        set this.b: p
+}
+
+procedure fill(c: Holder)
+{
+    let bx Box(5)
+    c.stash(&bx)
+}
+
+function main() returns int
+{
+    return 0
+}

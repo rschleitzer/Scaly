@@ -1,0 +1,25 @@
+; OK (positive control, NO-SIGIL): a no-sigil frame-local used by VALUE (its
+; field returned, or the whole value returned by copy into sret) does NOT
+; escape — only &<frame-local> does. Escape soundness step 1 must NOT
+; false-positive on value uses. Must COMPILE.
+define Box
+(
+    v: int
+)
+
+function use_field() returns int
+{
+    let b Box(5)
+    return b.v
+}
+
+function use_value() returns Box
+{
+    let b Box(5)
+    return b
+}
+
+function main() returns int
+{
+    return use_field() + use_value().v
+}

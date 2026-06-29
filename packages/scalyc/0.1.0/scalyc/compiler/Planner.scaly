@@ -4287,8 +4287,21 @@ define Planner
                             ; types_compatible (s96 part 2) extends the
                             ; rule set so pointer[T] flows into ref[T] /
                             ; pointer[T] params.
+                            ; Escape soundness step 1: `&<bare frame-local>`
+                            ; produces a pointer into THIS frame, so stamp the
+                            ; pointee Local (make_pointer_to_local#) — the
+                            ; existing return/store/pass checks then promote-or-
+                            ; reject it, matching what `$` provided via the
+                            ; binding's Local life. Other `&` operands keep the
+                            ; plain pointer so value uses and #/^-allocated
+                            ; locals stay unaffected.
                             if prefix_name.equals("&")
-                                set rt: Planner.make_pointer_type(rest_result.result_type)
+                            {
+                                if this.operand_is_bare_frame_local(rest_result)
+                                    set rt: Planner.make_pointer_to_local(rest_result.result_type)
+                                else
+                                    set rt: Planner.make_pointer_type(rest_result.result_type)
+                            }
                         }
 
                         let mangled this.mangle_unary_operator(
@@ -13204,6 +13217,54 @@ define Planner
             false
         }
 
+        ; binding_is_frame_local: true when `name` resolves to a non-parameter
+        ; local binding whose stored VALUE lives in this frame (life Unspecified
+        ; = plain stack value / no-sigil; or Local = $/heap-backed-default). Such
+        ; a binding's STORAGE is the frame, so `&name` is a pointer into the
+        ; local page (region rank Local). Parameters are excluded: a by-pointer
+        ; struct param points at the caller's object (rank Caller), and a value
+        ; param copied into the frame is not address-escaped in practice
+        ; (pos_return_param_ptr returns the pointer VALUE, never `&param`).
+        ; Bindings allocated with #/^ carry Call/Reference life on their VALUE —
+        ; the programmer placed them on a caller/named page deliberately — so
+        ; `&` of those is left to a later step (their slot is frame, but value
+        ; uses are the common case and stay correct). Escape soundness step 1.
+        function binding_is_frame_local(this: Planner, name: String) returns bool
+        {
+            let lb this.lookup_local_binding(name)
+            if lb = null
+                return false
+            if lb.is_parameter
+                return false
+            choose lb.binding_type.life
+                when u: Unspecified
+                    return true
+                when l: Local
+                    return true
+                else
+                    return false
+        }
+
+        ; True when `op` is a BARE frame-local Variable (no member-access
+        ; chain) — the `&op` target whose pointee lives in this frame. Kept
+        ; as its own single-exit helper (not inlined into the prefix-`&`
+        ; collapse block): a nested choose/if there is miscompiled by the
+        ; bootstrap lineage (the documented braceless-nest trap).
+        function operand_is_bare_frame_local(this: Planner, op: PlannedOperand) returns bool
+        {
+            var result false
+            if op.member_access = null
+                choose op.expr
+                    when v: Variable
+                    {
+                        if this.binding_is_frame_local(v.name)
+                            set result: true
+                    }
+                    else
+                        0
+            result
+        }
+
         function is_reference_to_local_page(t: PlannedType) returns bool
         {
             choose t.life
@@ -19943,6 +20004,30 @@ define Planner
         )
     }
 
+    ; make_pointer_to_local#: like make_pointer_type# but the INNER pointee
+    ; carries Local life — `&<frame-local-binding>` produces a pointer into
+    ; the function's frame, so is_reference_to_local_page# (which reads the
+    ; inner generic's life) fires when that pointer is returned / stored
+    ; externally / passed to a storing callee. Escape soundness step 1: the
+    ; address-of signal `$` used to provide on the binding, now inferred for
+    ; no-sigil frame locals. The inner is rebuilt FRESH (rehome_type# style,
+    ; String^rp copies, generics carried by ref) — never a by-value copy of
+    ; an existing result_type (the s34/s196 union-struct-copy ABI hazard).
+    function make_pointer_to_local(inner: PlannedType) returns PlannedType
+    {
+        let local_inner PlannedType(
+            inner.loc,
+            String^rp(inner.name),
+            String^rp(inner.mangled_name),
+            inner.generics,
+            Lifetime.Local(scalyc.compiler.Model.Local(inner.loc)),
+            inner.origin,
+            String^rp(inner.array_size),
+            inner.variable
+        )
+        Planner.make_pointer_type(local_inner)
+    }
+
     ; rehome_type#: deep-copy a PlannedType onto `rp`, recursively
     ; re-homing its name / mangled_name / array_size Strings and all
     ; nested generic-argument PlannedTypes. Used by instantiate_generic#
@@ -20289,6 +20374,43 @@ define Planner
                 false
             else
                 true
+    }
+
+    ; ================================================================
+    ; Provenance region-rank lattice (escape soundness, step 1).
+    ;
+    ; A coarse total order over WHERE a value's storage lives:
+    ;   Local (0)  < Caller (1)  < Static (2)
+    ;   frame/$       rp/#/^name     global/const
+    ; An ESCAPE is a reference whose pointee rank is Local placed where
+    ; Caller+ is required (return / store into a Caller-lived field /
+    ; pass to a storing callee). Sound + conservative: in doubt -> Local
+    ; -> reject. `#` and `^name` both collapse to Caller for now; the
+    ; ordered numeric-rank family (`'a: 'b` outlives) is the phase-5
+    ; endgame. region_rank_min implements the choose/if-join MINIMUM
+    ; (shortest-lived branch wins) used by step 3's provenance walk.
+    ; ================================================================
+    function region_rank_local() returns size_t
+        0
+    function region_rank_caller() returns size_t
+        1
+    function region_rank_static() returns size_t
+        2
+    function region_rank_of_life(life: Lifetime) returns size_t
+    {
+        choose life
+            when u: Unspecified
+                return 0
+            when l: Local
+                return 0
+            else
+                return 1
+    }
+    function region_rank_min(a: size_t, b: size_t) returns size_t
+    {
+        if a < b
+            return a
+        b
     }
 
     ; decode_utf8_to_code_point: decode exactly one UTF-8 code point from

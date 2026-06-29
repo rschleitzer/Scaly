@@ -1,0 +1,22 @@
+; ESCAPE (negative, NO-SIGIL): storing &<no-sigil frame-local> into this.field
+; is a use-after-free. Escape soundness step 1 infers the Local pointee so the
+; checker still REJECTS via store. Mirrors neg_store_through_this without $.
+define Box
+(
+    v: int
+)
+define Holder
+(
+    b: pointer[Box]
+)
+
+procedure stash(this: Holder)
+{
+    let bx Box(5)
+    set this.b: &bx
+}
+
+function main() returns int
+{
+    return 0
+}
