@@ -35,7 +35,7 @@ define HashMap[K, V]
     slots: pointer[Vector[Vector[KeyValuePair[K, V]]]] (null)
 )
 {
-    init# (rp, hash_map_builder: HashMapBuilder[K, V])
+    init (rp, hash_map_builder: HashMapBuilder[K, V])
     {
         if hash_map_builder.length = 0
         {

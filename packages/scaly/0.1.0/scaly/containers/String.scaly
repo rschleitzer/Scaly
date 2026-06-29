@@ -11,7 +11,7 @@ define String (data: pointer[u8](null))
         set data: null
     }
 
-    init#(page, length: size_t)
+    init(page, length: size_t)
     {
         ; s186: two-pass varint length prefix (count, then write directly
         ; into data). The old form used a `u8[PACKED_SIZE]` stack scratch,
@@ -43,7 +43,7 @@ define String (data: pointer[u8](null))
         set *(data + overall_length): (0 as u8)
     }
 
-    init#(page, other: pointer[const_char], length: size_t)
+    init(page, other: pointer[const_char], length: size_t)
     {
         if length = (0 as size_t)
         {
@@ -74,7 +74,7 @@ define String (data: pointer[u8](null))
         set *(data + overall_length): (0 as u8)
     }
 
-    init#(page, other: Vector[char])
+    init(page, other: Vector[char])
     {
         ; Delegate to String(page, pointer, length)
         var rest other.length
@@ -102,7 +102,7 @@ define String (data: pointer[u8](null))
 
     }
 
-    init#(page, c_string: pointer[const_char])
+    init(page, c_string: pointer[const_char])
     {
         let length strlen c_string
         if length = (0 as size_t)
@@ -134,7 +134,7 @@ define String (data: pointer[u8](null))
         set *(data + overall_length): (0 as u8)
     }
 
-    init#(page, other: String)
+    init(page, other: String)
     {
         if other.data = null
         {
@@ -167,7 +167,7 @@ define String (data: pointer[u8](null))
         set *(data + overall_length): (0 as u8)
     }
 
-    init#(page, character: u8)
+    init(page, character: u8)
     {
         set data: page.allocate(3, 1) as pointer[u8]
         set *data: 1

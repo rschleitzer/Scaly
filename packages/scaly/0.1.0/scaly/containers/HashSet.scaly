@@ -3,7 +3,7 @@ define HashSet[T]
     slots: pointer[Vector[Vector[T]]] (null)
 )
 {
-    init# (rp, hash_set_builder: HashSetBuilder[T])
+    init (rp, hash_set_builder: HashSetBuilder[T])
     {
         if hash_set_builder.length = 0
         {
