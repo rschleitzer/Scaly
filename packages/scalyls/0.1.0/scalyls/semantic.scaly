@@ -104,7 +104,7 @@ define semantic
     ; HOVER entry: resolve the type at the packed "<line> <char>" position.
     ; Returns the resolved type name (e.g. "int", "Point",
     ; "scaly.containers.String"), or "" on a miss / parse error / unresolved.
-    function semantic_type_packed#(rp, source: String, uri: String, packed: String) returns String
+    function semantic_type_packed(rp, source: String, uri: String, packed: String) returns String
     {
         var line: size_t 0
         var character: size_t 0
@@ -126,7 +126,7 @@ define semantic
             }
             set i: i + 1
         }
-        let offset semantic.position_to_offset#(source, line, character)
+        let offset semantic.position_to_offset(source, line, character)
         ; Only resolve when the cursor sits on a real token. Hovering
         ; whitespace / past EOF defers to the lexical hover (which reports the
         ; enclosing declaration) — and keeps coarse planner spans from
@@ -144,58 +144,58 @@ define semantic
             return ""
         if b = (0x0D as u8)
             return ""
-        let path diagnostics.strip_uri#(uri)
-        semantic.resolve_at#(source, path, 0 as size_t, offset)
+        let path diagnostics.strip_uri(uri)
+        semantic.resolve_at(source, path, 0 as size_t, offset)
     }
 
     ; Worker reply wrapper: a leading status byte distinguishes a genuine
     ; MISS ("0") from a pipeline CRASH (empty frame). Without it, an empty
     ; reply on a legitimate miss would be read as a crash by worker.exchange#
     ; and respawn the worker on every hover. On a hit the reply is "1<name>".
-    function semantic_type_framed#(rp, source: String, uri: String, packed: String) returns String
+    function semantic_type_framed(rp, source: String, uri: String, packed: String) returns String
     {
-        let ty semantic.semantic_type_packed#(source, uri, packed)
-        var sb StringBuilder#()
+        let ty semantic.semantic_type_packed(source, uri, packed)
+        var sb StringBuilder()
         if ty.get_length() > (0 as size_t)
         {
             sb.append(0x31 as char)                ; '1' = hit
             sb.append ty
-            return sb.to_string#()
+            return sb.to_string()
         }
         sb.append(0x30 as char)                    ; '0' = miss
-        sb.to_string#()
+        sb.to_string()
     }
 
     ; COMPLETION entry (mode 2): the OWN type of the receiver expression at
     ; `offset` (the innermost variable's base type, NOT the enclosing member
     ; access). "" on a miss / unresolved.
-    function receiver_type_at_offset#(rp, source: String, uri: String, offset: size_t) returns String
+    function receiver_type_at_offset(rp, source: String, uri: String, offset: size_t) returns String
     {
-        let path diagnostics.strip_uri#(uri)
-        semantic.resolve_at#(source, path, 2 as size_t, offset)
+        let path diagnostics.strip_uri(uri)
+        semantic.resolve_at(source, path, 2 as size_t, offset)
     }
 
     ; Run the full pipeline and walk the Plan for the type at `offset`.
-    function resolve_at#(rp, source: String, path: String, mode: size_t, offset: size_t) returns String
+    function resolve_at(rp, source: String, path: String, mode: size_t, offset: size_t) returns String
     {
         var p parser.Parser(source)
         var result ""
-        choose p.parse_program#()
+        choose p.parse_program()
             when err: Error
                 return ""
             when program: Success
             {
                 let prog_name "document"
-                let model Modeler.build_program#(path, prog_name, program, true)
+                let model Modeler.build_program(path, prog_name, program, true)
                 var planner Planner.Planner(path)
                 diagnostics.register_packages(&planner, &model)
                 let plan planner.plan_program model
                 if plan <> null
                 {
                     let pl (*plan)
-                    let rr semantic.walk_plan#(pl, mode, offset)
+                    let rr semantic.walk_plan(pl, mode, offset)
                     if rr.found
-                        set result: String#(rr.type_name)
+                        set result: String(rr.type_name)
                 }
             }
         result
@@ -204,7 +204,7 @@ define semantic
     ; 0-based (line, character) -> byte offset (self-contained copy of
     ; symbols.position_to_offset#, so this module does not depend on symbols —
     ; symbols depends on semantic for the Phase-2 prefer/fallback).
-    function position_to_offset#(rp, source: String, line: size_t, character: size_t) returns size_t
+    function position_to_offset(rp, source: String, line: size_t, character: size_t) returns size_t
     {
         let len source.get_length()
         var off: size_t 0
@@ -238,12 +238,12 @@ define semantic
     ; ====================================================================
     ; Plan walk — first FOUND match wins across non-overlapping siblings.
     ; ====================================================================
-    function walk_plan#(rp, plan: Plan, mode: size_t, offset: size_t) returns ResolveResult
+    function walk_plan(rp, plan: Plan, mode: size_t, offset: size_t) returns ResolveResult
     {
         var result semantic.none#()
 
         if plan.statements <> null
-            set result: semantic.walk_statements#(*plan.statements, mode, offset)
+            set result: semantic.walk_statements(*plan.statements, mode, offset)
 
         if result.found = false
         {
@@ -257,7 +257,7 @@ define semantic
                     {
                         let fp fns.get i
                         if fp <> null
-                            set result: semantic.walk_impl#((*fp).impl, mode, offset)
+                            set result: semantic.walk_impl((*fp).impl, mode, offset)
                     }
                     set i: i + 1
                 }
@@ -276,7 +276,7 @@ define semantic
                     {
                         let sp sts.get i
                         if sp <> null
-                            set result: semantic.walk_structure#(*sp, mode, offset)
+                            set result: semantic.walk_structure(*sp, mode, offset)
                     }
                     set i: i + 1
                 }
@@ -295,7 +295,7 @@ define semantic
                     {
                         let up uns.get i
                         if up <> null
-                            set result: semantic.walk_union#(*up, mode, offset)
+                            set result: semantic.walk_union(*up, mode, offset)
                     }
                     set i: i + 1
                 }
@@ -317,7 +317,7 @@ define semantic
                         {
                             let g (*gp)
                             if g.value <> null
-                                set result: semantic.walk_operands#(*g.value, mode, offset)
+                                set result: semantic.walk_operands(*g.value, mode, offset)
                         }
                     }
                     set i: i + 1
@@ -328,7 +328,7 @@ define semantic
         result
     }
 
-    function walk_structure#(rp, st: PlannedStructure, mode: size_t, offset: size_t) returns ResolveResult
+    function walk_structure(rp, st: PlannedStructure, mode: size_t, offset: size_t) returns ResolveResult
     {
         var result semantic.none#()
 
@@ -342,7 +342,7 @@ define semantic
                 {
                     let mp ms.get i
                     if mp <> null
-                        set result: semantic.walk_impl#((*mp).impl, mode, offset)
+                        set result: semantic.walk_impl((*mp).impl, mode, offset)
                 }
                 set i: i + 1
             }
@@ -360,7 +360,7 @@ define semantic
                     {
                         let ip inits.get i
                         if ip <> null
-                            set result: semantic.walk_impl#((*ip).impl, mode, offset)
+                            set result: semantic.walk_impl((*ip).impl, mode, offset)
                     }
                     set i: i + 1
                 }
@@ -379,7 +379,7 @@ define semantic
                     {
                         let op ops.get i
                         if op <> null
-                            set result: semantic.walk_impl#((*op).impl, mode, offset)
+                            set result: semantic.walk_impl((*op).impl, mode, offset)
                     }
                     set i: i + 1
                 }
@@ -389,13 +389,13 @@ define semantic
         if result.found = false
         {
             if st.deinitializer <> null
-                set result: semantic.walk_impl#((*st.deinitializer).impl, mode, offset)
+                set result: semantic.walk_impl((*st.deinitializer).impl, mode, offset)
         }
 
         result
     }
 
-    function walk_union#(rp, un: PlannedUnion, mode: size_t, offset: size_t) returns ResolveResult
+    function walk_union(rp, un: PlannedUnion, mode: size_t, offset: size_t) returns ResolveResult
     {
         var result semantic.none#()
 
@@ -409,7 +409,7 @@ define semantic
                 {
                     let mp ms.get i
                     if mp <> null
-                        set result: semantic.walk_impl#((*mp).impl, mode, offset)
+                        set result: semantic.walk_impl((*mp).impl, mode, offset)
                 }
                 set i: i + 1
             }
@@ -427,7 +427,7 @@ define semantic
                     {
                         let op ops.get i
                         if op <> null
-                            set result: semantic.walk_impl#((*op).impl, mode, offset)
+                            set result: semantic.walk_impl((*op).impl, mode, offset)
                     }
                     set i: i + 1
                 }
@@ -437,11 +437,11 @@ define semantic
         result
     }
 
-    function walk_impl#(rp, impl: PlannedImplementation, mode: size_t, offset: size_t) returns ResolveResult
+    function walk_impl(rp, impl: PlannedImplementation, mode: size_t, offset: size_t) returns ResolveResult
     {
         choose impl
             when action: Action
-                return semantic.walk_action#(action, mode, offset)
+                return semantic.walk_action(action, mode, offset)
             when ext: Extern
                 return semantic.none#()
             when inst: Instruction
@@ -450,15 +450,15 @@ define semantic
                 return semantic.none#()
     }
 
-    function walk_action#(rp, act: PlannedAction, mode: size_t, offset: size_t) returns ResolveResult
+    function walk_action(rp, act: PlannedAction, mode: size_t, offset: size_t) returns ResolveResult
     {
         var result semantic.none#()
         if act.source <> null
-            set result: semantic.walk_operands#(*act.source, mode, offset)
+            set result: semantic.walk_operands(*act.source, mode, offset)
         if result.found = false
         {
             if act.target <> null
-                set result: semantic.walk_operands#(*act.target, mode, offset)
+                set result: semantic.walk_operands(*act.target, mode, offset)
         }
         result
     }
@@ -466,7 +466,7 @@ define semantic
     ; ====================================================================
     ; Statements
     ; ====================================================================
-    function walk_statements#(rp, stmts: Vector[PlannedStatement], mode: size_t, offset: size_t) returns ResolveResult
+    function walk_statements(rp, stmts: Vector[PlannedStatement], mode: size_t, offset: size_t) returns ResolveResult
     {
         var result semantic.none#()
         var i: size_t 0
@@ -476,35 +476,35 @@ define semantic
             {
                 let sp stmts.get i
                 if sp <> null
-                    set result: semantic.walk_statement#(*sp, mode, offset)
+                    set result: semantic.walk_statement(*sp, mode, offset)
             }
             set i: i + 1
         }
         result
     }
 
-    function walk_statement#(rp, stmt: PlannedStatement, mode: size_t, offset: size_t) returns ResolveResult
+    function walk_statement(rp, stmt: PlannedStatement, mode: size_t, offset: size_t) returns ResolveResult
     {
         choose stmt
             when a: Action
-                return semantic.walk_action#(a, mode, offset)
+                return semantic.walk_action(a, mode, offset)
             when bnd: Binding
-                return semantic.walk_binding#(bnd, mode, offset)
+                return semantic.walk_binding(bnd, mode, offset)
             when br: Break
-                return semantic.walk_operands_opt#(br.result, mode, offset)
+                return semantic.walk_operands_opt(br.result, mode, offset)
             when ret: Return
-                return semantic.walk_operands_opt#(ret.result, mode, offset)
+                return semantic.walk_operands_opt(ret.result, mode, offset)
             when th: Throw
-                return semantic.walk_operands_opt#(th.result, mode, offset)
+                return semantic.walk_operands_opt(th.result, mode, offset)
             when cont: Continue
                 return semantic.none#()
     }
 
-    function walk_binding#(rp, bnd: PlannedBinding, mode: size_t, offset: size_t) returns ResolveResult
+    function walk_binding(rp, bnd: PlannedBinding, mode: size_t, offset: size_t) returns ResolveResult
     {
         if bnd.operation <> null
         {
-            let r semantic.walk_operands#(*bnd.operation, mode, offset)
+            let r semantic.walk_operands(*bnd.operation, mode, offset)
             if r.found
                 return r
         }
@@ -512,7 +512,7 @@ define semantic
         let bi bnd.binding_item
         if bi.item_type <> null
         {
-            if semantic.contains#(bi.loc, offset)
+            if semantic.contains(bi.loc, offset)
             {
                 let tn semantic.type_name#(*bi.item_type)
                 if tn.get_length() > (0 as size_t)
@@ -525,7 +525,7 @@ define semantic
     ; ====================================================================
     ; Operands / expressions
     ; ====================================================================
-    function walk_operands#(rp, ops: Vector[PlannedOperand], mode: size_t, offset: size_t) returns ResolveResult
+    function walk_operands(rp, ops: Vector[PlannedOperand], mode: size_t, offset: size_t) returns ResolveResult
     {
         var result semantic.none#()
         var i: size_t 0
@@ -535,27 +535,27 @@ define semantic
             {
                 let op ops.get i
                 if op <> null
-                    set result: semantic.walk_operand#(*op, mode, offset)
+                    set result: semantic.walk_operand(*op, mode, offset)
             }
             set i: i + 1
         }
         result
     }
 
-    function walk_operands_opt#(rp, opt: ref[Vector[PlannedOperand]]?, mode: size_t, offset: size_t) returns ResolveResult
+    function walk_operands_opt(rp, opt: ref[Vector[PlannedOperand]]?, mode: size_t, offset: size_t) returns ResolveResult
     {
         if opt <> null
-            return semantic.walk_operands#(*opt, mode, offset)
+            return semantic.walk_operands(*opt, mode, offset)
         semantic.none#()
     }
 
-    function walk_operand#(rp, op: PlannedOperand, mode: size_t, offset: size_t) returns ResolveResult
+    function walk_operand(rp, op: PlannedOperand, mode: size_t, offset: size_t) returns ResolveResult
     {
         ; Prune: children spans nest inside the operand's span.
-        if semantic.contains#(op.loc, offset) = false
+        if semantic.contains(op.loc, offset) = false
             return semantic.none#()
         let self_width op.loc.end - op.loc.start
-        let child semantic.walk_expr#(op.expr, mode, offset)
+        let child semantic.walk_expr(op.expr, mode, offset)
         ; RECEIVER mode (completion): the innermost expression's OWN base type
         ; (ignoring member access / the enclosing call) — `g.member` reports
         ; g's type, not the member-access result.
@@ -587,14 +587,14 @@ define semantic
         semantic.none#()
     }
 
-    function walk_operand_opt#(rp, opt: ref[PlannedOperand]?, mode: size_t, offset: size_t) returns ResolveResult
+    function walk_operand_opt(rp, opt: ref[PlannedOperand]?, mode: size_t, offset: size_t) returns ResolveResult
     {
         if opt <> null
-            return semantic.walk_operand#(*opt, mode, offset)
+            return semantic.walk_operand(*opt, mode, offset)
         semantic.none#()
     }
 
-    function walk_expr#(rp, expr: PlannedExpression, mode: size_t, offset: size_t) returns ResolveResult
+    function walk_expr(rp, expr: PlannedExpression, mode: size_t, offset: size_t) returns ResolveResult
     {
         choose expr
             when k: Constant
@@ -606,49 +606,49 @@ define semantic
             when g: GlobalRef
                 return semantic.none#()
             when c: Call
-                return semantic.walk_call#(c, mode, offset)
+                return semantic.walk_call(c, mode, offset)
             when t: Tuple
-                return semantic.walk_tuple#(t, mode, offset)
+                return semantic.walk_tuple(t, mode, offset)
             when mx: Matrix
                 return semantic.none#()
             when b: Block
-                return semantic.walk_block#(b, mode, offset)
+                return semantic.walk_block(b, mode, offset)
             when iff: If
-                return semantic.walk_if#(iff, mode, offset)
+                return semantic.walk_if(iff, mode, offset)
             when m: Match
-                return semantic.walk_match#(m, mode, offset)
+                return semantic.walk_match(m, mode, offset)
             when ch: Choose
-                return semantic.walk_choose#(ch, mode, offset)
+                return semantic.walk_choose(ch, mode, offset)
             when fr: For
-                return semantic.walk_for#(fr, mode, offset)
+                return semantic.walk_for(fr, mode, offset)
             when wh: While
-                return semantic.walk_while#(wh, mode, offset)
+                return semantic.walk_while(wh, mode, offset)
             when rep: Repeat
-                return semantic.walk_action#(rep.body, mode, offset)
+                return semantic.walk_action(rep.body, mode, offset)
             when lm: Lambda
                 return semantic.none#()
             when tr: Try
-                return semantic.walk_try#(tr, mode, offset)
+                return semantic.walk_try(tr, mode, offset)
             when so: SizeOf
                 return semantic.none#()
             when ao: AlignOf
                 return semantic.none#()
             when iz: Is
-                return semantic.walk_operand_opt#(iz.value, mode, offset)
+                return semantic.walk_operand_opt(iz.value, mode, offset)
             when az: As
-                return semantic.walk_operand_opt#(az.value, mode, offset)
+                return semantic.walk_operand_opt(az.value, mode, offset)
             when vc: VariantConstruction
-                return semantic.walk_operand_opt#(vc.value, mode, offset)
+                return semantic.walk_operand_opt(vc.value, mode, offset)
     }
 
-    function walk_call#(rp, c: PlannedCall, mode: size_t, offset: size_t) returns ResolveResult
+    function walk_call(rp, c: PlannedCall, mode: size_t, offset: size_t) returns ResolveResult
     {
         if c.args <> null
-            return semantic.walk_operands#(*c.args, mode, offset)
+            return semantic.walk_operands(*c.args, mode, offset)
         semantic.none#()
     }
 
-    function walk_tuple#(rp, t: PlannedTuple, mode: size_t, offset: size_t) returns ResolveResult
+    function walk_tuple(rp, t: PlannedTuple, mode: size_t, offset: size_t) returns ResolveResult
     {
         var result semantic.none#()
         if t.components <> null
@@ -664,7 +664,7 @@ define semantic
                     {
                         let comp (*cp)
                         if comp.value <> null
-                            set result: semantic.walk_operands#(*comp.value, mode, offset)
+                            set result: semantic.walk_operands(*comp.value, mode, offset)
                     }
                 }
                 set i: i + 1
@@ -673,36 +673,36 @@ define semantic
         result
     }
 
-    function walk_block#(rp, b: PlannedBlock, mode: size_t, offset: size_t) returns ResolveResult
+    function walk_block(rp, b: PlannedBlock, mode: size_t, offset: size_t) returns ResolveResult
     {
         if b.statements <> null
-            return semantic.walk_statements#(*b.statements, mode, offset)
+            return semantic.walk_statements(*b.statements, mode, offset)
         semantic.none#()
     }
 
-    function walk_if#(rp, iff: PlannedIf, mode: size_t, offset: size_t) returns ResolveResult
+    function walk_if(rp, iff: PlannedIf, mode: size_t, offset: size_t) returns ResolveResult
     {
         var result semantic.none#()
         if iff.condition <> null
-            set result: semantic.walk_operands#(*iff.condition, mode, offset)
+            set result: semantic.walk_operands(*iff.condition, mode, offset)
         if result.found = false
         {
             if iff.consequent <> null
-                set result: semantic.walk_statement#(*iff.consequent, mode, offset)
+                set result: semantic.walk_statement(*iff.consequent, mode, offset)
         }
         if result.found = false
         {
             if iff.alternative <> null
-                set result: semantic.walk_statement#(*iff.alternative, mode, offset)
+                set result: semantic.walk_statement(*iff.alternative, mode, offset)
         }
         result
     }
 
-    function walk_match#(rp, m: PlannedMatch, mode: size_t, offset: size_t) returns ResolveResult
+    function walk_match(rp, m: PlannedMatch, mode: size_t, offset: size_t) returns ResolveResult
     {
         var result semantic.none#()
         if m.condition <> null
-            set result: semantic.walk_operands#(*m.condition, mode, offset)
+            set result: semantic.walk_operands(*m.condition, mode, offset)
         if result.found = false
         {
             if m.branches <> null
@@ -718,7 +718,7 @@ define semantic
                         {
                             let br (*bp)
                             if br.consequent <> null
-                                set result: semantic.walk_statement#(*br.consequent, mode, offset)
+                                set result: semantic.walk_statement(*br.consequent, mode, offset)
                         }
                     }
                     set i: i + 1
@@ -728,16 +728,16 @@ define semantic
         if result.found = false
         {
             if m.alternative <> null
-                set result: semantic.walk_statement#(*m.alternative, mode, offset)
+                set result: semantic.walk_statement(*m.alternative, mode, offset)
         }
         result
     }
 
-    function walk_choose#(rp, ch: PlannedChoose, mode: size_t, offset: size_t) returns ResolveResult
+    function walk_choose(rp, ch: PlannedChoose, mode: size_t, offset: size_t) returns ResolveResult
     {
         var result semantic.none#()
         if ch.condition <> null
-            set result: semantic.walk_operands#(*ch.condition, mode, offset)
+            set result: semantic.walk_operands(*ch.condition, mode, offset)
         if result.found = false
         {
             if ch.cases <> null
@@ -753,7 +753,7 @@ define semantic
                         {
                             let wh (*wp)
                             if wh.consequent <> null
-                                set result: semantic.walk_statement#(*wh.consequent, mode, offset)
+                                set result: semantic.walk_statement(*wh.consequent, mode, offset)
                         }
                     }
                     set i: i + 1
@@ -763,32 +763,32 @@ define semantic
         if result.found = false
         {
             if ch.alternative <> null
-                set result: semantic.walk_statement#(*ch.alternative, mode, offset)
+                set result: semantic.walk_statement(*ch.alternative, mode, offset)
         }
         result
     }
 
-    function walk_for#(rp, fr: PlannedFor, mode: size_t, offset: size_t) returns ResolveResult
+    function walk_for(rp, fr: PlannedFor, mode: size_t, offset: size_t) returns ResolveResult
     {
         var result semantic.none#()
         if fr.expr <> null
-            set result: semantic.walk_operands#(*fr.expr, mode, offset)
+            set result: semantic.walk_operands(*fr.expr, mode, offset)
         if result.found = false
-            set result: semantic.walk_action#(fr.body, mode, offset)
+            set result: semantic.walk_action(fr.body, mode, offset)
         result
     }
 
-    function walk_while#(rp, wh: PlannedWhile, mode: size_t, offset: size_t) returns ResolveResult
+    function walk_while(rp, wh: PlannedWhile, mode: size_t, offset: size_t) returns ResolveResult
     {
-        var result semantic.walk_binding#(wh.cond, mode, offset)
+        var result semantic.walk_binding(wh.cond, mode, offset)
         if result.found = false
-            set result: semantic.walk_action#(wh.body, mode, offset)
+            set result: semantic.walk_action(wh.body, mode, offset)
         result
     }
 
-    function walk_try#(rp, tr: PlannedTry, mode: size_t, offset: size_t) returns ResolveResult
+    function walk_try(rp, tr: PlannedTry, mode: size_t, offset: size_t) returns ResolveResult
     {
-        var result semantic.walk_binding#(tr.cond, mode, offset)
+        var result semantic.walk_binding(tr.cond, mode, offset)
         if result.found = false
         {
             if tr.catches <> null
@@ -804,7 +804,7 @@ define semantic
                         {
                             let wh (*wp)
                             if wh.consequent <> null
-                                set result: semantic.walk_statement#(*wh.consequent, mode, offset)
+                                set result: semantic.walk_statement(*wh.consequent, mode, offset)
                         }
                     }
                     set i: i + 1
@@ -814,7 +814,7 @@ define semantic
         if result.found = false
         {
             if tr.alternative <> null
-                set result: semantic.walk_statement#(*tr.alternative, mode, offset)
+                set result: semantic.walk_statement(*tr.alternative, mode, offset)
         }
         result
     }
@@ -865,7 +865,7 @@ define semantic
     }
 
     ; True when offset is within [loc.start, loc.end).
-    function contains#(rp, loc: Span, offset: size_t) returns bool
+    function contains(rp, loc: Span, offset: size_t) returns bool
     {
         if offset < loc.start
             return false
@@ -888,6 +888,6 @@ define semantic
             return ""
         if pt.name.equals("void")
             return ""
-        String#(pt.name)
+        String(pt.name)
     }
 }

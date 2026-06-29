@@ -70249,10 +70249,11 @@ define linkonce_odr void @_ZN8semantic20semantic_type_framedEPN4scaly6memory4Pag
 entry:
   %sret.result6 = alloca { ptr }, align 8
   %sret.result3 = alloca { ptr }, align 8
+  %local_page = call ptr @_Z21scaly_alloc_root_pagev()
   %sret.result = alloca { ptr }, align 8
-  call void @_ZN8semantic20semantic_type_packedEPN4scaly6memory4PageE6String6String6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2, ptr %3, ptr %4)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN13StringBuilderC1EPN4scaly6memory4PageE(ptr %struct.region, ptr %1)
+  call void @_ZN8semantic20semantic_type_packedEPN4scaly6memory4PageE6String6String6String(ptr noalias sret({ ptr }) %sret.result, ptr %local_page, ptr %2, ptr %3, ptr %4)
+  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
+  call void @_ZN13StringBuilderC1EPN4scaly6memory4PageE(ptr %struct.region, ptr %local_page)
   %sb = alloca ptr, align 8
   store ptr %struct.region, ptr %sb, align 1
   %call = call i64 @_ZN6String10get_lengthEv(ptr %sret.result)
@@ -70266,6 +70267,7 @@ if.then:                                          ; preds = %entry
   call void @_ZN13StringBuilder6appendE6String(ptr %sb2, ptr %sret.result)
   %sb4 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result3, ptr %1, ptr %sb4)
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   %sret.body = load { ptr }, ptr %sret.result3, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result3, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -70275,6 +70277,7 @@ if.end:                                           ; preds = %entry
   call void @_ZN13StringBuilder6appendEc(ptr %sb5, i8 48)
   %sb7 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result6, ptr %1, ptr %sb7)
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   %sret.body8 = load { ptr }, ptr %sret.result6, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result6, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -74922,6 +74925,7 @@ entry:
   %deref.tmp14 = alloca %_Z11PlannedType, align 8
   %sret.result12 = alloca { ptr }, align 8
   %arg.tmp = alloca %_Z4Span, align 8
+  %local_page = call ptr @_Z21scaly_alloc_root_pagev()
   %deref.tmp = alloca %_Z6VectorIcE, align 8
   %sret.result = alloca %_Z13ResolveResult, align 8
   %load.struct = load %_Z14PlannedBinding, ptr %2, align 8
@@ -74948,6 +74952,7 @@ if.end:                                           ; preds = %if.end5, %entry
 if.then4:                                         ; preds = %if.then
   %sret.body = load %_Z13ResolveResult, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr (%_Z13ResolveResult, ptr null, i32 1) to i64), i1 false)
+  call void @_Z23scaly_release_root_pageP4Page(ptr %local_page)
   ret void
 
 if.end5:                                          ; preds = %if.then
@@ -74956,11 +74961,12 @@ if.end5:                                          ; preds = %if.then
 if.then8:                                         ; preds = %if.end
   %loc = extractvalue %_Z11PlannedItem %binding_item, 0
   store %_Z4Span %loc, ptr %arg.tmp, align 1
-  %call = call i1 @_ZN8semantic8containsEPN4scaly6memory4PageE4Spanm(ptr %1, ptr %arg.tmp, i64 %4)
+  %call = call i1 @_ZN8semantic8containsEPN4scaly6memory4PageE4Spanm(ptr %local_page, ptr %arg.tmp, i64 %4)
   br i1 %call, label %if.then10, label %if.end11
 
 if.end9:                                          ; preds = %if.end11, %if.end
   call void @_ZN8semantic4noneEPN4scaly6memory4PageE(ptr noalias sret(%_Z13ResolveResult) %sret.result, ptr %1)
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   %sret.body22 = load %_Z13ResolveResult, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr (%_Z13ResolveResult, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -74990,7 +74996,8 @@ if.then16:                                        ; preds = %if.then10
   %tuple.field21 = getelementptr inbounds %_Z13ResolveResult, ptr %sret.result, i32 0, i32 2
   store { ptr } %field.load, ptr %tuple.field21, align 1
   %tuple.val = load %_Z13ResolveResult, ptr %sret.result, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr (%_Z13ResolveResult, ptr null, i32 1) to i64), i1 false)
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
+  store %_Z13ResolveResult %tuple.val, ptr %0, align 1
   ret void
 
 if.end17:                                         ; preds = %if.then10
@@ -75091,13 +75098,15 @@ entry:
   %tuple = alloca %_Z13ResolveResult, align 8
   %sret.result11 = alloca { ptr }, align 8
   %sret.result = alloca %_Z13ResolveResult, align 8
+  %local_page = call ptr @_Z21scaly_alloc_root_pagev()
   %field.inplace = getelementptr inbounds %_Z14PlannedOperand, ptr %2, i32 0, i32 0
-  %call = call i1 @_ZN8semantic8containsEPN4scaly6memory4PageE4Spanm(ptr %1, ptr %field.inplace, i64 %4)
+  %call = call i1 @_ZN8semantic8containsEPN4scaly6memory4PageE4Spanm(ptr %local_page, ptr %field.inplace, i64 %4)
   %eq = icmp eq i1 %call, false
   br i1 %eq, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
   call void @_ZN8semantic4noneEPN4scaly6memory4PageE(ptr noalias sret(%_Z13ResolveResult) %sret.result, ptr %1)
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   %sret.body = load %_Z13ResolveResult, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr (%_Z13ResolveResult, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -75127,6 +75136,7 @@ if.end6:                                          ; preds = %if.end
   br i1 %found21, label %if.then22, label %if.end23
 
 if.then8:                                         ; preds = %if.then5
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   %sret.body10 = load %_Z13ResolveResult, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr (%_Z13ResolveResult, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -75148,11 +75158,13 @@ if.then15:                                        ; preds = %if.end9
   %tuple.field18 = getelementptr inbounds %_Z13ResolveResult, ptr %tuple, i32 0, i32 2
   store { ptr } %field.load, ptr %tuple.field18, align 1
   %tuple.val = load %_Z13ResolveResult, ptr %tuple, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z13ResolveResult, ptr null, i32 1) to i64), i1 false)
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
+  store %_Z13ResolveResult %tuple.val, ptr %0, align 1
   ret void
 
 if.end16:                                         ; preds = %if.end9
   call void @_ZN8semantic4noneEPN4scaly6memory4PageE(ptr noalias sret(%_Z13ResolveResult) %tuple, ptr %1)
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   %sret.body19 = load %_Z13ResolveResult, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z13ResolveResult, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -75169,6 +75181,7 @@ if.end23:                                         ; preds = %if.end26, %if.end6
   br i1 %gt29, label %if.then30, label %if.end31
 
 if.then25:                                        ; preds = %if.then22
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   %sret.body27 = load %_Z13ResolveResult, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr (%_Z13ResolveResult, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -75185,7 +75198,8 @@ if.then30:                                        ; preds = %if.end23
   %tuple.field36 = getelementptr inbounds %_Z13ResolveResult, ptr %tuple32, i32 0, i32 2
   store { ptr } %field.load35, ptr %tuple.field36, align 1
   %tuple.val37 = load %_Z13ResolveResult, ptr %tuple32, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple32, i64 ptrtoint (ptr getelementptr (%_Z13ResolveResult, ptr null, i32 1) to i64), i1 false)
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
+  store %_Z13ResolveResult %tuple.val37, ptr %0, align 1
   ret void
 
 if.end31:                                         ; preds = %if.end23
@@ -75194,12 +75208,14 @@ if.end31:                                         ; preds = %if.end23
   br i1 %found39, label %if.then40, label %if.end41
 
 if.then40:                                        ; preds = %if.end31
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   %sret.body42 = load %_Z13ResolveResult, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr (%_Z13ResolveResult, ptr null, i32 1) to i64), i1 false)
   ret void
 
 if.end41:                                         ; preds = %if.end31
   call void @_ZN8semantic4noneEPN4scaly6memory4PageE(ptr noalias sret(%_Z13ResolveResult) %tuple32, ptr %1)
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   %sret.body43 = load %_Z13ResolveResult, ptr %tuple32, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple32, i64 ptrtoint (ptr getelementptr (%_Z13ResolveResult, ptr null, i32 1) to i64), i1 false)
   ret void
