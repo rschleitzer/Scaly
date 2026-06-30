@@ -3028,9 +3028,7 @@ define Planner
                             if a.result_type.name.equals("String")
                                 if Planner.type_is_cstr_pointer(pt)
                                 {
-                                    var ah Vector[PlannedOperand]^rp(1)
-                                    ah.put(0, a)
-                                    let casted PlannedAs(a.loc, pt, ah.get 0)
+                                    let casted PlannedAs(a.loc, pt, &^this a)
                                     out.add(PlannedOperand(
                                         a.loc,
                                         PlannedExpression.As casted,
@@ -4859,9 +4857,7 @@ define Planner
                                     set type_substitutions.length: saved_subst_ctor
                                     var init_input_holder Vector[PlannedItem](init_input_items)
 
-                                    var parent_holder Vector[PlannedType]^rp(1)
-                                    parent_holder.put(0, ctor_struct_type)
-                                    let parent_ref parent_holder.get 0
+                                    let parent_ref &^this ctor_struct_type
 
                                     let c1_mangled Planner.mangle_function(
                                         "init", &init_input_holder, parent_ref, has_page_param
