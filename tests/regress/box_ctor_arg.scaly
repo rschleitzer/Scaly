@@ -1,0 +1,33 @@
+; Regression: a `&^obj <call>` box used as a `ref[T]?` CONSTRUCTOR POSITIONAL
+; ARG. This was long believed to hit an "NPO-call-arg gotcha" (boxes only
+; usable as `set X.field:` member-assignments or returns, never as a ctor
+; positional ref arg). DEBUNKED: a box pointer[T] satisfies a ref[T]? (NPO)
+; positional arg fine, INCLUDING the call-result page-promotion path (the box
+; routes bl#'s implicit page to the box page so the String's buffer survives).
+; This is the shape that unblocks de-holdering the class-C `Vector[X]^rp(1)`
+; holders whose `.get(0)` feeds a constructor (plan_item -> PlannedItem, etc).
+; Self-hosted-only. Expected: PASS
+
+package scaly 0.1.0
+
+use scaly.containers.String
+
+define Item(name: ref[String]?)
+
+function bl#(page, t: pointer[const_char]) returns String
+    String#(t)
+
+function make_item#(page, a: pointer[const_char]) returns Item
+    Item(&^page bl#(a))
+
+let it make_item#("foo")
+if it.name <> null
+{
+    let nm (*it.name)
+    if nm.equals("foo")
+        print("PASS")
+    else
+        print("FAIL content")
+}
+else
+    print("FAIL null")
