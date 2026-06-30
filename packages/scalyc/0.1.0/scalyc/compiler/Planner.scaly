@@ -1383,12 +1383,10 @@ define Planner
             ; aligned_alloc(alignment: size_t, size: size_t) -> pointer[void]
             var aa_size_path Vector[String]^rp(1)
             aa_size_path.put(0, "size_t")
-            var aa_size_holder Vector[Type]^rp(1)
-            aa_size_holder.put(0, Type(
+            let aa_size_ref Type^this(
                 Span(0, 0), aa_size_path, null,
                 Lifetime.Unspecified(Unspecified())
-            ))
-            let aa_size_ref aa_size_holder.get 0
+            )
 
             var aa_void_path Vector[String]^rp(1)
             aa_void_path.put(0, "void")
@@ -1404,12 +1402,10 @@ define Planner
 
             var aa_ptr_path Vector[String]^rp(1)
             aa_ptr_path.put(0, "pointer")
-            var aa_ptr_void_holder Vector[Type]^rp(1)
-            aa_ptr_void_holder.put(0, Type(
+            let aa_ptr_void_ref Type^this(
                 Span(0, 0), aa_ptr_path, aa_ptr_gens_ref,
                 Lifetime.Unspecified(Unspecified())
-            ))
-            let aa_ptr_void_ref aa_ptr_void_holder.get 0
+            )
 
             var aa_alignment_name Vector[String]^rp(1)
             aa_alignment_name.put(0, "alignment")
@@ -1468,12 +1464,10 @@ define Planner
             ; exit(code: int)
             var int_path Vector[String]^rp(1)
             int_path.put(0, "int")
-            var int_holder Vector[Type]^rp(1)
-            int_holder.put(0, Type(
+            let int_ref Type^this(
                 Span(0, 0), int_path, null,
                 Lifetime.Unspecified(Unspecified())
-            ))
-            let int_ref int_holder.get 0
+            )
 
             var exit_code_name Vector[String]^rp(1)
             exit_code_name.put(0, "code")
@@ -8926,9 +8920,7 @@ define Planner
             let id this.fresh_type_var_id()
             ; Allocate the TypeVariable in a one-element Vector on rp so
             ; its address outlives this function.
-            var holder Vector[TypeVariable]^rp(1)
-            holder.put(0, TypeVariable(id, String^rp(debug_name)))
-            let tv_ref holder.get 0
+            let tv_ref TypeVariable^this(id, String^rp(debug_name))
             PlannedType(
                 Span(0, 0),
                 String(debug_name),
@@ -12493,14 +12485,12 @@ define Planner
                 unit_tag as size_t,
                 null
             )
-            var holder Vector[PlannedOperand]^rp(1)
-            holder.put(0, PlannedOperand(
+            PlannedOperand^this(
                 loc,
                 PlannedExpression.VariantConstruction unit_vc,
                 null,
                 unit_union_ty
-            ))
-            holder.get 0
+            )
         }
 
         function plan_operands(
@@ -17206,8 +17196,7 @@ define Planner
                 set gens_ref: &gens_holder
             let mangled Planner.mangle_structure(name, gens_ref)
 
-            var parent_holder Vector[PlannedType]^rp(1)
-            parent_holder.put(0, PlannedType(
+            let parent_ref PlannedType^this(
                 s.span,
                 String(name),
                 mangled,
@@ -17216,8 +17205,7 @@ define Planner
                 null,
                 "",
                 null
-            ))
-            let parent_ref parent_holder.get 0
+            )
 
             ; Plan methods, operators, initializers, deinitializer.
             var planned_methods Array[PlannedFunction]()
@@ -17372,8 +17360,7 @@ define Planner
             ; plan_initializer can encode the parent in the
             ; mangled C1/C2 names.
             var gens_holder Vector[PlannedType]^rp(0)
-            var parent_holder Vector[PlannedType]^rp(1)
-            parent_holder.put(0, PlannedType(
+            let parent_ref PlannedType^this(
                 s.span,
                 String(name),
                 mangled,
@@ -17382,8 +17369,7 @@ define Planner
                 null,
                 "",
                 null
-            ))
-            let parent_ref parent_holder.get 0
+            )
 
             ; Plan only initializers (constructor bodies). Method
             ; bodies and operators are skipped — those frequently
@@ -17771,8 +17757,7 @@ define Planner
             ; drives the Itanium segment; encode_type length-prefixes
             ; it to emit `_ZN<NSName><FnName>E…`.
             let ns_mangled Planner.encode_name(name)
-            var parent_holder Vector[PlannedType]^rp(1)
-            parent_holder.put(0, PlannedType(
+            let parent_ref PlannedType^this(
                 ns.span,
                 String(name),
                 ns_mangled,
@@ -17781,8 +17766,7 @@ define Planner
                 null,
                 "",
                 null
-            ))
-            let parent_ref parent_holder.get 0
+            )
 
             ; Save outer context and activate this namespace.
             let old_ns this.current_namespace
@@ -18607,8 +18591,7 @@ define Planner
                 set u_gens_ref: &u_gens_holder
             let u_mangled Planner.mangle_structure(name, u_gens_ref)
 
-            var u_parent_holder Vector[PlannedType]^rp(1)
-            u_parent_holder.put(0, PlannedType(
+            let u_parent_ref PlannedType^this(
                 u.span,
                 String(name),
                 u_mangled,
@@ -18617,8 +18600,7 @@ define Planner
                 null,
                 "",
                 null
-            ))
-            let u_parent_ref u_parent_holder.get 0
+            )
 
             ; Plan methods and operators declared on the union.
             var planned_methods Array[PlannedFunction]()
