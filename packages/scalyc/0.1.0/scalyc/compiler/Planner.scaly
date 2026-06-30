@@ -15977,6 +15977,34 @@ define Planner
         ; lifetime rides the MATRIX operand's `life` (s107). Scan EVERY operand
         ; (top-level only — nested ctor args in a Tuple are not the binding's
         ; own placement) for either form.
+        ; True when an operation sequence's head is a `Vector[...]` construction
+        ; (`var V Vector[X](arr)`). Used by the address-taken escaping-target
+        ; trigger so a de-sigiled holder is treated like the `^rp` it replaced.
+        function op_seq_head_is_vector(this: Planner, ops: Vector[Operand]) returns bool
+        {
+            if ops.length = 0
+                return false
+            let hp ops.get 0
+            if hp = null
+                return false
+            let h (*hp)
+            if h.member_access <> null
+                return false
+            choose h.expression
+                when t: scalyc.compiler.Model.Type
+                {
+                    if t.name.length = 1
+                    {
+                        let np t.name.get 0
+                        if np <> null
+                            if (*np).equals("Vector")
+                                return true
+                    }
+                }
+                else
+                    0
+            false
+        }
         function operand_seq_escaping_ctor(this: Planner, ops: Vector[Operand]) returns bool
         {
             var i: size_t 0
@@ -16255,6 +16283,26 @@ define Planner
                             ; carries an explicit lifetime, which restamp keeps.
                             this.collect_flow_locals(bind.operation)
                         }
+                        ; Address-taken Vector binding (page-inference). The `^rp`
+                        ; this de-sigil replaced carried a Reference life, so the
+                        ; escaping-ctor block above marked the holder an escaping
+                        ; target and promoted its feeding locals. A plain
+                        ; `var V Vector[X](arr)` whose `&V` escapes into a returned
+                        ; structure needs the SAME transitive promotion: V's own
+                        ; construction is promoted in plan_binding# by the address-
+                        ; taken rule, but the values flowing into it (the feeding
+                        ; Array + the elements .add'd into it) reach the caller page
+                        ; only via this escaping-target chain. Gated on a Vector ctor
+                        ; head so it fires for exactly the de-sigiled-holder shape.
+                        ; NEUTRAL on sigiled source: the Reference life already
+                        ; triggered the block above, so this is a no-op addition
+                        ; there; it only takes over once the `^rp` is gone.
+                        if this.array_contains_name(address_taken_locals, bnm)
+                            if this.op_seq_head_is_vector(bind.operation)
+                            {
+                                this.add_escaping_target(bnm)
+                                this.collect_flow_locals(bind.operation)
+                            }
                         if this.array_contains_name(escaping_return_locals, bnm)
                             this.add_escaping_target(bnm)
                         ; get-alias back-propagation: a binding `let opp
@@ -16925,10 +16973,13 @@ define Planner
                 }
                 set pp: pp + 1
             }
-            this.scan_top_level_returns(f.implementation)
-            ; Page inference (address-taken rule): record every bare `&NAME` so
-            ; plan_binding# can promote an address-taken frame-local Vector to rp.
+            ; Page inference (address-taken rule): record every bare `&NAME`
+            ; FIRST, so the scan_top_level_returns# fixpoint below can treat an
+            ; address-taken Vector binding as an escaping-target (its feeding
+            ; Array + the values .add'd into it must reach the caller page too,
+            ; exactly as the `^rp` holder's escaping-ctor lifetime did).
             this.scan_address_taken(f.implementation)
+            this.scan_top_level_returns(f.implementation)
             ; Page inference: promote the IMPLICIT-RETURN (tail) expression of a
             ; page-owning-return function to the caller page. R2 only sees
             ; explicit `return`; a function whose body's last expression is a
