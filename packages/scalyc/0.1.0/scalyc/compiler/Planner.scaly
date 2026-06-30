@@ -6166,9 +6166,7 @@ define Planner
                                             if sfn.throws_ <> null
                                             {
                                                 set s_can_throw: true
-                                                var sth Vector[PlannedType]^rp(1)
-                                                sth.put(0, this.plan_type((*sfn.throws_)))
-                                                set s_throws: sth.get(0)
+                                                set s_throws: &^this this.plan_type((*sfn.throws_))
                                             }
                                             var srt_holder Vector[PlannedType]^rp(1)
                                             srt_holder.put(0, s_rt)
@@ -17309,9 +17307,7 @@ define Planner
             if s.deinitializer <> null
             {
                 let di (*s.deinitializer)
-                var dei_holder Vector[PlannedDeInitializer]^rp(1)
-                dei_holder.put(0, this.plan_deinitializer(di, parent_ref))
-                set deinit_ref: dei_holder.get(0)
+                set deinit_ref: &^this this.plan_deinitializer(di, parent_ref)
             }
 
             var methods_holder Vector[PlannedFunction]^rp(planned_methods)
