@@ -16914,20 +16914,14 @@ define Planner
             if f.returns_ <> null
             {
                 let rt (*f.returns_)
-                let planned_rt this.plan_type(rt)
-                var rt_holder Vector[PlannedType]^rp(1)
-                rt_holder.put(0, planned_rt)
-                set return_type: rt_holder.get(0)
+                set return_type: &^this this.plan_type(rt)
             }
 
             var throws_type: ref[PlannedType]? null
             if f.throws_ <> null
             {
                 let tt (*f.throws_)
-                let planned_tt this.plan_type(tt)
-                var tt_holder Vector[PlannedType]^rp(1)
-                tt_holder.put(0, planned_tt)
-                set throws_type: tt_holder.get(0)
+                set throws_type: &^this this.plan_type(tt)
             }
 
             ; GAP B: expose the return type to the body so a returned lambda
@@ -17388,20 +17382,14 @@ define Planner
             if op.returns_ <> null
             {
                 let rt (*op.returns_)
-                let planned_rt this.plan_type(rt)
-                var rt_holder Vector[PlannedType]^rp(1)
-                rt_holder.put(0, planned_rt)
-                set return_type: rt_holder.get(0)
+                set return_type: &^this this.plan_type(rt)
             }
 
             var throws_type: ref[PlannedType]? null
             if op.throws_ <> null
             {
                 let tt (*op.throws_)
-                let planned_tt this.plan_type(tt)
-                var tt_holder Vector[PlannedType]^rp(1)
-                tt_holder.put(0, planned_tt)
-                set throws_type: tt_holder.get(0)
+                set throws_type: &^this this.plan_type(tt)
             }
 
             let planned_impl this.plan_implementation(op.implementation)
@@ -17436,10 +17424,7 @@ define Planner
             if v.type <> null
             {
                 let t (*v.type)
-                let planned this.plan_type(t)
-                var holder Vector[PlannedType]^rp(1)
-                holder.put(0, planned)
-                set var_type: holder.get(0)
+                set var_type: &^this this.plan_type(t)
             }
 
             let mangled Planner.encode_name(v.name)
