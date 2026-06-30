@@ -17536,7 +17536,7 @@ define Planner
 
             let parent_ref PlannedType^this(
                 s.span,
-                String(name),
+                String^this(name),
                 mangled,
                 gens_ref,
                 Lifetime.Unspecified(Unspecified()),
@@ -17698,7 +17698,7 @@ define Planner
             var gens_holder Vector[PlannedType]^rp(0)
             let parent_ref PlannedType^this(
                 s.span,
-                String(name),
+                String^this(name),
                 mangled,
                 null,
                 Lifetime.Unspecified(Unspecified()),
@@ -18095,7 +18095,7 @@ define Planner
             let ns_mangled Planner.encode_name(name)
             let parent_ref PlannedType^this(
                 ns.span,
-                String(name),
+                String^this(name),
                 ns_mangled,
                 null,
                 Lifetime.Unspecified(Unspecified()),
@@ -18929,7 +18929,7 @@ define Planner
 
             let u_parent_ref PlannedType^this(
                 u.span,
-                String(name),
+                String^this(name),
                 u_mangled,
                 u_gens_ref,
                 Lifetime.Unspecified(Unspecified()),

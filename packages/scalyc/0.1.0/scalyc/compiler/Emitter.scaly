@@ -2101,22 +2101,6 @@ define Emitter
 
     function map_type(this, planned_type: PlannedType) returns LLVMTypeRef
     {
-        ; A use-after-free can leave a type descriptor's `name` reading stale,
-        ; unrelated bytes (e.g. "const_char") while its `mangled_name` — the
-        ; canonical struct key — survives intact. When the mangled name is an
-        ; already-registered struct, trust it over the (possibly corrupted)
-        ; name: this is byte-identical for valid types (name and mangled name
-        ; resolve to the same struct) and recovers the correct aggregate type
-        ; for corrupted ones, instead of mis-mapping `this`/field types to the
-        ; intrinsic the bogus name names (e.g. const_char -> i8) and emitting
-        ; an invalid `getelementptr <struct>, i8 %p` that crashes the backend.
-        if planned_type.mangled_name.get_length() > 0
-        {
-            let mangled_struct lookup_struct_cache planned_type.mangled_name
-            if mangled_struct.handle <> null
-                return mangled_struct
-        }
-
         ; Check type cache first
         let cached lookup_type_cache planned_type.name
         if cached.handle <> null
