@@ -340,6 +340,13 @@ define Planner
         ; (`^name`/`#`) or already-promoted, into which a put/add stores a value
         ; that must therefore also live on a non-local page.
         escaping_targets: Array[String]
+        ; Page inference (address-taken rule): names a pre-scan found taken by
+        ; address (`&NAME`) somewhere in the current function body. A frame-local
+        ; Vector binding whose address is taken and referenced into an escaping
+        ; structure (a PlannedCall/PlannedItem/PlannedFunction field) must live on
+        ; the CALLER's page (rp), not the local page — exactly what an explicit
+        ; `^rp` did. plan_binding# promotes such bindings; truncated per function.
+        address_taken_locals: Array[String]
         ; Set true while planning the IMPLICIT-RETURN (tail) action of a
         ; function whose return value owns page guts (needs_implicit_return_
         ; page). plan_action# reads-and-clears it so only the OUTERMOST body
@@ -532,6 +539,7 @@ define Planner
             set promoted_binding_names: Array[String]^page()
             set local_tainted_struct_bindings: Array[String]^page()
             set escaping_targets: Array[String]^page()
+            set address_taken_locals: Array[String]^page()
             set promote_tail_return: false
             set instantiated_functions: Array[PlannedFunction]^page()
             set function_name_index: ConceptIndex.create(262144 as size_t)
@@ -12910,6 +12918,42 @@ define Planner
                 }
             }
 
+            ; Page inference (address-taken rule): a frame-local Vector binding
+            ; (`var V Vector[X](arr)`, no explicit lifetime) whose address is
+            ; taken (`&V` found by the scan_address_taken# pre-scan) and
+            ; referenced into an escaping structure (a PlannedCall arg /
+            ; PlannedItem / PlannedFunction field) must live on the CALLER's page
+            ; (rp), not the local page — exactly what an explicit `^rp` provided.
+            ; Promote the construction's lifetime to the caller page now. This is
+            ; SOUND: it is precisely the page an address-taken-into-an-escaping-
+            ; structure reference requires; for the `Vector[X]^rp(arr)` sites it
+            ; is emission-IDENTICAL to the sigil (Call and Reference("rp") both
+            ; route emit_call's page_arg through lookup_variable("rp")). Gated:
+            ;   - name in address_taken_locals (a `&NAME` was seen),
+            ;   - the function HAS a caller page (rp in scope) — a primitive-
+            ;     returning helper (test()) has none, so it keeps the local page,
+            ;   - the init is a Vector construction, and restamp_operand_life#
+            ;     returns non-null (a relocatable page-owning Call/Tuple with
+            ;     Local/Unspecified life). A scalar/value-struct address-taken
+            ;     local fails owns-page-guts → stays unpromoted and is REJECTED-
+            ;     if-escaping, per the escape-soundness contract.
+            ; NEUTRAL on sigiled source: a `^rp` Vector's construction carries
+            ; Reference life, which restamp refuses → no promotion; the rule
+            ; fires only once the `^rp` is dropped.
+            if b.item.name <> null
+            {
+                let abn (*b.item.name)
+                if this.array_contains_name(address_taken_locals, abn)
+                    if this.lookup_local_binding("rp") <> null
+                        if collapsed.result_type.name.equals("Vector")
+                        {
+                            let at_life Lifetime.Call(scalyc.compiler.Model.Call(b.span))
+                            let at_promoted this.restamp_operand_life(collapsed, at_life)
+                            if at_promoted <> null
+                                set collapsed: (*at_promoted)
+                        }
+            }
+
             ; Hole-1 field provenance: a `let h Holder(&b)` binding where the
             ; construction received a &<frame-local> argument now holds a frame
             ; address in one of h's pointer fields. The binding lives in this
@@ -16391,6 +16435,234 @@ define Planner
             }
         }
 
+        ; ================================================================
+        ; Address-taken pre-scan (page inference). A read-only Model walk
+        ; that records, into address_taken_locals, every BARE local NAME
+        ; that appears as the operand of a prefix `&` (`&NAME`) anywhere in
+        ; the function body — including inside call-argument Tuples, Matrix
+        ; rows, and nested control-flow. plan_binding# then promotes such a
+        ; name's binding to the caller page (rp) when its initializer is a
+        ; relocatable page-owning Vector construction: a `&V` reference into
+        ; an escaping structure (a PlannedCall arg / PlannedItem field) must
+        ; outlive the frame, exactly what an explicit `^rp` provided.
+        ; Over-collection is harmless — the binding-site gate (Vector init +
+        ; restamp owns-page-guts) only fires for the intended shape. Mirrors
+        ; the recursion structure of operand_mentions_set#.
+        ; ================================================================
+        function add_address_taken(this: Planner, name: String)
+        {
+            if this.array_contains_name(address_taken_locals, name) = false
+                address_taken_locals.add(String^rp(name))
+        }
+        function scan_addr_taken_ops(this: Planner, ops: Vector[Operand])
+        {
+            var i: size_t 0
+            while i < ops.length
+            {
+                let op_ptr ops.get i
+                if op_ptr <> null
+                {
+                    let op (*op_ptr)
+                    ; `& NAME` adjacent pair: this op is the `&` operator and
+                    ; the next is a bare single-segment local name.
+                    var is_amp: bool false
+                    if op.member_access = null
+                        choose op.expression
+                            when t: scalyc.compiler.Model.Type
+                            {
+                                if t.generics = null
+                                    if t.name.length = 1
+                                    {
+                                        let np t.name.get 0
+                                        if np <> null
+                                            if (*np).equals("&")
+                                                set is_amp: true
+                                    }
+                            }
+                            else
+                                0
+                    if is_amp
+                        if i + 1 < ops.length
+                        {
+                            let nxt_ptr ops.get(i + 1)
+                            if nxt_ptr <> null
+                            {
+                                let nxt (*nxt_ptr)
+                                if nxt.member_access = null
+                                    choose nxt.expression
+                                        when nt: scalyc.compiler.Model.Type
+                                        {
+                                            if nt.generics = null
+                                                if nt.name.length = 1
+                                                {
+                                                    let nnp nt.name.get 0
+                                                    if nnp <> null
+                                                        this.add_address_taken((*nnp))
+                                                }
+                                        }
+                                        else
+                                            0
+                            }
+                        }
+                    this.scan_addr_taken_operand(op)
+                }
+                set i: i + 1
+            }
+        }
+        function scan_addr_taken_action(this: Planner, a: Action)
+        {
+            this.scan_addr_taken_ops(a.source)
+            this.scan_addr_taken_ops(a.target)
+        }
+        function scan_addr_taken_stmt(this: Planner, s: Statement)
+        {
+            choose s
+                when a: Action
+                    this.scan_addr_taken_action(a)
+                when bd: Binding
+                    this.scan_addr_taken_ops(bd.operation)
+                when r: Return
+                    this.scan_addr_taken_ops(r.result)
+                when th: Throw
+                    this.scan_addr_taken_ops(th.result)
+                when br: Break
+                    this.scan_addr_taken_ops(br.result)
+                else
+                    0
+        }
+        function scan_addr_taken_operand(this: Planner, op: Operand)
+        {
+            choose op.expression
+                when tup: Tuple
+                {
+                    var i: size_t 0
+                    while i < tup.components.length
+                    {
+                        let cp tup.components.get i
+                        if cp <> null
+                            this.scan_addr_taken_ops((*cp).value)
+                        set i: i + 1
+                    }
+                }
+                when mx: Matrix
+                {
+                    var i: size_t 0
+                    while i < mx.operations.length
+                    {
+                        let rp_ptr mx.operations.get i
+                        if rp_ptr <> null
+                            this.scan_addr_taken_ops((*rp_ptr))
+                        set i: i + 1
+                    }
+                }
+                when b: Block
+                {
+                    var i: size_t 0
+                    while i < b.statements.length
+                    {
+                        let sp b.statements.get i
+                        if sp <> null
+                            this.scan_addr_taken_stmt(sp.unwrap())
+                        set i: i + 1
+                    }
+                }
+                when iff: scalyc.compiler.Model.If
+                {
+                    this.scan_addr_taken_ops(iff.condition)
+                    this.scan_addr_taken_stmt(iff.consequent)
+                    if iff.alternative <> null
+                        this.scan_addr_taken_stmt((*iff.alternative))
+                }
+                when ch: Choose
+                {
+                    this.scan_addr_taken_ops(ch.condition)
+                    var i: size_t 0
+                    while i < ch.cases.length
+                    {
+                        let wp ch.cases.get i
+                        if wp <> null
+                            this.scan_addr_taken_stmt((*wp).consequent)
+                        set i: i + 1
+                    }
+                    if ch.alternative <> null
+                        this.scan_addr_taken_stmt((*ch.alternative))
+                }
+                when m: Match
+                {
+                    this.scan_addr_taken_ops(m.condition)
+                    var i: size_t 0
+                    while i < m.branches.length
+                    {
+                        let bp m.branches.get i
+                        if bp <> null
+                        {
+                            let br (*bp)
+                            var ci: size_t 0
+                            while ci < br.cases.length
+                            {
+                                let casep br.cases.get ci
+                                if casep <> null
+                                    this.scan_addr_taken_ops((*casep).condition)
+                                set ci: ci + 1
+                            }
+                            this.scan_addr_taken_stmt(br.consequent)
+                        }
+                        set i: i + 1
+                    }
+                    if m.alternative <> null
+                        this.scan_addr_taken_stmt((*m.alternative))
+                }
+                when fo: For
+                {
+                    this.scan_addr_taken_ops(fo.expression)
+                    this.scan_addr_taken_action(fo.action)
+                }
+                when wh: While
+                {
+                    this.scan_addr_taken_ops(wh.condition.operation)
+                    this.scan_addr_taken_action(wh.action)
+                }
+                when rep: Repeat
+                    this.scan_addr_taken_action(rep.action)
+                when tr: Try
+                {
+                    this.scan_addr_taken_ops(tr.binding.operation)
+                    var i: size_t 0
+                    while i < tr.catches.length
+                    {
+                        let wp tr.catches.get i
+                        if wp <> null
+                            this.scan_addr_taken_stmt((*wp).consequent)
+                        set i: i + 1
+                    }
+                    if tr.alternative <> null
+                        this.scan_addr_taken_stmt((*tr.alternative))
+                }
+                when nw: New
+                {
+                    var i: size_t 0
+                    while i < nw.arguments.components.length
+                    {
+                        let cp nw.arguments.components.get i
+                        if cp <> null
+                            this.scan_addr_taken_ops((*cp).value)
+                        set i: i + 1
+                    }
+                }
+                when lam: Lambda
+                    this.scan_addr_taken_action(lam.body)
+                else
+                    0
+        }
+        procedure scan_address_taken(this: Planner, impl: Implementation)
+        {
+            choose impl
+                when a: Action
+                    this.scan_addr_taken_action(a)
+                else
+                    0
+        }
+
         ; Entry: pre-scan a whole function body for bare `return x` targets and
         ; (deep-R2) locals flowing into returned constructions. Re-run to a
         ; FIXPOINT: each pass the Binding arm propagates escape one level deeper
@@ -16629,6 +16901,7 @@ define Planner
             let saved_pbn promoted_binding_names.length
             let saved_etg escaping_targets.length
             let saved_lts local_tainted_struct_bindings.length
+            let saved_atl address_taken_locals.length
             ; Page inference: a value stored through a ref/pointer out-parameter
             ; escapes to the caller, so seed those param names as escape targets.
             ; A later `param.add(v)` / `(*param).add(v)` then promotes v to the
@@ -16653,6 +16926,9 @@ define Planner
                 set pp: pp + 1
             }
             this.scan_top_level_returns(f.implementation)
+            ; Page inference (address-taken rule): record every bare `&NAME` so
+            ; plan_binding# can promote an address-taken frame-local Vector to rp.
+            this.scan_address_taken(f.implementation)
             ; Page inference: promote the IMPLICIT-RETURN (tail) expression of a
             ; page-owning-return function to the caller page. R2 only sees
             ; explicit `return`; a function whose body's last expression is a
@@ -16668,6 +16944,7 @@ define Planner
             set promoted_binding_names.length: saved_pbn
             set escaping_targets.length: saved_etg
             set local_tainted_struct_bindings.length: saved_lts
+            set address_taken_locals.length: saved_atl
             set local_closure_names.length: saved_lcn
             set this.current_return_type: saved_return_type
 
