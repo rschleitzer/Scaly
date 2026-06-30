@@ -1,0 +1,52 @@
+; Regression: `&^obj T(String(x), f(y), …)` — boxing a CONSTRUCTION LITERAL
+; of a struct that carries String/Vector fields. Two coordinated fixes are
+; exercised:
+;   1. instantiating a generic transitively (Big -> String -> Vector[char])
+;      must build the instantiated methods' `this`-type NAME on the persistent
+;      Planner page (plan_structure# `String^this(name)`), not a transient
+;      local page. The pre-fix dangle read stale bytes ("const_char") into the
+;      type name, so map_type mis-mapped `this` to i8 and the emitter produced
+;      an invalid `getelementptr <struct>, i8 %this` that crashed the backend.
+;   2. the construction's String ARGUMENTS (String(s) copies, call results)
+;      must be re-stamped onto the box page (collapse_operand_sequence# box
+;      `when btup: PlannedTuple` -> restamp_operand_life), else their heap
+;      buffers stay on the producing frame's local page and dangle after it
+;      returns — caught here by churning allocations between the box and the
+;      read so a dangling buffer is overwritten.
+; Self-hosted-only. Expected: PASS
+
+package scaly 0.1.0
+
+use scaly.containers.String
+
+define Big(a: String, b: String, c: String, d: String)
+
+function lbl(s: String) returns String
+    String(s)
+
+function via#(page, s: String) returns pointer[Big]
+    &^page Big(String(s), lbl(s), String(s), lbl(s))
+
+function churn#(page) returns size_t
+{
+    var acc: size_t 0
+    var i: size_t 0
+    while i < 200
+    {
+        let t String#("ZZZZZZZZZZZZZZZZZZZZZZZZ")
+        set acc: acc + t.get_length()
+        set i: i + 1
+    }
+    return acc
+}
+
+function alen(p: pointer[Big]) returns size_t
+    (*p).a.get_length()
+
+let seed String("hello")
+let bp via#(seed)
+let junk churn#()
+if alen(bp) = 5
+print("PASS")
+else
+print("FAIL")
