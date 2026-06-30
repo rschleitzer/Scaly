@@ -6105,11 +6105,8 @@ define Planner
                                                     if p_ptr.type <> null
                                                     {
                                                         let pt (*p_ptr.type)
-                                                        let planned_p this.plan_type(pt)
-                                                        var sity Vector[PlannedType]^rp(1)
-                                                        sity.put(0, planned_p)
                                                         sitems_arr.add(PlannedItem(
-                                                            result.loc, false, null, sity.get 0, null
+                                                            result.loc, false, null, &^this this.plan_type(pt), null
                                                         ))
                                                     }
                                                 }
