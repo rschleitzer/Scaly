@@ -2591,9 +2591,7 @@ define Planner
             {
                 let tt (*f.throws_)
                 set can_throw: true
-                var th_holder Vector[PlannedType]^rp(1)
-                th_holder.put(0, this.plan_type(tt))
-                set throws_ref: th_holder.get(0)
+                set throws_ref: &^this this.plan_type(tt)
             }
 
             MethodMatch^this(
@@ -4328,8 +4326,50 @@ define Planner
                             if is_box
                             {
                                 let box_ty Planner.make_pointer_type(rest_result.result_type)
+                                ; Call-result page promotion: when the boxed value
+                                ; is DIRECTLY a call (`&^this this.plan_type(tt)`),
+                                ; the callee allocates its sret result's heap
+                                ; internals (Strings/Vectors) on whatever page it
+                                ; receives. By default a plain function gets this
+                                ; frame's local page (freed at exit) → the box's
+                                ; shallow header copy would reference dead internals.
+                                ; Re-stamp the call's life to Reference(box page) so
+                                ; emit_call routes its page arg to Page.get(obj):
+                                ; the result's internals then live on the box's
+                                ; surviving page, matching what the `^rp` holder did
+                                ; (it passed the caller page). Only fires for a bare
+                                ; call value (a let-bound var's call already ran with
+                                ; its own page; box those only when their internals
+                                ; outlive the frame).
+                                var value_to_box rest_result
+                                choose rest_result.expr
+                                    when bcall: Call
+                                    {
+                                        let promoted_call PlannedCall(
+                                            bcall.loc,
+                                            bcall.name,
+                                            bcall.mangled_name,
+                                            bcall.is_intrinsic,
+                                            bcall.is_operator,
+                                            bcall.can_throw,
+                                            bcall.requires_page_param,
+                                            bcall.args,
+                                            bcall.result_type,
+                                            Lifetime.Reference(scalyc.compiler.Model.Reference(bcall.loc, box_loc)),
+                                            bcall.throws_type,
+                                            bcall.is_indirect
+                                        )
+                                        set value_to_box: PlannedOperand(
+                                            rest_result.loc,
+                                            PlannedExpression.Call promoted_call,
+                                            rest_result.member_access,
+                                            rest_result.result_type
+                                        )
+                                    }
+                                    else
+                                        0
                                 var bval_holder Vector[PlannedOperand]^rp(1)
-                                bval_holder.put(0, rest_result)
+                                bval_holder.put(0, value_to_box)
                                 let box PlannedBox(result.loc, bval_holder.get 0, box_loc, box_ty)
                                 let box_op PlannedOperand(result.loc, PlannedExpression.Box box, null, box_ty)
                                 if consumed >= ops.length
@@ -8378,9 +8418,7 @@ define Planner
             {
                 let tt (*f.throws_)
                 set can_throw: true
-                var th_holder Vector[PlannedType]^rp(1)
-                th_holder.put(0, this.plan_type(tt))
-                set throws_ref: th_holder.get(0)
+                set throws_ref: &^this this.plan_type(tt)
             }
 
             ; s88: propagate has_page (set when the resolved method takes
