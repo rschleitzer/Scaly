@@ -5013,7 +5013,9 @@ define symbols
             let dir symbols.dir_of(path)
             var sb StringBuilder()
             ; (1) the current file's directory tree (project-local, fast).
-            let here symbols.workspace_names_in_dir(dir, path)
+            ; Lexical (depth-0 byte scan), NOT a full parse — see
+            ; tagged_names_in_dir / tagged_names_lexical.
+            let here symbols.tagged_names_in_dir(dir, path)
             var hi: size_t 0
             let hn here.get_length()
             while hi < hn
@@ -5030,7 +5032,7 @@ define symbols
             if pkg.get_length() > (0 as size_t)
                 if pkg.equals(dir) = false
                 {
-                    let there symbols.workspace_names_in_dir(pkg, path)
+                    let there symbols.tagged_names_in_dir(pkg, path)
                     var ti: size_t 0
                     let tn there.get_length()
                     while ti < tn
@@ -5174,6 +5176,222 @@ define symbols
                     sb.append(0x0A as char)
                 }
                 set rec_start: i + (1 as size_t)
+            }
+            set i: i + (1 as size_t)
+        }
+        sb.to_string()
+    }
+
+    ; ----- fast lexical top-level name harvest (no full parse) -----
+    ; The cross-package semanticTokens harvest only needs each file's TOP-LEVEL
+    ; declaration names tagged F (function/procedure/delegate) or T (class/union/
+    ; intrinsic) — exactly what workspace_symbols_in_file + ws_decl emit for the
+    ; top level (it iterates file.declarations only; nested defines/methods live
+    ; inside `{...}` at depth>0 and are NOT emitted). A full parse_program of every
+    ; package file (incl. the 21k-line Planner.scaly, Emitter.scaly, 9.5k-line
+    ; symbols.scaly under <SCALY_HOME>/packages) cost ~7.5s on a cold worker —
+    ; right at the 8s budget. A brace-depth-0 byte scan skips all routine/type
+    ; BODIES and runs in a fraction of that. Emits the tagged_names_from_ws_blob
+    ; format ("F\tname\n" / "T\tname\n").
+
+    ; Skip whitespace, newlines, comments and string/char/fragment literals from
+    ; k; return the next real-code offset.
+    function lex_skip_ws(source: String, k0: size_t, n: size_t) returns size_t
+    {
+        var k k0
+        while k < n
+        {
+            let c source.get k
+            if symbols.is_noncode_start(c)
+            {
+                set k: symbols.skip_noncode(source, k, n)
+                continue
+            }
+            if symbols.is_ws_byte(c)
+            {
+                set k: k + (1 as size_t)
+                continue
+            }
+            if c = (10 as u8)
+            {
+                set k: k + (1 as size_t)
+                continue
+            }
+            break
+        }
+        k
+    }
+
+    ; Read an identifier starting at k (or "" if k is not an ident start).
+    function lex_read_ident(rp, source: String, k: size_t, n: size_t) returns String
+    {
+        if k >= n
+            return ""
+        if symbols.is_ident_byte(source.get k) = false
+            return ""
+        var j k
+        while j < n
+        {
+            if symbols.is_ident_byte(source.get j) = false
+                break
+            set j: j + (1 as size_t)
+        }
+        symbols.substring(source, k, j)
+    }
+
+    ; k points at `[`; return the offset just past the matching `]`.
+    function lex_skip_brackets(source: String, k0: size_t, n: size_t) returns size_t
+    {
+        var k k0
+        var d: i64 0
+        while k < n
+        {
+            let c source.get k
+            if c = (0x5B as u8)
+                set d: d + (1 as i64)
+            if c = (0x5D as u8)
+            {
+                set d: d - (1 as i64)
+                if d = (0 as i64)
+                {
+                    set k: k + (1 as size_t)
+                    break
+                }
+            }
+            set k: k + (1 as size_t)
+        }
+        k
+    }
+
+    function tagged_names_lexical(rp, source: String) returns String
+    {
+        var sb StringBuilder()
+        let n source.get_length()
+        var i: size_t 0
+        while i < n
+        {
+            let c source.get i
+            if symbols.is_noncode_start(c)
+            {
+                set i: symbols.skip_noncode(source, i, n)
+                continue
+            }
+            if symbols.is_ident_byte(c) = false
+            {
+                set i: i + (1 as size_t)
+                continue
+            }
+            ; read an identifier word [wstart, i). The declaration keywords
+            ; `function`/`procedure`/`define` are reserved and never appear
+            ; inside expression bodies, so a flat all-depth scan emits both
+            ; top-level declarations AND class/namespace MEMBERS (kind-6
+            ; methods, e.g. hashing::is_prime) — matching ws_definition's
+            ; recursive ws_body/ws_namespace member emission. No brace
+            ; depth tracking needed.
+            let wstart i
+            while i < n
+            {
+                if symbols.is_ident_byte(source.get i) = false
+                    break
+                set i: i + (1 as size_t)
+            }
+            let word symbols.substring(source, wstart, i)
+            var is_fn false
+            if word.equals("function")
+                set is_fn: true
+            if word.equals("procedure")
+                set is_fn: true
+            if is_fn
+            {
+                let fk symbols.lex_skip_ws(source, i, n)
+                let fnm symbols.lex_read_ident(source, fk, n)
+                if fnm.get_length() > (0 as size_t)
+                {
+                    sb.append(0x46 as char)            ; F
+                    sb.append(0x09 as char)
+                    sb.append(fnm)
+                    sb.append(0x0A as char)
+                }
+                continue
+            }
+            if word.equals("define")
+            {
+                var k symbols.lex_skip_ws(source, i, n)
+                let nm symbols.lex_read_ident(source, k, n)
+                if nm.get_length() > (0 as size_t)
+                {
+                    set k: k + nm.get_length()
+                    set k: symbols.lex_skip_ws(source, k, n)
+                    ; skip generic params [ ... ]
+                    if k < n
+                        if source.get(k) = (0x5B as u8)
+                            set k: symbols.lex_skip_brackets(source, k, n)
+                    set k: symbols.lex_skip_ws(source, k, n)
+                    var tag: size_t 0
+                    if k < n
+                    {
+                        let pc source.get k
+                        if pc = (0x28 as u8)              ; ( -> class/struct
+                            set tag: (0x54 as size_t)
+                        if symbols.is_ident_byte(pc)
+                        {
+                            let cw symbols.lex_read_ident(source, k, n)
+                            if cw.equals("union")
+                                set tag: (0x54 as size_t)
+                            if cw.equals("intrinsic")
+                                set tag: (0x54 as size_t)
+                            if cw.equals("delegate")
+                                set tag: (0x46 as size_t)
+                        }
+                    }
+                    if tag > (0 as size_t)
+                    {
+                        sb.append(tag as char)
+                        sb.append(0x09 as char)
+                        sb.append(nm)
+                        sb.append(0x0A as char)
+                    }
+                }
+                continue
+            }
+        }
+        sb.to_string()
+    }
+
+    ; Lexical analogue of workspace_names_in_dir: list every .scaly file under
+    ; `dir` (recursively), read each (skipping self_path), and aggregate the
+    ; tagged_names_lexical fragment. No full parse and no symindex (the byte scan
+    ; is cheap enough to re-run per request); the rich features keep their full-
+    ; blob symindex cache, populated by their own queries.
+    function tagged_names_in_dir(rp, dir: String, self_path: String) returns String
+    {
+        if dir.get_length() = (0 as size_t)
+            return ""
+        let listing symbols.list_scaly_files(dir)
+        var sb StringBuilder()
+        var line_start: size_t 0
+        let n listing.get_length()
+        var i: size_t 0
+        while i < n
+        {
+            if listing.get(i) = (10 as char)
+            {
+                let fpath symbols.substring(listing, line_start, i)
+                if fpath.get_length() > (0 as size_t)
+                    if fpath.equals(self_path) = false
+                        if File.exists(fpath)
+                        {
+                            let fsrc File.read_to_string(fpath)
+                            let frag symbols.tagged_names_lexical(fsrc)
+                            var ci: size_t 0
+                            let cn frag.get_length()
+                            while ci < cn
+                            {
+                                sb.append(frag.get(ci) as char)
+                                set ci: ci + (1 as size_t)
+                            }
+                        }
+                set line_start: i + (1 as size_t)
             }
             set i: i + (1 as size_t)
         }
