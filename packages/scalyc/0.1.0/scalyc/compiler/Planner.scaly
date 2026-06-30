@@ -5464,13 +5464,11 @@ define Planner
                                                 if this.has_recorded_function(mm3.mangled_name) = false
                                                 {
                                                     var items_arr2 Array[PlannedItem]()
-                                                    var this_type_holder2 Vector[PlannedType]^rp(1)
-                                                    this_type_holder2.put(0, recv_type)
                                                     items_arr2.add(PlannedItem(
                                                         result.loc,
                                                         false,
                                                         null,
-                                                        this_type_holder2.get 0,
+                                                        &^this recv_type,
                                                         null
                                                     ))
                                                     if mm3.parameter_types <> null
@@ -5483,13 +5481,11 @@ define Planner
                                                             let p_ptr2 pt_vec2.get ai2
                                                             if p_ptr2 <> null
                                                             {
-                                                                var pty_holder2 Vector[PlannedType]^rp(1)
-                                                                pty_holder2.put(0, (*p_ptr2))
                                                                 items_arr2.add(PlannedItem(
                                                                     result.loc,
                                                                     false,
                                                                     null,
-                                                                    pty_holder2.get 0,
+                                                                    &^this (*p_ptr2),
                                                                     null
                                                                 ))
                                                             }
@@ -5497,8 +5493,6 @@ define Planner
                                                         }
                                                     }
                                                     var items_holder2 Vector[PlannedItem]^rp(items_arr2)
-                                                    var rt_holder2 Vector[PlannedType]^rp(1)
-                                                    rt_holder2.put(0, mm3.return_type)
                                                     let extern_impl2 PlannedImplementation.Extern(
                                                         PlannedExternImpl result.loc
                                                     )
@@ -5518,7 +5512,7 @@ define Planner
                                                         mm3.mangled_name,
                                                         pp_ref_b,
                                                         &items_holder2,
-                                                        rt_holder2.get 0,
+                                                        &^this mm3.return_type,
                                                         mm3.throws_type,
                                                         Lifetime.Unspecified(Unspecified()),
                                                         extern_impl2,
