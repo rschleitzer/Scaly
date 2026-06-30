@@ -4362,6 +4362,30 @@ define Planner
                                             rest_result.result_type
                                         )
                                     }
+                                    when btup: PlannedTuple
+                                    {
+                                        ; Construction-literal promotion: boxing
+                                        ; `&^obj T(String(x), f(y), …)` shallow-
+                                        ; copies the constructed struct's header
+                                        ; onto obj's page, but the construction's
+                                        ; String/Vector ARGUMENTS allocate their
+                                        ; heap buffers on this frame's local page
+                                        ; by default → they are freed at return
+                                        ; and the boxed struct's String.data
+                                        ; dangles (the same hazard the call-result
+                                        ; promotion above closes for a bare call).
+                                        ; Re-stamp the construction AND, recursively,
+                                        ; its inline-construction/call arguments to
+                                        ; the box page so their buffers live on the
+                                        ; surviving page. restamp_operand_life# self-
+                                        ; gates on Local/Unspecified life + page-
+                                        ; owning guts, so a pure-POD construction or
+                                        ; an explicitly-placed arg is kept verbatim.
+                                        let tup_life Lifetime.Reference(scalyc.compiler.Model.Reference(rest_result.loc, box_loc))
+                                        let tup_promoted this.restamp_operand_life(rest_result, tup_life)
+                                        if tup_promoted <> null
+                                            set value_to_box: (*tup_promoted)
+                                    }
                                     else
                                         0
                                 var bval_holder Vector[PlannedOperand]^rp(1)
