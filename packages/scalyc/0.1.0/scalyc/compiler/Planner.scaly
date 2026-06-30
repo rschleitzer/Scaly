@@ -6066,11 +6066,7 @@ define Planner
                                                                             }
                                                                         }
                                                                         if is_static
-                                                                        {
-                                                                            var sfh Vector[Function]^rp(1)
-                                                                            sfh.put(0, sf)
-                                                                            set static_fn: sfh.get(0)
-                                                                        }
+                                                                            set static_fn: &^this sf
                                                                     }
                                                                 }
                                                                 0
@@ -14787,9 +14783,7 @@ define Planner
                     let promoted this.promote_tail_operand((*vc.value), new_life)
                     if promoted = null
                         return null
-                    var vh Vector[PlannedOperand]^rp(1)
-                    vh.put(0, (*promoted))
-                    let nvc PlannedVariantConstruction(vc.loc, vc.union_type, vc.variant_name, vc.variant_tag, vh.get(0))
+                    let nvc PlannedVariantConstruction(vc.loc, vc.union_type, vc.variant_name, vc.variant_tag, &^this (*promoted))
                     return PlannedOperand^this(op.loc, PlannedExpression.VariantConstruction nvc, op.member_access, op.result_type)
                 }
                 when ch: PlannedChoose
