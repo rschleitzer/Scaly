@@ -333,8 +333,12 @@ define lexer
                 }
 
                 let c *current
-                ; + - * / = % & | ^ ~ < >
-                if (c = 43) || (c = 45) || (c = 42) || (c = 47) || (c = 61) || (c = 37) || (c = 38) || (c = 124) || (c = 94) || (c = 126) || (c = 60) || (c = 62)
+                ; + - * / = % & | ~ < >  (NOT ^ — caret is the lifetime sigil,
+                ; never an operator char; excluding it lets `&^this v` tokenize
+                ; as `& ^this v` so the box-value `&^obj v` primitive parses
+                ; without a space. `^` already only STARTS as punctuation, so
+                ; this only stops it from EXTENDING a preceding operator.)
+                if (c = 43) || (c = 45) || (c = 42) || (c = 47) || (c = 61) || (c = 37) || (c = 38) || (c = 124) || (c = 126) || (c = 60) || (c = 62)
                     continue
                 else
                     return Token.Identifier(IdentifierToken(String^this(start, length)))

@@ -1,0 +1,30 @@
+; Regression: box-value-on-page primitive `&^obj v` — box a COPY of an
+; existing by-value value onto a page (Page.get(obj)) and yield pointer[X]
+; that outlives the frame. Replaces the hand-rolled holder idiom
+; `var H Vector[X]^rp(1); H.put(0, v); H.get(0)`. Self-hosted-only.
+;
+;   box_point#(page, p) returns &^page p   ; copy p onto the caller's page
+; The returned pointer survives box_point#'s frame because the copy lives on
+; the caller page, not the stack — `(*bp).x`/`(*bp).y` read back the original.
+; Expected: PASS
+
+package scaly 0.1.0
+
+use scaly.containers.String
+
+define Point(x: int, y: int)
+
+function box_point#(page, p: Point) returns pointer[Point]
+    &^page p
+
+let src Point(3, 4)
+let bp box_point#(src)
+if (*bp).x = 3
+{
+    if (*bp).y = 4
+        print("PASS")
+    else
+        print("FAIL y")
+}
+else
+    print("FAIL x")

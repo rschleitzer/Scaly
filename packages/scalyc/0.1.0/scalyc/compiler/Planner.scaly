@@ -4057,6 +4057,78 @@ define Planner
                     {
                         let prefix_name ty.name
 
+                        ; Box-value: `&^obj v` — `&` followed by a STANDALONE
+                        ; Reference-lifetime marker (empty-name PlannedType with
+                        ; Reference life) then a value operand. Box a COPY of the
+                        ; value onto `obj`'s page (Page.get(obj)) and yield a
+                        ; pointer[X] that outlives the frame. Replaces the
+                        ; hand-rolled `var H Vector[X]^rp(1); H.put(0, v);
+                        ; H.get(0)` holder. `&v` (no marker) stays a frame
+                        ; address-of below.
+                        var is_box: bool false
+                        var box_page: String ""
+                        if prefix_name.equals("&")
+                        {
+                            if ops.length > 2
+                            {
+                                let mk_ptr ops.get 1
+                                if mk_ptr <> null
+                                {
+                                    choose (*mk_ptr).expr
+                                        when mty: PlannedType
+                                        {
+                                            if mty.name.get_length() = 0
+                                            {
+                                                choose mty.life
+                                                    when rf: Reference
+                                                    {
+                                                        set is_box: true
+                                                        set box_page: rf.location
+                                                    }
+                                                    else
+                                                        0
+                                            }
+                                        }
+                                        else
+                                            0
+                                }
+                            }
+                        }
+                        if is_box
+                        {
+                            ; Collapse the value operand(s) after the marker
+                            ; (ops[2..end]) — `&^this v` is always a complete
+                            ; sub-expression (return / assign RHS / call-arg /
+                            ; sole tuple component), so the remainder is the
+                            ; whole boxed value.
+                            var bval_arr Array[PlannedOperand]()
+                            var br: size_t 2
+                            while br < ops.length
+                            {
+                                let bp_ptr ops.get br
+                                if bp_ptr <> null
+                                    bval_arr.add((*bp_ptr))
+                                set br: br + 1
+                            }
+                            var bval_vec Vector[PlannedOperand]^rp(bval_arr)
+                            let bval_result this.collapse_operand_sequence(bval_vec)
+                            let box_ty Planner.make_pointer_type(bval_result.result_type)
+                            var bval_holder Vector[PlannedOperand]^rp(1)
+                            bval_holder.put(0, bval_result)
+                            let box PlannedBox(
+                                result.loc,
+                                bval_holder.get 0,
+                                box_page,
+                                box_ty
+                            )
+                            return PlannedOperand(
+                                result.loc,
+                                PlannedExpression.Box box,
+                                null,
+                                box_ty
+                            )
+                        }
+
                         ; s174: a prefix operator consumes exactly ONE
                         ; operand — the immediately following one — unless
                         ; that operand is itself a prefix operator (chained

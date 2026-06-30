@@ -1789,6 +1789,77 @@ define Emitter
         LLVMBuildMemCpy(builder, d, 1, src_ptr, 1, size_const)
     }
 
+    ; `&^obj v` — box a COPY of value v onto obj's page, yield pointer[X].
+    ; Mirrors the struct-construction region-alloc path (resolve page →
+    ; Page::allocate(sizeof, alignof) → copy the value in → return ptr) but
+    ; for a single pre-existing value rather than field-by-field init.
+    ; Replaces the hand-rolled `var H Vector[X]^rp(1); H.put(0, v); H.get(0)`.
+    function emit_box(this, bx: PlannedBox) returns LLVMValueRef
+    {
+        if bx.value = null
+            return LLVMValueRef null
+        let val_op (*bx.value)
+        let val emit_operand val_op
+        if val.handle = null
+            return LLVMValueRef null
+        let val_ty map_type(val_op.result_type)
+
+        ; Resolve the destination page from the Reference location
+        ; (^this → Page.get(this), ^rp / ^name → that variable).
+        var page_arg: LLVMValueRef resolve_reference_page(bx.target_page)
+        if page_arg.handle = null
+        {
+            let rp_val lookup_variable("rp")
+            if rp_val.handle <> null
+                set page_arg: rp_val
+            if page_arg.handle = null
+                set page_arg: get_or_create_local_page()
+        }
+        if page_arg.handle = null
+            return LLVMValueRef null
+
+        ; Page::allocate(page, sizeof, alignof).
+        var alloc_func lookup_function_cache("_ZN4Page8allocateEmm")
+        if alloc_func.handle = null
+            set alloc_func: LLVMGetNamedFunction(llvm_module, "_ZN4Page8allocateEmm")
+        if alloc_func.handle = null
+        {
+            var apt Vector[LLVMTypeRef](3)
+            apt.put(0, LLVMPointerTypeInContext(context, 0))
+            apt.put(1, LLVMInt64TypeInContext context)
+            apt.put(2, LLVMInt64TypeInContext context)
+            let art LLVMPointerTypeInContext(context, 0)
+            let adt LLVMFunctionType(art, apt.data, 3, 0)
+            set alloc_func: LLVMAddFunction(llvm_module, "_ZN4Page8allocateEmm", adt)
+            LLVMSetLinkage(alloc_func, LLVMLinkage.External())
+            cache_function("_ZN4Page8allocateEmm", alloc_func)
+        }
+        ; s176 opaque-ptr fallback: a layout-less struct maps to ptr →
+        ; LLVMSizeOf=8 under-sizes; allocate a pessimistic 64 instead.
+        var size_const LLVMSizeOf(val_ty)
+        if LLVMGetTypeKind(val_ty) = LLVMTypeKind.Pointer()
+        {
+            let i64_ty LLVMInt64TypeInContext(context)
+            set size_const: LLVMConstInt(i64_ty, 64, 0)
+        }
+        let align_const LLVMAlignOf(val_ty)
+        var alloc_args Vector[LLVMValueRef](3)
+        alloc_args.put(0, page_arg)
+        alloc_args.put(1, size_const)
+        alloc_args.put(2, align_const)
+        var apt2 Vector[LLVMTypeRef](3)
+        apt2.put(0, LLVMPointerTypeInContext(context, 0))
+        apt2.put(1, LLVMInt64TypeInContext context)
+        apt2.put(2, LLVMInt64TypeInContext context)
+        let art2 LLVMPointerTypeInContext(context, 0)
+        let act LLVMFunctionType(art2, apt2.data, 3, 0)
+        let box_ptr LLVMBuildCall2(builder, act, alloc_func, alloc_args.data, 3, "box.region")
+
+        ; Copy the value into the allocation; yield the pointer.
+        copy_struct_value(box_ptr, val, val_ty)
+        box_ptr
+    }
+
     ; s178: return the current statement window's pooled temps to the
     ; free pool when provably dead (see release_slot_if_dead).
     procedure release_statement_temps(this)
@@ -4824,6 +4895,10 @@ define Emitter
             when clo: Closure
             {
                 return emit_closure clo
+            }
+            when bx: Box
+            {
+                return emit_box bx
             }
     }
 
