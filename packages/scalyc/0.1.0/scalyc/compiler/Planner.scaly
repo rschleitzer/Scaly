@@ -2553,8 +2553,7 @@ define Planner
                     ; Build a PlannedType for the namespace and items
                     ; for params, then call mangle_function# with parent.
                     let cnsn ns_for_mangle
-                    var ns_parent_holder Vector[PlannedType]^rp(1)
-                    ns_parent_holder.put(0, PlannedType(
+                    let ns_parent_ref &^this PlannedType(
                         Span(0, 0),
                         String(cnsn),
                         Planner.encode_name cnsn,
@@ -2563,8 +2562,7 @@ define Planner
                         null,
                         "",
                         null
-                    ))
-                    let ns_parent_ref ns_parent_holder.get 0
+                    )
                     var items_arr Array[PlannedItem]()
                     var pi2: size_t 0
                     while pi2 < params_holder.length
@@ -5655,8 +5653,7 @@ define Planner
                                             ; Build PlannedType for the
                                             ; namespace as a parent and
                                             ; rebuild the mangled name.
-                                            var ns_parent_holder Vector[PlannedType]^rp(1)
-                                            ns_parent_holder.put(0, PlannedType(
+                                            let ns_parent_ref &^this PlannedType(
                                                 result.loc,
                                                 String(prefix),
                                                 Planner.encode_name prefix,
@@ -5665,8 +5662,7 @@ define Planner
                                                 null,
                                                 "",
                                                 null
-                                            ))
-                                            let ns_parent_ref ns_parent_holder.get 0
+                                            )
 
                                             ; Build items from the matched
                                             ; function's declared parameter
