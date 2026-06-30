@@ -14376,9 +14376,7 @@ define Planner
                         c.can_throw, c.requires_page_param, new_args,
                         c.result_type, new_life, c.throws_type, c.is_indirect
                     )
-                    var h Vector[PlannedOperand]^rp(1)
-                    h.put(0, PlannedOperand(op.loc, PlannedExpression.Call nc, op.member_access, op.result_type))
-                    return h.get(0)
+                    return PlannedOperand^this(op.loc, PlannedExpression.Call nc, op.member_access, op.result_type)
                 }
                 when t: PlannedTuple
                 {
@@ -14402,9 +14400,7 @@ define Planner
                         t.loc, new_comps, t.tuple_type,
                         true, new_life, t.region_arg
                     )
-                    var h Vector[PlannedOperand]^rp(1)
-                    h.put(0, PlannedOperand(op.loc, PlannedExpression.Tuple nt, op.member_access, op.result_type))
-                    return h.get(0)
+                    return PlannedOperand^this(op.loc, PlannedExpression.Tuple nt, op.member_access, op.result_type)
                 }
                 else
                     return null
@@ -14577,9 +14573,7 @@ define Planner
                         c.can_throw, c.requires_page_param, new_args,
                         c.result_type, out_life, c.throws_type, c.is_indirect
                     )
-                    var h Vector[PlannedOperand]^rp(1)
-                    h.put(0, PlannedOperand(op.loc, PlannedExpression.Call nc, op.member_access, op.result_type))
-                    return h.get(0)
+                    return PlannedOperand^this(op.loc, PlannedExpression.Call nc, op.member_access, op.result_type)
                 }
                 when t: PlannedTuple
                 {
@@ -14610,9 +14604,7 @@ define Planner
                     let nt PlannedTuple(
                         t.loc, new_comps, t.tuple_type, out_region, out_life, t.region_arg
                     )
-                    var h Vector[PlannedOperand]^rp(1)
-                    h.put(0, PlannedOperand(op.loc, PlannedExpression.Tuple nt, op.member_access, op.result_type))
-                    return h.get(0)
+                    return PlannedOperand^this(op.loc, PlannedExpression.Tuple nt, op.member_access, op.result_type)
                 }
                 when vc: PlannedVariantConstruction
                 {
@@ -14624,9 +14616,7 @@ define Planner
                     let nvc PlannedVariantConstruction(
                         vc.loc, vc.union_type, vc.variant_name, vc.variant_tag, promoted
                     )
-                    var h Vector[PlannedOperand]^rp(1)
-                    h.put(0, PlannedOperand(op.loc, PlannedExpression.VariantConstruction nvc, op.member_access, op.result_type))
-                    return h.get(0)
+                    return PlannedOperand^this(op.loc, PlannedExpression.VariantConstruction nvc, op.member_access, op.result_type)
                 }
                 else
                     return null
@@ -14730,9 +14720,7 @@ define Planner
                     var vh Vector[PlannedOperand]^rp(1)
                     vh.put(0, (*promoted))
                     let nvc PlannedVariantConstruction(vc.loc, vc.union_type, vc.variant_name, vc.variant_tag, vh.get(0))
-                    var h Vector[PlannedOperand]^rp(1)
-                    h.put(0, PlannedOperand(op.loc, PlannedExpression.VariantConstruction nvc, op.member_access, op.result_type))
-                    return h.get(0)
+                    return PlannedOperand^this(op.loc, PlannedExpression.VariantConstruction nvc, op.member_access, op.result_type)
                 }
                 when ch: PlannedChoose
                 {
@@ -14779,9 +14767,7 @@ define Planner
                     if changed = false
                         return null
                     let nch PlannedChoose(ch.loc, ch.condition, new_cases, new_alt)
-                    var h Vector[PlannedOperand]^rp(1)
-                    h.put(0, PlannedOperand(op.loc, PlannedExpression.Choose nch, op.member_access, op.result_type))
-                    return h.get(0)
+                    return PlannedOperand^this(op.loc, PlannedExpression.Choose nch, op.member_access, op.result_type)
                 }
                 when iff: PlannedIf
                 {
@@ -14809,9 +14795,7 @@ define Planner
                     if changed = false
                         return null
                     let nif PlannedIf(iff.loc, iff.condition, iff.prop, new_cons, new_alt)
-                    var h Vector[PlannedOperand]^rp(1)
-                    h.put(0, PlannedOperand(op.loc, PlannedExpression.If nif, op.member_access, op.result_type))
-                    return h.get(0)
+                    return PlannedOperand^this(op.loc, PlannedExpression.If nif, op.member_access, op.result_type)
                 }
                 when mt: PlannedMatch
                 {
@@ -14858,9 +14842,7 @@ define Planner
                     if changed = false
                         return null
                     let nmt PlannedMatch(mt.loc, mt.condition, new_branches, new_malt)
-                    var h Vector[PlannedOperand]^rp(1)
-                    h.put(0, PlannedOperand(op.loc, PlannedExpression.Match nmt, op.member_access, op.result_type))
-                    return h.get(0)
+                    return PlannedOperand^this(op.loc, PlannedExpression.Match nmt, op.member_access, op.result_type)
                 }
                 when blk: PlannedBlock
                 {
@@ -14891,9 +14873,7 @@ define Planner
                     }
                     var sh Vector[PlannedStatement]^rp(out_stmts)
                     let nblk PlannedBlock(blk.loc, &sh, blk.needs_local_page_cleanup)
-                    var h Vector[PlannedOperand]^rp(1)
-                    h.put(0, PlannedOperand(op.loc, PlannedExpression.Block nblk, op.member_access, op.result_type))
-                    return h.get(0)
+                    return PlannedOperand^this(op.loc, PlannedExpression.Block nblk, op.member_access, op.result_type)
                 }
                 when c: PlannedCall
                 {
@@ -14923,9 +14903,7 @@ define Planner
                         c.can_throw, c.requires_page_param, new_args,
                         c.result_type, c.life, c.throws_type, c.is_indirect
                     )
-                    var h Vector[PlannedOperand]^rp(1)
-                    h.put(0, PlannedOperand(op.loc, PlannedExpression.Call nc, op.member_access, op.result_type))
-                    return h.get(0)
+                    return PlannedOperand^this(op.loc, PlannedExpression.Call nc, op.member_access, op.result_type)
                 }
                 when t: PlannedTuple
                 {
@@ -14941,9 +14919,7 @@ define Planner
                         return null
                     let new_comps this.restamp_components((*t.components), new_life)
                     let nt PlannedTuple(t.loc, new_comps, t.tuple_type, t.is_region_alloc, t.life, t.region_arg)
-                    var h Vector[PlannedOperand]^rp(1)
-                    h.put(0, PlannedOperand(op.loc, PlannedExpression.Tuple nt, op.member_access, op.result_type))
-                    return h.get(0)
+                    return PlannedOperand^this(op.loc, PlannedExpression.Tuple nt, op.member_access, op.result_type)
                 }
                 else
                     return null
