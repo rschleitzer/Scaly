@@ -1804,6 +1804,42 @@ define Emitter
             return LLVMValueRef null
         let val_ty map_type(val_op.result_type)
 
+        ; Stabilize the source into a fresh, NON-POOLED entry-block slot
+        ; IMMEDIATELY — before page resolution or Page::allocate emit any
+        ; instruction. Two reasons: (a) if `val` is a struct SSA load, the
+        ; intervening Page::allocate call pushes the load out of last-
+        ; instruction position, so the box's later copy_struct_value falls
+        ; back to STORING the loaded SSA struct — a big-aggregate spill that
+        ; re-bloats the frame of a deeply recursive caller
+        ; (collapse_operand_sequence) → stack overflow (the s178 lesson; the
+        ; v_holder `-S scalyc` bus error). (b) if `val` points at a pooled
+        ; sret/deref slot, capturing it now removes any dependence on that
+        ; slot surviving the allocate (the th_holder corruption). The box's
+        ; final copy then reads ONLY this stable slot, never the volatile
+        ; pooled/SSA original. Opaque/empty structs (element count 0) skip
+        ; this — LLVMSizeOf on them SIGTRAPs (s97) — and fall through to the
+        ; plain-store path below.
+        var src_struct: bool false
+        if LLVMGetTypeKind(val_ty) = LLVMTypeKind.Struct()
+        {
+            if LLVMCountStructElementTypes(val_ty) <> 0
+                set src_struct: true
+        }
+        var stable LLVMValueRef(null)
+        if src_struct
+        {
+            set stable: entry_alloca(val_ty, "box.src")
+            if LLVMGetTypeKind(LLVMTypeOf(val)) = LLVMTypeKind.Pointer()
+            {
+                if LLVMIsNull(val) <> 0
+                    LLVMBuildStore(builder, LLVMConstNull(val_ty), stable)
+                if LLVMIsNull(val) = 0
+                    LLVMBuildMemCpy(builder, stable, 1, val, 1, LLVMSizeOf(val_ty))
+            }
+            else
+                copy_struct_value(stable, val, val_ty)
+        }
+
         ; Resolve the destination page from the Reference location
         ; (^this → Page.get(this), ^rp / ^name → that variable).
         var page_arg: LLVMValueRef resolve_reference_page(bx.target_page)
@@ -1855,26 +1891,14 @@ define Emitter
         let act LLVMFunctionType(art2, apt2.data, 3, 0)
         let box_ptr LLVMBuildCall2(builder, act, alloc_func, alloc_args.data, 3, "box.region")
 
-        ; Copy the value into the allocation; yield the pointer.
-        ; When the value is a POINTER to the boxed STRUCT (an sret call result,
-        ; a region-allocated construction, or a struct local's slot), MEMCPY
-        ; DIRECTLY from the source — never LLVMBuildLoad2 the whole struct into
-        ; an SSA value: a big-struct load+store SPILLS and re-bloats the frame
-        ; of a deeply recursive caller (collapse_operand_sequence) → stack
-        ; overflow (the s178 lesson). A null source zero-inits the slot.
-        var copied: bool false
-        if LLVMGetTypeKind(LLVMTypeOf(val)) = LLVMTypeKind.Pointer()
-        {
-            if LLVMGetTypeKind(val_ty) = LLVMTypeKind.Struct()
-            {
-                if LLVMIsNull(val) <> 0
-                    LLVMBuildStore(builder, LLVMConstNull(val_ty), box_ptr)
-                if LLVMIsNull(val) = 0
-                    LLVMBuildMemCpy(builder, box_ptr, 1, val, 1, LLVMSizeOf(val_ty))
-                set copied: true
-            }
-        }
-        if copied = false
+        ; Copy the stabilized source into the allocation; yield the pointer.
+        ; For structs, memcpy from the stable slot captured above (never a
+        ; whole-struct SSA load+store — it spills, the s178 lesson). Scalars
+        ; are SSA values that no allocation can invalidate, so they copy
+        ; straight from `val` (and opaque/empty structs plain-store it).
+        if src_struct
+            LLVMBuildMemCpy(builder, box_ptr, 1, stable, 1, LLVMSizeOf(val_ty))
+        else
             copy_struct_value(box_ptr, val, val_ty)
         box_ptr
     }
