@@ -1920,9 +1920,7 @@ define Planner
                                 if v_ptr.type = null
                                     return null
                                 let vt (*v_ptr.type)
-                                var holder Vector[PlannedType]^rp(1)
-                                holder.put(0, this.plan_type(vt))
-                                return holder.get 0
+                                return &^this this.plan_type(vt)
                             }
                         }
                         set i: i + 1
@@ -7625,15 +7623,12 @@ define Planner
                 set j: j + 1
             }
 
-            var holder Vector[PlannedType]^rp(1)
             if o.returns_ <> null
             {
                 let rt (*o.returns_)
-                holder.put(0, this.plan_type(rt))
+                return &^this this.plan_type(rt)
             }
-            if o.returns_ = null
-                holder.put(0, Planner.make_void_type())
-            holder.get 0
+            &^this Planner.make_void_type()
         }
 
         ; resolve_prefix_operator_call: for unary prefix operators like
