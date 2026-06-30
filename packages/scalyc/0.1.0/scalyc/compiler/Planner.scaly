@@ -10847,12 +10847,10 @@ define Planner
                     {
                         let cn (*cn_ptr)
                         let ct (*ct_ptr)
-                        var ct_holder Vector[PlannedType]^rp(1)
-                        ct_holder.put(0, ct)
                         var cn_holder Vector[String]^rp(1)
                         cn_holder.put(0, String^rp(cn))
                         this.define_parameter(cn, ct)
-                        item_arr.add(PlannedItem(lam.span, false, cn_holder.get(0), ct_holder.get(0), null))
+                        item_arr.add(PlannedItem(lam.span, false, cn_holder.get(0), &^this ct, null))
                     }
                 set ci: ci + 1
             }
@@ -10870,8 +10868,6 @@ define Planner
                         if at_ptr <> null
                             set pty: (*at_ptr)
                     }
-                    var pty_holder Vector[PlannedType]^rp(1)
-                    pty_holder.put(0, pty)
                     var pname_ref: ref[String]? null
                     if it.name <> null
                     {
@@ -10881,7 +10877,7 @@ define Planner
                         set pname_ref: name_holder.get(0)
                         this.define_parameter(pn, pty)
                     }
-                    item_arr.add(PlannedItem(it.span, false, pname_ref, pty_holder.get(0), null))
+                    item_arr.add(PlannedItem(it.span, false, pname_ref, &^this pty, null))
                 }
                 set pi2: pi2 + 1
             }
