@@ -2602,8 +2602,7 @@ define Planner
                 set throws_ref: th_holder.get(0)
             }
 
-            var match_holder Vector[MethodMatch]^rp(1)
-            match_holder.put(0, MethodMatch(
+            MethodMatch^this(
                 null,
                 mangled,
                 return_type,
@@ -2613,8 +2612,7 @@ define Planner
                 throws_ref,
                 false,
                 false
-            ))
-            match_holder.get 0
+            )
         }
 
         ; s-LSP: is `prefix` a namespace declaring a member function named
@@ -2861,8 +2859,7 @@ define Planner
                                 var gm_takes_this: bool false
                                 if param_start2 > 0
                                     set gm_takes_this: true
-                                var match_holder Vector[MethodMatch]^rp(1)
-                                match_holder.put(0, MethodMatch(
+                                return MethodMatch^this(
                                     null,
                                     inst.mangled_name,
                                     inst_return,
@@ -2872,8 +2869,7 @@ define Planner
                                     inst.throws_type,
                                     false,
                                     gm_takes_this
-                                ))
-                                return match_holder.get 0
+                                )
                             }
                         }
                     }
@@ -6099,8 +6095,7 @@ define Planner
                                             }
                                             var srt_holder Vector[PlannedType]^rp(1)
                                             srt_holder.put(0, s_rt)
-                                            var smm_holder Vector[MethodMatch]^rp(1)
-                                            smm_holder.put(0, MethodMatch(
+                                            set match_ref: MethodMatch^this(
                                                 null,
                                                 smangled,
                                                 s_rt,
@@ -6110,8 +6105,7 @@ define Planner
                                                 s_throws,
                                                 false,
                                                 false
-                                            ))
-                                            set match_ref: smm_holder.get(0)
+                                            )
                                             if this.has_recorded_function(smangled) = false
                                             {
                                                 var spp_ref: ref[String]? null
@@ -8373,8 +8367,7 @@ define Planner
             var mm_takes_this: bool false
             if param_start > 0
                 set mm_takes_this: true
-            var match_holder Vector[MethodMatch]^rp(1)
-            match_holder.put(0, MethodMatch(
+            MethodMatch^this(
                 null,
                 mangled,
                 return_type,
@@ -8384,8 +8377,7 @@ define Planner
                 throws_ref,
                 false,
                 mm_takes_this
-            ))
-            match_holder.get 0
+            )
         }
 
         ; generate_page_get_this: synthesize a `Page.get(this)` call,
