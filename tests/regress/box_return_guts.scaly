@@ -1,0 +1,29 @@
+; Regression: RETURN-form box of a call result whose result OWNS page guts
+; (a String, whose data buffer is heap-allocated). Two things must cooperate:
+;   1. the escape checker must ACCEPT `return &^rp <call>` — the box places a
+;      copy on the caller page (rp), which outlives the frame, so the pointer
+;      is Caller-region and safe to return (region_of_operand's Box(this/rp)
+;      -> Caller arm; without it the boxed pointer's inner String carries the
+;      callee's Local life and the return is wrongly rejected);
+;   2. the call-result page-promotion must route make_label#'s implicit page
+;      arg to the box page (rp), so the String's data buffer lands on rp and
+;      survives — a shallow header copy alone would dangle.
+; This is the shape the compiler's plan_type/plan_deinitializer call-result
+; holders take once de-holdered. Self-hosted-only.
+; Expected: PASS
+
+package scaly 0.1.0
+
+use scaly.containers.String
+
+function make_label#() returns String
+    String#("hello")
+
+function boxed_label#() returns pointer[String]
+    &^rp make_label#()
+
+let p boxed_label#()
+if (*p).get_length() = 5
+    print("PASS")
+else
+    print("FAIL")

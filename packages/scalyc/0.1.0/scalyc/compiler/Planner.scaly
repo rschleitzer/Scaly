@@ -13584,6 +13584,22 @@ define Planner
         ; iff a frame pointee, else Caller; Caller < Static unused yet).
         function region_of_operand(op: PlannedOperand) returns size_t
         {
+            ; A box (`&^obj v`) places a COPY of the value on obj's page. For the
+            ; ^this / ^rp targets the page is the borrowed receiver / the caller's
+            ; region — both outlive this frame — so the resulting pointer is at
+            ; least Caller-region and is safe to return / store, regardless of the
+            ; boxed value's own (now stale) Local life. (A named-region box falls
+            ; through to the conservative pointee-life check below.)
+            choose op.expr
+                when b: Box
+                {
+                    if b.target_page.equals("this")
+                        return Planner.region_rank_caller()
+                    if b.target_page.equals("rp")
+                        return Planner.region_rank_caller()
+                }
+                else
+                    0
             if Planner.is_reference_to_local_page(op.result_type)
                 return Planner.region_rank_local()
             Planner.region_rank_caller()
