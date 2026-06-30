@@ -5057,9 +5057,7 @@ define Planner
                                                 {
                                                     let v (*c.value)
                                                     let collapsed this.collapse_operand_sequence(v)
-                                                    var v_holder Vector[PlannedOperand]^rp(1)
-                                                    v_holder.put(0, collapsed)
-                                                    set payload_holder: v_holder.get(0)
+                                                    set payload_holder: &^this collapsed
                                                 }
                                             }
                                         }
