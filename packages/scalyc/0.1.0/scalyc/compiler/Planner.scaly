@@ -11416,11 +11416,8 @@ define Planner
             {
                 this.push_scope()
                 let alt (*t.alternative)
-                let planned_alt this.plan_statement(alt)
+                set alternative_ref: &^this this.plan_statement(alt)
                 this.pop_scope()
-                var alt_holder Vector[PlannedStatement]^rp(1)
-                alt_holder.put(0, planned_alt)
-                set alternative_ref: alt_holder.get(0)
             }
 
             var catches_holder Vector[PlannedWhen](catches_arr)
@@ -11582,17 +11579,15 @@ define Planner
 
             this.define_local(w.name, binding_ty, false, false)
 
-            let planned_cons this.plan_statement(w.consequent)
+            let cons_box &^this this.plan_statement(w.consequent)
             this.pop_scope()
 
-            var cons_holder Vector[PlannedStatement]^rp(1)
-            cons_holder.put(0, planned_cons)
             PlannedWhen(
                 w.span,
                 w.name,
                 variant_type,
                 variant_tag,
-                cons_holder.get 0
+                cons_box
             )
         }
 
@@ -11703,10 +11698,7 @@ define Planner
             if c.alternative <> null
             {
                 let alt (*c.alternative)
-                let planned_alt this.plan_statement(alt)
-                var alt_holder Vector[PlannedStatement]^rp(1)
-                alt_holder.put(0, planned_alt)
-                set alternative_ref: alt_holder.get(0)
+                set alternative_ref: &^this this.plan_statement(alt)
             }
 
             ; Unify each when-arm's consequent result type (plus the
@@ -11790,12 +11782,10 @@ define Planner
                 set i: i + 1
             }
 
-            let planned_cons this.plan_statement(b.consequent)
-            var cons_holder Vector[PlannedStatement]^rp(1)
-            cons_holder.put(0, planned_cons)
+            let cons_box &^this this.plan_statement(b.consequent)
 
             var cases_holder Vector[PlannedCase](cases_arr)
-            PlannedBranch(b.span, &cases_holder, cons_holder.get 0)
+            PlannedBranch(b.span, &cases_holder, cons_box)
         }
 
         function plan_match(this: Planner, m: Match) returns PlannedMatch
@@ -11853,10 +11843,7 @@ define Planner
             if m.alternative <> null
             {
                 let alt (*m.alternative)
-                let planned_alt this.plan_statement(alt)
-                var alt_holder Vector[PlannedStatement]^rp(1)
-                alt_holder.put(0, planned_alt)
-                set alternative_ref: alt_holder.get(0)
+                set alternative_ref: &^this this.plan_statement(alt)
             }
 
             ; Unify all branch consequent result types (and the
