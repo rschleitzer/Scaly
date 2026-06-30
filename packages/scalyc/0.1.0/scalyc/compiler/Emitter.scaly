@@ -1799,27 +1799,10 @@ define Emitter
         if bx.value = null
             return LLVMValueRef null
         let val_op (*bx.value)
-        var val emit_operand val_op
+        let val emit_operand val_op
         if val.handle = null
             return LLVMValueRef null
         let val_ty map_type(val_op.result_type)
-        ; When the value is a POINTER but the boxed type is a STRUCT (e.g. an
-        ; sret-returned by-value struct like plan_type(...)'s PlannedType, where
-        ; emit_operand yields the result slot pointer), LOAD the struct first —
-        ; otherwise copy_struct_value stores the 8-byte pointer into the wider
-        ; slot and high bytes are garbage. Mirrors emit_tuple's field store
-        ; (stage-0 Emitter.cpp:6456-6469).
-        let val_kind LLVMGetTypeKind(LLVMTypeOf(val))
-        if val_kind = LLVMTypeKind.Pointer()
-        {
-            if LLVMGetTypeKind(val_ty) = LLVMTypeKind.Struct()
-            {
-                if LLVMIsNull(val) <> 0
-                    set val: LLVMConstNull(val_ty)
-                if LLVMIsNull(val) = 0
-                    set val: LLVMBuildLoad2(builder, val_ty, val, "box.load")
-            }
-        }
 
         ; Resolve the destination page from the Reference location
         ; (^this → Page.get(this), ^rp / ^name → that variable).
@@ -1873,7 +1856,26 @@ define Emitter
         let box_ptr LLVMBuildCall2(builder, act, alloc_func, alloc_args.data, 3, "box.region")
 
         ; Copy the value into the allocation; yield the pointer.
-        copy_struct_value(box_ptr, val, val_ty)
+        ; When the value is a POINTER to the boxed STRUCT (an sret call result,
+        ; a region-allocated construction, or a struct local's slot), MEMCPY
+        ; DIRECTLY from the source — never LLVMBuildLoad2 the whole struct into
+        ; an SSA value: a big-struct load+store SPILLS and re-bloats the frame
+        ; of a deeply recursive caller (collapse_operand_sequence) → stack
+        ; overflow (the s178 lesson). A null source zero-inits the slot.
+        var copied: bool false
+        if LLVMGetTypeKind(LLVMTypeOf(val)) = LLVMTypeKind.Pointer()
+        {
+            if LLVMGetTypeKind(val_ty) = LLVMTypeKind.Struct()
+            {
+                if LLVMIsNull(val) <> 0
+                    LLVMBuildStore(builder, LLVMConstNull(val_ty), box_ptr)
+                if LLVMIsNull(val) = 0
+                    LLVMBuildMemCpy(builder, box_ptr, 1, val, 1, LLVMSizeOf(val_ty))
+                set copied: true
+            }
+        }
+        if copied = false
+            copy_struct_value(box_ptr, val, val_ty)
         box_ptr
     }
 
