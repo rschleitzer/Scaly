@@ -6103,8 +6103,7 @@ define Planner
                                         if static_fn <> null
                                         {
                                             let sfn (*static_fn)
-                                            var sparent_holder Vector[PlannedType]^rp(1)
-                                            sparent_holder.put(0, PlannedType(
+                                            let sparent_ref &^this PlannedType(
                                                 result.loc,
                                                 String(prefix),
                                                 Planner.encode_name prefix,
@@ -6113,8 +6112,7 @@ define Planner
                                                 null,
                                                 "",
                                                 null
-                                            ))
-                                            let sparent_ref sparent_holder.get 0
+                                            )
                                             var sitems_arr Array[PlannedItem]()
                                             var spi: size_t 0
                                             while spi < sfn.input.length
@@ -9175,8 +9173,7 @@ define Planner
                         {
                             let size_name (*size_ptr).name
                             ; Build the element pointer type pointer[T].
-                            var probe_holder Vector[PlannedType]^rp(1)
-                            probe_holder.put(0, PlannedType(
+                            let elem_mangled Planner.encode_type(PlannedType(
                                 after_subst.loc,
                                 after_subst.name,
                                 "",
@@ -9186,7 +9183,6 @@ define Planner
                                 "",
                                 null
                             ))
-                            let elem_mangled Planner.encode_type((*probe_holder.get(0)))
                             var elem_holder Vector[PlannedType]^rp(1)
                             elem_holder.put(0, PlannedType(
                                 after_subst.loc,
