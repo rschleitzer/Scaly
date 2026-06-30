@@ -2883,17 +2883,12 @@ define Planner
             right: PlannedType
         ) returns String
         {
-            var left_holder Vector[PlannedType]^rp(1)
-            left_holder.put(0, left)
-            var right_holder Vector[PlannedType]^rp(1)
-            right_holder.put(0, right)
-
             var items Vector[PlannedItem]^rp(2)
             items.put(0, PlannedItem(
-                Span(0, 0), false, null, left_holder.get 0, null
+                Span(0, 0), false, null, &^this left, null
             ))
             items.put(1, PlannedItem(
-                Span(0, 0), false, null, right_holder.get 0, null
+                Span(0, 0), false, null, &^this right, null
             ))
 
             Planner.mangle_operator(op_name, &items, null)
@@ -2906,12 +2901,9 @@ define Planner
             operand: PlannedType
         ) returns String
         {
-            var holder Vector[PlannedType]^rp(1)
-            holder.put(0, operand)
-
             var items Vector[PlannedItem]^rp(1)
             items.put(0, PlannedItem(
-                Span(0, 0), false, null, holder.get 0, null
+                Span(0, 0), false, null, &^this operand, null
             ))
 
             Planner.mangle_operator(op_name, &items, null)
@@ -16516,10 +16508,8 @@ define Planner
                                 if n.equals("this")
                                 {
                                     let p (*parent)
-                                    var type_holder Vector[PlannedType]^rp(1)
-                                    type_holder.put(0, p)
                                     var patched item
-                                    set patched.item_type: type_holder.get(0)
+                                    set patched.item_type: &^this p
                                     planned_input.put(ti, patched)
                                 }
                             }
@@ -16925,13 +16915,11 @@ define Planner
 
                         var this_name_holder Vector[String]^rp(1)
                         this_name_holder.put(0, "this")
-                        var this_ty_holder Vector[PlannedType]^rp(1)
-                        this_ty_holder.put(0, p)
                         synth_items.add(PlannedItem(
                             ini.span,
                             false,
                             this_name_holder.get 0,
-                            this_ty_holder.get 0,
+                            &^this p,
                             null
                         ))
 
