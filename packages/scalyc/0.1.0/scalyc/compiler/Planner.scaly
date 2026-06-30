@@ -1959,7 +1959,7 @@ define Planner
             if Planner.is_generic_type_param_name(pattern.name)
             {
                 result.add(KeyValuePair[String, PlannedType](pattern.name, actual))
-                return Vector[KeyValuePair[String, PlannedType]]^rp(result)
+                return Vector[KeyValuePair[String, PlannedType]](result)
             }
 
             ; s167: the outer type constructors must match before recursing
@@ -1971,7 +1971,7 @@ define Planner
             ; vector-ptr field was read as the data ptr → garbage String
             ; elements → String::hash SIGSEGV.
             if pattern.name.equals(actual.name) = false
-                return Vector[KeyValuePair[String, PlannedType]]^rp(result)
+                return Vector[KeyValuePair[String, PlannedType]](result)
 
             if pattern.generics <> null
             {
@@ -2009,7 +2009,7 @@ define Planner
                 }
             }
 
-            Vector[KeyValuePair[String, PlannedType]]^rp(result)
+            Vector[KeyValuePair[String, PlannedType]](result)
         }
 
         ; infer_type_arguments: given a function's parameter types
@@ -2027,7 +2027,7 @@ define Planner
         {
             var result Array[KeyValuePair[String, PlannedType]]()
             if param_types.length <> arg_types.length
-                return Vector[KeyValuePair[String, PlannedType]]^rp(result)
+                return Vector[KeyValuePair[String, PlannedType]](result)
 
             var i: size_t 0
             while i < param_types.length
@@ -2054,7 +2054,7 @@ define Planner
                 set i: i + 1
             }
 
-            Vector[KeyValuePair[String, PlannedType]]^rp(result)
+            Vector[KeyValuePair[String, PlannedType]](result)
         }
 
         ; instantiate_generic_function: monomorphise a generic function
@@ -2694,7 +2694,7 @@ define Planner
                             tail_arr.add((*tap))
                         set tci: tci + 1
                     }
-                    var tail_vec Vector[PlannedType]^rp(tail_arr)
+                    var tail_vec Vector[PlannedType](tail_arr)
                     return this.resolve_function_call(suffix, tail_vec)
                 }
             }
@@ -3112,7 +3112,7 @@ define Planner
                     set lc_ci: lc_ci + 1
                 }
             }
-            var lc_at_vec Vector[PlannedType]^rp(lc_arg_types)
+            var lc_at_vec Vector[PlannedType](lc_arg_types)
             let lc_mono this.monomorphize_lambda(lc_name, lc_lam, lc_at_vec)
             let lc_mangled lc_mono.mangled
             ; Prepend the captured values (looked up at the call site, where they
@@ -3160,7 +3160,7 @@ define Planner
                         set lc_ret: (*(*lc_fptr).return_type)
                 }
             }
-            var lc_call_args Vector[PlannedOperand]^rp(lc_full_args)
+            var lc_call_args Vector[PlannedOperand](lc_full_args)
             let lc_pc this.make_planned_call(head_loc, lc_name, lc_mangled, lc_ret, lc_call_args)
             PlannedOperand(head_loc, PlannedExpression.Call lc_pc, null, lc_ret)
         }
@@ -3240,7 +3240,7 @@ define Planner
                                 var two_arr Array[PlannedOperand]()
                                 two_arr.add only_op
                                 two_arr.add tuple_op
-                                var two_vec Vector[PlannedOperand]^rp(two_arr)
+                                var two_vec Vector[PlannedOperand](two_arr)
                                 return this.collapse_operand_sequence(two_vec)
                             }
                         }
@@ -3491,7 +3491,7 @@ define Planner
                                     }
                                     set lp_k: lp_k + 1
                                 }
-                                var lp_new_vec Vector[PlannedOperand]^rp(lp_new)
+                                var lp_new_vec Vector[PlannedOperand](lp_new)
                                 return this.collapse_operand_sequence(lp_new_vec)
                             }
                             else
@@ -4006,7 +4006,7 @@ define Planner
                     merged_arr.add mp_op
                     set mi: mi + 1
                 }
-                var merged_vec Vector[PlannedOperand]^rp(merged_arr)
+                var merged_vec Vector[PlannedOperand](merged_arr)
                 ; s138: progress guard. Same as the s107 merge above:
                 ; if no marker was actually merged or dropped, avoid
                 ; infinite recursion.
@@ -4233,7 +4233,7 @@ define Planner
                             }
                             set r: r + 1
                         }
-                        var rest_vec Vector[PlannedOperand]^rp(rest_arr)
+                        var rest_vec Vector[PlannedOperand](rest_arr)
                         let rest_result this.collapse_operand_sequence(rest_vec)
 
                         let rt_ref this.resolve_prefix_operator_call(
@@ -4380,7 +4380,7 @@ define Planner
                                         bcont_arr.add((*bc_ptr))
                                     set bcc: bcc + 1
                                 }
-                                var bcont_vec Vector[PlannedOperand]^rp(bcont_arr)
+                                var bcont_vec Vector[PlannedOperand](bcont_arr)
                                 return this.collapse_operand_sequence(bcont_vec)
                             }
                         }
@@ -4431,7 +4431,7 @@ define Planner
                                 cont_arr.add((*c_ptr))
                             set cc: cc + 1
                         }
-                        var cont_vec Vector[PlannedOperand]^rp(cont_arr)
+                        var cont_vec Vector[PlannedOperand](cont_arr)
                         return this.collapse_operand_sequence(cont_vec)
                     }
                     0
@@ -4543,7 +4543,7 @@ define Planner
                             var sa_arr Array[PlannedOperand]()
                             sa_arr.add result
                             sa_arr.add sa_tuple_op
-                            var sa_vec Vector[PlannedOperand]^rp(sa_arr)
+                            var sa_vec Vector[PlannedOperand](sa_arr)
                             return this.collapse_operand_sequence(sa_vec)
                         }
                     }
@@ -4941,7 +4941,7 @@ define Planner
                                                 remaining_c.add((*prc_ptr))
                                             set rrc: rrc + 1
                                         }
-                                        var remaining_cv Vector[PlannedOperand]^rp(remaining_c)
+                                        var remaining_cv Vector[PlannedOperand](remaining_c)
                                         return this.collapse_operand_sequence(remaining_cv)
                                     }
                                     return result
@@ -5064,7 +5064,7 @@ define Planner
                                         remaining.add((*p_ptr))
                                     set rr: rr + 1
                                 }
-                                var remaining_vec Vector[PlannedOperand]^rp(remaining)
+                                var remaining_vec Vector[PlannedOperand](remaining)
                                 return this.collapse_operand_sequence(remaining_vec)
                             }
                             return result
@@ -5130,7 +5130,7 @@ define Planner
                                         remaining.add((*p_ptr))
                                     set rr: rr + 1
                                 }
-                                var remaining_vec Vector[PlannedOperand]^rp(remaining)
+                                var remaining_vec Vector[PlannedOperand](remaining)
                                 return this.collapse_operand_sequence(remaining_vec)
                             }
                             return result
@@ -6309,7 +6309,7 @@ define Planner
                             }
                             else
                                 args_arr.add second
-                        var call_args Vector[PlannedOperand]^rp(args_arr)
+                        var call_args Vector[PlannedOperand](args_arr)
                         ; String → const_char argument coercion: wrap a String
                         ; argument bound to a pointer[const_char]-like parameter
                         ; in a PlannedAs so emit_as lowers it to a c_data pointer.
@@ -6322,7 +6322,7 @@ define Planner
                         if has_ns_mangled
                             if ns_coerce_valid
                             {
-                                var ns_cp_holder Vector[PlannedType]^rp(ns_coerce_params)
+                                var ns_cp_holder Vector[PlannedType](ns_coerce_params)
                                 set call_args: this.coerce_string_args_to_cstr(call_args, ns_cp_holder)
                             }
                         if has_ns_mangled = false
@@ -6497,7 +6497,7 @@ define Planner
                                                     bv_remaining.add((*bv_ptr))
                                                 set bv_rr: bv_rr + 1
                                             }
-                                            var bv_vec Vector[PlannedOperand]^rp(bv_remaining)
+                                            var bv_vec Vector[PlannedOperand](bv_remaining)
                                             return this.collapse_operand_sequence(bv_vec)
                                         }
                                         return result
@@ -6749,7 +6749,7 @@ define Planner
                                                             }
                                                             else
                                                                 0
-                                                        var new_args Vector[PlannedOperand]^rp(chained_args_arr)
+                                                        var new_args Vector[PlannedOperand](chained_args_arr)
                                                         let chained this.make_planned_call(
                                                             next_args.loc,
                                                             method_name,
@@ -6857,7 +6857,7 @@ define Planner
                                     remaining.add((*p_ptr))
                                 set r: r + 1
                             }
-                            var remaining_vec Vector[PlannedOperand]^rp(remaining)
+                            var remaining_vec Vector[PlannedOperand](remaining)
                             return this.collapse_operand_sequence(remaining_vec)
                         }
                         return result
@@ -6904,7 +6904,7 @@ define Planner
                             var two_arr_l Array[PlannedOperand]()
                             two_arr_l.add result
                             two_arr_l.add tuple_op_l
-                            var two_vec_l Vector[PlannedOperand]^rp(two_arr_l)
+                            var two_vec_l Vector[PlannedOperand](two_arr_l)
                             set result: this.collapse_operand_sequence(two_vec_l)
                         }
                     }
@@ -7103,7 +7103,7 @@ define Planner
                                 var pfx_arr Array[PlannedOperand]()
                                 pfx_arr.add rhs
                                 pfx_arr.add((*pfx_operand_ptr))
-                                var pfx_vec Vector[PlannedOperand]^rp(pfx_arr)
+                                var pfx_vec Vector[PlannedOperand](pfx_arr)
                                 set rhs: this.collapse_operand_sequence(pfx_vec)
                                 set rhs_call_consumed: true
                             }
@@ -7175,7 +7175,7 @@ define Planner
                                     var sub_arr Array[PlannedOperand]()
                                     sub_arr.add rhs
                                     sub_arr.add after_op
-                                    var sub_vec Vector[PlannedOperand]^rp(sub_arr)
+                                    var sub_vec Vector[PlannedOperand](sub_arr)
                                     set rhs: this.collapse_operand_sequence(sub_vec)
                                     set rhs_call_consumed: true
                                 }
@@ -7209,7 +7209,7 @@ define Planner
                                     var as_arr Array[PlannedOperand]()
                                     as_arr.add rhs
                                     as_arr.add as_op
-                                    var as_vec Vector[PlannedOperand]^rp(as_arr)
+                                    var as_vec Vector[PlannedOperand](as_arr)
                                     set rhs: this.collapse_operand_sequence(as_vec)
                                     set rhs_call_consumed: true
                                 }
@@ -7255,7 +7255,7 @@ define Planner
                                         var two_arr_r Array[PlannedOperand]()
                                         two_arr_r.add rhs
                                         two_arr_r.add tuple_op_r
-                                        var two_vec_r Vector[PlannedOperand]^rp(two_arr_r)
+                                        var two_vec_r Vector[PlannedOperand](two_arr_r)
                                         set rhs: this.collapse_operand_sequence(two_vec_r)
                                     }
                                 }
@@ -7379,7 +7379,7 @@ define Planner
                                                         right_arr.add((*p_ptr))
                                                     set rr: rr + 1
                                                 }
-                                                var right_vec Vector[PlannedOperand]^rp(right_arr)
+                                                var right_vec Vector[PlannedOperand](right_arr)
                                                 set rhs: this.collapse_operand_sequence(right_vec)
                                                 set consumed_rest: true
                                                 set climb_to: climb_b
@@ -9977,7 +9977,7 @@ define Planner
                                 rest_arr.add((*seg_ptr))
                             set k: k + 1
                         }
-                        var rest_vec Vector[String]^rp(rest_arr)
+                        var rest_vec Vector[String](rest_arr)
                         ; Auto-deref pointer[T] / ref[T]: use the inner
                         ; generic as the base for member resolution.
                         var base_for_chain lb.binding_type
@@ -10144,7 +10144,7 @@ define Planner
                                                     all_arr.add((*sp))
                                                 set k2: k2 + 1
                                             }
-                                            var all_vec Vector[String]^rp(all_arr)
+                                            var all_vec Vector[String](all_arr)
                                             let chain2 this.resolve_member_access(inner2, all_vec)
                                             ; s87: skip removed (was `var has_method2 / while /
                                             ; if has_method2 = false` wrapper preserved through
@@ -11291,7 +11291,7 @@ define Planner
                 ; empty arg_types list drives lookup_method#'s overload
                 ; selection.
                 var no_args_arr Array[PlannedType]()
-                let no_args Vector[PlannedType]^rp(no_args_arr)
+                let no_args Vector[PlannedType](no_args_arr)
                 let get_iter_match this.lookup_method(iter_type, "get_iterator", no_args)
                 if get_iter_match <> null
                 {
@@ -12857,7 +12857,7 @@ define Planner
                     rest_arr.add((*p_ptr))
                 set ri: ri + 1
             }
-            let ops_to_collapse Vector[PlannedOperand]^rp(rest_arr)
+            let ops_to_collapse Vector[PlannedOperand](rest_arr)
             var collapsed this.collapse_operand_sequence(ops_to_collapse)
 
             ; Page inference, gap 1 (backward binding promotion): if this
@@ -21693,7 +21693,7 @@ define Planner
             set j: j + 1
         }
 
-        Vector[KeyValuePair[size_t, PlannedType]]^rp(temp)
+        Vector[KeyValuePair[size_t, PlannedType]](temp)
     }
 
     ; occurs_in: does a type variable with the given id appear anywhere in
