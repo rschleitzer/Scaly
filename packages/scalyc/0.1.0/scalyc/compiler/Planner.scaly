@@ -2564,13 +2564,11 @@ define Planner
                         let p_ptr2 params_holder.get pi2
                         if p_ptr2 <> null
                         {
-                            var ity_holder Vector[PlannedType]^rp(1)
-                            ity_holder.put(0, (*p_ptr2))
                             items_arr.add(PlannedItem(
                                 Span(0, 0),
                                 false,
                                 null,
-                                ity_holder.get 0,
+                                &^this (*p_ptr2),
                                 null
                             ))
                         }
@@ -5827,13 +5825,11 @@ define Planner
                                                         let pt_ptr pts.get ai
                                                         if pt_ptr <> null
                                                         {
-                                                            var ity_holder Vector[PlannedType]^rp(1)
-                                                            ity_holder.put(0, (*pt_ptr))
                                                             items_arr.add(PlannedItem(
                                                                 result.loc,
                                                                 false,
                                                                 null,
-                                                                ity_holder.get 0,
+                                                                &^this (*pt_ptr),
                                                                 null
                                                             ))
                                                         }
@@ -5848,13 +5844,11 @@ define Planner
                                                         let at_ptr arg_types.get ai
                                                         if at_ptr <> null
                                                         {
-                                                            var ity_holder Vector[PlannedType]^rp(1)
-                                                            ity_holder.put(0, (*at_ptr))
                                                             items_arr.add(PlannedItem(
                                                                 result.loc,
                                                                 false,
                                                                 null,
-                                                                ity_holder.get 0,
+                                                                &^this (*at_ptr),
                                                                 null
                                                             ))
                                                         }
@@ -5979,8 +5973,6 @@ define Planner
                                             if this.has_recorded_function(ns_mangled) = false
                                             {
                                                 let mm (*match_ref)
-                                                var rt_holder Vector[PlannedType]^rp(1)
-                                                rt_holder.put(0, mm.return_type)
                                                 let extern_impl PlannedImplementation.Extern(
                                                     PlannedExternImpl result.loc
                                                 )
@@ -6009,7 +6001,7 @@ define Planner
                                                     ns_mangled,
                                                     pp_ref,
                                                     &items_holder,
-                                                    rt_holder.get 0,
+                                                    &^this mm.return_type,
                                                     mm.throws_type,
                                                     Lifetime.Unspecified(Unspecified()),
                                                     extern_impl,
