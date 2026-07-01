@@ -110193,9 +110193,9 @@ while.body150:                                    ; preds = %while.cond149
 
 while.exit151:                                    ; preds = %while.cond149
   %field.inplace183 = getelementptr inbounds %_Z8Function, ptr %3, i32 0, i32 10
-  call void @_ZN7Planner18scan_address_takenEPN4scaly6memory4PageE14Implementation(ptr %1, ptr %2, ptr %field.inplace183)
+  call void @_ZN7Planner18scan_address_takenE14Implementation(ptr %2, ptr %field.inplace183)
   %field.inplace184 = getelementptr inbounds %_Z8Function, ptr %3, i32 0, i32 10
-  call void @_ZN7Planner22scan_top_level_returnsEPN4scaly6memory4PageE14Implementation(ptr %1, ptr %2, ptr %field.inplace184)
+  call void @_ZN7Planner22scan_top_level_returnsE14Implementation(ptr %2, ptr %field.inplace184)
   %load.struct185 = load %_Z7Planner, ptr %2, align 8
   %promote_tail_return = extractvalue %_Z7Planner %load.struct185, 20
   %call186 = call i1 @_ZN7Planner26needs_implicit_return_pageE8Function(ptr %3)
@@ -110283,7 +110283,7 @@ if.end176:                                        ; preds = %if.end180, %if.then
   br label %if.end170
 
 if.then179:                                       ; preds = %if.then175
-  call void @_ZN7Planner19add_escaping_targetEPN4scaly6memory4PageE6String(ptr %1, ptr %2, ptr %deref.tmp103)
+  call void @_ZN7Planner19add_escaping_targetE6String(ptr %2, ptr %deref.tmp103)
   br label %if.end180
 
 if.end180:                                        ; preds = %if.then179, %if.then175
@@ -156569,17 +156569,18 @@ if.end6:                                          ; preds = %if.then5, %if.end
   ret void
 }
 
-define linkonce_odr void @_ZN7Planner18add_escaping_localEPN4scaly6memory4PageE6String(ptr %0, ptr %1, ptr %2) {
+define linkonce_odr void @_ZN7Planner18add_escaping_localE6String(ptr %0, ptr %1) {
 entry:
-  %field.inplace = getelementptr inbounds %_Z7Planner, ptr %1, i32 0, i32 15
-  %call = call i1 @_ZN7Planner19array_contains_nameE5ArrayI6StringE6String(ptr %1, ptr %field.inplace, ptr %2)
+  %field.inplace = getelementptr inbounds %_Z7Planner, ptr %0, i32 0, i32 15
+  %call = call i1 @_ZN7Planner19array_contains_nameE5ArrayI6StringE6String(ptr %0, ptr %field.inplace, ptr %1)
   %eq = icmp eq i1 %call, false
   br i1 %eq, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  %field.inplace1 = getelementptr inbounds %_Z7Planner, ptr %1, i32 0, i32 15
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %0, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region, ptr %0, ptr %2)
+  %field.inplace1 = getelementptr inbounds %_Z7Planner, ptr %0, i32 0, i32 15
+  %own_page = call ptr @_Z3getPv(ptr %0)
+  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %own_page, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
+  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region, ptr %own_page, ptr %1)
   call void @_ZN5ArrayI6StringE3addE6String(ptr %field.inplace1, ptr %struct.region)
   br label %if.end
 
@@ -156772,11 +156773,11 @@ if.end64:                                         ; preds = %if.then57
   br label %if.end58
 }
 
-define linkonce_odr void @_ZN7Planner17collect_flow_stmtEPN4scaly6memory4PageE9Statement(ptr %0, ptr %1, ptr %2) {
+define linkonce_odr void @_ZN7Planner17collect_flow_stmtE9Statement(ptr %0, ptr %1) {
 entry:
   %arg.tmp4 = alloca %_Z6VectorI7OperandE, align 8
   %arg.tmp = alloca %_Z6VectorI7OperandE, align 8
-  %tag.ptr = getelementptr inbounds %_Z9Statement, ptr %2, i32 0, i32 0
+  %tag.ptr = getelementptr inbounds %_Z9Statement, ptr %1, i32 0, i32 0
   %tag = load i8, ptr %tag.ptr, align 1
   switch i8 %tag, label %choose.else [
     i8 0, label %choose.when
@@ -156791,25 +156792,25 @@ choose.else:                                      ; preds = %entry
   br label %choose.end
 
 choose.when:                                      ; preds = %entry
-  %"variant.c_data().ptr" = getelementptr inbounds %_Z9Statement, ptr %2, i32 0, i32 1
+  %"variant.c_data().ptr" = getelementptr inbounds %_Z9Statement, ptr %1, i32 0, i32 1
   %variant.val = load %_Z6Action, ptr %"variant.c_data().ptr", align 8
   %source = extractvalue %_Z6Action %variant.val, 0
   store %_Z6VectorI7OperandE %source, ptr %arg.tmp, align 1
-  call void @_ZN7Planner19collect_flow_localsEPN4scaly6memory4PageE6VectorI7OperandE(ptr %0, ptr %1, ptr %arg.tmp)
+  call void @_ZN7Planner19collect_flow_localsE6VectorI7OperandE(ptr %0, ptr %arg.tmp)
   br label %choose.end
 
 choose.when1:                                     ; preds = %entry
-  %"variant.c_data().ptr2" = getelementptr inbounds %_Z9Statement, ptr %2, i32 0, i32 1
+  %"variant.c_data().ptr2" = getelementptr inbounds %_Z9Statement, ptr %1, i32 0, i32 1
   %variant.val3 = load %_Z6Return, ptr %"variant.c_data().ptr2", align 8
   %result = extractvalue %_Z6Return %variant.val3, 1
   store %_Z6VectorI7OperandE %result, ptr %arg.tmp4, align 1
-  call void @_ZN7Planner19collect_flow_localsEPN4scaly6memory4PageE6VectorI7OperandE(ptr %0, ptr %1, ptr %arg.tmp4)
+  call void @_ZN7Planner19collect_flow_localsE6VectorI7OperandE(ptr %0, ptr %arg.tmp4)
   br label %choose.end
 }
 
 declare ptr @_ZN6OptionIR9StatementE6unwrapEv(ptr)
 
-define linkonce_odr void @_ZN7Planner19collect_flow_localsEPN4scaly6memory4PageE6VectorI7OperandE(ptr %0, ptr %1, ptr %2) {
+define linkonce_odr void @_ZN7Planner19collect_flow_localsE6VectorI7OperandE(ptr %0, ptr %1) {
 entry:
   %arg.tmp320 = alloca %_Z7Operand, align 8
   %arg.tmp316 = alloca %_Z6VectorI7OperandE, align 8
@@ -156856,18 +156857,19 @@ entry:
   %arg.tmp = alloca %_Z6VectorI6StringE, align 8
   %choose.union = alloca %_Z10Expression, align 8
   %deref.tmp = alloca %_Z7Operand, align 8
-  %load.struct = load %_Z6VectorI7OperandE, ptr %2, align 8
+  %local_page = call ptr @_Z21scaly_alloc_root_pagev()
+  %load.struct = load %_Z6VectorI7OperandE, ptr %1, align 8
   %length = extractvalue %_Z6VectorI7OperandE %load.struct, 0
   %eq = icmp eq i64 %length, 1
   br i1 %eq, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  %call = call ptr @_ZN6VectorI7OperandE3getEPN4scaly6memory4PageEm(ptr %0, ptr %2, i64 0)
+  %call = call ptr @_ZN6VectorI7OperandE3getEPN4scaly6memory4PageEm(ptr %local_page, ptr %1, i64 0)
   %ne = icmp ne ptr %call, null
   br i1 %ne, label %if.then1, label %if.end2
 
 if.end:                                           ; preds = %if.end2, %entry
-  %load.struct169 = load %_Z6VectorI7OperandE, ptr %2, align 8
+  %load.struct169 = load %_Z6VectorI7OperandE, ptr %1, align 8
   %length170 = extractvalue %_Z6VectorI7OperandE %load.struct169, 0
   %ge171 = icmp uge i64 %length170, 2
   br i1 %ge171, label %if.then172, label %if.end173
@@ -156927,7 +156929,7 @@ if.end8:                                          ; preds = %if.end27, %choose.w
 if.then11:                                        ; preds = %if.then7
   %name13 = extractvalue %_Z4Type %variant.val, 1
   store %_Z6VectorI6StringE %name13, ptr %arg.tmp, align 1
-  %call14 = call ptr @_ZN6VectorI6StringE3getEPN4scaly6memory4PageEm(ptr %0, ptr %arg.tmp, i64 0)
+  %call14 = call ptr @_ZN6VectorI6StringE3getEPN4scaly6memory4PageEm(ptr %local_page, ptr %arg.tmp, i64 0)
   %ne15 = icmp ne ptr %call14, null
   br i1 %ne15, label %if.then16, label %if.end17
 
@@ -156939,7 +156941,7 @@ if.end12:                                         ; preds = %if.end17, %if.then7
 
 if.then16:                                        ; preds = %if.then11
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp18, ptr align 1 %call14, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
-  %call19 = call i1 @_ZN7Planner19name_is_capitalizedE6String(ptr %1, ptr %deref.tmp18)
+  %call19 = call i1 @_ZN7Planner19name_is_capitalizedE6String(ptr %0, ptr %deref.tmp18)
   %eq20 = icmp eq i1 %call19, false
   br i1 %eq20, label %if.then21, label %if.end22
 
@@ -156948,7 +156950,7 @@ if.end17:                                         ; preds = %if.end22, %if.then1
 
 if.then21:                                        ; preds = %if.then16
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp23, ptr align 1 %call14, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
-  call void @_ZN7Planner18add_escaping_localEPN4scaly6memory4PageE6String(ptr %0, ptr %1, ptr %deref.tmp23)
+  call void @_ZN7Planner18add_escaping_localE6String(ptr %0, ptr %deref.tmp23)
   br label %if.end22
 
 if.end22:                                         ; preds = %if.then21, %if.then16
@@ -156957,7 +156959,7 @@ if.end22:                                         ; preds = %if.then21, %if.then
 if.then26:                                        ; preds = %if.end12
   %name28 = extractvalue %_Z4Type %variant.val, 1
   store %_Z6VectorI6StringE %name28, ptr %arg.tmp, align 1
-  %call29 = call ptr @_ZN6VectorI6StringE3getEPN4scaly6memory4PageEm(ptr %0, ptr %arg.tmp, i64 0)
+  %call29 = call ptr @_ZN6VectorI6StringE3getEPN4scaly6memory4PageEm(ptr %local_page, ptr %arg.tmp, i64 0)
   %ne30 = icmp ne ptr %call29, null
   br i1 %ne30, label %if.then31, label %if.end32
 
@@ -156966,7 +156968,7 @@ if.end27:                                         ; preds = %if.end32, %if.end12
 
 if.then31:                                        ; preds = %if.then26
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp33, ptr align 1 %call29, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
-  %call34 = call i1 @_ZN7Planner19name_is_capitalizedE6String(ptr %1, ptr %deref.tmp33)
+  %call34 = call i1 @_ZN7Planner19name_is_capitalizedE6String(ptr %0, ptr %deref.tmp33)
   %eq35 = icmp eq i1 %call34, false
   br i1 %eq35, label %if.then36, label %if.end37
 
@@ -156975,7 +156977,7 @@ if.end32:                                         ; preds = %if.end37, %if.then2
 
 if.then36:                                        ; preds = %if.then31
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp38, ptr align 1 %call29, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
-  call void @_ZN7Planner18add_escaping_localEPN4scaly6memory4PageE6String(ptr %0, ptr %1, ptr %deref.tmp38)
+  call void @_ZN7Planner18add_escaping_localE6String(ptr %0, ptr %deref.tmp38)
   br label %if.end37
 
 if.end37:                                         ; preds = %if.then36, %if.then31
@@ -156998,7 +157000,7 @@ while.body:                                       ; preds = %while.cond
   %cases44 = extractvalue %_Z6Choose %variant.val41, 2
   store %_Z6VectorI4WhenE %cases44, ptr %arg.tmp45, align 1
   %i46 = load i64, ptr %i, align 4
-  %call47 = call ptr @_ZN6VectorI4WhenE3getEPN4scaly6memory4PageEm(ptr %0, ptr %arg.tmp45, i64 %i46)
+  %call47 = call ptr @_ZN6VectorI4WhenE3getEPN4scaly6memory4PageEm(ptr %local_page, ptr %arg.tmp45, i64 %i46)
   %ne48 = icmp ne ptr %call47, null
   br i1 %ne48, label %if.then49, label %if.end50
 
@@ -157012,7 +157014,7 @@ if.then49:                                        ; preds = %while.body
   %grp.deref.val52 = load %_Z4When, ptr %deref.tmp51, align 8
   %consequent = extractvalue %_Z4When %grp.deref.val52, 3
   store %_Z9Statement %consequent, ptr %arg.tmp53, align 1
-  call void @_ZN7Planner17collect_flow_stmtEPN4scaly6memory4PageE9Statement(ptr %0, ptr %1, ptr %arg.tmp53)
+  call void @_ZN7Planner17collect_flow_stmtE9Statement(ptr %0, ptr %arg.tmp53)
   br label %if.end50
 
 if.end50:                                         ; preds = %if.then49, %while.body
@@ -157026,7 +157028,7 @@ if.then56:                                        ; preds = %while.exit
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp59, ptr align 1 %alternative58, i64 ptrtoint (ptr getelementptr (%_Z9Statement, ptr null, i32 1) to i64), i1 false)
   %grp.deref.val60 = load %_Z9Statement, ptr %deref.tmp59, align 1
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp61, ptr align 1 %deref.tmp59, i64 ptrtoint (ptr getelementptr (%_Z9Statement, ptr null, i32 1) to i64), i1 false)
-  call void @_ZN7Planner17collect_flow_stmtEPN4scaly6memory4PageE9Statement(ptr %0, ptr %1, ptr %arg.tmp61)
+  call void @_ZN7Planner17collect_flow_stmtE9Statement(ptr %0, ptr %arg.tmp61)
   br label %if.end57
 
 if.end57:                                         ; preds = %if.then56, %while.exit
@@ -157037,7 +157039,7 @@ choose.when62:                                    ; preds = %if.then4
   %variant.val64 = load %_Z2If, ptr %"variant.c_data().ptr63", align 8
   %consequent65 = extractvalue %_Z2If %variant.val64, 3
   store %_Z9Statement %consequent65, ptr %arg.tmp66, align 1
-  call void @_ZN7Planner17collect_flow_stmtEPN4scaly6memory4PageE9Statement(ptr %0, ptr %1, ptr %arg.tmp66)
+  call void @_ZN7Planner17collect_flow_stmtE9Statement(ptr %0, ptr %arg.tmp66)
   %alternative67 = extractvalue %_Z2If %variant.val64, 4
   %ne68 = icmp ne ptr %alternative67, null
   br i1 %ne68, label %if.then69, label %if.end70
@@ -157047,7 +157049,7 @@ if.then69:                                        ; preds = %choose.when62
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp72, ptr align 1 %alternative71, i64 ptrtoint (ptr getelementptr (%_Z9Statement, ptr null, i32 1) to i64), i1 false)
   %grp.deref.val73 = load %_Z9Statement, ptr %deref.tmp72, align 1
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp74, ptr align 1 %deref.tmp72, i64 ptrtoint (ptr getelementptr (%_Z9Statement, ptr null, i32 1) to i64), i1 false)
-  call void @_ZN7Planner17collect_flow_stmtEPN4scaly6memory4PageE9Statement(ptr %0, ptr %1, ptr %arg.tmp74)
+  call void @_ZN7Planner17collect_flow_stmtE9Statement(ptr %0, ptr %arg.tmp74)
   br label %if.end70
 
 if.end70:                                         ; preds = %if.then69, %choose.when62
@@ -157070,7 +157072,7 @@ while.body79:                                     ; preds = %while.cond78
   %branches84 = extractvalue %_Z5Match %variant.val77, 2
   store %_Z6VectorI6BranchE %branches84, ptr %arg.tmp85, align 1
   %i86 = load i64, ptr %i, align 4
-  %call87 = call ptr @_ZN6VectorI6BranchE3getEPN4scaly6memory4PageEm(ptr %0, ptr %arg.tmp85, i64 %i86)
+  %call87 = call ptr @_ZN6VectorI6BranchE3getEPN4scaly6memory4PageEm(ptr %local_page, ptr %arg.tmp85, i64 %i86)
   %ne88 = icmp ne ptr %call87, null
   br i1 %ne88, label %if.then89, label %if.end90
 
@@ -157084,7 +157086,7 @@ if.then89:                                        ; preds = %while.body79
   %grp.deref.val92 = load %_Z6Branch, ptr %deref.tmp91, align 8
   %consequent93 = extractvalue %_Z6Branch %grp.deref.val92, 2
   store %_Z9Statement %consequent93, ptr %arg.tmp94, align 1
-  call void @_ZN7Planner17collect_flow_stmtEPN4scaly6memory4PageE9Statement(ptr %0, ptr %1, ptr %arg.tmp94)
+  call void @_ZN7Planner17collect_flow_stmtE9Statement(ptr %0, ptr %arg.tmp94)
   br label %if.end90
 
 if.end90:                                         ; preds = %if.then89, %while.body79
@@ -157098,7 +157100,7 @@ if.then99:                                        ; preds = %while.exit80
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp102, ptr align 1 %alternative101, i64 ptrtoint (ptr getelementptr (%_Z9Statement, ptr null, i32 1) to i64), i1 false)
   %grp.deref.val103 = load %_Z9Statement, ptr %deref.tmp102, align 1
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp104, ptr align 1 %deref.tmp102, i64 ptrtoint (ptr getelementptr (%_Z9Statement, ptr null, i32 1) to i64), i1 false)
-  call void @_ZN7Planner17collect_flow_stmtEPN4scaly6memory4PageE9Statement(ptr %0, ptr %1, ptr %arg.tmp104)
+  call void @_ZN7Planner17collect_flow_stmtE9Statement(ptr %0, ptr %arg.tmp104)
   br label %if.end100
 
 if.end100:                                        ; preds = %if.then99, %while.exit80
@@ -157118,7 +157120,7 @@ if.then109:                                       ; preds = %choose.when105
   %statements113 = extractvalue %_Z5Block %variant.val107, 1
   %length114 = extractvalue %_Z6VectorI9StatementE %statements113, 0
   %sub = sub i64 %length114, 1
-  %call115 = call ptr @_ZN6VectorI9StatementE3getEPN4scaly6memory4PageEm(ptr %0, ptr %arg.tmp112, i64 %sub)
+  %call115 = call ptr @_ZN6VectorI9StatementE3getEPN4scaly6memory4PageEm(ptr %local_page, ptr %arg.tmp112, i64 %sub)
   %ne116 = icmp ne ptr %call115, null
   br i1 %ne116, label %if.then117, label %if.end118
 
@@ -157126,7 +157128,7 @@ if.end110:                                        ; preds = %if.end118, %choose.
   br label %choose.end
 
 if.then117:                                       ; preds = %if.then109
-  call void @_ZN7Planner17collect_flow_stmtEPN4scaly6memory4PageE9Statement(ptr %0, ptr %1, ptr %call115)
+  call void @_ZN7Planner17collect_flow_stmtE9Statement(ptr %0, ptr %call115)
   br label %if.end118
 
 if.end118:                                        ; preds = %if.then117, %if.then109
@@ -157149,7 +157151,7 @@ while.body123:                                    ; preds = %while.cond122
   %components127 = extractvalue %_Z5Tuple %variant.val121, 1
   store %_Z6VectorI9ComponentE %components127, ptr %arg.tmp128, align 1
   %ti129 = load i64, ptr %i, align 4
-  %call130 = call ptr @_ZN6VectorI9ComponentE3getEPN4scaly6memory4PageEm(ptr %0, ptr %arg.tmp128, i64 %ti129)
+  %call130 = call ptr @_ZN6VectorI9ComponentE3getEPN4scaly6memory4PageEm(ptr %local_page, ptr %arg.tmp128, i64 %ti129)
   %ne131 = icmp ne ptr %call130, null
   br i1 %ne131, label %if.then132, label %if.end133
 
@@ -157161,7 +157163,7 @@ if.then132:                                       ; preds = %while.body123
   %grp.deref.val135 = load %_Z9Component, ptr %deref.tmp134, align 8
   %value = extractvalue %_Z9Component %grp.deref.val135, 2
   store %_Z6VectorI7OperandE %value, ptr %arg.tmp136, align 1
-  call void @_ZN7Planner19collect_flow_localsEPN4scaly6memory4PageE6VectorI7OperandE(ptr %0, ptr %1, ptr %arg.tmp136)
+  call void @_ZN7Planner19collect_flow_localsE6VectorI7OperandE(ptr %0, ptr %arg.tmp136)
   br label %if.end133
 
 if.end133:                                        ; preds = %if.then132, %while.body123
@@ -157200,7 +157202,7 @@ choose.when149:                                   ; preds = %if.then141
 if.then155:                                       ; preds = %choose.when149
   %name157 = extractvalue %_Z4Type %variant.val151, 1
   store %_Z6VectorI6StringE %name157, ptr %arg.tmp, align 1
-  %call158 = call ptr @_ZN6VectorI6StringE3getEPN4scaly6memory4PageEm(ptr %0, ptr %arg.tmp, i64 0)
+  %call158 = call ptr @_ZN6VectorI6StringE3getEPN4scaly6memory4PageEm(ptr %local_page, ptr %arg.tmp, i64 0)
   %ne159 = icmp ne ptr %call158, null
   br i1 %ne159, label %if.then160, label %if.end161
 
@@ -157209,7 +157211,7 @@ if.end156:                                        ; preds = %if.end161, %choose.
 
 if.then160:                                       ; preds = %if.then155
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp162, ptr align 1 %call158, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
-  %call163 = call i1 @_ZN7Planner19name_is_capitalizedE6String(ptr %1, ptr %deref.tmp162)
+  %call163 = call i1 @_ZN7Planner19name_is_capitalizedE6String(ptr %0, ptr %deref.tmp162)
   %eq164 = icmp eq i1 %call163, false
   br i1 %eq164, label %if.then165, label %if.end166
 
@@ -157218,19 +157220,20 @@ if.end161:                                        ; preds = %if.end166, %if.then
 
 if.then165:                                       ; preds = %if.then160
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp167, ptr align 1 %call158, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
-  call void @_ZN7Planner18add_escaping_localEPN4scaly6memory4PageE6String(ptr %0, ptr %1, ptr %deref.tmp167)
+  call void @_ZN7Planner18add_escaping_localE6String(ptr %0, ptr %deref.tmp167)
   br label %if.end166
 
 if.end166:                                        ; preds = %if.then165, %if.then160
   br label %if.end161
 
 if.then172:                                       ; preds = %if.end
-  %call174 = call ptr @_ZN6VectorI7OperandE3getEPN4scaly6memory4PageEm(ptr %0, ptr %2, i64 0)
+  %call174 = call ptr @_ZN6VectorI7OperandE3getEPN4scaly6memory4PageEm(ptr %local_page, ptr %1, i64 0)
   store i64 1, ptr %i, align 1
   store i1 true, ptr %skipping, align 1
   br label %while.cond175
 
 if.end173:                                        ; preds = %if.end210, %if.end
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   ret void
 
 while.cond175:                                    ; preds = %if.end182, %if.then172
@@ -157240,13 +157243,13 @@ while.cond175:                                    ; preds = %if.end182, %if.then
 while.body176:                                    ; preds = %while.cond175
   store i1 false, ptr %skipping, align 1
   %args_idx = load i64, ptr %i, align 4
-  %call179 = call ptr @_ZN6VectorI7OperandE3getEPN4scaly6memory4PageEm(ptr %0, ptr %2, i64 %args_idx)
+  %call179 = call ptr @_ZN6VectorI7OperandE3getEPN4scaly6memory4PageEm(ptr %local_page, ptr %1, i64 %args_idx)
   %ne180 = icmp ne ptr %call179, null
   br i1 %ne180, label %if.then181, label %if.end182
 
 while.exit177:                                    ; preds = %while.cond175
   %args_idx206 = load i64, ptr %i, align 4
-  %call207 = call ptr @_ZN6VectorI7OperandE3getEPN4scaly6memory4PageEm(ptr %0, ptr %2, i64 %args_idx206)
+  %call207 = call ptr @_ZN6VectorI7OperandE3getEPN4scaly6memory4PageEm(ptr %local_page, ptr %1, i64 %args_idx206)
   %ne208 = icmp ne ptr %call174, null
   br i1 %ne208, label %if.then209, label %if.end210
 
@@ -157361,7 +157364,7 @@ choose.when231:                                   ; preds = %if.then223
 if.then237:                                       ; preds = %choose.when231
   %name239 = extractvalue %_Z4Type %variant.val233, 1
   store %_Z6VectorI6StringE %name239, ptr %arg.tmp, align 1
-  %call240 = call ptr @_ZN6VectorI6StringE3getEPN4scaly6memory4PageEm(ptr %0, ptr %arg.tmp, i64 0)
+  %call240 = call ptr @_ZN6VectorI6StringE3getEPN4scaly6memory4PageEm(ptr %local_page, ptr %arg.tmp, i64 0)
   %ne241 = icmp ne ptr %call240, null
   br i1 %ne241, label %if.then242, label %if.end243
 
@@ -157373,7 +157376,7 @@ if.end238:                                        ; preds = %if.end243, %choose.
 
 if.then242:                                       ; preds = %if.then237
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp244, ptr align 1 %call240, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
-  %call245 = call i1 @_ZN7Planner19name_is_capitalizedE6String(ptr %1, ptr %deref.tmp244)
+  %call245 = call i1 @_ZN7Planner19name_is_capitalizedE6String(ptr %0, ptr %deref.tmp244)
   br i1 %call245, label %if.then246, label %if.end247
 
 if.end243:                                        ; preds = %if.end247, %if.then237
@@ -157389,7 +157392,7 @@ if.end247:                                        ; preds = %if.then246, %if.the
 if.then251:                                       ; preds = %if.end238
   %name253 = extractvalue %_Z4Type %variant.val233, 1
   store %_Z6VectorI6StringE %name253, ptr %arg.tmp, align 1
-  %call254 = call ptr @_ZN6VectorI6StringE3getEPN4scaly6memory4PageEm(ptr %0, ptr %arg.tmp, i64 0)
+  %call254 = call ptr @_ZN6VectorI6StringE3getEPN4scaly6memory4PageEm(ptr %local_page, ptr %arg.tmp, i64 0)
   %ne255 = icmp ne ptr %call254, null
   br i1 %ne255, label %if.then256, label %if.end257
 
@@ -157421,7 +157424,7 @@ if.then266:                                       ; preds = %if.end252
   %name269 = extractvalue %_Z4Type %variant.val233, 1
   %length270 = extractvalue %_Z6VectorI6StringE %name269, 0
   %sub271 = sub i64 %length270, 1
-  %call272 = call ptr @_ZN6VectorI6StringE3getEPN4scaly6memory4PageEm(ptr %0, ptr %arg.tmp, i64 %sub271)
+  %call272 = call ptr @_ZN6VectorI6StringE3getEPN4scaly6memory4PageEm(ptr %local_page, ptr %arg.tmp, i64 %sub271)
   %ne273 = icmp ne ptr %call272, null
   br i1 %ne273, label %if.then274, label %if.end275
 
@@ -157430,7 +157433,7 @@ if.end267:                                        ; preds = %if.end275, %if.end2
 
 if.then274:                                       ; preds = %if.then266
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp276, ptr align 1 %call272, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
-  %call277 = call i1 @_ZN7Planner19name_is_capitalizedE6String(ptr %1, ptr %deref.tmp276)
+  %call277 = call i1 @_ZN7Planner19name_is_capitalizedE6String(ptr %0, ptr %deref.tmp276)
   %eq278 = icmp eq i1 %call277, false
   br i1 %eq278, label %if.then279, label %if.end280
 
@@ -157445,14 +157448,14 @@ if.end280:                                        ; preds = %if.then279, %if.the
   br label %if.end275
 
 if.then283:                                       ; preds = %if.end224
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %0, i64 ptrtoint (ptr getelementptr (%_Z6VectorI7OperandE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI7OperandE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI7OperandEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %0, i64 1)
+  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 ptrtoint (ptr getelementptr (%_Z6VectorI7OperandE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI7OperandE }, ptr null, i64 0, i32 1) to i64))
+  call void @_ZN6VectorI7OperandEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %local_page, i64 1)
   store ptr %struct.region, ptr %dh, align 1
   %dh285 = load ptr, ptr %dh, align 8
   store %_Z7Operand %grp.deref.val216, ptr %deref.tmp214, align 1
   call void @_ZN6VectorI7OperandE3putEm7Operand(ptr %dh285, i64 0, ptr %deref.tmp214)
   %dh286 = load ptr, ptr %dh, align 8
-  call void @_ZN7Planner19collect_flow_localsEPN4scaly6memory4PageE6VectorI7OperandE(ptr %0, ptr %1, ptr %dh286)
+  call void @_ZN7Planner19collect_flow_localsE6VectorI7OperandE(ptr %0, ptr %dh286)
   br label %if.end284
 
 if.end284:                                        ; preds = %if.then283, %if.end224
@@ -157483,14 +157486,14 @@ choose.end295:                                    ; preds = %choose.else296, %wh
   br label %if.end290
 
 choose.else296:                                   ; preds = %if.then289
-  %struct.region319 = call ptr @_ZN4Page8allocateEmm(ptr %0, i64 ptrtoint (ptr getelementptr (%_Z6VectorI7OperandE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI7OperandE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI7OperandEC1EPN4scaly6memory4PageEm(ptr %struct.region319, ptr %0, i64 1)
+  %struct.region319 = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 ptrtoint (ptr getelementptr (%_Z6VectorI7OperandE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI7OperandE }, ptr null, i64 0, i32 1) to i64))
+  call void @_ZN6VectorI7OperandEC1EPN4scaly6memory4PageEm(ptr %struct.region319, ptr %local_page, i64 1)
   store ptr %struct.region319, ptr %dh, align 1
   %ph = load ptr, ptr %dh, align 8
   store %_Z7Operand %grp.deref.val216, ptr %arg.tmp320, align 1
   call void @_ZN6VectorI7OperandE3putEm7Operand(ptr %ph, i64 0, ptr %arg.tmp320)
   %ph321 = load ptr, ptr %dh, align 8
-  call void @_ZN7Planner19collect_flow_localsEPN4scaly6memory4PageE6VectorI7OperandE(ptr %0, ptr %1, ptr %ph321)
+  call void @_ZN7Planner19collect_flow_localsE6VectorI7OperandE(ptr %0, ptr %ph321)
   br label %choose.end295
 
 choose.when297:                                   ; preds = %if.then289
@@ -157510,7 +157513,7 @@ while.body301:                                    ; preds = %while.cond300
   %components307 = extractvalue %_Z5Tuple %variant.val299, 1
   store %_Z6VectorI9ComponentE %components307, ptr %arg.tmp128, align 1
   %ci308 = load i64, ptr %ci, align 4
-  %call309 = call ptr @_ZN6VectorI9ComponentE3getEPN4scaly6memory4PageEm(ptr %0, ptr %arg.tmp128, i64 %ci308)
+  %call309 = call ptr @_ZN6VectorI9ComponentE3getEPN4scaly6memory4PageEm(ptr %local_page, ptr %arg.tmp128, i64 %ci308)
   %ne310 = icmp ne ptr %call309, null
   br i1 %ne310, label %if.then311, label %if.end312
 
@@ -157522,7 +157525,7 @@ if.then311:                                       ; preds = %while.body301
   %grp.deref.val314 = load %_Z9Component, ptr %deref.tmp313, align 8
   %value315 = extractvalue %_Z9Component %grp.deref.val314, 2
   store %_Z6VectorI7OperandE %value315, ptr %arg.tmp316, align 1
-  call void @_ZN7Planner19collect_flow_localsEPN4scaly6memory4PageE6VectorI7OperandE(ptr %0, ptr %1, ptr %arg.tmp316)
+  call void @_ZN7Planner19collect_flow_localsE6VectorI7OperandE(ptr %0, ptr %arg.tmp316)
   br label %if.end312
 
 if.end312:                                        ; preds = %if.then311, %while.body301
@@ -157532,17 +157535,18 @@ if.end312:                                        ; preds = %if.then311, %while.
   br label %while.cond300
 }
 
-define linkonce_odr void @_ZN7Planner19add_escaping_targetEPN4scaly6memory4PageE6String(ptr %0, ptr %1, ptr %2) {
+define linkonce_odr void @_ZN7Planner19add_escaping_targetE6String(ptr %0, ptr %1) {
 entry:
-  %field.inplace = getelementptr inbounds %_Z7Planner, ptr %1, i32 0, i32 18
-  %call = call i1 @_ZN7Planner19array_contains_nameE5ArrayI6StringE6String(ptr %1, ptr %field.inplace, ptr %2)
+  %field.inplace = getelementptr inbounds %_Z7Planner, ptr %0, i32 0, i32 18
+  %call = call i1 @_ZN7Planner19array_contains_nameE5ArrayI6StringE6String(ptr %0, ptr %field.inplace, ptr %1)
   %eq = icmp eq i1 %call, false
   br i1 %eq, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  %field.inplace1 = getelementptr inbounds %_Z7Planner, ptr %1, i32 0, i32 18
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %0, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region, ptr %0, ptr %2)
+  %field.inplace1 = getelementptr inbounds %_Z7Planner, ptr %0, i32 0, i32 18
+  %own_page = call ptr @_Z3getPv(ptr %0)
+  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %own_page, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
+  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region, ptr %own_page, ptr %1)
   call void @_ZN5ArrayI6StringE3addE6String(ptr %field.inplace1, ptr %struct.region)
   br label %if.end
 
@@ -157928,7 +157932,7 @@ if.end56:                                         ; preds = %if.then50
   br label %if.end51
 }
 
-define linkonce_odr void @_ZN7Planner26collect_store_value_localsEPN4scaly6memory4PageE6VectorI7OperandE(ptr %0, ptr %1, ptr %2) {
+define linkonce_odr void @_ZN7Planner26collect_store_value_localsE6VectorI7OperandE(ptr %0, ptr %1) {
 entry:
   %sa = alloca ptr, align 8
   %arg.tmp163 = alloca %_Z6VectorI7OperandE, align 8
@@ -157937,7 +157941,6 @@ entry:
   %ci = alloca i64, align 8
   %choose.union144 = alloca %_Z10Expression, align 8
   %arg.tmp127 = alloca %_Z5Tuple, align 8
-  %local_page = call ptr @_Z21scaly_alloc_root_pagev()
   %sret.result = alloca { ptr }, align 8
   %choose.union119 = alloca %_Z10Expression, align 8
   %arg.tmp113 = alloca { ptr }, align 8
@@ -157953,14 +157956,15 @@ entry:
   %deref.tmp12 = alloca %_Z6VectorI6StringE, align 8
   %recv_escapes = alloca i1, align 1
   %deref.tmp = alloca %_Z7Operand, align 8
-  %load.struct = load %_Z6VectorI7OperandE, ptr %2, align 8
+  %local_page = call ptr @_Z21scaly_alloc_root_pagev()
+  %load.struct = load %_Z6VectorI7OperandE, ptr %1, align 8
   %length = extractvalue %_Z6VectorI7OperandE %load.struct, 0
   %ge = icmp uge i64 %length, 2
   br i1 %ge, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  %call = call ptr @_ZN6VectorI7OperandE3getEPN4scaly6memory4PageEm(ptr %0, ptr %2, i64 0)
-  %call1 = call ptr @_ZN6VectorI7OperandE3getEPN4scaly6memory4PageEm(ptr %0, ptr %2, i64 1)
+  %call = call ptr @_ZN6VectorI7OperandE3getEPN4scaly6memory4PageEm(ptr %local_page, ptr %1, i64 0)
+  %call1 = call ptr @_ZN6VectorI7OperandE3getEPN4scaly6memory4PageEm(ptr %local_page, ptr %1, i64 1)
   %ne = icmp ne ptr %call, null
   br i1 %ne, label %if.then2, label %if.end3
 
@@ -158005,7 +158009,7 @@ if.then16:                                        ; preds = %if.then9
   %load.struct18 = load %_Z6VectorI6StringE, ptr %deref.tmp12, align 8
   %length19 = extractvalue %_Z6VectorI6StringE %load.struct18, 0
   %sub = sub i64 %length19, 1
-  %call20 = call ptr @_ZN6VectorI6StringE3getEPN4scaly6memory4PageEm(ptr %0, ptr %deref.tmp12, i64 %sub)
+  %call20 = call ptr @_ZN6VectorI6StringE3getEPN4scaly6memory4PageEm(ptr %local_page, ptr %deref.tmp12, i64 %sub)
   %ne21 = icmp ne ptr %call20, null
   br i1 %ne21, label %if.then22, label %if.end23
 
@@ -158060,7 +158064,7 @@ choose.when:                                      ; preds = %if.then28
 if.then31:                                        ; preds = %choose.when
   %name33 = extractvalue %_Z4Type %variant.val, 1
   store %_Z6VectorI6StringE %name33, ptr %arg.tmp34, align 1
-  %call35 = call ptr @_ZN6VectorI6StringE3getEPN4scaly6memory4PageEm(ptr %0, ptr %arg.tmp34, i64 0)
+  %call35 = call ptr @_ZN6VectorI6StringE3getEPN4scaly6memory4PageEm(ptr %local_page, ptr %arg.tmp34, i64 0)
   %ne36 = icmp ne ptr %call35, null
   br i1 %ne36, label %if.then37, label %if.end38
 
@@ -158069,8 +158073,8 @@ if.end32:                                         ; preds = %if.end38, %choose.w
 
 if.then37:                                        ; preds = %if.then31
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp39, ptr align 1 %call35, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
-  %field.inplace = getelementptr inbounds %_Z7Planner, ptr %1, i32 0, i32 18
-  %call40 = call i1 @_ZN7Planner19array_contains_nameE5ArrayI6StringE6String(ptr %1, ptr %field.inplace, ptr %deref.tmp39)
+  %field.inplace = getelementptr inbounds %_Z7Planner, ptr %0, i32 0, i32 18
+  %call40 = call i1 @_ZN7Planner19array_contains_nameE5ArrayI6StringE6String(ptr %0, ptr %field.inplace, ptr %deref.tmp39)
   br i1 %call40, label %if.then41, label %if.end42
 
 if.end38:                                         ; preds = %if.end46, %if.then31
@@ -158081,8 +158085,8 @@ if.then41:                                        ; preds = %if.then37
   br label %if.end42
 
 if.end42:                                         ; preds = %if.then41, %if.then37
-  %field.inplace43 = getelementptr inbounds %_Z7Planner, ptr %1, i32 0, i32 15
-  %call44 = call i1 @_ZN7Planner19array_contains_nameE5ArrayI6StringE6String(ptr %1, ptr %field.inplace43, ptr %deref.tmp39)
+  %field.inplace43 = getelementptr inbounds %_Z7Planner, ptr %0, i32 0, i32 15
+  %call44 = call i1 @_ZN7Planner19array_contains_nameE5ArrayI6StringE6String(ptr %0, ptr %field.inplace43, ptr %deref.tmp39)
   br i1 %call44, label %if.then45, label %if.end46
 
 if.then45:                                        ; preds = %if.end42
@@ -158124,7 +158128,7 @@ choose.when57:                                    ; preds = %if.then49
 if.then63:                                        ; preds = %choose.when57
   %name65 = extractvalue %_Z4Type %variant.val59, 1
   store %_Z6VectorI6StringE %name65, ptr %deref.tmp12, align 1
-  %call66 = call ptr @_ZN6VectorI6StringE3getEPN4scaly6memory4PageEm(ptr %0, ptr %deref.tmp12, i64 1)
+  %call66 = call ptr @_ZN6VectorI6StringE3getEPN4scaly6memory4PageEm(ptr %local_page, ptr %deref.tmp12, i64 1)
   %ne67 = icmp ne ptr %call66, null
   br i1 %ne67, label %if.then68, label %if.end69
 
@@ -158152,7 +158156,7 @@ lor.end72:                                        ; preds = %lor.rhs71, %if.then
 if.then76:                                        ; preds = %lor.end72
   %name78 = extractvalue %_Z4Type %variant.val59, 1
   store %_Z6VectorI6StringE %name78, ptr %deref.tmp12, align 1
-  %call79 = call ptr @_ZN6VectorI6StringE3getEPN4scaly6memory4PageEm(ptr %0, ptr %deref.tmp12, i64 0)
+  %call79 = call ptr @_ZN6VectorI6StringE3getEPN4scaly6memory4PageEm(ptr %local_page, ptr %deref.tmp12, i64 0)
   %ne80 = icmp ne ptr %call79, null
   br i1 %ne80, label %if.then81, label %if.end82
 
@@ -158161,8 +158165,8 @@ if.end77:                                         ; preds = %if.end82, %lor.end7
 
 if.then81:                                        ; preds = %if.then76
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp83, ptr align 1 %call79, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
-  %field.inplace84 = getelementptr inbounds %_Z7Planner, ptr %1, i32 0, i32 18
-  %call85 = call i1 @_ZN7Planner19array_contains_nameE5ArrayI6StringE6String(ptr %1, ptr %field.inplace84, ptr %deref.tmp83)
+  %field.inplace84 = getelementptr inbounds %_Z7Planner, ptr %0, i32 0, i32 18
+  %call85 = call i1 @_ZN7Planner19array_contains_nameE5ArrayI6StringE6String(ptr %0, ptr %field.inplace84, ptr %deref.tmp83)
   br i1 %call85, label %if.then86, label %if.end87
 
 if.end82:                                         ; preds = %if.end91, %if.then76
@@ -158173,8 +158177,8 @@ if.then86:                                        ; preds = %if.then81
   br label %if.end87
 
 if.end87:                                         ; preds = %if.then86, %if.then81
-  %field.inplace88 = getelementptr inbounds %_Z7Planner, ptr %1, i32 0, i32 15
-  %call89 = call i1 @_ZN7Planner19array_contains_nameE5ArrayI6StringE6String(ptr %1, ptr %field.inplace88, ptr %deref.tmp83)
+  %field.inplace88 = getelementptr inbounds %_Z7Planner, ptr %0, i32 0, i32 15
+  %call89 = call i1 @_ZN7Planner19array_contains_nameE5ArrayI6StringE6String(ptr %0, ptr %field.inplace88, ptr %deref.tmp83)
   br i1 %call89, label %if.then90, label %if.end91
 
 if.then90:                                        ; preds = %if.end87
@@ -158200,7 +158204,7 @@ if.then101:                                       ; preds = %if.then95
   %load.struct103 = load %_Z6VectorI6StringE, ptr %deref.tmp12, align 8
   %length104 = extractvalue %_Z6VectorI6StringE %load.struct103, 0
   %sub105 = sub i64 %length104, 1
-  %call106 = call ptr @_ZN6VectorI6StringE3getEPN4scaly6memory4PageEm(ptr %0, ptr %deref.tmp12, i64 %sub105)
+  %call106 = call ptr @_ZN6VectorI6StringE3getEPN4scaly6memory4PageEm(ptr %local_page, ptr %deref.tmp12, i64 %sub105)
   %ne107 = icmp ne ptr %call106, null
   br i1 %ne107, label %if.then108, label %if.end109
 
@@ -158248,14 +158252,14 @@ choose.when124:                                   ; preds = %if.then116
   %"variant.c_data().ptr125" = getelementptr inbounds %_Z10Expression, ptr %choose.union119, i32 0, i32 1
   %variant.val126 = load %_Z5Tuple, ptr %"variant.c_data().ptr125", align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp127, ptr align 1 %"variant.c_data().ptr125", i64 ptrtoint (ptr getelementptr (%_Z5Tuple, ptr null, i32 1) to i64), i1 false)
-  call void @_ZN7Planner25tuple_deref_receiver_nameEPN4scaly6memory4PageE5Tuple(ptr noalias sret({ ptr }) %sret.result, ptr %local_page, ptr %1, ptr %arg.tmp127)
+  call void @_ZN7Planner25tuple_deref_receiver_nameEPN4scaly6memory4PageE5Tuple(ptr noalias sret({ ptr }) %sret.result, ptr %local_page, ptr %0, ptr %arg.tmp127)
   %call128 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result)
   %gt = icmp ugt i64 %call128, 0
   br i1 %gt, label %if.then129, label %if.end130
 
 if.then129:                                       ; preds = %choose.when124
-  %field.inplace131 = getelementptr inbounds %_Z7Planner, ptr %1, i32 0, i32 18
-  %call132 = call i1 @_ZN7Planner19array_contains_nameE5ArrayI6StringE6String(ptr %1, ptr %field.inplace131, ptr %sret.result)
+  %field.inplace131 = getelementptr inbounds %_Z7Planner, ptr %0, i32 0, i32 18
+  %call132 = call i1 @_ZN7Planner19array_contains_nameE5ArrayI6StringE6String(ptr %0, ptr %field.inplace131, ptr %sret.result)
   br i1 %call132, label %if.then133, label %if.end134
 
 if.end130:                                        ; preds = %if.end138, %choose.when124
@@ -158266,8 +158270,8 @@ if.then133:                                       ; preds = %if.then129
   br label %if.end134
 
 if.end134:                                        ; preds = %if.then133, %if.then129
-  %field.inplace135 = getelementptr inbounds %_Z7Planner, ptr %1, i32 0, i32 15
-  %call136 = call i1 @_ZN7Planner19array_contains_nameE5ArrayI6StringE6String(ptr %1, ptr %field.inplace135, ptr %sret.result)
+  %field.inplace135 = getelementptr inbounds %_Z7Planner, ptr %0, i32 0, i32 15
+  %call136 = call i1 @_ZN7Planner19array_contains_nameE5ArrayI6StringE6String(ptr %0, ptr %field.inplace135, ptr %sret.result)
   br i1 %call136, label %if.then137, label %if.end138
 
 if.then137:                                       ; preds = %if.end134
@@ -158293,14 +158297,14 @@ choose.end147:                                    ; preds = %choose.else148, %wh
   br label %if.end142
 
 choose.else148:                                   ; preds = %if.then141
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %0, i64 ptrtoint (ptr getelementptr (%_Z6VectorI7OperandE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI7OperandE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI7OperandEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %0, i64 1)
+  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 ptrtoint (ptr getelementptr (%_Z6VectorI7OperandE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI7OperandE }, ptr null, i64 0, i32 1) to i64))
+  call void @_ZN6VectorI7OperandEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %local_page, i64 1)
   store ptr %struct.region, ptr %sa, align 1
   %sa165 = load ptr, ptr %sa, align 8
   store %_Z7Operand %grp.deref.val7, ptr %deref.tmp, align 1
   call void @_ZN6VectorI7OperandE3putEm7Operand(ptr %sa165, i64 0, ptr %deref.tmp)
   %sa166 = load ptr, ptr %sa, align 8
-  call void @_ZN7Planner19collect_flow_localsEPN4scaly6memory4PageE6VectorI7OperandE(ptr %0, ptr %1, ptr %sa166)
+  call void @_ZN7Planner19collect_flow_localsE6VectorI7OperandE(ptr %0, ptr %sa166)
   br label %choose.end147
 
 choose.when149:                                   ; preds = %if.then141
@@ -158320,7 +158324,7 @@ while.body:                                       ; preds = %while.cond
   %components154 = extractvalue %_Z5Tuple %variant.val151, 1
   store %_Z6VectorI9ComponentE %components154, ptr %arg.tmp155, align 1
   %ci156 = load i64, ptr %ci, align 4
-  %call157 = call ptr @_ZN6VectorI9ComponentE3getEPN4scaly6memory4PageEm(ptr %0, ptr %arg.tmp155, i64 %ci156)
+  %call157 = call ptr @_ZN6VectorI9ComponentE3getEPN4scaly6memory4PageEm(ptr %local_page, ptr %arg.tmp155, i64 %ci156)
   %ne158 = icmp ne ptr %call157, null
   br i1 %ne158, label %if.then159, label %if.end160
 
@@ -158332,7 +158336,7 @@ if.then159:                                       ; preds = %while.body
   %grp.deref.val162 = load %_Z9Component, ptr %deref.tmp161, align 8
   %value = extractvalue %_Z9Component %grp.deref.val162, 2
   store %_Z6VectorI7OperandE %value, ptr %arg.tmp163, align 1
-  call void @_ZN7Planner19collect_flow_localsEPN4scaly6memory4PageE6VectorI7OperandE(ptr %0, ptr %1, ptr %arg.tmp163)
+  call void @_ZN7Planner19collect_flow_localsE6VectorI7OperandE(ptr %0, ptr %arg.tmp163)
   br label %if.end160
 
 if.end160:                                        ; preds = %if.then159, %while.body
@@ -158342,43 +158346,44 @@ if.end160:                                        ; preds = %if.then159, %while.
   br label %while.cond
 }
 
-define linkonce_odr void @_ZN7Planner22collect_returns_actionEPN4scaly6memory4PageE6Action(ptr %0, ptr %1, ptr %2) {
+define linkonce_odr void @_ZN7Planner22collect_returns_actionE6Action(ptr %0, ptr %1) {
 entry:
   %tesc = alloca i1, align 1
   %deref.tmp29 = alloca { ptr }, align 8
   %arg.tmp = alloca %_Z6VectorI6StringE, align 8
   %choose.union = alloca %_Z10Expression, align 8
   %deref.tmp = alloca %_Z7Operand, align 8
+  %local_page = call ptr @_Z21scaly_alloc_root_pagev()
   %i = alloca i64, align 8
   store i64 0, ptr %i, align 1
   br label %while.cond
 
 while.cond:                                       ; preds = %if.end, %entry
   %i1 = load i64, ptr %i, align 4
-  %load.struct = load %_Z6Action, ptr %2, align 8
+  %load.struct = load %_Z6Action, ptr %1, align 8
   %source = extractvalue %_Z6Action %load.struct, 0
   %length = extractvalue %_Z6VectorI7OperandE %source, 0
   %lt = icmp ult i64 %i1, %length
   br i1 %lt, label %while.body, label %while.exit
 
 while.body:                                       ; preds = %while.cond
-  %field.inplace = getelementptr inbounds %_Z6Action, ptr %2, i32 0, i32 0
+  %field.inplace = getelementptr inbounds %_Z6Action, ptr %1, i32 0, i32 0
   %i2 = load i64, ptr %i, align 4
-  %call = call ptr @_ZN6VectorI7OperandE3getEPN4scaly6memory4PageEm(ptr %0, ptr %field.inplace, i64 %i2)
+  %call = call ptr @_ZN6VectorI7OperandE3getEPN4scaly6memory4PageEm(ptr %local_page, ptr %field.inplace, i64 %i2)
   %ne = icmp ne ptr %call, null
   br i1 %ne, label %if.then, label %if.end
 
 while.exit:                                       ; preds = %while.cond
-  %field.inplace4 = getelementptr inbounds %_Z6Action, ptr %2, i32 0, i32 0
-  call void @_ZN7Planner26collect_store_value_localsEPN4scaly6memory4PageE6VectorI7OperandE(ptr %0, ptr %1, ptr %field.inplace4)
-  %load.struct5 = load %_Z6Action, ptr %2, align 8
+  %field.inplace4 = getelementptr inbounds %_Z6Action, ptr %1, i32 0, i32 0
+  call void @_ZN7Planner26collect_store_value_localsE6VectorI7OperandE(ptr %0, ptr %field.inplace4)
+  %load.struct5 = load %_Z6Action, ptr %1, align 8
   %target = extractvalue %_Z6Action %load.struct5, 1
   %length6 = extractvalue %_Z6VectorI7OperandE %target, 0
   %eq = icmp eq i64 %length6, 1
   br i1 %eq, label %if.then7, label %if.end8
 
 if.then:                                          ; preds = %while.body
-  call void @_ZN7Planner23collect_returns_operandEPN4scaly6memory4PageE7Operand(ptr %0, ptr %1, ptr %call)
+  call void @_ZN7Planner23collect_returns_operandE7Operand(ptr %0, ptr %call)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %while.body
@@ -158388,12 +158393,13 @@ if.end:                                           ; preds = %if.then, %while.bod
   br label %while.cond
 
 if.then7:                                         ; preds = %while.exit
-  %field.inplace9 = getelementptr inbounds %_Z6Action, ptr %2, i32 0, i32 1
-  %call10 = call ptr @_ZN6VectorI7OperandE3getEPN4scaly6memory4PageEm(ptr %0, ptr %field.inplace9, i64 0)
+  %field.inplace9 = getelementptr inbounds %_Z6Action, ptr %1, i32 0, i32 1
+  %call10 = call ptr @_ZN6VectorI7OperandE3getEPN4scaly6memory4PageEm(ptr %local_page, ptr %field.inplace9, i64 0)
   %ne11 = icmp ne ptr %call10, null
   br i1 %ne11, label %if.then12, label %if.end13
 
 if.end8:                                          ; preds = %if.end13, %while.exit
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   ret void
 
 if.then12:                                        ; preds = %if.then7
@@ -158444,7 +158450,7 @@ if.end19:                                         ; preds = %if.end23, %choose.w
 if.then22:                                        ; preds = %if.then18
   %name24 = extractvalue %_Z4Type %variant.val, 1
   store %_Z6VectorI6StringE %name24, ptr %arg.tmp, align 1
-  %call25 = call ptr @_ZN6VectorI6StringE3getEPN4scaly6memory4PageEm(ptr %0, ptr %arg.tmp, i64 0)
+  %call25 = call ptr @_ZN6VectorI6StringE3getEPN4scaly6memory4PageEm(ptr %local_page, ptr %arg.tmp, i64 0)
   %ne26 = icmp ne ptr %call25, null
   br i1 %ne26, label %if.then27, label %if.end28
 
@@ -158454,8 +158460,8 @@ if.end23:                                         ; preds = %if.end28, %if.then1
 if.then27:                                        ; preds = %if.then22
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp29, ptr align 1 %call25, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   store i1 false, ptr %tesc, align 1
-  %field.inplace30 = getelementptr inbounds %_Z7Planner, ptr %1, i32 0, i32 15
-  %call31 = call i1 @_ZN7Planner19array_contains_nameE5ArrayI6StringE6String(ptr %1, ptr %field.inplace30, ptr %deref.tmp29)
+  %field.inplace30 = getelementptr inbounds %_Z7Planner, ptr %0, i32 0, i32 15
+  %call31 = call i1 @_ZN7Planner19array_contains_nameE5ArrayI6StringE6String(ptr %0, ptr %field.inplace30, ptr %deref.tmp29)
   br i1 %call31, label %if.then32, label %if.end33
 
 if.end28:                                         ; preds = %if.end40, %if.then22
@@ -158466,8 +158472,8 @@ if.then32:                                        ; preds = %if.then27
   br label %if.end33
 
 if.end33:                                         ; preds = %if.then32, %if.then27
-  %field.inplace34 = getelementptr inbounds %_Z7Planner, ptr %1, i32 0, i32 18
-  %call35 = call i1 @_ZN7Planner19array_contains_nameE5ArrayI6StringE6String(ptr %1, ptr %field.inplace34, ptr %deref.tmp29)
+  %field.inplace34 = getelementptr inbounds %_Z7Planner, ptr %0, i32 0, i32 18
+  %call35 = call i1 @_ZN7Planner19array_contains_nameE5ArrayI6StringE6String(ptr %0, ptr %field.inplace34, ptr %deref.tmp29)
   br i1 %call35, label %if.then36, label %if.end37
 
 if.then36:                                        ; preds = %if.end33
@@ -158479,18 +158485,19 @@ if.end37:                                         ; preds = %if.then36, %if.end3
   br i1 %tesc38, label %if.then39, label %if.end40
 
 if.then39:                                        ; preds = %if.end37
-  %field.inplace41 = getelementptr inbounds %_Z6Action, ptr %2, i32 0, i32 0
-  call void @_ZN7Planner19collect_flow_localsEPN4scaly6memory4PageE6VectorI7OperandE(ptr %0, ptr %1, ptr %field.inplace41)
+  %field.inplace41 = getelementptr inbounds %_Z6Action, ptr %1, i32 0, i32 0
+  call void @_ZN7Planner19collect_flow_localsE6VectorI7OperandE(ptr %0, ptr %field.inplace41)
   br label %if.end40
 
 if.end40:                                         ; preds = %if.then39, %if.end37
   br label %if.end28
 }
 
-define linkonce_odr void @_ZN7Planner20collect_returns_stmtEPN4scaly6memory4PageE9Statement(ptr %0, ptr %1, ptr %2) {
+define linkonce_odr void @_ZN7Planner20collect_returns_stmtE9Statement(ptr %0, ptr %1) {
 entry:
   %arg.tmp43 = alloca %_Z6Action, align 8
   %arg.tmp36 = alloca %_Z6VectorI7OperandE, align 8
+  %local_page = call ptr @_Z21scaly_alloc_root_pagev()
   %sret.result = alloca { ptr }, align 8
   %arg.tmp26 = alloca %_Z6VectorI7OperandE, align 8
   %arg.tmp21 = alloca %_Z6VectorI7OperandE, align 8
@@ -158499,7 +158506,7 @@ entry:
   %arg.tmp8 = alloca %_Z6VectorI7OperandE, align 8
   %deref.tmp = alloca { ptr }, align 8
   %arg.tmp = alloca %_Z6VectorI7OperandE, align 8
-  %tag.ptr = getelementptr inbounds %_Z9Statement, ptr %2, i32 0, i32 0
+  %tag.ptr = getelementptr inbounds %_Z9Statement, ptr %1, i32 0, i32 0
   %tag = load i8, ptr %tag.ptr, align 1
   switch i8 %tag, label %choose.else [
     i8 4, label %choose.when
@@ -158509,21 +158516,22 @@ entry:
 
 choose.end:                                       ; preds = %choose.else, %choose.when40, %if.end, %choose.when
   %choose.value = phi i64 [ 0, %choose.else ], [ undef, %choose.when ], [ undef, %if.end ], [ undef, %choose.when40 ]
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   ret void
 
 choose.else:                                      ; preds = %entry
   br label %choose.end
 
 choose.when:                                      ; preds = %entry
-  %"variant.c_data().ptr" = getelementptr inbounds %_Z9Statement, ptr %2, i32 0, i32 1
+  %"variant.c_data().ptr" = getelementptr inbounds %_Z9Statement, ptr %1, i32 0, i32 1
   %variant.val = load %_Z6Return, ptr %"variant.c_data().ptr", align 8
   %result = extractvalue %_Z6Return %variant.val, 1
   store %_Z6VectorI7OperandE %result, ptr %arg.tmp, align 1
-  call void @_ZN7Planner19collect_flow_localsEPN4scaly6memory4PageE6VectorI7OperandE(ptr %0, ptr %1, ptr %arg.tmp)
+  call void @_ZN7Planner19collect_flow_localsE6VectorI7OperandE(ptr %0, ptr %arg.tmp)
   br label %choose.end
 
 choose.when1:                                     ; preds = %entry
-  %"variant.c_data().ptr2" = getelementptr inbounds %_Z9Statement, ptr %2, i32 0, i32 1
+  %"variant.c_data().ptr2" = getelementptr inbounds %_Z9Statement, ptr %1, i32 0, i32 1
   %variant.val3 = load %_Z7Binding, ptr %"variant.c_data().ptr2", align 8
   %item = extractvalue %_Z7Binding %variant.val3, 2
   %name = extractvalue %_Z4Item %item, 2
@@ -158534,8 +158542,8 @@ if.then:                                          ; preds = %choose.when1
   %item4 = extractvalue %_Z7Binding %variant.val3, 2
   %name5 = extractvalue %_Z4Item %item4, 2
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp, ptr align 1 %name5, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
-  %field.inplace = getelementptr inbounds %_Z7Planner, ptr %1, i32 0, i32 15
-  %call = call i1 @_ZN7Planner19array_contains_nameE5ArrayI6StringE6String(ptr %1, ptr %field.inplace, ptr %deref.tmp)
+  %field.inplace = getelementptr inbounds %_Z7Planner, ptr %0, i32 0, i32 15
+  %call = call i1 @_ZN7Planner19array_contains_nameE5ArrayI6StringE6String(ptr %0, ptr %field.inplace, ptr %deref.tmp)
   br i1 %call, label %if.then6, label %if.end7
 
 if.end:                                           ; preds = %if.end34, %choose.when1
@@ -158544,61 +158552,61 @@ if.end:                                           ; preds = %if.end34, %choose.w
 if.then6:                                         ; preds = %if.then
   %operation = extractvalue %_Z7Binding %variant.val3, 3
   store %_Z6VectorI7OperandE %operation, ptr %arg.tmp8, align 1
-  call void @_ZN7Planner19collect_flow_localsEPN4scaly6memory4PageE6VectorI7OperandE(ptr %0, ptr %1, ptr %arg.tmp8)
+  call void @_ZN7Planner19collect_flow_localsE6VectorI7OperandE(ptr %0, ptr %arg.tmp8)
   br label %if.end7
 
 if.end7:                                          ; preds = %if.then6, %if.then
   %operation9 = extractvalue %_Z7Binding %variant.val3, 3
   store %_Z6VectorI7OperandE %operation9, ptr %arg.tmp10, align 1
-  %call11 = call i1 @_ZN7Planner25operand_seq_escaping_ctorE6VectorI7OperandE(ptr %1, ptr %arg.tmp10)
+  %call11 = call i1 @_ZN7Planner25operand_seq_escaping_ctorE6VectorI7OperandE(ptr %0, ptr %arg.tmp10)
   br i1 %call11, label %if.then12, label %if.end13
 
 if.then12:                                        ; preds = %if.end7
-  call void @_ZN7Planner19add_escaping_targetEPN4scaly6memory4PageE6String(ptr %0, ptr %1, ptr %deref.tmp)
+  call void @_ZN7Planner19add_escaping_targetE6String(ptr %0, ptr %deref.tmp)
   %operation14 = extractvalue %_Z7Binding %variant.val3, 3
   store %_Z6VectorI7OperandE %operation14, ptr %arg.tmp15, align 1
-  call void @_ZN7Planner19collect_flow_localsEPN4scaly6memory4PageE6VectorI7OperandE(ptr %0, ptr %1, ptr %arg.tmp15)
+  call void @_ZN7Planner19collect_flow_localsE6VectorI7OperandE(ptr %0, ptr %arg.tmp15)
   br label %if.end13
 
 if.end13:                                         ; preds = %if.then12, %if.end7
-  %field.inplace16 = getelementptr inbounds %_Z7Planner, ptr %1, i32 0, i32 19
-  %call17 = call i1 @_ZN7Planner19array_contains_nameE5ArrayI6StringE6String(ptr %1, ptr %field.inplace16, ptr %deref.tmp)
+  %field.inplace16 = getelementptr inbounds %_Z7Planner, ptr %0, i32 0, i32 19
+  %call17 = call i1 @_ZN7Planner19array_contains_nameE5ArrayI6StringE6String(ptr %0, ptr %field.inplace16, ptr %deref.tmp)
   br i1 %call17, label %if.then18, label %if.end19
 
 if.then18:                                        ; preds = %if.end13
   %operation20 = extractvalue %_Z7Binding %variant.val3, 3
   store %_Z6VectorI7OperandE %operation20, ptr %arg.tmp21, align 1
-  %call22 = call i1 @_ZN7Planner21op_seq_head_is_vectorE6VectorI7OperandE(ptr %1, ptr %arg.tmp21)
+  %call22 = call i1 @_ZN7Planner21op_seq_head_is_vectorE6VectorI7OperandE(ptr %0, ptr %arg.tmp21)
   br i1 %call22, label %if.then23, label %if.end24
 
 if.end19:                                         ; preds = %if.end24, %if.end13
-  %field.inplace27 = getelementptr inbounds %_Z7Planner, ptr %1, i32 0, i32 15
-  %call28 = call i1 @_ZN7Planner19array_contains_nameE5ArrayI6StringE6String(ptr %1, ptr %field.inplace27, ptr %deref.tmp)
+  %field.inplace27 = getelementptr inbounds %_Z7Planner, ptr %0, i32 0, i32 15
+  %call28 = call i1 @_ZN7Planner19array_contains_nameE5ArrayI6StringE6String(ptr %0, ptr %field.inplace27, ptr %deref.tmp)
   br i1 %call28, label %if.then29, label %if.end30
 
 if.then23:                                        ; preds = %if.then18
-  call void @_ZN7Planner19add_escaping_targetEPN4scaly6memory4PageE6String(ptr %0, ptr %1, ptr %deref.tmp)
+  call void @_ZN7Planner19add_escaping_targetE6String(ptr %0, ptr %deref.tmp)
   %operation25 = extractvalue %_Z7Binding %variant.val3, 3
   store %_Z6VectorI7OperandE %operation25, ptr %arg.tmp26, align 1
-  call void @_ZN7Planner19collect_flow_localsEPN4scaly6memory4PageE6VectorI7OperandE(ptr %0, ptr %1, ptr %arg.tmp26)
+  call void @_ZN7Planner19collect_flow_localsE6VectorI7OperandE(ptr %0, ptr %arg.tmp26)
   br label %if.end24
 
 if.end24:                                         ; preds = %if.then23, %if.then18
   br label %if.end19
 
 if.then29:                                        ; preds = %if.end19
-  call void @_ZN7Planner19add_escaping_targetEPN4scaly6memory4PageE6String(ptr %0, ptr %1, ptr %deref.tmp)
+  call void @_ZN7Planner19add_escaping_targetE6String(ptr %0, ptr %deref.tmp)
   br label %if.end30
 
 if.end30:                                         ; preds = %if.then29, %if.end19
-  %field.inplace31 = getelementptr inbounds %_Z7Planner, ptr %1, i32 0, i32 15
-  %call32 = call i1 @_ZN7Planner19array_contains_nameE5ArrayI6StringE6String(ptr %1, ptr %field.inplace31, ptr %deref.tmp)
+  %field.inplace31 = getelementptr inbounds %_Z7Planner, ptr %0, i32 0, i32 15
+  %call32 = call i1 @_ZN7Planner19array_contains_nameE5ArrayI6StringE6String(ptr %0, ptr %field.inplace31, ptr %deref.tmp)
   br i1 %call32, label %if.then33, label %if.end34
 
 if.then33:                                        ; preds = %if.end30
   %operation35 = extractvalue %_Z7Binding %variant.val3, 3
   store %_Z6VectorI7OperandE %operation35, ptr %arg.tmp36, align 1
-  call void @_ZN7Planner20binding_get_receiverEPN4scaly6memory4PageE6VectorI7OperandE(ptr noalias sret({ ptr }) %sret.result, ptr %0, ptr %1, ptr %arg.tmp36)
+  call void @_ZN7Planner20binding_get_receiverEPN4scaly6memory4PageE6VectorI7OperandE(ptr noalias sret({ ptr }) %sret.result, ptr %local_page, ptr %0, ptr %arg.tmp36)
   %call37 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result)
   %gt = icmp ugt i64 %call37, 0
   br i1 %gt, label %if.then38, label %if.end39
@@ -158607,22 +158615,22 @@ if.end34:                                         ; preds = %if.end39, %if.end30
   br label %if.end
 
 if.then38:                                        ; preds = %if.then33
-  call void @_ZN7Planner19add_escaping_targetEPN4scaly6memory4PageE6String(ptr %0, ptr %1, ptr %sret.result)
-  call void @_ZN7Planner18add_escaping_localEPN4scaly6memory4PageE6String(ptr %0, ptr %1, ptr %sret.result)
+  call void @_ZN7Planner19add_escaping_targetE6String(ptr %0, ptr %sret.result)
+  call void @_ZN7Planner18add_escaping_localE6String(ptr %0, ptr %sret.result)
   br label %if.end39
 
 if.end39:                                         ; preds = %if.then38, %if.then33
   br label %if.end34
 
 choose.when40:                                    ; preds = %entry
-  %"variant.c_data().ptr41" = getelementptr inbounds %_Z9Statement, ptr %2, i32 0, i32 1
+  %"variant.c_data().ptr41" = getelementptr inbounds %_Z9Statement, ptr %1, i32 0, i32 1
   %variant.val42 = load %_Z6Action, ptr %"variant.c_data().ptr41", align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp43, ptr align 1 %"variant.c_data().ptr41", i64 ptrtoint (ptr getelementptr (%_Z6Action, ptr null, i32 1) to i64), i1 false)
-  call void @_ZN7Planner22collect_returns_actionEPN4scaly6memory4PageE6Action(ptr %0, ptr %1, ptr %arg.tmp43)
+  call void @_ZN7Planner22collect_returns_actionE6Action(ptr %0, ptr %arg.tmp43)
   br label %choose.end
 }
 
-define linkonce_odr void @_ZN7Planner23collect_returns_operandEPN4scaly6memory4PageE7Operand(ptr %0, ptr %1, ptr %2) {
+define linkonce_odr void @_ZN7Planner23collect_returns_operandE7Operand(ptr %0, ptr %1) {
 entry:
   %arg.tmp99 = alloca %_Z6Action, align 8
   %arg.tmp94 = alloca %_Z6Action, align 8
@@ -158638,8 +158646,9 @@ entry:
   %arg.tmp27 = alloca %_Z9Statement, align 8
   %arg.tmp23 = alloca %_Z6VectorI7OperandE, align 8
   %arg.tmp = alloca %_Z6VectorI9StatementE, align 8
+  %local_page = call ptr @_Z21scaly_alloc_root_pagev()
   %i = alloca i64, align 8
-  %load.struct = load %_Z7Operand, ptr %2, align 8
+  %load.struct = load %_Z7Operand, ptr %1, align 8
   %expression = extractvalue %_Z7Operand %load.struct, 1
   %choose.union = alloca %_Z10Expression, align 8
   store %_Z10Expression %expression, ptr %choose.union, align 1
@@ -158657,6 +158666,7 @@ entry:
 
 choose.end:                                       ; preds = %choose.else, %choose.when95, %choose.when90, %choose.when86, %if.end81, %if.end54, %if.end30, %if.end8
   %choose.value100 = phi i64 [ 0, %choose.else ], [ undef, %if.end8 ], [ undef, %if.end30 ], [ undef, %if.end54 ], [ undef, %if.end81 ], [ undef, %choose.when86 ], [ undef, %choose.when90 ], [ undef, %choose.when95 ]
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   ret void
 
 choose.else:                                      ; preds = %entry
@@ -158679,7 +158689,7 @@ while.body:                                       ; preds = %while.cond
   %statements2 = extractvalue %_Z5Block %variant.val, 1
   store %_Z6VectorI9StatementE %statements2, ptr %arg.tmp, align 1
   %i3 = load i64, ptr %i, align 4
-  %call = call ptr @_ZN6VectorI9StatementE3getEPN4scaly6memory4PageEm(ptr %0, ptr %arg.tmp, i64 %i3)
+  %call = call ptr @_ZN6VectorI9StatementE3getEPN4scaly6memory4PageEm(ptr %local_page, ptr %arg.tmp, i64 %i3)
   %ne = icmp ne ptr %call, null
   br i1 %ne, label %if.then, label %if.end
 
@@ -158690,7 +158700,7 @@ while.exit:                                       ; preds = %while.cond
   br i1 %gt, label %if.then7, label %if.end8
 
 if.then:                                          ; preds = %while.body
-  call void @_ZN7Planner20collect_returns_stmtEPN4scaly6memory4PageE9Statement(ptr %0, ptr %1, ptr %call)
+  call void @_ZN7Planner20collect_returns_stmtE9Statement(ptr %0, ptr %call)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %while.body
@@ -158705,7 +158715,7 @@ if.then7:                                         ; preds = %while.exit
   %statements10 = extractvalue %_Z5Block %variant.val, 1
   %length11 = extractvalue %_Z6VectorI9StatementE %statements10, 0
   %sub = sub i64 %length11, 1
-  %call12 = call ptr @_ZN6VectorI9StatementE3getEPN4scaly6memory4PageEm(ptr %0, ptr %arg.tmp, i64 %sub)
+  %call12 = call ptr @_ZN6VectorI9StatementE3getEPN4scaly6memory4PageEm(ptr %local_page, ptr %arg.tmp, i64 %sub)
   %ne13 = icmp ne ptr %call12, null
   br i1 %ne13, label %if.then14, label %if.end15
 
@@ -158734,7 +158744,7 @@ choose.when20:                                    ; preds = %if.then14
   %variant.val22 = load %_Z6Action, ptr %"variant.c_data().ptr21", align 8
   %source = extractvalue %_Z6Action %variant.val22, 0
   store %_Z6VectorI7OperandE %source, ptr %arg.tmp23, align 1
-  call void @_ZN7Planner19collect_flow_localsEPN4scaly6memory4PageE6VectorI7OperandE(ptr %0, ptr %1, ptr %arg.tmp23)
+  call void @_ZN7Planner19collect_flow_localsE6VectorI7OperandE(ptr %0, ptr %arg.tmp23)
   br label %choose.end18
 
 choose.when24:                                    ; preds = %entry
@@ -158742,7 +158752,7 @@ choose.when24:                                    ; preds = %entry
   %variant.val26 = load %_Z2If, ptr %"variant.c_data().ptr25", align 8
   %consequent = extractvalue %_Z2If %variant.val26, 3
   store %_Z9Statement %consequent, ptr %arg.tmp27, align 1
-  call void @_ZN7Planner20collect_returns_stmtEPN4scaly6memory4PageE9Statement(ptr %0, ptr %1, ptr %arg.tmp27)
+  call void @_ZN7Planner20collect_returns_stmtE9Statement(ptr %0, ptr %arg.tmp27)
   %alternative = extractvalue %_Z2If %variant.val26, 4
   %ne28 = icmp ne ptr %alternative, null
   br i1 %ne28, label %if.then29, label %if.end30
@@ -158752,7 +158762,7 @@ if.then29:                                        ; preds = %choose.when24
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp, ptr align 1 %alternative31, i64 ptrtoint (ptr getelementptr (%_Z9Statement, ptr null, i32 1) to i64), i1 false)
   %grp.deref.val = load %_Z9Statement, ptr %deref.tmp, align 1
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp32, ptr align 1 %deref.tmp, i64 ptrtoint (ptr getelementptr (%_Z9Statement, ptr null, i32 1) to i64), i1 false)
-  call void @_ZN7Planner20collect_returns_stmtEPN4scaly6memory4PageE9Statement(ptr %0, ptr %1, ptr %arg.tmp32)
+  call void @_ZN7Planner20collect_returns_stmtE9Statement(ptr %0, ptr %arg.tmp32)
   br label %if.end30
 
 if.end30:                                         ; preds = %if.then29, %choose.when24
@@ -158775,7 +158785,7 @@ while.body37:                                     ; preds = %while.cond36
   %cases42 = extractvalue %_Z6Choose %variant.val35, 2
   store %_Z6VectorI4WhenE %cases42, ptr %arg.tmp43, align 1
   %i44 = load i64, ptr %i, align 4
-  %call45 = call ptr @_ZN6VectorI4WhenE3getEPN4scaly6memory4PageEm(ptr %0, ptr %arg.tmp43, i64 %i44)
+  %call45 = call ptr @_ZN6VectorI4WhenE3getEPN4scaly6memory4PageEm(ptr %local_page, ptr %arg.tmp43, i64 %i44)
   %ne46 = icmp ne ptr %call45, null
   br i1 %ne46, label %if.then47, label %if.end48
 
@@ -158786,7 +158796,7 @@ while.exit38:                                     ; preds = %while.cond36
 
 if.then47:                                        ; preds = %while.body37
   %field.inplace = getelementptr inbounds %_Z4When, ptr %call45, i32 0, i32 3
-  call void @_ZN7Planner20collect_returns_stmtEPN4scaly6memory4PageE9Statement(ptr %0, ptr %1, ptr %field.inplace)
+  call void @_ZN7Planner20collect_returns_stmtE9Statement(ptr %0, ptr %field.inplace)
   br label %if.end48
 
 if.end48:                                         ; preds = %if.then47, %while.body37
@@ -158800,7 +158810,7 @@ if.then53:                                        ; preds = %while.exit38
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp56, ptr align 1 %alternative55, i64 ptrtoint (ptr getelementptr (%_Z9Statement, ptr null, i32 1) to i64), i1 false)
   %grp.deref.val57 = load %_Z9Statement, ptr %deref.tmp56, align 1
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp58, ptr align 1 %deref.tmp56, i64 ptrtoint (ptr getelementptr (%_Z9Statement, ptr null, i32 1) to i64), i1 false)
-  call void @_ZN7Planner20collect_returns_stmtEPN4scaly6memory4PageE9Statement(ptr %0, ptr %1, ptr %arg.tmp58)
+  call void @_ZN7Planner20collect_returns_stmtE9Statement(ptr %0, ptr %arg.tmp58)
   br label %if.end54
 
 if.end54:                                         ; preds = %if.then53, %while.exit38
@@ -158823,7 +158833,7 @@ while.body63:                                     ; preds = %while.cond62
   %branches68 = extractvalue %_Z5Match %variant.val61, 2
   store %_Z6VectorI6BranchE %branches68, ptr %arg.tmp69, align 1
   %i70 = load i64, ptr %i, align 4
-  %call71 = call ptr @_ZN6VectorI6BranchE3getEPN4scaly6memory4PageEm(ptr %0, ptr %arg.tmp69, i64 %i70)
+  %call71 = call ptr @_ZN6VectorI6BranchE3getEPN4scaly6memory4PageEm(ptr %local_page, ptr %arg.tmp69, i64 %i70)
   %ne72 = icmp ne ptr %call71, null
   br i1 %ne72, label %if.then73, label %if.end74
 
@@ -158834,7 +158844,7 @@ while.exit64:                                     ; preds = %while.cond62
 
 if.then73:                                        ; preds = %while.body63
   %field.inplace75 = getelementptr inbounds %_Z6Branch, ptr %call71, i32 0, i32 2
-  call void @_ZN7Planner20collect_returns_stmtEPN4scaly6memory4PageE9Statement(ptr %0, ptr %1, ptr %field.inplace75)
+  call void @_ZN7Planner20collect_returns_stmtE9Statement(ptr %0, ptr %field.inplace75)
   br label %if.end74
 
 if.end74:                                         ; preds = %if.then73, %while.body63
@@ -158848,7 +158858,7 @@ if.then80:                                        ; preds = %while.exit64
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp83, ptr align 1 %alternative82, i64 ptrtoint (ptr getelementptr (%_Z9Statement, ptr null, i32 1) to i64), i1 false)
   %grp.deref.val84 = load %_Z9Statement, ptr %deref.tmp83, align 1
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp85, ptr align 1 %deref.tmp83, i64 ptrtoint (ptr getelementptr (%_Z9Statement, ptr null, i32 1) to i64), i1 false)
-  call void @_ZN7Planner20collect_returns_stmtEPN4scaly6memory4PageE9Statement(ptr %0, ptr %1, ptr %arg.tmp85)
+  call void @_ZN7Planner20collect_returns_stmtE9Statement(ptr %0, ptr %arg.tmp85)
   br label %if.end81
 
 if.end81:                                         ; preds = %if.then80, %while.exit64
@@ -158859,7 +158869,7 @@ choose.when86:                                    ; preds = %entry
   %variant.val88 = load %_Z3For, ptr %"variant.c_data().ptr87", align 8
   %action = extractvalue %_Z3For %variant.val88, 3
   store %_Z6Action %action, ptr %arg.tmp89, align 1
-  call void @_ZN7Planner22collect_returns_actionEPN4scaly6memory4PageE6Action(ptr %0, ptr %1, ptr %arg.tmp89)
+  call void @_ZN7Planner22collect_returns_actionE6Action(ptr %0, ptr %arg.tmp89)
   br label %choose.end
 
 choose.when90:                                    ; preds = %entry
@@ -158867,7 +158877,7 @@ choose.when90:                                    ; preds = %entry
   %variant.val92 = load %_Z5While, ptr %"variant.c_data().ptr91", align 8
   %action93 = extractvalue %_Z5While %variant.val92, 2
   store %_Z6Action %action93, ptr %arg.tmp94, align 1
-  call void @_ZN7Planner22collect_returns_actionEPN4scaly6memory4PageE6Action(ptr %0, ptr %1, ptr %arg.tmp94)
+  call void @_ZN7Planner22collect_returns_actionE6Action(ptr %0, ptr %arg.tmp94)
   br label %choose.end
 
 choose.when95:                                    ; preds = %entry
@@ -158875,23 +158885,24 @@ choose.when95:                                    ; preds = %entry
   %variant.val97 = load %_Z6Repeat, ptr %"variant.c_data().ptr96", align 8
   %action98 = extractvalue %_Z6Repeat %variant.val97, 1
   store %_Z6Action %action98, ptr %arg.tmp99, align 1
-  call void @_ZN7Planner22collect_returns_actionEPN4scaly6memory4PageE6Action(ptr %0, ptr %1, ptr %arg.tmp99)
+  call void @_ZN7Planner22collect_returns_actionE6Action(ptr %0, ptr %arg.tmp99)
   br label %choose.end
 }
 
 declare ptr @_ZN6OptionIR7OperandE6unwrapEv(ptr)
 
-define linkonce_odr void @_ZN7Planner17add_address_takenEPN4scaly6memory4PageE6String(ptr %0, ptr %1, ptr %2) {
+define linkonce_odr void @_ZN7Planner17add_address_takenE6String(ptr %0, ptr %1) {
 entry:
-  %field.inplace = getelementptr inbounds %_Z7Planner, ptr %1, i32 0, i32 19
-  %call = call i1 @_ZN7Planner19array_contains_nameE5ArrayI6StringE6String(ptr %1, ptr %field.inplace, ptr %2)
+  %field.inplace = getelementptr inbounds %_Z7Planner, ptr %0, i32 0, i32 19
+  %call = call i1 @_ZN7Planner19array_contains_nameE5ArrayI6StringE6String(ptr %0, ptr %field.inplace, ptr %1)
   %eq = icmp eq i1 %call, false
   br i1 %eq, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  %field.inplace1 = getelementptr inbounds %_Z7Planner, ptr %1, i32 0, i32 19
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %0, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region, ptr %0, ptr %2)
+  %field.inplace1 = getelementptr inbounds %_Z7Planner, ptr %0, i32 0, i32 19
+  %own_page = call ptr @_Z3getPv(ptr %0)
+  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %own_page, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
+  call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region, ptr %own_page, ptr %1)
   call void @_ZN5ArrayI6StringE3addE6String(ptr %field.inplace1, ptr %struct.region)
   br label %if.end
 
@@ -158899,7 +158910,7 @@ if.end:                                           ; preds = %if.then, %entry
   ret void
 }
 
-define linkonce_odr void @_ZN7Planner23scan_addr_taken_operandEPN4scaly6memory4PageE7Operand(ptr %0, ptr %1, ptr %2) {
+define linkonce_odr void @_ZN7Planner23scan_addr_taken_operandE7Operand(ptr %0, ptr %1) {
 entry:
   %arg.tmp216 = alloca %_Z6Action, align 8
   %arg.tmp210 = alloca %_Z6VectorI7OperandE, align 8
@@ -158941,8 +158952,9 @@ entry:
   %arg.tmp4 = alloca %_Z6VectorI7OperandE, align 8
   %deref.tmp = alloca %_Z9Component, align 8
   %arg.tmp = alloca %_Z6VectorI9ComponentE, align 8
+  %local_page = call ptr @_Z21scaly_alloc_root_pagev()
   %i = alloca i64, align 8
-  %load.struct = load %_Z7Operand, ptr %2, align 8
+  %load.struct = load %_Z7Operand, ptr %1, align 8
   %expression = extractvalue %_Z7Operand %load.struct, 1
   %choose.union = alloca %_Z10Expression, align 8
   store %_Z10Expression %expression, ptr %choose.union, align 1
@@ -158965,6 +158977,7 @@ entry:
 
 choose.end:                                       ; preds = %choose.else, %choose.when213, %while.exit195, %if.end185, %choose.when154, %choose.when147, %choose.when141, %if.end136, %if.end84, %if.end52, %while.exit32, %while.exit11, %while.exit
   %choose.value = phi i64 [ 0, %choose.else ], [ undef, %while.exit ], [ undef, %while.exit11 ], [ undef, %while.exit32 ], [ undef, %if.end52 ], [ undef, %if.end84 ], [ undef, %if.end136 ], [ undef, %choose.when141 ], [ undef, %choose.when147 ], [ undef, %choose.when154 ], [ undef, %if.end185 ], [ undef, %while.exit195 ], [ undef, %choose.when213 ]
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   ret void
 
 choose.else:                                      ; preds = %entry
@@ -158987,7 +159000,7 @@ while.body:                                       ; preds = %while.cond
   %components2 = extractvalue %_Z5Tuple %variant.val, 1
   store %_Z6VectorI9ComponentE %components2, ptr %arg.tmp, align 1
   %i3 = load i64, ptr %i, align 4
-  %call = call ptr @_ZN6VectorI9ComponentE3getEPN4scaly6memory4PageEm(ptr %0, ptr %arg.tmp, i64 %i3)
+  %call = call ptr @_ZN6VectorI9ComponentE3getEPN4scaly6memory4PageEm(ptr %local_page, ptr %arg.tmp, i64 %i3)
   %ne = icmp ne ptr %call, null
   br i1 %ne, label %if.then, label %if.end
 
@@ -158999,7 +159012,7 @@ if.then:                                          ; preds = %while.body
   %grp.deref.val = load %_Z9Component, ptr %deref.tmp, align 8
   %value = extractvalue %_Z9Component %grp.deref.val, 2
   store %_Z6VectorI7OperandE %value, ptr %arg.tmp4, align 1
-  call void @_ZN7Planner19scan_addr_taken_opsEPN4scaly6memory4PageE6VectorI7OperandE(ptr %0, ptr %1, ptr %arg.tmp4)
+  call void @_ZN7Planner19scan_addr_taken_opsE6VectorI7OperandE(ptr %0, ptr %arg.tmp4)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %while.body
@@ -159025,7 +159038,7 @@ while.body10:                                     ; preds = %while.cond9
   %operations15 = extractvalue %_Z6Matrix %variant.val8, 1
   store %_Z6VectorI6VectorI7OperandEE %operations15, ptr %arg.tmp16, align 1
   %i17 = load i64, ptr %i, align 4
-  %call18 = call ptr @_ZN6VectorI6VectorI7OperandEE3getEPN4scaly6memory4PageEm(ptr %0, ptr %arg.tmp16, i64 %i17)
+  %call18 = call ptr @_ZN6VectorI6VectorI7OperandEE3getEPN4scaly6memory4PageEm(ptr %local_page, ptr %arg.tmp16, i64 %i17)
   %ne19 = icmp ne ptr %call18, null
   br i1 %ne19, label %if.then20, label %if.end21
 
@@ -159036,7 +159049,7 @@ if.then20:                                        ; preds = %while.body10
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp22, ptr align 1 %call18, i64 ptrtoint (ptr getelementptr (%_Z6VectorI7OperandE, ptr null, i32 1) to i64), i1 false)
   %grp.deref.val23 = load %_Z6VectorI7OperandE, ptr %deref.tmp22, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp24, ptr align 1 %deref.tmp22, i64 ptrtoint (ptr getelementptr (%_Z6VectorI7OperandE, ptr null, i32 1) to i64), i1 false)
-  call void @_ZN7Planner19scan_addr_taken_opsEPN4scaly6memory4PageE6VectorI7OperandE(ptr %0, ptr %1, ptr %arg.tmp24)
+  call void @_ZN7Planner19scan_addr_taken_opsE6VectorI7OperandE(ptr %0, ptr %arg.tmp24)
   br label %if.end21
 
 if.end21:                                         ; preds = %if.then20, %while.body10
@@ -159062,7 +159075,7 @@ while.body31:                                     ; preds = %while.cond30
   %statements36 = extractvalue %_Z5Block %variant.val29, 1
   store %_Z6VectorI9StatementE %statements36, ptr %arg.tmp37, align 1
   %i38 = load i64, ptr %i, align 4
-  %call39 = call ptr @_ZN6VectorI9StatementE3getEPN4scaly6memory4PageEm(ptr %0, ptr %arg.tmp37, i64 %i38)
+  %call39 = call ptr @_ZN6VectorI9StatementE3getEPN4scaly6memory4PageEm(ptr %local_page, ptr %arg.tmp37, i64 %i38)
   %ne40 = icmp ne ptr %call39, null
   br i1 %ne40, label %if.then41, label %if.end42
 
@@ -159070,7 +159083,7 @@ while.exit32:                                     ; preds = %while.cond30
   br label %choose.end
 
 if.then41:                                        ; preds = %while.body31
-  call void @_ZN7Planner20scan_addr_taken_stmtEPN4scaly6memory4PageE9Statement(ptr %0, ptr %1, ptr %call39)
+  call void @_ZN7Planner20scan_addr_taken_stmtE9Statement(ptr %0, ptr %call39)
   br label %if.end42
 
 if.end42:                                         ; preds = %if.then41, %while.body31
@@ -159084,10 +159097,10 @@ choose.when45:                                    ; preds = %entry
   %variant.val47 = load %_Z2If, ptr %"variant.c_data().ptr46", align 8
   %condition = extractvalue %_Z2If %variant.val47, 1
   store %_Z6VectorI7OperandE %condition, ptr %arg.tmp48, align 1
-  call void @_ZN7Planner19scan_addr_taken_opsEPN4scaly6memory4PageE6VectorI7OperandE(ptr %0, ptr %1, ptr %arg.tmp48)
+  call void @_ZN7Planner19scan_addr_taken_opsE6VectorI7OperandE(ptr %0, ptr %arg.tmp48)
   %consequent = extractvalue %_Z2If %variant.val47, 3
   store %_Z9Statement %consequent, ptr %arg.tmp49, align 1
-  call void @_ZN7Planner20scan_addr_taken_stmtEPN4scaly6memory4PageE9Statement(ptr %0, ptr %1, ptr %arg.tmp49)
+  call void @_ZN7Planner20scan_addr_taken_stmtE9Statement(ptr %0, ptr %arg.tmp49)
   %alternative = extractvalue %_Z2If %variant.val47, 4
   %ne50 = icmp ne ptr %alternative, null
   br i1 %ne50, label %if.then51, label %if.end52
@@ -159097,7 +159110,7 @@ if.then51:                                        ; preds = %choose.when45
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp54, ptr align 1 %alternative53, i64 ptrtoint (ptr getelementptr (%_Z9Statement, ptr null, i32 1) to i64), i1 false)
   %grp.deref.val55 = load %_Z9Statement, ptr %deref.tmp54, align 1
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp56, ptr align 1 %deref.tmp54, i64 ptrtoint (ptr getelementptr (%_Z9Statement, ptr null, i32 1) to i64), i1 false)
-  call void @_ZN7Planner20scan_addr_taken_stmtEPN4scaly6memory4PageE9Statement(ptr %0, ptr %1, ptr %arg.tmp56)
+  call void @_ZN7Planner20scan_addr_taken_stmtE9Statement(ptr %0, ptr %arg.tmp56)
   br label %if.end52
 
 if.end52:                                         ; preds = %if.then51, %choose.when45
@@ -159108,7 +159121,7 @@ choose.when57:                                    ; preds = %entry
   %variant.val59 = load %_Z6Choose, ptr %"variant.c_data().ptr58", align 8
   %condition60 = extractvalue %_Z6Choose %variant.val59, 1
   store %_Z6VectorI7OperandE %condition60, ptr %arg.tmp61, align 1
-  call void @_ZN7Planner19scan_addr_taken_opsEPN4scaly6memory4PageE6VectorI7OperandE(ptr %0, ptr %1, ptr %arg.tmp61)
+  call void @_ZN7Planner19scan_addr_taken_opsE6VectorI7OperandE(ptr %0, ptr %arg.tmp61)
   store i64 0, ptr %i, align 1
   br label %while.cond62
 
@@ -159123,7 +159136,7 @@ while.body63:                                     ; preds = %while.cond62
   %cases68 = extractvalue %_Z6Choose %variant.val59, 2
   store %_Z6VectorI4WhenE %cases68, ptr %arg.tmp69, align 1
   %i70 = load i64, ptr %i, align 4
-  %call71 = call ptr @_ZN6VectorI4WhenE3getEPN4scaly6memory4PageEm(ptr %0, ptr %arg.tmp69, i64 %i70)
+  %call71 = call ptr @_ZN6VectorI4WhenE3getEPN4scaly6memory4PageEm(ptr %local_page, ptr %arg.tmp69, i64 %i70)
   %ne72 = icmp ne ptr %call71, null
   br i1 %ne72, label %if.then73, label %if.end74
 
@@ -159137,7 +159150,7 @@ if.then73:                                        ; preds = %while.body63
   %grp.deref.val76 = load %_Z4When, ptr %deref.tmp75, align 8
   %consequent77 = extractvalue %_Z4When %grp.deref.val76, 3
   store %_Z9Statement %consequent77, ptr %arg.tmp78, align 1
-  call void @_ZN7Planner20scan_addr_taken_stmtEPN4scaly6memory4PageE9Statement(ptr %0, ptr %1, ptr %arg.tmp78)
+  call void @_ZN7Planner20scan_addr_taken_stmtE9Statement(ptr %0, ptr %arg.tmp78)
   br label %if.end74
 
 if.end74:                                         ; preds = %if.then73, %while.body63
@@ -159151,7 +159164,7 @@ if.then83:                                        ; preds = %while.exit64
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp86, ptr align 1 %alternative85, i64 ptrtoint (ptr getelementptr (%_Z9Statement, ptr null, i32 1) to i64), i1 false)
   %grp.deref.val87 = load %_Z9Statement, ptr %deref.tmp86, align 1
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp88, ptr align 1 %deref.tmp86, i64 ptrtoint (ptr getelementptr (%_Z9Statement, ptr null, i32 1) to i64), i1 false)
-  call void @_ZN7Planner20scan_addr_taken_stmtEPN4scaly6memory4PageE9Statement(ptr %0, ptr %1, ptr %arg.tmp88)
+  call void @_ZN7Planner20scan_addr_taken_stmtE9Statement(ptr %0, ptr %arg.tmp88)
   br label %if.end84
 
 if.end84:                                         ; preds = %if.then83, %while.exit64
@@ -159162,7 +159175,7 @@ choose.when89:                                    ; preds = %entry
   %variant.val91 = load %_Z5Match, ptr %"variant.c_data().ptr90", align 8
   %condition92 = extractvalue %_Z5Match %variant.val91, 1
   store %_Z6VectorI7OperandE %condition92, ptr %arg.tmp93, align 1
-  call void @_ZN7Planner19scan_addr_taken_opsEPN4scaly6memory4PageE6VectorI7OperandE(ptr %0, ptr %1, ptr %arg.tmp93)
+  call void @_ZN7Planner19scan_addr_taken_opsE6VectorI7OperandE(ptr %0, ptr %arg.tmp93)
   store i64 0, ptr %i, align 1
   br label %while.cond94
 
@@ -159177,7 +159190,7 @@ while.body95:                                     ; preds = %while.cond94
   %branches100 = extractvalue %_Z5Match %variant.val91, 2
   store %_Z6VectorI6BranchE %branches100, ptr %arg.tmp101, align 1
   %i102 = load i64, ptr %i, align 4
-  %call103 = call ptr @_ZN6VectorI6BranchE3getEPN4scaly6memory4PageEm(ptr %0, ptr %arg.tmp101, i64 %i102)
+  %call103 = call ptr @_ZN6VectorI6BranchE3getEPN4scaly6memory4PageEm(ptr %local_page, ptr %arg.tmp101, i64 %i102)
   %ne104 = icmp ne ptr %call103, null
   br i1 %ne104, label %if.then105, label %if.end106
 
@@ -159209,14 +159222,14 @@ while.body110:                                    ; preds = %while.cond109
   %cases116 = extractvalue %_Z6Branch %grp.deref.val108, 1
   store %_Z6VectorI4CaseE %cases116, ptr %arg.tmp117, align 1
   %ci118 = load i64, ptr %ci, align 4
-  %call119 = call ptr @_ZN6VectorI4CaseE3getEPN4scaly6memory4PageEm(ptr %0, ptr %arg.tmp117, i64 %ci118)
+  %call119 = call ptr @_ZN6VectorI4CaseE3getEPN4scaly6memory4PageEm(ptr %local_page, ptr %arg.tmp117, i64 %ci118)
   %ne120 = icmp ne ptr %call119, null
   br i1 %ne120, label %if.then121, label %if.end122
 
 while.exit111:                                    ; preds = %while.cond109
   %consequent129 = extractvalue %_Z6Branch %grp.deref.val108, 2
   store %_Z9Statement %consequent129, ptr %arg.tmp130, align 1
-  call void @_ZN7Planner20scan_addr_taken_stmtEPN4scaly6memory4PageE9Statement(ptr %0, ptr %1, ptr %arg.tmp130)
+  call void @_ZN7Planner20scan_addr_taken_stmtE9Statement(ptr %0, ptr %arg.tmp130)
   br label %if.end106
 
 if.then121:                                       ; preds = %while.body110
@@ -159224,7 +159237,7 @@ if.then121:                                       ; preds = %while.body110
   %grp.deref.val124 = load %_Z4Case, ptr %deref.tmp123, align 8
   %condition125 = extractvalue %_Z4Case %grp.deref.val124, 1
   store %_Z6VectorI7OperandE %condition125, ptr %arg.tmp126, align 1
-  call void @_ZN7Planner19scan_addr_taken_opsEPN4scaly6memory4PageE6VectorI7OperandE(ptr %0, ptr %1, ptr %arg.tmp126)
+  call void @_ZN7Planner19scan_addr_taken_opsE6VectorI7OperandE(ptr %0, ptr %arg.tmp126)
   br label %if.end122
 
 if.end122:                                        ; preds = %if.then121, %while.body110
@@ -159238,7 +159251,7 @@ if.then135:                                       ; preds = %while.exit96
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp138, ptr align 1 %alternative137, i64 ptrtoint (ptr getelementptr (%_Z9Statement, ptr null, i32 1) to i64), i1 false)
   %grp.deref.val139 = load %_Z9Statement, ptr %deref.tmp138, align 1
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp140, ptr align 1 %deref.tmp138, i64 ptrtoint (ptr getelementptr (%_Z9Statement, ptr null, i32 1) to i64), i1 false)
-  call void @_ZN7Planner20scan_addr_taken_stmtEPN4scaly6memory4PageE9Statement(ptr %0, ptr %1, ptr %arg.tmp140)
+  call void @_ZN7Planner20scan_addr_taken_stmtE9Statement(ptr %0, ptr %arg.tmp140)
   br label %if.end136
 
 if.end136:                                        ; preds = %if.then135, %while.exit96
@@ -159249,10 +159262,10 @@ choose.when141:                                   ; preds = %entry
   %variant.val143 = load %_Z3For, ptr %"variant.c_data().ptr142", align 8
   %expression144 = extractvalue %_Z3For %variant.val143, 2
   store %_Z6VectorI7OperandE %expression144, ptr %arg.tmp145, align 1
-  call void @_ZN7Planner19scan_addr_taken_opsEPN4scaly6memory4PageE6VectorI7OperandE(ptr %0, ptr %1, ptr %arg.tmp145)
+  call void @_ZN7Planner19scan_addr_taken_opsE6VectorI7OperandE(ptr %0, ptr %arg.tmp145)
   %action = extractvalue %_Z3For %variant.val143, 3
   store %_Z6Action %action, ptr %arg.tmp146, align 1
-  call void @_ZN7Planner22scan_addr_taken_actionEPN4scaly6memory4PageE6Action(ptr %0, ptr %1, ptr %arg.tmp146)
+  call void @_ZN7Planner22scan_addr_taken_actionE6Action(ptr %0, ptr %arg.tmp146)
   br label %choose.end
 
 choose.when147:                                   ; preds = %entry
@@ -159261,10 +159274,10 @@ choose.when147:                                   ; preds = %entry
   %condition150 = extractvalue %_Z5While %variant.val149, 1
   %operation = extractvalue %_Z7Binding %condition150, 3
   store %_Z6VectorI7OperandE %operation, ptr %arg.tmp151, align 1
-  call void @_ZN7Planner19scan_addr_taken_opsEPN4scaly6memory4PageE6VectorI7OperandE(ptr %0, ptr %1, ptr %arg.tmp151)
+  call void @_ZN7Planner19scan_addr_taken_opsE6VectorI7OperandE(ptr %0, ptr %arg.tmp151)
   %action152 = extractvalue %_Z5While %variant.val149, 2
   store %_Z6Action %action152, ptr %arg.tmp153, align 1
-  call void @_ZN7Planner22scan_addr_taken_actionEPN4scaly6memory4PageE6Action(ptr %0, ptr %1, ptr %arg.tmp153)
+  call void @_ZN7Planner22scan_addr_taken_actionE6Action(ptr %0, ptr %arg.tmp153)
   br label %choose.end
 
 choose.when154:                                   ; preds = %entry
@@ -159272,7 +159285,7 @@ choose.when154:                                   ; preds = %entry
   %variant.val156 = load %_Z6Repeat, ptr %"variant.c_data().ptr155", align 8
   %action157 = extractvalue %_Z6Repeat %variant.val156, 1
   store %_Z6Action %action157, ptr %arg.tmp158, align 1
-  call void @_ZN7Planner22scan_addr_taken_actionEPN4scaly6memory4PageE6Action(ptr %0, ptr %1, ptr %arg.tmp158)
+  call void @_ZN7Planner22scan_addr_taken_actionE6Action(ptr %0, ptr %arg.tmp158)
   br label %choose.end
 
 choose.when159:                                   ; preds = %entry
@@ -159281,7 +159294,7 @@ choose.when159:                                   ; preds = %entry
   %binding = extractvalue %_Z3Try %variant.val161, 1
   %operation162 = extractvalue %_Z7Binding %binding, 3
   store %_Z6VectorI7OperandE %operation162, ptr %arg.tmp163, align 1
-  call void @_ZN7Planner19scan_addr_taken_opsEPN4scaly6memory4PageE6VectorI7OperandE(ptr %0, ptr %1, ptr %arg.tmp163)
+  call void @_ZN7Planner19scan_addr_taken_opsE6VectorI7OperandE(ptr %0, ptr %arg.tmp163)
   store i64 0, ptr %i, align 1
   br label %while.cond164
 
@@ -159296,7 +159309,7 @@ while.body165:                                    ; preds = %while.cond164
   %catches170 = extractvalue %_Z3Try %variant.val161, 2
   store %_Z6VectorI4WhenE %catches170, ptr %arg.tmp69, align 1
   %i171 = load i64, ptr %i, align 4
-  %call172 = call ptr @_ZN6VectorI4WhenE3getEPN4scaly6memory4PageEm(ptr %0, ptr %arg.tmp69, i64 %i171)
+  %call172 = call ptr @_ZN6VectorI4WhenE3getEPN4scaly6memory4PageEm(ptr %local_page, ptr %arg.tmp69, i64 %i171)
   %ne173 = icmp ne ptr %call172, null
   br i1 %ne173, label %if.then174, label %if.end175
 
@@ -159310,7 +159323,7 @@ if.then174:                                       ; preds = %while.body165
   %grp.deref.val177 = load %_Z4When, ptr %deref.tmp176, align 8
   %consequent178 = extractvalue %_Z4When %grp.deref.val177, 3
   store %_Z9Statement %consequent178, ptr %arg.tmp179, align 1
-  call void @_ZN7Planner20scan_addr_taken_stmtEPN4scaly6memory4PageE9Statement(ptr %0, ptr %1, ptr %arg.tmp179)
+  call void @_ZN7Planner20scan_addr_taken_stmtE9Statement(ptr %0, ptr %arg.tmp179)
   br label %if.end175
 
 if.end175:                                        ; preds = %if.then174, %while.body165
@@ -159324,7 +159337,7 @@ if.then184:                                       ; preds = %while.exit166
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp187, ptr align 1 %alternative186, i64 ptrtoint (ptr getelementptr (%_Z9Statement, ptr null, i32 1) to i64), i1 false)
   %grp.deref.val188 = load %_Z9Statement, ptr %deref.tmp187, align 1
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp189, ptr align 1 %deref.tmp187, i64 ptrtoint (ptr getelementptr (%_Z9Statement, ptr null, i32 1) to i64), i1 false)
-  call void @_ZN7Planner20scan_addr_taken_stmtEPN4scaly6memory4PageE9Statement(ptr %0, ptr %1, ptr %arg.tmp189)
+  call void @_ZN7Planner20scan_addr_taken_stmtE9Statement(ptr %0, ptr %arg.tmp189)
   br label %if.end185
 
 if.end185:                                        ; preds = %if.then184, %while.exit166
@@ -159349,7 +159362,7 @@ while.body194:                                    ; preds = %while.cond193
   %components201 = extractvalue %_Z5Tuple %arguments200, 1
   store %_Z6VectorI9ComponentE %components201, ptr %arg.tmp, align 1
   %i202 = load i64, ptr %i, align 4
-  %call203 = call ptr @_ZN6VectorI9ComponentE3getEPN4scaly6memory4PageEm(ptr %0, ptr %arg.tmp, i64 %i202)
+  %call203 = call ptr @_ZN6VectorI9ComponentE3getEPN4scaly6memory4PageEm(ptr %local_page, ptr %arg.tmp, i64 %i202)
   %ne204 = icmp ne ptr %call203, null
   br i1 %ne204, label %if.then205, label %if.end206
 
@@ -159361,7 +159374,7 @@ if.then205:                                       ; preds = %while.body194
   %grp.deref.val208 = load %_Z9Component, ptr %deref.tmp207, align 8
   %value209 = extractvalue %_Z9Component %grp.deref.val208, 2
   store %_Z6VectorI7OperandE %value209, ptr %arg.tmp210, align 1
-  call void @_ZN7Planner19scan_addr_taken_opsEPN4scaly6memory4PageE6VectorI7OperandE(ptr %0, ptr %1, ptr %arg.tmp210)
+  call void @_ZN7Planner19scan_addr_taken_opsE6VectorI7OperandE(ptr %0, ptr %arg.tmp210)
   br label %if.end206
 
 if.end206:                                        ; preds = %if.then205, %while.body194
@@ -159375,11 +159388,11 @@ choose.when213:                                   ; preds = %entry
   %variant.val215 = load %_Z6Lambda, ptr %"variant.c_data().ptr214", align 8
   %body = extractvalue %_Z6Lambda %variant.val215, 2
   store %_Z6Action %body, ptr %arg.tmp216, align 1
-  call void @_ZN7Planner22scan_addr_taken_actionEPN4scaly6memory4PageE6Action(ptr %0, ptr %1, ptr %arg.tmp216)
+  call void @_ZN7Planner22scan_addr_taken_actionE6Action(ptr %0, ptr %arg.tmp216)
   br label %choose.end
 }
 
-define linkonce_odr void @_ZN7Planner19scan_addr_taken_opsEPN4scaly6memory4PageE6VectorI7OperandE(ptr %0, ptr %1, ptr %2) {
+define linkonce_odr void @_ZN7Planner19scan_addr_taken_opsE6VectorI7OperandE(ptr %0, ptr %1) {
 entry:
   %deref.tmp65 = alloca { ptr }, align 8
   %choose.union43 = alloca %_Z10Expression, align 8
@@ -159389,24 +159402,26 @@ entry:
   %choose.union = alloca %_Z10Expression, align 8
   %is_amp = alloca i1, align 1
   %deref.tmp = alloca %_Z7Operand, align 8
+  %local_page = call ptr @_Z21scaly_alloc_root_pagev()
   %i = alloca i64, align 8
   store i64 0, ptr %i, align 1
   br label %while.cond
 
 while.cond:                                       ; preds = %if.end, %entry
   %i1 = load i64, ptr %i, align 4
-  %load.struct = load %_Z6VectorI7OperandE, ptr %2, align 8
+  %load.struct = load %_Z6VectorI7OperandE, ptr %1, align 8
   %length = extractvalue %_Z6VectorI7OperandE %load.struct, 0
   %lt = icmp ult i64 %i1, %length
   br i1 %lt, label %while.body, label %while.exit
 
 while.body:                                       ; preds = %while.cond
   %i2 = load i64, ptr %i, align 4
-  %call = call ptr @_ZN6VectorI7OperandE3getEPN4scaly6memory4PageEm(ptr %0, ptr %2, i64 %i2)
+  %call = call ptr @_ZN6VectorI7OperandE3getEPN4scaly6memory4PageEm(ptr %local_page, ptr %1, i64 %i2)
   %ne = icmp ne ptr %call, null
   br i1 %ne, label %if.then, label %if.end
 
 while.exit:                                       ; preds = %while.cond
+  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
   ret void
 
 if.then:                                          ; preds = %while.body
@@ -159462,7 +159477,7 @@ if.end7:                                          ; preds = %if.end11, %choose.w
 if.then10:                                        ; preds = %if.then6
   %name12 = extractvalue %_Z4Type %variant.val, 1
   store %_Z6VectorI6StringE %name12, ptr %arg.tmp, align 1
-  %call13 = call ptr @_ZN6VectorI6StringE3getEPN4scaly6memory4PageEm(ptr %0, ptr %arg.tmp, i64 0)
+  %call13 = call ptr @_ZN6VectorI6StringE3getEPN4scaly6memory4PageEm(ptr %local_page, ptr %arg.tmp, i64 0)
   %ne14 = icmp ne ptr %call13, null
   br i1 %ne14, label %if.then15, label %if.end16
 
@@ -159488,20 +159503,20 @@ if.end21:                                         ; preds = %if.then20, %if.then
 if.then23:                                        ; preds = %if.end4
   %i25 = load i64, ptr %i, align 4
   %add = add i64 %i25, 1
-  %load.struct26 = load %_Z6VectorI7OperandE, ptr %2, align 8
+  %load.struct26 = load %_Z6VectorI7OperandE, ptr %1, align 8
   %length27 = extractvalue %_Z6VectorI7OperandE %load.struct26, 0
   %lt28 = icmp ult i64 %add, %length27
   br i1 %lt28, label %if.then29, label %if.end30
 
 if.end24:                                         ; preds = %if.end30, %if.end4
   store %_Z7Operand %grp.deref.val, ptr %deref.tmp, align 1
-  call void @_ZN7Planner23scan_addr_taken_operandEPN4scaly6memory4PageE7Operand(ptr %0, ptr %1, ptr %deref.tmp)
+  call void @_ZN7Planner23scan_addr_taken_operandE7Operand(ptr %0, ptr %deref.tmp)
   br label %if.end
 
 if.then29:                                        ; preds = %if.then23
   %i31 = load i64, ptr %i, align 4
   %add32 = add i64 %i31, 1
-  %call33 = call ptr @_ZN6VectorI7OperandE3getEPN4scaly6memory4PageEm(ptr %0, ptr %2, i64 %add32)
+  %call33 = call ptr @_ZN6VectorI7OperandE3getEPN4scaly6memory4PageEm(ptr %local_page, ptr %1, i64 %add32)
   %ne34 = icmp ne ptr %call33, null
   br i1 %ne34, label %if.then35, label %if.end36
 
@@ -159556,7 +159571,7 @@ if.end54:                                         ; preds = %if.end59, %choose.w
 if.then58:                                        ; preds = %if.then53
   %name60 = extractvalue %_Z4Type %variant.val50, 1
   store %_Z6VectorI6StringE %name60, ptr %arg.tmp, align 1
-  %call61 = call ptr @_ZN6VectorI6StringE3getEPN4scaly6memory4PageEm(ptr %0, ptr %arg.tmp, i64 0)
+  %call61 = call ptr @_ZN6VectorI6StringE3getEPN4scaly6memory4PageEm(ptr %local_page, ptr %arg.tmp, i64 0)
   %ne62 = icmp ne ptr %call61, null
   br i1 %ne62, label %if.then63, label %if.end64
 
@@ -159565,30 +159580,30 @@ if.end59:                                         ; preds = %if.end64, %if.then5
 
 if.then63:                                        ; preds = %if.then58
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp65, ptr align 1 %call61, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
-  call void @_ZN7Planner17add_address_takenEPN4scaly6memory4PageE6String(ptr %0, ptr %1, ptr %deref.tmp65)
+  call void @_ZN7Planner17add_address_takenE6String(ptr %0, ptr %deref.tmp65)
   br label %if.end64
 
 if.end64:                                         ; preds = %if.then63, %if.then58
   br label %if.end59
 }
 
-define linkonce_odr void @_ZN7Planner22scan_addr_taken_actionEPN4scaly6memory4PageE6Action(ptr %0, ptr %1, ptr %2) {
+define linkonce_odr void @_ZN7Planner22scan_addr_taken_actionE6Action(ptr %0, ptr %1) {
 entry:
-  %field.inplace = getelementptr inbounds %_Z6Action, ptr %2, i32 0, i32 0
-  call void @_ZN7Planner19scan_addr_taken_opsEPN4scaly6memory4PageE6VectorI7OperandE(ptr %0, ptr %1, ptr %field.inplace)
-  %field.inplace1 = getelementptr inbounds %_Z6Action, ptr %2, i32 0, i32 1
-  call void @_ZN7Planner19scan_addr_taken_opsEPN4scaly6memory4PageE6VectorI7OperandE(ptr %0, ptr %1, ptr %field.inplace1)
+  %field.inplace = getelementptr inbounds %_Z6Action, ptr %1, i32 0, i32 0
+  call void @_ZN7Planner19scan_addr_taken_opsE6VectorI7OperandE(ptr %0, ptr %field.inplace)
+  %field.inplace1 = getelementptr inbounds %_Z6Action, ptr %1, i32 0, i32 1
+  call void @_ZN7Planner19scan_addr_taken_opsE6VectorI7OperandE(ptr %0, ptr %field.inplace1)
   ret void
 }
 
-define linkonce_odr void @_ZN7Planner20scan_addr_taken_stmtEPN4scaly6memory4PageE9Statement(ptr %0, ptr %1, ptr %2) {
+define linkonce_odr void @_ZN7Planner20scan_addr_taken_stmtE9Statement(ptr %0, ptr %1) {
 entry:
   %arg.tmp18 = alloca %_Z6VectorI7OperandE, align 8
   %arg.tmp13 = alloca %_Z6VectorI7OperandE, align 8
   %arg.tmp8 = alloca %_Z6VectorI7OperandE, align 8
   %arg.tmp4 = alloca %_Z6VectorI7OperandE, align 8
   %arg.tmp = alloca %_Z6Action, align 8
-  %tag.ptr = getelementptr inbounds %_Z9Statement, ptr %2, i32 0, i32 0
+  %tag.ptr = getelementptr inbounds %_Z9Statement, ptr %1, i32 0, i32 0
   %tag = load i8, ptr %tag.ptr, align 1
   switch i8 %tag, label %choose.else [
     i8 0, label %choose.when
@@ -159606,49 +159621,49 @@ choose.else:                                      ; preds = %entry
   br label %choose.end
 
 choose.when:                                      ; preds = %entry
-  %"variant.c_data().ptr" = getelementptr inbounds %_Z9Statement, ptr %2, i32 0, i32 1
+  %"variant.c_data().ptr" = getelementptr inbounds %_Z9Statement, ptr %1, i32 0, i32 1
   %variant.val = load %_Z6Action, ptr %"variant.c_data().ptr", align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp, ptr align 1 %"variant.c_data().ptr", i64 ptrtoint (ptr getelementptr (%_Z6Action, ptr null, i32 1) to i64), i1 false)
-  call void @_ZN7Planner22scan_addr_taken_actionEPN4scaly6memory4PageE6Action(ptr %0, ptr %1, ptr %arg.tmp)
+  call void @_ZN7Planner22scan_addr_taken_actionE6Action(ptr %0, ptr %arg.tmp)
   br label %choose.end
 
 choose.when1:                                     ; preds = %entry
-  %"variant.c_data().ptr2" = getelementptr inbounds %_Z9Statement, ptr %2, i32 0, i32 1
+  %"variant.c_data().ptr2" = getelementptr inbounds %_Z9Statement, ptr %1, i32 0, i32 1
   %variant.val3 = load %_Z7Binding, ptr %"variant.c_data().ptr2", align 8
   %operation = extractvalue %_Z7Binding %variant.val3, 3
   store %_Z6VectorI7OperandE %operation, ptr %arg.tmp4, align 1
-  call void @_ZN7Planner19scan_addr_taken_opsEPN4scaly6memory4PageE6VectorI7OperandE(ptr %0, ptr %1, ptr %arg.tmp4)
+  call void @_ZN7Planner19scan_addr_taken_opsE6VectorI7OperandE(ptr %0, ptr %arg.tmp4)
   br label %choose.end
 
 choose.when5:                                     ; preds = %entry
-  %"variant.c_data().ptr6" = getelementptr inbounds %_Z9Statement, ptr %2, i32 0, i32 1
+  %"variant.c_data().ptr6" = getelementptr inbounds %_Z9Statement, ptr %1, i32 0, i32 1
   %variant.val7 = load %_Z6Return, ptr %"variant.c_data().ptr6", align 8
   %result = extractvalue %_Z6Return %variant.val7, 1
   store %_Z6VectorI7OperandE %result, ptr %arg.tmp8, align 1
-  call void @_ZN7Planner19scan_addr_taken_opsEPN4scaly6memory4PageE6VectorI7OperandE(ptr %0, ptr %1, ptr %arg.tmp8)
+  call void @_ZN7Planner19scan_addr_taken_opsE6VectorI7OperandE(ptr %0, ptr %arg.tmp8)
   br label %choose.end
 
 choose.when9:                                     ; preds = %entry
-  %"variant.c_data().ptr10" = getelementptr inbounds %_Z9Statement, ptr %2, i32 0, i32 1
+  %"variant.c_data().ptr10" = getelementptr inbounds %_Z9Statement, ptr %1, i32 0, i32 1
   %variant.val11 = load %_Z5Throw, ptr %"variant.c_data().ptr10", align 8
   %result12 = extractvalue %_Z5Throw %variant.val11, 1
   store %_Z6VectorI7OperandE %result12, ptr %arg.tmp13, align 1
-  call void @_ZN7Planner19scan_addr_taken_opsEPN4scaly6memory4PageE6VectorI7OperandE(ptr %0, ptr %1, ptr %arg.tmp13)
+  call void @_ZN7Planner19scan_addr_taken_opsE6VectorI7OperandE(ptr %0, ptr %arg.tmp13)
   br label %choose.end
 
 choose.when14:                                    ; preds = %entry
-  %"variant.c_data().ptr15" = getelementptr inbounds %_Z9Statement, ptr %2, i32 0, i32 1
+  %"variant.c_data().ptr15" = getelementptr inbounds %_Z9Statement, ptr %1, i32 0, i32 1
   %variant.val16 = load %_Z5Break, ptr %"variant.c_data().ptr15", align 8
   %result17 = extractvalue %_Z5Break %variant.val16, 1
   store %_Z6VectorI7OperandE %result17, ptr %arg.tmp18, align 1
-  call void @_ZN7Planner19scan_addr_taken_opsEPN4scaly6memory4PageE6VectorI7OperandE(ptr %0, ptr %1, ptr %arg.tmp18)
+  call void @_ZN7Planner19scan_addr_taken_opsE6VectorI7OperandE(ptr %0, ptr %arg.tmp18)
   br label %choose.end
 }
 
-define linkonce_odr void @_ZN7Planner18scan_address_takenEPN4scaly6memory4PageE14Implementation(ptr %0, ptr %1, ptr %2) {
+define linkonce_odr void @_ZN7Planner18scan_address_takenE14Implementation(ptr %0, ptr %1) {
 entry:
   %arg.tmp = alloca %_Z6Action, align 8
-  %tag.ptr = getelementptr inbounds %_Z14Implementation, ptr %2, i32 0, i32 0
+  %tag.ptr = getelementptr inbounds %_Z14Implementation, ptr %1, i32 0, i32 0
   %tag = load i8, ptr %tag.ptr, align 1
   switch i8 %tag, label %choose.else [
     i8 0, label %choose.when
@@ -159662,19 +159677,19 @@ choose.else:                                      ; preds = %entry
   br label %choose.end
 
 choose.when:                                      ; preds = %entry
-  %"variant.c_data().ptr" = getelementptr inbounds %_Z14Implementation, ptr %2, i32 0, i32 1
+  %"variant.c_data().ptr" = getelementptr inbounds %_Z14Implementation, ptr %1, i32 0, i32 1
   %variant.val = load %_Z6Action, ptr %"variant.c_data().ptr", align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp, ptr align 1 %"variant.c_data().ptr", i64 ptrtoint (ptr getelementptr (%_Z6Action, ptr null, i32 1) to i64), i1 false)
-  call void @_ZN7Planner22scan_addr_taken_actionEPN4scaly6memory4PageE6Action(ptr %0, ptr %1, ptr %arg.tmp)
+  call void @_ZN7Planner22scan_addr_taken_actionE6Action(ptr %0, ptr %arg.tmp)
   br label %choose.end
 }
 
-define linkonce_odr void @_ZN7Planner22scan_top_level_returnsEPN4scaly6memory4PageE14Implementation(ptr %0, ptr %1, ptr %2) {
+define linkonce_odr void @_ZN7Planner22scan_top_level_returnsE14Implementation(ptr %0, ptr %1) {
 entry:
   %arg.tmp = alloca %_Z6Action, align 8
   %passes = alloca i64, align 8
   %prev_len = alloca i64, align 8
-  %tag.ptr = getelementptr inbounds %_Z14Implementation, ptr %2, i32 0, i32 0
+  %tag.ptr = getelementptr inbounds %_Z14Implementation, ptr %1, i32 0, i32 0
   %tag = load i8, ptr %tag.ptr, align 1
   switch i8 %tag, label %choose.else [
     i8 0, label %choose.when
@@ -159688,30 +159703,30 @@ choose.else:                                      ; preds = %entry
   br label %choose.end
 
 choose.when:                                      ; preds = %entry
-  %"variant.c_data().ptr" = getelementptr inbounds %_Z14Implementation, ptr %2, i32 0, i32 1
+  %"variant.c_data().ptr" = getelementptr inbounds %_Z14Implementation, ptr %1, i32 0, i32 1
   %variant.val = load %_Z6Action, ptr %"variant.c_data().ptr", align 8
   store i64 0, ptr %prev_len, align 1
   store i64 0, ptr %passes, align 1
   br label %repeat.body
 
 repeat.body:                                      ; preds = %if.end15, %choose.when
-  %load.struct = load %_Z7Planner, ptr %1, align 8
+  %load.struct = load %_Z7Planner, ptr %0, align 8
   %escaping_return_locals = extractvalue %_Z7Planner %load.struct, 15
   %length = extractvalue %_Z5ArrayI6StringE %escaping_return_locals, 0
-  %load.struct1 = load %_Z7Planner, ptr %1, align 8
+  %load.struct1 = load %_Z7Planner, ptr %0, align 8
   %escaping_targets = extractvalue %_Z7Planner %load.struct1, 18
   %length2 = extractvalue %_Z5ArrayI6StringE %escaping_targets, 0
   %add = add i64 %length, %length2
   store i64 %add, ptr %prev_len, align 1
   store %_Z6Action %variant.val, ptr %arg.tmp, align 1
-  call void @_ZN7Planner22collect_returns_actionEPN4scaly6memory4PageE6Action(ptr %0, ptr %1, ptr %arg.tmp)
+  call void @_ZN7Planner22collect_returns_actionE6Action(ptr %0, ptr %arg.tmp)
   %passes3 = load i64, ptr %passes, align 4
   %add4 = add i64 %passes3, 1
   store i64 %add4, ptr %passes, align 1
-  %load.struct5 = load %_Z7Planner, ptr %1, align 8
+  %load.struct5 = load %_Z7Planner, ptr %0, align 8
   %escaping_return_locals6 = extractvalue %_Z7Planner %load.struct5, 15
   %length7 = extractvalue %_Z5ArrayI6StringE %escaping_return_locals6, 0
-  %load.struct8 = load %_Z7Planner, ptr %1, align 8
+  %load.struct8 = load %_Z7Planner, ptr %0, align 8
   %escaping_targets9 = extractvalue %_Z7Planner %load.struct8, 18
   %length10 = extractvalue %_Z5ArrayI6StringE %escaping_targets9, 0
   %add11 = add i64 %length7, %length10
