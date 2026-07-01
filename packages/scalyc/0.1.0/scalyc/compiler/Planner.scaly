@@ -20360,7 +20360,7 @@ define Planner
             return Vector[size_t](0)
 
         let ps (*props)
-        var result Vector[size_t]^rp(ps.length)
+        var result Vector[size_t]#(ps.length)
         var offset: size_t 0
         var i: size_t 0
         while i < ps.length
@@ -20513,7 +20513,7 @@ define Planner
         if t.generics <> null
         {
             let gens (*t.generics)
-            var new_gens Vector[PlannedType]^rp(gens.length)
+            var new_gens Vector[PlannedType]#(gens.length)
             var i: size_t 0
             while i < gens.length
             {
@@ -20638,7 +20638,7 @@ define Planner
     ; an outer Model.Type with proper inner generic structure.
     function planned_type_to_model_type(pt: PlannedType) returns Type
     {
-        var name_path Vector[String]^rp(1)
+        var name_path Vector[String]#(1)
         name_path.put(0, pt.name)
         var maybe_gens: ref[Vector[Type]]? null
         if pt.generics <> null
@@ -20646,7 +20646,7 @@ define Planner
             let pgens (*pt.generics)
             if pgens.length > 0
             {
-                var conv Vector[Type]^rp(pgens.length)
+                var conv Vector[Type]#(pgens.length)
                 var i: size_t 0
                 while i < pgens.length
                 {
@@ -20699,7 +20699,7 @@ define Planner
         if t.generics <> null
         {
             let gens (*t.generics)
-            var new_gens Vector[PlannedType]^rp(gens.length)
+            var new_gens Vector[PlannedType]#(gens.length)
             var i: size_t 0
             while i < gens.length
             {
@@ -20776,7 +20776,7 @@ define Planner
     ; mangled name. `inner.mangled_name` must be populated.
     function make_pointer_type(inner: PlannedType) returns PlannedType
     {
-        var gens Vector[PlannedType]^rp(1)
+        var gens Vector[PlannedType]#(1)
         gens.put(0, inner)
         var sb StringBuilder()
         sb.append "P"
@@ -20846,7 +20846,7 @@ define Planner
             String(inner.array_size),
             inner.variable
         )
-        var new_gens Vector[PlannedType]^rp(1)
+        var new_gens Vector[PlannedType]#(1)
         new_gens.put(0, local_inner)
         PlannedType(
             t.loc,
@@ -21002,10 +21002,10 @@ define Planner
                                             {
                                                 if nested_gens.length > 0
                                                 {
-                                                    var name_path Vector[String]^rp(1)
+                                                    var name_path Vector[String]#(1)
                                                     name_path.put(0, name_type.name)
                                                     var gens_vec Vector[Type](nested_gens)
-                                                    var holder Vector[Type]^rp(1)
+                                                    var holder Vector[Type]#(1)
                                                     holder.put(0, Type(
                                                         name_type.loc,
                                                         name_path,
@@ -21046,7 +21046,7 @@ define Planner
                 choose cell.expr
                     when et: PlannedType
                     {
-                        var holder Vector[Type]^rp(1)
+                        var holder Vector[Type]#(1)
                         holder.put(0, Planner.planned_type_to_model_type(et))
                         return holder.get 0
                     }
@@ -21080,7 +21080,7 @@ define Planner
         if t.generics <> null
         {
             let gens (*t.generics)
-            var result Vector[PlannedType]^rp(gens.length)
+            var result Vector[PlannedType]#(gens.length)
             var i: size_t 0
             while i < gens.length
             {
@@ -21111,7 +21111,7 @@ define Planner
                         var sb StringBuilder()
                         sb.append "P"
                         sb.append inner.mangled_name
-                        set mangled: sb.to_string^rp()
+                        set mangled: sb.to_string#()
                     }
                 }
             }
@@ -21130,7 +21130,7 @@ define Planner
                         var sb StringBuilder()
                         sb.append "R"
                         sb.append inner.mangled_name
-                        set mangled: sb.to_string^rp()
+                        set mangled: sb.to_string#()
                     }
                 }
             }
@@ -21399,7 +21399,7 @@ define Planner
 
         ; Allocate stable storage for the fresh TypeVariables so their
         ; addresses can be embedded in the substitution-target PlannedTypes.
-        var fresh_vars Vector[TypeVariable]^rp(quants.length)
+        var fresh_vars Vector[TypeVariable]#(quants.length)
         var subst_arr Array[KeyValuePair[size_t, PlannedType]]()
         var i: size_t 0
         while i < quants.length
@@ -21531,7 +21531,7 @@ define Planner
                 let rv (*right_embed)
                 if lv.id = rv.id
                 {
-                    var empty Vector[KeyValuePair[size_t, PlannedType]]^rp(0)
+                    var empty Vector[KeyValuePair[size_t, PlannedType]]#(0)
                     return &empty
                 }
             }
@@ -21543,7 +21543,7 @@ define Planner
             let lv (*left_embed)
             if Planner.occurs_in(lv.id, right)
                 return null
-            var s Vector[KeyValuePair[size_t, PlannedType]]^rp(1)
+            var s Vector[KeyValuePair[size_t, PlannedType]]#(1)
             s.put(0, KeyValuePair[size_t, PlannedType](lv.id, right))
             return &s
         }
@@ -21554,7 +21554,7 @@ define Planner
             let rv (*right_embed)
             if Planner.occurs_in(rv.id, left)
                 return null
-            var s Vector[KeyValuePair[size_t, PlannedType]]^rp(1)
+            var s Vector[KeyValuePair[size_t, PlannedType]]#(1)
             s.put(0, KeyValuePair[size_t, PlannedType](rv.id, left))
             return &s
         }
@@ -21564,12 +21564,12 @@ define Planner
         ; `void` unifies with anything (null literal compatibility).
         if left.name.equals("void")
         {
-            var empty Vector[KeyValuePair[size_t, PlannedType]]^rp(0)
+            var empty Vector[KeyValuePair[size_t, PlannedType]]#(0)
             return &empty
         }
         if right.name.equals("void")
         {
-            var empty Vector[KeyValuePair[size_t, PlannedType]]^rp(0)
+            var empty Vector[KeyValuePair[size_t, PlannedType]]#(0)
             return &empty
         }
 
@@ -21577,19 +21577,19 @@ define Planner
         ; inserts the cast).
         if Planner.are_compatible_integer_types(left.name, right.name)
         {
-            var empty Vector[KeyValuePair[size_t, PlannedType]]^rp(0)
+            var empty Vector[KeyValuePair[size_t, PlannedType]]#(0)
             return &empty
         }
 
         ; null literal (pointer[void]) as the None of any Option type.
         if Planner.is_option_vs_void_pointer(left, right)
         {
-            var empty Vector[KeyValuePair[size_t, PlannedType]]^rp(0)
+            var empty Vector[KeyValuePair[size_t, PlannedType]]#(0)
             return &empty
         }
         if Planner.is_option_vs_void_pointer(right, left)
         {
-            var empty Vector[KeyValuePair[size_t, PlannedType]]^rp(0)
+            var empty Vector[KeyValuePair[size_t, PlannedType]]#(0)
             return &empty
         }
 
@@ -21614,7 +21614,7 @@ define Planner
             return null
 
         ; Unify generic args pairwise, composing substitutions.
-        var result Vector[KeyValuePair[size_t, PlannedType]]^rp(0)
+        var result Vector[KeyValuePair[size_t, PlannedType]]#(0)
         if left.generics <> null
         {
             if right.generics <> null
@@ -21656,7 +21656,7 @@ define Planner
         constraints: ref[Vector[TypeConstraint]]?
     ) returns ref[Vector[KeyValuePair[size_t, PlannedType]]]?
     {
-        var solution Vector[KeyValuePair[size_t, PlannedType]]^rp(0)
+        var solution Vector[KeyValuePair[size_t, PlannedType]]#(0)
 
         if constraints = null
             return &solution
@@ -23046,7 +23046,7 @@ define Planner
     ; C-style string literals. Shared by StringConstant and FragmentConstant.
     function make_cstring_type(sp: Span) returns PlannedType
     {
-        var gens Vector[PlannedType]^rp(1)
+        var gens Vector[PlannedType]#(1)
         let i8_ty PlannedType(
             sp,
             "i8",
@@ -23075,7 +23075,7 @@ define Planner
     ; at the use-site.
     function make_null_type(sp: Span) returns PlannedType
     {
-        var gens Vector[PlannedType]^rp(1)
+        var gens Vector[PlannedType]#(1)
         let void_ty PlannedType(
             sp,
             "void",
