@@ -7814,18 +7814,25 @@ define Planner
                                     set bi: bi + 1
                                 }
 
-                                var holder Vector[PlannedType]^rp(1)
+                                ; Let-bound box: plan_type must run BEFORE the
+                                ; type_substitutions restore (it resolves the
+                                ; return type against the active substitutions),
+                                ; so the box can't be inlined into the return.
+                                ; The box's call-result promotion routes plan_
+                                ; type's guts to ^this; local_box_names records r
+                                ; so region_of_operand# accepts `return r` past
+                                ; the intervening restore.
                                 if o.returns_ <> null
                                 {
                                     let rt_model (*o.returns_)
-                                    holder.put(0, this.plan_type(rt_model))
+                                    let r &^this this.plan_type(rt_model)
+                                    set type_substitutions.length: saved_len
+                                    set this.resolved_op_is_intrinsic: Planner.operator_is_intrinsic(o)
+                                    return r
                                 }
-                                if o.returns_ = null
-                                    holder.put(0, Planner.make_void_type())
-
                                 set type_substitutions.length: saved_len
                                 set this.resolved_op_is_intrinsic: Planner.operator_is_intrinsic(o)
-                                return holder.get 0
+                                return &^this Planner.make_void_type()
                             }
                         }
                     }
