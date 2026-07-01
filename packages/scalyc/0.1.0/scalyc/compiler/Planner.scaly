@@ -15621,10 +15621,18 @@ define Planner
         ; Gated on a CAPITALIZED head name (a construction, not a call) so an
         ; ordinary `return f(scratch)` does not over-promote scratch — over-
         ; collection is merely leaky, never unsafe, but the gate keeps it tight.
+        ; The escaping-name stores live on `^this` (the Planner's own page), not
+        ; `^rp`: the set is a Planner field, so its names belong to the Planner's
+        ; region and outlive every per-function scan/promote cycle. `^rp` here
+        ; was only ever an accident of the transitive page-set — dropping it was
+        ; blocked until the transient `Vector[Operand]` holders in the collect_*
+        ; walkers below stopped requiring rp (they are now plain locals). With
+        ; those holders local, no scan-machinery function needs rp threaded from
+        ; add_escaping_*, so `^this` here no longer collapses the rp web.
         function add_escaping_local(this: Planner, name: String)
         {
             if this.array_contains_name(escaping_return_locals, name) = false
-                escaping_return_locals.add(String^rp(name))
+                escaping_return_locals.add(String^this(name))
         }
         function name_is_capitalized(this: Planner, n: String) returns bool
         {
@@ -15958,9 +15966,22 @@ define Planner
                                 }
                                 else
                                     0
+                        ; dh/ph/sa are TRANSIENT single-element holders: box one
+                        ; operand, pass it to the SYNCHRONOUS read-only recursive
+                        ; collect_flow_locals, discard. They never escape, so they
+                        ; are plain LOCALS (no `^rp`). This is load-bearing for the
+                        ; `^this` escaping-name stores above: were these `^rp`, the
+                        ; whole collect_* chain would need rp threaded from
+                        ; add_escaping_* (via the transitive page-set); when
+                        ; add_escaping_* moved to `^this` and left that set, the
+                        ; chain lost rp, these holders dangled, and the scan
+                        ; under-collected — a returned/stored local (e.g.
+                        ; handle_declaration's `var fns`) was left on the local page
+                        ; and freed, dangling a Modeler concept name into
+                        ; register_concept. As locals they need no rp at all.
                         if is_deref
                         {
-                            var dh Vector[Operand]^rp(1)
+                            var dh Vector[Operand](1)
                             dh.put(0, args)
                             this.collect_flow_locals(dh)
                         }
@@ -15988,7 +16009,7 @@ define Planner
                                     ; must be promoted. Recurse on a one-operand
                                     ; sequence so the ops.length=1 alias/branch
                                     ; logic collects it.
-                                    var ph Vector[Operand]^rp(1)
+                                    var ph Vector[Operand](1)
                                     ph.put(0, args)
                                     this.collect_flow_locals(ph)
                                 }
@@ -16018,7 +16039,7 @@ define Planner
         function add_escaping_target(this: Planner, name: String)
         {
             if this.array_contains_name(escaping_targets, name) = false
-                escaping_targets.add(String^rp(name))
+                escaping_targets.add(String^this(name))
         }
         ; A binding initializer escapes the frame when its construction carries
         ; an explicit `^name` (Reference) or `#` (Call) lifetime. For a
@@ -16273,7 +16294,7 @@ define Planner
                                     ; (`result.add stmt`, s199): the argument is a
                                     ; bare value operand, NOT wrapped in a Tuple, so
                                     ; collect the value's flow locals directly.
-                                    var sa Vector[Operand]^rp(1)
+                                    var sa Vector[Operand](1)
                                     sa.put(0, args)
                                     this.collect_flow_locals(sa)
                                 }
@@ -16551,7 +16572,7 @@ define Planner
         function add_address_taken(this: Planner, name: String)
         {
             if this.array_contains_name(address_taken_locals, name) = false
-                address_taken_locals.add(String^rp(name))
+                address_taken_locals.add(String^this(name))
         }
         function scan_addr_taken_ops(this: Planner, ops: Vector[Operand])
         {
