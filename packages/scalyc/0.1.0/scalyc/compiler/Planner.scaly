@@ -4310,7 +4310,7 @@ define Planner
                         ; Instead of a frame address-of, box a COPY of the
                         ; collapsed operand onto obj's page (Page.get(obj)) and
                         ; yield a pointer[X] that outlives the frame — replacing
-                        ; the `var H Vector[X]^rp(1); H.put(0,v); H.get(0)` holder.
+                        ; the `var H Vector[X]#(1); H.put(0,v); H.get(0)` holder.
                         ; Reading ty.life (not a separate ops[1] marker scan) is
                         ; what makes it fire for ANY value, incl. call results.
                         if prefix_name.equals("&")
