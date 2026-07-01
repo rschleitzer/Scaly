@@ -1384,18 +1384,27 @@ define Planner
         ; ================================================================
         function register_runtime_functions(this: Planner)
         {
-            ; All Vector / String / Type containers must live on `rp`
-            ; (the Planner's owning page) — `$` would put them on this
-            ; function's local page, which is freed on return, leaving
-            ; every Item.type and Type.generics ref dangling. Symptom
-            ; (s100): later `lookup_functions("exit")` returns a Function
-            ; whose param Type.generics reads as a tiny non-null bogus
-            ; pointer (e.g. 0x8), and resolve_type_base# crashes on
-            ; deref.
+            ; All Vector / String / Type containers must live on `^this`
+            ; (the Planner's OWN page, Page.get(this)) — a no-sigil local
+            ; would put them on this function's local page, which is freed
+            ; on return, leaving every Item.type and Type.generics ref
+            ; dangling. Symptom (s100): later `lookup_functions("exit")`
+            ; returns a Function whose param Type.generics reads as a tiny
+            ; non-null bogus pointer (e.g. 0x8), and resolve_type_base#
+            ; crashes on deref.
+            ;
+            ; `^this` (not the old threaded `^rp`) is correct AND
+            ; interface-honest: this procedure MUTATES `this` — its built
+            ; Function objects belong to `this` and outlive the frame iff
+            ; `this` does, so they live on `this`'s own page. Page.get(this)
+            ; is a stable page of the same long-lived region the Planner and
+            ; its Array backings already occupy (the struct never moves), so
+            ; nothing dangles; the region flows through the declared `this`
+            ; parameter, not a hidden injected page.
             ;
             ; Type itself is a value-defined struct (no init#) so we
-            ; can't write `Type^rp(...)`. Instead, hold each Type in a
-            ; Vector[Type]^rp(1) and take a ref via `vec.get(0)` —
+            ; can't write `Type^this(...)`. Instead, hold each Type in a
+            ; Vector[Type]^this(1) and take a ref via `vec.get(0)` —
             ; mirrors handle_type# in Modeler.scaly.
 
             ; aligned_alloc(alignment: size_t, size: size_t) -> pointer[void]
