@@ -1713,6 +1713,10 @@ define Planner
                 return true
             if name.equals("StringBuilder")
                 return true
+            if name.equals("HashSet")
+                return true
+            if name.equals("HashMap")
+                return true
             false
         }
 
