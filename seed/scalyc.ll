@@ -168869,8 +168869,9 @@ choose.when:                                      ; preds = %entry
 
 define linkonce_odr void @_ZN7PlannerC1EPN4scaly6memory4PageE6String(ptr %0, ptr %1, ptr %2) {
 entry:
+  %call = call ptr @_ZN4Page3getEPv(ptr %0)
   %owning_page = getelementptr inbounds %_Z7Planner, ptr %0, i32 0, i32 47
-  store ptr %1, ptr %owning_page, align 8
+  store ptr %call, ptr %owning_page, align 8
   %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
   call void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr %struct.region, ptr %1, ptr %2)
   %file = getelementptr inbounds %_Z7Planner, ptr %0, i32 0, i32 0
