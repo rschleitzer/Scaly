@@ -1399,38 +1399,38 @@ define Planner
             ; mirrors handle_type# in Modeler.scaly.
 
             ; aligned_alloc(alignment: size_t, size: size_t) -> pointer[void]
-            var aa_size_path Vector[String]^rp(1)
+            var aa_size_path Vector[String]^this(1)
             aa_size_path.put(0, "size_t")
             let aa_size_ref Type^this(
                 Span(0, 0), aa_size_path, null,
                 Lifetime.Unspecified(Unspecified())
             )
 
-            var aa_void_path Vector[String]^rp(1)
+            var aa_void_path Vector[String]^this(1)
             aa_void_path.put(0, "void")
-            var aa_void_holder Vector[Type]^rp(1)
+            var aa_void_holder Vector[Type]^this(1)
             aa_void_holder.put(0, Type(
                 Span(0, 0), aa_void_path, null,
                 Lifetime.Unspecified(Unspecified())
             ))
 
-            var aa_ptr_gens_holder Vector[Vector[Type]]^rp(1)
+            var aa_ptr_gens_holder Vector[Vector[Type]]^this(1)
             aa_ptr_gens_holder.put(0, aa_void_holder)
             let aa_ptr_gens_ref aa_ptr_gens_holder.get 0
 
-            var aa_ptr_path Vector[String]^rp(1)
+            var aa_ptr_path Vector[String]^this(1)
             aa_ptr_path.put(0, "pointer")
             let aa_ptr_void_ref Type^this(
                 Span(0, 0), aa_ptr_path, aa_ptr_gens_ref,
                 Lifetime.Unspecified(Unspecified())
             )
 
-            var aa_alignment_name Vector[String]^rp(1)
+            var aa_alignment_name Vector[String]^this(1)
             aa_alignment_name.put(0, "alignment")
-            var aa_size_name Vector[String]^rp(1)
+            var aa_size_name Vector[String]^this(1)
             aa_size_name.put(0, "size")
 
-            var aa_inputs Vector[Item]^rp(2)
+            var aa_inputs Vector[Item]^this(2)
             aa_inputs.put(0, Item(
                 Span(0, 0), false,
                 aa_alignment_name.get 0,
@@ -1446,7 +1446,7 @@ define Planner
             let aligned_alloc_fn Function(
                 Span(0, 0), false, false,
                 "aligned_alloc",
-                Vector[GenericParameter]^rp(0),
+                Vector[GenericParameter]^this(0),
                 null,
                 aa_inputs,
                 aa_ptr_void_ref,
@@ -1457,9 +1457,9 @@ define Planner
             this.register_function(aligned_alloc_fn)
 
             ; free(ptr: pointer[void])
-            var free_ptr_name Vector[String]^rp(1)
+            var free_ptr_name Vector[String]^this(1)
             free_ptr_name.put(0, "ptr")
-            var free_inputs Vector[Item]^rp(1)
+            var free_inputs Vector[Item]^this(1)
             free_inputs.put(0, Item(
                 Span(0, 0), false,
                 free_ptr_name.get 0,
@@ -1469,7 +1469,7 @@ define Planner
             let free_fn Function(
                 Span(0, 0), false, false,
                 "free",
-                Vector[GenericParameter]^rp(0),
+                Vector[GenericParameter]^this(0),
                 null,
                 free_inputs,
                 null,
@@ -1480,16 +1480,16 @@ define Planner
             this.register_function(free_fn)
 
             ; exit(code: int)
-            var int_path Vector[String]^rp(1)
+            var int_path Vector[String]^this(1)
             int_path.put(0, "int")
             let int_ref Type^this(
                 Span(0, 0), int_path, null,
                 Lifetime.Unspecified(Unspecified())
             )
 
-            var exit_code_name Vector[String]^rp(1)
+            var exit_code_name Vector[String]^this(1)
             exit_code_name.put(0, "code")
-            var exit_inputs Vector[Item]^rp(1)
+            var exit_inputs Vector[Item]^this(1)
             exit_inputs.put(0, Item(
                 Span(0, 0), false,
                 exit_code_name.get 0,
@@ -1499,7 +1499,7 @@ define Planner
             let exit_fn Function(
                 Span(0, 0), false, false,
                 "exit",
-                Vector[GenericParameter]^rp(0),
+                Vector[GenericParameter]^this(0),
                 null,
                 exit_inputs,
                 null,
