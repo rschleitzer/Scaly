@@ -320,6 +320,15 @@ define Planner
         ; (the record lives on this frame) — flagged as a hard diagnostic.
         ; Truncated to its entry length at each function boundary.
         local_closure_names: Array[String]
+        ; Page inference (let-bound box escape): names bound to a `&^this`/`&^rp`
+        ; box (`let r &^this <call>`). The box places its value on a SURVIVING
+        ; page (the borrowed receiver / caller rp), so such a local may be
+        ; returned/stored/passed even though its binding_type carries the boxed
+        ; value's stale Local inner. region_of_operand# ranks a use of one Caller.
+        ; Covers the bind-then-escape shape where intervening statements (e.g. a
+        ; type_substitutions restore) prevent inlining the box into the sink.
+        ; Truncated per function boundary.
+        local_box_names: Array[String]
         ; Page inference, gap 1 (backward binding promotion). escaping_return_
         ; locals: names a pre-scan found returned bare (`return x`) somewhere in
         ; the current function body — their `let x <alloc>` binding's allocation
@@ -535,6 +544,7 @@ define Planner
             set delegate_names: Array[String]^page()
             set current_return_type: null
             set local_closure_names: Array[String]^page()
+            set local_box_names: Array[String]^page()
             set escaping_return_locals: Array[String]^page()
             set promoted_binding_names: Array[String]^page()
             set local_tainted_struct_bindings: Array[String]^page()
@@ -12909,6 +12919,21 @@ define Planner
                         }
                     }
                 }
+
+                ; Let-bound box escape: a binding whose initializer is a
+                ; `&^this`/`&^rp` box places its value on a surviving page, so
+                ; the local is safe to return/store/pass (region_of_operand#
+                ; ranks it Caller). Record the name here.
+                choose collapsed.expr
+                    when bx: Box
+                    {
+                        if bx.target_page.equals("this")
+                            local_box_names.add(String^rp(bn))
+                        if bx.target_page.equals("rp")
+                            local_box_names.add(String^rp(bn))
+                    }
+                    else
+                        0
             }
 
             ; Page inference (address-taken rule): a frame-local Vector binding
@@ -13114,7 +13139,7 @@ define Planner
             ; h.p's static type is pointer[Box{Unspecified}], so the Local pointee
             ; isn't on the field type; the per-fn taint set carries it instead).
             var store_src_escapes false
-            if Planner.region_of_operand(planned_source_collapsed) < Planner.required_region_for_escape()
+            if this.region_of_operand(planned_source_collapsed) < Planner.required_region_for_escape()
                 set store_src_escapes: true
             if this.operand_reads_tainted_local_field(planned_source_collapsed)
                 set store_src_escapes: true
@@ -13578,7 +13603,7 @@ define Planner
         ; NEUTRAL: region_of_operand(op) < required_region_for_escape() is
         ; exactly today's is_reference_to_local_page(op.result_type) (rank Local
         ; iff a frame pointee, else Caller; Caller < Static unused yet).
-        function region_of_operand(op: PlannedOperand) returns size_t
+        function region_of_operand(this: Planner, op: PlannedOperand) returns size_t
         {
             ; A box (`&^obj v`) places a COPY of the value on obj's page. For the
             ; ^this / ^rp targets the page is the borrowed receiver / the caller's
@@ -13593,6 +13618,18 @@ define Planner
                         return Planner.region_rank_caller()
                     if b.target_page.equals("rp")
                         return Planner.region_rank_caller()
+                }
+                when v: Variable
+                {
+                    ; A local bound to a `&^this`/`&^rp` box (recorded in
+                    ; local_box_names at plan_binding#) points at a surviving
+                    ; page even though its binding_type carries the boxed value's
+                    ; stale Local inner. Rank it Caller so `let r &^this <call>;
+                    ; <intervening statements>; return r` is accepted. Only a bare
+                    ; Variable read (no member-access hop) qualifies.
+                    if op.member_access = null
+                        if this.array_contains_name(local_box_names, v.name)
+                            return Planner.region_rank_caller()
                 }
                 else
                     0
@@ -14077,7 +14114,7 @@ define Planner
             if arg_ptr = null
                 return
             let arg arg_ptr.unwrap()
-            if Planner.region_of_operand(arg) < Planner.required_region_for_escape()
+            if this.region_of_operand(arg) < Planner.required_region_for_escape()
             {
                 var violates false
                 if rec.dest_kind = 1
@@ -15139,7 +15176,7 @@ define Planner
             ; Unspecified. The latter closes `return Vector[T](0)` /
             ; `return SomeStruct(...)` directly-returned-construction dangling.
             var return_needs_promotion false
-            if Planner.region_of_operand(planned_collapsed) < Planner.required_region_for_escape()
+            if this.region_of_operand(planned_collapsed) < Planner.required_region_for_escape()
                 set return_needs_promotion: true
             if return_needs_promotion = false
                 if this.operand_is_local_page_construction(planned_collapsed)
@@ -16928,6 +16965,7 @@ define Planner
             let saved_return_type this.current_return_type
             set this.current_return_type: return_type
             let saved_lcn local_closure_names.length
+            let saved_lbn local_box_names.length
             ; Page inference, gap 1: pre-scan the body for bare `return x`
             ; targets so plan_binding# can promote their allocations to the
             ; caller page. Sets are truncated at the function boundary so
@@ -16984,6 +17022,7 @@ define Planner
             set local_tainted_struct_bindings.length: saved_lts
             set address_taken_locals.length: saved_atl
             set local_closure_names.length: saved_lcn
+            set local_box_names.length: saved_lbn
             set this.current_return_type: saved_return_type
 
             this.pop_scope()

@@ -1,0 +1,31 @@
+; Regression: BIND-THEN-RETURN box (`let r &^rp <call>; <intervening>; return r`).
+; Previously the escape checker accepted only a DIRECT `return &^rp <call>`; a
+; local BOUND to the box fell through region_of_operand#'s Variable arm to
+; is_reference_to_local_page (the box's inner pointee carries the callee's stale
+; Local life) and was wrongly REJECTED. local_box_names now records such a
+; binding so region_of_operand# ranks a use of it Caller. The intervening
+; statement models the real holder sites (e.g. a type_substitutions restore)
+; that prevent inlining the box into the return. The direct-call page-promotion
+; still routes make_label#'s String buffer to rp, so (*p) survives.
+; Self-hosted-only. Expected: PASS
+
+package scaly 0.1.0
+
+use scaly.containers.String
+
+function make_label#() returns String
+    String#("hello")
+
+function boxed_label#() returns pointer[String]
+{
+    let r &^rp make_label#()
+    var n: size_t 0
+    set n: n + 1
+    return r
+}
+
+let p boxed_label#()
+if (*p).get_length() = 5
+    print("PASS")
+else
+    print("FAIL")
