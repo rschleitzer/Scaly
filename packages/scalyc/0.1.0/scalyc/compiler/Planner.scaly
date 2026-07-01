@@ -850,7 +850,7 @@ define Planner
                                     if it.name <> null
                                     {
                                         var nm_path Vector[String]^rp(1)
-                                        nm_path.put(0, String^rp((*it.name)))
+                                        nm_path.put(0, String((*it.name)))
                                         let synth_ty Type(it.span, nm_path, null, scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.Unspecified()))
                                         let synth_pt this.plan_type(synth_ty)
                                         result.add synth_pt
@@ -9625,7 +9625,7 @@ define Planner
             {
                 let n (*i.name)
                 var name_holder Vector[String]^rp(1)
-                name_holder.put(0, String^rp(n))
+                name_holder.put(0, String(n))
                 set planned_name: name_holder.get(0)
             }
 
@@ -10682,7 +10682,7 @@ define Planner
                         set di: di + 1
                     }
                     if is_param = false && already = false
-                        captures_arr.add(String^rp(nm))
+                        captures_arr.add(String(nm))
                 }
                 set fi: fi + 1
             }
@@ -11943,7 +11943,7 @@ define Planner
             {
                 let n (*c.name)
                 var holder Vector[String]^rp(1)
-                holder.put(0, String^rp(n))
+                holder.put(0, String(n))
                 set name_ref: holder.get(0)
             }
             ; Collapse when the operand sequence either starts with a
@@ -12699,7 +12699,7 @@ define Planner
                                 if b.item.name <> null
                                 {
                                     var nh Vector[String]^rp(1)
-                                    nh.put(0, String^rp((*b.item.name)))
+                                    nh.put(0, String((*b.item.name)))
                                     set name_ref: nh.get(0)
                                 }
                                 var pt_h Vector[PlannedType]^rp(1)
@@ -17113,7 +17113,7 @@ define Planner
             if f.page_parameter <> null
             {
                 var pp_holder Vector[String]^rp(1)
-                pp_holder.put(0, String^rp((*f.page_parameter)))
+                pp_holder.put(0, String((*f.page_parameter)))
                 set page_param_ref: pp_holder.get(0)
             }
             if f.page_parameter = null
@@ -17245,7 +17245,7 @@ define Planner
             if ini.page_parameter <> null
             {
                 var holder Vector[String]^rp(1)
-                holder.put(0, String^rp((*ini.page_parameter)))
+                holder.put(0, String((*ini.page_parameter)))
                 set page_ref: holder.get(0)
             }
 
@@ -17297,7 +17297,7 @@ define Planner
                             page_ty_holder.put(0, page_ptr_ty)
 
                             var page_name_holder Vector[String]^rp(1)
-                            page_name_holder.put(0, String^rp((*ini.page_parameter)))
+                            page_name_holder.put(0, String((*ini.page_parameter)))
 
                             synth_items.add(PlannedItem(
                                 ini.span,
