@@ -117,7 +117,7 @@ define json
     {
         choose this
             when s: Str
-                String^rp(s)
+                String#(s)
             else
                 String()
     }
