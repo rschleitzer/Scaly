@@ -510,12 +510,6 @@ define Planner
         escape_found: bool
         escape_fn_index: size_t
 
-        ; The Planner's own owning page (the init# `page`). Persistent for
-        ; the whole compile. instantiate_generic# pins lazily-instantiated
-        ; generics here instead of the threaded rp (which may be a
-        ; transient sub-computation page); see the s100-class note there.
-        owning_page: pointer[scaly.memory.Page]
-
         ; Transitive page-need set (interprocedural escape forwarding). Names
         ; of functions that need the caller's page ONLY because their body
         ; forwards rp to a sibling that needs one (the escape-machinery
@@ -529,12 +523,6 @@ define Planner
     {
         init(page, filename: String)
         {
-            ; owning_page is the Planner's OWN page (Page.get(this)), not the
-            ; injected construction `page`. Both are stable pages of the same
-            ; long-lived region, but Page.get(this) ties persistent plan storage
-            ; (instantiations, rehomed types) to the object it belongs to — the
-            ; step toward `^this` everywhere and dropping the injected page.
-            set owning_page: Page.get(this as pointer[void])
             set file: String^page(filename)
             set scope_bindings: Array[KeyValuePair[String, LocalBinding]]^page()
             set scope_boundaries: Array[size_t]^page()
@@ -2354,7 +2342,6 @@ define Planner
                 ; threaded `rp` (which may be a transient sub-computation
                 ; page; see the s100 note at the plan_structure^own_page
                 ; call below).
-                let own_page this.owning_page
 
                 ; Bind each generic parameter name to its concrete argument.
                 ; Rehome the argument onto own_page first: a lazily reached
@@ -2385,7 +2372,7 @@ define Planner
                                 ; in-package args (already laid out) → fixpoint-
                                 ; safe.
                                 this.ensure_type_layout((*a_ptr))
-                                this.define_type_substitution(p_ptr.name, Planner.rehome_type^own_page((*a_ptr)))
+                                this.define_type_substitution(p_ptr.name, Planner.rehome_type^this((*a_ptr)))
                             }
                         }
                     }
@@ -2414,12 +2401,12 @@ define Planner
                 choose c.definition
                     when s: Structure
                     {
-                        let pl this.plan_structure^own_page(s, concept_name)
+                        let pl this.plan_structure^this(s, concept_name)
                         0
                     }
                     when u: scalyc.compiler.Model.Union
                     {
-                        let pl this.plan_union^own_page(u, concept_name)
+                        let pl this.plan_union^this(u, concept_name)
                         0
                     }
                     else
@@ -18152,9 +18139,8 @@ define Planner
                     ; Layout-only (no initializers) — see
                     ; plan_structure_layout_opt#: the dependency type's
                     ; constructor must NOT be emitted into this root.
-                    let own_page this.owning_page
                     instantiating_structures.add m_check
-                    let pl this.plan_structure_layout_opt^own_page(s, name, false)
+                    let pl this.plan_structure_layout_opt^this(s, name, false)
                     if instantiating_structures.length > 0
                         set instantiating_structures.length: instantiating_structures.length - 1
                     ; Recurse into BY-VALUE field types so the emitter's struct
@@ -18230,9 +18216,8 @@ define Planner
             choose c.definition
                 when u: scalyc.compiler.Model.Union
                 {
-                    let own_page this.owning_page
                     instantiating_structures.add m_check
-                    let pl this.plan_union_opt^own_page(u, name, false)
+                    let pl this.plan_union_opt^this(u, name, false)
                     if instantiating_structures.length > 0
                         set instantiating_structures.length: instantiating_structures.length - 1
                     ; Recurse into BY-VALUE variant payload types so the union
