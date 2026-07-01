@@ -316,13 +316,13 @@ define RegionInfo
     named_region_values: ref[Array[LLVMValueRef]]?
 )
 {
-    init(page: pointer[Page])
+    init()
     {
         set local_page: LLVMValueRef(null)
         set return_page: LLVMValueRef(null)
         set exception_page: LLVMValueRef(null)
-        set named_region_names: Array[String]^page()
-        set named_region_values: Array[LLVMValueRef]^page()
+        set named_region_names: Array[String]^this()
+        set named_region_values: Array[LLVMValueRef]^this()
     }
 
     function lookup_named_region(this, name: String) returns LLVMValueRef
@@ -482,7 +482,7 @@ define Emitter
     page_restore_watermark: LLVMValueRef
 )
 {
-    init(page: pointer[Page], cfg: EmitterConfig)
+    init(cfg: EmitterConfig)
     {
         set config: cfg
         set context: LLVMContextRef(null)
@@ -497,39 +497,39 @@ define Emitter
         set source_text: String()
         set source_file: String()
         set current_plan: null
-        set type_cache_names: Array[String]^page()
-        set type_cache_types: Array[LLVMTypeRef]^page()
-        set struct_cache_names: Array[String]^page()
-        set struct_cache_types: Array[LLVMTypeRef]^page()
-        set di_type_cache_names: Array[String]^page()
-        set di_type_cache_types: Array[LLVMMetadataRef]^page()
-        set function_cache_names: Array[String]^page()
-        set function_cache_funcs: Array[LLVMValueRef]^page()
+        set type_cache_names: Array[String]^this()
+        set type_cache_types: Array[LLVMTypeRef]^this()
+        set struct_cache_names: Array[String]^this()
+        set struct_cache_types: Array[LLVMTypeRef]^this()
+        set di_type_cache_names: Array[String]^this()
+        set di_type_cache_types: Array[LLVMMetadataRef]^this()
+        set function_cache_names: Array[String]^this()
+        set function_cache_funcs: Array[LLVMValueRef]^this()
         set type_index: ConceptIndex.create(131072 as size_t)
         set struct_index: ConceptIndex.create(131072 as size_t)
         set function_index: ConceptIndex.create(262144 as size_t)
         set di_index: ConceptIndex.create(131072 as size_t)
-        set throws_result_names: Array[String]^page()
-        set throws_result_types: Array[LLVMTypeRef]^page()
-        set intrinsic_type_names: Array[String]^page()
-        set intrinsic_types: Array[IntrinsicTypeInfo]^page()
+        set throws_result_names: Array[String]^this()
+        set throws_result_types: Array[LLVMTypeRef]^this()
+        set intrinsic_type_names: Array[String]^this()
+        set intrinsic_types: Array[IntrinsicTypeInfo]^this()
         set current_function: LLVMValueRef(null)
         set current_block: LLVMBasicBlockRef(null)
         set current_function_can_throw: false
         set function_local_page: LLVMValueRef(null)
-        set local_var_names: Array[String]^page()
-        set local_var_values: Array[LLVMValueRef]^page()
-        set scope_marks: Array[size_t]^page()
-        set current_region: RegionInfo^page()
-        set loop_stack: Array[LoopContext]^page()
-        set block_cleanup_stack: Array[BlockCleanupContext]^page()
-        set temp_pool_types: Array[LLVMTypeRef]^page()
-        set temp_pool_slots: Array[LLVMValueRef]^page()
-        set temp_pool_free: Array[size_t]^page()
+        set local_var_names: Array[String]^this()
+        set local_var_values: Array[LLVMValueRef]^this()
+        set scope_marks: Array[size_t]^this()
+        set current_region: RegionInfo^this()
+        set loop_stack: Array[LoopContext]^this()
+        set block_cleanup_stack: Array[BlockCleanupContext]^this()
+        set temp_pool_types: Array[LLVMTypeRef]^this()
+        set temp_pool_slots: Array[LLVMValueRef]^this()
+        set temp_pool_free: Array[size_t]^this()
         set temp_pool_start: 0
-        set temp_stmt_log: Array[size_t]^page()
+        set temp_stmt_log: Array[size_t]^this()
         set temp_stmt_log_start: 0
-        set temp_pinned: Array[LLVMValueRef]^page()
+        set temp_pinned: Array[LLVMValueRef]^this()
         set page_type: LLVMTypeRef(null)
         set page_allocate: LLVMValueRef(null)
         set page_allocate_page: LLVMValueRef(null)
@@ -4734,7 +4734,7 @@ define Emitter
                     ; to a struct. Happens when a previous chain step
                     ; extracted a field whose stage-1 IR layout is `ptr`
                     ; (heap-stored struct field like
-                    ; `scope_bindings: Array[...]^page()` or a
+                    ; `scope_bindings: Array[...]^this()` or a
                     ; `ref[T]?` value). Get the struct layout from
                     ; access.parent_type via map_type, with a
                     ; synthesize_literal_struct fallback for known
@@ -5527,7 +5527,7 @@ define Emitter
         ; concrete LLVM struct, walk fields and store `LLVMConstNull` of
         ; each field's type. Matches stage-0's tuple.region pattern
         ; (Emitter.cpp:5500 / handle_class IR for symbols_builder).
-        ; Requires_page_param ctors (Vector[T]^page(len)) and any ctor
+        ; Requires_page_param ctors (Vector[T]^this(len)) and any ctor
         ; with explicit user args go through the regular LLVMBuildCall2
         ; path below.
         if user_arg_count = 0
@@ -6221,7 +6221,7 @@ define Emitter
                                                                         let acc (*acc_ptr)
                                                                         ; s122: remember whether the field's
                                                                         ; IR slot is `ptr` (heap-stored, e.g.
-                                                                        ; stage-1's `Array[T]^page()` fields)
+                                                                        ; stage-1's `Array[T]^this()` fields)
                                                                         ; vs. an inline struct (e.g.
                                                                         ; `Parser.lexer: Lexer`). Drives the
                                                                         ; post-loop deref-load decision.
@@ -6242,8 +6242,8 @@ define Emitter
                                                                 ; receives `&slot_addr` and reads garbage
                                                                 ; when treating it as the struct start —
                                                                 ; breaks every method receiver whose field
-                                                                ; is heap-stored (`Array[T]^page()`,
-                                                                ; `Vector[T]^page()`, etc.) or genuinely
+                                                                ; is heap-stored (`Array[T]^this()`,
+                                                                ; `Vector[T]^this()`, etc.) or genuinely
                                                                 ; `pointer[T]`/`ref[T]`. Inline-struct
                                                                 ; fields (e.g. `Parser.lexer`) keep the
                                                                 ; pre-s122 behavior (pass slot ptr = struct
@@ -11233,7 +11233,7 @@ define Emitter
             ; When emit_operands(ret.result) returns null (sub-emit dropped
             ; statements — happens with multi-statement when-bodies that
             ; reference union-variant member chains, e.g. parse_identifier's
-            ; `return name` where `let name String^page(ident.name.get_buffer(),
+            ; `return name` where `let name String^this(ident.name.get_buffer(),
             ; ident.name.length)` failed to emit), the sret slot is left
             ; uninitialized. Caller reads garbage — for String that's a
             ; non-null data pointer with huge length, so length() = 0 checks
