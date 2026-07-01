@@ -22273,6 +22273,25 @@ define Planner
                 return false
         false
     }
+    ; The `^rp` on a GENERIC construction (`Vector[T]^rp(...)`) rides the Matrix
+    ; operand's life, NOT the leading Type's lifetime (the s107 split). The
+    ; `#`-scan (operand_has_call_life) checks Matrix.life via lifetime_is_call;
+    ; the `^rp`-scan below must be symmetric, else a function whose only rp use is
+    ; a `Vector[T]^rp(...)` construction is not recognised as needing rp on its
+    ; own — it then depends on the transitive page-set reaching it through a
+    ; `^rp`-storing callee, which silently breaks the moment that callee drops its
+    ; `^rp`. The compiler source currently has NO `^rp` (all migrated to
+    ; `#`/`^this`/local), so this is behaviour-neutral today; it is a correctness
+    ; fix that keeps the two lifetime scans symmetric and guards reintroduction.
+    function lifetime_is_rp(lt: Lifetime) returns bool
+    {
+        choose lt
+            when r: Reference
+                return r.location.equals("rp")
+            else
+                return false
+        false
+    }
     function ops_reference_rp(ops: Vector[Operand]) returns bool
     {
         var i: size_t 0
@@ -22342,6 +22361,8 @@ define Planner
             }
             when mx: Matrix
             {
+                if Planner.lifetime_is_rp(mx.life)
+                    return true
                 var i: size_t 0
                 while i < mx.operations.length
                 {
