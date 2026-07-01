@@ -85272,7 +85272,7 @@ entry:
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp, ptr align 1 %2, i64 ptrtoint (ptr getelementptr (%_Z13VersionSyntax, ptr null, i32 1) to i64), i1 false)
   %grp.deref.val = load %_Z13VersionSyntax, ptr %deref.tmp, align 4
   %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN13StringBuilderC1EPN4scaly6memory4PageE(ptr %struct.region, ptr %local_page)
+  call void @_ZN13StringBuilderC1Ev(ptr %struct.region)
   %sb = alloca ptr, align 8
   store ptr %struct.region, ptr %sb, align 1
   %majorMinor = extractvalue %_Z13VersionSyntax %grp.deref.val, 2
@@ -85375,7 +85375,7 @@ if.then4:                                         ; preds = %if.end
 
 if.end5:                                          ; preds = %if.end
   %struct.region6 = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN13StringBuilderC1EPN4scaly6memory4PageE(ptr %struct.region6, ptr %local_page)
+  call void @_ZN13StringBuilderC1Ev(ptr %struct.region6)
   store ptr %struct.region6, ptr %sb, align 1
   %sb7 = load ptr, ptr %sb, align 8
   %home_str8 = load ptr, ptr %home_str, align 8
@@ -85423,7 +85423,7 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %if.then, %entry
   %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN13StringBuilderC1EPN4scaly6memory4PageE(ptr %struct.region, ptr %local_page)
+  call void @_ZN13StringBuilderC1Ev(ptr %struct.region)
   store ptr %struct.region, ptr %sb, align 1
   %sb5 = load ptr, ptr %sb, align 8
   call void @_ZN7Modeler15scaly_home_baseEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result6, ptr %local_page)
@@ -85466,7 +85466,7 @@ entry:
   %arg.tmp = alloca { ptr }, align 8
   %local_page = call ptr @_Z21scaly_alloc_root_pagev()
   %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN13StringBuilderC1EPN4scaly6memory4PageE(ptr %struct.region, ptr %local_page)
+  call void @_ZN13StringBuilderC1Ev(ptr %struct.region)
   %sb = alloca ptr, align 8
   store ptr %struct.region, ptr %sb, align 1
   %call = call i64 @_ZN6String10get_lengthEv(ptr %2)
@@ -85560,7 +85560,7 @@ if.end30:                                         ; preds = %if.end24
 choose.end:                                       ; preds = %choose.else, %choose.when37
   %choose.value = phi %_Z13ProgramSyntax [ %throws.success.val, %choose.when37 ], [ undef, %choose.else ]
   %struct.region38 = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN13StringBuilderC1EPN4scaly6memory4PageE(ptr %struct.region38, ptr %local_page)
+  call void @_ZN13StringBuilderC1Ev(ptr %struct.region38)
   store ptr %struct.region38, ptr %sub_sb, align 1
   %call39 = call i64 @_ZN6String10get_lengthEv(ptr %2)
   %gt40 = icmp ugt i64 %call39, 0
@@ -85853,7 +85853,7 @@ choose.when:                                      ; preds = %if.then9
 
 if.then14:                                        ; preds = %if.end
   %struct.region16 = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN13StringBuilderC1EPN4scaly6memory4PageE(ptr %struct.region16, ptr %local_page)
+  call void @_ZN13StringBuilderC1Ev(ptr %struct.region16)
   store ptr %struct.region16, ptr %prelude_sb, align 1
   %prelude_sb17 = load ptr, ptr %prelude_sb, align 8
   call void @_ZN7Modeler15scaly_home_baseEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result18, ptr %local_page)
@@ -103701,7 +103701,7 @@ while.body:                                       ; preds = %while.cond
 
 while.exit:                                       ; preds = %while.cond
   %struct.region41 = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN13StringBuilderC1EPN4scaly6memory4PageE(ptr %struct.region41, ptr %local_page)
+  call void @_ZN13StringBuilderC1Ev(ptr %struct.region41)
   store ptr %struct.region41, ptr %sb, align 1
   %field.inplace42 = getelementptr inbounds %_Z11PlannedType, ptr %after_subst, i32 0, i32 1
   store { ptr } { ptr @.sconst.510 }, ptr %arg.tmp43, align 1
@@ -103889,7 +103889,7 @@ if.then98:                                        ; preds = %if.then94
   store ptr null, ptr %tuple.field134, align 1
   call void @_ZN6VectorI11PlannedTypeE3putEm11PlannedType(ptr %elem_holder, i64 0, ptr %tuple.region125)
   %struct.region135 = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN13StringBuilderC1EPN4scaly6memory4PageE(ptr %struct.region135, ptr %local_page)
+  call void @_ZN13StringBuilderC1Ev(ptr %struct.region135)
   store ptr %struct.region135, ptr %sb, align 1
   %ptr_sb = load ptr, ptr %sb, align 8
   store { ptr } { ptr @.sconst.514 }, ptr %arg.tmp136, align 1
@@ -106006,7 +106006,7 @@ entry:
   %sret.result1 = alloca { ptr }, align 8
   call void @_ZN4Path4joinEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %sret.result1, ptr %1, ptr %sret.result, ptr %5)
   %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN13StringBuilderC1EPN4scaly6memory4PageE(ptr %struct.region, ptr %local_page)
+  call void @_ZN13StringBuilderC1Ev(ptr %struct.region)
   %file_sb = alloca ptr, align 8
   store ptr %struct.region, ptr %file_sb, align 1
   %file_sb2 = load ptr, ptr %file_sb, align 8
@@ -106070,7 +106070,7 @@ define linkonce_odr ptr @_ZN7Planner25load_intra_package_moduleEPN4scaly6memory4
 entry:
   %local_page = call ptr @_Z21scaly_alloc_root_pagev()
   %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN13StringBuilderC1EPN4scaly6memory4PageE(ptr %struct.region, ptr %local_page)
+  call void @_ZN13StringBuilderC1Ev(ptr %struct.region)
   %name_sb = alloca ptr, align 8
   store ptr %struct.region, ptr %name_sb, align 1
   %name_sb1 = load ptr, ptr %name_sb, align 8
@@ -111113,7 +111113,7 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %if.end2, %entry
   %struct.region21 = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN13StringBuilderC1EPN4scaly6memory4PageE(ptr %struct.region21, ptr %local_page)
+  call void @_ZN13StringBuilderC1Ev(ptr %struct.region21)
   store ptr %struct.region21, ptr %sb, align 1
   %sb22 = load ptr, ptr %sb, align 8
   store { ptr } { ptr @.sconst.707 }, ptr %arg.tmp23, align 1
@@ -111130,7 +111130,7 @@ if.end:                                           ; preds = %if.end2, %entry
 
 if.then1:                                         ; preds = %if.then
   %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN13StringBuilderC1EPN4scaly6memory4PageE(ptr %struct.region, ptr %local_page)
+  call void @_ZN13StringBuilderC1Ev(ptr %struct.region)
   store ptr %struct.region, ptr %sb, align 1
   %sb3 = load ptr, ptr %sb, align 8
   store { ptr } { ptr @.sconst.704 }, ptr %arg.tmp, align 1
@@ -112540,7 +112540,7 @@ entry:
   %arg.tmp4 = alloca { ptr }, align 8
   %local_page = call ptr @_Z21scaly_alloc_root_pagev()
   %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN13StringBuilderC1EPN4scaly6memory4PageE(ptr %struct.region, ptr %local_page)
+  call void @_ZN13StringBuilderC1Ev(ptr %struct.region)
   %sb = alloca ptr, align 8
   store ptr %struct.region, ptr %sb, align 1
   %sb1 = load ptr, ptr %sb, align 8
@@ -112622,7 +112622,7 @@ entry:
   %sret.result = alloca { ptr }, align 8
   call void @_ZN7Planner14size_to_stringEPN4scaly6memory4PageEm(ptr noalias sret({ ptr }) %sret.result, ptr %local_page, i64 %call)
   %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN13StringBuilderC1EPN4scaly6memory4PageE(ptr %struct.region, ptr %local_page)
+  call void @_ZN13StringBuilderC1Ev(ptr %struct.region)
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region, ptr %sret.result)
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region, ptr %2)
   %sret.result1 = alloca { ptr }, align 8
@@ -113571,7 +113571,7 @@ entry:
   %deref.tmp = alloca %_Z11PlannedType, align 8
   %local_page = call ptr @_Z21scaly_alloc_root_pagev()
   %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN13StringBuilderC1EPN4scaly6memory4PageE(ptr %struct.region, ptr %local_page)
+  call void @_ZN13StringBuilderC1Ev(ptr %struct.region)
   %sb = alloca ptr, align 8
   store ptr %struct.region, ptr %sb, align 1
   %sb1 = load ptr, ptr %sb, align 8
@@ -114453,7 +114453,7 @@ entry:
 
 if.then:                                          ; preds = %entry
   %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN13StringBuilderC1EPN4scaly6memory4PageE(ptr %struct.region, ptr %local_page)
+  call void @_ZN13StringBuilderC1Ev(ptr %struct.region)
   store ptr %struct.region, ptr %sb, align 1
   %sb1 = load ptr, ptr %sb, align 8
   store { ptr } { ptr @.sconst.390 }, ptr %arg.tmp, align 1
@@ -114602,7 +114602,7 @@ while.body58:                                     ; preds = %while.cond57
 
 while.exit59:                                     ; preds = %while.cond57
   %struct.region168 = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN13StringBuilderC1EPN4scaly6memory4PageE(ptr %struct.region168, ptr %local_page)
+  call void @_ZN13StringBuilderC1Ev(ptr %struct.region168)
   store ptr %struct.region168, ptr %sb, align 1
   %sb169 = load ptr, ptr %sb, align 8
   store { ptr } { ptr @.sconst.392 }, ptr %deref.tmp89, align 1
@@ -114921,7 +114921,7 @@ entry:
   %sret.result = alloca { ptr }, align 8
   call void @_ZN7Planner13operator_codeEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result, ptr %local_page, ptr %2)
   %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN13StringBuilderC1EPN4scaly6memory4PageE(ptr %struct.region, ptr %local_page)
+  call void @_ZN13StringBuilderC1Ev(ptr %struct.region)
   %sb = alloca ptr, align 8
   store ptr %struct.region, ptr %sb, align 1
   %sb1 = load ptr, ptr %sb, align 8
@@ -124951,7 +124951,7 @@ if.then3703:                                      ; preds = %if.then3699
 
 if.end3704:                                       ; preds = %if.end3730, %if.then3699
   %struct.region3814 = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN13StringBuilderC1EPN4scaly6memory4PageE(ptr %struct.region3814, ptr %local_page)
+  call void @_ZN13StringBuilderC1Ev(ptr %struct.region3814)
   store ptr %struct.region3814, ptr %srt_holder, align 1
   %dsb = load ptr, ptr %srt_holder, align 8
   store { ptr } { ptr @.sconst.445 }, ptr %bv_union_name, align 1
@@ -127901,7 +127901,7 @@ while.body45:                                     ; preds = %while.cond44
 
 while.exit46:                                     ; preds = %while.cond44
   %struct.region140 = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN13StringBuilderC1EPN4scaly6memory4PageE(ptr %struct.region140, ptr %local_page)
+  call void @_ZN13StringBuilderC1Ev(ptr %struct.region140)
   store ptr %struct.region140, ptr %ml_sb, align 1
   %ml_sb141 = load ptr, ptr %ml_sb, align 8
   store { ptr } { ptr @.sconst.545 }, ptr %arg.tmp, align 1
@@ -131870,7 +131870,7 @@ if.end442:                                        ; preds = %if.then441, %while.
 
 if.then457:                                       ; preds = %if.end404
   %struct.region459 = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN13StringBuilderC1EPN4scaly6memory4PageE(ptr %struct.region459, ptr %local_page)
+  call void @_ZN13StringBuilderC1Ev(ptr %struct.region459)
   store ptr %struct.region459, ptr %inner_o, align 1
   %sb = load ptr, ptr %inner_o, align 8
   store { ptr } { ptr @.sconst.508 }, ptr %arg.tmp460, align 1
@@ -132853,7 +132853,7 @@ entry:
   %gens1 = load ptr, ptr %gens, align 8
   call void @_ZN6VectorI11PlannedTypeE3putEm11PlannedType(ptr %gens1, i64 0, ptr %2)
   %struct.region2 = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN13StringBuilderC1EPN4scaly6memory4PageE(ptr %struct.region2, ptr %local_page)
+  call void @_ZN13StringBuilderC1Ev(ptr %struct.region2)
   %sb = alloca ptr, align 8
   store ptr %struct.region2, ptr %sb, align 1
   %sb3 = load ptr, ptr %sb, align 8
@@ -136057,7 +136057,7 @@ if.then65:                                        ; preds = %if.then61
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp67, ptr align 1 %call63, i64 ptrtoint (ptr getelementptr (%_Z11PlannedType, ptr null, i32 1) to i64), i1 false)
   call void @_ZN7Planner11encode_typeEPN4scaly6memory4PageE11PlannedType(ptr noalias sret({ ptr }) %sret.result, ptr %local_page, ptr %deref.tmp67)
   %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN13StringBuilderC1EPN4scaly6memory4PageE(ptr %struct.region, ptr %local_page)
+  call void @_ZN13StringBuilderC1Ev(ptr %struct.region)
   store ptr %struct.region, ptr %sb, align 1
   %sb68 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb68, i8 80)
@@ -136109,7 +136109,7 @@ if.then90:                                        ; preds = %if.then86
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp67, ptr align 1 %call88, i64 ptrtoint (ptr getelementptr (%_Z11PlannedType, ptr null, i32 1) to i64), i1 false)
   call void @_ZN7Planner11encode_typeEPN4scaly6memory4PageE11PlannedType(ptr noalias sret({ ptr }) %sret.result92, ptr %local_page, ptr %deref.tmp67)
   %struct.region93 = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN13StringBuilderC1EPN4scaly6memory4PageE(ptr %struct.region93, ptr %local_page)
+  call void @_ZN13StringBuilderC1Ev(ptr %struct.region93)
   store ptr %struct.region93, ptr %sb, align 1
   %sb94 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb94, i8 82)
@@ -136164,7 +136164,7 @@ if.then113:                                       ; preds = %if.then108
 
 if.end114:                                        ; preds = %if.then113, %if.then108
   %struct.region117 = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN13StringBuilderC1EPN4scaly6memory4PageE(ptr %struct.region117, ptr %local_page)
+  call void @_ZN13StringBuilderC1Ev(ptr %struct.region117)
   store ptr %struct.region117, ptr %sb, align 1
   %sb118 = load ptr, ptr %sb, align 8
   call void @_ZN7Planner11encode_nameEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result119, ptr %local_page, ptr %sret.result92)
@@ -136222,7 +136222,7 @@ entry:
   %arg.tmp8 = alloca { ptr }, align 8
   %local_page = call ptr @_Z21scaly_alloc_root_pagev()
   %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN13StringBuilderC1EPN4scaly6memory4PageE(ptr %struct.region, ptr %local_page)
+  call void @_ZN13StringBuilderC1Ev(ptr %struct.region)
   %sb = alloca ptr, align 8
   store ptr %struct.region, ptr %sb, align 1
   %sb1 = load ptr, ptr %sb, align 8
@@ -137371,7 +137371,7 @@ if.end27:                                         ; preds = %if.end31, %if.then2
 if.then30:                                        ; preds = %if.then26
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %sret.result12, ptr align 1 %call28, i64 ptrtoint (ptr getelementptr (%_Z11PlannedType, ptr null, i32 1) to i64), i1 false)
   %struct.region32 = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN13StringBuilderC1EPN4scaly6memory4PageE(ptr %struct.region32, ptr %local_page)
+  call void @_ZN13StringBuilderC1Ev(ptr %struct.region32)
   store ptr %struct.region32, ptr %result, align 1
   %sb = load ptr, ptr %result, align 8
   store { ptr } { ptr @.sconst.907 }, ptr %arg.tmp33, align 1
@@ -137444,7 +137444,7 @@ if.end51:                                         ; preds = %if.end55, %if.then4
 if.then54:                                        ; preds = %if.then50
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %sret.result12, ptr align 1 %call52, i64 ptrtoint (ptr getelementptr (%_Z11PlannedType, ptr null, i32 1) to i64), i1 false)
   %struct.region56 = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN13StringBuilderC1EPN4scaly6memory4PageE(ptr %struct.region56, ptr %local_page)
+  call void @_ZN13StringBuilderC1Ev(ptr %struct.region56)
   store ptr %struct.region56, ptr %result, align 1
   %sb57 = load ptr, ptr %result, align 8
   store { ptr } { ptr @.sconst.909 }, ptr %arg.tmp58, align 1
@@ -138315,7 +138315,7 @@ entry:
   %sret.result = alloca { ptr }, align 8
   %local_page = call ptr @_Z21scaly_alloc_root_pagev()
   %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN13StringBuilderC1EPN4scaly6memory4PageE(ptr %struct.region, ptr %local_page)
+  call void @_ZN13StringBuilderC1Ev(ptr %struct.region)
   %sb = alloca ptr, align 8
   store ptr %struct.region, ptr %sb, align 1
   %load.struct = load %_Z6VectorI6StringE, ptr %2, align 8
@@ -145059,7 +145059,7 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN13StringBuilderC1EPN4scaly6memory4PageE(ptr %struct.region, ptr %local_page)
+  call void @_ZN13StringBuilderC1Ev(ptr %struct.region)
   store i64 %2, ptr %value, align 1
   %struct.region1 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr (%_Z5ArrayIcE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5ArrayIcE }, ptr null, i64 0, i32 1) to i64))
   %tuple.field = getelementptr inbounds %_Z5ArrayIcE, ptr %struct.region1, i32 0, i32 0
@@ -145331,7 +145331,7 @@ while.exit65:                                     ; preds = %while.cond63
   %next_lambda_id134 = getelementptr inbounds %_Z7Planner, ptr %2, i32 0, i32 42
   store i64 %add133, ptr %next_lambda_id134, align 4
   %struct.region135 = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN13StringBuilderC1EPN4scaly6memory4PageE(ptr %struct.region135, ptr %local_page)
+  call void @_ZN13StringBuilderC1Ev(ptr %struct.region135)
   store ptr %struct.region135, ptr %name_sb, align 1
   %name_sb136 = load ptr, ptr %name_sb, align 8
   store { ptr } { ptr @.sconst.543 }, ptr %pname, align 1
@@ -145557,7 +145557,7 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %while.exit, %entry
   %struct.region37 = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN13StringBuilderC1EPN4scaly6memory4PageE(ptr %struct.region37, ptr %local_page)
+  call void @_ZN13StringBuilderC1Ev(ptr %struct.region37)
   store ptr %struct.region37, ptr %thunk_sb, align 1
   %thunk_sb38 = load ptr, ptr %thunk_sb, align 8
   %field.inplace = getelementptr inbounds %_Z16LambdaMonoResult, ptr %sret.result, i32 0, i32 0
@@ -145568,7 +145568,7 @@ if.end:                                           ; preds = %while.exit, %entry
   %thunk_sb41 = load ptr, ptr %thunk_sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result40, ptr %1, ptr %thunk_sb41)
   %struct.region42 = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN13StringBuilderC1EPN4scaly6memory4PageE(ptr %struct.region42, ptr %local_page)
+  call void @_ZN13StringBuilderC1Ev(ptr %struct.region42)
   store ptr %struct.region42, ptr %clo_sb, align 1
   %clo_sb43 = load ptr, ptr %clo_sb, align 8
   store { ptr } { ptr @.sconst.551 }, ptr %arg.tmp44, align 1
@@ -150137,7 +150137,7 @@ if.end29:                                         ; preds = %if.then28, %if.then
 
 if.then39:                                        ; preds = %if.end
   %struct.region41 = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN13StringBuilderC1EPN4scaly6memory4PageE(ptr %struct.region41, ptr %local_page)
+  call void @_ZN13StringBuilderC1Ev(ptr %struct.region41)
   store ptr %struct.region41, ptr %sb, align 1
   %sb42 = load ptr, ptr %sb, align 8
   store { ptr } { ptr @.sconst.589 }, ptr %arg.tmp43, align 1
@@ -156089,7 +156089,7 @@ choose.when:                                      ; preds = %if.then11
   %next_lambda_id18 = getelementptr inbounds %_Z7Planner, ptr %2, i32 0, i32 42
   store i64 %add, ptr %next_lambda_id18, align 4
   %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN13StringBuilderC1EPN4scaly6memory4PageE(ptr %struct.region, ptr %local_page)
+  call void @_ZN13StringBuilderC1Ev(ptr %struct.region)
   store ptr %struct.region, ptr %rb_sb, align 1
   %rb_sb19 = load ptr, ptr %rb_sb, align 8
   store { ptr } { ptr @.sconst.624 }, ptr %arg.tmp, align 1
@@ -169783,7 +169783,7 @@ entry:
   %sret.result = alloca { ptr }, align 8
   call void @_ZN7Planner11encode_typeEPN4scaly6memory4PageE11PlannedType(ptr noalias sret({ ptr }) %sret.result, ptr %local_page, ptr %2)
   %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN13StringBuilderC1EPN4scaly6memory4PageE(ptr %struct.region, ptr %local_page)
+  call void @_ZN13StringBuilderC1Ev(ptr %struct.region)
   %sb = alloca ptr, align 8
   store ptr %struct.region, ptr %sb, align 1
   %sb1 = load ptr, ptr %sb, align 8
@@ -170051,7 +170051,7 @@ if.then83:                                        ; preds = %if.end80
 
 if.end84:                                         ; preds = %if.end80
   %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN13StringBuilderC1EPN4scaly6memory4PageE(ptr %struct.region, ptr %local_page)
+  call void @_ZN13StringBuilderC1Ev(ptr %struct.region)
   store ptr %struct.region, ptr %sb, align 1
   %sb85 = load ptr, ptr %sb, align 8
   store { ptr } { ptr @.sconst.764 }, ptr %arg.tmp86, align 1
@@ -170106,7 +170106,7 @@ if.end:                                           ; preds = %if.end5, %entry
 
 if.then4:                                         ; preds = %if.then
   %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN13StringBuilderC1EPN4scaly6memory4PageE(ptr %struct.region, ptr %local_page)
+  call void @_ZN13StringBuilderC1Ev(ptr %struct.region)
   store ptr %struct.region, ptr %sb, align 1
   %sb6 = load ptr, ptr %sb, align 8
   %field.inplace = getelementptr inbounds %_Z11PlannedType, ptr %2, i32 0, i32 1
@@ -215850,7 +215850,7 @@ if.then4:                                         ; preds = %if.end
 
 if.end5:                                          ; preds = %if.end
   %struct.region6 = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN13StringBuilderC1EPN4scaly6memory4PageE(ptr %struct.region6, ptr %local_page)
+  call void @_ZN13StringBuilderC1Ev(ptr %struct.region6)
   store ptr %struct.region6, ptr %sb, align 1
   %sb7 = load ptr, ptr %sb, align 8
   %home_str8 = load ptr, ptr %home_str, align 8
@@ -215961,7 +215961,7 @@ while.body:                                       ; preds = %while.cond
 
 while.exit:                                       ; preds = %while.cond
   %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN13StringBuilderC1EPN4scaly6memory4PageE(ptr %struct.region, ptr %local_page)
+  call void @_ZN13StringBuilderC1Ev(ptr %struct.region)
   store ptr %struct.region, ptr %msg, align 1
   %msg13 = load ptr, ptr %msg, align 8
   call void @_ZN13StringBuilder6appendE6String(ptr %msg13, ptr %0)
@@ -216253,7 +216253,7 @@ while.body17:                                     ; preds = %while.cond16
 
 while.exit18:                                     ; preds = %while.cond16
   %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN13StringBuilderC1EPN4scaly6memory4PageE(ptr %struct.region, ptr %local_page)
+  call void @_ZN13StringBuilderC1Ev(ptr %struct.region)
   store ptr %struct.region, ptr %msg, align 1
   %msg31 = load ptr, ptr %msg, align 8
   call void @_ZN13StringBuilder6appendE6String(ptr %msg31, ptr %dpath)
@@ -216858,7 +216858,7 @@ if.then219:                                       ; preds = %if.end214
 
 if.end220:                                        ; preds = %if.end214
   %struct.region222 = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN13StringBuilderC1EPN4scaly6memory4PageE(ptr %struct.region222, ptr %local_page)
+  call void @_ZN13StringBuilderC1Ev(ptr %struct.region222)
   store ptr %struct.region222, ptr %cmd_builder, align 1
   %cmd_builder223 = load ptr, ptr %cmd_builder, align 8
   call void @_ZN3cli13link_compilerEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result224, ptr %local_page)
@@ -217002,7 +217002,7 @@ if.end296:                                        ; preds = %if.end299, %while.e
 
 if.then298:                                       ; preds = %if.then295
   %struct.region300 = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN13StringBuilderC1EPN4scaly6memory4PageE(ptr %struct.region300, ptr %local_page)
+  call void @_ZN13StringBuilderC1Ev(ptr %struct.region300)
   store ptr %struct.region300, ptr %dsym_builder, align 1
   %dsym_builder301 = load ptr, ptr %dsym_builder, align 8
   store { ptr } { ptr @.sconst.1672 }, ptr %arg.tmp302, align 1
@@ -217077,7 +217077,7 @@ while.body:                                       ; preds = %while.cond
 
 while.exit:                                       ; preds = %while.cond
   %struct.region6 = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN13StringBuilderC1EPN4scaly6memory4PageE(ptr %struct.region6, ptr %local_page)
+  call void @_ZN13StringBuilderC1Ev(ptr %struct.region6)
   store ptr %struct.region6, ptr %sb, align 1
   %digits7 = load ptr, ptr %digits, align 8
   %load.struct = load %_Z5ArrayIcE, ptr %digits7, align 8
@@ -217157,7 +217157,7 @@ stub.entry:
   ret void
 }
 
-declare void @_ZN13StringBuilderC1EPN4scaly6memory4PageE(ptr, ptr)
+declare void @_ZN13StringBuilderC1Ev(ptr)
 
 declare ptr @getenv(...)
 
