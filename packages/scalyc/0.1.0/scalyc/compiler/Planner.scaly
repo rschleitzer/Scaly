@@ -9052,7 +9052,7 @@ define Planner
                 return true
 
             ; Run the stateless solver.
-            var cs_vec Vector[TypeConstraint]^rp(constraints)
+            var cs_vec Vector[TypeConstraint](constraints)
             let result Planner.solve_constraints(&cs_vec)
             if result = null
                 return false
@@ -18317,7 +18317,7 @@ define Planner
             if this_ref = null
                 return false
             let this_ty (*this_ref)
-            var struct_name String^rp(this_ty.name)
+            var struct_name String(this_ty.name)
             if this_ty.generics <> null
             {
                 var is_ptr_like: bool false
@@ -18332,7 +18332,7 @@ define Planner
                     {
                         let inner_ptr gens.get 0
                         if inner_ptr <> null
-                            set struct_name: String^rp((*inner_ptr).name)
+                            set struct_name: String((*inner_ptr).name)
                     }
                 }
             }
