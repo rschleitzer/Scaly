@@ -5530,6 +5530,17 @@ define Emitter
         ; Requires_page_param ctors (Vector[T]^this(len)) and any ctor
         ; with explicit user args go through the regular LLVMBuildCall2
         ; path below.
+        ; A GENERIC instantiation (result_type carries type generics) may have
+        ; no emitted C1 body, so the zero-init/skip bypass below avoids an
+        ; undefined symbol. A NON-generic concept (e.g. a de-sigiled
+        ; StringBuilder whose page param was dropped, leaving a real
+        ; param-less init()) has a real, linkable C1 — for the opaque
+        ; cross-package case-2 it must CALL that ctor rather than return
+        ; uninitialized memory (SIGSEGV on first use).
+        var ctor_is_generic: bool false
+        if ctor_rt.generics <> null
+            if (*ctor_rt.generics).length > 0
+                set ctor_is_generic: true
         if user_arg_count = 0
         {
             if call.requires_page_param = false
@@ -5563,7 +5574,8 @@ define Emitter
                 ; independently. Closes ~113 undefined C1Ev refs at
                 ; stage-2 link time.
                 if LLVMGetTypeKind(struct_ty) <> LLVMTypeKind.Struct()
-                    return struct_ptr
+                    if ctor_is_generic
+                        return struct_ptr
             }
         }
 
