@@ -529,7 +529,12 @@ define Planner
     {
         init(page, filename: String)
         {
-            set owning_page: page
+            ; owning_page is the Planner's OWN page (Page.get(this)), not the
+            ; injected construction `page`. Both are stable pages of the same
+            ; long-lived region, but Page.get(this) ties persistent plan storage
+            ; (instantiations, rehomed types) to the object it belongs to — the
+            ; step toward `^this` everywhere and dropping the injected page.
+            set owning_page: Page.get(this as pointer[void])
             set file: String^page(filename)
             set scope_bindings: Array[KeyValuePair[String, LocalBinding]]^page()
             set scope_boundaries: Array[size_t]^page()
