@@ -1728,6 +1728,175 @@ define Planner
             false
         }
 
+        ; concept_needs_this_residency: true iff the named concept's init
+        ; allocates guts on `^this` (a Model Type carrying
+        ; Lifetime.Reference "this"). Such an instance MUST live on a page
+        ; (its ctor does Page.get(this)); a no-page-param `^this` ctor would
+        ; otherwise stack-allocate and its Page.get(this) reads a garbage
+        ; page. This lets a value type drop its explicit `page`/`rp`
+        ; implicit-region param yet stay page-resident — the residency-
+        ; inference twin of concept_is_heap_backed, but SOURCE-DRIVEN (no
+        ; name allowlist). Consulted only on the fall-through construction
+        ; path (no page/rp param AND not heap-backed-listed), where today
+        ; only Emitter/RegionInfo qualify: every other `^this`-init has a
+        ; page/rp param, so has_page_param=true bypasses this.
+        function concept_needs_this_residency(this: Planner, name: String) returns bool
+        {
+            let concept_ref this.lookup_concept(name)
+            if concept_ref = null
+                return false
+            let c (*concept_ref)
+            var found: bool false
+            choose c.definition
+                when s: Structure
+                    set found: this.structure_init_has_this_alloc(s)
+                else
+                    0
+            found
+        }
+
+        function structure_init_has_this_alloc(this: Planner, s: Structure) returns bool
+        {
+            var i: size_t 0
+            while i < s.initializers.length
+            {
+                let ip s.initializers.get i
+                if ip <> null
+                {
+                    let ini (*ip)
+                    if this.impl_has_this_alloc(ini.implementation)
+                        return true
+                }
+                set i: i + 1
+            }
+            false
+        }
+
+        function impl_has_this_alloc(this: Planner, impl: Implementation) returns bool
+        {
+            var found: bool false
+            choose impl
+                when a: Action
+                    set found: this.operands_have_this_alloc(a.source)
+                else
+                    0
+            found
+        }
+
+        function operands_have_this_alloc(this: Planner, ops: Vector[Operand]) returns bool
+        {
+            var i: size_t 0
+            while i < ops.length
+            {
+                let op_ptr ops.get i
+                if op_ptr <> null
+                {
+                    let op (*op_ptr)
+                    if this.operand_has_this_alloc(op)
+                        return true
+                }
+                set i: i + 1
+            }
+            false
+        }
+
+        function operand_has_this_alloc(this: Planner, op: Operand) returns bool
+        {
+            var found: bool false
+            choose op.expression
+                when ty: Type
+                    set found: Planner.type_life_is_this(ty)
+                when tp: Tuple
+                    set found: this.tuple_has_this_alloc(tp)
+                when bk: Block
+                    set found: this.block_has_this_alloc(bk)
+                when mx: Matrix
+                    set found: this.matrix_has_this_alloc(mx)
+                else
+                    0
+            found
+        }
+
+        function tuple_has_this_alloc(this: Planner, tp: Tuple) returns bool
+        {
+            var i: size_t 0
+            while i < tp.components.length
+            {
+                let cp tp.components.get i
+                if cp <> null
+                {
+                    let comp (*cp)
+                    if this.operands_have_this_alloc(comp.value)
+                        return true
+                }
+                set i: i + 1
+            }
+            false
+        }
+
+        function block_has_this_alloc(this: Planner, bk: Block) returns bool
+        {
+            var i: size_t 0
+            while i < bk.statements.length
+            {
+                let sp bk.statements.get i
+                if sp <> null
+                {
+                    let st (*sp)
+                    if this.statement_has_this_alloc(st)
+                        return true
+                }
+                set i: i + 1
+            }
+            false
+        }
+
+        function matrix_has_this_alloc(this: Planner, mx: Matrix) returns bool
+        {
+            var i: size_t 0
+            while i < mx.operations.length
+            {
+                let rowp mx.operations.get i
+                if rowp <> null
+                {
+                    let row (*rowp)
+                    if this.operands_have_this_alloc(row)
+                        return true
+                }
+                set i: i + 1
+            }
+            false
+        }
+
+        function statement_has_this_alloc(this: Planner, st: Statement) returns bool
+        {
+            var found: bool false
+            choose st
+                when a: Action
+                    set found: this.operands_have_this_alloc(a.source)
+                when b: Binding
+                    set found: this.operands_have_this_alloc(b.operation)
+                when r: Return
+                    set found: this.operands_have_this_alloc(r.result)
+                else
+                    0
+            found
+        }
+
+        function type_life_is_this(t: Type) returns bool
+        {
+            var found: bool false
+            choose t.lifetime
+                when r: Reference
+                {
+                    if r.location.equals("this")
+                        set found: true
+                }
+                else
+                    0
+            found
+        }
+
         function find_initializer(
             this: Planner,
             struct_name: String,
@@ -4943,6 +5112,15 @@ define Planner
                                     if has_page_param = false
                                         if this.concept_is_heap_backed(fn_name)
                                             set ctor_heap_default: true
+                                    ; Residency inference: a no-page-param ctor
+                                    ; that allocates `^this` guts must be page-
+                                    ; resident (its ctor does Page.get(this)).
+                                    ; Stamp Local so the object is Page::allocate'd
+                                    ; on the local page, not stack-alloca'd.
+                                    if has_page_param = false
+                                        if ctor_heap_default = false
+                                            if this.concept_needs_this_residency(fn_name)
+                                                set ctor_heap_default: true
                                     var eff_ctor_life: Lifetime ctor_struct_type.life
                                     if ctor_heap_default
                                         choose ctor_struct_type.life
