@@ -6253,29 +6253,6 @@ entry:
   ret void
 }
 
-define linkonce_odr void @_ZN5ArrayI6StringEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI6StringE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI6StringE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI6StringEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI6StringE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI6StringE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %1)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorI6StringE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI6StringE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI6StringEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call, i64 %2)
-  %vector1 = getelementptr inbounds %_Z5ArrayI6StringE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector1, align 8
-  ret void
-}
-
 define linkonce_odr void @_ZN6VectorI6StringEC1EPN4scaly6memory4PageE5ArrayI6StringE(ptr %0, ptr %1, ptr %2) {
 entry:
   %load.struct = load %_Z5ArrayI6StringE, ptr %2, align 8
@@ -7167,29 +7144,6 @@ entry:
   call void @_ZN6VectorI6VectorI6StringEEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call1, i64 %1)
   %vector2 = getelementptr inbounds %_Z5ArrayI6VectorI6StringEE, ptr %0, i32 0, i32 1
   store ptr %struct.region, ptr %vector2, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI6VectorI6StringEEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI6VectorI6StringEE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI6VectorI6StringEE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI6VectorI6StringEEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI6VectorI6StringEE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI6VectorI6StringEE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %1)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorI6VectorI6StringEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI6VectorI6StringEE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI6VectorI6StringEEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call, i64 %2)
-  %vector1 = getelementptr inbounds %_Z5ArrayI6VectorI6StringEE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector1, align 8
   ret void
 }
 
@@ -8385,29 +8339,6 @@ entry:
   ret void
 }
 
-define linkonce_odr void @_ZN5ArrayI11BuilderListI4SlotI6StringEEEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI11BuilderListI4SlotI6StringEEEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %1)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI11BuilderListI4SlotI6StringEEE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI11BuilderListI4SlotI6StringEEEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call, i64 %2)
-  %vector1 = getelementptr inbounds %_Z5ArrayI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector1, align 8
-  ret void
-}
-
 define linkonce_odr void @_ZN6VectorI11BuilderListI4SlotI6StringEEEC1EPN4scaly6memory4PageE5ArrayI11BuilderListI4SlotI6StringEEE(ptr %0, ptr %1, ptr %2) {
 entry:
   %load.struct = load %_Z5ArrayI11BuilderListI4SlotI6StringEEE, ptr %2, align 8
@@ -9142,7 +9073,7 @@ entry:
   ret void
 }
 
-define linkonce_odr void @_ZN7HashSetI6StringEC1EPN4scaly6memory4PageE14HashSetBuilderI6StringE(ptr %0, ptr %1, ptr %2) {
+define linkonce_odr void @_ZN7HashSetI6StringEC1E14HashSetBuilderI6StringE(ptr %0, ptr %1) {
 entry:
   %deref.tmp = alloca %_Z5ArrayI6StringE, align 8
   %list_iterator = alloca %_Z12ListIteratorI4SlotI6StringEE, align 8
@@ -9151,7 +9082,7 @@ entry:
   %local_page = call ptr @_Z21scaly_alloc_root_pagev()
   %i = alloca i64, align 8
   %length9 = alloca i64, align 8
-  %load.struct = load %_Z14HashSetBuilderI6StringE, ptr %2, align 8
+  %load.struct = load %_Z14HashSetBuilderI6StringE, ptr %1, align 8
   %length = extractvalue %_Z14HashSetBuilderI6StringE %load.struct, 0
   %eq = icmp eq i64 %length, 0
   br i1 %eq, label %if.then, label %if.end
@@ -9165,14 +9096,14 @@ if.then:                                          ; preds = %entry
 if.end:                                           ; preds = %entry
   %own_page = call ptr @_Z3getPv(ptr %0)
   %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %own_page, i64 ptrtoint (ptr getelementptr (%_Z6VectorI6VectorI6StringEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI6VectorI6StringEE }, ptr null, i64 0, i32 1) to i64))
-  %load.struct1 = load %_Z14HashSetBuilderI6StringE, ptr %2, align 8
+  %load.struct1 = load %_Z14HashSetBuilderI6StringE, ptr %1, align 8
   %slots2 = extractvalue %_Z14HashSetBuilderI6StringE %load.struct1, 1
   %deref = load %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %slots2, align 8
   %length3 = extractvalue %_Z6VectorI11BuilderListI4SlotI6StringEEE %deref, 0
   call void @_ZN6VectorI6VectorI6StringEEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %own_page, i64 %length3)
   %slots4 = getelementptr inbounds %_Z7HashSetI6StringE, ptr %0, i32 0, i32 0
   store ptr %struct.region, ptr %slots4, align 8
-  %load.struct5 = load %_Z14HashSetBuilderI6StringE, ptr %2, align 8
+  %load.struct5 = load %_Z14HashSetBuilderI6StringE, ptr %1, align 8
   %slots6 = extractvalue %_Z14HashSetBuilderI6StringE %load.struct5, 1
   %deref7 = load %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %slots6, align 8
   %length8 = extractvalue %_Z6VectorI11BuilderListI4SlotI6StringEEE %deref7, 0
@@ -9187,7 +9118,7 @@ while.cond:                                       ; preds = %if.end14, %if.end
   br i1 %lt, label %while.body, label %while.exit
 
 while.body:                                       ; preds = %while.cond
-  %field.inplace = getelementptr inbounds %_Z14HashSetBuilderI6StringE, ptr %2, i32 0, i32 1
+  %field.inplace = getelementptr inbounds %_Z14HashSetBuilderI6StringE, ptr %1, i32 0, i32 1
   %deref.recv = load ptr, ptr %field.inplace, align 8
   %i12 = load i64, ptr %i, align 4
   %call = call ptr @_ZN6VectorI11BuilderListI4SlotI6StringEEE7get_ptrEm(ptr %deref.recv, i64 %i12)
@@ -9856,16 +9787,6 @@ entry:
   ret void
 }
 
-define linkonce_odr void @_ZN5ArrayI1TEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI1TEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  ret void
-}
-
 define linkonce_odr void @_ZN6VectorI1TEC1EPN4scaly6memory4PageE5ArrayI1TE(ptr %0, ptr %1, ptr %2) {
 entry:
   ret void
@@ -10382,16 +10303,6 @@ entry:
   ret void
 }
 
-define linkonce_odr void @_ZN5ArrayI11BuilderListI4SlotI1TEEEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI11BuilderListI4SlotI1TEEEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  ret void
-}
-
 define linkonce_odr ptr @_ZN19BuilderListIteratorI4SlotI1TEE4nextEv(ptr %0) {
 entry:
   ret ptr null
@@ -10474,7 +10385,7 @@ entry:
   store ptr %struct.region, ptr %hash_set_builder, align 1
   %struct.region1 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr (%_Z7HashSetI6StringE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z7HashSetI6StringE }, ptr null, i64 0, i32 1) to i64))
   %hash_set_builder2 = load ptr, ptr %hash_set_builder, align 8
-  call void @_ZN7HashSetI6StringEC1EPN4scaly6memory4PageE14HashSetBuilderI6StringE(ptr %struct.region1, ptr %1, ptr %hash_set_builder2)
+  call void @_ZN7HashSetI6StringEC1E14HashSetBuilderI6StringE(ptr %struct.region1, ptr %hash_set_builder2)
   %sret.body = load %_Z7HashSetI6StringE, ptr %struct.region1, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.region1, i64 ptrtoint (ptr getelementptr (%_Z7HashSetI6StringE, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -11727,29 +11638,6 @@ entry:
   call void @_ZN6VectorI17DeclarationSyntaxEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call1, i64 %1)
   %vector2 = getelementptr inbounds %_Z5ArrayI17DeclarationSyntaxE, ptr %0, i32 0, i32 1
   store ptr %struct.region, ptr %vector2, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI17DeclarationSyntaxEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI17DeclarationSyntaxE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI17DeclarationSyntaxE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI17DeclarationSyntaxEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI17DeclarationSyntaxE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI17DeclarationSyntaxE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %1)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorI17DeclarationSyntaxE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI17DeclarationSyntaxE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI17DeclarationSyntaxEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call, i64 %2)
-  %vector1 = getelementptr inbounds %_Z5ArrayI17DeclarationSyntaxE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector1, align 8
   ret void
 }
 
@@ -14028,29 +13916,6 @@ entry:
   ret void
 }
 
-define linkonce_odr void @_ZN5ArrayI12MemberSyntaxEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI12MemberSyntaxE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI12MemberSyntaxE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI12MemberSyntaxEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI12MemberSyntaxE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI12MemberSyntaxE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %1)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12MemberSyntaxE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12MemberSyntaxE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI12MemberSyntaxEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call, i64 %2)
-  %vector1 = getelementptr inbounds %_Z5ArrayI12MemberSyntaxE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector1, align 8
-  ret void
-}
-
 define linkonce_odr void @_ZN6VectorI12MemberSyntaxEC1EPN4scaly6memory4PageE5ArrayI12MemberSyntaxE(ptr %0, ptr %1, ptr %2) {
 entry:
   %load.struct = load %_Z5ArrayI12MemberSyntaxE, ptr %2, align 8
@@ -16189,29 +16054,6 @@ entry:
   call void @_ZN6VectorI22GenericParameterSyntaxEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call1, i64 %1)
   %vector2 = getelementptr inbounds %_Z5ArrayI22GenericParameterSyntaxE, ptr %0, i32 0, i32 1
   store ptr %struct.region, ptr %vector2, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI22GenericParameterSyntaxEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI22GenericParameterSyntaxE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI22GenericParameterSyntaxE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI22GenericParameterSyntaxEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI22GenericParameterSyntaxE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI22GenericParameterSyntaxE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %1)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorI22GenericParameterSyntaxE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI22GenericParameterSyntaxE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI22GenericParameterSyntaxEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call, i64 %2)
-  %vector1 = getelementptr inbounds %_Z5ArrayI22GenericParameterSyntaxE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector1, align 8
   ret void
 }
 
@@ -18496,29 +18338,6 @@ entry:
   ret void
 }
 
-define linkonce_odr void @_ZN5ArrayI13VariantSyntaxEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI13VariantSyntaxE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI13VariantSyntaxE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI13VariantSyntaxEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI13VariantSyntaxE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI13VariantSyntaxE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %1)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorI13VariantSyntaxE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI13VariantSyntaxE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI13VariantSyntaxEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call, i64 %2)
-  %vector1 = getelementptr inbounds %_Z5ArrayI13VariantSyntaxE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector1, align 8
-  ret void
-}
-
 define linkonce_odr void @_ZN6VectorI13VariantSyntaxEC1EPN4scaly6memory4PageE5ArrayI13VariantSyntaxE(ptr %0, ptr %1, ptr %2) {
 entry:
   %load.struct = load %_Z5ArrayI13VariantSyntaxE, ptr %2, align 8
@@ -20250,29 +20069,6 @@ entry:
   ret void
 }
 
-define linkonce_odr void @_ZN5ArrayI21GenericArgumentSyntaxEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI21GenericArgumentSyntaxE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI21GenericArgumentSyntaxE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI21GenericArgumentSyntaxEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI21GenericArgumentSyntaxE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI21GenericArgumentSyntaxE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %1)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorI21GenericArgumentSyntaxE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI21GenericArgumentSyntaxE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI21GenericArgumentSyntaxEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call, i64 %2)
-  %vector1 = getelementptr inbounds %_Z5ArrayI21GenericArgumentSyntaxE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector1, align 8
-  ret void
-}
-
 define linkonce_odr void @_ZN6VectorI21GenericArgumentSyntaxEC1EPN4scaly6memory4PageE5ArrayI21GenericArgumentSyntaxE(ptr %0, ptr %1, ptr %2) {
 entry:
   %load.struct = load %_Z5ArrayI21GenericArgumentSyntaxE, ptr %2, align 8
@@ -21646,29 +21442,6 @@ entry:
   call void @_ZN6VectorI10ItemSyntaxEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call1, i64 %1)
   %vector2 = getelementptr inbounds %_Z5ArrayI10ItemSyntaxE, ptr %0, i32 0, i32 1
   store ptr %struct.region, ptr %vector2, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI10ItemSyntaxEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI10ItemSyntaxE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI10ItemSyntaxE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI10ItemSyntaxEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI10ItemSyntaxE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI10ItemSyntaxE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %1)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorI10ItemSyntaxE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI10ItemSyntaxE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI10ItemSyntaxEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call, i64 %2)
-  %vector1 = getelementptr inbounds %_Z5ArrayI10ItemSyntaxE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector1, align 8
   ret void
 }
 
@@ -23225,29 +22998,6 @@ entry:
   call void @_ZN6VectorI9UseSyntaxEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call1, i64 %1)
   %vector2 = getelementptr inbounds %_Z5ArrayI9UseSyntaxE, ptr %0, i32 0, i32 1
   store ptr %struct.region, ptr %vector2, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI9UseSyntaxEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI9UseSyntaxE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI9UseSyntaxE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI9UseSyntaxEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI9UseSyntaxE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI9UseSyntaxE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %1)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorI9UseSyntaxE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI9UseSyntaxE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI9UseSyntaxEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call, i64 %2)
-  %vector1 = getelementptr inbounds %_Z5ArrayI9UseSyntaxE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector1, align 8
   ret void
 }
 
@@ -25189,29 +24939,6 @@ entry:
   ret void
 }
 
-define linkonce_odr void @_ZN5ArrayI12MethodSyntaxEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI12MethodSyntaxE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI12MethodSyntaxE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI12MethodSyntaxEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI12MethodSyntaxE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI12MethodSyntaxE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %1)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12MethodSyntaxE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12MethodSyntaxE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI12MethodSyntaxEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call, i64 %2)
-  %vector1 = getelementptr inbounds %_Z5ArrayI12MethodSyntaxE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector1, align 8
-  ret void
-}
-
 define linkonce_odr void @_ZN6VectorI12MethodSyntaxEC1EPN4scaly6memory4PageE5ArrayI12MethodSyntaxE(ptr %0, ptr %1, ptr %2) {
 entry:
   %load.struct = load %_Z5ArrayI12MethodSyntaxE, ptr %2, align 8
@@ -26408,29 +26135,6 @@ entry:
   call void @_ZN6VectorI10InitSyntaxEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call1, i64 %1)
   %vector2 = getelementptr inbounds %_Z5ArrayI10InitSyntaxE, ptr %0, i32 0, i32 1
   store ptr %struct.region, ptr %vector2, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI10InitSyntaxEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI10InitSyntaxE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI10InitSyntaxE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI10InitSyntaxEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI10InitSyntaxE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI10InitSyntaxE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %1)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorI10InitSyntaxE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI10InitSyntaxE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI10InitSyntaxEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call, i64 %2)
-  %vector1 = getelementptr inbounds %_Z5ArrayI10InitSyntaxE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector1, align 8
   ret void
 }
 
@@ -29455,29 +29159,6 @@ entry:
   ret void
 }
 
-define linkonce_odr void @_ZN5ArrayI12ExtendSyntaxEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI12ExtendSyntaxE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI12ExtendSyntaxE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI12ExtendSyntaxEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI12ExtendSyntaxE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI12ExtendSyntaxE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %1)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12ExtendSyntaxE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12ExtendSyntaxE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI12ExtendSyntaxEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call, i64 %2)
-  %vector1 = getelementptr inbounds %_Z5ArrayI12ExtendSyntaxE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector1, align 8
-  ret void
-}
-
 define linkonce_odr void @_ZN6VectorI12ExtendSyntaxEC1EPN4scaly6memory4PageE5ArrayI12ExtendSyntaxE(ptr %0, ptr %1, ptr %2) {
 entry:
   %load.struct = load %_Z5ArrayI12ExtendSyntaxE, ptr %2, align 8
@@ -30769,29 +30450,6 @@ entry:
   call void @_ZN6VectorI15AttributeSyntaxEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call1, i64 %1)
   %vector2 = getelementptr inbounds %_Z5ArrayI15AttributeSyntaxE, ptr %0, i32 0, i32 1
   store ptr %struct.region, ptr %vector2, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI15AttributeSyntaxEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI15AttributeSyntaxE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI15AttributeSyntaxE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI15AttributeSyntaxEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI15AttributeSyntaxE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI15AttributeSyntaxE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %1)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorI15AttributeSyntaxE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI15AttributeSyntaxE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI15AttributeSyntaxEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call, i64 %2)
-  %vector1 = getelementptr inbounds %_Z5ArrayI15AttributeSyntaxE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector1, align 8
   ret void
 }
 
@@ -32266,29 +31924,6 @@ entry:
   ret void
 }
 
-define linkonce_odr void @_ZN5ArrayI13PackageSyntaxEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI13PackageSyntaxE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI13PackageSyntaxE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI13PackageSyntaxEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI13PackageSyntaxE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI13PackageSyntaxE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %1)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorI13PackageSyntaxE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI13PackageSyntaxE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI13PackageSyntaxEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call, i64 %2)
-  %vector1 = getelementptr inbounds %_Z5ArrayI13PackageSyntaxE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector1, align 8
-  ret void
-}
-
 define linkonce_odr void @_ZN6VectorI13PackageSyntaxEC1EPN4scaly6memory4PageE5ArrayI13PackageSyntaxE(ptr %0, ptr %1, ptr %2) {
 entry:
   %load.struct = load %_Z5ArrayI13PackageSyntaxE, ptr %2, align 8
@@ -33748,29 +33383,6 @@ entry:
   ret void
 }
 
-define linkonce_odr void @_ZN5ArrayI13OperandSyntaxEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI13OperandSyntaxE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI13OperandSyntaxE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI13OperandSyntaxEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI13OperandSyntaxE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI13OperandSyntaxE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %1)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorI13OperandSyntaxE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI13OperandSyntaxE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI13OperandSyntaxEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call, i64 %2)
-  %vector1 = getelementptr inbounds %_Z5ArrayI13OperandSyntaxE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector1, align 8
-  ret void
-}
-
 define linkonce_odr void @_ZN6VectorI13OperandSyntaxEC1EPN4scaly6memory4PageE5ArrayI13OperandSyntaxE(ptr %0, ptr %1, ptr %2) {
 entry:
   %load.struct = load %_Z5ArrayI13OperandSyntaxE, ptr %2, align 8
@@ -34881,29 +34493,6 @@ entry:
   call void @_ZN6VectorI18MemberAccessSyntaxEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call1, i64 %1)
   %vector2 = getelementptr inbounds %_Z5ArrayI18MemberAccessSyntaxE, ptr %0, i32 0, i32 1
   store ptr %struct.region, ptr %vector2, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI18MemberAccessSyntaxEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI18MemberAccessSyntaxE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI18MemberAccessSyntaxE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI18MemberAccessSyntaxEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI18MemberAccessSyntaxE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI18MemberAccessSyntaxE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %1)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorI18MemberAccessSyntaxE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI18MemberAccessSyntaxE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI18MemberAccessSyntaxEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call, i64 %2)
-  %vector1 = getelementptr inbounds %_Z5ArrayI18MemberAccessSyntaxE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector1, align 8
   ret void
 }
 
@@ -37351,29 +36940,6 @@ entry:
   ret void
 }
 
-define linkonce_odr void @_ZN5ArrayI15ComponentSyntaxEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI15ComponentSyntaxE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI15ComponentSyntaxE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI15ComponentSyntaxEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI15ComponentSyntaxE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI15ComponentSyntaxE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %1)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorI15ComponentSyntaxE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI15ComponentSyntaxE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI15ComponentSyntaxEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call, i64 %2)
-  %vector1 = getelementptr inbounds %_Z5ArrayI15ComponentSyntaxE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector1, align 8
-  ret void
-}
-
 define linkonce_odr void @_ZN6VectorI15ComponentSyntaxEC1EPN4scaly6memory4PageE5ArrayI15ComponentSyntaxE(ptr %0, ptr %1, ptr %2) {
 entry:
   %load.struct = load %_Z5ArrayI15ComponentSyntaxE, ptr %2, align 8
@@ -38953,29 +38519,6 @@ entry:
   call void @_ZN6VectorI13ElementSyntaxEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call1, i64 %1)
   %vector2 = getelementptr inbounds %_Z5ArrayI13ElementSyntaxE, ptr %0, i32 0, i32 1
   store ptr %struct.region, ptr %vector2, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI13ElementSyntaxEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI13ElementSyntaxE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI13ElementSyntaxE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI13ElementSyntaxEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI13ElementSyntaxE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI13ElementSyntaxE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %1)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorI13ElementSyntaxE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI13ElementSyntaxE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI13ElementSyntaxEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call, i64 %2)
-  %vector1 = getelementptr inbounds %_Z5ArrayI13ElementSyntaxE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector1, align 8
   ret void
 }
 
@@ -40894,29 +40437,6 @@ entry:
   ret void
 }
 
-define linkonce_odr void @_ZN5ArrayI12BranchSyntaxEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI12BranchSyntaxE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI12BranchSyntaxE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI12BranchSyntaxEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI12BranchSyntaxE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI12BranchSyntaxE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %1)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12BranchSyntaxE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12BranchSyntaxE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI12BranchSyntaxEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call, i64 %2)
-  %vector1 = getelementptr inbounds %_Z5ArrayI12BranchSyntaxE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector1, align 8
-  ret void
-}
-
 define linkonce_odr void @_ZN6VectorI12BranchSyntaxEC1EPN4scaly6memory4PageE5ArrayI12BranchSyntaxE(ptr %0, ptr %1, ptr %2) {
 entry:
   %load.struct = load %_Z5ArrayI12BranchSyntaxE, ptr %2, align 8
@@ -42074,29 +41594,6 @@ entry:
   call void @_ZN6VectorI10CaseSyntaxEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call1, i64 %1)
   %vector2 = getelementptr inbounds %_Z5ArrayI10CaseSyntaxE, ptr %0, i32 0, i32 1
   store ptr %struct.region, ptr %vector2, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI10CaseSyntaxEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI10CaseSyntaxE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI10CaseSyntaxE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI10CaseSyntaxEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI10CaseSyntaxE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI10CaseSyntaxE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %1)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorI10CaseSyntaxE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI10CaseSyntaxE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI10CaseSyntaxEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call, i64 %2)
-  %vector1 = getelementptr inbounds %_Z5ArrayI10CaseSyntaxE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector1, align 8
   ret void
 }
 
@@ -44288,29 +43785,6 @@ entry:
   ret void
 }
 
-define linkonce_odr void @_ZN5ArrayI10WhenSyntaxEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI10WhenSyntaxE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI10WhenSyntaxE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI10WhenSyntaxEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI10WhenSyntaxE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI10WhenSyntaxE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %1)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorI10WhenSyntaxE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI10WhenSyntaxE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI10WhenSyntaxEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call, i64 %2)
-  %vector1 = getelementptr inbounds %_Z5ArrayI10WhenSyntaxE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector1, align 8
-  ret void
-}
-
 define linkonce_odr void @_ZN6VectorI10WhenSyntaxEC1EPN4scaly6memory4PageE5ArrayI10WhenSyntaxE(ptr %0, ptr %1, ptr %2) {
 entry:
   %load.struct = load %_Z5ArrayI10WhenSyntaxE, ptr %2, align 8
@@ -45576,29 +45050,6 @@ entry:
   call void @_ZN6VectorI15StatementSyntaxEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call1, i64 %1)
   %vector2 = getelementptr inbounds %_Z5ArrayI15StatementSyntaxE, ptr %0, i32 0, i32 1
   store ptr %struct.region, ptr %vector2, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI15StatementSyntaxEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI15StatementSyntaxE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI15StatementSyntaxE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI15StatementSyntaxEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI15StatementSyntaxE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI15StatementSyntaxE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %1)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorI15StatementSyntaxE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI15StatementSyntaxE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI15StatementSyntaxEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call, i64 %2)
-  %vector1 = getelementptr inbounds %_Z5ArrayI15StatementSyntaxE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector1, align 8
   ret void
 }
 
@@ -47918,29 +47369,6 @@ entry:
   ret void
 }
 
-define linkonce_odr void @_ZN5ArrayI17BindingSpecSyntaxEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI17BindingSpecSyntaxE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI17BindingSpecSyntaxE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI17BindingSpecSyntaxEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI17BindingSpecSyntaxE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI17BindingSpecSyntaxE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %1)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorI17BindingSpecSyntaxE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI17BindingSpecSyntaxE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI17BindingSpecSyntaxEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call, i64 %2)
-  %vector1 = getelementptr inbounds %_Z5ArrayI17BindingSpecSyntaxE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector1, align 8
-  ret void
-}
-
 define linkonce_odr void @_ZN6VectorI17BindingSpecSyntaxEC1EPN4scaly6memory4PageE5ArrayI17BindingSpecSyntaxE(ptr %0, ptr %1, ptr %2) {
 entry:
   %load.struct = load %_Z5ArrayI17BindingSpecSyntaxE, ptr %2, align 8
@@ -49414,29 +48842,6 @@ entry:
   ret void
 }
 
-define linkonce_odr void @_ZN5ArrayI10PartSyntaxEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI10PartSyntaxE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI10PartSyntaxE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI10PartSyntaxEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI10PartSyntaxE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI10PartSyntaxE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %1)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorI10PartSyntaxE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI10PartSyntaxE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI10PartSyntaxEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call, i64 %2)
-  %vector1 = getelementptr inbounds %_Z5ArrayI10PartSyntaxE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector1, align 8
-  ret void
-}
-
 define linkonce_odr void @_ZN6VectorI10PartSyntaxEC1EPN4scaly6memory4PageE5ArrayI10PartSyntaxE(ptr %0, ptr %1, ptr %2) {
 entry:
   %load.struct = load %_Z5ArrayI10PartSyntaxE, ptr %2, align 8
@@ -50698,29 +50103,6 @@ entry:
   call void @_ZN6VectorI14PropertySyntaxEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call1, i64 %1)
   %vector2 = getelementptr inbounds %_Z5ArrayI14PropertySyntaxE, ptr %0, i32 0, i32 1
   store ptr %struct.region, ptr %vector2, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI14PropertySyntaxEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI14PropertySyntaxE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI14PropertySyntaxE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI14PropertySyntaxEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI14PropertySyntaxE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI14PropertySyntaxE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %1)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorI14PropertySyntaxE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI14PropertySyntaxE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI14PropertySyntaxEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call, i64 %2)
-  %vector1 = getelementptr inbounds %_Z5ArrayI14PropertySyntaxE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector1, align 8
   ret void
 }
 
@@ -53626,29 +53008,6 @@ entry:
   ret void
 }
 
-define linkonce_odr void @_ZN5ArrayI12ActionSyntaxEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI12ActionSyntaxE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI12ActionSyntaxE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI12ActionSyntaxEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI12ActionSyntaxE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI12ActionSyntaxE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %1)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12ActionSyntaxE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12ActionSyntaxE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI12ActionSyntaxEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call, i64 %2)
-  %vector1 = getelementptr inbounds %_Z5ArrayI12ActionSyntaxE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector1, align 8
-  ret void
-}
-
 define linkonce_odr void @_ZN6VectorI12ActionSyntaxEC1EPN4scaly6memory4PageE5ArrayI12ActionSyntaxE(ptr %0, ptr %1, ptr %2) {
 entry:
   %load.struct = load %_Z5ArrayI12ActionSyntaxE, ptr %2, align 8
@@ -55847,29 +55206,6 @@ entry:
   ret void
 }
 
-define linkonce_odr void @_ZN5ArrayI10TypeSyntaxEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI10TypeSyntaxE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI10TypeSyntaxE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI10TypeSyntaxEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI10TypeSyntaxE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI10TypeSyntaxE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %1)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorI10TypeSyntaxE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI10TypeSyntaxE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI10TypeSyntaxEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call, i64 %2)
-  %vector1 = getelementptr inbounds %_Z5ArrayI10TypeSyntaxE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector1, align 8
-  ret void
-}
-
 define linkonce_odr void @_ZN6VectorI10TypeSyntaxEC1EPN4scaly6memory4PageE5ArrayI10TypeSyntaxE(ptr %0, ptr %1, ptr %2) {
 entry:
   %load.struct = load %_Z5ArrayI10TypeSyntaxE, ptr %2, align 8
@@ -57212,29 +56548,6 @@ entry:
   call void @_ZN6VectorI15ExtensionSyntaxEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call1, i64 %1)
   %vector2 = getelementptr inbounds %_Z5ArrayI15ExtensionSyntaxE, ptr %0, i32 0, i32 1
   store ptr %struct.region, ptr %vector2, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI15ExtensionSyntaxEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI15ExtensionSyntaxE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI15ExtensionSyntaxE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI15ExtensionSyntaxEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI15ExtensionSyntaxE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI15ExtensionSyntaxE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %1)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorI15ExtensionSyntaxE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI15ExtensionSyntaxE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI15ExtensionSyntaxEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call, i64 %2)
-  %vector1 = getelementptr inbounds %_Z5ArrayI15ExtensionSyntaxE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector1, align 8
   ret void
 }
 
@@ -58620,29 +57933,6 @@ entry:
   ret void
 }
 
-define linkonce_odr void @_ZN5ArrayI6VectorI7OperandEEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI6VectorI7OperandEE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI6VectorI7OperandEE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI6VectorI7OperandEEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI6VectorI7OperandEE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI6VectorI7OperandEE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %1)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorI6VectorI7OperandEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI6VectorI7OperandEE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI6VectorI7OperandEEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call, i64 %2)
-  %vector1 = getelementptr inbounds %_Z5ArrayI6VectorI7OperandEE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector1, align 8
-  ret void
-}
-
 define linkonce_odr void @_ZN6VectorI6VectorI7OperandEEC1EPN4scaly6memory4PageE5ArrayI6VectorI7OperandEE(ptr %0, ptr %1, ptr %2) {
 entry:
   %load.struct = load %_Z5ArrayI6VectorI7OperandEE, ptr %2, align 8
@@ -59532,29 +58822,6 @@ entry:
   call void @_ZN6VectorI9AttributeEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call1, i64 %1)
   %vector2 = getelementptr inbounds %_Z5ArrayI9AttributeE, ptr %0, i32 0, i32 1
   store ptr %struct.region, ptr %vector2, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI9AttributeEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI9AttributeE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI9AttributeE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI9AttributeEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI9AttributeE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI9AttributeE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %1)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorI9AttributeE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI9AttributeE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI9AttributeEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call, i64 %2)
-  %vector1 = getelementptr inbounds %_Z5ArrayI9AttributeE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector1, align 8
   ret void
 }
 
@@ -60450,29 +59717,6 @@ entry:
   ret void
 }
 
-define linkonce_odr void @_ZN5ArrayI9ComponentEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI9ComponentE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI9ComponentE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI9ComponentEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI9ComponentE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI9ComponentE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %1)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorI9ComponentE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI9ComponentE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI9ComponentEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call, i64 %2)
-  %vector1 = getelementptr inbounds %_Z5ArrayI9ComponentE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector1, align 8
-  ret void
-}
-
 define linkonce_odr void @_ZN6VectorI9ComponentEC1EPN4scaly6memory4PageE5ArrayI9ComponentE(ptr %0, ptr %1, ptr %2) {
 entry:
   %load.struct = load %_Z5ArrayI9ComponentE, ptr %2, align 8
@@ -61362,29 +60606,6 @@ entry:
   call void @_ZN6VectorI9StatementEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call1, i64 %1)
   %vector2 = getelementptr inbounds %_Z5ArrayI9StatementE, ptr %0, i32 0, i32 1
   store ptr %struct.region, ptr %vector2, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI9StatementEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI9StatementE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI9StatementE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI9StatementEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI9StatementE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI9StatementE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %1)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorI9StatementE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI9StatementE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI9StatementEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call, i64 %2)
-  %vector1 = getelementptr inbounds %_Z5ArrayI9StatementE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector1, align 8
   ret void
 }
 
@@ -62280,29 +61501,6 @@ entry:
   ret void
 }
 
-define linkonce_odr void @_ZN5ArrayI4CaseEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI4CaseE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI4CaseE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI4CaseEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI4CaseE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI4CaseE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %1)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorI4CaseE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI4CaseE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI4CaseEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call, i64 %2)
-  %vector1 = getelementptr inbounds %_Z5ArrayI4CaseE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector1, align 8
-  ret void
-}
-
 define linkonce_odr void @_ZN6VectorI4CaseEC1EPN4scaly6memory4PageE5ArrayI4CaseE(ptr %0, ptr %1, ptr %2) {
 entry:
   %load.struct = load %_Z5ArrayI4CaseE, ptr %2, align 8
@@ -63192,29 +62390,6 @@ entry:
   call void @_ZN6VectorI6BranchEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call1, i64 %1)
   %vector2 = getelementptr inbounds %_Z5ArrayI6BranchE, ptr %0, i32 0, i32 1
   store ptr %struct.region, ptr %vector2, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI6BranchEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI6BranchE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI6BranchE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI6BranchEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI6BranchE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI6BranchE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %1)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorI6BranchE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI6BranchE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI6BranchEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call, i64 %2)
-  %vector1 = getelementptr inbounds %_Z5ArrayI6BranchE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector1, align 8
   ret void
 }
 
@@ -64110,29 +63285,6 @@ entry:
   ret void
 }
 
-define linkonce_odr void @_ZN5ArrayI4WhenEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI4WhenE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI4WhenE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI4WhenEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI4WhenE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI4WhenE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %1)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorI4WhenE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI4WhenE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI4WhenEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call, i64 %2)
-  %vector1 = getelementptr inbounds %_Z5ArrayI4WhenE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector1, align 8
-  ret void
-}
-
 define linkonce_odr void @_ZN6VectorI4WhenEC1EPN4scaly6memory4PageE5ArrayI4WhenE(ptr %0, ptr %1, ptr %2) {
 entry:
   %load.struct = load %_Z5ArrayI4WhenE, ptr %2, align 8
@@ -65022,29 +64174,6 @@ entry:
   call void @_ZN6VectorI4ItemEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call1, i64 %1)
   %vector2 = getelementptr inbounds %_Z5ArrayI4ItemE, ptr %0, i32 0, i32 1
   store ptr %struct.region, ptr %vector2, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI4ItemEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI4ItemE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI4ItemE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI4ItemEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI4ItemE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI4ItemE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %1)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorI4ItemE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI4ItemE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI4ItemEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call, i64 %2)
-  %vector1 = getelementptr inbounds %_Z5ArrayI4ItemE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector1, align 8
   ret void
 }
 
@@ -65940,29 +65069,6 @@ entry:
   ret void
 }
 
-define linkonce_odr void @_ZN5ArrayI7OperandEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI7OperandE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI7OperandE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI7OperandEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI7OperandE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI7OperandE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %1)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorI7OperandE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI7OperandE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI7OperandEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call, i64 %2)
-  %vector1 = getelementptr inbounds %_Z5ArrayI7OperandE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector1, align 8
-  ret void
-}
-
 define linkonce_odr void @_ZN6VectorI7OperandEC1EPN4scaly6memory4PageE5ArrayI7OperandE(ptr %0, ptr %1, ptr %2) {
 entry:
   %load.struct = load %_Z5ArrayI7OperandE, ptr %2, align 8
@@ -66852,29 +65958,6 @@ entry:
   call void @_ZN6VectorI16GenericParameterEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call1, i64 %1)
   %vector2 = getelementptr inbounds %_Z5ArrayI16GenericParameterE, ptr %0, i32 0, i32 1
   store ptr %struct.region, ptr %vector2, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI16GenericParameterEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI16GenericParameterE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI16GenericParameterE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI16GenericParameterEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI16GenericParameterE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI16GenericParameterE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %1)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorI16GenericParameterE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI16GenericParameterE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI16GenericParameterEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call, i64 %2)
-  %vector1 = getelementptr inbounds %_Z5ArrayI16GenericParameterE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector1, align 8
   ret void
 }
 
@@ -67770,29 +66853,6 @@ entry:
   ret void
 }
 
-define linkonce_odr void @_ZN5ArrayI8PropertyEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI8PropertyE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI8PropertyE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI8PropertyEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI8PropertyE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI8PropertyE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %1)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorI8PropertyE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI8PropertyE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI8PropertyEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call, i64 %2)
-  %vector1 = getelementptr inbounds %_Z5ArrayI8PropertyE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector1, align 8
-  ret void
-}
-
 define linkonce_odr void @_ZN6VectorI8PropertyEC1EPN4scaly6memory4PageE5ArrayI8PropertyE(ptr %0, ptr %1, ptr %2) {
 entry:
   %load.struct = load %_Z5ArrayI8PropertyE, ptr %2, align 8
@@ -68682,29 +67742,6 @@ entry:
   call void @_ZN6VectorI3UseEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call1, i64 %1)
   %vector2 = getelementptr inbounds %_Z5ArrayI3UseE, ptr %0, i32 0, i32 1
   store ptr %struct.region, ptr %vector2, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI3UseEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI3UseE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI3UseE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI3UseEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI3UseE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI3UseE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %1)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorI3UseE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI3UseE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI3UseEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call, i64 %2)
-  %vector1 = getelementptr inbounds %_Z5ArrayI3UseE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector1, align 8
   ret void
 }
 
@@ -69600,29 +68637,6 @@ entry:
   ret void
 }
 
-define linkonce_odr void @_ZN5ArrayI11InitializerEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI11InitializerE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI11InitializerE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI11InitializerEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI11InitializerE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI11InitializerE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %1)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorI11InitializerE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI11InitializerE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI11InitializerEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call, i64 %2)
-  %vector1 = getelementptr inbounds %_Z5ArrayI11InitializerE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector1, align 8
-  ret void
-}
-
 define linkonce_odr void @_ZN6VectorI11InitializerEC1EPN4scaly6memory4PageE5ArrayI11InitializerE(ptr %0, ptr %1, ptr %2) {
 entry:
   %load.struct = load %_Z5ArrayI11InitializerE, ptr %2, align 8
@@ -70512,29 +69526,6 @@ entry:
   call void @_ZN6VectorI7VariantEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call1, i64 %1)
   %vector2 = getelementptr inbounds %_Z5ArrayI7VariantE, ptr %0, i32 0, i32 1
   store ptr %struct.region, ptr %vector2, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI7VariantEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI7VariantE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI7VariantE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI7VariantEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI7VariantE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI7VariantE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %1)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorI7VariantE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI7VariantE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI7VariantEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call, i64 %2)
-  %vector1 = getelementptr inbounds %_Z5ArrayI7VariantE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector1, align 8
   ret void
 }
 
@@ -71430,29 +70421,6 @@ entry:
   ret void
 }
 
-define linkonce_odr void @_ZN5ArrayI6MemberEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI6MemberE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI6MemberE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI6MemberEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI6MemberE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI6MemberE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %1)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorI6MemberE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI6MemberE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI6MemberEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call, i64 %2)
-  %vector1 = getelementptr inbounds %_Z5ArrayI6MemberE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector1, align 8
-  ret void
-}
-
 define linkonce_odr void @_ZN6VectorI6MemberEC1EPN4scaly6memory4PageE5ArrayI6MemberE(ptr %0, ptr %1, ptr %2) {
 entry:
   %load.struct = load %_Z5ArrayI6MemberE, ptr %2, align 8
@@ -72345,29 +71313,6 @@ entry:
   ret void
 }
 
-define linkonce_odr void @_ZN5ArrayI6ModuleEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI6ModuleE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI6ModuleE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI6ModuleEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI6ModuleE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI6ModuleE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %1)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorI6ModuleE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI6ModuleE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI6ModuleEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call, i64 %2)
-  %vector1 = getelementptr inbounds %_Z5ArrayI6ModuleE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector1, align 8
-  ret void
-}
-
 define linkonce_odr void @_ZN6VectorI6ModuleEC1EPN4scaly6memory4PageE5ArrayI6ModuleE(ptr %0, ptr %1, ptr %2) {
 entry:
   %load.struct = load %_Z5ArrayI6ModuleE, ptr %2, align 8
@@ -73257,29 +72202,6 @@ entry:
   call void @_ZN6VectorI8FunctionEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call1, i64 %1)
   %vector2 = getelementptr inbounds %_Z5ArrayI8FunctionE, ptr %0, i32 0, i32 1
   store ptr %struct.region, ptr %vector2, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI8FunctionEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI8FunctionE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI8FunctionE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI8FunctionEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI8FunctionE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI8FunctionE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %1)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorI8FunctionE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI8FunctionE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI8FunctionEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call, i64 %2)
-  %vector1 = getelementptr inbounds %_Z5ArrayI8FunctionE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector1, align 8
   ret void
 }
 
@@ -74595,29 +73517,6 @@ entry:
   ret void
 }
 
-define linkonce_odr void @_ZN5ArrayI4TypeEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI4TypeE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI4TypeE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI4TypeEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI4TypeE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI4TypeE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %1)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorI4TypeE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI4TypeE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI4TypeEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call, i64 %2)
-  %vector1 = getelementptr inbounds %_Z5ArrayI4TypeE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector1, align 8
-  ret void
-}
-
 define linkonce_odr void @_ZN6VectorI4TypeEC1EPN4scaly6memory4PageE5ArrayI4TypeE(ptr %0, ptr %1, ptr %2) {
 entry:
   %load.struct = load %_Z5ArrayI4TypeE, ptr %2, align 8
@@ -75507,29 +74406,6 @@ entry:
   call void @_ZN6VectorI6VectorI4TypeEEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call1, i64 %1)
   %vector2 = getelementptr inbounds %_Z5ArrayI6VectorI4TypeEE, ptr %0, i32 0, i32 1
   store ptr %struct.region, ptr %vector2, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI6VectorI4TypeEEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI6VectorI4TypeEE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI6VectorI4TypeEE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI6VectorI4TypeEEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI6VectorI4TypeEE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI6VectorI4TypeEE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %1)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorI6VectorI4TypeEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI6VectorI4TypeEE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI6VectorI4TypeEEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call, i64 %2)
-  %vector1 = getelementptr inbounds %_Z5ArrayI6VectorI4TypeEE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector1, align 8
   ret void
 }
 
@@ -76795,29 +75671,6 @@ entry:
   ret void
 }
 
-define linkonce_odr void @_ZN5ArrayIcEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayIcE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayIcE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayIcEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayIcE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayIcE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %1)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorIcE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorIcE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorIcEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call, i64 %2)
-  %vector1 = getelementptr inbounds %_Z5ArrayIcE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector1, align 8
-  ret void
-}
-
 define linkonce_odr void @_ZN6VectorIcEC1EPN4scaly6memory4PageE5ArrayIcE(ptr %0, ptr %1, ptr %2) {
 entry:
   %load.struct = load %_Z5ArrayIcE, ptr %2, align 8
@@ -77976,29 +76829,6 @@ entry:
   call void @_ZN6VectorI14LifetimeSyntaxEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call1, i64 %1)
   %vector2 = getelementptr inbounds %_Z5ArrayI14LifetimeSyntaxE, ptr %0, i32 0, i32 1
   store ptr %struct.region, ptr %vector2, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI14LifetimeSyntaxEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI14LifetimeSyntaxE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI14LifetimeSyntaxE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI14LifetimeSyntaxEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI14LifetimeSyntaxE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI14LifetimeSyntaxE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %1)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorI14LifetimeSyntaxE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI14LifetimeSyntaxE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI14LifetimeSyntaxEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call, i64 %2)
-  %vector1 = getelementptr inbounds %_Z5ArrayI14LifetimeSyntaxE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector1, align 8
   ret void
 }
 
@@ -83702,7 +82532,7 @@ if.then52:                                        ; preds = %if.end12
 if.end53:                                         ; preds = %if.end89, %if.end12
   %struct.region134 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
   %symbols_builder135 = load ptr, ptr %symbols_builder, align 8
-  call void @_ZN7HashMapI6String8NameableEC1EPN4scaly6memory4PageE14HashMapBuilderI6String8NameableE(ptr %struct.region134, ptr %1, ptr %symbols_builder135)
+  call void @_ZN7HashMapI6String8NameableEC1E14HashMapBuilderI6String8NameableE(ptr %struct.region134, ptr %symbols_builder135)
   %load.struct136 = load %_Z11ClassSyntax, ptr %4, align 8
   %start = extractvalue %_Z11ClassSyntax %load.struct136, 0
   %load.struct137 = load %_Z11ClassSyntax, ptr %4, align 8
@@ -84150,7 +82980,7 @@ if.then5:                                         ; preds = %if.end
 if.end6:                                          ; preds = %while.exit, %if.end
   %struct.region28 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
   %symbols_builder29 = load ptr, ptr %symbols_builder, align 8
-  call void @_ZN7HashMapI6String8NameableEC1EPN4scaly6memory4PageE14HashMapBuilderI6String8NameableE(ptr %struct.region28, ptr %1, ptr %symbols_builder29)
+  call void @_ZN7HashMapI6String8NameableEC1E14HashMapBuilderI6String8NameableE(ptr %struct.region28, ptr %symbols_builder29)
   %struct.region30 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr (%_Z6VectorI6ModuleE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI6ModuleE }, ptr null, i64 0, i32 1) to i64))
   %modules31 = load ptr, ptr %modules, align 8
   call void @_ZN6VectorI6ModuleEC1EPN4scaly6memory4PageE5ArrayI6ModuleE(ptr %struct.region30, ptr %1, ptr %modules31)
@@ -84830,7 +83660,7 @@ if.then31:                                        ; preds = %if.end11
 if.end32:                                         ; preds = %if.end40, %if.end11
   %struct.region64 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
   %symbols_builder65 = load ptr, ptr %symbols_builder, align 8
-  call void @_ZN7HashMapI6String8NameableEC1EPN4scaly6memory4PageE14HashMapBuilderI6String8NameableE(ptr %struct.region64, ptr %1, ptr %symbols_builder65)
+  call void @_ZN7HashMapI6String8NameableEC1E14HashMapBuilderI6String8NameableE(ptr %struct.region64, ptr %symbols_builder65)
   %load.struct66 = load %_Z11UnionSyntax, ptr %4, align 8
   %start = extractvalue %_Z11UnionSyntax %load.struct66, 0
   %load.struct67 = load %_Z11UnionSyntax, ptr %4, align 8
@@ -85500,7 +84330,7 @@ if.end:                                           ; preds = %if.then, %entry
   call void @_ZN6VectorI6MemberEC1EPN4scaly6memory4PageEm(ptr %struct.region9, ptr %1, i64 0)
   %struct.region10 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
   %empty_symbols11 = load ptr, ptr %empty_symbols, align 8
-  call void @_ZN7HashMapI6String8NameableEC1EPN4scaly6memory4PageE14HashMapBuilderI6String8NameableE(ptr %struct.region10, ptr %1, ptr %empty_symbols11)
+  call void @_ZN7HashMapI6String8NameableEC1E14HashMapBuilderI6String8NameableE(ptr %struct.region10, ptr %empty_symbols11)
   %tuple.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr (%_Z6Module, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6Module }, ptr null, i64 0, i32 1) to i64))
   %tuple.field = getelementptr inbounds %_Z6Module, ptr %tuple.region, i32 0, i32 0
   store i1 %4, ptr %tuple.field, align 1
@@ -85659,7 +84489,7 @@ if.then:                                          ; preds = %entry
 if.end:                                           ; preds = %while.exit, %entry
   %struct.region32 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
   %symbols_builder33 = load ptr, ptr %symbols_builder, align 8
-  call void @_ZN7HashMapI6String8NameableEC1EPN4scaly6memory4PageE14HashMapBuilderI6String8NameableE(ptr %struct.region32, ptr %1, ptr %symbols_builder33)
+  call void @_ZN7HashMapI6String8NameableEC1E14HashMapBuilderI6String8NameableE(ptr %struct.region32, ptr %symbols_builder33)
   %struct.region34 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr (%_Z6VectorI6ModuleE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI6ModuleE }, ptr null, i64 0, i32 1) to i64))
   %modules35 = load ptr, ptr %modules, align 8
   call void @_ZN6VectorI6ModuleEC1EPN4scaly6memory4PageE5ArrayI6ModuleE(ptr %struct.region34, ptr %1, ptr %modules35)
@@ -87490,29 +86320,6 @@ entry:
   ret void
 }
 
-define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String12LocalBindingEEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String12LocalBindingEEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %1)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String12LocalBindingEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12KeyValuePairI6String12LocalBindingEE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI12KeyValuePairI6String12LocalBindingEEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call, i64 %2)
-  %vector1 = getelementptr inbounds %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector1, align 8
-  ret void
-}
-
 define linkonce_odr ptr @_ZN6VectorImE3getEPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
 entry:
   %load.struct = load %_Z6VectorImE, ptr %1, align 8
@@ -88432,29 +87239,6 @@ entry:
   ret void
 }
 
-define linkonce_odr void @_ZN5ArrayImEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayImE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayImE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayImEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayImE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayImE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %1)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorImE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorImE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorImEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call, i64 %2)
-  %vector1 = getelementptr inbounds %_Z5ArrayImE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector1, align 8
-  ret void
-}
-
 define linkonce_odr ptr @_ZN6VectorI12KeyValuePairI6String11PlannedTypeEE3getEPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
 entry:
   %load.struct = load %_Z6VectorI12KeyValuePairI6String11PlannedTypeEE, ptr %1, align 8
@@ -89344,29 +88128,6 @@ entry:
   call void @_ZN6VectorI12KeyValuePairI6String11PlannedTypeEEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call1, i64 %1)
   %vector2 = getelementptr inbounds %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE, ptr %0, i32 0, i32 1
   store ptr %struct.region, ptr %vector2, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String11PlannedTypeEEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String11PlannedTypeEEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %1)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String11PlannedTypeEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12KeyValuePairI6String11PlannedTypeEE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI12KeyValuePairI6String11PlannedTypeEEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call, i64 %2)
-  %vector1 = getelementptr inbounds %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector1, align 8
   ret void
 }
 
@@ -90262,29 +89023,6 @@ entry:
   ret void
 }
 
-define linkonce_odr void @_ZN5ArrayI14TypeConstraintEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI14TypeConstraintE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI14TypeConstraintE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI14TypeConstraintEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI14TypeConstraintE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI14TypeConstraintE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %1)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorI14TypeConstraintE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI14TypeConstraintE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI14TypeConstraintEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call, i64 %2)
-  %vector1 = getelementptr inbounds %_Z5ArrayI14TypeConstraintE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector1, align 8
-  ret void
-}
-
 define linkonce_odr ptr @_ZN6VectorI12KeyValuePairIm11PlannedTypeEE3getEPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
 entry:
   %load.struct = load %_Z6VectorI12KeyValuePairIm11PlannedTypeEE, ptr %1, align 8
@@ -91174,29 +89912,6 @@ entry:
   call void @_ZN6VectorI12KeyValuePairIm11PlannedTypeEEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call1, i64 %1)
   %vector2 = getelementptr inbounds %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE, ptr %0, i32 0, i32 1
   store ptr %struct.region, ptr %vector2, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI12KeyValuePairIm11PlannedTypeEEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI12KeyValuePairIm11PlannedTypeEEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %1)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairIm11PlannedTypeEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12KeyValuePairIm11PlannedTypeEE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI12KeyValuePairIm11PlannedTypeEEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call, i64 %2)
-  %vector1 = getelementptr inbounds %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector1, align 8
   ret void
 }
 
@@ -92092,29 +90807,6 @@ entry:
   ret void
 }
 
-define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String7ConceptEEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI12KeyValuePairI6String7ConceptEE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI12KeyValuePairI6String7ConceptEE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String7ConceptEEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI12KeyValuePairI6String7ConceptEE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI12KeyValuePairI6String7ConceptEE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %1)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String7ConceptEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12KeyValuePairI6String7ConceptEE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI12KeyValuePairI6String7ConceptEEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call, i64 %2)
-  %vector1 = getelementptr inbounds %_Z5ArrayI12KeyValuePairI6String7ConceptEE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector1, align 8
-  ret void
-}
-
 define linkonce_odr ptr @_ZN6VectorI16PlannedStructureE3getEPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
 entry:
   %load.struct = load %_Z6VectorI16PlannedStructureE, ptr %1, align 8
@@ -93004,29 +91696,6 @@ entry:
   call void @_ZN6VectorI16PlannedStructureEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call1, i64 %1)
   %vector2 = getelementptr inbounds %_Z5ArrayI16PlannedStructureE, ptr %0, i32 0, i32 1
   store ptr %struct.region, ptr %vector2, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI16PlannedStructureEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI16PlannedStructureE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI16PlannedStructureE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI16PlannedStructureEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI16PlannedStructureE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI16PlannedStructureE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %1)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorI16PlannedStructureE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI16PlannedStructureE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI16PlannedStructureEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call, i64 %2)
-  %vector1 = getelementptr inbounds %_Z5ArrayI16PlannedStructureE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector1, align 8
   ret void
 }
 
@@ -93922,29 +92591,6 @@ entry:
   ret void
 }
 
-define linkonce_odr void @_ZN5ArrayI12PlannedUnionEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI12PlannedUnionE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI12PlannedUnionE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI12PlannedUnionEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI12PlannedUnionE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI12PlannedUnionE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %1)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12PlannedUnionE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12PlannedUnionE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI12PlannedUnionEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call, i64 %2)
-  %vector1 = getelementptr inbounds %_Z5ArrayI12PlannedUnionE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector1, align 8
-  ret void
-}
-
 define linkonce_odr ptr @_ZN6VectorI15PlannedFunctionE3getEPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
 entry:
   %load.struct = load %_Z6VectorI15PlannedFunctionE, ptr %1, align 8
@@ -94834,29 +93480,6 @@ entry:
   call void @_ZN6VectorI15PlannedFunctionEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call1, i64 %1)
   %vector2 = getelementptr inbounds %_Z5ArrayI15PlannedFunctionE, ptr %0, i32 0, i32 1
   store ptr %struct.region, ptr %vector2, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI15PlannedFunctionEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI15PlannedFunctionE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI15PlannedFunctionE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI15PlannedFunctionEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI15PlannedFunctionE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI15PlannedFunctionE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %1)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorI15PlannedFunctionE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI15PlannedFunctionE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI15PlannedFunctionEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call, i64 %2)
-  %vector1 = getelementptr inbounds %_Z5ArrayI15PlannedFunctionE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector1, align 8
   ret void
 }
 
@@ -95752,29 +94375,6 @@ entry:
   ret void
 }
 
-define linkonce_odr void @_ZN5ArrayI13PlannedGlobalEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI13PlannedGlobalE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI13PlannedGlobalE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI13PlannedGlobalEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI13PlannedGlobalE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI13PlannedGlobalE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %1)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorI13PlannedGlobalE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI13PlannedGlobalE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI13PlannedGlobalEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call, i64 %2)
-  %vector1 = getelementptr inbounds %_Z5ArrayI13PlannedGlobalE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector1, align 8
-  ret void
-}
-
 define linkonce_odr ptr @_ZN6VectorI12KeyValuePairI6String8FunctionEE3getEPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
 entry:
   %load.struct = load %_Z6VectorI12KeyValuePairI6String8FunctionEE, ptr %1, align 8
@@ -96664,29 +95264,6 @@ entry:
   call void @_ZN6VectorI12KeyValuePairI6String8FunctionEEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call1, i64 %1)
   %vector2 = getelementptr inbounds %_Z5ArrayI12KeyValuePairI6String8FunctionEE, ptr %0, i32 0, i32 1
   store ptr %struct.region, ptr %vector2, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String8FunctionEEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI12KeyValuePairI6String8FunctionEE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI12KeyValuePairI6String8FunctionEE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String8FunctionEEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI12KeyValuePairI6String8FunctionEE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI12KeyValuePairI6String8FunctionEE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %1)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String8FunctionEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12KeyValuePairI6String8FunctionEE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI12KeyValuePairI6String8FunctionEEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call, i64 %2)
-  %vector1 = getelementptr inbounds %_Z5ArrayI12KeyValuePairI6String8FunctionEE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector1, align 8
   ret void
 }
 
@@ -97582,29 +96159,6 @@ entry:
   ret void
 }
 
-define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String6LambdaEEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI12KeyValuePairI6String6LambdaEE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI12KeyValuePairI6String6LambdaEE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String6LambdaEEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI12KeyValuePairI6String6LambdaEE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI12KeyValuePairI6String6LambdaEE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %1)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String6LambdaEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12KeyValuePairI6String6LambdaEE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI12KeyValuePairI6String6LambdaEEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call, i64 %2)
-  %vector1 = getelementptr inbounds %_Z5ArrayI12KeyValuePairI6String6LambdaEE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector1, align 8
-  ret void
-}
-
 define linkonce_odr ptr @_ZN6VectorI12KeyValuePairI6String8OperatorEE3getEPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
 entry:
   %load.struct = load %_Z6VectorI12KeyValuePairI6String8OperatorEE, ptr %1, align 8
@@ -98494,29 +97048,6 @@ entry:
   call void @_ZN6VectorI12KeyValuePairI6String8OperatorEEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call1, i64 %1)
   %vector2 = getelementptr inbounds %_Z5ArrayI12KeyValuePairI6String8OperatorEE, ptr %0, i32 0, i32 1
   store ptr %struct.region, ptr %vector2, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String8OperatorEEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI12KeyValuePairI6String8OperatorEE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI12KeyValuePairI6String8OperatorEE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String8OperatorEEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI12KeyValuePairI6String8OperatorEE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI12KeyValuePairI6String8OperatorEE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %1)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String8OperatorEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12KeyValuePairI6String8OperatorEE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI12KeyValuePairI6String8OperatorEEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call, i64 %2)
-  %vector1 = getelementptr inbounds %_Z5ArrayI12KeyValuePairI6String8OperatorEE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector1, align 8
   ret void
 }
 
@@ -99412,29 +97943,6 @@ entry:
   ret void
 }
 
-define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String6ModuleEEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI12KeyValuePairI6String6ModuleEE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI12KeyValuePairI6String6ModuleEE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String6ModuleEEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI12KeyValuePairI6String6ModuleEE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI12KeyValuePairI6String6ModuleEE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %1)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String6ModuleEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12KeyValuePairI6String6ModuleEE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI12KeyValuePairI6String6ModuleEEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call, i64 %2)
-  %vector1 = getelementptr inbounds %_Z5ArrayI12KeyValuePairI6String6ModuleEE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector1, align 8
-  ret void
-}
-
 define linkonce_odr ptr @_ZN6VectorI17PlannerDiagnosticE3getEPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
 entry:
   %load.struct = load %_Z6VectorI17PlannerDiagnosticE, ptr %1, align 8
@@ -100324,29 +98832,6 @@ entry:
   call void @_ZN6VectorI17PlannerDiagnosticEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call1, i64 %1)
   %vector2 = getelementptr inbounds %_Z5ArrayI17PlannerDiagnosticE, ptr %0, i32 0, i32 1
   store ptr %struct.region, ptr %vector2, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI17PlannerDiagnosticEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI17PlannerDiagnosticE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI17PlannerDiagnosticE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI17PlannerDiagnosticEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI17PlannerDiagnosticE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI17PlannerDiagnosticE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %1)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorI17PlannerDiagnosticE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI17PlannerDiagnosticE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI17PlannerDiagnosticEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call, i64 %2)
-  %vector1 = getelementptr inbounds %_Z5ArrayI17PlannerDiagnosticE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector1, align 8
   ret void
 }
 
@@ -101242,29 +99727,6 @@ entry:
   ret void
 }
 
-define linkonce_odr void @_ZN5ArrayI7ProgramEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI7ProgramE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI7ProgramE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI7ProgramEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI7ProgramE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI7ProgramE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %1)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorI7ProgramE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI7ProgramE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI7ProgramEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call, i64 %2)
-  %vector1 = getelementptr inbounds %_Z5ArrayI7ProgramE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector1, align 8
-  ret void
-}
-
 define linkonce_odr ptr @_ZN6VectorI12EscapeRecordE3getEPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
 entry:
   %load.struct = load %_Z6VectorI12EscapeRecordE, ptr %1, align 8
@@ -102154,29 +100616,6 @@ entry:
   call void @_ZN6VectorI12EscapeRecordEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call1, i64 %1)
   %vector2 = getelementptr inbounds %_Z5ArrayI12EscapeRecordE, ptr %0, i32 0, i32 1
   store ptr %struct.region, ptr %vector2, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI12EscapeRecordEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI12EscapeRecordE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI12EscapeRecordE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI12EscapeRecordEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI12EscapeRecordE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI12EscapeRecordE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %1)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12EscapeRecordE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12EscapeRecordE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI12EscapeRecordEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call, i64 %2)
-  %vector1 = getelementptr inbounds %_Z5ArrayI12EscapeRecordE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector1, align 8
   ret void
 }
 
@@ -103285,29 +101724,6 @@ entry:
   call void @_ZN6VectorI11PlannedTypeEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call1, i64 %1)
   %vector2 = getelementptr inbounds %_Z5ArrayI11PlannedTypeE, ptr %0, i32 0, i32 1
   store ptr %struct.region, ptr %vector2, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI11PlannedTypeEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI11PlannedTypeE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI11PlannedTypeE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI11PlannedTypeEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI11PlannedTypeE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI11PlannedTypeE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %1)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorI11PlannedTypeE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI11PlannedTypeE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI11PlannedTypeEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call, i64 %2)
-  %vector1 = getelementptr inbounds %_Z5ArrayI11PlannedTypeE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector1, align 8
   ret void
 }
 
@@ -106835,29 +105251,6 @@ entry:
   call void @_ZN6VectorI8OperatorEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call1, i64 %1)
   %vector2 = getelementptr inbounds %_Z5ArrayI8OperatorE, ptr %0, i32 0, i32 1
   store ptr %struct.region, ptr %vector2, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI8OperatorEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI8OperatorE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI8OperatorE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI8OperatorEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI8OperatorE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI8OperatorE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %1)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorI8OperatorE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI8OperatorE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI8OperatorEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call, i64 %2)
-  %vector1 = getelementptr inbounds %_Z5ArrayI8OperatorE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector1, align 8
   ret void
 }
 
@@ -113545,29 +111938,6 @@ entry:
   ret void
 }
 
-define linkonce_odr void @_ZN5ArrayI11PlannedItemEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI11PlannedItemE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI11PlannedItemE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI11PlannedItemEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI11PlannedItemE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI11PlannedItemE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %1)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorI11PlannedItemE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI11PlannedItemE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI11PlannedItemEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call, i64 %2)
-  %vector1 = getelementptr inbounds %_Z5ArrayI11PlannedItemE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector1, align 8
-  ret void
-}
-
 define linkonce_odr void @_ZN7Planner15mangle_functionEPN4scaly6memory4PageE6String6OptionIR6VectorI11PlannedItemEE6OptionIR11PlannedTypeEb(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3, ptr %4, i1 %5) {
 entry:
   %sret.result65 = alloca { ptr }, align 8
@@ -115851,29 +114221,6 @@ entry:
   ret void
 }
 
-define linkonce_odr void @_ZN5ArrayI14PlannedOperandEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI14PlannedOperandE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI14PlannedOperandE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI14PlannedOperandEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI14PlannedOperandE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI14PlannedOperandE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %1)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorI14PlannedOperandE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI14PlannedOperandE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI14PlannedOperandEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call, i64 %2)
-  %vector1 = getelementptr inbounds %_Z5ArrayI14PlannedOperandE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector1, align 8
-  ret void
-}
-
 define linkonce_odr void @_ZN6VectorI14PlannedOperandEC1EPN4scaly6memory4PageE5ArrayI14PlannedOperandE(ptr %0, ptr %1, ptr %2) {
 entry:
   %load.struct = load %_Z5ArrayI14PlannedOperandE, ptr %2, align 8
@@ -117187,29 +115534,6 @@ entry:
   call void @_ZN6VectorI16PlannedComponentEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call1, i64 %1)
   %vector2 = getelementptr inbounds %_Z5ArrayI16PlannedComponentE, ptr %0, i32 0, i32 1
   store ptr %struct.region, ptr %vector2, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI16PlannedComponentEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI16PlannedComponentE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI16PlannedComponentE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI16PlannedComponentEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI16PlannedComponentE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI16PlannedComponentE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %1)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorI16PlannedComponentE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI16PlannedComponentE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI16PlannedComponentEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call, i64 %2)
-  %vector1 = getelementptr inbounds %_Z5ArrayI16PlannedComponentE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector1, align 8
   ret void
 }
 
@@ -129449,29 +127773,6 @@ entry:
   ret void
 }
 
-define linkonce_odr void @_ZN5ArrayI19PlannedMemberAccessEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI19PlannedMemberAccessE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI19PlannedMemberAccessE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI19PlannedMemberAccessEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI19PlannedMemberAccessE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI19PlannedMemberAccessE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %1)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorI19PlannedMemberAccessE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI19PlannedMemberAccessE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI19PlannedMemberAccessEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call, i64 %2)
-  %vector1 = getelementptr inbounds %_Z5ArrayI19PlannedMemberAccessE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector1, align 8
-  ret void
-}
-
 define linkonce_odr void @_ZN6VectorI19PlannedMemberAccessEC1EPN4scaly6memory4PageE5ArrayI19PlannedMemberAccessE(ptr %0, ptr %1, ptr %2) {
 entry:
   %load.struct = load %_Z5ArrayI19PlannedMemberAccessE, ptr %2, align 8
@@ -130370,29 +128671,6 @@ entry:
   call void @_ZN6VectorI6VectorI14PlannedOperandEEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call1, i64 %1)
   %vector2 = getelementptr inbounds %_Z5ArrayI6VectorI14PlannedOperandEE, ptr %0, i32 0, i32 1
   store ptr %struct.region, ptr %vector2, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI6VectorI14PlannedOperandEEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI6VectorI14PlannedOperandEE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI6VectorI14PlannedOperandEE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI6VectorI14PlannedOperandEEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI6VectorI14PlannedOperandEE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI6VectorI14PlannedOperandEE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %1)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorI6VectorI14PlannedOperandEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI6VectorI14PlannedOperandEE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI6VectorI14PlannedOperandEEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call, i64 %2)
-  %vector1 = getelementptr inbounds %_Z5ArrayI6VectorI14PlannedOperandEE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector1, align 8
   ret void
 }
 
@@ -140683,29 +138961,6 @@ entry:
   ret void
 }
 
-define linkonce_odr void @_ZN5ArrayI16PlannedStatementEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI16PlannedStatementE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI16PlannedStatementE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI16PlannedStatementEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI16PlannedStatementE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI16PlannedStatementE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %1)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorI16PlannedStatementE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI16PlannedStatementE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI16PlannedStatementEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call, i64 %2)
-  %vector1 = getelementptr inbounds %_Z5ArrayI16PlannedStatementE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector1, align 8
-  ret void
-}
-
 define linkonce_odr void @_ZN6VectorI16PlannedStatementEC1EPN4scaly6memory4PageE5ArrayI16PlannedStatementE(ptr %0, ptr %1, ptr %2) {
 entry:
   %load.struct = load %_Z5ArrayI16PlannedStatementE, ptr %2, align 8
@@ -142532,29 +140787,6 @@ entry:
   ret void
 }
 
-define linkonce_odr void @_ZN5ArrayI11PlannedWhenEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI11PlannedWhenE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI11PlannedWhenE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI11PlannedWhenEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI11PlannedWhenE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI11PlannedWhenE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %1)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorI11PlannedWhenE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI11PlannedWhenE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI11PlannedWhenEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call, i64 %2)
-  %vector1 = getelementptr inbounds %_Z5ArrayI11PlannedWhenE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector1, align 8
-  ret void
-}
-
 define linkonce_odr void @_ZN6VectorI11PlannedWhenEC1EPN4scaly6memory4PageE5ArrayI11PlannedWhenE(ptr %0, ptr %1, ptr %2) {
 entry:
   %load.struct = load %_Z5ArrayI11PlannedWhenE, ptr %2, align 8
@@ -143447,29 +141679,6 @@ entry:
   ret void
 }
 
-define linkonce_odr void @_ZN5ArrayI13PlannedBranchEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI13PlannedBranchE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI13PlannedBranchE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI13PlannedBranchEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI13PlannedBranchE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI13PlannedBranchE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %1)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorI13PlannedBranchE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI13PlannedBranchE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI13PlannedBranchEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call, i64 %2)
-  %vector1 = getelementptr inbounds %_Z5ArrayI13PlannedBranchE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector1, align 8
-  ret void
-}
-
 define linkonce_odr void @_ZN6VectorI13PlannedBranchEC1EPN4scaly6memory4PageE5ArrayI13PlannedBranchE(ptr %0, ptr %1, ptr %2) {
 entry:
   %load.struct = load %_Z5ArrayI13PlannedBranchE, ptr %2, align 8
@@ -144359,29 +142568,6 @@ entry:
   call void @_ZN6VectorI11PlannedCaseEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call1, i64 %1)
   %vector2 = getelementptr inbounds %_Z5ArrayI11PlannedCaseE, ptr %0, i32 0, i32 1
   store ptr %struct.region, ptr %vector2, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI11PlannedCaseEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI11PlannedCaseE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI11PlannedCaseE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI11PlannedCaseEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI11PlannedCaseE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI11PlannedCaseE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %1)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorI11PlannedCaseE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI11PlannedCaseE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI11PlannedCaseEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call, i64 %2)
-  %vector1 = getelementptr inbounds %_Z5ArrayI11PlannedCaseE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector1, align 8
   ret void
 }
 
@@ -162084,29 +160270,6 @@ entry:
   ret void
 }
 
-define linkonce_odr void @_ZN5ArrayI15PlannedPropertyEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI15PlannedPropertyE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI15PlannedPropertyE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI15PlannedPropertyEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI15PlannedPropertyE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI15PlannedPropertyE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %1)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorI15PlannedPropertyE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI15PlannedPropertyE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI15PlannedPropertyEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call, i64 %2)
-  %vector1 = getelementptr inbounds %_Z5ArrayI15PlannedPropertyE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector1, align 8
-  ret void
-}
-
 define linkonce_odr void @_ZN7Planner24compute_property_offsetsEPN4scaly6memory4PageE6OptionIR6VectorI15PlannedPropertyEE(ptr noalias sret(%_Z6VectorImE) %0, ptr %1, ptr %2) {
 entry:
   %deref.tmp8 = alloca %_Z15PlannedProperty, align 8
@@ -163202,29 +161365,6 @@ entry:
   ret void
 }
 
-define linkonce_odr void @_ZN5ArrayI15PlannedOperatorEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI15PlannedOperatorE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI15PlannedOperatorE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI15PlannedOperatorEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI15PlannedOperatorE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI15PlannedOperatorE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %1)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorI15PlannedOperatorE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI15PlannedOperatorE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI15PlannedOperatorEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call, i64 %2)
-  %vector1 = getelementptr inbounds %_Z5ArrayI15PlannedOperatorE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector1, align 8
-  ret void
-}
-
 define linkonce_odr ptr @_ZN6VectorI18PlannedInitializerE3getEPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
 entry:
   %load.struct = load %_Z6VectorI18PlannedInitializerE, ptr %1, align 8
@@ -164114,29 +162254,6 @@ entry:
   call void @_ZN6VectorI18PlannedInitializerEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call1, i64 %1)
   %vector2 = getelementptr inbounds %_Z5ArrayI18PlannedInitializerE, ptr %0, i32 0, i32 1
   store ptr %struct.region, ptr %vector2, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI18PlannedInitializerEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI18PlannedInitializerE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI18PlannedInitializerE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI18PlannedInitializerEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI18PlannedInitializerE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI18PlannedInitializerE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %1)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorI18PlannedInitializerE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI18PlannedInitializerE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI18PlannedInitializerEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call, i64 %2)
-  %vector1 = getelementptr inbounds %_Z5ArrayI18PlannedInitializerE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector1, align 8
   ret void
 }
 
@@ -166184,29 +164301,6 @@ entry:
   ret void
 }
 
-define linkonce_odr void @_ZN5ArrayI14PlannedConceptEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI14PlannedConceptE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI14PlannedConceptE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI14PlannedConceptEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI14PlannedConceptE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI14PlannedConceptE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %1)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorI14PlannedConceptE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI14PlannedConceptE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI14PlannedConceptEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call, i64 %2)
-  %vector1 = getelementptr inbounds %_Z5ArrayI14PlannedConceptE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector1, align 8
-  ret void
-}
-
 define linkonce_odr void @_ZN7Planner12plan_conceptEPN4scaly6memory4PageE7Concept(ptr noalias sret(%_Z14PlannedConcept) %0, ptr %1, ptr %2, ptr %3) {
 entry:
   %sret.result92 = alloca { ptr }, align 8
@@ -168141,29 +166235,6 @@ entry:
   ret void
 }
 
-define linkonce_odr void @_ZN5ArrayI13PlannedModuleEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI13PlannedModuleE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI13PlannedModuleE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI13PlannedModuleEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI13PlannedModuleE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI13PlannedModuleE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %1)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorI13PlannedModuleE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI13PlannedModuleE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI13PlannedModuleEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call, i64 %2)
-  %vector1 = getelementptr inbounds %_Z5ArrayI13PlannedModuleE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector1, align 8
-  ret void
-}
-
 define linkonce_odr i64 @_ZN7Planner12align_offsetEmm(i64 %0, i64 %1) {
 entry:
   %add = add i64 %0, %1
@@ -169063,29 +167134,6 @@ entry:
   call void @_ZN6VectorI14PlannedVariantEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call1, i64 %1)
   %vector2 = getelementptr inbounds %_Z5ArrayI14PlannedVariantE, ptr %0, i32 0, i32 1
   store ptr %struct.region, ptr %vector2, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI14PlannedVariantEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI14PlannedVariantE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI14PlannedVariantE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI14PlannedVariantEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI14PlannedVariantE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI14PlannedVariantE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %1)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorI14PlannedVariantE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI14PlannedVariantE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI14PlannedVariantEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call, i64 %2)
-  %vector1 = getelementptr inbounds %_Z5ArrayI14PlannedVariantE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector1, align 8
   ret void
 }
 
@@ -171801,29 +169849,6 @@ entry:
   ret void
 }
 
-define linkonce_odr void @_ZN5ArrayI6VectorI12KeyValuePairI6String12LocalBindingEEEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI6VectorI12KeyValuePairI6String12LocalBindingEEE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI6VectorI12KeyValuePairI6String12LocalBindingEEE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI6VectorI12KeyValuePairI6String12LocalBindingEEEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI6VectorI12KeyValuePairI6String12LocalBindingEEE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI6VectorI12KeyValuePairI6String12LocalBindingEEE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %1)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorI6VectorI12KeyValuePairI6String12LocalBindingEEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI6VectorI12KeyValuePairI6String12LocalBindingEEE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI6VectorI12KeyValuePairI6String12LocalBindingEEEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call, i64 %2)
-  %vector1 = getelementptr inbounds %_Z5ArrayI6VectorI12KeyValuePairI6String12LocalBindingEEE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector1, align 8
-  ret void
-}
-
 define linkonce_odr void @_ZN6VectorI6VectorI12KeyValuePairI6String12LocalBindingEEEC1EPN4scaly6memory4PageE5ArrayI6VectorI12KeyValuePairI6String12LocalBindingEEE(ptr %0, ptr %1, ptr %2) {
 entry:
   %load.struct = load %_Z5ArrayI6VectorI12KeyValuePairI6String12LocalBindingEEE, ptr %2, align 8
@@ -173111,29 +171136,6 @@ entry:
   call void @_ZN6VectorI12TypeVariableEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call1, i64 %1)
   %vector2 = getelementptr inbounds %_Z5ArrayI12TypeVariableE, ptr %0, i32 0, i32 1
   store ptr %struct.region, ptr %vector2, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI12TypeVariableEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI12TypeVariableE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI12TypeVariableE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI12TypeVariableEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI12TypeVariableE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI12TypeVariableE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %1)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12TypeVariableE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12TypeVariableE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI12TypeVariableEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call, i64 %2)
-  %vector1 = getelementptr inbounds %_Z5ArrayI12TypeVariableE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector1, align 8
   ret void
 }
 
@@ -178384,29 +176386,6 @@ entry:
   ret void
 }
 
-define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String8NameableEEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI12KeyValuePairI6String8NameableEE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI12KeyValuePairI6String8NameableEE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6String8NameableEEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI12KeyValuePairI6String8NameableEE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI12KeyValuePairI6String8NameableEE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %1)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12KeyValuePairI6String8NameableEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12KeyValuePairI6String8NameableEE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI12KeyValuePairI6String8NameableEEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call, i64 %2)
-  %vector1 = getelementptr inbounds %_Z5ArrayI12KeyValuePairI6String8NameableEE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector1, align 8
-  ret void
-}
-
 define linkonce_odr void @_ZN6VectorI12KeyValuePairI6String8NameableEEC1EPN4scaly6memory4PageE5ArrayI12KeyValuePairI6String8NameableEE(ptr %0, ptr %1, ptr %2) {
 entry:
   %load.struct = load %_Z5ArrayI12KeyValuePairI6String8NameableEE, ptr %2, align 8
@@ -178782,16 +176761,6 @@ entry:
 }
 
 define linkonce_odr void @_ZN5ArrayI12KeyValuePairI1K1VEEC1Em(ptr %0, i64 %1) {
-entry:
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI12KeyValuePairI1K1VEEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI12KeyValuePairI1K1VEEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
 entry:
   ret void
 }
@@ -180563,29 +178532,6 @@ entry:
   ret void
 }
 
-define linkonce_odr void @_ZN5ArrayI12LLVMValueRefEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI12LLVMValueRefE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI12LLVMValueRefE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI12LLVMValueRefEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI12LLVMValueRefE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI12LLVMValueRefE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %1)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorI12LLVMValueRefE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI12LLVMValueRefE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI12LLVMValueRefEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call, i64 %2)
-  %vector1 = getelementptr inbounds %_Z5ArrayI12LLVMValueRefE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector1, align 8
-  ret void
-}
-
 define linkonce_odr void @_ZN10RegionInfoC1Ev(ptr %0) {
 entry:
   %tuple = alloca %_Z12LLVMValueRef, align 8
@@ -182192,29 +180138,6 @@ entry:
   call void @_ZN6VectorI15LLVMMetadataRefEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call1, i64 %1)
   %vector2 = getelementptr inbounds %_Z5ArrayI15LLVMMetadataRefE, ptr %0, i32 0, i32 1
   store ptr %struct.region, ptr %vector2, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI15LLVMMetadataRefEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI15LLVMMetadataRefE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI15LLVMMetadataRefE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI15LLVMMetadataRefEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI15LLVMMetadataRefE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI15LLVMMetadataRefE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %1)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorI15LLVMMetadataRefE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI15LLVMMetadataRefE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI15LLVMMetadataRefEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call, i64 %2)
-  %vector1 = getelementptr inbounds %_Z5ArrayI15LLVMMetadataRefE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector1, align 8
   ret void
 }
 
@@ -184414,29 +182337,6 @@ entry:
   call void @_ZN6VectorI11LLVMTypeRefEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call1, i64 %1)
   %vector2 = getelementptr inbounds %_Z5ArrayI11LLVMTypeRefE, ptr %0, i32 0, i32 1
   store ptr %struct.region, ptr %vector2, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI11LLVMTypeRefEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI11LLVMTypeRefE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI11LLVMTypeRefE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI11LLVMTypeRefEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI11LLVMTypeRefE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI11LLVMTypeRefE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %1)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorI11LLVMTypeRefE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI11LLVMTypeRefE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI11LLVMTypeRefEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call, i64 %2)
-  %vector1 = getelementptr inbounds %_Z5ArrayI11LLVMTypeRefE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector1, align 8
   ret void
 }
 
@@ -198422,29 +196322,6 @@ entry:
   call void @_ZN6VectorI17LLVMBasicBlockRefEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call1, i64 %1)
   %vector2 = getelementptr inbounds %_Z5ArrayI17LLVMBasicBlockRefE, ptr %0, i32 0, i32 1
   store ptr %struct.region, ptr %vector2, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI17LLVMBasicBlockRefEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI17LLVMBasicBlockRefE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI17LLVMBasicBlockRefE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI17LLVMBasicBlockRefEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI17LLVMBasicBlockRefE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI17LLVMBasicBlockRefE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %1)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorI17LLVMBasicBlockRefE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI17LLVMBasicBlockRefE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI17LLVMBasicBlockRefEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call, i64 %2)
-  %vector1 = getelementptr inbounds %_Z5ArrayI17LLVMBasicBlockRefE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector1, align 8
   ret void
 }
 
@@ -213148,29 +211025,6 @@ entry:
   ret void
 }
 
-define linkonce_odr void @_ZN5ArrayI17IntrinsicTypeInfoEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI17IntrinsicTypeInfoE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI17IntrinsicTypeInfoE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI17IntrinsicTypeInfoEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI17IntrinsicTypeInfoE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI17IntrinsicTypeInfoE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %1)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorI17IntrinsicTypeInfoE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI17IntrinsicTypeInfoE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI17IntrinsicTypeInfoEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call, i64 %2)
-  %vector1 = getelementptr inbounds %_Z5ArrayI17IntrinsicTypeInfoE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector1, align 8
-  ret void
-}
-
 define linkonce_odr ptr @_ZN6VectorI11LoopContextE3getEPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
 entry:
   %load.struct = load %_Z6VectorI11LoopContextE, ptr %1, align 8
@@ -214001,29 +211855,6 @@ entry:
   ret void
 }
 
-define linkonce_odr void @_ZN5ArrayI11LoopContextEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI11LoopContextE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI11LoopContextE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI11LoopContextEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI11LoopContextE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI11LoopContextE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %1)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorI11LoopContextE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI11LoopContextE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI11LoopContextEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call, i64 %2)
-  %vector1 = getelementptr inbounds %_Z5ArrayI11LoopContextE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector1, align 8
-  ret void
-}
-
 define linkonce_odr ptr @_ZN6VectorI19BlockCleanupContextE3getEPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
 entry:
   %load.struct = load %_Z6VectorI19BlockCleanupContextE, ptr %1, align 8
@@ -214851,29 +212682,6 @@ entry:
   call void @_ZN6VectorI19BlockCleanupContextEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call1, i64 %1)
   %vector2 = getelementptr inbounds %_Z5ArrayI19BlockCleanupContextE, ptr %0, i32 0, i32 1
   store ptr %struct.region, ptr %vector2, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI19BlockCleanupContextEC1EPN4scaly6memory4PageE(ptr %0, ptr %1) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI19BlockCleanupContextE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI19BlockCleanupContextE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  ret void
-}
-
-define linkonce_odr void @_ZN5ArrayI19BlockCleanupContextEC1EPN4scaly6memory4PageEm(ptr %0, ptr %1, i64 %2) {
-entry:
-  %length = getelementptr inbounds %_Z5ArrayI19BlockCleanupContextE, ptr %0, i32 0, i32 0
-  store i64 0, ptr %length, align 4
-  %vector = getelementptr inbounds %_Z5ArrayI19BlockCleanupContextE, ptr %0, i32 0, i32 1
-  store ptr null, ptr %vector, align 8
-  %call = call ptr @_ZN4Page23allocate_exclusive_pageEv(ptr %1)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6VectorI19BlockCleanupContextE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorI19BlockCleanupContextE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6VectorI19BlockCleanupContextEC1EPN4scaly6memory4PageEm(ptr %struct.region, ptr %call, i64 %2)
-  %vector1 = getelementptr inbounds %_Z5ArrayI19BlockCleanupContextE, ptr %0, i32 0, i32 1
-  store ptr %struct.region, ptr %vector1, align 8
   ret void
 }
 
@@ -217172,7 +214980,7 @@ declare i64 @_ZN7hashing9get_primeEm(...)
 
 declare void @_ZN6StringC1EPN4scaly6memory4PageE6String(ptr, ptr, ptr)
 
-define void @_ZN7HashMapI6String8NameableEC1EPN4scaly6memory4PageE14HashMapBuilderI6String8NameableE(ptr %0, ptr %1, ptr %2) {
+define void @_ZN7HashMapI6String8NameableEC1E14HashMapBuilderI6String8NameableE(ptr %0, ptr %1) {
 stub.entry:
   ret void
 }
