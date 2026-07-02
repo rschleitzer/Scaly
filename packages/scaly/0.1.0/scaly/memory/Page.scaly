@@ -25,7 +25,11 @@ define Page
         set current_page: null
         set next_page: null
         set next_object: this + (1 as size_t)
-        set exclusive_pages: PageList()
+        ; Zero the field directly — no PageList() construction. The allocator
+        ; must never region-allocate: residency inference would promote the
+        ; construction to a local page, and a local page here recurses into
+        ; scaly_alloc_root_page (allocator allocating from itself).
+        set exclusive_pages.head: null
     }
 
     function allocate(this: Page, size: size_t, align: size_t) returns pointer[void]

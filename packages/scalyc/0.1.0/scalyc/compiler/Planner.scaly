@@ -1682,56 +1682,25 @@ define Planner
             true
         }
 
-        ; concept_is_heap_backed: must an instance of the named type live on a
-        ; page? True exactly for the stdlib containers whose methods do
-        ; Page.get(this) / store ^this-allocated nodes (Array/List reallocate
-        ; against this's own page; the HashMap/HashSet builders grow likewise;
-        ; StringBuilder/PageList do too) — a stack instance would compute a
-        ; garbage page header. Page-inference rule 1 uses this to default a
-        ; no-sigil construction of such a type to the function's local page when
-        ; the construction matched a page-LESS init (no-arg generic container)
-        ; or fell through the reshape path.
-        ;
-        ; Identified BY NAME, deliberately NOT by "has a page-param init#": that
-        ; test is too broad — Vector and String allocate their DATA buffer on a
-        ; page (via init#) but the struct itself is stack-safe (Vector is
-        ; fixed-size, String immutable; neither does Page.get(this)). It is also
-        ; unavailable cross-package: these are GENERIC, and a dependency
-        ; package's generic init# is not populated on the Structure when reached
-        ; from a consumer (e.g. compiling scalyc). Same idiom as
-        ; is_lazy_machinery_generic / is_runtime_opaque_struct. A plain value
-        ; struct (EmitterConfig) is absent here and stays a stack value.
-        function concept_is_heap_backed(this: Planner, name: String) returns bool
-        {
-            if name.equals("Array")
-                return true
-            if name.equals("List")
-                return true
-            if name.equals("HashSetBuilder")
-                return true
-            if name.equals("HashMapBuilder")
-                return true
-            if name.equals("StringBuilder")
-                return true
-            if name.equals("HashSet")
-                return true
-            if name.equals("HashMap")
-                return true
-            false
-        }
+        ; (The former concept_is_heap_backed NAME ALLOWLIST lived here. It is
+        ; gone: residency is now DERIVED from the concept's own bodies by
+        ; concept_needs_this_residency below — see its comment. Vector and
+        ; String still classify as stack-safe values by construction: their
+        ; bodies contain no `^this` and no `Page.get(this)`.)
 
-        ; concept_needs_this_residency: true iff the named concept's init
-        ; allocates guts on `^this` (a Model Type carrying
-        ; Lifetime.Reference "this"). Such an instance MUST live on a page
-        ; (its ctor does Page.get(this)); a no-page-param `^this` ctor would
-        ; otherwise stack-allocate and its Page.get(this) reads a garbage
-        ; page. This lets a value type drop its explicit `page`/`rp`
-        ; implicit-region param yet stay page-resident — the residency-
-        ; inference twin of concept_is_heap_backed, but SOURCE-DRIVEN (no
-        ; name allowlist). Consulted only on the fall-through construction
-        ; path (no page/rp param AND not heap-backed-listed), where today
-        ; only Emitter/RegionInfo qualify: every other `^this`-init has a
-        ; page/rp param, so has_page_param=true bypasses this.
+        ; concept_needs_this_residency: true iff the named concept derives a
+        ; page from its own address anywhere in its bodies — a `^this`
+        ; construction (Type or Matrix life) or a `Page.get(this ...)` call,
+        ; in any init, method, operator, or the deinit. Such an instance MUST
+        ; live on a page; a stack instance would compute a garbage page
+        ; header. SOURCE-DRIVEN: this replaced the concept_is_heap_backed
+        ; name allowlist (Array/List/builders/HashSet/HashMap/StringBuilder
+        ; all classify via their own bodies — Array/builders through the
+        ; two-step `let own_page Page.get(this as pointer[void])`, List
+        ; through `Node[T]^this` in add, HashSet/HashMap/StringBuilder
+        ; through generic `^this` inits). Consulted on the fall-through
+        ; construction paths (Unspecified life) in collapse_operand_sequence;
+        ; explicit #/^ constructions never reach it.
         function concept_needs_this_residency(this: Planner, name: String) returns bool
         {
             let concept_ref this.lookup_concept(name)
@@ -1741,10 +1710,46 @@ define Planner
             var found: bool false
             choose c.definition
                 when s: Structure
+                {
                     set found: this.structure_init_has_this_alloc(s)
+                    if found = false
+                        set found: this.structure_members_have_this_alloc(s)
+                }
                 else
                     0
             found
+        }
+
+        function structure_members_have_this_alloc(this: Planner, s: Structure) returns bool
+        {
+            var i: size_t 0
+            while i < s.members.length
+            {
+                let mp s.members.get i
+                if mp <> null
+                {
+                    let m (*mp)
+                    var found: bool false
+                    choose m
+                        when f: Function
+                            set found: this.impl_has_this_alloc(f.implementation)
+                        when o: Operator
+                            set found: this.impl_has_this_alloc(o.implementation)
+                        else
+                            0
+                    if found
+                        return true
+                }
+                set i: i + 1
+            }
+            if s.deinitializer <> null
+            {
+                let dr s.deinitializer
+                let di (*dr)
+                if this.impl_has_this_alloc(di.implementation)
+                    return true
+            }
+            false
         }
 
         function structure_init_has_this_alloc(this: Planner, s: Structure) returns bool
@@ -1786,10 +1791,114 @@ define Planner
                     let op (*op_ptr)
                     if this.operand_has_this_alloc(op)
                         return true
+                    ; `Page.get(this ...)` — the concept derives a page from
+                    ; its own address (the Array/builder two-step shape
+                    ; `let own_page Page.get(this as pointer[void])`), so an
+                    ; instance must be page-resident even when no literal
+                    ; `^this` construction appears anywhere.
+                    if Planner.operand_is_page_get(op)
+                    {
+                        if i + 1 < ops.length
+                        {
+                            let np ops.get(i + 1)
+                            if np <> null
+                            {
+                                let nop (*np)
+                                if Planner.operand_leads_with_this(nop)
+                                    return true
+                            }
+                        }
+                    }
                 }
                 set i: i + 1
             }
             false
+        }
+
+        function operand_is_page_get(op: Operand) returns bool
+        {
+            var found: bool false
+            choose op.expression
+                when ty: Type
+                {
+                    if ty.name.length = 2
+                    {
+                        let s0 ty.name.get 0
+                        let s1 ty.name.get 1
+                        if s0 <> null
+                        {
+                            if s1 <> null
+                            {
+                                let seg0 (*s0)
+                                let seg1 (*s1)
+                                if seg0.equals("Page")
+                                {
+                                    if seg1.equals("get")
+                                        set found: true
+                                }
+                            }
+                        }
+                    }
+                }
+                else
+                    0
+            found
+        }
+
+        ; True when the operand is the argument shape of a `this`-receiving
+        ; call: a Tuple whose first component's value leads with `this`
+        ; (`Page.get(this as pointer[void])`), or a bare `this` (parenless).
+        function operand_leads_with_this(op: Operand) returns bool
+        {
+            var found: bool false
+            choose op.expression
+                when tp: Tuple
+                {
+                    if tp.components.length > 0
+                    {
+                        let cp tp.components.get 0
+                        if cp <> null
+                        {
+                            let comp (*cp)
+                            if comp.value.length > 0
+                            {
+                                let vp comp.value.get 0
+                                if vp <> null
+                                {
+                                    let vop (*vp)
+                                    set found: Planner.operand_is_bare_this(vop)
+                                }
+                            }
+                        }
+                    }
+                }
+                when ty: Type
+                    set found: Planner.type_is_bare_this(ty)
+                else
+                    0
+            found
+        }
+
+        function operand_is_bare_this(op: Operand) returns bool
+        {
+            var found: bool false
+            choose op.expression
+                when ty: Type
+                    set found: Planner.type_is_bare_this(ty)
+                else
+                    0
+            found
+        }
+
+        function type_is_bare_this(ty: Type) returns bool
+        {
+            if ty.name.length <> 1
+                return false
+            let s0 ty.name.get 0
+            if s0 = null
+                return false
+            let seg (*s0)
+            seg.equals("this")
         }
 
         function operand_has_this_alloc(this: Planner, op: Operand) returns bool
@@ -1845,6 +1954,14 @@ define Planner
 
         function matrix_has_this_alloc(this: Planner, mx: Matrix) returns bool
         {
+            ; The ^this on a GENERIC construction (`Vector[T]^this(...)`)
+            ; rides the Matrix operand's life, not an inner Type — the same
+            ; Matrix.life asymmetry the `^rp` and `#` scans already handle
+            ; (lifetime_is_rp / lifetime_is_call both check mx.life). Without
+            ; this, a generic-only `^this` init (HashSet/HashMap/StringBuilder)
+            ; is invisible to the residency scan.
+            if Planner.lifetime_is_this(mx.life)
+                return true
             var i: size_t 0
             while i < mx.operations.length
             {
@@ -1876,9 +1993,12 @@ define Planner
         }
 
         function type_life_is_this(t: Type) returns bool
+            Planner.lifetime_is_this(t.lifetime)
+
+        function lifetime_is_this(lt: Lifetime) returns bool
         {
             var found: bool false
-            choose t.lifetime
+            choose lt
                 when r: Reference
                 {
                     if r.location.equals("this")
@@ -5091,27 +5211,18 @@ define Planner
                                     ; and the compiler picks the page.
                                     ; Default to Local also when the matched
                                     ; init has no page param (has_page_param
-                                    ; false) but the CONCEPT is a heap-backed
-                                    ; container (Array/List/HashSetBuilder/...):
+                                    ; false) but the concept's own bodies derive
+                                    ; a page from `this` (^this constructions or
+                                    ; Page.get(this) — Array/List/builders/...):
                                     ; its no-arg init() leaves life Unspecified,
                                     ; which would stack-allocate, but the instance
-                                    ; must live on a page (its methods do
-                                    ; Page.get(this)). Mirrors the reshape-path
+                                    ; must live on a page. Mirrors the reshape-path
                                     ; rule 1. Only fires for Unspecified life, so
-                                    ; explicit $/#/^ constructions are unchanged.
+                                    ; explicit #/^ constructions are unchanged.
                                     var ctor_heap_default: bool has_page_param
                                     if has_page_param = false
-                                        if this.concept_is_heap_backed(fn_name)
+                                        if this.concept_needs_this_residency(fn_name)
                                             set ctor_heap_default: true
-                                    ; Residency inference: a no-page-param ctor
-                                    ; that allocates `^this` guts must be page-
-                                    ; resident (its ctor does Page.get(this)).
-                                    ; Stamp Local so the object is Page::allocate'd
-                                    ; on the local page, not stack-alloca'd.
-                                    if has_page_param = false
-                                        if ctor_heap_default = false
-                                            if this.concept_needs_this_residency(fn_name)
-                                                set ctor_heap_default: true
                                     var eff_ctor_life: Lifetime ctor_struct_type.life
                                     if ctor_heap_default
                                         choose ctor_struct_type.life
@@ -5222,22 +5333,21 @@ define Planner
                             ; (emit_tuple respects is_region_alloc by calling
                             ; Page::allocate on the appropriate page).
                             ; Page inference rule 1 (reshape path): a no-sigil
-                            ; construction of a heap-backed type (its concept
-                            ; declares a page-param init) that matched no init#
-                            ; here carries Unspecified life and would stack-
-                            ; allocate — but the instance MUST live on a page
-                            ; (its methods do Page.get(this); a stack base gives
-                            ; a garbage page). Default it to the function's local
-                            ; page, exactly as `$` would; the escape checker
+                            ; construction of a residency-needing type (its own
+                            ; bodies derive a page from `this`) that matched no
+                            ; init# here carries Unspecified life and would
+                            ; stack-allocate — but the instance MUST live on a
+                            ; page (a stack base gives a garbage page). Default
+                            ; it to the function's local page; the escape checker
                             ; promotes to the caller page on escape. Plain value
-                            ; structs (no page-param init) stay Unspecified ->
-                            ; stack. Existing $/#/^ constructions already carry a
-                            ; non-Unspecified life, so this only fires for
-                            ; de-sigiled sources (emission-neutral otherwise).
+                            ; structs stay Unspecified -> stack. Existing #/^
+                            ; constructions already carry a non-Unspecified
+                            ; life, so this only fires for de-sigiled sources
+                            ; (emission-neutral otherwise).
                             var reshape_life: Lifetime ctor_struct_type.life
                             choose ctor_struct_type.life
                                 when u: Unspecified
-                                    if this.concept_is_heap_backed(fn_name)
+                                    if this.concept_needs_this_residency(fn_name)
                                         set reshape_life: Lifetime.Local(scalyc.compiler.Model.Local(second.loc))
                                 else
                                     0

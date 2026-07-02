@@ -187,7 +187,11 @@ procedure reset_page(p: pointer[Page])
     set p.next_object: (p as size_t + sizeof Page) as pointer[void]
     set p.current_page: null
     set p.next_page: null
-    set p.exclusive_pages: PageList()
+    ; Zero the field directly — no PageList() construction. The allocator
+    ; must never region-allocate: residency inference would promote the
+    ; construction to a local page, and a local page here recurses into
+    ; scaly_alloc_root_page (allocator allocating from itself).
+    set p.exclusive_pages.head: null
 }
 
 ; --------------------------------------------------------------------------
