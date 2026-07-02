@@ -1,0 +1,22 @@
+; ESCAPE (negative, NO-SIGIL): hole 1 (2026-07-02f) — an IMPLICIT tail
+; return of a reference into the local page. plan_return# always caught the
+; explicit `return &b`, but a body whose LAST EXPRESSION is the same
+; reference (`{ ...; &b }`, the unify shape) compiled clean and dangled.
+; check_tail_ref_escape# (the diagnostic-only mirror of plan_return#'s
+; reference check, recursing block tails and arm consequents) must reject.
+define Box
+(
+    v: int
+)
+
+function leak() returns pointer[Box]
+{
+    let b Box(5)
+    &b
+}
+
+function main() returns int
+{
+    let p leak()
+    return (*p).v
+}
