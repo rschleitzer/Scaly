@@ -35342,7 +35342,7 @@ choose.when38:                                    ; preds = %entry
   store %_Z13ProgramSyntax %throws.success.val, ptr %arg.tmp41, align 1
   call void @_ZN7Modeler13build_programEPN4scaly6memory4PageE6String6String13ProgramSyntaxb(ptr noalias sret(%_Z7Program) %sret.result39, ptr %local_page, ptr %sret.result22, ptr %arg.tmp40, ptr %arg.tmp41, i1 true)
   %struct.region42 = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 ptrtoint (ptr getelementptr (%_Z7Planner, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z7Planner }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN7PlannerC1EPN4scaly6memory4PageE6String(ptr %struct.region42, ptr %local_page, ptr %sret.result22)
+  call void @_ZN7PlannerC1E6String(ptr %struct.region42, ptr %sret.result22)
   store ptr %struct.region42, ptr %planner, align 1
   %addr.heap = load ptr, ptr %planner, align 8
   call void @_ZN11diagnostics17register_packagesEP7PlannerP7Program(ptr %addr.heap, ptr %sret.result39)
@@ -69663,7 +69663,7 @@ choose.when2:                                     ; preds = %entry
   store %_Z13ProgramSyntax %throws.success.val, ptr %arg.tmp4, align 1
   call void @_ZN7Modeler13build_programEPN4scaly6memory4PageE6String6String13ProgramSyntaxb(ptr noalias sret(%_Z7Program) %sret.result3, ptr %1, ptr %3, ptr %arg.tmp, ptr %arg.tmp4, i1 true)
   %struct.region5 = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 ptrtoint (ptr getelementptr (%_Z7Planner, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z7Planner }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN7PlannerC1EPN4scaly6memory4PageE6String(ptr %struct.region5, ptr %local_page, ptr %3)
+  call void @_ZN7PlannerC1E6String(ptr %struct.region5, ptr %3)
   store ptr %struct.region5, ptr %planner, align 1
   %addr.heap = load ptr, ptr %planner, align 8
   call void @_ZN11diagnostics17register_packagesEP7PlannerP7Program(ptr %addr.heap, ptr %sret.result3)
@@ -82417,7 +82417,7 @@ declare i64 @write(...)
 
 declare void @_ZN6ParserC1EPN4scaly6memory4PageE6String(ptr, ptr, ptr)
 
-declare void @_ZN7PlannerC1EPN4scaly6memory4PageE6String(ptr, ptr, ptr)
+declare void @_ZN7PlannerC1E6String(ptr, ptr)
 
 declare void @_ZN6StringC1EPN4scaly6memory4PageEP10const_charm(ptr, ptr, ptr, i64)
 
