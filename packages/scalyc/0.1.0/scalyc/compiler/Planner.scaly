@@ -369,6 +369,29 @@ define Planner
         getref_arg_locals: Array[String]
         getref_alias_names: Array[String]
         getref_alias_receivers: Array[String]
+        ; Option B (2026-07-02h checker net): per-function set of container
+        ; holder locals whose page-owning construction REMAINED on the frame's
+        ; local page after every promotion pass above (defaulted-Local life;
+        ; not a parameter, not #/^ — those carry Call/Reference life — and not
+        ; in promoted_binding_names). A `.get(i)`/`.get_ptr(i)` ref out of such
+        ; a holder points into the local page; collapse_operand_sequence#'s
+        ; method dispatch stamps those results Local-pointee (stamp_getref_
+        ; local_pointee#) so the return/store/pass escape checks reject an
+        ; escaping use instead of silently dangling. Truncated per function.
+        ;
+        ; The *_base fields index the CURRENT function's first entry: the
+        ; name arrays are entry-truncated per function, NOT cleared, so a
+        ; generic method lazily instantiated MID-function (lookup_method#'s
+        ; s188 hook — e.g. VectorIterator[int].next during test_vector) sees
+        ; the outer function's entries. A whole-array name scan then false-
+        ; matches an outer holder (next's `vector` FIELD vs test_vector's
+        ; `vector` local). The stamp and the no-rp gate consult only entries
+        ; at index >= base; the pre-existing sets (promoted_binding_names,
+        ; getref promotion) keep their whole-array scans — promotion is
+        ; placement-only, and narrowing them would change emission.
+        local_frame_holder_names: Array[String]
+        local_frame_holder_base: size_t
+        getref_arg_base: size_t
         ; Set true while planning the IMPLICIT-RETURN (tail) action of a
         ; function whose return value owns page guts (needs_implicit_return_
         ; page). plan_action# reads-and-clears it so only the OUTERMOST body
@@ -568,6 +591,9 @@ define Planner
             set getref_arg_locals: Array[String]^this()
             set getref_alias_names: Array[String]^this()
             set getref_alias_receivers: Array[String]^this()
+            set local_frame_holder_names: Array[String]^this()
+            set local_frame_holder_base: 0
+            set getref_arg_base: 0
             set promote_tail_return: false
             set check_tail_escape: false
             set instantiated_functions: Array[PlannedFunction]^this()
@@ -5668,6 +5694,14 @@ define Planner
                         ; on-local-variable resolution.
                         var is_method_dispatch: bool false
                         var receiver_op: PlannedOperand result
+                        ; Option B (2026-07-02h): set when the resolved call is
+                        ; a container get/get_ptr whose receiver holder's guts
+                        ; live on the frame's LOCAL page (local_frame_holder_
+                        ; names, recorded by plan_binding#). The result type is
+                        ; then stamped Local-pointee below (where rt is read
+                        ; from the match) so the escape checks see the frame-
+                        ; bound reference.
+                        var stamp_getref_local: bool false
                         if match_ref = null
                         {
                             let dot_idx fn_name.last_index_of(46 as u8)
@@ -5856,6 +5890,26 @@ define Planner
                                             ))
                                         }
                                         set match_ref: mm_ref
+
+                                        ; Option B: a get/get_ptr ref out of a
+                                        ; frame-local-page holder — flag the
+                                        ; result for the Local-pointee stamp.
+                                        ; The name array is entry-truncated per
+                                        ; function (NOT cleared), so a lazily-
+                                        ; instantiated generic method planned
+                                        ; MID-function sees the outer entries —
+                                        ; require the receiver to be a genuine
+                                        ; non-parameter local Vector binding of
+                                        ; THIS scope (a field/param receiver
+                                        ; is caller-lived, never stamped).
+                                        var sfx_is_getref suffix.equals("get")
+                                        if sfx_is_getref = false
+                                            set sfx_is_getref: suffix.equals("get_ptr")
+                                        if sfx_is_getref
+                                            if local.is_parameter = false
+                                                if local.binding_type.name.equals("Vector")
+                                                    if this.array_contains_name_from(local_frame_holder_names, this.local_frame_holder_base, prefix)
+                                                        set stamp_getref_local: true
                                     }
                                     }
                                 }
@@ -5920,6 +5974,50 @@ define Planner
                                                         recv_type
                                                     )
                                                 }
+
+                                                ; Option B stamp (s83 chain path
+                                                ; — THE live path for `H.get(i)`
+                                                ; on a local receiver: plan_type_
+                                                ; operand resolves the hop to a
+                                                ; method chain, so fn_name is the
+                                                ; bare method name and the s75
+                                                ; dotted branch never runs). Only
+                                                ; a chain-free Variable receiver
+                                                ; can be a holder binding; field
+                                                ; receivers (non-empty truncated
+                                                ; chain) are caller-lived and
+                                                ; never stamped.
+                                                var s83_is_getref last_acc.name.equals("get")
+                                                if s83_is_getref = false
+                                                    set s83_is_getref: last_acc.name.equals("get_ptr")
+                                                if s83_is_getref
+                                                    if trunc_arr.length = 0
+                                                        choose result.expr
+                                                            when s83v: Variable
+                                                            {
+                                                                ; The name array is entry-
+                                                                ; truncated per function (NOT
+                                                                ; cleared), so a lazily-
+                                                                ; instantiated generic method
+                                                                ; planned MID-function sees the
+                                                                ; outer entries (VectorIterator.
+                                                                ; next's `vector` FIELD collided
+                                                                ; with test_vector's holder).
+                                                                ; Require a genuine non-parameter
+                                                                ; local Vector binding of THIS
+                                                                ; scope — a field name misses
+                                                                ; lookup_local_binding.
+                                                                if this.array_contains_name_from(local_frame_holder_names, this.local_frame_holder_base, s83v.name)
+                                                                {
+                                                                    let s83lb this.lookup_local_binding(s83v.name)
+                                                                    if s83lb <> null
+                                                                        if s83lb.is_parameter = false
+                                                                            if s83lb.binding_type.name.equals("Vector")
+                                                                                set stamp_getref_local: true
+                                                                }
+                                                            }
+                                                            else
+                                                                0
 
                                                 ; Record extern PlannedFunction so
                                                 ; emit_function_decl emits an LLVM
@@ -6734,6 +6832,14 @@ define Planner
                         if has_ns_mangled
                             if ns_return_valid
                                 set rt: ns_return_type
+
+                        ; Option B: the receiver holder's guts live on the
+                        ; frame's local page — stamp the get/get_ptr result's
+                        ; pointee life Local (Option-of-ref pierced by the
+                        ; escape leaf predicates) so an escaping use of the
+                        ; reference is rejected instead of dangling.
+                        if stamp_getref_local
+                            set rt: Planner.stamp_getref_local_pointee(rt)
 
                         ; Flatten the tuple argument into a list of
                         ; individual PlannedOperand values so the emitter
@@ -13421,8 +13527,9 @@ define Planner
                 if this.array_contains_name(getref_arg_locals, abn)
                     set at_hit: true
                 if at_hit
-                    if this.lookup_local_binding("rp") <> null
-                        if collapsed.result_type.name.equals("Vector")
+                    if collapsed.result_type.name.equals("Vector")
+                    {
+                        if this.lookup_local_binding("rp") <> null
                         {
                             let at_life Lifetime.Call(scalyc.compiler.Model.Call(b.span))
                             let at_promoted this.restamp_operand_life(collapsed, at_life)
@@ -13441,6 +13548,25 @@ define Planner
                                     promoted_binding_names.add(String#(abn))
                             }
                         }
+                        else
+                        {
+                            ; Option B (2026-07-02h): the getref scan proved
+                            ; this holder's interior references reach an
+                            ; argument/return position, so promotion to the
+                            ; caller page is REQUIRED — but no rp is in scope
+                            ; (the lambda-machinery class). The refs would
+                            ; dangle silently once the local page is freed;
+                            ; hard-error instead. Only fires for a construction
+                            ; that actually stayed on the LOCAL page — a #/^
+                            ; holder (Call/Reference life) already outlives the
+                            ; frame and is skipped. Keyed on getref_arg_locals
+                            ; (not the address-taken set) to keep the error
+                            ; surface exactly the interior-ref class.
+                            if this.array_contains_name_from(getref_arg_locals, this.getref_arg_base, abn)
+                                if this.operand_is_local_page_construction(collapsed)
+                                    this.add_diagnostic(b.span, "reference into a local page escapes via a container ref - no caller page is in scope to promote the holder to; allocate the holder on a surviving region ('^this') or copy the value out instead of passing the reference")
+                        }
+                    }
             }
 
             ; Hole-1 field provenance: a `let h Holder(&b)` binding where the
@@ -13459,6 +13585,25 @@ define Planner
                     if this.construction_has_local_ref_arg(collapsed)
                         if this.array_contains_name(local_tainted_struct_bindings, tbn) = false
                             local_tainted_struct_bindings.add(String#(tbn))
+            }
+
+            ; Option B (2026-07-02h): record a container holder whose
+            ; construction REMAINED on the frame's local page after the gap-1 /
+            ; address-taken / getref promotion passes above — its `.get(i)` /
+            ; `.get_ptr(i)` refs point into this frame's page. The method-
+            ; dispatch stamp in collapse_operand_sequence# marks such refs
+            ; Local-pointee so the return/store/pass escape checks reject an
+            ; escaping use (the silent-dangle class). Parameters never bind
+            ; here; #/^ holders carry Call/Reference life (operand_is_local_
+            ; page_construction false); promoted bindings are excluded by name.
+            if b.item.name <> null
+            {
+                let fhn (*b.item.name)
+                if collapsed.result_type.name.equals("Vector")
+                    if this.operand_is_local_page_construction(collapsed)
+                        if this.array_contains_name(promoted_binding_names, fhn) = false
+                            if this.array_contains_name_from(local_frame_holder_names, this.local_frame_holder_base, fhn) = false
+                                local_frame_holder_names.add(String#(fhn))
             }
 
             ; s192: stack array declaration `var buffer char[64]` (no
@@ -13671,8 +13816,36 @@ define Planner
                                 set promoted_done: true
                             }
                         }
+                        ; Option B deferral: a container get/get_ptr ref stored
+                        ; into a field of `this` follows the save/restore
+                        ; discipline (plan_namespace's current_namespace_name:
+                        ; every read happens before this frame exits and the
+                        ; old value is restored). The stamped Local pointee
+                        ; would reject the compiler's own benign idiom; keep
+                        ; the pre-Option-B behavior (silent acceptance) for
+                        ; exactly this shape — a DIRECT non-operator get/
+                        ; get_ptr call source into a this-field. All other
+                        ; sinks (non-this param fields, globals, derefs,
+                        ; return, pass-to-storing-callee) keep the hard error.
+                        ; `&local` sources are operator calls and stay flagged.
+                        var defer_this_getref false
+                        if base_is_this
+                            choose planned_source_collapsed.expr
+                                when sgc: Call
+                                {
+                                    if sgc.is_operator = false
+                                    {
+                                        if sgc.name.equals("get")
+                                            set defer_this_getref: true
+                                        if sgc.name.equals("get_ptr")
+                                            set defer_this_getref: true
+                                    }
+                                }
+                                else
+                                    0
                         if promoted_done = false
-                            this.add_diagnostic(action_loc, "reference into a local page escapes via store - allocate the target with '#' (caller page) or '^name' (region) so it outlives the use")
+                            if defer_this_getref = false
+                                this.add_diagnostic(action_loc, "reference into a local page escapes via store - allocate the target with '#' (caller page) or '^name' (region) so it outlives the use")
                     }
                 }
 
@@ -14044,7 +14217,18 @@ define Planner
         {
             choose t.life
                 when loc: Local
-                    return true
+                {
+                    ; Option B: a stamped pointee life spreads to a DEREF'D
+                    ; value (`*b` of a stamped pointer[int{Local}] derives
+                    ; int{Local} via the prefix-* generic rule); a primitive
+                    ; value is a plain copy and cannot dangle, so it must not
+                    ; trip the value clause. Pre-existing Local-life VALUE
+                    ; types are page-guts-owning structs (the default-to-local
+                    ; flip's result_owns_page_guts gate), never primitives —
+                    ; the guard is neutral for them.
+                    if Planner.is_primitive_type_name(t.name) = false
+                        return true
+                }
                 else
                     0
             let ptr_name "pointer"
@@ -14072,6 +14256,26 @@ define Planner
                                 else
                                     0
                         }
+                    }
+                }
+            }
+            ; Option-of-ref piercing (Option B, 2026-07-02h): a STAMPED
+            ; Option[ref[T{Local}]] (frame-local-page holder get-ref) must
+            ; rank Local at region_of_operand#'s sinks. is_local_ref_pointer
+            ; carries the same piercing; only stamped types ever match (the
+            ; leading value-clause above is deliberately NOT applied to the
+            ; Option's inner — see the is_local_ref_pointer header comment).
+            if t.name.equals("Option")
+            {
+                if t.generics <> null
+                {
+                    let gens_o (*t.generics)
+                    if gens_o.length > (0 as size_t)
+                    {
+                        let io_ptr gens_o.get 0
+                        if io_ptr <> null
+                            if Planner.is_local_ref_pointer((*io_ptr))
+                                return true
                     }
                 }
             }
@@ -14177,6 +14381,28 @@ define Planner
                                 else
                                     0
                         }
+                    }
+                }
+            }
+            ; Option-of-ref piercing (Option B, 2026-07-02h): `ref[T]?` plans
+            ; as Option[ref[T]] — a STAMPED get-ref out of a frame-local-page
+            ; holder carries its Local pointee on the INNER reference, which
+            ; the Option wrapper otherwise hides from every escape site.
+            ; Recurse into the Option's first generic; the recursion only
+            ; fires when that inner is itself a pointer/ref with a Local
+            ; pointee, so unstamped Option-of-ref (declared signatures,
+            ; Unspecified life) stays invisible exactly as before.
+            if t.name.equals("Option")
+            {
+                if t.generics <> null
+                {
+                    let gens_o (*t.generics)
+                    if gens_o.length > (0 as size_t)
+                    {
+                        let io_ptr gens_o.get 0
+                        if io_ptr <> null
+                            if Planner.is_local_ref_pointer((*io_ptr))
+                                set result: true
                     }
                 }
             }
@@ -16238,6 +16464,25 @@ define Planner
             false
         }
 
+        ; Option B: like array_contains_name but scanning only entries at
+        ; index >= base — the CURRENT function's slice of an entry-truncated
+        ; per-function name array. Used by the stamp and no-rp gate so a
+        ; lazily-instantiated generic method planned mid-function does not
+        ; false-match the outer function's holder names.
+        function array_contains_name_from(this: Planner, arr: Array[String], base: size_t, name: String) returns bool
+        {
+            var i: size_t base
+            while i < arr.length
+            {
+                let p arr.get i
+                if p <> null
+                    if (*p).equals(name)
+                        return true
+                set i: i + 1
+            }
+            false
+        }
+
         ; deep-R2 (nested-construction return-promotion). The bare-`return x`
         ; collection below promotes only the OUTERMOST returned allocation. A
         ; construction returned (directly or via a bound local) builds its value
@@ -17569,7 +17814,36 @@ define Planner
                                 }
                             }
                         }
-                    this.scan_getref_operand(op, in_args)
+                    ; `*(RECV.get i)` — a `*`-prefixed single-component paren
+                    ; group is DEREF'D: its leading get copies the value out,
+                    ; so the receiver must NOT be recorded (Option B: the
+                    ; no-rp gate would otherwise false-fire on the benign
+                    ; `*(vector.get 0)` test shapes). The paren group models
+                    ; as a Tuple, whose component recursion below forces
+                    ; in_args=true — intercept it here (where the previous
+                    ; operand is visible) and scan the component with
+                    ; in_args=false instead; a REAL call-arg tuple nested
+                    ; deeper re-enables recording through the normal Tuple
+                    ; recursion.
+                    var handled_deref_tuple false
+                    if deref_before
+                        choose op.expression
+                            when dtup: Tuple
+                            {
+                                if dtup.components.length = 1
+                                {
+                                    let dcp dtup.components.get 0
+                                    if dcp <> null
+                                    {
+                                        this.scan_getref_ops((*dcp).value, false)
+                                        set handled_deref_tuple: true
+                                    }
+                                }
+                            }
+                            else
+                                0
+                    if handled_deref_tuple = false
+                        this.scan_getref_operand(op, in_args)
                 }
                 set i: i + 1
             }
@@ -17989,6 +18263,15 @@ define Planner
             let saved_gra getref_arg_locals.length
             let saved_gan getref_alias_names.length
             let saved_gar getref_alias_receivers.length
+            let saved_lfh local_frame_holder_names.length
+            ; Option B: scope the NEW consultations (stamp + no-rp gate) to
+            ; entries recorded by THIS function — a lazily-instantiated
+            ; generic method planned mid-function must not see the outer
+            ; function's holder names (see the field comment).
+            let saved_lfb this.local_frame_holder_base
+            set this.local_frame_holder_base: local_frame_holder_names.length
+            let saved_gab this.getref_arg_base
+            set this.getref_arg_base: getref_arg_locals.length
             ; Page inference: a value stored through a ref/pointer out-parameter
             ; escapes to the caller, so seed those param names as escape targets.
             ; A later `param.add(v)` / `(*param).add(v)` then promotes v to the
@@ -18051,6 +18334,9 @@ define Planner
             set getref_arg_locals.length: saved_gra
             set getref_alias_names.length: saved_gan
             set getref_alias_receivers.length: saved_gar
+            set local_frame_holder_names.length: saved_lfh
+            set this.local_frame_holder_base: saved_lfb
+            set this.getref_arg_base: saved_gab
             set local_closure_names.length: saved_lcn
             set local_box_names.length: saved_lbn
             set this.current_return_type: saved_return_type
@@ -21855,6 +22141,56 @@ define Planner
         )
         var new_gens Vector[PlannedType](1)
         new_gens.put(0, local_inner)
+        PlannedType(
+            t.loc,
+            String(t.name),
+            String(t.mangled_name),
+            &new_gens,
+            t.life,
+            t.origin,
+            String(t.array_size),
+            t.variable
+        )
+    }
+
+    ; stamp_getref_local_pointee# (Option B, 2026-07-02h): rebuild a container
+    ; get/get_ptr RESULT type with its pointee life Local. get_ptr returns a
+    ; bare pointer[T] — delegate to make_ref_to_local_inner#. get returns
+    ; ref[T]? which plans as Option[ref[T]] — rebuild the Option with its
+    ; inner reference stamped (the Option-of-ref shape the escape leaf
+    ; predicates pierce). Any other type is returned verbatim. Applied by
+    ; collapse_operand_sequence#'s method dispatch when the receiver holder's
+    ; guts live on the frame's local page (local_frame_holder_names).
+    function stamp_getref_local_pointee(t: PlannedType) returns PlannedType
+    {
+        var is_ref_like false
+        if t.name.equals("pointer")
+            set is_ref_like: true
+        if t.name.equals("ref")
+            set is_ref_like: true
+        if is_ref_like
+            return Planner.make_ref_to_local_inner(t)
+        if t.name.equals("Option") = false
+            return t
+        if t.generics = null
+            return t
+        let gens (*t.generics)
+        if gens.length = 0
+            return t
+        let inner_ptr gens.get 0
+        if inner_ptr = null
+            return t
+        let inner (*inner_ptr)
+        var inner_is_ref false
+        if inner.name.equals("pointer")
+            set inner_is_ref: true
+        if inner.name.equals("ref")
+            set inner_is_ref: true
+        if inner_is_ref = false
+            return t
+        let stamped_ref Planner.make_ref_to_local_inner(inner)
+        var new_gens Vector[PlannedType](1)
+        new_gens.put(0, stamped_ref)
         PlannedType(
             t.loc,
             String(t.name),

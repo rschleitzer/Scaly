@@ -1,0 +1,24 @@
+; ESCAPE (negative, PRELUDE): Option B stamp, bare-pointer half — a get_ptr
+; ref (pointer[T]) out of a frame-local-page holder stored into a PARAMETER's
+; field. Scan-blind shape (no arg/return position); the stamped Local pointee
+; on the pointer result must reject the store.
+package scaly 0.1.0
+
+use scaly.containers.Vector
+
+define Holder
+(
+    b: pointer[int]
+)
+
+procedure fill(c: Holder)
+{
+    var h Vector[int](1)
+    h.put(0, 5)
+    set c.b: h.get_ptr 0
+}
+
+function main() returns int
+{
+    return 0
+}

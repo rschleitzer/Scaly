@@ -1,0 +1,24 @@
+; OK (positive, PRELUDE): get-refs out of a frame-local-page holder used ONLY
+; within the frame (deref'd reads) in a no-rp function. The `*(h.get 0)` paren
+; shape must NOT be recorded by the getref scan (deref'd-paren fix — the `*`
+; sits before the paren group), and the stamped local alias never escapes.
+; Must COMPILE (no false positive; mirrors containers.scaly's test_vector).
+package scaly 0.1.0
+
+use scaly.containers.Vector
+
+function sum() returns int
+{
+    var h Vector[int](2)
+    h.put(0, 3)
+    h.put(1, 4)
+    if *(h.get 0) <> 3
+        return -1
+    let b h.get_ptr 1
+    return *b
+}
+
+function main() returns int
+{
+    return 0
+}

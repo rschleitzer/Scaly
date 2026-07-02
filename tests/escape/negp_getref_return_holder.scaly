@@ -1,0 +1,22 @@
+; ESCAPE (negative, PRELUDE): Option B (2026-07-02h) — a container get_ptr
+; ref out of a holder whose construction stays on the frame's LOCAL page,
+; returned from a function with NO caller page (rp) in scope (a bare
+; pointer return injects no page param, unlike ref[T]? which does and then
+; promotes cleanly). The getref scan proves the ref reaches a return
+; position; promotion is impossible (no rp), so the holder binding must be
+; REJECTED (previously a silent dangle — the lambda-machinery class).
+package scaly 0.1.0
+
+use scaly.containers.Vector
+
+function pick(x: int) returns pointer[int]
+{
+    var h Vector[int](1)
+    h.put(0, x)
+    return h.get_ptr 0
+}
+
+function main() returns int
+{
+    return 0
+}

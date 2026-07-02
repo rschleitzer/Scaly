@@ -1,0 +1,18 @@
+; OK (positive, PRELUDE): an explicitly `#`-sigiled holder (caller page) —
+; the construction carries Call life, so it is never recorded as a frame
+; holder and its get-refs stay unstamped. Must COMPILE.
+package scaly 0.1.0
+
+use scaly.containers.Vector
+
+function pick#(rp, x: int) returns ref[int]?
+{
+    var h Vector[int]#(1)
+    h.put(0, x)
+    return h.get 0
+}
+
+function main() returns int
+{
+    return 0
+}

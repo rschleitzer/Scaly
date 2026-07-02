@@ -1,0 +1,20 @@
+; OK (positive, PRELUDE): the same return-a-get-ref shape as
+; negp_getref_return_holder, but the function HAS a caller page (rp) — the
+; getref scan + plan_binding# promotion place the holder's guts on rp, so
+; nothing dangles. Must COMPILE (the de-sigiled compiler holder sites are
+; exactly this shape).
+package scaly 0.1.0
+
+use scaly.containers.Vector
+
+function pick#(rp, x: int) returns ref[int]?
+{
+    var h Vector[int](1)
+    h.put(0, x)
+    return h.get 0
+}
+
+function main() returns int
+{
+    return 0
+}

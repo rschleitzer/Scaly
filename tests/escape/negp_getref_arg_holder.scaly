@@ -1,0 +1,23 @@
+; ESCAPE (negative, PRELUDE): Option B — a get_ptr ref out of a frame-local-
+; page holder reaches an ARGUMENT position in a function with no caller page
+; (rp) in scope. Promotion is impossible, so the holder binding must be
+; REJECTED instead of handing out a reference into the soon-freed local page.
+package scaly 0.1.0
+
+use scaly.containers.Vector
+
+procedure consume(p: pointer[int])
+    set *(p): 1
+
+function build() returns int
+{
+    var h Vector[int](1)
+    h.put(0, 5)
+    consume(h.get_ptr 0)
+    return 0
+}
+
+function main() returns int
+{
+    return 0
+}

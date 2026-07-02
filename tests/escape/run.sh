@@ -35,6 +35,32 @@ for f in tests/escape/pos_*.scaly; do
   fi
 done
 
+# Option B (2026-07-02h): container get-ref suite — needs the PRELUDE (real
+# Vector.get/get_ptr), unlike the no-prelude neg_*/pos_* sets above.
+# negp_* : a frame-local-page holder's interior ref escapes -> MUST reject.
+# posp_* : promoted / sigiled / frame-only-use holder refs -> MUST compile.
+for f in tests/escape/negp_*.scaly; do
+  [ -e "$f" ] || continue
+  t=$(basename "$f" .scaly)
+  out=$( ( ulimit -s 65520; "$CC" -c -o /tmp/esc_$t.o "$f" ) 2>&1 ); rc=$?
+  if [ $rc -ne 0 ] && echo "$out" | grep -q "escapes"; then
+    pass=$((pass+1))
+  else
+    fail=$((fail+1)); failures+=("$t: expected rejection, got rc=$rc")
+  fi
+done
+
+for f in tests/escape/posp_*.scaly; do
+  [ -e "$f" ] || continue
+  t=$(basename "$f" .scaly)
+  out=$( ( ulimit -s 65520; "$CC" -c -o /tmp/esc_$t.o "$f" ) 2>&1 ); rc=$?
+  if [ $rc -eq 0 ]; then
+    pass=$((pass+1))
+  else
+    fail=$((fail+1)); failures+=("$t: expected compile, got rc=$rc: $out")
+  fi
+done
+
 # Multi-file diagnostic LOCATION: the escape is in mfloc_helper.scaly (a
 # sub-module of mfloc_main.scaly). The diagnostic must name the HELPER file at
 # its real line (13), not the entry file. Guards per-diagnostic file tracking.

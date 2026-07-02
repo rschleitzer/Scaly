@@ -1,0 +1,26 @@
+; ESCAPE (negative, PRELUDE): Option B stamp + Option-of-ref piercing — a
+; get-ref (ref[T]?, planned as Option[ref[T]]) out of a frame-local-page
+; holder stored into a PARAMETER's field (frame-external memory). The getref
+; scan does not see this shape (no arg/return position), so the STAMPED Local
+; pointee on the call result — pierced through the Option wrapper by
+; is_reference_to_local_page# — is what must reject the store.
+package scaly 0.1.0
+
+use scaly.containers.Vector
+
+define Keeper
+(
+    r: ref[int]?
+)
+
+procedure fill(c: Keeper)
+{
+    var h Vector[int](1)
+    h.put(0, 5)
+    set c.r: h.get 0
+}
+
+function main() returns int
+{
+    return 0
+}
