@@ -53,9 +53,9 @@ define Vector[T]
     }
 
     ; NOTE: each allocating init derives its page FIRST, at the top of the
-    ; body — the residency scan (concept_needs_this_residency) walks only
-    ; top-level statements' operands, so a Page.get(this) nested inside an
-    ; `if` would be invisible and constructions would silently stack-alloc.
+    ; body. The residency scan (concept_needs_this_residency) now descends
+    ; control-flow operands too, so a nested Page.get(this) is visible; the
+    ; hoist stays as belt-and-braces and keeps the signal obvious.
     init (len: size_t)
     {
         let own_page Page.get(this as pointer[void])
