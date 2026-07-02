@@ -5361,6 +5361,17 @@ define Emitter
     ; path.
     function emit_constructor_call(this, call: PlannedCall) returns LLVMValueRef
     {
+        let no_dest LLVMValueRef(null)
+        emit_constructor_call_into(call, no_dest)
+    }
+
+    ; Like emit_constructor_call, but when `dest` is non-null the struct is
+    ; constructed IN PLACE on that address (a field GEP from
+    ; emit_in_place_field_ctor): no page resolution, no scratch allocation.
+    ; The caller guarantees dest is big enough (its LLVM type equals the
+    ; ctor's struct type) and that no ctor arg aliases the destination.
+    function emit_constructor_call_into(this, call: PlannedCall, dest: LLVMValueRef) returns LLVMValueRef
+    {
         ; s176: region-allocated ctor results are planned as pointer[T]
         ; (s27), so map_type(call.result_type) yields `ptr` and
         ; LLVMSizeOf(ptr)=8 under-sized every Page::allocate for T
@@ -5413,44 +5424,57 @@ define Emitter
             else
                 0
 
+        ; In-place destination: construct directly on the caller-provided
+        ; field address — skip page resolution and scratch allocation.
+        var in_place: bool false
+        if dest.handle <> null
+            set in_place: true
+
         ; Resolve the page argument.
         var page_arg: LLVMValueRef LLVMValueRef(null)
-        if is_region_alloc
+        if in_place = false
         {
-            ; A `$` (Lifetime.Local) construction allocates on THIS function's
-            ; local page (released on exit by always-free-local), NEVER the
-            ; caller's rp. Mirrors stage-0 Emitter.cpp:3680-3682. Without this,
-            ; a `$` allocation inside a `#` function (which has `rp` in scope)
-            ; fell through to the rp branch below and leaked onto the caller's
-            ; persistent page — the stage-2 transient-leak driver (2.4x RSS vs
-            ; stage-1: $ builders/Vectors/StringBuilders in the hot # planner
-            ; functions never freed). The escape checker guarantees a `$` value
-            ; that escapes is a compile error, so routing to the local page is
-            ; safe. (Item-2's LEVER fixed the analogous CALL path at ~line 5140;
-            ; constructions were missed.)
-            if is_local_alloc
-                set page_arg: get_or_create_local_page()
-            if is_local_alloc = false
+            if is_region_alloc
             {
-                if has_ref_name
-                    set page_arg: resolve_reference_page(ref_name)
-                if has_ref_name = false
+                ; A `$` (Lifetime.Local) construction allocates on THIS function's
+                ; local page (released on exit by always-free-local), NEVER the
+                ; caller's rp. Mirrors stage-0 Emitter.cpp:3680-3682. Without this,
+                ; a `$` allocation inside a `#` function (which has `rp` in scope)
+                ; fell through to the rp branch below and leaked onto the caller's
+                ; persistent page — the stage-2 transient-leak driver (2.4x RSS vs
+                ; stage-1: $ builders/Vectors/StringBuilders in the hot # planner
+                ; functions never freed). The escape checker guarantees a `$` value
+                ; that escapes is a compile error, so routing to the local page is
+                ; safe. (Item-2's LEVER fixed the analogous CALL path at ~line 5140;
+                ; constructions were missed.)
+                if is_local_alloc
+                    set page_arg: get_or_create_local_page()
+                if is_local_alloc = false
                 {
-                    let rp_val lookup_variable("rp")
-                    if rp_val.handle <> null
-                        set page_arg: rp_val
-                    ; s196: non-# caller — reuse this function's single local
-                    ; root page (released on exit) instead of leaking a fresh one.
-                    if page_arg.handle = null
-                        set page_arg: get_or_create_local_page()
+                    if has_ref_name
+                        set page_arg: resolve_reference_page(ref_name)
+                    if has_ref_name = false
+                    {
+                        let rp_val lookup_variable("rp")
+                        if rp_val.handle <> null
+                            set page_arg: rp_val
+                        ; s196: non-# caller — reuse this function's single local
+                        ; root page (released on exit) instead of leaking a fresh one.
+                        if page_arg.handle = null
+                            set page_arg: get_or_create_local_page()
+                    }
                 }
+                if page_arg.handle = null
+                    return LLVMValueRef null
             }
-            if page_arg.handle = null
-                return LLVMValueRef null
         }
 
         ; Allocate the struct.
         var struct_ptr: LLVMValueRef LLVMValueRef(null)
+        if in_place
+            set struct_ptr: dest
+        if in_place = false
+        {
         if is_region_alloc
         {
             ; Page::allocate(page, sizeof, alignof). LLVMSizeOf / LLVMAlignOf
@@ -5503,6 +5527,7 @@ define Emitter
         }
         if is_region_alloc = false
             set struct_ptr: entry_alloca(struct_ty, "struct.init")
+        }
 
         ; Compute user arg count.
         var user_arg_count: size_t 0
@@ -10300,6 +10325,269 @@ define Emitter
     }
 
     ; Emit an action (expression statement or assignment)
+    ; True when the operand tree mentions `name` — as a bare variable, a
+    ; member-access hop, or inside nested call/tuple/as operands. Used by the
+    ; in-place field-construction aliasing guard; CONSERVATIVE: any expression
+    ; shape the walker doesn't enumerate counts as a mention (keep the
+    ; scratch when in doubt).
+    function operand_mentions_name(this, op: PlannedOperand, name: String) returns bool
+    {
+        if op.member_access <> null
+        {
+            let chain (*op.member_access)
+            var mi: size_t 0
+            while mi < chain.length
+            {
+                let mp chain.get mi
+                if mp <> null
+                {
+                    let hop (*mp)
+                    if hop.name.equals(name)
+                        return true
+                }
+                set mi: mi + 1
+            }
+        }
+        var mentions: bool false
+        choose op.expr
+            when v: Variable
+                set mentions: v.name.equals(name)
+            when c: Call
+            {
+                if c.args <> null
+                {
+                    let argv (*c.args)
+                    var ai: size_t 0
+                    while ai < argv.length
+                    {
+                        let ap argv.get ai
+                        if ap <> null
+                        {
+                            let arg_op (*ap)
+                            if operand_mentions_name(arg_op, name)
+                                return true
+                        }
+                        set ai: ai + 1
+                    }
+                }
+            }
+            when tp: Tuple
+            {
+                if tp.components <> null
+                {
+                    let comps (*tp.components)
+                    var ci: size_t 0
+                    while ci < comps.length
+                    {
+                        let cp comps.get ci
+                        if cp <> null
+                        {
+                            let comp (*cp)
+                            if comp.value <> null
+                            {
+                                let vals (*comp.value)
+                                var vi: size_t 0
+                                while vi < vals.length
+                                {
+                                    let vp vals.get vi
+                                    if vp <> null
+                                    {
+                                        let v_op (*vp)
+                                        if operand_mentions_name(v_op, name)
+                                            return true
+                                    }
+                                    set vi: vi + 1
+                                }
+                            }
+                        }
+                        set ci: ci + 1
+                    }
+                }
+            }
+            when az: As
+            {
+                if az.value <> null
+                {
+                    let a_ref az.value
+                    let a_op (*a_ref)
+                    if operand_mentions_name(a_op, name)
+                        return true
+                }
+            }
+            when ct: Constant
+                0
+            when ty: Type
+                0
+            when gr: GlobalRef
+                0
+            when so: SizeOf
+                0
+            when ao: AlignOf
+                0
+            else
+                set mentions: true
+        mentions
+    }
+
+    ; Aliasing guard for in-place field construction: true when any ctor arg
+    ; references the target variable or any hop of the target member chain.
+    ; `set f: String(f)` must KEEP the scratch — the ctor reads the old value
+    ; while in-place construction would clobber it first.
+    function ctor_args_mention_chain(this, call: PlannedCall, variable: PlannedVariable, chain: Vector[PlannedMemberAccess]) returns bool
+    {
+        if call.args = null
+            return false
+        let argv (*call.args)
+        var ai: size_t 0
+        while ai < argv.length
+        {
+            let ap argv.get ai
+            if ap <> null
+            {
+                let arg_op (*ap)
+                if operand_mentions_name(arg_op, variable.name)
+                    return true
+                var mi: size_t 0
+                while mi < chain.length
+                {
+                    let mp chain.get mi
+                    if mp <> null
+                    {
+                        let hop (*mp)
+                        if operand_mentions_name(arg_op, hop.name)
+                            return true
+                    }
+                    set mi: mi + 1
+                }
+            }
+            set ai: ai + 1
+        }
+        false
+    }
+
+    ; In-place field construction: `set X.field...: Ctor(args)` with a single
+    ; construction source constructs directly on the final field address
+    ; instead of a discarded scratch. The scratch LEAKED sizeof(struct) on the
+    ; owner page per field init (a region-alloc'd ctor result was loaded and
+    ; stored by value into the field, orphaning the allocation) and the
+    ; whole-aggregate load+store is the s178 spill class. IR-verified: the
+    ; scratch page always equals the destination page (Page.get(this) inside
+    ; the ctor = Page.get(&field) = owner page), so interior buffer placement
+    ; is unchanged. Gates (all checked BEFORE any IR is emitted):
+    ;   - target is a Variable with a member-access chain;
+    ;   - source is exactly one C1E constructor Call with no trailing chain,
+    ;     no page param, and life Unspecified (stack scratch) or ^this
+    ;     (owner page) — Local/Call/^other scratches keep the legacy copy;
+    ;   - the final field's LLVM type IS the ctor's struct type (by-value
+    ;     field; pointer-storing fields keep the legacy path);
+    ;   - no ctor arg mentions the target chain (aliasing guard).
+    ; Returns null (nothing emitted) when not applicable — emit_action then
+    ; falls through to the legacy scratch path.
+    function emit_in_place_field_ctor(this, action: PlannedAction) returns LLVMValueRef
+    {
+        let no_val LLVMValueRef(null)
+        if action.target = null
+            return no_val
+        if action.target.length = 0
+            return no_val
+        let target_op action.target.get 0
+        if target_op = null
+            return no_val
+        if target_op.member_access = null
+            return no_val
+        if target_op.member_access.length = 0
+            return no_val
+        if action.source = null
+            return no_val
+        if action.source.length <> 1
+            return no_val
+        let src_ptr action.source.get 0
+        if src_ptr = null
+            return no_val
+        let src_op (*src_ptr)
+        if src_op.member_access <> null
+            return no_val
+
+        choose target_op.expr
+            when variable: Variable
+            {
+                choose src_op.expr
+                    when c: Call
+                    {
+                        if c.mangled_name.contains("C1E") = false
+                            return no_val
+                        if c.requires_page_param
+                            return no_val
+                        var life_ok: bool false
+                        choose c.life
+                            when u: Unspecified
+                                set life_ok: true
+                            when r: Lifetime.Reference
+                            {
+                                if r.location.equals("this")
+                                    set life_ok: true
+                            }
+                            else
+                                0
+                        if life_ok = false
+                            return no_val
+
+                        ; Final field must be a by-value struct of exactly
+                        ; the ctor's LLVM type (types are uniqued — compare
+                        ; handles).
+                        let chain_ref target_op.member_access
+                        let chain (*chain_ref)
+                        let n chain.length
+                        let last_ptr chain.get(n - 1)
+                        if last_ptr = null
+                            return no_val
+                        let last_member last_ptr.unwrap()
+                        let field_ty map_type last_member.result_type
+                        if field_ty.handle = null
+                            return no_val
+                        if LLVMGetTypeKind(field_ty) <> LLVMTypeKind.Struct()
+                            return no_val
+                        var ctor_rt c.result_type
+                        if ctor_rt.name.equals("pointer")
+                        {
+                            if ctor_rt.generics <> null
+                            {
+                                let gens (*ctor_rt.generics)
+                                if gens.length > 0
+                                {
+                                    let g0 gens.get 0
+                                    if g0 <> null
+                                        set ctor_rt: (*g0)
+                                }
+                            }
+                        }
+                        let ctor_ty map_type ctor_rt
+                        if ctor_ty.handle = null
+                            return no_val
+                        if ctor_ty.handle <> field_ty.handle
+                            return no_val
+
+                        if ctor_args_mention_chain(c, variable, chain)
+                            return no_val
+
+                        ; All gates passed — emit: field address, then
+                        ; construct straight onto it.
+                        let var_ptr lookup_variable variable.name
+                        if var_ptr.handle = null
+                            return no_val
+                        let dest emit_member_address(var_ptr, variable, target_op.member_access)
+                        if dest.handle = null
+                            return no_val
+                        return emit_constructor_call_into(c, dest)
+                    }
+                    else
+                        0
+            }
+            else
+                0
+        no_val
+    }
+
     function emit_action(this, action: PlannedAction) returns LLVMValueRef
     {
         ; -g line info: every action carries its own source span (plan_action#
@@ -10312,6 +10600,13 @@ define Emitter
         ; emit_debug_info and returns before its O(n) offset scan when -g is
         ; off, so default (no-g) emission stays byte-identical.
         set_debug_location action.loc
+
+        ; In-place field construction (see emit_in_place_field_ctor): must
+        ; run BEFORE the source is emitted — the legacy path materializes the
+        ; ctor result into a scratch first and copies it into the field.
+        let in_place_val emit_in_place_field_ctor(action)
+        if in_place_val.handle <> null
+            return in_place_val
 
         ; Emit source operands
         var value emit_operands action.source
@@ -10691,13 +10986,15 @@ define Emitter
         heap_ptr
     }
 
-    ; Helper for member field assignment
-    function emit_member_assignment(this, var_ptr: LLVMValueRef, planned_var: PlannedVariable, members: ref[Vector[PlannedMemberAccess]]?, value: LLVMValueRef) returns LLVMValueRef
+    ; Compute the ADDRESS of a member-access chain's final field (base setup
+    ; + GEP-chain walk). Factored out of emit_member_assignment so the
+    ; in-place field construction path (emit_in_place_field_ctor) can compute
+    ; the destination without emitting a store.
+    function emit_member_address(this, var_ptr: LLVMValueRef, planned_var: PlannedVariable, members: ref[Vector[PlannedMemberAccess]]?) returns LLVMValueRef
     {
         ; s34 root fix: plain var copies of the by-ptr struct params
         ; (emitBinding now copies single-ptr-field struct params correctly).
         var current_ptr var_ptr
-        var stored_value value
 
         ; Determine the struct type for GEP. For `this` (pointer[T]) we
         ; want T's struct type directly. For non-pointer locals we use
@@ -10891,12 +11188,27 @@ define Emitter
                 }
                 set i: i + 1
             }
+        }
 
-            ; Mirrors stage-0 Emitter.cpp:2062-2064: when stored_value is a
-            ; pointer but the final field is a struct, load the struct value
-            ; from the pointer first. Without this, init# results (heap ptrs)
-            ; assigned to struct fields stomp the field's first 8 bytes
-            ; instead of writing the struct value.
+        current_ptr
+    }
+
+    ; Helper for member field assignment
+    function emit_member_assignment(this, var_ptr: LLVMValueRef, planned_var: PlannedVariable, members: ref[Vector[PlannedMemberAccess]]?, value: LLVMValueRef) returns LLVMValueRef
+    {
+        var stored_value value
+        let current_ptr emit_member_address(var_ptr, planned_var, members)
+
+        ; Mirrors stage-0 Emitter.cpp:2062-2064: when stored_value is a
+        ; pointer but the final field is a struct, load the struct value
+        ; from the pointer first. Without this, init# results (heap ptrs)
+        ; assigned to struct fields stomp the field's first 8 bytes
+        ; instead of writing the struct value.
+        if members <> null
+        {
+            let chain_ref members
+            let chain (*chain_ref)
+            let n chain.length
             if n > 0
             {
                 let last_ptr chain.get(n - 1)
