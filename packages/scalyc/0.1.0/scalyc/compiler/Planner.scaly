@@ -13427,7 +13427,19 @@ define Planner
                             let at_life Lifetime.Call(scalyc.compiler.Model.Call(b.span))
                             let at_promoted this.restamp_operand_life(collapsed, at_life)
                             if at_promoted <> null
+                            {
                                 set collapsed: (*at_promoted)
+                                ; Record the promotion so a later REASSIGNMENT
+                                ; of the same holder (`set value_holder:
+                                ; Vector[...](arr)` in plan_component) is
+                                ; promoted too — plan_action#'s reassign
+                                ; promotion keys on promoted_binding_names.
+                                ; Also correct for the return/tail gap-1
+                                ; shortcut: the binding's allocation now
+                                ; lives on the caller page.
+                                if this.array_contains_name(promoted_binding_names, abn) = false
+                                    promoted_binding_names.add(String#(abn))
+                            }
                         }
             }
 
