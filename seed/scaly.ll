@@ -548,15 +548,9 @@ entry:
   %ptr.add = getelementptr inbounds %_Z4Page, ptr %0, i64 1
   %next_object = getelementptr inbounds %_Z4Page, ptr %0, i32 0, i32 0
   store ptr %ptr.add, ptr %next_object, align 8
-  %struct.init = alloca %_Z8PageList, align 8
-  %tuple.field = getelementptr inbounds %_Z8PageList, ptr %struct.init, i32 0, i32 0
-  store ptr null, ptr %tuple.field, align 8
-  %parent.page = call ptr @_ZN4Page3getEPv(ptr %0)
-  %ctor.heap = call ptr @_ZN4Page8allocateEmm(ptr %parent.page, i64 ptrtoint (ptr getelementptr (%_Z8PageList, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z8PageList }, ptr null, i64 0, i32 1) to i64))
-  %1 = call ptr @memcpy(ptr %ctor.heap, ptr %struct.init, i64 ptrtoint (ptr getelementptr (%_Z8PageList, ptr null, i32 1) to i64))
   %exclusive_pages = getelementptr inbounds %_Z4Page, ptr %0, i32 0, i32 3
-  %field.load = load %_Z8PageList, ptr %ctor.heap, align 8
-  store %_Z8PageList %field.load, ptr %exclusive_pages, align 8
+  %head = getelementptr inbounds %_Z8PageList, ptr %exclusive_pages, i32 0, i32 0
+  store ptr null, ptr %head, align 8
   ret void
 }
 
@@ -990,12 +984,9 @@ entry:
   store ptr null, ptr %current_page, align 8
   %next_page = getelementptr inbounds %_Z4Page, ptr %0, i32 0, i32 2
   store ptr null, ptr %next_page, align 8
-  %struct.init = alloca %_Z8PageList, align 8
-  %tuple.field = getelementptr inbounds %_Z8PageList, ptr %struct.init, i32 0, i32 0
-  store ptr null, ptr %tuple.field, align 8
   %exclusive_pages = getelementptr inbounds %_Z4Page, ptr %0, i32 0, i32 3
-  %field.load = load %_Z8PageList, ptr %struct.init, align 8
-  store %_Z8PageList %field.load, ptr %exclusive_pages, align 8
+  %head = getelementptr inbounds %_Z8PageList, ptr %exclusive_pages, i32 0, i32 0
+  store ptr null, ptr %head, align 8
   ret void
 }
 
