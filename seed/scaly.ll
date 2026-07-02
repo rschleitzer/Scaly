@@ -9472,7 +9472,6 @@ entry:
 
 define linkonce_odr ptr @_ZN15HashMapIterator4nextEv(ptr %0) {
 entry:
-  %struct.init = alloca %_Z14VectorIteratorI12KeyValuePairI1K1VEE, align 8
   br label %while.cond
 
 while.cond:                                       ; preds = %if.end4, %entry
@@ -9502,13 +9501,8 @@ if.then3:                                         ; preds = %if.end
   ret ptr null
 
 if.end4:                                          ; preds = %if.end
-  call void @_ZN14VectorIteratorI12KeyValuePairI1K1VEEC1EP6VectorI12KeyValuePairI1K1VEE(ptr %struct.init, ptr %call2)
-  %parent.page = call ptr @_ZN4Page3getEPv(ptr %0)
-  %ctor.heap = call ptr @_ZN4Page8allocateEmm(ptr %parent.page, i64 ptrtoint (ptr getelementptr (%_Z14VectorIteratorI12KeyValuePairI1K1VEE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z14VectorIteratorI12KeyValuePairI1K1VEE }, ptr null, i64 0, i32 1) to i64))
-  %1 = call ptr @memcpy(ptr %ctor.heap, ptr %struct.init, i64 ptrtoint (ptr getelementptr (%_Z14VectorIteratorI12KeyValuePairI1K1VEE, ptr null, i32 1) to i64))
   %element_iterator = getelementptr inbounds %_Z15HashMapIteratorI1K1VE, ptr %0, i32 0, i32 1
-  %field.load = load %_Z14VectorIteratorI12KeyValuePairI1K1VEE, ptr %ctor.heap, align 8
-  store %_Z14VectorIteratorI12KeyValuePairI1K1VEE %field.load, ptr %element_iterator, align 8
+  call void @_ZN14VectorIteratorI12KeyValuePairI1K1VEEC1EP6VectorI12KeyValuePairI1K1VEE(ptr %element_iterator, ptr %call2)
   br label %while.cond
 }
 
@@ -11499,70 +11493,50 @@ entry:
 
 define linkonce_odr void @_ZN13StringBuilderC1Ev(ptr %0) {
 entry:
-  %own_page = call ptr @_Z3getPv(ptr %0)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %own_page, i64 ptrtoint (ptr getelementptr (%_Z5ArrayIcE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5ArrayIcE }, ptr null, i64 0, i32 1) to i64))
-  %tuple.field = getelementptr inbounds %_Z5ArrayIcE, ptr %struct.region, i32 0, i32 0
-  store i64 0, ptr %tuple.field, align 4
-  %tuple.field1 = getelementptr inbounds %_Z5ArrayIcE, ptr %struct.region, i32 0, i32 1
-  store ptr null, ptr %tuple.field1, align 8
   %buffer = getelementptr inbounds %_Z13StringBuilder, ptr %0, i32 0, i32 0
-  %field.load = load %_Z5ArrayIcE, ptr %struct.region, align 8
-  store %_Z5ArrayIcE %field.load, ptr %buffer, align 8
+  %tuple.field = getelementptr inbounds %_Z5ArrayIcE, ptr %buffer, i32 0, i32 0
+  store i64 0, ptr %tuple.field, align 4
+  %tuple.field1 = getelementptr inbounds %_Z5ArrayIcE, ptr %buffer, i32 0, i32 1
+  store ptr null, ptr %tuple.field1, align 8
   ret void
 }
 
 define linkonce_odr void @_ZN13StringBuilderC1Em(ptr %0, i64 %1) {
 entry:
-  %own_page = call ptr @_Z3getPv(ptr %0)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %own_page, i64 ptrtoint (ptr getelementptr (%_Z5ArrayIcE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5ArrayIcE }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN5ArrayIcEC1Em(ptr %struct.region, i64 %1)
   %buffer = getelementptr inbounds %_Z13StringBuilder, ptr %0, i32 0, i32 0
-  %field.load = load %_Z5ArrayIcE, ptr %struct.region, align 8
-  store %_Z5ArrayIcE %field.load, ptr %buffer, align 8
+  call void @_ZN5ArrayIcEC1Em(ptr %buffer, i64 %1)
   ret void
 }
 
 define linkonce_odr void @_ZN13StringBuilderC1Ec(ptr %0, i8 %1) {
 entry:
-  %own_page = call ptr @_Z3getPv(ptr %0)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %own_page, i64 ptrtoint (ptr getelementptr (%_Z5ArrayIcE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5ArrayIcE }, ptr null, i64 0, i32 1) to i64))
-  %tuple.field = getelementptr inbounds %_Z5ArrayIcE, ptr %struct.region, i32 0, i32 0
-  store i64 0, ptr %tuple.field, align 4
-  %tuple.field1 = getelementptr inbounds %_Z5ArrayIcE, ptr %struct.region, i32 0, i32 1
-  store ptr null, ptr %tuple.field1, align 8
   %buffer = getelementptr inbounds %_Z13StringBuilder, ptr %0, i32 0, i32 0
-  %field.load = load %_Z5ArrayIcE, ptr %struct.region, align 8
-  store %_Z5ArrayIcE %field.load, ptr %buffer, align 8
+  %tuple.field = getelementptr inbounds %_Z5ArrayIcE, ptr %buffer, i32 0, i32 0
+  store i64 0, ptr %tuple.field, align 4
+  %tuple.field1 = getelementptr inbounds %_Z5ArrayIcE, ptr %buffer, i32 0, i32 1
+  store ptr null, ptr %tuple.field1, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %0, i8 %1)
   ret void
 }
 
 define linkonce_odr void @_ZN13StringBuilderC1E6String(ptr %0, ptr %1) {
 entry:
-  %own_page = call ptr @_Z3getPv(ptr %0)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %own_page, i64 ptrtoint (ptr getelementptr (%_Z5ArrayIcE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5ArrayIcE }, ptr null, i64 0, i32 1) to i64))
-  %tuple.field = getelementptr inbounds %_Z5ArrayIcE, ptr %struct.region, i32 0, i32 0
-  store i64 0, ptr %tuple.field, align 4
-  %tuple.field1 = getelementptr inbounds %_Z5ArrayIcE, ptr %struct.region, i32 0, i32 1
-  store ptr null, ptr %tuple.field1, align 8
   %buffer = getelementptr inbounds %_Z13StringBuilder, ptr %0, i32 0, i32 0
-  %field.load = load %_Z5ArrayIcE, ptr %struct.region, align 8
-  store %_Z5ArrayIcE %field.load, ptr %buffer, align 8
+  %tuple.field = getelementptr inbounds %_Z5ArrayIcE, ptr %buffer, i32 0, i32 0
+  store i64 0, ptr %tuple.field, align 4
+  %tuple.field1 = getelementptr inbounds %_Z5ArrayIcE, ptr %buffer, i32 0, i32 1
+  store ptr null, ptr %tuple.field1, align 8
   call void @_ZN13StringBuilder6appendE6String(ptr %0, ptr %1)
   ret void
 }
 
 define linkonce_odr void @_ZN13StringBuilderC1EP10const_char(ptr %0, ptr %1) {
 entry:
-  %own_page = call ptr @_Z3getPv(ptr %0)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %own_page, i64 ptrtoint (ptr getelementptr (%_Z5ArrayIcE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5ArrayIcE }, ptr null, i64 0, i32 1) to i64))
-  %tuple.field = getelementptr inbounds %_Z5ArrayIcE, ptr %struct.region, i32 0, i32 0
-  store i64 0, ptr %tuple.field, align 4
-  %tuple.field1 = getelementptr inbounds %_Z5ArrayIcE, ptr %struct.region, i32 0, i32 1
-  store ptr null, ptr %tuple.field1, align 8
   %buffer = getelementptr inbounds %_Z13StringBuilder, ptr %0, i32 0, i32 0
-  %field.load = load %_Z5ArrayIcE, ptr %struct.region, align 8
-  store %_Z5ArrayIcE %field.load, ptr %buffer, align 8
+  %tuple.field = getelementptr inbounds %_Z5ArrayIcE, ptr %buffer, i32 0, i32 0
+  store i64 0, ptr %tuple.field, align 4
+  %tuple.field1 = getelementptr inbounds %_Z5ArrayIcE, ptr %buffer, i32 0, i32 1
+  store ptr null, ptr %tuple.field1, align 8
   call void @_ZN13StringBuilder6appendEP10const_char(ptr %0, ptr %1)
   ret void
 }
