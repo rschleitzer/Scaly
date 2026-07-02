@@ -3,15 +3,23 @@ use scaly.memory.runtime
 
 define PACKED_SIZE: int 9
 
+; String is a pointer-sized HANDLE: the struct is a single pointer, the
+; varint-length-prefixed byte buffer lives on a page. The allocating inits
+; below derive that page from the String's own address (Page.get(this)),
+; so every construction that allocates must be page-resident — residency
+; inference guarantees this (concept_needs_this_residency sees the
+; Page.get(this) in these bodies and region-allocates the construction on
+; the destination page chosen at the call site: local page, # = caller's
+; page, ^this = the owner's page).
 define String (data: pointer[u8](null))
 {
-    ; Empty string - no page needed
+    ; Empty string - no allocation
     init()
     {
         set data: null
     }
 
-    init(page, length: size_t)
+    init(length: size_t)
     {
         ; s186: two-pass varint length prefix (count, then write directly
         ; into data). The old form used a `u8[PACKED_SIZE]` stack scratch,
@@ -30,7 +38,8 @@ define String (data: pointer[u8](null))
         let overall_length counter + (1 as size_t) + length
         ; Over-allocate by 1 byte so c_data() is safely null-terminated for
         ; C APIs. Keeps the logical content length unchanged.
-        set data: page.allocate(overall_length + (1 as size_t), 1) as pointer[u8]
+        let own_page Page.get(this as pointer[void])
+        set data: own_page.allocate(overall_length + (1 as size_t), 1) as pointer[u8]
         var wrest length
         var wi: size_t 0
         while wrest >= (0x80 as size_t)
@@ -43,7 +52,7 @@ define String (data: pointer[u8](null))
         set *(data + overall_length): (0 as u8)
     }
 
-    init(page, other: pointer[const_char], length: size_t)
+    init(other: pointer[const_char], length: size_t)
     {
         if length = (0 as size_t)
         {
@@ -60,7 +69,8 @@ define String (data: pointer[u8](null))
         }
 
         let overall_length counter + (1 as size_t) + length
-        set data: page.allocate(overall_length + (1 as size_t), 1) as pointer[u8]
+        let own_page Page.get(this as pointer[void])
+        set data: own_page.allocate(overall_length + (1 as size_t), 1) as pointer[u8]
         var wrest length
         var wi: size_t 0
         while wrest >= (0x80 as size_t)
@@ -74,9 +84,9 @@ define String (data: pointer[u8](null))
         set *(data + overall_length): (0 as u8)
     }
 
-    init(page, other: Vector[char])
+    init(other: Vector[char])
     {
-        ; Delegate to String(page, pointer, length)
+        ; Same encoding as String(pointer, length)
         var rest other.length
         var counter: size_t 0
         while rest >= (0x80 as size_t)
@@ -86,7 +96,8 @@ define String (data: pointer[u8](null))
         }
 
         let overall_length counter + (1 as size_t) + other.length
-        set data: page.allocate(overall_length + (1 as size_t), 1) as pointer[u8]
+        let own_page Page.get(this as pointer[void])
+        set data: own_page.allocate(overall_length + (1 as size_t), 1) as pointer[u8]
         var wrest other.length
         var wi: size_t 0
         while wrest >= (0x80 as size_t)
@@ -102,7 +113,7 @@ define String (data: pointer[u8](null))
 
     }
 
-    init(page, c_string: pointer[const_char])
+    init(c_string: pointer[const_char])
     {
         let length strlen c_string
         if length = (0 as size_t)
@@ -120,7 +131,8 @@ define String (data: pointer[u8](null))
         }
 
         let overall_length counter + (1 as size_t) + length
-        set data: page.allocate(overall_length + (1 as size_t), 1) as pointer[u8]
+        let own_page Page.get(this as pointer[void])
+        set data: own_page.allocate(overall_length + (1 as size_t), 1) as pointer[u8]
         var wrest length
         var wi: size_t 0
         while wrest >= (0x80 as size_t)
@@ -134,7 +146,7 @@ define String (data: pointer[u8](null))
         set *(data + overall_length): (0 as u8)
     }
 
-    init(page, other: String)
+    init(other: String)
     {
         if other.data = null
         {
@@ -162,14 +174,16 @@ define String (data: pointer[u8](null))
             set index: index + (1 as size_t)
         }
         var overall_length index + (1 as size_t) + length
-        set data: page.allocate(overall_length + (1 as size_t), 1) as pointer[u8]
+        let own_page Page.get(this as pointer[void])
+        set data: own_page.allocate(overall_length + (1 as size_t), 1) as pointer[u8]
         memcpy(data, other.data, overall_length)
         set *(data + overall_length): (0 as u8)
     }
 
-    init(page, character: u8)
+    init(character: u8)
     {
-        set data: page.allocate(3, 1) as pointer[u8]
+        let own_page Page.get(this as pointer[void])
+        set data: own_page.allocate(3, 1) as pointer[u8]
         set *data: 1
         set *(data + 1): character
         set *(data + 2): (0 as u8)

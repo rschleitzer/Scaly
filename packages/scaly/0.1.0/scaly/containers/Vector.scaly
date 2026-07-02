@@ -26,6 +26,14 @@ define VectorIterator[T]
     }
 }
 
+; Vector is a fat-pointer HANDLE: a fixed 16-byte {length, data} struct whose
+; element buffer lives on a page. The allocating inits below derive that page
+; from the Vector's own address (Page.get(this)), so every allocating
+; construction must be page-resident — residency inference guarantees this
+; (concept_needs_this_residency sees the Page.get(this) in these bodies and
+; region-allocates the construction on the destination page chosen at the
+; call site). The borrow init (d, len) and the empty init allocate nothing
+; and stay stack-safe.
 define Vector[T]
 (
     length: size_t
@@ -44,48 +52,43 @@ define Vector[T]
         set data: d
     }
 
-    init (rp, len: size_t)
+    ; NOTE: each allocating init derives its page FIRST, at the top of the
+    ; body — the residency scan (concept_needs_this_residency) walks only
+    ; top-level statements' operands, so a Page.get(this) nested inside an
+    ; `if` would be invisible and constructions would silently stack-alloc.
+    init (len: size_t)
     {
+        let own_page Page.get(this as pointer[void])
         set length: len
         if len > 0
         {
-            set data: rp.allocate(len * sizeof T, alignof T) as pointer[T]
+            set data: own_page.allocate(len * sizeof T, alignof T) as pointer[T]
             memset(data, 0, len * sizeof T)
         }
         else
             set data: null
     }
 
-    init (rp, arr: pointer[T], len: size_t)
+    init (other: Vector[T])
     {
-        set length: len
-        if len > 0
-        {
-            set data: rp.allocate(len * sizeof T, alignof T) as pointer[T]
-            memcpy(data, arr, len * sizeof T)
-        }
-        else
-            set data: null
-    }
-
-    init (rp, other: Vector[T])
-    {
+        let own_page Page.get(this as pointer[void])
         set length: other.length
         if length > 0
         {
-            set data: rp.allocate(length * sizeof T, alignof T) as pointer[T]
+            set data: own_page.allocate(length * sizeof T, alignof T) as pointer[T]
             memcpy(data, other.data, length * sizeof T)
         }
         else
             set data: null
     }
 
-    init (rp, array: Array[T])
+    init (array: Array[T])
     {
+        let own_page Page.get(this as pointer[void])
         set length: array.length
         if length > 0
         {
-            set data: rp.allocate(length * sizeof T, alignof T) as pointer[T]
+            set data: own_page.allocate(length * sizeof T, alignof T) as pointer[T]
             let arr_vector array.vector
             memcpy(data, arr_vector.data, length * sizeof T)
         }
@@ -93,12 +96,13 @@ define Vector[T]
             set data: null
     }
 
-    init (rp, list: List[T])
+    init (list: List[T])
     {
+        let own_page Page.get(this as pointer[void])
         set length: list.count()
         if length > 0
         {
-            set data: rp.allocate(length * sizeof T, alignof T) as pointer[T]
+            set data: own_page.allocate(length * sizeof T, alignof T) as pointer[T]
             var list_iterator list.get_iterator()
             var i: size_t length
             while let item list_iterator.next()
