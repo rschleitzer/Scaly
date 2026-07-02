@@ -868,7 +868,7 @@ define Planner
                                     ; takes the it.type branch above.)
                                     if it.name <> null
                                     {
-                                        var nm_path Vector[String]#(1)
+                                        var nm_path Vector[String](1)
                                         nm_path.put(0, String((*it.name)))
                                         let synth_ty Type(it.span, nm_path, null, scaly.compiler.Model.Lifetime.Unspecified(scaly.compiler.Model.Unspecified()))
                                         let synth_pt this.plan_type(synth_ty)
@@ -2228,7 +2228,7 @@ define Planner
                                         }
                                         set pi: pi + 1
                                     }
-                                    var param_types_vec Vector[PlannedType]#(param_types_arr)
+                                    var param_types_vec Vector[PlannedType](param_types_arr)
                                     let bindings this.infer_type_arguments(
                                         param_types_vec, arg_types
                                     )
@@ -3341,7 +3341,7 @@ define Planner
             right: PlannedType
         ) returns String
         {
-            var items Vector[PlannedItem]#(2)
+            var items Vector[PlannedItem](2)
             items.put(0, PlannedItem(
                 Span(0, 0), false, null, &^this left, null
             ))
@@ -3359,7 +3359,7 @@ define Planner
             operand: PlannedType
         ) returns String
         {
-            var items Vector[PlannedItem]#(1)
+            var items Vector[PlannedItem](1)
             items.put(0, PlannedItem(
                 Span(0, 0), false, null, &^this operand, null
             ))
@@ -3756,7 +3756,7 @@ define Planner
                             if ic_is_void_ptr
                             {
                                 let i64_ty Planner.make_i64_type()
-                                var ic_args Vector[PlannedOperand]#(1)
+                                var ic_args Vector[PlannedOperand](1)
                                 ic_args.put(0, ic_head)
                                 var ic_args_holder Vector[PlannedOperand](ic_args)
                                 let ic_call PlannedCall(
@@ -4060,7 +4060,7 @@ define Planner
                                                     {
                                                         if gens_arr.length > 0
                                                         {
-                                                            var name_path Vector[String]#(1)
+                                                            var name_path Vector[String](1)
                                                             name_path.put(0, ct2.name)
                                                             var model_gens Vector[Type](gens_arr)
                                                             ; Use the Matrix's lifetime when set —
@@ -4103,7 +4103,7 @@ define Planner
                                                                 let raw_ma (*np_op.member_access)
                                                                 if raw_ma.length > 0
                                                                 {
-                                                                    var ma_names Vector[String]#(raw_ma.length)
+                                                                    var ma_names Vector[String](raw_ma.length)
                                                                     var mni: size_t 0
                                                                     while mni < raw_ma.length
                                                                     {
@@ -4186,16 +4186,16 @@ define Planner
                                                             let sz Planner.matrix_single_int_size(nm2)
                                                             if sz.get_length() > 0
                                                             {
-                                                                var sz_path Vector[String]#(1)
+                                                                var sz_path Vector[String](1)
                                                                 sz_path.put(0, sz)
-                                                                var sz_gens Vector[Type]#(1)
+                                                                var sz_gens Vector[Type](1)
                                                                 sz_gens.put(0, Type(
                                                                     ct2.loc,
                                                                     sz_path,
                                                                     null,
                                                                     Lifetime.Unspecified(Unspecified())
                                                                 ))
-                                                                var arr_name_path Vector[String]#(1)
+                                                                var arr_name_path Vector[String](1)
                                                                 arr_name_path.put(0, ct2.name)
                                                                 let arr_type this.plan_type(Type(
                                                                     ct2.loc,
@@ -4235,7 +4235,7 @@ define Planner
                     merged_arr2.add cp_op
                     set ci2: ci2 + 1
                 }
-                var merged_vec2 Vector[PlannedOperand]#(merged_arr2)
+                var merged_vec2 Vector[PlannedOperand](merged_arr2)
                 ; s138: progress guard. If the rebuild produced the
                 ; same length (no actual merges — e.g.,
                 ; extract_row_to_type# returned null for every row),
@@ -4836,7 +4836,7 @@ define Planner
                                     }
                                     else
                                         0
-                                var bval_holder Vector[PlannedOperand]#(1)
+                                var bval_holder Vector[PlannedOperand](1)
                                 bval_holder.put(0, value_to_box)
                                 let box PlannedBox(result.loc, bval_holder.get 0, box_loc, box_ty)
                                 let box_op PlannedOperand(result.loc, PlannedExpression.Box box, null, box_ty)
@@ -4860,7 +4860,7 @@ define Planner
                         let mangled this.mangle_unary_operator(
                             prefix_name, rest_result.result_type
                         )
-                        var args_v Vector[PlannedOperand]#(1)
+                        var args_v Vector[PlannedOperand](1)
                         args_v.put(0, rest_result)
                         ; Mirrors Planner.cpp:4131-4132 — prefix operators on
                         ; primitive types are intrinsic (is_intrinsic=true,
@@ -4989,9 +4989,9 @@ define Planner
                                 0
                         if arg_is_value
                         {
-                            var sa_arg_vec Vector[PlannedOperand]#(1)
+                            var sa_arg_vec Vector[PlannedOperand](1)
                             sa_arg_vec.put(0, sa_arg_op)
-                            var sa_comps Vector[PlannedComponent]#(1)
+                            var sa_comps Vector[PlannedComponent](1)
                             sa_comps.put(0, PlannedComponent(
                                 sa_arg_op.loc,
                                 null,
@@ -5455,7 +5455,7 @@ define Planner
                                                     if vals.length > 1
                                                     {
                                                         let collapsed this.collapse_operand_sequence(vals)
-                                                        var one_arr Array[PlannedOperand]#()
+                                                        var one_arr Array[PlannedOperand]()
                                                         one_arr.add collapsed
                                                         var one_vec Vector[PlannedOperand](one_arr)
                                                         set nc_value: &one_vec
@@ -5651,7 +5651,7 @@ define Planner
                             }
                             else
                                 arg_types_arr_s90.add second.result_type
-                        let arg_types Vector[PlannedType]#(arg_types_arr_s90)
+                        let arg_types Vector[PlannedType](arg_types_arr_s90)
                         var match_ref this.resolve_function_call(fn_name, arg_types)
 
                         ; First-hop method dispatch (s75): when fn_name
@@ -5832,7 +5832,7 @@ define Planner
                                             var pp_ref_a: ref[String]? null
                                             if mm.requires_page_param
                                             {
-                                                var pp_h_a Vector[String]#(1)
+                                                var pp_h_a Vector[String](1)
                                                 pp_h_a.put(0, "rp")
                                                 set pp_ref_a: pp_h_a.get(0)
                                             }
@@ -5959,7 +5959,7 @@ define Planner
                                                             set ai2: ai2 + 1
                                                         }
                                                     }
-                                                    var items_holder2 Vector[PlannedItem]#(items_arr2)
+                                                    var items_holder2 Vector[PlannedItem](items_arr2)
                                                     let extern_impl2 PlannedImplementation.Extern(
                                                         PlannedExternImpl result.loc
                                                     )
@@ -5967,7 +5967,7 @@ define Planner
                                                     var pp_ref_b: ref[String]? null
                                                     if mm3.requires_page_param
                                                     {
-                                                        var pp_h_b Vector[String]#(1)
+                                                        var pp_h_b Vector[String](1)
                                                         pp_h_b.put(0, "rp")
                                                         set pp_ref_b: pp_h_b.get(0)
                                                     }
@@ -6232,7 +6232,7 @@ define Planner
                                                                                         {
                                                                                             let pt (*p_ptr.type)
                                                                                             let planned_p this.plan_type(pt)
-                                                                                            var ity_holder Vector[PlannedType]#(1)
+                                                                                            var ity_holder Vector[PlannedType](1)
                                                                                             ity_holder.put(0, planned_p)
                                                                                             ; Preserve the param NAME so the
                                                                                             ; `this` item is recognised and
@@ -6456,7 +6456,7 @@ define Planner
                                                 var pp_ref: ref[String]? null
                                                 if ns_has_page
                                                 {
-                                                    var pp_h Vector[String]#(1)
+                                                    var pp_h Vector[String](1)
                                                     pp_h.put(0, "rp")
                                                     set pp_ref: pp_h.get(0)
                                                 }
@@ -6604,7 +6604,7 @@ define Planner
                                                 set s_can_throw: true
                                                 set s_throws: &^this this.plan_type((*sfn.throws_))
                                             }
-                                            var srt_holder Vector[PlannedType]#(1)
+                                            var srt_holder Vector[PlannedType](1)
                                             srt_holder.put(0, s_rt)
                                             set match_ref: MethodMatch^this(
                                                 null,
@@ -6622,7 +6622,7 @@ define Planner
                                                 var spp_ref: ref[String]? null
                                                 if s_pp
                                                 {
-                                                    var spph Vector[String]#(1)
+                                                    var spph Vector[String](1)
                                                     spph.put(0, "rp")
                                                     set spp_ref: spph.get(0)
                                                 }
@@ -7259,7 +7259,7 @@ define Planner
                             let tail_ma (*prev_tuple.member_access)
                             if tail_ma.length > 0
                             {
-                                var tail_names Vector[String]#(tail_ma.length)
+                                var tail_names Vector[String](tail_ma.length)
                                 var tni: size_t 0
                                 while tni < tail_ma.length
                                 {
@@ -7391,7 +7391,7 @@ define Planner
                 choose op.expr
                     when pis: PlannedIs
                     {
-                        var value_holder Vector[PlannedOperand]#(1)
+                        var value_holder Vector[PlannedOperand](1)
                         value_holder.put(0, result)
 
                         var new_tag: size_t pis.variant_tag
@@ -7486,7 +7486,7 @@ define Planner
                         }
                         if folded = false
                         {
-                            var value_holder Vector[PlannedOperand]#(1)
+                            var value_holder Vector[PlannedOperand](1)
                             value_holder.put(0, result)
                             let stitched PlannedAs(
                                 pas.loc,
@@ -7951,7 +7951,7 @@ define Planner
                         }
                     }
 
-                    var two_args Vector[PlannedOperand]#(2)
+                    var two_args Vector[PlannedOperand](2)
                     two_args.put(0, result)
                     two_args.put(1, rhs)
                     var two_args_holder Vector[PlannedOperand](two_args)
@@ -8096,7 +8096,7 @@ define Planner
             if candidates.length = 0
                 return null
 
-            var arg_types Vector[PlannedType]#(1)
+            var arg_types Vector[PlannedType](1)
             arg_types.put(0, operand)
 
             ; Pass 1: exact.
@@ -8150,7 +8150,7 @@ define Planner
             if candidates.length = 0
                 return null
 
-            var arg_types Vector[PlannedType]#(2)
+            var arg_types Vector[PlannedType](2)
             arg_types.put(0, left)
             arg_types.put(1, right)
 
@@ -8236,7 +8236,7 @@ define Planner
                                 }
                                 set pi: pi + 1
                             }
-                            var param_types_vec Vector[PlannedType]#(param_types_arr)
+                            var param_types_vec Vector[PlannedType](param_types_arr)
 
                             let bindings this.infer_type_arguments(
                                 param_types_vec, arg_types
@@ -8647,7 +8647,7 @@ define Planner
                                 if (*li_conc).parameters.length > 0
                                 {
                                     instantiating_methods.add li_smangled
-                                    var li_args_holder Vector[PlannedType]#(li_gens)
+                                    var li_args_holder Vector[PlannedType](li_gens)
                                     var li_snap Array[KeyValuePair[String, PlannedType]]()
                                     var li_si: size_t 0
                                     while li_si < type_substitutions.length
@@ -8940,7 +8940,7 @@ define Planner
                 this_ty
             )
 
-            var args_vec Vector[PlannedOperand]#(1)
+            var args_vec Vector[PlannedOperand](1)
             args_vec.put(0, this_operand)
 
             ; Mangle as a call to Page.get(pointer[void]).
@@ -8979,7 +8979,7 @@ define Planner
             let tail_ma (*operand.member_access)
             if tail_ma.length = 0
                 return operand
-            var tail_names Vector[String]#(tail_ma.length)
+            var tail_names Vector[String](tail_ma.length)
             var tni: size_t 0
             while tni < tail_ma.length
             {
@@ -9567,7 +9567,7 @@ define Planner
                     let model_gens (*t.generics)
                     if model_gens.length > 0
                     {
-                        var canon_gens Vector[PlannedType]#(model_gens.length)
+                        var canon_gens Vector[PlannedType](model_gens.length)
                         var gi: size_t 0
                         while gi < model_gens.length
                         {
@@ -9637,7 +9637,7 @@ define Planner
                                 "",
                                 null
                             ))
-                            var elem_holder Vector[PlannedType]#(1)
+                            var elem_holder Vector[PlannedType](1)
                             elem_holder.put(0, PlannedType(
                                 after_subst.loc,
                                 after_subst.name,
@@ -9958,7 +9958,7 @@ define Planner
                                     ; Re-plan via plan_type# in this case so the
                                     ; current substitutions (K → String, V →
                                     ; LocalBinding) drive the inner mangling.
-                                    var canon_gens_inst Vector[PlannedType]#(g.length)
+                                    var canon_gens_inst Vector[PlannedType](g.length)
                                     var ggi: size_t 0
                                     while ggi < g.length
                                     {
@@ -10065,7 +10065,7 @@ define Planner
             if i.name <> null
             {
                 let n (*i.name)
-                var name_holder Vector[String]#(1)
+                var name_holder Vector[String](1)
                 name_holder.put(0, String(n))
                 set planned_name: name_holder.get(0)
             }
@@ -10091,7 +10091,7 @@ define Planner
         ; use `put(i, ...)` instead of Array.add + copy.
         function plan_items(this: Planner, items: Vector[Item]) returns Vector[PlannedItem]
         {
-            var result Vector[PlannedItem]#(items.length)
+            var result Vector[PlannedItem](items.length)
             var i: size_t 0
             while i < items.length
             {
@@ -10191,7 +10191,7 @@ define Planner
             ; variant_tag itself is filled in by the call site that
             ; pairs a PlannedIs with its value operand (needs the
             ; operand's union type, which plan_is doesn't see).
-            let ty_path Vector[String]#(i.name)
+            let ty_path Vector[String](i.name)
             let ty Type(i.span, ty_path, null, Lifetime.Unspecified(Unspecified()))
             let test_type this.plan_type(ty)
             let union_name Planner.join_dotted_name(i.name)
@@ -10393,7 +10393,7 @@ define Planner
                                                 set prop_type: this.plan_type(pt2)
                                             }
                                             let idx this.get_property_index(inner.name, name)
-                                            var ma_arr Array[PlannedMemberAccess]#()
+                                            var ma_arr Array[PlannedMemberAccess]()
                                             ma_arr.add(PlannedMemberAccess(
                                                 name, idx as size_t, false, false,
                                                 inner, prop_type
@@ -10615,7 +10615,7 @@ define Planner
                                             ; s83-s86). With s87's emit_variable struct/ptr-alloca
                                             ; fix and s86's heap-copy in MemberAssignment, the
                                             ; method-on-chain dispatch now works at runtime.
-                                            var holder2 Vector[PlannedMemberAccess]#(chain2)
+                                            var holder2 Vector[PlannedMemberAccess](chain2)
                                             var ft2 inner2
                                             if chain2.length > 0
                                             {
@@ -10678,7 +10678,7 @@ define Planner
             this.add_equality_constraint(bool_ty, planned_cond_collapsed.result_type, f.span)
 
             let planned_consequent this.plan_statement(f.consequent)
-            var consequent_holder Vector[PlannedStatement]#(1)
+            var consequent_holder Vector[PlannedStatement](1)
             consequent_holder.put(0, planned_consequent)
 
             var alternative_ref: ref[PlannedStatement]? null
@@ -10686,7 +10686,7 @@ define Planner
             {
                 let alt (*f.alternative)
                 let planned_alt this.plan_statement(alt)
-                var alt_holder Vector[PlannedStatement]#(1)
+                var alt_holder Vector[PlannedStatement](1)
                 alt_holder.put(0, planned_alt)
                 set alternative_ref: alt_holder.get(0)
 
@@ -10700,7 +10700,7 @@ define Planner
                         this.add_equality_constraint(cons_ty, alt_ty, f.span)
             }
 
-            var cond_holder Vector[PlannedOperand]#(1)
+            var cond_holder Vector[PlannedOperand](1)
             cond_holder.put(0, planned_cond_collapsed)
             PlannedIf(
                 f.span,
@@ -12220,7 +12220,7 @@ define Planner
             ; callers have already collapsed); storing the flat
             ; `[get_color, ()]` would emit only `get_color` and miss
             ; the call. plan_if has this same shape (~line 5096).
-            var cond_holder Vector[PlannedOperand]#(1)
+            var cond_holder Vector[PlannedOperand](1)
             cond_holder.put(0, collapsed_cond)
             var cases_holder Vector[PlannedWhen](cases_arr)
             PlannedChoose(c.span, &cond_holder, &cases_holder, alternative_ref)
@@ -12383,7 +12383,7 @@ define Planner
             if c.name <> null
             {
                 let n (*c.name)
-                var holder Vector[String]#(1)
+                var holder Vector[String](1)
                 holder.put(0, String(n))
                 set name_ref: holder.get(0)
             }
@@ -12554,9 +12554,9 @@ define Planner
             if should_collapse
             {
                 let collapsed this.collapse_operand_sequence(planned_value)
-                var collapsed_arr Array[PlannedOperand]#()
+                var collapsed_arr Array[PlannedOperand]()
                 collapsed_arr.add collapsed
-                set value_holder: Vector[PlannedOperand]#(collapsed_arr)
+                set value_holder: Vector[PlannedOperand](collapsed_arr)
             }
             PlannedComponent(c.span, name_ref, &value_holder, null)
         }
@@ -12680,7 +12680,7 @@ define Planner
                     set ci: ci + 1
                 }
             }
-            var arg_types_vec Vector[PlannedType]#(arg_types_arr)
+            var arg_types_vec Vector[PlannedType](arg_types_arr)
             let init_ref this.find_initializer(planned_ty.name, arg_types_vec)
             if init_ref = null
             {
@@ -12995,7 +12995,7 @@ define Planner
             ops: Vector[scalyc.compiler.Model.Operand]
         ) returns Vector[PlannedOperand]
         {
-            var result Vector[PlannedOperand]#(ops.length)
+            var result Vector[PlannedOperand](ops.length)
             var i: size_t 0
             while i < ops.length
             {
@@ -13080,7 +13080,7 @@ define Planner
                         {
                             if e0.name.equals("=")
                             {
-                                var arr Array[PlannedOperand]#()
+                                var arr Array[PlannedOperand]()
                                 var i: size_t 1
                                 while i < ops.length
                                 {
@@ -13139,11 +13139,11 @@ define Planner
                                 var name_ref: ref[String]? null
                                 if b.item.name <> null
                                 {
-                                    var nh Vector[String]#(1)
+                                    var nh Vector[String](1)
                                     nh.put(0, String((*b.item.name)))
                                     set name_ref: nh.get(0)
                                 }
-                                var pt_h Vector[PlannedType]#(1)
+                                var pt_h Vector[PlannedType](1)
                                 pt_h.put(0, del_pt)
                                 let pitem PlannedItem(b.span, false, name_ref, pt_h.get(0), null)
                                 ; Register the local so later references resolve
@@ -13207,7 +13207,7 @@ define Planner
             ; drops the alloca entirely.
             var peeled_idx: size_t 0
             var has_peeled_type: bool false
-            var peeled_holder Vector[PlannedType]#(1)
+            var peeled_holder Vector[PlannedType](1)
             if orig_item.item_type = null
             {
                 if planned_ops_flat.length >= 2
@@ -13299,7 +13299,7 @@ define Planner
 
             ; Build the actual ops vector to collapse: either all of
             ; planned_ops_flat or just the tail starting at peeled_idx.
-            var rest_arr Array[PlannedOperand]#()
+            var rest_arr Array[PlannedOperand]()
             var ri: size_t peeled_idx
             while ri < planned_ops_flat.length
             {
@@ -13469,7 +13469,7 @@ define Planner
             ; lone-type operand is kept as an init, emit_operands returns
             ; null on it, and emit_binding drops the slot.
             var is_stack_array_decl: bool false
-            var stack_array_holder Vector[PlannedType]#(1)
+            var stack_array_holder Vector[PlannedType](1)
             if has_peeled_type = false
             {
                 if orig_item.item_type = null
@@ -13543,12 +13543,12 @@ define Planner
             ; lets emit_binding fall through to the type-only alloca
             ; path. Mirrors stage-0 Planner.cpp:10947 where empty
             ; ValueOps produce a null `Init` field on the Binding.
-            var ops_holder Vector[PlannedOperand]#(0)
+            var ops_holder Vector[PlannedOperand](0)
             if rest_arr.length > 0
             {
                 if is_stack_array_decl = false
                 {
-                    set ops_holder: Vector[PlannedOperand]#(1)
+                    set ops_holder: Vector[PlannedOperand](1)
                     ops_holder.put(0, collapsed)
                 }
             }
@@ -13759,13 +13759,13 @@ define Planner
 
             let result_type planned_source_collapsed.result_type
 
-            var source_holder Vector[PlannedOperand]#(1)
+            var source_holder Vector[PlannedOperand](1)
             source_holder.put(0, planned_source_collapsed)
 
             var target_holder: ref[Vector[PlannedOperand]]? null
             if a.target.length > 0
             {
-                var target_vec Vector[PlannedOperand]#(1)
+                var target_vec Vector[PlannedOperand](1)
                 target_vec.put(0, planned_target_collapsed)
                 set target_holder: &target_vec
             }
@@ -15352,7 +15352,7 @@ define Planner
                     if ch.cases <> null
                     {
                         let cases_in (*ch.cases)
-                        var out_cases Vector[PlannedWhen]#(cases_in.length)
+                        var out_cases Vector[PlannedWhen](cases_in.length)
                         var i: size_t 0
                         while i < cases_in.length
                         {
@@ -15427,7 +15427,7 @@ define Planner
                     if mt.branches <> null
                     {
                         let brs_in (*mt.branches)
-                        var out_brs Vector[PlannedBranch]#(brs_in.length)
+                        var out_brs Vector[PlannedBranch](brs_in.length)
                         var i: size_t 0
                         while i < brs_in.length
                         {
@@ -15480,7 +15480,7 @@ define Planner
                     let pl this.promote_tail_statement((*last_ptr), new_life)
                     if pl = null
                         return null
-                    var out_stmts Vector[PlannedStatement]#(stmts.length)
+                    var out_stmts Vector[PlannedStatement](stmts.length)
                     var i: size_t 0
                     while i < stmts.length
                     {
@@ -15572,10 +15572,10 @@ define Planner
                     let promoted this.promote_tail_operand((*s0_ptr), new_life)
                     if promoted = null
                         return null
-                    var srch Vector[PlannedOperand]#(1)
+                    var srch Vector[PlannedOperand](1)
                     srch.put(0, (*promoted))
                     let na PlannedAction(a.loc, &srch, a.target, a.result_type)
-                    var h Vector[PlannedStatement]#(1)
+                    var h Vector[PlannedStatement](1)
                     h.put(0, PlannedStatement.Action na)
                     return h.get(0)
                 }
@@ -15767,7 +15767,7 @@ define Planner
                                     let rbase rb_sb.to_string#()
                                     let rclo this.make_closure(rbase, rl, dparams, dret, crt, Lifetime.Call(scalyc.compiler.Model.Call(r.span)))
                                     let rclo_op PlannedOperand(r.span, PlannedExpression.Closure rclo, null, crt)
-                                    var rh Vector[PlannedOperand]#(1)
+                                    var rh Vector[PlannedOperand](1)
                                     rh.put(0, rclo_op)
                                     return PlannedReturn(r.span, &rh)
                                 }
@@ -15893,7 +15893,7 @@ define Planner
                     set planned_collapsed: (*nested_promoted)
             }
 
-            var holder Vector[PlannedOperand]#(1)
+            var holder Vector[PlannedOperand](1)
             if planned_flat.length > 0
                 holder.put(0, planned_collapsed)
             PlannedReturn(r.span, &holder)
@@ -15912,7 +15912,7 @@ define Planner
                 return PlannedBreak(b.span, &empty_holder, b.loop_label)
             }
             let planned_collapsed this.collapse_operand_sequence(planned_flat)
-            var holder Vector[PlannedOperand]#(1)
+            var holder Vector[PlannedOperand](1)
             holder.put(0, planned_collapsed)
             PlannedBreak(b.span, &holder, b.loop_label)
         }
@@ -15944,7 +15944,7 @@ define Planner
                 if throw_promoted <> null
                     set planned_collapsed: (*throw_promoted)
             }
-            var holder Vector[PlannedOperand]#(1)
+            var holder Vector[PlannedOperand](1)
             if planned_flat.length > 0
                 holder.put(0, planned_collapsed)
             PlannedThrow(t.span, &holder)
@@ -15979,7 +15979,7 @@ define Planner
             stmts: Vector[Statement]
         ) returns Vector[PlannedStatement]
         {
-            var result Vector[PlannedStatement]#(stmts.length)
+            var result Vector[PlannedStatement](stmts.length)
             var i: size_t 0
             while i < stmts.length
             {
@@ -17933,7 +17933,7 @@ define Planner
             if f.page_parameter = null
                 if Planner.function_needs_caller_page(this, f)
                 {
-                    var rp_holder Vector[String]#(1)
+                    var rp_holder Vector[String](1)
                     rp_holder.put(0, "rp")
                     set pp_name_ref: rp_holder.get(0)
                 }
@@ -18075,7 +18075,7 @@ define Planner
             ; Extern C functions keep their unmangled name so LLVM can
             ; resolve them against libc / system libraries. Mirrors
             ; Planner.cpp:11806-11808's IsExtern ? Func.Name : mangle.
-            var mangled_holder Vector[String]#(1)
+            var mangled_holder Vector[String](1)
             if Planner.is_extern_impl(f.implementation)
                 mangled_holder.put(0, String(f.name))
             if Planner.is_extern_impl(f.implementation) = false
@@ -18135,7 +18135,7 @@ define Planner
             var page_param_ref: ref[String]? null
             if f.page_parameter <> null
             {
-                var pp_holder Vector[String]#(1)
+                var pp_holder Vector[String](1)
                 pp_holder.put(0, String((*f.page_parameter)))
                 set page_param_ref: pp_holder.get(0)
             }
@@ -18143,7 +18143,7 @@ define Planner
             {
                 if Planner.function_needs_caller_page(this, f)
                 {
-                    var pp_holder Vector[String]#(1)
+                    var pp_holder Vector[String](1)
                     pp_holder.put(0, "rp")
                     set page_param_ref: pp_holder.get(0)
                 }
@@ -18267,7 +18267,7 @@ define Planner
             var page_ref: ref[String]? null
             if ini.page_parameter <> null
             {
-                var holder Vector[String]#(1)
+                var holder Vector[String](1)
                 holder.put(0, String((*ini.page_parameter)))
                 set page_ref: holder.get(0)
             }
@@ -18293,7 +18293,7 @@ define Planner
                         let p (*parent)
                         var synth_items Array[PlannedItem]()
 
-                        var this_name_holder Vector[String]#(1)
+                        var this_name_holder Vector[String](1)
                         this_name_holder.put(0, "this")
                         synth_items.add(PlannedItem(
                             ini.span,
@@ -18316,10 +18316,10 @@ define Planner
                                 null
                             )
                             let page_ptr_ty Planner.make_pointer_type(page_struct_ty)
-                            var page_ty_holder Vector[PlannedType]#(1)
+                            var page_ty_holder Vector[PlannedType](1)
                             page_ty_holder.put(0, page_ptr_ty)
 
-                            var page_name_holder Vector[String]#(1)
+                            var page_name_holder Vector[String](1)
                             page_name_holder.put(0, String((*ini.page_parameter)))
 
                             synth_items.add(PlannedItem(
@@ -18756,7 +18756,7 @@ define Planner
             ; Build the parent type (struct's own PlannedType) so
             ; plan_initializer can encode the parent in the
             ; mangled C1/C2 names.
-            var gens_holder Vector[PlannedType]#(0)
+            var gens_holder Vector[PlannedType](0)
             let parent_ref PlannedType^this(
                 s.span,
                 String^this(name),
@@ -18790,8 +18790,8 @@ define Planner
                 }
             }
 
-            var methods_holder Vector[PlannedFunction]#(0)
-            var ops_holder Vector[PlannedOperator]#(0)
+            var methods_holder Vector[PlannedFunction](0)
+            var ops_holder Vector[PlannedOperator](0)
             var inits_holder Vector[PlannedInitializer](planned_initializers)
 
             let result PlannedStructure(
@@ -19167,7 +19167,7 @@ define Planner
             let old_ns this.current_namespace
             let old_ns_name this.current_namespace_name
             set current_namespace: &ns
-            var name_box Vector[String]#(1)
+            var name_box Vector[String](1)
             name_box.put(0, name)
             set current_namespace_name: name_box.get(0)
 
@@ -19652,7 +19652,7 @@ define Planner
                                 var op_page_param: ref[String]? null
                                 if Planner.needs_implicit_return_page(synth_fn)
                                 {
-                                    var pp_holder Vector[String]#(1)
+                                    var pp_holder Vector[String](1)
                                     pp_holder.put(0, "rp")
                                     set op_page_param: pp_holder.get(0)
                                 }
@@ -21367,7 +21367,7 @@ define Planner
             return Vector[size_t](0)
 
         let ps (*props)
-        var result Vector[size_t]#(ps.length)
+        var result Vector[size_t](ps.length)
         var offset: size_t 0
         var i: size_t 0
         while i < ps.length
@@ -21520,7 +21520,7 @@ define Planner
         if t.generics <> null
         {
             let gens (*t.generics)
-            var new_gens Vector[PlannedType]#(gens.length)
+            var new_gens Vector[PlannedType](gens.length)
             var i: size_t 0
             while i < gens.length
             {
@@ -21645,7 +21645,7 @@ define Planner
     ; an outer Model.Type with proper inner generic structure.
     function planned_type_to_model_type(pt: PlannedType) returns Type
     {
-        var name_path Vector[String]#(1)
+        var name_path Vector[String](1)
         name_path.put(0, pt.name)
         var maybe_gens: ref[Vector[Type]]? null
         if pt.generics <> null
@@ -21653,7 +21653,7 @@ define Planner
             let pgens (*pt.generics)
             if pgens.length > 0
             {
-                var conv Vector[Type]#(pgens.length)
+                var conv Vector[Type](pgens.length)
                 var i: size_t 0
                 while i < pgens.length
                 {
@@ -21706,7 +21706,7 @@ define Planner
         if t.generics <> null
         {
             let gens (*t.generics)
-            var new_gens Vector[PlannedType]#(gens.length)
+            var new_gens Vector[PlannedType](gens.length)
             var i: size_t 0
             while i < gens.length
             {
@@ -21783,7 +21783,7 @@ define Planner
     ; mangled name. `inner.mangled_name` must be populated.
     function make_pointer_type(inner: PlannedType) returns PlannedType
     {
-        var gens Vector[PlannedType]#(1)
+        var gens Vector[PlannedType](1)
         gens.put(0, inner)
         var sb StringBuilder()
         sb.append "P"
@@ -21853,7 +21853,7 @@ define Planner
             String(inner.array_size),
             inner.variable
         )
-        var new_gens Vector[PlannedType]#(1)
+        var new_gens Vector[PlannedType](1)
         new_gens.put(0, local_inner)
         PlannedType(
             t.loc,
@@ -22009,10 +22009,10 @@ define Planner
                                             {
                                                 if nested_gens.length > 0
                                                 {
-                                                    var name_path Vector[String]#(1)
+                                                    var name_path Vector[String](1)
                                                     name_path.put(0, name_type.name)
                                                     var gens_vec Vector[Type](nested_gens)
-                                                    var holder Vector[Type]#(1)
+                                                    var holder Vector[Type](1)
                                                     holder.put(0, Type(
                                                         name_type.loc,
                                                         name_path,
@@ -22053,7 +22053,7 @@ define Planner
                 choose cell.expr
                     when et: PlannedType
                     {
-                        var holder Vector[Type]#(1)
+                        var holder Vector[Type](1)
                         holder.put(0, Planner.planned_type_to_model_type(et))
                         return holder.get 0
                     }
@@ -22087,7 +22087,7 @@ define Planner
         if t.generics <> null
         {
             let gens (*t.generics)
-            var result Vector[PlannedType]#(gens.length)
+            var result Vector[PlannedType](gens.length)
             var i: size_t 0
             while i < gens.length
             {
@@ -22406,7 +22406,7 @@ define Planner
 
         ; Allocate stable storage for the fresh TypeVariables so their
         ; addresses can be embedded in the substitution-target PlannedTypes.
-        var fresh_vars Vector[TypeVariable]#(quants.length)
+        var fresh_vars Vector[TypeVariable](quants.length)
         var subst_arr Array[KeyValuePair[size_t, PlannedType]]()
         var i: size_t 0
         while i < quants.length
@@ -24074,7 +24074,7 @@ define Planner
     ; C-style string literals. Shared by StringConstant and FragmentConstant.
     function make_cstring_type(sp: Span) returns PlannedType
     {
-        var gens Vector[PlannedType]#(1)
+        var gens Vector[PlannedType](1)
         let i8_ty PlannedType(
             sp,
             "i8",
@@ -24103,7 +24103,7 @@ define Planner
     ; at the use-site.
     function make_null_type(sp: Span) returns PlannedType
     {
-        var gens Vector[PlannedType]#(1)
+        var gens Vector[PlannedType](1)
         let void_ty PlannedType(
             sp,
             "void",
