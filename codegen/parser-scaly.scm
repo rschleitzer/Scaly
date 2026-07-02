@@ -89,9 +89,17 @@ define Parser
     keywords: HashSet[String]
 )
 {
-    init(rp, text: String)
+    init(text: String)
     {
-        set lexer: Lexer(text)
+        ; `^this` is LOAD-BEARING, not decorative: the ctor allocates the
+        ; Lexer + keyword tables on Page.get(this), so the Parser instance
+        ; MUST be page-resident. The residency scan (concept_needs_this_
+        ; residency) fires only when the init body has a literal `^this`
+        ; Type - this is the one that triggers it, letting the Parser drop
+        ; its implicit `rp`/page param (which the body never used). Removing
+        ; the `^this` re-introduces a stack-allocated Parser whose
+        ; Page.get(this) reads a garbage page header (SIGBUS).
+        set lexer: Lexer^this(text)
         set keywords_index: initialize_keywords_index()
         set keywords: initialize_keywords()
     }
