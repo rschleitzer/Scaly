@@ -57255,28 +57255,26 @@ entry:
   ret i1 %call
 }
 
-define linkonce_odr void @_ZN6ParserC1EPN4scaly6memory4PageE6String(ptr %0, ptr %1, ptr %2) {
+define linkonce_odr void @_ZN6ParserC1E6String(ptr %0, ptr %1) {
 entry:
-  %struct.init = alloca %_Z5Lexer, align 8
-  call void @_ZN5LexerC1E6String(ptr %struct.init, ptr %2)
-  %parent.page = call ptr @_ZN4Page3getEPv(ptr %0)
-  %ctor.heap = call ptr @_ZN4Page8allocateEmm(ptr %parent.page, i64 ptrtoint (ptr getelementptr (%_Z5Lexer, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5Lexer }, ptr null, i64 0, i32 1) to i64))
-  %3 = call ptr @memcpy(ptr %ctor.heap, ptr %struct.init, i64 ptrtoint (ptr getelementptr (%_Z5Lexer, ptr null, i32 1) to i64))
+  %own_page = call ptr @_Z3getPv(ptr %0)
+  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %own_page, i64 ptrtoint (ptr getelementptr (%_Z5Lexer, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5Lexer }, ptr null, i64 0, i32 1) to i64))
+  call void @_ZN5LexerC1E6String(ptr %struct.region, ptr %1)
   %lexer = getelementptr inbounds %_Z6Parser, ptr %0, i32 0, i32 0
-  %field.load = load %_Z5Lexer, ptr %ctor.heap, align 8
+  %field.load = load %_Z5Lexer, ptr %struct.region, align 8
   store %_Z5Lexer %field.load, ptr %lexer, align 8
   %sret.result = alloca %_Z6VectorI6StringE, align 8
-  %own_page = call ptr @_Z3getPv(ptr %0)
-  call void @_ZN6Parser25initialize_keywords_indexEPN4scaly6memory4PageE(ptr noalias sret(%_Z6VectorI6StringE) %sret.result, ptr %own_page, ptr %0)
+  %own_page1 = call ptr @_Z3getPv(ptr %0)
+  call void @_ZN6Parser25initialize_keywords_indexEPN4scaly6memory4PageE(ptr noalias sret(%_Z6VectorI6StringE) %sret.result, ptr %own_page1, ptr %0)
   %keywords_index = getelementptr inbounds %_Z6Parser, ptr %0, i32 0, i32 1
-  %field.load1 = load %_Z6VectorI6StringE, ptr %sret.result, align 8
-  store %_Z6VectorI6StringE %field.load1, ptr %keywords_index, align 8
-  %sret.result2 = alloca %_Z7HashSetI6StringE, align 8
-  %own_page3 = call ptr @_Z3getPv(ptr %0)
-  call void @_ZN6Parser19initialize_keywordsEPN4scaly6memory4PageE(ptr noalias sret(%_Z7HashSetI6StringE) %sret.result2, ptr %own_page3, ptr %0)
+  %field.load2 = load %_Z6VectorI6StringE, ptr %sret.result, align 8
+  store %_Z6VectorI6StringE %field.load2, ptr %keywords_index, align 8
+  %sret.result3 = alloca %_Z7HashSetI6StringE, align 8
+  %own_page4 = call ptr @_Z3getPv(ptr %0)
+  call void @_ZN6Parser19initialize_keywordsEPN4scaly6memory4PageE(ptr noalias sret(%_Z7HashSetI6StringE) %sret.result3, ptr %own_page4, ptr %0)
   %keywords = getelementptr inbounds %_Z6Parser, ptr %0, i32 0, i32 2
-  %field.load4 = load %_Z7HashSetI6StringE, ptr %sret.result2, align 8
-  store %_Z7HashSetI6StringE %field.load4, ptr %keywords, align 8
+  %field.load5 = load %_Z7HashSetI6StringE, ptr %sret.result3, align 8
+  store %_Z7HashSetI6StringE %field.load5, ptr %keywords, align 8
   ret void
 }
 
@@ -84378,7 +84376,7 @@ if.then29:                                        ; preds = %if.end24
 if.end30:                                         ; preds = %if.end24
   %struct.region32 = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 ptrtoint (ptr getelementptr (%_Z6Parser, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6Parser }, ptr null, i64 0, i32 1) to i64))
   %contents33 = load ptr, ptr %contents, align 8
-  call void @_ZN6ParserC1EPN4scaly6memory4PageE6String(ptr %struct.region32, ptr %local_page, ptr %contents33)
+  call void @_ZN6ParserC1E6String(ptr %struct.region32, ptr %contents33)
   store ptr %struct.region32, ptr %p, align 1
   %p35 = load ptr, ptr %p, align 8
   call void @_ZN6Parser13parse_programEPN4scaly6memory4PageE(ptr noalias sret({ i8, [48 x i8] }) %sret.result34, ptr %1, ptr %p35)
@@ -214270,7 +214268,7 @@ if.then20:                                        ; preds = %if.end16
 if.end21:                                         ; preds = %if.then20, %if.end16
   %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 ptrtoint (ptr getelementptr (%_Z6Parser, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6Parser }, ptr null, i64 0, i32 1) to i64))
   %source23 = load ptr, ptr %source, align 8
-  call void @_ZN6ParserC1EPN4scaly6memory4PageE6String(ptr %struct.region, ptr %local_page, ptr %source23)
+  call void @_ZN6ParserC1E6String(ptr %struct.region, ptr %source23)
   store ptr %struct.region, ptr %p, align 1
   %load.struct24 = load %_Z7Options, ptr %0, align 8
   %lex_only = extractvalue %_Z7Options %load.struct24, 5

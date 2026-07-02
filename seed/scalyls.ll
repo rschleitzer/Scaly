@@ -35268,7 +35268,7 @@ entry:
   %sret.result22 = alloca { ptr }, align 8
   call void @_ZN11diagnostics9strip_uriEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result22, ptr %local_page, ptr %2)
   %struct.region23 = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6ParserC1EPN4scaly6memory4PageE6String(ptr %struct.region23, ptr %local_page, ptr %3)
+  call void @_ZN6ParserC1E6String(ptr %struct.region23, ptr %3)
   %p = alloca ptr, align 8
   store ptr %struct.region23, ptr %p, align 1
   %sret.result24 = alloca { i8, [48 x i8] }, align 8
@@ -37706,7 +37706,7 @@ entry:
   %sb1 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb1, i8 91)
   %struct.region2 = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6ParserC1EPN4scaly6memory4PageE6String(ptr %struct.region2, ptr %local_page, ptr %2)
+  call void @_ZN6ParserC1E6String(ptr %struct.region2, ptr %2)
   %p = alloca ptr, align 8
   store ptr %struct.region2, ptr %p, align 1
   %sret.result = alloca { i8, [48 x i8] }, align 8
@@ -40769,7 +40769,7 @@ entry:
   %sb1 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb1, i8 91)
   %struct.region2 = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6ParserC1EPN4scaly6memory4PageE6String(ptr %struct.region2, ptr %local_page, ptr %2)
+  call void @_ZN6ParserC1E6String(ptr %struct.region2, ptr %2)
   %p = alloca ptr, align 8
   store ptr %struct.region2, ptr %p, align 1
   %sret.result = alloca { i8, [48 x i8] }, align 8
@@ -41774,7 +41774,7 @@ entry:
   %sb1 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb1, i8 91)
   %struct.region2 = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6ParserC1EPN4scaly6memory4PageE6String(ptr %struct.region2, ptr %local_page, ptr %2)
+  call void @_ZN6ParserC1E6String(ptr %struct.region2, ptr %2)
   %p = alloca ptr, align 8
   store ptr %struct.region2, ptr %p, align 1
   %sret.result = alloca { i8, [48 x i8] }, align 8
@@ -42291,7 +42291,7 @@ entry:
   %sb = alloca ptr, align 8
   store ptr %struct.region, ptr %sb, align 1
   %struct.region1 = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6ParserC1EPN4scaly6memory4PageE6String(ptr %struct.region1, ptr %local_page, ptr %2)
+  call void @_ZN6ParserC1E6String(ptr %struct.region1, ptr %2)
   %p = alloca ptr, align 8
   store ptr %struct.region1, ptr %p, align 1
   %sret.result = alloca { i8, [48 x i8] }, align 8
@@ -48653,7 +48653,7 @@ entry:
   %deref.tmp = alloca %_Z6VectorIcE, align 8
   %local_page = call ptr @_Z21scaly_alloc_root_pagev()
   %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6ParserC1EPN4scaly6memory4PageE6String(ptr %struct.region, ptr %local_page, ptr %2)
+  call void @_ZN6ParserC1E6String(ptr %struct.region, ptr %2)
   %p = alloca ptr, align 8
   store ptr %struct.region, ptr %p, align 1
   %result = alloca { ptr }, align 8
@@ -49819,7 +49819,7 @@ entry:
   %deref.tmp = alloca %_Z6VectorIcE, align 8
   %local_page = call ptr @_Z21scaly_alloc_root_pagev()
   %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6ParserC1EPN4scaly6memory4PageE6String(ptr %struct.region, ptr %local_page, ptr %2)
+  call void @_ZN6ParserC1E6String(ptr %struct.region, ptr %2)
   %p = alloca ptr, align 8
   store ptr %struct.region, ptr %p, align 1
   %struct.region1 = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
@@ -50445,7 +50445,7 @@ entry:
   %deref.tmp = alloca %_Z6VectorIcE, align 8
   %local_page = call ptr @_Z21scaly_alloc_root_pagev()
   %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6ParserC1EPN4scaly6memory4PageE6String(ptr %struct.region, ptr %local_page, ptr %2)
+  call void @_ZN6ParserC1E6String(ptr %struct.region, ptr %2)
   %p = alloca ptr, align 8
   store ptr %struct.region, ptr %p, align 1
   %result = alloca { ptr }, align 8
@@ -51430,7 +51430,7 @@ entry:
   %deref.tmp = alloca %_Z6VectorIcE, align 8
   %local_page = call ptr @_Z21scaly_alloc_root_pagev()
   %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6ParserC1EPN4scaly6memory4PageE6String(ptr %struct.region, ptr %local_page, ptr %2)
+  call void @_ZN6ParserC1E6String(ptr %struct.region, ptr %2)
   %p = alloca ptr, align 8
   store ptr %struct.region, ptr %p, align 1
   %result = alloca { ptr }, align 8
@@ -52118,7 +52118,7 @@ entry:
   %local_page = call ptr @_Z21scaly_alloc_root_pagev()
   %call = call i64 @_ZN7symbols18position_to_offsetEPN4scaly6memory4PageE6Stringmm(ptr %1, ptr %2, i64 %3, i64 %4)
   %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6ParserC1EPN4scaly6memory4PageE6String(ptr %struct.region, ptr %local_page, ptr %2)
+  call void @_ZN6ParserC1E6String(ptr %struct.region, ptr %2)
   %p = alloca ptr, align 8
   store ptr %struct.region, ptr %p, align 1
   %result = alloca { ptr }, align 8
@@ -53317,7 +53317,7 @@ entry:
   %deref.tmp = alloca %_Z6VectorIcE, align 8
   %local_page = call ptr @_Z21scaly_alloc_root_pagev()
   %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6ParserC1EPN4scaly6memory4PageE6String(ptr %struct.region, ptr %local_page, ptr %2)
+  call void @_ZN6ParserC1E6String(ptr %struct.region, ptr %2)
   %p = alloca ptr, align 8
   store ptr %struct.region, ptr %p, align 1
   %result = alloca { ptr }, align 8
@@ -63267,7 +63267,7 @@ entry:
   %deref.tmp = alloca %_Z6VectorIcE, align 8
   %local_page = call ptr @_Z21scaly_alloc_root_pagev()
   %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6ParserC1EPN4scaly6memory4PageE6String(ptr %struct.region, ptr %local_page, ptr %2)
+  call void @_ZN6ParserC1E6String(ptr %struct.region, ptr %2)
   %p = alloca ptr, align 8
   store ptr %struct.region, ptr %p, align 1
   %result = alloca { ptr }, align 8
@@ -64185,7 +64185,7 @@ entry:
   %sb = alloca ptr, align 8
   store ptr %struct.region, ptr %sb, align 1
   %struct.region1 = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6ParserC1EPN4scaly6memory4PageE6String(ptr %struct.region1, ptr %local_page, ptr %2)
+  call void @_ZN6ParserC1E6String(ptr %struct.region1, ptr %2)
   %p = alloca ptr, align 8
   store ptr %struct.region1, ptr %p, align 1
   %sret.result = alloca { i8, [48 x i8] }, align 8
@@ -69627,7 +69627,7 @@ entry:
   %sret.result3 = alloca %_Z7Program, align 8
   %local_page = call ptr @_Z21scaly_alloc_root_pagev()
   %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6ParserC1EPN4scaly6memory4PageE6String(ptr %struct.region, ptr %local_page, ptr %2)
+  call void @_ZN6ParserC1E6String(ptr %struct.region, ptr %2)
   %p = alloca ptr, align 8
   store ptr %struct.region, ptr %p, align 1
   %result = alloca { ptr }, align 8
@@ -82415,7 +82415,7 @@ declare void @_ZN6StringC1EPN4scaly6memory4PageEm(ptr, ptr, i64)
 
 declare i64 @write(...)
 
-declare void @_ZN6ParserC1EPN4scaly6memory4PageE6String(ptr, ptr, ptr)
+declare void @_ZN6ParserC1E6String(ptr, ptr)
 
 declare void @_ZN7PlannerC1E6String(ptr, ptr)
 
