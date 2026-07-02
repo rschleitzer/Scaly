@@ -356,6 +356,19 @@ define Planner
         ; the CALLER's page (rp), not the local page — exactly what an explicit
         ; `^rp` did. plan_binding# promotes such bindings; truncated per function.
         address_taken_locals: Array[String]
+        ; Ref-flow provenance (2026-07-02f): per-function set of holder-style
+        ; locals whose INTERIOR references (`H.get(i)` / `H.get_ptr(i)`)
+        ; reach an argument or return position un-dereferenced — directly or
+        ; via a `let r H.get(i)` / `set r: H.get(i)` alias (the two parallel
+        ; alias arrays map alias name -> receiver). Such a reference lands in
+        ; a structure that outlives the frame (record_function's
+        ; PlannedFunction, MethodMatch^this), so plan_binding# promotes H's
+        ; construction to the caller page exactly like the address-taken
+        ; rule above (same gates). A DEREFERENCED read `*H.get(i)` copies
+        ; the value out — benign, not recorded. Truncated per function.
+        getref_arg_locals: Array[String]
+        getref_alias_names: Array[String]
+        getref_alias_receivers: Array[String]
         ; Set true while planning the IMPLICIT-RETURN (tail) action of a
         ; function whose return value owns page guts (needs_implicit_return_
         ; page). plan_action# reads-and-clears it so only the OUTERMOST body
@@ -552,6 +565,9 @@ define Planner
             set local_tainted_struct_bindings: Array[String]^this()
             set escaping_targets: Array[String]^this()
             set address_taken_locals: Array[String]^this()
+            set getref_arg_locals: Array[String]^this()
+            set getref_alias_names: Array[String]^this()
+            set getref_alias_receivers: Array[String]^this()
             set promote_tail_return: false
             set check_tail_escape: false
             set instantiated_functions: Array[PlannedFunction]^this()
@@ -13393,7 +13409,18 @@ define Planner
             if b.item.name <> null
             {
                 let abn (*b.item.name)
+                ; Ref-flow provenance (2026-07-02f): a holder whose interior
+                ; reference (`H.get(i)`) reaches an argument/return position
+                ; (getref_arg_locals, collected by scan_getref_args#) needs
+                ; the caller page exactly like an address-taken one — the
+                ; reference lands in a structure that outlives the frame
+                ; (record_function's PlannedFunction, MethodMatch^this).
+                var at_hit false
                 if this.array_contains_name(address_taken_locals, abn)
+                    set at_hit: true
+                if this.array_contains_name(getref_arg_locals, abn)
+                    set at_hit: true
+                if at_hit
                     if this.lookup_local_binding("rp") <> null
                         if collapsed.result_type.name.equals("Vector")
                         {
@@ -17375,6 +17402,344 @@ define Planner
                     0
         }
 
+        ; ================================================================
+        ; Get-ref argument pre-scan (ref-flow provenance, 2026-07-02f).
+        ; See the getref_arg_locals field comment. Mirrors the recursion
+        ; structure of scan_addr_taken_* with an `in_args` mode: Tuple
+        ; components (call/construction argument lists) and return/throw/
+        ; break results are escape positions; conditions and plain statement
+        ; sources are not. Over-collection is harmless — the plan_binding#
+        ; gate (rp in scope + Vector init + restamp owns-page-guts) only
+        ; fires for the intended holder shape, and promotion to the caller
+        ; page is the page an escaping interior reference requires.
+        ; ================================================================
+        function add_getref_arg(this: Planner, name: String)
+        {
+            if this.array_contains_name(getref_arg_locals, name) = false
+                getref_arg_locals.add(String^this(name))
+        }
+        function add_getref_alias(this: Planner, alias_name: String, recv: String)
+        {
+            getref_alias_names.add(String^this(alias_name))
+            getref_alias_receivers.add(String^this(recv))
+        }
+        function getref_alias_receiver(this: Planner, n: String) returns String
+        {
+            var i: size_t 0
+            while i < getref_alias_names.length
+            {
+                let p getref_alias_names.get i
+                if p <> null
+                    if (*p).equals(n)
+                    {
+                        let rcv getref_alias_receivers.get i
+                        if rcv <> null
+                            return String((*rcv))
+                    }
+                set i: i + 1
+            }
+            ""
+        }
+        ; Form A/B `RECV.get`/`RECV.get_ptr` detection on a SINGLE operand
+        ; (binding_get_receiver# checks ops[0] of a whole sequence; argument
+        ; scanning needs the per-operand form). Returns RECV or "".
+        function operand_get_receiver(this: Planner, op: Operand) returns String
+        {
+            if op.member_access = null
+                choose op.expression
+                    when t: scalyc.compiler.Model.Type
+                    {
+                        if t.name.length = 2
+                        {
+                            let mp t.name.get 1
+                            if mp <> null
+                            {
+                                var is_get (*mp).equals("get")
+                                if is_get = false
+                                    set is_get: (*mp).equals("get_ptr")
+                                if is_get
+                                {
+                                    let rp_ptr t.name.get 0
+                                    if rp_ptr <> null
+                                        return String((*rp_ptr))
+                                }
+                            }
+                        }
+                    }
+                    else
+                        0
+            if op.member_access <> null
+                choose op.expression
+                    when t2: scalyc.compiler.Model.Type
+                    {
+                        if t2.name.length = 1
+                        {
+                            let ma (*op.member_access)
+                            if ma.length >= 1
+                            {
+                                let last_ptr ma.get(ma.length - 1)
+                                if last_ptr <> null
+                                {
+                                    var is_get2 (*last_ptr).equals("get")
+                                    if is_get2 = false
+                                        set is_get2: (*last_ptr).equals("get_ptr")
+                                    if is_get2
+                                    {
+                                        let rp2 t2.name.get 0
+                                        if rp2 <> null
+                                            return String((*rp2))
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    else
+                        0
+            ""
+        }
+        ; Bare single-segment local name (no generics, no member access) — the
+        ; shape of an alias use in an argument list.
+        function operand_bare_name(this: Planner, op: Operand) returns String
+        {
+            if op.member_access <> null
+                return ""
+            choose op.expression
+                when t: scalyc.compiler.Model.Type
+                {
+                    if t.generics = null
+                        if t.name.length = 1
+                        {
+                            let np t.name.get 0
+                            if np <> null
+                                return String((*np))
+                        }
+                }
+                else
+                    0
+            ""
+        }
+        function scan_getref_ops(this: Planner, ops: Vector[Operand], in_args: bool)
+        {
+            var i: size_t 0
+            while i < ops.length
+            {
+                let op_ptr ops.get i
+                if op_ptr <> null
+                {
+                    let op (*op_ptr)
+                    ; `*RECV.get(i)` copies the value out — benign. The `*`
+                    ; rides the PREVIOUS operand in the flat sequence.
+                    var deref_before false
+                    if i > 0
+                    {
+                        let prev_ptr ops.get(i - 1)
+                        if prev_ptr <> null
+                        {
+                            let pn this.operand_bare_name((*prev_ptr))
+                            if pn.equals("*")
+                                set deref_before: true
+                        }
+                    }
+                    if in_args
+                        if deref_before = false
+                        {
+                            let recv this.operand_get_receiver(op)
+                            if recv.get_length() > 0
+                                this.add_getref_arg(recv)
+                            if recv.get_length() = 0
+                            {
+                                let bare this.operand_bare_name(op)
+                                if bare.get_length() > 0
+                                {
+                                    let arecv this.getref_alias_receiver(bare)
+                                    if arecv.get_length() > 0
+                                        this.add_getref_arg(arecv)
+                                }
+                            }
+                        }
+                    this.scan_getref_operand(op, in_args)
+                }
+                set i: i + 1
+            }
+        }
+        function scan_getref_action(this: Planner, a: Action)
+        {
+            ; `set X: RECV.get(i)` — X aliases RECV's element guts.
+            if a.target.length = 1
+            {
+                let tgt_p a.target.get 0
+                if tgt_p <> null
+                {
+                    let tn this.operand_bare_name((*tgt_p))
+                    if tn.get_length() > 0
+                    {
+                        let recv this.binding_get_receiver(a.source)
+                        if recv.get_length() > 0
+                            this.add_getref_alias(tn, recv)
+                    }
+                }
+            }
+            this.scan_getref_ops(a.source, false)
+            this.scan_getref_ops(a.target, false)
+        }
+        function scan_getref_stmt(this: Planner, s: Statement)
+        {
+            choose s
+                when a: Action
+                    this.scan_getref_action(a)
+                when bd: Binding
+                {
+                    ; `let r RECV.get(i)` — r aliases RECV's element guts.
+                    if bd.item.name <> null
+                    {
+                        let recv this.binding_get_receiver(bd.operation)
+                        if recv.get_length() > 0
+                            this.add_getref_alias((*bd.item.name), recv)
+                    }
+                    this.scan_getref_ops(bd.operation, false)
+                }
+                when r: Return
+                    this.scan_getref_ops(r.result, true)
+                when th: Throw
+                    this.scan_getref_ops(th.result, true)
+                when br: Break
+                    this.scan_getref_ops(br.result, true)
+                else
+                    0
+        }
+        function scan_getref_operand(this: Planner, op: Operand, in_args: bool)
+        {
+            choose op.expression
+                when tup: Tuple
+                {
+                    var i: size_t 0
+                    while i < tup.components.length
+                    {
+                        let cp tup.components.get i
+                        if cp <> null
+                            this.scan_getref_ops((*cp).value, true)
+                        set i: i + 1
+                    }
+                }
+                when mx: Matrix
+                {
+                    var i: size_t 0
+                    while i < mx.operations.length
+                    {
+                        let rp_ptr mx.operations.get i
+                        if rp_ptr <> null
+                            this.scan_getref_ops((*rp_ptr), in_args)
+                        set i: i + 1
+                    }
+                }
+                when b: Block
+                {
+                    var i: size_t 0
+                    while i < b.statements.length
+                    {
+                        let sp b.statements.get i
+                        if sp <> null
+                            this.scan_getref_stmt(sp.unwrap())
+                        set i: i + 1
+                    }
+                }
+                when iff: scalyc.compiler.Model.If
+                {
+                    this.scan_getref_ops(iff.condition, false)
+                    this.scan_getref_stmt(iff.consequent)
+                    if iff.alternative <> null
+                        this.scan_getref_stmt((*iff.alternative))
+                }
+                when ch: Choose
+                {
+                    this.scan_getref_ops(ch.condition, false)
+                    var i: size_t 0
+                    while i < ch.cases.length
+                    {
+                        let wp ch.cases.get i
+                        if wp <> null
+                            this.scan_getref_stmt((*wp).consequent)
+                        set i: i + 1
+                    }
+                    if ch.alternative <> null
+                        this.scan_getref_stmt((*ch.alternative))
+                }
+                when m: Match
+                {
+                    this.scan_getref_ops(m.condition, false)
+                    var i: size_t 0
+                    while i < m.branches.length
+                    {
+                        let bp m.branches.get i
+                        if bp <> null
+                        {
+                            let br (*bp)
+                            var ci: size_t 0
+                            while ci < br.cases.length
+                            {
+                                let casep br.cases.get ci
+                                if casep <> null
+                                    this.scan_getref_ops((*casep).condition, false)
+                                set ci: ci + 1
+                            }
+                            this.scan_getref_stmt(br.consequent)
+                        }
+                        set i: i + 1
+                    }
+                    if m.alternative <> null
+                        this.scan_getref_stmt((*m.alternative))
+                }
+                when fo: For
+                {
+                    this.scan_getref_ops(fo.expression, false)
+                    this.scan_getref_action(fo.action)
+                }
+                when wh: While
+                {
+                    this.scan_getref_ops(wh.condition.operation, false)
+                    this.scan_getref_action(wh.action)
+                }
+                when rep: Repeat
+                    this.scan_getref_action(rep.action)
+                when tr: Try
+                {
+                    this.scan_getref_ops(tr.binding.operation, false)
+                    var i: size_t 0
+                    while i < tr.catches.length
+                    {
+                        let wp tr.catches.get i
+                        if wp <> null
+                            this.scan_getref_stmt((*wp).consequent)
+                        set i: i + 1
+                    }
+                    if tr.alternative <> null
+                        this.scan_getref_stmt((*tr.alternative))
+                }
+                when nw: New
+                {
+                    var i: size_t 0
+                    while i < nw.arguments.components.length
+                    {
+                        let cp nw.arguments.components.get i
+                        if cp <> null
+                            this.scan_getref_ops((*cp).value, true)
+                        set i: i + 1
+                    }
+                }
+                when lam: Lambda
+                    this.scan_getref_action(lam.body)
+                else
+                    0
+        }
+        procedure scan_getref_args(this: Planner, impl: Implementation)
+        {
+            choose impl
+                when a: Action
+                    this.scan_getref_action(a)
+                else
+                    0
+        }
+
         ; Entry: pre-scan a whole function body for bare `return x` targets and
         ; (deep-R2) locals flowing into returned constructions. Re-run to a
         ; FIXPOINT: each pass the Binding arm propagates escape one level deeper
@@ -17609,6 +17974,9 @@ define Planner
             let saved_etg escaping_targets.length
             let saved_lts local_tainted_struct_bindings.length
             let saved_atl address_taken_locals.length
+            let saved_gra getref_arg_locals.length
+            let saved_gan getref_alias_names.length
+            let saved_gar getref_alias_receivers.length
             ; Page inference: a value stored through a ref/pointer out-parameter
             ; escapes to the caller, so seed those param names as escape targets.
             ; A later `param.add(v)` / `(*param).add(v)` then promotes v to the
@@ -17638,6 +18006,9 @@ define Planner
             ; Array + the values .add'd into it must reach the caller page too,
             ; exactly as the `^rp` holder's escaping-ctor lifetime did).
             this.scan_address_taken(f.implementation)
+            ; Ref-flow provenance (2026-07-02f): record holder locals whose
+            ; get-refs reach argument/return positions — see scan_getref_args#.
+            this.scan_getref_args(f.implementation)
             this.scan_top_level_returns(f.implementation)
             ; Page inference: promote the IMPLICIT-RETURN (tail) expression of a
             ; page-owning-return function to the caller page. R2 only sees
@@ -17665,6 +18036,9 @@ define Planner
             set escaping_targets.length: saved_etg
             set local_tainted_struct_bindings.length: saved_lts
             set address_taken_locals.length: saved_atl
+            set getref_arg_locals.length: saved_gra
+            set getref_alias_names.length: saved_gan
+            set getref_alias_receivers.length: saved_gar
             set local_closure_names.length: saved_lcn
             set local_box_names.length: saved_lbn
             set this.current_return_type: saved_return_type
