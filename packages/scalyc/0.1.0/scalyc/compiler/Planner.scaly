@@ -521,64 +521,64 @@ define Planner
         transitive_page_built: bool
     )
     {
-        init(page, filename: String)
+        init(filename: String)
         {
-            set file: String^page(filename)
-            set scope_bindings: Array[KeyValuePair[String, LocalBinding]]^page()
-            set scope_boundaries: Array[size_t]^page()
-            set type_substitutions: Array[KeyValuePair[String, PlannedType]]^page()
+            set file: String^this(filename)
+            set scope_bindings: Array[KeyValuePair[String, LocalBinding]]^this()
+            set scope_boundaries: Array[size_t]^this()
+            set type_substitutions: Array[KeyValuePair[String, PlannedType]]^this()
             set next_type_var_id: 0
-            set constraints: Array[TypeConstraint]^page()
-            set solution: Array[KeyValuePair[size_t, PlannedType]]^page()
-            set concepts: Array[KeyValuePair[String, Concept]]^page()
+            set constraints: Array[TypeConstraint]^this()
+            set solution: Array[KeyValuePair[size_t, PlannedType]]^this()
+            set concepts: Array[KeyValuePair[String, Concept]]^this()
             set concept_index: ConceptIndex.create(65536 as size_t)
-            set instantiated_structures: Array[PlannedStructure]^page()
-            set instantiated_unions: Array[scalyc.compiler.Plan.PlannedUnion]^page()
-            set delegate_names: Array[String]^page()
+            set instantiated_structures: Array[PlannedStructure]^this()
+            set instantiated_unions: Array[scalyc.compiler.Plan.PlannedUnion]^this()
+            set delegate_names: Array[String]^this()
             set current_return_type: null
-            set local_closure_names: Array[String]^page()
-            set local_box_names: Array[String]^page()
-            set escaping_return_locals: Array[String]^page()
-            set promoted_binding_names: Array[String]^page()
-            set local_tainted_struct_bindings: Array[String]^page()
-            set escaping_targets: Array[String]^page()
-            set address_taken_locals: Array[String]^page()
+            set local_closure_names: Array[String]^this()
+            set local_box_names: Array[String]^this()
+            set escaping_return_locals: Array[String]^this()
+            set promoted_binding_names: Array[String]^this()
+            set local_tainted_struct_bindings: Array[String]^this()
+            set escaping_targets: Array[String]^this()
+            set address_taken_locals: Array[String]^this()
             set promote_tail_return: false
-            set instantiated_functions: Array[PlannedFunction]^page()
+            set instantiated_functions: Array[PlannedFunction]^this()
             set function_name_index: ConceptIndex.create(262144 as size_t)
-            set instantiated_globals: Array[PlannedGlobal]^page()
-            set instantiating_structures: Array[String]^page()
-            set instantiating_methods: Array[String]^page()
-            set model_functions: Array[KeyValuePair[String, Function]]^page()
-            set lambda_models: Array[KeyValuePair[String, Lambda]]^page()
+            set instantiated_globals: Array[PlannedGlobal]^this()
+            set instantiating_structures: Array[String]^this()
+            set instantiating_methods: Array[String]^this()
+            set model_functions: Array[KeyValuePair[String, Function]]^this()
+            set lambda_models: Array[KeyValuePair[String, Lambda]]^this()
             set model_function_index: FunctionIndex.create(65536 as size_t, 262144 as size_t)
-            set model_operators: Array[KeyValuePair[String, Operator]]^page()
+            set model_operators: Array[KeyValuePair[String, Operator]]^this()
             set model_operator_index: FunctionIndex.create(65536 as size_t, 262144 as size_t)
             set resolved_op_is_intrinsic: false
-            set search_paths: Array[String]^page()
-            set loaded_packages: Array[KeyValuePair[String, Module]]^page()
-            set loaded_module_paths: Array[KeyValuePair[String, Module]]^page()
-            set errors: Array[String]^page()
-            set diagnostics: Array[PlannerDiagnostic]^page()
-            set sibling_programs: Array[Program]^page()
+            set search_paths: Array[String]^this()
+            set loaded_packages: Array[KeyValuePair[String, Module]]^this()
+            set loaded_module_paths: Array[KeyValuePair[String, Module]]^this()
+            set errors: Array[String]^this()
+            set diagnostics: Array[PlannerDiagnostic]^this()
+            set sibling_programs: Array[Program]^this()
             set current_namespace: null
             set current_namespace_name: null
-            set program_use_aliases: Array[String]^page()
-            set program_use_namespaces: Array[String]^page()
+            set program_use_aliases: Array[String]^this()
+            set program_use_namespaces: Array[String]^this()
             set next_lambda_id: 0
-            set escape_records: Array[EscapeRecord]^page()
+            set escape_records: Array[EscapeRecord]^this()
             set escape_checking: false
             set escape_found: false
             set escape_fn_index: 0
-            set transitive_page_names: Array[String]^page()
+            set transitive_page_names: Array[String]^this()
             set transitive_page_built: false
 
             ; Seed the function registry with C-runtime externs so name
             ; lookups for aligned_alloc/free/exit succeed from day one.
-            ; Use `^page` to put runtime Function records on the Planner's
-            ; owning page; `$` (default) would put them on the call's
-            ; local page and dangle on return (s100).
-            this.register_runtime_functions^page()
+            ; Use `^this` to put runtime Function records on the Planner's
+            ; own page (Page.get(this)); the default local page would
+            ; dangle on return (s100).
+            this.register_runtime_functions^this()
         }
 
         ; ================================================================
