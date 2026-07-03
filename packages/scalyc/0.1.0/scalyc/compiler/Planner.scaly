@@ -9617,7 +9617,7 @@ define Planner
             if solution.length = 0
                 return t
 
-            var sol_vec Vector[KeyValuePair[size_t, PlannedType]]#(solution)
+            var sol_vec Vector[KeyValuePair[size_t, PlannedType]](solution)
             Planner.apply_substitution(t, &sol_vec)
         }
 
@@ -15299,7 +15299,7 @@ define Planner
         ; the name-graph); only INLINE constructions are restamped here.
         function restamp_args(this: Planner, args: Vector[PlannedOperand], new_life: Lifetime) returns ref[Vector[PlannedOperand]]?
         {
-            var out Vector[PlannedOperand]#(args.length)
+            var out Vector[PlannedOperand](args.length)
             var i: size_t 0
             while i < args.length
             {
@@ -15334,7 +15334,7 @@ define Planner
         ; sigiled source).
         function restamp_putadd_constructions(this: Planner, args: Vector[PlannedOperand], new_life: Lifetime) returns ref[Vector[PlannedOperand]]?
         {
-            var out Vector[PlannedOperand]#(args.length)
+            var out Vector[PlannedOperand](args.length)
             var i: size_t 0
             while i < args.length
             {
@@ -15385,7 +15385,7 @@ define Planner
         }
         function restamp_components(this: Planner, comps: Vector[PlannedComponent], new_life: Lifetime) returns ref[Vector[PlannedComponent]]?
         {
-            var out Vector[PlannedComponent]#(comps.length)
+            var out Vector[PlannedComponent](comps.length)
             var i: size_t 0
             while i < comps.length
             {
@@ -15508,7 +15508,7 @@ define Planner
         function promote_escaping_args(this: Planner, args: Vector[PlannedOperand], new_life: Lifetime) returns ref[Vector[PlannedOperand]]?
         {
             var changed false
-            var out Vector[PlannedOperand]#(args.length)
+            var out Vector[PlannedOperand](args.length)
             var i: size_t 0
             while i < args.length
             {
@@ -15533,7 +15533,7 @@ define Planner
         function promote_escaping_components(this: Planner, comps: Vector[PlannedComponent], new_life: Lifetime) returns ref[Vector[PlannedComponent]]?
         {
             var changed false
-            var out Vector[PlannedComponent]#(comps.length)
+            var out Vector[PlannedComponent](comps.length)
             var i: size_t 0
             while i < comps.length
             {
@@ -22957,7 +22957,7 @@ define Planner
                 let rv (*right_embed)
                 if lv.id = rv.id
                 {
-                    var empty Vector[KeyValuePair[size_t, PlannedType]]#(0)
+                    var empty Vector[KeyValuePair[size_t, PlannedType]](0)
                     return &empty
                 }
             }
@@ -22969,7 +22969,7 @@ define Planner
             let lv (*left_embed)
             if Planner.occurs_in(lv.id, right)
                 return null
-            var s Vector[KeyValuePair[size_t, PlannedType]]#(1)
+            var s Vector[KeyValuePair[size_t, PlannedType]](1)
             s.put(0, KeyValuePair[size_t, PlannedType](lv.id, right))
             return &s
         }
@@ -22980,7 +22980,7 @@ define Planner
             let rv (*right_embed)
             if Planner.occurs_in(rv.id, left)
                 return null
-            var s Vector[KeyValuePair[size_t, PlannedType]]#(1)
+            var s Vector[KeyValuePair[size_t, PlannedType]](1)
             s.put(0, KeyValuePair[size_t, PlannedType](rv.id, left))
             return &s
         }
@@ -22990,12 +22990,12 @@ define Planner
         ; `void` unifies with anything (null literal compatibility).
         if left.name.equals("void")
         {
-            var empty Vector[KeyValuePair[size_t, PlannedType]]#(0)
+            var empty Vector[KeyValuePair[size_t, PlannedType]](0)
             return &empty
         }
         if right.name.equals("void")
         {
-            var empty Vector[KeyValuePair[size_t, PlannedType]]#(0)
+            var empty Vector[KeyValuePair[size_t, PlannedType]](0)
             return &empty
         }
 
@@ -23003,19 +23003,19 @@ define Planner
         ; inserts the cast).
         if Planner.are_compatible_integer_types(left.name, right.name)
         {
-            var empty Vector[KeyValuePair[size_t, PlannedType]]#(0)
+            var empty Vector[KeyValuePair[size_t, PlannedType]](0)
             return &empty
         }
 
         ; null literal (pointer[void]) as the None of any Option type.
         if Planner.is_option_vs_void_pointer(left, right)
         {
-            var empty Vector[KeyValuePair[size_t, PlannedType]]#(0)
+            var empty Vector[KeyValuePair[size_t, PlannedType]](0)
             return &empty
         }
         if Planner.is_option_vs_void_pointer(right, left)
         {
-            var empty Vector[KeyValuePair[size_t, PlannedType]]#(0)
+            var empty Vector[KeyValuePair[size_t, PlannedType]](0)
             return &empty
         }
 
@@ -23040,7 +23040,7 @@ define Planner
             return null
 
         ; Unify generic args pairwise, composing substitutions.
-        var result Vector[KeyValuePair[size_t, PlannedType]]#(0)
+        var result Vector[KeyValuePair[size_t, PlannedType]](0)
         if left.generics <> null
         {
             if right.generics <> null
@@ -23082,7 +23082,7 @@ define Planner
         constraints: ref[Vector[TypeConstraint]]?
     ) returns ref[Vector[KeyValuePair[size_t, PlannedType]]]?
     {
-        var solution Vector[KeyValuePair[size_t, PlannedType]]#(0)
+        var solution Vector[KeyValuePair[size_t, PlannedType]](0)
 
         if constraints = null
             return &solution
