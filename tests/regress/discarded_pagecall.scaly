@@ -1,0 +1,88 @@
+; Regression: discarded page-call statement promotion (2026-07-03c). A
+; page-requiring call in non-last statement position discards its result;
+; the callee stores page-allocated copies into `this`-state (the
+; plan_module#/record_function shape in miniature). plan_statements'
+; promote_discarded_pagecall must route the call's page to rp — the
+; Design-B Local flip would put the callee's persistent stores on this
+; frame's local page, which the churn loop recycles before the read-back.
+; Self-hosted-only.
+; Expected: PASS
+
+package scaly 0.1.0
+
+use scaly.containers.String
+use scaly.containers.Vector
+use scaly.containers.Array
+
+define Reg
+(
+    names: Array[String]
+)
+{
+    init()
+    {
+        set names: Array[String]^this()
+    }
+
+    ; Page-requiring (returns a guts-owning String). Side effect: a
+    ; page-allocated copy lands in this-state — the this-field putadd
+    ; promotion routes it to THIS call's page.
+    function plan_thing(this: Reg, text: String) returns String
+    {
+        names.add(String(text))
+        String(text)
+    }
+
+    ; The plan_namespace_module_one shape: explicit rp, page-requiring
+    ; sibling call in non-last statement position, result discarded.
+    function drive(rp, this: Reg, text: String)
+    {
+        this.plan_thing(text)
+        let done 0
+    }
+
+    function read_back(this: Reg) returns size_t
+    {
+        if names.length = 0
+            return 0
+        let p names.get 0
+        if p = null
+            return 0
+        (*p).get_length()
+    }
+}
+
+function churn(n: size_t) returns size_t
+{
+    var total: size_t 0
+    var i: size_t 0
+    while i < n
+    {
+        var junk Vector[String](3)
+        junk.put(0, "xxxxx")
+        junk.put(1, "yyyyy")
+        junk.put(2, "zzzzz")
+        let jp junk.get 0
+        if jp <> null
+            set total: total + (*jp).get_length()
+        set i: i + 1
+    }
+    total
+}
+
+function check() returns int
+{
+    var r Reg()
+    r.drive("hello")
+    let c churn(50)
+    if c = 0
+        return 4
+    if r.read_back() <> 5
+        return 1
+    42
+}
+
+if check() = 42
+    print("PASS")
+else
+    print("FAIL")

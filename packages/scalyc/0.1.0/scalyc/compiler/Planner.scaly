@@ -16280,6 +16280,71 @@ define Planner
                     PlannedStatement.Throw(this.plan_throw(t))
         }
 
+        ; Page inference (discarded page-call statement, 2026-07-03c): a
+        ; page-requiring, non-operator call in NON-LAST statement position
+        ; discards its result — the call matters only through its side
+        ; effects, and any data the callee allocates on the passed page that
+        ; PERSISTS (shallow-stored into `this`-state registries, e.g.
+        ; plan_module's planned functions reaching record_function) must
+        ; outlive this frame. The Design-B flip in collapse stamped the call
+        ; Local because its result type owns page guts, but for a discarded
+        ; result that routing is never right: persistent callee data on the
+        ; local page DANGLES at first read after this frame exits, while
+        ; transient callee data on rp is only a bounded leak. This extends
+        ; the flip site's own void rationale (a void page-call is a storage
+        ; procedure -> it must receive the caller's rp) to value-returning
+        ; calls whose value is dropped — the interprocedural "callee's
+        ; page-arg allocations escape the call" summary, degenerated to the
+        ; one signal that needs no call-graph walk and no sigils: the result
+        ; is discarded. Non-last position is PRECISE (a non-last statement's
+        ; value is never a block value, arm value, or tail return). Gated on
+        ; rp in scope (a page-less function keeps the local page); sigiled
+        ; `#` calls carry Call life, which restamp_operand_life# refuses ->
+        ; NEUTRAL on sigiled source.
+        function promote_discarded_pagecall(this: Planner, stmt: PlannedStatement) returns ref[PlannedStatement]?
+        {
+            if this.lookup_local_binding("rp") = null
+                return null
+            choose stmt
+                when a: PlannedAction
+                {
+                    if a.target <> null
+                        return null
+                    if a.source = null
+                        return null
+                    let src (*a.source)
+                    if src.length = 0
+                        return null
+                    let s0_ptr src.get 0
+                    if s0_ptr = null
+                        return null
+                    let s0 (*s0_ptr)
+                    var is_pagecall false
+                    choose s0.expr
+                        when dc: PlannedCall
+                            if dc.requires_page_param
+                                if dc.is_operator = false
+                                    set is_pagecall: true
+                        else
+                            0
+                    if is_pagecall = false
+                        return null
+                    let disc_life Lifetime.Call(scalyc.compiler.Model.Call(s0.loc))
+                    let promoted this.restamp_operand_life(s0, disc_life)
+                    if promoted = null
+                        return null
+                    var srch Vector[PlannedOperand](1)
+                    srch.put(0, (*promoted))
+                    let na PlannedAction(a.loc, &srch, a.target, a.result_type)
+                    var h Vector[PlannedStatement](1)
+                    h.put(0, PlannedStatement.Action na)
+                    return h.get(0)
+                }
+                else
+                    return null
+            null
+        }
+
         ; plan_statements: batch plan_statement over a Model.Block's statements.
         function plan_statements(
             this: Planner,
@@ -16294,7 +16359,15 @@ define Planner
                 if s_ptr <> null
                 {
                     let s (*s_ptr)
-                    let pl this.plan_statement(s)
+                    var pl this.plan_statement(s)
+                    ; Discarded-result page-call promotion (non-last only;
+                    ; see promote_discarded_pagecall above).
+                    if i + 1 < stmts.length
+                    {
+                        let dp this.promote_discarded_pagecall(pl)
+                        if dp <> null
+                            set pl: (*dp)
+                    }
                     result.put(i, pl)
                 }
                 set i: i + 1
