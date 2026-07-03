@@ -11136,7 +11136,7 @@ define Planner
         {
             this.push_scope()
 
-            var planned_items Vector[PlannedItem]#(lam.input.length)
+            var planned_items Vector[PlannedItem](lam.input.length)
             var i: size_t 0
             while i < lam.input.length
             {
@@ -11425,7 +11425,7 @@ define Planner
                     {
                         let cn (*cn_ptr)
                         let ct (*ct_ptr)
-                        var cn_holder Vector[String]#(1)
+                        var cn_holder Vector[String](1)
                         cn_holder.put(0, String(cn))
                         this.define_parameter(cn, ct)
                         item_arr.add(PlannedItem(lam.span, false, cn_holder.get(0), &^this ct, null))
@@ -11450,7 +11450,7 @@ define Planner
                     if it.name <> null
                     {
                         let pn (*it.name)
-                        var name_holder Vector[String]#(1)
+                        var name_holder Vector[String](1)
                         name_holder.put(0, String(pn))
                         set pname_ref: name_holder.get(0)
                         this.define_parameter(pn, pty)
@@ -11463,7 +11463,7 @@ define Planner
             this.pop_scope()
 
             var items_holder Vector[PlannedItem](item_arr)
-            var rt_holder Vector[PlannedType]#(1)
+            var rt_holder Vector[PlannedType](1)
             rt_holder.put(0, planned_body.result_type)
             let synth_fn PlannedFunction(
                 lam.span,
