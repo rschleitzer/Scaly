@@ -14332,6 +14332,38 @@ define Planner
                         if this.array_contains_name(local_box_names, v.name)
                             return Planner.region_rank_caller()
                 }
+                when c: PlannedCall
+                {
+                    ; Borrow-return holder (2026-07-03): `&NAME` where NAME's
+                    ; binding was promoted to the caller page by the addr-taken/
+                    ; getref rule (promoted_binding_names) points at rp-lived
+                    ; memory even though the stamped pointee life still reads
+                    ; Local (restamp_operand_life# rewrites call.life, not
+                    ; result_type.life). Rank the reference Caller so the
+                    ; return/tail escape gates accept the de-sigiled restamp/
+                    ; unify shape (`var out Vector[T](n) ... &out`). Only the
+                    ; exact intrinsic `&` over a bare promoted Variable
+                    ; qualifies; everything else falls through to the
+                    ; conservative pointee-life check below.
+                    if c.is_operator
+                        if c.name.equals("&")
+                            if c.args <> null
+                            {
+                                let amp_args (*c.args)
+                                if amp_args.length = 1
+                                {
+                                    let amp_a0 amp_args.get 0
+                                    if amp_a0 <> null
+                                        if (*amp_a0).member_access = null
+                                            choose (*amp_a0).expr
+                                                when av: Variable
+                                                    if this.array_contains_name(promoted_binding_names, av.name)
+                                                        return Planner.region_rank_caller()
+                                                else
+                                                    0
+                                }
+                            }
+                }
                 else
                     0
             if Planner.is_reference_to_local_page(op.result_type)
