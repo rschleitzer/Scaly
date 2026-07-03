@@ -320,7 +320,7 @@ function handle_type(syntax: TypeSyntax) returns ref[Type]?
                 }
                 set gi: gi + 1
             }
-            var gens_holder Vector[Vector[Type]]#(1)
+            var gens_holder Vector[Vector[Type]](1)
             gens_holder.put(0, gen_types)
             set generics: gens_holder.get(0)
         }
@@ -339,7 +339,7 @@ function handle_type(syntax: TypeSyntax) returns ref[Type]?
     if syntax.optional = null
         return base_type
 
-    var inner_holder Vector[Type]#(1)
+    var inner_holder Vector[Type](1)
     inner_holder.put(0, base_type)
     var inner_path Vector[String](1)
     inner_path.put(0, "Option")
@@ -620,7 +620,7 @@ function handle_lambda(syntax: LambdaSyntax) returns Lambda
                         set param_name: String(name_syn.name)
                     else
                         set param_name: ""
-                var name_holder Vector[String]#(1)
+                var name_holder Vector[String](1)
                 name_holder.put(0, String(param_name))
                 input.put(i, Item(
                     Span(op.start, op.end),
@@ -1045,7 +1045,7 @@ function handle_operand(syntax: OperandSyntax) returns Operand
             set i: i + 1
         }
         var path Vector[String](path_arr)
-        var path_holder Vector[Vector[String]]#(1)
+        var path_holder Vector[Vector[String]](1)
         path_holder.put(0, path)
         set member_access: path_holder.get(0)
     }
@@ -1091,7 +1091,7 @@ function handle_binding_item(syntax: BindingSyntax) returns Item
         set item_type: handle_binding_annotation(annotation)
     }
 
-    var name_holder Vector[String]#(1)
+    var name_holder Vector[String](1)
     name_holder.put(0, String(syntax.name))
     Item(
         Span(syntax.start, syntax.end),
@@ -1337,7 +1337,7 @@ function handle_item(is_private: bool, syntax: ItemSyntax) returns Item
         set item_type: handle_type(annotation.type)
     }
 
-    var name_holder Vector[String]#(1)
+    var name_holder Vector[String](1)
     name_holder.put(0, String(syntax.name))
     Item(
         Span(syntax.start, syntax.end),
@@ -1357,7 +1357,7 @@ function handle_property(is_private: bool, syntax: PropertySyntax) returns Prope
     {
         let init_syntax (*syntax.initializer)
         let ops handle_operands(init_syntax.operands)
-        var holder Vector[Vector[Operand]]#(1)
+        var holder Vector[Vector[Operand]](1)
         holder.put(0, ops)
         set initializer: holder.get(0)
     }
@@ -1609,7 +1609,7 @@ function build_function(start: size_t, end_pos: size_t, syntax: TargetSyntax, is
                     {
                         if first_ptr.name <> null
                         {
-                            var holder Vector[String]#(1)
+                            var holder Vector[String](1)
                             holder.put(0, String((*first_ptr.name)))
                             set page_param: holder.get(0)
                         }
@@ -1627,7 +1627,7 @@ function build_function(start: size_t, end_pos: size_t, syntax: TargetSyntax, is
                 }
                 if first_has_name_no_type = false
                 {
-                    var holder Vector[String]#(1)
+                    var holder Vector[String](1)
                     holder.put(0, "rp")
                     set page_param: holder.get(0)
                 }
@@ -1667,7 +1667,7 @@ function build_function(start: size_t, end_pos: size_t, syntax: TargetSyntax, is
                                 }
                                 if d_should_peel
                                 {
-                                    var d_holder Vector[String]#(1)
+                                    var d_holder Vector[String](1)
                                     d_holder.put(0, String(dpn0))
                                     set page_param: d_holder.get(0)
                                     var d_rest Vector[Item](input.length - 1)
@@ -1975,7 +1975,7 @@ function handle_initializer(syntax: InitSyntax, is_private: bool) returns Initia
             {
                 if first_ptr.name <> null
                 {
-                    var holder Vector[String]#(1)
+                    var holder Vector[String](1)
                     holder.put(0, String((*first_ptr.name)))
                     set page_param: holder.get(0)
                 }
