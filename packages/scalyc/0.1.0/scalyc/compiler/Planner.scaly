@@ -19748,7 +19748,13 @@ define Planner
             ; the scalyls package self-host without naming its modules in
             ; the compiler. A bare call (no `equals("X") = false` negation)
             ; avoids the stage-0 codegen SEGV that motivated the allowlist.
-            let planned this.plan_module#(sub)
+            ; Bare non-last statement call: the result is intentionally
+            ; discarded (only the `this`-registering side effects matter),
+            ; so promote_discarded_pagecall routes the page arg to rp —
+            ; exactly what the former `let planned this.plan_module#(sub)`
+            ; sigil provided. The registrations plan_module makes on that
+            ; page persist in `this`; a local page here would dangle them.
+            this.plan_module(sub)
             ; Layout-only fallback: after the walk (or when a struct was
             ; already cached), register layouts for any concrete
             ; (parameterless) Structures it defines. has_instantiated_structure
