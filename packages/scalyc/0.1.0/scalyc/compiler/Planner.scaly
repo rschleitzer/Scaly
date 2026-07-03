@@ -7198,6 +7198,55 @@ define Planner
                                         set recv_escapes: true
                                     if this.array_contains_name(promoted_binding_names, rv.name)
                                         set recv_escapes: true
+                                    ; Store-escape into a this-FIELD (2026-07-03c): a
+                                    ; put/add on a receiver that is a FIELD of `this`
+                                    ; (implicit-property shape: Variable("this") +
+                                    ; member chain [field..., method]) stores the value
+                                    ; struct into storage that outlives this frame, so
+                                    ; an inline-constructed value must not live on the
+                                    ; local page. Promote to the CALLER page (rp) —
+                                    ; exactly what the handwritten `#` asserted at every
+                                    ; such site; NOT Page.get(this), which the
+                                    ; 2026-07-01c probes proved can never reach the
+                                    ; root driver page for a multi-page object. rp is
+                                    ; an upper bound, not this's true page: it is
+                                    ; sufficient when the object's field reads never
+                                    ; outlive the caller chain that threads rp — for
+                                    ; the Planner's own bookkeeping arrays this holds
+                                    ; by the per-function TRUNCATION invariant (entries
+                                    ; are length-truncated per function and re-read
+                                    ; only during the same root-driven analysis, and
+                                    ; rp = the root driver page outlives all of it).
+                                    ; Where it does not hold, rp still strictly
+                                    ; dominates the pre-rule Local (a guaranteed
+                                    ; dangle). Gated on rp in scope (a page-less
+                                    ; function keeps the local page) and on every hop
+                                    ; before the method being a plain field access.
+                                    ; NEUTRAL on sigiled source: explicit-`#` args
+                                    ; carry Call life, which restamp_operand_life#
+                                    ; refuses (returns null) → kept verbatim.
+                                    if rv.name.equals("this")
+                                        if result.member_access <> null
+                                        {
+                                            let tfm_r result.member_access
+                                            let tfm (*tfm_r)
+                                            if tfm.length > 1
+                                                if this.lookup_local_binding("rp") <> null
+                                                {
+                                                    var tf_fields_only true
+                                                    var tfi: size_t 0
+                                                    while tfi < tfm.length - 1
+                                                    {
+                                                        let tfh tfm.get tfi
+                                                        if tfh <> null
+                                                            if (*tfh).is_method
+                                                                set tf_fields_only: false
+                                                        set tfi: tfi + 1
+                                                    }
+                                                    if tf_fields_only
+                                                        set recv_escapes: true
+                                                }
+                                        }
                                 }
                                 else
                                     0
