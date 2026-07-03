@@ -105,7 +105,7 @@ define rpc
         if content_length = (0 as size_t)
             return String()
 
-        var body String#(content_length)
+        var body String(content_length)
         let buf body.get_buffer()
         rpc.read_exact(buf as pointer[void], content_length)
         body
@@ -279,7 +279,7 @@ define rpc
         if content_length = (0 as size_t)
             return String()
 
-        var body String#(content_length)
+        var body String(content_length)
         let buf body.get_buffer()
         rpc.read_exact_fd(fd, buf as pointer[void], content_length)
         body
