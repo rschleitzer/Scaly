@@ -13309,7 +13309,7 @@ define Planner
                                     this.define_local((*b.item.name), del_pt, b.binding_type.equals("var"), false)
                                     ; Track it as a stack closure for escape
                                     ; checking (returning it would dangle).
-                                    local_closure_names.add(String#((*b.item.name)))
+                                    local_closure_names.add(String((*b.item.name)))
                                 }
                                 return PlannedBinding(b.span, b.binding_type, pitem, &op_vec)
                             }
@@ -13500,7 +13500,7 @@ define Planner
                     if promoted_init <> null
                     {
                         set collapsed: (*promoted_init)
-                        promoted_binding_names.add(String#(bn))
+                        promoted_binding_names.add(String(bn))
                     }
                     else
                     {
@@ -13518,7 +13518,7 @@ define Planner
                         if promoted_ctrl <> null
                         {
                             set collapsed: (*promoted_ctrl)
-                            promoted_binding_names.add(String#(bn))
+                            promoted_binding_names.add(String(bn))
                         }
                     }
                 }
@@ -13531,9 +13531,9 @@ define Planner
                     when bx: Box
                     {
                         if bx.target_page.equals("this")
-                            local_box_names.add(String#(bn))
+                            local_box_names.add(String(bn))
                         if bx.target_page.equals("rp")
-                            local_box_names.add(String#(bn))
+                            local_box_names.add(String(bn))
                     }
                     else
                         0
@@ -13594,7 +13594,7 @@ define Planner
                                 ; shortcut: the binding's allocation now
                                 ; lives on the caller page.
                                 if this.array_contains_name(promoted_binding_names, abn) = false
-                                    promoted_binding_names.add(String#(abn))
+                                    promoted_binding_names.add(String(abn))
                             }
                         }
                         else
@@ -13633,7 +13633,7 @@ define Planner
                 if this.result_type_is_value_struct(collapsed.result_type)
                     if this.construction_has_local_ref_arg(collapsed)
                         if this.array_contains_name(local_tainted_struct_bindings, tbn) = false
-                            local_tainted_struct_bindings.add(String#(tbn))
+                            local_tainted_struct_bindings.add(String(tbn))
             }
 
             ; Option B (2026-07-02h): record a container holder whose
@@ -13652,7 +13652,7 @@ define Planner
                     if this.operand_is_local_page_construction(collapsed)
                         if this.array_contains_name(promoted_binding_names, fhn) = false
                             if this.array_contains_name_from(local_frame_holder_names, this.local_frame_holder_base, fhn) = false
-                                local_frame_holder_names.add(String#(fhn))
+                                local_frame_holder_names.add(String(fhn))
             }
 
             ; s192: stack array declaration `var buffer char[64]` (no
