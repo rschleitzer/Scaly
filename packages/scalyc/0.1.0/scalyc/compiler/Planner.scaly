@@ -1292,7 +1292,7 @@ define Planner
             var file_sb StringBuilder()
             file_sb.append name
             file_sb.append ".scaly"
-            let file_part file_sb.to_string#()
+            let file_part file_sb.to_string()
             Path.join(step2, file_part)
         }
 
@@ -1349,7 +1349,7 @@ define Planner
             var name_sb StringBuilder()
             name_sb.append module_name
             name_sb.append ".scaly"
-            let file_part name_sb.to_string#()
+            let file_part name_sb.to_string()
             let mod_path Path.join(base_path, file_part)
 
             this.lookup_loaded_module_path(mod_path)
@@ -2963,7 +2963,7 @@ define Planner
             ; Extern C functions use their unmangled name so the linker
             ; finds them in libc / system libraries. Mirrors
             ; Planner.cpp:9714-9716.
-            var mangled: String String#(f.name)
+            var mangled: String String(f.name)
             if Planner.is_extern_impl(f.implementation) = false
             {
                 ; s101: Namespace sibling call. When the call is being
@@ -3016,7 +3016,7 @@ define Planner
                 if is_namespace_sibling
                 {
                     let cnsn (*current_namespace_name)
-                    set ns_for_mangle: String#(cnsn)
+                    set ns_for_mangle: String(cnsn)
                 }
                 if is_namespace_sibling = false
                     set ns_for_mangle: this.lookup_use_alias_namespace(f.name)
@@ -9783,7 +9783,7 @@ define Planner
             ; (unqualified). Mirrors stage-0 Planner.cpp:5619-5648
             ; (lookupConcept dotted) and 6263-6311 (resolveType module
             ; stack fallback).
-            var canonical_name: String String#(after_subst.name)
+            var canonical_name: String String(after_subst.name)
 
             ; Union.Variant pattern: a dotted name like `Member.Function`
             ; where the prefix is a Union concept and the suffix is one of
@@ -11242,7 +11242,7 @@ define Planner
             name_sb.append "_ZN6lambda"
             name_sb.append(Planner.size_to_string lam_id)
             name_sb.append "Ev"
-            let mangled name_sb.to_string#()
+            let mangled name_sb.to_string()
 
             var items_holder Vector[PlannedItem](planned_items)
             var captures_holder Vector[String](captures_arr)
@@ -11357,7 +11357,7 @@ define Planner
                                 let lb this.lookup_local_binding(nm)
                                 if lb <> null
                                 {
-                                    cap_names.add(String#(nm))
+                                    cap_names.add(String(nm))
                                     cap_types.add((*lb).binding_type)
                                 }
                             }
@@ -11401,7 +11401,7 @@ define Planner
                 set mi: mi + 1
             }
             ml_sb.append "Ev"
-            let mangled ml_sb.to_string#()
+            let mangled ml_sb.to_string()
 
             var caps_holder Vector[String](cap_names)
             var caps_ref: ref[Vector[String]]? null
@@ -11426,7 +11426,7 @@ define Planner
                         let cn (*cn_ptr)
                         let ct (*ct_ptr)
                         var cn_holder Vector[String]#(1)
-                        cn_holder.put(0, String#(cn))
+                        cn_holder.put(0, String(cn))
                         this.define_parameter(cn, ct)
                         item_arr.add(PlannedItem(lam.span, false, cn_holder.get(0), &^this ct, null))
                     }
@@ -11451,7 +11451,7 @@ define Planner
                     {
                         let pn (*it.name)
                         var name_holder Vector[String]#(1)
-                        name_holder.put(0, String#(pn))
+                        name_holder.put(0, String(pn))
                         set pname_ref: name_holder.get(0)
                         this.define_parameter(pn, pty)
                     }
@@ -11529,11 +11529,11 @@ define Planner
             var thunk_sb StringBuilder()
             thunk_sb.append mono.mangled
             thunk_sb.append "_thunk"
-            let thunk_name thunk_sb.to_string#()
+            let thunk_name thunk_sb.to_string()
             var clo_sb StringBuilder()
             clo_sb.append "clo_"
             clo_sb.append mono.mangled
-            let clo_type_name clo_sb.to_string#()
+            let clo_type_name clo_sb.to_string()
             var cap_ops_holder Vector[PlannedOperand](cap_ops)
             var cap_tys_holder Vector[PlannedType](cap_tys)
             var dparams_holder Vector[PlannedType](dparams)
@@ -13234,7 +13234,7 @@ define Planner
                                 var dparams this.delegate_param_types(del_name)
                                 var base_name "lam"
                                 if b.item.name <> null
-                                    set base_name: String#((*b.item.name))
+                                    set base_name: String((*b.item.name))
                                 let del_pt this.plan_type((*b.item.type))
                                 let dret this.delegate_return_type(del_name)
                                 let clo this.make_closure(base_name, dl, dparams, dret, del_pt, Lifetime.Local(scalyc.compiler.Model.Local(b.span)))
@@ -15990,7 +15990,7 @@ define Planner
                                     rb_sb.append "ret"
                                     let rlam_str size_to_string(rlam_id)
                                     rb_sb.append rlam_str
-                                    let rbase rb_sb.to_string#()
+                                    let rbase rb_sb.to_string()
                                     let rclo this.make_closure(rbase, rl, dparams, dret, crt, Lifetime.Call(scalyc.compiler.Model.Call(r.span)))
                                     let rclo_op PlannedOperand(r.span, PlannedExpression.Closure rclo, null, crt)
                                     var rh Vector[PlannedOperand](1)
@@ -19457,7 +19457,7 @@ define Planner
             ; defines stay Itanium-length-prefixed via encode_name (s189).
             var mangled Planner.encode_name(name)
             if g.is_mutable
-                set mangled: String#(name)
+                set mangled: String(name)
             let result PlannedGlobal(
                 g.span,
                 String(name),
@@ -22505,7 +22505,7 @@ define Planner
                         var sb StringBuilder()
                         sb.append "P"
                         sb.append inner.mangled_name
-                        set mangled: sb.to_string#()
+                        set mangled: sb.to_string()
                     }
                 }
             }
@@ -22524,7 +22524,7 @@ define Planner
                         var sb StringBuilder()
                         sb.append "R"
                         sb.append inner.mangled_name
-                        set mangled: sb.to_string#()
+                        set mangled: sb.to_string()
                     }
                 }
             }
