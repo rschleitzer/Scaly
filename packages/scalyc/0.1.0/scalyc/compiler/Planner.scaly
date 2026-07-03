@@ -17251,6 +17251,28 @@ define Planner
                                 this.add_escaping_target(bnm)
                                 this.collect_flow_locals(bind.operation)
                             }
+                        ; Ref-flow counterpart (value-guts provenance,
+                        ; 2026-07-03): a holder whose `.get(i)` refs reach an
+                        ; argument/return position (getref_arg_locals, recorded
+                        ; by scan_getref_args# which runs BEFORE this fixpoint)
+                        ; is promoted to the caller page by plan_binding#'s
+                        ; getref gate — but the VALUES put/add'd into it must
+                        ; move too: Vector.put copies the value struct
+                        ; SHALLOWLY, so a bound value's nested heap guts stay
+                        ; on its own (local) page and dangle once the frame
+                        ; exits. Mark the holder an escaping target so
+                        ; collect_store_value_locals# collects its stored
+                        ; values into the promotion name-graph. Base-scoped
+                        ; consult (the s2026-07-02i guard): a same-named
+                        ; OUTER-function entry must never false-match. NEUTRAL
+                        ; on sigiled source: a #/^ holder is already an
+                        ; escaping target via the escaping-ctor block above.
+                        if this.array_contains_name_from(getref_arg_locals, this.getref_arg_base, bnm)
+                            if this.op_seq_head_is_vector(bind.operation)
+                            {
+                                this.add_escaping_target(bnm)
+                                this.collect_flow_locals(bind.operation)
+                            }
                         if this.array_contains_name(escaping_return_locals, bnm)
                             this.add_escaping_target(bnm)
                         ; get-alias back-propagation: a binding `let opp
@@ -17421,7 +17443,36 @@ define Planner
                                             if this.array_contains_name(escaping_targets, tn)
                                                 set tesc: true
                                             if tesc
+                                            {
                                                 this.collect_flow_locals(a.source)
+                                                ; get-alias back-propagation, SET form
+                                                ; (mirror of the Binding-arm back-prop):
+                                                ; `set X: SRC.get(i)` where X escapes
+                                                ; makes X alias SRC's element guts, so
+                                                ; SRC's elements escape too — mark SRC
+                                                ; an escaping target (its put/add VALUES
+                                                ; are then collected and promoted) and
+                                                ; an escaping local (its own construction
+                                                ; is promoted by plan_binding#'s gap-1
+                                                ; restamp — the same Call/rp destination
+                                                ; the getref gate picks). The holder
+                                                ; shape `var H Vector[T](1); H.put(0,
+                                                ; bound_local); set alias: H.get(0)`
+                                                ; needs this: the getref scan promotes H
+                                                ; itself, but the BOUND put value's guts
+                                                ; stayed on the local page (value-guts
+                                                ; provenance, 2026-07-03). NEUTRAL on
+                                                ; sigiled source: a #/^ holder is already
+                                                ; an escaping target via its escaping-
+                                                ; ctor lifetime, and restamp keeps
+                                                ; explicit lifetimes verbatim.
+                                                let gsrc this.binding_get_receiver(a.source)
+                                                if gsrc.get_length() > 0
+                                                {
+                                                    this.add_escaping_target(gsrc)
+                                                    this.add_escaping_local(gsrc)
+                                                }
+                                            }
                                         }
                                     }
                             }

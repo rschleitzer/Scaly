@@ -1,0 +1,76 @@
+; Regression: value-guts provenance for a DIRECT-return get-ref holder with a
+; BOUND ctor-arg value (2026-07-03; the extract_row_to_type shape). `var H
+; Vector[T](1); H.put(0, T(bound_vec)); return H.get 0` — the getref scan
+; promotes H, and the inline T(...) put value is restamped at the plan site,
+; but the BOUND `bound_vec` ctor arg previously stayed on the local page (its
+; buffer is embedded by value into the escaping T). The getref-holder
+; escaping-target rule now collects it via collect_store_value_locals#'s
+; inline-ctor recursion. Self-hosted-only. Expected: PASS
+
+package scaly 0.1.0
+
+use scaly.containers.String
+use scaly.containers.Vector
+
+define Wrap(items: Vector[String])
+
+function build_ref() returns ref[Wrap]?
+{
+    var inner Vector[String](2)
+    inner.put(0, "alpha")
+    inner.put(1, "beta")
+    var holder Vector[Wrap](1)
+    holder.put(0, Wrap(inner))
+    return holder.get 0
+}
+
+function churn(n: size_t) returns size_t
+{
+    var total: size_t 0
+    var i: size_t 0
+    while i < n
+    {
+        var junk Vector[String](3)
+        junk.put(0, "qqqqq")
+        junk.put(1, "rrrrr")
+        junk.put(2, "sssss")
+        let jp junk.get 0
+        if jp <> null
+            set total: total + (*jp).get_length()
+        set i: i + 1
+    }
+    total
+}
+
+let w build_ref()
+let c churn(50)
+var ok: bool true
+if w = null
+    set ok: false
+if w <> null
+{
+    if (*w).items.length <> 2
+        set ok: false
+    let i0 (*w).items.get 0
+    let i1 (*w).items.get 1
+    if i0 = null
+        set ok: false
+    if i1 = null
+        set ok: false
+    if i0 <> null
+    {
+        if (*i0).equals("alpha") = false
+            set ok: false
+    }
+    if i1 <> null
+    {
+        if (*i1).equals("beta") = false
+            set ok: false
+    }
+}
+if c = 0
+    set ok: false
+if ok
+    print("PASS")
+else
+    print("FAIL")

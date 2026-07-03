@@ -1,0 +1,76 @@
+; Regression: value-guts provenance through a SET-form get-alias (2026-07-03).
+; The holder shape `var H Vector[T](1); H.put(0, bound_local); set alias:
+; H.get(0)` where the alias escapes (ctor arg of the returned value): the
+; getref scan promotes H itself to the caller page, but the BOUND put value's
+; heap guts (parts' element buffer) previously stayed on the local page —
+; Vector.put copies the value struct SHALLOWLY, so the returned record's
+; nested buffer dangled once the frame's local page was released. The SET-form
+; get-alias back-propagation now marks H an escaping target, so
+; collect_store_value_locals# collects `parts` and its binding is promoted.
+; The churn loop recycles root pages so a dangling buffer is overwritten
+; before the read-back. Self-hosted-only. Expected: PASS
+
+package scaly 0.1.0
+
+use scaly.containers.String
+use scaly.containers.Vector
+
+define Rec(name: Vector[String])
+
+function build() returns Rec
+{
+    var parts Vector[String](2)
+    parts.put(0, "hello")
+    parts.put(1, "world")
+    var holder Vector[Vector[String]](1)
+    holder.put(0, parts)
+    var alias: ref[Vector[String]]? null
+    set alias: holder.get(0)
+    Rec((*alias))
+}
+
+function churn(n: size_t) returns size_t
+{
+    var total: size_t 0
+    var i: size_t 0
+    while i < n
+    {
+        var junk Vector[String](3)
+        junk.put(0, "xxxxx")
+        junk.put(1, "yyyyy")
+        junk.put(2, "zzzzz")
+        let jp junk.get 0
+        if jp <> null
+            set total: total + (*jp).get_length()
+        set i: i + 1
+    }
+    total
+}
+
+let rec build()
+let c churn(50)
+var ok: bool true
+if rec.name.length <> 2
+    set ok: false
+let n0 rec.name.get 0
+let n1 rec.name.get 1
+if n0 = null
+    set ok: false
+if n1 = null
+    set ok: false
+if n0 <> null
+{
+    if (*n0).equals("hello") = false
+        set ok: false
+}
+if n1 <> null
+{
+    if (*n1).equals("world") = false
+        set ok: false
+}
+if c = 0
+    set ok: false
+if ok
+    print("PASS")
+else
+    print("FAIL")
