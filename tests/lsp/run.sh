@@ -13,12 +13,9 @@
 # scalyls) and reuses them, linking each scalyls consumer from four objects (the
 # seed.sh "4-root" recipe). This is the canonical gate.
 #
-# `cpp` mode (LEGACY) drives the frozen C++ stage-0, which emits the whole
-# transitive closure into one module so `$SCALYC -o <prog>` links directly.
-# C++ stage-0 is `#`-only with no page inference, so cpp mode ONLY works on the
-# fully-sigiled (pre-de-sigil-migration) compiler source — it is retired as a
-# bar gate. Invoke explicitly (`tests/lsp/run.sh ./scalyc/build/scalyc cpp`)
-# against sigiled source if you need the historical cross-check.
+# `cpp` mode is DEAD: it drove the C++ stage-0, which is retired entirely
+# (sources frozen under retired/scalyc0/, no build). The code path remains
+# only as history; invoking it cannot work against the current tree.
 set -euo pipefail
 
 cd "$(dirname "$0")/../.."

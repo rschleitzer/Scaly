@@ -1,20 +1,11 @@
 <![CDATA[
-;; Rules for generating idiomatic C++ from scaly.sgm
+;; Rules for generating the self-hosted parser/syntax sources from scaly.sgm.
+;; The C++ stage-0 outputs (scalyc/Syntax.h, Parser.h/cpp, SyntaxDump.h) were
+;; retired with the C++ compiler (sources frozen under retired/scalyc0/); the
+;; generator functions remain loaded but unused.
 
 (element grammar
     (sosofo-append
-        (file "scalyc/Syntax.h"
-            (generate-syntax-cpp)
-        )
-        (file "scalyc/Parser.h"
-            (generate-parser-h)
-        )
-        (file "scalyc/Parser.cpp"
-            (generate-parser-cpp)
-        )
-        (file "scalyc/SyntaxDump.h"
-            (generate-syntax-dump-cpp)
-        )
         (file "packages/scalyc/0.1.0/scalyc/compiler/Syntax.scaly"
             (generate-syntax-scaly)
         )

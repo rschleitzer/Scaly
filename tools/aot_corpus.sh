@@ -10,7 +10,9 @@
 # absolute ground truth (catches a stage-2 miscompile even if stage-0 shares
 # it), and cycle.sh already proves stage-1 == stage-2 emission. Tests WITHOUT
 # an "; Expected:" comment (exit-code / value tests, e.g. scalyc_test_exit,
-# ref_string_item) keep the stage-0 reference cross-check.
+# ref_string_item) cross-check against a reference binary built by the
+# compiler at scalyc/build/scalyc (the seed-built compiler since the C++
+# stage-0 was retired); when that binary is absent the cross-check is skipped.
 #
 # Usage: tools/aot_corpus.sh <stage-binary> [label]
 cd "$(dirname "$0")/.."
@@ -31,10 +33,14 @@ for f in tests/aot/*.scaly; do
       fail=$((fail+1)); failed="$failed $t"
     fi
   else
-    # No Expected comment -> cross-check against the stage-0 reference.
+    # No Expected comment -> cross-check against the reference compiler.
     rm -f /tmp/aot_ref_$t /tmp/aot_new_$t
-    ./scalyc/build/scalyc -o /tmp/aot_ref_$t $f >/dev/null 2>&1
-    refrc_c=$?
+    if [ -x ./scalyc/build/scalyc ]; then
+      ./scalyc/build/scalyc -o /tmp/aot_ref_$t $f >/dev/null 2>&1
+      refrc_c=$?
+    else
+      refrc_c=1
+    fi
     $STAGE -o /tmp/aot_new_$t $f >/dev/null 2>&1
     newrc_c=$?
     if [ $refrc_c -ne 0 ]; then continue; fi  # not a runnable reference

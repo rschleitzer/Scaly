@@ -2,17 +2,13 @@
 set -e
 
 # Content-stable codegen. openjade rewrites every generated file on each run
-# with a fresh mtime even when the output is byte-identical to what was there.
-# That forces ninja to recompile the large generated Parser.cpp (+ everything
-# depending on the regenerated headers) on EVERY build.sh — the dominant cost
-# of an incremental bootstrap. To avoid it we snapshot the generated files
-# first, then after generation restore any file whose content is unchanged
-# (which puts back its old mtime), so ninja only rebuilds what truly changed.
-# A genuine grammar/literate-test edit changes the bytes -> the new file (new
-# mtime) stays and is rebuilt as before.
+# with a fresh mtime even when the output is byte-identical. Snapshot the
+# generated files first, then after generation restore any file whose content
+# is unchanged (keeping its old mtime) so downstream tooling only sees what
+# truly changed. (The C++ outputs Parser.cpp/Syntax.h died with the retired
+# stage-0; rules.scm no longer emits them.)
 
 GENERATED=(
-    scalyc/Parser.cpp scalyc/Parser.h scalyc/Syntax.h scalyc/SyntaxDump.h
     docs/scaly/generated-expressions.xml
     docs/scaly/generated-definitions.xml
     docs/scaly/generated-choose.xml

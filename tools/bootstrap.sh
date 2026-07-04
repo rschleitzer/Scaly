@@ -23,30 +23,25 @@ source tools/llvm-env.sh
 
 LINK="-L$LLVM_LIBDIR -l$LLVM_LIBNAME"
 
-# Bootstrap ROOT: prefer the committed seed (C++-free); else C++ stage-0.
+# Bootstrap ROOT: the committed seed. The C++ stage-0 fallback is retired
+# (sources frozen under retired/scalyc0/) — no seed means no bootstrap.
 if [ -f seed/scalyc.ll ] && tools/build-from-seed.sh /tmp/scalyc_seed_root >/dev/null 2>&1; then
   echo "bootstrap: ROOT = seed-built compiler -> /tmp/scalyc_seed_root"
-  ROOT=/tmp/scalyc_seed_root; ROOT_SELFHOSTED=1
+  ROOT=/tmp/scalyc_seed_root
 else
-  echo "bootstrap: no usable seed — falling back to C++ stage-0 (build.sh)"
-  ./build.sh >/dev/null
-  ROOT=./scalyc/build/scalyc; ROOT_SELFHOSTED=0
+  echo "bootstrap: FAIL — no usable seed (seed/scalyc.ll missing or build-from-seed failed)"
+  exit 1
 fi
 
 echo "bootstrap: ROOT -> stage1"
-if [ "$ROOT_SELFHOSTED" = "1" ]; then
-  # A self-hosted ROOT compiling main.scaly emits only main + external refs to
-  # the compiler package; the package must be compiled to an archive and linked
-  # (the same two-step as stage1 -> stage2). C++ stage-0 instead emits the whole
-  # package from main.scaly alone, so its branch stays single-step.
-  ( ulimit -s 65520
-    "$ROOT" -c -o /tmp/sc0.o packages/scalyc/0.1.0/scalyc.scaly
-    rm -f /tmp/libscalyc0.a; ar rcs /tmp/libscalyc0.a /tmp/sc0.o
-    "$ROOT" -o /tmp/scalyc_stage1 packages/scalyc/0.1.0/main.scaly /tmp/libscalyc0.a $LINK
-  ) 2>&1 | grep -v 'ld: warning' || true
-else
-  "$ROOT" -o /tmp/scalyc_stage1 packages/scalyc/0.1.0/main.scaly $LINK 2>&1 | grep -v 'warning' || true
-fi
+# The self-hosted ROOT compiling main.scaly emits only main + external refs to
+# the compiler package; the package must be compiled to an archive and linked
+# (the same two-step as stage1 -> stage2).
+( ulimit -s 65520
+  "$ROOT" -c -o /tmp/sc0.o packages/scalyc/0.1.0/scalyc.scaly
+  rm -f /tmp/libscalyc0.a; ar rcs /tmp/libscalyc0.a /tmp/sc0.o
+  "$ROOT" -o /tmp/scalyc_stage1 packages/scalyc/0.1.0/main.scaly /tmp/libscalyc0.a $LINK
+) 2>&1 | grep -v 'ld: warning' || true
 
 # Rebuild the scaly-package runtime archive with stage1 so stage2's -o link
 # (cli.run appends /tmp/libscaly.a) picks up a fix-consistent runtime. A STALE
