@@ -9639,7 +9639,7 @@ define Planner
             let id this.fresh_type_var_id()
             ; Allocate the TypeVariable in a one-element Vector on rp so
             ; its address outlives this function.
-            let tv_ref TypeVariable^this(id, String#(debug_name))
+            let tv_ref TypeVariable^this(id, String(debug_name))
             PlannedType(
                 Span(0, 0),
                 String(debug_name),
