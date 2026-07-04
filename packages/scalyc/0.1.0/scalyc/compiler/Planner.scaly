@@ -564,6 +564,21 @@ define Planner
         ; set after registration; consulted by function_needs_caller_page.
         transitive_page_names: Array[String]
         transitive_page_built: bool
+
+        ; Phase-5 class 1 (value-guts persist summary memo): mangled name ->
+        ; does the function's body store a parameter's VALUE into state that
+        ; outlives its frame (this-field/global putadd of a bare param, or a
+        ; param embedded in a bare-lifetime construction —
+        ; `errors.add message`, `diagnostics.add(PlannerDiagnostic(...,
+        ; message, ...))`)? Consulted at call resolution ONLY when an
+        ; argument's planned type carries Local life (a Design-B
+        ; local-flipped call result), so the model walk runs rarely and the
+        ; memo stays small. Planner-lived, append-only, NEVER truncated —
+        ; summaries are global facts about function bodies, not per-function
+        ; scan state (the s02i base-scope trap does not apply). Declared
+        ; LAST so the field indices of everything before stay stable.
+        persist_summary_names: Array[String]
+        persist_summary_vals: Array[size_t]
     )
     {
         init(filename: String)
@@ -589,6 +604,8 @@ define Planner
             set escaping_targets: Array[String]^this()
             set address_taken_locals: Array[String]^this()
             set getref_arg_locals: Array[String]^this()
+            set persist_summary_names: Array[String]^this()
+            set persist_summary_vals: Array[size_t]^this()
             set getref_alias_names: Array[String]^this()
             set getref_alias_receivers: Array[String]^this()
             set local_frame_holder_names: Array[String]^this()
@@ -2888,6 +2905,91 @@ define Planner
             true
         }
 
+        ; Phase-5 class 1: a persist into a receiver that is itself a
+        ; frame-local, non-escaping binding does not outlive the frame —
+        ; receiver and argument share the frame's lifetime, so promoting
+        ; the argument (or hard-erroring on a missing rp) would be a false
+        ; positive. The Planner-instance test code hits exactly this shape
+        ; (a local Planner collecting constraints built from local-page
+        ; types). `this`, parameters, and escaping/promoted locals all
+        ; outlive the frame -> not frame-local.
+        function persist_receiver_is_frame_local(this: Planner, is_method: bool, recv: PlannedOperand) returns bool
+        {
+            if is_method = false
+                return false
+            if recv.member_access <> null
+                return false
+            choose recv.expr
+                when v: Variable
+                {
+                    if v.name.equals("this")
+                        return false
+                    let lb this.lookup_local_binding(v.name)
+                    if lb = null
+                        return false
+                    if (*lb).is_parameter
+                        return false
+                    if this.array_contains_name(escaping_return_locals, v.name)
+                        return false
+                    if this.array_contains_name(escaping_targets, v.name)
+                        return false
+                    if this.array_contains_name(promoted_binding_names, v.name)
+                        return false
+                    return true
+                }
+                else
+                    return false
+            false
+        }
+
+        ; Phase-5 class 1: memoized persist summary. Key = the callee's
+        ; mangled name; value = function_persists_param_guts over the model
+        ; body, computed once. Only consulted when a call argument carries
+        ; Local life (see the resolution sites), so the walk runs rarely.
+        function persists_args_for(this: Planner, mangled: String, f: Function) returns bool
+        {
+            var idx: size_t 0
+            while idx < persist_summary_names.length
+            {
+                let np persist_summary_names.get idx
+                if np <> null
+                    if (*np).equals(mangled)
+                    {
+                        let vp persist_summary_vals.get idx
+                        if vp <> null
+                            return (*vp) = 1
+                        return false
+                    }
+                set idx: idx + 1
+            }
+            let computed Planner.function_persists_param_guts(f)
+            persist_summary_names.add(String^this(mangled))
+            var pv: size_t 0
+            if computed
+                set pv: 1
+            persist_summary_vals.add pv
+            computed
+        }
+
+        ; Phase-5 class 1 gate: does any argument type carry Local life —
+        ; the Design-B local-flip stamp on a call result whose guts live on
+        ; THIS frame's local page? Only such calls can need the persist
+        ; promotion; sigiled (`#`) arguments carry Call life, so the gate
+        ; keeps the summary walk off every sigiled call site (neutrality).
+        function args_have_local_life(arg_types: Vector[PlannedType]) returns bool
+        {
+            var i: size_t 0
+            while i < arg_types.length
+            {
+                let ap arg_types.get i
+                if ap <> null
+                    if Planner.lifetime_is_local((*ap).life)
+                        return true
+                set i: i + 1
+            }
+            false
+        }
+
         function check_function_match(
             this: Planner,
             f: Function,
@@ -3074,6 +3176,15 @@ define Planner
                 set throws_ref: &^this this.plan_type(tt)
             }
 
+            ; Phase-5 class 1: flag the match when a Local-life argument is
+            ; passed to a body that persists a parameter's value guts.
+            var cfm_persists: bool false
+            if Planner.args_have_local_life(arg_types)
+            {
+                if this.persists_args_for(mangled, f)
+                    set cfm_persists: true
+            }
+
             MethodMatch^this(
                 null,
                 mangled,
@@ -3083,7 +3194,8 @@ define Planner
                 can_throw,
                 throws_ref,
                 false,
-                false
+                false,
+                cfm_persists
             )
         }
 
@@ -3340,7 +3452,8 @@ define Planner
                                     inst.can_throw,
                                     inst.throws_type,
                                     false,
-                                    gm_takes_this
+                                    gm_takes_this,
+                                    false
                                 )
                             }
                         }
@@ -6758,6 +6871,7 @@ define Planner
                                                 s_can_throw,
                                                 s_throws,
                                                 false,
+                                                false,
                                                 false
                                             )
                                             if this.has_recorded_function(smangled) = false
@@ -7304,6 +7418,48 @@ define Planner
                                         set put_args_ref: restamped
                                 }
                         }
+                        ; Phase-5 class 1 (value-guts persist promotion): the
+                        ; resolved callee stores an argument's VALUE into state
+                        ; that outlives its frame (this-field putadd of a bare
+                        ; param — add_error's `errors.add message`), and at
+                        ; least one argument's guts live on THIS frame's local
+                        ; page (the resolution site's args_have_local_life gate
+                        ; sets persists_args only then). Left alone, the
+                        ; persisted shallow copy would read freed memory once
+                        ; this frame's page is released — move the argument to
+                        ; the caller page, exactly what the handwritten `#`
+                        ; asserted at every diag-text call site. Composes with
+                        ; the put/add rule above: both stamp Call life, and
+                        ; restamp_operand_life# refuses an already-Call operand
+                        ; (returns null), so double-firing is idempotent and
+                        ; sigiled `#` args stay verbatim. Without rp in scope
+                        ; the escape cannot be fixed here — HARD diagnostic
+                        ; instead of a silent dangle.
+                        if match_ref <> null
+                            if (*match_ref).persists_args
+                            {
+                                if this.persist_receiver_is_frame_local(is_method_dispatch, receiver_op) = false
+                                {
+                                    if this.lookup_local_binding("rp") <> null
+                                    {
+                                        if call_args_holder.length > 0
+                                        {
+                                            let pa_life Lifetime.Call(scalyc.compiler.Model.Call(result.loc))
+                                            let pa_restamped this.restamp_putadd_constructions((*put_args_ref), pa_life)
+                                            if pa_restamped <> null
+                                                set put_args_ref: pa_restamped
+                                        }
+                                    }
+                                    else
+                                    {
+                                        var pa_sb StringBuilder()
+                                        pa_sb.append "argument on the local page is stored beyond the frame by "
+                                        pa_sb.append fn_name
+                                        pa_sb.append "; no caller page in scope"
+                                        this.add_diagnostic(result.loc, pa_sb.to_string#())
+                                    }
+                                }
+                            }
                         let call PlannedCall(
                             result.loc,
                             fn_name,
@@ -9080,6 +9236,15 @@ define Planner
             var mm_takes_this: bool false
             if param_start > 0
                 set mm_takes_this: true
+            ; Phase-5 class 1: flag the match when a Local-life argument is
+            ; passed to a body that persists a parameter's value guts
+            ; (add_error / add_diagnostic resolve through this path).
+            var mm_persists: bool false
+            if Planner.args_have_local_life(arg_types)
+            {
+                if this.persists_args_for(mangled, f)
+                    set mm_persists: true
+            }
             MethodMatch^this(
                 null,
                 mangled,
@@ -9089,7 +9254,8 @@ define Planner
                 can_throw,
                 throws_ref,
                 false,
-                mm_takes_this
+                mm_takes_this,
+                mm_persists
             )
         }
 
@@ -24108,6 +24274,240 @@ define Planner
             else
                 return false
         false
+    }
+    function lifetime_is_local(lt: Lifetime) returns bool
+    {
+        choose lt
+            when l: Local
+                return true
+            else
+                return false
+        false
+    }
+    ; Phase-5 class 1 helpers: the value-guts persist summary. See the
+    ; persist_summary_names field comment for the contract and
+    ; function_persists_param_guts below for the entry point.
+    function persist_names_contain(arr: Array[String], name: String) returns bool
+    {
+        var i: size_t 0
+        while i < arr.length
+        {
+            let p arr.get i
+            if p <> null
+                if (*p).equals(name)
+                    return true
+            set i: i + 1
+        }
+        false
+    }
+    ; Does the operand sequence (from index `start`) mention one of `pnames`
+    ; BARE — a single-segment name operand, at top level or nested inside a
+    ; construction WITHOUT an explicit lifetime? A `^this`/`^page`/`#`
+    ; construction re-homes or deep-copies its content (String^this(name) in
+    ; the escape collectors), so a param nested under one is NOT persisted
+    ; shallowly; a bare data-class construction copies the param struct
+    ; SHALLOWLY, so its page guts escape with it (PlannerDiagnostic(...,
+    ; message, ...) in add_diagnostic).
+    function persist_value_mentions_param(ops: Vector[Operand], start: size_t, pnames: Array[String]) returns bool
+    {
+        var prev_explicit_life false
+        var i start
+        while i < ops.length
+        {
+            let op_ptr ops.get i
+            if op_ptr <> null
+            {
+                var cur_explicit_life false
+                choose (*op_ptr).expression
+                    when ty: scalyc.compiler.Model.Type
+                    {
+                        choose ty.lifetime
+                            when u: Unspecified
+                                0
+                            else
+                                set cur_explicit_life: true
+                        if ty.name.length = 1
+                        {
+                            let s0 ty.name.get 0
+                            if s0 <> null
+                                if Planner.persist_names_contain(pnames, (*s0))
+                                    return true
+                        }
+                    }
+                    when tup: Tuple
+                    {
+                        if prev_explicit_life = false
+                        {
+                            var ci: size_t 0
+                            while ci < tup.components.length
+                            {
+                                let cp tup.components.get ci
+                                if cp <> null
+                                    if Planner.persist_value_mentions_param((*cp).value, 0, pnames)
+                                        return true
+                                set ci: ci + 1
+                            }
+                        }
+                    }
+                    else
+                        0
+                set prev_explicit_life: cur_explicit_life
+            }
+            set i: i + 1
+        }
+        false
+    }
+    ; Is this operand sequence a put/add into state that outlives the frame
+    ; (receiver a this-field or a name that is neither a parameter nor a
+    ; body-local, i.e. a field/global reached via the implicit-property
+    ; path), whose value mentions a parameter bare?
+    function persist_ops_putadd_param(ops: Vector[Operand], pnames: Array[String], locals: Array[String]) returns bool
+    {
+        if ops.length < 2
+            return false
+        let op0p ops.get 0
+        if op0p = null
+            return false
+        if (*op0p).member_access <> null
+            return false
+        var recv_persists false
+        choose (*op0p).expression
+            when ty: scalyc.compiler.Model.Type
+            {
+                if ty.name.length > 1
+                {
+                    let lastp ty.name.get(ty.name.length - 1)
+                    if lastp <> null
+                    {
+                        var is_putadd false
+                        if (*lastp).equals("add")
+                            set is_putadd: true
+                        if (*lastp).equals("put")
+                            set is_putadd: true
+                        if is_putadd
+                        {
+                            let s0p ty.name.get 0
+                            if s0p <> null
+                            {
+                                let s0 (*s0p)
+                                if s0.equals("this")
+                                {
+                                    ; this.field.add(...) — needs a field hop
+                                    if ty.name.length > 2
+                                        set recv_persists: true
+                                }
+                                else
+                                {
+                                    var s0_known false
+                                    if Planner.persist_names_contain(pnames, s0)
+                                        set s0_known: true
+                                    if Planner.persist_names_contain(locals, s0)
+                                        set s0_known: true
+                                    if s0_known = false
+                                        set recv_persists: true
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            else
+                0
+        if recv_persists = false
+            return false
+        Planner.persist_value_mentions_param(ops, 1, pnames)
+    }
+    ; Walk the TOP statement level of a body block: collect Binding names
+    ; as body-locals first (a local container receiver is frame state, not
+    ; persistence), then test each Action's operand sequence. Nested
+    ; control-flow putadds stay unclassified in this increment — their
+    ; call sites keep pre-rule behavior.
+    function persist_scan_statements(stmts: Vector[Statement], pnames: Array[String]) returns bool
+    {
+        var locals Array[String]()
+        var i: size_t 0
+        while i < stmts.length
+        {
+            let sp stmts.get i
+            if sp <> null
+                choose (*sp)
+                    when b: scalyc.compiler.Model.Binding
+                    {
+                        if b.item.name <> null
+                            locals.add((*b.item.name))
+                    }
+                    else
+                        0
+            set i: i + 1
+        }
+        set i: 0
+        while i < stmts.length
+        {
+            let sp stmts.get i
+            if sp <> null
+                choose (*sp)
+                    when a: scalyc.compiler.Model.Action
+                        if Planner.persist_ops_putadd_param(a.source, pnames, locals)
+                            return true
+                    else
+                        0
+            set i: i + 1
+        }
+        false
+    }
+    ; Entry point: does f's body store a parameter's page-guts VALUE into
+    ; state that outlives its frame? True for add_error (`errors.add
+    ; message`) and add_diagnostic (`diagnostics.add(PlannerDiagnostic(...,
+    ; message, ...))`); false for the deep-copying escape collectors
+    ; (`escaping_return_locals.add(String^this(name))` — explicit-lifetime
+    ; construction excluded) and for putadds into body-local containers.
+    function function_persists_param_guts(f: Function) returns bool
+    {
+        var pnames Array[String]()
+        var pi: size_t 0
+        while pi < f.input.length
+        {
+            let ip f.input.get pi
+            if ip <> null
+                if (*ip).name <> null
+                {
+                    let pn (*(*ip).name)
+                    if pn.equals("this") = false
+                        pnames.add pn
+                }
+            set pi: pi + 1
+        }
+        if pnames.length = 0
+            return false
+        var found false
+        choose f.implementation
+            when a: scalyc.compiler.Model.Action
+            {
+                var scanned_block false
+                if a.source.length = 1
+                {
+                    let op0 a.source.get 0
+                    if op0 <> null
+                        choose (*op0).expression
+                            when bk: Block
+                            {
+                                set scanned_block: true
+                                if Planner.persist_scan_statements(bk.statements, pnames)
+                                    set found: true
+                            }
+                            else
+                                0
+                }
+                if scanned_block = false
+                {
+                    var no_locals Array[String]()
+                    if Planner.persist_ops_putadd_param(a.source, pnames, no_locals)
+                        set found: true
+                }
+            }
+            else
+                0
+        found
     }
     function type_has_call_lifetime(t: scalyc.compiler.Model.Type) returns bool
         Planner.lifetime_is_call(t.lifetime)

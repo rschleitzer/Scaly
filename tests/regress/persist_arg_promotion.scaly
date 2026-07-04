@@ -1,0 +1,85 @@
+; Regression: phase-5 class 1 (value-guts persist promotion, 2026-07-04).
+; A no-sigil call result (`sb.to_string()`) whose guts default to the
+; calling frame's local page is passed to a callee that stores the
+; parameter's VALUE into state that outlives its frame (`entries.add
+; message` — a this-field putadd of a bare param, the add_error shape).
+; The persist summary + call-site restamp move the argument to the
+; caller page, exactly what the old handwritten `#` asserted. Without
+; the rule the shallow-copied String's buffer stays on note_result's
+; local page, which is released at return and recycled by the churn
+; loop before the read-back.
+; Self-hosted-only.
+; Expected: PASS
+
+package scaly 0.1.0
+
+use scaly.containers.Array
+use scaly.containers.String
+use scaly.containers.StringBuilder
+
+define Log
+(
+    entries: Array[String]
+)
+{
+    init()
+    {
+        ; ^this gives the residency scan a signal so a bare Log()
+        ; construction is page-resident (entries' lazy backing derives
+        ; its page from Page.get(this)).
+        set entries: Array[String]^this()
+    }
+
+    function note(this: Log, message: String)
+    {
+        entries.add message
+    }
+}
+
+function note_result(log: Log) returns String
+{
+    ; returns a page-owning value so rp is injected — mirrors the real
+    ; diag-text sites (resolve_function_call etc. are all rp-injected).
+    var sb StringBuilder()
+    sb.append "the quick brown fox jumps over the lazy dog"
+    log.note(sb.to_string())
+    String("done")
+}
+
+function churn(n: size_t) returns size_t
+{
+    var total: size_t 0
+    var i: size_t 0
+    while i < n
+    {
+        var csb StringBuilder()
+        csb.append "recycle recycle recycle recycle recycle recycle"
+        let junk csb.to_string()
+        set total: total + junk.get_length()
+        set i: i + 1
+    }
+    total
+}
+
+function check() returns int
+{
+    var log Log()
+    let noted note_result(log)
+    if noted.get_length() <> 4
+        return 1
+    let churned churn(64)
+    if churned = 0
+        return 2
+    let e log.entries.get 0
+    if e = null
+        return 3
+    let text (*e)
+    if text.equals("the quick brown fox jumps over the lazy dog") = false
+        return 4
+    42
+}
+
+if check() = 42
+    print("PASS")
+else
+    print("FAIL")

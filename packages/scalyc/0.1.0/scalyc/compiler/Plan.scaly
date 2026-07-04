@@ -704,6 +704,14 @@ define MethodMatch
     throws_type: ref[PlannedType]?
     is_intrinsic: bool
     takes_this: bool
+    ; Phase-5 class 1 (value-guts persist): true when THIS call passes an
+    ; argument whose guts live on the caller frame's local page (Local life)
+    ; to a callee whose body stores a parameter's value into state that
+    ; outlives its frame (this-field putadd, e.g. add_error's
+    ; `errors.add message`). collapse_operand_sequence# promotes such
+    ; arguments to the caller page — the auto-promoted form of the old
+    ; handwritten `#` at every diag-text call site.
+    persists_args: bool
 )
 
 ; Result of operator lookup
