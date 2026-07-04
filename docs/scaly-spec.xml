@@ -8,6 +8,7 @@
   <!ENTITY grammar-productions SYSTEM "scaly/grammar.xml">
   <!ENTITY definitions SYSTEM "scaly/chapters/definitions.xml">
   <!ENTITY expressions SYSTEM "scaly/chapters/expressions.xml">
+  <!ENTITY modules SYSTEM "scaly/chapters/modules.xml">
   <!ENTITY generated-expressions SYSTEM "scaly/generated-expressions.xml">
   <!ENTITY generated-definitions SYSTEM "scaly/generated-definitions.xml">
   <!ENTITY generated-choose SYSTEM "scaly/generated-choose.xml">
@@ -24,6 +25,7 @@
   &grammar;
   &definitions;
   &expressions;
+  &modules;
   &stdlib;
   &appendix-bootstrap;
 

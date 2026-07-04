@@ -98,7 +98,7 @@ HREF="tutorial.htm#AEN253"
 ></DT
 ><DT
 ><A
-HREF="tutorial.htm#AEN323"
+HREF="tutorial.htm#AEN334"
 >Putting It Together</A
 ></DT
 ></DL
@@ -1165,7 +1165,7 @@ CLASS="code"
         and perform side effects. The distinction is visible at every call site,
         so a reader always knows which calls can mutate state. See
         <A
-HREF="types.htm#AEN548"
+HREF="types.htm#AEN559"
 >the Section called <I
 >Mutation via Procedures</I
 > in Chapter 4</A
@@ -1213,7 +1213,7 @@ let p Point(3, 4)
 let d p.distance_squared()   ; d is 25</PRE
 ><P
 ><A
-HREF="types.htm#AEN554"
+HREF="types.htm#AEN565"
 >the Section called <I
 >Constructors</I
 > in Chapter 4</A
@@ -1274,7 +1274,7 @@ let a or_zero(Option.Some(7))   ; a is 7
 let b or_zero(Option.None)      ; b is 0</PRE
 ><P
 >See <A
-HREF="types.htm#AEN689"
+HREF="types.htm#AEN700"
 >the Section called <I
 >Union Types</I
 > in Chapter 4</A
@@ -1284,13 +1284,67 @@ CLASS="code"
 >T?</TT
 > shorthand, and pattern matching in full.</P
 ></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN323"
+>Modules and Imports</A
+></H2
+><P
+>Split a program across files with <TT
+CLASS="code"
+>module</TT
+>: the
+        statement <TT
+CLASS="code"
+>module shapes</TT
+> loads the sibling file
+        <TT
+CLASS="filename"
+>shapes.scaly</TT
+>. A type defined there stays hidden
+        until the using file imports it with <TT
+CLASS="code"
+>use</TT
+>:</P
+><PRE
+CLASS="programlisting"
+>; shapes.scaly
+define Box(width: int, height: int)
+{
+    function area(this) returns int
+        width * height
+}
+
+; myprog.scaly
+module shapes
+use myprog.shapes.Box        ; or: use myprog.shapes.*
+
+let b Box(3, 4)
+if b.area() = 12
+    print("area is 12")</PRE
+><P
+>Forgetting the import is caught at compile time, and the error
+        states the exact <TT
+CLASS="code"
+>use</TT
+> line to add. The standard library
+        needs no imports — it is always visible. See
+        <A
+HREF="modules.htm"
+>Chapter 8</A
+> for packages, visibility rules, and glob
+        imports.</P
+></DIV
 ></DIV
 ><DIV
 CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN323"
+NAME="AEN334"
 >Putting It Together</A
 ></H1
 ><P

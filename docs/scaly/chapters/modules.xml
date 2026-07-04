@@ -1,0 +1,174 @@
+<chapter xml:id="modules">
+  <title>Modules and Packages</title>
+
+  <section xml:id="mod-overview">
+    <title>Overview</title>
+    <para>A Scaly program can be split across several source files, and it can
+      depend on other packages. There are no build files, manifests, or
+      configuration files — three statements inside the source itself organize
+      everything:</para>
+    <itemizedlist>
+      <listitem>
+        <para><code>module</code> loads another source file into the current
+          program or package.</para>
+      </listitem>
+      <listitem>
+        <para><code>package</code> declares a dependency on another
+          package.</para>
+      </listitem>
+      <listitem>
+        <para><code>use</code> makes types defined in another module visible
+          in the current file.</para>
+      </listitem>
+    </itemizedlist>
+  </section>
+
+  <section xml:id="mod-module">
+    <title>Modules</title>
+    <para>Every source file is a module. The statement
+      <code>module shapes</code> loads the file
+      <filename>shapes.scaly</filename> from the directory of the file that
+      declares it and makes it part of the program:</para>
+    <programlisting>; shapes.scaly
+define Box(width: int, height: int)
+{
+    function area(this) returns int
+        width * height
+}
+
+; myprog.scaly
+module shapes
+use myprog.shapes.Box
+
+let b Box(3, 4)
+if b.area() = 12
+    print("area is 12")</programlisting>
+    <para>A module may declare child modules of its own. Those live in a
+      directory named after the parent module: if
+      <filename>compiler.scaly</filename> declares
+      <code>module lexer</code>, the child is loaded from
+      <filename>compiler/lexer.scaly</filename>. This mirrors how the standard
+      library and the compiler themselves are laid out.</para>
+    <para>Top-level statements of a loaded module are ignored — only its
+      definitions become part of the program. Programs have top-level
+      statements; libraries consist of definitions only.</para>
+  </section>
+
+  <section xml:id="mod-package">
+    <title>Packages</title>
+    <para>A package is a source distribution. Its version is encoded in its
+      filesystem path — <filename>packages/scaly/0.1.0/</filename> — and that
+      path is the single source of truth; there is no separate version
+      manifest. The statement</para>
+    <programlisting>package scaly 0.1.0</programlisting>
+    <para>declares a dependency on that package. Packages are searched in
+      <filename>./packages/</filename> first, then
+      <filename>/usr/share/scaly/packages/</filename>, then any paths given
+      with <option>-I</option>. When <envar>SCALY_HOME</envar> is set, the
+      standard packages are resolved under
+      <filename>$SCALY_HOME/packages/</filename>.</para>
+    <para>Multiple versions of the same package can coexist in one program:
+      the version is baked into the mangled symbol names, so they never
+      collide. Dependencies are not transitively visible — a package sees only
+      the packages it declares itself — and circular package dependencies are
+      forbidden.</para>
+    <para>The standard library package <code>scaly</code> is the implicit
+      <emphasis>prelude</emphasis>: every program depends on it automatically,
+      and its types are visible everywhere without any <code>use</code>
+      statement. Pass <option>--no-prelude</option> to compile without it, for
+      bare-metal or embedded targets. See <xref linkend="types-prelude"/> for
+      what the prelude provides.</para>
+  </section>
+
+  <section xml:id="mod-use">
+    <title>Imports and Visibility</title>
+    <para>Type definitions are private to their module by default. A type
+      defined in another module — even one loaded into the same program with
+      <code>module</code> — is hidden until the current file imports it with a
+      <code>use</code> statement. This keeps every file's dependencies
+      explicit: the list of <code>use</code> statements at the top of a file
+      is a complete inventory of the outside types the file relies on.</para>
+
+    <section xml:id="mod-use-default">
+      <title>What Is Visible Without an Import</title>
+      <para>Three kinds of types need no <code>use</code> statement:</para>
+      <itemizedlist>
+        <listitem>
+          <para>Types defined <emphasis>in the same file</emphasis>.</para>
+        </listitem>
+        <listitem>
+          <para>Types of the <emphasis>prelude</emphasis> — the standard
+            library (<code>String</code>, <code>Vector</code>,
+            <code>Option</code>, …) is always visible.</para>
+        </listitem>
+        <listitem>
+          <para>The namespace of a <emphasis>declared child module</emphasis>.
+            When a file declares <code>module geometry</code> and
+            <filename>geometry.scaly</filename> defines a namespace of the
+            same name, that namespace is visible in the declaring file, so its
+            members can be reached qualified:</para>
+          <programlisting>; geometry.scaly
+define geometry
+{
+    function unit_area() returns int
+        1
+}
+
+; myprog.scaly
+module geometry
+
+let a geometry.unit_area()   ; qualified access, no use needed</programlisting>
+        </listitem>
+      </itemizedlist>
+      <para>Visibility applies to named type definitions. Free functions are
+        resolved through their namespaces and are not gated separately.</para>
+    </section>
+
+    <section xml:id="mod-use-explicit">
+      <title>Importing a Single Type</title>
+      <para>A <code>use</code> statement names a type by its full dotted path.
+        The path starts with the program or package name, followed by the
+        module path, ending in the type name:</para>
+      <programlisting>use myprog.shapes.Box            ; Box from module shapes of program myprog
+use scalyc.compiler.Modeler      ; Modeler from package scalyc</programlisting>
+      <para>A module that is named after the single type it defines — the
+        file <filename>Modeler.scaly</filename> defining
+        <code>Modeler</code> — is addressed once, as the path spells it; the
+        module and the type do not appear as two separate path segments.</para>
+    </section>
+
+    <section xml:id="mod-use-glob">
+      <title>Importing Everything from a Module</title>
+      <para>A trailing <code>*</code> imports every type a module
+        defines:</para>
+      <programlisting>module shapes
+use myprog.shapes.*
+
+let b Box(3, 4)              ; Box is visible through the glob
+if b.area() = 12
+    print("glob works")</programlisting>
+      <para>Globs are convenient for a module whose types are used
+        pervasively. Prefer single-type imports when a file uses only one or
+        two names from a module — they document the dependency more
+        precisely.</para>
+    </section>
+
+    <section xml:id="mod-use-diagnostic">
+      <title>When a Type Is Not Visible</title>
+      <para>Referencing a type that exists in the program but has not been
+        imported fails the compile. The error names the module that defines
+        the type and states the exact <code>use</code> line that would import
+        it:</para>
+      <programlisting>myprog.scaly:3:7: error: function not found: Box - defined in
+    myprog.shapes but not visible here; add: use myprog.shapes.Box</programlisting>
+      <para>Two compiler flags support working with visibility:
+        <option>--no-use-vis</option> disables enforcement entirely (every
+        type in the program is visible everywhere, the pre-visibility
+        behavior), and <option>--use-vis</option> prints an advisory report of
+        every reference that strict visibility would reject — useful when
+        migrating an existing codebase, to collect the needed
+        <code>use</code> lines before turning enforcement on.</para>
+    </section>
+  </section>
+
+</chapter>

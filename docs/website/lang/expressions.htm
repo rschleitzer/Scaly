@@ -13,8 +13,8 @@ REL="PREVIOUS"
 TITLE="Definitions"
 HREF="definitions.htm"><LINK
 REL="NEXT"
-TITLE="Standard Library Reference"
-HREF="stdlib.htm"><META
+TITLE="Modules and Packages"
+HREF="modules.htm"><META
 HTTP-EQUIV="Content-Type"
 CONTENT="text/html; charset=UTF-8"></HEAD
 ><BODY
@@ -58,7 +58,7 @@ WIDTH="10%"
 ALIGN="right"
 VALIGN="bottom"
 ><A
-HREF="stdlib.htm"
+HREF="modules.htm"
 ACCESSKEY="N"
 >Next</A
 ></TD
@@ -71,7 +71,7 @@ WIDTH="100%"></DIV
 CLASS="chapter"
 ><H1
 ><A
-NAME="AEN1567"
+NAME="AEN1578"
 ></A
 >Chapter 7 Expressions</H1
 ><DIV
@@ -83,57 +83,62 @@ CLASS="TOC"
 ></DT
 ><DT
 ><A
-HREF="expressions.htm#AEN1569"
+HREF="expressions.htm#AEN1580"
 >Overview</A
 ></DT
 ><DT
 ><A
-HREF="expressions.htm#AEN1572"
+HREF="expressions.htm#AEN1583"
 >Literals</A
 ></DT
 ><DT
 ><A
-HREF="expressions.htm#AEN1722"
+HREF="expressions.htm#AEN1733"
 >Operations</A
 ></DT
 ><DT
 ><A
-HREF="expressions.htm#AEN1880"
+HREF="expressions.htm#AEN1891"
 >Comparison Operators</A
 ></DT
 ><DT
 ><A
-HREF="expressions.htm#AEN1967"
+HREF="expressions.htm#AEN1978"
 >Boolean Operators</A
 ></DT
 ><DT
 ><A
-HREF="expressions.htm#AEN2024"
+HREF="expressions.htm#AEN2035"
 >Bitwise Operators</A
 ></DT
 ><DT
 ><A
-HREF="expressions.htm#AEN2059"
+HREF="expressions.htm#AEN2070"
+>Lambdas</A
+></DT
+><DT
+><A
+HREF="expressions.htm#AEN2210"
 >If Expressions</A
 ></DT
 ><DT
 ><A
-HREF="expressions.htm#AEN2067"
+HREF="expressions.htm#AEN2218"
 >Match Expressions</A
 ></DT
 ><DT
 ><A
-HREF="expressions.htm#AEN2076"
+HREF="expressions.htm#AEN2227"
 >Choose Expressions</A
 ></DT
 ><DT
 ><A
-HREF="expressions.htm#AEN2140"
+HREF="expressions.htm#AEN2291"
 >Optional Types</A
 ></DT
 ><DT
 ><A
-HREF="expressions.htm#AEN2204"
+HREF="expressions.htm#AEN2355"
 >Variant Construction</A
 ></DT
 ></DL
@@ -143,7 +148,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN1569"
+NAME="AEN1580"
 >Overview</A
 ></H1
 ><P
@@ -160,7 +165,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN1572"
+NAME="AEN1583"
 >Literals</A
 ></H1
 ><P
@@ -170,7 +175,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN1575"
+NAME="AEN1586"
 >Boolean Literals</A
 ></H2
 ><P
@@ -180,7 +185,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN1578"
+NAME="AEN1589"
 ></A
 ><TABLE
 BORDER="0"
@@ -235,7 +240,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN1597"
+NAME="AEN1608"
 >Integer Literals</A
 ></H2
 ><P
@@ -245,7 +250,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN1600"
+NAME="AEN1611"
 ></A
 ><TABLE
 BORDER="0"
@@ -313,7 +318,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN1624"
+NAME="AEN1635"
 >Hexadecimal Literals</A
 ></H2
 ><P
@@ -323,7 +328,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN1627"
+NAME="AEN1638"
 ></A
 ><TABLE
 BORDER="0"
@@ -391,7 +396,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN1651"
+NAME="AEN1662"
 >Floating-Point Literals</A
 ></H2
 ><P
@@ -401,7 +406,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN1654"
+NAME="AEN1665"
 ></A
 ><TABLE
 BORDER="0"
@@ -469,7 +474,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN1678"
+NAME="AEN1689"
 >String Literals</A
 ></H2
 ><P
@@ -479,7 +484,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN1681"
+NAME="AEN1692"
 ></A
 ><TABLE
 BORDER="0"
@@ -532,7 +537,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN1700"
+NAME="AEN1711"
 >Character Literals</A
 ></H2
 ><P
@@ -542,7 +547,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN1703"
+NAME="AEN1714"
 ></A
 ><TABLE
 BORDER="0"
@@ -597,7 +602,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN1722"
+NAME="AEN1733"
 >Operations</A
 ></H1
 ><P
@@ -607,7 +612,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN1725"
+NAME="AEN1736"
 >Prefix Functions</A
 ></H2
 ><P
@@ -620,7 +625,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN1728"
+NAME="AEN1739"
 ></A
 ><TABLE
 BORDER="0"
@@ -688,7 +693,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN1752"
+NAME="AEN1763"
 >Operator Chains</A
 ></H2
 ><P
@@ -701,7 +706,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN1755"
+NAME="AEN1766"
 ></A
 ><TABLE
 BORDER="0"
@@ -821,7 +826,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN1799"
+NAME="AEN1810"
 >Parentheses and Grouping</A
 ></H2
 ><P
@@ -832,7 +837,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN1802"
+NAME="AEN1813"
 ></A
 ><TABLE
 BORDER="0"
@@ -900,7 +905,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN1826"
+NAME="AEN1837"
 >Identifier Shapes</A
 ></H2
 ><P
@@ -910,7 +915,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN1829"
+NAME="AEN1840"
 ></A
 ><TABLE
 BORDER="0"
@@ -965,7 +970,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN1848"
+NAME="AEN1859"
 >Let Bindings</A
 ></H2
 ><P
@@ -975,7 +980,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN1851"
+NAME="AEN1862"
 ></A
 ><TABLE
 BORDER="0"
@@ -1061,7 +1066,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN1880"
+NAME="AEN1891"
 >Comparison Operators</A
 ></H1
 ><P
@@ -1071,7 +1076,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN1883"
+NAME="AEN1894"
 >Equality</A
 ></H2
 ><P
@@ -1081,7 +1086,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN1886"
+NAME="AEN1897"
 ></A
 ><TABLE
 BORDER="0"
@@ -1162,7 +1167,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN1915"
+NAME="AEN1926"
 >Relational Operators</A
 ></H2
 ><P
@@ -1172,7 +1177,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN1918"
+NAME="AEN1929"
 ></A
 ><TABLE
 BORDER="0"
@@ -1305,7 +1310,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN1967"
+NAME="AEN1978"
 >Boolean Operators</A
 ></H1
 ><P
@@ -1315,7 +1320,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN1970"
+NAME="AEN1981"
 >Boolean Negation</A
 ></H2
 ><P
@@ -1325,7 +1330,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN1973"
+NAME="AEN1984"
 ></A
 ><TABLE
 BORDER="0"
@@ -1380,7 +1385,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN1992"
+NAME="AEN2003"
 >Boolean And/Or</A
 ></H2
 ><P
@@ -1390,7 +1395,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN1995"
+NAME="AEN2006"
 ></A
 ><TABLE
 BORDER="0"
@@ -1471,7 +1476,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN2024"
+NAME="AEN2035"
 >Bitwise Operators</A
 ></H1
 ><P
@@ -1481,7 +1486,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN2027"
+NAME="AEN2038"
 >Bit Shifts</A
 ></H2
 ><P
@@ -1491,7 +1496,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN2030"
+NAME="AEN2041"
 ></A
 ><TABLE
 BORDER="0"
@@ -1572,7 +1577,466 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN2059"
+NAME="AEN2070"
+>Lambdas</A
+></H1
+><P
+>A lambda is an anonymous function written with a backslash:
+    `\params: body`. Parameters are space-separated. A lambda bound to a name
+    and applied to arguments is monomorphized at the call site for those
+    argument types, so the same lambda works at any argument type.</P
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN2073"
+>Lambda Application</A
+></H2
+><P
+>A lambda bound to a name can be called like a function.</P
+><DIV
+CLASS="informaltable"
+><P
+></P
+><A
+NAME="AEN2076"
+></A
+><TABLE
+BORDER="0"
+FRAME="void"
+CLASS="CALSTABLE"
+><COL
+WIDTH="1*"><COL
+WIDTH="1*"><THEAD
+><TR
+><TH
+>Input</TH
+><TH
+>Result</TH
+></TR
+></THEAD
+><TBODY
+><TR
+><TD
+><PRE
+CLASS="programlisting"
+>let inc \x: x + 1
+inc(5)</PRE
+></TD
+><TD
+><TT
+CLASS="literal"
+>6
+        </TT
+></TD
+></TR
+><TR
+><TD
+><PRE
+CLASS="programlisting"
+>let add \x y: x + y
+add(3, 4)</PRE
+></TD
+><TD
+><TT
+CLASS="literal"
+>7
+        </TT
+></TD
+></TR
+><TR
+><TD
+><PRE
+CLASS="programlisting"
+>let dbl \x: x + x
+let a dbl(10)
+let b dbl(21)
+a + b</PRE
+></TD
+><TD
+><TT
+CLASS="literal"
+>62
+
+    </TT
+></TD
+></TR
+></TBODY
+></TABLE
+><P
+></P
+></DIV
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN2100"
+>Captures</A
+></H2
+><P
+>A lambda captures enclosing variables by value. The captured
+        value is fixed when the lambda is applied.</P
+><DIV
+CLASS="informaltable"
+><P
+></P
+><A
+NAME="AEN2103"
+></A
+><TABLE
+BORDER="0"
+FRAME="void"
+CLASS="CALSTABLE"
+><COL
+WIDTH="1*"><COL
+WIDTH="1*"><THEAD
+><TR
+><TH
+>Input</TH
+><TH
+>Result</TH
+></TR
+></THEAD
+><TBODY
+><TR
+><TD
+><PRE
+CLASS="programlisting"
+>let n 10
+let f \x: x + n
+f(5)</PRE
+></TD
+><TD
+><TT
+CLASS="literal"
+>15
+        </TT
+></TD
+></TR
+><TR
+><TD
+><PRE
+CLASS="programlisting"
+>let a 3
+let b 4
+let g \x: x + a + b
+g(10)</PRE
+></TD
+><TD
+><TT
+CLASS="literal"
+>17
+
+    </TT
+></TD
+></TR
+></TBODY
+></TABLE
+><P
+></P
+></DIV
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN2122"
+>Captures in Braced Bodies</A
+></H2
+><P
+>Capture discovery reaches inside a braced body, and a body-local
+        binding that shadows an enclosing name is the local, not a capture.</P
+><DIV
+CLASS="informaltable"
+><P
+></P
+><A
+NAME="AEN2125"
+></A
+><TABLE
+BORDER="0"
+FRAME="void"
+CLASS="CALSTABLE"
+><COL
+WIDTH="1*"><COL
+WIDTH="1*"><THEAD
+><TR
+><TH
+>Input</TH
+><TH
+>Result</TH
+></TR
+></THEAD
+><TBODY
+><TR
+><TD
+><PRE
+CLASS="programlisting"
+>let n 10
+let cap \x: { x + n }
+cap(5)</PRE
+></TD
+><TD
+><TT
+CLASS="literal"
+>15
+        </TT
+></TD
+></TR
+><TR
+><TD
+><PRE
+CLASS="programlisting"
+>let n 10
+let shade \x: { let n 99
+x + n }
+shade(5)</PRE
+></TD
+><TD
+><TT
+CLASS="literal"
+>104
+
+    </TT
+></TD
+></TR
+></TBODY
+></TABLE
+><P
+></P
+></DIV
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN2144"
+>Embedded Calls</A
+></H2
+><P
+>A lambda call may appear anywhere inside a larger expression, not
+        only as the whole right-hand side of a binding. Each call is resolved to
+        a direct call before operator precedence is applied.</P
+><DIV
+CLASS="informaltable"
+><P
+></P
+><A
+NAME="AEN2147"
+></A
+><TABLE
+BORDER="0"
+FRAME="void"
+CLASS="CALSTABLE"
+><COL
+WIDTH="1*"><COL
+WIDTH="1*"><THEAD
+><TR
+><TH
+>Input</TH
+><TH
+>Result</TH
+></TR
+></THEAD
+><TBODY
+><TR
+><TD
+><PRE
+CLASS="programlisting"
+>let inc \x: x + 1
+let add \x y: x + y
+inc(5) + add(3, 4)</PRE
+></TD
+><TD
+><TT
+CLASS="literal"
+>13
+        </TT
+></TD
+></TR
+><TR
+><TD
+><PRE
+CLASS="programlisting"
+>let inc \x: x + 1
+let n 100
+n + inc(9)</PRE
+></TD
+><TD
+><TT
+CLASS="literal"
+>110
+        </TT
+></TD
+></TR
+><TR
+><TD
+><PRE
+CLASS="programlisting"
+>let n 100
+let cap \x: x + n
+cap(1) + cap(2)</PRE
+></TD
+><TD
+><TT
+CLASS="literal"
+>203
+
+    </TT
+></TD
+></TR
+></TBODY
+></TABLE
+><P
+></P
+></DIV
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN2171"
+>Delegate Values</A
+></H2
+><P
+>A `delegate` names a function type. A non-capturing lambda assigned
+        to a delegate-typed binding is a function-pointer value that can be passed
+        to a function and called indirectly.</P
+><DIV
+CLASS="informaltable"
+><P
+></P
+><A
+NAME="AEN2174"
+></A
+><TABLE
+BORDER="0"
+FRAME="void"
+CLASS="CALSTABLE"
+><COL
+WIDTH="1*"><COL
+WIDTH="1*"><THEAD
+><TR
+><TH
+>Input</TH
+><TH
+>Result</TH
+></TR
+></THEAD
+><TBODY
+><TR
+><TD
+><PRE
+CLASS="programlisting"
+>define IntFn delegate(int) returns int
+function apply(f: IntFn, x: int) returns int
+    f(x)
+let g: IntFn \x: x + 1
+apply(g, 5)</PRE
+></TD
+><TD
+><TT
+CLASS="literal"
+>6
+        </TT
+></TD
+></TR
+><TR
+><TD
+><PRE
+CLASS="programlisting"
+>define IntFn delegate(int) returns int
+function twice(f: IntFn, x: int) returns int
+    f(f(x))
+let dbl: IntFn \x: x + x
+twice(dbl, 20)</PRE
+></TD
+><TD
+><TT
+CLASS="literal"
+>80
+
+    </TT
+></TD
+></TR
+></TBODY
+></TABLE
+><P
+></P
+></DIV
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN2193"
+>Closures</A
+></H2
+><P
+>A capturing lambda assigned to a delegate type is a true closure
+        value carrying the captured variables. (Closures returned from a
+        function escape onto the caller's region -- see the escaping-closure AOT
+        regression test.)</P
+><DIV
+CLASS="informaltable"
+><P
+></P
+><A
+NAME="AEN2196"
+></A
+><TABLE
+BORDER="0"
+FRAME="void"
+CLASS="CALSTABLE"
+><COL
+WIDTH="1*"><COL
+WIDTH="1*"><THEAD
+><TR
+><TH
+>Input</TH
+><TH
+>Result</TH
+></TR
+></THEAD
+><TBODY
+><TR
+><TD
+><PRE
+CLASS="programlisting"
+>define IntFn delegate(int) returns int
+function apply(f: IntFn, x: int) returns int
+    f(x)
+let n 10
+let add: IntFn \x: x + n
+apply(add, 5)</PRE
+></TD
+><TD
+><TT
+CLASS="literal"
+>15
+</TT
+></TD
+></TR
+></TBODY
+></TABLE
+><P
+></P
+></DIV
+></DIV
+></DIV
+><DIV
+CLASS="section"
+><H1
+CLASS="section"
+><A
+NAME="AEN2210"
 >If Expressions</A
 ></H1
 ><P
@@ -1601,7 +2065,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN2067"
+NAME="AEN2218"
 >Match Expressions</A
 ></H1
 ><P
@@ -1632,7 +2096,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN2076"
+NAME="AEN2227"
 >Choose Expressions</A
 ></H1
 ><P
@@ -1642,7 +2106,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN2079"
+NAME="AEN2230"
 >Choose on Variant Construction</A
 ></H2
 ><P
@@ -1652,7 +2116,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN2082"
+NAME="AEN2233"
 ></A
 ><TABLE
 BORDER="0"
@@ -1709,7 +2173,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN2101"
+NAME="AEN2252"
 >Choose with Binding</A
 ></H2
 ><P
@@ -1719,7 +2183,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN2104"
+NAME="AEN2255"
 ></A
 ><TABLE
 BORDER="0"
@@ -1762,7 +2226,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN2118"
+NAME="AEN2269"
 >Multiple When Clauses</A
 ></H2
 ><P
@@ -1772,7 +2236,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN2121"
+NAME="AEN2272"
 ></A
 ><TABLE
 BORDER="0"
@@ -1829,7 +2293,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN2140"
+NAME="AEN2291"
 >Optional Types</A
 ></H1
 ><P
@@ -1839,7 +2303,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN2143"
+NAME="AEN2294"
 >Is Null Check</A
 ></H2
 ><P
@@ -1849,7 +2313,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN2146"
+NAME="AEN2297"
 ></A
 ><TABLE
 BORDER="0"
@@ -1908,7 +2372,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN2165"
+NAME="AEN2316"
 >Optional Type Sugar</A
 ></H2
 ><P
@@ -1918,7 +2382,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN2168"
+NAME="AEN2319"
 ></A
 ><TABLE
 BORDER="0"
@@ -1962,7 +2426,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN2182"
+NAME="AEN2333"
 >Generic Option Types</A
 ></H2
 ><P
@@ -1972,7 +2436,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN2185"
+NAME="AEN2336"
 ></A
 ><TABLE
 BORDER="0"
@@ -2029,7 +2493,7 @@ CLASS="section"
 ><H1
 CLASS="section"
 ><A
-NAME="AEN2204"
+NAME="AEN2355"
 >Variant Construction</A
 ></H1
 ><P
@@ -2039,7 +2503,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN2207"
+NAME="AEN2358"
 >Construct Variants</A
 ></H2
 ><P
@@ -2049,7 +2513,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN2210"
+NAME="AEN2361"
 ></A
 ><TABLE
 BORDER="0"
@@ -2106,7 +2570,7 @@ CLASS="section"
 ><H2
 CLASS="section"
 ><A
-NAME="AEN2229"
+NAME="AEN2380"
 >Variant Is Expression</A
 ></H2
 ><P
@@ -2116,7 +2580,7 @@ CLASS="informaltable"
 ><P
 ></P
 ><A
-NAME="AEN2232"
+NAME="AEN2383"
 ></A
 ><TABLE
 BORDER="0"
@@ -2203,7 +2667,7 @@ WIDTH="33%"
 ALIGN="right"
 VALIGN="top"
 ><A
-HREF="stdlib.htm"
+HREF="modules.htm"
 ACCESSKEY="N"
 >Next</A
 ></TD
@@ -2223,7 +2687,7 @@ VALIGN="top"
 WIDTH="33%"
 ALIGN="right"
 VALIGN="top"
->Standard Library Reference</TD
+>Modules and Packages</TD
 ></TR
 ></TABLE
 ></DIV

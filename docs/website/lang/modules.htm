@@ -1,0 +1,547 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<HTML
+><HEAD
+><TITLE
+>Modules and Packages</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"><LINK
+REL="HOME"
+TITLE="The Scaly Programming Language"
+HREF="index.html"><LINK
+REL="PREVIOUS"
+TITLE="Expressions"
+HREF="expressions.htm"><LINK
+REL="NEXT"
+TITLE="Standard Library Reference"
+HREF="stdlib.htm"><META
+HTTP-EQUIV="Content-Type"
+CONTENT="text/html; charset=UTF-8"></HEAD
+><BODY
+CLASS="chapter"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>The Scaly Programming Language</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="expressions.htm"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+></TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="stdlib.htm"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="chapter"
+><H1
+><A
+NAME="AEN2402"
+></A
+>Chapter 8 Modules and Packages</H1
+><DIV
+CLASS="TOC"
+><DL
+><DT
+><B
+>Table of Contents</B
+></DT
+><DT
+><A
+HREF="modules.htm#AEN2404"
+>Overview</A
+></DT
+><DT
+><A
+HREF="modules.htm#AEN2417"
+>Modules</A
+></DT
+><DT
+><A
+HREF="modules.htm#AEN2428"
+>Packages</A
+></DT
+><DT
+><A
+HREF="modules.htm#AEN2446"
+>Imports and Visibility</A
+></DT
+></DL
+></DIV
+><DIV
+CLASS="section"
+><H1
+CLASS="section"
+><A
+NAME="AEN2404"
+>Overview</A
+></H1
+><P
+>A Scaly program can be split across several source files, and it can
+      depend on other packages. There are no build files, manifests, or
+      configuration files — three statements inside the source itself organize
+      everything:</P
+><P
+></P
+><UL
+><LI
+><P
+><TT
+CLASS="code"
+>module</TT
+> loads another source file into the current
+          program or package.</P
+></LI
+><LI
+><P
+><TT
+CLASS="code"
+>package</TT
+> declares a dependency on another
+          package.</P
+></LI
+><LI
+><P
+><TT
+CLASS="code"
+>use</TT
+> makes types defined in another module visible
+          in the current file.</P
+></LI
+></UL
+></DIV
+><DIV
+CLASS="section"
+><H1
+CLASS="section"
+><A
+NAME="AEN2417"
+>Modules</A
+></H1
+><P
+>Every source file is a module. The statement
+      <TT
+CLASS="code"
+>module shapes</TT
+> loads the file
+      <TT
+CLASS="filename"
+>shapes.scaly</TT
+> from the directory of the file that
+      declares it and makes it part of the program:</P
+><PRE
+CLASS="programlisting"
+>; shapes.scaly
+define Box(width: int, height: int)
+{
+    function area(this) returns int
+        width * height
+}
+
+; myprog.scaly
+module shapes
+use myprog.shapes.Box
+
+let b Box(3, 4)
+if b.area() = 12
+    print("area is 12")</PRE
+><P
+>A module may declare child modules of its own. Those live in a
+      directory named after the parent module: if
+      <TT
+CLASS="filename"
+>compiler.scaly</TT
+> declares
+      <TT
+CLASS="code"
+>module lexer</TT
+>, the child is loaded from
+      <TT
+CLASS="filename"
+>compiler/lexer.scaly</TT
+>. This mirrors how the standard
+      library and the compiler themselves are laid out.</P
+><P
+>Top-level statements of a loaded module are ignored — only its
+      definitions become part of the program. Programs have top-level
+      statements; libraries consist of definitions only.</P
+></DIV
+><DIV
+CLASS="section"
+><H1
+CLASS="section"
+><A
+NAME="AEN2428"
+>Packages</A
+></H1
+><P
+>A package is a source distribution. Its version is encoded in its
+      filesystem path — <TT
+CLASS="filename"
+>packages/scaly/0.1.0/</TT
+> — and that
+      path is the single source of truth; there is no separate version
+      manifest. The statement</P
+><PRE
+CLASS="programlisting"
+>package scaly 0.1.0</PRE
+><P
+>declares a dependency on that package. Packages are searched in
+      <TT
+CLASS="filename"
+>./packages/</TT
+> first, then
+      <TT
+CLASS="filename"
+>/usr/share/scaly/packages/</TT
+>, then any paths given
+      with <CODE
+CLASS="option"
+>-I</CODE
+>. When <CODE
+CLASS="envar"
+>SCALY_HOME</CODE
+> is set, the
+      standard packages are resolved under
+      <TT
+CLASS="filename"
+>$SCALY_HOME/packages/</TT
+>.</P
+><P
+>Multiple versions of the same package can coexist in one program:
+      the version is baked into the mangled symbol names, so they never
+      collide. Dependencies are not transitively visible — a package sees only
+      the packages it declares itself — and circular package dependencies are
+      forbidden.</P
+><P
+>The standard library package <TT
+CLASS="code"
+>scaly</TT
+> is the implicit
+      <SPAN
+CLASS="emphasis"
+><I
+CLASS="emphasis"
+>prelude</I
+></SPAN
+>: every program depends on it automatically,
+      and its types are visible everywhere without any <TT
+CLASS="code"
+>use</TT
+>
+      statement. Pass <CODE
+CLASS="option"
+>--no-prelude</CODE
+> to compile without it, for
+      bare-metal or embedded targets. See <A
+HREF="types.htm#AEN499"
+>the Section called <I
+>Backend Preludes (Future Direction)</I
+> in Chapter 4</A
+> for
+      what the prelude provides.</P
+></DIV
+><DIV
+CLASS="section"
+><H1
+CLASS="section"
+><A
+NAME="AEN2446"
+>Imports and Visibility</A
+></H1
+><P
+>Type definitions are private to their module by default. A type
+      defined in another module — even one loaded into the same program with
+      <TT
+CLASS="code"
+>module</TT
+> — is hidden until the current file imports it with a
+      <TT
+CLASS="code"
+>use</TT
+> statement. This keeps every file's dependencies
+      explicit: the list of <TT
+CLASS="code"
+>use</TT
+> statements at the top of a file
+      is a complete inventory of the outside types the file relies on.</P
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN2452"
+>What Is Visible Without an Import</A
+></H2
+><P
+>Three kinds of types need no <TT
+CLASS="code"
+>use</TT
+> statement:</P
+><P
+></P
+><UL
+><LI
+><P
+>Types defined <SPAN
+CLASS="emphasis"
+><I
+CLASS="emphasis"
+>in the same file</I
+></SPAN
+>.</P
+></LI
+><LI
+><P
+>Types of the <SPAN
+CLASS="emphasis"
+><I
+CLASS="emphasis"
+>prelude</I
+></SPAN
+> — the standard
+            library (<TT
+CLASS="code"
+>String</TT
+>, <TT
+CLASS="code"
+>Vector</TT
+>,
+            <TT
+CLASS="code"
+>Option</TT
+>, …) is always visible.</P
+></LI
+><LI
+><P
+>The namespace of a <SPAN
+CLASS="emphasis"
+><I
+CLASS="emphasis"
+>declared child module</I
+></SPAN
+>.
+            When a file declares <TT
+CLASS="code"
+>module geometry</TT
+> and
+            <TT
+CLASS="filename"
+>geometry.scaly</TT
+> defines a namespace of the
+            same name, that namespace is visible in the declaring file, so its
+            members can be reached qualified:</P
+><PRE
+CLASS="programlisting"
+>; geometry.scaly
+define geometry
+{
+    function unit_area() returns int
+        1
+}
+
+; myprog.scaly
+module geometry
+
+let a geometry.unit_area()   ; qualified access, no use needed</PRE
+></LI
+></UL
+><P
+>Visibility applies to named type definitions. Free functions are
+        resolved through their namespaces and are not gated separately.</P
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN2473"
+>Importing a Single Type</A
+></H2
+><P
+>A <TT
+CLASS="code"
+>use</TT
+> statement names a type by its full dotted path.
+        The path starts with the program or package name, followed by the
+        module path, ending in the type name:</P
+><PRE
+CLASS="programlisting"
+>use myprog.shapes.Box            ; Box from module shapes of program myprog
+use scalyc.compiler.Modeler      ; Modeler from package scalyc</PRE
+><P
+>A module that is named after the single type it defines — the
+        file <TT
+CLASS="filename"
+>Modeler.scaly</TT
+> defining
+        <TT
+CLASS="code"
+>Modeler</TT
+> — is addressed once, as the path spells it; the
+        module and the type do not appear as two separate path segments.</P
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN2481"
+>Importing Everything from a Module</A
+></H2
+><P
+>A trailing <TT
+CLASS="code"
+>*</TT
+> imports every type a module
+        defines:</P
+><PRE
+CLASS="programlisting"
+>module shapes
+use myprog.shapes.*
+
+let b Box(3, 4)              ; Box is visible through the glob
+if b.area() = 12
+    print("glob works")</PRE
+><P
+>Globs are convenient for a module whose types are used
+        pervasively. Prefer single-type imports when a file uses only one or
+        two names from a module — they document the dependency more
+        precisely.</P
+></DIV
+><DIV
+CLASS="section"
+><H2
+CLASS="section"
+><A
+NAME="AEN2487"
+>When a Type Is Not Visible</A
+></H2
+><P
+>Referencing a type that exists in the program but has not been
+        imported fails the compile. The error names the module that defines
+        the type and states the exact <TT
+CLASS="code"
+>use</TT
+> line that would import
+        it:</P
+><PRE
+CLASS="programlisting"
+>myprog.scaly:3:7: error: function not found: Box - defined in
+    myprog.shapes but not visible here; add: use myprog.shapes.Box</PRE
+><P
+>Two compiler flags support working with visibility:
+        <CODE
+CLASS="option"
+>--no-use-vis</CODE
+> disables enforcement entirely (every
+        type in the program is visible everywhere, the pre-visibility
+        behavior), and <CODE
+CLASS="option"
+>--use-vis</CODE
+> prints an advisory report of
+        every reference that strict visibility would reject — useful when
+        migrating an existing codebase, to collect the needed
+        <TT
+CLASS="code"
+>use</TT
+> lines before turning enforcement on.</P
+></DIV
+></DIV
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="expressions.htm"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="index.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="stdlib.htm"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Expressions</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+>&nbsp;</TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Standard Library Reference</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

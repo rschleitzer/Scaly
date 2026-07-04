@@ -485,6 +485,33 @@ let b or_zero(Option.None)      ; b is 0</programlisting>
       <para>See <xref linkend="types-unions"/> for union layout, the
         <code>T?</code> shorthand, and pattern matching in full.</para>
     </section>
+
+    <section xml:id="tut-modules">
+      <title>Modules and Imports</title>
+      <para>Split a program across files with <code>module</code>: the
+        statement <code>module shapes</code> loads the sibling file
+        <filename>shapes.scaly</filename>. A type defined there stays hidden
+        until the using file imports it with <code>use</code>:</para>
+      <programlisting>; shapes.scaly
+define Box(width: int, height: int)
+{
+    function area(this) returns int
+        width * height
+}
+
+; myprog.scaly
+module shapes
+use myprog.shapes.Box        ; or: use myprog.shapes.*
+
+let b Box(3, 4)
+if b.area() = 12
+    print("area is 12")</programlisting>
+      <para>Forgetting the import is caught at compile time, and the error
+        states the exact <code>use</code> line to add. The standard library
+        needs no imports — it is always visible. See
+        <xref linkend="modules"/> for packages, visibility rules, and glob
+        imports.</para>
+    </section>
   </section>
 
   <section xml:id="tut-together">
