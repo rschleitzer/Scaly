@@ -44,51 +44,14 @@
 ; (unlike the Syntax unions in symbols.scaly). In a choose returning a value,
 ; EVERY arm uses an explicit return.
 
-use scaly.containers.String
-use scaly.containers.StringBuilder
-use scaly.containers.Vector
-use scaly.memory.Page
 use scaly.memory.runtime
 
 use scalyls.diagnostics
 
 use scalyc.compiler.parser
 use scalyc.compiler.Modeler
-use scalyc.compiler.Model.Program
-use scalyc.compiler.Model.Span
 use scalyc.compiler.Planner
 
-use scalyc.compiler.Plan.Plan
-use scalyc.compiler.Plan.PlannedType
-use scalyc.compiler.Plan.PlannedOperand
-use scalyc.compiler.Plan.PlannedStatement
-use scalyc.compiler.Plan.PlannedExpression
-use scalyc.compiler.Plan.PlannedImplementation
-use scalyc.compiler.Plan.PlannedAction
-use scalyc.compiler.Plan.PlannedBinding
-use scalyc.compiler.Plan.PlannedBlock
-use scalyc.compiler.Plan.PlannedCall
-use scalyc.compiler.Plan.PlannedTuple
-use scalyc.compiler.Plan.PlannedComponent
-use scalyc.compiler.Plan.PlannedIf
-use scalyc.compiler.Plan.PlannedMatch
-use scalyc.compiler.Plan.PlannedBranch
-use scalyc.compiler.Plan.PlannedChoose
-use scalyc.compiler.Plan.PlannedWhen
-use scalyc.compiler.Plan.PlannedFor
-use scalyc.compiler.Plan.PlannedWhile
-use scalyc.compiler.Plan.PlannedRepeat
-use scalyc.compiler.Plan.PlannedTry
-use scalyc.compiler.Plan.PlannedAs
-use scalyc.compiler.Plan.PlannedIs
-use scalyc.compiler.Plan.PlannedVariantConstruction
-use scalyc.compiler.Plan.PlannedFunction
-use scalyc.compiler.Plan.PlannedStructure
-use scalyc.compiler.Plan.PlannedUnion
-use scalyc.compiler.Plan.PlannedInitializer
-use scalyc.compiler.Plan.PlannedOperator
-use scalyc.compiler.Plan.PlannedDeInitializer
-use scalyc.compiler.Plan.PlannedGlobal
 use scalyc.compiler.Model.*
 use scalyc.compiler.Plan.*
 use scalyc.compiler.parser.*

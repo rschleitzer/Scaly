@@ -1,10 +1,6 @@
 ; Model.scaly - Semantic model types for Scaly compiler
 ; Ported from retired proto-Scaly Model.scaly
 
-use scaly.containers.Vector
-use scaly.containers.HashMap
-use scaly.containers.String
-
 ; Source location
 define Span(start: size_t, end: size_t)
 

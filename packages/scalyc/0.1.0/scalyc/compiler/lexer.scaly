@@ -1,8 +1,5 @@
 package scaly 0.1.0
 
-use scaly.containers.String
-use scaly.containers.HashSet
-
 define lexer
 {
     ; Literal types

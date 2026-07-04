@@ -5,8 +5,6 @@
 ;
 ; Reference: https://llvm.org/doxygen/group__LLVMC.html
 
-use scaly.containers.String
-
 ; ============================================================================
 ; LLVM Opaque Handle Types
 ; ============================================================================

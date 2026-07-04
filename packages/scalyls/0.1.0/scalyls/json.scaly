@@ -26,12 +26,6 @@
 ; no else (it desugars to an `if` with no alternative). Real branching
 ; uses if/else. Every if below is the true-runs-the-body form.
 
-use scaly.containers.String
-use scaly.containers.StringBuilder
-use scaly.containers.Array
-use scaly.containers.List
-use scaly.containers.ListIterator
-use scaly.memory.Page
 use scaly.memory.runtime
 
 ; Empty payload for the Null variant (see PAYLOADLESS-VARIANT NOTE).

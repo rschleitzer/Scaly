@@ -28,8 +28,6 @@
 ;
 ; CONTROL-FLOW NOTE: `if COND STMT` runs STMT when COND is TRUE (no else).
 
-use scaly.containers.String
-
 ; libc allocator. malloc declared locally (fixpoint-safe — touches no scaly
 ; source); the table is leaked at process exit (one table per compile).
 function malloc(size: size_t) returns pointer[void] extern

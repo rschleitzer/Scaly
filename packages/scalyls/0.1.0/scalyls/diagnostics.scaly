@@ -25,17 +25,12 @@
 ; else). One statement per line. `choose *ptr` does not parse — bind the
 ; deref to a local first.
 
-use scaly.containers.String
-use scaly.containers.StringBuilder
-use scaly.containers.Vector
-use scaly.memory.Page
 use scaly.memory.runtime
 use scalyls.json
 
 ; Compiler pipeline (scalyc package).
 use scalyc.compiler.parser
 use scalyc.compiler.Modeler
-use scalyc.compiler.Model.Program
 use scalyc.compiler.Planner
 use scalyc.compiler.Model.*
 use scalyc.compiler.Plan.*

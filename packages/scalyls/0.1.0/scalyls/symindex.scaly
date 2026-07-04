@@ -35,7 +35,6 @@
 ; CONTROL-FLOW NOTE: `if COND STMT` runs STMT when COND is TRUE (no else).
 ; One statement per line (`;` starts a comment, not a separator).
 
-use scaly.containers.String
 use scaly.memory.runtime
 
 ; libc allocator. free + memcpy come from scaly.memory.runtime; malloc is not

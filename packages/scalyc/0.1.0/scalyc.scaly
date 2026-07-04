@@ -1,7 +1,5 @@
 package scaly 0.1.0
 
-use scaly.containers.String
-
 define scalyc {
     module compiler
     module cli

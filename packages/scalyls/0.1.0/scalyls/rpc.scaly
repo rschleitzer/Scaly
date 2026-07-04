@@ -16,10 +16,6 @@
 ; numeric bytes, never "\r"/"\n" literals (the lexer stores those raw as
 ; backslash+letter — s185 escape class).
 
-use scaly.containers.String
-use scaly.containers.StringBuilder
-use scaly.containers.Array
-use scaly.memory.Page
 use scaly.memory.runtime
 
 define RPC_STDIN_FD: int 0

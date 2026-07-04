@@ -36,11 +36,7 @@
 ; deref to a local first. In a choose returning a value, EVERY arm uses an
 ; explicit `return` (mixing return + bare arms drops the bare ones).
 
-use scaly.containers.String
-use scaly.containers.StringBuilder
-use scaly.containers.Vector
 use scaly.io.File
-use scaly.memory.Page
 use scaly.memory.runtime
 use scaly.memory.root_pages.getenv
 use scalyls.json
@@ -66,43 +62,6 @@ function fgetc(stream: pointer[void]) returns i32 extern
 
 ; Syntax tree types (parser output). Imported by payload type so the
 ; `choose ... when x: TSyntax` arms resolve.
-use scalyc.compiler.Syntax.DeclarationSyntax
-use scalyc.compiler.Syntax.DefinitionSyntax
-use scalyc.compiler.Syntax.MemberSyntax
-use scalyc.compiler.Syntax.ExportSyntax
-use scalyc.compiler.Syntax.TargetSyntax
-use scalyc.compiler.Syntax.BodySyntax
-use scalyc.compiler.Syntax.NamespaceSyntax
-use scalyc.compiler.Syntax.UnionSyntax
-use scalyc.compiler.Syntax.EmptySyntax
-use scalyc.compiler.Syntax.PackageSyntax
-use scalyc.compiler.Syntax.UseSyntax
-use scalyc.compiler.Syntax.PrivateSyntax
-use scalyc.compiler.Syntax.FunctionSyntax
-use scalyc.compiler.Syntax.ProcedureSyntax
-use scalyc.compiler.Syntax.OperatorSyntax
-use scalyc.compiler.Syntax.TraitSyntax
-use scalyc.compiler.Syntax.MacroSyntax
-use scalyc.compiler.Syntax.ModuleSyntax
-use scalyc.compiler.Syntax.MutableSyntax
-use scalyc.compiler.Syntax.ClassSyntax
-use scalyc.compiler.Syntax.ConstantSyntax
-use scalyc.compiler.Syntax.DelegateSyntax
-use scalyc.compiler.Syntax.IntrinsicSyntax
-use scalyc.compiler.Syntax.NamedSyntax
-use scalyc.compiler.Syntax.RoutineSyntax
-use scalyc.compiler.Syntax.InitSyntax
-use scalyc.compiler.Syntax.DeInitSyntax
-use scalyc.compiler.Syntax.ImplementSyntax
-use scalyc.compiler.Syntax.VariantSyntax
-use scalyc.compiler.Syntax.ParametersSyntax
-use scalyc.compiler.Syntax.ParameterSetSyntax
-use scalyc.compiler.Syntax.ItemSyntax
-use scalyc.compiler.Syntax.TypeSyntax
-use scalyc.compiler.Syntax.TypeAnnotationSyntax
-use scalyc.compiler.Syntax.PartSyntax
-use scalyc.compiler.Syntax.FieldSyntax
-use scalyc.compiler.Syntax.PropertySyntax
 use scalyc.compiler.lexer.*
 use scalyc.compiler.parser.*
 use scalyc.compiler.Syntax.*

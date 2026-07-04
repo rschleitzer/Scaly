@@ -27,10 +27,7 @@
 ; else). One statement per line. CR/LF are numeric bytes (rpc handles the
 ; framing); quotes are 0x22 bytes.
 
-use scaly.containers.String
-use scaly.containers.StringBuilder
 use scaly.io.File
-use scaly.memory.Page
 use scaly.memory.runtime
 use scalyls.rpc
 use scalyls.diagnostics
