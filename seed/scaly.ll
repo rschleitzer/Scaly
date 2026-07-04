@@ -10168,6 +10168,58 @@ if.end:                                           ; preds = %entry
   ret ptr %ptr.add
 }
 
+define linkonce_odr i1 @_ZN5SliceI2u8EeqE5SliceI2u8E(ptr %0, ptr %1) {
+entry:
+  %i = alloca i64, align 8
+  %load.struct = load %_Z5Slice, ptr %0, align 8
+  %length = extractvalue %_Z5Slice %load.struct, 1
+  %load.struct1 = load %_Z5Slice, ptr %1, align 8
+  %length2 = extractvalue %_Z5Slice %load.struct1, 1
+  %ne = icmp ne i64 %length, %length2
+  br i1 %ne, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret i1 false
+
+if.end:                                           ; preds = %entry
+  %load.struct3 = load %_Z5Slice, ptr %0, align 8
+  %data = extractvalue %_Z5Slice %load.struct3, 0
+  %load.struct4 = load %_Z5Slice, ptr %1, align 8
+  %data5 = extractvalue %_Z5Slice %load.struct4, 0
+  %load.struct6 = load %_Z5Slice, ptr %0, align 8
+  %length7 = extractvalue %_Z5Slice %load.struct6, 1
+  %mul = mul i64 %length7, ptrtoint (ptr getelementptr (i8, ptr null, i32 1) to i64)
+  store i64 0, ptr %i, align 1
+  br label %while.cond
+
+while.cond:                                       ; preds = %if.end15, %if.end
+  %i8 = load i64, ptr %i, align 4
+  %lt = icmp ult i64 %i8, %mul
+  br i1 %lt, label %while.body, label %while.exit
+
+while.body:                                       ; preds = %while.cond
+  %i9 = load i64, ptr %i, align 4
+  %ptr.add = getelementptr inbounds i8, ptr %data, i64 %i9
+  %deref = load i8, ptr %ptr.add, align 1
+  %i10 = load i64, ptr %i, align 4
+  %ptr.add11 = getelementptr inbounds i8, ptr %data5, i64 %i10
+  %deref12 = load i8, ptr %ptr.add11, align 1
+  %ne13 = icmp ne i8 %deref, %deref12
+  br i1 %ne13, label %if.then14, label %if.end15
+
+while.exit:                                       ; preds = %while.cond
+  ret i1 true
+
+if.then14:                                        ; preds = %while.body
+  ret i1 false
+
+if.end15:                                         ; preds = %while.body
+  %i16 = load i64, ptr %i, align 4
+  %add = add i64 %i16, 1
+  store i64 %add, ptr %i, align 1
+  br label %while.cond
+}
+
 define linkonce_odr i1 @_ZN6String8containsE2u8(ptr %0, i8 %1) {
 entry:
   %i = alloca i64, align 8
