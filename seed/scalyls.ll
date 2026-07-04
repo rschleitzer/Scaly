@@ -68840,13 +68840,13 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN8semantic9walk_planEPN4scaly6memory4PageE4Planmm(ptr noalias sret(%_Z13ResolveResult) %0, ptr %1, ptr %2, i64 %3, i64 %4) {
 entry:
-  %deref.tmp137 = alloca %_Z6VectorIcE, align 8
-  %sret.result134 = alloca %_Z13ResolveResult, align 8
-  %deref.tmp129 = alloca %_Z13PlannedGlobal, align 8
-  %deref.tmp96 = alloca %_Z12PlannedUnion, align 8
-  %sret.result95 = alloca %_Z13ResolveResult, align 8
-  %deref.tmp62 = alloca %_Z16PlannedStructure, align 8
-  %sret.result61 = alloca %_Z13ResolveResult, align 8
+  %deref.tmp143 = alloca %_Z6VectorIcE, align 8
+  %sret.result140 = alloca %_Z13ResolveResult, align 8
+  %deref.tmp135 = alloca %_Z13PlannedGlobal, align 8
+  %deref.tmp100 = alloca %_Z12PlannedUnion, align 8
+  %sret.result99 = alloca %_Z13ResolveResult, align 8
+  %deref.tmp64 = alloca %_Z16PlannedStructure, align 8
+  %sret.result63 = alloca %_Z13ResolveResult, align 8
   %arg.tmp = alloca %_Z21PlannedImplementation, align 8
   %deref.tmp28 = alloca %_Z15PlannedFunction, align 8
   %sret.result27 = alloca %_Z13ResolveResult, align 8
@@ -68868,7 +68868,9 @@ if.then:                                          ; preds = %entry
   %statements3 = extractvalue %_Z4Plan %load.struct2, 1
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp, ptr align 1 %statements3, i64 ptrtoint (ptr getelementptr (%_Z6VectorIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN8semantic15walk_statementsEPN4scaly6memory4PageE6VectorI16PlannedStatementEmm(ptr noalias sret(%_Z13ResolveResult) %sret.result1, ptr %1, ptr %deref.tmp, i64 %3, i64 %4)
-  store ptr %sret.result1, ptr %result, align 1
+  %set.dest = load ptr, ptr %result, align 8
+  %set.thru = load %_Z13ResolveResult, ptr %sret.result1, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %set.dest, ptr align 1 %sret.result1, i64 ptrtoint (ptr getelementptr (%_Z13ResolveResult, ptr null, i32 1) to i64), i1 false)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -68885,11 +68887,11 @@ if.then6:                                         ; preds = %if.end
   br i1 %ne9, label %if.then10, label %if.end11
 
 if.end7:                                          ; preds = %if.end11, %if.end
-  %result31 = load ptr, ptr %result, align 8
-  %load.struct32 = load %_Z13ResolveResult, ptr %result31, align 8
-  %found33 = extractvalue %_Z13ResolveResult %load.struct32, 0
-  %eq34 = icmp eq i1 %found33, false
-  br i1 %eq34, label %if.then35, label %if.end36
+  %result33 = load ptr, ptr %result, align 8
+  %load.struct34 = load %_Z13ResolveResult, ptr %result33, align 8
+  %found35 = extractvalue %_Z13ResolveResult %load.struct34, 0
+  %eq36 = icmp eq i1 %found35, false
+  br i1 %eq36, label %if.then37, label %if.end38
 
 if.then10:                                        ; preds = %if.then6
   %load.struct12 = load %_Z4Plan, ptr %2, align 8
@@ -68925,8 +68927,8 @@ if.then21:                                        ; preds = %while.body
   br i1 %ne24, label %if.then25, label %if.end26
 
 if.end22:                                         ; preds = %if.end26, %while.body
-  %i30 = load i64, ptr %i, align 4
-  %add = add i64 %i30, 1
+  %i32 = load i64, ptr %i, align 4
+  %add = add i64 %i32, 1
   store i64 %add, ptr %i, align 1
   br label %while.cond
 
@@ -68936,205 +68938,213 @@ if.then25:                                        ; preds = %if.then21
   %impl = extractvalue %_Z15PlannedFunction %load.struct29, 10
   store %_Z21PlannedImplementation %impl, ptr %arg.tmp, align 1
   call void @_ZN8semantic9walk_implEPN4scaly6memory4PageE21PlannedImplementationmm(ptr noalias sret(%_Z13ResolveResult) %sret.result27, ptr %1, ptr %arg.tmp, i64 %3, i64 %4)
-  store ptr %sret.result27, ptr %result, align 1
+  %set.dest30 = load ptr, ptr %result, align 8
+  %set.thru31 = load %_Z13ResolveResult, ptr %sret.result27, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %set.dest30, ptr align 1 %sret.result27, i64 ptrtoint (ptr getelementptr (%_Z13ResolveResult, ptr null, i32 1) to i64), i1 false)
   br label %if.end26
 
 if.end26:                                         ; preds = %if.then25, %if.then21
   br label %if.end22
 
-if.then35:                                        ; preds = %if.end7
-  %load.struct37 = load %_Z4Plan, ptr %2, align 8
-  %structures = extractvalue %_Z4Plan %load.struct37, 2
-  %ne38 = icmp ne ptr %structures, null
-  br i1 %ne38, label %if.then39, label %if.end40
+if.then37:                                        ; preds = %if.end7
+  %load.struct39 = load %_Z4Plan, ptr %2, align 8
+  %structures = extractvalue %_Z4Plan %load.struct39, 2
+  %ne40 = icmp ne ptr %structures, null
+  br i1 %ne40, label %if.then41, label %if.end42
 
-if.end36:                                         ; preds = %if.end40, %if.end7
-  %result65 = load ptr, ptr %result, align 8
-  %load.struct66 = load %_Z13ResolveResult, ptr %result65, align 8
-  %found67 = extractvalue %_Z13ResolveResult %load.struct66, 0
-  %eq68 = icmp eq i1 %found67, false
-  br i1 %eq68, label %if.then69, label %if.end70
+if.end38:                                         ; preds = %if.end42, %if.end7
+  %result69 = load ptr, ptr %result, align 8
+  %load.struct70 = load %_Z13ResolveResult, ptr %result69, align 8
+  %found71 = extractvalue %_Z13ResolveResult %load.struct70, 0
+  %eq72 = icmp eq i1 %found71, false
+  br i1 %eq72, label %if.then73, label %if.end74
 
-if.then39:                                        ; preds = %if.then35
-  %load.struct41 = load %_Z4Plan, ptr %2, align 8
-  %structures42 = extractvalue %_Z4Plan %load.struct41, 2
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp14, ptr align 1 %structures42, i64 ptrtoint (ptr getelementptr (%_Z6VectorIcE, ptr null, i32 1) to i64), i1 false)
+if.then41:                                        ; preds = %if.then37
+  %load.struct43 = load %_Z4Plan, ptr %2, align 8
+  %structures44 = extractvalue %_Z4Plan %load.struct43, 2
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp14, ptr align 1 %structures44, i64 ptrtoint (ptr getelementptr (%_Z6VectorIcE, ptr null, i32 1) to i64), i1 false)
   store i64 0, ptr %i, align 1
-  br label %while.cond43
+  br label %while.cond45
 
-if.end40:                                         ; preds = %while.exit45, %if.then35
-  br label %if.end36
+if.end42:                                         ; preds = %while.exit47, %if.then37
+  br label %if.end38
 
-while.cond43:                                     ; preds = %if.end55, %if.then39
-  %i46 = load i64, ptr %i, align 4
-  %load.struct47 = load %_Z6VectorIcE, ptr %deref.tmp14, align 8
-  %length48 = extractvalue %_Z6VectorIcE %load.struct47, 0
-  %lt49 = icmp ult i64 %i46, %length48
-  br i1 %lt49, label %while.body44, label %while.exit45
+while.cond45:                                     ; preds = %if.end57, %if.then41
+  %i48 = load i64, ptr %i, align 4
+  %load.struct49 = load %_Z6VectorIcE, ptr %deref.tmp14, align 8
+  %length50 = extractvalue %_Z6VectorIcE %load.struct49, 0
+  %lt51 = icmp ult i64 %i48, %length50
+  br i1 %lt51, label %while.body46, label %while.exit47
 
-while.body44:                                     ; preds = %while.cond43
-  %result50 = load ptr, ptr %result, align 8
-  %load.struct51 = load %_Z13ResolveResult, ptr %result50, align 8
-  %found52 = extractvalue %_Z13ResolveResult %load.struct51, 0
-  %eq53 = icmp eq i1 %found52, false
-  br i1 %eq53, label %if.then54, label %if.end55
+while.body46:                                     ; preds = %while.cond45
+  %result52 = load ptr, ptr %result, align 8
+  %load.struct53 = load %_Z13ResolveResult, ptr %result52, align 8
+  %found54 = extractvalue %_Z13ResolveResult %load.struct53, 0
+  %eq55 = icmp eq i1 %found54, false
+  br i1 %eq55, label %if.then56, label %if.end57
 
-while.exit45:                                     ; preds = %while.cond43
-  br label %if.end40
+while.exit47:                                     ; preds = %while.cond45
+  br label %if.end42
 
-if.then54:                                        ; preds = %while.body44
-  %i56 = load i64, ptr %i, align 4
-  %call57 = call ptr @_ZN6VectorI16PlannedStructureE3getEPN4scaly6memory4PageEm(ptr %1, ptr %deref.tmp14, i64 %i56)
-  %ne58 = icmp ne ptr %call57, null
-  br i1 %ne58, label %if.then59, label %if.end60
+if.then56:                                        ; preds = %while.body46
+  %i58 = load i64, ptr %i, align 4
+  %call59 = call ptr @_ZN6VectorI16PlannedStructureE3getEPN4scaly6memory4PageEm(ptr %1, ptr %deref.tmp14, i64 %i58)
+  %ne60 = icmp ne ptr %call59, null
+  br i1 %ne60, label %if.then61, label %if.end62
 
-if.end55:                                         ; preds = %if.end60, %while.body44
-  %i63 = load i64, ptr %i, align 4
-  %add64 = add i64 %i63, 1
-  store i64 %add64, ptr %i, align 1
-  br label %while.cond43
+if.end57:                                         ; preds = %if.end62, %while.body46
+  %i67 = load i64, ptr %i, align 4
+  %add68 = add i64 %i67, 1
+  store i64 %add68, ptr %i, align 1
+  br label %while.cond45
 
-if.then59:                                        ; preds = %if.then54
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp62, ptr align 1 %call57, i64 ptrtoint (ptr getelementptr (%_Z16PlannedStructure, ptr null, i32 1) to i64), i1 false)
-  call void @_ZN8semantic14walk_structureEPN4scaly6memory4PageE16PlannedStructuremm(ptr noalias sret(%_Z13ResolveResult) %sret.result61, ptr %1, ptr %deref.tmp62, i64 %3, i64 %4)
-  store ptr %sret.result61, ptr %result, align 1
-  br label %if.end60
+if.then61:                                        ; preds = %if.then56
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp64, ptr align 1 %call59, i64 ptrtoint (ptr getelementptr (%_Z16PlannedStructure, ptr null, i32 1) to i64), i1 false)
+  call void @_ZN8semantic14walk_structureEPN4scaly6memory4PageE16PlannedStructuremm(ptr noalias sret(%_Z13ResolveResult) %sret.result63, ptr %1, ptr %deref.tmp64, i64 %3, i64 %4)
+  %set.dest65 = load ptr, ptr %result, align 8
+  %set.thru66 = load %_Z13ResolveResult, ptr %sret.result63, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %set.dest65, ptr align 1 %sret.result63, i64 ptrtoint (ptr getelementptr (%_Z13ResolveResult, ptr null, i32 1) to i64), i1 false)
+  br label %if.end62
 
-if.end60:                                         ; preds = %if.then59, %if.then54
-  br label %if.end55
+if.end62:                                         ; preds = %if.then61, %if.then56
+  br label %if.end57
 
-if.then69:                                        ; preds = %if.end36
-  %load.struct71 = load %_Z4Plan, ptr %2, align 8
-  %unions = extractvalue %_Z4Plan %load.struct71, 3
-  %ne72 = icmp ne ptr %unions, null
-  br i1 %ne72, label %if.then73, label %if.end74
-
-if.end70:                                         ; preds = %if.end74, %if.end36
-  %result99 = load ptr, ptr %result, align 8
-  %load.struct100 = load %_Z13ResolveResult, ptr %result99, align 8
-  %found101 = extractvalue %_Z13ResolveResult %load.struct100, 0
-  %eq102 = icmp eq i1 %found101, false
-  br i1 %eq102, label %if.then103, label %if.end104
-
-if.then73:                                        ; preds = %if.then69
+if.then73:                                        ; preds = %if.end38
   %load.struct75 = load %_Z4Plan, ptr %2, align 8
-  %unions76 = extractvalue %_Z4Plan %load.struct75, 3
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp14, ptr align 1 %unions76, i64 ptrtoint (ptr getelementptr (%_Z6VectorIcE, ptr null, i32 1) to i64), i1 false)
+  %unions = extractvalue %_Z4Plan %load.struct75, 3
+  %ne76 = icmp ne ptr %unions, null
+  br i1 %ne76, label %if.then77, label %if.end78
+
+if.end74:                                         ; preds = %if.end78, %if.end38
+  %result105 = load ptr, ptr %result, align 8
+  %load.struct106 = load %_Z13ResolveResult, ptr %result105, align 8
+  %found107 = extractvalue %_Z13ResolveResult %load.struct106, 0
+  %eq108 = icmp eq i1 %found107, false
+  br i1 %eq108, label %if.then109, label %if.end110
+
+if.then77:                                        ; preds = %if.then73
+  %load.struct79 = load %_Z4Plan, ptr %2, align 8
+  %unions80 = extractvalue %_Z4Plan %load.struct79, 3
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp14, ptr align 1 %unions80, i64 ptrtoint (ptr getelementptr (%_Z6VectorIcE, ptr null, i32 1) to i64), i1 false)
   store i64 0, ptr %i, align 1
-  br label %while.cond77
+  br label %while.cond81
 
-if.end74:                                         ; preds = %while.exit79, %if.then69
-  br label %if.end70
-
-while.cond77:                                     ; preds = %if.end89, %if.then73
-  %i80 = load i64, ptr %i, align 4
-  %load.struct81 = load %_Z6VectorIcE, ptr %deref.tmp14, align 8
-  %length82 = extractvalue %_Z6VectorIcE %load.struct81, 0
-  %lt83 = icmp ult i64 %i80, %length82
-  br i1 %lt83, label %while.body78, label %while.exit79
-
-while.body78:                                     ; preds = %while.cond77
-  %result84 = load ptr, ptr %result, align 8
-  %load.struct85 = load %_Z13ResolveResult, ptr %result84, align 8
-  %found86 = extractvalue %_Z13ResolveResult %load.struct85, 0
-  %eq87 = icmp eq i1 %found86, false
-  br i1 %eq87, label %if.then88, label %if.end89
-
-while.exit79:                                     ; preds = %while.cond77
+if.end78:                                         ; preds = %while.exit83, %if.then73
   br label %if.end74
 
-if.then88:                                        ; preds = %while.body78
-  %i90 = load i64, ptr %i, align 4
-  %call91 = call ptr @_ZN6VectorI12PlannedUnionE3getEPN4scaly6memory4PageEm(ptr %1, ptr %deref.tmp14, i64 %i90)
-  %ne92 = icmp ne ptr %call91, null
-  br i1 %ne92, label %if.then93, label %if.end94
+while.cond81:                                     ; preds = %if.end93, %if.then77
+  %i84 = load i64, ptr %i, align 4
+  %load.struct85 = load %_Z6VectorIcE, ptr %deref.tmp14, align 8
+  %length86 = extractvalue %_Z6VectorIcE %load.struct85, 0
+  %lt87 = icmp ult i64 %i84, %length86
+  br i1 %lt87, label %while.body82, label %while.exit83
 
-if.end89:                                         ; preds = %if.end94, %while.body78
-  %i97 = load i64, ptr %i, align 4
-  %add98 = add i64 %i97, 1
-  store i64 %add98, ptr %i, align 1
-  br label %while.cond77
+while.body82:                                     ; preds = %while.cond81
+  %result88 = load ptr, ptr %result, align 8
+  %load.struct89 = load %_Z13ResolveResult, ptr %result88, align 8
+  %found90 = extractvalue %_Z13ResolveResult %load.struct89, 0
+  %eq91 = icmp eq i1 %found90, false
+  br i1 %eq91, label %if.then92, label %if.end93
 
-if.then93:                                        ; preds = %if.then88
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp96, ptr align 1 %call91, i64 ptrtoint (ptr getelementptr (%_Z12PlannedUnion, ptr null, i32 1) to i64), i1 false)
-  call void @_ZN8semantic10walk_unionEPN4scaly6memory4PageE12PlannedUnionmm(ptr noalias sret(%_Z13ResolveResult) %sret.result95, ptr %1, ptr %deref.tmp96, i64 %3, i64 %4)
-  store ptr %sret.result95, ptr %result, align 1
-  br label %if.end94
+while.exit83:                                     ; preds = %while.cond81
+  br label %if.end78
 
-if.end94:                                         ; preds = %if.then93, %if.then88
-  br label %if.end89
+if.then92:                                        ; preds = %while.body82
+  %i94 = load i64, ptr %i, align 4
+  %call95 = call ptr @_ZN6VectorI12PlannedUnionE3getEPN4scaly6memory4PageEm(ptr %1, ptr %deref.tmp14, i64 %i94)
+  %ne96 = icmp ne ptr %call95, null
+  br i1 %ne96, label %if.then97, label %if.end98
 
-if.then103:                                       ; preds = %if.end70
-  %load.struct105 = load %_Z4Plan, ptr %2, align 8
-  %globals = extractvalue %_Z4Plan %load.struct105, 5
-  %ne106 = icmp ne ptr %globals, null
-  br i1 %ne106, label %if.then107, label %if.end108
+if.end93:                                         ; preds = %if.end98, %while.body82
+  %i103 = load i64, ptr %i, align 4
+  %add104 = add i64 %i103, 1
+  store i64 %add104, ptr %i, align 1
+  br label %while.cond81
 
-if.end104:                                        ; preds = %if.end108, %if.end70
-  %result140 = load ptr, ptr %result, align 8
-  %sret.body = load %_Z13ResolveResult, ptr %result140, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %result140, i64 ptrtoint (ptr getelementptr (%_Z13ResolveResult, ptr null, i32 1) to i64), i1 false)
+if.then97:                                        ; preds = %if.then92
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp100, ptr align 1 %call95, i64 ptrtoint (ptr getelementptr (%_Z12PlannedUnion, ptr null, i32 1) to i64), i1 false)
+  call void @_ZN8semantic10walk_unionEPN4scaly6memory4PageE12PlannedUnionmm(ptr noalias sret(%_Z13ResolveResult) %sret.result99, ptr %1, ptr %deref.tmp100, i64 %3, i64 %4)
+  %set.dest101 = load ptr, ptr %result, align 8
+  %set.thru102 = load %_Z13ResolveResult, ptr %sret.result99, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %set.dest101, ptr align 1 %sret.result99, i64 ptrtoint (ptr getelementptr (%_Z13ResolveResult, ptr null, i32 1) to i64), i1 false)
+  br label %if.end98
+
+if.end98:                                         ; preds = %if.then97, %if.then92
+  br label %if.end93
+
+if.then109:                                       ; preds = %if.end74
+  %load.struct111 = load %_Z4Plan, ptr %2, align 8
+  %globals = extractvalue %_Z4Plan %load.struct111, 5
+  %ne112 = icmp ne ptr %globals, null
+  br i1 %ne112, label %if.then113, label %if.end114
+
+if.end110:                                        ; preds = %if.end114, %if.end74
+  %result148 = load ptr, ptr %result, align 8
+  %sret.body = load %_Z13ResolveResult, ptr %result148, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %result148, i64 ptrtoint (ptr getelementptr (%_Z13ResolveResult, ptr null, i32 1) to i64), i1 false)
   ret void
 
-if.then107:                                       ; preds = %if.then103
-  %load.struct109 = load %_Z4Plan, ptr %2, align 8
-  %globals110 = extractvalue %_Z4Plan %load.struct109, 5
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp14, ptr align 1 %globals110, i64 ptrtoint (ptr getelementptr (%_Z6VectorIcE, ptr null, i32 1) to i64), i1 false)
+if.then113:                                       ; preds = %if.then109
+  %load.struct115 = load %_Z4Plan, ptr %2, align 8
+  %globals116 = extractvalue %_Z4Plan %load.struct115, 5
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp14, ptr align 1 %globals116, i64 ptrtoint (ptr getelementptr (%_Z6VectorIcE, ptr null, i32 1) to i64), i1 false)
   store i64 0, ptr %i, align 1
-  br label %while.cond111
+  br label %while.cond117
 
-if.end108:                                        ; preds = %while.exit113, %if.then103
-  br label %if.end104
+if.end114:                                        ; preds = %while.exit119, %if.then109
+  br label %if.end110
 
-while.cond111:                                    ; preds = %if.end123, %if.then107
-  %i114 = load i64, ptr %i, align 4
-  %load.struct115 = load %_Z6VectorIcE, ptr %deref.tmp14, align 8
-  %length116 = extractvalue %_Z6VectorIcE %load.struct115, 0
-  %lt117 = icmp ult i64 %i114, %length116
-  br i1 %lt117, label %while.body112, label %while.exit113
+while.cond117:                                    ; preds = %if.end129, %if.then113
+  %i120 = load i64, ptr %i, align 4
+  %load.struct121 = load %_Z6VectorIcE, ptr %deref.tmp14, align 8
+  %length122 = extractvalue %_Z6VectorIcE %load.struct121, 0
+  %lt123 = icmp ult i64 %i120, %length122
+  br i1 %lt123, label %while.body118, label %while.exit119
 
-while.body112:                                    ; preds = %while.cond111
-  %result118 = load ptr, ptr %result, align 8
-  %load.struct119 = load %_Z13ResolveResult, ptr %result118, align 8
-  %found120 = extractvalue %_Z13ResolveResult %load.struct119, 0
-  %eq121 = icmp eq i1 %found120, false
-  br i1 %eq121, label %if.then122, label %if.end123
+while.body118:                                    ; preds = %while.cond117
+  %result124 = load ptr, ptr %result, align 8
+  %load.struct125 = load %_Z13ResolveResult, ptr %result124, align 8
+  %found126 = extractvalue %_Z13ResolveResult %load.struct125, 0
+  %eq127 = icmp eq i1 %found126, false
+  br i1 %eq127, label %if.then128, label %if.end129
 
-while.exit113:                                    ; preds = %while.cond111
-  br label %if.end108
+while.exit119:                                    ; preds = %while.cond117
+  br label %if.end114
 
-if.then122:                                       ; preds = %while.body112
-  %i124 = load i64, ptr %i, align 4
-  %call125 = call ptr @_ZN6VectorI13PlannedGlobalE3getEPN4scaly6memory4PageEm(ptr %1, ptr %deref.tmp14, i64 %i124)
-  %ne126 = icmp ne ptr %call125, null
-  br i1 %ne126, label %if.then127, label %if.end128
+if.then128:                                       ; preds = %while.body118
+  %i130 = load i64, ptr %i, align 4
+  %call131 = call ptr @_ZN6VectorI13PlannedGlobalE3getEPN4scaly6memory4PageEm(ptr %1, ptr %deref.tmp14, i64 %i130)
+  %ne132 = icmp ne ptr %call131, null
+  br i1 %ne132, label %if.then133, label %if.end134
 
-if.end123:                                        ; preds = %if.end128, %while.body112
-  %i138 = load i64, ptr %i, align 4
-  %add139 = add i64 %i138, 1
-  store i64 %add139, ptr %i, align 1
-  br label %while.cond111
+if.end129:                                        ; preds = %if.end134, %while.body118
+  %i146 = load i64, ptr %i, align 4
+  %add147 = add i64 %i146, 1
+  store i64 %add147, ptr %i, align 1
+  br label %while.cond117
 
-if.then127:                                       ; preds = %if.then122
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp129, ptr align 1 %call125, i64 ptrtoint (ptr getelementptr (%_Z13PlannedGlobal, ptr null, i32 1) to i64), i1 false)
-  %load.struct130 = load %_Z13PlannedGlobal, ptr %deref.tmp129, align 8
-  %value = extractvalue %_Z13PlannedGlobal %load.struct130, 4
-  %ne131 = icmp ne ptr %value, null
-  br i1 %ne131, label %if.then132, label %if.end133
+if.then133:                                       ; preds = %if.then128
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp135, ptr align 1 %call131, i64 ptrtoint (ptr getelementptr (%_Z13PlannedGlobal, ptr null, i32 1) to i64), i1 false)
+  %load.struct136 = load %_Z13PlannedGlobal, ptr %deref.tmp135, align 8
+  %value = extractvalue %_Z13PlannedGlobal %load.struct136, 4
+  %ne137 = icmp ne ptr %value, null
+  br i1 %ne137, label %if.then138, label %if.end139
 
-if.end128:                                        ; preds = %if.end133, %if.then122
-  br label %if.end123
+if.end134:                                        ; preds = %if.end139, %if.then128
+  br label %if.end129
 
-if.then132:                                       ; preds = %if.then127
-  %load.struct135 = load %_Z13PlannedGlobal, ptr %deref.tmp129, align 8
-  %value136 = extractvalue %_Z13PlannedGlobal %load.struct135, 4
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp137, ptr align 1 %value136, i64 ptrtoint (ptr getelementptr (%_Z6VectorIcE, ptr null, i32 1) to i64), i1 false)
-  call void @_ZN8semantic13walk_operandsEPN4scaly6memory4PageE6VectorI14PlannedOperandEmm(ptr noalias sret(%_Z13ResolveResult) %sret.result134, ptr %1, ptr %deref.tmp137, i64 %3, i64 %4)
-  store ptr %sret.result134, ptr %result, align 1
-  br label %if.end133
+if.then138:                                       ; preds = %if.then133
+  %load.struct141 = load %_Z13PlannedGlobal, ptr %deref.tmp135, align 8
+  %value142 = extractvalue %_Z13PlannedGlobal %load.struct141, 4
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp143, ptr align 1 %value142, i64 ptrtoint (ptr getelementptr (%_Z6VectorIcE, ptr null, i32 1) to i64), i1 false)
+  call void @_ZN8semantic13walk_operandsEPN4scaly6memory4PageE6VectorI14PlannedOperandEmm(ptr noalias sret(%_Z13ResolveResult) %sret.result140, ptr %1, ptr %deref.tmp143, i64 %3, i64 %4)
+  %set.dest144 = load ptr, ptr %result, align 8
+  %set.thru145 = load %_Z13ResolveResult, ptr %sret.result140, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %set.dest144, ptr align 1 %sret.result140, i64 ptrtoint (ptr getelementptr (%_Z13ResolveResult, ptr null, i32 1) to i64), i1 false)
+  br label %if.end139
 
-if.end133:                                        ; preds = %if.then132, %if.then127
-  br label %if.end128
+if.end139:                                        ; preds = %if.then138, %if.then133
+  br label %if.end134
 }
 
 define linkonce_odr void @_ZN8semantic4noneEPN4scaly6memory4PageE(ptr noalias sret(%_Z13ResolveResult) %0, ptr %1) {
@@ -70066,7 +70076,9 @@ if.end:                                           ; preds = %if.end6, %while.bod
 if.then5:                                         ; preds = %if.then
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp, ptr align 1 %call, i64 ptrtoint (ptr getelementptr (%_Z16PlannedStatement, ptr null, i32 1) to i64), i1 false)
   call void @_ZN8semantic14walk_statementEPN4scaly6memory4PageE16PlannedStatementmm(ptr noalias sret(%_Z13ResolveResult) %sret.result7, ptr %1, ptr %deref.tmp, i64 %3, i64 %4)
-  store ptr %sret.result7, ptr %result, align 1
+  %set.dest = load ptr, ptr %result, align 8
+  %set.thru = load %_Z13ResolveResult, ptr %sret.result7, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %set.dest, ptr align 1 %sret.result7, i64 ptrtoint (ptr getelementptr (%_Z13ResolveResult, ptr null, i32 1) to i64), i1 false)
   br label %if.end6
 
 if.end6:                                          ; preds = %if.then5, %if.then
@@ -70128,12 +70140,12 @@ choose.when9:                                     ; preds = %entry
 
 define linkonce_odr void @_ZN8semantic14walk_structureEPN4scaly6memory4PageE16PlannedStructuremm(ptr noalias sret(%_Z13ResolveResult) %0, ptr %1, ptr %2, i64 %3, i64 %4) {
 entry:
-  %arg.tmp107 = alloca %_Z21PlannedImplementation, align 8
-  %deref.tmp104 = alloca %_Z20PlannedDeInitializer, align 8
-  %sret.result101 = alloca %_Z13ResolveResult, align 8
-  %arg.tmp88 = alloca %_Z21PlannedImplementation, align 8
-  %deref.tmp85 = alloca %_Z15PlannedOperator, align 8
-  %sret.result84 = alloca %_Z13ResolveResult, align 8
+  %arg.tmp111 = alloca %_Z21PlannedImplementation, align 8
+  %deref.tmp108 = alloca %_Z20PlannedDeInitializer, align 8
+  %sret.result105 = alloca %_Z13ResolveResult, align 8
+  %arg.tmp90 = alloca %_Z21PlannedImplementation, align 8
+  %deref.tmp87 = alloca %_Z15PlannedOperator, align 8
+  %sret.result86 = alloca %_Z13ResolveResult, align 8
   %arg.tmp51 = alloca %_Z21PlannedImplementation, align 8
   %deref.tmp48 = alloca %_Z18PlannedInitializer, align 8
   %sret.result47 = alloca %_Z13ResolveResult, align 8
@@ -70200,7 +70212,9 @@ if.then11:                                        ; preds = %if.then7
   %impl = extractvalue %_Z15PlannedFunction %load.struct15, 10
   store %_Z21PlannedImplementation %impl, ptr %arg.tmp, align 1
   call void @_ZN8semantic9walk_implEPN4scaly6memory4PageE21PlannedImplementationmm(ptr noalias sret(%_Z13ResolveResult) %sret.result13, ptr %1, ptr %arg.tmp, i64 %3, i64 %4)
-  store ptr %sret.result13, ptr %result, align 1
+  %set.dest = load ptr, ptr %result, align 8
+  %set.thru = load %_Z13ResolveResult, ptr %sret.result13, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %set.dest, ptr align 1 %sret.result13, i64 ptrtoint (ptr getelementptr (%_Z13ResolveResult, ptr null, i32 1) to i64), i1 false)
   br label %if.end12
 
 if.end12:                                         ; preds = %if.then11, %if.then7
@@ -70213,11 +70227,11 @@ if.then21:                                        ; preds = %if.end
   br i1 %ne24, label %if.then25, label %if.end26
 
 if.end22:                                         ; preds = %if.end26, %if.end
-  %result54 = load ptr, ptr %result, align 8
-  %load.struct55 = load %_Z13ResolveResult, ptr %result54, align 8
-  %found56 = extractvalue %_Z13ResolveResult %load.struct55, 0
-  %eq57 = icmp eq i1 %found56, false
-  br i1 %eq57, label %if.then58, label %if.end59
+  %result56 = load ptr, ptr %result, align 8
+  %load.struct57 = load %_Z13ResolveResult, ptr %result56, align 8
+  %found58 = extractvalue %_Z13ResolveResult %load.struct57, 0
+  %eq59 = icmp eq i1 %found58, false
+  br i1 %eq59, label %if.then60, label %if.end61
 
 if.then25:                                        ; preds = %if.then21
   %load.struct27 = load %_Z16PlannedStructure, ptr %2, align 8
@@ -70253,9 +70267,9 @@ if.then40:                                        ; preds = %while.body30
   br i1 %ne44, label %if.then45, label %if.end46
 
 if.end41:                                         ; preds = %if.end46, %while.body30
-  %i52 = load i64, ptr %i, align 4
-  %add53 = add i64 %i52, 1
-  store i64 %add53, ptr %i, align 1
+  %i54 = load i64, ptr %i, align 4
+  %add55 = add i64 %i54, 1
+  store i64 %add55, ptr %i, align 1
   br label %while.cond29
 
 if.then45:                                        ; preds = %if.then40
@@ -70264,101 +70278,107 @@ if.then45:                                        ; preds = %if.then40
   %impl50 = extractvalue %_Z18PlannedInitializer %load.struct49, 5
   store %_Z21PlannedImplementation %impl50, ptr %arg.tmp51, align 1
   call void @_ZN8semantic9walk_implEPN4scaly6memory4PageE21PlannedImplementationmm(ptr noalias sret(%_Z13ResolveResult) %sret.result47, ptr %1, ptr %arg.tmp51, i64 %3, i64 %4)
-  store ptr %sret.result47, ptr %result, align 1
+  %set.dest52 = load ptr, ptr %result, align 8
+  %set.thru53 = load %_Z13ResolveResult, ptr %sret.result47, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %set.dest52, ptr align 1 %sret.result47, i64 ptrtoint (ptr getelementptr (%_Z13ResolveResult, ptr null, i32 1) to i64), i1 false)
   br label %if.end46
 
 if.end46:                                         ; preds = %if.then45, %if.then40
   br label %if.end41
 
-if.then58:                                        ; preds = %if.end22
-  %load.struct60 = load %_Z16PlannedStructure, ptr %2, align 8
-  %operators = extractvalue %_Z16PlannedStructure %load.struct60, 9
-  %ne61 = icmp ne ptr %operators, null
-  br i1 %ne61, label %if.then62, label %if.end63
+if.then60:                                        ; preds = %if.end22
+  %load.struct62 = load %_Z16PlannedStructure, ptr %2, align 8
+  %operators = extractvalue %_Z16PlannedStructure %load.struct62, 9
+  %ne63 = icmp ne ptr %operators, null
+  br i1 %ne63, label %if.then64, label %if.end65
 
-if.end59:                                         ; preds = %if.end63, %if.end22
-  %result91 = load ptr, ptr %result, align 8
-  %load.struct92 = load %_Z13ResolveResult, ptr %result91, align 8
-  %found93 = extractvalue %_Z13ResolveResult %load.struct92, 0
-  %eq94 = icmp eq i1 %found93, false
-  br i1 %eq94, label %if.then95, label %if.end96
+if.end61:                                         ; preds = %if.end65, %if.end22
+  %result95 = load ptr, ptr %result, align 8
+  %load.struct96 = load %_Z13ResolveResult, ptr %result95, align 8
+  %found97 = extractvalue %_Z13ResolveResult %load.struct96, 0
+  %eq98 = icmp eq i1 %found97, false
+  br i1 %eq98, label %if.then99, label %if.end100
 
-if.then62:                                        ; preds = %if.then58
-  %load.struct64 = load %_Z16PlannedStructure, ptr %2, align 8
-  %operators65 = extractvalue %_Z16PlannedStructure %load.struct64, 9
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp, ptr align 1 %operators65, i64 ptrtoint (ptr getelementptr (%_Z6VectorIcE, ptr null, i32 1) to i64), i1 false)
+if.then64:                                        ; preds = %if.then60
+  %load.struct66 = load %_Z16PlannedStructure, ptr %2, align 8
+  %operators67 = extractvalue %_Z16PlannedStructure %load.struct66, 9
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp, ptr align 1 %operators67, i64 ptrtoint (ptr getelementptr (%_Z6VectorIcE, ptr null, i32 1) to i64), i1 false)
   store i64 0, ptr %i, align 1
-  br label %while.cond66
+  br label %while.cond68
 
-if.end63:                                         ; preds = %while.exit68, %if.then58
-  br label %if.end59
+if.end65:                                         ; preds = %while.exit70, %if.then60
+  br label %if.end61
 
-while.cond66:                                     ; preds = %if.end78, %if.then62
-  %i69 = load i64, ptr %i, align 4
-  %load.struct70 = load %_Z6VectorIcE, ptr %deref.tmp, align 8
-  %length71 = extractvalue %_Z6VectorIcE %load.struct70, 0
-  %lt72 = icmp ult i64 %i69, %length71
-  br i1 %lt72, label %while.body67, label %while.exit68
+while.cond68:                                     ; preds = %if.end80, %if.then64
+  %i71 = load i64, ptr %i, align 4
+  %load.struct72 = load %_Z6VectorIcE, ptr %deref.tmp, align 8
+  %length73 = extractvalue %_Z6VectorIcE %load.struct72, 0
+  %lt74 = icmp ult i64 %i71, %length73
+  br i1 %lt74, label %while.body69, label %while.exit70
 
-while.body67:                                     ; preds = %while.cond66
-  %result73 = load ptr, ptr %result, align 8
-  %load.struct74 = load %_Z13ResolveResult, ptr %result73, align 8
-  %found75 = extractvalue %_Z13ResolveResult %load.struct74, 0
-  %eq76 = icmp eq i1 %found75, false
-  br i1 %eq76, label %if.then77, label %if.end78
+while.body69:                                     ; preds = %while.cond68
+  %result75 = load ptr, ptr %result, align 8
+  %load.struct76 = load %_Z13ResolveResult, ptr %result75, align 8
+  %found77 = extractvalue %_Z13ResolveResult %load.struct76, 0
+  %eq78 = icmp eq i1 %found77, false
+  br i1 %eq78, label %if.then79, label %if.end80
 
-while.exit68:                                     ; preds = %while.cond66
-  br label %if.end63
+while.exit70:                                     ; preds = %while.cond68
+  br label %if.end65
 
-if.then77:                                        ; preds = %while.body67
-  %i79 = load i64, ptr %i, align 4
-  %call80 = call ptr @_ZN6VectorI15PlannedOperatorE3getEPN4scaly6memory4PageEm(ptr %1, ptr %deref.tmp, i64 %i79)
-  %ne81 = icmp ne ptr %call80, null
-  br i1 %ne81, label %if.then82, label %if.end83
+if.then79:                                        ; preds = %while.body69
+  %i81 = load i64, ptr %i, align 4
+  %call82 = call ptr @_ZN6VectorI15PlannedOperatorE3getEPN4scaly6memory4PageEm(ptr %1, ptr %deref.tmp, i64 %i81)
+  %ne83 = icmp ne ptr %call82, null
+  br i1 %ne83, label %if.then84, label %if.end85
 
-if.end78:                                         ; preds = %if.end83, %while.body67
-  %i89 = load i64, ptr %i, align 4
-  %add90 = add i64 %i89, 1
-  store i64 %add90, ptr %i, align 1
-  br label %while.cond66
+if.end80:                                         ; preds = %if.end85, %while.body69
+  %i93 = load i64, ptr %i, align 4
+  %add94 = add i64 %i93, 1
+  store i64 %add94, ptr %i, align 1
+  br label %while.cond68
 
-if.then82:                                        ; preds = %if.then77
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp85, ptr align 1 %call80, i64 ptrtoint (ptr getelementptr (%_Z15PlannedOperator, ptr null, i32 1) to i64), i1 false)
-  %load.struct86 = load %_Z15PlannedOperator, ptr %deref.tmp85, align 8
-  %impl87 = extractvalue %_Z15PlannedOperator %load.struct86, 7
-  store %_Z21PlannedImplementation %impl87, ptr %arg.tmp88, align 1
-  call void @_ZN8semantic9walk_implEPN4scaly6memory4PageE21PlannedImplementationmm(ptr noalias sret(%_Z13ResolveResult) %sret.result84, ptr %1, ptr %arg.tmp88, i64 %3, i64 %4)
-  store ptr %sret.result84, ptr %result, align 1
-  br label %if.end83
+if.then84:                                        ; preds = %if.then79
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp87, ptr align 1 %call82, i64 ptrtoint (ptr getelementptr (%_Z15PlannedOperator, ptr null, i32 1) to i64), i1 false)
+  %load.struct88 = load %_Z15PlannedOperator, ptr %deref.tmp87, align 8
+  %impl89 = extractvalue %_Z15PlannedOperator %load.struct88, 7
+  store %_Z21PlannedImplementation %impl89, ptr %arg.tmp90, align 1
+  call void @_ZN8semantic9walk_implEPN4scaly6memory4PageE21PlannedImplementationmm(ptr noalias sret(%_Z13ResolveResult) %sret.result86, ptr %1, ptr %arg.tmp90, i64 %3, i64 %4)
+  %set.dest91 = load ptr, ptr %result, align 8
+  %set.thru92 = load %_Z13ResolveResult, ptr %sret.result86, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %set.dest91, ptr align 1 %sret.result86, i64 ptrtoint (ptr getelementptr (%_Z13ResolveResult, ptr null, i32 1) to i64), i1 false)
+  br label %if.end85
 
-if.end83:                                         ; preds = %if.then82, %if.then77
-  br label %if.end78
+if.end85:                                         ; preds = %if.then84, %if.then79
+  br label %if.end80
 
-if.then95:                                        ; preds = %if.end59
-  %load.struct97 = load %_Z16PlannedStructure, ptr %2, align 8
-  %deinitializer = extractvalue %_Z16PlannedStructure %load.struct97, 7
-  %ne98 = icmp ne ptr %deinitializer, null
-  br i1 %ne98, label %if.then99, label %if.end100
+if.then99:                                        ; preds = %if.end61
+  %load.struct101 = load %_Z16PlannedStructure, ptr %2, align 8
+  %deinitializer = extractvalue %_Z16PlannedStructure %load.struct101, 7
+  %ne102 = icmp ne ptr %deinitializer, null
+  br i1 %ne102, label %if.then103, label %if.end104
 
-if.end96:                                         ; preds = %if.end100, %if.end59
-  %result108 = load ptr, ptr %result, align 8
-  %sret.body = load %_Z13ResolveResult, ptr %result108, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %result108, i64 ptrtoint (ptr getelementptr (%_Z13ResolveResult, ptr null, i32 1) to i64), i1 false)
+if.end100:                                        ; preds = %if.end104, %if.end61
+  %result114 = load ptr, ptr %result, align 8
+  %sret.body = load %_Z13ResolveResult, ptr %result114, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %result114, i64 ptrtoint (ptr getelementptr (%_Z13ResolveResult, ptr null, i32 1) to i64), i1 false)
   ret void
 
-if.then99:                                        ; preds = %if.then95
-  %load.struct102 = load %_Z16PlannedStructure, ptr %2, align 8
-  %deinitializer103 = extractvalue %_Z16PlannedStructure %load.struct102, 7
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp104, ptr align 1 %deinitializer103, i64 ptrtoint (ptr getelementptr (%_Z20PlannedDeInitializer, ptr null, i32 1) to i64), i1 false)
-  %load.struct105 = load %_Z20PlannedDeInitializer, ptr %deref.tmp104, align 8
-  %impl106 = extractvalue %_Z20PlannedDeInitializer %load.struct105, 2
-  store %_Z21PlannedImplementation %impl106, ptr %arg.tmp107, align 1
-  call void @_ZN8semantic9walk_implEPN4scaly6memory4PageE21PlannedImplementationmm(ptr noalias sret(%_Z13ResolveResult) %sret.result101, ptr %1, ptr %arg.tmp107, i64 %3, i64 %4)
-  store ptr %sret.result101, ptr %result, align 1
-  br label %if.end100
+if.then103:                                       ; preds = %if.then99
+  %load.struct106 = load %_Z16PlannedStructure, ptr %2, align 8
+  %deinitializer107 = extractvalue %_Z16PlannedStructure %load.struct106, 7
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp108, ptr align 1 %deinitializer107, i64 ptrtoint (ptr getelementptr (%_Z20PlannedDeInitializer, ptr null, i32 1) to i64), i1 false)
+  %load.struct109 = load %_Z20PlannedDeInitializer, ptr %deref.tmp108, align 8
+  %impl110 = extractvalue %_Z20PlannedDeInitializer %load.struct109, 2
+  store %_Z21PlannedImplementation %impl110, ptr %arg.tmp111, align 1
+  call void @_ZN8semantic9walk_implEPN4scaly6memory4PageE21PlannedImplementationmm(ptr noalias sret(%_Z13ResolveResult) %sret.result105, ptr %1, ptr %arg.tmp111, i64 %3, i64 %4)
+  %set.dest112 = load ptr, ptr %result, align 8
+  %set.thru113 = load %_Z13ResolveResult, ptr %sret.result105, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %set.dest112, ptr align 1 %sret.result105, i64 ptrtoint (ptr getelementptr (%_Z13ResolveResult, ptr null, i32 1) to i64), i1 false)
+  br label %if.end104
 
-if.end100:                                        ; preds = %if.then99, %if.then95
-  br label %if.end96
+if.end104:                                        ; preds = %if.then103, %if.then99
+  br label %if.end100
 }
 
 define linkonce_odr void @_ZN8semantic10walk_unionEPN4scaly6memory4PageE12PlannedUnionmm(ptr noalias sret(%_Z13ResolveResult) %0, ptr %1, ptr %2, i64 %3, i64 %4) {
@@ -70429,7 +70449,9 @@ if.then11:                                        ; preds = %if.then7
   %impl = extractvalue %_Z15PlannedFunction %load.struct15, 10
   store %_Z21PlannedImplementation %impl, ptr %arg.tmp, align 1
   call void @_ZN8semantic9walk_implEPN4scaly6memory4PageE21PlannedImplementationmm(ptr noalias sret(%_Z13ResolveResult) %sret.result13, ptr %1, ptr %arg.tmp, i64 %3, i64 %4)
-  store ptr %sret.result13, ptr %result, align 1
+  %set.dest = load ptr, ptr %result, align 8
+  %set.thru = load %_Z13ResolveResult, ptr %sret.result13, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %set.dest, ptr align 1 %sret.result13, i64 ptrtoint (ptr getelementptr (%_Z13ResolveResult, ptr null, i32 1) to i64), i1 false)
   br label %if.end12
 
 if.end12:                                         ; preds = %if.then11, %if.then7
@@ -70442,9 +70464,9 @@ if.then21:                                        ; preds = %if.end
   br i1 %ne24, label %if.then25, label %if.end26
 
 if.end22:                                         ; preds = %if.end26, %if.end
-  %result54 = load ptr, ptr %result, align 8
-  %sret.body = load %_Z13ResolveResult, ptr %result54, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %result54, i64 ptrtoint (ptr getelementptr (%_Z13ResolveResult, ptr null, i32 1) to i64), i1 false)
+  %result56 = load ptr, ptr %result, align 8
+  %sret.body = load %_Z13ResolveResult, ptr %result56, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %result56, i64 ptrtoint (ptr getelementptr (%_Z13ResolveResult, ptr null, i32 1) to i64), i1 false)
   ret void
 
 if.then25:                                        ; preds = %if.then21
@@ -70481,9 +70503,9 @@ if.then40:                                        ; preds = %while.body30
   br i1 %ne44, label %if.then45, label %if.end46
 
 if.end41:                                         ; preds = %if.end46, %while.body30
-  %i52 = load i64, ptr %i, align 4
-  %add53 = add i64 %i52, 1
-  store i64 %add53, ptr %i, align 1
+  %i54 = load i64, ptr %i, align 4
+  %add55 = add i64 %i54, 1
+  store i64 %add55, ptr %i, align 1
   br label %while.cond29
 
 if.then45:                                        ; preds = %if.then40
@@ -70492,7 +70514,9 @@ if.then45:                                        ; preds = %if.then40
   %impl50 = extractvalue %_Z15PlannedOperator %load.struct49, 7
   store %_Z21PlannedImplementation %impl50, ptr %arg.tmp51, align 1
   call void @_ZN8semantic9walk_implEPN4scaly6memory4PageE21PlannedImplementationmm(ptr noalias sret(%_Z13ResolveResult) %sret.result47, ptr %1, ptr %arg.tmp51, i64 %3, i64 %4)
-  store ptr %sret.result47, ptr %result, align 1
+  %set.dest52 = load ptr, ptr %result, align 8
+  %set.thru53 = load %_Z13ResolveResult, ptr %sret.result47, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %set.dest52, ptr align 1 %sret.result47, i64 ptrtoint (ptr getelementptr (%_Z13ResolveResult, ptr null, i32 1) to i64), i1 false)
   br label %if.end46
 
 if.end46:                                         ; preds = %if.then45, %if.then40
@@ -71414,7 +71438,9 @@ if.end:                                           ; preds = %if.end6, %while.bod
 if.then5:                                         ; preds = %if.then
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp, ptr align 1 %call, i64 ptrtoint (ptr getelementptr (%_Z14PlannedOperand, ptr null, i32 1) to i64), i1 false)
   call void @_ZN8semantic12walk_operandEPN4scaly6memory4PageE14PlannedOperandmm(ptr noalias sret(%_Z13ResolveResult) %sret.result7, ptr %1, ptr %deref.tmp, i64 %3, i64 %4)
-  store ptr %sret.result7, ptr %result, align 1
+  %set.dest = load ptr, ptr %result, align 8
+  %set.thru = load %_Z13ResolveResult, ptr %sret.result7, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %set.dest, ptr align 1 %sret.result7, i64 ptrtoint (ptr getelementptr (%_Z13ResolveResult, ptr null, i32 1) to i64), i1 false)
   br label %if.end6
 
 if.end6:                                          ; preds = %if.then5, %if.then
@@ -73177,7 +73203,9 @@ if.then:                                          ; preds = %entry
   %source3 = extractvalue %_Z13PlannedAction %load.struct2, 1
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp, ptr align 1 %source3, i64 ptrtoint (ptr getelementptr (%_Z6VectorIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN8semantic13walk_operandsEPN4scaly6memory4PageE6VectorI14PlannedOperandEmm(ptr noalias sret(%_Z13ResolveResult) %sret.result1, ptr %1, ptr %deref.tmp, i64 %3, i64 %4)
-  store ptr %sret.result1, ptr %result, align 1
+  %set.dest = load ptr, ptr %result, align 8
+  %set.thru = load %_Z13ResolveResult, ptr %sret.result1, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %set.dest, ptr align 1 %sret.result1, i64 ptrtoint (ptr getelementptr (%_Z13ResolveResult, ptr null, i32 1) to i64), i1 false)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -73194,9 +73222,9 @@ if.then6:                                         ; preds = %if.end
   br i1 %ne9, label %if.then10, label %if.end11
 
 if.end7:                                          ; preds = %if.end11, %if.end
-  %result16 = load ptr, ptr %result, align 8
-  %sret.body = load %_Z13ResolveResult, ptr %result16, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %result16, i64 ptrtoint (ptr getelementptr (%_Z13ResolveResult, ptr null, i32 1) to i64), i1 false)
+  %result18 = load ptr, ptr %result, align 8
+  %sret.body = load %_Z13ResolveResult, ptr %result18, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %result18, i64 ptrtoint (ptr getelementptr (%_Z13ResolveResult, ptr null, i32 1) to i64), i1 false)
   ret void
 
 if.then10:                                        ; preds = %if.then6
@@ -73204,7 +73232,9 @@ if.then10:                                        ; preds = %if.then6
   %target14 = extractvalue %_Z13PlannedAction %load.struct13, 2
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp15, ptr align 1 %target14, i64 ptrtoint (ptr getelementptr (%_Z6VectorIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN8semantic13walk_operandsEPN4scaly6memory4PageE6VectorI14PlannedOperandEmm(ptr noalias sret(%_Z13ResolveResult) %sret.result12, ptr %1, ptr %deref.tmp15, i64 %3, i64 %4)
-  store ptr %sret.result12, ptr %result, align 1
+  %set.dest16 = load ptr, ptr %result, align 8
+  %set.thru17 = load %_Z13ResolveResult, ptr %sret.result12, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %set.dest16, ptr align 1 %sret.result12, i64 ptrtoint (ptr getelementptr (%_Z13ResolveResult, ptr null, i32 1) to i64), i1 false)
   br label %if.end11
 
 if.end11:                                         ; preds = %if.then10, %if.then6
@@ -74073,7 +74103,9 @@ if.then16:                                        ; preds = %if.then11
   %value20 = extractvalue %_Z16PlannedComponent %load.struct19, 2
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp21, ptr align 1 %value20, i64 ptrtoint (ptr getelementptr (%_Z6VectorIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN8semantic13walk_operandsEPN4scaly6memory4PageE6VectorI14PlannedOperandEmm(ptr noalias sret(%_Z13ResolveResult) %sret.result18, ptr %1, ptr %deref.tmp21, i64 %3, i64 %4)
-  store ptr %sret.result18, ptr %result, align 1
+  %set.dest = load ptr, ptr %result, align 8
+  %set.thru = load %_Z13ResolveResult, ptr %sret.result18, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %set.dest, ptr align 1 %sret.result18, i64 ptrtoint (ptr getelementptr (%_Z13ResolveResult, ptr null, i32 1) to i64), i1 false)
   br label %if.end17
 
 if.end17:                                         ; preds = %if.then16, %if.then11
@@ -74107,8 +74139,8 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN8semantic7walk_ifEPN4scaly6memory4PageE9PlannedIfmm(ptr noalias sret(%_Z13ResolveResult) %0, ptr %1, ptr %2, i64 %3, i64 %4) {
 entry:
-  %deref.tmp29 = alloca %_Z16PlannedStatement, align 8
-  %sret.result26 = alloca %_Z13ResolveResult, align 8
+  %deref.tmp31 = alloca %_Z16PlannedStatement, align 8
+  %sret.result28 = alloca %_Z13ResolveResult, align 8
   %deref.tmp15 = alloca %_Z16PlannedStatement, align 8
   %sret.result12 = alloca %_Z13ResolveResult, align 8
   %deref.tmp = alloca %_Z6VectorIcE, align 8
@@ -74127,7 +74159,9 @@ if.then:                                          ; preds = %entry
   %condition3 = extractvalue %_Z9PlannedIf %load.struct2, 1
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp, ptr align 1 %condition3, i64 ptrtoint (ptr getelementptr (%_Z6VectorIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN8semantic13walk_operandsEPN4scaly6memory4PageE6VectorI14PlannedOperandEmm(ptr noalias sret(%_Z13ResolveResult) %sret.result1, ptr %1, ptr %deref.tmp, i64 %3, i64 %4)
-  store ptr %sret.result1, ptr %result, align 1
+  %set.dest = load ptr, ptr %result, align 8
+  %set.thru = load %_Z13ResolveResult, ptr %sret.result1, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %set.dest, ptr align 1 %sret.result1, i64 ptrtoint (ptr getelementptr (%_Z13ResolveResult, ptr null, i32 1) to i64), i1 false)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -74144,51 +74178,55 @@ if.then6:                                         ; preds = %if.end
   br i1 %ne9, label %if.then10, label %if.end11
 
 if.end7:                                          ; preds = %if.end11, %if.end
-  %result16 = load ptr, ptr %result, align 8
-  %load.struct17 = load %_Z13ResolveResult, ptr %result16, align 8
-  %found18 = extractvalue %_Z13ResolveResult %load.struct17, 0
-  %eq19 = icmp eq i1 %found18, false
-  br i1 %eq19, label %if.then20, label %if.end21
+  %result18 = load ptr, ptr %result, align 8
+  %load.struct19 = load %_Z13ResolveResult, ptr %result18, align 8
+  %found20 = extractvalue %_Z13ResolveResult %load.struct19, 0
+  %eq21 = icmp eq i1 %found20, false
+  br i1 %eq21, label %if.then22, label %if.end23
 
 if.then10:                                        ; preds = %if.then6
   %load.struct13 = load %_Z9PlannedIf, ptr %2, align 8
   %consequent14 = extractvalue %_Z9PlannedIf %load.struct13, 3
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp15, ptr align 1 %consequent14, i64 ptrtoint (ptr getelementptr (%_Z16PlannedStatement, ptr null, i32 1) to i64), i1 false)
   call void @_ZN8semantic14walk_statementEPN4scaly6memory4PageE16PlannedStatementmm(ptr noalias sret(%_Z13ResolveResult) %sret.result12, ptr %1, ptr %deref.tmp15, i64 %3, i64 %4)
-  store ptr %sret.result12, ptr %result, align 1
+  %set.dest16 = load ptr, ptr %result, align 8
+  %set.thru17 = load %_Z13ResolveResult, ptr %sret.result12, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %set.dest16, ptr align 1 %sret.result12, i64 ptrtoint (ptr getelementptr (%_Z13ResolveResult, ptr null, i32 1) to i64), i1 false)
   br label %if.end11
 
 if.end11:                                         ; preds = %if.then10, %if.then6
   br label %if.end7
 
-if.then20:                                        ; preds = %if.end7
-  %load.struct22 = load %_Z9PlannedIf, ptr %2, align 8
-  %alternative = extractvalue %_Z9PlannedIf %load.struct22, 4
-  %ne23 = icmp ne ptr %alternative, null
-  br i1 %ne23, label %if.then24, label %if.end25
+if.then22:                                        ; preds = %if.end7
+  %load.struct24 = load %_Z9PlannedIf, ptr %2, align 8
+  %alternative = extractvalue %_Z9PlannedIf %load.struct24, 4
+  %ne25 = icmp ne ptr %alternative, null
+  br i1 %ne25, label %if.then26, label %if.end27
 
-if.end21:                                         ; preds = %if.end25, %if.end7
-  %result30 = load ptr, ptr %result, align 8
-  %sret.body = load %_Z13ResolveResult, ptr %result30, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %result30, i64 ptrtoint (ptr getelementptr (%_Z13ResolveResult, ptr null, i32 1) to i64), i1 false)
+if.end23:                                         ; preds = %if.end27, %if.end7
+  %result34 = load ptr, ptr %result, align 8
+  %sret.body = load %_Z13ResolveResult, ptr %result34, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %result34, i64 ptrtoint (ptr getelementptr (%_Z13ResolveResult, ptr null, i32 1) to i64), i1 false)
   ret void
 
-if.then24:                                        ; preds = %if.then20
-  %load.struct27 = load %_Z9PlannedIf, ptr %2, align 8
-  %alternative28 = extractvalue %_Z9PlannedIf %load.struct27, 4
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp29, ptr align 1 %alternative28, i64 ptrtoint (ptr getelementptr (%_Z16PlannedStatement, ptr null, i32 1) to i64), i1 false)
-  call void @_ZN8semantic14walk_statementEPN4scaly6memory4PageE16PlannedStatementmm(ptr noalias sret(%_Z13ResolveResult) %sret.result26, ptr %1, ptr %deref.tmp29, i64 %3, i64 %4)
-  store ptr %sret.result26, ptr %result, align 1
-  br label %if.end25
+if.then26:                                        ; preds = %if.then22
+  %load.struct29 = load %_Z9PlannedIf, ptr %2, align 8
+  %alternative30 = extractvalue %_Z9PlannedIf %load.struct29, 4
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp31, ptr align 1 %alternative30, i64 ptrtoint (ptr getelementptr (%_Z16PlannedStatement, ptr null, i32 1) to i64), i1 false)
+  call void @_ZN8semantic14walk_statementEPN4scaly6memory4PageE16PlannedStatementmm(ptr noalias sret(%_Z13ResolveResult) %sret.result28, ptr %1, ptr %deref.tmp31, i64 %3, i64 %4)
+  %set.dest32 = load ptr, ptr %result, align 8
+  %set.thru33 = load %_Z13ResolveResult, ptr %sret.result28, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %set.dest32, ptr align 1 %sret.result28, i64 ptrtoint (ptr getelementptr (%_Z13ResolveResult, ptr null, i32 1) to i64), i1 false)
+  br label %if.end27
 
-if.end25:                                         ; preds = %if.then24, %if.then20
-  br label %if.end21
+if.end27:                                         ; preds = %if.then26, %if.then22
+  br label %if.end23
 }
 
 define linkonce_odr void @_ZN8semantic10walk_matchEPN4scaly6memory4PageE12PlannedMatchmm(ptr noalias sret(%_Z13ResolveResult) %0, ptr %1, ptr %2, i64 %3, i64 %4) {
 entry:
-  %deref.tmp50 = alloca %_Z16PlannedStatement, align 8
-  %sret.result47 = alloca %_Z13ResolveResult, align 8
+  %deref.tmp52 = alloca %_Z16PlannedStatement, align 8
+  %sret.result49 = alloca %_Z13ResolveResult, align 8
   %deref.tmp35 = alloca %_Z16PlannedStatement, align 8
   %sret.result32 = alloca %_Z13ResolveResult, align 8
   %deref.tmp27 = alloca %_Z13PlannedBranch, align 8
@@ -74210,7 +74248,9 @@ if.then:                                          ; preds = %entry
   %condition3 = extractvalue %_Z12PlannedMatch %load.struct2, 1
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp, ptr align 1 %condition3, i64 ptrtoint (ptr getelementptr (%_Z6VectorIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN8semantic13walk_operandsEPN4scaly6memory4PageE6VectorI14PlannedOperandEmm(ptr noalias sret(%_Z13ResolveResult) %sret.result1, ptr %1, ptr %deref.tmp, i64 %3, i64 %4)
-  store ptr %sret.result1, ptr %result, align 1
+  %set.dest = load ptr, ptr %result, align 8
+  %set.thru = load %_Z13ResolveResult, ptr %sret.result1, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %set.dest, ptr align 1 %sret.result1, i64 ptrtoint (ptr getelementptr (%_Z13ResolveResult, ptr null, i32 1) to i64), i1 false)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -74227,11 +74267,11 @@ if.then6:                                         ; preds = %if.end
   br i1 %ne9, label %if.then10, label %if.end11
 
 if.end7:                                          ; preds = %if.end11, %if.end
-  %result37 = load ptr, ptr %result, align 8
-  %load.struct38 = load %_Z13ResolveResult, ptr %result37, align 8
-  %found39 = extractvalue %_Z13ResolveResult %load.struct38, 0
-  %eq40 = icmp eq i1 %found39, false
-  br i1 %eq40, label %if.then41, label %if.end42
+  %result39 = load ptr, ptr %result, align 8
+  %load.struct40 = load %_Z13ResolveResult, ptr %result39, align 8
+  %found41 = extractvalue %_Z13ResolveResult %load.struct40, 0
+  %eq42 = icmp eq i1 %found41, false
+  br i1 %eq42, label %if.then43, label %if.end44
 
 if.then10:                                        ; preds = %if.then6
   %load.struct12 = load %_Z12PlannedMatch, ptr %2, align 8
@@ -74267,8 +74307,8 @@ if.then21:                                        ; preds = %while.body
   br i1 %ne24, label %if.then25, label %if.end26
 
 if.end22:                                         ; preds = %if.end26, %while.body
-  %i36 = load i64, ptr %i, align 4
-  %add = add i64 %i36, 1
+  %i38 = load i64, ptr %i, align 4
+  %add = add i64 %i38, 1
   store i64 %add, ptr %i, align 1
   br label %while.cond
 
@@ -74287,40 +74327,44 @@ if.then30:                                        ; preds = %if.then25
   %consequent34 = extractvalue %_Z13PlannedBranch %load.struct33, 2
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp35, ptr align 1 %consequent34, i64 ptrtoint (ptr getelementptr (%_Z16PlannedStatement, ptr null, i32 1) to i64), i1 false)
   call void @_ZN8semantic14walk_statementEPN4scaly6memory4PageE16PlannedStatementmm(ptr noalias sret(%_Z13ResolveResult) %sret.result32, ptr %1, ptr %deref.tmp35, i64 %3, i64 %4)
-  store ptr %sret.result32, ptr %result, align 1
+  %set.dest36 = load ptr, ptr %result, align 8
+  %set.thru37 = load %_Z13ResolveResult, ptr %sret.result32, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %set.dest36, ptr align 1 %sret.result32, i64 ptrtoint (ptr getelementptr (%_Z13ResolveResult, ptr null, i32 1) to i64), i1 false)
   br label %if.end31
 
 if.end31:                                         ; preds = %if.then30, %if.then25
   br label %if.end26
 
-if.then41:                                        ; preds = %if.end7
-  %load.struct43 = load %_Z12PlannedMatch, ptr %2, align 8
-  %alternative = extractvalue %_Z12PlannedMatch %load.struct43, 3
-  %ne44 = icmp ne ptr %alternative, null
-  br i1 %ne44, label %if.then45, label %if.end46
+if.then43:                                        ; preds = %if.end7
+  %load.struct45 = load %_Z12PlannedMatch, ptr %2, align 8
+  %alternative = extractvalue %_Z12PlannedMatch %load.struct45, 3
+  %ne46 = icmp ne ptr %alternative, null
+  br i1 %ne46, label %if.then47, label %if.end48
 
-if.end42:                                         ; preds = %if.end46, %if.end7
-  %result51 = load ptr, ptr %result, align 8
-  %sret.body = load %_Z13ResolveResult, ptr %result51, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %result51, i64 ptrtoint (ptr getelementptr (%_Z13ResolveResult, ptr null, i32 1) to i64), i1 false)
+if.end44:                                         ; preds = %if.end48, %if.end7
+  %result55 = load ptr, ptr %result, align 8
+  %sret.body = load %_Z13ResolveResult, ptr %result55, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %result55, i64 ptrtoint (ptr getelementptr (%_Z13ResolveResult, ptr null, i32 1) to i64), i1 false)
   ret void
 
-if.then45:                                        ; preds = %if.then41
-  %load.struct48 = load %_Z12PlannedMatch, ptr %2, align 8
-  %alternative49 = extractvalue %_Z12PlannedMatch %load.struct48, 3
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp50, ptr align 1 %alternative49, i64 ptrtoint (ptr getelementptr (%_Z16PlannedStatement, ptr null, i32 1) to i64), i1 false)
-  call void @_ZN8semantic14walk_statementEPN4scaly6memory4PageE16PlannedStatementmm(ptr noalias sret(%_Z13ResolveResult) %sret.result47, ptr %1, ptr %deref.tmp50, i64 %3, i64 %4)
-  store ptr %sret.result47, ptr %result, align 1
-  br label %if.end46
+if.then47:                                        ; preds = %if.then43
+  %load.struct50 = load %_Z12PlannedMatch, ptr %2, align 8
+  %alternative51 = extractvalue %_Z12PlannedMatch %load.struct50, 3
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp52, ptr align 1 %alternative51, i64 ptrtoint (ptr getelementptr (%_Z16PlannedStatement, ptr null, i32 1) to i64), i1 false)
+  call void @_ZN8semantic14walk_statementEPN4scaly6memory4PageE16PlannedStatementmm(ptr noalias sret(%_Z13ResolveResult) %sret.result49, ptr %1, ptr %deref.tmp52, i64 %3, i64 %4)
+  %set.dest53 = load ptr, ptr %result, align 8
+  %set.thru54 = load %_Z13ResolveResult, ptr %sret.result49, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %set.dest53, ptr align 1 %sret.result49, i64 ptrtoint (ptr getelementptr (%_Z13ResolveResult, ptr null, i32 1) to i64), i1 false)
+  br label %if.end48
 
-if.end46:                                         ; preds = %if.then45, %if.then41
-  br label %if.end42
+if.end48:                                         ; preds = %if.then47, %if.then43
+  br label %if.end44
 }
 
 define linkonce_odr void @_ZN8semantic11walk_chooseEPN4scaly6memory4PageE13PlannedChoosemm(ptr noalias sret(%_Z13ResolveResult) %0, ptr %1, ptr %2, i64 %3, i64 %4) {
 entry:
-  %deref.tmp50 = alloca %_Z16PlannedStatement, align 8
-  %sret.result47 = alloca %_Z13ResolveResult, align 8
+  %deref.tmp52 = alloca %_Z16PlannedStatement, align 8
+  %sret.result49 = alloca %_Z13ResolveResult, align 8
   %deref.tmp35 = alloca %_Z16PlannedStatement, align 8
   %sret.result32 = alloca %_Z13ResolveResult, align 8
   %deref.tmp27 = alloca %_Z11PlannedWhen, align 8
@@ -74342,7 +74386,9 @@ if.then:                                          ; preds = %entry
   %condition3 = extractvalue %_Z13PlannedChoose %load.struct2, 1
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp, ptr align 1 %condition3, i64 ptrtoint (ptr getelementptr (%_Z6VectorIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN8semantic13walk_operandsEPN4scaly6memory4PageE6VectorI14PlannedOperandEmm(ptr noalias sret(%_Z13ResolveResult) %sret.result1, ptr %1, ptr %deref.tmp, i64 %3, i64 %4)
-  store ptr %sret.result1, ptr %result, align 1
+  %set.dest = load ptr, ptr %result, align 8
+  %set.thru = load %_Z13ResolveResult, ptr %sret.result1, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %set.dest, ptr align 1 %sret.result1, i64 ptrtoint (ptr getelementptr (%_Z13ResolveResult, ptr null, i32 1) to i64), i1 false)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -74359,11 +74405,11 @@ if.then6:                                         ; preds = %if.end
   br i1 %ne9, label %if.then10, label %if.end11
 
 if.end7:                                          ; preds = %if.end11, %if.end
-  %result37 = load ptr, ptr %result, align 8
-  %load.struct38 = load %_Z13ResolveResult, ptr %result37, align 8
-  %found39 = extractvalue %_Z13ResolveResult %load.struct38, 0
-  %eq40 = icmp eq i1 %found39, false
-  br i1 %eq40, label %if.then41, label %if.end42
+  %result39 = load ptr, ptr %result, align 8
+  %load.struct40 = load %_Z13ResolveResult, ptr %result39, align 8
+  %found41 = extractvalue %_Z13ResolveResult %load.struct40, 0
+  %eq42 = icmp eq i1 %found41, false
+  br i1 %eq42, label %if.then43, label %if.end44
 
 if.then10:                                        ; preds = %if.then6
   %load.struct12 = load %_Z13PlannedChoose, ptr %2, align 8
@@ -74399,8 +74445,8 @@ if.then21:                                        ; preds = %while.body
   br i1 %ne24, label %if.then25, label %if.end26
 
 if.end22:                                         ; preds = %if.end26, %while.body
-  %i36 = load i64, ptr %i, align 4
-  %add = add i64 %i36, 1
+  %i38 = load i64, ptr %i, align 4
+  %add = add i64 %i38, 1
   store i64 %add, ptr %i, align 1
   br label %while.cond
 
@@ -74419,34 +74465,38 @@ if.then30:                                        ; preds = %if.then25
   %consequent34 = extractvalue %_Z11PlannedWhen %load.struct33, 4
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp35, ptr align 1 %consequent34, i64 ptrtoint (ptr getelementptr (%_Z16PlannedStatement, ptr null, i32 1) to i64), i1 false)
   call void @_ZN8semantic14walk_statementEPN4scaly6memory4PageE16PlannedStatementmm(ptr noalias sret(%_Z13ResolveResult) %sret.result32, ptr %1, ptr %deref.tmp35, i64 %3, i64 %4)
-  store ptr %sret.result32, ptr %result, align 1
+  %set.dest36 = load ptr, ptr %result, align 8
+  %set.thru37 = load %_Z13ResolveResult, ptr %sret.result32, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %set.dest36, ptr align 1 %sret.result32, i64 ptrtoint (ptr getelementptr (%_Z13ResolveResult, ptr null, i32 1) to i64), i1 false)
   br label %if.end31
 
 if.end31:                                         ; preds = %if.then30, %if.then25
   br label %if.end26
 
-if.then41:                                        ; preds = %if.end7
-  %load.struct43 = load %_Z13PlannedChoose, ptr %2, align 8
-  %alternative = extractvalue %_Z13PlannedChoose %load.struct43, 3
-  %ne44 = icmp ne ptr %alternative, null
-  br i1 %ne44, label %if.then45, label %if.end46
+if.then43:                                        ; preds = %if.end7
+  %load.struct45 = load %_Z13PlannedChoose, ptr %2, align 8
+  %alternative = extractvalue %_Z13PlannedChoose %load.struct45, 3
+  %ne46 = icmp ne ptr %alternative, null
+  br i1 %ne46, label %if.then47, label %if.end48
 
-if.end42:                                         ; preds = %if.end46, %if.end7
-  %result51 = load ptr, ptr %result, align 8
-  %sret.body = load %_Z13ResolveResult, ptr %result51, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %result51, i64 ptrtoint (ptr getelementptr (%_Z13ResolveResult, ptr null, i32 1) to i64), i1 false)
+if.end44:                                         ; preds = %if.end48, %if.end7
+  %result55 = load ptr, ptr %result, align 8
+  %sret.body = load %_Z13ResolveResult, ptr %result55, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %result55, i64 ptrtoint (ptr getelementptr (%_Z13ResolveResult, ptr null, i32 1) to i64), i1 false)
   ret void
 
-if.then45:                                        ; preds = %if.then41
-  %load.struct48 = load %_Z13PlannedChoose, ptr %2, align 8
-  %alternative49 = extractvalue %_Z13PlannedChoose %load.struct48, 3
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp50, ptr align 1 %alternative49, i64 ptrtoint (ptr getelementptr (%_Z16PlannedStatement, ptr null, i32 1) to i64), i1 false)
-  call void @_ZN8semantic14walk_statementEPN4scaly6memory4PageE16PlannedStatementmm(ptr noalias sret(%_Z13ResolveResult) %sret.result47, ptr %1, ptr %deref.tmp50, i64 %3, i64 %4)
-  store ptr %sret.result47, ptr %result, align 1
-  br label %if.end46
+if.then47:                                        ; preds = %if.then43
+  %load.struct50 = load %_Z13PlannedChoose, ptr %2, align 8
+  %alternative51 = extractvalue %_Z13PlannedChoose %load.struct50, 3
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp52, ptr align 1 %alternative51, i64 ptrtoint (ptr getelementptr (%_Z16PlannedStatement, ptr null, i32 1) to i64), i1 false)
+  call void @_ZN8semantic14walk_statementEPN4scaly6memory4PageE16PlannedStatementmm(ptr noalias sret(%_Z13ResolveResult) %sret.result49, ptr %1, ptr %deref.tmp52, i64 %3, i64 %4)
+  %set.dest53 = load ptr, ptr %result, align 8
+  %set.thru54 = load %_Z13ResolveResult, ptr %sret.result49, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %set.dest53, ptr align 1 %sret.result49, i64 ptrtoint (ptr getelementptr (%_Z13ResolveResult, ptr null, i32 1) to i64), i1 false)
+  br label %if.end48
 
-if.end46:                                         ; preds = %if.then45, %if.then41
-  br label %if.end42
+if.end48:                                         ; preds = %if.then47, %if.then43
+  br label %if.end44
 }
 
 define linkonce_odr void @_ZN8semantic8walk_forEPN4scaly6memory4PageE10PlannedFormm(ptr noalias sret(%_Z13ResolveResult) %0, ptr %1, ptr %2, i64 %3, i64 %4) {
@@ -74468,7 +74518,9 @@ if.then:                                          ; preds = %entry
   %expr3 = extractvalue %_Z10PlannedFor %load.struct2, 2
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp, ptr align 1 %expr3, i64 ptrtoint (ptr getelementptr (%_Z6VectorIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN8semantic13walk_operandsEPN4scaly6memory4PageE6VectorI14PlannedOperandEmm(ptr noalias sret(%_Z13ResolveResult) %sret.result1, ptr %1, ptr %deref.tmp, i64 %3, i64 %4)
-  store ptr %sret.result1, ptr %result, align 1
+  %set.dest = load ptr, ptr %result, align 8
+  %set.thru = load %_Z13ResolveResult, ptr %sret.result1, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %set.dest, ptr align 1 %sret.result1, i64 ptrtoint (ptr getelementptr (%_Z13ResolveResult, ptr null, i32 1) to i64), i1 false)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -74481,13 +74533,15 @@ if.end:                                           ; preds = %if.then, %entry
 if.then6:                                         ; preds = %if.end
   %field.inplace = getelementptr inbounds %_Z10PlannedFor, ptr %2, i32 0, i32 3
   call void @_ZN8semantic11walk_actionEPN4scaly6memory4PageE13PlannedActionmm(ptr noalias sret(%_Z13ResolveResult) %sret.result8, ptr %1, ptr %field.inplace, i64 %3, i64 %4)
-  store ptr %sret.result8, ptr %result, align 1
+  %set.dest9 = load ptr, ptr %result, align 8
+  %set.thru10 = load %_Z13ResolveResult, ptr %sret.result8, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %set.dest9, ptr align 1 %sret.result8, i64 ptrtoint (ptr getelementptr (%_Z13ResolveResult, ptr null, i32 1) to i64), i1 false)
   br label %if.end7
 
 if.end7:                                          ; preds = %if.then6, %if.end
-  %result9 = load ptr, ptr %result, align 8
-  %sret.body = load %_Z13ResolveResult, ptr %result9, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %result9, i64 ptrtoint (ptr getelementptr (%_Z13ResolveResult, ptr null, i32 1) to i64), i1 false)
+  %result11 = load ptr, ptr %result, align 8
+  %sret.body = load %_Z13ResolveResult, ptr %result11, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %result11, i64 ptrtoint (ptr getelementptr (%_Z13ResolveResult, ptr null, i32 1) to i64), i1 false)
   ret void
 }
 
@@ -74508,7 +74562,9 @@ entry:
 if.then:                                          ; preds = %entry
   %field.inplace3 = getelementptr inbounds %_Z12PlannedWhile, ptr %2, i32 0, i32 2
   call void @_ZN8semantic11walk_actionEPN4scaly6memory4PageE13PlannedActionmm(ptr noalias sret(%_Z13ResolveResult) %sret.result2, ptr %1, ptr %field.inplace3, i64 %3, i64 %4)
-  store ptr %sret.result2, ptr %result, align 1
+  %set.dest = load ptr, ptr %result, align 8
+  %set.thru = load %_Z13ResolveResult, ptr %sret.result2, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %set.dest, ptr align 1 %sret.result2, i64 ptrtoint (ptr getelementptr (%_Z13ResolveResult, ptr null, i32 1) to i64), i1 false)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -74605,7 +74661,9 @@ if.then22:                                        ; preds = %if.then17
   %consequent26 = extractvalue %_Z11PlannedWhen %load.struct25, 4
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp27, ptr align 1 %consequent26, i64 ptrtoint (ptr getelementptr (%_Z16PlannedStatement, ptr null, i32 1) to i64), i1 false)
   call void @_ZN8semantic14walk_statementEPN4scaly6memory4PageE16PlannedStatementmm(ptr noalias sret(%_Z13ResolveResult) %sret.result24, ptr %1, ptr %deref.tmp27, i64 %3, i64 %4)
-  store ptr %sret.result24, ptr %result, align 1
+  %set.dest = load ptr, ptr %result, align 8
+  %set.thru = load %_Z13ResolveResult, ptr %sret.result24, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %set.dest, ptr align 1 %sret.result24, i64 ptrtoint (ptr getelementptr (%_Z13ResolveResult, ptr null, i32 1) to i64), i1 false)
   br label %if.end23
 
 if.end23:                                         ; preds = %if.then22, %if.then17
@@ -74618,9 +74676,9 @@ if.then33:                                        ; preds = %if.end
   br i1 %ne36, label %if.then37, label %if.end38
 
 if.end34:                                         ; preds = %if.end38, %if.end
-  %result43 = load ptr, ptr %result, align 8
-  %sret.body = load %_Z13ResolveResult, ptr %result43, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %result43, i64 ptrtoint (ptr getelementptr (%_Z13ResolveResult, ptr null, i32 1) to i64), i1 false)
+  %result45 = load ptr, ptr %result, align 8
+  %sret.body = load %_Z13ResolveResult, ptr %result45, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %result45, i64 ptrtoint (ptr getelementptr (%_Z13ResolveResult, ptr null, i32 1) to i64), i1 false)
   ret void
 
 if.then37:                                        ; preds = %if.then33
@@ -74628,7 +74686,9 @@ if.then37:                                        ; preds = %if.then33
   %alternative41 = extractvalue %_Z10PlannedTry %load.struct40, 3
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp42, ptr align 1 %alternative41, i64 ptrtoint (ptr getelementptr (%_Z16PlannedStatement, ptr null, i32 1) to i64), i1 false)
   call void @_ZN8semantic14walk_statementEPN4scaly6memory4PageE16PlannedStatementmm(ptr noalias sret(%_Z13ResolveResult) %sret.result39, ptr %1, ptr %deref.tmp42, i64 %3, i64 %4)
-  store ptr %sret.result39, ptr %result, align 1
+  %set.dest43 = load ptr, ptr %result, align 8
+  %set.thru44 = load %_Z13ResolveResult, ptr %sret.result39, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %set.dest43, ptr align 1 %sret.result39, i64 ptrtoint (ptr getelementptr (%_Z13ResolveResult, ptr null, i32 1) to i64), i1 false)
   br label %if.end38
 
 if.end38:                                         ; preds = %if.then37, %if.then33
@@ -80087,7 +80147,9 @@ while.body:                                       ; preds = %while.cond
   call void @_ZN4json9array_getEPN4scaly6memory4PageEm(ptr noalias sret(%_Z9JsonValue) %sret.result6, ptr %local_page, ptr %sret.result3, i64 %i7)
   %text9 = load ptr, ptr %text, align 8
   call void @_ZN6server12apply_changeEPN4scaly6memory4PageE6String9JsonValue(ptr noalias sret({ ptr }) %sret.result8, ptr %local_page, ptr %text9, ptr %sret.result6)
-  store ptr %sret.result8, ptr %text, align 1
+  %set.dest = load ptr, ptr %text, align 8
+  %set.thru = load { ptr }, ptr %sret.result8, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %set.dest, ptr align 1 %sret.result8, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   %i10 = load i64, ptr %i, align 4
   %add = add i64 %i10, 1
   store i64 %add, ptr %i, align 1
@@ -80194,7 +80256,9 @@ entry:
 
 if.then:                                          ; preds = %entry
   call void @_ZN6worker5hoverEPN4scaly6memory4PageE6String6String6String(ptr noalias sret({ ptr }) %sret.result18, ptr %local_page, ptr %sret.result2, ptr %sret.result13, ptr %sret.result11)
-  store ptr %sret.result18, ptr %value, align 1
+  %set.dest = load ptr, ptr %value, align 8
+  %set.thru = load { ptr }, ptr %sret.result18, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %set.dest, ptr align 1 %sret.result18, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
