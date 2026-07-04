@@ -5404,6 +5404,31 @@ define Planner
                                                 set eff_ctor_life: Lifetime.Local(scalyc.compiler.Model.Local(second.loc))
                                             else
                                                 0
+                                    ; Page inference, step-D adoption (ctor
+                                    ; path): an explicit-^ ctor's defaulted args
+                                    ; adopt the ctor's page — an inline
+                                    ; construction in an arg position of
+                                    ; `T^page(...)` becomes a field of the ^page
+                                    ; aggregate, so its guts must live there
+                                    ; too. restamp_args keeps borrows/explicit-
+                                    ; lifetime args verbatim, so sigiled source
+                                    ; is unchanged. NOTE the ref-reassign shape
+                                    ; is LOAD-BEARING: `set ctor_args_vec:
+                                    ; (*adopted)` — a deref-copy into the
+                                    ; promoted Vector binding — hits a latent
+                                    ; emit_action gap (ptr slot + ptr deref.tmp
+                                    ; source -> raw pointer store to a pooled
+                                    ; STACK temp) and dangles nondeterministically.
+                                    var ctor_args_ref: ref[Vector[PlannedOperand]]? &ctor_args_vec
+                                    choose eff_ctor_life
+                                        when adopt_r: Reference
+                                        {
+                                            let adopted this.restamp_args(ctor_args_vec, eff_ctor_life)
+                                            if adopted <> null
+                                                set ctor_args_ref: adopted
+                                        }
+                                        else
+                                            0
 
                                     let ctor_call PlannedCall(
                                         second.loc,
@@ -5413,7 +5438,7 @@ define Planner
                                         false,
                                         false,
                                         has_page_param,
-                                        &ctor_args_vec,
+                                        ctor_args_ref,
                                         ctor_struct_type,
                                         eff_ctor_life,
                                         null,
@@ -5523,6 +5548,26 @@ define Planner
                                 when u: Unspecified
                                     if this.concept_needs_this_residency(fn_name)
                                         set reshape_life: Lifetime.Local(scalyc.compiler.Model.Local(second.loc))
+                                else
+                                    0
+
+                            ; Page inference, step-D adoption (reshape path): a
+                            ; data-class construction with an explicit ^ life
+                            ; adopts its defaulted component constructions onto
+                            ; the same page — `TypeVariable^this(id,
+                            ; String(name))`'s String must live where the
+                            ; TypeVariable lives, not on the released local
+                            ; page. Ref-reassign shape (see the ctor-path note).
+                            choose reshape_life
+                                when adopt_r2: Reference
+                                {
+                                    if components_holder <> null
+                                    {
+                                        let adopted_comps this.restamp_components((*components_holder), reshape_life)
+                                        if adopted_comps <> null
+                                            set components_holder: adopted_comps
+                                    }
+                                }
                                 else
                                     0
 
