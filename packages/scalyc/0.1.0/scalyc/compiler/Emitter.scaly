@@ -6719,7 +6719,7 @@ define Emitter
             return LLVMValueRef null
 
         let ty map_type result_type
-        let is_float is_floating_point_type result_type
+        var is_float is_floating_point_type result_type
         ; Signedness derives from the LEFT OPERAND's type, NOT result_type:
         ; for comparisons result_type is bool (signed by default), which
         ; would wrongly emit signed slt/sgt for size_t/unsigned operands.
@@ -6734,6 +6734,15 @@ define Emitter
         ; offset, matching the C++ Emitter at emitIntrinsicOp:4063+).
         let l_kind LLVMGetTypeKind(LLVMTypeOf l)
         let r_kind LLVMGetTypeKind(LLVMTypeOf r)
+        ; Floatness must ALSO derive from the actual operand (the operand-
+        ; side mirror of the is_signed rule above): for comparisons
+        ; result_type is bool, so a double compare would otherwise fall
+        ; into LLVMBuildICmp — invalid IR on FP operands, and LLVM's
+        ; constant folder loops forever folding an icmp of FP constants.
+        if l_kind = LLVMTypeKind.Float()
+            set is_float: true
+        if l_kind = LLVMTypeKind.Double()
+            set is_float: true
         ; Pointer comparisons are unsigned (mirror C++ emitIntrinsicOp).
         if l_kind = LLVMTypeKind.Pointer()
             if r_kind = LLVMTypeKind.Pointer()

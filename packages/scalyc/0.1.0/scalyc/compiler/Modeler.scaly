@@ -21,6 +21,10 @@ define Modeler
 ; Literal/Constant handling
 ; ============================================================================
 
+; libc float parsing for FloatingPointLiteral (exact, correctly rounded;
+; a hand-rolled digit walk would accumulate error).
+function strtod(nptr: pointer[const_char], endptr: pointer[void]) returns double extern
+
 ; Decode the escape sequences the lexer validated in a string literal's
 ; raw payload: \" \\ \' \n \r \t \0 and \uXXXX (UTF-8 encoded). A literal
 ; without a backslash returns the payload unchanged.
@@ -141,7 +145,14 @@ function handle_literal(syntax: LiteralSyntax) returns Constant
         when bool_lit: BooleanLiteral
             Constant.Boolean(BooleanConstant(loc, bool_lit.value))
         when float_lit: FloatingPointLiteral
-            Constant.FloatingPoint(FloatingPointConstant(loc, 0.0))
+        {
+            ; Parse the decimal text (was hardcoded 0.0 — every float
+            ; literal in a program compiled to zero).
+            let float_text float_lit.value
+            let float_cstr float_text.to_c_string()
+            let float_val strtod(float_cstr, null)
+            Constant.FloatingPoint(FloatingPointConstant(loc, float_val))
+        }
         when hex_lit: HexLiteral
         {
             ; Token includes the 0x prefix; 'x' decodes as 0 which is harmless

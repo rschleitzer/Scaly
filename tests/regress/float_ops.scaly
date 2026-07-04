@@ -1,0 +1,51 @@
+; Floating-point literals and comparisons (A2, 2026-07-04): FloatingPoint
+; literals were hardcoded to 0.0 in the Modeler (every float compiled to
+; zero), and float comparisons fell into LLVMBuildICmp — invalid IR that
+; also hung LLVM's constant folder. The Modeler now parses the literal via
+; strtod and emit_intrinsic_binary_op derives floatness from the operand.
+; Expected: PASS
+
+var ok true
+
+let a 1.5
+let b 2.0
+
+; Literals are no longer zero.
+if a <= (0.0)
+    set ok: false
+
+; Ordered comparisons.
+if (a < b) = false
+    set ok: false
+if (b > a) = false
+    set ok: false
+if (a <= a) = false
+    set ok: false
+if (b >= b) = false
+    set ok: false
+if (a > b)
+    set ok: false
+
+; Arithmetic.
+let sum a + b
+if (sum > 3.4) = false
+    set ok: false
+if (sum < 3.6) = false
+    set ok: false
+
+let prod a * b
+if (prod > 2.9) = false
+    set ok: false
+if (prod < 3.1) = false
+    set ok: false
+
+let diff b - a
+if (diff > 0.4) = false
+    set ok: false
+if (diff < 0.6) = false
+    set ok: false
+
+if ok
+    print("PASS")
+else
+    print("FAIL")
