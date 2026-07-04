@@ -4601,6 +4601,224 @@ define Planner
                     return this.collapse_operand_sequence(merged_vec)
             }
 
+            ; Subscript pre-pass: fuse `[value, Matrix]` pairs into a `[]`
+            ; operator call BEFORE the prefix/binary machinery runs, so
+            ; `base[index] <op> rhs` collapses as call-then-binary instead
+            ; of the operator falling into the prefix branch (the long-
+            ; latent subscript mis-collapse; the old containers workaround
+            ; was to pre-group in parens). Mirrors stage-0's planOperands
+            ; subscript detection (Planner.cpp:10323). Gated to VALUE
+            ; receivers (Variable/Call/Tuple — a bare PlannedType base is
+            ; a generic instantiation, owned by the s107 merge above) and
+            ; to a single-row Matrix with no member_access whose first
+            ; operand is not itself a Type/Matrix. find_subscript_operator
+            ; misses (no `[]` on the receiver's concept) leave the pair
+            ; untouched via the progress guard.
+            var has_subscript: bool false
+            var sci: size_t 0
+            while sci + 1 < ops.length
+            {
+                let sc_ptr ops.get sci
+                let sn_ptr ops.get(sci + 1)
+                if sc_ptr <> null
+                {
+                    if sn_ptr <> null
+                    {
+                        let sc_op (*sc_ptr)
+                        let sn_op (*sn_ptr)
+                        var sc_is_value: bool false
+                        choose sc_op.expr
+                            when sv: PlannedVariable
+                                set sc_is_value: true
+                            when sc: PlannedCall
+                                set sc_is_value: true
+                            when st: PlannedTuple
+                                set sc_is_value: true
+                            when sty: PlannedType
+                            {
+                                ; A bare name that resolves to a LOCAL is a
+                                ; value receiver — names stay PlannedType
+                                ; through collapse until resolution.
+                                if sty.name.get_length() > 0
+                                    if sc_op.member_access = null
+                                        if this.lookup_local_binding(sty.name) <> null
+                                            set sc_is_value: true
+                                0
+                            }
+                            else
+                                0
+                        if sc_is_value
+                        {
+                            choose sn_op.expr
+                                when sm: scalyc.compiler.Plan.PlannedMatrix
+                                    set has_subscript: true
+                                else
+                                    0
+                        }
+                    }
+                }
+                set sci: sci + 1
+            }
+
+            if has_subscript
+            {
+                var sub_arr Array[PlannedOperand]()
+                var si: size_t 0
+                while si < ops.length
+                {
+                    let sp_ptr ops.get si
+                    if sp_ptr = null
+                    {
+                        set si: si + 1
+                        continue
+                    }
+                    let s_op (*sp_ptr)
+                    var fused: bool false
+                    if si + 1 < ops.length
+                    {
+                        let sx_ptr ops.get(si + 1)
+                        if sx_ptr <> null
+                        {
+                            let sx_op (*sx_ptr)
+                            var base_is_value: bool false
+                            ; A bare local name arrives as PlannedType —
+                            ; resolve it to a PlannedVariable receiver
+                            ; (mirror of plan_type_operand's local path).
+                            var recv_holder Array[PlannedOperand]()
+                            recv_holder.add s_op
+                            choose s_op.expr
+                                when sv2: PlannedVariable
+                                    set base_is_value: true
+                                when sc2: PlannedCall
+                                    set base_is_value: true
+                                when st2: PlannedTuple
+                                    set base_is_value: true
+                                when sty2: PlannedType
+                                {
+                                    if sty2.name.get_length() > 0
+                                    {
+                                        if s_op.member_access = null
+                                        {
+                                            let lb_ref this.lookup_local_binding(sty2.name)
+                                            if lb_ref <> null
+                                            {
+                                                let lb (*lb_ref)
+                                                let recv_var PlannedVariable(
+                                                    s_op.loc,
+                                                    String(sty2.name),
+                                                    lb.binding_type,
+                                                    lb.is_mutable
+                                                )
+                                                recv_holder.put(0, PlannedOperand(
+                                                    s_op.loc,
+                                                    PlannedExpression.Variable recv_var,
+                                                    null,
+                                                    lb.binding_type
+                                                ))
+                                                set base_is_value: true
+                                            }
+                                        }
+                                    }
+                                    0
+                                }
+                                else
+                                    0
+                            if base_is_value
+                            {
+                                if sx_op.member_access = null
+                                {
+                                    choose sx_op.expr
+                                        when smx: scalyc.compiler.Plan.PlannedMatrix
+                                        {
+                                            if smx.operations <> null
+                                            {
+                                                let rows (*smx.operations)
+                                                if rows.length = 1
+                                                {
+                                                    let row_ptr rows.get 0
+                                                    if row_ptr <> null
+                                                    {
+                                                        let row (*row_ptr)
+                                                        if row.length > 0
+                                                        {
+                                                            var idx_is_value: bool true
+                                                            let r0_ptr row.get 0
+                                                            if r0_ptr <> null
+                                                            {
+                                                                choose (*r0_ptr).expr
+                                                                    when rt0: PlannedType
+                                                                        set idx_is_value: false
+                                                                    when rm0: scalyc.compiler.Plan.PlannedMatrix
+                                                                        set idx_is_value: false
+                                                                    else
+                                                                        0
+                                                            }
+                                                            let recv_ptr recv_holder.get 0
+                                                            if recv_ptr = null
+                                                                set idx_is_value: false
+                                                            if idx_is_value
+                                                            {
+                                                                let recv_op (*recv_ptr)
+                                                                let sm_ref this.find_subscript_operator(recv_op.result_type, sx_op.loc)
+                                                                if sm_ref <> null
+                                                                {
+                                                                    let m (*sm_ref)
+                                                                    let idx_op this.collapse_operand_sequence(row)
+                                                                    this.ensure_type_layout(recv_op.result_type)
+                                                                    this.ensure_type_layout(m.return_type)
+                                                                    var sub_args Vector[PlannedOperand](2)
+                                                                    sub_args.put(0, recv_op)
+                                                                    sub_args.put(1, idx_op)
+                                                                    let sub_call PlannedCall(
+                                                                        sx_op.loc,
+                                                                        String("[]"),
+                                                                        m.mangled_name,
+                                                                        false,
+                                                                        true,
+                                                                        m.can_throw,
+                                                                        m.requires_page_param,
+                                                                        &sub_args,
+                                                                        m.return_type,
+                                                                        Lifetime.Unspecified(Unspecified()),
+                                                                        m.throws_type,
+                                                                        false
+                                                                    )
+                                                                    sub_arr.add(PlannedOperand(
+                                                                        s_op.loc,
+                                                                        PlannedExpression.Call sub_call,
+                                                                        null,
+                                                                        m.return_type
+                                                                    ))
+                                                                    set fused: true
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                            0
+                                        }
+                                        else
+                                            0
+                                }
+                            }
+                        }
+                    }
+                    if fused
+                    {
+                        set si: si + 2
+                        continue
+                    }
+                    sub_arr.add s_op
+                    set si: si + 1
+                }
+                var sub_vec Vector[PlannedOperand](sub_arr)
+                ; s138 progress guard: no pair actually fused (e.g. no
+                ; `[]` operator on any receiver) — fall through.
+                if sub_vec.length < ops.length
+                    return this.collapse_operand_sequence(sub_vec)
+            }
+
             let first_ptr ops.get 0
             if first_ptr = null
             {
@@ -9259,6 +9477,286 @@ define Planner
             )
         }
 
+        ; find_subscript_operator: resolve `base[index]` to the receiver
+        ; concept's `operator []`. Mirrors stage-0 findSubscriptOperator
+        ; (Planner.cpp:2896): bind the concept's generic params to the
+        ; receiver's generic args (s167 rebuild so receiver bindings win
+        ; under first-wins lookup), plan the operator under that
+        ; substitution, and record it as a dispatchable PlannedFunction on
+        ; first use so the Emitter defines the symbol (plan_structure's
+        ; PlannedOperators are stored but never emitted). Returns null when
+        ; the receiver's concept declares no `[]` — the collapse pre-pass
+        ; then leaves the operand sequence untouched.
+        function find_subscript_operator(
+            this: Planner,
+            container_type: PlannedType,
+            loc: Span
+        ) returns ref[MethodMatch]?
+        {
+            ; Auto-deref pointer/ref receivers (s106 pattern).
+            var lookup_st: PlannedType container_type
+            if container_type.name.equals("pointer")
+            {
+                if container_type.generics <> null
+                {
+                    let gens (*container_type.generics)
+                    if gens.length > 0
+                    {
+                        let inner_ptr gens.get 0
+                        if inner_ptr <> null
+                            set lookup_st: (*inner_ptr)
+                    }
+                }
+            }
+            if container_type.name.equals("ref")
+            {
+                if container_type.generics <> null
+                {
+                    let gens (*container_type.generics)
+                    if gens.length > 0
+                    {
+                        let inner_ptr gens.get 0
+                        if inner_ptr <> null
+                            set lookup_st: (*inner_ptr)
+                    }
+                }
+            }
+
+            let concept_ref this.lookup_concept(lookup_st.name)
+            if concept_ref = null
+                return null
+            let conc (*concept_ref)
+
+            ; Find the `[]` operator member.
+            var op_holder Array[Operator]()
+            choose conc.definition
+                when s: Structure
+                {
+                    var mi: size_t 0
+                    while mi < s.members.length
+                    {
+                        let m_ptr s.members.get mi
+                        if m_ptr <> null
+                        {
+                            choose (*m_ptr)
+                                when o: Operator
+                                {
+                                    if o.name.equals("[]")
+                                        if op_holder.length = 0
+                                            op_holder.add o
+                                    0
+                                }
+                                else
+                                    0
+                        }
+                        set mi: mi + 1
+                    }
+                    0
+                }
+                else
+                    0
+            if op_holder.length = 0
+                return null
+            let op_ptr op_holder.get 0
+            if op_ptr = null
+                return null
+            let op (*op_ptr)
+
+            ; Cycle guard: planning the operator body below re-enters
+            ; collapse; a subscript inside the SAME container's own `[]`
+            ; body would recurse forever (recording happens only after
+            ; planning completes). Keyed distinctly from the struct
+            ; mangled so the s188 lazy-instantiation entries are not
+            ; disturbed.
+            var guard_sb StringBuilder()
+            guard_sb.append "ix:"
+            guard_sb.append(Planner.mangle_structure(lookup_st.name, lookup_st.generics))
+            let guard_key guard_sb.to_string()
+            var gi_i: size_t 0
+            while gi_i < instantiating_methods.length
+            {
+                let g_ptr instantiating_methods.get gi_i
+                if g_ptr <> null
+                    if g_ptr.equals(guard_key)
+                        return null
+                set gi_i: gi_i + 1
+            }
+            instantiating_methods.add guard_key
+
+            ; s167 substitution rebuild: receiver generic bindings must WIN
+            ; over same-named ambient bindings (first-wins lookup). Snapshot
+            ; ambient, rebuild without shadowed keys, append receiver
+            ; bindings; restore the full ambient list afterward.
+            var rb_names Array[String]()
+            var rb_vals Array[PlannedType]()
+            if conc.parameters.length > 0
+            {
+                if lookup_st.generics <> null
+                {
+                    let gens_ref (*lookup_st.generics)
+                    var pi: size_t 0
+                    while pi < conc.parameters.length
+                    {
+                        if pi < gens_ref.length
+                        {
+                            let cp_ptr conc.parameters.get pi
+                            let gen_ptr gens_ref.get pi
+                            if cp_ptr <> null
+                            {
+                                if gen_ptr <> null
+                                {
+                                    rb_names.add cp_ptr.name
+                                    rb_vals.add((*gen_ptr))
+                                }
+                            }
+                        }
+                        set pi: pi + 1
+                    }
+                }
+            }
+            var subst_snapshot Array[KeyValuePair[String, PlannedType]]()
+            var ssi: size_t 0
+            while ssi < type_substitutions.length
+            {
+                let sp type_substitutions.get ssi
+                if sp <> null
+                    subst_snapshot.add((*sp))
+                set ssi: ssi + 1
+            }
+            set type_substitutions.length: 0
+            var rsi: size_t 0
+            while rsi < subst_snapshot.length
+            {
+                let ep subst_snapshot.get rsi
+                if ep <> null
+                {
+                    let e (*ep)
+                    var shadowed: bool false
+                    var ri: size_t 0
+                    while ri < rb_names.length
+                    {
+                        let rn_ptr rb_names.get ri
+                        if rn_ptr <> null
+                            if rn_ptr.equals(e.key)
+                                set shadowed: true
+                        set ri: ri + 1
+                    }
+                    if shadowed = false
+                        type_substitutions.add e
+                }
+                set rsi: rsi + 1
+            }
+            var rbi: size_t 0
+            while rbi < rb_names.length
+            {
+                let rn_ptr rb_names.get rbi
+                let rv_ptr rb_vals.get rbi
+                if rn_ptr <> null
+                {
+                    if rv_ptr <> null
+                        this.define_type_substitution((*rn_ptr), (*rv_ptr))
+                }
+                set rbi: rbi + 1
+            }
+
+            ; Parent type for planning/mangling: the concrete receiver.
+            var parent_holder Vector[PlannedType](1)
+            parent_holder.put(0, lookup_st)
+
+            let planned_op this.plan_operator(op, parent_holder.get(0))
+
+            ; Restore ambient substitutions.
+            set type_substitutions.length: 0
+            var rst_i: size_t 0
+            while rst_i < subst_snapshot.length
+            {
+                let rp_e subst_snapshot.get rst_i
+                if rp_e <> null
+                    type_substitutions.add((*rp_e))
+                set rst_i: rst_i + 1
+            }
+
+            ; Pop the cycle guard.
+            if instantiating_methods.length > 0
+                set instantiating_methods.length: instantiating_methods.length - 1
+
+            ; Record as a dispatchable function on first use (dedup by
+            ; mangled name). The same implicit-return-page rule as
+            ; plan_operator's mangling decides the rp slot.
+            var op_has_page: bool false
+            if Planner.is_extern_impl(op.implementation) = false
+            {
+                if op.returns_ <> null
+                {
+                    let ort (*op.returns_)
+                    if ort.name.length > 0
+                    {
+                        let ojoined Planner.join_dotted_name(ort.name)
+                        if Planner.is_primitive_type_name(ojoined) = false
+                            if Planner.is_generic_type_param_name(ojoined) = false
+                                set op_has_page: true
+                    }
+                }
+            }
+
+            var return_type: PlannedType Planner.make_void_type()
+            if planned_op.return_type <> null
+            {
+                let prt planned_op.return_type
+                set return_type: (*prt)
+            }
+
+            if this.has_recorded_function(planned_op.mangled_name) = false
+            {
+                var page_param_ref: ref[String]? null
+                if op_has_page
+                {
+                    var pp_holder Vector[String](1)
+                    pp_holder.put(0, String("rp"))
+                    set page_param_ref: pp_holder.get(0)
+                }
+                var rt_ref: ref[PlannedType]? null
+                if planned_op.return_type <> null
+                    set rt_ref: planned_op.return_type
+                let op_fn PlannedFunction(
+                    planned_op.loc,
+                    planned_op.is_private,
+                    true,
+                    planned_op.name,
+                    planned_op.mangled_name,
+                    page_param_ref,
+                    planned_op.input,
+                    rt_ref,
+                    planned_op.throws_type,
+                    Lifetime.Unspecified(Unspecified()),
+                    planned_op.impl,
+                    null,
+                    false,
+                    false,
+                    null,
+                    this.file
+                )
+                this.record_function(op_fn)
+            }
+
+            var can_throw: bool false
+            if planned_op.throws_type <> null
+                set can_throw: true
+
+            MethodMatch^this(
+                null,
+                planned_op.mangled_name,
+                return_type,
+                null,
+                op_has_page,
+                can_throw,
+                planned_op.throws_type,
+                false,
+                true,
+                false
+            )
+        }
+
         ; generate_page_get_this: synthesize a `Page.get(this)` call,
         ; returned as a PlannedOperand whose result_type is
         ; `pointer[Page]`. Used when lowering a `^this` lifetime
@@ -12945,6 +13443,17 @@ define Planner
                                     ; grouping shortcut emits only the
                                     ; callee operand — the whole statement
                                     ; silently drops.
+                                    set should_collapse: true
+                                }
+                                when mx: scalyc.compiler.Plan.PlannedMatrix
+                                {
+                                    ; Subscript shape: a Matrix at k>=1 is
+                                    ; an index (`(v[0])`) or a generic arg
+                                    ; list — either way the collapse pre-
+                                    ; passes own the pair. Without this the
+                                    ; grouping shortcut emits only the base
+                                    ; operand and the subscript silently
+                                    ; drops.
                                     set should_collapse: true
                                 }
                                 when ty: PlannedType
@@ -19379,10 +19888,58 @@ define Planner
 
             let planned_input this.plan_items(op.input)
 
-            var i: size_t 0
-            while i < planned_input.length
+            ; Member operators may declare `this` implicitly (Vector/Slice
+            ; `operator [](i: size_t)`) — prepend the receiver item so the
+            ; body's bare field reads (`length`, `data`) resolve through
+            ; the `this` binding and the signature matches the
+            ; [receiver, args...] call shape when the operator is recorded
+            ; as a dispatchable function (find_subscript_operator).
+            ; Explicit-this declarations (Array's `operator [](this:
+            ; Array[T], i)`) come through plan_items already; mangle_operator
+            ; skips the leading "this" item by name either way, so mangled
+            ; names are unchanged.
+            var oi_arr Array[PlannedItem]()
+            var needs_this: bool false
+            if parent <> null
+                set needs_this: true
+            if needs_this
             {
-                let item_ptr planned_input.get i
+                if planned_input.length > 0
+                {
+                    let fi_ptr planned_input.get 0
+                    if fi_ptr <> null
+                    {
+                        let fi (*fi_ptr)
+                        if fi.name <> null
+                        {
+                            let fin (*fi.name)
+                            if fin.equals("this")
+                                set needs_this: false
+                        }
+                    }
+                }
+            }
+            if needs_this
+            {
+                let pt (*parent)
+                var tn_holder Vector[String](1)
+                tn_holder.put(0, String("this"))
+                oi_arr.add(PlannedItem(op.span, false, tn_holder.get(0), &^this pt, null))
+            }
+            var pii: size_t 0
+            while pii < planned_input.length
+            {
+                let ip planned_input.get pii
+                if ip <> null
+                    oi_arr.add((*ip))
+                set pii: pii + 1
+            }
+            var full_input Vector[PlannedItem](oi_arr)
+
+            var i: size_t 0
+            while i < full_input.length
+            {
+                let item_ptr full_input.get i
                 if item_ptr <> null
                 {
                     let item (*item_ptr)
@@ -19392,11 +19949,57 @@ define Planner
                         {
                             let n (*item.name)
                             let t (*item.item_type)
-                            this.define_parameter(n, t)
+                            ; For 'this', the local-scope binding must be
+                            ; pointer[T] so bare-field access in the body
+                            ; resolves via the implicit-property path
+                            ; (same as plan_function's this handling).
+                            if n.equals("this")
+                            {
+                                let ptr_t Planner.make_pointer_type(t)
+                                this.define_parameter(n, ptr_t)
+                            }
+                            if n.equals("this") = false
+                                this.define_parameter(n, t)
                         }
                     }
                 }
                 set i: i + 1
+            }
+
+            ; Same implicit-return-page rule as plan_function: a non-extern
+            ; operator returning a non-primitive (Vector's `[]` returns
+            ; ref[T]?) takes the caller's page, exactly like Vector.get.
+            ; Register `rp` as a pointer[Page] local (s152 mirror) and
+            ; carry the slot in the mangled name below.
+            var op_has_page: bool false
+            if Planner.is_extern_impl(op.implementation) = false
+            {
+                if op.returns_ <> null
+                {
+                    let ort (*op.returns_)
+                    if ort.name.length > 0
+                    {
+                        let ojoined Planner.join_dotted_name(ort.name)
+                        if Planner.is_primitive_type_name(ojoined) = false
+                            if Planner.is_generic_type_param_name(ojoined) = false
+                                set op_has_page: true
+                    }
+                }
+            }
+            if op_has_page
+            {
+                let pp_page_ty PlannedType(
+                    op.span,
+                    "Page",
+                    "",
+                    null,
+                    Lifetime.Unspecified(Unspecified()),
+                    null,
+                    "",
+                    null
+                )
+                let pp_ptr_ty Planner.make_pointer_type(pp_page_ty)
+                this.define_parameter("rp", pp_ptr_ty)
             }
 
             var return_type: ref[PlannedType]? null
@@ -19418,14 +20021,13 @@ define Planner
             this.pop_scope()
             set type_substitutions.length: saved_subst_len
 
-            var input_holder Vector[PlannedItem](planned_input)
-            let mangled Planner.mangle_operator(op.name, &input_holder, parent)
+            let mangled Planner.mangle_operator_paged(op.name, &full_input, parent, op_has_page)
             PlannedOperator(
                 op.span,
                 op.private_,
                 op.name,
                 mangled,
-                &input_holder,
+                &full_input,
                 return_type,
                 throws_type,
                 planned_impl,
@@ -21633,6 +22235,92 @@ define Planner
         }
 
         var has_params: bool false
+        if params <> null
+        {
+            let ps (*params)
+            var i: size_t start_idx
+            while i < ps.length
+            {
+                let param_ptr ps.get i
+                if param_ptr <> null
+                {
+                    let param (*param_ptr)
+                    if param.item_type <> null
+                    {
+                        let pty (*param.item_type)
+                        sb.append(Planner.encode_type(pty))
+                        set has_params: true
+                    }
+                }
+                set i: i + 1
+            }
+        }
+
+        if has_params = false
+            sb.append "v"
+
+        sb.to_string()
+    }
+
+    ; mangle_operator_paged: mangle_operator plus the implicit caller-page
+    ; parameter slot (PN4scaly6memory4PageE inserted before the explicit
+    ; params, mirroring mangle_function's has_page placement). Used by
+    ; plan_operator / find_subscript_operator for operators that fall under
+    ; the implicit-return-page rule (e.g. `operator [] returns ref[T]?`,
+    ; the same rule that gives Vector.get its page slot).
+    function mangle_operator_paged(
+        name: String,
+        params: ref[Vector[PlannedItem]]?,
+        parent: ref[PlannedType]?,
+        has_page: bool
+    ) returns String
+    {
+        let op_code Planner.operator_code(name)
+        var sb StringBuilder()
+        sb.append "_Z"
+
+        if parent <> null
+        {
+            let p (*parent)
+            sb.append "N"
+            sb.append(Planner.encode_type(p))
+            sb.append op_code
+            sb.append "E"
+        }
+        if parent = null
+            sb.append op_code
+
+        var has_params: bool false
+        if has_page
+        {
+            sb.append "PN4scaly6memory4PageE"
+            set has_params: true
+        }
+
+        ; Skip 'this' on member operators (param[0] with name "this").
+        var start_idx: size_t 0
+        if parent <> null
+        {
+            if params <> null
+            {
+                let ps (*params)
+                if ps.length > 0
+                {
+                    let first_ptr ps.get 0
+                    if first_ptr <> null
+                    {
+                        let first (*first_ptr)
+                        if first.name <> null
+                        {
+                            let pname (*first.name)
+                            if pname.equals("this")
+                                set start_idx: 1
+                        }
+                    }
+                }
+            }
+        }
+
         if params <> null
         {
             let ps (*params)

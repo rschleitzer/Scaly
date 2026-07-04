@@ -110,8 +110,23 @@ define HashMapBuilder[K, V]
         return null
     }
 
+    ; Body inlined from get — same reason as HashMap's `[]`: an on-demand-
+    ; planned operator body must not depend on sibling methods that are
+    ; never instantiated (undefined at link).
     operator [](key: K) returns ref[V]?
     {
-        return get key
+        if slots = null
+            return null
+
+        let slot slots.get_ptr(key.hash() % slots.length)
+        var iterator slot.get_iterator()
+        while let item iterator.next()
+        {
+            if key.equals(item.value.key)
+                return &item.value.value
+
+        }
+
+        return null
     }
 }

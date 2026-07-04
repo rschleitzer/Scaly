@@ -2189,21 +2189,14 @@ function handle_constituent(path: String, syntax: MemberSyntax, symbols_builder:
         }
         when op: OperatorSyntax
         {
-            ; Stage-1 cannot yet build a Nameable.Operator union variant for
-            ; "[]"-shaped operators (parsed via the Routine target arm) —
-            ; pre-existing codegen bug. Drop those entirely so scaly stdlib
-            ; modules with operator [] can at least be loaded for name
-            ; resolution. A real fix needs stage-0 to handle by-value union
-            ; variant construction of an Operator carrying a literal name.
-            choose op.target
-                when r: RoutineSyntax
-                    Member.Package(Vector[Module](0))
-                else
-                {
-                    let operator_ handle_operator(op, false)
-                    (*symbols_builder).add(operator_.name, Nameable.Operator operator_)
-                    Member.Operator operator_
-                }
+            ; Routine-target operators (`operator [](i)` with a body) were
+            ; historically DROPPED here — a stage-1-era workaround for a
+            ; by-value union-variant-construction miscompile that has since
+            ; been fixed. Model them like the sibling member arms so
+            ; subscript dispatch (find_subscript_operator) can see them.
+            let operator_ handle_operator(op, false)
+            (*symbols_builder).add(operator_.name, Nameable.Operator operator_)
+            Member.Operator operator_
         }
         when mod: ModuleSyntax
         {
