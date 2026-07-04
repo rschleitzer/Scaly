@@ -3329,7 +3329,7 @@ define Planner
                 var sb StringBuilder()
                 sb.append "function not found: "
                 sb.append name
-                this.add_error(sb.to_string#())
+                this.add_error(sb.to_string())
                 return null
             }
 
@@ -3465,7 +3465,7 @@ define Planner
             var sb StringBuilder()
             sb.append "no matching overload for function: "
             sb.append name
-            this.add_error(sb.to_string#())
+            this.add_error(sb.to_string())
             null
         }
 
@@ -7233,7 +7233,7 @@ define Planner
                                 var dsb StringBuilder()
                                 dsb.append "function not found: "
                                 dsb.append fn_name
-                                this.add_diagnostic(result.loc, dsb.to_string#())
+                                this.add_diagnostic(result.loc, dsb.to_string())
                             }
                         }
                         ; s196: propagate a `^name`/`#`/`$` lifetime onto the
@@ -7456,7 +7456,7 @@ define Planner
                                         pa_sb.append "argument on the local page is stored beyond the frame by "
                                         pa_sb.append fn_name
                                         pa_sb.append "; no caller page in scope"
-                                        this.add_diagnostic(result.loc, pa_sb.to_string#())
+                                        this.add_diagnostic(result.loc, pa_sb.to_string())
                                     }
                                 }
                             }
@@ -9784,7 +9784,7 @@ define Planner
                         sb.append m
                         sb.append "' not found in type "
                         sb.append current.name
-                        this.add_error(sb.to_string#())
+                        this.add_error(sb.to_string())
                         result.add(PlannedMemberAccess(
                             m, 0, false, false, current, Planner.make_void_type()
                         ))
@@ -13054,7 +13054,7 @@ define Planner
                 sb.append "no matching initializer for `new "
                 sb.append planned_ty.name
                 sb.append "`"
-                this.add_error(sb.to_string#())
+                this.add_error(sb.to_string())
             }
 
             PlannedTuple(
