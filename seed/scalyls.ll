@@ -2533,16 +2533,13 @@ entry:
   %deref.tmp = alloca %_Z10JsonMember, align 8
   %i = alloca i64, align 8
   %it = alloca ptr, align 8
-  %sret.result20 = alloca %_Z12ListIteratorI10JsonMemberE, align 8
-  %tuple14 = alloca %_Z10JsonObject, align 8
-  %arg.tmp = alloca %_Z10JsonMember, align 8
-  %tuple = alloca %_Z10JsonMember, align 8
+  %sret.result18 = alloca %_Z12ListIteratorI10JsonMemberE, align 8
+  %tuple = alloca %_Z10JsonObject, align 8
   %sret.result1 = alloca %_Z9JsonValue, align 8
   %sret.result = alloca { ptr }, align 8
-  %local_page = call ptr @_Z21scaly_alloc_root_pagev()
   call void @_ZN4json6expectEP10JsonParser2u8(ptr %2, i8 123)
   call void @_ZN4json7skip_wsEP10JsonParser(ptr %2)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 ptrtoint (ptr getelementptr (%_Z4ListI10JsonMemberE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z4ListI10JsonMemberE }, ptr null, i64 0, i32 1) to i64))
+  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr (%_Z4ListI10JsonMemberE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z4ListI10JsonMemberE }, ptr null, i64 0, i32 1) to i64))
   %tuple.field = getelementptr inbounds %_Z4ListI10JsonMemberE, ptr %struct.region, i32 0, i32 0
   store ptr null, ptr %tuple.field, align 8
   %members = alloca ptr, align 8
@@ -2575,15 +2572,14 @@ while.body:                                       ; preds = %while.cond
   call void @_ZN4json6expectEP10JsonParser2u8(ptr %2, i8 58)
   call void @_ZN4json11parse_valueEPN4scaly6memory4PageEP10JsonParser(ptr noalias sret(%_Z9JsonValue) %sret.result1, ptr %1, ptr %2)
   %members2 = load ptr, ptr %members, align 8
+  %tuple.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr (%_Z10JsonMember, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z10JsonMember }, ptr null, i64 0, i32 1) to i64))
   %field.load = load { ptr }, ptr %sret.result, align 8
-  %tuple.field3 = getelementptr inbounds %_Z10JsonMember, ptr %tuple, i32 0, i32 0
+  %tuple.field3 = getelementptr inbounds %_Z10JsonMember, ptr %tuple.region, i32 0, i32 0
   store { ptr } %field.load, ptr %tuple.field3, align 1
   %field.load4 = load %_Z9JsonValue, ptr %sret.result1, align 1
-  %tuple.field5 = getelementptr inbounds %_Z10JsonMember, ptr %tuple, i32 0, i32 1
+  %tuple.field5 = getelementptr inbounds %_Z10JsonMember, ptr %tuple.region, i32 0, i32 1
   store %_Z9JsonValue %field.load4, ptr %tuple.field5, align 1
-  %tuple.val = load %_Z10JsonMember, ptr %tuple, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z10JsonMember, ptr null, i32 1) to i64), i1 false)
-  call void @_ZN4ListI10JsonMemberE3addE10JsonMember(ptr %members2, ptr %arg.tmp)
+  call void @_ZN4ListI10JsonMemberE3addE10JsonMember(ptr %members2, ptr %tuple.region)
   %count6 = load i64, ptr %count, align 4
   %add = add i64 %count6, 1
   store i64 %add, ptr %count, align 1
@@ -2606,60 +2602,58 @@ if.end9:                                          ; preds = %while.body
 if.then12:                                        ; preds = %if.end
   %variant.tag.ptr = getelementptr inbounds %_Z9JsonValue, ptr %sret.result1, i32 0, i32 0
   store i8 5, ptr %variant.tag.ptr, align 1
-  %tuple.field15 = getelementptr inbounds %_Z10JsonObject, ptr %tuple14, i32 0, i32 0
-  store i64 0, ptr %tuple.field15, align 1
-  %tuple.field16 = getelementptr inbounds %_Z10JsonObject, ptr %tuple14, i32 0, i32 1
-  store ptr null, ptr %tuple.field16, align 1
-  %tuple.val17 = load %_Z10JsonObject, ptr %tuple14, align 8
+  %tuple.field14 = getelementptr inbounds %_Z10JsonObject, ptr %tuple, i32 0, i32 0
+  store i64 0, ptr %tuple.field14, align 1
+  %tuple.field15 = getelementptr inbounds %_Z10JsonObject, ptr %tuple, i32 0, i32 1
+  store ptr null, ptr %tuple.field15, align 1
+  %tuple.val = load %_Z10JsonObject, ptr %tuple, align 8
   %variant.data.ptr = getelementptr inbounds %_Z9JsonValue, ptr %sret.result1, i32 0, i32 1
-  store %_Z10JsonObject %tuple.val17, ptr %variant.data.ptr, align 1
+  store %_Z10JsonObject %tuple.val, ptr %variant.data.ptr, align 1
   %variant.val = load %_Z9JsonValue, ptr %sret.result1, align 1
-  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
-  store %_Z9JsonValue %variant.val, ptr %0, align 1
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result1, i64 ptrtoint (ptr getelementptr (%_Z9JsonValue, ptr null, i32 1) to i64), i1 false)
   ret void
 
 if.end13:                                         ; preds = %if.end
-  %count18 = load i64, ptr %count, align 4
-  %mul = mul i64 %count18, ptrtoint (ptr getelementptr (%_Z10JsonMember, ptr null, i32 1) to i64)
-  %call19 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 %mul, i64 8)
-  %members21 = load ptr, ptr %members, align 8
-  call void @_ZN4ListI10JsonMemberE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI10JsonMemberE) %sret.result20, ptr %local_page, ptr %members21)
-  store ptr %sret.result20, ptr %it, align 1
-  %count22 = load i64, ptr %count, align 4
-  store i64 %count22, ptr %i, align 1
-  br label %while.cond23
+  %count16 = load i64, ptr %count, align 4
+  %mul = mul i64 %count16, ptrtoint (ptr getelementptr (%_Z10JsonMember, ptr null, i32 1) to i64)
+  %call17 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 %mul, i64 8)
+  %members19 = load ptr, ptr %members, align 8
+  call void @_ZN4ListI10JsonMemberE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI10JsonMemberE) %sret.result18, ptr %1, ptr %members19)
+  store ptr %sret.result18, ptr %it, align 1
+  %count20 = load i64, ptr %count, align 4
+  store i64 %count20, ptr %i, align 1
+  br label %while.cond21
 
-while.cond23:                                     ; preds = %while.body24, %if.end13
-  %it26 = load ptr, ptr %it, align 8
-  %call27 = call ptr @_ZN12ListIteratorI10JsonMemberE4nextEv(ptr %it26)
-  %while.tobool = icmp ne ptr %call27, null
-  br i1 %while.tobool, label %while.body24, label %while.exit25
+while.cond21:                                     ; preds = %while.body22, %if.end13
+  %it24 = load ptr, ptr %it, align 8
+  %call25 = call ptr @_ZN12ListIteratorI10JsonMemberE4nextEv(ptr %it24)
+  %while.tobool = icmp ne ptr %call25, null
+  br i1 %while.tobool, label %while.body22, label %while.exit23
 
-while.body24:                                     ; preds = %while.cond23
-  %i28 = load i64, ptr %i, align 4
-  %sub = sub i64 %i28, 1
+while.body22:                                     ; preds = %while.cond21
+  %i26 = load i64, ptr %i, align 4
+  %sub = sub i64 %i26, 1
   store i64 %sub, ptr %i, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp, ptr align 1 %call27, i64 ptrtoint (ptr getelementptr (%_Z10JsonMember, ptr null, i32 1) to i64), i1 false)
-  %i29 = load i64, ptr %i, align 4
-  %ptr.add = getelementptr inbounds %_Z10JsonMember, ptr %call19, i64 %i29
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp, ptr align 1 %call25, i64 ptrtoint (ptr getelementptr (%_Z10JsonMember, ptr null, i32 1) to i64), i1 false)
+  %i27 = load i64, ptr %i, align 4
+  %ptr.add = getelementptr inbounds %_Z10JsonMember, ptr %call17, i64 %i27
   %store.load = load %_Z10JsonMember, ptr %deref.tmp, align 8
   store %_Z10JsonMember %store.load, ptr %ptr.add, align 8
-  br label %while.cond23
+  br label %while.cond21
 
-while.exit25:                                     ; preds = %while.cond23
-  %variant.tag.ptr30 = getelementptr inbounds %_Z9JsonValue, ptr %sret.result1, i32 0, i32 0
-  store i8 5, ptr %variant.tag.ptr30, align 1
-  %count31 = load i64, ptr %count, align 4
-  %tuple.field32 = getelementptr inbounds %_Z10JsonObject, ptr %tuple14, i32 0, i32 0
-  store i64 %count31, ptr %tuple.field32, align 1
-  %tuple.field33 = getelementptr inbounds %_Z10JsonObject, ptr %tuple14, i32 0, i32 1
-  store ptr %call19, ptr %tuple.field33, align 1
-  %tuple.val34 = load %_Z10JsonObject, ptr %tuple14, align 8
-  %variant.data.ptr35 = getelementptr inbounds %_Z9JsonValue, ptr %sret.result1, i32 0, i32 1
-  store %_Z10JsonObject %tuple.val34, ptr %variant.data.ptr35, align 1
-  %variant.val36 = load %_Z9JsonValue, ptr %sret.result1, align 1
-  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
-  store %_Z9JsonValue %variant.val36, ptr %0, align 1
+while.exit23:                                     ; preds = %while.cond21
+  %variant.tag.ptr28 = getelementptr inbounds %_Z9JsonValue, ptr %sret.result1, i32 0, i32 0
+  store i8 5, ptr %variant.tag.ptr28, align 1
+  %count29 = load i64, ptr %count, align 4
+  %tuple.field30 = getelementptr inbounds %_Z10JsonObject, ptr %tuple, i32 0, i32 0
+  store i64 %count29, ptr %tuple.field30, align 1
+  %tuple.field31 = getelementptr inbounds %_Z10JsonObject, ptr %tuple, i32 0, i32 1
+  store ptr %call17, ptr %tuple.field31, align 1
+  %tuple.val32 = load %_Z10JsonObject, ptr %tuple, align 8
+  %variant.data.ptr33 = getelementptr inbounds %_Z9JsonValue, ptr %sret.result1, i32 0, i32 1
+  store %_Z10JsonObject %tuple.val32, ptr %variant.data.ptr33, align 1
+  %variant.val34 = load %_Z9JsonValue, ptr %sret.result1, align 1
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result1, i64 ptrtoint (ptr getelementptr (%_Z9JsonValue, ptr null, i32 1) to i64), i1 false)
   ret void
 }
 
@@ -2671,10 +2665,9 @@ entry:
   %sret.result14 = alloca %_Z12ListIteratorI9JsonValueE, align 8
   %tuple = alloca %_Z9JsonArray, align 8
   %sret.result = alloca %_Z9JsonValue, align 8
-  %local_page = call ptr @_Z21scaly_alloc_root_pagev()
   call void @_ZN4json6expectEP10JsonParser2u8(ptr %2, i8 91)
   call void @_ZN4json7skip_wsEP10JsonParser(ptr %2)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %local_page, i64 ptrtoint (ptr getelementptr (%_Z4ListI9JsonValueE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z4ListI9JsonValueE }, ptr null, i64 0, i32 1) to i64))
+  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 ptrtoint (ptr getelementptr (%_Z4ListI9JsonValueE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z4ListI9JsonValueE }, ptr null, i64 0, i32 1) to i64))
   %tuple.field = getelementptr inbounds %_Z4ListI9JsonValueE, ptr %struct.region, i32 0, i32 0
   store ptr null, ptr %tuple.field, align 8
   %items = alloca ptr, align 8
@@ -2734,8 +2727,7 @@ if.then8:                                         ; preds = %if.end
   %variant.data.ptr = getelementptr inbounds %_Z9JsonValue, ptr %sret.result, i32 0, i32 1
   store %_Z9JsonArray %tuple.val, ptr %variant.data.ptr, align 1
   %variant.val = load %_Z9JsonValue, ptr %sret.result, align 1
-  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
-  store %_Z9JsonValue %variant.val, ptr %0, align 1
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr (%_Z9JsonValue, ptr null, i32 1) to i64), i1 false)
   ret void
 
 if.end9:                                          ; preds = %if.end
@@ -2743,7 +2735,7 @@ if.end9:                                          ; preds = %if.end
   %mul = mul i64 %count12, ptrtoint (ptr getelementptr (%_Z9JsonValue, ptr null, i32 1) to i64)
   %call13 = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 %mul, i64 8)
   %items15 = load ptr, ptr %items, align 8
-  call void @_ZN4ListI9JsonValueE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI9JsonValueE) %sret.result14, ptr %local_page, ptr %items15)
+  call void @_ZN4ListI9JsonValueE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI9JsonValueE) %sret.result14, ptr %1, ptr %items15)
   store ptr %sret.result14, ptr %it, align 1
   %count16 = load i64, ptr %count, align 4
   store i64 %count16, ptr %i, align 1
@@ -2778,8 +2770,7 @@ while.exit19:                                     ; preds = %while.cond17
   %variant.data.ptr29 = getelementptr inbounds %_Z9JsonValue, ptr %variant.ptr, i32 0, i32 1
   store %_Z9JsonArray %tuple.val28, ptr %variant.data.ptr29, align 1
   %variant.val30 = load %_Z9JsonValue, ptr %variant.ptr, align 1
-  call void @_Z28scaly_release_root_page_fullP4Page(ptr %local_page)
-  store %_Z9JsonValue %variant.val30, ptr %0, align 1
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %variant.ptr, i64 ptrtoint (ptr getelementptr (%_Z9JsonValue, ptr null, i32 1) to i64), i1 false)
   ret void
 }
 
