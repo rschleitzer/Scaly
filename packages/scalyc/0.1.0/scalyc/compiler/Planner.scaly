@@ -579,6 +579,35 @@ define Planner
         ; LAST so the field indices of everything before stay stable.
         persist_summary_names: Array[String]
         persist_summary_vals: Array[size_t]
+
+        ; ===== use-visibility infrastructure (stage 1: recording only) =====
+        ; Rust-style strict `use` visibility for concepts. Stage 1 only
+        ; RECORDS — no lookup consults these yet, so behavior/emission is
+        ; unchanged. The function-alias machinery (program_use_aliases/
+        ; _namespaces) stays untouched; this is the parallel CONCEPT
+        ; structure.
+        ; concept_origin_files/paths run in LOCKSTEP with `concepts` (same
+        ; index): the defining module's file and dotted container path
+        ; (module chain + enclosing namespaces, e.g. "scaly.containers"
+        ; for Vector). registering_file/path are the save/switch/restore
+        ; context maintained by register_module_concepts /
+        ; register_concept_recursive during registration walks (empty =
+        ; unknown origin).
+        ; use_vis_files/names/paths are flat per-use-clause triples: the
+        ; recording module's file, the clause's last path segment ("*"
+        ; marks a glob — `use ns.*` parses with a trailing "*" segment),
+        ; and the dotted prefix (segments before the last — the namespace
+        ; the name is imported from). use_vis_recorded_files dedups
+        ; modules walked more than once (register_packages + plan_module).
+        ; Declared LAST (field-index stability, persist_summary lesson).
+        concept_origin_files: Array[String]
+        concept_origin_paths: Array[String]
+        registering_file: String
+        registering_path: String
+        use_vis_files: Array[String]
+        use_vis_names: Array[String]
+        use_vis_paths: Array[String]
+        use_vis_recorded_files: Array[String]
     )
     {
         init(filename: String)
@@ -641,6 +670,14 @@ define Planner
             set escape_fn_index: 0
             set transitive_page_names: Array[String]^this()
             set transitive_page_built: false
+            set concept_origin_files: Array[String]^this()
+            set concept_origin_paths: Array[String]^this()
+            set registering_file: String^this("")
+            set registering_path: String^this("")
+            set use_vis_files: Array[String]^this()
+            set use_vis_names: Array[String]^this()
+            set use_vis_paths: Array[String]^this()
+            set use_vis_recorded_files: Array[String]^this()
 
             ; Seed the function registry with C-runtime externs so name
             ; lookups for aligned_alloc/free/exit succeed from day one.
@@ -788,6 +825,15 @@ define Planner
                 else
                     0
             concepts.add(KeyValuePair[String, Concept](c.name, c))
+            ; Record the concept's origin (use-visibility stage 1) in
+            ; LOCKSTEP with `concepts` — one entry per add, same index.
+            ; Empty registering_file means the registration happened
+            ; outside a module walk (unknown origin — treated leniently
+            ; by later stages).
+            let origin_file String^this(registering_file)
+            concept_origin_files.add origin_file
+            let origin_path String^this(registering_path)
+            concept_origin_paths.add origin_path
             ; Maintain the O(1) index in lockstep. insert OVERWRITES on a
             ; duplicate key so the LAST-registered index wins — matching
             ; lookup_concept's backward-scan semantics (s95). This is the ONLY
@@ -1143,6 +1189,112 @@ define Planner
                 set i: i + 1
             }
             false
+        }
+
+        ; ===== use-visibility recording (stage 1, advisory) =====
+        ; Parallel CONCEPT-visibility structure — the function-alias
+        ; machinery above (record_program_uses etc.) stays untouched.
+
+        ; use_vis_file_recorded: has this module file's use clauses
+        ; already been recorded? Modules are walked more than once
+        ; (cli.register_packages + plan_module both call
+        ; register_module_concepts on the same trees).
+        function use_vis_file_recorded(this: Planner, f: String) returns bool
+        {
+            var i: size_t 0
+            while i < use_vis_recorded_files.length
+            {
+                let p use_vis_recorded_files.get i
+                if p <> null
+                {
+                    if p.equals(f)
+                        return true
+                }
+                set i: i + 1
+            }
+            false
+        }
+
+        ; dotted_use_prefix: join a use clause's path segments EXCEPT the
+        ; last with "." — the namespace prefix the name (or glob) is
+        ; imported from. `use scaly.containers.String` -> "scaly.containers";
+        ; single-segment clauses -> "".
+        function dotted_use_prefix(this: Planner, path: Vector[String]) returns String
+        {
+            if path.length < 2
+                return String^this("")
+            var sb StringBuilder()
+            var i: size_t 0
+            while i < path.length - 1
+            {
+                let s_ptr path.get i
+                if s_ptr <> null
+                {
+                    if i > 0
+                        sb.append "."
+                    sb.append((*s_ptr))
+                }
+                set i: i + 1
+            }
+            let joined sb.to_string()
+            String^this(joined)
+        }
+
+        ; extend_dotted_path: append `name` to a dotted container path.
+        ; Used to maintain registering_path while descending modules and
+        ; namespace-shaped concepts during registration.
+        function extend_dotted_path(this: Planner, prefix: String, name: String) returns String
+        {
+            if name.get_length() = 0
+                return String^this(prefix)
+            if prefix.get_length() = 0
+                return String^this(name)
+            var sb StringBuilder()
+            sb.append prefix
+            sb.append "."
+            sb.append name
+            let joined sb.to_string()
+            String^this(joined)
+        }
+
+        ; record_module_uses: record one module's use clauses into the
+        ; use-visibility triples (file, last segment, dotted prefix).
+        ; A trailing "*" segment is a glob import of the prefix namespace
+        ; and is stored with name "*". Dedup'd per module file; NOT
+        ; recursive — register_module_concepts' own recursion reaches
+        ; every sub-module (including namespace-hosted ones).
+        function record_module_uses(this: Planner, m: Module)
+        {
+            if m.file.get_length() = 0
+                return
+            if this.use_vis_file_recorded(m.file)
+                return
+            let rec_file String^this(m.file)
+            use_vis_recorded_files.add rec_file
+
+            var i: size_t 0
+            while i < m.uses.length
+            {
+                let u_ptr m.uses.get i
+                if u_ptr <> null
+                {
+                    let path u_ptr.path
+                    if path.length > 0
+                    {
+                        let last_ptr path.get(path.length - 1)
+                        if last_ptr <> null
+                        {
+                            let vis_file String^this(m.file)
+                            use_vis_files.add vis_file
+                            let vis_name String^this((*last_ptr))
+                            use_vis_names.add vis_name
+                            let vis_path this.dotted_use_prefix(path)
+                            use_vis_paths.add vis_path
+                        }
+                    }
+                }
+                set i: i + 1
+            }
         }
 
         ; plan_loaded_packages: extracted helper so plan_program's
@@ -20931,9 +21083,16 @@ define Planner
         function register_concept_recursive(this: Planner, c: Concept)
         {
             this.register_concept(c)
+            ; Use-visibility stage 1: members registered while descending
+            ; into this concept carry a container path extended by the
+            ; concept's own name ("scalyc.compiler.Modeler" + ".Modeler"
+            ; for the inner namespace). Saved/restored around the choose.
+            let saved_reg_path this.registering_path
+            let inner_reg_path this.extend_dotted_path(saved_reg_path, c.name)
             choose c.definition
                 when ns: Namespace
                 {
+                    set this.registering_path: String^this(inner_reg_path)
                     var i: size_t 0
                     while i < ns.members.length
                     {
@@ -20978,6 +21137,7 @@ define Planner
                         }
                         set mi: mi + 1
                     }
+                    set this.registering_path: saved_reg_path
                     0
                 }
                 when s: Structure
@@ -20986,6 +21146,7 @@ define Planner
                     ; register under their own name. This lets
                     ; `struct Outer { struct Inner { ... } }` resolve
                     ; `Inner` by its short name.
+                    set this.registering_path: String^this(inner_reg_path)
                     var i: size_t 0
                     while i < s.members.length
                     {
@@ -21004,10 +21165,12 @@ define Planner
                         }
                         set i: i + 1
                     }
+                    set this.registering_path: saved_reg_path
                     0
                 }
                 when u: scalyc.compiler.Model.Union
                 {
+                    set this.registering_path: String^this(inner_reg_path)
                     var i: size_t 0
                     while i < u.members.length
                     {
@@ -21026,6 +21189,7 @@ define Planner
                         }
                         set i: i + 1
                     }
+                    set this.registering_path: saved_reg_path
                     0
                 }
                 else
@@ -21041,6 +21205,22 @@ define Planner
         ; reachable by their short name.
         function register_module_concepts(this: Planner, m: Module)
         {
+            ; Use-visibility stage 1: record this module's use clauses
+            ; (dedup'd by file) and switch the registration context so
+            ; register_concept records each concept's origin. Saved and
+            ; restored at the single exit below (same shape as
+            ; plan_module's saved_file dance).
+            this.record_module_uses m
+            let saved_reg_file this.registering_file
+            let saved_reg_path this.registering_path
+            if m.file.get_length() > 0
+            {
+                let new_reg_file String^this(m.file)
+                set this.registering_file: new_reg_file
+            }
+            let new_reg_path this.extend_dotted_path(saved_reg_path, m.name)
+            set this.registering_path: String^this(new_reg_path)
+
             var i: size_t 0
             while i < m.members.length
             {
@@ -21081,6 +21261,9 @@ define Planner
                 }
                 set mi: mi + 1
             }
+
+            set this.registering_file: saved_reg_file
+            set this.registering_path: saved_reg_path
         }
 
         ; plan_module: Model.Module → Plan.PlannedModule.
