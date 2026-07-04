@@ -1,0 +1,14 @@
+; Strict use visibility (2026-07-04): a concept defined in another module
+; is hidden until imported; the glob `use <prog>.<module>.*` imports every
+; concept of that module. Self-hosted-only (stage-0 never consulted use for
+; concepts).
+; Expected: PASS
+
+module use_vis_helper
+use use_vis_glob.use_vis_helper.*
+
+let b Box(7)
+if b.value = 7
+    print("PASS")
+else
+    print("FAIL")

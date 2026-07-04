@@ -633,6 +633,21 @@ define Planner
         ; prefix) looks its file up here so re-registered concepts keep
         ; root-anchored origins.
         use_vis_recorded_paths: Array[String]
+
+        ; Stage 4 (enforcement, default ON — cli --no-use-vis disables):
+        ; an INVISIBLE concept behaves as NOT FOUND (lookup_concept
+        ; returns null) so the existing not-found machinery fires; the
+        ; exhaustion diagnostic appends an "add: use ..." hint via
+        ; use_vis_hint/lookup_concept_any. LENIENT during lazy
+        ; instantiation (nested-planning trap: a generic's body planned
+        ; mid-module must see its OWN module's names; the context switch
+        ; is unimplemented — stdlib machinery is prelude-visible anyway).
+        ; The verdict is memoized per (concept index, current file) in
+        ; the two lockstep-with-`concepts` arrays below (verdict_file
+        ; empty = uncomputed; ok 1 = visible).
+        use_vis_enforce: bool
+        use_vis_verdict_file: Array[String]
+        use_vis_verdict_ok: Array[size_t]
     )
     {
         init(filename: String)
@@ -710,6 +725,9 @@ define Planner
             set use_vis_miss_files: Array[String]^this()
             set use_vis_miss_lazy: Array[size_t]^this()
             set use_vis_recorded_paths: Array[String]^this()
+            set use_vis_enforce: true
+            set use_vis_verdict_file: Array[String]^this()
+            set use_vis_verdict_ok: Array[size_t]^this()
 
             ; Seed the function registry with C-runtime externs so name
             ; lookups for aligned_alloc/free/exit succeed from day one.
@@ -884,6 +902,11 @@ define Planner
             let origin_file String^this(registering_file)
             concept_origin_files.add origin_file
             concept_origin_paths.add origin_path
+            ; Visibility-verdict memo slots (stage 4), same lockstep.
+            let vslot String()
+            use_vis_verdict_file.add vslot
+            var vzero: size_t 0
+            use_vis_verdict_ok.add vzero
             ; Maintain the O(1) index in lockstep. insert OVERWRITES on a
             ; duplicate key so the LAST-registered index wins — matching
             ; lookup_concept's backward-scan semantics (s95). This is the ONLY
@@ -914,8 +937,30 @@ define Planner
                     ; this hit against the strict rules (counting only).
                     if use_vis_measure
                         this.use_vis_count(name, idx as size_t)
+                    ; Stage 4: strict visibility — an invisible concept
+                    ; is NOT FOUND here (memoized check).
+                    if use_vis_enforce
+                    {
+                        if this.use_vis_check(name, idx as size_t) = false
+                            return null
+                    }
                     return &kvp_ptr.value
                 }
+            }
+            null
+        }
+
+        ; lookup_concept_any: raw registry lookup WITHOUT the strict
+        ; visibility gate — for diagnostics ("exists but not visible")
+        ; and tooling.
+        function lookup_concept_any(this: Planner, name: String) returns ref[Concept]?
+        {
+            let idx concept_index.lookup name
+            if idx >= 0
+            {
+                let kvp_ptr concepts.get(idx as size_t)
+                if kvp_ptr <> null
+                    return &kvp_ptr.value
             }
             null
         }
@@ -1554,6 +1599,85 @@ define Planner
             if origin_file.ends_with("/prelude.scaly")
                 return true
             origin_file.equals("prelude.scaly")
+        }
+
+        ; ===== use-visibility enforcement (stage 4) =====
+
+        ; use_vis_check: the enforcement predicate behind lookup_concept.
+        ; Same rules as use_vis_visible, plus: LENIENT during lazy
+        ; instantiation (the nested-planning trap — a generic's body is
+        ; planned mid-module and must see its OWN module's names), and
+        ; memoized per (concept index, current file) since lookup_concept
+        ; is the hottest planner function.
+        function use_vis_check(this: Planner, name: String, idx: size_t) returns bool
+        {
+            if instantiating_structures.length > 0
+                return true
+            if instantiating_methods.length > 0
+                return true
+            if idx >= concept_origin_files.length
+                return true
+            if idx < use_vis_verdict_file.length
+            {
+                let vf use_vis_verdict_file.get idx
+                if vf <> null
+                {
+                    if vf.get_length() > 0
+                    {
+                        if vf.equals(file)
+                        {
+                            let vo use_vis_verdict_ok.get idx
+                            if vo <> null
+                                return (*vo) = 1
+                        }
+                    }
+                }
+            }
+            let of_ptr concept_origin_files.get idx
+            if of_ptr = null
+                return true
+            let op_ptr concept_origin_paths.get idx
+            if op_ptr = null
+                return true
+            let ok this.use_vis_visible(name, *of_ptr, *op_ptr)
+            if idx < use_vis_verdict_file.length
+            {
+                let vfile String^this(file)
+                use_vis_verdict_file.put(idx, vfile)
+                var vok: size_t 0
+                if ok
+                    set vok: 1
+                use_vis_verdict_ok.put(idx, vok)
+            }
+            ok
+        }
+
+        ; use_vis_hint: when `name` exists in the registry but is not
+        ; visible from the current file, a "; add: use <path>" hint for
+        ; the not-found diagnostic — empty otherwise. Diagnostic paths
+        ; only (never hot).
+        function use_vis_hint(this: Planner, name: String) returns String
+        {
+            if use_vis_enforce = false
+                return ""
+            let idx concept_index.lookup name
+            if idx < 0
+                return ""
+            if (idx as size_t) >= concept_origin_paths.length
+                return ""
+            if this.use_vis_check(name, idx as size_t)
+                return ""
+            let op_ptr concept_origin_paths.get(idx as size_t)
+            if op_ptr = null
+                return ""
+            var sb StringBuilder()
+            sb.append " - defined in "
+            sb.append((*op_ptr))
+            sb.append " but not visible here; add: use "
+            let full this.extend_dotted_path((*op_ptr), name)
+            sb.append full
+            let hint sb.to_string()
+            String^this(hint)
         }
 
         ; plan_loaded_packages: extracted helper so plan_program's
@@ -7862,6 +7986,12 @@ define Planner
                                 var dsb StringBuilder()
                                 dsb.append "function not found: "
                                 dsb.append fn_name
+                                ; Strict use visibility: if the name
+                                ; exists but is hidden here, say how to
+                                ; import it.
+                                let vis_hint this.use_vis_hint(fn_name)
+                                if vis_hint.get_length() > 0
+                                    dsb.append vis_hint
                                 this.add_diagnostic(result.loc, dsb.to_string())
                             }
                         }

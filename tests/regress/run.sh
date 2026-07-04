@@ -18,9 +18,11 @@ for f in tests/regress/*.scaly; do
   case "$t" in
     xfail_*)
       # Expected-failure test: the compile must FAIL loudly. PASS when the
-      # compiler exits nonzero AND stderr contains the `; xfail:` substring.
+      # compiler exits nonzero AND its output contains the `; xfail:`
+      # substring (stdout+stderr — emitter traps print to stderr, planner
+      # diagnostics via Console.println to stdout).
       want=$(sed -n 's/^; xfail: //p' "$f" | head -1)
-      err=$("$STAGE" -o "$bin" "$f" 2>&1 >/dev/null); rc=$?
+      err=$("$STAGE" -o "$bin" "$f" 2>&1); rc=$?
       if [ $rc -ne 0 ] && printf '%s' "$err" | grep -qF "$want"; then
         pass=$((pass+1))
       else

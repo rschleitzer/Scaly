@@ -61,6 +61,7 @@ define Options
     no_prelude: bool        ; --no-prelude: skip auto-loading prelude
     no_tests: bool          ; --no-tests: omit test/test_* functions (seed build)
     use_vis: bool           ; --use-vis: advisory use-visibility measurement
+    no_use_vis: bool        ; --no-use-vis: disable strict use visibility
     debug: bool             ; -g: emit DWARF debug info
     run_mode: bool          ; --run <fn>: JIT-compile and execute <fn> in-process
     run_function: String    ; the function name to JIT-run
@@ -86,6 +87,7 @@ define Options
         set no_prelude: false
         set no_tests: false
         set use_vis: false
+        set no_use_vis: false
         set debug: false
         set run_mode: false
         set run_function: String()
@@ -172,6 +174,10 @@ define cli
                 else if arg.equals("--use-vis")
                 {
                     set opts.use_vis: true
+                }
+                else if arg.equals("--no-use-vis")
+                {
+                    set opts.no_use_vis: true
                 }
                 else if arg.equals("--jit")
                 {
@@ -427,6 +433,8 @@ define cli
         var planner Planner.Planner(opts.input_file)
         if opts.use_vis
             set planner.use_vis_measure: true
+        if opts.no_use_vis
+            set planner.use_vis_enforce: false
         cli.register_packages(&planner, &model)
         let plan planner.plan_program model
 

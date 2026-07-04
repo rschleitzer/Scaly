@@ -1,0 +1,12 @@
+; xfail: but not visible here; add: use
+;
+; Strict use visibility (2026-07-04): referencing a concept defined in a
+; declared child module WITHOUT a use line must HARD-FAIL the compile with
+; the "add: use <path>" hint. The same reference compiles with
+; `use <prog>.use_vis_helper.Box` (explicit) or `.*` (glob) — see
+; use_vis_glob.scaly.
+
+module use_vis_helper
+
+let b Box(7)
+print("compiled\n")

@@ -1,0 +1,9 @@
+; Sidecar module for the use-visibility tests: use_vis_glob.scaly and
+; xfail_use_vis_hidden.scaly load it via `module use_vis_helper`. The
+; harness also runs it standalone (every *.scaly here is a test), so it
+; prints PASS itself; module loading ignores top-level statements.
+; Expected: PASS
+
+define Box(value: int)
+
+print("PASS")
