@@ -229,10 +229,10 @@ define json
             while true
             {
                 json.skip_ws p
-                let key json.parse_string#(p)
+                let key json.parse_string(p)
                 json.skip_ws p
                 json.expect(p, 0x3A as u8) ; ':'
-                let value json.parse_value#(p)
+                let value json.parse_value(p)
                 members.add(JsonMember(key, value))
                 set count: count + 1
                 json.skip_ws p
@@ -276,7 +276,7 @@ define json
         {
             while true
             {
-                let value json.parse_value#(p)
+                let value json.parse_value(p)
                 items.add value
                 set count: count + 1
                 json.skip_ws p
