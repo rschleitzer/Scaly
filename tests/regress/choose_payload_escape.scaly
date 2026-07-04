@@ -1,0 +1,79 @@
+; Regression: phase-5 class 2 (choose-payload escape, 2026-07-04).
+; A no-sigil choose SCRUTINEE call defaults to the calling frame's local
+; page. Its arm payload is stored into a local (`set kept: ok`) that
+; escapes through a BARE free-function tail call (`finish(kept.text)`).
+; Two coordinated rules make this safe without a sigil: (1) the bare-call
+; argument collection in collect_flow_locals# marks `kept` escaping from
+; the tail call, and the set-reassign back-prop (fixpoint pass) then marks
+; the arm payload `ok`; (2) plan_choose#'s arm-escape check (arm name or
+; the arm-consequent payload-flow walk) promotes the scrutinee call to
+; the caller page — exactly what the old handwritten `#` asserted at
+; build_referenced_module's `choose p.parse_program#()`. Without the
+; rules the Payload's String buffer stays on drive's local page, which
+; is released at return and recycled by the churn loop.
+; Self-hosted-only.
+; Expected: PASS
+
+package scaly 0.1.0
+
+use scaly.containers.String
+use scaly.containers.StringBuilder
+
+define Payload(text: String)
+
+define Outcome union (
+    Ok: Payload
+    Err: int
+)
+
+function produce() returns Outcome
+{
+    var sb StringBuilder()
+    sb.append "choose payload text that must survive the frame"
+    Outcome.Ok(Payload(sb.to_string()))
+}
+
+function finish(t: String) returns String
+    t
+
+function drive() returns String
+{
+    var kept Payload(String("x"))
+    choose produce()
+        when ok: Ok
+            set kept: ok
+        when e: Err
+            set kept: Payload(String("err"))
+    finish(kept.text)
+}
+
+function churn(n: size_t) returns size_t
+{
+    var total: size_t 0
+    var i: size_t 0
+    while i < n
+    {
+        var csb StringBuilder()
+        csb.append "recycle recycle recycle recycle recycle recycle"
+        let junk csb.to_string()
+        set total: total + junk.get_length()
+        set i: i + 1
+    }
+    total
+}
+
+function check() returns int
+{
+    let s drive()
+    let c churn(64)
+    if c = 0
+        return 2
+    if s.equals("choose payload text that must survive the frame") = false
+        return 1
+    42
+}
+
+if check() = 42
+    print("PASS")
+else
+    print("FAIL")

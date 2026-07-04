@@ -12425,6 +12425,128 @@ define Planner
         }
 
         ; plan_choose: Scaly's choose/when pattern match.
+        ; Phase-5 class 2 helpers (choose-payload back-prop). True when ops
+        ; is exactly one bare single-segment name equal to `name`.
+        function ops_are_bare_name(ops: Vector[Operand], name: String) returns bool
+        {
+            if ops.length <> 1
+                return false
+            let p ops.get 0
+            if p = null
+                return false
+            if (*p).member_access <> null
+                return false
+            choose (*p).expression
+                when t: scalyc.compiler.Model.Type
+                {
+                    if t.generics = null
+                        if t.name.length = 1
+                        {
+                            let np t.name.get 0
+                            if np <> null
+                                return (*np).equals(name)
+                        }
+                }
+                else
+                    0
+            false
+        }
+
+        function binding_flows_payload_to_escaping(this: Planner, b: scalyc.compiler.Model.Binding, payload: String) returns bool
+        {
+            if b.item.name = null
+                return false
+            if Planner.ops_are_bare_name(b.operation, payload) = false
+                return false
+            let bn (*b.item.name)
+            if this.array_contains_name(escaping_return_locals, bn)
+                return true
+            if this.array_contains_name(escaping_targets, bn)
+                return true
+            false
+        }
+
+        function action_flows_payload_to_escaping(this: Planner, a: Action, payload: String) returns bool
+        {
+            ; direct `set TARGET: payload` — a bare single-segment target
+            ; that the completed escape sets mark escaping
+            if a.target.length = 1
+            {
+                if Planner.ops_are_bare_name(a.source, payload)
+                {
+                    let tp a.target.get 0
+                    if tp <> null
+                    {
+                        if (*tp).member_access = null
+                            choose (*tp).expression
+                                when tt: scalyc.compiler.Model.Type
+                                {
+                                    if tt.generics = null
+                                        if tt.name.length = 1
+                                        {
+                                            let tnp tt.name.get 0
+                                            if tnp <> null
+                                            {
+                                                if this.array_contains_name(escaping_return_locals, (*tnp))
+                                                    return true
+                                                if this.array_contains_name(escaping_targets, (*tnp))
+                                                    return true
+                                            }
+                                        }
+                                }
+                                else
+                                    0
+                    }
+                }
+                return false
+            }
+            ; braced consequent: descend the block's statements
+            if a.source.length = 1
+            {
+                let op0 a.source.get 0
+                if op0 <> null
+                    choose (*op0).expression
+                        when bk: Block
+                        {
+                            var i: size_t 0
+                            while i < bk.statements.length
+                            {
+                                let sp bk.statements.get i
+                                if sp <> null
+                                    if this.stmt_flows_payload_to_escaping((*sp), payload)
+                                        return true
+                                set i: i + 1
+                            }
+                        }
+                        else
+                            0
+            }
+            false
+        }
+
+        function stmt_flows_payload_to_escaping(this: Planner, s: Statement, payload: String) returns bool
+        {
+            choose s
+                when a: scalyc.compiler.Model.Action
+                    return this.action_flows_payload_to_escaping(a, payload)
+                when b: scalyc.compiler.Model.Binding
+                    return this.binding_flows_payload_to_escaping(b, payload)
+                else
+                    return false
+            false
+        }
+
+        ; Phase-5 class 2: does this when-arm's consequent store the arm
+        ; payload BARE into a local that the completed escape sets mark
+        ; escaping (`when prog: Success set syntax: prog`, where `syntax`
+        ; later feeds the returned Module)? Field-read sources (`ok.text`)
+        ; are not covered in this increment — the compiler's shapes store
+        ; the payload bare.
+        function when_payload_flows_to_escaping(this: Planner, w: When) returns bool
+        {
+            this.stmt_flows_payload_to_escaping(w.consequent, w.name)
+        }
+
         function plan_choose(this: Planner, c: Choose) returns PlannedChoose
         {
             let planned_cond this.plan_operands(c.condition)
@@ -12451,8 +12573,25 @@ define Planner
                 {
                     let ae_w (*ae_wp)
                     if ae_w.name.get_length() > 0
+                    {
                         if this.array_contains_name(escaping_return_locals, ae_w.name)
                             set arm_escapes: true
+                        ; Phase-5 class 2 (choose-payload back-prop): the arm
+                        ; binding itself is often NOT in the escaping sets —
+                        ; the linear pre-scan visits the arm's `set X: payload`
+                        ; BEFORE X's own escape is collected (X escapes via a
+                        ; LATER statement, e.g. build_referenced_module's tail
+                        ; `build_module(..., syntax.file, ...)`), so the
+                        ; set-reassign back-prop's gate is false at visit time
+                        ; and the payload name is never added. At PLAN time the
+                        ; sets are complete, so walk the arm consequent for a
+                        ; reassignment (or re-binding) of the payload into an
+                        ; escaping local. The scrutinee's guts flow out through
+                        ; that store — same promotion as the arm-name check.
+                        if arm_escapes = false
+                            if this.when_payload_flows_to_escaping(ae_w)
+                                set arm_escapes: true
+                    }
                 }
                 set ae_i: ae_i + 1
             }
@@ -17203,6 +17342,46 @@ define Planner
                                         if last_seg <> null
                                             if this.name_is_capitalized((*last_seg)) = false
                                                 set is_call: true
+                                    }
+                                    ; Phase-5 class 2: a SINGLE-segment
+                                    ; IDENTIFIER head (leading lowercase
+                                    ; letter or underscore) followed by an
+                                    ; argument operand is a FREE-FUNCTION /
+                                    ; bare sibling call (`build_module(...,
+                                    ; syntax.file, ...)` as build_referenced_
+                                    ; module's tail). Its args flow into the
+                                    ; result exactly like the dotted-call
+                                    ; case, so collect them too — without
+                                    ; this, `syntax` never enters the escape
+                                    ; sets and the choose-payload back-prop
+                                    ; in plan_choose# has nothing to match.
+                                    ; OPERATOR heads (`&`, `*`, `+`, ...) are
+                                    ; NOT calls: collecting `&b`'s operand as
+                                    ; a call arg promoted the binding, and
+                                    ; gap-1's already_promoted shortcut then
+                                    ; ACCEPTED `return &b` — defeating the
+                                    ; escape checker's rejection (escape
+                                    ; suite neg_return_local_ptr). `*` keeps
+                                    ; its own deref recursion above.
+                                    if t.name.length = 1
+                                    {
+                                        let c0 t.name.get 0
+                                        if c0 <> null
+                                        {
+                                            let c0s (*c0)
+                                            if c0s.get_length() > 0
+                                            {
+                                                let c0b c0s.get_buffer()
+                                                let c0c (*c0b)
+                                                var c0_ident false
+                                                if (c0c >= (97 as u8)) && (c0c <= (122 as u8))
+                                                    set c0_ident: true
+                                                if c0c = (95 as u8)
+                                                    set c0_ident: true
+                                                if c0_ident
+                                                    set is_call: true
+                                            }
+                                        }
                                     }
                                 }
                                 else
