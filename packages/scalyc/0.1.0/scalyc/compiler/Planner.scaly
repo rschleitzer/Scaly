@@ -11390,7 +11390,7 @@ define Planner
                     if it.name <> null
                     {
                         let pn (*it.name)
-                        pnames.add(String#(pn))
+                        pnames.add(String(pn))
                         this.define_parameter(pn, pty1)
                     }
                 }
