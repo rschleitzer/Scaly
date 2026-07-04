@@ -164,7 +164,7 @@ source_filename = "scaly"
 @"8SEEK_END" = constant i64 2
 @"4F_OK" = constant i64 0
 @"4F_OK.1" = constant i64 0
-@.sconst = private constant [4 x i8] c"\02\\n\00"
+@.sconst = private constant [3 x i8] c"\01\0A\00"
 @.str = private unnamed_addr constant [53 x i8] c"scaly_release_root_page: LIFO violation \E2\80\94 release=\00", align 1
 @.str.2 = private unnamed_addr constant [6 x i8] c" top=\00", align 1
 @.str.3 = private unnamed_addr constant [30 x i8] c"scaly_trace_root: UNBALANCED \00", align 1
