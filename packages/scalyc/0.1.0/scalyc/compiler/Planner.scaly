@@ -17026,6 +17026,22 @@ define Planner
         ; return RECV (deep-copied onto rp); otherwise the empty string. Used to
         ; back-propagate escape through a Vector element read: `let opp
         ; SRC.get(i)` makes opp alias SRC's element guts.
+        ; Alias-yielding method names for binding_get_receiver: `get` returns
+        ; an element ref, `get_iterator` returns an iterator holding a pointer
+        ; into the container, `next` returns an element ref out of an
+        ; iterator (phase-5 class 3: the List-drain idiom `var it C.get_
+        ; iterator(); while let m it.next() { set *(buf+i): *m }` threads
+        ; escape back from the drained element to the container).
+        function is_alias_method_name(n: String) returns bool
+        {
+            if n.equals("get")
+                return true
+            if n.equals("next")
+                return true
+            if n.equals("get_iterator")
+                return true
+            false
+        }
         function binding_get_receiver(this: Planner, ops: Vector[Operand]) returns String
         {
             if ops.length >= 1
@@ -17043,7 +17059,7 @@ define Planner
                                 {
                                     let mp t.name.get 1
                                     if mp <> null
-                                        if (*mp).equals("get")
+                                        if Planner.is_alias_method_name((*mp))
                                         {
                                             let rp_ptr t.name.get 0
                                             if rp_ptr <> null
@@ -17066,7 +17082,7 @@ define Planner
                                     {
                                         let last_ptr ma.get(ma.length - 1)
                                         if last_ptr <> null
-                                            if (*last_ptr).equals("get")
+                                            if Planner.is_alias_method_name((*last_ptr))
                                             {
                                                 let rp2 t2.name.get 0
                                                 if rp2 <> null
@@ -17739,6 +17755,31 @@ define Planner
         ; EXPLICITLY-`^page`-bound local (lexer's `return name`) made restamp_
         ; operand_life# override the explicit lifetime → wrong page → dangling
         ; token Strings. restamp now only promotes DEFAULTED-Local allocations.
+        ; Phase-5 class 3: the get-alias back-prop for a WHILE-LET condition
+        ; binding (`while let m it.next()`). The While condition is a Binding
+        ; STRUCT, not a Binding statement, so the walker's Binding arm never
+        ; sees it — the drain idiom's element alias `m` had no back-prop and
+        ; the escape chain (m -> it -> container) broke at the loop head.
+        ; Mirrors the Binding arm's escaping-alias essentials.
+        function collect_returns_while_binding(this: Planner, bind: Binding)
+        {
+            if bind.item.name <> null
+            {
+                let bnm (*bind.item.name)
+                if this.array_contains_name(escaping_return_locals, bnm)
+                {
+                    this.collect_flow_locals(bind.operation)
+                    this.add_escaping_target(bnm)
+                    let src this.binding_get_receiver(bind.operation)
+                    if src.get_length() > 0
+                    {
+                        this.add_escaping_target(src)
+                        this.add_escaping_local(src)
+                    }
+                }
+            }
+        }
+
         function collect_returns_stmt(this: Planner, s: Statement)
         {
             choose s
@@ -17929,7 +17970,10 @@ define Planner
                 when fo: For
                     this.collect_returns_action(fo.action)
                 when wh: While
+                {
+                    this.collect_returns_while_binding(wh.condition)
                     this.collect_returns_action(wh.action)
+                }
                 when rep: Repeat
                     this.collect_returns_action(rep.action)
                 else
@@ -17964,6 +18008,37 @@ define Planner
             ; is the rule-3 store-into-field path, handled elsewhere. NEUTRAL on
             ; sigiled source: the bound local's init carries an explicit #/^,
             ; which restamp keeps verbatim.
+            ; Phase-5 class 3 (deref-target store escape): `set *(P): SRC`
+            ; stores SRC's VALUE through a pointer into memory whose lifetime
+            ; this function cannot see (an rp.allocate'd buffer in the json
+            ; List drain, a caller-owned slot via a pointer param). The
+            ; shallow-copied value's guts must therefore outlive the frame —
+            ; collect SRC's flow locals so the fixpoint promotes their
+            ; bindings (and, through the while-let alias back-prop, the
+            ; drained container's stored values). Params collected here are
+            ; inert (no local binding to promote), so the stdlib drains
+            ; (Vector's freeze init over a List PARAM) stay untouched.
+            if a.target.length > 1
+            {
+                let dt_p a.target.get 0
+                if dt_p <> null
+                {
+                    if (*dt_p).member_access = null
+                        choose (*dt_p).expression
+                            when dt_t: scalyc.compiler.Model.Type
+                            {
+                                if dt_t.name.length = 1
+                                {
+                                    let dt_n dt_t.name.get 0
+                                    if dt_n <> null
+                                        if (*dt_n).equals("*")
+                                            this.collect_flow_locals(a.source)
+                                }
+                            }
+                            else
+                                0
+                }
+            }
             if a.target.length = 1
             {
                 let tgt_p a.target.get 0

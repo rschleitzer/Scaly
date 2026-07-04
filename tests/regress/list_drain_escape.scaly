@@ -1,0 +1,95 @@
+; Regression: phase-5 class 3 (List-drain escape, 2026-07-04).
+; The json parser idiom: values collected into a LOCAL List are drained
+; through an iterator into an rp-allocated buffer (`set *(buf + i): *m`).
+; The shallow-copied element's String guts must outlive the frame, but a
+; no-sigil `sb.to_string()` defaults them to the frame's local page.
+; Three coordinated rules thread the escape backward: the deref-target
+; store collects the drained source (`m`), the while-let condition
+; binding's alias back-prop reaches the iterator (`it`), and the
+; get_iterator/next receiver extraction reaches the container (`items`)
+; — whose put/add VALUES then promote to the caller page, exactly what
+; the old handwritten `#` on json.parse_string#/parse_value# asserted.
+; The stdlib freeze drain (Vector's init over a List PARAM) stays
+; untouched: params have no local binding to promote.
+; Self-hosted-only.
+; Expected: PASS
+
+package scaly 0.1.0
+
+use scaly.containers.String
+use scaly.containers.StringBuilder
+use scaly.containers.List
+use scaly.memory.Page
+
+define Packet(text: String)
+
+define Bundle
+(
+    count: size_t
+    data: pointer[Packet]
+)
+
+function make_bundle(rp) returns Bundle
+{
+    var items List[Packet]()
+    var count: size_t 0
+    while count < 3
+    {
+        var sb StringBuilder()
+        sb.append "packet payload that must survive the frame"
+        let text sb.to_string()
+        items.add(Packet(text))
+        set count: count + 1
+    }
+    let buf rp.allocate(count * sizeof Packet, alignof Packet) as pointer[Packet]
+    var it items.get_iterator()
+    var i count
+    while let m it.next()
+    {
+        set i: i - 1
+        set *(buf + i): *m
+    }
+    Bundle(count, buf)
+}
+
+function drive() returns String
+{
+    let b make_bundle#()
+    if b.count <> 3
+        return String("wrong count")
+    ; return the packet text SHALLOWLY (shared buffer) so a dangling
+    ; buffer stays observable after the churn — a deep copy here would
+    ; read the freed bytes before they are recycled and mask the bug.
+    (*(b.data)).text
+}
+
+function churn(n: size_t) returns size_t
+{
+    var total: size_t 0
+    var i: size_t 0
+    while i < n
+    {
+        var csb StringBuilder()
+        csb.append "recycle recycle recycle recycle recycle recycle"
+        let junk csb.to_string()
+        set total: total + junk.get_length()
+        set i: i + 1
+    }
+    total
+}
+
+function check() returns int
+{
+    let s drive()
+    let c churn(64)
+    if c = 0
+        return 2
+    if s.equals("packet payload that must survive the frame") = false
+        return 1
+    42
+}
+
+if check() = 42
+    print("PASS")
+else
+    print("FAIL")
