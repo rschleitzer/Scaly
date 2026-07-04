@@ -21,12 +21,105 @@ define Modeler
 ; Literal/Constant handling
 ; ============================================================================
 
+; Decode the escape sequences the lexer validated in a string literal's
+; raw payload: \" \\ \' \n \r \t \0 and \uXXXX (UTF-8 encoded). A literal
+; without a backslash returns the payload unchanged.
+function decode_escapes(raw: String) returns String
+{
+    let len raw.get_length()
+    let buf raw.get_buffer()
+    var has_escape false
+    var scan: size_t 0
+    while scan < len
+    {
+        if *(buf + scan) = (92 as u8)
+            set has_escape: true
+        set scan: scan + (1 as size_t)
+    }
+    if has_escape = false
+        return raw
+
+    var sb StringBuilder()
+    var i: size_t 0
+    while i < len
+    {
+        let b *(buf + i)
+        if b <> (92 as u8)
+        {
+            sb.append(b as char)
+            set i: i + (1 as size_t)
+        }
+        else
+        {
+            ; The lexer only emits a string token when every escape is
+            ; one of " \ ' n r t 0 or \uXXXX, so buf[i + 1] exists.
+            let e *(buf + i + 1)
+            if e = (110 as u8)
+                sb.append(10 as char)
+            if e = (116 as u8)
+                sb.append(9 as char)
+            if e = (114 as u8)
+                sb.append(13 as char)
+            if e = (48 as u8)
+                sb.append(0 as char)
+            if e = (34 as u8)
+                sb.append(34 as char)
+            if e = (39 as u8)
+                sb.append(39 as char)
+            if e = (92 as u8)
+                sb.append(92 as char)
+            if e = (117 as u8)
+            {
+                ; \uXXXX - four lexer-validated hex digits to a code
+                ; point, then UTF-8 (plain arithmetic, no bit ops).
+                var cp: size_t 0
+                var k: size_t 0
+                while k < 4
+                {
+                    let h *(buf + i + 2 + k)
+                    var d: size_t 0
+                    if h <= (57 as u8)
+                        set d: (h - (48 as u8)) as size_t
+                    if h >= (97 as u8)
+                        set d: ((h - (97 as u8)) as size_t) + (10 as size_t)
+                    if h >= (65 as u8)
+                    {
+                        if h <= (70 as u8)
+                            set d: ((h - (65 as u8)) as size_t) + (10 as size_t)
+                    }
+                    set cp: cp * (16 as size_t) + d
+                    set k: k + (1 as size_t)
+                }
+                if cp < 128
+                    sb.append(cp as char)
+                else
+                {
+                    if cp < 2048
+                    {
+                        sb.append((192 + cp / 64) as char)
+                        sb.append((128 + (cp - (cp / 64) * 64)) as char)
+                    }
+                    else
+                    {
+                        sb.append((224 + cp / 4096) as char)
+                        sb.append((128 + (cp / 64 - (cp / 4096) * 64)) as char)
+                        sb.append((128 + (cp - (cp / 64) * 64)) as char)
+                    }
+                }
+                set i: i + (4 as size_t)
+            }
+            set i: i + (2 as size_t)
+        }
+    }
+    sb.to_string()
+}
+
 function handle_literal(syntax: LiteralSyntax) returns Constant
 {
     let loc Span(syntax.start, syntax.end)
     choose syntax.literal
         when str: StringLiteral
-            Constant.String(StringConstant(loc, str.value))
+            Constant.String(StringConstant(loc, decode_escapes(str.value)))
         when chr: CharacterLiteral
             Constant.Character(CharacterConstant(loc, chr.value))
         when frag: FragmentLiteral

@@ -1,0 +1,60 @@
+; String escape decoding (A1, 2026-07-04): the Modeler decodes the
+; lexer-validated escapes \" \\ \' \n \r \t \0 \uXXXX in string literals
+; (decode_escapes), so "\n" is one newline byte and "\n" as char is 10.
+; Historically the raw backslash bytes were stored unchanged.
+; Expected: PASS
+
+let nl "\n" as char
+let tab "\t" as char
+let cr "\r" as char
+let bs "\\" as char
+let dq "\"" as char
+var ok true
+if nl <> (10 as char)
+    set ok: false
+if tab <> (9 as char)
+    set ok: false
+if cr <> (13 as char)
+    set ok: false
+if bs <> (92 as char)
+    set ok: false
+if dq <> (34 as char)
+    set ok: false
+
+let mixed "a\tb"
+; NOTE: `x.method() <> rhs` at statement head still mis-collapses to a
+; unary `<>` (emitter trap, exit 14) — bind call results to locals first.
+let mixed_len mixed.get_length()
+if mixed_len <> (3 as size_t)
+    set ok: false
+let mixed_1 mixed.get(1)
+if mixed_1 <> (9 as char)
+    set ok: false
+
+; \uXXXX decodes to UTF-8: one, two, and three bytes.
+let ascii "\u0041"
+let ascii_len ascii.get_length()
+if ascii_len <> (1 as size_t)
+    set ok: false
+let ascii_0 ascii.get(0)
+if ascii_0 <> (65 as char)
+    set ok: false
+let two "\u00e9"
+let two_len two.get_length()
+if two_len <> (2 as size_t)
+    set ok: false
+let three "\u20ac"
+let three_len three.get_length()
+if three_len <> (3 as size_t)
+    set ok: false
+
+; A literal without escapes is unchanged.
+let plain "hello"
+let plain_len plain.get_length()
+if plain_len <> (5 as size_t)
+    set ok: false
+
+if ok
+    print("PASS")
+else
+    print("FAIL")
