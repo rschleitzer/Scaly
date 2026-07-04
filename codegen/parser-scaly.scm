@@ -32,6 +32,8 @@ use scaly.containers.Array
 use scaly.containers.List
 use scaly.containers.HashSet
 use scaly.containers.HashSetBuilder
+use scalyc.compiler.lexer.*
+use scalyc.compiler.Syntax.*
 
 define parser
 {

@@ -89,6 +89,10 @@ use scalyc.compiler.Plan.PlannedInitializer
 use scalyc.compiler.Plan.PlannedOperator
 use scalyc.compiler.Plan.PlannedDeInitializer
 use scalyc.compiler.Plan.PlannedGlobal
+use scalyc.compiler.Model.*
+use scalyc.compiler.Plan.*
+use scalyc.compiler.parser.*
+use scalyc.compiler.Syntax.*
 
 ; A resolution candidate: `found` true with a non-empty `type_name`, plus the
 ; source-span `width` of the operand it came from (smaller = tighter match).

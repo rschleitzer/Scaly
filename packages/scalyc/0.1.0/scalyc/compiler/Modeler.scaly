@@ -183,6 +183,10 @@ use scaly.compiler.Syntax.ProgramSyntax
 use scaly.compiler.Syntax.PackageSyntax
 use scaly.compiler.Syntax.VersionSyntax
 use scaly.compiler.Syntax.ExtensionSyntax
+use scalyc.compiler.lexer.*
+use scalyc.compiler.parser.*
+use scalyc.compiler.Syntax.*
+use scalyc.compiler.Model.*
 
 define Modeler
 {

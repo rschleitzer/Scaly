@@ -28,6 +28,12 @@ use scalyc.compiler.Planner
 use scalyc.compiler.Plan.Plan
 use scalyc.compiler.Emitter
 use scalyc.compiler.Emitter.EmitterConfig
+use scalyc.compiler.lexer.*
+use scalyc.compiler.parser.*
+use scalyc.compiler.Syntax.*
+use scalyc.compiler.Model.*
+use scalyc.compiler.Plan.*
+use scalyc.compiler.Planner.*
 
 ; ============================================================================
 ; Module declarations

@@ -9,6 +9,7 @@ use scaly.containers.String
 use scalyc.compiler.Model.Span
 use scalyc.compiler.Model.Lifetime
 use scalyc.compiler.Model.Constant
+use scalyc.compiler.Model.*
 
 ; ============================================================================
 ; Type Inference Support

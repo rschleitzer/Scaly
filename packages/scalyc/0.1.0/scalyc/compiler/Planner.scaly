@@ -143,6 +143,8 @@ use scalyc.compiler.Plan.PlannedOperand
 use scalyc.compiler.Plan.PlannedExpression
 use scalyc.compiler.Plan.PlannedTuple
 use scalyc.compiler.Plan.PlannedComponent
+use scalyc.compiler.Model.*
+use scalyc.compiler.Plan.*
 
 ; libc extern for loud-failing stubs.
 function exit(code: int) extern
@@ -1460,6 +1462,22 @@ define Planner
                 return true
             if this.use_vis_origin_is_prelude(origin_path, origin_file)
                 return true
+            ; A concept whose origin is a DIRECT child of the current
+            ; file's own container path, named like that child, is a
+            ; declared child module's namespace (`module lexer` in
+            ; compiler.scaly) — visible without use, Rust's `mod foo;`
+            ; semantics. The genuine-extension guard skips the collapse
+            ; case (name = the path's own last segment).
+            let cur_path this.use_vis_lookup_file_path(file)
+            if cur_path.get_length() > 0
+            {
+                let child this.extend_dotted_path(cur_path, name)
+                if child.get_length() > cur_path.get_length()
+                {
+                    if origin_path.equals(child)
+                        return true
+                }
+            }
             var i: size_t 0
             while i < use_vis_files.length
             {

@@ -230,6 +230,13 @@ use scaly.scalyc.parser.ParserError
 use scalyc.compiler.Modeler
 use scaly.compiler.Planner.Planner
 use scalyc.compiler.ConceptIndex.ConceptIndex
+use scalyc.compiler.Model.*
+use scalyc.compiler.Plan.*
+use scalyc.compiler.LLVM.*
+use scalyc.compiler.lexer.*
+use scalyc.compiler.parser.*
+use scalyc.compiler.Syntax.*
+use scalyc.compiler.Planner.*
 
 define Emitter
 {

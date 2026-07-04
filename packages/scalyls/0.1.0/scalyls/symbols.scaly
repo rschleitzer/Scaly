@@ -103,6 +103,11 @@ use scalyc.compiler.Syntax.TypeAnnotationSyntax
 use scalyc.compiler.Syntax.PartSyntax
 use scalyc.compiler.Syntax.FieldSyntax
 use scalyc.compiler.Syntax.PropertySyntax
+use scalyc.compiler.lexer.*
+use scalyc.compiler.parser.*
+use scalyc.compiler.Syntax.*
+use scalyls.nameset.*
+use scalyls.json.*
 
 define symbols
 {
