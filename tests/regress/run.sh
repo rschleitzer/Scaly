@@ -28,7 +28,15 @@ for f in tests/regress/*.scaly; do
       fi
       ;;
     *)
-      "$STAGE" -o "$bin" "$f" >/dev/null 2>&1
+      # `; link: llvm` in the test file appends the libLLVM link flags
+      # (for tests exercising extern LLVM-C calls, e.g. the wrapper-param
+      # unwrap). llvm-env.sh is sourced lazily on first use.
+      extra=()
+      if grep -q '^; link: llvm' "$f"; then
+        if [ -z "$LLVM_LIBDIR" ]; then source tools/llvm-env.sh >/dev/null; fi
+        extra=(-L"$LLVM_LIBDIR" -l"$LLVM_LIBNAME")
+      fi
+      "$STAGE" -o "$bin" "$f" "${extra[@]}" >/dev/null 2>&1
       out=$("$bin" 2>/dev/null)
       if [ "$out" = "PASS" ]; then
         pass=$((pass+1))

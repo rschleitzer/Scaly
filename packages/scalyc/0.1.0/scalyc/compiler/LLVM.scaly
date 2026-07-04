@@ -498,6 +498,13 @@ function LLVMGetAllocatedType(alloca: LLVMValueRef) returns LLVMTypeRef extern
 ; must be dereferenced to the bare handle.
 function LLVMIsALoadInst(val: LLVMValueRef) returns LLVMValueRef extern
 
+; Function-argument inspection — same isa<> pattern. Used by emit_call's
+; extern-LLVM arg unwrap to recognise a wrapper-struct PARAM (declared as
+; ptr-to-struct by emit_function_decl) passed straight through to an
+; extern LLVM callee, which needs the same load+extract as the s172/s173
+; alloca/load cases.
+function LLVMIsAArgument(val: LLVMValueRef) returns LLVMValueRef extern
+
 ; s178: use-list walking + instruction classification for the alloca
 ; reuse pool's escape check (Emitter.temp_value_escapes). Same isa<>
 ; pattern as LLVMIsAAllocaInst: returns the value when it is an

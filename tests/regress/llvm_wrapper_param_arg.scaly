@@ -1,0 +1,52 @@
+; Regression: a single-ptr-field LLVM wrapper struct PARAM passed DIRECTLY
+; as an extern LLVM-C call arg (`function f(v: LLVMTypeRef) { LLVMGetInt-
+; TypeWidth(v) }`). emit_function_decl declares struct params as ptr-to-
+; struct; the raw Argument is neither an alloca (s172 unwrap) nor a load
+; (s173 unwrap), so emit_call's old fall-through passed the struct's
+; ADDRESS as the handle — the long-documented "bind it to a local var
+; first" landmine (report_jit_error and emit_restore_watermark were live
+; instances in the compiler itself). The fix adds the Argument case to the
+; extern-LLVM unwrap chain. Self-hosted-only. Expected: PASS
+; link: llvm
+
+package scaly 0.1.0
+
+define LLVMContextRef(handle: pointer[void])
+define LLVMTypeRef(handle: pointer[void])
+
+function LLVMContextCreate() returns LLVMContextRef extern
+function LLVMInt32TypeInContext(context: LLVMContextRef) returns LLVMTypeRef extern
+function LLVMGetIntTypeWidth(int_type: LLVMTypeRef) returns int extern
+
+define probe
+{
+    function width_param(ty: LLVMTypeRef) returns int
+        LLVMGetIntTypeWidth(ty)
+
+    function width_var(ty: LLVMTypeRef) returns int
+    {
+        var t ty
+        LLVMGetIntTypeWidth(t)
+    }
+}
+
+function check() returns int
+{
+    let ctx LLVMContextCreate()
+    let i32ty LLVMInt32TypeInContext(ctx)
+    let direct LLVMGetIntTypeWidth(i32ty)
+    if direct <> 32
+        return 1
+    let v probe.width_var(i32ty)
+    if v <> 32
+        return 2
+    let p probe.width_param(i32ty)
+    if p <> 32
+        return 3
+    42
+}
+
+if check() = 42
+    print("PASS")
+else
+    print("FAIL")

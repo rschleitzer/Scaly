@@ -6481,6 +6481,46 @@ define Emitter
                                         }
                                     }
                                 }
+                                ; Same unwrap when the arg is a wrapper-struct
+                                ; PARAM passed straight through (`function f(v:
+                                ; LLVMValueRef) { LLVMDump(v) }`). emit_function_
+                                ; decl declares struct params as ptr-to-struct,
+                                ; so the raw Argument is kind Pointer but is
+                                ; neither an alloca (s172) nor a load (s173) —
+                                ; the old fall-through passed the struct's
+                                ; ADDRESS as the handle (the long-documented
+                                ; "bind it to a local var first" landmine).
+                                ; Bare handles from extern LLVM call results
+                                ; are CallInsts, not Arguments, so the planned-
+                                ; type gate plus the Argument check keeps them
+                                ; untouched.
+                                if arg_load_isa.handle = null
+                                {
+                                    let arg_arg_isa LLVMIsAArgument(arg_value)
+                                    if arg_arg_isa.handle <> null
+                                    {
+                                        if arg_operand.result_type.name.starts_with("LLVM")
+                                        {
+                                            let p_ty map_type arg_operand.result_type
+                                            if p_ty.handle <> null
+                                            {
+                                                if LLVMGetTypeKind(p_ty) = LLVMTypeKind.Struct()
+                                                {
+                                                    let pnelems LLVMCountStructElementTypes(p_ty)
+                                                    if pnelems = 1
+                                                    {
+                                                        let pinner LLVMStructGetTypeAtIndex(p_ty, 0)
+                                                        if LLVMGetTypeKind(pinner) = LLVMTypeKind.Pointer()
+                                                        {
+                                                            let wrapper_val3 LLVMBuildLoad2(builder, p_ty, arg_value, "wrapper.load")
+                                                            set arg_value: LLVMBuildExtractValue(builder, wrapper_val3, 0, "handle")
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         }
                         }
