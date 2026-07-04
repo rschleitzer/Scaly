@@ -10670,6 +10670,54 @@ define Emitter
                             if LLVMGetTypeKind(store_ty) <> LLVMTypeKind.Pointer()
                                 return value
                         }
+                        ; ptr-slot + ptr-VALUE disambiguation — the missing
+                        ; third case beside s172/s173 (the 2026-07-04b latent
+                        ; gap). The alloca holds a POINTER to the binding's
+                        ; heap struct (an addr-taken/borrow-return PROMOTED
+                        ; binding), the TARGET's planned type is that struct,
+                        ; and the source value is ALSO an LLVM ptr (a deref
+                        ; temp `set X: (*ref)`, a ref, or an sret slot) — a
+                        ; struct materialized BY POINTER, not a pointer
+                        ; value. The old fall-through raw-stored the pooled
+                        ; stack temp's ADDRESS into the promoted slot, which
+                        ; outlives the temp (garbage after frame exit). Copy
+                        ; the struct THROUGH into the existing heap struct
+                        ; instead: the binding's page placement (chosen at
+                        ; promotion) is preserved and pre-existing &X
+                        ; references observe the new contents. A genuinely
+                        ; pointer-typed target (ref/pointer var reassign)
+                        ; maps to Pointer, not Struct, and keeps the raw
+                        ; store.
+                        let tgt_rt (*target_op).result_type
+                        let tgt_ty map_type tgt_rt
+                        if tgt_ty.handle <> null
+                        {
+                            if LLVMGetTypeKind(tgt_ty) = LLVMTypeKind.Struct()
+                            {
+                                let slot_alloca LLVMIsAAllocaInst(var_ptr)
+                                if slot_alloca.handle <> null
+                                {
+                                    let slot_ty LLVMGetAllocatedType(var_ptr)
+                                    if slot_ty.handle <> null
+                                    {
+                                        if LLVMGetTypeKind(slot_ty) = LLVMTypeKind.Pointer()
+                                        {
+                                            let val_ty_d LLVMTypeOf(value)
+                                            if val_ty_d.handle <> null
+                                            {
+                                                if LLVMGetTypeKind(val_ty_d) = LLVMTypeKind.Pointer()
+                                                {
+                                                    let dest_ptr LLVMBuildLoad2(builder, LLVMPointerTypeInContext(context, 0), var_ptr, "set.dest")
+                                                    let thru_val LLVMBuildLoad2(builder, tgt_ty, value, "set.thru")
+                                                    copy_struct_value(dest_ptr, thru_val, tgt_ty)
+                                                    return value
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
                         ; s172: layout-mismatch store, mirrors stage-0
                         ; Emitter.cpp:2076-2100. The alloca holds a POINTER
                         ; to a heap struct (var X String^rp(...)) but the

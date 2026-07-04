@@ -1,0 +1,74 @@
+; Regression: `set X: (*ref)` where X is an addr-taken PROMOTED binding
+; (ptr slot) and ref is an Option-of-ref — the planned source type stays
+; ref[T] (pointer kind), so the emitted value is a ptr (pooled deref temp).
+; The old emit_action fall-through raw-stored that stack temp's ADDRESS into
+; the promoted slot (the 2026-07-04b latent gap beside s172/s173); the
+; returned reference then read a dead frame. The fix copies the struct
+; THROUGH into the promoted binding's existing heap struct when the TARGET's
+; planned type is a struct but slot and value are both LLVM ptrs.
+; Self-hosted-only. Expected: PASS
+package scaly 0.1.0
+
+use scaly.containers.String
+use scaly.containers.Vector
+
+define probe
+{
+    function pick(v: Vector[int]) returns ref[Vector[int]]?
+        &v
+
+    function make(alt: Vector[int]) returns ref[Vector[int]]?
+    {
+        var out Vector[int](2)
+        out.put(0, 7)
+        out.put(1, 8)
+        let adopted probe.pick(alt)
+        if adopted <> null
+            set out: (*adopted)
+        &out
+    }
+}
+
+function churn(n: size_t) returns size_t
+{
+    var total: size_t 0
+    var i: size_t 0
+    while i < n
+    {
+        var junk Vector[String](3)
+        junk.put(0, "xxxxx")
+        junk.put(1, "yyyyy")
+        junk.put(2, "zzzzz")
+        let jp junk.get 0
+        if jp <> null
+            set total: total + (*jp).get_length()
+        set i: i + 1
+    }
+    total
+}
+
+function check() returns int
+{
+    var src Vector[int](2)
+    src.put(0, 40)
+    src.put(1, 2)
+    let r probe.make(src)
+    if r = null
+        return 1
+    let c churn(50)
+    if c = 0
+        return 4
+    let rv (*r)
+    let a rv.get 0
+    let b rv.get 1
+    if a = null
+        return 2
+    if b = null
+        return 3
+    (*a) + (*b)
+}
+
+if check() = 42
+    print("PASS")
+else
+    print("FAIL")
