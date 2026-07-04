@@ -54,6 +54,7 @@ define Options
     show_help: bool
     no_prelude: bool        ; --no-prelude: skip auto-loading prelude
     no_tests: bool          ; --no-tests: omit test/test_* functions (seed build)
+    use_vis: bool           ; --use-vis: advisory use-visibility measurement
     debug: bool             ; -g: emit DWARF debug info
     run_mode: bool          ; --run <fn>: JIT-compile and execute <fn> in-process
     run_function: String    ; the function name to JIT-run
@@ -78,6 +79,7 @@ define Options
         set show_help: false
         set no_prelude: false
         set no_tests: false
+        set use_vis: false
         set debug: false
         set run_mode: false
         set run_function: String()
@@ -160,6 +162,10 @@ define cli
                 else if arg.equals("--no-tests")
                 {
                     set opts.no_tests: true
+                }
+                else if arg.equals("--use-vis")
+                {
+                    set opts.use_vis: true
                 }
                 else if arg.equals("--jit")
                 {
@@ -413,6 +419,8 @@ define cli
         ; ================================================================
 
         var planner Planner.Planner(opts.input_file)
+        if opts.use_vis
+            set planner.use_vis_measure: true
         cli.register_packages(&planner, &model)
         let plan planner.plan_program model
 
@@ -421,6 +429,12 @@ define cli
             Console.println "Planner error"
             return 4
         }
+
+        ; --use-vis: advisory use-visibility measurement report (stage 2).
+        ; Printed before the hard-diagnostics gate so measurement output
+        ; survives a failing compile.
+        if opts.use_vis
+            cli.print_use_vis(&planner)
 
         ; s185 (roadmap Step C): hard diagnostics — constructs the
         ; planner could not resolve and the emitter would silently
@@ -775,6 +789,57 @@ define cli
                 Console.println(msg_str.to_c_string())
             }
             set di: di + 1
+        }
+    }
+
+    ; --use-vis report: aggregate counts plus one line per distinct
+    ; (concept, looking-up file) miss. A [lazy] tag marks a first
+    ; sighting during lazy instantiation — those need the visibility-
+    ; context switch (nested-planning trap), not a use line.
+    function print_use_vis(planner: ref[Planner.Planner])
+    {
+        var head StringBuilder()
+        head.append "use-vis: "
+        head.append(cli.format_size(planner.use_vis_hits))
+        head.append " visible, "
+        head.append(cli.format_size(planner.use_vis_misses))
+        head.append " invisible lookups, "
+        head.append(cli.format_size(planner.use_vis_miss_idx.length))
+        head.append " distinct"
+        let head_str head.to_string()
+        Console.println(head_str.to_c_string())
+
+        var i: size_t 0
+        while i < planner.use_vis_miss_idx.length
+        {
+            let ip planner.use_vis_miss_idx.get i
+            if ip <> null
+            {
+                let cidx (*ip)
+                var msg StringBuilder()
+                msg.append "use-vis MISS: "
+                let fp planner.use_vis_miss_files.get i
+                if fp <> null
+                    msg.append((*fp))
+                msg.append ": "
+                let kp planner.concepts.get cidx
+                if kp <> null
+                    msg.append kp.key
+                msg.append " (origin "
+                let op planner.concept_origin_paths.get cidx
+                if op <> null
+                    msg.append((*op))
+                msg.append ")"
+                let lp planner.use_vis_miss_lazy.get i
+                if lp <> null
+                {
+                    if (*lp) = 1
+                        msg.append " [lazy]"
+                }
+                let msg_str msg.to_string()
+                Console.println(msg_str.to_c_string())
+            }
+            set i: i + 1
         }
     }
 

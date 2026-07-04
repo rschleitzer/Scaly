@@ -608,6 +608,29 @@ define Planner
         use_vis_names: Array[String]
         use_vis_paths: Array[String]
         use_vis_recorded_files: Array[String]
+
+        ; Stage 2 (advisory measurement, cli --use-vis): every
+        ; lookup_concept hit is classified against the would-be strict
+        ; visibility rules (local > explicit use > glob > prelude;
+        ; unknown origin = lenient) and counted — NO behavior change.
+        ; Misses dedup by (concept index, current file);
+        ; use_vis_miss_lazy notes whether the first sighting happened
+        ; during lazy instantiation (instantiating_structures/methods
+        ; non-empty) — those point at the visibility-context switch
+        ; (nested-planning trap), not at a missing use line.
+        use_vis_measure: bool
+        use_vis_hits: size_t
+        use_vis_misses: size_t
+        use_vis_miss_idx: Array[size_t]
+        use_vis_miss_files: Array[String]
+        use_vis_miss_lazy: Array[size_t]
+
+        ; Anchored container path per recorded module file, in LOCKSTEP
+        ; with use_vis_recorded_files. A registration walk starting
+        ; mid-tree (plan_module(sub) re-walks with an empty inherited
+        ; prefix) looks its file up here so re-registered concepts keep
+        ; root-anchored origins.
+        use_vis_recorded_paths: Array[String]
     )
     {
         init(filename: String)
@@ -678,6 +701,13 @@ define Planner
             set use_vis_names: Array[String]^this()
             set use_vis_paths: Array[String]^this()
             set use_vis_recorded_files: Array[String]^this()
+            set use_vis_measure: false
+            set use_vis_hits: 0
+            set use_vis_misses: 0
+            set use_vis_miss_idx: Array[size_t]^this()
+            set use_vis_miss_files: Array[String]^this()
+            set use_vis_miss_lazy: Array[size_t]^this()
+            set use_vis_recorded_paths: Array[String]^this()
 
             ; Seed the function registry with C-runtime externs so name
             ; lookups for aligned_alloc/free/exit succeed from day one.
@@ -824,15 +854,33 @@ define Planner
                     delegate_names.add(String^this(c.name))
                 else
                     0
-            concepts.add(KeyValuePair[String, Concept](c.name, c))
             ; Record the concept's origin (use-visibility stage 1) in
             ; LOCKSTEP with `concepts` — one entry per add, same index.
             ; Empty registering_file means the registration happened
             ; outside a module walk (unknown origin — treated leniently
-            ; by later stages).
+            ; by later stages). FIRST origin wins on a re-registration
+            ; from the same file: module trees are walked more than once
+            ; (register_packages + plan_module, plan_module(sub) again),
+            ; and later walks start mid-tree, so their container path
+            ; lacks the root anchor.
+            var origin_path String^this(registering_path)
+            let prev_idx concept_index.lookup(c.name)
+            if prev_idx >= 0
+            {
+                let prev_of concept_origin_files.get(prev_idx as size_t)
+                if prev_of <> null
+                {
+                    if prev_of.equals(registering_file)
+                    {
+                        let prev_op concept_origin_paths.get(prev_idx as size_t)
+                        if prev_op <> null
+                            set origin_path: String^this((*prev_op))
+                    }
+                }
+            }
+            concepts.add(KeyValuePair[String, Concept](c.name, c))
             let origin_file String^this(registering_file)
             concept_origin_files.add origin_file
-            let origin_path String^this(registering_path)
             concept_origin_paths.add origin_path
             ; Maintain the O(1) index in lockstep. insert OVERWRITES on a
             ; duplicate key so the LAST-registered index wins — matching
@@ -859,7 +907,13 @@ define Planner
             {
                 let kvp_ptr concepts.get(idx as size_t)
                 if kvp_ptr <> null
+                {
+                    ; Use-visibility stage 2: advisory classification of
+                    ; this hit against the strict rules (counting only).
+                    if use_vis_measure
+                        this.use_vis_count(name, idx as size_t)
                     return &kvp_ptr.value
+                }
             }
             null
         }
@@ -1215,6 +1269,28 @@ define Planner
             false
         }
 
+        ; use_vis_lookup_file_path: the anchored container path recorded
+        ; at this file's first registration walk ("" when unknown).
+        function use_vis_lookup_file_path(this: Planner, f: String) returns String
+        {
+            var i: size_t 0
+            while i < use_vis_recorded_files.length
+            {
+                let p use_vis_recorded_files.get i
+                if p <> null
+                {
+                    if p.equals(f)
+                    {
+                        let pp use_vis_recorded_paths.get i
+                        if pp <> null
+                            return String((*pp))
+                    }
+                }
+                set i: i + 1
+            }
+            ""
+        }
+
         ; dotted_use_prefix: join a use clause's path segments EXCEPT the
         ; last with "." — the namespace prefix the name (or glob) is
         ; imported from. `use scaly.containers.String` -> "scaly.containers";
@@ -1242,13 +1318,25 @@ define Planner
 
         ; extend_dotted_path: append `name` to a dotted container path.
         ; Used to maintain registering_path while descending modules and
-        ; namespace-shaped concepts during registration.
+        ; namespace-shaped concepts during registration. A name equal to
+        ; the path's LAST segment is collapsed — the module-named-after-
+        ; namespace idiom (module Modeler containing `define Modeler`,
+        ; `define scalyc` in the program module scalyc) is addressed
+        ; once, matching how use paths spell it.
         function extend_dotted_path(this: Planner, prefix: String, name: String) returns String
         {
             if name.get_length() = 0
                 return String^this(prefix)
             if prefix.get_length() = 0
                 return String^this(name)
+            if prefix.equals(name)
+                return String^this(prefix)
+            var dsb StringBuilder()
+            dsb.append "."
+            dsb.append name
+            let dotted dsb.to_string()
+            if prefix.ends_with(dotted)
+                return String^this(prefix)
             var sb StringBuilder()
             sb.append prefix
             sb.append "."
@@ -1271,6 +1359,10 @@ define Planner
                 return
             let rec_file String^this(m.file)
             use_vis_recorded_files.add rec_file
+            ; Snapshot the anchored container path for this file so
+            ; later mid-tree re-walks can restore the root anchor.
+            let rec_path String^this(registering_path)
+            use_vis_recorded_paths.add rec_path
 
             var i: size_t 0
             while i < m.uses.length
@@ -1295,6 +1387,155 @@ define Planner
                 }
                 set i: i + 1
             }
+        }
+
+        ; ===== use-visibility measurement (stage 2, advisory) =====
+
+        ; use_vis_count: classify a lookup_concept hit against the strict
+        ; visibility rules and count. Called only under --use-vis; never
+        ; changes lookup behavior.
+        function use_vis_count(this: Planner, name: String, idx: size_t)
+        {
+            if idx >= concept_origin_files.length
+                return
+            let of_ptr concept_origin_files.get idx
+            if of_ptr = null
+                return
+            let op_ptr concept_origin_paths.get idx
+            if op_ptr = null
+                return
+            if this.use_vis_visible(name, *of_ptr, *op_ptr)
+            {
+                set use_vis_hits: use_vis_hits + 1
+                return
+            }
+            set use_vis_misses: use_vis_misses + 1
+
+            ; Dedup the miss list by (concept index, current file).
+            var i: size_t 0
+            while i < use_vis_miss_idx.length
+            {
+                let ip use_vis_miss_idx.get i
+                if ip <> null
+                {
+                    if (*ip) = idx
+                    {
+                        let fp use_vis_miss_files.get i
+                        if fp <> null
+                        {
+                            if fp.equals(file)
+                                return
+                        }
+                    }
+                }
+                set i: i + 1
+            }
+            use_vis_miss_idx.add idx
+            let f_copy String^this(file)
+            use_vis_miss_files.add f_copy
+            var lazy_flag: size_t 0
+            if instantiating_structures.length > 0
+                set lazy_flag: 1
+            if instantiating_methods.length > 0
+                set lazy_flag: 1
+            use_vis_miss_lazy.add lazy_flag
+        }
+
+        ; use_vis_visible: the strict-visibility predicate (advisory).
+        ; Visible when: origin unknown (registered outside a module
+        ; walk), module-local (origin file = current file), prelude
+        ; (scaly stdlib package or the attached prelude module),
+        ; explicit `use ns.Name`, or glob `use ns.*` whose prefix
+        ; addresses the origin container.
+        function use_vis_visible(
+            this: Planner,
+            name: String,
+            origin_file: String,
+            origin_path: String
+        ) returns bool
+        {
+            if origin_file.get_length() = 0
+                return true
+            if origin_file.equals(file)
+                return true
+            if this.use_vis_origin_is_prelude(origin_path, origin_file)
+                return true
+            var i: size_t 0
+            while i < use_vis_files.length
+            {
+                let uf use_vis_files.get i
+                if uf <> null
+                {
+                    if uf.equals(file)
+                    {
+                        let un use_vis_names.get i
+                        let up use_vis_paths.get i
+                        if un <> null
+                        {
+                            if up <> null
+                            {
+                                var name_hit false
+                                if un.equals(name)
+                                    set name_hit: true
+                                if un.equals("*")
+                                    set name_hit: true
+                                if name_hit
+                                {
+                                    if this.use_vis_target_match(origin_path, *up, name)
+                                        return true
+                                }
+                            }
+                        }
+                    }
+                }
+                set i: i + 1
+            }
+            false
+        }
+
+        ; use_vis_target_match: does a use clause with dotted prefix
+        ; `prefix` import the concept whose container path is
+        ; `origin_path` under `name`? Two layouts match: the concept
+        ; defined directly in the container the prefix addresses
+        ; (origin = prefix), and the module-named-after-concept idiom
+        ; (origin = prefix + "." + name — `use scalyc.compiler.Modeler`
+        ; reaching namespace Modeler inside module Modeler).
+        function use_vis_target_match(
+            this: Planner,
+            origin_path: String,
+            prefix: String,
+            name: String
+        ) returns bool
+        {
+            if prefix.get_length() = 0
+                return true
+            if origin_path.equals(prefix)
+                return true
+            var sb StringBuilder()
+            sb.append prefix
+            sb.append "."
+            sb.append name
+            let full sb.to_string()
+            origin_path.equals(full)
+        }
+
+        ; use_vis_origin_is_prelude: the scaly stdlib package (origin
+        ; path rooted at "scaly") stays auto-visible like Rust's
+        ; prelude; the prelude module itself attaches under the main
+        ; module and is recognized by its file name.
+        function use_vis_origin_is_prelude(
+            this: Planner,
+            origin_path: String,
+            origin_file: String
+        ) returns bool
+        {
+            if origin_path.equals("scaly")
+                return true
+            if origin_path.starts_with("scaly.")
+                return true
+            if origin_file.ends_with("/prelude.scaly")
+                return true
+            origin_file.equals("prelude.scaly")
         }
 
         ; plan_loaded_packages: extracted helper so plan_program's
@@ -21205,12 +21446,14 @@ define Planner
         ; reachable by their short name.
         function register_module_concepts(this: Planner, m: Module)
         {
-            ; Use-visibility stage 1: record this module's use clauses
-            ; (dedup'd by file) and switch the registration context so
-            ; register_concept records each concept's origin. Saved and
+            ; Use-visibility stage 1: switch the registration context so
+            ; register_concept records each concept's origin, then record
+            ; this module's use clauses (dedup'd by file). Saved and
             ; restored at the single exit below (same shape as
-            ; plan_module's saved_file dance).
-            this.record_module_uses m
+            ; plan_module's saved_file dance). A walk starting with an
+            ; EMPTY inherited prefix may be a mid-tree re-walk
+            ; (plan_module(sub)) — restore the anchored path recorded at
+            ; this file's first walk.
             let saved_reg_file this.registering_file
             let saved_reg_path this.registering_path
             if m.file.get_length() > 0
@@ -21218,8 +21461,15 @@ define Planner
                 let new_reg_file String^this(m.file)
                 set this.registering_file: new_reg_file
             }
-            let new_reg_path this.extend_dotted_path(saved_reg_path, m.name)
+            var new_reg_path this.extend_dotted_path(saved_reg_path, m.name)
+            if saved_reg_path.get_length() = 0
+            {
+                let known this.use_vis_lookup_file_path(m.file)
+                if known.get_length() > 0
+                    set new_reg_path: String^this(known)
+            }
             set this.registering_path: String^this(new_reg_path)
+            this.record_module_uses m
 
             var i: size_t 0
             while i < m.members.length
