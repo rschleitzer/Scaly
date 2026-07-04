@@ -7018,19 +7018,16 @@ define Emitter
             return LLVMBuildICmp(builder, LLVMIntPredicate.UGE(), l, r, "ge")
         }
 
-        ; `==` and `[]` are DEFINED source/user operators (Slice.operator==,
-        ; the subscript operator) — NOT the genuinely-unknown Bug-B class.
-        ; The self-hosted planner cannot yet DISPATCH a generic concept's
-        ; operator from a call site (the documented s185 generic-operator
-        ; gap), so resolve_operator_call# returns null and the call falls
-        ; through here marked intrinsic. Returning null preserves the
-        ; pre-existing behavior for these KNOWN operators (their lone call
-        ; site is a stdlib test that is exercised under the JIT/stage-0 path,
-        ; where dispatch works); the hard trap below stays reserved for truly
-        ; undefined operators (`//` and typos — the Bug-B class), which it
-        ; does NOT mask. Keeps emission byte-identical (cycle/fixpoint).
-        if op_name.equals("==")
-            return LLVMValueRef null
+        ; `[]` is a DEFINED subscript operator dispatched by the collapse
+        ; pre-pass (find_member_operator) to a real call; it should never
+        ; reach here. The exception stays only as belt-and-braces for a
+        ; subscript the pre-pass could not resolve (e.g. an un-instantiated
+        ; receiver) — returning null preserves the pre-existing silent
+        ; behavior rather than hard-trapping. `==` is NO LONGER excepted:
+        ; A3a's member-operator dispatch (collapse_operand_sequence#) now
+        ; routes a generic concept's `operator ==` to a real non-intrinsic
+        ; call, so a `==` arriving here is a genuine unresolved-operator bug
+        ; and SHOULD hit the loud trap below (the Bug-B class), not vanish.
         if op_name.equals("[]")
             return LLVMValueRef null
 

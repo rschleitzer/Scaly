@@ -5173,7 +5173,7 @@ define Planner
                                                             if idx_is_value
                                                             {
                                                                 let recv_op (*recv_ptr)
-                                                                let sm_ref this.find_subscript_operator(recv_op.result_type, sx_op.loc)
+                                                                let sm_ref this.find_member_operator(recv_op.result_type, String("[]"), sx_op.loc)
                                                                 if sm_ref <> null
                                                                 {
                                                                     let m (*sm_ref)
@@ -8851,6 +8851,78 @@ define Planner
                     let resolved this.resolve_operator_call(
                         op_name, result.result_type, rhs.result_type
                     )
+
+                    ; Member binary operator dispatch (A3a): a user-defined
+                    ; operator declared INSIDE a (possibly generic) concept —
+                    ; e.g. `Pair[T]`'s `operator ==` — is not in the top-level
+                    ; operator registry, so resolve_operator_call# above missed
+                    ; it. Left untreated the call falls through to the intrinsic
+                    ; path and the emitter silently drops it (the documented
+                    ; generic-concept operator-dispatch gap). Mirror the
+                    ; subscript pre-pass: find the member operator on the
+                    ; receiver concept, record it as a dispatchable function,
+                    ; and build a NON-intrinsic call. Gated to a non-primitive,
+                    ; non-generic-param receiver so primitive arithmetic and
+                    ; comparison keep their intrinsic fast path (fixpoint-safe:
+                    ; the compiler source declares member operators only on the
+                    ; non-generic String, whose call sites already dispatch).
+                    if resolved = null
+                    {
+                        ; PlannedType.name is already a joined string (unlike
+                        ; Model.Type.name's Vector[String]) — no join needed.
+                        let lop_name result.result_type.name
+                        if Planner.is_primitive_type_name(lop_name) = false
+                        {
+                            if Planner.is_generic_type_param_name(lop_name) = false
+                            {
+                                let mop_ref this.find_member_operator(result.result_type, op_name, result.loc)
+                                if mop_ref <> null
+                                {
+                                    let m (*mop_ref)
+                                    this.ensure_type_layout(result.result_type)
+                                    this.ensure_type_layout(m.return_type)
+                                    var mop_args Vector[PlannedOperand](2)
+                                    mop_args.put(0, result)
+                                    mop_args.put(1, rhs)
+                                    let mop_call PlannedCall(
+                                        result.loc,
+                                        String(op_name),
+                                        m.mangled_name,
+                                        false,
+                                        true,
+                                        m.can_throw,
+                                        m.requires_page_param,
+                                        &mop_args,
+                                        m.return_type,
+                                        Lifetime.Unspecified(Unspecified()),
+                                        m.throws_type,
+                                        false
+                                    )
+                                    set result: PlannedOperand(
+                                        result.loc,
+                                        PlannedExpression.Call mop_call,
+                                        null,
+                                        m.return_type
+                                    )
+                                    if consumed_rest
+                                    {
+                                        if climb_to >= ops.length
+                                            break
+                                        set i: climb_to
+                                        continue
+                                    }
+                                    if rhs_call_consumed
+                                    {
+                                        set i: i + 3
+                                        continue
+                                    }
+                                    set i: i + 2
+                                    continue
+                                }
+                            }
+                        }
+                    }
+
                     var combined_type: PlannedType this.fresh_type_var("")
                     if resolved <> null
                         set combined_type: (*resolved)
@@ -9897,19 +9969,21 @@ define Planner
             )
         }
 
-        ; find_subscript_operator: resolve `base[index]` to the receiver
-        ; concept's `operator []`. Mirrors stage-0 findSubscriptOperator
-        ; (Planner.cpp:2896): bind the concept's generic params to the
-        ; receiver's generic args (s167 rebuild so receiver bindings win
-        ; under first-wins lookup), plan the operator under that
+        ; find_member_operator: resolve a member operator named `op_name`
+        ; (`[]` for subscripts, `==`/`<>`/… for a concept's binary operators)
+        ; to the receiver concept's declaration. Mirrors stage-0
+        ; findSubscriptOperator (Planner.cpp:2896): bind the concept's generic
+        ; params to the receiver's generic args (s167 rebuild so receiver
+        ; bindings win under first-wins lookup), plan the operator under that
         ; substitution, and record it as a dispatchable PlannedFunction on
         ; first use so the Emitter defines the symbol (plan_structure's
         ; PlannedOperators are stored but never emitted). Returns null when
-        ; the receiver's concept declares no `[]` — the collapse pre-pass
+        ; the receiver's concept declares no matching operator — the caller
         ; then leaves the operand sequence untouched.
-        function find_subscript_operator(
+        function find_member_operator(
             this: Planner,
             container_type: PlannedType,
+            op_name: String,
             loc: Span
         ) returns ref[MethodMatch]?
         {
@@ -9961,7 +10035,7 @@ define Planner
                             choose (*m_ptr)
                                 when o: Operator
                                 {
-                                    if o.name.equals("[]")
+                                    if o.name.equals(op_name)
                                         if op_holder.length = 0
                                             op_holder.add o
                                     0
@@ -9990,6 +10064,8 @@ define Planner
             ; disturbed.
             var guard_sb StringBuilder()
             guard_sb.append "ix:"
+            guard_sb.append op_name
+            guard_sb.append ":"
             guard_sb.append(Planner.mangle_structure(lookup_st.name, lookup_st.generics))
             let guard_key guard_sb.to_string()
             var gi_i: size_t 0

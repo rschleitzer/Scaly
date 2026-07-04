@@ -1,0 +1,50 @@
+; Generic-concept operator dispatch at the call site (A3a, 2026-07-04):
+; a user-defined `operator ==` (and any member binary operator) declared
+; inside a generic concept is dispatched to a real non-intrinsic call by
+; collapse_operand_sequence#'s member-operator branch (find_member_operator).
+; Previously the call fell through to the intrinsic path and the emitter
+; SILENTLY DROPPED it (the documented generic-concept dispatch gap).
+; Expected: PASS
+
+define Pair[T]
+(
+    first: T
+    second: T
+)
+{
+    operator ==(other: Pair[T]) returns bool
+    {
+        if first <> other.first
+            return false
+        second = other.second
+    }
+    operator <>(other: Pair[T]) returns bool
+    {
+        if first <> other.first
+            return true
+        second <> other.second
+    }
+}
+
+var ok true
+
+let a Pair[int](1, 2)
+let b Pair[int](1, 2)
+let c Pair[int](1, 9)
+
+; == dispatches and returns the right value (equal case).
+if (a == b) = false
+    set ok: false
+; == on unequal pairs is false (differ in second).
+if a == c
+    set ok: false
+; <> dispatches independently.
+if (a <> c) = false
+    set ok: false
+if a <> b
+    set ok: false
+
+if ok
+    print("PASS")
+else
+    print("FAIL")
