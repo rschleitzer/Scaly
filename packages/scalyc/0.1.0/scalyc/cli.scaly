@@ -70,6 +70,7 @@ define Options
     library_paths: Array[String]    ; -L<path> entries (no leading -L)
     libraries: Array[String]        ; -l<name> entries (no leading -l)
     extra_objects: Array[String]    ; positional .a / .o paths
+    target_triple: String           ; --target <triple>: cross-emit object (empty = host)
 )
 {
     init()
@@ -96,6 +97,7 @@ define Options
         set library_paths: Array[String]()
         set libraries: Array[String]()
         set extra_objects: Array[String]()
+        set target_triple: String()
     }
 
     function has_error(this) returns bool
@@ -212,6 +214,23 @@ define cli
                         set opts.error_message: "--run requires a function name"
                     }
                 }
+                else if arg.equals("--target")
+                {
+                    ; Cross-emit target triple - next argument is the triple.
+                    ; Object emission (-c) uses it instead of the host default;
+                    ; both AArch64 and X86 backends are initialized, so any of
+                    ; the LP64 "fabulous four" (arm64/x86_64, darwin/linux) works.
+                    set i: i + 1
+                    if i < argc
+                    {
+                        let triple_ptr *(argv + i)
+                        set opts.target_triple: String(triple_ptr)
+                    }
+                    else
+                    {
+                        set opts.error_message: "--target requires a triple"
+                    }
+                }
                 else if arg.starts_with("-L") & arg.get_length() > 2
                 {
                     ; Library search path: -L<path> (prefix-form, like clang).
@@ -276,6 +295,7 @@ define cli
         Console.println("  --no-tests     Omit test/test_* functions (seed build)")
         Console.println "  --run <fn>     JIT-compile and run <fn> in-process"
         Console.println "  --jit          JIT-compile and run the whole program"
+        Console.println "  --target <t>   Cross-emit object for triple <t> (use with -c)"
     }
 
     ; Resolve the runtime static archive the linker pulls in. When SCALY_HOME
@@ -533,6 +553,7 @@ define cli
         var config EmitterConfig()
         set config.emit_debug_info: opts.debug
         set config.skip_tests: opts.no_tests
+        set config.target_triple: opts.target_triple
 
         var emitter Emitter.Emitter(config)
         if opts.debug

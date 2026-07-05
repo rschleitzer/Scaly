@@ -22,4 +22,5 @@ tools/build-from-seed.sh scalyc/build/scalyc
 if [ "$1" = "test" ]; then
     tests/regress/run.sh scalyc/build/scalyc
     tests/selfhosted/run.sh scalyc/build/scalyc
+    tests/target/run.sh scalyc/build/scalyc
 fi

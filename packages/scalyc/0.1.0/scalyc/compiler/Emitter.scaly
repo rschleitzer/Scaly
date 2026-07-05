@@ -4355,18 +4355,32 @@ define Emitter
         LLVMInitializeX86TargetMC()
         LLVMInitializeX86AsmPrinter()
 
-        let triple LLVMGetDefaultTargetTriple()
-        if triple = null
-            return false
+        ; --target <triple>: when config.target_triple is set, cross-emit for
+        ; that triple instead of the host default. The AArch64 + X86 backends
+        ; above are both initialized, so any LP64 "fabulous four" target
+        ; (arm64/x86_64, darwin/linux) works; the IR is target-neutral (no
+        ; datalayout line, LP64 sizes baked in), so llc/TargetMachine retargets
+        ; it cleanly.
+        var triple (LLVMGetDefaultTargetTriple() as pointer[const_char])
+        if config.target_triple.get_length() > 0
+        {
+            let override_triple config.target_triple.to_c_string()
+            set triple: override_triple
+        }
+        else
+        {
+            if triple = null
+                return false
+        }
 
-        LLVMSetTarget(llvm_module, triple as pointer[const_char])
+        LLVMSetTarget(llvm_module, triple)
 
         var target LLVMTargetRef(null)
-        let lookup_err LLVMGetTargetFromTriple(triple as pointer[const_char], &target, null as pointer[pointer[char]])
+        let lookup_err LLVMGetTargetFromTriple(triple, &target, null as pointer[pointer[char]])
         if lookup_err <> 0
             return false
 
-        let tm LLVMCreateTargetMachine(target, triple as pointer[const_char],
+        let tm LLVMCreateTargetMachine(target, triple,
             "generic" as pointer[const_char],
             "" as pointer[const_char],
             0, 2, 0)
