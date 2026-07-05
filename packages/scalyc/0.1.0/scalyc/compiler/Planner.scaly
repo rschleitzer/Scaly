@@ -12555,12 +12555,34 @@ define Planner
         ; capture discovery. Unlike collect_free_names (which only reaches
         ; Variable/Call/Tuple, so a block-bodied lambda's captures were missed
         ; entirely), these recurse through every compound expression and
-        ; statement, accumulating into `uses` every PlannedVariable name
-        ; referenced and into `bound` every name a body PlannedBinding (or a
-        ; for-loop identifier) introduces. A name in `bound` is shadowed by a
-        ; body-local binding and is NOT captured — flow-insensitive: any body
-        ; binding of a name suppresses its capture (the pathological same-name
-        ; use-before-bind, `let n n + 1` over an enclosing `n`, is unsupported).
+        ; statement. They are FLOW-SENSITIVE within a linear statement
+        ; sequence: `bound` is maintained in evaluation order, and a name a
+        ; body PlannedBinding (or a for-loop / when / try identifier)
+        ; introduces is added to `bound` ONLY AFTER its initializer is walked.
+        ; A PlannedVariable USE is recorded into `uses` (a capture candidate)
+        ; only when its name is not yet in `bound` at that point — so a use
+        ; that lexically PRECEDES a body binding of the same name (the
+        ; use-before-bind case `let n n + 1` over an enclosing `n`) captures
+        ; the enclosing value, while a use AFTER the binding is the local.
+        ; Ordinary shadowing (`let n 3; x + n`, no preceding use) stays local.
+        ; NOTE: `bound` accumulates across sibling branches / block scopes
+        ; (no scope pop), so a name bound only inside one branch is treated as
+        ; bound afterward — a conservative residual imprecision that can miss a
+        ; capture in that rarer shape; the linear case is exact.
+        function name_in_string_array(this: Planner, arr: Array[String], name: String) returns bool
+        {
+            var i: size_t 0
+            while i < arr.length
+            {
+                let p arr.get i
+                if p <> null
+                    if (*p).equals(name)
+                        return true
+                set i: i + 1
+            }
+            false
+        }
+
         function collect_lambda_names_ops(this: Planner, ops_ref: ref[Vector[PlannedOperand]]?, uses: Array[String], bound: Array[String])
         {
             if ops_ref = null
@@ -12589,9 +12611,13 @@ define Planner
                     this.collect_lambda_names_action(a, uses, bound)
                 when b: PlannedBinding
                 {
+                    ; Evaluation order: the initializer runs BEFORE the new
+                    ; binding is in scope, so walk it first (a use of the
+                    ; binding's own name in its initializer captures the
+                    ; enclosing variable), then mark the name bound.
+                    this.collect_lambda_names_ops(b.operation, uses, bound)
                     if b.binding_item.name <> null
                         bound.add (*b.binding_item.name)
-                    this.collect_lambda_names_ops(b.operation, uses, bound)
                 }
                 when r: PlannedReturn
                     this.collect_lambda_names_ops(r.result, uses, bound)
@@ -12629,7 +12655,11 @@ define Planner
         {
             choose op.expr
                 when v: PlannedVariable
-                    uses.add v.name
+                {
+                    if this.name_in_string_array(bound, v.name) = false
+                        uses.add v.name
+                    0
+                }
                 when call: PlannedCall
                 {
                     if call.args <> null
@@ -12743,9 +12773,9 @@ define Planner
                 }
                 when wh: PlannedWhile
                 {
+                    this.collect_lambda_names_ops(wh.cond.operation, uses, bound)
                     if wh.cond.binding_item.name <> null
                         bound.add (*wh.cond.binding_item.name)
-                    this.collect_lambda_names_ops(wh.cond.operation, uses, bound)
                     this.collect_lambda_names_action(wh.body, uses, bound)
                     0
                 }
@@ -12999,29 +13029,21 @@ define Planner
                                 set already: true
                         set dj: dj + 1
                     }
-                    ; A name bound by a body-local let/var/for/when shadows the
-                    ; enclosing one — it is the local, not a capture.
-                    var is_shadowed: bool false
-                    var bk: size_t 0
-                    while bk < body_bound.length
-                    {
-                        let bn_ptr body_bound.get bk
-                        if bn_ptr <> null
-                            if (*bn_ptr).equals(nm)
-                                set is_shadowed: true
-                        set bk: bk + 1
-                    }
+                    ; `free` already excludes uses that follow a body-local
+                    ; binding of the same name (collect_lambda_names records a
+                    ; use only while its name is not yet bound), so a name here
+                    ; is a genuine capture even if it is ALSO rebound later
+                    ; (the use-before-bind case). No post-hoc shadow filter.
                     if is_param = false
                         if already = false
-                            if is_shadowed = false
+                        {
+                            let lb this.lookup_local_binding(nm)
+                            if lb <> null
                             {
-                                let lb this.lookup_local_binding(nm)
-                                if lb <> null
-                                {
-                                    cap_names.add(String(nm))
-                                    cap_types.add((*lb).binding_type)
-                                }
+                                cap_names.add(String(nm))
+                                cap_types.add((*lb).binding_type)
                             }
+                        }
                 }
                 set fi: fi + 1
             }

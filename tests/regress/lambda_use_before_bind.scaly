@@ -1,0 +1,28 @@
+; Regression (GAP C, flow-sensitive lambda capture): a use of an enclosing
+; variable that lexically PRECEDES a body-local binding of the same name must
+; capture the ENCLOSING value. `let n n + 1` inside the lambda evaluates its
+; initializer before the new local `n` is in scope, so the RHS `n` is the
+; enclosing n (10) -> local n = 11; then `x + n` uses the local -> 5 + 11 = 16.
+; Ordinary shadowing (a binding with no preceding use of the name) must stay
+; the local: `let m 3; x + m` -> 5 + 3 = 8, m NOT captured. Self-hosted-only.
+; Expected: PASS
+
+let n 10
+let f \x: { let n n + 1
+            x + n }
+
+let m 100
+let g \x: { let m 3
+            x + m }
+
+let r1 f(5)
+let r2 g(5)
+if r1 = 16
+{
+    if r2 = 8
+        print("PASS")
+    else
+        print("FAIL")
+}
+else
+    print("FAIL")
