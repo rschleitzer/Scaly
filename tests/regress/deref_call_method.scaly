@@ -1,0 +1,33 @@
+; Deref of a (namespace-)qualified call result, then a method on it:
+;   (*factory.make(x)).val()
+; The s182 note flagged the `(*qualified.call(args)).method()` receiver shape
+; as unplannable by stage-1 (the planner DROPPED the whole call — every such
+; site in scaly/containers/Array.scaly was written in an unrolled two-step
+; `let p Page.get(this); p.method()` form to avoid it). The intervening
+; s185–s199 planner work (parenless-call collapse, member-operator dispatch,
+; qualified-call flattening) closed the gap; the chained form now plans, emits,
+; and runs. Array.scaly::init was reverted to the chained form as an in-tree
+; guard; this standalone test pins the general shape.
+; Expected: PASS
+
+define Box
+(
+    value: int
+)
+{
+    function val(this: Box) returns int
+        value
+}
+
+define factory
+{
+    function make(x: int) returns pointer[Box]
+        Box#(x)
+}
+
+let result (*factory.make(7)).val()
+
+if result = 7
+    print("PASS")
+else
+    print("FAIL")
