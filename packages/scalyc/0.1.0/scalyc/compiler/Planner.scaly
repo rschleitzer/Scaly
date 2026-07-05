@@ -12565,10 +12565,17 @@ define Planner
         ; use-before-bind case `let n n + 1` over an enclosing `n`) captures
         ; the enclosing value, while a use AFTER the binding is the local.
         ; Ordinary shadowing (`let n 3; x + n`, no preceding use) stays local.
-        ; NOTE: `bound` accumulates across sibling branches / block scopes
-        ; (no scope pop), so a name bound only inside one branch is treated as
-        ; bound afterward — a conservative residual imprecision that can miss a
-        ; capture in that rarer shape; the linear case is exact.
+        ; The walk is also SCOPE-ACCURATE, not just linear: every construct
+        ; that pushes a planner scope (block, for/while/repeat body, choose /
+        ; match / try when-arm, try-else) records the bound-set length on entry
+        ; and TRUNCATES back on exit (`set bound.length:` — `bound` is passed by
+        ; reference), so a name bound only inside a nested block or sibling
+        ; branch does NOT suppress a capture of an enclosing same-named variable
+        ; used after it. `if` branches, choose/match `else`, and the try-bound
+        ; name are NOT scoped/truncated here because plan_if/plan_choose/
+        ; plan_match don't push a scope for them and the try binding leaks into
+        ; the enclosing scope — mirroring the planner exactly keeps "bound at
+        ; this point" equal to "pass-1 resolved this use to a body-local".
         function name_in_string_array(this: Planner, arr: Array[String], name: String) returns bool
         {
             var i: size_t 0
@@ -12697,7 +12704,15 @@ define Planner
                 }
                 when blk: PlannedBlock
                 {
+                    ; A block is a nested scope (plan_block push/pops one), so
+                    ; its bindings must NOT leak to code after the block or to
+                    ; a sibling branch. Record the bound-set length, walk, then
+                    ; truncate back — dropping names bound inside the block so a
+                    ; later use of an enclosing same-named variable still
+                    ; captures. `bound` is pass-by-ref; `set .length:` truncates.
+                    let mark bound.length
                     this.collect_lambda_names_stmts(blk.statements, uses, bound)
+                    set bound.length: mark
                     0
                 }
                 when iff: PlannedIf
@@ -12719,14 +12734,22 @@ define Planner
                             let w_ptr whens.get i
                             if w_ptr <> null
                             {
+                                ; Each when-arm is its own scope (plan_when
+                                ; push/pops): the pattern name + arm-local
+                                ; bindings must not leak to sibling arms, the
+                                ; else, or code after the choose. Mark/truncate.
+                                let mark bound.length
                                 let w (*w_ptr)
                                 if w.name.get_length() > 0
                                     bound.add w.name
                                 this.collect_lambda_names_stmt_opt(w.consequent, uses, bound)
+                                set bound.length: mark
                             }
                             set i: i + 1
                         }
                     }
+                    ; The else is planned in the current scope (no push in
+                    ; plan_choose), like an if branch — no mark/truncate.
                     this.collect_lambda_names_stmt_opt(ch.alternative, uses, bound)
                     0
                 }
@@ -12765,23 +12788,37 @@ define Planner
                 }
                 when fr: PlannedFor
                 {
+                    ; The loop identifier + body live in the loop's pushed
+                    ; scope (plan_for); the collection expr is evaluated before
+                    ; the identifier is in scope. Mark, walk expr, bind the
+                    ; identifier, walk body, truncate.
+                    let mark bound.length
                     this.collect_lambda_names_ops(fr.expr, uses, bound)
                     if fr.identifier.get_length() > 0
                         bound.add fr.identifier
                     this.collect_lambda_names_action(fr.body, uses, bound)
+                    set bound.length: mark
                     0
                 }
                 when wh: PlannedWhile
                 {
+                    ; while-let's bound name + body live in the loop scope
+                    ; (plan_while); the condition operation runs before the
+                    ; name is in scope. Mark, walk cond, bind name, walk body.
+                    let mark bound.length
                     this.collect_lambda_names_ops(wh.cond.operation, uses, bound)
                     if wh.cond.binding_item.name <> null
                         bound.add (*wh.cond.binding_item.name)
                     this.collect_lambda_names_action(wh.body, uses, bound)
+                    set bound.length: mark
                     0
                 }
                 when rp: PlannedRepeat
                 {
+                    ; repeat body is a pushed scope (plan_repeat).
+                    let mark bound.length
                     this.collect_lambda_names_action(rp.body, uses, bound)
+                    set bound.length: mark
                     0
                 }
                 when as_e: scalyc.compiler.Plan.PlannedAs
@@ -12798,7 +12835,14 @@ define Planner
                 }
                 when tr: PlannedTry
                 {
+                    ; The try-bound name (`try let q ...`) LEAKS into the
+                    ; enclosing scope (plan_try binds it in the current scope,
+                    ; no push) — the success path falls through past the try
+                    ; with it in scope. So walk its initializer, then add the
+                    ; name to the CURRENT scope WITHOUT truncating.
                     this.collect_lambda_names_ops(tr.cond.operation, uses, bound)
+                    if tr.cond.binding_item.name <> null
+                        bound.add (*tr.cond.binding_item.name)
                     if tr.catches <> null
                     {
                         let cats (*tr.catches)
@@ -12808,15 +12852,21 @@ define Planner
                             let w_ptr cats.get i
                             if w_ptr <> null
                             {
+                                ; Each catch arm is its own scope (plan_when).
+                                let mark bound.length
                                 let w (*w_ptr)
                                 if w.name.get_length() > 0
                                     bound.add w.name
                                 this.collect_lambda_names_stmt_opt(w.consequent, uses, bound)
+                                set bound.length: mark
                             }
                             set i: i + 1
                         }
                     }
+                    ; The try-else gets its own pushed scope (plan_try).
+                    let alt_mark bound.length
                     this.collect_lambda_names_stmt_opt(tr.alternative, uses, bound)
+                    set bound.length: alt_mark
                     0
                 }
                 else

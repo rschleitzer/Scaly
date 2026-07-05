@@ -1,0 +1,38 @@
+; Regression (GAP C, scope-accurate lambda capture): a variable bound inside a
+; NESTED scope (block, if-branch, for/while body, when-arm) must not leak out
+; and suppress a capture of an enclosing same-named variable used AFTER that
+; scope. Capture discovery mirrors the planner's scoping: entering a scope marks
+; the bound-set, leaving it truncates back.
+;
+;   r1: inner block `let n 999` is local to the if-block; the outer block's last
+;       expr `x + n` captures the enclosing n=10 -> 5 + 10 = 15.
+;   r2: the for-loop identifier `i` is local to the loop; `x + i` after the loop
+;       captures the enclosing i=7 -> 5 + 7 = 12.
+; Self-hosted-only. Expected: PASS
+
+let n 10
+let f \x: { if x > 0
+            {
+                let n 999
+                x + n
+            }
+            x + n }
+
+let i 7
+let g \x: { for i in 3
+            {
+                let dummy i
+            }
+            x + i }
+
+let r1 f(5)
+let r2 g(5)
+if r1 = 15
+{
+    if r2 = 12
+        print("PASS")
+    else
+        print("FAIL")
+}
+else
+    print("FAIL")
