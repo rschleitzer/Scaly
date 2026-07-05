@@ -1,0 +1,19 @@
+; Regression (use-alias ModuleStack scoping): a `use ns.fn` clause in one
+; sub-module must NOT bleed its alias into a sibling sub-module. Module A
+; imports `nsx.helper` (returns 99); module B has its own free `helper`
+; (returns 2) and `b_uses()` calls it. Before the fix, `program_use_aliases`
+; was a global flat list that only grew, so A's "helper" -> "nsx" alias
+; mis-mangled B's bare `helper(5)` to `nsx.helper` and `b_uses()` returned 99.
+; plan_module# now saves the alias-list length on entry and truncates on exit
+; (mirroring stage-0's ModuleStack), so a sibling's uses are popped before the
+; next sibling is planned. Self-hosted-only (retired stage-0 drops the aliased
+; call). Expected: PASS (b_uses() == 2).
+
+module usealias_scope_a
+module usealias_scope_b
+
+let r b_uses()
+if r = 2
+    print("PASS")
+else
+    print("FAIL")

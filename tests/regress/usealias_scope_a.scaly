@@ -1,0 +1,21 @@
+; Sidecar A for usealias_scope.scaly (loaded via `module usealias_scope_a`).
+; Declares a namespace function nsx.helper and imports it with `use nsx.helper`
+; — this records the alias "helper" -> namespace "nsx" while module A is being
+; planned. The ModuleStack scoping fix must POP that alias when A's module
+; frame exits, so it does NOT bleed into the sibling module B (which has its
+; own free `helper`). Run standalone by the harness it prints PASS; module
+; loading ignores the top-level statement.
+; Expected: PASS
+
+define nsx
+{
+    function helper(x: int) returns int
+        99
+}
+
+use nsx.helper
+
+function call_a() returns int
+    helper(1)
+
+print("PASS")

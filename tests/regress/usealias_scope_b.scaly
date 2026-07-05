@@ -1,0 +1,16 @@
+; Sidecar B for usealias_scope.scaly (loaded via `module usealias_scope_b`).
+; Has its OWN free `helper` (returns 2) and a bare call to it. Sibling module A
+; imports `nsx.helper` (returns 99); before the ModuleStack scoping fix, A's
+; alias "helper" -> "nsx" bled through the global use-alias list and mis-mangled
+; B's bare `helper(5)` as `_ZN3nsx6helperEi`, so `b_uses()` returned 99 instead
+; of 2. With per-module push/pop scoping, B sees no such alias -> free
+; `_Z6helperi` -> 2. Run standalone it prints PASS.
+; Expected: PASS
+
+function helper(x: int) returns int
+    2
+
+function b_uses() returns int
+    helper(5)
+
+print("PASS")

@@ -22307,6 +22307,17 @@ define Planner
             ; resolve at planning time but never reach the gate, so no
             ; extern declaration is emitted and emit_call returns null
             ; → empty function bodies.
+            ;
+            ; ModuleStack scoping (mirrors stage-0's push/pop): record this
+            ; module's aliases here, then TRUNCATE them back at the single
+            ; return below. The two arrays grow in lockstep, so saving one
+            ; length suffices for both. Because plan_module# plans sub-modules
+            ; and then this module's members BEFORE returning, a nested module
+            ; and this module's own bodies see this module's + ancestors' uses;
+            ; a SIBLING module planned later does NOT (its frame was popped) —
+            ; without this a sibling's `use ns.foo` bled globally and mis-mangled
+            ; an unrelated bare `foo(...)` in another module as `_ZN2ns3fooE…`.
+            let saved_use_aliases_len program_use_aliases.length
             var uu: size_t 0
             while uu < m.uses.length
             {
@@ -22460,6 +22471,9 @@ define Planner
             var ops_holder Vector[PlannedOperator](operators)
 
             set this.file: saved_file
+            ; Pop this module's Use aliases off the stack (see the save above).
+            set program_use_aliases.length: saved_use_aliases_len
+            set program_use_namespaces.length: saved_use_aliases_len
 
             PlannedModule(
                 m.file,
