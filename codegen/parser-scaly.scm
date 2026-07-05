@@ -232,10 +232,10 @@ define Parser
                 choose err
                     when d: Different {}
                     when i: Invalid"
-                                    (if (multiple? content)
+                                    (if (and (not (multiple? content)) (colon-opened? content))
+" {}"
 "
-                        throw ParserError.Invalid(i)"
-" {}")
+                        throw ParserError.Invalid(i)")
 "
             }
             when success: Success

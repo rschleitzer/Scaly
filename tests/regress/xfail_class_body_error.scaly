@@ -1,0 +1,22 @@
+; xfail: expected '}'
+;
+; A syntax error INSIDE a class/union/trait body must HARD-FAIL the compile
+; with the real inner error, not be silently swallowed. parse_class/parse_union/
+; parse_trait treat the Body as an optional field; the old codegen discarded a
+; committed Invalid from parse_body (`when i: Invalid {}`), leaving the lexer
+; parked mid-body so the class parsed as if it had no body and the garbage was
+; silently dropped (compile succeeded, rc 0) — or re-surfaced as a bogus outer
+; "expected '}'". The generator now propagates an Invalid from any optional
+; field whose opener is unambiguous (here the body's `{`), so the "expected '}'"
+; from parse_body reaches the user.
+;
+; Self-hosted-only: the frozen C++ stage-0 llvm::consumeError's the same site.
+
+define Foo()
+{
+    function good() returns int
+    {
+        return 1
+    }
+    @#$ garbage that is not a member
+}

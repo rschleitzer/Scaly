@@ -131,6 +131,20 @@
         (gi (element-with-id (attribute-string "link" node)))
         (attribute-string "type" node)))
 
+;; The type ("colon"/"keyword"/"punctuation"/"literal"/"syntax"/...) of a
+;; syntax's first content child -- i.e. the token a parse_X commits on. A
+;; separator newline lexes as a Colon, so a colon-opened optional field
+;; (TypeAnnotation, BindingAnnotation, Value) false-commits on a separator and
+;; must backtrack by swallowing its Invalid. Every other opener ([ { ( keyword
+;; literal ^ ?) is unambiguous, so a committed Invalid is a real syntax error
+;; and must propagate -- otherwise class/union/trait bodies silently swallow
+;; inner errors (and re-surface as a bogus outer "expected '}'").
+(define (first-content-type node)
+    (type (node-list-first (children node))))
+
+(define (colon-opened? content)
+    (string=? "colon" (first-content-type (element-with-id (link content)))))
+
 (define (has-syntax-children? node)
     (not (node-list-empty?
         (node-list-filter (lambda (snl) (and (syntax? snl) (string=? "syntax" (gi (element-with-id (attribute-string "link" snl))))))
