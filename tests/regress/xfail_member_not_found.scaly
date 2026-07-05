@@ -1,0 +1,24 @@
+; A member/method access whose name does NOT exist on a CONCRETE resolved
+; struct must FAIL LOUDLY, not silently read field 0. Before the emit-time
+; guard, `b.nonexistent()` on a Box emitted `extractvalue Box, 0` — the first
+; field (value) — so a typo'd method silently returned the wrong value. The
+; guard (Emitter.scaly::emit_member_access_chain) traps when a non-method,
+; non-variant hop has a VOID result and its parent maps to a sized concrete
+; struct. Only viable after glob-type-disambiguation stopped the glob-
+; ambiguity path from relying on the field-0 fallback.
+; xfail: member not found
+
+define Box
+(
+    value: int
+)
+{
+    function val(this: Box) returns int
+        value
+}
+
+function main() returns int
+{
+    let b Box(5)
+    return b.nonexistent()
+}

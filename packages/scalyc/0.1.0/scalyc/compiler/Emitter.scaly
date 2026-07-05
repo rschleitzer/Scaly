@@ -4510,6 +4510,45 @@ define Emitter
             {
                 let access access_ptr.unwrap()
 
+                ; A non-method, non-variant hop with a VOID result is
+                ; resolve_member_access#'s unresolved placeholder (member not
+                ; found). The lenient extractvalue-at-field-0 path below is a
+                ; RECOVERY the compiler relies on when the PLANNER couldn't
+                ; resolve the base type (empty parent name): the emitter falls
+                ; back to the actual LLVM value type + field 0, correct when
+                ; the intended member IS field 0 (e.g. `.name`). But when the
+                ; base is a CONCRETE, resolved struct (non-empty name mapping
+                ; to a sized struct) and the member still isn't found, field 0
+                ; is the WRONG field — a typo'd `x.method()` silently returns
+                ; the first field. That is a certain silent miscompile: fail
+                ; HARD+LOUD (same discipline as the unknown-operator trap).
+                ; Speculative mis-typed lookups recover in the planner and
+                ; never carry the placeholder into the emitted plan; the LSP
+                ; never runs the Emitter, so it is unaffected.
+                if access.is_method = false
+                    if access.is_union_value = false
+                        if access.result_type.name.equals("void")
+                            if access.parent_type.name.get_length() > 0
+                            {
+                                let mac_pty map_type access.parent_type
+                                var mac_concrete: bool false
+                                if mac_pty.handle <> null
+                                    if LLVMGetTypeKind(mac_pty) = LLVMTypeKind.Struct()
+                                        if LLVMTypeIsSized(mac_pty) <> 0
+                                            set mac_concrete: true
+                                if mac_concrete
+                                {
+                                    scaly_eputs "Emitter: member not found: "
+                                    let mac_parent access.parent_type.name.to_c_string()
+                                    scaly_eputs mac_parent
+                                    scaly_eputs "."
+                                    let mac_name access.name.to_c_string()
+                                    scaly_eputs mac_name
+                                    scaly_eputs "\n"
+                                    exit 16
+                                }
+                            }
+
                 ; Handle union .value extraction specially
                 if access.is_union_value
                 {
