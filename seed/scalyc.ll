@@ -223762,11 +223762,11 @@ entry:
   %deref.tmp282 = alloca { ptr }, align 8
   %arg.tmp280 = alloca { ptr }, align 8
   %li = alloca i64, align 8
-  %deref.tmp = alloca { ptr }, align 8
+  %sret.result265 = alloca { ptr }, align 8
   %arg.tmp263 = alloca { ptr }, align 8
+  %deref.tmp = alloca { ptr }, align 8
+  %arg.tmp259 = alloca { ptr }, align 8
   %ei = alloca i64, align 8
-  %sret.result250 = alloca { ptr }, align 8
-  %arg.tmp248 = alloca { ptr }, align 8
   %arg.tmp245 = alloca { ptr }, align 8
   %sret.result243 = alloca { ptr }, align 8
   %cmd_builder = alloca ptr, align 8
@@ -224358,50 +224358,50 @@ if.end239:                                        ; preds = %if.end233
   call void @_ZN13StringBuilder6appendE6String(ptr %cmd_builder244, ptr %arg.tmp245)
   %cmd_builder246 = load ptr, ptr %cmd_builder, align 8
   call void @_ZN13StringBuilder6appendE6String(ptr %cmd_builder246, ptr %arg.tmp79)
-  %cmd_builder247 = load ptr, ptr %cmd_builder, align 8
-  store { ptr } { ptr @.sconst.1757 }, ptr %arg.tmp248, align 1
-  call void @_ZN13StringBuilder6appendE6String(ptr %cmd_builder247, ptr %arg.tmp248)
-  %cmd_builder249 = load ptr, ptr %cmd_builder, align 8
-  call void @_ZN3cli20runtime_archive_pathEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result250, ptr %local_page)
-  call void @_ZN13StringBuilder6appendE6String(ptr %cmd_builder249, ptr %sret.result250)
   store i64 0, ptr %ei, align 1
-  br label %while.cond251
+  br label %while.cond247
 
-while.cond251:                                    ; preds = %if.end261, %if.end239
-  %ei254 = load i64, ptr %ei, align 4
-  %load.struct255 = load %_Z7Options, ptr %0, align 8
-  %extra_objects = extractvalue %_Z7Options %load.struct255, 21
+while.cond247:                                    ; preds = %if.end257, %if.end239
+  %ei250 = load i64, ptr %ei, align 4
+  %load.struct251 = load %_Z7Options, ptr %0, align 8
+  %extra_objects = extractvalue %_Z7Options %load.struct251, 21
   %length = extractvalue %_Z5ArrayI6StringE %extra_objects, 0
-  %lt = icmp ult i64 %ei254, %length
-  br i1 %lt, label %while.body252, label %while.exit253
+  %lt = icmp ult i64 %ei250, %length
+  br i1 %lt, label %while.body248, label %while.exit249
 
-while.body252:                                    ; preds = %while.cond251
-  %field.inplace256 = getelementptr inbounds %_Z7Options, ptr %0, i32 0, i32 21
-  %ei257 = load i64, ptr %ei, align 4
-  %call258 = call ptr @_ZN5ArrayI6StringE3getEPN4scaly6memory4PageEm(ptr %local_page, ptr %field.inplace256, i64 %ei257)
-  %ne259 = icmp ne ptr %call258, null
-  br i1 %ne259, label %if.then260, label %if.end261
+while.body248:                                    ; preds = %while.cond247
+  %field.inplace252 = getelementptr inbounds %_Z7Options, ptr %0, i32 0, i32 21
+  %ei253 = load i64, ptr %ei, align 4
+  %call254 = call ptr @_ZN5ArrayI6StringE3getEPN4scaly6memory4PageEm(ptr %local_page, ptr %field.inplace252, i64 %ei253)
+  %ne255 = icmp ne ptr %call254, null
+  br i1 %ne255, label %if.then256, label %if.end257
 
-while.exit253:                                    ; preds = %while.cond251
-  store i64 0, ptr %li, align 1
-  br label %while.cond266
-
-if.then260:                                       ; preds = %while.body252
+while.exit249:                                    ; preds = %while.cond247
   %cmd_builder262 = load ptr, ptr %cmd_builder, align 8
   store { ptr } { ptr @.sconst.1758 }, ptr %arg.tmp263, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %cmd_builder262, ptr %arg.tmp263)
   %cmd_builder264 = load ptr, ptr %cmd_builder, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp, ptr align 1 %call258, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
-  call void @_ZN13StringBuilder6appendE6String(ptr %cmd_builder264, ptr %deref.tmp)
-  br label %if.end261
+  call void @_ZN3cli20runtime_archive_pathEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result265, ptr %local_page)
+  call void @_ZN13StringBuilder6appendE6String(ptr %cmd_builder264, ptr %sret.result265)
+  store i64 0, ptr %li, align 1
+  br label %while.cond266
 
-if.end261:                                        ; preds = %if.then260, %while.body252
-  %ei265 = load i64, ptr %ei, align 4
-  %add = add i64 %ei265, 1
+if.then256:                                       ; preds = %while.body248
+  %cmd_builder258 = load ptr, ptr %cmd_builder, align 8
+  store { ptr } { ptr @.sconst.1757 }, ptr %arg.tmp259, align 1
+  call void @_ZN13StringBuilder6appendE6String(ptr %cmd_builder258, ptr %arg.tmp259)
+  %cmd_builder260 = load ptr, ptr %cmd_builder, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp, ptr align 1 %call254, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_ZN13StringBuilder6appendE6String(ptr %cmd_builder260, ptr %deref.tmp)
+  br label %if.end257
+
+if.end257:                                        ; preds = %if.then256, %while.body248
+  %ei261 = load i64, ptr %ei, align 4
+  %add = add i64 %ei261, 1
   store i64 %add, ptr %ei, align 1
-  br label %while.cond251
+  br label %while.cond247
 
-while.cond266:                                    ; preds = %if.end278, %while.exit253
+while.cond266:                                    ; preds = %if.end278, %while.exit249
   %li269 = load i64, ptr %li, align 4
   %load.struct270 = load %_Z7Options, ptr %0, align 8
   %library_paths = extractvalue %_Z7Options %load.struct270, 19
