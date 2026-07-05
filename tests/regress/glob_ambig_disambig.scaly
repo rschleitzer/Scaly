@@ -1,0 +1,17 @@
+; An explicit use resolves a glob ambiguity (A3b, 2026-07-05): both globs
+; supply `Widget`, but the explicit `use ...glob_ambig_a.Widget` names the
+; winner (explicit > glob), so the compile succeeds and `Widget` binds to
+; mod_a's definition (field `x`).
+; Expected: PASS
+
+module glob_ambig_a
+module glob_ambig_b
+use glob_ambig_disambig.glob_ambig_a.*
+use glob_ambig_disambig.glob_ambig_b.*
+use glob_ambig_disambig.glob_ambig_a.Widget
+
+let w Widget(3)
+if w.x = 3
+    print("PASS")
+else
+    print("FAIL")

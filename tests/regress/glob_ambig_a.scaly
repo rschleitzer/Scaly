@@ -1,0 +1,9 @@
+; Sidecar for the glob-ambiguity tests (xfail_glob_ambiguity.scaly and
+; glob_ambig_disambig.scaly load it via `module glob_ambig_a`). Also run
+; standalone by the harness, so it prints PASS itself; module loading
+; ignores top-level statements. Widget's field is `x` (mod_b's is `y`).
+; Expected: PASS
+
+define Widget(x: int)
+
+print("PASS")

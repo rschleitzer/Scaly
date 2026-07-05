@@ -1,0 +1,14 @@
+; Glob-ambiguity hard diagnostic (A3b, 2026-07-05): two glob imports that
+; each supply a concept of the same name (`Widget` from glob_ambig_a and
+; glob_ambig_b) make a bare reference ambiguous — which one it binds would
+; depend on registry order, not the source. That is a hard error at the use
+; site. An explicit use disambiguates (glob_ambig_disambig.scaly).
+; xfail: ambiguous glob import
+
+module glob_ambig_a
+module glob_ambig_b
+use xfail_glob_ambiguity.glob_ambig_a.*
+use xfail_glob_ambiguity.glob_ambig_b.*
+
+let w Widget(3)
+print("done")

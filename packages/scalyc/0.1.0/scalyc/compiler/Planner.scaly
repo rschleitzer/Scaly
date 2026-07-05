@@ -1630,6 +1630,237 @@ define Planner
             diagnostics.length > 0
         }
 
+        ; ===== glob-ambiguity diagnostic (use-visibility, hard) =====
+        ;
+        ; Two glob imports in one file (`use a.*` and `use b.*`) that BOTH
+        ; supply a concept of the same name make a bare reference to that
+        ; name ambiguous: which concept it binds would depend on the
+        ; registry's last-write-wins order, not on the source. That is a
+        ; hard error at the use site. An explicit `use a.Name` in the same
+        ; file names the winner and suppresses the error (explicit > glob).
+        ; Runs once after registration, only when enforcement is on; the
+        ; tree carries no such collision (the lexer/Syntax Literal families
+        ; were unified), so this fires only on a genuine new clash.
+
+        ; use_vis_file_has_explicit: does file `f` carry a non-glob use
+        ; clause naming `name` (which disambiguates a glob collision)?
+        function use_vis_file_has_explicit(this: Planner, f: String, name: String) returns bool
+        {
+            var i: size_t 0
+            while i < use_vis_files.length
+            {
+                let uf use_vis_files.get i
+                let un use_vis_names.get i
+                if uf <> null
+                {
+                    if un <> null
+                    {
+                        if uf.equals(f)
+                        {
+                            if un.equals(name)
+                                return true
+                        }
+                    }
+                }
+                set i: i + 1
+            }
+            false
+        }
+
+        ; use_vis_file_glob_supplies: does a glob clause in `f` import the
+        ; concept named `name` from container `origin`?
+        function use_vis_file_glob_supplies(this: Planner, f: String, name: String, origin: String) returns bool
+        {
+            var i: size_t 0
+            while i < use_vis_files.length
+            {
+                let uf use_vis_files.get i
+                let un use_vis_names.get i
+                let up use_vis_paths.get i
+                if uf <> null
+                {
+                    if un <> null
+                    {
+                        if up <> null
+                        {
+                            if uf.equals(f)
+                            {
+                                if un.equals("*")
+                                {
+                                    if this.use_vis_target_match(origin, *up, name)
+                                        return true
+                                }
+                            }
+                        }
+                    }
+                }
+                set i: i + 1
+            }
+            false
+        }
+
+        ; check_glob_ambiguities: the enforcement entry, called once from
+        ; plan_program. For each distinct file that declared a glob, and
+        ; each concept name, count the DISTINCT origin modules that supply
+        ; it into that file via a glob (skipping same-file and prelude
+        ; origins, and names an explicit use already disambiguates). Two or
+        ; more distinct glob origins for one name is a hard diagnostic.
+        function check_glob_ambiguities(this: Planner)
+        {
+            if use_vis_enforce = false
+                return
+
+            var seen_files Array[String]()
+            var fi: size_t 0
+            while fi < use_vis_files.length
+            {
+                let un_ptr use_vis_names.get fi
+                let uf_ptr use_vis_files.get fi
+                if un_ptr <> null
+                {
+                    if uf_ptr <> null
+                    {
+                        if un_ptr.equals("*")
+                        {
+                            let cur_file (*uf_ptr)
+                            var already false
+                            var si: size_t 0
+                            while si < seen_files.length
+                            {
+                                let sp seen_files.get si
+                                if sp <> null
+                                {
+                                    if sp.equals(cur_file)
+                                        set already: true
+                                }
+                                set si: si + 1
+                            }
+                            if already = false
+                            {
+                                let cf_copy String(cur_file)
+                                seen_files.add cf_copy
+                                this.check_file_glob_ambiguities(cur_file)
+                            }
+                        }
+                    }
+                }
+                set fi: fi + 1
+            }
+        }
+
+        function check_file_glob_ambiguities(this: Planner, f: String)
+        {
+            var seen_names Array[String]()
+            var ci: size_t 0
+            while ci < concepts.length
+            {
+                let kp concepts.get ci
+                if kp <> null
+                {
+                    let name kp.key
+                    var dup false
+                    var di: size_t 0
+                    while di < seen_names.length
+                    {
+                        let sp seen_names.get di
+                        if sp <> null
+                        {
+                            if sp.equals(name)
+                                set dup: true
+                        }
+                        set di: di + 1
+                    }
+                    if dup = false
+                    {
+                        let nm_copy String(name)
+                        seen_names.add nm_copy
+                        if this.use_vis_file_has_explicit(f, name) = false
+                        {
+                            var origins Array[String]()
+                            var cj: size_t 0
+                            while cj < concepts.length
+                            {
+                                let kp2 concepts.get cj
+                                if kp2 <> null
+                                {
+                                    if kp2.key.equals(name)
+                                    {
+                                        let of_ptr concept_origin_files.get cj
+                                        let op_ptr concept_origin_paths.get cj
+                                        if of_ptr <> null
+                                        {
+                                            if op_ptr <> null
+                                            {
+                                                var counts false
+                                                if (*of_ptr).equals(f) = false
+                                                {
+                                                    if this.use_vis_origin_is_prelude(*op_ptr, *of_ptr) = false
+                                                    {
+                                                        if this.use_vis_file_glob_supplies(f, name, *op_ptr)
+                                                            set counts: true
+                                                    }
+                                                }
+                                                if counts
+                                                {
+                                                    var have false
+                                                    var oi: size_t 0
+                                                    while oi < origins.length
+                                                    {
+                                                        let ep origins.get oi
+                                                        if ep <> null
+                                                        {
+                                                            if ep.equals(*op_ptr)
+                                                                set have: true
+                                                        }
+                                                        set oi: oi + 1
+                                                    }
+                                                    if have = false
+                                                    {
+                                                        let og_copy String((*op_ptr))
+                                                        origins.add og_copy
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                                set cj: cj + 1
+                            }
+                            if origins.length >= 2
+                            {
+                                var sb StringBuilder()
+                                sb.append "ambiguous glob import in "
+                                sb.append f
+                                sb.append ": "
+                                sb.append name
+                                sb.append " is supplied by "
+                                sb.append(Planner.size_to_string(origins.length))
+                                sb.append " globbed modules ("
+                                var mi: size_t 0
+                                while mi < origins.length
+                                {
+                                    if mi > 0
+                                        sb.append ", "
+                                    let ep origins.get mi
+                                    if ep <> null
+                                        sb.append((*ep))
+                                    set mi: mi + 1
+                                }
+                                sb.append "); add an explicit use to disambiguate"
+                                ; The message is stored in this.diagnostics
+                                ; beyond this frame, so allocate it on this's
+                                ; region (this function takes no caller page).
+                                let amb_local sb.to_string()
+                                let amb_msg String^this(amb_local)
+                                this.add_diagnostic(Span(0 as size_t, 0 as size_t), amb_msg)
+                            }
+                        }
+                    }
+                }
+                set ci: ci + 1
+            }
+        }
+
         ; Look up a previously loaded package in the cache.
         function lookup_loaded_package(this: Planner, name: String) returns ref[Module]?
         {
@@ -22197,6 +22428,11 @@ define Planner
 
             let planned_main this.plan_module(prog.module_)
             let planned_stmts this.plan_statements(prog.statements)
+
+            ; Hard-fail on any glob import collision (two `use a.*`/`use b.*`
+            ; supplying the same concept name into one file). Registration
+            ; and the use tables are complete by here.
+            this.check_glob_ambiguities()
 
             ; Escape checker (RBMM blocker C), Vector 3: pass-to-storing-callee.
             ; Runs once instantiated_functions is fully populated; appends a

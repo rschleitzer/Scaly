@@ -1,30 +1,24 @@
 package scaly 0.1.0
 
+; The token literal payload IS Syntax's Literal union — a single shared
+; definition, not a mirror copy. Historically lexer declared its own
+; byte-identical Literal family and the parser type-punned the two under
+; last-write-wins glob resolution; unifying on Syntax.Literal removes that
+; duplication (and the only cross-module glob-name collision) while keeping
+; the invariant "the token literal and the AST literal are the same shape"
+; true by construction. Syntax is declared before lexer and does not depend
+; on it, so this import introduces no cycle.
+use scalyc.compiler.Syntax.Literal
+use scalyc.compiler.Syntax.StringLiteral
+use scalyc.compiler.Syntax.CharacterLiteral
+use scalyc.compiler.Syntax.FragmentLiteral
+use scalyc.compiler.Syntax.IntegerLiteral
+use scalyc.compiler.Syntax.BooleanLiteral
+use scalyc.compiler.Syntax.FloatingPointLiteral
+use scalyc.compiler.Syntax.HexLiteral
+
 define lexer
 {
-    ; Literal types
-    define StringLiteral(value: String)
-    define CharacterLiteral(value: String)
-    define FragmentLiteral(value: String)
-    define IntegerLiteral(value: String)
-    define BooleanLiteral(value: bool)
-    define FloatingPointLiteral(value: String)
-    define HexLiteral(value: String)
-
-    ; NOTE: Variant order must match Syntax.scaly's Literal union because
-    ; LiteralSyntax stores this union by value; tag values are compared
-    ; across modules. The parser extracts lexer's Literal from LiteralToken
-    ; and stores it into Syntax.LiteralSyntax.literal.
-    define Literal union (
-        String: StringLiteral,
-        Character: CharacterLiteral,
-        Fragment: FragmentLiteral,
-        Integer: IntegerLiteral,
-        Boolean: BooleanLiteral,
-        FloatingPoint: FloatingPointLiteral,
-        Hex: HexLiteral
-    )
-
     ; Token types
     define EmptyToken()
     define InvalidToken()

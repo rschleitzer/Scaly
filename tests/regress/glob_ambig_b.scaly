@@ -1,0 +1,8 @@
+; Sidecar for the glob-ambiguity tests — a SECOND module defining the same
+; concept name `Widget` (field `y`), so a file globbing both a and b sees
+; an ambiguous `Widget`. Prints PASS when run standalone.
+; Expected: PASS
+
+define Widget(y: int)
+
+print("PASS")
