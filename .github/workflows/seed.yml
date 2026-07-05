@@ -1,11 +1,14 @@
 name: seed
 
-# Mint + fixed-point-verify the seed NATIVELY on each of the "fabulous four"
-# LP64 targets. The committed seed .ll is target-neutral (no triple/datalayout,
+# Mint + fixed-point-verify the seed NATIVELY on the "fabulous four" LP64
+# targets. The committed seed .ll is target-neutral (no triple/datalayout,
 # LP64 sizes baked in), so one seed serves all four — but the toolchain is
 # host-only for LINKING + RUNNING, so each target must build + run it natively.
-# This matrix is that native verification (arm64-mac is the dev box; the other
-# three are proven here). tools/seed.sh auto-bootstraps stage-2 from the
+# This matrix is that native verification on THREE of the four: x86_64-linux,
+# aarch64-linux, and arm64-apple-darwin (the dev box). x86_64-apple-darwin is
+# omitted (scarce/expensive Intel runners — see the matrix note below); its
+# OBJECT emission is still covered by tests/target/run.sh cross-emit in every
+# leg. tools/seed.sh auto-bootstraps stage-2 from the
 # committed seed (no C++, no cmake, no openjade — LLVM 18 + clang only), emits
 # the seed, links it clean, runs hello + the AOT corpus, checks byte-identical
 # self-reproduction, and builds + smoke-tests the scalyls language server.
@@ -29,10 +32,16 @@ jobs:
             os: ubuntu-latest
           - name: aarch64-linux-gnu
             os: ubuntu-24.04-arm
-          - name: x86_64-apple-darwin
-            os: macos-13
           - name: arm64-apple-darwin
             os: macos-14
+          # x86_64-apple-darwin is intentionally omitted: GitHub-hosted Intel
+          # (macos-13) runners are scarce (queues of 1h+) and cost 10x on a
+          # private repo, for the lowest marginal coverage — x86_64 codegen is
+          # verified natively on x86_64-linux, the macOS ABI on arm64-apple-
+          # darwin, and x86_64-darwin OBJECT emission by tests/target/run.sh
+          # (cross-emit) in every leg. Run it on demand with `--target
+          # x86_64-apple-darwin` on any host, or add it back here if an Intel
+          # runner becomes reliably available.
     steps:
       - uses: actions/checkout@v4
 
