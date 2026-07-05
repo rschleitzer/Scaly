@@ -1,0 +1,22 @@
+; ESCAPE (negative, CLOSURE store): a closure bound to a local lives on the
+; stack frame (its env record is entry_alloca'd). Storing it into a field of
+; the receiver `this` — which points at the CALLER's object, memory that
+; outlives this frame — is a use-after-free once `stash` returns. Must be
+; REJECTED ("escapes"). The working alternative is to return the lambda
+; directly (return \x: ...) so it is allocated on the caller's region.
+; Self-hosted-only (closures/delegates never parse in the retired C++ stage-0).
+define IntFn delegate(int) returns int
+
+define Holder
+(
+    fn: IntFn
+)
+
+procedure stash(this: Holder)
+{
+    let g: IntFn \x: x + 1
+    set this.fn: g
+}
+
+function main() returns int
+    0

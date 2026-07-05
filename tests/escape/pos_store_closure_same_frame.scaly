@@ -1,0 +1,22 @@
+; OK (positive control, CLOSURE store): storing a stack closure into a
+; SAME-FRAME local struct's field is fine — the struct (`h`) and the closure
+; record die together at function exit; nothing escapes. Must COMPILE (no false
+; positive — `h` is a local var, NOT a parameter, so its `.field` is frame-local
+; and its stored closure never outlives the frame). Self-hosted-only.
+define IntFn delegate(int) returns int
+
+define Holder
+(
+    fn: IntFn
+)
+
+function build() returns int
+{
+    let g: IntFn \x: x + 1
+    var h Holder(g)
+    set h.fn: g
+    0
+}
+
+function main() returns int
+    build()

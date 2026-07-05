@@ -15732,6 +15732,24 @@ define Planner
                     }
                 }
 
+            ; STORE vector, CLOSURE variant: a closure bound to a local lives on
+            ; the stack frame (its env record is entry_alloca'd). Storing it into
+            ; FRAME-EXTERNAL memory (a parameter/receiver's field, a module global,
+            ; or through a pointer deref) is a use-after-free once the frame exits.
+            ; is_reference_to_local_page / region_of_operand can't see it — a
+            ; closure is delegate-typed, not pointer/ref — so it's tracked
+            ; separately via local_closure_names (live during this function's
+            ; planning). No promotion path exists (unlike the this.field ref case):
+            ; the only escaping-closure form is `return \x: ...` (Call life), so
+            ; this is a hard error. Vector 3 (pass-to-storing-callee) is NOT
+            ; extended to closures — the interprocedural post-pass runs after
+            ; local_closure_names is truncated, so it can't see per-function
+            ; closure-locality without recording it into the escape summary.
+            if a.target.length > 0
+                if this.operand_is_stack_closure(planned_source_collapsed)
+                    if this.target_is_frame_external(planned_target_collapsed)
+                        this.add_diagnostic(action_loc, "a closure bound to a local lives on the stack frame and escapes via store into memory that outlives this frame - return the lambda directly (return \\x: ...) instead of binding it to a local first")
+
             ; STORE vector (page inference, VALUE variant): a fresh page-owning
             ; VALUE stored into an escaping (returned) local must be promoted to
             ; the caller page (Call/rp) — the local is returned by value, so its
@@ -16176,6 +16194,62 @@ define Planner
         ; NEUTRAL: region_of_operand(op) < required_region_for_escape() is
         ; exactly today's is_reference_to_local_page(op.result_type) (rank Local
         ; iff a frame pointee, else Caller; Caller < Static unused yet).
+        ; operand_is_stack_closure: true when `op` is a bare read (no member-
+        ; access hop) of a local bound to a stack (Lifetime.Local) closure —
+        ; recorded in local_closure_names at plan_binding#. A member hop
+        ; (`clo.field`) is a read THROUGH the closure, not the closure value, so
+        ; it does not qualify. Used by the CLOSURE store-escape check.
+        function operand_is_stack_closure(this: Planner, op: PlannedOperand) returns bool
+        {
+            if op.member_access <> null
+            {
+                let ma (*op.member_access)
+                if ma.length > (0 as size_t)
+                    return false
+            }
+            choose op.expr
+                when v: Variable
+                    return this.array_contains_name(local_closure_names, v.name)
+                else
+                    return false
+            false
+        }
+
+        ; target_is_frame_external: true when a store TARGET writes into memory
+        ; that outlives this frame — a parameter/receiver's field
+        ; (`this.field`/`param.field`, base binding is_parameter), a module
+        ; global (GlobalRef), or through a pointer deref (Call). A same-frame
+        ; local's field (base var/let) dies with the frame → false. Mirrors the
+        ; inline frame-external detection in the ref STORE vector above.
+        function target_is_frame_external(this: Planner, target: PlannedOperand) returns bool
+        {
+            var has_member false
+            if target.member_access <> null
+            {
+                let ma (*target.member_access)
+                if ma.length > (0 as size_t)
+                    set has_member: true
+            }
+            choose target.expr
+                when v: Variable
+                {
+                    if has_member
+                    {
+                        let lb this.lookup_local_binding(v.name)
+                        if lb <> null
+                            if lb.is_parameter
+                                return true
+                    }
+                }
+                when g: GlobalRef
+                    return true
+                when c: Call
+                    return true
+                else
+                    0
+            false
+        }
+
         function region_of_operand(this: Planner, op: PlannedOperand) returns size_t
         {
             ; A box (`&^obj v`) places a COPY of the value on obj's page. For the
