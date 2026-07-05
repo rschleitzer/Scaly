@@ -6575,9 +6575,19 @@ define Emitter
                 set is_logical: true
             if call.name.equals("&&")
                 set is_logical: true
+            ; `or`/`and` are word-operator synonyms for `||`/`&&` and take
+            ; the identical short-circuit path (Scaly semantics).
+            if call.name.equals("or")
+                set is_logical: true
+            if call.name.equals("and")
+                set is_logical: true
             if is_logical
             {
-                let is_or call.name.equals("||")
+                var is_or: bool false
+                if call.name.equals("||")
+                    set is_or: true
+                if call.name.equals("or")
+                    set is_or: true
                 var lc emit_operand(left_arg.unwrap())
                 let i1_ty LLVMInt1TypeInContext(context)
                 ; If the LHS operand can't be emitted (the same pre-existing
@@ -6688,8 +6698,10 @@ define Emitter
             return LLVMBuildSelect(builder, isneg, neg, op, "abs")
         }
 
-        ; Logical not
+        ; Logical not (`!` and its word synonym `not`)
         if op_name.equals("!")
+            return LLVMBuildNot(builder, op, "not")
+        if op_name.equals("not")
             return LLVMBuildNot(builder, op, "not")
 
         ; Bitwise not
@@ -6963,6 +6975,13 @@ define Emitter
 
         ; Logical OR (on i1 booleans).
         if op_name.equals("||")
+            return LLVMBuildOr(builder, l, r, "lor")
+
+        ; Word-operator synonyms `and`/`or` — reached only if a logical op
+        ; ever bypasses emit_operand's short-circuit path; lower like &&/||.
+        if op_name.equals("and")
+            return LLVMBuildAnd(builder, l, r, "land")
+        if op_name.equals("or")
             return LLVMBuildOr(builder, l, r, "lor")
 
         ; Bitwise AND

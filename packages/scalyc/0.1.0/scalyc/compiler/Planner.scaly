@@ -9375,6 +9375,11 @@ define Planner
                             set combined_type: Planner.make_bool_type()
                         if op_name.equals("||")
                             set combined_type: Planner.make_bool_type()
+                        ; Word-operator synonyms for &&/|| — also yield bool.
+                        if op_name.equals("and")
+                            set combined_type: Planner.make_bool_type()
+                        if op_name.equals("or")
+                            set combined_type: Planner.make_bool_type()
 
                         ; s101: built-in arithmetic / bitwise operators on
                         ; primitive integer types return the left operand's
@@ -23113,9 +23118,15 @@ define Planner
             return "ge"
         if name.equals("&&")
             return "aa"
+        if name.equals("and")
+            return "aa"
         if name.equals("||")
             return "oo"
+        if name.equals("or")
+            return "oo"
         if name.equals("!")
+            return "nt"
+        if name.equals("not")
             return "nt"
         if name.equals("&")
             return "an"
@@ -25451,6 +25462,10 @@ define Planner
 
         if name.equals("abs")
             return true
+        ; `not` is the alphabetically-spelled prefix synonym for `!`
+        ; (like `abs`) — recognised here so the prefix path fires.
+        if name.equals("not")
+            return true
 
         let first name.get 0
         if first = ("+" as u8)
@@ -25494,7 +25509,11 @@ define Planner
     {
         if name.equals("||")
             return 1
+        if name.equals("or")
+            return 1
         if name.equals("&&")
+            return 2
+        if name.equals("and")
             return 2
         if name.equals("|")
             return 3
@@ -27167,7 +27186,11 @@ define Planner
     {
         if op.equals("||")
             return 1
+        if op.equals("or")
+            return 1
         if op.equals("&&")
+            return 2
+        if op.equals("and")
             return 2
         if op.equals("|")
             return 3
