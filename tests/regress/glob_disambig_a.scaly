@@ -1,0 +1,9 @@
+; Sidecar for glob_disambig_field.scaly: a Widget whose `x` field is at
+; index 1 (behind `tag`), so a correct explicit-use disambiguation to THIS
+; module yields w.x=7, while the old field-0 leniency would wrongly yield the
+; `tag` (=10). Prints PASS when run standalone (module load ignores it).
+; Expected: PASS
+
+define Widget(tag: int, x: int)
+
+print("PASS")

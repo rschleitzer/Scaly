@@ -1,0 +1,7 @@
+; Sidecar for glob_disambig_field.scaly: a SECOND module defining Widget with
+; a single field, so globbing both a and b makes `Widget` ambiguous.
+; Expected: PASS
+
+define Widget(x: int)
+
+print("PASS")

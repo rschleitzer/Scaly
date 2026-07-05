@@ -527,6 +527,37 @@ define Planner
         use_vis_enforce: bool
         use_vis_verdict_file: Array[String]
         use_vis_verdict_ok: Array[size_t]
+
+        ; Membership set of names registered by ≥2 concepts from DIFFERENT
+        ; origin files — the glob-type-disambiguation fast path. Maintained
+        ; incrementally in register_concept (a cross-origin duplicate is the
+        ; only case an explicit `use ns.Name` can change resolution). O(1)
+        ; hashed (same ConceptIndex as concept_index) so lookup_concept's hot
+        ; path pays only one hash probe per call; the explicit-use scan runs
+        ; ONLY for the few genuinely cross-origin-duplicated names. The
+        ; compiler shares several such names (Model/Plan/Syntax Call, Type,
+        ; Lifetime, Span, …) but explicitly uses none of them.
+        ambiguous_index: ConceptIndex
+
+        ; Cache of the current file's EXPLICIT (non-glob) use names. `file` is
+        ; set once (init) and never changes, so this stays valid; rebuilt only
+        ; when use_vis_files grows. Turns the per-call explicit-use test (for
+        ; the cross-origin-duplicated names that pass ambiguous_index) from an
+        ; O(all-use-clauses) linear scan into an O(this-file's-explicit-uses)
+        ; one. Rebuilt INLINE (a nested procedure call did not persist the
+        ; mutation; inline mutation from a function does — cf. use_vis_check's
+        ; verdict memo).
+        file_explicit_names: Array[String]
+
+        ; TRUE iff some name is BOTH cross-origin-ambiguous AND explicitly
+        ; used in the main file — the only situation where glob-type-
+        ; disambiguation changes a result. Set once during registration (both
+        ; add-sites), so lookup_concept's hot path pays just a single bool read
+        ; and skips the disambiguation entirely otherwise. FALSE for the
+        ; compiler's own source (its cross-origin names — Model/Plan/Syntax
+        ; Call/Type/… — are never explicitly used), so the self-compile hot
+        ; path is unchanged.
+        disambiguation_active: bool
     )
     {
         init(filename: String)
@@ -591,6 +622,9 @@ define Planner
             set transitive_page_built: false
             set concept_origin_files: Array[String]^this()
             set concept_origin_paths: Array[String]^this()
+            set ambiguous_index: ConceptIndex.create(4096 as size_t)
+            set file_explicit_names: Array[String]^this()
+            set disambiguation_active: false
             set registering_file: String^this("")
             set registering_path: String^this("")
             set use_vis_files: Array[String]^this()
@@ -775,6 +809,26 @@ define Planner
                         if prev_op <> null
                             set origin_path: String^this((*prev_op))
                     }
+                    else
+                    {
+                        ; A same-named concept already exists from a DIFFERENT
+                        ; origin file — this name is glob-ambiguous. Record it
+                        ; so lookup_concept knows to honour an explicit
+                        ; `use ns.Name` here. Same-file re-registration (the
+                        ; namespace+struct s95 pair, or re-walks) takes the
+                        ; branch above and is NOT recorded. Empty origin files
+                        ; (unknown origin) are left lenient. insert overwrites,
+                        ; so it is naturally idempotent (membership only).
+                        if registering_file.get_length() > 0
+                            if prev_of.get_length() > 0
+                            {
+                                ambiguous_index.insert(c.name, 1 as size_t)
+                                ; If the main file also explicitly uses this
+                                ; now-ambiguous name, disambiguation matters.
+                                if this.array_contains_name(file_explicit_names, c.name)
+                                    set disambiguation_active: true
+                            }
+                    }
                 }
             }
             concepts.add(KeyValuePair[String, Concept](c.name, c))
@@ -820,6 +874,38 @@ define Planner
                     ; is NOT FOUND here (memoized check).
                     if use_vis_enforce
                     {
+                        ; Glob-type-disambiguation: an explicit `use ns.Name`
+                        ; names the winner among same-named concepts (explicit
+                        ; > glob). concept_index is last-write-wins, so when a
+                        ; glob also pulls a DIFFERENT-origin same-named concept
+                        ; that registered later, the last entry may be the
+                        ; wrong one. If this file explicitly uses `name` and the
+                        ; last-registered entry does NOT match that explicit
+                        ; use, return the same-named entry whose origin DOES.
+                        ; Three cheap gates, cheapest first: (1) the
+                        ; disambiguation_active bool (FALSE for the compiler's
+                        ; own source → hot path is one bool read); (2) O(1)
+                        ; ambiguous_index membership; (3) the cached per-file
+                        ; explicit-use list. Only when all three hold does the
+                        ; backward origin-matching scan run — the genuine
+                        ; ambiguity case. Single-concept / explicit-matches-
+                        ; last / no-explicit lookups keep the same result.
+                        if disambiguation_active
+                        if ambiguous_index.lookup(name) >= 0
+                        if this.file_has_explicit_cached(name)
+                        {
+                            var last_matches: bool false
+                            let last_op concept_origin_paths.get(idx as size_t)
+                            if last_op <> null
+                                if this.origin_matches_explicit_use(name, *last_op)
+                                    set last_matches: true
+                            if last_matches = false
+                            {
+                                let dis this.lookup_concept_explicit_scan(name)
+                                if dis <> null
+                                    return dis
+                            }
+                        }
                         if this.use_vis_check(name, idx as size_t) = false
                             return null
                     }
@@ -1308,6 +1394,21 @@ define Planner
                             use_vis_names.add vis_name
                             let vis_path this.dotted_use_prefix(path)
                             use_vis_paths.add vis_path
+                            ; Feed lookup_concept's fast explicit-use cache:
+                            ; only the MAIN file's EXPLICIT (non-glob) use
+                            ; names. Populated here (persisting context) and
+                            ; read-only in lookup_concept.
+                            if m.file.equals(file)
+                                if (*last_ptr).equals("*") = false
+                                {
+                                    file_explicit_names.add(String^this((*last_ptr)))
+                                    ; If this explicitly-used name is already
+                                    ; cross-origin-ambiguous, disambiguation
+                                    ; matters (covers explicit-use-recorded-
+                                    ; after the ambiguity).
+                                    if ambiguous_index.lookup((*last_ptr)) >= 0
+                                        set disambiguation_active: true
+                                }
                         }
                     }
                 }
@@ -1665,6 +1766,67 @@ define Planner
                 set i: i + 1
             }
             false
+        }
+
+        ; file_has_explicit_cached: O(this-file's-explicit-uses) replacement
+        ; for use_vis_file_has_explicit(file, name) on lookup_concept's hot
+        ; path. A PURE READ — the list is populated incrementally in
+        ; record_module_uses (a persisting context; lookup_concept's `this` is
+        ; effectively a copy so a mutation THERE is lost). `file` is fixed
+        ; after init, so the cached list covers the whole compile.
+        function file_has_explicit_cached(this: Planner, name: String) returns bool
+            this.array_contains_name(file_explicit_names, name)
+
+        ; origin_matches_explicit_use: does some EXPLICIT (non-"*") use clause
+        ; `use P.name` in the CURRENT file name an origin matching origin_path?
+        ; Reuses use_vis_target_match (origin = P, or P.name — the module-named-
+        ; after-concept idiom). Drives glob-type-disambiguation in lookup_concept.
+        function origin_matches_explicit_use(this: Planner, name: String, origin_path: String) returns bool
+        {
+            var i: size_t 0
+            while i < use_vis_files.length
+            {
+                let uf use_vis_files.get i
+                let un use_vis_names.get i
+                let up use_vis_paths.get i
+                if uf <> null
+                    if un <> null
+                        if up <> null
+                            if uf.equals(file)
+                                if un.equals(name)
+                                    if this.use_vis_target_match(origin_path, *up, name)
+                                        return true
+                set i: i + 1
+            }
+            false
+        }
+
+        ; lookup_concept_explicit_scan: scan `concepts` BACKWARD for a same-named
+        ; entry whose ORIGIN matches an explicit use clause for `name` in the
+        ; current file. Backward so the s95 same-file namespace+struct pair still
+        ; yields the later Structure entry (both share the file's origin, so both
+        ; match; the last one wins). Only called from lookup_concept when the
+        ; last-write-wins entry does NOT match the explicit use — the genuine
+        ; glob-ambiguity case (`use a.Widget` while a glob also pulls b.Widget).
+        function lookup_concept_explicit_scan(this: Planner, name: String) returns ref[Concept]?
+        {
+            if concepts.length = 0
+                return null
+            var i: size_t concepts.length
+            while i > 0
+            {
+                set i: i - 1
+                let kvp_ptr concepts.get i
+                if kvp_ptr <> null
+                    if kvp_ptr.key.equals(name)
+                    {
+                        let op_ptr concept_origin_paths.get i
+                        if op_ptr <> null
+                            if this.origin_matches_explicit_use(name, *op_ptr)
+                                return &kvp_ptr.value
+                    }
+            }
+            null
         }
 
         ; use_vis_file_glob_supplies: does a glob clause in `f` import the

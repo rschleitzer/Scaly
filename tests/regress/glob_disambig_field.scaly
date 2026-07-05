@@ -1,0 +1,19 @@
+; Glob-type-disambiguation: an explicit `use ns.Name` steers TYPE resolution
+; (construction + member access), not just visibility, to the named module's
+; concept — beating the last-write-wins glob registration. Both modules define
+; `Widget`; mod_a's `x` is at field index 1. Correct disambiguation resolves
+; Widget(10, 7) and w.x to mod_a (=> 7); the pre-fix field-0 leniency would
+; read field 0 (=> 10). Discriminating layout so the assertion is meaningful.
+; Expected: PASS
+
+module glob_disambig_a
+module glob_disambig_b
+use glob_disambig_field.glob_disambig_a.*
+use glob_disambig_field.glob_disambig_b.*
+use glob_disambig_field.glob_disambig_a.Widget
+
+let w Widget(10, 7)
+if w.x = 7
+    print("PASS")
+else
+    print("FAIL")
