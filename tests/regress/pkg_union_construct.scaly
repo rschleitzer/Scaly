@@ -1,0 +1,71 @@
+; Cross-package generic-union construction + match. A generic union defined
+; in a DEPENDENCY package (the scaly stdlib: Option[T], Result[T,E]) must be
+; explicitly constructible (Option[int].Some(7)) and matchable (choose/when)
+; from another package. The union is never reached by the compilation root's
+; module walk, so its tagged layout {i8 tag, [maxpayload x i8]} must be laid
+; out on demand (ensure_union_layout#) at BOTH the construction site and the
+; choose scrutinee. Before the fix, emit_variant_construction missed the
+; struct cache and silently returned null (the whole binding dropped, main
+; body emitted `ret i64 0`), and choose over such a union GEP'd off the s114
+; { ptr } placeholder — so the value came back as 0. An identical in-file
+; union works, which is why this needs a self-hosted-only regression.
+; Expected: PASS
+
+package scaly 0.1.0
+
+function opt_some() returns int
+{
+    let x Option[int].Some(7)
+    choose x
+        when v: Some
+            return v
+        else
+            return 0
+}
+
+function opt_none() returns int
+{
+    let x Option[int].None
+    choose x
+        when v: Some
+            return v
+        else
+            return 3
+}
+
+function res_ok() returns int
+{
+    let x Result[int, bool].Ok(11)
+    choose x
+        when v: Ok
+            return v
+        else
+            return 0
+}
+
+function res_error() returns int
+{
+    let x Result[int, int].Error(5)
+    choose x
+        when v: Ok
+            return v
+        when e: Error
+            return e + 4
+        else
+            return 0
+}
+
+var ok true
+if opt_some() <> 7
+    set ok: false
+if opt_none() <> 3
+    set ok: false
+if res_ok() <> 11
+    set ok: false
+if res_error() <> 9
+    set ok: false
+
+if ok
+    print("PASS")
+else
+    print("FAIL")

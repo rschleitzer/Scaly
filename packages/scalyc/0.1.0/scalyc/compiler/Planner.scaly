@@ -6588,6 +6588,15 @@ define Planner
 
                         if is_variant_ctor
                         {
+                            ; A CROSS-PACKAGE generic union constructed here
+                            ; (Option[int].Some(7), Result[int,bool].Ok(x))
+                            ; is never reached by the module walk that lays
+                            ; out in-package unions, so lay it out on demand —
+                            ; otherwise emit_variant_construction misses the
+                            ; struct cache and silently returns null, dropping
+                            ; the whole binding. No-op for in-package unions
+                            ; (already instantiated) and opaque stdlib types.
+                            this.ensure_union_layout(ctor_union_type.name)
                             ; Build a PlannedVariantConstruction. The
                             ; tuple's first component carries the payload
                             ; for variants like Some(int); empty `()`
@@ -21319,13 +21328,26 @@ define Planner
             if concept_ref = null
                 return
             let c (*concept_ref)
-            if c.parameters.length > 0
-                return
             choose c.definition
                 when u: scalyc.compiler.Model.Union
                 {
                     instantiating_structures.add m_check
+                    ; A GENERIC cross-package union (Option[X], Result[X,Y],
+                    ; a user generic union) is laid out under its BARE name —
+                    ; the parameter-free tagged layout {i8 tag, [maxpayload x
+                    ; i8]} the emitter uses for every instantiation, identical
+                    ; to what the module walk produces for an in-package
+                    ; generic union. Ambient substitutions are cleared so a
+                    ; generic param bound higher on the stack never leaks a
+                    ; monomorphised suffix (_Z6OptionIiE) into the mangled
+                    ; name — map_type looks the union up by its bare mangle.
+                    ; Non-generic unions have no params, so the clear is inert
+                    ; for them. Structs (Vector/Array/HashMap machinery) never
+                    ; reach this arm — they are handled by instantiate_generic#.
+                    let saved_subst_len type_substitutions.length
+                    set type_substitutions.length: 0
                     let pl this.plan_union_opt^this(u, name, false)
+                    set type_substitutions.length: saved_subst_len
                     if instantiating_structures.length > 0
                         set instantiating_structures.length: instantiating_structures.length - 1
                     ; Recurse into BY-VALUE variant payload types so the union
