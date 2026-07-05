@@ -633,8 +633,6 @@ define cli
         ; user .o's also emit those — `ld` then fails with duplicate
         ; symbols on every AOT test that pulls libscaly.o in for
         ; the runtime (s111).
-        cmd_builder.append " "
-        cmd_builder.append(runtime_archive_path())
 
         ; Forward extra positional .a / .o inputs from the user
         ; (e.g. /tmp/libscalyc.a for stage-1 self-build). Required
@@ -651,6 +649,16 @@ define cli
             }
             set ei: ei + 1
         }
+
+        ; Runtime archive AFTER the user's extra objects: a left-to-right
+        ; linker (GNU BFD/lld on Linux) pulls an archive member only to
+        ; satisfy symbols undefined SO FAR. main.o references only the
+        ; scalyc package (cli.main) — no runtime symbol directly — so the
+        ; runtime archive must follow the package archive (libscalyc*.a),
+        ; whose members reference get/Page::allocate/String. macOS ld64 is
+        ; order-insensitive, so this reorder is a no-op there (fixpoint-safe).
+        cmd_builder.append " "
+        cmd_builder.append(runtime_archive_path())
 
         ; Forward -L<path> entries.
         var li: size_t 0

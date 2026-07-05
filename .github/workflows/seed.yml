@@ -46,6 +46,12 @@ jobs:
           # libLLVM-18.so lives under the versioned prefix; put it on the loader
           # path so the freshly-linked scalyc_seed can start.
           echo "LD_LIBRARY_PATH=$(llvm-config-18 --libdir)" >> "$GITHUB_ENV"
+          # Make lld the default linker: stock GNU BFD ld fails to link
+          # libLLVM-18 ("failed to set dynamic section sizes"), and the
+          # compiler's own -o bootstrap link (cli.run) invokes plain `clang`
+          # (default ld) — so `ld` itself must be lld, not just seed.sh's links.
+          sudo update-alternatives --install /usr/bin/ld ld \
+            "$(command -v ld.lld-18 || command -v ld.lld)" 100
 
       - name: Install deps (macOS)
         if: runner.os == 'macOS'
