@@ -1,0 +1,24 @@
+; xfail: unexpected operand
+;
+; Missing-separator mis-parse: `if x g()` (intent: `if x` then `g()`) parses as
+; a greedy condition operand list `x g()`, with the newline as the if/consequent
+; separator — so `return 0` below is stolen as the consequent and the intended
+; `g()` is folded into the condition. `x` is a bare non-callable value, so the
+; trailing operand `g` cannot attach; collapse_operand_sequence# used to silently
+; drop it (the whole `if` degenerated to nothing). It now reports "unexpected
+; operand - missing operator, or a ':'/newline separator before this statement".
+; The fix is narrow — only a bare non-callable value (not a method chain, not a
+; delegate) followed by a non-operator triggers it, so valid parenless calls
+; (`recv.method arg`, `g arg` for a delegate) and infix operators (incl. name
+; operators like `mod` and word operators `and`/`or`) are unaffected.
+; Self-hosted-only.
+
+function g() returns int
+    3
+
+function main() returns int
+{
+    let x true
+    if x g()
+    return 0
+}

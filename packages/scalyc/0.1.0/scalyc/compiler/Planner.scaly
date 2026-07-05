@@ -8917,6 +8917,63 @@ define Planner
                     continue
                 }
 
+                ; Orphan value operand (missing operator / separator). `op` is a
+                ; plain VALUE (not a PlannedType, so not an operator) sitting
+                ; where a binary operator is expected, AND `result` so far is a
+                ; bare NON-CALLABLE value — a plain local/constant with no method
+                ; member-access chain and a non-delegate type. Nothing joins the
+                ; two. This is the missing-separator mis-parse `if x g()`: the
+                ; condition greedily grabs `x g()`, but `x` (a bare bool) is not
+                ; callable, so the trailing call cannot attach and was silently
+                ; dropped (the whole `if` degenerated + the next statement was
+                ; stolen as the consequent). The gate is deliberately narrow so
+                ; a VALID parenless call — `recv.method arg` (result carries a
+                ; method chain) or `g arg` where g is delegate-typed — is not
+                ; flagged; those attach `op` downstream. Reports instead of
+                ; abandoning `op`.
+                var op_is_operator: bool false
+                choose op.expr
+                    when opvty: PlannedType
+                    {
+                        ; An operator here is recognised the same way the binary
+                        ; loop recognises one: a symbolic operator name
+                        ; (is_operator_name, char-based), a user-declared
+                        ; operator (is_operator, registry — name-operators like
+                        ; `mod`/`div`), or a word operator with precedence
+                        ; (`and`/`or`, get_operator_precedence > 0). Missing any
+                        ; of these mis-flags valid infix uses as orphans.
+                        if Planner.is_operator_name(opvty.name)
+                            set op_is_operator: true
+                        if this.is_operator(opvty.name)
+                            set op_is_operator: true
+                        if Planner.get_operator_precedence(opvty.name) > 0
+                            set op_is_operator: true
+                    }
+                    else
+                        0
+                if op_is_operator = false
+                {
+                    var result_is_bare_noncallable: bool false
+                    if result.member_access = null
+                    {
+                        choose result.expr
+                            when rv: Variable
+                                set result_is_bare_noncallable: true
+                            when rc: scalyc.compiler.Plan.PlannedConstant
+                                set result_is_bare_noncallable: true
+                            else
+                                0
+                    }
+                    if result_is_bare_noncallable
+                        if this.is_delegate_type(result.result_type.name)
+                            set result_is_bare_noncallable: false
+                    if result_is_bare_noncallable
+                    {
+                        this.add_diagnostic(op.loc, "unexpected operand - missing operator, or a ':'/newline separator before this statement")
+                        return result
+                    }
+                }
+
                 ; Binary operator: op followed by rhs.
                 ; if runs the break when the condition is TRUE (Scaly
                 ; semantics, NOT Swift-inverted). Bail out when no rhs is
