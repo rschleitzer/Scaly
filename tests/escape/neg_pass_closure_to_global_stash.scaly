@@ -1,0 +1,23 @@
+; ESCAPE (negative, CLOSURE Vector-3 / pass-to-storing-callee): a closure
+; bound to a local lives on the stack frame. Passing it to a callee that
+; STASHES its delegate parameter into memory outliving this frame — here a
+; module global — makes the stack record dangle once `main` returns; a later
+; call through `saved_fn` reads freed memory. Must be REJECTED ("escapes via
+; call"). The interprocedural summary records that `stash_global` stores param
+; `f` into a global (dest_kind global -> always outlives); the call check flags
+; passing the STACK closure `g` to it. Self-hosted-only.
+define IntFn delegate(int) returns int
+
+mutable saved_fn: IntFn null
+
+procedure stash_global(f: IntFn)
+{
+    set saved_fn: f
+}
+
+function main() returns int
+{
+    let g: IntFn \x: x + 1
+    stash_global(g)
+    0
+}

@@ -436,6 +436,15 @@ define Planner
         escape_found: bool
         escape_fn_index: size_t
 
+        ; CLOSURE Vector-3 support: names bound to a stack (Lifetime.Local)
+        ; closure in the function CURRENTLY being walked by the escape
+        ; post-pass. Rebuilt from the Plan tree (each function's PlannedBinding
+        ; whose init is a Local Closure) at every escape_walk_function_body
+        ; entry — NOT from the plan-time local_closure_names, which is
+        ; truncated per function and stale by post-pass time. Lets the call
+        ; check flag a stack closure passed to a storing callee.
+        current_fn_closure_names: Array[String]
+
         ; Transitive page-need set (interprocedural escape forwarding). Names
         ; of functions that need the caller's page ONLY because their body
         ; forwards rp to a sibling that needs one (the escape-machinery
@@ -618,6 +627,7 @@ define Planner
             set escape_checking: false
             set escape_found: false
             set escape_fn_index: 0
+            set current_fn_closure_names: Array[String]^this()
             set transitive_page_names: Array[String]^this()
             set transitive_page_built: false
             set concept_origin_files: Array[String]^this()
@@ -16712,6 +16722,54 @@ define Planner
             false
         }
 
+        ; binding_inits_stack_closure: true when a PlannedBinding's initializer
+        ; is a stack (Lifetime.Local) closure — i.e. `let g: Cb \x: …` whose
+        ; make_closure# stamped Local (env on the frame). Read structurally from
+        ; the Plan tree so the escape post-pass needs no plan-time state.
+        function binding_inits_stack_closure(this: Planner, binding: PlannedBinding) returns bool
+        {
+            if binding.operation = null
+                return false
+            let ops (*binding.operation)
+            if ops.length = 0
+                return false
+            let op0_ptr ops.get 0
+            if op0_ptr = null
+                return false
+            choose (*op0_ptr).expr
+                when clo: Closure
+                {
+                    choose clo.life
+                        when l: Local
+                            return true
+                        else
+                            return false
+                }
+                else
+                    return false
+            false
+        }
+
+        ; arg_is_stack_closure: true when a call ARGUMENT is a bare read (no
+        ; member hop) of a name recorded in current_fn_closure_names — a stack
+        ; closure of the calling function. Passing it to a callee that stores
+        ; its parameter frame-external dangles once this frame exits.
+        function arg_is_stack_closure(this: Planner, arg: PlannedOperand) returns bool
+        {
+            if arg.member_access <> null
+            {
+                let ma (*arg.member_access)
+                if ma.length > (0 as size_t)
+                    return false
+            }
+            choose arg.expr
+                when v: Variable
+                    return this.array_contains_name(current_fn_closure_names, v.name)
+                else
+                    return false
+            false
+        }
+
         ; Pass 0: at a frame-external store of a current-function parameter
         ; reference, record a summary entry. Reuses the Vector-2 store shape
         ; (value = a bare reference-like param; target = param.field / global
@@ -16751,7 +16809,18 @@ define Planner
                     }
                     if val_has_member = false
                     {
+                        ; A stored param is escapable if it is a pointer/ref
+                        ; (Vector-2 shape) OR a delegate (closure value): a
+                        ; callee storing a delegate PARAM frame-external makes
+                        ; whatever closure the caller passes outlive this frame;
+                        ; the call check then flags callers passing a STACK
+                        ; closure (a heap `#` closure / a borrowed param is fine).
+                        var val_is_escapable false
                         if Planner.is_reference_like(val.result_type)
+                            set val_is_escapable: true
+                        if this.is_delegate_type(val.result_type.name)
+                            set val_is_escapable: true
+                        if val_is_escapable
                             set stored_param_index: this.escape_param_index_current(v.name)
                     }
                 }
@@ -16826,7 +16895,19 @@ define Planner
             if arg_ptr = null
                 return
             let arg arg_ptr.unwrap()
+            ; The arg escapes if it is a Local-page ref (Vector-2 shape) OR a
+            ; STACK closure of the calling function (Vector-3 closure variant):
+            ; either way, the callee stashes it into memory that outlives this
+            ; frame. A heap `#` closure / a delegate PARAM arg is not local.
+            var arg_is_closure false
+            if this.arg_is_stack_closure(arg)
+                set arg_is_closure: true
+            var arg_escapes false
             if this.region_of_operand(arg) < Planner.required_region_for_escape()
+                set arg_escapes: true
+            if arg_is_closure
+                set arg_escapes: true
+            if arg_escapes
             {
                 var violates false
                 if rec.dest_kind = 1
@@ -16850,7 +16931,10 @@ define Planner
                     let cur_fn instantiated_functions.get escape_fn_index
                     if cur_fn <> null
                         set this.file: String^this(cur_fn.file)
-                    this.add_diagnostic(call.loc, "reference into a local page escapes via call - the callee stores it into memory that outlives this frame; allocate with '#' (caller page) or '^name' (region)")
+                    if arg_is_closure
+                        this.add_diagnostic(call.loc, "a closure bound to a local lives on the stack frame and escapes via call - the callee stores it into memory that outlives this frame; return the lambda directly (return \\x: ...) instead of binding it to a local first")
+                    else
+                        this.add_diagnostic(call.loc, "reference into a local page escapes via call - the callee stores it into memory that outlives this frame; allocate with '#' (caller page) or '^name' (region)")
                     set escape_found: true
                 }
             }
@@ -17090,7 +17174,15 @@ define Planner
                 when action: Action
                     this.escape_walk_action(action)
                 when binding: Binding
+                {
+                    ; Record a stack (Local) closure binding's name so a later
+                    ; call in this function can flag passing it to a storing
+                    ; callee. Detected structurally from the Plan tree.
+                    if binding.binding_item.name <> null
+                        if this.binding_inits_stack_closure(binding)
+                            current_fn_closure_names.add(String((*binding.binding_item.name)))
                     this.escape_walk_operands(binding.operation)
+                }
                 when ret: Return
                     this.escape_walk_operands(ret.result)
                 when throw_stmt: Throw
@@ -17117,6 +17209,11 @@ define Planner
         ; and feed the whole Action by value to escape_walk_action.
         function escape_walk_function_body(this: Planner, func: PlannedFunction)
         {
+            ; Reset the per-function stack-closure name set; it is repopulated
+            ; in evaluation order as escape_walk_statement encounters each
+            ; Local-closure binding (a binding always precedes any use of its
+            ; name, so a later call passing the closure sees it).
+            set current_fn_closure_names.length: 0
             choose func.impl
                 when action: Action
                     this.escape_walk_action(action)

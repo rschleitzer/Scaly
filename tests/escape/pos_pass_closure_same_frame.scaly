@@ -1,0 +1,26 @@
+; OK (positive control, CLOSURE Vector-3): passing a stack closure to a callee
+; that stores its delegate parameter into the RECEIVER's field is fine when the
+; receiver is a SAME-FRAME local — the holder `hh` and the closure record die
+; together at function exit; nothing outlives the frame. Must COMPILE (no false
+; positive — the shared dest-outlives gate sees `&hh` as same-frame). The twin
+; negative (neg_pass_closure_to_global_stash) stashes into a global instead, so
+; the destination outlives the frame and IS rejected. Self-hosted-only.
+define IntFn delegate(int) returns int
+
+define Holder
+(
+    fn: IntFn
+)
+
+procedure set_fn(h: pointer[Holder], f: IntFn)
+{
+    set h.fn: f
+}
+
+function main() returns int
+{
+    let g: IntFn \x: x + 1
+    var hh Holder(g)
+    set_fn(&hh, g)
+    0
+}
