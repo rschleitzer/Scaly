@@ -9,11 +9,22 @@ use scaly.memory.root_pages.getenv
 ; cross-package File./Path. calls instead of varargs fallbacks).
 use scaly.io.File
 use scaly.io.Path
+use scaly.io.Console
 
 use scalyc.compiler.lexer.*
 use scalyc.compiler.parser.*
 use scalyc.compiler.Syntax.*
 use scalyc.compiler.Model.*
+
+; Count of sub-module load failures (a `module foo` / package / prelude whose
+; file failed to PARSE). build_referenced_module used to swallow such a parse
+; error and return an empty stub module, so the real syntax error vanished and
+; re-surfaced downstream as a misleading planner "not found" in the wrong file.
+; It now reports the real error against the sub-module's own file:line:col and
+; bumps this counter; cli.run checks Modeler.had_errors() after build_program
+; and fails the compile (rc 2) before the planner runs. Module scope (mutable
+; globals are rejected inside a namespace body).
+mutable modeler_error_count: size_t 0
 
 define Modeler
 {
@@ -2548,9 +2559,87 @@ procedure handle_package_decl(pkg_syntax: PackageSyntax, packages: ref[Array[Mod
     packages.add loaded
 }
 
-; Load and model a sibling module file at <path>/<name>.scaly. Returns an
-; empty Module on any failure (file missing, parse error, etc.) so callers
-; can continue without crashing.
+; True when any sub-module failed to load. cli.run gates on this after
+; build_program and fails the compile before the planner emits misleading
+; downstream diagnostics.
+function had_errors() returns bool
+    modeler_error_count > 0
+
+; Reset at the start of each program build (harmless in a fresh process; keeps
+; the counter honest if build_program is ever called more than once).
+function reset_errors()
+    set modeler_error_count: 0
+
+; size_t -> decimal String (self-contained; the Planner has its own copy but
+; the Modeler must not depend on the Planner).
+function num_to_string(n: size_t) returns String
+{
+    if n = 0
+        return "0"
+    let result StringBuilder()
+    var value n
+    var digits Array[char]()
+    while value > 0
+    {
+        let digit ((value % 10) as char) + 48 as char
+        digits.add digit
+        set value: value / 10
+    }
+    var i digits.length
+    while i > 0
+    {
+        set i: i - 1
+        let d digits.get i
+        if d <> null
+            result.append(*d)
+    }
+    result.to_string()
+}
+
+; Report a sub-module load failure at its real file:line:col and bump the
+; error counter. `offset` is a byte offset into `source` (the sub-module's own
+; contents); the line/col walk mirrors cli.print_parse_error's numeric-LF scan.
+function report_module_error(file_path: String, source: String, offset: size_t, message: String)
+{
+    var line: size_t 1
+    var col: size_t 1
+    let src_len source.get_length()
+    var target offset
+    if target > src_len
+        set target: src_len
+    var off: size_t 0
+    while off < target
+    {
+        let c source.get off
+        if c = (10 as char)
+        {
+            set line: line + 1
+            set col: 1
+        }
+        else
+            set col: col + 1
+        set off: off + 1
+    }
+    let line_str num_to_string(line)
+    let col_str num_to_string(col)
+    var msg StringBuilder()
+    msg.append file_path
+    msg.append ":"
+    msg.append line_str
+    msg.append ":"
+    msg.append col_str
+    msg.append ": "
+    msg.append message
+    let msg_str msg.to_string()
+    Console.println(msg_str.to_c_string())
+    set modeler_error_count: modeler_error_count + 1
+}
+
+; Load and model a sibling module file at <path>/<name>.scaly. On a genuine
+; PARSE error the real syntax error is reported (file:line:col) and an empty
+; stub is returned so modeling can continue; cli.run then fails the compile via
+; had_errors(). A missing/empty file still returns an empty stub silently (an
+; absent optional module is not itself an error at this layer).
 function build_referenced_module(path: String, name: String, is_private: bool) returns Module
 {
     ; Compute file path: <path>/<name>.scaly
@@ -2587,7 +2676,17 @@ function build_referenced_module(path: String, name: String, is_private: bool) r
     var syntax: ProgramSyntax
     choose p.parse_program()
         when err: Error
+        {
+            ; Don't swallow the real syntax error: report it against the
+            ; sub-module's own file:line:col, then continue with an empty stub
+            ; so downstream modeling doesn't crash. cli.run fails the compile.
+            choose err
+                when inv: Invalid
+                    report_module_error(file_path, contents, inv.start, inv.message)
+                when d: Different
+                    report_module_error(file_path, contents, 0, "parse error")
             return empty_module
+        }
         when prog: Success
             set syntax: prog
 
@@ -2667,6 +2766,7 @@ function build_module(path: String, file_name: String, name: String, syntax: Fil
 
 function build_program(file_name: String, program_name: String, syntax: ProgramSyntax, enable_prelude: bool) returns Program
 {
+    reset_errors()
     var packages Array[Module]()
     if syntax.file.declarations <> null
     {

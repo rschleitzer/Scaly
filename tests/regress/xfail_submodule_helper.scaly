@@ -1,0 +1,13 @@
+; xfail: expected '}'
+;
+; Sidecar for xfail_submodule_parse.scaly: a sub-module with a syntax error
+; inside a function body. Compiled STANDALONE by the harness it must fail with
+; the real parse error (this xfail entry); loaded as `module xfail_submodule_
+; helper` by xfail_submodule_parse.scaly it exercises the Modeler no-longer-
+; swallowing the sub-module error.
+
+function helper() returns int
+{
+    let x @#$ garbage
+    return 7
+}

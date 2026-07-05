@@ -1,0 +1,16 @@
+; xfail: xfail_submodule_helper.scaly:10:1: expected '}'
+;
+; A parse error in a loaded sub-module must surface against the SUB-MODULE's
+; own file:line:col, not be swallowed into an empty stub (which used to make
+; the real error vanish and re-appear as a misleading planner "not found" in
+; the wrong file). Modeler.build_referenced_module now reports the real error
+; and bumps modeler_error_count; cli.run fails the compile (rc 2) via
+; Modeler.had_errors() before the planner runs. The sidecar
+; xfail_submodule_helper.scaly holds the broken body.
+
+module xfail_submodule_helper
+
+function main() returns int
+{
+    return helper()
+}

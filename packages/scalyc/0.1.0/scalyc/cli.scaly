@@ -417,6 +417,13 @@ define cli
 
         let model Modeler.build_program(opts.input_file, program_name, syntax, opts.no_prelude = false)
 
+        ; A sub-module (`module foo` / package / prelude) that failed to PARSE
+        ; was already reported by the Modeler against its own file:line:col.
+        ; Stop here (rc 2, like a main-file parse error) so the planner doesn't
+        ; pile misleading "not found" diagnostics on top of the real one.
+        if Modeler.had_errors()
+            return 2
+
         if opts.verbose
             Console.println "Model built successfully"
 
