@@ -1,0 +1,18 @@
+; xfail: not found: NS.bogus
+;
+; A dangling qualified reference — `NS.bogus` where NS is a namespace with no
+; member `bogus` — must be a hard error, not silently planned as a lenient bare
+; Type operand (which the emitter turned into garbage: `return NS.bogus`
+; compiled and returned 0). plan_type_operand#'s value fallback now calls
+; qualified_ref_is_dangling# and reports "not found: NS.bogus". Self-hosted-only.
+
+define NS
+{
+    function real() returns int
+        7
+}
+
+function main() returns int
+{
+    return NS.bogus
+}

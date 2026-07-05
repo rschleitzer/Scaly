@@ -1,0 +1,18 @@
+; A REAL namespace-member function called qualified must still resolve — the
+; dangling-qualified-ref check (qualified_ref_is_dangling#) must NOT false-
+; positive on it. `NS.real()` is a genuine member, so the member scan finds it
+; and the reference is left alone; it returns 7. Guards the twin xfail
+; (xfail_dangling_qualified.scaly), which references a NONexistent member.
+; Expected: PASS
+
+define NS
+{
+    function real() returns int
+        7
+}
+
+let r NS.real()
+if r = 7
+    print("PASS")
+else
+    print("FAIL")

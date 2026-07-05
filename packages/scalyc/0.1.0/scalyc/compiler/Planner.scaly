@@ -12008,6 +12008,110 @@ define Planner
         }
 
         ; plan_type_operand: a Model.Type used as an operand can mean
+        ; qualified_ref_is_dangling: a VALUE-position qualified name `X.Y`
+        ; (exactly two segments) whose prefix X is a known NAMESPACE but whose
+        ; suffix Y is not any member of it (function/operator/nested concept),
+        ; not a registered concept/type (X.Y or bare Y), not a union variant,
+        ; and not a global constant. Such a reference is a dangling qualified
+        ; access — a typo like `NS.bogus` — that currently plans leniently as a
+        ; bare Type operand (the emitter then produces garbage: `return NS.bogus`
+        ; compiles and returns 0). This lets plan_type_operand#'s value fallback
+        ; hard-error instead. Deliberately CONSERVATIVE — it fires only for a
+        ; two-segment name with a resolvable NAMESPACE prefix, so deep paths,
+        ; package/module names, type variables, generic params, struct static
+        ; calls, and every real member are left untouched (no false positive).
+        ; A parenless reference to a REAL member (`NS.real`, function not called)
+        ; is NOT flagged — that is a separate lenient case, out of scope here.
+        function qualified_ref_is_dangling(this: Planner, t: Type) returns bool
+        {
+            if t.name.length <> 2
+                return false
+            let prefix_ptr t.name.get 0
+            let suffix_ptr t.name.get 1
+            if prefix_ptr = null
+                return false
+            if suffix_ptr = null
+                return false
+            let prefix (*prefix_ptr)
+            let suffix (*suffix_ptr)
+            ; Self-namespace static call: `Planner.foo` inside a Planner method
+            ; (prefix == current namespace) is flattened to a sibling call `foo`
+            ; and resolved via the namespace-sibling path (s199) — the static
+            ; functions live in the namespace concept, not model_functions, so
+            ; is_function misses them. Never dangling; leave to the flatten pass.
+            if current_namespace_name <> null
+            {
+                let cnsn (*current_namespace_name)
+                if cnsn.equals(prefix)
+                    return false
+            }
+            ; The whole dotted name or the bare suffix resolving to a concept
+            ; means it is a real type / constructor target.
+            let joined Planner.join_dotted_name(t.name)
+            if this.has_concept(joined)
+                return false
+            if this.has_concept(suffix)
+                return false
+            ; A registered FUNCTION or OPERATOR named `suffix` (including static
+            ; namespace functions like Planner.encode_name — a real call target
+            ; whether parenful or parenless) resolves. is_function/is_operator
+            ; are name-indexed over the whole program, so this excludes every
+            ; real member regardless of where it is stored (namespace member
+            ; vector vs symbol table vs struct static) — the robust signal that
+            ; a manual member scan missed.
+            if this.is_function(suffix)
+                return false
+            if this.is_operator(suffix)
+                return false
+            ; A global (module constant / mutable) under either name resolves.
+            if this.lookup_global(joined) <> null
+                return false
+            if this.lookup_global(suffix) <> null
+                return false
+            ; A union variant `Union.Variant` resolves.
+            if this.lookup_variant_tag(prefix, suffix) >= 0
+                return false
+            ; The prefix must be a known NAMESPACE — a genuine qualified-member
+            ; access attempt (not a package/module name, type variable, generic
+            ; param, or struct static receiver, which stay lenient).
+            let ns_ref this.lookup_namespace_concept(prefix)
+            if ns_ref = null
+                return false
+            ; A namespace-MEMBER function/operator/concept named `suffix` (a
+            ; static reached cross-namespace or from top level, e.g. `NS.real()`
+            ; — is_function only indexes top-level free functions, so it misses
+            ; these). Scan the namespace concept's own members.
+            let conc (*ns_ref)
+            choose conc.definition
+                when ns: Namespace
+                {
+                    var mi: size_t 0
+                    while mi < ns.members.length
+                    {
+                        let m_ptr ns.members.get mi
+                        if m_ptr <> null
+                            choose (*m_ptr)
+                                when mc: Concept
+                                    if mc.name.equals(suffix)
+                                        return false
+                                when mo: Operator
+                                    if mo.name.equals(suffix)
+                                        return false
+                                when mf: Function
+                                    if mf.name.equals(suffix)
+                                        return false
+                                else
+                                    0
+                        set mi: mi + 1
+                    }
+                }
+                else
+                    0
+            ; Prefix is a namespace; suffix is not a function, operator,
+            ; concept, global, or variant anywhere → the reference dangles.
+            true
+        }
+
         ; different things depending on whether the name resolves to:
         ;   - a local variable in scope → PlannedVariable with its type
         ;   - a top-level function name → keep as Type, result is a
@@ -12415,6 +12519,20 @@ define Planner
                         }
                     }
                 }
+            }
+
+            ; Dangling qualified reference (e.g. `NS.bogus` where NS is a
+            ; namespace with no member `bogus`): hard-error rather than plan a
+            ; lenient bare Type operand the emitter would turn into garbage. A
+            ; parenful `NS.bogus()` already errors via the call path; this closes
+            ; the parenless value-position hole.
+            if this.qualified_ref_is_dangling(t)
+            {
+                let dangling_name Planner.join_dotted_name(t.name)
+                var dsb StringBuilder()
+                dsb.append "not found: "
+                dsb.append dangling_name
+                this.add_diagnostic(loc, dsb.to_string())
             }
 
             let pt this.plan_type(t)
