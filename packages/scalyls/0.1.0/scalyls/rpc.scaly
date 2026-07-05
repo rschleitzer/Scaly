@@ -94,7 +94,7 @@ define rpc
                 break
 
             if line_str.starts_with("Content-Length:")
-                set content_length: rpc.parse_header_size(line_str)
+                set content_length: rpc.parse_header_size line_str
         }
 
         ; ---- body ----
@@ -269,7 +269,7 @@ define rpc
                 break
 
             if line_str.starts_with("Content-Length:")
-                set content_length: rpc.parse_header_size(line_str)
+                set content_length: rpc.parse_header_size line_str
         }
 
         if content_length = (0 as size_t)

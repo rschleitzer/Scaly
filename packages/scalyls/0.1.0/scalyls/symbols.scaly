@@ -170,7 +170,7 @@ define symbols
     ; A function / procedure / operator: name from its target, no children.
     function routine_symbol(rp, source: String, target: TargetSyntax, start: size_t, end: size_t, kind: i64) returns String
     {
-        let name symbols.target_name(target)
+        let name symbols.target_name target
         symbols.symbol_object(source, name, kind, start, end, "[]")
     }
 
@@ -901,7 +901,7 @@ define symbols
         ; type names (struct 22 / enum-union 13), plus the lowercase primitives.
         ; An identifier USE matching one of these is coloured by its declared
         ; kind, not just its shape.
-        let comp_items symbols.completion_items(source)
+        let comp_items symbols.completion_items source
         let fn_list symbols.names_from_items(comp_items, 2 as i64, 3 as i64)
         let ty_list symbols.names_from_items(comp_items, 22 as i64, 13 as i64)
         let prim_list symbols.primitive_type_list()
@@ -914,7 +914,7 @@ define symbols
         ; per-identifier cost no longer scales with the list bytes (the Step 27
         ; gate is removed; the harvest cost is bounded by the content-hashed
         ; symindex regardless of the current file's size).
-        let xname_blob symbols.workspace_name_blob(uri)
+        let xname_blob symbols.workspace_name_blob uri
         let xfn_list symbols.tagged_name_list(xname_blob, 0x46 as u8)  ; F
         let xty_list symbols.tagged_name_list(xname_blob, 0x54 as u8)  ; T
 
@@ -935,7 +935,7 @@ define symbols
         ; Scope-aware tables: routine [start,end)+param-names and field-decl
         ; offsets, both from ONE more parse. param_in_scope / is_field_decl_offset
         ; query this per identifier; the after-dot property case uses prev_was_dot.
-        let scope_tbl symbols.scope_table(source)
+        let scope_tbl symbols.scope_table source
 
         let n source.get_length()
         var i: size_t 0
@@ -1345,7 +1345,7 @@ define symbols
     {
         var sb StringBuilder()
         sb.append(0x0A as char)                    ; leading newline
-        let jv json.parse(items_json)
+        let jv json.parse items_json
         let count json.array_length jv
         var i: size_t 0
         while i < count
@@ -1599,7 +1599,7 @@ define symbols
                 let nlen prop.name.get_length()
                 if off + nlen <= source.get_length()
                     if symbols.range_equals(source, off, prop.name, 0 as size_t, nlen)
-                        return symbols.f_record(off)
+                        return symbols.f_record off
                 return ""
             }
             when prop2: Property
@@ -1608,7 +1608,7 @@ define symbols
                 let nlen prop2.name.get_length()
                 if off + nlen <= source.get_length()
                     if symbols.range_equals(source, off, prop2.name, 0 as size_t, nlen)
-                        return symbols.f_record(off)
+                        return symbols.f_record off
                 return ""
             }
     }
@@ -2474,7 +2474,7 @@ define symbols
                     if cmem.get_length() > (0 as size_t)
                         return cmem
                 }
-                return symbols.completion_items(source)
+                return symbols.completion_items source
             }
 
         let receiver symbols.receiver_before_cursor(source, offset)
@@ -2497,7 +2497,7 @@ define symbols
                 let stype semantic.receiver_type_at_offset(source, uri, recv_off)
                 if stype.get_length() > (0 as size_t)
                 {
-                    let sbase symbols.simple_base_name(stype)
+                    let sbase symbols.simple_base_name stype
                     let smem symbols.members_for_type(source, uri, sbase)
                     if smem.get_length() > (0 as size_t)
                         return smem
@@ -2530,7 +2530,7 @@ define symbols
             if xpkg.get_length() > (0 as size_t)
                 return xpkg
         }
-        symbols.completion_items(source)
+        symbols.completion_items source
     }
 
     ; Members of the concept named `type_name`: this file first, then sibling
@@ -2551,12 +2551,12 @@ define symbols
     ; Vector members complete). "" if none.
     function member_completions_in_workspace(rp, uri: String, type_name: String) returns String
     {
-        let path symbols.uri_to_path(uri)
-        let dir symbols.dir_of(path)
+        let path symbols.uri_to_path uri
+        let dir symbols.dir_of path
         let here symbols.member_completions_in_dir(dir, path, type_name)
         if here.get_length() > (0 as size_t)
             return here
-        let pkg symbols.package_search_dir(path)
+        let pkg symbols.package_search_dir path
         if pkg.get_length() > (0 as size_t)
             if pkg.equals(dir) = false
                 return symbols.member_completions_in_dir(pkg, path, type_name)
@@ -2575,7 +2575,7 @@ define symbols
     {
         if dir.get_length() = (0 as size_t)
             return ""
-        let listing symbols.list_scaly_files(dir)   ; abs paths, each + LF
+        let listing symbols.list_scaly_files dir   ; abs paths, each + LF
 
         var result ""
         var line_start: size_t 0
@@ -2596,10 +2596,10 @@ define symbols
                                 let chash fsrc.hash()
                                 var blob ""
                                 if symindex.valid(fpath, chash)
-                                    set blob: symindex.get_blob(fpath)
+                                    set blob: symindex.get_blob fpath
                                 if symindex.valid(fpath, chash) = false
                                 {
-                                    let furi symbols.path_to_uri(fpath)
+                                    let furi symbols.path_to_uri fpath
                                     set blob: symbols.workspace_symbols_in_file(fsrc, furi)
                                     symindex.put(fpath, chash, blob)
                                 }
@@ -3028,12 +3028,12 @@ define symbols
         let here symbols.member_type(source, type_name, member_name)
         if here.get_length() > (0 as size_t)
             return here
-        let path symbols.uri_to_path(uri)
-        let dir symbols.dir_of(path)
+        let path symbols.uri_to_path uri
+        let dir symbols.dir_of path
         let in_dir symbols.member_type_in_dir(dir, path, type_name, member_name)
         if in_dir.get_length() > (0 as size_t)
             return in_dir
-        let pkg symbols.package_search_dir(path)
+        let pkg symbols.package_search_dir path
         if pkg.get_length() > (0 as size_t)
             if pkg.equals(dir) = false
                 return symbols.member_type_in_dir(pkg, path, type_name, member_name)
@@ -3050,7 +3050,7 @@ define symbols
     {
         if dir.get_length() = (0 as size_t)
             return ""
-        let listing symbols.list_scaly_files(dir)
+        let listing symbols.list_scaly_files dir
         var result ""
         var line_start: size_t 0
         let n listing.get_length()
@@ -3070,10 +3070,10 @@ define symbols
                                 let chash fsrc.hash()
                                 var blob ""
                                 if symindex.valid(fpath, chash)
-                                    set blob: symindex.get_blob(fpath)
+                                    set blob: symindex.get_blob fpath
                                 if symindex.valid(fpath, chash) = false
                                 {
-                                    let furi symbols.path_to_uri(fpath)
+                                    let furi symbols.path_to_uri fpath
                                     set blob: symbols.workspace_symbols_in_file(fsrc, furi)
                                     symindex.put(fpath, chash, blob)
                                 }
@@ -3187,12 +3187,12 @@ define symbols
         let here symbols.function_return_type(source, fname)
         if here.get_length() > (0 as size_t)
             return here
-        let path symbols.uri_to_path(uri)
-        let dir symbols.dir_of(path)
+        let path symbols.uri_to_path uri
+        let dir symbols.dir_of path
         let in_dir symbols.function_return_type_in_dir(dir, path, fname)
         if in_dir.get_length() > (0 as size_t)
             return in_dir
-        let pkg symbols.package_search_dir(path)
+        let pkg symbols.package_search_dir path
         if pkg.get_length() > (0 as size_t)
             if pkg.equals(dir) = false
                 return symbols.function_return_type_in_dir(pkg, path, fname)
@@ -3203,7 +3203,7 @@ define symbols
     {
         if dir.get_length() = (0 as size_t)
             return ""
-        let listing symbols.list_scaly_files(dir)
+        let listing symbols.list_scaly_files dir
         var result ""
         var line_start: size_t 0
         let n listing.get_length()
@@ -4339,12 +4339,12 @@ define symbols
     ; Location pointing at the matching file, or "".
     function find_definition_in_workspace(rp, uri: String, name: String) returns String
     {
-        let path symbols.uri_to_path(uri)
-        let dir symbols.dir_of(path)
+        let path symbols.uri_to_path uri
+        let dir symbols.dir_of path
         let here symbols.find_definition_in_dir(dir, path, name)
         if here.get_length() > (0 as size_t)
             return here
-        let pkg symbols.package_search_dir(path)
+        let pkg symbols.package_search_dir path
         if pkg.get_length() > (0 as size_t)
             if pkg.equals(dir) = false
                 return symbols.find_definition_in_dir(pkg, path, name)
@@ -4371,7 +4371,7 @@ define symbols
     {
         if dir.get_length() = (0 as size_t)
             return ""
-        let listing symbols.list_scaly_files(dir)   ; abs paths, each + LF
+        let listing symbols.list_scaly_files dir   ; abs paths, each + LF
 
         var result ""
         var line_start: size_t 0
@@ -4392,10 +4392,10 @@ define symbols
                                 let chash fsrc.hash()
                                 var blob ""
                                 if symindex.valid(fpath, chash)
-                                    set blob: symindex.get_blob(fpath)
+                                    set blob: symindex.get_blob fpath
                                 if symindex.valid(fpath, chash) = false
                                 {
-                                    let furi symbols.path_to_uri(fpath)
+                                    let furi symbols.path_to_uri fpath
                                     set blob: symbols.workspace_symbols_in_file(fsrc, furi)
                                     symindex.put(fpath, chash, blob)
                                 }
@@ -4834,11 +4834,11 @@ define symbols
     ; MISS the package dependency tree. Reads CACHED ws blobs via the symindex.
     function concept_in_workspace(rp, uri: String, name: String) returns bool
     {
-        let path symbols.uri_to_path(uri)
-        let dir symbols.dir_of(path)
+        let path symbols.uri_to_path uri
+        let dir symbols.dir_of path
         if symbols.concept_in_dir(dir, path, name)
             return true
-        let pkg symbols.package_search_dir(path)
+        let pkg symbols.package_search_dir path
         if pkg.get_length() > (0 as size_t)
             if pkg.equals(dir) = false
                 return symbols.concept_in_dir(pkg, path, name)
@@ -4853,7 +4853,7 @@ define symbols
     {
         if dir.get_length() = (0 as size_t)
             return false
-        let listing symbols.list_scaly_files(dir)
+        let listing symbols.list_scaly_files dir
         var found false
         var line_start: size_t 0
         let n listing.get_length()
@@ -4873,10 +4873,10 @@ define symbols
                                 let chash fsrc.hash()
                                 var blob ""
                                 if symindex.valid(fpath, chash)
-                                    set blob: symindex.get_blob(fpath)
+                                    set blob: symindex.get_blob fpath
                                 if symindex.valid(fpath, chash) = false
                                 {
-                                    let furi symbols.path_to_uri(fpath)
+                                    let furi symbols.path_to_uri fpath
                                     set blob: symbols.workspace_symbols_in_file(fsrc, furi)
                                     symindex.put(fpath, chash, blob)
                                 }
@@ -4897,12 +4897,12 @@ define symbols
     ; cache-served (no per-file re-parse).
     function return_type_in_workspace(rp, uri: String, name: String) returns String
     {
-        let path symbols.uri_to_path(uri)
-        let dir symbols.dir_of(path)
+        let path symbols.uri_to_path uri
+        let dir symbols.dir_of path
         let here symbols.return_type_in_dir(dir, path, name)
         if here.get_length() > (0 as size_t)
             return here
-        let pkg symbols.package_search_dir(path)
+        let pkg symbols.package_search_dir path
         if pkg.get_length() > (0 as size_t)
             if pkg.equals(dir) = false
                 return symbols.return_type_in_dir(pkg, path, name)
@@ -4913,7 +4913,7 @@ define symbols
     {
         if dir.get_length() = (0 as size_t)
             return ""
-        let listing symbols.list_scaly_files(dir)
+        let listing symbols.list_scaly_files dir
         var result ""
         var line_start: size_t 0
         let n listing.get_length()
@@ -4933,10 +4933,10 @@ define symbols
                                 let chash fsrc.hash()
                                 var blob ""
                                 if symindex.valid(fpath, chash)
-                                    set blob: symindex.get_blob(fpath)
+                                    set blob: symindex.get_blob fpath
                                 if symindex.valid(fpath, chash) = false
                                 {
-                                    let furi symbols.path_to_uri(fpath)
+                                    let furi symbols.path_to_uri fpath
                                     set blob: symbols.workspace_symbols_in_file(fsrc, furi)
                                     symindex.put(fpath, chash, blob)
                                 }
@@ -4973,8 +4973,8 @@ define symbols
     {
         if uri.get_length() > (0 as size_t)
         {
-            let path symbols.uri_to_path(uri)
-            let dir symbols.dir_of(path)
+            let path symbols.uri_to_path uri
+            let dir symbols.dir_of path
             var sb StringBuilder()
             ; (1) the current file's directory tree (project-local, fast).
             ; Lexical (depth-0 byte scan), NOT a full parse — see
@@ -4992,7 +4992,7 @@ define symbols
             ; when it would re-scan the same dir. Duplicate names are harmless —
             ; the hash set dedups. Re-enabled in Step 28 (the O(1) lookup makes
             ; the larger name set affordable; the symindex caches the parse).
-            let pkg symbols.package_search_dir(path)
+            let pkg symbols.package_search_dir path
             if pkg.get_length() > (0 as size_t)
                 if pkg.equals(dir) = false
                 {
@@ -5019,7 +5019,7 @@ define symbols
     {
         if dir.get_length() = (0 as size_t)
             return ""
-        let listing symbols.list_scaly_files(dir)
+        let listing symbols.list_scaly_files dir
 
         var sb StringBuilder()
         var line_start: size_t 0
@@ -5038,14 +5038,14 @@ define symbols
                             let chash fsrc.hash()
                             var blob ""
                             if symindex.valid(fpath, chash)
-                                set blob: symindex.get_blob(fpath)
+                                set blob: symindex.get_blob fpath
                             if symindex.valid(fpath, chash) = false
                             {
-                                let furi symbols.path_to_uri(fpath)
+                                let furi symbols.path_to_uri fpath
                                 set blob: symbols.workspace_symbols_in_file(fsrc, furi)
                                 symindex.put(fpath, chash, blob)
                             }
-                            let frag symbols.tagged_names_from_ws_blob(blob)
+                            let frag symbols.tagged_names_from_ws_blob blob
                             var ci: size_t 0
                             let cn frag.get_length()
                             while ci < cn
@@ -5273,7 +5273,7 @@ define symbols
                 {
                     sb.append(0x46 as char)            ; F
                     sb.append(0x09 as char)
-                    sb.append(fnm)
+                    sb.append fnm
                     sb.append(0x0A as char)
                 }
                 continue
@@ -5312,7 +5312,7 @@ define symbols
                     {
                         sb.append(tag as char)
                         sb.append(0x09 as char)
-                        sb.append(nm)
+                        sb.append nm
                         sb.append(0x0A as char)
                     }
                 }
@@ -5331,7 +5331,7 @@ define symbols
     {
         if dir.get_length() = (0 as size_t)
             return ""
-        let listing symbols.list_scaly_files(dir)
+        let listing symbols.list_scaly_files dir
         var sb StringBuilder()
         var line_start: size_t 0
         let n listing.get_length()
@@ -5346,7 +5346,7 @@ define symbols
                         if File.exists(fpath)
                         {
                             let fsrc File.read_to_string(fpath)
-                            let frag symbols.tagged_names_lexical(fsrc)
+                            let frag symbols.tagged_names_lexical fsrc
                             var ci: size_t 0
                             let cn frag.get_length()
                             while ci < cn
@@ -5448,7 +5448,7 @@ define symbols
             sb.append "packages"
             return sb.to_string()
         }
-        symbols.packages_dir_from_path(path)
+        symbols.packages_dir_from_path path
     }
 
     ; `path` truncated to include its last "/packages" segment (so
@@ -5608,7 +5608,7 @@ define symbols
     {
         if root.get_length() = (0 as size_t)
             return "[]"
-        let listing symbols.list_scaly_files(root)
+        let listing symbols.list_scaly_files root
 
         var sb StringBuilder()
         sb.append(0x5B as char)                    ; [
@@ -5628,10 +5628,10 @@ define symbols
                         let chash fsrc.hash()
                         var blob ""
                         if symindex.valid(fpath, chash)
-                            set blob: symindex.get_blob(fpath)
+                            set blob: symindex.get_blob fpath
                         if symindex.valid(fpath, chash) = false
                         {
-                            let furi symbols.path_to_uri(fpath)
+                            let furi symbols.path_to_uri fpath
                             set blob: symbols.workspace_symbols_in_file(fsrc, furi)
                             symindex.put(fpath, chash, blob)
                         }
@@ -6068,7 +6068,7 @@ define symbols
                         if pp <> null
                         {
                             let part (*pp)
-                            let frag symbols.cmt_part(part)
+                            let frag symbols.cmt_part part
                             var ci: size_t 0
                             let cn frag.get_length()
                             while ci < cn
@@ -6093,7 +6093,7 @@ define symbols
                             if mp <> null
                             {
                                 let m (*mp)
-                                let frag symbols.cmt_member(m)
+                                let frag symbols.cmt_member m
                                 var ci: size_t 0
                                 let cn frag.get_length()
                                 while ci < cn
@@ -6367,8 +6367,8 @@ define symbols
 
     function references_packed(rp, source: String, uri: String, packed: String) returns String
     {
-        let root symbols.root_prefix(packed)
-        let pos symbols.strip_root_prefix(packed)
+        let root symbols.root_prefix packed
+        let pos symbols.strip_root_prefix packed
         var line: size_t 0
         var character: size_t 0
         var seen_space: bool false
@@ -6394,8 +6394,8 @@ define symbols
         let name symbols.identifier_at(source, offset)
         if name.get_length() = (0 as size_t)
             return "[]"
-        let scope_tbl symbols.scope_table(source)
-        let comp_items symbols.completion_items(source)
+        let scope_tbl symbols.scope_table source
+        let comp_items symbols.completion_items source
         let range_packed symbols.scan_scope(source, scope_tbl, comp_items, uri, name, offset)
         ; A local/parameter is confined to its routine in the current file; a
         ; module/file-wide name (range_packed "") fans out across the workspace
@@ -7154,18 +7154,18 @@ define symbols
 
         ; (2) the other .scaly files under the walk root (or the current file's
         ; directory tree when no root is set).
-        let path symbols.uri_to_path(uri)
+        let path symbols.uri_to_path uri
         var walk_dir root
         var apply_excl true
         if root.get_length() = (0 as size_t)
         {
-            set walk_dir: symbols.dir_of(path)
+            set walk_dir: symbols.dir_of path
             set apply_excl: false
         }
-        let cur_pkg_dir symbols.current_package_dir(path)
+        let cur_pkg_dir symbols.current_package_dir path
         if walk_dir.get_length() > (0 as size_t)
         {
-            let listing symbols.list_scaly_files(walk_dir)
+            let listing symbols.list_scaly_files walk_dir
             var line_start: size_t 0
             let n listing.get_length()
             var i: size_t 0
@@ -7186,7 +7186,7 @@ define symbols
                             if File.exists(fpath)
                             {
                                 let fsrc File.read_to_string(fpath)
-                                let furi symbols.path_to_uri(fpath)
+                                let furi symbols.path_to_uri fpath
                                 let fshadow symbols.shadow_ranges(fsrc, name)
                                 let frag symbols.scan_fragment(fsrc, furi, name, true, "", fshadow)
                                 if frag.get_length() > (0 as size_t)
@@ -7236,7 +7236,7 @@ define symbols
     ; "<tag><TAB><name><LF>".
     function name_in_workspace(rp, uri: String, name: String) returns bool
     {
-        let blob symbols.workspace_name_blob(uri)
+        let blob symbols.workspace_name_blob uri
         let nlen name.get_length()
         if nlen = (0 as size_t)
             return false
@@ -7273,7 +7273,7 @@ define symbols
     ; True when `name` equals the label of any completion item.
     function name_in_completion(rp, comp_items: String, name: String) returns bool
     {
-        let jv json.parse(comp_items)
+        let jv json.parse comp_items
         let count json.array_length jv
         var i: size_t 0
         while i < count
@@ -7423,8 +7423,8 @@ define symbols
         let name symbols.identifier_at(source, offset)
         if name.get_length() = (0 as size_t)
             return "[]"
-        let scope_tbl symbols.scope_table(source)
-        let comp_items symbols.completion_items(source)
+        let scope_tbl symbols.scope_table source
+        let comp_items symbols.completion_items source
         ; documentHighlight is single-document, so no workspace uri is threaded;
         ; "" makes a cross-file name fall to the in-file checks only (cosmetic).
         let range_packed symbols.scan_scope(source, scope_tbl, comp_items, "", name, offset)
@@ -7469,8 +7469,8 @@ define symbols
     ; build the WorkspaceEdit. "" on no identifier / empty new name.
     function rename_packed(rp, source: String, uri: String, packed: String) returns String
     {
-        let root symbols.root_prefix(packed)
-        let pos symbols.strip_root_prefix(packed)
+        let root symbols.root_prefix packed
+        let pos symbols.strip_root_prefix packed
         var line: size_t 0
         var character: size_t 0
         var phase: int 0                           ; 0=line 1=char 2=newName
@@ -7509,8 +7509,8 @@ define symbols
             return ""
         if new_name.get_length() = (0 as size_t)
             return ""
-        let scope_tbl symbols.scope_table(source)
-        let comp_items symbols.completion_items(source)
+        let scope_tbl symbols.scope_table source
+        let comp_items symbols.completion_items source
         let range_packed symbols.scan_scope(source, scope_tbl, comp_items, uri, old_name, offset)
         ; A local/parameter renames within its routine in the current file; a
         ; module/file-wide name (range_packed "") renames across the workspace
@@ -7672,18 +7672,18 @@ define symbols
 
         ; (2) the other .scaly files under the walk root (or the current file's
         ; directory tree when no root is set).
-        let path symbols.uri_to_path(uri)
+        let path symbols.uri_to_path uri
         var walk_dir root
         var apply_excl true
         if root.get_length() = (0 as size_t)
         {
-            set walk_dir: symbols.dir_of(path)
+            set walk_dir: symbols.dir_of path
             set apply_excl: false
         }
-        let cur_pkg_dir symbols.current_package_dir(path)
+        let cur_pkg_dir symbols.current_package_dir path
         if walk_dir.get_length() > (0 as size_t)
         {
-            let listing symbols.list_scaly_files(walk_dir)
+            let listing symbols.list_scaly_files walk_dir
             var line_start: size_t 0
             let n listing.get_length()
             var i: size_t 0
@@ -7710,7 +7710,7 @@ define symbols
                                 {
                                     if first = false
                                         sb.append(0x2C as char)
-                                    let furi symbols.path_to_uri(fpath)
+                                    let furi symbols.path_to_uri fpath
                                     sb.append(json.quote_string(furi))
                                     sb.append(0x3A as char)        ; :
                                     sb.append(0x5B as char)        ; [
@@ -8060,7 +8060,7 @@ define symbols
             set li: li + (1 as size_t)
         }
         sb.append(0x09 as char)
-        let rt symbols.routine_return_base(routine)
+        let rt symbols.routine_return_base routine
         var ri: size_t 0
         let rl rt.get_length()
         while ri < rl
@@ -8469,7 +8469,7 @@ define symbols
         let range_end symbols.position_to_offset(source, el, ec)
 
         ; One parse: the intra-file resolution map shared by every site below.
-        let map symbols.binding_map(source)
+        let map symbols.binding_map source
 
         var sb StringBuilder()
         sb.append(0x5B as char)                    ; [
@@ -8614,12 +8614,12 @@ define symbols
         ; Intra-file: the single-parse map carries the routine's labels directly.
         let mlabels symbols.map_labels(map, callee)
         if mlabels.get_length() > (0 as size_t)
-            return symbols.names_from_labels(mlabels)
+            return symbols.names_from_labels mlabels
         ; Cross-file: the symindex-cached signature path.
         var sig symbols.find_signature_in_workspace(uri, callee, 0 as size_t)
         if sig.get_length() = (0 as size_t)
             return ""
-        let v json.parse(sig)
+        let v json.parse sig
         let sigs json.get(v, "signatures")
         let sig0 json.array_get(sigs, 0 as size_t)
         let params json.get(sig0, "parameters")
@@ -9247,7 +9247,7 @@ define symbols
                                         sig_label.append(ptext.get(li) as char)
                                         set li: li + (1 as size_t)
                                     }
-                                    let item_obj symbols.param_item(ptext)
+                                    let item_obj symbols.param_item ptext
                                     var ai: size_t 0
                                     let al item_obj.get_length()
                                     while ai < al
@@ -9275,7 +9275,7 @@ define symbols
                             sig_label.append(ptext.get(li) as char)
                             set li: li + (1 as size_t)
                         }
-                        let item_obj symbols.param_item(ptext)
+                        let item_obj symbols.param_item ptext
                         var ai: size_t 0
                         let al item_obj.get_length()
                         while ai < al
@@ -9461,7 +9461,7 @@ define symbols
                         sig_label.append(ptext.get(li) as char)
                         set li: li + (1 as size_t)
                     }
-                    let item_obj symbols.param_item(ptext)
+                    let item_obj symbols.param_item ptext
                     var ai: size_t 0
                     let al item_obj.get_length()
                     while ai < al
@@ -9648,12 +9648,12 @@ define symbols
     ; same two-step search as find_definition_in_workspace#. "" if none.
     function find_signature_in_workspace(rp, uri: String, name: String, active: size_t) returns String
     {
-        let path symbols.uri_to_path(uri)
-        let dir symbols.dir_of(path)
+        let path symbols.uri_to_path uri
+        let dir symbols.dir_of path
         let here symbols.find_signature_in_dir(dir, path, name, active)
         if here.get_length() > (0 as size_t)
             return here
-        let pkg symbols.package_search_dir(path)
+        let pkg symbols.package_search_dir path
         if pkg.get_length() > (0 as size_t)
             if pkg.equals(dir) = false
                 return symbols.find_signature_in_dir(pkg, path, name, active)
@@ -9672,7 +9672,7 @@ define symbols
     {
         if dir.get_length() = (0 as size_t)
             return ""
-        let listing symbols.list_scaly_files(dir)
+        let listing symbols.list_scaly_files dir
 
         var result ""
         var line_start: size_t 0
@@ -9693,10 +9693,10 @@ define symbols
                                 let chash fsrc.hash()
                                 var blob ""
                                 if symindex.valid(fpath, chash)
-                                    set blob: symindex.get_blob(fpath)
+                                    set blob: symindex.get_blob fpath
                                 if symindex.valid(fpath, chash) = false
                                 {
-                                    let furi symbols.path_to_uri(fpath)
+                                    let furi symbols.path_to_uri fpath
                                     set blob: symbols.workspace_symbols_in_file(fsrc, furi)
                                     symindex.put(fpath, chash, blob)
                                 }

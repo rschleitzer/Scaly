@@ -63,7 +63,7 @@ define diagnostics
 
         ; `first` gates the comma separator between diagnostic objects.
         var first true
-        let path diagnostics.strip_uri(uri)
+        let path diagnostics.strip_uri uri
 
         var p parser.Parser(text)
         choose p.parse_program()

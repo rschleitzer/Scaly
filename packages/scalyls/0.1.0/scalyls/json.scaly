@@ -184,10 +184,10 @@ define json
         }
 
         if c = (0x7B as u8)             ; '{'
-            return json.parse_object(p)
+            return json.parse_object p
 
         if c = (0x5B as u8)             ; '['
-            return json.parse_array(p)
+            return json.parse_array p
 
         if c = (0x22 as u8)             ; '"'
             return JsonValue.Str(json.parse_string(p))
@@ -223,10 +223,10 @@ define json
             while true
             {
                 json.skip_ws p
-                let key json.parse_string(p)
+                let key json.parse_string p
                 json.skip_ws p
                 json.expect(p, 0x3A as u8) ; ':'
-                let value json.parse_value(p)
+                let value json.parse_value p
                 members.add(JsonMember(key, value))
                 set count: count + 1
                 json.skip_ws p
@@ -270,7 +270,7 @@ define json
         {
             while true
             {
-                let value json.parse_value(p)
+                let value json.parse_value p
                 items.add value
                 set count: count + 1
                 json.skip_ws p
@@ -434,7 +434,7 @@ define json
         while (c = (0x20 as u8)) || (c = (0x09 as u8)) || (c = (0x0A as u8)) || (c = (0x0D as u8))
         {
             json.advance p
-            set c: json.peek(p)
+            set c: json.peek p
         }
     }
 
@@ -514,9 +514,9 @@ define json
                 return "false"
             }
             when n: Number
-                return json.format_i64(n)
+                return json.format_i64 n
             when s: Str
-                return json.quote_string(s)
+                return json.quote_string s
             when arr: Array
             {
                 var sb StringBuilder()

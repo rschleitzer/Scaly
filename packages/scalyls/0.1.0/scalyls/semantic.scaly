@@ -111,7 +111,7 @@ define semantic
             return ""
         if b = (0x0D as u8)
             return ""
-        let path diagnostics.strip_uri(uri)
+        let path diagnostics.strip_uri uri
         semantic.resolve_at(source, path, 0 as size_t, offset)
     }
 
@@ -138,7 +138,7 @@ define semantic
     ; access). "" on a miss / unresolved.
     function receiver_type_at_offset(rp, source: String, uri: String, offset: size_t) returns String
     {
-        let path diagnostics.strip_uri(uri)
+        let path diagnostics.strip_uri uri
         semantic.resolve_at(source, path, 2 as size_t, offset)
     }
 
@@ -535,7 +535,7 @@ define semantic
                 return ResolveResult(true, self_width, bt)
             return semantic.none()
         }
-        let self_type semantic.operand_final_type(op)
+        let self_type semantic.operand_final_type op
         ; A strictly-tighter deeper match wins (genuine nesting f(g x)).
         if child.found
         {
@@ -828,7 +828,7 @@ define semantic
             when az: As
                 return semantic.type_name(az.target_type)
             else
-                return semantic.type_name(fallback)
+                return semantic.type_name fallback
     }
 
     ; True when offset is within [loc.start, loc.end).

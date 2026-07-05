@@ -108,13 +108,13 @@ define worker
     ; set — is reclaimed on return, every iteration.
     function serve_one(in_fd: int, out_fd: int) returns bool
     {
-        let kind rpc.read_message_fd(in_fd)
+        let kind rpc.read_message_fd in_fd
         if kind.get_length() = (0 as size_t)
             return false
 
-        let uri rpc.read_message_fd(in_fd)
-        let doctext rpc.read_message_fd(in_fd)
-        let position rpc.read_message_fd(in_fd)
+        let uri rpc.read_message_fd in_fd
+        let doctext rpc.read_message_fd in_fd
+        let position rpc.read_message_fd in_fd
 
         ; workspace/symbol: the `uri` frame carries the workspace ROOT path and
         ; `position` the query; there is no single document. Handle it before
@@ -129,7 +129,7 @@ define worker
         ; Resolve the document source: prefer the parent's in-memory copy
         ; (sees unsaved edits); fall back to reading the file from disk when
         ; the parent has no buffer for this uri (empty doctext frame).
-        let path diagnostics.strip_uri(uri)
+        let path diagnostics.strip_uri uri
         var source doctext
         if source.get_length() = (0 as size_t)
             set source: File.read_to_string(path)
@@ -468,7 +468,7 @@ define worker
                 return fallback
             }
 
-            let resp rpc.read_message_fd(worker_out)
+            let resp rpc.read_message_fd worker_out
             ; Non-empty = a real answer.
             if resp.get_length() > (0 as size_t)
                 return resp

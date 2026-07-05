@@ -66,10 +66,10 @@ define server
 
     function handle_message(body: String)
     {
-        let msg json.parse(body)
+        let msg json.parse body
 
         let method_val json.get(msg, "method")
-        let method json.as_string(method_val)
+        let method json.as_string method_val
 
         ; An `id` field marks a Request (needs a Response). Notifications
         ; carry no id. A comparison result bound straight to a `let`
@@ -247,7 +247,7 @@ define server
         if n = (0 as size_t)
             return
 
-        var text docstore.get(uri)
+        var text docstore.get uri
         var i: size_t 0
         while i < n
         {
@@ -319,7 +319,7 @@ define server
         let uri json.as_string(json.get(doc, "uri"))
         ; In-memory text (empty -> worker reads disk) so the outline reflects
         ; unsaved edits.
-        let text docstore.get(uri)
+        let text docstore.get uri
         let result worker.symbols(uri, text)
         rpc.write_message(server.document_symbol_response(id, result))
     }
@@ -334,7 +334,7 @@ define server
         let params json.get(msg, "params")
         let doc json.get(params, "textDocument")
         let uri json.as_string(json.get(doc, "uri"))
-        let text docstore.get(uri)
+        let text docstore.get uri
         let result worker.folding(uri, text)
         rpc.write_message(server.document_symbol_response(id, result))
     }
@@ -348,7 +348,7 @@ define server
         let params json.get(msg, "params")
         let doc json.get(params, "textDocument")
         let uri json.as_string(json.get(doc, "uri"))
-        let text docstore.get(uri)
+        let text docstore.get uri
         let result worker.semantic_tokens(uri, text)
         rpc.write_message(server.document_symbol_response(id, result))
     }
@@ -372,7 +372,7 @@ define server
         pb.append(json.format_i64(character))
         let packed pb.to_string()
 
-        let text docstore.get(uri)
+        let text docstore.get uri
         ; PREFER the planner-resolved type (handles reassigned vars, generic
         ; element types, pointer/ref inner types, mid-chain calls). The
         ; semantic query runs the full pipeline in the worker and can
@@ -380,7 +380,7 @@ define server
         ; walk (a separate worker round-trip, so a pipeline crash here never
         ; costs the lexical answer).
         let sem worker.semantic_type(uri, text, packed)
-        var value server.semantic_hover_from_framed(sem)
+        var value server.semantic_hover_from_framed sem
         if value.get_length() = (0 as size_t)
             set value: worker.hover(uri, text, packed)
         rpc.write_message(server.hover_response(id, value))
@@ -430,7 +430,7 @@ define server
         pb.append(json.format_i64(character))
         let packed pb.to_string()
 
-        let text docstore.get(uri)
+        let text docstore.get uri
         let result worker.definition(uri, text, packed)
         rpc.write_message(server.definition_response(id, result))
     }
@@ -453,7 +453,7 @@ define server
         pb.append(json.format_i64(character))
         let packed pb.to_string()
 
-        let text docstore.get(uri)
+        let text docstore.get uri
         let result worker.signature_help(uri, text, packed)
         rpc.write_message(server.hover_response(id, result))
     }
@@ -485,7 +485,7 @@ define server
         pb.append(json.format_i64(ec))
         let packed pb.to_string()
 
-        let text docstore.get(uri)
+        let text docstore.get uri
         let result worker.inlay_hints(uri, text, packed)
         rpc.write_message(server.document_symbol_response(id, result))
     }
@@ -524,7 +524,7 @@ define server
         pb.append(json.format_i64(character))
         let packed pb.to_string()
 
-        let text docstore.get(uri)
+        let text docstore.get uri
         let result worker.references(uri, text, packed)
         ; document_symbol_response# wraps a pre-serialized JSON array as the
         ; result, appending it byte-at-a-time (a many-occurrence array can be
@@ -549,7 +549,7 @@ define server
         pb.append(json.format_i64(character))
         let packed pb.to_string()
 
-        let text docstore.get(uri)
+        let text docstore.get uri
         let result worker.highlights(uri, text, packed)
         rpc.write_message(server.document_symbol_response(id, result))
     }
@@ -575,7 +575,7 @@ define server
         pb.append(json.format_i64(character))
         let packed pb.to_string()
 
-        let text docstore.get(uri)
+        let text docstore.get uri
         ; The CompletionItem[] array can be large (many names); reuse the
         ; byte-at-a-time array wrapper.
         let result worker.completion(uri, text, packed)
@@ -601,7 +601,7 @@ define server
         pb.append(json.format_i64(character))
         let packed pb.to_string()
 
-        let text docstore.get(uri)
+        let text docstore.get uri
         let result worker.prepare_rename(uri, text, packed)
         rpc.write_message(server.hover_response(id, result))
     }
@@ -649,7 +649,7 @@ define server
         }
         let packed pb.to_string()
 
-        let text docstore.get(uri)
+        let text docstore.get uri
         let result worker.rename(uri, text, packed)
         ; Empty -> not renameable / worker unavailable -> null. A real
         ; WorkspaceEdit can be large, so wrap it byte-at-a-time.
@@ -711,7 +711,7 @@ define server
         let uri json.as_string(json.get(doc, "uri"))
         ; Drop the in-memory buffer; subsequent requests fall back to disk.
         docstore.remove uri
-        let payload diagnostics.clear_diagnostics(uri)
+        let payload diagnostics.clear_diagnostics uri
         rpc.write_message payload
     }
 
