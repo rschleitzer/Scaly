@@ -352,7 +352,7 @@ define Parser
             throw ParserError.Different(DifferentSyntax())
 "
                                         "
-            throw ParserError.Invalid(InvalidSyntax(start, lexer.position, \"expected colon or newline\"))
+            throw ParserError.Invalid(InvalidSyntax(lexer.previous_position, lexer.position, \"expected colon or newline\"))
 ")
                                 )
                             )

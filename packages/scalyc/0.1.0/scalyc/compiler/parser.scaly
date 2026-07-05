@@ -3087,7 +3087,7 @@ define Parser
                 set condition: success
 
         if ~lexer.parse_colon()
-            throw ParserError.Invalid(InvalidSyntax(start, lexer.position, "expected colon or newline"))
+            throw ParserError.Invalid(InvalidSyntax(lexer.previous_position, lexer.position, "expected colon or newline"))
 
         let consequent_start lexer.position
         var consequent: ThenSyntax
@@ -3193,7 +3193,7 @@ define Parser
                 set scrutinee: success
 
         if ~lexer.parse_colon()
-            throw ParserError.Invalid(InvalidSyntax(start, lexer.position, "expected colon or newline"))
+            throw ParserError.Invalid(InvalidSyntax(lexer.previous_position, lexer.position, "expected colon or newline"))
 
         let branches_start lexer.position
         var branches: ref[Vector[BranchSyntax]]?
@@ -3269,7 +3269,7 @@ define Parser
                 set cases: success
 
         if ~lexer.parse_colon()
-            throw ParserError.Invalid(InvalidSyntax(start, lexer.position, "expected colon or newline"))
+            throw ParserError.Invalid(InvalidSyntax(lexer.previous_position, lexer.position, "expected colon or newline"))
 
         let consequent_start lexer.position
         var consequent: StatementSyntax
@@ -3367,7 +3367,7 @@ define Parser
                 set condition: success
 
         if ~lexer.parse_colon()
-            throw ParserError.Invalid(InvalidSyntax(start, lexer.position, "expected colon or newline"))
+            throw ParserError.Invalid(InvalidSyntax(lexer.previous_position, lexer.position, "expected colon or newline"))
 
         let name_start lexer.position
         var name: ref[LabelSyntax]? null
@@ -3425,7 +3425,7 @@ define Parser
                 set condition: success
 
         if ~lexer.parse_colon()
-            throw ParserError.Invalid(InvalidSyntax(start, lexer.position, "expected colon or newline"))
+            throw ParserError.Invalid(InvalidSyntax(lexer.previous_position, lexer.position, "expected colon or newline"))
 
         let cases_start lexer.position
         var cases: ref[Vector[WhenSyntax]]? null
@@ -3493,7 +3493,7 @@ define Parser
                 set condition: success
 
         if ~lexer.parse_colon()
-            throw ParserError.Invalid(InvalidSyntax(start, lexer.position, "expected colon or newline"))
+            throw ParserError.Invalid(InvalidSyntax(lexer.previous_position, lexer.position, "expected colon or newline"))
 
         let cases_start lexer.position
         var cases: ref[Vector[WhenSyntax]]? null
@@ -3592,7 +3592,7 @@ define Parser
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, "expected identifier"))
 
         if ~lexer.parse_colon()
-            throw ParserError.Invalid(InvalidSyntax(start, lexer.position, "expected colon or newline"))
+            throw ParserError.Invalid(InvalidSyntax(lexer.previous_position, lexer.position, "expected colon or newline"))
 
         let variant_start lexer.position
         var variant: NameSyntax
@@ -4370,7 +4370,7 @@ define Parser
                 set input: success
 
         if ~lexer.parse_colon()
-            throw ParserError.Invalid(InvalidSyntax(start, lexer.position, "expected colon or newline"))
+            throw ParserError.Invalid(InvalidSyntax(lexer.previous_position, lexer.position, "expected colon or newline"))
 
         let block_start lexer.position
         var block: ActionSyntax
@@ -4432,7 +4432,7 @@ define Parser
                 set operation: success
 
         if ~lexer.parse_colon()
-            throw ParserError.Invalid(InvalidSyntax(start, lexer.position, "expected colon or newline"))
+            throw ParserError.Invalid(InvalidSyntax(lexer.previous_position, lexer.position, "expected colon or newline"))
 
         let name_start lexer.position
         var name: ref[LabelSyntax]? null
@@ -4628,7 +4628,7 @@ define Parser
                 set target: success
 
         if ~lexer.parse_colon()
-            throw ParserError.Invalid(InvalidSyntax(start, lexer.position, "expected colon or newline"))
+            throw ParserError.Invalid(InvalidSyntax(lexer.previous_position, lexer.position, "expected colon or newline"))
 
         let source_start lexer.position
         var source: ref[Vector[OperandSyntax]]?

@@ -1,0 +1,16 @@
+; xfail: :10: expected colon or newline
+;
+; `if X return Y` with no colon/newline separating the condition from the
+; consequent is a syntax error: the condition operand list ends at the `return`
+; keyword, then a separator is required. The self-hosted parser raises a hard
+; "expected colon or newline" (the C++-stage-0 note about silently dropping the
+; if-branch does not apply here — the Invalid propagates eagerly). The point of
+; this test is the LOCATION: the diagnostic must point at the offending token
+; (`return`, col 10) via lexer.previous_position, NOT at the `if` keyword
+; (col 5) as it did when the error start was the construct's `start`.
+
+function f(x: int) returns int
+{
+    if x return 1
+    return 2
+}
