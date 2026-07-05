@@ -16,23 +16,27 @@ STAGE=${1:-/tmp/scalyc_stage2}
 SRC=tests/aot/hello.scaly
 pass=0; fail=0; failures=()
 
-# triple -> substring that `file` must report for a correct object.
+# triple -> (format token, arch token) that `file` must BOTH report. Checked
+# independently because GNU file (Linux) and BSD file (macOS) order the words
+# differently ("Mach-O 64-bit x86_64 object" vs "Mach-O 64-bit object x86_64"),
+# so a fixed phrase is not portable — but both always contain the format name
+# and the arch name somewhere.
 check() {
-  local triple=$1 want=$2 obj=/tmp/target_$3.o
+  local triple=$1 fmt=$2 arch=$3 obj=/tmp/target_$4.o
   rm -f "$obj"
   "$STAGE" -c --target "$triple" -o "$obj" "$SRC" >/dev/null 2>&1
   local desc; desc=$(file "$obj" 2>/dev/null)
-  if printf '%s' "$desc" | grep -qF "$want"; then
+  if printf '%s' "$desc" | grep -qF "$fmt" && printf '%s' "$desc" | grep -qF "$arch"; then
     pass=$((pass+1))
   else
     fail=$((fail+1)); failures+=("$triple: '$desc'")
   fi
 }
 
-check x86_64-linux-gnu   "x86-64"        x86lin
-check aarch64-linux-gnu  "aarch64"       arm64lin
-check x86_64-apple-darwin "Mach-O 64-bit object x86_64" x86mac
-check arm64-apple-darwin  "Mach-O 64-bit object arm64"  arm64mac
+check x86_64-linux-gnu    ELF     x86-64   x86lin
+check aarch64-linux-gnu   ELF     aarch64  arm64lin
+check x86_64-apple-darwin Mach-O  x86_64   x86mac
+check arm64-apple-darwin  Mach-O  arm64    arm64mac
 
 echo "target: $pass PASS, $fail FAIL ${failures[*]}"
 [ $fail -eq 0 ]
