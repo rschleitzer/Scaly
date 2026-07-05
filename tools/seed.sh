@@ -43,6 +43,18 @@ CC=${1:-/tmp/scalyc_stage2}
 OUT=${2:-dist/seed}
 CLANG=${CLANG:-clang}
 
+# On Linux, stock GNU ld (BFD) fails to link libLLVM-18 ("failed to set dynamic
+# section sizes: bad value"); lld handles it. Mirror tools/build-from-seed.sh so
+# seed.sh's OWN link steps (scalyc_seed, scalyls) work on Linux too. macOS ld64
+# links fine, so LINKARGS stays empty there.
+LINKARGS=()
+if [ "$(uname -s)" = "Linux" ]; then
+  for c in "$LLVM_PREFIX/bin/ld.lld" ld.lld ld.lld-18; do
+    p=$(command -v "$c" 2>/dev/null || true)
+    [ -n "$p" ] && { LINKARGS+=("-fuse-ld=$p"); break; }
+  done
+fi
+
 mkdir -p "$OUT"
 fail() { echo "SEED: FAIL — $1"; exit 1; }
 
@@ -71,7 +83,7 @@ done
 # (LLVM-18 llc is required: some system clangs reject the seed's
 # mul/ptrtoint-getelementptr constexprs; llc-18 accepts them. The final link
 # is plain object linking, so any clang/cc works.)
-if ! "$CLANG" "$OUT/main.o" "$OUT/scalyc.o" "$OUT/scaly.o" \
+if ! "$CLANG" "${LINKARGS[@]}" "$OUT/main.o" "$OUT/scalyc.o" "$OUT/scaly.o" \
      -L"$LLVM_LIBDIR" -l"$LLVM_LIBNAME" -o "$OUT/scalyc_seed" 2> "$OUT/link.log"; then
   grep -v 'reexported library' "$OUT/link.log" || true
   fail "link (undefined symbols)"
@@ -137,7 +149,7 @@ echo "seed: emitting scalyls roots with $OUT/scalyc_seed (self-hosted)"
 for f in scalyls_main scalyls; do
   "$LLC" -relocation-model=pic -filetype=obj "$OUT/$f.ll" -o "$OUT/$f.o" || fail "llc $f.ll"
 done
-if ! "$CLANG" "$OUT/scalyls_main.o" "$OUT/scalyls.o" "$OUT/scalyc.o" "$OUT/scaly.o" \
+if ! "$CLANG" "${LINKARGS[@]}" "$OUT/scalyls_main.o" "$OUT/scalyls.o" "$OUT/scalyc.o" "$OUT/scaly.o" \
      -L"$LLVM_LIBDIR" -l"$LLVM_LIBNAME" -o "$OUT/scalyls" 2> "$OUT/scalyls_link.log"; then
   grep -v 'reexported library' "$OUT/scalyls_link.log" || true
   fail "scalyls link (undefined symbols)"

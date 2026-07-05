@@ -1,0 +1,65 @@
+name: seed
+
+# Mint + fixed-point-verify the seed NATIVELY on each of the "fabulous four"
+# LP64 targets. The committed seed .ll is target-neutral (no triple/datalayout,
+# LP64 sizes baked in), so one seed serves all four — but the toolchain is
+# host-only for LINKING + RUNNING, so each target must build + run it natively.
+# This matrix is that native verification (arm64-mac is the dev box; the other
+# three are proven here). tools/seed.sh auto-bootstraps stage-2 from the
+# committed seed (no C++, no cmake, no openjade — LLVM 18 + clang only), emits
+# the seed, links it clean, runs hello + the AOT corpus, checks byte-identical
+# self-reproduction, and builds + smoke-tests the scalyls language server.
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+
+jobs:
+  seed:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: x86_64-linux-gnu
+            os: ubuntu-latest
+          - name: aarch64-linux-gnu
+            os: ubuntu-24.04-arm
+          - name: x86_64-apple-darwin
+            os: macos-13
+          - name: arm64-apple-darwin
+            os: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install deps (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y llvm-18 llvm-18-dev clang-18 lld-18 python3
+          # seed.sh links with $CLANG; Ubuntu ships clang-18, not a bare `clang`.
+          echo "CLANG=clang-18" >> "$GITHUB_ENV"
+          # libLLVM-18.so lives under the versioned prefix; put it on the loader
+          # path so the freshly-linked scalyc_seed can start.
+          echo "LD_LIBRARY_PATH=$(llvm-config-18 --libdir)" >> "$GITHUB_ENV"
+
+      - name: Install deps (macOS)
+        if: runner.os == 'macOS'
+        run: brew install llvm@18
+
+      - name: Build + verify seed (bootstrap, link, hello, AOT, fixed point)
+        run: tools/seed.sh
+
+      - name: Cross-emit sanity (--target all four object formats)
+        run: tests/target/run.sh dist/seed/scalyc_seed
+
+      - name: Upload native compiler
+        uses: actions/upload-artifact@v4
+        with:
+          name: scalyc-${{ matrix.name }}
+          path: dist/seed/scalyc_seed
+          if-no-files-found: error
