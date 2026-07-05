@@ -2838,6 +2838,41 @@ function build_program(file_name: String, program_name: String, syntax: ProgramS
         }
     }
 
+    ; Implicit stdlib: auto-load the scaly package so its types (String,
+    ; Vector, Option, Result, HashMap, …) are usable WITHOUT an explicit
+    ; `package scaly 0.1.0` — the prelude.scaly submodule above only
+    ; supplies print/println/puts. Loaded exactly like handle_package_decl#
+    ; (same path/name), so register_packages# registers its concepts and
+    ; the used ones instantiate on demand (unused ones are never emitted;
+    ; the runtime bodies link from libscaly.a — identical to the explicit
+    ; form). SKIPPED when the program already declares `package scaly`
+    ; (dedup below → byte-identical emission for the compiler's own roots,
+    ; which all declare it) and when the prelude is disabled (--no-prelude:
+    ; the libscaly build + bare-metal targets).
+    if enable_prelude
+    {
+        var has_scaly: bool false
+        var pk: size_t 0
+        while pk < packages.length
+        {
+            let pkp packages.get pk
+            if pkp <> null
+                if pkp.name.equals("scaly")
+                    set has_scaly: true
+            set pk: pk + 1
+        }
+        if has_scaly = false
+        {
+            var std_sb StringBuilder()
+            std_sb.append(scaly_home_base())
+            std_sb.append "packages/scaly/0.1.0"
+            let std_path std_sb.to_string()
+            let std_module build_referenced_module(std_path, "scaly", false)
+            if std_module.members.length > 0
+                packages.add std_module
+        }
+    }
+
     ; Handle top-level statements
     let statements handle_statements(syntax.statements)
 

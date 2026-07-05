@@ -1,0 +1,48 @@
+; Implicit stdlib: the scaly package (String, Vector, Option, Result, …) is
+; usable WITHOUT an explicit `package scaly 0.1.0` — the Modeler auto-loads
+; the package whenever the prelude is enabled (dedup'd against an explicit
+; declaration, skipped under --no-prelude). Before the fix, prelude.scaly
+; supplied only print/println/puts and every stdlib TYPE reference failed
+; with "function not found". No `package scaly 0.1.0` line here on purpose.
+; Expected: PASS
+
+function opt_roundtrip() returns int
+{
+    let x Option[int].Some(7)
+    choose x
+        when v: Some
+            return v
+        else
+            return 0
+}
+
+function res_roundtrip() returns int
+{
+    let r Result[int, bool].Ok(11)
+    choose r
+        when v: Ok
+            return v
+        else
+            return 0
+}
+
+var ok true
+
+let s String("hi")
+if s.get_length() <> 2
+    set ok: false
+
+let v Vector[int](3)
+if v.length <> 3
+    set ok: false
+
+if opt_roundtrip() <> 7
+    set ok: false
+
+if res_roundtrip() <> 11
+    set ok: false
+
+if ok
+    print("PASS")
+else
+    print("FAIL")
