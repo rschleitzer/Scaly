@@ -24,8 +24,6 @@
 ; The keyword set comes straight from the grammar's <keyword> elements, so new
 ; keywords flow into syntax highlighting automatically as the language grows.
 
-use scaly.containers.String
-
 define grammar
 {
     ; True when `word` is a reserved keyword (scaly.sgm <keyword> list).
