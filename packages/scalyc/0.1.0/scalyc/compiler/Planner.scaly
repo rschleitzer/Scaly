@@ -100,6 +100,18 @@ define EscapeRecord
     src_field1: size_t
 )
 
+; Result of resolving a stored/forwarded operand back to a (parameter, field
+; path) pair — the access-path generalization of escape_value_param_root.
+; param_index -1 = not rooted at a parameter/alias. All scalars (k=2 field
+; path), so it returns/copies by value with no RBMM lifetime concern.
+define EscapeAccess
+(
+    param_index: int
+    path_len: size_t
+    field0: size_t
+    field1: size_t
+)
+
 define Planner
 {
     ; ========================================================================
@@ -17112,16 +17124,201 @@ define Planner
             -1
         }
 
+        ; EMITTER CONSTRAINT for every EscapeAccess-returning helper below:
+        ; accumulate working state in SCALARS and construct the returned struct
+        ; EXACTLY ONCE (a single tail construction). A by-value struct returned
+        ; from multiple branches — or a struct local reassigned across branches —
+        ; is region-allocated per site, and a phi merging those buffers fails
+        ; LLVM verification ("Instruction does not dominate all uses"). Field
+        ; paths are k=2, appended with truncation (a truncated path denotes "this
+        ; field subtree" — region_of_arg_path# resolves it SAFE unless provably
+        ; local, so truncation never causes a false flag).
+
+        ; peel_operand: the inner operand of a deref (`*pr`) or a parenthesized
+        ; single value (`(*pr)` = a one-component one-operand Tuple), as a ref
+        ; into the existing Plan tree (no by-value union copy). null otherwise.
+        ; Lets escape_resolve_access# keep a SINGLE recursion site outside its
+        ; classifying choose — two sret-returning recursive calls in separate
+        ; choose arms make the emitter merge their result buffers into a phi
+        ; that fails LLVM verification ("does not dominate all uses").
+        function peel_operand(this: Planner, op: PlannedOperand) returns ref[PlannedOperand]?
+        {
+            var result: ref[PlannedOperand]? null
+            choose op.expr
+                when tp: Tuple
+                {
+                    if tp.components <> null
+                    {
+                        let comps (*tp.components)
+                        if comps.length = 1
+                        {
+                            let cp comps.get 0
+                            if cp <> null
+                            {
+                                let comp (*cp)
+                                if comp.value <> null
+                                {
+                                    let vals (*comp.value)
+                                    if vals.length = 1
+                                        set result: vals.get 0
+                                }
+                            }
+                        }
+                    }
+                }
+                when c: PlannedCall
+                {
+                    if c.is_operator
+                        if c.name.equals("*")
+                            if c.args <> null
+                            {
+                                let a (*c.args)
+                                if a.length = 1
+                                    set result: a.get 0
+                            }
+                }
+                else
+                    0
+            result
+        }
+
+        function escape_resolve_access(this: Planner, op: PlannedOperand) returns EscapeAccess
+        {
+            ; SCALAR accumulate / construct-once (see path_push# comment) — no
+            ; struct local is reassigned across branches, and there is one
+            ; EscapeAccess construction (the tail).
+            var root_pi: int -1
+            var plen: size_t 0
+            var f0: size_t 0
+            var f1: size_t 0
+
+            var is_var false
+            choose op.expr
+                when v: Variable
+                {
+                    set is_var: true
+                    let d this.escape_param_index_current(v.name)
+                    if d >= 0
+                        set root_pi: d
+                    else
+                        set root_pi: this.escape_alias_param_index(v.name)
+                }
+                else
+                    0
+
+            ; Single recursion site: peel a deref/paren layer and resolve the
+            ; inner operand (its own member hops, if any, are handled by that
+            ; recursive frame; our real shapes carry them on the outermost op).
+            ; The result is read into scalars — never reassigned as a struct.
+            if is_var = false
+            {
+                let inner this.peel_operand(op)
+                if inner <> null
+                {
+                    let r this.escape_resolve_access((*inner))
+                    set root_pi: r.param_index
+                    set plen: r.path_len
+                    set f0: r.field0
+                    set f1: r.field1
+                }
+            }
+
+            var ok false
+            if root_pi >= 0
+            {
+                set ok: true
+                if op.member_access <> null
+                {
+                    let chain (*op.member_access)
+                    var i: size_t 0
+                    while i < chain.length
+                    {
+                        let hp chain.get i
+                        if hp <> null
+                        {
+                            let hop (*hp)
+                            if hop.is_method
+                                set ok: false
+                            if hop.is_union_value
+                                set ok: false
+                            if ok
+                            {
+                                ; append field index (k=2 truncation). `else`
+                                ; prevents the just-set plen=1 branch from also
+                                ; firing the plen=1 branch in the same iteration.
+                                if plen = 0
+                                {
+                                    set f0: hop.field_index
+                                    set plen: 1
+                                }
+                                else
+                                {
+                                    if plen = 1
+                                    {
+                                        set f1: hop.field_index
+                                        set plen: 2
+                                    }
+                                }
+                            }
+                        }
+                        set i: i + 1
+                    }
+                }
+            }
+
+            if ok = false
+            {
+                set root_pi: -1
+                set plen: 0
+                set f0: 0
+                set f1: 0
+            }
+            EscapeAccess(root_pi, plen, f0, f1)
+        }
+
+        ; escape_value_param_access: the (parameter, field-path) an escapable
+        ; stored/forwarded operand denotes, or param_index -1. A path-0 result is
+        ; tracked ONLY when the operand is a bare parameter/alias Variable — the
+        ; exact pre-reshape behavior of escape_value_param_root, so path-0 summary
+        ; records are byte-identical. A bare deref/paren with no field (`(*pr)`)
+        ; is not tracked. A field reshape (`(*pr).a`, `pr.a`, `s.current`) yields
+        ; path_len > 0 and IS tracked (this is what escape_value_param_root
+        ; deliberately dropped to protect the self-host; the field check now
+        ; resolves it via per-field provenance instead of coarsely flagging).
+        function escape_value_param_access(this: Planner, op: PlannedOperand) returns EscapeAccess
+        {
+            ; SCALAR accumulate / construct-once (see path_push# comment).
+            let acc this.escape_resolve_access(op)
+            var pi: int acc.param_index
+            var plen acc.path_len
+            var f0 acc.field0
+            var f1 acc.field1
+            if acc.param_index >= 0
+                if acc.path_len = 0
+                {
+                    var is_bare_var false
+                    choose op.expr
+                        when v: Variable
+                            set is_bare_var: true
+                        else
+                            0
+                    if is_bare_var = false
+                        set pi: -1
+                }
+            if pi < 0
+            {
+                set plen: 0
+                set f0: 0
+                set f1: 0
+            }
+            EscapeAccess(pi, plen, f0, f1)
+        }
+
         ; escape_value_param_root: the reference-like/delegate PARAMETER index
         ; this operand's value IS — a bare parameter, or a bare local ALIAS of a
         ; parameter (`let q p`). -1 otherwise. Deliberately BARE only (no member
-        ; hop): a field/deref reshape (`s.current`) is NOT the parameter's own
-        ; lifetime — flagging it would reject the ubiquitous struct-field-copy
-        ; pattern (Lexer.restore_state does `set current: s.current`, storing a
-        ; long-lived pointer field of param `s`) and break the self-host. So the
-        ; FIELD reshape stays a documented residual (it needs per-field pointee-
-        ; lifetime tracking the coarse per-param summary cannot express); only the
-        ; precise ALIAS reshape is closed here.
+        ; hop). Kept UNCHANGED (not routed through escape_value_param_access) so
+        ; the alias-recording site's bare-only semantics are exactly preserved.
         function escape_value_param_root(this: Planner, op: PlannedOperand) returns int
         {
             if op.member_access <> null
@@ -17180,14 +17377,18 @@ define Planner
             ; storing such a value frame-external makes whatever the caller passes
             ; outlive this frame; the call check then flags callers passing a
             ; Local ref / STACK closure (a heap `#` / borrowed param is fine).
-            var stored_param_index: int -1
             var val_is_escapable false
             if Planner.is_reference_like(val.result_type)
                 set val_is_escapable: true
             if this.is_delegate_type(val.result_type.name)
                 set val_is_escapable: true
+            ; Computed unconditionally (no struct-local reassignment); the
+            ; val_is_escapable gate is applied to the scalar param index so a
+            ; non-reference store (e.g. an int parameter) is never recorded.
+            let acc this.escape_value_param_access(val)
+            var stored_param_index: int -1
             if val_is_escapable
-                set stored_param_index: this.escape_value_param_root(val)
+                set stored_param_index: acc.param_index
             if stored_param_index < 0
                 return
 
@@ -17232,9 +17433,9 @@ define Planner
                 (stored_param_index as size_t),
                 (dest_kind as size_t),
                 (dest_index as size_t),
-                (0 as size_t),
-                (0 as size_t),
-                (0 as size_t)
+                acc.path_len,
+                acc.field0,
+                acc.field1
             ))
         }
 
@@ -17242,6 +17443,11 @@ define Planner
         function escape_check_call_record(this: Planner, call: PlannedCall, rec: EscapeRecord)
         {
             if escape_found
+                return
+            ; PHASE-2 GATE: a field-path record (src_path_len > 0) is not yet
+            ; checked; the field-aware region check (region_of_arg_path#) is
+            ; activated in phase 4, replacing this early return.
+            if rec.src_path_len > 0
                 return
             let callee instantiated_functions.get rec.callee_fn_index
             if callee = null
@@ -17394,7 +17600,7 @@ define Planner
         ; (callee_fn_index + param_index + dest_kind + dest_index). callee_param_
         ; count is derived from callee_fn_index so it is not part of identity.
         ; Dedup is what makes the forwarding fixpoint terminate.
-        function escape_record_exists(this: Planner, fn_index: size_t, param_index: size_t, dest_kind: size_t, dest_index: size_t) returns bool
+        function escape_record_exists(this: Planner, fn_index: size_t, param_index: size_t, dest_kind: size_t, dest_index: size_t, path_len: size_t, field0: size_t, field1: size_t) returns bool
         {
             var ri: size_t 0
             while ri < escape_records.length
@@ -17407,7 +17613,10 @@ define Planner
                         if rec.param_index = param_index
                             if rec.dest_kind = dest_kind
                                 if rec.dest_index = dest_index
-                                    return true
+                                    if rec.src_path_len = path_len
+                                        if rec.src_field0 = field0
+                                            if rec.src_field1 = field1
+                                                return true
                 }
                 set ri: ri + 1
             }
@@ -17466,7 +17675,7 @@ define Planner
                         if fwd_param_index >= 0
                         {
                             let cpc this.escape_current_param_count()
-                            if this.escape_record_exists(escape_fn_index, (fwd_param_index as size_t), (1 as size_t), (0 as size_t)) = false
+                            if this.escape_record_exists(escape_fn_index, (fwd_param_index as size_t), (1 as size_t), (0 as size_t), (0 as size_t), (0 as size_t), (0 as size_t)) = false
                                 escape_records.add(EscapeRecord(
                                     escape_fn_index,
                                     cpc,
@@ -17520,7 +17729,8 @@ define Planner
                 set arg_is_escapable: true
             if arg_is_escapable = false
                 return
-            let fwd_param_index this.escape_value_param_root(arg)
+            let facc this.escape_value_param_access(arg)
+            let fwd_param_index facc.param_index
             if fwd_param_index < 0
                 return
 
@@ -17571,8 +17781,40 @@ define Planner
             if new_dest_kind < 0
                 return
 
+            ; Compose the forwarded arg's own field path with the callee's
+            ; recorded field path: the current fn persists fwd_param accessed at
+            ; (arg-path ++ callee-path), k=2 truncation. For the common bare
+            ; forward (both paths empty) this is the empty path -> byte-identical
+            ; to the pre-reshape record. Composed in SCALARS to avoid a struct-
+            ; local reassignment (see path_push# comment).
+            var cplen facc.path_len
+            var cf0 facc.field0
+            var cf1 facc.field1
+            if rec.src_path_len >= 1
+            {
+                if cplen = 0
+                {
+                    set cf0: rec.src_field0
+                    set cplen: 1
+                }
+                else
+                {
+                    if cplen = 1
+                    {
+                        set cf1: rec.src_field0
+                        set cplen: 2
+                    }
+                }
+            }
+            if rec.src_path_len >= 2
+                if cplen = 1
+                {
+                    set cf1: rec.src_field1
+                    set cplen: 2
+                }
+
             let cpc this.escape_current_param_count()
-            if this.escape_record_exists(escape_fn_index, (fwd_param_index as size_t), (new_dest_kind as size_t), (new_dest_index as size_t))
+            if this.escape_record_exists(escape_fn_index, (fwd_param_index as size_t), (new_dest_kind as size_t), (new_dest_index as size_t), cplen, cf0, cf1)
                 return
             escape_records.add(EscapeRecord(
                 escape_fn_index,
@@ -17580,9 +17822,9 @@ define Planner
                 (fwd_param_index as size_t),
                 (new_dest_kind as size_t),
                 (new_dest_index as size_t),
-                (0 as size_t),
-                (0 as size_t),
-                (0 as size_t)
+                cplen,
+                cf0,
+                cf1
             ))
         }
 
