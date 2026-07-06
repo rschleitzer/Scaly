@@ -12,8 +12,17 @@
 ; instantiation (Vector[JsonValue]) crashes the stage-0 planner when the
 ; union is used from ANOTHER package — the compiler's own recursive
 ; unions are all intra-package, so that path is untested. Pointers break
-; the layout cycle with no generic instantiation, so the union lays out
-; the same way in every consuming package.
+; the layout cycle with no generic instantiation.
+;
+; CROSS-PACKAGE SIZE NOTE: the Array/Object variants hold a POINTER to the
+; JsonArray/JsonObject (not the 16-byte struct by value). A consuming
+; package that imports only JsonValue does not see the JsonArray/JsonObject
+; definitions, so it sizes them via an 8-byte struct placeholder — a
+; by-value variant would then lay the union out at 8 bytes in the consumer
+; but 16 bytes here, and json.get's sret store would overrun the caller's
+; slot and corrupt the adjacent stack. A pointer is 8 bytes in every
+; package with no definition needed, so the union lays out identically
+; everywhere (max payload = 8: i64 / String / pointer).
 ;
 ; PAYLOADLESS-VARIANT NOTE: every variant carries a payload (Null wraps an
 ; empty JsonNull). A BARE payloadless variant value (`JsonValue.Null`)
@@ -43,8 +52,8 @@ define JsonValue union
     Bool: bool
     Number: i64
     Str: String
-    Array: JsonArray
-    Object: JsonObject
+    Array: pointer[JsonArray]
+    Object: pointer[JsonObject]
 )
 
 ; Cursor over the source text. `ok` latches false on the first parse
@@ -120,7 +129,7 @@ define json
     {
         choose this
             when arr: Array
-                arr.count
+                (*arr).count
             else
                 0 as size_t
     }
@@ -132,10 +141,10 @@ define json
         choose this
             when arr: Array
             {
-                if i >= arr.count
+                if i >= (*arr).count
                     return JsonValue.Null(JsonNull())
 
-                *(arr.items + i)
+                *((*arr).items + i)
             }
             else
                 json.null_value()
@@ -149,9 +158,9 @@ define json
             when obj: Object
             {
                 var i: size_t 0
-                while i < obj.count
+                while i < (*obj).count
                 {
-                    let mm (*(obj.members + i))
+                    let mm (*((*obj).members + i))
                     if mm.key.equals(key)
                         return mm.value
 
@@ -243,7 +252,11 @@ define json
 
         ; Materialize the List into a contiguous, order-preserving buffer.
         if count = (0 as size_t)
-            return JsonValue.Object(JsonObject(0 as size_t, null))
+        {
+            let empty rp.allocate(sizeof JsonObject, alignof JsonObject) as pointer[JsonObject]
+            set *empty: JsonObject(0 as size_t, null)
+            return JsonValue.Object(empty)
+        }
 
         let buf rp.allocate(count * sizeof JsonMember, alignof JsonMember) as pointer[JsonMember]
         var it members.get_iterator()
@@ -253,7 +266,9 @@ define json
             set i: i - 1
             set *(buf + i): *m
         }
-        JsonValue.Object(JsonObject(count, buf))
+        let obj rp.allocate(sizeof JsonObject, alignof JsonObject) as pointer[JsonObject]
+        set *obj: JsonObject(count, buf)
+        JsonValue.Object(obj)
     }
 
     function parse_array(rp, p: pointer[JsonParser]) returns JsonValue
@@ -286,7 +301,11 @@ define json
         }
 
         if count = (0 as size_t)
-            return JsonValue.Array(JsonArray(0 as size_t, null))
+        {
+            let empty rp.allocate(sizeof JsonArray, alignof JsonArray) as pointer[JsonArray]
+            set *empty: JsonArray(0 as size_t, null)
+            return JsonValue.Array(empty)
+        }
 
         let buf rp.allocate(count * sizeof JsonValue, alignof JsonValue) as pointer[JsonValue]
         var it items.get_iterator()
@@ -296,7 +315,9 @@ define json
             set i: i - 1
             set *(buf + i): *e
         }
-        JsonValue.Array(JsonArray(count, buf))
+        let arr rp.allocate(sizeof JsonArray, alignof JsonArray) as pointer[JsonArray]
+        set *arr: JsonArray(count, buf)
+        JsonValue.Array(arr)
     }
 
     function parse_string(rp, p: pointer[JsonParser]) returns String
@@ -522,12 +543,12 @@ define json
                 var sb StringBuilder()
                 sb.append(0x5B as char)    ; '['
                 var i: size_t 0
-                while i < arr.count
+                while i < (*arr).count
                 {
                     if i > (0 as size_t)
                         sb.append(0x2C as char)       ; ','
 
-                    sb.append(json.stringify(*(arr.items + i)))
+                    sb.append(json.stringify(*((*arr).items + i)))
                     set i: i + 1
                 }
                 sb.append(0x5D as char)    ; ']'
@@ -538,12 +559,12 @@ define json
                 var sb StringBuilder()
                 sb.append(0x7B as char)    ; '{'
                 var i: size_t 0
-                while i < obj.count
+                while i < (*obj).count
                 {
                     if i > (0 as size_t)
                         sb.append(0x2C as char)
 
-                    let mm (*(obj.members + i))
+                    let mm (*((*obj).members + i))
                     sb.append(json.quote_string(mm.key))
                     sb.append(0x3A as char)           ; ':'
                     sb.append(json.stringify(mm.value))
