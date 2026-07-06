@@ -73,6 +73,21 @@ define PlannerDiagnostic
 ; to align a call's args from the right (skipping any leading page arg).
 ; Indices are computed at collect time so the per-call check needs no signature
 ; lookup. Mirrors Planner.cpp's EscapeSummary/CalleeParamNames.
+; A per-parameter persist fact: "callee_fn_index's function stores its
+; parameter `param_index`, accessed at the k-limited FIELD path
+; (src_path_len / src_field0 / src_field1), into frame-external memory
+; (dest_kind 1 = global/deref, dest_kind 0 = into callee param dest_index's
+; field)". The field path is encoded as fixed scalars rather than a
+; Vector[String] (Design-B spec's illustrative form): k is fixed at 2, and
+; struct field INDICES — not names — align exactly between the callee's
+; store site and the caller's construction (both reference the same struct
+; type, so a field has one stable index), while staying pure scalars that
+; copy trivially by value in Array[EscapeRecord] with no String/RBMM
+; lifetime hazard. src_path_len 0 = the whole parameter (byte-compatible
+; with every pre-field-reshape record); 1 = param.<field0>; 2 =
+; param.<field0>.<field1>. A path longer than 2 is truncated to 2 (a
+; truncated match is treated as "this field subtree", resolved SAFE unless
+; provably local — see region_of_arg_path#).
 define EscapeRecord
 (
     callee_fn_index: size_t
@@ -80,6 +95,9 @@ define EscapeRecord
     param_index: size_t
     dest_kind: size_t
     dest_index: size_t
+    src_path_len: size_t
+    src_field0: size_t
+    src_field1: size_t
 )
 
 define Planner
@@ -17213,7 +17231,10 @@ define Planner
                 cpc,
                 (stored_param_index as size_t),
                 (dest_kind as size_t),
-                (dest_index as size_t)
+                (dest_index as size_t),
+                (0 as size_t),
+                (0 as size_t),
+                (0 as size_t)
             ))
         }
 
@@ -17451,6 +17472,9 @@ define Planner
                                     cpc,
                                     (fwd_param_index as size_t),
                                     (1 as size_t),
+                                    (0 as size_t),
+                                    (0 as size_t),
+                                    (0 as size_t),
                                     (0 as size_t)
                                 ))
                         }
@@ -17555,7 +17579,10 @@ define Planner
                 cpc,
                 (fwd_param_index as size_t),
                 (new_dest_kind as size_t),
-                (new_dest_index as size_t)
+                (new_dest_index as size_t),
+                (0 as size_t),
+                (0 as size_t),
+                (0 as size_t)
             ))
         }
 
