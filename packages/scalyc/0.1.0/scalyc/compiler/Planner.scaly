@@ -1932,6 +1932,37 @@ define Planner
             false
         }
 
+        ; type_is_char_like: a single-byte target (char / u8 / i8) into which a
+        ; double-quoted char literal — a chainless String constant — may fold
+        ; when passed as a call argument. Mirrors type_is_cstr_pointer's role
+        ; for the const_char* case, but for a scalar char parameter.
+        function type_is_char_like(t: PlannedType) returns bool
+        {
+            if t.name = "char"
+                return true
+            if t.name = "u8"
+                return true
+            if t.name = "i8"
+                return true
+            false
+        }
+
+        ; arg_is_foldable_char_string: is the argument at position `j` (in the
+        ; parallel arg-operand list gathered at the call site) a chainless
+        ; String constant that may fold to a char/u8 parameter? A short/empty
+        ; arg_ops list — the default at call sites that do not opt in — yields
+        ; false, so the char-fold match is byte-identical to the pre-feature
+        ; matchers everywhere it is not explicitly enabled.
+        function arg_is_foldable_char_string(this: Planner, arg_ops: Vector[PlannedOperand], j: size_t) returns bool
+        {
+            if j >= arg_ops.length
+                return false
+            let op_ptr arg_ops.get j
+            if op_ptr = null
+                return false
+            this.operand_is_string_constant((*op_ptr))
+        }
+
         ; operand_is_null_constant: is the operand the bare `null` literal?
         ; Used to EXCLUDE null comparisons from the equality desugar —
         ; `x <> null` is an NPO presence test, never a content compare.
@@ -4036,6 +4067,72 @@ define Planner
             true
         }
 
+        ; candidate_matches_char_fold: pure predicate for the char-fold
+        ; fallback pass. Arity + per-param, where a param that fails the
+        ; compatible check still matches when it is char/u8 and the argument
+        ; is a foldable String constant. Side-effect-free like candidate_matches
+        ; (plan_type# only) — the winner is rebuilt by check_function_match#
+        ; with char_fold=true, which folds the operand at the call site.
+        function candidate_matches_char_fold(
+            this: Planner,
+            f: Function,
+            arg_types: Vector[PlannedType],
+            arg_ops: Vector[PlannedOperand]
+        ) returns bool
+        {
+            var param_start: size_t 0
+            if f.input.length > 0
+            {
+                let first_ptr f.input.get 0
+                if first_ptr <> null
+                {
+                    if first_ptr.name <> null
+                    {
+                        let fname (*first_ptr.name)
+                        if fname = "this"
+                            set param_start: 1
+                    }
+                }
+            }
+
+            let expected_arity f.input.length - param_start
+            if expected_arity <> arg_types.length
+                return false
+
+            var any_fold: bool false
+            var j: size_t 0
+            while j < arg_types.length
+            {
+                let p_ptr f.input.get(j + param_start)
+                let a_ptr arg_types.get j
+                if p_ptr = null
+                    return false
+                if a_ptr = null
+                    return false
+                if p_ptr.type <> null
+                {
+                    let p_type (*p_ptr.type)
+                    let planned_p this.plan_type(p_type)
+                    let arg (*a_ptr)
+                    var ok: bool Planner.types_compatible(planned_p, arg)
+                    if ok = false
+                        if arg.name = "String"
+                            if Planner.type_is_char_like(planned_p)
+                                if this.arg_is_foldable_char_string(arg_ops, j)
+                                {
+                                    set ok: true
+                                    set any_fold: true
+                                }
+                    if ok = false
+                        return false
+                }
+                set j: j + 1
+            }
+            ; Require at least one genuine fold so this pass never displaces a
+            ; plain compatible match that the earlier passes should have taken.
+            any_fold
+        }
+
         ; Phase-5 class 1: a persist into a receiver that is itself a
         ; frame-local, non-escaping binding does not outlive the frame —
         ; receiver and argument share the frame's lifetime, so promoting
@@ -4125,7 +4222,9 @@ define Planner
             this: Planner,
             f: Function,
             arg_types: Vector[PlannedType],
-            exact_only: bool
+            exact_only: bool,
+            char_fold: bool,
+            arg_ops: Vector[PlannedOperand]
         ) returns ref[MethodMatch]?
         {
             var param_start: size_t 0
@@ -4167,6 +4266,17 @@ define Planner
                         set ok: Planner.types_equal(planned_p, arg)
                     if exact_only = false
                         set ok: Planner.types_compatible(planned_p, arg)
+                    ; Char-fold fallback: a bare double-quoted char literal (a
+                    ; chainless String constant) matches a char/u8 parameter.
+                    ; Enabled only in the dedicated fold pass; the operand is
+                    ; folded to a CharacterConstant at the call-construction
+                    ; site (fold_string_args_to_char).
+                    if ok = false
+                        if char_fold
+                            if arg.name = "String"
+                                if Planner.type_is_char_like(planned_p)
+                                    if this.arg_is_foldable_char_string(arg_ops, j)
+                                        set ok: true
                     if ok = false
                         return null
                     ; Ensure a by-value cross-package param type's layout so the
@@ -4414,7 +4524,7 @@ define Planner
                         set tci: tci + 1
                     }
                     var tail_vec Vector[PlannedType](tail_arr)
-                    return this.resolve_function_call(suffix, tail_vec)
+                    return this.resolve_function_call(suffix, tail_vec, Vector[PlannedOperand]())
                 }
             }
             null
@@ -4432,7 +4542,7 @@ define Planner
             arg_types: Vector[PlannedType]
         ) returns ref[MethodMatch]?
         {
-            let m this.resolve_function_call(suffix, arg_types)
+            let m this.resolve_function_call(suffix, arg_types, Vector[PlannedOperand]())
             if m <> null
                 return m
             this.resolve_namespace_this_method(prefix, suffix, arg_types)
@@ -4451,7 +4561,8 @@ define Planner
         function resolve_function_call(
             this: Planner,
             name: String,
-            arg_types: Vector[PlannedType]
+            arg_types: Vector[PlannedType],
+            arg_ops: Vector[PlannedOperand]
         ) returns ref[MethodMatch]?
         {
             let candidates this.lookup_functions(name)
@@ -4473,7 +4584,7 @@ define Planner
                 {
                     let f (*f_ptr)
                     if this.candidate_matches(f, arg_types, true)
-                        return this.check_function_match(f, arg_types, true)
+                        return this.check_function_match(f, arg_types, true, false, arg_ops)
                 }
                 set i: i + 1
             }
@@ -4493,7 +4604,7 @@ define Planner
                 {
                     let f (*f_ptr)
                     if this.candidate_matches_string_i8(f, arg_types)
-                        return this.check_function_match(f, arg_types, false)
+                        return this.check_function_match(f, arg_types, false, false, arg_ops)
                 }
                 set i15: i15 + 1
             }
@@ -4507,9 +4618,28 @@ define Planner
                 {
                     let f (*f_ptr)
                     if this.candidate_matches(f, arg_types, false)
-                        return this.check_function_match(f, arg_types, false)
+                        return this.check_function_match(f, arg_types, false, false, arg_ops)
                 }
                 set k: k + 1
+            }
+
+            ; Pass 2.5 (char fold): a bare double-quoted char literal argument
+            ; folds to a char/u8 parameter. Fallback-only — runs after the
+            ; exact/i8/compatible passes fail, so an existing String-parameter
+            ; overload (matched in Pass 1) always wins and emission stays
+            ; byte-identical for code that already resolves. The fold itself is
+            ; applied to the operand at the call-construction site.
+            var cf: size_t 0
+            while cf < candidates.length
+            {
+                let f_ptr candidates.get cf
+                if f_ptr <> null
+                {
+                    let f (*f_ptr)
+                    if this.candidate_matches_char_fold(f, arg_types, arg_ops)
+                        return this.check_function_match(f, arg_types, false, true, arg_ops)
+                }
+                set cf: cf + 1
             }
 
             ; Pass 3: generic overload. For candidates declaring type
@@ -4762,6 +4892,57 @@ define Planner
                         }
                     }
                     if wrapped = false
+                        out.add a
+                }
+                set ai: ai + 1
+            }
+            Vector[PlannedOperand](out)
+        }
+
+        ; fold_string_args_to_char: for a resolved call, fold each bare
+        ; double-quoted char literal argument (a chainless String constant)
+        ; whose matched parameter is char/u8/i8 into a validated
+        ; CharacterConstant. The counterpart to coerce_string_args_to_cstr for
+        ; the scalar-char case: without this the String pointer would be passed
+        ; into the char slot (silent wrong code). A multi-byte string here
+        ; raises the hard "not a single character" diagnostic inside
+        ; fold_string_operand_to_char. Same tail-alignment as
+        ; coerce_string_args_to_cstr (param_types excludes `this`).
+        function fold_string_args_to_char(
+            this: Planner,
+            args: Vector[PlannedOperand],
+            param_types: Vector[PlannedType]
+        ) returns Vector[PlannedOperand]
+        {
+            if param_types.length = 0
+                return Vector[PlannedOperand](args)
+            if args.length < param_types.length
+                return Vector[PlannedOperand](args)
+            let offset args.length - param_types.length
+            var out Array[PlannedOperand]()
+            var ai: size_t 0
+            while ai < args.length
+            {
+                let ap args.get ai
+                if ap <> null
+                {
+                    let a (*ap)
+                    var folded: bool false
+                    if ai >= offset
+                    {
+                        let pp param_types.get(ai - offset)
+                        if pp <> null
+                        {
+                            let pt (*pp)
+                            if Planner.type_is_char_like(pt)
+                                if this.operand_is_string_constant(a)
+                                {
+                                    out.add(this.fold_string_operand_to_char(a, pt))
+                                    set folded: true
+                                }
+                        }
+                    }
+                    if folded = false
                         out.add a
                 }
                 set ai: ai + 1
@@ -7326,6 +7507,14 @@ define Planner
                         ; plus any `if X = ...` follower silently
                         ; vanish from the IR.
                         var arg_types_arr_s90 Array[PlannedType]()
+                        ; Parallel to arg_types: the collapsed arg operands, so
+                        ; the resolution passes can tell a bare double-quoted
+                        ; char literal (a chainless String constant) from a
+                        ; String value and fold it to a char/u8 parameter as a
+                        ; last-resort fallback (Pass 2.5 / lookup_method's
+                        ; char-fold selection). Empty for non-string args → no
+                        ; behavioural change.
+                        var arg_ops_arr_s90 Array[PlannedOperand]()
                         choose second.expr
                             when tp_s90: PlannedTuple
                             {
@@ -7346,6 +7535,7 @@ define Planner
                                                 {
                                                     let collapsed_s90 this.collapse_operand_sequence(v_s90)
                                                     arg_types_arr_s90.add collapsed_s90.result_type
+                                                    arg_ops_arr_s90.add collapsed_s90
                                                 }
                                             }
                                         }
@@ -7354,9 +7544,13 @@ define Planner
                                 }
                             }
                             else
+                            {
                                 arg_types_arr_s90.add second.result_type
+                                arg_ops_arr_s90.add second
+                            }
                         let arg_types Vector[PlannedType](arg_types_arr_s90)
-                        var match_ref this.resolve_function_call(fn_name, arg_types)
+                        let arg_ops Vector[PlannedOperand](arg_ops_arr_s90)
+                        var match_ref this.resolve_function_call(fn_name, arg_types, arg_ops)
 
                         ; First-hop method dispatch (s75): when fn_name
                         ; is a dotted name `arg.starts_with` and `arg`
@@ -7470,7 +7664,7 @@ define Planner
                                     }
                                     if skip_dispatch = false
                                     {
-                                    let mm_ref this.lookup_method(local.binding_type, suffix, arg_types)
+                                    let mm_ref this.lookup_method(local.binding_type, suffix, arg_types, arg_ops)
                                     if mm_ref <> null
                                     {
                                         let mm (*mm_ref)
@@ -7619,7 +7813,7 @@ define Planner
                                         if last_acc.is_method
                                         {
                                             let recv_type last_acc.parent_type
-                                            let mm_ref this.lookup_method(recv_type, last_acc.name, arg_types)
+                                            let mm_ref this.lookup_method(recv_type, last_acc.name, arg_types, arg_ops)
                                             if mm_ref <> null
                                             {
                                                 let mm3 (*mm_ref)
@@ -8460,7 +8654,7 @@ define Planner
                                                 if inner_ptr <> null
                                                 {
                                                     let inner_t (*inner_ptr)
-                                                    let mm_ref this.lookup_method(inner_t, fn_name, arg_types)
+                                                    let mm_ref this.lookup_method(inner_t, fn_name, arg_types, arg_ops)
                                                     if mm_ref <> null
                                                     {
                                                         set match_ref: mm_ref
@@ -8571,13 +8765,17 @@ define Planner
                             {
                                 var ns_cp_holder Vector[PlannedType](ns_coerce_params)
                                 set call_args: this.coerce_string_args_to_cstr(call_args, ns_cp_holder)
+                                set call_args: this.fold_string_args_to_char(call_args, ns_cp_holder)
                             }
                         if has_ns_mangled = false
                             if match_ref <> null
                             {
                                 let mm_cc (*match_ref)
                                 if mm_cc.parameter_types <> null
+                                {
                                     set call_args: this.coerce_string_args_to_cstr(call_args, (*mm_cc.parameter_types))
+                                    set call_args: this.fold_string_args_to_char(call_args, (*mm_cc.parameter_types))
+                                }
                             }
                         ; Propagate the matched function's page-param
                         ; requirement to the PlannedCall so emit_call
@@ -9066,7 +9264,8 @@ define Planner
                                                 {
                                                     let match_ref this.lookup_method(
                                                         result.result_type, method_name,
-                                                        Planner.extract_arg_types(next_args)
+                                                        Planner.extract_arg_types(next_args),
+                                                        Vector[PlannedOperand]()
                                                     )
                                                     if match_ref <> null
                                                     {
@@ -9950,7 +10149,7 @@ define Planner
                             {
                                 var eq_arg_types Vector[PlannedType](1)
                                 eq_arg_types.put(0, rhs.result_type)
-                                let em_ref this.lookup_method(result.result_type, String("equals"), eq_arg_types)
+                                let em_ref this.lookup_method(result.result_type, String("equals"), eq_arg_types, Vector[PlannedOperand]())
                                 if em_ref <> null
                                 {
                                     let em (*em_ref)
@@ -10521,7 +10720,9 @@ define Planner
             this: Planner,
             f: Function,
             arg_types: Vector[PlannedType],
-            exact_only: bool
+            exact_only: bool,
+            char_fold: bool,
+            arg_ops: Vector[PlannedOperand]
         ) returns bool
         {
             var param_start: size_t 0
@@ -10562,6 +10763,16 @@ define Planner
                         set ok: Planner.types_equal(planned_p, arg)
                     if exact_only = false
                         set ok: Planner.types_compatible(planned_p, arg)
+                    ; Char-fold fallback (see check_function_match#): a bare
+                    ; char literal (chainless String constant) matches a
+                    ; char/u8 parameter. Enabled only by lookup_method#'s
+                    ; dedicated char-fold selection pass.
+                    if ok = false
+                        if char_fold
+                            if arg.name = "String"
+                                if Planner.type_is_char_like(planned_p)
+                                    if this.arg_is_foldable_char_string(arg_ops, j)
+                                        set ok: true
                     if ok = false
                         return false
                 }
@@ -10580,7 +10791,8 @@ define Planner
             this: Planner,
             struct_type: PlannedType,
             method_name: String,
-            arg_types: Vector[PlannedType]
+            arg_types: Vector[PlannedType],
+            arg_ops: Vector[PlannedOperand]
         ) returns ref[MethodMatch]?
         {
             ; s106: auto-deref pointer[T] / ref[T] before lookup. Mirrors
@@ -10742,7 +10954,7 @@ define Planner
                         let c_ptr candidates.get ci
                         if c_ptr <> null
                         {
-                            if this.method_params_match((*c_ptr), arg_types, true)
+                            if this.method_params_match((*c_ptr), arg_types, true, false, arg_ops)
                                 set chosen: c_ptr
                         }
                     }
@@ -10758,11 +10970,34 @@ define Planner
                             let c_ptr candidates.get ck
                             if c_ptr <> null
                             {
-                                if this.method_params_match((*c_ptr), arg_types, false)
+                                if this.method_params_match((*c_ptr), arg_types, false, false, arg_ops)
                                     set chosen: c_ptr
                             }
                         }
                         set ck: ck + 1
+                    }
+                }
+                ; Char-fold selection: prefer a char/u8 overload for a bare
+                ; double-quoted char literal argument. Fallback-only — runs
+                ; after the exact and compatible passes leave `chosen` null, so
+                ; an existing String overload (e.g. append(String)) still wins
+                ; and emission stays byte-identical. The operand is folded at
+                ; the call-construction site.
+                if chosen = null
+                {
+                    var cfk: size_t 0
+                    while cfk < candidates.length
+                    {
+                        if chosen = null
+                        {
+                            let c_ptr candidates.get cfk
+                            if c_ptr <> null
+                            {
+                                if this.method_params_match((*c_ptr), arg_types, false, true, arg_ops)
+                                    set chosen: c_ptr
+                            }
+                        }
+                        set cfk: cfk + 1
                     }
                 }
                 set type_substitutions.length: saved_subst_sel
@@ -14462,7 +14697,7 @@ define Planner
                 ; selection.
                 var no_args_arr Array[PlannedType]()
                 let no_args Vector[PlannedType](no_args_arr)
-                let get_iter_match this.lookup_method(iter_type, "get_iterator", no_args)
+                let get_iter_match this.lookup_method(iter_type, "get_iterator", no_args, Vector[PlannedOperand]())
                 if get_iter_match <> null
                 {
                     let gm (*get_iter_match)
@@ -14470,7 +14705,7 @@ define Planner
                     set iterator_type: gm.return_type
                     set get_iter_name: gm.mangled_name
 
-                    let next_match this.lookup_method(iterator_type, "next", no_args)
+                    let next_match this.lookup_method(iterator_type, "next", no_args, Vector[PlannedOperand]())
                     if next_match <> null
                     {
                         let nm (*next_match)

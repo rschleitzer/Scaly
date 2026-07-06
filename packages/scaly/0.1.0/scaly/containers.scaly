@@ -530,24 +530,24 @@ define containers
         if s.ends_with(hello)
             return -213
 
-        ; Test index_of
-        if s.index_of("H" as char) <> 0
+        ; Test index_of (bare char literal folds to the u8 overload)
+        if s.index_of("H") <> 0
             return -214
 
-        if s.index_of("," as char) <> 5
+        if s.index_of(",") <> 5
             return -215
 
-        if s.index_of("!" as char) <> 12
+        if s.index_of("!") <> 12
             return -216
 
-        if s.index_of("X" as char) <> -1
+        if s.index_of("X") <> -1
             return -217
 
         ; Test index_of with start offset
-        if s.index_of("o" as char, 0) <> 4
+        if s.index_of("o", 0) <> 4
             return -218
 
-        if s.index_of("o" as char, 5) <> 8
+        if s.index_of("o", 5) <> 8
             return -219
 
         0

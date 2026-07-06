@@ -1,0 +1,24 @@
+; The char-fold match is fallback-only: a String-parameter overload still
+; wins for a bare double-quoted literal, so existing code keeps resolving to
+; the String method and emission stays byte-identical. String.contains has
+; BOTH a u8 and a String overload; a multi-byte literal proves the String
+; overload was chosen (the char overload would hard-error on >1 byte, and a
+; single "H" resolving to contains(u8) would still be correct — so the
+; multi-byte cases are the discriminating ones).
+; Expected: PASS
+
+var failures 0
+var s "Hello, World!"
+
+; bare literals → contains(String) (String overload wins over contains(u8))
+if s.contains("Hello") = false
+    set failures: failures + 1
+if s.contains("World") = false
+    set failures: failures + 1
+if s.contains("xyz")
+    set failures: failures + 1
+
+if failures = 0
+    print "PASS\n"
+else
+    print "FAIL\n"

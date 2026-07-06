@@ -1,0 +1,34 @@
+; Double-quoted char literals fold to a char/u8 parameter in call-argument
+; position (2026-07-06). `s.index_of("H")` selects the u8 overload with no
+; explicit `as char`; a free function taking a char likewise accepts a bare
+; literal. Fallback-only — a String overload still wins for a bare literal
+; (see char_arg_overload_precedence).
+; Expected: PASS
+
+function first_is(c: char) returns bool
+    c = ("H" as char)
+
+var failures 0
+
+var s "Hello, World!"
+
+; index_of has only u8 overloads → the bare literal folds to u8
+if s.index_of("H") <> 0
+    set failures: failures + 1
+if s.index_of(",") <> 5
+    set failures: failures + 1
+if s.index_of("X") <> -1
+    set failures: failures + 1
+
+; two-arg index_of(u8, start) selected by arity + char fold
+if s.index_of("o", 5) <> 8
+    set failures: failures + 1
+
+; free function with a char parameter, bare literal argument
+if first_is("H") = false
+    set failures: failures + 1
+
+if failures = 0
+    print "PASS\n"
+else
+    print "FAIL\n"

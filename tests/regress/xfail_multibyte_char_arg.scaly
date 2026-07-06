@@ -1,0 +1,10 @@
+; A multi-byte string literal must NEVER silently match a char/u8 parameter.
+; index_of has only u8 overloads, so "ab" reaches the call-site char fold,
+; which raises the hard "not a single character" diagnostic
+; (fold_string_operand_to_char) instead of passing a String pointer into the
+; char slot.
+; xfail: not a single character
+
+var s "Hello"
+let n s.index_of("ab")
+print "unreachable\n"
