@@ -29,8 +29,19 @@ aws s3 cp docs/website/install.sh "s3://scaly.io/install.sh" \
 aws s3 cp "$TARBALL" "s3://scaly.io/downloads/scaly-$VERSION.tar.gz" \
     --content-type 'application/gzip'
 
+# Publish the VS Code extension under a STABLE name so the tutorial's install
+# command never goes stale. Picks the newest committed .vsix; rebuild it with
+# `cd editors/vscode && npm run package` before publishing a new version.
+VSIX=$(ls -t editors/vscode/scaly-*.vsix 2>/dev/null | head -1)
+if [ -n "$VSIX" ]; then
+  echo "publish-install: uploading $VSIX -> downloads/scaly-vscode.vsix"
+  aws s3 cp "$VSIX" "s3://scaly.io/downloads/scaly-vscode.vsix" \
+      --content-type 'application/octet-stream'
+fi
+
 aws cloudfront create-invalidation --distribution-id "$DIST_ID" \
-    --paths "/install.sh" "/downloads/scaly-$VERSION.tar.gz"
+    --paths "/install.sh" "/downloads/scaly-$VERSION.tar.gz" "/downloads/scaly-vscode.vsix"
 
 echo "publish-install: OK"
 echo "  users install with:  curl -fsSL https://scaly.io/install.sh | sh"
+echo "  VS Code extension:   https://scaly.io/downloads/scaly-vscode.vsix"

@@ -1,40 +1,81 @@
 # Scaly for VS Code
 
-A minimal VS Code language client for [scalyls](../../packages/scalyls/0.1.0), the
-Scaly language server (itself written in Scaly). It registers the `.scaly`
-language, launches the server over stdio, and surfaces what the server provides:
+VS Code language support for [Scaly](https://scaly.io), backed by
+[scalyls](../../packages/scalyls/0.1.0) — the Scaly language server, itself
+written in Scaly. The extension registers the `.scaly` language, provides
+TextMate syntax highlighting, launches the server over stdio, and declares
+breakpoint support so the CodeLLDB debugger can stop in Scaly sources.
 
-- **Diagnostics** — parse / model / plan errors, pushed by the server.
-- **Document symbols / outline** — the Outline view, breadcrumbs, and
-  "Go to Symbol in File" (`Cmd+Shift+O`), showing functions, structs/unions
-  (with their methods and variants), namespaces, and module-level mutables.
+What you get:
 
-No hover/completion/definition yet — those are planned server-side work. The
-client itself is generic `vscode-languageclient`; it picks up each feature
-automatically as the server advertises the capability.
+- **Syntax highlighting** — TextMate grammar for keywords, literals, comments,
+  operators (plus richer, server-computed **semantic tokens** on top).
+- **Diagnostics** — parse / model / plan errors as you type, in the editor and
+  the Problems panel.
+- **Hover** — signatures and doc info for functions, types, and bindings.
+- **Go to Definition** / **Find All References** / **Document Highlight** —
+  cross-file and cross-package.
+- **Completion** — names in scope, members, keywords.
+- **Rename** — shadow-aware, with prepare support (F2).
+- **Signature Help** — parameter hints while typing a call.
+- **Document symbols / outline** — functions, structs/unions (with methods and
+  variants), namespaces, module-level mutables; **workspace symbols** across
+  the project (Cmd+T).
+- **Inlay hints** — inferred types inline.
+- **Folding ranges**.
+- **Breakpoints in `.scaly` files** — the extension declares the language for
+  debugging, so the editor accepts gutter breakpoints without any settings
+  workaround (debugging itself is provided by the
+  [CodeLLDB](https://marketplace.visualstudio.com/items?itemName=vadimcn.vscode-lldb)
+  extension and the compiler's `-g` DWARF output; see the tutorial chapter
+  "Using Scaly with VS Code" on scaly.io).
 
-## 1. Build the language server
+## Install (users)
 
-The client launches a prebuilt `scalyls` binary; it does not build it. From the
-repo root:
+1. Install the Scaly toolchain — this puts both `scalyc` and the `scalyls`
+   language server on your `PATH`:
+
+   ```bash
+   curl -fsSL https://scaly.io/install.sh | sh
+   ```
+
+2. Install the extension from the packaged `.vsix`:
+
+   ```bash
+   curl -fsSLO https://scaly.io/downloads/scaly-vscode.vsix
+   code --install-extension scaly-vscode.vsix
+   ```
+
+   (Or in VS Code: Extensions view > `···` menu > "Install from VSIX…".)
+
+3. Open any folder and create a `.scaly` file. The extension finds `scalyls`
+   on `PATH`; the installer's wrapper sets `SCALY_HOME` itself, so the server
+   resolves the prelude and standard library from `~/.scaly` no matter where
+   your sources live.
+
+## Settings
+
+| Setting | Default | Meaning |
+|---------|---------|---------|
+| `scaly.server.path` | `scalyls` | Path to the `scalyls` binary. The default resolves it on `PATH` (the scaly.io installer's wrapper); falls back to `~/.scaly/bin/scalyls`. |
+| `scaly.home` | `""` | `SCALY_HOME` for the server (prelude/packages search root). If empty and a workspace folder is itself a Scaly checkout (contains `packages/scaly`), that folder is used; otherwise the server wrapper's own `SCALY_HOME` applies. |
+
+## Restart the server
+
+Command Palette > **"Scaly: Restart Language Server"** (`scaly.restartServer`),
+e.g. after rebuilding `scalyls`.
+
+## Development (working on the extension or the server)
+
+Build the language server from a repo checkout (`tools/install.sh` installs a
+`scalyls` wrapper alongside `scalyc`; or build by hand):
 
 ```bash
-cd /Users/r.schleitzer/repos/Scaly
-
-# Build the compiler if it is missing:
-#   ./build.sh
-
-# Build the runtime archive if /tmp/libscaly.a is missing:
-#   ./scalyc/build/scalyc -c --no-prelude -o /tmp/libscaly.o packages/scaly/0.1.0/scaly.scaly
-#   ar rcs /tmp/libscaly.a /tmp/libscaly.o
-
-./scalyc/build/scalyc -o /tmp/scalyls packages/scalyls/0.1.0/main.scaly \
-    -L/opt/homebrew/opt/llvm@18/lib -lLLVM-18
+./build.sh                      # builds scalyc + scalyls from the seed
+tools/install.sh                # puts scalyc/scalyls wrappers on PATH
 ```
 
-This produces `/tmp/scalyls`, the default `scaly.server.path`.
-
-## 2. Build the extension
+Build and run the extension from source:
 
 ```bash
 cd editors/vscode
@@ -42,56 +83,13 @@ npm install
 npm run compile
 ```
 
-## 3. Settings
+Then open `editors/vscode` in VS Code and press **F5** ("Run Scaly
+Extension") — an Extension Development Host window opens with the extension
+loaded. Open the Scaly repo root as the folder in that window so `SCALY_HOME`
+resolves to the checkout, and open any `.scaly` file.
 
-| Setting | Default | Meaning |
-|---------|---------|---------|
-| `scaly.server.path` | `/tmp/scalyls` | Path to the `scalyls` binary. |
-| `scaly.home` | `""` | `SCALY_HOME` for the server. **If empty, the first workspace folder is used.** |
+Package a `.vsix` for distribution:
 
-`SCALY_HOME` (or, when unset, the workspace folder) **must** point at a tree that
-contains `packages/` — the server loads the scaly + scalyc prelude packages from
-`$SCALY_HOME/packages/` to run the diagnostics pipeline. With it unset and no
-workspace folder, diagnostics come back empty because the prelude never loads.
-
-The simplest setup: open the Scaly repo root
-(`/Users/r.schleitzer/repos/Scaly`) as your workspace folder and leave
-`scaly.home` empty.
-
-## 4. Run it (Extension Development Host)
-
-1. Open the `editors/vscode` folder in VS Code.
-2. Run `npm install` once (step 2).
-3. Press **F5** (or Run → "Run Scaly Extension"). This compiles and opens a new
-   **Extension Development Host** window with the extension loaded.
-4. In that window, open the Scaly repo as a folder (so `SCALY_HOME` resolves to
-   it), then open any `.scaly` file.
-
-### Verify diagnostics
-
-1. Create a file `bad.scaly` containing a call to an undefined function, e.g.:
-
-   ```scaly
-   function main() returns int { return frobnicate(3) }
-   ```
-
-   A red squiggle appears under the call and a `function not found: frobnicate`
-   entry shows in the **Problems** panel.
-2. Fix it (e.g. replace `frobnicate(3)` with `3`) and save — the squiggle and the
-   Problems entry clear.
-3. Close the file — any remaining diagnostics for it clear.
-4. Open a clean, valid `.scaly` file — no diagnostics appear.
-
-### Verify the outline
-
-Open any `.scaly` file (e.g. one under `packages/`) and open the **Outline**
-view (Explorer sidebar) or press `Cmd+Shift+O`. The tree lists top-level
-functions, `define` structs/unions/namespaces (with their methods and union
-variants nested underneath), and module-level `mutable` globals. The outline is
-read from the file **on disk**, so save the file to refresh it after edits (an
-in-memory document store is a planned follow-up alongside incremental sync).
-
-### Restart the server
-
-Command Palette → **"Scaly: Restart Language Server"** (`scaly.restartServer`),
-e.g. after rebuilding `/tmp/scalyls`.
+```bash
+npm run package                 # runs vsce package
+```

@@ -2,7 +2,7 @@
   "name": "scaly",
   "displayName": "Scaly",
   "description": "Scaly language support (LSP client for scalyls)",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "publisher": "scaly",
   "license": "MIT",
   "repository": {
@@ -39,6 +39,11 @@
         "language": "scaly",
         "scopeName": "source.scaly",
         "path": "./syntaxes/scaly.tmLanguage.json"
+      }
+    ],
+    "breakpoints": [
+      {
+        "language": "scaly"
       }
     ],
     "commands": [
