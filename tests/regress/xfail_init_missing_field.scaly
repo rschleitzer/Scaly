@@ -1,0 +1,25 @@
+; xfail: field 'y' is never assigned
+;
+; WP8 — constructor completeness. A "simple" initializer (only field
+; assignments / bindings / control-exit / nested block/if/choose) must
+; assign every property that has no default. Here `y` is never assigned,
+; so the field would read garbage — a hard planner diagnostic (rc 4).
+; Self-hosted-only.
+
+define Point
+(
+    x: int
+    y: int
+)
+{
+    init(a: int)
+    {
+        set x: a
+    }
+}
+
+function main() returns int
+{
+    let p Point(5)
+    return p.x
+}

@@ -1,0 +1,34 @@
+; WP8 — constructor completeness, the passing side. Every non-defaulted
+; property is assigned: `a` directly, `b` on BOTH branches of an if
+; (flow-insensitive — an assignment on any path counts), and `c` is
+; omitted but has a default so it is not required. The completeness
+; check must NOT flag this init.
+; Expected: PASS
+
+define Widget
+(
+    a: int
+    b: int
+    c: int(99)
+)
+{
+    init(flag: bool, v: int)
+    {
+        set a: v
+        if flag
+            set b: 1
+        else
+            set b: 2
+    }
+}
+
+function main() returns int
+{
+    let w1 Widget(true, 7)
+    let w2 Widget(false, 7)
+    if w1.a = 7 && w1.b = 1 && w2.b = 2
+        print("PASS")
+    else
+        print("FAIL")
+    return 0
+}

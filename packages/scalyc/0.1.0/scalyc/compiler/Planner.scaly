@@ -22350,6 +22350,290 @@ define Planner
             result
         }
 
+        ; ================================================================
+        ; WP8 — constructor completeness.
+        ;
+        ; A "simple" initializer body — one that consists only of field
+        ; assignments (`set this.f: ...`), local bindings (let/var),
+        ; control-exit statements (return/throw/break/continue) and
+        ; nested Block/If/Choose — must assign every property that has no
+        ; default. Any init doing something we can't fully account for
+        ; (a bare helper call, a method call on this, a loop, match/try,
+        ; or a computed/derefed assignment target) is treated as NOT
+        ; checkable and skipped entirely — so the check is conservatively
+        ; sound and never false-positives on the compiler's / stdlib's own
+        ; initializers.
+        ;
+        ; These predicates walk the PLANNED body (planned_impl), whose
+        ; source/target/statements are ref[Vector]? pointers that read
+        ; reliably — the Model body's by-value Vector fields do not (see
+        ; the WP8 deferral note). Two pure families: *_checkable decides
+        ; whether the body is analyzable; *_assigns(field) decides whether
+        ; a given property is assigned somewhere in the body.
+        ; ================================================================
+        function init_action_checkable(this: Planner, pa: PlannedAction) returns bool
+        {
+            ; Assignment statement (has a target).
+            var is_assign false
+            if pa.target <> null
+                if pa.target.length > 0
+                    set is_assign: true
+            if is_assign
+            {
+                let top pa.target.get 0
+                if top = null
+                    return false
+                let target_op (*top)
+                var has_member false
+                if target_op.member_access <> null
+                    if (*target_op.member_access).length > 0
+                        set has_member: true
+                choose target_op.expr
+                    when v: Variable
+                    {
+                        if has_member = false
+                            return true             ; bare local var assign
+                        let chain (*target_op.member_access)
+                        if v.name.equals("this")
+                        {
+                            if chain.length = 1
+                                return true          ; set this.<field>:
+                            return false             ; nested this.a.b -> skip
+                        }
+                        return false                 ; member on non-this base
+                    }
+                    else
+                        return false                 ; deref/call/global target
+            }
+            ; Bare expression statement — classify by the source operand.
+            if pa.source = null
+                return true
+            if pa.source.length = 0
+                return true
+            let sop pa.source.get 0
+            if sop = null
+                return true
+            let op (*sop)
+            ; A member-access chain on a bare statement is a method call
+            ; (`this.push(x)`) — cannot account for what it assigns.
+            if op.member_access <> null
+                if (*op.member_access).length > 0
+                    return false
+            choose op.expr
+                when b: Block
+                    return this.init_block_checkable(b)
+                when f: If
+                    return this.init_if_checkable(f)
+                when ch: Choose
+                    return this.init_choose_checkable(ch)
+                when cst: Constant
+                    return true
+                when v: Variable
+                    return true
+                else
+                    return false
+        }
+
+        function init_stmt_checkable(this: Planner, stmt: PlannedStatement) returns bool
+        {
+            choose stmt
+                when action: Action
+                    return this.init_action_checkable(action)
+                else
+                    return true          ; binding / return / throw / break / continue
+        }
+
+        function init_block_checkable(this: Planner, b: PlannedBlock) returns bool
+        {
+            if b.statements = null
+                return true
+            let stmts (*b.statements)
+            var i: size_t 0
+            while i < stmts.length
+            {
+                let sp stmts.get i
+                if sp <> null
+                    if this.init_stmt_checkable((*sp)) = false
+                        return false
+                set i: i + 1
+            }
+            true
+        }
+
+        function init_if_checkable(this: Planner, f: PlannedIf) returns bool
+        {
+            if f.consequent <> null
+            {
+                let cons (*f.consequent)
+                if this.init_stmt_checkable(cons) = false
+                    return false
+            }
+            if f.alternative <> null
+            {
+                let alt (*f.alternative)
+                if this.init_stmt_checkable(alt) = false
+                    return false
+            }
+            true
+        }
+
+        function init_choose_checkable(this: Planner, ch: PlannedChoose) returns bool
+        {
+            if ch.cases <> null
+            {
+                let cs (*ch.cases)
+                var i: size_t 0
+                while i < cs.length
+                {
+                    let wp cs.get i
+                    if wp <> null
+                    {
+                        let w (*wp)
+                        if w.consequent <> null
+                        {
+                            let cons (*w.consequent)
+                            if this.init_stmt_checkable(cons) = false
+                                return false
+                        }
+                    }
+                    set i: i + 1
+                }
+            }
+            if ch.alternative <> null
+            {
+                let alt (*ch.alternative)
+                if this.init_stmt_checkable(alt) = false
+                    return false
+            }
+            true
+        }
+
+        function init_action_assigns(this: Planner, pa: PlannedAction, field: String) returns bool
+        {
+            ; Assignment case: is the target `set this.<field>:`?
+            if pa.target <> null
+                if pa.target.length > 0
+                {
+                    let top pa.target.get 0
+                    if top <> null
+                    {
+                        let target_op (*top)
+                        if target_op.member_access <> null
+                        {
+                            let chain (*target_op.member_access)
+                            if chain.length > 0
+                            {
+                                var base_is_this false
+                                choose target_op.expr
+                                    when v: Variable
+                                        set base_is_this: v.name.equals("this")
+                                    else
+                                        0
+                                if base_is_this
+                                {
+                                    let first chain.get 0
+                                    if first <> null
+                                        if (*first).name.equals(field)
+                                            return true
+                                }
+                            }
+                        }
+                    }
+                }
+            ; Recurse into control-flow carried in the source operand.
+            if pa.source = null
+                return false
+            if pa.source.length = 0
+                return false
+            let sop pa.source.get 0
+            if sop = null
+                return false
+            let op (*sop)
+            choose op.expr
+                when b: Block
+                    return this.init_block_assigns(b, field)
+                when f: If
+                    return this.init_if_assigns(f, field)
+                when ch: Choose
+                    return this.init_choose_assigns(ch, field)
+                else
+                    return false
+        }
+
+        function init_stmt_assigns(this: Planner, stmt: PlannedStatement, field: String) returns bool
+        {
+            choose stmt
+                when action: Action
+                    return this.init_action_assigns(action, field)
+                else
+                    return false
+        }
+
+        function init_block_assigns(this: Planner, b: PlannedBlock, field: String) returns bool
+        {
+            if b.statements = null
+                return false
+            let stmts (*b.statements)
+            var i: size_t 0
+            while i < stmts.length
+            {
+                let sp stmts.get i
+                if sp <> null
+                    if this.init_stmt_assigns((*sp), field)
+                        return true
+                set i: i + 1
+            }
+            false
+        }
+
+        function init_if_assigns(this: Planner, f: PlannedIf, field: String) returns bool
+        {
+            if f.consequent <> null
+            {
+                let cons (*f.consequent)
+                if this.init_stmt_assigns(cons, field)
+                    return true
+            }
+            if f.alternative <> null
+            {
+                let alt (*f.alternative)
+                if this.init_stmt_assigns(alt, field)
+                    return true
+            }
+            false
+        }
+
+        function init_choose_assigns(this: Planner, ch: PlannedChoose, field: String) returns bool
+        {
+            if ch.cases <> null
+            {
+                let cs (*ch.cases)
+                var i: size_t 0
+                while i < cs.length
+                {
+                    let wp cs.get i
+                    if wp <> null
+                    {
+                        let w (*wp)
+                        if w.consequent <> null
+                        {
+                            let cons (*w.consequent)
+                            if this.init_stmt_assigns(cons, field)
+                                return true
+                        }
+                    }
+                    set i: i + 1
+                }
+            }
+            if ch.alternative <> null
+            {
+                let alt (*ch.alternative)
+                if this.init_stmt_assigns(alt, field)
+                    return true
+            }
+            false
+        }
+
         ; plan_initializer: Model.Initializer → Plan.PlannedInitializer.
         ; An initializer is like a function without name / returns_ / throws_ /
         ; lifetime. Parameters open a new scope, implementation is planned,
@@ -22423,6 +22707,56 @@ define Planner
             }
 
             let planned_impl this.plan_implementation(ini.implementation)
+
+            ; WP8: constructor completeness. When the parent structure is
+            ; known and the body is a "simple" (fully analyzable) action,
+            ; every property without a default must be assigned. See the
+            ; init_*_checkable / init_*_assigns predicates above.
+            if parent <> null
+            {
+                choose planned_impl
+                    when chk_ia: PlannedAction
+                    {
+                        if this.init_action_checkable(chk_ia)
+                        {
+                            let pnm (*parent).name
+                            let concept_ref this.lookup_concept(pnm)
+                            if concept_ref <> null
+                            {
+                                let c (*concept_ref)
+                                choose c.definition
+                                    when s: Structure
+                                    {
+                                        var pci: size_t 0
+                                        while pci < s.properties.length
+                                        {
+                                            let pp s.properties.get pci
+                                            if pp <> null
+                                            {
+                                                let prop (*pp)
+                                                if prop.initializer = null
+                                                    if this.init_action_assigns(chk_ia, prop.name) = false
+                                                    {
+                                                        var msb StringBuilder()
+                                                        msb.append "field '"
+                                                        msb.append prop.name
+                                                        msb.append "' is never assigned"
+                                                        this.add_diagnostic(ini.span, msb.to_string())
+                                                    }
+                                            }
+                                            set pci: pci + 1
+                                        }
+                                        0
+                                    }
+                                    else
+                                        0
+                            }
+                        }
+                        0
+                    }
+                    else
+                        0
+            }
 
             this.pop_scope()
 
