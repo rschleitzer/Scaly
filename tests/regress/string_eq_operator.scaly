@@ -1,0 +1,100 @@
+; Equality desugar (2026-07-06): `a = b` / `a <> b` where no operator
+; (registered or member) resolves and the receiver's concept declares a
+; matching `equals` method dispatches to that method — `un = "*"` reads
+; as `un.equals("*")`, `a <> b` as its negation. lookup_method# supplies
+; pointer/ref auto-deref, the s172 Option unwrap, and the s163 overload
+; selection, so string literals match equals(String) via the String-typed
+; constant. Null comparisons are excluded (`x <> null` stays an NPO
+; presence test), and primitive/generic-param receivers keep the
+; intrinsic fast path.
+; Expected: PASS
+
+define Box[T](item: T)
+{
+    function has(this: Box[T], x: T) returns bool
+    {
+        if item = x
+            return true
+        false
+    }
+}
+
+var failures 0
+
+; String = String, equal and unequal
+var a String("alpha")
+var b String("alpha")
+var c String("beta")
+if a = b
+    0
+else
+    set failures: failures + 1
+if a = c
+    set failures: failures + 1
+
+; String <> String
+if a <> c
+    0
+else
+    set failures: failures + 1
+if a <> b
+    set failures: failures + 1
+
+; String vs string literal, both operators
+if a = "alpha"
+    0
+else
+    set failures: failures + 1
+if c = "alpha"
+    set failures: failures + 1
+if a <> "gamma"
+    0
+else
+    set failures: failures + 1
+
+; ref[String] receiver via Vector.get (Option unwrap + auto-deref);
+; the null compare beside it must stay a presence test.
+var names Vector[String](2)
+names.put(0, String("*"))
+names.put(1, String("x"))
+let un names.get 0
+if un <> null
+{
+    if un = "*"
+        0
+    else
+        set failures: failures + 1
+    if un <> "x"
+        0
+    else
+        set failures: failures + 1
+}
+else
+    set failures: failures + 1
+
+; generic T = T: after monomorphization the operands are concrete
+; Strings, so `item = x` inside a generic body dispatches String.equals
+; (the old compiler silently dropped the whole if — the List[String].
+; remove bug class). List itself stays out of this test: user-program
+; instantiation of List is a separate, pre-existing hole.
+var bx Box[String](String("hi"))
+if bx.has(String("hi")) = false
+    set failures: failures + 1
+if bx.has(String("ho"))
+    set failures: failures + 1
+
+; primitive comparisons keep the intrinsic path
+var n 7
+if n = 7
+    0
+else
+    set failures: failures + 1
+if n <> 8
+    0
+else
+    set failures: failures + 1
+
+if failures = 0
+    print "PASS\n"
+else
+    print "FAIL\n"

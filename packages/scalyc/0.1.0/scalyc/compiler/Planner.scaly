@@ -1932,6 +1932,27 @@ define Planner
             false
         }
 
+        ; operand_is_null_constant: is the operand the bare `null` literal?
+        ; Used to EXCLUDE null comparisons from the equality desugar —
+        ; `x <> null` is an NPO presence test, never a content compare.
+        function operand_is_null_constant(this: Planner, op: PlannedOperand) returns bool
+        {
+            if op.member_access <> null
+                return false
+            choose op.expr
+                when pc: scalyc.compiler.Plan.PlannedConstant
+                {
+                    choose pc.value
+                        when n: NullConstant
+                            return true
+                        else
+                            return false
+                }
+                else
+                    return false
+            false
+        }
+
         ; ===== glob-ambiguity diagnostic (use-visibility, hard) =====
         ;
         ; Two glob imports in one file (`use a.*` and `use b.*`) that BOTH
@@ -9875,6 +9896,134 @@ define Planner
                                     }
                                     set i: i + 2
                                     continue
+                                }
+                            }
+                        }
+                    }
+
+                    ; Equality desugar: `a = b` / `a <> b` where no operator
+                    ; (registered or member) resolved and the receiver's
+                    ; concept declares a matching `equals` method dispatches
+                    ; to it — `un = "*"` reads as `un.equals("*")`, `a <> b`
+                    ; as its negation. lookup_method# brings the pointer/ref
+                    ; auto-deref, the s172 Option unwrap, and the s163
+                    ; arg-type-aware overload selection (String's three
+                    ; equals overloads), so a string literal picks
+                    ; equals(String) via its String-typed constant. Null
+                    ; comparisons are EXCLUDED — `x <> null` is an NPO
+                    ; presence test, never a content compare. Primitive and
+                    ; generic-param receivers keep the intrinsic fast path.
+                    ; Fixpoint gate: the compiler source spells every
+                    ; content compare .equals, so no existing site fires.
+                    if resolved = null
+                    {
+                        var eq_negate: bool false
+                        var is_eq_op: bool false
+                        if op_name.equals("=")
+                            set is_eq_op: true
+                        if op_name.equals("<>")
+                        {
+                            set is_eq_op: true
+                            set eq_negate: true
+                        }
+                        if is_eq_op
+                        {
+                            if this.operand_is_null_constant(result)
+                                set is_eq_op: false
+                            if this.operand_is_null_constant(rhs)
+                                set is_eq_op: false
+                        }
+                        if is_eq_op
+                        {
+                            var eq_gate_ty result.result_type
+                            let eq_elem Planner.get_pointer_element_type(result.result_type)
+                            if eq_elem <> null
+                                set eq_gate_ty: (*eq_elem)
+                            var eq_gate_ok: bool true
+                            if Planner.is_primitive_type_name(eq_gate_ty.name)
+                                set eq_gate_ok: false
+                            if Planner.is_generic_type_param_name(eq_gate_ty.name)
+                                set eq_gate_ok: false
+                            if eq_gate_ok
+                            {
+                                var eq_arg_types Vector[PlannedType](1)
+                                eq_arg_types.put(0, rhs.result_type)
+                                let em_ref this.lookup_method(result.result_type, String("equals"), eq_arg_types)
+                                if em_ref <> null
+                                {
+                                    let em (*em_ref)
+                                    var eq_ok: bool em.takes_this
+                                    if em.return_type.name.equals("bool") = false
+                                        set eq_ok: false
+                                    if eq_ok
+                                    {
+                                        this.ensure_type_layout(result.result_type)
+                                        var eq_args Vector[PlannedOperand](2)
+                                        eq_args.put(0, result)
+                                        eq_args.put(1, rhs)
+                                        let eq_call PlannedCall(
+                                            result.loc,
+                                            String("equals"),
+                                            em.mangled_name,
+                                            false,
+                                            false,
+                                            em.can_throw,
+                                            em.requires_page_param,
+                                            &eq_args,
+                                            em.return_type,
+                                            Lifetime.Unspecified(Unspecified()),
+                                            em.throws_type,
+                                            false
+                                        )
+                                        var eq_op_res PlannedOperand(
+                                            result.loc,
+                                            PlannedExpression.Call eq_call,
+                                            null,
+                                            em.return_type
+                                        )
+                                        if eq_negate
+                                        {
+                                            let not_ty Planner.make_bool_type()
+                                            let not_mangled this.mangle_unary_operator(String("!"), em.return_type)
+                                            var not_args Vector[PlannedOperand](1)
+                                            not_args.put(0, eq_op_res)
+                                            let not_call PlannedCall(
+                                                result.loc,
+                                                String("!"),
+                                                not_mangled,
+                                                true,
+                                                true,
+                                                false,
+                                                false,
+                                                &not_args,
+                                                not_ty,
+                                                Lifetime.Unspecified(Unspecified()),
+                                                null,
+                                                false
+                                            )
+                                            set eq_op_res: PlannedOperand(
+                                                result.loc,
+                                                PlannedExpression.Call not_call,
+                                                null,
+                                                not_ty
+                                            )
+                                        }
+                                        set result: eq_op_res
+                                        if consumed_rest
+                                        {
+                                            if climb_to >= ops.length
+                                                break
+                                            set i: climb_to
+                                            continue
+                                        }
+                                        if rhs_call_consumed
+                                        {
+                                            set i: i + 3
+                                            continue
+                                        }
+                                        set i: i + 2
+                                        continue
+                                    }
                                 }
                             }
                         }
