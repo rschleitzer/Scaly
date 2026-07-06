@@ -1,0 +1,36 @@
+; ESCAPE (negative, FIELD reshape): a frame-local struct `pp` is constructed
+; with a pointer field holding &<frame-local> (pp.a = &bx), then passed BY
+; ADDRESS to a callee that stores that field frame-external (set this.slot:
+; (*pr).a). Once trigger's frame is freed, this.slot dangles (UAF). The field
+; reshape the coarse per-param summary could not track — now caught precisely:
+; the callee records "persists param pr FIELD [a]", and the caller's field-
+; points-to map proves pp.a is Local. Compiler MUST reject (escapes via call).
+define Box
+(
+    v: int
+)
+define Pair
+(
+    a: pointer[Box]
+    b: pointer[Box]
+)
+define Sink
+(
+    slot: pointer[Box]
+)
+{
+    procedure stash(this, pr: pointer[Pair])
+        set this.slot: (*pr).a
+}
+
+procedure trigger(sink: Sink)
+{
+    let bx Box(5)
+    let pp Pair(&bx, &bx)
+    sink.stash(&pp)
+}
+
+function main() returns int
+{
+    return 0
+}

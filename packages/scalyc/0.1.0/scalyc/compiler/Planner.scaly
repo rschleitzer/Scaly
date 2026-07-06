@@ -17532,15 +17532,100 @@ define Planner
             ))
         }
 
+        ; fpt_region_of: the recorded region rank of local `base_name`'s field
+        ; `field` in the current function's field-points-to map, or Caller
+        ; (safe) when not recorded. Only LOCAL-region fields are ever recorded
+        ; (escape_record_field_points_to#), so an unrecorded field is treated as
+        ; Caller — the UNKNOWN -> SAFE default that keeps the self-host green.
+        function fpt_region_of(this: Planner, base_name: String, field: size_t) returns size_t
+        {
+            var i: size_t 0
+            while i < current_fn_fpt_names.length
+            {
+                let np current_fn_fpt_names.get i
+                if np <> null
+                    if np.equals(base_name)
+                    {
+                        let fp current_fn_fpt_fields.get i
+                        if fp <> null
+                            if (*fp) = field
+                            {
+                                let rp current_fn_fpt_regions.get i
+                                if rp <> null
+                                    return (*rp)
+                            }
+                    }
+                set i: i + 1
+            }
+            Planner.region_rank_caller()
+        }
+
+        ; region_of_arg_path: the region rank of the field the callee reaches
+        ; into — arg.<src_field0> — for a FIELD-reshape record. The base local
+        ; the arg denotes is a bare `X` or `&X`; its field region comes from the
+        ; caller-side field-points-to map (fpt_region_of#). UNKNOWN -> Caller
+        ; (SAFE): only a VISIBLY-locally-constructed struct's field resolves to
+        ; Local, so a call-result / opaque / parameter arg is never flagged
+        ; (this is what accepts save/restore-state and keeps the self-host
+        ; green). Only depth-1 paths resolve precisely; a depth-2 (k-truncated)
+        ; path -> Caller (safe), since the depth-1 map cannot prove the deeper
+        ; field local without risking a false positive.
+        function region_of_arg_path(this: Planner, arg: PlannedOperand, rec: EscapeRecord) returns size_t
+        {
+            var result Planner.region_rank_caller()
+            if rec.src_path_len = 1
+            {
+                var arg_has_member false
+                if arg.member_access <> null
+                {
+                    let ma (*arg.member_access)
+                    if ma.length > (0 as size_t)
+                        set arg_has_member: true
+                }
+                if arg_has_member = false
+                    choose arg.expr
+                        when v: Variable
+                            set result: this.fpt_region_of(v.name, rec.src_field0)
+                        when c: PlannedCall
+                        {
+                            if c.is_operator
+                                if c.name.equals("&")
+                                    if c.args <> null
+                                    {
+                                        let a (*c.args)
+                                        if a.length = 1
+                                        {
+                                            let a0 a.get 0
+                                            if a0 <> null
+                                            {
+                                                let inner a0.unwrap()
+                                                var inner_has_member false
+                                                if inner.member_access <> null
+                                                {
+                                                    let ima (*inner.member_access)
+                                                    if ima.length > (0 as size_t)
+                                                        set inner_has_member: true
+                                                }
+                                                if inner_has_member = false
+                                                    choose inner.expr
+                                                        when iv: Variable
+                                                            set result: this.fpt_region_of(iv.name, rec.src_field0)
+                                                        else
+                                                            0
+                                            }
+                                        }
+                                    }
+                        }
+                        else
+                            0
+            }
+            result
+        }
+
         ; Pass 1: check one call against one summary entry.
         function escape_check_call_record(this: Planner, call: PlannedCall, rec: EscapeRecord)
         {
             if escape_found
-                return
-            ; PHASE-2 GATE: a field-path record (src_path_len > 0) is not yet
-            ; checked; the field-aware region check (region_of_arg_path#) is
-            ; activated in phase 4, replacing this early return.
-            if rec.src_path_len > 0
                 return
             let callee instantiated_functions.get rec.callee_fn_index
             if callee = null
@@ -17563,14 +17648,27 @@ define Planner
             ; STACK closure of the calling function (Vector-3 closure variant):
             ; either way, the callee stashes it into memory that outlives this
             ; frame. A heap `#` closure / a delegate PARAM arg is not local.
+            ; For a FIELD-reshape record (src_path_len > 0) the callee stashes a
+            ; FIELD of the arg, so the escaping test is the region of that field
+            ; (region_of_arg_path# — Caller/SAFE unless the field-points-to map
+            ; CONFIDENTLY proves it local; a bare closure arg is irrelevant to a
+            ; field path).
             var arg_is_closure false
-            if this.arg_is_stack_closure(arg)
-                set arg_is_closure: true
             var arg_escapes false
-            if this.region_of_operand(arg) < Planner.required_region_for_escape()
-                set arg_escapes: true
-            if arg_is_closure
-                set arg_escapes: true
+            if rec.src_path_len = 0
+            {
+                if this.arg_is_stack_closure(arg)
+                    set arg_is_closure: true
+                if this.region_of_operand(arg) < Planner.required_region_for_escape()
+                    set arg_escapes: true
+                if arg_is_closure
+                    set arg_escapes: true
+            }
+            else
+            {
+                if this.region_of_arg_path(arg, rec) < Planner.required_region_for_escape()
+                    set arg_escapes: true
+            }
             if arg_escapes
             {
                 var violates false
@@ -17598,7 +17696,10 @@ define Planner
                     if arg_is_closure
                         this.add_diagnostic(call.loc, "a closure bound to a local lives on the stack frame and escapes via call - the callee stores it into memory that outlives this frame; return the lambda directly (return \\x: ...) instead of binding it to a local first")
                     else
-                        this.add_diagnostic(call.loc, "reference into a local page escapes via call - the callee stores it into memory that outlives this frame; allocate with '#' (caller page) or '^name' (region)")
+                        if rec.src_path_len > 0
+                            this.add_diagnostic(call.loc, "a field of the passed value points into a local page and escapes via call - the callee stores that field into memory that outlives this frame; allocate the pointed-to value with '#' (caller page) or '^name' (region)")
+                        else
+                            this.add_diagnostic(call.loc, "reference into a local page escapes via call - the callee stores it into memory that outlives this frame; allocate with '#' (caller page) or '^name' (region)")
                     set escape_found: true
                 }
             }

@@ -1,0 +1,42 @@
+; POS (FIELD reshape, save/restore-state): the canonical self-host shape
+; (Lexer.save_state / restore_state). `save` returns a State whose pointer
+; field is borrowed from `this` (a parameter -> caller-region); `restore`
+; stores that field back (set this.ptr: s.ptr) -> records "persists param s
+; FIELD [ptr]". The caller binds `snap` from a CALL result (this.save()), which
+; the field-points-to map deliberately does NOT seed as local (a function
+; returning a struct whose reference field points to a frame-local is already
+; rejected by the return-escape vectors, so snap's fields are guaranteed non-
+; local). region_of_arg_path therefore resolves snap.ptr SAFE. MUST compile —
+; this is the case whose coarse mis-attribution broke the self-host before.
+define Box
+(
+    v: int
+)
+define State
+(
+    ptr: pointer[Box]
+    pos: int
+)
+define Machine
+(
+    ptr: pointer[Box]
+    pos: int
+)
+{
+    function save(this) returns State
+        State(this.ptr, this.pos)
+
+    procedure restore(this, s: State)
+        set this.ptr: s.ptr
+
+    procedure roundtrip(this)
+    {
+        let snap this.save()
+        this.restore(snap)
+    }
+}
+
+function main() returns int
+{
+    return 0
+}
