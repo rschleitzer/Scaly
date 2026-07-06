@@ -1,0 +1,22 @@
+; An indirect delegate call EMBEDDED in a larger expression used to
+; mis-collapse (the [delegateVar, Tuple] fusion was gated to whole
+; length-2 sequences), feeding `=` into the unary path — emitter trap
+; "unknown unary operator". Now a whole-list pre-pass fuses the pair.
+; Expected: PASS
+define IntFn delegate(int) returns int
+
+function make_adder(n: int) returns IntFn
+{
+    return \x: x + n
+}
+
+let add5 make_adder(5)
+if add5(2) = 7
+{
+    if add5(2) + add5(3) = 15
+    {
+        print("PASS")
+        exit 0
+    }
+}
+print("FAIL")
