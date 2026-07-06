@@ -5539,6 +5539,13 @@ define Emitter
                             set result: true
                         if inner.name.equals("u8")
                             set result: true
+                        ; pointer[void]: a String cast to a raw buffer
+                        ; pointer (write/fwrite args) hands over its
+                        ; content pointer exactly like the cstr targets.
+                        ; Without this the e45166de loud-cast trap fires
+                        ; on `"..." as pointer[void]` (io.scaly tests).
+                        if inner.name.equals("void")
+                            set result: true
                     }
                 }
             }
