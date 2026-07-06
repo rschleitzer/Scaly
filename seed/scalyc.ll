@@ -126823,6 +126823,20 @@ if.end4:                                          ; preds = %if.then
   br label %if.end
 }
 
+define linkonce_odr ptr @_ZN7Planner25lookup_concept_for_layoutEPN4scaly6memory4PageE6String(ptr %0, ptr %1, ptr %2) {
+entry:
+  %call = call ptr @_ZN7Planner14lookup_conceptEPN4scaly6memory4PageE6String(ptr %0, ptr %1, ptr %2)
+  %ne = icmp ne ptr %call, null
+  br i1 %ne, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret ptr %call
+
+if.end:                                           ; preds = %entry
+  %call1 = call ptr @_ZN7Planner18lookup_concept_anyEPN4scaly6memory4PageE6String(ptr %0, ptr %1, ptr %2)
+  ret ptr %call1
+}
+
 define linkonce_odr ptr @_ZN7Planner24lookup_namespace_conceptEPN4scaly6memory4PageE6String(ptr %0, ptr %1, ptr %2) {
 entry:
   %choose.union = alloca %_Z10Definition, align 8
@@ -164336,7 +164350,7 @@ while.body:                                       ; preds = %while.cond
   br i1 %ne, label %if.then7, label %if.end8
 
 while.exit:                                       ; preds = %while.cond
-  %call13 = call ptr @_ZN7Planner14lookup_conceptEPN4scaly6memory4PageE6String(ptr %local_page, ptr %0, ptr %1)
+  %call13 = call ptr @_ZN7Planner25lookup_concept_for_layoutEPN4scaly6memory4PageE6String(ptr %local_page, ptr %0, ptr %1)
   %eq = icmp eq ptr %call13, null
   br i1 %eq, label %if.then14, label %if.end15
 
@@ -168609,7 +168623,7 @@ while.body:                                       ; preds = %while.cond
   br i1 %ne, label %if.then7, label %if.end8
 
 while.exit:                                       ; preds = %while.cond
-  %call13 = call ptr @_ZN7Planner14lookup_conceptEPN4scaly6memory4PageE6String(ptr %local_page, ptr %0, ptr %1)
+  %call13 = call ptr @_ZN7Planner25lookup_concept_for_layoutEPN4scaly6memory4PageE6String(ptr %local_page, ptr %0, ptr %1)
   %eq = icmp eq ptr %call13, null
   br i1 %eq, label %if.then14, label %if.end15
 
@@ -169912,7 +169926,7 @@ if.then24:                                        ; preds = %if.end21
   ret i64 8
 
 if.end25:                                         ; preds = %if.end21
-  %call26 = call ptr @_ZN7Planner14lookup_conceptEPN4scaly6memory4PageE6String(ptr %local_page, ptr %0, ptr %1)
+  %call26 = call ptr @_ZN7Planner25lookup_concept_for_layoutEPN4scaly6memory4PageE6String(ptr %local_page, ptr %0, ptr %1)
   %ne = icmp ne ptr %call26, null
   br i1 %ne, label %if.then27, label %if.end28
 
