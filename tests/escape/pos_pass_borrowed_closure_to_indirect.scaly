@@ -1,0 +1,11 @@
+; OK (positive, indirect, closure): passing a BORROWED delegate parameter to an
+; indirect call is fine — a delegate param is not a frame-local stack closure,
+; it refers to a closure the caller owns. Must COMPILE. Self-hosted-only.
+define IntFn delegate(int) returns int
+define Runner delegate(IntFn) returns int
+
+function via(r: Runner, f: IntFn) returns int
+    r(f)
+
+function main() returns int
+    0

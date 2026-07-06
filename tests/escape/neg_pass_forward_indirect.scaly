@@ -1,0 +1,21 @@
+; ESCAPE (negative, TRANSITIVE indirect): `via` forwards its delegate parameter
+; `f` through an INDIRECT call `r(f)`. The forwarding fixpoint records that `via`
+; persists `f` frame-external (the unknown callee may store it). `use_it` then
+; passes a STACK closure `g` to `via` -> MUST be REJECTED via the propagated
+; summary, exactly like the direct-forward chain but with an indirect hop.
+; Self-hosted-only.
+define IntFn delegate(int) returns int
+define Runner delegate(IntFn) returns int
+
+function via(r: Runner, f: IntFn) returns int
+    r(f)
+
+function use_it(r: Runner) returns int
+{
+    let g: IntFn \x: x + 1
+    via(r, g)
+    0
+}
+
+function main() returns int
+    0

@@ -1,0 +1,17 @@
+; ESCAPE (negative, indirect-call soundness): a reference into a LOCAL is passed
+; to an INDIRECT call (through a delegate value). The callee is an unknown
+; function pointer that may store the reference beyond this frame, so it MUST be
+; REJECTED ("escapes via indirect call"). The direct-call summary keys on a
+; mangled callee name, which an indirect call lacks — this is the hole the
+; indirect-call check closes. Self-hosted-only.
+define PtrSink delegate(p: pointer[int]) returns int
+
+function run(sink: PtrSink) returns int
+{
+    var local 5
+    sink(&local)
+    0
+}
+
+function main() returns int
+    0

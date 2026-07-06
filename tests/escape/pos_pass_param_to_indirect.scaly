@@ -1,0 +1,15 @@
+; OK (positive, indirect): forwarding a BORROWED parameter (not a frame-local)
+; through an indirect call is fine — the parameter outlives this frame, so
+; nothing local escapes. `via` compiles even though the fixpoint records it as
+; persisting `p` (that only matters for a caller passing a LOCAL). Must COMPILE
+; (no false positive on borrow-to-indirect-callback). Self-hosted-only.
+define PtrSink delegate(p: pointer[int]) returns int
+
+function via(sink: PtrSink, p: pointer[int]) returns int
+{
+    sink(p)
+    0
+}
+
+function main() returns int
+    0

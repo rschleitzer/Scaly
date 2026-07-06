@@ -1,0 +1,16 @@
+; ESCAPE (negative, indirect-call soundness, closure variant): a STACK closure
+; is passed to an INDIRECT call. The unknown callee may store the delegate value
+; beyond this frame while the closure record dies with the frame -> REJECT.
+; Self-hosted-only.
+define IntFn delegate(int) returns int
+define Runner delegate(IntFn) returns int
+
+function run(r: Runner) returns int
+{
+    let g: IntFn \x: x + 1
+    r(g)
+    0
+}
+
+function main() returns int
+    0

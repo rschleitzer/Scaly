@@ -447,6 +447,13 @@ define Planner
         ; persists that parameter too — repeated until no new fact appears.
         escape_forwarding: bool
 
+        ; True once the collect walk has seen any INDIRECT call. Indirect calls
+        ; carry no summary record (no mangled callee), so the "records empty ->
+        ; nothing to check" fast path would wrongly skip the indirect-call check;
+        ; this flag keeps the fast path only for code with neither records nor
+        ; indirect calls (the common, delegate-free case incl. the compiler).
+        escape_saw_indirect: bool
+
         ; CLOSURE Vector-3 support: names bound to a stack (Lifetime.Local)
         ; closure in the function CURRENTLY being walked by the escape
         ; post-pass. Rebuilt from the Plan tree (each function's PlannedBinding
@@ -656,6 +663,7 @@ define Planner
             set escape_found: false
             set escape_fn_index: 0
             set escape_forwarding: false
+            set escape_saw_indirect: false
             set current_fn_closure_names: Array[String]^this()
             set transitive_page_names: Array[String]^this()
             set transitive_page_built: false
@@ -17228,6 +17236,55 @@ define Planner
             }
         }
 
+        ; Pass 1 (indirect calls): an indirect call goes THROUGH a delegate
+        ; VALUE whose body is unknown at compile time, so we cannot prove it
+        ; does not stash its arguments. Conservatively (SOUND) reject passing
+        ; any escaping argument to it — a reference into a local page, or a
+        ; stack closure of this frame. args[0] is the callee (the delegate
+        ; value itself); the real arguments are args[1..]. A borrowed parameter
+        ; or a '#'/'^' allocation is Caller-ranked and stays fine. This closes
+        ; the non-transitivity hole for a chain whose escaping hop is an
+        ; unresolved (function-pointer) call — the direct-call summary path
+        ; keys on mangled_name, which an indirect call does not have.
+        function escape_check_indirect_call(this: Planner, call: PlannedCall)
+        {
+            if escape_found
+                return
+            if call.args = null
+                return
+            var ai: size_t 1
+            while ai < call.args.length
+            {
+                if escape_found
+                    return
+                let arg_ptr call.args.get ai
+                if arg_ptr <> null
+                {
+                    let arg arg_ptr.unwrap()
+                    var arg_is_closure false
+                    if this.arg_is_stack_closure(arg)
+                        set arg_is_closure: true
+                    var arg_escapes false
+                    if this.region_of_operand(arg) < Planner.required_region_for_escape()
+                        set arg_escapes: true
+                    if arg_is_closure
+                        set arg_escapes: true
+                    if arg_escapes
+                    {
+                        let cur_fn instantiated_functions.get escape_fn_index
+                        if cur_fn <> null
+                            set this.file: String^this(cur_fn.file)
+                        if arg_is_closure
+                            this.add_diagnostic(call.loc, "a closure bound to a local lives on the stack frame and escapes via indirect call - the callee is an unknown function value that may store it beyond this frame; return the lambda directly (return \\x: ...) or allocate with '#'/'^name'")
+                        else
+                            this.add_diagnostic(call.loc, "reference into a local page escapes via indirect call - the callee is an unknown function value that may store it beyond this frame; allocate with '#' (caller page) or '^name' (region)")
+                        set escape_found: true
+                    }
+                }
+                set ai: ai + 1
+            }
+        }
+
         ; Pass 1: a call may match several summary entries (e.g. two escaping
         ; params); check each.
         function escape_handle_call(this: Planner, call: PlannedCall)
@@ -17236,6 +17293,10 @@ define Planner
                 return
             if call.args = null
                 return
+            ; Note any indirect call so the records-empty fast path does not skip
+            ; the indirect-call check. Set in every pass; harmless if re-set.
+            if call.is_indirect
+                set escape_saw_indirect: true
             ; Forwarding fixpoint pass: grow the summary instead of checking.
             if escape_forwarding
             {
@@ -17254,6 +17315,10 @@ define Planner
                     this.escape_check_call_record(call, (*rec_ptr))
                 set ri: ri + 1
             }
+            ; An indirect call has no mangled name to match a summary entry, so
+            ; the loop above skips it; check its arguments directly instead.
+            if call.is_indirect
+                this.escape_check_indirect_call(call)
         }
 
         ; True when the summary already carries a record equal to this one
@@ -17294,6 +17359,71 @@ define Planner
                 if rec_ptr <> null
                     this.escape_forward_call_record(call, (*rec_ptr))
                 set ri: ri + 1
+            }
+            ; An indirect call carries no summary entry to forward against, so
+            ; the loop above never fires for it. Treat the unknown callee as one
+            ; that may persist any reference-like/delegate argument: a forwarded
+            ; PARAMETER of the current function is recorded as persisted frame-
+            ; external, propagating the escape fact to callers (transitive close
+            ; of a chain that ends in an indirect call).
+            if call.is_indirect
+                this.escape_forward_indirect_call(call)
+        }
+
+        ; Forwarding fixpoint (pass 0.5), indirect calls: for each bare
+        ; reference-like/delegate PARAMETER of the current function forwarded
+        ; (no member hop) into an indirect call, record that the current
+        ; function persists that parameter frame-external (dest_kind 1). args[0]
+        ; is the callee; scan args[1..]. Dedup'd so the fixpoint terminates.
+        function escape_forward_indirect_call(this: Planner, call: PlannedCall)
+        {
+            if call.args = null
+                return
+            var ai: size_t 1
+            while ai < call.args.length
+            {
+                let arg_ptr call.args.get ai
+                if arg_ptr <> null
+                {
+                    let arg arg_ptr.unwrap()
+                    var arg_has_member false
+                    if arg.member_access <> null
+                    {
+                        let ama (*arg.member_access)
+                        if ama.length > (0 as size_t)
+                            set arg_has_member: true
+                    }
+                    if arg_has_member = false
+                    {
+                        var arg_is_escapable false
+                        if Planner.is_reference_like(arg.result_type)
+                            set arg_is_escapable: true
+                        if this.is_delegate_type(arg.result_type.name)
+                            set arg_is_escapable: true
+                        if arg_is_escapable
+                        {
+                            var fwd_param_index: int -1
+                            choose arg.expr
+                                when v: Variable
+                                    set fwd_param_index: this.escape_param_index_current(v.name)
+                                else
+                                    0
+                            if fwd_param_index >= 0
+                            {
+                                let cpc this.escape_current_param_count()
+                                if this.escape_record_exists(escape_fn_index, (fwd_param_index as size_t), (1 as size_t), (0 as size_t)) = false
+                                    escape_records.add(EscapeRecord(
+                                        escape_fn_index,
+                                        cpc,
+                                        (fwd_param_index as size_t),
+                                        (1 as size_t),
+                                        (0 as size_t)
+                                    ))
+                            }
+                        }
+                    }
+                }
+                set ai: ai + 1
             }
         }
 
@@ -17674,6 +17804,7 @@ define Planner
             ; Pass 0: build the escape summary.
             set escape_checking: false
             set escape_found: false
+            set escape_saw_indirect: false
             var i: size_t 0
             for func in instantiated_functions
             {
@@ -17682,9 +17813,12 @@ define Planner
                 set i: i + 1
             }
 
-            ; Clean code records nothing -> nothing to check.
+            ; Clean code with no summary AND no indirect calls has nothing to
+            ; check. An indirect call is checked argument-by-argument (no record),
+            ; so its presence must keep the check alive even with an empty summary.
             if escape_records.length = 0
-                return
+                if escape_saw_indirect = false
+                    return
 
             ; Pass 0.5: transitive closure of the summary. A function that only
             ; FORWARDS a reference/delegate parameter to a storing callee (rather
