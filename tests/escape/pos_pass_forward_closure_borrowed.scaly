@@ -1,0 +1,27 @@
+; OK (positive control, TRANSITIVE Vector-3, CLOSURE pendant): `forward_fn` is
+; the same pure forwarder as the negative twin, and the fixpoint still infers it
+; persists its delegate parameter. But `relay` forwards a BORROWED delegate
+; parameter (`f`), not a stack closure of its own frame, so nothing on `relay`'s
+; frame escapes. Must COMPILE (no false positive — a borrowed delegate param is
+; not a frame-local stack closure). Self-hosted-only.
+define IntFn delegate(int) returns int
+
+define Sink
+(
+    fn: IntFn
+)
+{
+    procedure store_fn(this, f: IntFn)
+        set this.fn: f
+}
+
+procedure forward_fn(s: Sink, f: IntFn)
+    s.store_fn(f)
+
+procedure relay(s: Sink, f: IntFn)
+    forward_fn(s, f)
+
+function main() returns int
+{
+    return 0
+}

@@ -1,0 +1,29 @@
+; OK (positive control, TRANSITIVE Vector-3): `forward` is the same pure
+; forwarder as the negative twin, and the fixpoint still infers it persists `p`
+; into `c`'s field. But here the caller `relay` passes a CALLER-provided pointer
+; (`src`, its own parameter — not a frame-local), so nothing on `relay`'s frame
+; escapes. Must COMPILE (no false positive: the forwarded value outlives the
+; frame just like the destination does).
+define Box
+(
+    v: int
+)
+define Holder
+(
+    b: pointer[Box]
+)
+{
+    procedure stash(this, p: pointer[Box])
+        set this.b: p
+}
+
+procedure forward(c: Holder, p: pointer[Box])
+    c.stash(p)
+
+procedure relay(c: Holder, src: pointer[Box])
+    forward(c, src)
+
+function main() returns int
+{
+    return 0
+}

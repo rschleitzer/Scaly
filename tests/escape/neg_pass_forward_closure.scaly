@@ -1,0 +1,32 @@
+; ESCAPE (negative, TRANSITIVE Vector-3, CLOSURE pendant): a stack closure `g`
+; is passed to `forward_fn`, which does NOT store it — it only relays it to
+; `store_fn`, which stashes the delegate parameter into the receiver's field.
+; The direct check gives `forward_fn` no record; the forwarding fixpoint infers
+; that `forward_fn` persists its delegate parameter `f` into `s`'s field, so
+; passing the STACK closure `g` to it MUST be REJECTED ("escapes via call").
+; Self-hosted-only.
+define IntFn delegate(int) returns int
+
+define Sink
+(
+    fn: IntFn
+)
+{
+    procedure store_fn(this, f: IntFn)
+        set this.fn: f
+}
+
+; Pure forwarder: relays the delegate on to store_fn, stores nothing itself.
+procedure forward_fn(s: Sink, f: IntFn)
+    s.store_fn(f)
+
+procedure use_it(s: Sink)
+{
+    let g: IntFn \x: x + 1
+    forward_fn(s, g)
+}
+
+function main() returns int
+{
+    return 0
+}

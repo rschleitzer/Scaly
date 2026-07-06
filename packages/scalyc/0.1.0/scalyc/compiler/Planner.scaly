@@ -436,6 +436,17 @@ define Planner
         escape_found: bool
         escape_fn_index: size_t
 
+        ; Transitive Vector-3 (interprocedural pass-to-storing-callee closure).
+        ; The direct pass records only functions that STORE a parameter frame-
+        ; external; a function that merely FORWARDS its parameter on to a storing
+        ; callee (forward(p) calls store(p)) gets no direct record, so
+        ; forward(&local) is silently accepted (the one known soundness hole).
+        ; escape_forwarding gates a fixpoint pass (between collect and check)
+        ; that, at each call passing a bare reference-like/delegate PARAMETER
+        ; into a callee's persisting slot, records that the current function
+        ; persists that parameter too — repeated until no new fact appears.
+        escape_forwarding: bool
+
         ; CLOSURE Vector-3 support: names bound to a stack (Lifetime.Local)
         ; closure in the function CURRENTLY being walked by the escape
         ; post-pass. Rebuilt from the Plan tree (each function's PlannedBinding
@@ -644,6 +655,7 @@ define Planner
             set escape_checking: false
             set escape_found: false
             set escape_fn_index: 0
+            set escape_forwarding: false
             set current_fn_closure_names: Array[String]^this()
             set transitive_page_names: Array[String]^this()
             set transitive_page_built: false
@@ -17028,6 +17040,10 @@ define Planner
         {
             if escape_checking
                 return
+            ; Store facts are gathered once in the direct-collect pass; the
+            ; forwarding fixpoint must not re-record them (would never converge).
+            if escape_forwarding
+                return
             if act.source = null
                 return
             if act.target = null
@@ -17194,11 +17210,17 @@ define Planner
         ; params); check each.
         function escape_handle_call(this: Planner, call: PlannedCall)
         {
-            if escape_checking = false
-                return
             if escape_found
                 return
             if call.args = null
+                return
+            ; Forwarding fixpoint pass: grow the summary instead of checking.
+            if escape_forwarding
+            {
+                this.escape_forward_call(call)
+                return
+            }
+            if escape_checking = false
                 return
             var ri: size_t 0
             while ri < escape_records.length
@@ -17210,6 +17232,159 @@ define Planner
                     this.escape_check_call_record(call, (*rec_ptr))
                 set ri: ri + 1
             }
+        }
+
+        ; True when the summary already carries a record equal to this one
+        ; (callee_fn_index + param_index + dest_kind + dest_index). callee_param_
+        ; count is derived from callee_fn_index so it is not part of identity.
+        ; Dedup is what makes the forwarding fixpoint terminate.
+        function escape_record_exists(this: Planner, fn_index: size_t, param_index: size_t, dest_kind: size_t, dest_index: size_t) returns bool
+        {
+            var ri: size_t 0
+            while ri < escape_records.length
+            {
+                let rec_ptr escape_records.get ri
+                if rec_ptr <> null
+                {
+                    let rec (*rec_ptr)
+                    if rec.callee_fn_index = fn_index
+                        if rec.param_index = param_index
+                            if rec.dest_kind = dest_kind
+                                if rec.dest_index = dest_index
+                                    return true
+                }
+                set ri: ri + 1
+            }
+            false
+        }
+
+        ; Forwarding fixpoint (pass 0.5): a call may forward several params into
+        ; several persisting callee slots; test the current summary against each
+        ; matching record. Snapshot the length so records added during this call
+        ; are not re-processed here (the outer fixpoint loop propagates them).
+        function escape_forward_call(this: Planner, call: PlannedCall)
+        {
+            let n escape_records.length
+            var ri: size_t 0
+            while ri < n
+            {
+                let rec_ptr escape_records.get ri
+                if rec_ptr <> null
+                    this.escape_forward_call_record(call, (*rec_ptr))
+                set ri: ri + 1
+            }
+        }
+
+        ; Forwarding fixpoint core: if this call passes a bare reference-like/
+        ; delegate PARAMETER of the current function into the callee's persisting
+        ; slot (rec.param_index), then the current function itself persists that
+        ; parameter — into whatever the callee's destination maps to from the
+        ; current frame. Records a new summary entry for the current function
+        ; (dedup'd). Mirrors the arg<->param mapping of escape_check_call_record.
+        function escape_forward_call_record(this: Planner, call: PlannedCall, rec: EscapeRecord)
+        {
+            let callee instantiated_functions.get rec.callee_fn_index
+            if callee = null
+                return
+            if callee.mangled_name.equals(call.mangled_name) = false
+                return
+            if call.args = null
+                return
+            if call.args.length < rec.callee_param_count
+                return
+            let off call.args.length - rec.callee_param_count
+            let arg_idx off + rec.param_index
+            if arg_idx >= call.args.length
+                return
+            let arg_ptr call.args.get arg_idx
+            if arg_ptr = null
+                return
+            let arg arg_ptr.unwrap()
+
+            ; The forwarded arg must be a BARE reference-like/delegate parameter
+            ; of the current function (a member hop or a non-param disqualifies).
+            var arg_has_member false
+            if arg.member_access <> null
+            {
+                let ama (*arg.member_access)
+                if ama.length > (0 as size_t)
+                    set arg_has_member: true
+            }
+            if arg_has_member
+                return
+            var arg_is_escapable false
+            if Planner.is_reference_like(arg.result_type)
+                set arg_is_escapable: true
+            if this.is_delegate_type(arg.result_type.name)
+                set arg_is_escapable: true
+            if arg_is_escapable = false
+                return
+            var fwd_param_index: int -1
+            choose arg.expr
+                when v: Variable
+                    set fwd_param_index: this.escape_param_index_current(v.name)
+                else
+                    0
+            if fwd_param_index < 0
+                return
+
+            ; Map the callee's destination into the current frame.
+            ;   callee dest_kind 1 (global/deref)      -> current frame-external.
+            ;   callee dest_kind 0 (callee param D)    -> whatever the current fn
+            ;     passed as that arg: a current param  -> dest_kind 0 at that
+            ;     param; a global/#/^ outliving value  -> dest_kind 1; a same-
+            ;     frame local                          -> no escape, skip.
+            var new_dest_kind: int -1
+            var new_dest_index: int 0
+            if rec.dest_kind = 1
+                set new_dest_kind: 1
+            else
+            {
+                let dest_idx off + rec.dest_index
+                if dest_idx < call.args.length
+                {
+                    let dest_ptr call.args.get dest_idx
+                    if dest_ptr <> null
+                    {
+                        let dest_op dest_ptr.unwrap()
+                        var dest_has_member false
+                        if dest_op.member_access <> null
+                        {
+                            let dma (*dest_op.member_access)
+                            if dma.length > (0 as size_t)
+                                set dest_has_member: true
+                        }
+                        var dest_param_index: int -1
+                        if dest_has_member = false
+                            choose dest_op.expr
+                                when dv: Variable
+                                    set dest_param_index: this.escape_param_index_current(dv.name)
+                                else
+                                    0
+                        if dest_param_index >= 0
+                        {
+                            set new_dest_kind: 0
+                            set new_dest_index: dest_param_index
+                        }
+                        else
+                            if this.escape_dest_arg_outlives(dest_op)
+                                set new_dest_kind: 1
+                    }
+                }
+            }
+            if new_dest_kind < 0
+                return
+
+            let cpc this.escape_current_param_count()
+            if this.escape_record_exists(escape_fn_index, (fwd_param_index as size_t), (new_dest_kind as size_t), (new_dest_index as size_t))
+                return
+            escape_records.add(EscapeRecord(
+                escape_fn_index,
+                cpc,
+                (fwd_param_index as size_t),
+                (new_dest_kind as size_t),
+                (new_dest_index as size_t)
+            ))
         }
 
         ; Walk all operands in a (nullable) operand vector. Takes the
@@ -17488,6 +17663,27 @@ define Planner
             ; Clean code records nothing -> nothing to check.
             if escape_records.length = 0
                 return
+
+            ; Pass 0.5: transitive closure of the summary. A function that only
+            ; FORWARDS a reference/delegate parameter to a storing callee (rather
+            ; than storing it itself) inherits a persist-parameter fact. Repeat
+            ; the whole-program walk until no new fact is recorded — the summary
+            ; only grows and dedup bounds it, so this terminates.
+            set escape_forwarding: true
+            var changed true
+            while changed
+            {
+                let before escape_records.length
+                var k: size_t 0
+                for func in instantiated_functions
+                {
+                    set escape_fn_index: k
+                    this.escape_walk_function_body(func)
+                    set k: k + 1
+                }
+                set changed: escape_records.length <> before
+            }
+            set escape_forwarding: false
 
             ; Pass 1: check every call against the summary.
             set escape_checking: true
