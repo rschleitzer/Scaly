@@ -16710,6 +16710,8 @@ entry:
   %field.load = load %_Z5SliceI1TE, ptr %2, align 8
   %tuple.field = getelementptr inbounds %_Z13SliceIteratorI1TE, ptr %tuple, i32 0, i32 0
   store %_Z5SliceI1TE %field.load, ptr %tuple.field, align 1
+  %tuple.field1 = getelementptr inbounds %_Z13SliceIteratorI1TE, ptr %tuple, i32 0, i32 1
+  store i64 0, ptr %tuple.field1, align 1
   %tuple.val = load %_Z13SliceIteratorI1TE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z13SliceIteratorI1TE, ptr null, i32 1) to i64), i1 false)
   ret void
