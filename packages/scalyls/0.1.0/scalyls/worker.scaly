@@ -120,7 +120,7 @@ define worker
         ; `position` the query; there is no single document. Handle it before
         ; the per-document source resolution below (which would try to read the
         ; root directory as a file).
-        if kind.equals("w")
+        if kind = "w"
         {
             rpc.write_message_fd(out_fd, symbols.workspace_symbols(uri, position))
             return true
@@ -135,7 +135,7 @@ define worker
             set source: File.read_to_string(path)
 
         ; documentSymbol: outline of the resolved source.
-        if kind.equals("s")
+        if kind = "s"
         {
             rpc.write_message_fd(out_fd, symbols.document_symbols(source))
             return true
@@ -144,14 +144,14 @@ define worker
         ; completion: when a `.` precedes the cursor and its receiver names a
         ; declared concept, the members of that concept; otherwise the flat
         ; all-names list (the editor prefix-filters either way).
-        if kind.equals("c")
+        if kind = "c"
         {
             rpc.write_message_fd(out_fd, symbols.completion_packed(source, uri, position))
             return true
         }
 
         ; hover: symbol under the packed "<line> <char>" cursor position.
-        if kind.equals("h")
+        if kind = "h"
         {
             rpc.write_message_fd(out_fd, symbols.hover_packed(source, position))
             return true
@@ -160,7 +160,7 @@ define worker
         ; definition: declaration for the identifier at the cursor. Searches
         ; the current file first (result Location refers back to `uri`), then
         ; sibling .scaly files in the same directory tree (cross-file).
-        if kind.equals("g")
+        if kind = "g"
         {
             rpc.write_message_fd(out_fd, symbols.definition_workspace_packed(source, uri, position))
             return true
@@ -168,14 +168,14 @@ define worker
 
         ; references: all occurrences of the identifier at the cursor; the
         ; result Locations refer back to `uri`.
-        if kind.equals("r")
+        if kind = "r"
         {
             rpc.write_message_fd(out_fd, symbols.references_packed(source, uri, position))
             return true
         }
 
         ; documentHighlight: occurrences in the current document (range-only).
-        if kind.equals("l")
+        if kind = "l"
         {
             rpc.write_message_fd(out_fd, symbols.highlights_packed(source, position))
             return true
@@ -184,21 +184,21 @@ define worker
         ; rename: rewrite every occurrence of the identifier at the cursor to
         ; the new name (packed as "<line> <char> <newName>"); the result
         ; WorkspaceEdit refers back to `uri`.
-        if kind.equals("n")
+        if kind = "n"
         {
             rpc.write_message_fd(out_fd, symbols.rename_packed(source, uri, position))
             return true
         }
 
         ; prepareRename: the range of the renameable identifier at the cursor.
-        if kind.equals("p")
+        if kind = "p"
         {
             rpc.write_message_fd(out_fd, symbols.prepare_rename_packed(source, position))
             return true
         }
 
         ; signatureHelp: the parameter list of the call enclosing the cursor.
-        if kind.equals("f")
+        if kind = "f"
         {
             rpc.write_message_fd(out_fd, symbols.signature_packed(source, uri, position))
             return true
@@ -206,7 +206,7 @@ define worker
 
         ; inlayHint: parameter-name hints for call sites in the packed
         ; "<sl> <sc> <el> <ec>" range.
-        if kind.equals("y")
+        if kind = "y"
         {
             rpc.write_message_fd(out_fd, symbols.inlay_hints_packed(source, uri, position))
             return true
@@ -214,7 +214,7 @@ define worker
 
         ; foldingRange: collapsible regions of the resolved source (uri-only,
         ; no position).
-        if kind.equals("o")
+        if kind = "o"
         {
             rpc.write_message_fd(out_fd, symbols.folding_ranges(source))
             return true
@@ -222,7 +222,7 @@ define worker
 
         ; semanticTokens: delta-encoded token classification of the source
         ; (uri-only, no position).
-        if kind.equals("t")
+        if kind = "t"
         {
             rpc.write_message_fd(out_fd, symbols.semantic_tokens(source, uri))
             return true
@@ -233,7 +233,7 @@ define worker
         ; (e.g. "int"), or "" on a miss / parse error / unresolved. The full
         ; pipeline can crash/hang here; the isolation + 8s poll handle it, and
         ; the server falls back to the lexical hover on an empty reply.
-        if kind.equals("x")
+        if kind = "x"
         {
             rpc.write_message_fd(out_fd, semantic.semantic_type_framed(source, uri, position))
             return true

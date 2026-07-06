@@ -60,7 +60,7 @@ define HashSetBuilder[T]
         var iterator slot_list.get_iterator()
         while let item iterator.next()
         {
-            if value.equals(item.value)
+            if value = item.value
                 return false
 
         }
@@ -83,7 +83,7 @@ define HashSetBuilder[T]
         var iterator slot.get_iterator()
         while let item iterator.next()
         {
-            if value.equals(item.value)
+            if value = item.value
                 return true
 
         }

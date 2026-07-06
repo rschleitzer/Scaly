@@ -832,7 +832,7 @@ define Planner
                 let kvp_ptr scope_bindings.get i
                 if kvp_ptr <> null
                 {
-                    if kvp_ptr.key.equals(name)
+                    if kvp_ptr.key = name
                         return &kvp_ptr.value
                 }
             }
@@ -870,7 +870,7 @@ define Planner
                 let kvp_ptr type_substitutions.get i
                 if kvp_ptr <> null
                 {
-                    if kvp_ptr.key.equals(name)
+                    if kvp_ptr.key = name
                         return &kvp_ptr.value
                 }
                 set i: i + 1
@@ -918,7 +918,7 @@ define Planner
                 let prev_of concept_origin_files.get(prev_idx as size_t)
                 if prev_of <> null
                 {
-                    if prev_of.equals(registering_file)
+                    if prev_of = registering_file
                     {
                         let prev_op concept_origin_paths.get(prev_idx as size_t)
                         if prev_op <> null
@@ -1091,7 +1091,7 @@ define Planner
                 let kvp_ptr concepts.get i
                 if kvp_ptr <> null
                 {
-                    if kvp_ptr.key.equals(name)
+                    if kvp_ptr.key = name
                     {
                         var is_ns: bool false
                         choose kvp_ptr.value.definition
@@ -1215,7 +1215,7 @@ define Planner
                 let s_ptr instantiated_structures.get i
                 if s_ptr <> null
                 {
-                    if s_ptr.mangled_name.equals(mangled)
+                    if s_ptr.mangled_name = mangled
                         return true
                 }
                 set i: i + 1
@@ -1231,7 +1231,7 @@ define Planner
                 let u_ptr instantiated_unions.get i
                 if u_ptr <> null
                 {
-                    if u_ptr.mangled_name.equals(mangled)
+                    if u_ptr.mangled_name = mangled
                         return true
                 }
                 set i: i + 1
@@ -1274,7 +1274,7 @@ define Planner
                 let g_ptr instantiated_globals.get i
                 if g_ptr <> null
                 {
-                    if g_ptr.name.equals(name)
+                    if g_ptr.name = name
                         return g_ptr
                 }
                 set i: i + 1
@@ -1365,7 +1365,7 @@ define Planner
                 let a_ptr program_use_aliases.get i
                 if a_ptr <> null
                 {
-                    if a_ptr.equals(name)
+                    if a_ptr = name
                     {
                         let ns_ptr program_use_namespaces.get i
                         if ns_ptr <> null
@@ -1386,7 +1386,7 @@ define Planner
                 let a_ptr program_use_aliases.get i
                 if a_ptr <> null
                 {
-                    if a_ptr.equals(name)
+                    if a_ptr = name
                         return true
                 }
                 set i: i + 1
@@ -1410,7 +1410,7 @@ define Planner
                 let p use_vis_recorded_files.get i
                 if p <> null
                 {
-                    if p.equals(f)
+                    if p = f
                         return true
                 }
                 set i: i + 1
@@ -1428,7 +1428,7 @@ define Planner
                 let p use_vis_recorded_files.get i
                 if p <> null
                 {
-                    if p.equals(f)
+                    if p = f
                     {
                         let pp use_vis_recorded_paths.get i
                         if pp <> null
@@ -1478,7 +1478,7 @@ define Planner
                 return String^this(prefix)
             if prefix.get_length() = 0
                 return String^this(name)
-            if prefix.equals(name)
+            if prefix = name
                 return String^this(prefix)
             var dsb StringBuilder()
             dsb.append "."
@@ -1535,8 +1535,8 @@ define Planner
                             ; only the MAIN file's EXPLICIT (non-glob) use
                             ; names. Populated here (persisting context) and
                             ; read-only in lookup_concept.
-                            if m.file.equals(file)
-                                if (*last_ptr).equals("*") = false
+                            if m.file = file
+                                if (*last_ptr) <> "*"
                                 {
                                     file_explicit_names.add(String^this((*last_ptr)))
                                     ; If this explicitly-used name is already
@@ -1587,7 +1587,7 @@ define Planner
                         let fp use_vis_miss_files.get i
                         if fp <> null
                         {
-                            if fp.equals(file)
+                            if fp = file
                                 return
                         }
                     }
@@ -1620,7 +1620,7 @@ define Planner
         {
             if origin_file.get_length() = 0
                 return true
-            if origin_file.equals(file)
+            if origin_file = file
                 return true
             if this.use_vis_origin_is_prelude(origin_path, origin_file)
                 return true
@@ -1636,7 +1636,7 @@ define Planner
                 let child this.extend_dotted_path(cur_path, name)
                 if child.get_length() > cur_path.get_length()
                 {
-                    if origin_path.equals(child)
+                    if origin_path = child
                         return true
                 }
             }
@@ -1646,7 +1646,7 @@ define Planner
                 let uf use_vis_files.get i
                 if uf <> null
                 {
-                    if uf.equals(file)
+                    if uf = file
                     {
                         let un use_vis_names.get i
                         let up use_vis_paths.get i
@@ -1655,9 +1655,9 @@ define Planner
                             if up <> null
                             {
                                 var name_hit false
-                                if un.equals(name)
+                                if un = name
                                     set name_hit: true
-                                if un.equals("*")
+                                if un = "*"
                                     set name_hit: true
                                 if name_hit
                                 {
@@ -1689,14 +1689,14 @@ define Planner
         {
             if prefix.get_length() = 0
                 return true
-            if origin_path.equals(prefix)
+            if origin_path = prefix
                 return true
             var sb StringBuilder()
             sb.append prefix
             sb.append "."
             sb.append name
             let full sb.to_string()
-            origin_path.equals(full)
+            origin_path = full
         }
 
         ; use_vis_origin_is_prelude: the scaly stdlib package (origin
@@ -1709,13 +1709,13 @@ define Planner
             origin_file: String
         ) returns bool
         {
-            if origin_path.equals("scaly")
+            if origin_path = "scaly"
                 return true
             if origin_path.starts_with("scaly.")
                 return true
             if origin_file.ends_with("/prelude.scaly")
                 return true
-            origin_file.equals("prelude.scaly")
+            origin_file = "prelude.scaly"
         }
 
         ; ===== use-visibility enforcement (stage 4) =====
@@ -1741,7 +1741,7 @@ define Planner
                 {
                     if vf.get_length() > 0
                     {
-                        if vf.equals(file)
+                        if vf = file
                         {
                             let vo use_vis_verdict_ok.get idx
                             if vo <> null
@@ -1978,9 +1978,9 @@ define Planner
                 {
                     if un <> null
                     {
-                        if uf.equals(f)
+                        if uf = f
                         {
-                            if un.equals(name)
+                            if un = name
                                 return true
                         }
                     }
@@ -2014,8 +2014,8 @@ define Planner
                 if uf <> null
                     if un <> null
                         if up <> null
-                            if uf.equals(file)
-                                if un.equals(name)
+                            if uf = file
+                                if un = name
                                     if this.use_vis_target_match(origin_path, *up, name)
                                         return true
                 set i: i + 1
@@ -2040,7 +2040,7 @@ define Planner
                 set i: i - 1
                 let kvp_ptr concepts.get i
                 if kvp_ptr <> null
-                    if kvp_ptr.key.equals(name)
+                    if kvp_ptr.key = name
                     {
                         let op_ptr concept_origin_paths.get i
                         if op_ptr <> null
@@ -2067,9 +2067,9 @@ define Planner
                     {
                         if up <> null
                         {
-                            if uf.equals(f)
+                            if uf = f
                             {
-                                if un.equals("*")
+                                if un = "*"
                                 {
                                     if this.use_vis_target_match(origin, *up, name)
                                         return true
@@ -2104,7 +2104,7 @@ define Planner
                 {
                     if uf_ptr <> null
                     {
-                        if un_ptr.equals("*")
+                        if un_ptr = "*"
                         {
                             let cur_file (*uf_ptr)
                             var already false
@@ -2114,7 +2114,7 @@ define Planner
                                 let sp seen_files.get si
                                 if sp <> null
                                 {
-                                    if sp.equals(cur_file)
+                                    if sp = cur_file
                                         set already: true
                                 }
                                 set si: si + 1
@@ -2149,7 +2149,7 @@ define Planner
                         let sp seen_names.get di
                         if sp <> null
                         {
-                            if sp.equals(name)
+                            if sp = name
                                 set dup: true
                         }
                         set di: di + 1
@@ -2167,7 +2167,7 @@ define Planner
                                 let kp2 concepts.get cj
                                 if kp2 <> null
                                 {
-                                    if kp2.key.equals(name)
+                                    if kp2.key = name
                                     {
                                         let of_ptr concept_origin_files.get cj
                                         let op_ptr concept_origin_paths.get cj
@@ -2176,7 +2176,7 @@ define Planner
                                             if op_ptr <> null
                                             {
                                                 var counts false
-                                                if (*of_ptr).equals(f) = false
+                                                if (*of_ptr) <> f
                                                 {
                                                     if this.use_vis_origin_is_prelude(*op_ptr, *of_ptr) = false
                                                     {
@@ -2193,7 +2193,7 @@ define Planner
                                                         let ep origins.get oi
                                                         if ep <> null
                                                         {
-                                                            if ep.equals(*op_ptr)
+                                                            if ep = (*op_ptr)
                                                                 set have: true
                                                         }
                                                         set oi: oi + 1
@@ -2254,7 +2254,7 @@ define Planner
                 let kvp_ptr loaded_packages.get i
                 if kvp_ptr <> null
                 {
-                    if kvp_ptr.key.equals(name)
+                    if kvp_ptr.key = name
                         return &kvp_ptr.value
                 }
                 set i: i + 1
@@ -2276,7 +2276,7 @@ define Planner
                 let kvp_ptr lambda_models.get i
                 if kvp_ptr <> null
                 {
-                    if kvp_ptr.key.equals(name)
+                    if kvp_ptr.key = name
                         return &kvp_ptr.value
                 }
                 set i: i + 1
@@ -2294,7 +2294,7 @@ define Planner
                 let kvp_ptr loaded_module_paths.get i
                 if kvp_ptr <> null
                 {
-                    if kvp_ptr.key.equals(path)
+                    if kvp_ptr.key = path
                         return &kvp_ptr.value
                 }
                 set i: i + 1
@@ -2634,7 +2634,7 @@ define Planner
                     choose mem
                         when f: Function
                         {
-                            if f.name.equals(method_name)
+                            if f.name = method_name
                                 acc.add f
                             0
                         }
@@ -2723,7 +2723,7 @@ define Planner
                         let p_ptr s.properties.get i
                         if p_ptr <> null
                         {
-                            if p_ptr.name.equals(property_name)
+                            if p_ptr.name = property_name
                                 return p_ptr
                         }
                         set i: i + 1
@@ -3028,9 +3028,9 @@ define Planner
                             {
                                 let seg0 (*s0)
                                 let seg1 (*s1)
-                                if seg0.equals("Page")
+                                if seg0 = "Page"
                                 {
-                                    if seg1.equals("get")
+                                    if seg1 = "get"
                                         set found: true
                                 }
                             }
@@ -3095,7 +3095,7 @@ define Planner
             if s0 = null
                 return false
             let seg (*s0)
-            seg.equals("this")
+            seg = "this"
         }
 
         ; Exhaustive Expression walker, mirroring operand_references_rp /
@@ -3313,7 +3313,7 @@ define Planner
             choose lt
                 when r: Reference
                 {
-                    if r.location.equals("this")
+                    if r.location = "this"
                         set found: true
                 }
                 else
@@ -3432,7 +3432,7 @@ define Planner
                         let p_ptr s.properties.get i
                         if p_ptr <> null
                         {
-                            if p_ptr.name.equals(property_name)
+                            if p_ptr.name = property_name
                                 return i as int
                         }
                         set i: i + 1
@@ -3481,11 +3481,11 @@ define Planner
                                 {
                                     let last_ptr type_val.name.get(type_val.name.length - 1)
                                     if last_ptr <> null
-                                        if last_ptr.equals(variant_name)
+                                        if last_ptr = variant_name
                                             return i as int
                                 }
                             }
-                            if v_ptr.name.equals(variant_name)
+                            if v_ptr.name = variant_name
                                 return i as int
                         }
                         set i: i + 1
@@ -3533,12 +3533,12 @@ define Planner
                                 {
                                     let last_ptr type_val.name.get(type_val.name.length - 1)
                                     if last_ptr <> null
-                                        if last_ptr.equals(variant_name)
+                                        if last_ptr = variant_name
                                             set matched: true
                                 }
                             }
                             if matched = false
-                                if v_ptr.name.equals(variant_name)
+                                if v_ptr.name = variant_name
                                     set matched: true
                             if matched = true
                             {
@@ -3587,7 +3587,7 @@ define Planner
             ; — emitting a Vector(Vector) call passed an Array struct, whose
             ; vector-ptr field was read as the data ptr → garbage String
             ; elements → String::hash SIGSEGV.
-            if pattern.name.equals(actual.name) = false
+            if pattern.name <> actual.name
                 return Vector[KeyValuePair[String, PlannedType]](result)
 
             if pattern.generics <> null
@@ -3758,7 +3758,7 @@ define Planner
                     let im_ptr instantiating_structures.get i
                     if im_ptr <> null
                     {
-                        if im_ptr.equals(mangled)
+                        if im_ptr = mangled
                             set already_cached: true
                     }
                     set i: i + 1
@@ -3923,7 +3923,7 @@ define Planner
                     if first_ptr.name <> null
                     {
                         let fname (*first_ptr.name)
-                        if fname.equals("this")
+                        if fname = "this"
                             set param_start: 1
                     }
             }
@@ -3946,7 +3946,7 @@ define Planner
                     let arg (*a_ptr)
                     var ok: bool Planner.types_equal(planned_p, arg)
                     if ok = false
-                        if arg.name.equals("String")
+                        if arg.name = "String"
                             if Planner.type_is_i8_pointer(planned_p)
                             {
                                 set ok: true
@@ -3968,7 +3968,7 @@ define Planner
         function type_is_i8_pointer(t: PlannedType) returns bool
         {
             var result: bool false
-            if t.name.equals("pointer")
+            if t.name = "pointer"
                 if t.generics <> null
                 {
                     let gs (*t.generics)
@@ -3976,7 +3976,7 @@ define Planner
                     {
                         let ip gs.get 0
                         if ip <> null
-                            if (*ip).name.equals("i8")
+                            if (*ip).name = "i8"
                                 set result: true
                     }
                 }
@@ -3999,7 +3999,7 @@ define Planner
                     if first_ptr.name <> null
                     {
                         let fname (*first_ptr.name)
-                        if fname.equals("this")
+                        if fname = "this"
                             set param_start: 1
                     }
                 }
@@ -4053,7 +4053,7 @@ define Planner
             choose recv.expr
                 when v: Variable
                 {
-                    if v.name.equals("this")
+                    if v.name = "this"
                         return false
                     let lb this.lookup_local_binding(v.name)
                     if lb = null
@@ -4084,7 +4084,7 @@ define Planner
             {
                 let np persist_summary_names.get idx
                 if np <> null
-                    if (*np).equals(mangled)
+                    if (*np) = mangled
                     {
                         let vp persist_summary_vals.get idx
                         if vp <> null
@@ -4137,7 +4137,7 @@ define Planner
                     if first_ptr.name <> null
                     {
                         let fname (*first_ptr.name)
-                        if fname.equals("this")
+                        if fname = "this"
                             set param_start: 1
                     }
                 }
@@ -4226,7 +4226,7 @@ define Planner
                                 choose mem
                                     when nf: Function
                                     {
-                                        if nf.name.equals(f.name)
+                                        if nf.name = f.name
                                         {
                                             if nf.input.length = f.input.length
                                                 set is_namespace_sibling: true
@@ -4356,7 +4356,7 @@ define Planner
                                 choose mc
                                     when ncf: Function
                                     {
-                                        if ncf.name.equals(suffix)
+                                        if ncf.name = suffix
                                         {
                                             if ncf.input.length > 0
                                             {
@@ -4365,7 +4365,7 @@ define Planner
                                                 {
                                                     if nmi0.name <> null
                                                     {
-                                                        if (*nmi0.name).equals("this")
+                                                        if (*nmi0.name) = "this"
                                                             return true
                                                     }
                                                 }
@@ -4535,7 +4535,7 @@ define Planner
                                 if fi0.name <> null
                                 {
                                     let fname (*fi0.name)
-                                    if fname.equals("this")
+                                    if fname = "this"
                                         set param_start2: 1
                                 }
                             }
@@ -4685,7 +4685,7 @@ define Planner
         function type_is_cstr_pointer(t: PlannedType) returns bool
         {
             var result: bool false
-            if t.name.equals("pointer")
+            if t.name = "pointer"
                 if t.generics <> null
                 {
                     let gs (*t.generics)
@@ -4695,13 +4695,13 @@ define Planner
                         if ip <> null
                         {
                             let inner (*ip)
-                            if inner.name.equals("const_char")
+                            if inner.name = "const_char"
                                 set result: true
-                            if inner.name.equals("i8")
+                            if inner.name = "i8"
                                 set result: true
-                            if inner.name.equals("char")
+                            if inner.name = "char"
                                 set result: true
-                            if inner.name.equals("u8")
+                            if inner.name = "u8"
                                 set result: true
                         }
                     }
@@ -4747,7 +4747,7 @@ define Planner
                         if pp <> null
                         {
                             let pt (*pp)
-                            if a.result_type.name.equals("String")
+                            if a.result_type.name = "String"
                                 if Planner.type_is_cstr_pointer(pt)
                                 {
                                     let casted PlannedAs(a.loc, pt, &^this a)
@@ -5003,7 +5003,7 @@ define Planner
                             when v: Variable
                             {
                                 let vt v.variable_type
-                                if vt.name.equals("pointer")
+                                if vt.name = "pointer"
                                 {
                                     if vt.generics <> null
                                     {
@@ -5012,7 +5012,7 @@ define Planner
                                             let g0_ptr (*vt.generics).get(0)
                                             if g0_ptr <> null
                                             {
-                                                if (*g0_ptr).name.equals("void")
+                                                if (*g0_ptr).name = "void"
                                                     set ic_is_void_ptr: true
                                             }
                                         }
@@ -6337,11 +6337,11 @@ define Planner
                             set rt: (*rt_ref)
                         if rt_ref = null
                         {
-                            if prefix_name.equals("!")
+                            if prefix_name = "!"
                                 set rt: Planner.make_bool_type()
-                            if prefix_name.equals("not")
+                            if prefix_name = "not"
                                 set rt: Planner.make_bool_type()
-                            if prefix_name.equals("*")
+                            if prefix_name = "*"
                             {
                                 ; Dereference: result is the pointer's
                                 ; element type. Use get_pointer_element_type
@@ -6379,7 +6379,7 @@ define Planner
                             ; life. Other `&` operands (pointer/ref bases that
                             ; auto-deref out of the frame, #/^-allocated values)
                             ; keep the plain pointer so value uses stay sound.
-                            if prefix_name.equals("&")
+                            if prefix_name = "&"
                             {
                                 if this.operand_addr_is_frame_local(rest_result)
                                     set rt: Planner.make_pointer_to_local(rest_result.result_type)
@@ -6397,7 +6397,7 @@ define Planner
                         ; the `var H Vector[X]#(1); H.put(0,v); H.get(0)` holder.
                         ; Reading ty.life (not a separate ops[1] marker scan) is
                         ; what makes it fire for ANY value, incl. call results.
-                        if prefix_name.equals("&")
+                        if prefix_name = "&"
                         {
                             var is_box: bool false
                             var box_loc: String ""
@@ -7415,18 +7415,18 @@ define Planner
                                     var skip_dispatch: bool false
                                     if local.binding_type.generics <> null
                                     {
-                                        if local.binding_type.name.equals("pointer") = false
+                                        if local.binding_type.name <> "pointer"
                                         {
-                                            if local.binding_type.name.equals("ref") = false
+                                            if local.binding_type.name <> "ref"
                                             {
                                                 ; s137-INVESTIGATE: Vector removed
-                                                if local.binding_type.name.equals("HashMap")
+                                                if local.binding_type.name = "HashMap"
                                                     set skip_dispatch: true
-                                                if local.binding_type.name.equals("HashMapBuilder")
+                                                if local.binding_type.name = "HashMapBuilder"
                                                     set skip_dispatch: true
-                                                if local.binding_type.name.equals("HashSet")
+                                                if local.binding_type.name = "HashSet"
                                                     set skip_dispatch: true
-                                                if local.binding_type.name.equals("HashSetBuilder")
+                                                if local.binding_type.name = "HashSetBuilder"
                                                     set skip_dispatch: true
                                                 ; s154: Array removed from skip_dispatch, mirroring
                                                 ; the s137 Vector lift. Array[T] is specialised via
@@ -7447,23 +7447,23 @@ define Planner
                                                 ; was lifted in s137, no regression there).
                                                 ; if local.binding_type.name.equals("List")
                                                 ;     set skip_dispatch: true
-                                                if local.binding_type.name.equals("ListIterator")
+                                                if local.binding_type.name = "ListIterator"
                                                     set skip_dispatch: true
-                                                if local.binding_type.name.equals("BuilderList")
+                                                if local.binding_type.name = "BuilderList"
                                                     set skip_dispatch: true
-                                                if local.binding_type.name.equals("BuilderListIterator")
+                                                if local.binding_type.name = "BuilderListIterator"
                                                     set skip_dispatch: true
-                                                if local.binding_type.name.equals("Option")
+                                                if local.binding_type.name = "Option"
                                                     set skip_dispatch: true
-                                                if local.binding_type.name.equals("Result")
+                                                if local.binding_type.name = "Result"
                                                     set skip_dispatch: true
-                                                if local.binding_type.name.equals("Slice")
+                                                if local.binding_type.name = "Slice"
                                                     set skip_dispatch: true
-                                                if local.binding_type.name.equals("Slot")
+                                                if local.binding_type.name = "Slot"
                                                     set skip_dispatch: true
-                                                if local.binding_type.name.equals("Node")
+                                                if local.binding_type.name = "Node"
                                                     set skip_dispatch: true
-                                                if local.binding_type.name.equals("KeyValuePair")
+                                                if local.binding_type.name = "KeyValuePair"
                                                     set skip_dispatch: true
                                             }
                                         }
@@ -7580,12 +7580,12 @@ define Planner
                                         ; non-parameter local Vector binding of
                                         ; THIS scope (a field/param receiver
                                         ; is caller-lived, never stamped).
-                                        var sfx_is_getref suffix.equals("get")
+                                        var sfx_is_getref suffix = "get"
                                         if sfx_is_getref = false
-                                            set sfx_is_getref: suffix.equals("get_ptr")
+                                            set sfx_is_getref: suffix = "get_ptr"
                                         if sfx_is_getref
                                             if local.is_parameter = false
-                                                if local.binding_type.name.equals("Vector")
+                                                if local.binding_type.name = "Vector"
                                                     if this.array_contains_name_from(local_frame_holder_names, this.local_frame_holder_base, prefix)
                                                         set stamp_getref_local: true
                                     }
@@ -7665,9 +7665,9 @@ define Planner
                                                 ; receivers (non-empty truncated
                                                 ; chain) are caller-lived and
                                                 ; never stamped.
-                                                var s83_is_getref last_acc.name.equals("get")
+                                                var s83_is_getref last_acc.name = "get"
                                                 if s83_is_getref = false
-                                                    set s83_is_getref: last_acc.name.equals("get_ptr")
+                                                    set s83_is_getref: last_acc.name = "get_ptr"
                                                 if s83_is_getref
                                                     if trunc_arr.length = 0
                                                         choose result.expr
@@ -7690,7 +7690,7 @@ define Planner
                                                                     let s83lb this.lookup_local_binding(s83v.name)
                                                                     if s83lb <> null
                                                                         if s83lb.is_parameter = false
-                                                                            if s83lb.binding_type.name.equals("Vector")
+                                                                            if s83lb.binding_type.name = "Vector"
                                                                                 set stamp_getref_local: true
                                                                 }
                                                             }
@@ -7951,7 +7951,7 @@ define Planner
                                                                 {
                                                                     if used_ns_local = false
                                                                     {
-                                                                        if nf.name.equals(suffix)
+                                                                        if nf.name = suffix
                                                                         {
                                                                             ; Skip leading 'this'.
                                                                             var pstart: size_t 0
@@ -7963,7 +7963,7 @@ define Planner
                                                                                     if fi0.name <> null
                                                                                     {
                                                                                         let fname (*fi0.name)
-                                                                                        if fname.equals("this")
+                                                                                        if fname = "this"
                                                                                             set pstart: 1
                                                                                     }
                                                                                 }
@@ -8204,7 +8204,7 @@ define Planner
                                             if current_namespace_name <> null
                                             {
                                                 let cnsn (*current_namespace_name)
-                                                if cnsn.equals(prefix)
+                                                if cnsn = prefix
                                                     set prefix_is_current_ns: true
                                             }
                                             var gate_open: bool false
@@ -8293,7 +8293,7 @@ define Planner
                                                             {
                                                                 if static_fn = null
                                                                 {
-                                                                    if sf.name.equals(suffix)
+                                                                    if sf.name = suffix
                                                                     {
                                                                         var is_static: bool true
                                                                         if sf.input.length > 0
@@ -8303,7 +8303,7 @@ define Planner
                                                                             {
                                                                                 if i0.name <> null
                                                                                 {
-                                                                                    if (*i0.name).equals("this")
+                                                                                    if (*i0.name) = "this"
                                                                                         set is_static: false
                                                                                 }
                                                                             }
@@ -8449,7 +8449,7 @@ define Planner
                                 if this_ref <> null
                                 {
                                     let this_ty (*this_ref)
-                                    if this_ty.name.equals("pointer")
+                                    if this_ty.name = "pointer"
                                     {
                                         if this_ty.generics <> null
                                         {
@@ -8628,9 +8628,9 @@ define Planner
                         ; libscaly.a (Option over scaly types only) can't
                         ; provide → stage-2 link failure.
                         var call_is_intrinsic: bool false
-                        if fn_name.equals("unwrap")
+                        if fn_name = "unwrap"
                             set call_is_intrinsic: true
-                        if fn_name.equals("unwrap_or")
+                        if fn_name = "unwrap_or"
                             set call_is_intrinsic: true
                         ; s184: only Option's OWN unwrap/unwrap_or are
                         ; intrinsic. A user-defined free function named
@@ -8646,7 +8646,7 @@ define Planner
                                 var recv_is_option: bool false
                                 if is_method_dispatch
                                 {
-                                    if receiver_op.result_type.name.equals("Option")
+                                    if receiver_op.result_type.name = "Option"
                                         set recv_is_option: true
                                 }
                                 if recv_is_option = false
@@ -8665,7 +8665,7 @@ define Planner
                         ; `intrinsic` and has no body to call.
                         if call_is_intrinsic
                         {
-                            if fn_name.equals("unwrap_or")
+                            if fn_name = "unwrap_or"
                             {
                                 if is_method_dispatch
                                 {
@@ -8850,7 +8850,7 @@ define Planner
                                     ; the sigiled source: there these are `#`-calls
                                     ; (Call life, not Unspecified), so the flip
                                     ; never fired for them anyway.
-                                    if rt.name.equals("void") = false
+                                    if rt.name <> "void"
                                         if Planner.result_owns_page_guts(rt)
                                             set call_life: Lifetime.Local(scalyc.compiler.Model.Local(Span(0, 0)))
                                 else
@@ -8888,9 +8888,9 @@ define Planner
                         ; (499d3312) for the put/add method-call shape.
                         var put_args_ref: ref[Vector[PlannedOperand]]? &call_args_holder
                         var is_putadd false
-                        if fn_name.equals("put")
+                        if fn_name = "put"
                             set is_putadd: true
-                        if fn_name.equals("add")
+                        if fn_name = "add"
                             set is_putadd: true
                         if is_putadd
                         {
@@ -8931,7 +8931,7 @@ define Planner
                                     ; NEUTRAL on sigiled source: explicit-`#` args
                                     ; carry Call life, which restamp_operand_life#
                                     ; refuses (returns null) → kept verbatim.
-                                    if rv.name.equals("this")
+                                    if rv.name = "this"
                                         if result.member_access <> null
                                         {
                                             let tfm_r result.member_access
@@ -9186,7 +9186,7 @@ define Planner
                                         let tc (*tc_ptr)
                                         if tc.is_method
                                             set all_props: false
-                                        if tc.result_type.name.equals("void")
+                                        if tc.result_type.name = "void"
                                             set all_props: false
                                     }
                                     set tci: tci + 1
@@ -9334,7 +9334,7 @@ define Planner
                         ; such if in cli/lexer/parser is silently dropped.
                         ; Mirrors stage-0 Planner.cpp:4470-4517.
                         var folded: bool false
-                        if pas.target_type.name.equals("char")
+                        if pas.target_type.name = "char"
                         {
                             ; The fold validates: a decoded length other than
                             ; one byte is a hard diagnostic, not a silent
@@ -9345,7 +9345,7 @@ define Planner
                                 set folded: true
                             }
                         }
-                        if pas.target_type.name.equals("u8")
+                        if pas.target_type.name = "u8"
                         {
                             if folded = false
                             {
@@ -9810,17 +9810,17 @@ define Planner
                     ; pointer compare). Multi-byte strings hard-error inside
                     ; the fold.
                     var lhs_is_charlike: bool false
-                    if result.result_type.name.equals("char")
+                    if result.result_type.name = "char"
                         set lhs_is_charlike: true
-                    if result.result_type.name.equals("u8")
+                    if result.result_type.name = "u8"
                         set lhs_is_charlike: true
                     if lhs_is_charlike
                         if this.operand_is_string_constant(rhs)
                             set rhs: this.fold_string_operand_to_char(rhs, result.result_type)
                     var rhs_is_charlike: bool false
-                    if rhs.result_type.name.equals("char")
+                    if rhs.result_type.name = "char"
                         set rhs_is_charlike: true
-                    if rhs.result_type.name.equals("u8")
+                    if rhs.result_type.name = "u8"
                         set rhs_is_charlike: true
                     if rhs_is_charlike
                         if this.operand_is_string_constant(result)
@@ -9913,15 +9913,17 @@ define Planner
                     ; comparisons are EXCLUDED — `x <> null` is an NPO
                     ; presence test, never a content compare. Primitive and
                     ; generic-param receivers keep the intrinsic fast path.
-                    ; Fixpoint gate: the compiler source spells every
-                    ; content compare .equals, so no existing site fires.
+                    ; SELF-HOSTING NOTE: since the 2026-07-06 de-equals
+                    ; migration the compiler source itself spells content
+                    ; compares `=`/`<>`, so this desugar is LOAD-BEARING
+                    ; for the self-compile (the committed seed carries it).
                     if resolved = null
                     {
                         var eq_negate: bool false
                         var is_eq_op: bool false
-                        if op_name.equals("=")
+                        if op_name = "="
                             set is_eq_op: true
-                        if op_name.equals("<>")
+                        if op_name = "<>"
                         {
                             set is_eq_op: true
                             set eq_negate: true
@@ -9953,7 +9955,7 @@ define Planner
                                 {
                                     let em (*em_ref)
                                     var eq_ok: bool em.takes_this
-                                    if em.return_type.name.equals("bool") = false
+                                    if em.return_type.name <> "bool"
                                         set eq_ok: false
                                     if eq_ok
                                     {
@@ -10043,13 +10045,13 @@ define Planner
                     ; IsIntegerType branch) — result type = LHS pointer type.
                     if resolved = null
                     {
-                        if result.result_type.name.equals("pointer")
+                        if result.result_type.name = "pointer"
                         {
                             if Planner.is_integer_type(rhs.result_type.name)
                             {
-                                if op_name.equals("+")
+                                if op_name = "+"
                                     set combined_type: result.result_type
-                                if op_name.equals("-")
+                                if op_name = "-"
                                     set combined_type: result.result_type
                             }
                         }
@@ -10063,26 +10065,26 @@ define Planner
                         ; mangled="", and `let X f(a, p = q)` silently drops.
                         ; Mirrors Planner.cpp's findOperator returning bool
                         ; for primitive comparison.
-                        if op_name.equals("=")
+                        if op_name = "="
                             set combined_type: Planner.make_bool_type()
-                        if op_name.equals("<>")
+                        if op_name = "<>"
                             set combined_type: Planner.make_bool_type()
-                        if op_name.equals("<")
+                        if op_name = "<"
                             set combined_type: Planner.make_bool_type()
-                        if op_name.equals(">")
+                        if op_name = ">"
                             set combined_type: Planner.make_bool_type()
-                        if op_name.equals("<=")
+                        if op_name = "<="
                             set combined_type: Planner.make_bool_type()
-                        if op_name.equals(">=")
+                        if op_name = ">="
                             set combined_type: Planner.make_bool_type()
-                        if op_name.equals("&&")
+                        if op_name = "&&"
                             set combined_type: Planner.make_bool_type()
-                        if op_name.equals("||")
+                        if op_name = "||"
                             set combined_type: Planner.make_bool_type()
                         ; Word-operator synonyms for &&/|| — also yield bool.
-                        if op_name.equals("and")
+                        if op_name = "and"
                             set combined_type: Planner.make_bool_type()
-                        if op_name.equals("or")
+                        if op_name = "or"
                             set combined_type: Planner.make_bool_type()
 
                         ; s101: built-in arithmetic / bitwise operators on
@@ -10100,29 +10102,29 @@ define Planner
                         {
                             if Planner.is_integer_type(rhs.result_type.name)
                             {
-                                if op_name.equals("+")
+                                if op_name = "+"
                                     set combined_type: result.result_type
-                                if op_name.equals("-")
+                                if op_name = "-"
                                     set combined_type: result.result_type
-                                if op_name.equals("*")
+                                if op_name = "*"
                                     set combined_type: result.result_type
-                                if op_name.equals("/")
+                                if op_name = "/"
                                     set combined_type: result.result_type
-                                if op_name.equals("%")
+                                if op_name = "%"
                                     set combined_type: result.result_type
-                                if op_name.equals("div")
+                                if op_name = "div"
                                     set combined_type: result.result_type
-                                if op_name.equals("mod")
+                                if op_name = "mod"
                                     set combined_type: result.result_type
-                                if op_name.equals("&")
+                                if op_name = "&"
                                     set combined_type: result.result_type
-                                if op_name.equals("|")
+                                if op_name = "|"
                                     set combined_type: result.result_type
-                                if op_name.equals("^")
+                                if op_name = "^"
                                     set combined_type: result.result_type
-                                if op_name.equals("<<")
+                                if op_name = "<<"
                                     set combined_type: result.result_type
-                                if op_name.equals(">>")
+                                if op_name = ">>"
                                     set combined_type: result.result_type
                             }
                         }
@@ -10203,7 +10205,7 @@ define Planner
                     if first_ptr.name <> null
                     {
                         let fname (*first_ptr.name)
-                        if fname.equals("this")
+                        if fname = "this"
                             set param_start: 1
                     }
                 }
@@ -10389,7 +10391,7 @@ define Planner
                                 if fi0.name <> null
                                 {
                                     let fname (*fi0.name)
-                                    if fname.equals("this")
+                                    if fname = "this"
                                         set param_start2: 1
                                 }
                             }
@@ -10531,7 +10533,7 @@ define Planner
                     if first_ptr.name <> null
                     {
                         let fname (*first_ptr.name)
-                        if fname.equals("this")
+                        if fname = "this"
                             set param_start: 1
                     }
                 }
@@ -10587,7 +10589,7 @@ define Planner
             ; implicit `page: pointer[scaly.memory.Page]`) silently fails
             ; because lookup walks the outer "pointer" name.
             var lookup_st: PlannedType struct_type
-            if struct_type.name.equals("pointer")
+            if struct_type.name = "pointer"
             {
                 if struct_type.generics <> null
                 {
@@ -10600,7 +10602,7 @@ define Planner
                     }
                 }
             }
-            if struct_type.name.equals("ref")
+            if struct_type.name = "ref"
             {
                 if struct_type.generics <> null
                 {
@@ -10622,17 +10624,17 @@ define Planner
             ; dispatch drops the whole call. Option's own methods are
             ; exempt so NPO unwrap dispatch keeps resolving.
             var mn_is_opt: bool false
-            if method_name.equals("unwrap")
+            if method_name = "unwrap"
                 set mn_is_opt: true
-            if method_name.equals("unwrap_or")
+            if method_name = "unwrap_or"
                 set mn_is_opt: true
-            if method_name.equals("is_some")
+            if method_name = "is_some"
                 set mn_is_opt: true
-            if method_name.equals("is_none")
+            if method_name = "is_none"
                 set mn_is_opt: true
             if mn_is_opt = false
             {
-                if lookup_st.name.equals("Option")
+                if lookup_st.name = "Option"
                 {
                     if lookup_st.generics <> null
                     {
@@ -10643,7 +10645,7 @@ define Planner
                             if og_ptr <> null
                             {
                                 var inner_o (*og_ptr)
-                                if inner_o.name.equals("ref")
+                                if inner_o.name = "ref"
                                 {
                                     if inner_o.generics <> null
                                     {
@@ -10656,7 +10658,7 @@ define Planner
                                         }
                                     }
                                 }
-                                if inner_o.name.equals("pointer")
+                                if inner_o.name = "pointer"
                                 {
                                     if inner_o.generics <> null
                                     {
@@ -10815,7 +10817,7 @@ define Planner
                         {
                             let li_mp instantiating_methods.get li_ip
                             if li_mp <> null
-                                if li_mp.equals(li_smangled)
+                                if li_mp = li_smangled
                                     set li_need: false
                             set li_ip: li_ip + 1
                         }
@@ -10941,7 +10943,7 @@ define Planner
                     {
                         let rn_ptr rb_names.get ri
                         if rn_ptr <> null
-                            if rn_ptr.equals(e.key)
+                            if rn_ptr = e.key
                                 set shadowed: true
                         set ri: ri + 1
                     }
@@ -10980,7 +10982,7 @@ define Planner
                     if first_ptr.name <> null
                     {
                         let fname (*first_ptr.name)
-                        if fname.equals("this")
+                        if fname = "this"
                             set param_start: 1
                     }
                 }
@@ -11103,7 +11105,7 @@ define Planner
         {
             ; Auto-deref pointer/ref receivers (s106 pattern).
             var lookup_st: PlannedType container_type
-            if container_type.name.equals("pointer")
+            if container_type.name = "pointer"
             {
                 if container_type.generics <> null
                 {
@@ -11116,7 +11118,7 @@ define Planner
                     }
                 }
             }
-            if container_type.name.equals("ref")
+            if container_type.name = "ref"
             {
                 if container_type.generics <> null
                 {
@@ -11149,7 +11151,7 @@ define Planner
                             choose (*m_ptr)
                                 when o: Operator
                                 {
-                                    if o.name.equals(op_name)
+                                    if o.name = op_name
                                         if op_holder.length = 0
                                             op_holder.add o
                                     0
@@ -11187,7 +11189,7 @@ define Planner
             {
                 let g_ptr instantiating_methods.get gi_i
                 if g_ptr <> null
-                    if g_ptr.equals(guard_key)
+                    if g_ptr = guard_key
                         return null
                 set gi_i: gi_i + 1
             }
@@ -11247,7 +11249,7 @@ define Planner
                     {
                         let rn_ptr rb_names.get ri
                         if rn_ptr <> null
-                            if rn_ptr.equals(e.key)
+                            if rn_ptr = e.key
                                 set shadowed: true
                         set ri: ri + 1
                     }
@@ -11477,7 +11479,7 @@ define Planner
                     let tc (*tc_ptr)
                     if tc.is_method
                         set all_props: false
-                    if tc.result_type.name.equals("void")
+                    if tc.result_type.name = "void"
                         set all_props: false
                 }
                 set tci: tci + 1
@@ -11537,7 +11539,7 @@ define Planner
                     ; never finds methods because lookup walks the outer
                     ; "pointer" name.
                     var lookup_type: PlannedType current
-                    if current.name.equals("pointer")
+                    if current.name = "pointer"
                     {
                         if current.generics <> null
                         {
@@ -11550,7 +11552,7 @@ define Planner
                             }
                         }
                     }
-                    if current.name.equals("ref")
+                    if current.name = "ref"
                     {
                         if current.generics <> null
                         {
@@ -11577,13 +11579,13 @@ define Planner
                     ; exempt so NPO unwrap dispatch keeps resolving on
                     ; the Option itself.
                     var m_is_opt_method: bool false
-                    if m.equals("unwrap")
+                    if m = "unwrap"
                         set m_is_opt_method: true
-                    if m.equals("unwrap_or")
+                    if m = "unwrap_or"
                         set m_is_opt_method: true
-                    if m.equals("is_some")
+                    if m = "is_some"
                         set m_is_opt_method: true
-                    if m.equals("is_none")
+                    if m = "is_none"
                         set m_is_opt_method: true
                     ; s184: variant names resolve on the union itself
                     ; (`Option[int].None` after the generic merge) —
@@ -11593,7 +11595,7 @@ define Planner
                         set m_is_opt_method: true
                     if m_is_opt_method = false
                     {
-                        if lookup_type.name.equals("Option")
+                        if lookup_type.name = "Option"
                         {
                             if lookup_type.generics <> null
                             {
@@ -11604,7 +11606,7 @@ define Planner
                                     if og_ptr <> null
                                     {
                                         var inner_o (*og_ptr)
-                                        if inner_o.name.equals("ref")
+                                        if inner_o.name = "ref"
                                         {
                                             if inner_o.generics <> null
                                             {
@@ -11617,7 +11619,7 @@ define Planner
                                                 }
                                             }
                                         }
-                                        if inner_o.name.equals("pointer")
+                                        if inner_o.name = "pointer"
                                         {
                                             if inner_o.generics <> null
                                             {
@@ -11727,7 +11729,7 @@ define Planner
                                         {
                                             let prn ps_names.get pri
                                             if prn <> null
-                                                if prn.equals(e3.key)
+                                                if prn = e3.key
                                                     set shadowed2: true
                                             set pri: pri + 1
                                         }
@@ -11835,7 +11837,7 @@ define Planner
                     ; instead of a plain extractvalue at field_index.
                     if matched = false
                     {
-                        if m.equals("value")
+                        if m = "value"
                         {
                             let conc_ref_for_value this.lookup_concept(lookup_type.name)
                             if conc_ref_for_value <> null
@@ -12015,7 +12017,7 @@ define Planner
                 ; container generic uses `33scalyc.compiler.Plan.PlannedUnion`
                 ; (full) while the arg substitutes to `12PlannedUnion` (short),
                 ; producing a method symbol that no other side defines (s100).
-                if after_subst.name.equals(base.name) = false
+                if after_subst.name <> base.name
                     set subst_fired: true
             }
             if subst_fired
@@ -12056,9 +12058,9 @@ define Planner
                         }
                         ; Rebuild outer mangled name with canonicalized inner.
                         var sb StringBuilder()
-                        if after_subst.name.equals("pointer")
+                        if after_subst.name = "pointer"
                             sb.append "P"
-                        if after_subst.name.equals("ref")
+                        if after_subst.name = "ref"
                             sb.append "R"
                         let inner0_ptr canon_gens.get 0
                         if inner0_ptr <> null
@@ -12242,7 +12244,7 @@ define Planner
                                             choose nf_mem
                                                 when nff: Function
                                                 {
-                                                    if nff.name.equals(suffix)
+                                                    if nff.name = suffix
                                                         set nf_keep_dotted: true
                                                     0
                                                 }
@@ -12667,7 +12669,7 @@ define Planner
                 let first_ptr i.name.get 0
                 if first_ptr <> null
                 {
-                    if (*first_ptr).equals("null")
+                    if (*first_ptr) = "null"
                         return PlannedIs(
                             i.span,
                             Planner.make_void_type(),
@@ -12758,7 +12760,7 @@ define Planner
             if current_namespace_name <> null
             {
                 let cnsn (*current_namespace_name)
-                if cnsn.equals(prefix)
+                if cnsn = prefix
                     return false
             }
             ; The whole dotted name or the bare suffix resolving to a concept
@@ -12808,13 +12810,13 @@ define Planner
                         if m_ptr <> null
                             choose (*m_ptr)
                                 when mc: Concept
-                                    if mc.name.equals(suffix)
+                                    if mc.name = suffix
                                         return false
                                 when mo: Operator
-                                    if mo.name.equals(suffix)
+                                    if mo.name = suffix
                                         return false
                                 when mf: Function
-                                    if mf.name.equals(suffix)
+                                    if mf.name = suffix
                                         return false
                                 else
                                     0
@@ -12850,17 +12852,17 @@ define Planner
                     ; Type names; rewrite them as Constant operands so the
                     ; emitter sees the right shape. Mirrors
                     ; Planner.cpp:10148-10160.
-                    if name.equals("null")
+                    if name = "null"
                     {
                         let c Constant.Null(NullConstant loc)
                         return this.plan_constant_operand(c, loc)
                     }
-                    if name.equals("true")
+                    if name = "true"
                     {
                         let c Constant.Boolean(BooleanConstant(loc, true))
                         return this.plan_constant_operand(c, loc)
                     }
-                    if name.equals("false")
+                    if name = "false"
                     {
                         let c Constant.Boolean(BooleanConstant(loc, false))
                         return this.plan_constant_operand(c, loc)
@@ -12968,7 +12970,7 @@ define Planner
                     if this_ref <> null
                     {
                         let this_ty (*this_ref)
-                        if this_ty.name.equals("pointer")
+                        if this_ty.name = "pointer"
                         {
                             if this_ty.generics <> null
                             {
@@ -13042,7 +13044,7 @@ define Planner
                         ; Auto-deref pointer[T] / ref[T]: use the inner
                         ; generic as the base for member resolution.
                         var base_for_chain lb.binding_type
-                        if lb.binding_type.name.equals("pointer")
+                        if lb.binding_type.name = "pointer"
                         {
                             if lb.binding_type.generics <> null
                             {
@@ -13055,7 +13057,7 @@ define Planner
                                 }
                             }
                         }
-                        if lb.binding_type.name.equals("ref")
+                        if lb.binding_type.name = "ref"
                         {
                             if lb.binding_type.generics <> null
                             {
@@ -13182,7 +13184,7 @@ define Planner
                     if this_ref2 <> null
                     {
                         let this_ty2 (*this_ref2)
-                        if this_ty2.name.equals("pointer")
+                        if this_ty2.name = "pointer"
                         {
                             if this_ty2.generics <> null
                             {
@@ -13306,8 +13308,8 @@ define Planner
                 ; voids (pure statements contribute no constraint).
                 let cons_ty Planner.statement_result_type(planned_consequent)
                 let alt_ty Planner.statement_result_type(planned_alt)
-                if cons_ty.name.equals("void") = false
-                    if alt_ty.name.equals("void") = false
+                if cons_ty.name <> "void"
+                    if alt_ty.name <> "void"
                         this.add_equality_constraint(cons_ty, alt_ty, f.span)
             }
 
@@ -13427,7 +13429,7 @@ define Planner
             {
                 let p arr.get i
                 if p <> null
-                    if (*p).equals(name)
+                    if (*p) = name
                         return true
                 set i: i + 1
             }
@@ -13795,7 +13797,7 @@ define Planner
                             if p_ptr.name <> null
                             {
                                 let pn (*p_ptr.name)
-                                if pn.equals(nm)
+                                if pn = nm
                                     set is_param: true
                             }
                         }
@@ -13808,7 +13810,7 @@ define Planner
                         let d_ptr captures_arr.get di
                         if d_ptr <> null
                         {
-                            if (*d_ptr).equals(nm)
+                            if (*d_ptr) = nm
                                 set already: true
                         }
                         set di: di + 1
@@ -13909,7 +13911,7 @@ define Planner
                     {
                         let pn_ptr pnames.get pj
                         if pn_ptr <> null
-                            if (*pn_ptr).equals(nm)
+                            if (*pn_ptr) = nm
                                 set is_param: true
                         set pj: pj + 1
                     }
@@ -13919,7 +13921,7 @@ define Planner
                     {
                         let d_ptr cap_names.get dj
                         if d_ptr <> null
-                            if (*d_ptr).equals(nm)
+                            if (*d_ptr) = nm
                                 set already: true
                         set dj: dj + 1
                     }
@@ -14180,7 +14182,7 @@ define Planner
                 if op_ptr <> null
                 {
                     let t this.find_break_type_in_expr((*op_ptr).expr)
-                    if t.name.equals("void") = false
+                    if t.name <> "void"
                         return t
                 }
                 set i: i + 1
@@ -14231,7 +14233,7 @@ define Planner
                         if sp <> null
                         {
                             let t this.find_break_type_in_statement(*sp)
-                            if t.name.equals("void") = false
+                            if t.name <> "void"
                                 return t
                         }
                         set i: i + 1
@@ -14241,7 +14243,7 @@ define Planner
                 when ife: PlannedIf
                 {
                     let tc this.find_break_type_in_stmt_ref(ife.consequent)
-                    if tc.name.equals("void") = false
+                    if tc.name <> "void"
                         return tc
                     this.find_break_type_in_stmt_ref(ife.alternative)
                 }
@@ -14257,7 +14259,7 @@ define Planner
                             if cp <> null
                             {
                                 let t this.find_break_type_in_stmt_ref((*cp).consequent)
-                                if t.name.equals("void") = false
+                                if t.name <> "void"
                                     return t
                             }
                             set i: i + 1
@@ -14277,7 +14279,7 @@ define Planner
                             if bp <> null
                             {
                                 let t this.find_break_type_in_stmt_ref((*bp).consequent)
-                                if t.name.equals("void") = false
+                                if t.name <> "void"
                                     return t
                             }
                             set i: i + 1
@@ -14334,7 +14336,7 @@ define Planner
                             if last_ptr <> null
                             {
                                 let op_ty (*last_ptr).result_type
-                                if op_ty.name.equals("Option")
+                                if op_ty.name = "Option"
                                 {
                                     if op_ty.generics <> null
                                     {
@@ -14378,7 +14380,7 @@ define Planner
             var coll_type: PlannedType collapsed_expr.result_type
 
             ; Auto-unwrap Option[T] → T on the collection side.
-            if coll_type.name.equals("Option")
+            if coll_type.name = "Option"
             {
                 if coll_type.generics <> null
                 {
@@ -14399,9 +14401,9 @@ define Planner
             ; per-name guards.
             var iter_type: PlannedType coll_type
             var is_pointer_like: bool false
-            if iter_type.name.equals("ref")
+            if iter_type.name = "ref"
                 set is_pointer_like: true
-            if iter_type.name.equals("pointer")
+            if iter_type.name = "pointer"
                 set is_pointer_like: true
             if is_pointer_like
             {
@@ -14422,25 +14424,25 @@ define Planner
             ; runs unconditionally). Use per-name guards so each one
             ; matches its own primitive name.
             var is_integer: bool false
-            if iter_type.name.equals("int")
+            if iter_type.name = "int"
                 set is_integer: true
-            if iter_type.name.equals("int8")
+            if iter_type.name = "int8"
                 set is_integer: true
-            if iter_type.name.equals("int16")
+            if iter_type.name = "int16"
                 set is_integer: true
-            if iter_type.name.equals("int32")
+            if iter_type.name = "int32"
                 set is_integer: true
-            if iter_type.name.equals("int64")
+            if iter_type.name = "int64"
                 set is_integer: true
-            if iter_type.name.equals("size_t")
+            if iter_type.name = "size_t"
                 set is_integer: true
-            if iter_type.name.equals("uint8")
+            if iter_type.name = "uint8"
                 set is_integer: true
-            if iter_type.name.equals("uint16")
+            if iter_type.name = "uint16"
                 set is_integer: true
-            if iter_type.name.equals("uint32")
+            if iter_type.name = "uint32"
                 set is_integer: true
-            if iter_type.name.equals("uint64")
+            if iter_type.name = "uint64"
                 set is_integer: true
 
             var is_iterator_loop: bool false
@@ -14630,7 +14632,7 @@ define Planner
                     set variant_name: (*last_ptr)
             }
 
-            if union_type.name.equals("void") = false
+            if union_type.name <> "void"
             {
                 ; s184: bind the union's generic parameters to the
                 ; scrutinee's generic args before planning the payload
@@ -14694,16 +14696,16 @@ define Planner
             ; → Success arm); emit_throw stores tag=1 at offset 0 → Error
             ; arm. Result union wrapping is the proper fix (1-2 day
             ; refactor) but isn't required for hello.scaly's narrow path.
-            if variant_type.name.equals("void")
+            if variant_type.name = "void"
             {
                 if is_throws_call
                 {
-                    let is_error variant_name.equals("Error")
+                    let is_error variant_name = "Error"
                     var is_err: bool is_error
                     if is_err = false
-                        set is_err: variant_name.equals("err")
+                        set is_err: variant_name = "err"
                     if is_err = false
-                        set is_err: variant_name.equals("error")
+                        set is_err: variant_name = "error"
                     if is_err
                     {
                         set variant_tag: 1
@@ -14716,16 +14718,16 @@ define Planner
                     }
                     if is_err = false
                     {
-                        let is_success variant_name.equals("Success")
+                        let is_success variant_name = "Success"
                         var is_ok: bool is_success
                         if is_ok = false
-                            set is_ok: variant_name.equals("Ok")
+                            set is_ok: variant_name = "Ok"
                         if is_ok = false
-                            set is_ok: variant_name.equals("ok")
+                            set is_ok: variant_name = "ok"
                         if is_ok = false
-                            set is_ok: variant_name.equals("value")
+                            set is_ok: variant_name = "value"
                         if is_ok = false
-                            set is_ok: variant_name.equals("node")
+                            set is_ok: variant_name = "node"
                         if is_ok
                         {
                             ; s172: bind the success arm to the call's
@@ -14782,7 +14784,7 @@ define Planner
                         {
                             let np t.name.get 0
                             if np <> null
-                                return (*np).equals(name)
+                                return (*np) = name
                         }
                 }
                 else
@@ -14950,9 +14952,9 @@ define Planner
             ; dispatch. Mirrors stage-0 Planner.cpp:11247-11250.
             var union_type: PlannedType collapsed_cond.result_type
             var peel_cond: bool false
-            if union_type.name.equals("ref")
+            if union_type.name = "ref"
                 set peel_cond: true
-            if union_type.name.equals("pointer")
+            if union_type.name = "pointer"
                 set peel_cond: true
             if peel_cond
             {
@@ -15030,7 +15032,7 @@ define Planner
                         {
                             let cons_ref (*pw.consequent)
                             let arm_ty Planner.statement_result_type(cons_ref)
-                            if arm_ty.name.equals("void") = false
+                            if arm_ty.name <> "void"
                             {
                                 if have_first = false
                                 {
@@ -15052,7 +15054,7 @@ define Planner
                     {
                         let alt (*alternative_ref)
                         let alt_ty Planner.statement_result_type(alt)
-                        if alt_ty.name.equals("void") = false
+                        if alt_ty.name <> "void"
                             this.add_equality_constraint(first_ty, alt_ty, c.span)
                     }
                 }
@@ -15175,7 +15177,7 @@ define Planner
                         {
                             let cons (*br.consequent)
                             let br_ty Planner.statement_result_type(cons)
-                            if br_ty.name.equals("void") = false
+                            if br_ty.name <> "void"
                             {
                                 if have_first = false
                                 {
@@ -15197,7 +15199,7 @@ define Planner
                     {
                         let alt (*alternative_ref)
                         let alt_ty Planner.statement_result_type(alt)
-                        if alt_ty.name.equals("void") = false
+                        if alt_ty.name <> "void"
                             this.add_equality_constraint(first_ty, alt_ty, m.span)
                     }
                 }
@@ -15803,7 +15805,7 @@ define Planner
                         if var_ptr <> null
                         {
                             let var_def (*var_ptr)
-                            if var_def.name.equals(variant_name)
+                            if var_def.name = variant_name
                             {
                                 if var_def.type = null
                                     set unit_variant: true
@@ -15932,7 +15934,7 @@ define Planner
                     choose f0v.expr
                         when e0: PlannedType
                         {
-                            if e0.name.equals("=")
+                            if e0.name = "="
                             {
                                 var arr Array[PlannedOperand]()
                                 var i: size_t 1
@@ -16005,7 +16007,7 @@ define Planner
                                 ; or calling g(...) indirectly).
                                 if b.item.name <> null
                                 {
-                                    this.define_local((*b.item.name), del_pt, b.binding_type.equals("var"), false)
+                                    this.define_local((*b.item.name), del_pt, b.binding_type = "var", false)
                                     ; Track it as a stack closure for escape
                                     ; checking (returning it would dangle).
                                     local_closure_names.add(String((*b.item.name)))
@@ -16229,9 +16231,9 @@ define Planner
                 choose collapsed.expr
                     when bx: Box
                     {
-                        if bx.target_page.equals("this")
+                        if bx.target_page = "this"
                             local_box_names.add(String(bn))
-                        if bx.target_page.equals("rp")
+                        if bx.target_page = "rp"
                             local_box_names.add(String(bn))
                     }
                     else
@@ -16275,7 +16277,7 @@ define Planner
                 if this.array_contains_name(getref_arg_locals, abn)
                     set at_hit: true
                 if at_hit
-                    if collapsed.result_type.name.equals("Vector")
+                    if collapsed.result_type.name = "Vector"
                     {
                         if this.lookup_local_binding("rp") <> null
                         {
@@ -16347,7 +16349,7 @@ define Planner
             if b.item.name <> null
             {
                 let fhn (*b.item.name)
-                if collapsed.result_type.name.equals("Vector")
+                if collapsed.result_type.name = "Vector"
                     if this.operand_is_local_page_construction(collapsed)
                         if this.array_contains_name(promoted_binding_names, fhn) = false
                             if this.array_contains_name_from(local_frame_holder_names, this.local_frame_holder_base, fhn) = false
@@ -16372,7 +16374,7 @@ define Planner
                         {
                             if ct.array_size.get_length() > 0
                             {
-                                if ct.name.equals("pointer")
+                                if ct.name = "pointer"
                                 {
                                     set is_stack_array_decl: true
                                     stack_array_holder.put(0, ct)
@@ -16416,9 +16418,9 @@ define Planner
             ; validated CharacterConstant, matching the `as char` and binary-
             ; comparison folds.
             var bt_is_charlike: bool false
-            if binding_type.name.equals("char")
+            if binding_type.name = "char"
                 set bt_is_charlike: true
-            if binding_type.name.equals("u8")
+            if binding_type.name = "u8"
                 set bt_is_charlike: true
             if bt_is_charlike
                 if this.operand_is_string_constant(collapsed)
@@ -16544,7 +16546,7 @@ define Planner
                                     if lb.is_parameter
                                     {
                                         set external: true
-                                        if v.name.equals("this")
+                                        if v.name = "this"
                                             set base_is_this: true
                                     }
                             }
@@ -16596,9 +16598,9 @@ define Planner
                                 {
                                     if sgc.is_operator = false
                                     {
-                                        if sgc.name.equals("get")
+                                        if sgc.name = "get"
                                             set defer_this_getref: true
-                                        if sgc.name.equals("get_ptr")
+                                        if sgc.name = "get_ptr"
                                             set defer_this_getref: true
                                     }
                                 }
@@ -16702,7 +16704,7 @@ define Planner
                     if this.current_return_type <> null
                     {
                         let crt (*this.current_return_type)
-                        if crt.name.equals("pointer")
+                        if crt.name = "pointer"
                             if this.tail_is_unspecified_value_ctor(planned_source_collapsed)
                             {
                                 let ptrp this.restamp_operand_life(planned_source_collapsed, tail_life)
@@ -16786,9 +16788,9 @@ define Planner
         ; forwarded unchanged (no false-positive promotion/diagnostic).
         function tail_is_unspecified_value_ctor(this: Planner, op: PlannedOperand) returns bool
         {
-            if op.result_type.name.equals("pointer")
+            if op.result_type.name = "pointer"
                 return false
-            if op.result_type.name.equals("ref")
+            if op.result_type.name = "ref"
                 return false
             choose op.expr
                 when vc: PlannedCall
@@ -16826,7 +16828,7 @@ define Planner
             ; `slice_from`/`slice_to` (de-sigiled tail calls to `subslice`)
             ; byte-identical. R2's explicit-return path still covers a Local-
             ; life Slice via is_reference_to_local_page if one ever escapes.
-            if op.result_type.name.equals("Slice")
+            if op.result_type.name = "Slice"
                 return false
             ; Read the EXPRESSION life (call.life / tuple.life). Only LOCAL —
             ; a construction the init#/reshape block placed on the function's
@@ -16905,9 +16907,9 @@ define Planner
                 set result: false
             else
             {
-                if lb.binding_type.name.equals("pointer")
+                if lb.binding_type.name = "pointer"
                     set result: false
-                if lb.binding_type.name.equals("ref")
+                if lb.binding_type.name = "ref"
                     set result: false
                 ; A `ref[T]?` / `pointer[T]?` local (e.g. `let p v.get(i)`,
                 ; which returns ref[T]?) stores as an `Option` whose inner is
@@ -16916,7 +16918,7 @@ define Planner
                 ; Every compiler `return &kvp_ptr.value` (HashMap scope walk)
                 ; is this shape. An Option of a VALUE struct is a frame-
                 ; resident tagged union, so it stays flagged (sound).
-                if lb.binding_type.name.equals("Option")
+                if lb.binding_type.name = "Option"
                 {
                     if this.option_inner_is_reference(lb.binding_type)
                         set result: false
@@ -16938,9 +16940,9 @@ define Planner
                     let gp gens.get 0
                     if gp <> null
                     {
-                        if gp.name.equals("pointer")
+                        if gp.name = "pointer"
                             set result: true
-                        if gp.name.equals("ref")
+                        if gp.name = "ref"
                             set result: true
                     }
                 }
@@ -17074,10 +17076,10 @@ define Planner
             let ptr_name "pointer"
             let ref_name "ref"
             var is_ref_like false
-            if t.name.equals(ptr_name)
+            if t.name = ptr_name
                 set is_ref_like: true
             if is_ref_like = false
-                if t.name.equals(ref_name)
+                if t.name = ref_name
                     set is_ref_like: true
             if is_ref_like
             {
@@ -17105,7 +17107,7 @@ define Planner
             ; carries the same piercing; only stamped types ever match (the
             ; leading value-clause above is deliberately NOT applied to the
             ; Option's inner — see the is_local_ref_pointer header comment).
-            if t.name.equals("Option")
+            if t.name = "Option"
             {
                 if t.generics <> null
                 {
@@ -17200,9 +17202,9 @@ define Planner
             choose op.expr
                 when b: Box
                 {
-                    if b.target_page.equals("this")
+                    if b.target_page = "this"
                         return Planner.region_rank_caller()
-                    if b.target_page.equals("rp")
+                    if b.target_page = "rp"
                         return Planner.region_rank_caller()
                     ; A box targeting a PARAMETER (`&^page v` in a `#`
                     ; function whose declared page param is `page`, or
@@ -17242,7 +17244,7 @@ define Planner
                     ; qualifies; everything else falls through to the
                     ; conservative pointee-life check below.
                     if c.is_operator
-                        if c.name.equals("&")
+                        if c.name = "&"
                             if c.args <> null
                             {
                                 let amp_args (*c.args)
@@ -17288,9 +17290,9 @@ define Planner
         {
             var result false
             var is_ref_like false
-            if t.name.equals("pointer")
+            if t.name = "pointer"
                 set is_ref_like: true
-            if t.name.equals("ref")
+            if t.name = "ref"
                 set is_ref_like: true
             if is_ref_like
             {
@@ -17320,7 +17322,7 @@ define Planner
             ; fires when that inner is itself a pointer/ref with a Local
             ; pointee, so unstamped Option-of-ref (declared signatures,
             ; Unspecified life) stays invisible exactly as before.
-            if t.name.equals("Option")
+            if t.name = "Option"
             {
                 if t.generics <> null
                 {
@@ -17345,11 +17347,11 @@ define Planner
         function result_type_is_value_struct(this: Planner, t: PlannedType) returns bool
         {
             var result true
-            if t.name.equals("pointer")
+            if t.name = "pointer"
                 set result: false
-            if t.name.equals("ref")
+            if t.name = "ref"
                 set result: false
-            if t.name.equals("Option")
+            if t.name = "Option"
                 if this.option_inner_is_reference(t)
                     set result: false
             result
@@ -17492,10 +17494,10 @@ define Planner
         function is_reference_like(t: PlannedType) returns bool
         {
             let ptr_name "pointer"
-            if t.name.equals(ptr_name)
+            if t.name = ptr_name
                 return true
             let ref_name "ref"
-            if t.name.equals(ref_name)
+            if t.name = ref_name
                 return true
             false
         }
@@ -17519,7 +17521,7 @@ define Planner
             ; (Modeler.handle_type# wraps an optional in Option[..]); under NPO
             ; that is a nullable borrow — exclude when the Option's inner is
             ; reference-like. Option[value] (e.g. String?) DOES own guts -> keep.
-            if t.name.equals("Option")
+            if t.name = "Option"
             {
                 if t.generics <> null
                 {
@@ -17560,7 +17562,7 @@ define Planner
                     if nm_ptr <> null
                     {
                         let nm (*nm_ptr)
-                        if nm.equals(name)
+                        if nm = name
                             return (i as int)
                     }
                 }
@@ -17592,7 +17594,7 @@ define Planner
             if fp.page_parameter <> null
             {
                 let pp (*fp.page_parameter)
-                if pp.equals(name)
+                if pp = name
                     return true
             }
             if fp.input = null
@@ -17607,7 +17609,7 @@ define Planner
                     if nm_ptr <> null
                     {
                         let nm (*nm_ptr)
-                        if nm.equals(name)
+                        if nm = name
                             return true
                     }
                 }
@@ -17708,7 +17710,7 @@ define Planner
             {
                 let np current_fn_alias_names.get i
                 if np <> null
-                    if np.equals(name)
+                    if np = name
                     {
                         let pp current_fn_alias_params.get i
                         if pp <> null
@@ -17764,7 +17766,7 @@ define Planner
                 when c: PlannedCall
                 {
                     if c.is_operator
-                        if c.name.equals("*")
+                        if c.name = "*"
                             if c.args <> null
                             {
                                 let a (*c.args)
@@ -18118,7 +18120,7 @@ define Planner
             {
                 let np current_fn_fpt_names.get i
                 if np <> null
-                    if np.equals(base_name)
+                    if np = base_name
                     {
                         let fp current_fn_fpt_fields.get i
                         if fp <> null
@@ -18163,7 +18165,7 @@ define Planner
                         when c: PlannedCall
                         {
                             if c.is_operator
-                                if c.name.equals("&")
+                                if c.name = "&"
                                     if c.args <> null
                                     {
                                         let a (*c.args)
@@ -18204,7 +18206,7 @@ define Planner
             let callee instantiated_functions.get rec.callee_fn_index
             if callee = null
                 return
-            if callee.mangled_name.equals(call.mangled_name) = false
+            if callee.mangled_name <> call.mangled_name
                 return
             if call.args = null
                 return
@@ -18472,7 +18474,7 @@ define Planner
             let callee instantiated_functions.get rec.callee_fn_index
             if callee = null
                 return
-            if callee.mangled_name.equals(call.mangled_name) = false
+            if callee.mangled_name <> call.mangled_name
                 return
             if call.args = null
                 return
@@ -19103,7 +19105,7 @@ define Planner
                             {
                                 if this.name_is_capitalized(c.name)
                                     set is_ctor: true
-                                if c.name.equals("init")
+                                if c.name = "init"
                                     set is_ctor: true
                                 ; CALL-# de-sigil: a has_page function-call RESULT
                                 ; (lowercase, e.g. `arr.add(plan_type(pt))`)
@@ -19810,7 +19812,7 @@ define Planner
                                     {
                                         let lcn_ptr local_closure_names.get lci
                                         if lcn_ptr <> null
-                                            if (*lcn_ptr).equals((*evn_ptr))
+                                            if (*lcn_ptr) = (*evn_ptr)
                                                 set is_stack_closure: true
                                         set lci: lci + 1
                                     }
@@ -19861,7 +19863,7 @@ define Planner
             ; already a pointer, is forwarded unchanged).
             if return_needs_promotion = false
                 if this.current_return_type <> null
-                    if (*this.current_return_type).name.equals("pointer")
+                    if (*this.current_return_type).name = "pointer"
                         if this.tail_is_unspecified_value_ctor(planned_collapsed)
                             set return_needs_promotion: true
             if planned_flat.length > 0
@@ -20327,7 +20329,7 @@ define Planner
             {
                 let p arr.get i
                 if p <> null
-                    if (*p).equals(name)
+                    if (*p) = name
                         return true
                 set i: i + 1
             }
@@ -20346,7 +20348,7 @@ define Planner
             {
                 let p arr.get i
                 if p <> null
-                    if (*p).equals(name)
+                    if (*p) = name
                         return true
                 set i: i + 1
             }
@@ -20400,11 +20402,11 @@ define Planner
         ; escape back from the drained element to the container).
         function is_alias_method_name(n: String) returns bool
         {
-            if n.equals("get")
+            if n = "get"
                 return true
-            if n.equals("next")
+            if n = "next"
                 return true
-            if n.equals("get_iterator")
+            if n = "get_iterator"
                 return true
             false
         }
@@ -20715,7 +20717,7 @@ define Planner
                                     {
                                         let d0 t.name.get 0
                                         if d0 <> null
-                                            if (*d0).equals("*")
+                                            if (*d0) = "*"
                                                 set is_deref: true
                                     }
                                     if t.name.length >= 2
@@ -20871,7 +20873,7 @@ define Planner
                     {
                         let np t.name.get 0
                         if np <> null
-                            if (*np).equals("Vector")
+                            if (*np) = "Vector"
                                 return true
                     }
                 }
@@ -20942,7 +20944,7 @@ define Planner
                     {
                         let s0 t0.name.get 0
                         if s0 <> null
-                            if (*s0).equals("*")
+                            if (*s0) = "*"
                                 set star_ok: true
                     }
                 }
@@ -20987,7 +20989,7 @@ define Planner
                                 if last_ptr <> null
                                 {
                                     let meth (*last_ptr)
-                                    if meth.equals("put") || meth.equals("add")
+                                    if meth = "put" || meth = "add"
                                         choose head.expression
                                             when t: scalyc.compiler.Model.Type
                                             {
@@ -21025,7 +21027,7 @@ define Planner
                                         if meth_ptr <> null
                                         {
                                             let meth (*meth_ptr)
-                                            if meth.equals("put") || meth.equals("add")
+                                            if meth = "put" || meth = "add"
                                             {
                                                 let rn_ptr t.name.get 0
                                                 if rn_ptr <> null
@@ -21059,7 +21061,7 @@ define Planner
                                 if last2 <> null
                                 {
                                     let meth2 (*last2)
-                                    if meth2.equals("put") || meth2.equals("add")
+                                    if meth2 = "put" || meth2 = "add"
                                         choose head.expression
                                             when th: scalyc.compiler.Model.Tuple
                                             {
@@ -21397,7 +21399,7 @@ define Planner
                                 {
                                     let dt_n dt_t.name.get 0
                                     if dt_n <> null
-                                        if (*dt_n).equals("*")
+                                        if (*dt_n) = "*"
                                             this.collect_flow_locals(a.source)
                                 }
                             }
@@ -21507,7 +21509,7 @@ define Planner
                                     {
                                         let np t.name.get 0
                                         if np <> null
-                                            if (*np).equals("&")
+                                            if (*np) = "&"
                                                 set is_amp: true
                                     }
                             }
@@ -21723,7 +21725,7 @@ define Planner
             {
                 let p getref_alias_names.get i
                 if p <> null
-                    if (*p).equals(n)
+                    if (*p) = n
                     {
                         let rcv getref_alias_receivers.get i
                         if rcv <> null
@@ -21747,9 +21749,9 @@ define Planner
                             let mp t.name.get 1
                             if mp <> null
                             {
-                                var is_get (*mp).equals("get")
+                                var is_get (*mp) = "get"
                                 if is_get = false
-                                    set is_get: (*mp).equals("get_ptr")
+                                    set is_get: (*mp) = "get_ptr"
                                 if is_get
                                 {
                                     let rp_ptr t.name.get 0
@@ -21773,9 +21775,9 @@ define Planner
                                 let last_ptr ma.get(ma.length - 1)
                                 if last_ptr <> null
                                 {
-                                    var is_get2 (*last_ptr).equals("get")
+                                    var is_get2 (*last_ptr) = "get"
                                     if is_get2 = false
-                                        set is_get2: (*last_ptr).equals("get_ptr")
+                                        set is_get2: (*last_ptr) = "get_ptr"
                                     if is_get2
                                     {
                                         let rp2 t2.name.get 0
@@ -21829,7 +21831,7 @@ define Planner
                         if prev_ptr <> null
                         {
                             let pn this.operand_bare_name((*prev_ptr))
-                            if pn.equals("*")
+                            if pn = "*"
                                 set deref_before: true
                         }
                     }
@@ -22172,7 +22174,7 @@ define Planner
                             if item.item_type = null
                             {
                                 let n (*item.name)
-                                if n.equals("this")
+                                if n = "this"
                                 {
                                     let p (*parent)
                                     var patched item
@@ -22202,12 +22204,12 @@ define Planner
                             ; For 'this', the local-scope binding should be
                             ; pointer[T] (struct-by-pointer ABI), so field
                             ; access auto-derefs. Mirrors Planner.cpp:11781-11790.
-                            if n.equals("this")
+                            if n = "this"
                             {
                                 let ptr_t Planner.make_pointer_type(t)
                                 this.define_parameter(n, ptr_t)
                             }
-                            if n.equals("this") = false
+                            if n <> "this"
                                 this.define_parameter(n, t)
                         }
                     }
@@ -22324,7 +22326,7 @@ define Planner
                         if pit.type <> null
                         {
                             let pnm (*pit.name)
-                            if pnm.equals("this") = false
+                            if pnm <> "this"
                                 if Planner.is_ref_or_pointer_type((*pit.type))
                                     this.add_escaping_target(pnm)
                         }
@@ -22543,7 +22545,7 @@ define Planner
                         if has_member = false
                             return true             ; bare local var assign
                         let chain (*target_op.member_access)
-                        if v.name.equals("this")
+                        if v.name = "this"
                         {
                             if chain.length = 1
                                 return true          ; set this.<field>:
@@ -22675,14 +22677,14 @@ define Planner
                                 var base_is_this false
                                 choose target_op.expr
                                     when v: Variable
-                                        set base_is_this: v.name.equals("this")
+                                        set base_is_this: v.name = "this"
                                     else
                                         0
                                 if base_is_this
                                 {
                                     let first chain.get 0
                                     if first <> null
-                                        if (*first).name.equals(field)
+                                        if (*first).name = field
                                             return true
                                 }
                             }
@@ -23110,7 +23112,7 @@ define Planner
                         if fi.name <> null
                         {
                             let fin (*fi.name)
-                            if fin.equals("this")
+                            if fin = "this"
                                 set needs_this: false
                         }
                     }
@@ -23150,12 +23152,12 @@ define Planner
                             ; pointer[T] so bare-field access in the body
                             ; resolves via the implicit-property path
                             ; (same as plan_function's this handling).
-                            if n.equals("this")
+                            if n = "this"
                             {
                                 let ptr_t Planner.make_pointer_type(t)
                                 this.define_parameter(n, ptr_t)
                             }
-                            if n.equals("this") = false
+                            if n <> "this"
                                 this.define_parameter(n, t)
                         }
                     }
@@ -23701,7 +23703,7 @@ define Planner
             {
                 let im_ptr instantiating_structures.get gi
                 if im_ptr <> null
-                    if im_ptr.equals(m_check)
+                    if im_ptr = m_check
                         return
                 set gi: gi + 1
             }
@@ -23781,7 +23783,7 @@ define Planner
             {
                 let im_ptr instantiating_structures.get gi
                 if im_ptr <> null
-                    if im_ptr.equals(m_check)
+                    if im_ptr = m_check
                         return
                 set gi: gi + 1
             }
@@ -24081,9 +24083,9 @@ define Planner
             if this_ty.generics <> null
             {
                 var is_ptr_like: bool false
-                if this_ty.name.equals("pointer")
+                if this_ty.name = "pointer"
                     set is_ptr_like: true
-                if this_ty.name.equals("ref")
+                if this_ty.name = "ref"
                     set is_ptr_like: true
                 if is_ptr_like
                 {
@@ -24122,7 +24124,7 @@ define Planner
                     choose mem
                         when f: Function
                         {
-                            if f.name.equals(name)
+                            if f.name = name
                                 return true
                             0
                         }
@@ -24618,19 +24620,19 @@ define Planner
         function compute_payload_size(this: Planner, name: String) returns size_t
         {
             var size: size_t Planner.get_primitive_alignment(name)
-            if name.equals("Vector")
+            if name = "Vector"
                 return 16
-            if name.equals("Array")
+            if name = "Array"
                 return 16
-            if name.equals("String")
+            if name = "String"
                 return 8
-            if name.equals("HashMap")
+            if name = "HashMap"
                 return 8
-            if name.equals("HashSet")
+            if name = "HashSet"
                 return 8
-            if name.equals("HashMapBuilder")
+            if name = "HashMapBuilder"
                 return 8
-            if name.equals("HashSetBuilder")
+            if name = "HashSetBuilder"
                 return 8
             let c_ref this.lookup_concept_for_layout(name)
             if c_ref <> null
@@ -25121,31 +25123,31 @@ define Planner
     function encode_type(type_value: PlannedType) returns String
     {
         ; Built-in primitive types.
-        if type_value.name.equals("void")
+        if type_value.name = "void"
             return "v"
-        if type_value.name.equals("bool")
+        if type_value.name = "bool"
             return "b"
-        if type_value.name.equals("char")
+        if type_value.name = "char"
             return "c"
-        if type_value.name.equals("int")
+        if type_value.name = "int"
             return "i"
-        if type_value.name.equals("uint")
+        if type_value.name = "uint"
             return "j"
-        if type_value.name.equals("long")
+        if type_value.name = "long"
             return "l"
-        if type_value.name.equals("ulong")
+        if type_value.name = "ulong"
             return "m"
-        if type_value.name.equals("float")
+        if type_value.name = "float"
             return "f"
-        if type_value.name.equals("double")
+        if type_value.name = "double"
             return "d"
-        if type_value.name.equals("size")
+        if type_value.name = "size"
             return "m"
-        if type_value.name.equals("size_t")
+        if type_value.name = "size_t"
             return "m"
 
         ; pointer[T] -> "P" + encode_type(T)
-        if type_value.name.equals("pointer")
+        if type_value.name = "pointer"
         {
             if type_value.generics <> null
             {
@@ -25167,7 +25169,7 @@ define Planner
         }
 
         ; ref[T] -> "R" + encode_type(T)   (non-owning reference)
-        if type_value.name.equals("ref")
+        if type_value.name = "ref"
         {
             if type_value.generics <> null
             {
@@ -25302,9 +25304,9 @@ define Planner
             ; stage-0 Planner.cpp:12100-12103. Required so constructor call-
             ; sites and the def-site (plan_initializer) agree on the symbol
             ; (`_ZN<T>C1E<args>`) which libscaly.a exports from stage-0.
-            if name.equals("init")
+            if name = "init"
                 sb.append "C1"
-            if name.equals("init") = false
+            if name <> "init"
                 sb.append(Planner.encode_name name)
             sb.append "E"
         }
@@ -25335,7 +25337,7 @@ define Planner
                     if param.name <> null
                     {
                         let pname (*param.name)
-                        set is_this: pname.equals("this")
+                        set is_this: pname = "this"
                     }
                     if is_this = false
                     {
@@ -25402,55 +25404,55 @@ define Planner
     ; followed by the length-prefixed operator identifier.
     function operator_code(name: String) returns String
     {
-        if name.equals("+")
+        if name = "+"
             return "pl"
-        if name.equals("-")
+        if name = "-"
             return "mi"
-        if name.equals("*")
+        if name = "*"
             return "ml"
-        if name.equals("/")
+        if name = "/"
             return "dv"
-        if name.equals("%")
+        if name = "%"
             return "rm"
-        if name.equals("==")
+        if name = "=="
             return "eq"
-        if name.equals("!=")
+        if name = "!="
             return "ne"
-        if name.equals("<")
+        if name = "<"
             return "lt"
-        if name.equals(">")
+        if name = ">"
             return "gt"
-        if name.equals("<=")
+        if name = "<="
             return "le"
-        if name.equals(">=")
+        if name = ">="
             return "ge"
-        if name.equals("&&")
+        if name = "&&"
             return "aa"
-        if name.equals("and")
+        if name = "and"
             return "aa"
-        if name.equals("||")
+        if name = "||"
             return "oo"
-        if name.equals("or")
+        if name = "or"
             return "oo"
-        if name.equals("!")
+        if name = "!"
             return "nt"
-        if name.equals("not")
+        if name = "not"
             return "nt"
-        if name.equals("&")
+        if name = "&"
             return "an"
-        if name.equals("|")
+        if name = "|"
             return "or"
-        if name.equals("^")
+        if name = "^"
             return "eo"
-        if name.equals("~")
+        if name = "~"
             return "co"
-        if name.equals("<<")
+        if name = "<<"
             return "ls"
-        if name.equals(">>")
+        if name = ">>"
             return "rs"
-        if name.equals("[]")
+        if name = "[]"
             return "ix"
-        if name.equals("()")
+        if name = "()"
             return "cl"
 
         ; Vendor extension for operators without a dedicated code.
@@ -25501,7 +25503,7 @@ define Planner
                         if first.name <> null
                         {
                             let pname (*first.name)
-                            if pname.equals("this")
+                            if pname = "this"
                                 set start_idx: 1
                         }
                     }
@@ -25588,7 +25590,7 @@ define Planner
                         if first.name <> null
                         {
                             let pname (*first.name)
-                            if pname.equals("this")
+                            if pname = "this"
                                 set start_idx: 1
                         }
                     }
@@ -25680,39 +25682,39 @@ define Planner
             }
         }
 
-        if base.equals("int")
+        if base = "int"
             return "i64"
-        if base.equals("i64")
+        if base = "i64"
             return "i64"
-        if base.equals("i32")
+        if base = "i32"
             return "i32"
-        if base.equals("i16")
+        if base = "i16"
             return "i16"
-        if base.equals("i8")
+        if base = "i8"
             return "i8"
-        if base.equals("size_t")
+        if base = "size_t"
             return "u64"
-        if base.equals("size")
+        if base = "size"
             return "u64"
-        if base.equals("u64")
+        if base = "u64"
             return "u64"
-        if base.equals("usize")
+        if base = "usize"
             return "u64"
-        if base.equals("u32")
+        if base = "u32"
             return "u32"
-        if base.equals("u16")
+        if base = "u16"
             return "u16"
-        if base.equals("u8")
+        if base = "u8"
             return "u8"
-        if base.equals("char")
+        if base = "char"
             return "u8"
-        if base.equals("double")
+        if base = "double"
             return "f64"
-        if base.equals("f64")
+        if base = "f64"
             return "f64"
-        if base.equals("float")
+        if base = "float"
             return "f32"
-        if base.equals("f32")
+        if base = "f32"
             return "f32"
 
         String(base)
@@ -25722,29 +25724,29 @@ define Planner
     ; Called post-normalization so both "int" and "i64" answer true.
     function is_integer_type(normalized: String) returns bool
     {
-        if normalized.equals("i64")
+        if normalized = "i64"
             return true
-        if normalized.equals("i32")
+        if normalized = "i32"
             return true
-        if normalized.equals("i16")
+        if normalized = "i16"
             return true
-        if normalized.equals("i8")
+        if normalized = "i8"
             return true
-        if normalized.equals("u64")
+        if normalized = "u64"
             return true
-        if normalized.equals("u32")
+        if normalized = "u32"
             return true
-        if normalized.equals("u16")
+        if normalized = "u16"
             return true
-        if normalized.equals("u8")
+        if normalized = "u8"
             return true
-        if normalized.equals("size_t")
+        if normalized = "size_t"
             return true
-        if normalized.equals("int")
+        if normalized = "int"
             return true
-        if normalized.equals("uint")
+        if normalized = "uint"
             return true
-        if normalized.equals("char")
+        if normalized = "char"
             return true
         false
     }
@@ -25756,45 +25758,45 @@ define Planner
     ; because you must not silently assign immutable data to mutable storage.
     function is_char_like_cross_compatible(param_inner: String, arg_inner: String) returns bool
     {
-        if param_inner.equals("const_char")
+        if param_inner = "const_char"
         {
-            if arg_inner.equals("i8")
+            if arg_inner = "i8"
                 return true
-            if arg_inner.equals("char")
+            if arg_inner = "char"
                 return true
         }
-        if param_inner.equals("i8")
+        if param_inner = "i8"
         {
-            if arg_inner.equals("const_char")
+            if arg_inner = "const_char"
                 return true
-            if arg_inner.equals("char")
+            if arg_inner = "char"
                 return true
         }
-        if param_inner.equals("char")
+        if param_inner = "char"
         {
-            if arg_inner.equals("i8")
+            if arg_inner = "i8"
                 return true
         }
 
         ; u8 is ABI-identical to the 1-byte char family.
-        if param_inner.equals("u8")
+        if param_inner = "u8"
         {
-            if arg_inner.equals("char")
+            if arg_inner = "char"
                 return true
-            if arg_inner.equals("const_char")
+            if arg_inner = "const_char"
                 return true
-            if arg_inner.equals("i8")
+            if arg_inner = "i8"
                 return true
-            if arg_inner.equals("u8")
+            if arg_inner = "u8"
                 return true
         }
-        if arg_inner.equals("u8")
+        if arg_inner = "u8"
         {
-            if param_inner.equals("char")
+            if param_inner = "char"
                 return true
-            if param_inner.equals("const_char")
+            if param_inner = "const_char"
                 return true
-            if param_inner.equals("i8")
+            if param_inner = "i8"
                 return true
         }
 
@@ -25808,7 +25810,7 @@ define Planner
     {
         let norm_a Planner.normalize_type_name(a.name)
         let norm_b Planner.normalize_type_name(b.name)
-        if norm_a.equals(norm_b) = false
+        if norm_a <> norm_b
             return false
 
         var a_len: size_t 0
@@ -25884,9 +25886,9 @@ define Planner
         ; into scaly_eputs / String() ctor / equals(cstr) etc. The Emitter
         ; emits a plain NUL-terminated cstr global for a String CONSTANT in
         ; such a position (byte-identical to the pre-feature cstr).
-        if arg_type.name.equals("String")
+        if arg_type.name = "String"
         {
-            if param_type.name.equals("pointer")
+            if param_type.name = "pointer"
             {
                 if param_type.generics <> null
                 {
@@ -25897,13 +25899,13 @@ define Planner
                         if pinner_ptr <> null
                         {
                             let pinner (*pinner_ptr)
-                            if pinner.name.equals("const_char")
+                            if pinner.name = "const_char"
                                 return true
-                            if pinner.name.equals("i8")
+                            if pinner.name = "i8"
                                 return true
-                            if pinner.name.equals("char")
+                            if pinner.name = "char"
                                 return true
-                            if pinner.name.equals("u8")
+                            if pinner.name = "u8"
                                 return true
                         }
                     }
@@ -25913,7 +25915,7 @@ define Planner
 
         ; Rule 3: arg is pointer[T], param is T — implicit deref. Handles
         ; passing `this` (a pointer) to a function expecting the value type.
-        if arg_type.name.equals("pointer")
+        if arg_type.name = "pointer"
         {
             if arg_type.generics <> null
             {
@@ -25932,7 +25934,7 @@ define Planner
         }
 
         ; Rule 4: ref[T] implicitly derefs to T.
-        if arg_type.name.equals("ref")
+        if arg_type.name = "ref"
         {
             if arg_type.generics <> null
             {
@@ -25958,9 +25960,9 @@ define Planner
         ; sites); extending the rule here lets free-function `f(&x)` for
         ; `f(p: ref[T])` work too. Symmetric: pointer[T] passed to ref[T]
         ; param, OR ref[T] passed to pointer[T] param.
-        if param_type.name.equals("ref")
+        if param_type.name = "ref"
         {
-            if arg_type.name.equals("pointer")
+            if arg_type.name = "pointer"
             {
                 if param_type.generics <> null
                 {
@@ -25990,9 +25992,9 @@ define Planner
                 }
             }
         }
-        if param_type.name.equals("pointer")
+        if param_type.name = "pointer"
         {
-            if arg_type.name.equals("ref")
+            if arg_type.name = "ref"
             {
                 if param_type.generics <> null
                 {
@@ -26024,9 +26026,9 @@ define Planner
         }
 
         ; Rules 5 & 6 both require both sides to be pointer[T] with a generic arg.
-        if param_type.name.equals("pointer")
+        if param_type.name = "pointer"
         {
-            if arg_type.name.equals("pointer")
+            if arg_type.name = "pointer"
             {
                 if param_type.generics <> null
                 {
@@ -26039,7 +26041,7 @@ define Planner
                             let p0 (*p0_ptr)
 
                             ; Rule 6: any pointer[T] coerces to pointer[void].
-                            if p0.name.equals("void")
+                            if p0.name = "void"
                                 return true
 
                             ; Rule 5: char-family pointer cross-compatibility.
@@ -26064,7 +26066,7 @@ define Planner
         }
 
         ; Rules 7 & 8: null (typed as pointer[void]) is the None for Option types.
-        if arg_type.name.equals("pointer")
+        if arg_type.name = "pointer"
         {
             if arg_type.generics <> null
             {
@@ -26075,9 +26077,9 @@ define Planner
                     if a0_ptr <> null
                     {
                         let a0 (*a0_ptr)
-                        if a0.name.equals("void")
+                        if a0.name = "void"
                         {
-                            if param_type.name.equals("Option")
+                            if param_type.name = "Option"
                                 return true
                             if param_type.name.starts_with("Option.")
                                 return true
@@ -26103,12 +26105,12 @@ define Planner
         ; path (resolve_function_call# on the suffix), so without this
         ; the put call is dropped, `add`'s mangled_name stays empty, and
         ; stage-2's emit_function_decl SIGSEGVs in LLVMAddFunction(null).
-        if param_type.name.equals("Option")
+        if param_type.name = "Option"
         {
             var arg_is_ptr_like: bool false
-            if arg_type.name.equals("pointer")
+            if arg_type.name = "pointer"
                 set arg_is_ptr_like: true
-            if arg_type.name.equals("ref")
+            if arg_type.name = "ref"
                 set arg_is_ptr_like: true
             if arg_is_ptr_like
             {
@@ -26141,47 +26143,47 @@ define Planner
     ; decisions and for the needs_implicit_return_page check.
     function is_primitive_type_name(name: String) returns bool
     {
-        if name.equals("void")
+        if name = "void"
             return true
-        if name.equals("bool")
+        if name = "bool"
             return true
-        if name.equals("int")
+        if name = "int"
             return true
-        if name.equals("uint")
+        if name = "uint"
             return true
-        if name.equals("char")
+        if name = "char"
             return true
-        if name.equals("i8")
+        if name = "i8"
             return true
-        if name.equals("i16")
+        if name = "i16"
             return true
-        if name.equals("i32")
+        if name = "i32"
             return true
-        if name.equals("i64")
+        if name = "i64"
             return true
-        if name.equals("u8")
+        if name = "u8"
             return true
-        if name.equals("u16")
+        if name = "u16"
             return true
-        if name.equals("u32")
+        if name = "u32"
             return true
-        if name.equals("u64")
+        if name = "u64"
             return true
-        if name.equals("f32")
+        if name = "f32"
             return true
-        if name.equals("f64")
+        if name = "f64"
             return true
-        if name.equals("float")
+        if name = "float"
             return true
-        if name.equals("double")
+        if name = "double"
             return true
-        if name.equals("size_t")
+        if name = "size_t"
             return true
-        if name.equals("size")
+        if name = "size"
             return true
-        if name.equals("pointer")
+        if name = "pointer"
             return true
-        if name.equals("ref")
+        if name = "ref"
             return true
         false
     }
@@ -26193,25 +26195,25 @@ define Planner
     ; or non-primitive types default to 8-byte alignment.
     function get_primitive_alignment(type_name: String) returns size_t
     {
-        if type_name.equals("bool")
+        if type_name = "bool"
             return 1
-        if type_name.equals("char")
+        if type_name = "char"
             return 1
-        if type_name.equals("i8")
+        if type_name = "i8"
             return 1
-        if type_name.equals("u8")
+        if type_name = "u8"
             return 1
-        if type_name.equals("i16")
+        if type_name = "i16"
             return 2
-        if type_name.equals("u16")
+        if type_name = "u16"
             return 2
-        if type_name.equals("i32")
+        if type_name = "i32"
             return 4
-        if type_name.equals("u32")
+        if type_name = "u32"
             return 4
-        if type_name.equals("float")
+        if type_name = "float"
             return 4
-        if type_name.equals("f32")
+        if type_name = "f32"
             return 4
         ; s103: int/uint are 8 bytes (i64) to match stage-0
         ; (Planner.cpp:960). Stage-1 previously returned 4 here,
@@ -26557,7 +26559,7 @@ define Planner
             let kvp_ptr subst.get_ptr i
             if kvp_ptr <> null
             {
-                if kvp_ptr.key.equals(name)
+                if kvp_ptr.key = name
                     return &kvp_ptr.value
             }
             set i: i + 1
@@ -26803,13 +26805,13 @@ define Planner
     function stamp_getref_local_pointee(t: PlannedType) returns PlannedType
     {
         var is_ref_like false
-        if t.name.equals("pointer")
+        if t.name = "pointer"
             set is_ref_like: true
-        if t.name.equals("ref")
+        if t.name = "ref"
             set is_ref_like: true
         if is_ref_like
             return Planner.make_ref_to_local_inner(t)
-        if t.name.equals("Option") = false
+        if t.name <> "Option"
             return t
         if t.generics = null
             return t
@@ -26821,9 +26823,9 @@ define Planner
             return t
         let inner (*inner_ptr)
         var inner_is_ref false
-        if inner.name.equals("pointer")
+        if inner.name = "pointer"
             set inner_is_ref: true
-        if inner.name.equals("ref")
+        if inner.name = "ref"
             set inner_is_ref: true
         if inner_is_ref = false
             return t
@@ -27079,7 +27081,7 @@ define Planner
         }
 
         var mangled ""
-        if joined.equals("pointer")
+        if joined = "pointer"
         {
             if resolved_gens <> null
             {
@@ -27098,7 +27100,7 @@ define Planner
                 }
             }
         }
-        if joined.equals("ref")
+        if joined = "ref"
         {
             if resolved_gens <> null
             {
@@ -27143,7 +27145,7 @@ define Planner
             let kvp_ptr scope.get_ptr i
             if kvp_ptr <> null
             {
-                if kvp_ptr.key.equals(name)
+                if kvp_ptr.key = name
                     return &kvp_ptr.value
             }
             set i: i + 1
@@ -27458,7 +27460,7 @@ define Planner
     function is_option_vs_void_pointer(left: PlannedType, right: PlannedType) returns bool
     {
         var is_option: bool false
-        if left.name.equals("Option")
+        if left.name = "Option"
             set is_option: true
         if left.name.starts_with("Option.")
             set is_option: true
@@ -27466,7 +27468,7 @@ define Planner
         if is_option = false
             return false
 
-        if right.name.equals("pointer") = false
+        if right.name <> "pointer"
             return false
 
         if right.generics = null
@@ -27480,7 +27482,7 @@ define Planner
         if g0 = null
             return false
 
-        (*g0).name.equals("void")
+        (*g0).name = "void"
     }
 
     ; unify: produce the most-general substitution that makes `left` and
@@ -27544,12 +27546,12 @@ define Planner
         ; Case 4: both concrete.
 
         ; `void` unifies with anything (null literal compatibility).
-        if left.name.equals("void")
+        if left.name = "void"
         {
             var empty Vector[KeyValuePair[size_t, PlannedType]](0)
             return &empty
         }
-        if right.name.equals("void")
+        if right.name = "void"
         {
             var empty Vector[KeyValuePair[size_t, PlannedType]](0)
             return &empty
@@ -27576,7 +27578,7 @@ define Planner
         }
 
         ; Names must match.
-        if left.name.equals(right.name) = false
+        if left.name <> right.name
             return null
 
         ; Arities must match.
@@ -27768,11 +27770,11 @@ define Planner
         if name.get_length() = 0
             return false
 
-        if name.equals("abs")
+        if name = "abs"
             return true
         ; `not` is the alphabetically-spelled prefix synonym for `!`
         ; (like `abs`) — recognised here so the prefix path fires.
-        if name.equals("not")
+        if name = "not"
             return true
 
         let first name.get 0
@@ -27815,49 +27817,49 @@ define Planner
     ; `(A <> X) & (B <> Y)` rather than `((A <> X) & B) <> Y`.
     function get_operator_precedence(name: String) returns int
     {
-        if name.equals("||")
+        if name = "||"
             return 1
-        if name.equals("or")
+        if name = "or"
             return 1
-        if name.equals("&&")
+        if name = "&&"
             return 2
-        if name.equals("and")
+        if name = "and"
             return 2
-        if name.equals("|")
+        if name = "|"
             return 3
-        if name.equals("^")
+        if name = "^"
             return 4
-        if name.equals("&")
+        if name = "&"
             return 5
-        if name.equals("=")
+        if name = "="
             return 6
-        if name.equals("<>")
+        if name = "<>"
             return 6
-        if name.equals("<")
+        if name = "<"
             return 7
-        if name.equals(">")
+        if name = ">"
             return 7
-        if name.equals("<=")
+        if name = "<="
             return 7
-        if name.equals(">=")
+        if name = ">="
             return 7
-        if name.equals("<<")
+        if name = "<<"
             return 8
-        if name.equals(">>")
+        if name = ">>"
             return 8
-        if name.equals("+")
+        if name = "+"
             return 9
-        if name.equals("-")
+        if name = "-"
             return 9
-        if name.equals("*")
+        if name = "*"
             return 10
-        if name.equals("/")
+        if name = "/"
             return 10
-        if name.equals("%")
+        if name = "%"
             return 10
-        if name.equals("div")
+        if name = "div"
             return 10
-        if name.equals("mod")
+        if name = "mod"
             return 10
         0
     }
@@ -27918,14 +27920,14 @@ define Planner
     ; instantiations (Option/Result/Slice from containers::test_*).
     function is_lazy_machinery_generic(name: String) returns bool
     {
-        if name.equals("BuilderList") = false
-            if name.equals("BuilderListIterator") = false
-                if name.equals("ListIterator") = false
-                    if name.equals("VectorIterator") = false
-                        if name.equals("Vector") = false
-                            if name.equals("Node") = false
-                                if name.equals("Slot") = false
-                                    if name.equals("KeyValuePair") = false
+        if name <> "BuilderList"
+            if name <> "BuilderListIterator"
+                if name <> "ListIterator"
+                    if name <> "VectorIterator"
+                        if name <> "Vector"
+                            if name <> "Node"
+                                if name <> "Slot"
+                                    if name <> "KeyValuePair"
                                         return false
         true
     }
@@ -27944,9 +27946,9 @@ define Planner
     function is_lazy_real_union(name: String, generics: ref[Vector[PlannedType]]?) returns bool
     {
         var is_or: bool false
-        if name.equals("Option")
+        if name = "Option"
             set is_or: true
-        if name.equals("Result")
+        if name = "Result"
             set is_or: true
         if is_or = false
             return false
@@ -27961,9 +27963,9 @@ define Planner
             let gp gens.get gi
             if gp <> null
             {
-                if (*gp).name.equals("ref")
+                if (*gp).name = "ref"
                     return false
-                if (*gp).name.equals("pointer")
+                if (*gp).name = "pointer"
                     return false
             }
             set gi: gi + 1
@@ -27984,37 +27986,37 @@ define Planner
     ; already skips parameterized concepts.
     function is_runtime_opaque_struct(name: String) returns bool
     {
-        if name.equals("String")
+        if name = "String"
             return true
-        if name.equals("StringBuilder")
+        if name = "StringBuilder"
             return true
-        if name.equals("StringIterator")
+        if name = "StringIterator"
             return true
-        if name.equals("Page")
+        if name = "Page"
             return true
-        if name.equals("PageList")
+        if name = "PageList"
             return true
-        if name.equals("PageListIterator")
+        if name = "PageListIterator"
             return true
-        if name.equals("PageNode")
+        if name = "PageNode"
             return true
-        if name.equals("Path")
+        if name = "Path"
             return true
-        if name.equals("File")
+        if name = "File"
             return true
-        if name.equals("Directory")
+        if name = "Directory"
             return true
-        if name.equals("Console")
+        if name = "Console"
             return true
-        if name.equals("FileError")
+        if name = "FileError"
             return true
-        if name.equals("BlockWatermark")
+        if name = "BlockWatermark"
             return true
-        if name.equals("HeapBucketHeader")
+        if name = "HeapBucketHeader"
             return true
-        if name.equals("StackBucketHeader")
+        if name = "StackBucketHeader"
             return true
-        if name.equals("TraceEntry")
+        if name = "TraceEntry"
             return true
         false
     }
@@ -28095,9 +28097,9 @@ define Planner
         if n0 = null
             return false
         let n (*n0)
-        if n.equals("ref")
+        if n = "ref"
             return true
-        if n.equals("pointer")
+        if n = "pointer"
             return true
         false
     }
@@ -28114,8 +28116,8 @@ define Planner
                     if it.type <> null
                     {
                         let nm (*it.name)
-                        if nm.equals(name)
-                            if nm.equals("this") = false
+                        if nm = name
+                            if nm <> "this"
                                 return Planner.is_ref_or_pointer_type((*it.type))
                     }
             }
@@ -28136,7 +28138,7 @@ define Planner
                     if it.type <> null
                     {
                         let nm (*it.name)
-                        if nm.equals("this") = false
+                        if nm <> "this"
                             if Planner.is_ref_or_pointer_type((*it.type))
                                 return true
                     }
@@ -28166,7 +28168,7 @@ define Planner
                 if last_ptr <> null
                 {
                     let meth (*last_ptr)
-                    if meth.equals("put") || meth.equals("add")
+                    if meth = "put" || meth = "add"
                         choose head.expression
                             when t: scalyc.compiler.Model.Type
                             {
@@ -28193,7 +28195,7 @@ define Planner
                         if meth_ptr <> null
                         {
                             let meth (*meth_ptr)
-                            if meth.equals("put") || meth.equals("add")
+                            if meth = "put" || meth = "add"
                             {
                                 let rn_ptr t.name.get 0
                                 if rn_ptr <> null
@@ -28278,7 +28280,7 @@ define Planner
     {
         choose t.lifetime
             when r: Reference
-                return r.location.equals("rp")
+                return r.location = "rp"
             else
                 return false
         false
@@ -28297,7 +28299,7 @@ define Planner
     {
         choose lt
             when r: Reference
-                return r.location.equals("rp")
+                return r.location = "rp"
             else
                 return false
         false
@@ -28560,7 +28562,7 @@ define Planner
         {
             let p arr.get i
             if p <> null
-                if (*p).equals(name)
+                if (*p) = name
                     return true
             set i: i + 1
         }
@@ -28646,9 +28648,9 @@ define Planner
                     if lastp <> null
                     {
                         var is_putadd false
-                        if (*lastp).equals("add")
+                        if (*lastp) = "add"
                             set is_putadd: true
-                        if (*lastp).equals("put")
+                        if (*lastp) = "put"
                             set is_putadd: true
                         if is_putadd
                         {
@@ -28656,7 +28658,7 @@ define Planner
                             if s0p <> null
                             {
                                 let s0 (*s0p)
-                                if s0.equals("this")
+                                if s0 = "this"
                                 {
                                     ; this.field.add(...) — needs a field hop
                                     if ty.name.length > 2
@@ -28738,7 +28740,7 @@ define Planner
                 if (*ip).name <> null
                 {
                     let pn (*(*ip).name)
-                    if pn.equals("this") = false
+                    if pn <> "this"
                         pnames.add pn
                 }
             set pi: pi + 1
@@ -28849,7 +28851,7 @@ define Planner
                             {
                                 let n0 ty.name.get 0
                                 if n0 <> null
-                                    if (*n0).equals(name)
+                                    if (*n0) = name
                                         return true
                             }
                         else
@@ -29182,7 +29184,7 @@ define Planner
                                     {
                                         let tn_ptr t.name.get 0
                                         if tn_ptr <> null
-                                            if (*tn_ptr).equals(type_name)
+                                            if (*tn_ptr) = type_name
                                                 choose (*next_ptr).expression
                                                     when tup: Tuple
                                                         return true
@@ -29211,7 +29213,7 @@ define Planner
         {
             let p names.get i
             if p <> null
-                if (*p).equals(n)
+                if (*p) = n
                     return true
             set i: i + 1
         }
@@ -29696,7 +29698,7 @@ define Planner
     ; hit a case that needs it.
     function get_pointer_element_type(ptr_type: PlannedType) returns ref[PlannedType]?
     {
-        if ptr_type.name.equals("pointer")
+        if ptr_type.name = "pointer"
         {
             if ptr_type.generics <> null
             {
@@ -29705,7 +29707,7 @@ define Planner
                     return gens.get 0
             }
         }
-        if ptr_type.name.equals("ref")
+        if ptr_type.name = "ref"
         {
             if ptr_type.generics <> null
             {
@@ -29714,7 +29716,7 @@ define Planner
                     return gens.get 0
             }
         }
-        if ptr_type.name.equals("Option")
+        if ptr_type.name = "Option"
         {
             if ptr_type.generics <> null
             {
@@ -29725,7 +29727,7 @@ define Planner
                     if inner_ptr <> null
                     {
                         let inner (*inner_ptr)
-                        if inner.name.equals("pointer")
+                        if inner.name = "pointer"
                         {
                             if inner.generics <> null
                             {
@@ -29734,7 +29736,7 @@ define Planner
                                     return ig.get 0
                             }
                         }
-                        if inner.name.equals("ref")
+                        if inner.name = "ref"
                         {
                             if inner.generics <> null
                             {
@@ -29755,49 +29757,49 @@ define Planner
     ; Scaly uses `=` / `<>` (equal / not-equal) instead of C's `==` / `!=`.
     function get_operator_precedence(op: String) returns int
     {
-        if op.equals("||")
+        if op = "||"
             return 1
-        if op.equals("or")
+        if op = "or"
             return 1
-        if op.equals("&&")
+        if op = "&&"
             return 2
-        if op.equals("and")
+        if op = "and"
             return 2
-        if op.equals("|")
+        if op = "|"
             return 3
-        if op.equals("^")
+        if op = "^"
             return 4
-        if op.equals("&")
+        if op = "&"
             return 5
-        if op.equals("=")
+        if op = "="
             return 6
-        if op.equals("<>")
+        if op = "<>"
             return 6
-        if op.equals("<")
+        if op = "<"
             return 7
-        if op.equals(">")
+        if op = ">"
             return 7
-        if op.equals("<=")
+        if op = "<="
             return 7
-        if op.equals(">=")
+        if op = ">="
             return 7
-        if op.equals("<<")
+        if op = "<<"
             return 8
-        if op.equals(">>")
+        if op = ">>"
             return 8
-        if op.equals("+")
+        if op = "+"
             return 9
-        if op.equals("-")
+        if op = "-"
             return 9
-        if op.equals("*")
+        if op = "*"
             return 10
-        if op.equals("/")
+        if op = "/"
             return 10
-        if op.equals("%")
+        if op = "%"
             return 10
-        if op.equals("div")
+        if op = "div"
             return 10
-        if op.equals("mod")
+        if op = "mod"
             return 10
         0
     }
@@ -29843,33 +29845,33 @@ define Planner
     {
         ; size_to_string - smallest self-contained helper.
         let str0 Planner.size_to_string(0)
-        if str0.equals("0") = false
+        if str0 <> "0"
             return 1
 
         let str4 Planner.size_to_string(4)
-        if str4.equals("4") = false
+        if str4 <> "4"
             return 2
 
         let str42 Planner.size_to_string(42)
-        if str42.equals("42") = false
+        if str42 <> "42"
             return 3
 
         ; encode_name - depends on size_to_string.
         let encoded Planner.encode_name("test")
-        if encoded.equals("4test") = false
+        if encoded <> "4test"
             return 4
 
         let encoded2 Planner.encode_name("")
-        if encoded2.equals("0") = false
+        if encoded2 <> "0"
             return 5
 
         ; strip_package_prefix - only strips when it starts with "scaly."
         let stripped Planner.strip_package_prefix("scaly.containers.String")
-        if stripped.equals("String") = false
+        if stripped <> "String"
             return 6
 
         let unstripped Planner.strip_package_prefix("scalyc.compiler.Planner")
-        if unstripped.equals("scalyc.compiler.Planner") = false
+        if unstripped <> "scalyc.compiler.Planner"
             return 7
 
         ; encode_type - built-in primitive codes.
@@ -29884,7 +29886,7 @@ define Planner
             null
         )
         let enc_int Planner.encode_type(int_ty)
-        if enc_int.equals("i") = false
+        if enc_int <> "i"
             return 8
 
         let bool_ty PlannedType(
@@ -29898,7 +29900,7 @@ define Planner
             null
         )
         let enc_bool Planner.encode_type(bool_ty)
-        if enc_bool.equals("b") = false
+        if enc_bool <> "b"
             return 9
 
         ; encode_type - user-defined falls through to encode_name.
@@ -29913,7 +29915,7 @@ define Planner
             null
         )
         let enc_foo Planner.encode_type(foo_ty)
-        if enc_foo.equals("3Foo") = false
+        if enc_foo <> "3Foo"
             return 10
 
         ; encode_type - "scaly.containers.String" -> "6String" (prefix stripped).
@@ -29928,38 +29930,38 @@ define Planner
             null
         )
         let enc_sstr Planner.encode_type(sstr_ty)
-        if enc_sstr.equals("6String") = false
+        if enc_sstr <> "6String"
             return 11
 
         ; mangle_type - "_Z" prefix + encoded type.
         let mangled_int Planner.mangle_type(int_ty)
-        if mangled_int.equals("_Zi") = false
+        if mangled_int <> "_Zi"
             return 12
 
         let mangled_foo Planner.mangle_type(foo_ty)
-        if mangled_foo.equals("_Z3Foo") = false
+        if mangled_foo <> "_Z3Foo"
             return 13
 
         ; mangle_structure - no generics falls back to encode_name.
         let mangled_s Planner.mangle_structure("String", null)
-        if mangled_s.equals("_Z6String") = false
+        if mangled_s <> "_Z6String"
             return 14
 
         ; mangle_structure with one int generic arg: Vector[int] -> _Z6VectorIiE.
         var gens_vec Vector[PlannedType](1)
         gens_vec.put(0, int_ty)
         let mangled_vec Planner.mangle_structure("Vector", &gens_vec)
-        if mangled_vec.equals("_Z6VectorIiE") = false
+        if mangled_vec <> "_Z6VectorIiE"
             return 15
 
         ; mangle_function - free, no params -> _Z3foov.
         let mf_free Planner.mangle_function("foo", null, null, false)
-        if mf_free.equals("_Z3foov") = false
+        if mf_free <> "_Z3foov"
             return 16
 
         ; mangle_function - method on Foo, no params -> _ZN3Foo3fooEv.
         let mf_method Planner.mangle_function("foo", null, &foo_ty, false)
-        if mf_method.equals("_ZN3Foo3fooEv") = false
+        if mf_method <> "_ZN3Foo3fooEv"
             return 17
 
         ; mangle_function - 'this' is implicit; drops out of the name.
@@ -29967,12 +29969,12 @@ define Planner
         var this_only Vector[PlannedItem](1)
         this_only.put(0, PlannedItem(Span(0, 0), false, &this_name, &foo_ty, null))
         let mf_this Planner.mangle_function("bar", &this_only, &foo_ty, false)
-        if mf_this.equals("_ZN3Foo3barEv") = false
+        if mf_this <> "_ZN3Foo3barEv"
             return 18
 
         ; mangle_function with implicit page param.
         let mf_page Planner.mangle_function("foo", null, null, true)
-        if mf_page.equals("_Z3fooPN4scaly6memory4PageE") = false
+        if mf_page <> "_Z3fooPN4scaly6memory4PageE"
             return 19
 
         ; mangle_function - free with int param -> _Z3fooi.
@@ -29980,25 +29982,25 @@ define Planner
         var one_int Vector[PlannedItem](1)
         one_int.put(0, PlannedItem(Span(0, 0), false, &x_name, &int_ty, null))
         let mf_i Planner.mangle_function("foo", &one_int, null, false)
-        if mf_i.equals("_Z3fooi") = false
+        if mf_i <> "_Z3fooi"
             return 20
 
         ; operator_code - a few known codes plus vendor extension.
         let op_plus Planner.operator_code("+")
-        if op_plus.equals("pl") = false
+        if op_plus <> "pl"
             return 21
 
         let op_index Planner.operator_code("[]")
-        if op_index.equals("ix") = false
+        if op_index <> "ix"
             return 22
 
         let op_vendor Planner.operator_code("??")
-        if op_vendor.equals("v02??") = false
+        if op_vendor <> "v02??"
             return 23
 
         ; mangle_operator - free + with int param -> _Zpli.
         let mop_plus Planner.mangle_operator("+", &one_int, null)
-        if mop_plus.equals("_Zpli") = false
+        if mop_plus <> "_Zpli"
             return 24
 
         ; mangle_operator - member + on Foo with (this, int) -> _ZN3FooplEi.
@@ -30006,17 +30008,17 @@ define Planner
         this_int.put(0, PlannedItem(Span(0, 0), false, &this_name, &foo_ty, null))
         this_int.put(1, PlannedItem(Span(0, 0), false, &x_name, &int_ty, null))
         let mop_member Planner.mangle_operator("+", &this_int, &foo_ty)
-        if mop_member.equals("_ZN3FooplEi") = false
+        if mop_member <> "_ZN3FooplEi"
             return 25
 
         ; mangle_operator - member with only 'this' -> _ZN3FooneEv (the 'this' skip).
         let mop_this Planner.mangle_operator("!=", &this_only, &foo_ty)
-        if mop_this.equals("_ZN3FooneEv") = false
+        if mop_this <> "_ZN3FooneEv"
             return 26
 
         ; get_readable_name - plain type, no generics.
         let rn_int Planner.get_readable_name(int_ty)
-        if rn_int.equals("int") = false
+        if rn_int <> "int"
             return 27
 
         ; get_readable_name - generic: Vector[int] -> "Vector[int]".
@@ -30033,30 +30035,30 @@ define Planner
             null
         )
         let rn_vec Planner.get_readable_name(vec_ty)
-        if rn_vec.equals("Vector[int]") = false
+        if rn_vec <> "Vector[int]"
             return 28
 
         ; normalize_type_name - builtin aliases collapse.
         let nm_int Planner.normalize_type_name("int")
-        if nm_int.equals("i64") = false
+        if nm_int <> "i64"
             return 29
 
         let nm_size Planner.normalize_type_name("size_t")
-        if nm_size.equals("u64") = false
+        if nm_size <> "u64"
             return 30
 
         let nm_char Planner.normalize_type_name("char")
-        if nm_char.equals("u8") = false
+        if nm_char <> "u8"
             return 31
 
         ; normalize_type_name - "scaly.containers.String" -> "String".
         let nm_sstr Planner.normalize_type_name("scaly.containers.String")
-        if nm_sstr.equals("String") = false
+        if nm_sstr <> "String"
             return 32
 
         ; normalize_type_name - user types pass through.
         let nm_user Planner.normalize_type_name("scalyc.compiler.Planner")
-        if nm_user.equals("scalyc.compiler.Planner") = false
+        if nm_user <> "scalyc.compiler.Planner"
             return 33
 
         ; types_equal - identical primitives.
@@ -30271,7 +30273,7 @@ define Planner
         if pe_int = null
             return 56
         let pe_int_v (*pe_int)
-        if pe_int_v.name.equals("int") = false
+        if pe_int_v.name <> "int"
             return 57
 
         ; get_pointer_element_type - non-pointer returns null.
@@ -30296,35 +30298,35 @@ define Planner
         if pe_opt = null
             return 59
         let pe_opt_v (*pe_opt)
-        if pe_opt_v.name.equals("int") = false
+        if pe_opt_v.name <> "int"
             return 60
 
         ; infer_constant_type - booleans yield "bool".
         let c_bool Constant.Boolean(BooleanConstant(Span(0, 0), true))
         let t_bool Planner.infer_constant_type(c_bool)
-        if t_bool.name.equals("bool") = false
+        if t_bool.name <> "bool"
             return 61
 
         ; infer_constant_type - integer literal is "int" (pre-solver).
         let c_int Constant.Integer(IntegerConstant(Span(0, 0), 42))
         let t_int Planner.infer_constant_type(c_int)
-        if t_int.name.equals("int") = false
+        if t_int.name <> "int"
             return 62
-        if t_int.mangled_name.equals("i") = false
+        if t_int.mangled_name <> "i"
             return 63
 
         ; infer_constant_type - hex literal is u64.
         let c_hex Constant.Hex(HexConstant(Span(0, 0), 255))
         let t_hex Planner.infer_constant_type(c_hex)
-        if t_hex.name.equals("u64") = false
+        if t_hex.name <> "u64"
             return 64
 
         ; infer_constant_type - string literal is pointer[i8] (Itanium "Pa").
         let c_str Constant.String(StringConstant(Span(0, 0), "hi"))
         let t_str Planner.infer_constant_type(c_str)
-        if t_str.name.equals("pointer") = false
+        if t_str.name <> "pointer"
             return 65
-        if t_str.mangled_name.equals("Pa") = false
+        if t_str.mangled_name <> "Pa"
             return 66
         if t_str.generics = null
             return 67
@@ -30332,9 +30334,9 @@ define Planner
         ; infer_constant_type - null literal is pointer[void].
         let c_null Constant.Null(NullConstant(Span(0, 0)))
         let t_null Planner.infer_constant_type(c_null)
-        if t_null.name.equals("pointer") = false
+        if t_null.name <> "pointer"
             return 68
-        if t_null.mangled_name.equals("Pv") = false
+        if t_null.mangled_name <> "Pv"
             return 69
 
         ; extract_arg_types - non-tuple operand yields empty Vector.
@@ -30389,13 +30391,13 @@ define Planner
         if t0 = null
             return 72
         let t0v (*t0)
-        if t0v.name.equals("int") = false
+        if t0v.name <> "int"
             return 73
         let t1 two_types.get 1
         if t1 = null
             return 74
         let t1v (*t1)
-        if t1v.name.equals("bool") = false
+        if t1v.name <> "bool"
             return 75
 
         ; is_primitive_type_name - representative cases.
@@ -30475,7 +30477,7 @@ define Planner
         parts.put(1, "containers")
         parts.put(2, "String")
         let joined Planner.join_dotted_name(parts)
-        if joined.equals("scaly.containers.String") = false
+        if joined <> "scaly.containers.String"
             return 92
 
         ; is_generic_type_param_name - single uppercase letter.
@@ -30597,7 +30599,7 @@ define Planner
 
         ; apply_substitution - null substitution leaves type unchanged.
         let sub_int Planner.apply_substitution(int_ty, null)
-        if sub_int.name.equals("int") = false
+        if sub_int.name <> "int"
             return 101
 
         ; apply_substitution - unbound variable stays as-is.
@@ -30610,12 +30612,12 @@ define Planner
         var sub1 Vector[KeyValuePair[size_t, PlannedType]](1)
         sub1.put(0, KeyValuePair[size_t, PlannedType](7, int_ty))
         let sub_hit Planner.apply_substitution(var_ty, &sub1)
-        if sub_hit.name.equals("int") = false
+        if sub_hit.name <> "int"
             return 103
 
         ; apply_substitution - substitutes inside generic arguments.
         let sub_vec Planner.apply_substitution(vec_of_t_ty, &sub1)
-        if sub_vec.name.equals("Vector") = false
+        if sub_vec.name <> "Vector"
             return 104
         if sub_vec.generics = null
             return 105
@@ -30626,7 +30628,7 @@ define Planner
         if sub_vec_g0 = null
             return 107
         let sub_vec_g0v (*sub_vec_g0)
-        if sub_vec_g0v.name.equals("int") = false
+        if sub_vec_g0v.name <> "int"
             return 108
 
         ; apply_substitution - follows chains T7 -> T8 -> int.
@@ -30645,7 +30647,7 @@ define Planner
         sub_chain.put(0, KeyValuePair[size_t, PlannedType](7, var_ty8))
         sub_chain.put(1, KeyValuePair[size_t, PlannedType](8, int_ty))
         let sub_chained Planner.apply_substitution(var_ty, &sub_chain)
-        if sub_chained.name.equals("int") = false
+        if sub_chained.name <> "int"
             return 109
 
         ; compose_substitutions - S2 ∘ S1: S1={T7 -> T8}, S2={T8 -> int}
@@ -30663,7 +30665,7 @@ define Planner
         if comp7 = null
             return 111
         let comp7v (*comp7)
-        if comp7v.name.equals("int") = false
+        if comp7v.name <> "int"
             return 112
 
         ; T8 should still be present.
@@ -30683,7 +30685,7 @@ define Planner
         if dup7 = null
             return 115
         let dup7v (*dup7)
-        if dup7v.name.equals("int") = false
+        if dup7v.name <> "int"
             return 116
 
         ; compute_struct_size / compute_struct_alignment - empty and simple.
@@ -30767,7 +30769,7 @@ define Planner
         let u2_lookup Planner.substitution_lookup((*u2), 7)
         if u2_lookup = null
             return 136
-        if (*u2_lookup).name.equals("int") = false
+        if (*u2_lookup).name <> "int"
             return 137
 
         ; unify - right variable, left concrete → also binds.
@@ -30806,7 +30808,7 @@ define Planner
         let u_vec_lookup Planner.substitution_lookup((*u_vec), 7)
         if u_vec_lookup = null
             return 147
-        if (*u_vec_lookup).name.equals("int") = false
+        if (*u_vec_lookup).name <> "int"
             return 148
 
         ; unify - occurs check: T7 vs Vector[T7] → null.
@@ -30847,7 +30849,7 @@ define Planner
         let sc_one_lookup Planner.substitution_lookup((*sc_one), 7)
         if sc_one_lookup = null
             return 154
-        if (*sc_one_lookup).name.equals("int") = false
+        if (*sc_one_lookup).name <> "int"
             return 155
 
         ; solve_constraints - chain T7 = T8, T8 = int → T7 resolves to int.
@@ -30862,7 +30864,7 @@ define Planner
         if sc_chain = null
             return 156
         let sc_chain_t7 Planner.apply_substitution(var_ty, sc_chain)
-        if sc_chain_t7.name.equals("int") = false
+        if sc_chain_t7.name <> "int"
             return 157
 
         ; solve_constraints - conflicting: T7 = int, T7 = bool → null.
@@ -31014,7 +31016,7 @@ define Planner
             Lifetime.Unspecified(Unspecified())
         )
         let rt_int Planner.resolve_type_base(int_type)
-        if rt_int.name.equals("int") = false
+        if rt_int.name <> "int"
             return 185
         if rt_int.generics <> null
             return 186
@@ -31031,7 +31033,7 @@ define Planner
             Lifetime.Unspecified(Unspecified())
         )
         let rt_str Planner.resolve_type_base(str_type)
-        if rt_str.name.equals("scaly.containers.String") = false
+        if rt_str.name <> "scaly.containers.String"
             return 187
 
         ; resolve_type_base - pointer[int] gets "P" mangled prefix.
@@ -31046,7 +31048,7 @@ define Planner
             Lifetime.Unspecified(Unspecified())
         )
         let rt_ptr Planner.resolve_type_base(ptr_type)
-        if rt_ptr.name.equals("pointer") = false
+        if rt_ptr.name <> "pointer"
             return 188
         if rt_ptr.generics = null
             return 189
@@ -31056,11 +31058,11 @@ define Planner
         let rt_ptr_inner rt_ptr_gens.get 0
         if rt_ptr_inner = null
             return 191
-        if (*rt_ptr_inner).name.equals("int") = false
+        if (*rt_ptr_inner).name <> "int"
             return 192
         ; Inner primitive has no mangled_name set here (set by caller after
         ; concept-table lookup), so outer just becomes "P" + "".
-        if rt_ptr.mangled_name.equals("P") = false
+        if rt_ptr.mangled_name <> "P"
             return 193
 
         ; name_substitution_lookup - hit/miss.
@@ -31069,7 +31071,7 @@ define Planner
         let hit_t Planner.name_substitution_lookup(t_subst, "T")
         if hit_t = null
             return 194
-        if (*hit_t).name.equals("int") = false
+        if (*hit_t).name <> "int"
             return 195
         if Planner.name_substitution_lookup(t_subst, "K") <> null
             return 196
@@ -31086,7 +31088,7 @@ define Planner
             null
         )
         let subst_t Planner.apply_name_substitution(t_ty, &t_subst)
-        if subst_t.name.equals("int") = false
+        if subst_t.name <> "int"
             return 197
 
         ; apply_name_substitution - Vector[T] → Vector[int].
@@ -31103,37 +31105,37 @@ define Planner
             null
         )
         let subst_vec Planner.apply_name_substitution(vec_t_ns_ty, &t_subst)
-        if subst_vec.name.equals("Vector") = false
+        if subst_vec.name <> "Vector"
             return 198
         if subst_vec.generics = null
             return 199
         let subst_vec_g0 (*subst_vec.generics).get(0)
         if subst_vec_g0 = null
             return 200
-        if (*subst_vec_g0).name.equals("int") = false
+        if (*subst_vec_g0).name <> "int"
             return 201
 
         ; apply_name_substitution - null substitution, no change.
         let no_subst Planner.apply_name_substitution(vec_t_ns_ty, null)
-        if no_subst.name.equals("Vector") = false
+        if no_subst.name <> "Vector"
             return 202
 
         ; Primitive factories set the Itanium one-letter codes.
         let mk_int Planner.make_int_type()
-        if mk_int.name.equals("int") = false
+        if mk_int.name <> "int"
             return 203
-        if mk_int.mangled_name.equals("i") = false
+        if mk_int.mangled_name <> "i"
             return 204
 
         let mk_void Planner.make_void_type()
-        if mk_void.mangled_name.equals("v") = false
+        if mk_void.mangled_name <> "v"
             return 205
 
         ; make_pointer_type wraps "P" + inner.mangled_name.
         let mk_ptr_int Planner.make_pointer_type(mk_int)
-        if mk_ptr_int.name.equals("pointer") = false
+        if mk_ptr_int.name <> "pointer"
             return 206
-        if mk_ptr_int.mangled_name.equals("Pi") = false
+        if mk_ptr_int.mangled_name <> "Pi"
             return 207
         if mk_ptr_int.generics = null
             return 208
@@ -31143,7 +31145,7 @@ define Planner
 
         ; instantiate - no quantified vars: return scheme type unchanged.
         let inst_int Planner.instantiate(sch_int, 100)
-        if inst_int.name.equals("int") = false
+        if inst_int.name <> "int"
             return 210
 
         ; instantiate - scheme with quantified T7 gets fresh id 100.
@@ -31171,7 +31173,7 @@ define Planner
         let px1 p.lookup_local("x")
         if px1 = null
             return 214
-        if (*px1).name.equals("int") = false
+        if (*px1).name <> "int"
             return 215
 
         ; Push inner scope, shadow "x" with bool.
@@ -31180,7 +31182,7 @@ define Planner
         let px2 p.lookup_local("x")
         if px2 = null
             return 216
-        if (*px2).name.equals("bool") = false
+        if (*px2).name <> "bool"
             return 217
 
         ; Lookup binding flags on inner "x".
@@ -31195,7 +31197,7 @@ define Planner
         let px3 p.lookup_local("x")
         if px3 = null
             return 220
-        if (*px3).name.equals("int") = false
+        if (*px3).name <> "int"
             return 221
 
         ; Pop outer scope, no locals remain.
@@ -31214,7 +31216,7 @@ define Planner
         let ps_t p.lookup_type_substitution("T")
         if ps_t = null
             return 224
-        if (*ps_t).name.equals("int") = false
+        if (*ps_t).name <> "int"
             return 225
 
         p.clear_type_substitutions()
@@ -31249,7 +31251,7 @@ define Planner
 
         ; Applying the current substitution to fv1 should now yield int.
         let rewritten p.apply_current_substitution(fv1)
-        if rewritten.name.equals("int") = false
+        if rewritten.name <> "int"
             return 233
 
         ; Constraints are cleared after a successful solve — adding an
@@ -31273,7 +31275,7 @@ define Planner
         ; A clean Planner — no active substitutions — resolves "int" plainly.
         var p2 Planner.Planner("test2.scaly")
         let pt_int p2.plan_type(int_type)
-        if pt_int.name.equals("int") = false
+        if pt_int.name <> "int"
             return 236
 
         ; With T → int substitution active, Vector[T] becomes Vector[int].
@@ -31296,14 +31298,14 @@ define Planner
             Lifetime.Unspecified(Unspecified())
         )
         let pt_vec_t p2.plan_type(vec_t_model)
-        if pt_vec_t.name.equals("Vector") = false
+        if pt_vec_t.name <> "Vector"
             return 237
         if pt_vec_t.generics = null
             return 238
         let pt_vec_t_g0 (*pt_vec_t.generics).get(0)
         if pt_vec_t_g0 = null
             return 239
-        if (*pt_vec_t_g0).name.equals("int") = false
+        if (*pt_vec_t_g0).name <> "int"
             return 240
 
         ; ====================================================================
@@ -31321,11 +31323,11 @@ define Planner
         let pl_item p2.plan_item(model_item)
         if pl_item.name = null
             return 241
-        if (*pl_item.name).equals("x") = false
+        if (*pl_item.name) <> "x"
             return 242
         if pl_item.item_type = null
             return 243
-        if (*pl_item.item_type).name.equals("int") = false
+        if (*pl_item.item_type).name <> "int"
             return 244
 
         ; Item { name: null, type: null } → PlannedItem with nulls propagated.
@@ -31362,7 +31364,7 @@ define Planner
             Constant.Integer(IntegerConstant(Span(0, 0), 42)),
             Span(0, 0)
         )
-        if plan_c42.result_type.name.equals("int") = false
+        if plan_c42.result_type.name <> "int"
             return 251
 
         ; plan_operand / plan_operands over Constant-only operands.
@@ -31372,7 +31374,7 @@ define Planner
             null
         )
         let po_42 p2.plan_operand(op_42)
-        if po_42.result_type.name.equals("int") = false
+        if po_42.result_type.name <> "int"
             return 252
 
         let op_true Operand(
@@ -31389,7 +31391,7 @@ define Planner
         let po_batch_1 po_batch.get 1
         if po_batch_1 = null
             return 254
-        if (*po_batch_1).result_type.name.equals("bool") = false
+        if (*po_batch_1).result_type.name <> "bool"
             return 255
 
         ; plan_binding - `let x: int = 42`:
@@ -31412,18 +31414,18 @@ define Planner
             init_ops
         )
         let pb p3.plan_binding(model_bind)
-        if pb.binding_type.equals("let") = false
+        if pb.binding_type <> "let"
             return 256
         if pb.binding_item.name = null
             return 257
-        if (*pb.binding_item.name).equals("x") = false
+        if (*pb.binding_item.name) <> "x"
             return 258
 
         ; After plan_binding, x should be a local in p3's scope.
         let plocal_x p3.lookup_local("x")
         if plocal_x = null
             return 259
-        if (*plocal_x).name.equals("int") = false
+        if (*plocal_x).name <> "int"
             return 260
 
         ; The equality constraint binding_type = init_type should be solvable.
@@ -31437,7 +31439,7 @@ define Planner
         ; An Action: source = [42], target = [] → PlannedAction with result_type int.
         let model_action Action(init_ops, Vector[Operand](0))
         let pl_act p3.plan_action(model_action)
-        if pl_act.result_type.name.equals("int") = false
+        if pl_act.result_type.name <> "int"
             return 262
 
         ; A Return with one operand.
@@ -31490,9 +31492,9 @@ define Planner
             Vector[Attribute](0)
         )
         let pl_prop p3.plan_property(model_prop)
-        if pl_prop.name.equals("x") = false
+        if pl_prop.name <> "x"
             return 269
-        if pl_prop.prop_type.name.equals("int") = false
+        if pl_prop.prop_type.name <> "int"
             return 270
         if pl_prop.offset <> 0
             return 271
@@ -31505,7 +31507,7 @@ define Planner
             Vector[Attribute](0)
         )
         let pl_variant p3.plan_variant(model_variant, 1)
-        if pl_variant.name.equals("Some") = false
+        if pl_variant.name <> "Some"
             return 272
         if pl_variant.tag <> 1
             return 273
@@ -31535,7 +31537,7 @@ define Planner
             Implementation.Extern(Extern(Span(0, 0)))
         )
         let pl_fn p3.plan_function(model_fn, null)
-        if pl_fn.name.equals("foo") = false
+        if pl_fn.name <> "foo"
             return 275
         if pl_fn.input = null
             return 276
@@ -31543,7 +31545,7 @@ define Planner
             return 277
         if pl_fn.return_type = null
             return 278
-        if (*pl_fn.return_type).name.equals("int") = false
+        if (*pl_fn.return_type).name <> "int"
             return 279
 
         ; plan_structure - empty Structure: size 0, alignment 1.
@@ -31562,7 +31564,7 @@ define Planner
             empty_symbols
         )
         let pl_struct p3.plan_structure(empty_struct, "Foo")
-        if pl_struct.name.equals("Foo") = false
+        if pl_struct.name <> "Foo"
             return 280
         if pl_struct.size <> 0
             return 281
@@ -31610,7 +31612,7 @@ define Planner
             Implementation.Intrinsic(Intrinsic(Span(0, 0)))
         )
         let pl_op p3.plan_operator(model_op, null)
-        if pl_op.name.equals("+") = false
+        if pl_op.name <> "+"
             return 285
         if pl_op.input = null
             return 286
@@ -31630,14 +31632,14 @@ define Planner
             lam_body
         )
         let pl_lam p4.plan_lambda(model_lam)
-        if pl_lam.mangled_name.equals("_ZN6lambda0Ev") = false
+        if pl_lam.mangled_name <> "_ZN6lambda0Ev"
             return 289
-        if pl_lam.return_type.name.equals("int") = false
+        if pl_lam.return_type.name <> "int"
             return 290
 
         ; A second lambda bumps the counter to 1.
         let pl_lam2 p4.plan_lambda(model_lam)
-        if pl_lam2.mangled_name.equals("_ZN6lambda1Ev") = false
+        if pl_lam2.mangled_name <> "_ZN6lambda1Ev"
             return 291
 
         ; ====================================================================
@@ -31645,7 +31647,7 @@ define Planner
         ; ====================================================================
         let model_rep Repeat(Span(0, 0), lam_body, "")
         let pl_rep p4.plan_repeat(model_rep)
-        if pl_rep.body.result_type.name.equals("int") = false
+        if pl_rep.body.result_type.name <> "int"
             return 292
 
         0

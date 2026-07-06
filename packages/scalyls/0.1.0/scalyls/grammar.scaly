@@ -10,97 +10,97 @@ define grammar
     ; True when `word` is a reserved keyword (scaly.sgm <keyword> list).
     function is_keyword(word: String) returns bool
     {
-        if word.equals("alignof")
+        if word = "alignof"
             return true
-        if word.equals("as")
+        if word = "as"
             return true
-        if word.equals("break")
+        if word = "break"
             return true
-        if word.equals("case")
+        if word = "case"
             return true
-        if word.equals("choose")
+        if word = "choose"
             return true
-        if word.equals("continue")
+        if word = "continue"
             return true
-        if word.equals("define")
+        if word = "define"
             return true
-        if word.equals("deinit")
+        if word = "deinit"
             return true
-        if word.equals("delegate")
+        if word = "delegate"
             return true
-        if word.equals("else")
+        if word = "else"
             return true
-        if word.equals("extends")
+        if word = "extends"
             return true
-        if word.equals("extern")
+        if word = "extern"
             return true
-        if word.equals("for")
+        if word = "for"
             return true
-        if word.equals("function")
+        if word = "function"
             return true
-        if word.equals("if")
+        if word = "if"
             return true
-        if word.equals("implement")
+        if word = "implement"
             return true
-        if word.equals("in")
+        if word = "in"
             return true
-        if word.equals("init")
+        if word = "init"
             return true
-        if word.equals("instruction")
+        if word = "instruction"
             return true
-        if word.equals("intrinsic")
+        if word = "intrinsic"
             return true
-        if word.equals("is")
+        if word = "is"
             return true
-        if word.equals("label")
+        if word = "label"
             return true
-        if word.equals("let")
+        if word = "let"
             return true
-        if word.equals("loop")
+        if word = "loop"
             return true
-        if word.equals("macro")
+        if word = "macro"
             return true
-        if word.equals("match")
+        if word = "match"
             return true
-        if word.equals("module")
+        if word = "module"
             return true
-        if word.equals("mutable")
+        if word = "mutable"
             return true
-        if word.equals("operator")
+        if word = "operator"
             return true
-        if word.equals("private")
+        if word = "private"
             return true
-        if word.equals("procedure")
+        if word = "procedure"
             return true
-        if word.equals("repeat")
+        if word = "repeat"
             return true
-        if word.equals("return")
+        if word = "return"
             return true
-        if word.equals("returns")
+        if word = "returns"
             return true
-        if word.equals("set")
+        if word = "set"
             return true
-        if word.equals("sizeof")
+        if word = "sizeof"
             return true
-        if word.equals("throw")
+        if word = "throw"
             return true
-        if word.equals("throws")
+        if word = "throws"
             return true
-        if word.equals("trait")
+        if word = "trait"
             return true
-        if word.equals("try")
+        if word = "try"
             return true
-        if word.equals("union")
+        if word = "union"
             return true
-        if word.equals("use")
+        if word = "use"
             return true
-        if word.equals("var")
+        if word = "var"
             return true
-        if word.equals("when")
+        if word = "when"
             return true
-        if word.equals("while")
+        if word = "while"
             return true
-        if word.equals("package")
+        if word = "package"
             return true
         false
     }

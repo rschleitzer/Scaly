@@ -83,7 +83,7 @@ define HashMap[K, V]
             let item slot.get_ptr i
             if item <> null
             {
-                if key.equals(item.key)
+                if key = item.key
                     return true
 
             }
@@ -120,7 +120,7 @@ define HashMap[K, V]
             let item slot.get_ptr i
             if item <> null
             {
-                if key.equals(item.key)
+                if key = item.key
                     return &item.value
 
             }
@@ -150,7 +150,7 @@ define HashMap[K, V]
             let item slot.get_ptr i
             if item <> null
             {
-                if key.equals(item.key)
+                if key = item.key
                     return &item.value
 
             }

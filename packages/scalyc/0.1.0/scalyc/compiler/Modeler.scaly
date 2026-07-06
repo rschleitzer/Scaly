@@ -432,9 +432,9 @@ function handle_expression(syntax: ExpressionSyntax) returns Expression
             if name_syntax.extensions = null
             {
                 let loc Span(name_syntax.start, name_syntax.end)
-                if name_syntax.name.equals("true")
+                if name_syntax.name = "true"
                     return Expression.Constant(Constant.Boolean(BooleanConstant(loc, true)))
-                if name_syntax.name.equals("false")
+                if name_syntax.name = "false"
                     return Expression.Constant(Constant.Boolean(BooleanConstant(loc, false)))
             }
 
@@ -1596,9 +1596,9 @@ function build_function(start: size_t, end_pos: size_t, syntax: TargetSyntax, is
                         {
                             let dpn0 (*dfp0.name)
                             var d_name_is_page: bool false
-                            if dpn0.equals("page")
+                            if dpn0 = "page"
                                 set d_name_is_page: true
-                            if dpn0.equals("rp")
+                            if dpn0 = "rp"
                                 set d_name_is_page: true
                             if d_name_is_page
                             {
@@ -1828,7 +1828,7 @@ function type_is_pointer_page(t: Type) returns bool
     let outer_ptr t.name.get 0
     if outer_ptr = null
         return false
-    if (*outer_ptr).equals("pointer") = false
+    if (*outer_ptr) <> "pointer"
         return false
     if t.generics = null
         return false
@@ -1844,7 +1844,7 @@ function type_is_pointer_page(t: Type) returns bool
     let last_seg inner.name.get(inner.name.length - 1)
     if last_seg = null
         return false
-    (*last_seg).equals("Page")
+    (*last_seg) = "Page"
 }
 
 function handle_initializer(syntax: InitSyntax, is_private: bool) returns Initializer
@@ -1891,9 +1891,9 @@ function handle_initializer(syntax: InitSyntax, is_private: bool) returns Initia
                 {
                     let pn0 (*fp0.name)
                     var name_is_page: bool false
-                    if pn0.equals("page")
+                    if pn0 = "page"
                         set name_is_page: true
-                    if pn0.equals("rp")
+                    if pn0 = "rp"
                         set name_is_page: true
                     if name_is_page
                     {
@@ -2172,7 +2172,7 @@ function handle_namespace(name: String, path: String, syntax: NamespaceSyntax, i
     ; own filename. Mirrors stage-0 Modeler.cpp:1864-1868.
     let last_seg Path.get_file_name(path)
     var ns_path: String path
-    if last_seg.equals(name) = false
+    if last_seg <> name
         set ns_path: Path.join(path, name)
 
     if syntax.declarations <> null
@@ -2857,7 +2857,7 @@ function build_program(file_name: String, program_name: String, syntax: ProgramS
         {
             let pkp packages.get pk
             if pkp <> null
-                if pkp.name.equals("scaly")
+                if pkp.name = "scaly"
                     set has_scaly: true
             set pk: pk + 1
         }
@@ -3028,13 +3028,13 @@ function test() returns int
             choose stmt
                 when binding: Binding
                 {
-                    if binding.binding_type.equals("const") = false
+                    if binding.binding_type <> "const"
                         return 233
 
                     if binding.item.name = null
                         return 234
 
-                    if (*binding.item.name).equals("x") = false
+                    if (*binding.item.name) <> "x"
                         return 235
 
                 }
@@ -3061,13 +3061,13 @@ function test() returns int
             choose stmt
                 when binding: Binding
                 {
-                    if binding.binding_type.equals("var") = false
+                    if binding.binding_type <> "var"
                         return 243
 
                     if binding.item.name = null
                         return 244
 
-                    if (*binding.item.name).equals("y") = false
+                    if (*binding.item.name) <> "y"
                         return 245
 
                     if binding.item.type = null
@@ -3081,7 +3081,7 @@ function test() returns int
                     if type_name_ptr = null
                         return 248
 
-                    if (*type_name_ptr).equals("int") = false
+                    if (*type_name_ptr) <> "int"
                         return 249
 
                 }
@@ -3123,7 +3123,7 @@ function test() returns int
                             if name_ptr = null
                                 return 255
 
-                            if (*name_ptr).equals("foo") = false
+                            if (*name_ptr) <> "foo"
                                 return 256
 
                         }
@@ -3186,7 +3186,7 @@ function test() returns int
             choose member
                 when fn: Function
                 {
-                    if fn.name.equals("answer") = false
+                    if fn.name <> "answer"
                         return 273
 
                     if fn.pure = false
@@ -3216,7 +3216,7 @@ function test() returns int
             choose member
                 when fn: Function
                 {
-                    if fn.name.equals("mutate") = false
+                    if fn.name <> "mutate"
                         return 283
 
                     if fn.pure = true
@@ -3246,7 +3246,7 @@ function test() returns int
             choose member
                 when concept: Concept
                 {
-                    if concept.name.equals("Point") = false
+                    if concept.name <> "Point"
                         return 293
 
                     choose concept.definition
@@ -3282,7 +3282,7 @@ function test() returns int
             choose member
                 when concept: Concept
                 {
-                    if concept.name.equals("Option") = false
+                    if concept.name <> "Option"
                         return 300
 
                     choose concept.definition

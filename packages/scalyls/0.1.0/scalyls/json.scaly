@@ -156,7 +156,7 @@ define json
                 while i < obj.count
                 {
                     let mm (*(obj.members + i))
-                    if mm.key.equals(key)
+                    if mm.key = key
                         return mm.value
 
                     set i: i + 1

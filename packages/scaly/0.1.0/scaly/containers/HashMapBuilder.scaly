@@ -62,7 +62,7 @@ define HashMapBuilder[K, V]
         var iterator slot_list.get_iterator()
         while let item iterator.next()
         {
-            if key.equals(item.value.key)
+            if key = item.value.key
                 return false
 
         }
@@ -85,7 +85,7 @@ define HashMapBuilder[K, V]
         var iterator slot.get_iterator()
         while let item iterator.next()
         {
-            if key.equals(item.value.key)
+            if key = item.value.key
                 return true
 
         }
@@ -102,7 +102,7 @@ define HashMapBuilder[K, V]
         var iterator slot.get_iterator()
         while let item iterator.next()
         {
-            if key.equals(item.value.key)
+            if key = item.value.key
                 return &item.value.value
 
         }
@@ -122,7 +122,7 @@ define HashMapBuilder[K, V]
         var iterator slot.get_iterator()
         while let item iterator.next()
         {
-            if key.equals(item.value.key)
+            if key = item.value.key
                 return &item.value.value
 
         }

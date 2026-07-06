@@ -92,7 +92,7 @@ define ConceptIndex (slots: pointer[ConceptSlot](null), cap: size_t(0))
                     set s.used: true
                     return
                 }
-                if s.name.equals(name)
+                if s.name = name
                 {
                     set s.index: index
                     return
@@ -127,7 +127,7 @@ define ConceptIndex (slots: pointer[ConceptSlot](null), cap: size_t(0))
                     set s.used: true
                     return
                 }
-                if s.name.equals(name)
+                if s.name = name
                     return
                 set idx: (idx + (1 as size_t)) & mask
                 set probes: probes + (1 as size_t)
@@ -151,7 +151,7 @@ define ConceptIndex (slots: pointer[ConceptSlot](null), cap: size_t(0))
                 let s slots + idx
                 if s.used = false
                     return (0 - 1) as i64
-                if s.name.equals(name)
+                if s.name = name
                     return s.index as i64
                 set idx: (idx + (1 as size_t)) & mask
                 set probes: probes + (1 as size_t)

@@ -118,7 +118,7 @@ define RegionInfo
         var i 0
         for n in named_region_names
         {
-            if n.equals(name)
+            if n = name
             {
                 let val named_region_values.get i
                 if val <> null
@@ -493,72 +493,72 @@ define Emitter
     {
         var bits: size_t 0
         var enc: i32 (5 as i32)
-        if name.equals("bool")
+        if name = "bool"
         {
             set bits: (8 as size_t)
             set enc: (2 as i32)
         }
-        if name.equals("char")
+        if name = "char"
         {
             set bits: (8 as size_t)
             set enc: (8 as i32)
         }
-        if name.equals("i8")
+        if name = "i8"
             set bits: (8 as size_t)
-        if name.equals("u8")
+        if name = "u8"
         {
             set bits: (8 as size_t)
             set enc: (7 as i32)
         }
-        if name.equals("i16")
+        if name = "i16"
             set bits: (16 as size_t)
-        if name.equals("u16")
+        if name = "u16"
         {
             set bits: (16 as size_t)
             set enc: (7 as i32)
         }
-        if name.equals("i32")
+        if name = "i32"
             set bits: (32 as size_t)
-        if name.equals("u32")
-        {
-            set bits: (32 as size_t)
-            set enc: (7 as i32)
-        }
-        if name.equals("i64")
-            set bits: (64 as size_t)
-        if name.equals("u64")
-        {
-            set bits: (64 as size_t)
-            set enc: (7 as i32)
-        }
-        if name.equals("int")
-            set bits: (64 as size_t)
-        if name.equals("uint")
-        {
-            set bits: (64 as size_t)
-            set enc: (7 as i32)
-        }
-        if name.equals("size_t")
-        {
-            set bits: (64 as size_t)
-            set enc: (7 as i32)
-        }
-        if name.equals("float")
+        if name = "u32"
         {
             set bits: (32 as size_t)
-            set enc: (4 as i32)
+            set enc: (7 as i32)
         }
-        if name.equals("f32")
+        if name = "i64"
+            set bits: (64 as size_t)
+        if name = "u64"
+        {
+            set bits: (64 as size_t)
+            set enc: (7 as i32)
+        }
+        if name = "int"
+            set bits: (64 as size_t)
+        if name = "uint"
+        {
+            set bits: (64 as size_t)
+            set enc: (7 as i32)
+        }
+        if name = "size_t"
+        {
+            set bits: (64 as size_t)
+            set enc: (7 as i32)
+        }
+        if name = "float"
         {
             set bits: (32 as size_t)
             set enc: (4 as i32)
         }
-        if name.equals("double")
+        if name = "f32"
+        {
+            set bits: (32 as size_t)
+            set enc: (4 as i32)
+        }
+        if name = "double"
         {
             set bits: (64 as size_t)
             set enc: (4 as i32)
         }
-        if name.equals("f64")
+        if name = "f64"
         {
             set bits: (64 as size_t)
             set enc: (4 as i32)
@@ -585,7 +585,7 @@ define Emitter
         ; pointer[T] / ref[T] — both lower to ptr; point at the pointee's
         ; DIType (cycle-safe: a struct pointee resolves to its cached
         ; forward decl while it is being built).
-        if pt.name.equals("pointer") || pt.name.equals("ref")
+        if pt.name = "pointer" || pt.name = "ref"
         {
             var inner LLVMMetadataRef(null)
             if pt.generics <> null
@@ -618,7 +618,7 @@ define Emitter
                     if sp <> null
                     {
                         let s (*sp)
-                        if s.mangled_name.equals(pt.mangled_name)
+                        if s.mangled_name = pt.mangled_name
                             return di_struct_type s
                     }
                     set i: i + 1
@@ -631,7 +631,7 @@ define Emitter
                 if sp <> null
                 {
                     let s (*sp)
-                    if s.name.equals(pt.name)
+                    if s.name = pt.name
                         return di_struct_type s
                 }
                 set k: k + 1
@@ -651,7 +651,7 @@ define Emitter
                     if up <> null
                     {
                         let u (*up)
-                        if u.mangled_name.equals(pt.mangled_name)
+                        if u.mangled_name = pt.mangled_name
                             return di_union_type u
                     }
                     set j: j + 1
@@ -664,7 +664,7 @@ define Emitter
                 if up <> null
                 {
                     let u (*up)
-                    if u.name.equals(pt.name)
+                    if u.name = pt.name
                         return di_union_type u
                 }
                 set m: m + 1
@@ -1080,7 +1080,7 @@ define Emitter
         if nv.handle = null
             return LLVMValueRef null
         var page_val nv
-        if ref_name.equals("this")
+        if ref_name = "this"
         {
             ; ^this: wrap the receiver in Page.get(this). Mirrors stage-0's
             ; generatePageGetThis.
@@ -1754,7 +1754,7 @@ define Emitter
             let n_ptr local_var_names.get i
             if n_ptr <> null
             {
-                if (*n_ptr).equals(name)
+                if (*n_ptr) = name
                 {
                     let v local_var_values.get i
                     if v <> null
@@ -1880,7 +1880,7 @@ define Emitter
         {
             let d_ptr dels.get i
             if d_ptr <> null
-                if (*d_ptr).equals(name)
+                if (*d_ptr) = name
                     return true
             set i: i + 1
         }
@@ -1908,7 +1908,7 @@ define Emitter
             return intr_type
 
         ; Handle pointer types
-        if planned_type.name.equals("pointer")
+        if planned_type.name = "pointer"
         {
             ; Use opaque pointer (ptr) for LLVM 15+
             let ptr_type LLVMPointerTypeInContext(context, 0)
@@ -1917,7 +1917,7 @@ define Emitter
         }
 
         ; Handle ref types (same as pointer at LLVM level)
-        if planned_type.name.equals("ref")
+        if planned_type.name = "ref"
         {
             let ptr_type LLVMPointerTypeInContext(context, 0)
             cache_type(planned_type.mangled_name, ptr_type)
@@ -1992,7 +1992,7 @@ define Emitter
                     if s_ptr <> null
                     {
                         let s (*s_ptr)
-                        if s.mangled_name.equals(planned_type.mangled_name)
+                        if s.mangled_name = planned_type.mangled_name
                             return emit_struct_type s
                     }
                     set i: i + 1
@@ -2005,7 +2005,7 @@ define Emitter
                 if s_ptr <> null
                 {
                     let s (*s_ptr)
-                    if s.name.equals(planned_type.name)
+                    if s.name = planned_type.name
                         return emit_struct_type s
                 }
                 set k: k + 1
@@ -2023,7 +2023,7 @@ define Emitter
                     if u_ptr <> null
                     {
                         let u (*u_ptr)
-                        if u.mangled_name.equals(planned_type.mangled_name)
+                        if u.mangled_name = planned_type.mangled_name
                             return emit_union_type u
                     }
                     set j: j + 1
@@ -2036,7 +2036,7 @@ define Emitter
                 if u_ptr <> null
                 {
                     let u (*u_ptr)
-                    if u.name.equals(planned_type.name)
+                    if u.name = planned_type.name
                         return emit_union_type u
                 }
                 set m: m + 1
@@ -2054,7 +2054,7 @@ define Emitter
         ; routes the deref through the struct path. Same shape works
         ; for other 1-ptr-field stdlib types (StringIterator, Path,
         ; ListIterator, etc.); add them only when needed.
-        if planned_type.name.equals("String")
+        if planned_type.name = "String"
         {
             var fields Vector[LLVMTypeRef](1)
             fields.put(0, LLVMPointerTypeInContext(context, 0))
@@ -2129,7 +2129,7 @@ define Emitter
                     if struct_ptr <> null
                     {
                         let struct (*struct_ptr)
-                        if struct.name.equals(name)
+                        if struct.name = name
                         {
                             if struct.properties <> null
                             {
@@ -2167,7 +2167,7 @@ define Emitter
         ; reflect actual stdlib field ORDER.
         let i64_ty LLVMInt64TypeInContext(context)
         let ptr_ty LLVMPointerTypeInContext(context, 0)
-        if name.equals("Vector")
+        if name = "Vector"
         {
             ; Vector[T]: { length: size_t, data: pointer[T] }
             var fields Vector[LLVMTypeRef](2)
@@ -2175,7 +2175,7 @@ define Emitter
             fields.put(1, ptr_ty)
             return LLVMStructTypeInContext(context, fields.data, 2, 0)
         }
-        if name.equals("HashMap")
+        if name = "HashMap"
         {
             ; HashMap[K,V]: { length, slots: ptr, capacity, page }
             var fields Vector[LLVMTypeRef](4)
@@ -2185,7 +2185,7 @@ define Emitter
             fields.put(3, ptr_ty)
             return LLVMStructTypeInContext(context, fields.data, 4, 0)
         }
-        if name.equals("HashSet")
+        if name = "HashSet"
         {
             ; HashSet[T]: { length, slots: ptr, capacity, page }
             var fields Vector[LLVMTypeRef](4)
@@ -2195,7 +2195,7 @@ define Emitter
             fields.put(3, ptr_ty)
             return LLVMStructTypeInContext(context, fields.data, 4, 0)
         }
-        if name.equals("Array")
+        if name = "Array"
         {
             ; Array[T] (packages/scaly/0.1.0/scaly/containers/Array.scaly):
             ; { length: size_t, vector: pointer[Vector[T]] } — 2 fields.
@@ -2207,7 +2207,7 @@ define Emitter
             fields.put(1, ptr_ty)
             return LLVMStructTypeInContext(context, fields.data, 2, 0)
         }
-        if name.equals("List")
+        if name = "List"
         {
             ; List[T]: { head: ptr, tail: ptr, length }
             var fields Vector[LLVMTypeRef](3)
@@ -2216,7 +2216,7 @@ define Emitter
             fields.put(2, i64_ty)
             return LLVMStructTypeInContext(context, fields.data, 3, 0)
         }
-        if name.equals("HashMapBuilder")
+        if name = "HashMapBuilder"
         {
             ; HashMapBuilder[K,V]: { length: size_t, slots: pointer[Vector[...]] }
             var fields Vector[LLVMTypeRef](2)
@@ -2224,7 +2224,7 @@ define Emitter
             fields.put(1, ptr_ty)
             return LLVMStructTypeInContext(context, fields.data, 2, 0)
         }
-        if name.equals("HashSetBuilder")
+        if name = "HashSetBuilder"
         {
             ; HashSetBuilder[T]: { length: size_t, slots: pointer[Vector[...]] }
             var fields Vector[LLVMTypeRef](2)
@@ -2269,9 +2269,9 @@ define Emitter
         if map_intrinsic_type_by_name(rt.name).handle <> null
             return false
         ; Pointer / ref → ptr return.
-        if rt.name.equals("pointer")
+        if rt.name = "pointer"
             return false
-        if rt.name.equals("ref")
+        if rt.name = "ref"
             return false
         ; s136: NPO Option detection. Option[ref[T]] / Option[pointer[T]]
         ; is represented as a single nullable pointer at the LLVM level
@@ -2283,7 +2283,7 @@ define Emitter
         ; `ref[T]?` → Modeler s113 wraps it in Option[ref[T]] → without
         ; this check, stage-1 sret'd the call site of `holder.get(0)` and
         ; SEGV'd at the caller dereferencing the stale alloca pointer.
-        if rt.name.equals("Option")
+        if rt.name = "Option"
             return is_npo_option(rt) = false
         ; Otherwise — struct or unknown cross-package type. Sret it.
         true
@@ -2294,7 +2294,7 @@ define Emitter
     ; as a single nullable pointer rather than a tagged union.
     function is_npo_option(this, t: PlannedType) returns bool
     {
-        if t.name.equals("Option") = false
+        if t.name <> "Option"
             return false
         if t.generics = null
             return false
@@ -2305,9 +2305,9 @@ define Emitter
         if inner_ptr = null
             return false
         let inner (*inner_ptr)
-        if inner.name.equals("ref")
+        if inner.name = "ref"
             return true
-        if inner.name.equals("pointer")
+        if inner.name = "pointer"
             return true
         false
     }
@@ -2321,14 +2321,14 @@ define Emitter
             return false
         if map_intrinsic_type_by_name(result_type.name).handle <> null
             return false
-        if result_type.name.equals("pointer")
+        if result_type.name = "pointer"
             return false
-        if result_type.name.equals("ref")
+        if result_type.name = "ref"
             return false
         ; s136: same NPO Option carve-out as needs_sret_for_return —
         ; Option[ref[T]] / Option[pointer[T]] is a single ptr at the
         ; ABI level.
-        if result_type.name.equals("Option")
+        if result_type.name = "Option"
             return is_npo_option(result_type) = false
         true
     }
@@ -2339,7 +2339,7 @@ define Emitter
         var i 0
         for n in intrinsic_type_names
         {
-            if n.equals(name)
+            if n = name
             {
                 let info intrinsic_types.get i
                 if info <> null
@@ -2359,39 +2359,39 @@ define Emitter
     ; should fall back to map_type for struct/pointer/ref handling.
     function map_intrinsic_type_by_name(this, name: String) returns LLVMTypeRef
     {
-        if name.equals("void")
+        if name = "void"
             return LLVMVoidTypeInContext context
-        if name.equals("bool")
+        if name = "bool"
             return LLVMInt1TypeInContext context
-        if name.equals("char")
+        if name = "char"
             return LLVMInt8TypeInContext context
-        if name.equals("const_char")
+        if name = "const_char"
             return LLVMInt8TypeInContext context
-        if name.equals("i8")
+        if name = "i8"
             return LLVMInt8TypeInContext context
-        if name.equals("u8")
+        if name = "u8"
             return LLVMInt8TypeInContext context
-        if name.equals("i16")
+        if name = "i16"
             return LLVMInt16TypeInContext context
-        if name.equals("u16")
+        if name = "u16"
             return LLVMInt16TypeInContext context
-        if name.equals("i32")
+        if name = "i32"
             return LLVMInt32TypeInContext context
-        if name.equals("u32")
+        if name = "u32"
             return LLVMInt32TypeInContext context
-        if name.equals("int")
+        if name = "int"
             return LLVMInt64TypeInContext context
-        if name.equals("uint")
+        if name = "uint"
             return LLVMInt64TypeInContext context
-        if name.equals("i64")
+        if name = "i64"
             return LLVMInt64TypeInContext context
-        if name.equals("u64")
+        if name = "u64"
             return LLVMInt64TypeInContext context
-        if name.equals("size_t")
+        if name = "size_t"
             return LLVMInt64TypeInContext context
-        if name.equals("float")
+        if name = "float"
             return LLVMFloatTypeInContext context
-        if name.equals("double")
+        if name = "double"
             return LLVMDoubleTypeInContext context
         LLVMTypeRef null
     }
@@ -2401,7 +2401,7 @@ define Emitter
     {
         for n in intrinsic_type_names
         {
-            if n.equals(name)
+            if n = name
                 return true
 
         }
@@ -2429,13 +2429,13 @@ define Emitter
             ; Reuse only when the cached entry's name and mangled_name
             ; coincide — i.e. a non-generic struct. For generics, the
             ; mangled name disambiguates.
-            if struct.name.equals(struct.mangled_name)
+            if struct.name = struct.mangled_name
                 return cached
         }
 
         ; Create named struct
         let llvm_struct LLVMStructCreateNamed(context, struct.mangled_name.c_data())
-        if struct.name.equals(struct.mangled_name)
+        if struct.name = struct.mangled_name
             cache_struct(struct.name, llvm_struct)
         cache_struct(struct.mangled_name, llvm_struct)
 
@@ -2811,7 +2811,7 @@ define Emitter
         var i 0
         for n in throws_result_names
         {
-            if n.equals(mangled_name)
+            if n = mangled_name
             {
                 let t throws_result_types.get i
                 if t <> null
@@ -2924,9 +2924,9 @@ define Emitter
                     if LLVMGetTypeKind(mapped) = LLVMTypeKind.Pointer()
                     {
                         var rt_is_ref: bool false
-                        if rt.name.equals("pointer")
+                        if rt.name = "pointer"
                             set rt_is_ref: true
-                        if rt.name.equals("ref")
+                        if rt.name = "ref"
                             set rt_is_ref: true
                         if is_npo_option(rt)
                             set rt_is_ref: true
@@ -3047,7 +3047,7 @@ define Emitter
         ; defeating bootstrap (cli.main and the entry point both
         ; resolve to the wrong symbol).
         var func_cstr func.mangled_name.c_data()
-        if func.name.equals("main")
+        if func.name = "main"
         {
             ; "main" is a String constant under the string-literal-as-constant
             ; feature; func_cstr is a pointer[const_char] (from c_data()). The
@@ -3381,9 +3381,9 @@ define Emitter
                                     var ret_is_value: bool false
                                     if map_intrinsic_type_by_name(rt2.name).handle <> null
                                         set ret_is_value: true
-                                    if rt2.name.equals("pointer")
+                                    if rt2.name = "pointer"
                                         set ret_is_value: true
-                                    if rt2.name.equals("ref")
+                                    if rt2.name = "ref"
                                         set ret_is_value: true
                                     if is_npo_option(rt2)
                                         set ret_is_value: true
@@ -3667,7 +3667,7 @@ define Emitter
                 ; — extern args, String() ctor, equals(cstr), const_char
                 ; returns) emit the plain NUL-terminated cstr global as
                 ; before, byte-identical.
-                if result_type.name.equals("String")
+                if result_type.name = "String"
                     return this.emit_string_constant(s.value)
                 return LLVMBuildGlobalStringPtr(builder, s.value.c_data(), ".str")
             }
@@ -3720,7 +3720,7 @@ define Emitter
     {
         if config.skip_tests = false
             return false
-        if func.name.equals("test")
+        if func.name = "test"
             return true
         func.name.starts_with("test_")
     }
@@ -4527,7 +4527,7 @@ define Emitter
                 ; never runs the Emitter, so it is unaffected.
                 if access.is_method = false
                     if access.is_union_value = false
-                        if access.result_type.name.equals("void")
+                        if access.result_type.name = "void"
                             if access.parent_type.name.get_length() > 0
                             {
                                 let mac_pty map_type access.parent_type
@@ -4600,7 +4600,7 @@ define Emitter
                         ; Otherwise (s121 heap-stored struct field) the
                         ; parent_type is already the struct, use it directly.
                         var deref_parent access.parent_type
-                        if access.parent_type.name.equals("pointer")
+                        if access.parent_type.name = "pointer"
                         {
                             if access.parent_type.generics <> null
                             {
@@ -4613,7 +4613,7 @@ define Emitter
                                 }
                             }
                         }
-                        if access.parent_type.name.equals("ref")
+                        if access.parent_type.name = "ref"
                         {
                             if access.parent_type.generics <> null
                             {
@@ -5015,7 +5015,7 @@ define Emitter
             LLVMSetLinkage(real_fn, LLVMLinkage.External())
         }
         let result LLVMBuildCall2(builder, real_ty, real_fn, real_args.data, n_real as u32, "")
-        if clo.return_type.name.equals("void")
+        if clo.return_type.name = "void"
             LLVMBuildRetVoid builder
         else
             LLVMBuildRet(builder, result)
@@ -5225,7 +5225,7 @@ define Emitter
         ; the zero-init field GEPs below see the real struct type —
         ; mirrors stage-0, which sizes with the struct type.
         var ctor_rt call.result_type
-        if ctor_rt.name.equals("pointer")
+        if ctor_rt.name = "pointer"
         {
             if ctor_rt.generics <> null
             {
@@ -5521,7 +5521,7 @@ define Emitter
     function target_is_cstr_pointer(this, t: PlannedType) returns bool
     {
         var result: bool false
-        if t.name.equals("pointer")
+        if t.name = "pointer"
             if t.generics <> null
             {
                 let gs (*t.generics)
@@ -5531,20 +5531,20 @@ define Emitter
                     if ip <> null
                     {
                         let inner (*ip)
-                        if inner.name.equals("const_char")
+                        if inner.name = "const_char"
                             set result: true
-                        if inner.name.equals("i8")
+                        if inner.name = "i8"
                             set result: true
-                        if inner.name.equals("char")
+                        if inner.name = "char"
                             set result: true
-                        if inner.name.equals("u8")
+                        if inner.name = "u8"
                             set result: true
                         ; pointer[void]: a String cast to a raw buffer
                         ; pointer (write/fwrite args) hands over its
                         ; content pointer exactly like the cstr targets.
                         ; Without this the e45166de loud-cast trap fires
                         ; on `"..." as pointer[void]` (io.scaly tests).
-                        if inner.name.equals("void")
+                        if inner.name = "void"
                             set result: true
                     }
                 }
@@ -5628,7 +5628,7 @@ define Emitter
                         let callee_val emit_operand(*callee_ptr)
                         ; Phase-1 JIT (`cli --run`) zero-arg i64() invoke — the
                         ; callee value is itself the function address.
-                        if call.name.equals("__jit_indirect")
+                        if call.name = "__jit_indirect"
                         {
                             let i64_ty LLVMInt64TypeInContext(context)
                             let jit_ty LLVMFunctionType(i64_ty, null as pointer[LLVMTypeRef], 0, 0)
@@ -5749,9 +5749,9 @@ define Emitter
                 if LLVMGetTypeKind(mapped) = LLVMTypeKind.Pointer()
                 {
                     var rt_is_ref: bool false
-                    if call.result_type.name.equals("pointer")
+                    if call.result_type.name = "pointer"
                         set rt_is_ref: true
-                    if call.result_type.name.equals("ref")
+                    if call.result_type.name = "ref"
                         set rt_is_ref: true
                     if is_npo_option(call.result_type)
                         set rt_is_ref: true
@@ -6220,7 +6220,7 @@ define Emitter
                                                                         {
                                                                             if dcall.is_intrinsic
                                                                             {
-                                                                                if dcall.name.equals("*")
+                                                                                if dcall.name = "*"
                                                                                     set deref_args: dcall.args
                                                                             }
                                                                         }
@@ -6239,7 +6239,7 @@ define Emitter
                                 {
                                     if dbare.is_intrinsic
                                     {
-                                        if dbare.name.equals("*")
+                                        if dbare.name = "*"
                                             set deref_args: dbare.args
                                     }
                                 }
@@ -6374,7 +6374,7 @@ define Emitter
                     choose arg_operand.expr
                         when ac: Call
                         {
-                            if ac.name.equals("&")
+                            if ac.name = "&"
                                 set arg_is_addr_of: true
                         }
                         else
@@ -6567,7 +6567,7 @@ define Emitter
             ; For stack-bound mutable structs (var x Foo()), the alloca
             ; holds the struct itself; passthrough returns the alloca
             ; address so `(*p).f = 1` still mutates x in place.
-            if call.name.equals("&")
+            if call.name = "&"
             {
                 if arg_op.member_access = null
                 {
@@ -6693,22 +6693,22 @@ define Emitter
             ; add to an empty Array. Emit: cond-branch on LHS, evaluate
             ; RHS in its own block, phi the two incomings.
             var is_logical: bool false
-            if call.name.equals("||")
+            if call.name = "||"
                 set is_logical: true
-            if call.name.equals("&&")
+            if call.name = "&&"
                 set is_logical: true
             ; `or`/`and` are word-operator synonyms for `||`/`&&` and take
             ; the identical short-circuit path (Scaly semantics).
-            if call.name.equals("or")
+            if call.name = "or"
                 set is_logical: true
-            if call.name.equals("and")
+            if call.name = "and"
                 set is_logical: true
             if is_logical
             {
                 var is_or: bool false
-                if call.name.equals("||")
+                if call.name = "||"
                     set is_or: true
-                if call.name.equals("or")
+                if call.name = "or"
                     set is_or: true
                 var lc emit_operand(left_arg.unwrap())
                 let i1_ty LLVMInt1TypeInContext(context)
@@ -6789,7 +6789,7 @@ define Emitter
         let is_float is_floating_point_type result_type
 
         ; Negation
-        if op_name.equals("-")
+        if op_name = "-"
         {
             if is_float
                 return LLVMBuildFNeg(builder, op, "fneg")
@@ -6798,14 +6798,14 @@ define Emitter
         }
 
         ; Unary plus (identity)
-        if op_name.equals("+")
+        if op_name = "+"
             return op
 
         ; Absolute value. Stage-0 calls the llvm.abs/llvm.fabs
         ; intrinsics (Emitter.cpp:4238); icmp/fcmp + select is
         ; semantically equivalent (abs with is_int_min_poison=false)
         ; and needs no intrinsic-declaration bindings.
-        if op_name.equals("abs")
+        if op_name = "abs"
         {
             if is_float
             {
@@ -6821,13 +6821,13 @@ define Emitter
         }
 
         ; Logical not (`!` and its word synonym `not`)
-        if op_name.equals("!")
+        if op_name = "!"
             return LLVMBuildNot(builder, op, "not")
-        if op_name.equals("not")
+        if op_name = "not"
             return LLVMBuildNot(builder, op, "not")
 
         ; Bitwise not
-        if op_name.equals("~")
+        if op_name = "~"
             return LLVMBuildNot(builder, op, "bitnot")
 
         ; Dereference. For struct result types, load + spill to a
@@ -6837,7 +6837,7 @@ define Emitter
         ; would force every call site to do its own spill. ref_string_item's
         ; `let n (*i.name)` then `String^rp(n)` hits this — `n` is the
         ; loaded String value and the ctor needs a ptr to it.
-        if op_name.equals("*")
+        if op_name = "*"
         {
             if LLVMGetTypeKind(ty) = LLVMTypeKind.Struct()
             {
@@ -6866,7 +6866,7 @@ define Emitter
         ; alloca pointer. Mirrors stage-0's `addr.tmp` pattern
         ; (Emitter.cpp ~3735) — required for `let n T(); let p &n` then
         ; `(*p).field` to round-trip through opaque ptr correctly.
-        if op_name.equals("&")
+        if op_name = "&"
         {
             let op_kind LLVMGetTypeKind(LLVMTypeOf op)
             if op_kind = LLVMTypeKind.Struct()
@@ -6938,10 +6938,10 @@ define Emitter
         {
             if r_kind = LLVMTypeKind.Integer()
             {
-                if op_name.equals("+")
+                if op_name = "+"
                 {
                     var elem_ty LLVMInt8TypeInContext(context)
-                    if result_type.name.equals("pointer")
+                    if result_type.name = "pointer"
                     {
                         if result_type.generics <> null
                         {
@@ -6954,7 +6954,7 @@ define Emitter
                                     ; s105: pointer[void] uses byte stride.
                                     ; map_type(void) returns LLVMVoidType
                                     ; which GEP rejects; fall back to i8.
-                                    if (*inner_ptr).name.equals("void") = false
+                                    if (*inner_ptr).name <> "void"
                                         set elem_ty: map_type(*inner_ptr)
                                 }
                             }
@@ -6965,10 +6965,10 @@ define Emitter
                     return LLVMBuildInBoundsGEP2(builder, elem_ty, l, indices.data, 1, "ptr.add")
                 }
 
-                if op_name.equals("-")
+                if op_name = "-"
                 {
                     var elem_ty LLVMInt8TypeInContext(context)
-                    if result_type.name.equals("pointer")
+                    if result_type.name = "pointer"
                     {
                         if result_type.generics <> null
                         {
@@ -7011,7 +7011,7 @@ define Emitter
         }
 
         ; Addition
-        if op_name.equals("+")
+        if op_name = "+"
         {
             if is_float
                 return LLVMBuildFAdd(builder, l, r, "fadd")
@@ -7020,7 +7020,7 @@ define Emitter
         }
 
         ; Subtraction
-        if op_name.equals("-")
+        if op_name = "-"
         {
             if is_float
                 return LLVMBuildFSub(builder, l, r, "fsub")
@@ -7029,7 +7029,7 @@ define Emitter
         }
 
         ; Multiplication
-        if op_name.equals("*")
+        if op_name = "*"
         {
             if is_float
                 return LLVMBuildFMul(builder, l, r, "fmul")
@@ -7038,7 +7038,7 @@ define Emitter
         }
 
         ; Division
-        if op_name.equals("/")
+        if op_name = "/"
         {
             if is_float
                 return LLVMBuildFDiv(builder, l, r, "fdiv")
@@ -7050,7 +7050,7 @@ define Emitter
         }
 
         ; Modulo
-        if op_name.equals("%")
+        if op_name = "%"
         {
             if is_float
                 return LLVMBuildFRem(builder, l, r, "frem")
@@ -7065,7 +7065,7 @@ define Emitter
         ; implemented these (its emitter has no handler; the test
         ; passed by accident of operand-sequence semantics) — stage-N
         ; lowers them like `/` and `%`.
-        if op_name.equals("div")
+        if op_name = "div"
         {
             if is_float
                 return LLVMBuildFDiv(builder, l, r, "fdiv")
@@ -7076,7 +7076,7 @@ define Emitter
             return LLVMBuildUDiv(builder, l, r, "udiv")
         }
 
-        if op_name.equals("mod")
+        if op_name = "mod"
         {
             if is_float
                 return LLVMBuildFRem(builder, l, r, "frem")
@@ -7092,38 +7092,38 @@ define Emitter
         ; falls through to the comparison block which produces
         ; an icmp without using the result, leaving downstream
         ; if/while branches with no condition value.
-        if op_name.equals("&&")
+        if op_name = "&&"
             return LLVMBuildAnd(builder, l, r, "land")
 
         ; Logical OR (on i1 booleans).
-        if op_name.equals("||")
+        if op_name = "||"
             return LLVMBuildOr(builder, l, r, "lor")
 
         ; Word-operator synonyms `and`/`or` — reached only if a logical op
         ; ever bypasses emit_operand's short-circuit path; lower like &&/||.
-        if op_name.equals("and")
+        if op_name = "and"
             return LLVMBuildAnd(builder, l, r, "land")
-        if op_name.equals("or")
+        if op_name = "or"
             return LLVMBuildOr(builder, l, r, "lor")
 
         ; Bitwise AND
-        if op_name.equals("&")
+        if op_name = "&"
             return LLVMBuildAnd(builder, l, r, "and")
 
         ; Bitwise OR
-        if op_name.equals("|")
+        if op_name = "|"
             return LLVMBuildOr(builder, l, r, "or")
 
         ; Bitwise XOR
-        if op_name.equals("^")
+        if op_name = "^"
             return LLVMBuildXor(builder, l, r, "xor")
 
         ; Left shift
-        if op_name.equals("<<")
+        if op_name = "<<"
             return LLVMBuildShl(builder, l, r, "shl")
 
         ; Right shift
-        if op_name.equals(">>")
+        if op_name = ">>"
         {
             if is_signed
                 return LLVMBuildAShr(builder, l, r, "ashr")
@@ -7140,7 +7140,7 @@ define Emitter
         ; rhs dangling as a `ptr null` constant. Until plan_component#
         ; collapses binary-op components (separate session), guarding
         ; the icmp emit-site keeps llc clean.
-        if op_name.equals("=")
+        if op_name = "="
         {
             if is_float
                 return LLVMBuildFCmp(builder, LLVMRealPredicate.OEQ(), l, r, "eq")
@@ -7150,7 +7150,7 @@ define Emitter
             return LLVMBuildICmp(builder, LLVMIntPredicate.EQ(), l, r, "eq")
         }
 
-        if op_name.equals("<>")
+        if op_name = "<>"
         {
             if is_float
                 return LLVMBuildFCmp(builder, LLVMRealPredicate.ONE(), l, r, "ne")
@@ -7160,7 +7160,7 @@ define Emitter
             return LLVMBuildICmp(builder, LLVMIntPredicate.NE(), l, r, "ne")
         }
 
-        if op_name.equals("<")
+        if op_name = "<"
         {
             if is_float
                 return LLVMBuildFCmp(builder, LLVMRealPredicate.OLT(), l, r, "lt")
@@ -7173,7 +7173,7 @@ define Emitter
             return LLVMBuildICmp(builder, LLVMIntPredicate.ULT(), l, r, "lt")
         }
 
-        if op_name.equals("<=")
+        if op_name = "<="
         {
             if is_float
                 return LLVMBuildFCmp(builder, LLVMRealPredicate.OLE(), l, r, "le")
@@ -7186,7 +7186,7 @@ define Emitter
             return LLVMBuildICmp(builder, LLVMIntPredicate.ULE(), l, r, "le")
         }
 
-        if op_name.equals(">")
+        if op_name = ">"
         {
             if is_float
                 return LLVMBuildFCmp(builder, LLVMRealPredicate.OGT(), l, r, "gt")
@@ -7199,7 +7199,7 @@ define Emitter
             return LLVMBuildICmp(builder, LLVMIntPredicate.UGT(), l, r, "gt")
         }
 
-        if op_name.equals(">=")
+        if op_name = ">="
         {
             if is_float
                 return LLVMBuildFCmp(builder, LLVMRealPredicate.OGE(), l, r, "ge")
@@ -7222,7 +7222,7 @@ define Emitter
         ; routes a generic concept's `operator ==` to a real non-intrinsic
         ; call, so a `==` arriving here is a genuine unresolved-operator bug
         ; and SHOULD hit the loud trap below (the Bug-B class), not vanish.
-        if op_name.equals("[]")
+        if op_name = "[]"
             return LLVMValueRef null
 
         ; Unknown binary operator — HARD, LOUD failure instead of silently
@@ -7248,7 +7248,7 @@ define Emitter
         let name call.name
 
         ; Handle Option::unwrap - extract payload from union
-        if name.equals("unwrap")
+        if name = "unwrap"
         {
             if call.args <> null
             {
@@ -7296,7 +7296,7 @@ define Emitter
         }
 
         ; Handle Option::unwrap_or - return value or default
-        if name.equals("unwrap_or")
+        if name = "unwrap_or"
         {
             if call.args <> null
             {
@@ -7330,10 +7330,10 @@ define Emitter
     ; Check if type is floating point
     function is_floating_point_type(this, t: PlannedType) returns bool
     {
-        if t.name.equals("float")
+        if t.name = "float"
             return true
 
-        if t.name.equals("double")
+        if t.name = "double"
             return true
 
         false
@@ -7343,34 +7343,34 @@ define Emitter
     function is_signed_type(this, t: PlannedType) returns bool
     {
         ; Unsigned types start with 'u' or are size_t
-        if t.name.equals("u8")
+        if t.name = "u8"
             return false
 
-        if t.name.equals("u16")
+        if t.name = "u16"
             return false
 
-        if t.name.equals("u32")
+        if t.name = "u32"
             return false
 
-        if t.name.equals("u64")
+        if t.name = "u64"
             return false
 
-        if t.name.equals("uint")
+        if t.name = "uint"
             return false
 
-        if t.name.equals("size_t")
+        if t.name = "size_t"
             return false
 
-        if t.name.equals("size")
+        if t.name = "size"
             return false
 
-        if t.name.equals("usize")
+        if t.name = "usize"
             return false
 
-        if t.name.equals("bool")
+        if t.name = "bool"
             return false
 
-        if t.name.equals("char")
+        if t.name = "char"
             return false
 
         ; Everything else is signed by default
@@ -7503,7 +7503,7 @@ define Emitter
                                     choose ilast.expr
                                         when icall: PlannedCall
                                         {
-                                            if icall.name.equals("*")
+                                            if icall.name = "*"
                                             {
                                                 let deref_val emit_operands imf.value
                                                 if deref_val.handle = null
@@ -7599,7 +7599,7 @@ define Emitter
             if page_val_raw.handle <> null
             {
                 var page_val page_val_raw
-                if page_var_name.equals("this")
+                if page_var_name = "this"
                 {
                     ; ^this: the receiver is an object pointer, not a
                     ; pointer[Page] — wrap it in Page.get(this). Mirrors
@@ -7710,7 +7710,7 @@ define Emitter
                                 {
                                     let lop_ptr c0_ops.get(c0_ops.length - 1)
                                     if lop_ptr <> null
-                                        if lop_ptr.result_type.name.equals("Array")
+                                        if lop_ptr.result_type.name = "Array"
                                             set comp0_is_array: true
                                 }
                             }
@@ -8563,7 +8563,7 @@ define Emitter
                 {
                     let cond_op (*last_op_ptr)
                     var rt cond_op.result_type
-                    if rt.name.equals("pointer")
+                    if rt.name = "pointer"
                     {
                         if rt.generics <> null
                         {
@@ -8576,7 +8576,7 @@ define Emitter
                             }
                         }
                     }
-                    if rt.name.equals("ref")
+                    if rt.name = "ref"
                     {
                         if rt.generics <> null
                         {
@@ -8598,9 +8598,9 @@ define Emitter
                     ; case-name shape (Some/None). The tagged-union IR
                     ; path otherwise produces `getelementptr ptr, ptr,
                     ; i32 0, i32 0` which llc/IRTranslator rejects.
-                    if cond_op.result_type.name.equals("ref")
+                    if cond_op.result_type.name = "ref"
                         set is_npo: true
-                    if cond_op.result_type.name.equals("pointer")
+                    if cond_op.result_type.name = "pointer"
                         set is_npo: true
                     ; s103: Option is NPO only when its inner type is a
                     ; pointer or ref. Option[int] / Option[Struct] use
@@ -8611,7 +8611,7 @@ define Emitter
                     ; the Some-arm result. Mirrors stage-0
                     ; Planner.cpp:970-976 (NPO detection only on
                     ; Option[ref|pointer]).
-                    if cond_op.result_type.name.equals("Option")
+                    if cond_op.result_type.name = "Option"
                     {
                         if cond_op.result_type.generics <> null
                         {
@@ -8622,9 +8622,9 @@ define Emitter
                                 if inner_g_ptr <> null
                                 {
                                     let inner_g (*inner_g_ptr)
-                                    if inner_g.name.equals("ref")
+                                    if inner_g.name = "ref"
                                         set is_npo: true
-                                    if inner_g.name.equals("pointer")
+                                    if inner_g.name = "pointer"
                                         set is_npo: true
                                 }
                             }
@@ -8666,7 +8666,7 @@ define Emitter
                                     if rc_ptr <> null
                                     {
                                         let rc (*rc_ptr)
-                                        if rc.variant_type.name.equals("void") = false
+                                        if rc.variant_type.name <> "void"
                                             set has_resolved_variant: true
                                     }
                                     set ri: ri + 1
@@ -8767,9 +8767,9 @@ define Emitter
                 if last_op_ptr <> null
                 {
                     let cond_op (*last_op_ptr)
-                    if cond_op.result_type.name.equals("pointer")
+                    if cond_op.result_type.name = "pointer"
                         set cond_is_pointer: true
-                    if cond_op.result_type.name.equals("ref")
+                    if cond_op.result_type.name = "ref"
                         set cond_is_pointer: true
                     ; s143: an sret-returning call yields the sret slot
                     ; pointer as its LLVM value, even though the planner's
@@ -9701,7 +9701,7 @@ define Emitter
         {
             let name_ref while_expr.cond.binding_item.name
             let name (*name_ref)
-            if while_expr.cond.binding_type.equals("var")
+            if while_expr.cond.binding_type = "var"
             {
                 let ty LLVMTypeOf(cond_value)
                 let alloca entry_alloca(ty, name.c_data())
@@ -9771,7 +9771,7 @@ define Emitter
         ; Allocate the break-value slot unless the repeat is value-less (void).
         var result_slot LLVMValueRef(null)
         var value_llvm_ty LLVMTypeRef(null)
-        if repeat_expr.value_type.name.equals("void") = false
+        if repeat_expr.value_type.name <> "void"
         {
             set value_llvm_ty: map_type(repeat_expr.value_type)
             var slot_name "repeat.result"
@@ -9890,7 +9890,7 @@ define Emitter
         {
             let name_ref try_expr.cond.binding_item.name
             let name (*name_ref)
-            if try_expr.cond.binding_type.equals("var")
+            if try_expr.cond.binding_type = "var"
             {
                 let alloca entry_alloca(ok_type, name.c_data())
                 LLVMBuildStore(builder, ok_value, alloca)
@@ -9963,7 +9963,7 @@ define Emitter
                     ; void type is invalid IR.
                     if catch_case.name.length > 0
                     {
-                        if catch_case.variant_type.name.equals("void") = false
+                        if catch_case.variant_type.name <> "void"
                         {
                             let err_ty map_type catch_case.variant_type
                             let err_value LLVMBuildLoad2(builder, err_ty, payload_ptr, "err.val")
@@ -10074,7 +10074,7 @@ define Emitter
             let val_op is_expr.value.unwrap()
             var opt_ty val_op.result_type
             var value_is_ptr: bool false
-            if opt_ty.name.equals("pointer") || opt_ty.name.equals("ref")
+            if opt_ty.name = "pointer" || opt_ty.name = "ref"
             {
                 if opt_ty.generics <> null
                 {
@@ -10091,7 +10091,7 @@ define Emitter
                 }
             }
             var uses_npo: bool true
-            if opt_ty.name.equals("Option")
+            if opt_ty.name = "Option"
             {
                 if opt_ty.generics <> null
                 {
@@ -10102,9 +10102,9 @@ define Emitter
                         if oip <> null
                         {
                             set uses_npo: false
-                            if (*oip).name.equals("pointer")
+                            if (*oip).name = "pointer"
                                 set uses_npo: true
-                            if (*oip).name.equals("ref")
+                            if (*oip).name = "ref"
                                 set uses_npo: true
                         }
                     }
@@ -10389,9 +10389,9 @@ define Emitter
                     if inner_g_ptr <> null
                     {
                         let inner_g (*inner_g_ptr)
-                        if inner_g.name.equals("ref")
+                        if inner_g.name = "ref"
                             set inner_is_ptr_like: true
-                        if inner_g.name.equals("pointer")
+                        if inner_g.name = "pointer"
                             set inner_is_ptr_like: true
                     }
                 }
@@ -10404,7 +10404,7 @@ define Emitter
         if is_option
         {
             ; Check if variant is None
-            if vc.variant_name.equals("None")
+            if vc.variant_name = "None"
             {
                 ; None = null pointer
                 let ptr_type LLVMPointerTypeInContext(context, 0)
@@ -10412,7 +10412,7 @@ define Emitter
             }
 
             ; For Some, check if we have a value and the type uses NPO
-            if vc.variant_name.equals("Some")
+            if vc.variant_name = "Some"
             {
                 if vc.value <> null
                 {
@@ -10580,7 +10580,7 @@ define Emitter
                 if mp <> null
                 {
                     let hop (*mp)
-                    if hop.name.equals(name)
+                    if hop.name = name
                         return true
                 }
                 set mi: mi + 1
@@ -10589,7 +10589,7 @@ define Emitter
         var mentions: bool false
         choose op.expr
             when v: Variable
-                set mentions: v.name.equals(name)
+                set mentions: v.name = name
             when c: Call
             {
                 if c.args <> null
@@ -10762,7 +10762,7 @@ define Emitter
                                 set life_ok: true
                             when r: Lifetime.Reference
                             {
-                                if r.location.equals("this")
+                                if r.location = "this"
                                     set life_ok: true
                             }
                             else
@@ -10786,7 +10786,7 @@ define Emitter
                         if LLVMGetTypeKind(field_ty) <> LLVMTypeKind.Struct()
                             return no_val
                         var ctor_rt c.result_type
-                        if ctor_rt.name.equals("pointer")
+                        if ctor_rt.name = "pointer"
                         {
                             if ctor_rt.generics <> null
                             {
@@ -11058,7 +11058,7 @@ define Emitter
                     when call: Call
                     {
                         ; Handle dereference assignment like *ptr = value
-                        if call.name.equals("*")
+                        if call.name = "*"
                         {
                             if call.args <> null
                             {
@@ -11136,9 +11136,9 @@ define Emitter
                             if target_op.member_access.length > 0
                             {
                                 var base gv
-                                var is_ptr_global global_ref.global_type.name.equals("pointer")
+                                var is_ptr_global global_ref.global_type.name = "pointer"
                                 if is_ptr_global = false
-                                    set is_ptr_global: global_ref.global_type.name.equals("ref")
+                                    set is_ptr_global: global_ref.global_type.name = "ref"
                                 if is_ptr_global
                                 {
                                     let ptr_type LLVMPointerTypeInContext(context, 0)
@@ -11172,7 +11172,7 @@ define Emitter
     ; mangled name. Other shapes pass through unchanged.
     function maybe_heap_copy_ctor_value(this, value: LLVMValueRef, var_ptr: LLVMValueRef, variable: PlannedVariable, source: ref[Vector[PlannedOperand]]?) returns LLVMValueRef
     {
-        if variable.name.equals("this") = false
+        if variable.name <> "this"
             return value
         if source = null
             return value
@@ -11297,10 +11297,10 @@ define Emitter
         ; indices). With the branch, we load the ref's heap pointer first
         ; and switch current_type to the inner struct for the GEP. Use
         ; nested set instead of `or` to avoid precedence ambiguity.
-        var is_pointer var_ty_name.equals("pointer")
+        var is_pointer var_ty_name = "pointer"
         if is_pointer = false
-            set is_pointer: var_ty_name.equals("ref")
-        let is_this planned_var.name.equals("this")
+            set is_pointer: var_ty_name = "ref"
+        let is_this planned_var.name = "this"
 
         var current_type LLVMTypeRef(null)
         if is_pointer = false
@@ -11416,7 +11416,7 @@ define Emitter
                             if LLVMGetTypeKind(mapped) = LLVMTypeKind.Pointer()
                             {
                                 var inner_rt rt
-                                if inner_rt.name.equals("Option")
+                                if inner_rt.name = "Option"
                                 {
                                     if inner_rt.generics <> null
                                     {
@@ -11429,7 +11429,7 @@ define Emitter
                                         }
                                     }
                                 }
-                                if inner_rt.name.equals("ref")
+                                if inner_rt.name = "ref"
                                 {
                                     if inner_rt.generics <> null
                                     {
@@ -11442,7 +11442,7 @@ define Emitter
                                         }
                                     }
                                 }
-                                if inner_rt.name.equals("pointer")
+                                if inner_rt.name = "pointer"
                                 {
                                     if inner_rt.generics <> null
                                     {
@@ -11548,7 +11548,7 @@ define Emitter
                 ; Get the type from the value
                 let ty LLVMTypeOf(value)
 
-                if binding.binding_type.equals("var")
+                if binding.binding_type = "var"
                 {
                     ; s174: a struct value held through a pointer (sret
                     ; call result, by-ptr param) must be COPIED into a
@@ -11710,7 +11710,7 @@ define Emitter
                     ; slot), NOT the statement-scoped temp pool — the buffer
                     ; outlives the declaring statement.
                     var arr_count: size_t 0
-                    if item_type.name.equals("pointer")
+                    if item_type.name = "pointer"
                     {
                         if item_type.array_size.get_length() > 0
                             set arr_count: Emitter.parse_array_size(item_type.array_size)
@@ -12241,7 +12241,7 @@ define Emitter
             let ctx_ptr loop_stack.get(i - 1)
             if ctx_ptr <> null
             {
-                if ctx_ptr.loop_label.equals(loop_label)
+                if ctx_ptr.loop_label = loop_label
                     return ctx_ptr
             }
             set i: i - 1

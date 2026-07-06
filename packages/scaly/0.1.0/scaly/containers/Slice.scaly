@@ -118,7 +118,7 @@ define Slice[T](data: pointer[T], length: size_t)
         if prefix.length > length
             return false
 
-        subslice(0, prefix.length).equals(prefix)
+        subslice(0, prefix.length) = prefix
     }
 
     ; Check if ends with suffix
@@ -127,7 +127,7 @@ define Slice[T](data: pointer[T], length: size_t)
         if suffix.length > length
             return false
 
-        subslice(length - suffix.length, length).equals(suffix)
+        subslice(length - suffix.length, length) = suffix
     }
 
     ; Iterator support

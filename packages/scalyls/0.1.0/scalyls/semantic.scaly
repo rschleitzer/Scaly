@@ -853,7 +853,7 @@ define semantic
             return ""
         if pt.name.get_length() = (0 as size_t)
             return ""
-        if pt.name.equals("void")
+        if pt.name = "void"
             return ""
         String(pt.name)
     }

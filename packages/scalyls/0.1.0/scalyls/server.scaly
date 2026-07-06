@@ -80,7 +80,7 @@ define server
             set has_id: false
         let id json.as_i64 id_val
 
-        if method.equals("initialize")
+        if method = "initialize"
         {
             ; Capture the workspace root (workspace/symbol carries no uri).
             server.capture_workspace_root msg
@@ -89,122 +89,122 @@ define server
             return
         }
 
-        if method.equals("shutdown")
+        if method = "shutdown"
         {
             if has_id
                 rpc.write_message(server.null_result_response(id))
             return
         }
 
-        if method.equals("exit")
+        if method = "exit"
         {
             exit 0
             return
         }
 
-        if method.equals("textDocument/didOpen")
+        if method = "textDocument/didOpen"
         {
             server.handle_did_open msg
             return
         }
 
-        if method.equals("textDocument/didChange")
+        if method = "textDocument/didChange"
         {
             server.handle_did_change msg
             return
         }
 
-        if method.equals("textDocument/didClose")
+        if method = "textDocument/didClose"
         {
             server.handle_did_close msg
             return
         }
 
-        if method.equals("textDocument/documentSymbol")
+        if method = "textDocument/documentSymbol"
         {
             if has_id
                 server.handle_document_symbol(msg, id)
             return
         }
 
-        if method.equals("textDocument/hover")
+        if method = "textDocument/hover"
         {
             if has_id
                 server.handle_hover(msg, id)
             return
         }
 
-        if method.equals("textDocument/definition")
+        if method = "textDocument/definition"
         {
             if has_id
                 server.handle_definition(msg, id)
             return
         }
 
-        if method.equals("textDocument/references")
+        if method = "textDocument/references"
         {
             if has_id
                 server.handle_references(msg, id)
             return
         }
 
-        if method.equals("textDocument/documentHighlight")
+        if method = "textDocument/documentHighlight"
         {
             if has_id
                 server.handle_document_highlight(msg, id)
             return
         }
 
-        if method.equals("textDocument/completion")
+        if method = "textDocument/completion"
         {
             if has_id
                 server.handle_completion(msg, id)
             return
         }
 
-        if method.equals("textDocument/prepareRename")
+        if method = "textDocument/prepareRename"
         {
             if has_id
                 server.handle_prepare_rename(msg, id)
             return
         }
 
-        if method.equals("textDocument/rename")
+        if method = "textDocument/rename"
         {
             if has_id
                 server.handle_rename(msg, id)
             return
         }
 
-        if method.equals("textDocument/signatureHelp")
+        if method = "textDocument/signatureHelp"
         {
             if has_id
                 server.handle_signature_help(msg, id)
             return
         }
 
-        if method.equals("textDocument/foldingRange")
+        if method = "textDocument/foldingRange"
         {
             if has_id
                 server.handle_folding_range(msg, id)
             return
         }
 
-        if method.equals("textDocument/semanticTokens/full")
+        if method = "textDocument/semanticTokens/full"
         {
             if has_id
                 server.handle_semantic_tokens(msg, id)
             return
         }
 
-        if method.equals("textDocument/inlayHint")
+        if method = "textDocument/inlayHint"
         {
             if has_id
                 server.handle_inlay_hint(msg, id)
             return
         }
 
-        if method.equals("workspace/symbol")
+        if method = "workspace/symbol"
         {
             if has_id
                 server.handle_workspace_symbol(msg, id)

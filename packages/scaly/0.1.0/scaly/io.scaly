@@ -75,7 +75,7 @@ define io
         if read_content.get_length() <> test_content.get_length()
             return -21
 
-        if read_content.equals(test_content) = false
+        if read_content <> test_content
             return -22
 
         0
@@ -127,20 +127,20 @@ define io
         var file "test.txt"
         var joined Path.join(dir, file)
         var expected "/tmp/test.txt"
-        if joined.equals(expected) = false
+        if joined <> expected
             return -50
 
         ; Test Path.get_file_name
         var full_path "/tmp/test.txt"
         var file_name Path.get_file_name(full_path)
         var expected_name "test.txt"
-        if file_name.equals(expected_name) = false
+        if file_name <> expected_name
             return -51
 
         ; Test Path.get_directory_name
         var dir_name Path.get_directory_name(full_path)
         var expected_dir "/tmp"
-        if dir_name.equals(expected_dir) = false
+        if dir_name <> expected_dir
             return -52
 
         0

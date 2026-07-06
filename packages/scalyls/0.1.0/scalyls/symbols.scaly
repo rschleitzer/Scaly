@@ -1154,17 +1154,17 @@ define symbols
                 if t = (0 as i64)
                 {
                     var np: i64 (0 - 1)
-                    if word.equals("function")
+                    if word = "function"
                         set np: 2 as i64
-                    if word.equals("procedure")
+                    if word = "procedure"
                         set np: 2 as i64
-                    if word.equals("define")
+                    if word = "define"
                         set np: 1 as i64
-                    if word.equals("union")
+                    if word = "union"
                         set np: 1 as i64
-                    if word.equals("trait")
+                    if word = "trait"
                         set np: 1 as i64
-                    if word.equals("module")
+                    if word = "module"
                         set np: 1 as i64
                     set pending: np
                 }
@@ -1482,7 +1482,7 @@ define symbols
                             {
                                 let it0 (*i0)
                                 let kw_this "this"
-                                if it0.name.equals(kw_this)
+                                if it0.name = kw_this
                                     set i: 1 as size_t
                             }
                         }
@@ -2558,7 +2558,7 @@ define symbols
             return here
         let pkg symbols.package_search_dir path
         if pkg.get_length() > (0 as size_t)
-            if pkg.equals(dir) = false
+            if pkg <> dir
                 return symbols.member_completions_in_dir(pkg, path, type_name)
         ""
     }
@@ -2589,7 +2589,7 @@ define symbols
                 {
                     let fpath symbols.substring(listing, line_start, i)
                     if fpath.get_length() > (0 as size_t)
-                        if fpath.equals(self_path) = false
+                        if fpath <> self_path
                             if File.exists(fpath)
                             {
                                 let fsrc File.read_to_string(fpath)
@@ -2830,7 +2830,7 @@ define symbols
         choose target
             when named: NamedSyntax
             {
-                if named.name.equals(name)
+                if named.name = name
                     return symbols.routine_return_base(named.routine)
                 return ""
             }
@@ -2897,7 +2897,7 @@ define symbols
     ; Otherwise recurse into a namespace's nested declarations.
     function mt_definition(rp, source: String, def: DefinitionSyntax, type_name: String, member_name: String) returns String
     {
-        if def.name.equals(type_name)
+        if def.name = type_name
         {
             var t ""
             choose def.concept_
@@ -2996,13 +2996,13 @@ define symbols
         choose part
             when fld: FieldSyntax
             {
-                if fld.property.name.equals(member_name)
+                if fld.property.name = member_name
                     return symbols.type_base_name(fld.property.annotation.type)
                 return ""
             }
             when prop: PropertySyntax
             {
-                if prop.name.equals(member_name)
+                if prop.name = member_name
                     return symbols.type_base_name(prop.annotation.type)
                 return ""
             }
@@ -3035,7 +3035,7 @@ define symbols
             return in_dir
         let pkg symbols.package_search_dir path
         if pkg.get_length() > (0 as size_t)
-            if pkg.equals(dir) = false
+            if pkg <> dir
                 return symbols.member_type_in_dir(pkg, path, type_name, member_name)
         ""
     }
@@ -3063,7 +3063,7 @@ define symbols
                 {
                     let fpath symbols.substring(listing, line_start, i)
                     if fpath.get_length() > (0 as size_t)
-                        if fpath.equals(self_path) = false
+                        if fpath <> self_path
                             if File.exists(fpath)
                             {
                                 let fsrc File.read_to_string(fpath)
@@ -3194,7 +3194,7 @@ define symbols
             return in_dir
         let pkg symbols.package_search_dir path
         if pkg.get_length() > (0 as size_t)
-            if pkg.equals(dir) = false
+            if pkg <> dir
                 return symbols.function_return_type_in_dir(pkg, path, fname)
         ""
     }
@@ -3216,7 +3216,7 @@ define symbols
                 {
                     let fpath symbols.substring(listing, line_start, i)
                     if fpath.get_length() > (0 as size_t)
-                        if fpath.equals(self_path) = false
+                        if fpath <> self_path
                             if File.exists(fpath)
                             {
                                 let fsrc File.read_to_string(fpath)
@@ -3533,7 +3533,7 @@ define symbols
     ; declarations for a nested match. "" when neither matches.
     function mem_definition(rp, source: String, def: DefinitionSyntax, receiver: String) returns String
     {
-        if def.name.equals(receiver)
+        if def.name = receiver
         {
             var members ""
             choose def.concept_
@@ -4255,7 +4255,7 @@ define symbols
     ; A Location pointing at `start` when `candidate` equals `name`, else "".
     function def_match(rp, source: String, uri: String, candidate: String, name: String, start: size_t) returns String
     {
-        if candidate.equals(name)
+        if candidate = name
             return symbols.location_object(source, uri, start)
         ""
     }
@@ -4346,7 +4346,7 @@ define symbols
             return here
         let pkg symbols.package_search_dir path
         if pkg.get_length() > (0 as size_t)
-            if pkg.equals(dir) = false
+            if pkg <> dir
                 return symbols.find_definition_in_dir(pkg, path, name)
         ""
     }
@@ -4385,7 +4385,7 @@ define symbols
                 {
                     let fpath symbols.substring(listing, line_start, i)
                     if fpath.get_length() > (0 as size_t)
-                        if fpath.equals(self_path) = false
+                        if fpath <> self_path
                             if File.exists(fpath)
                             {
                                 let fsrc File.read_to_string(fpath)
@@ -4840,7 +4840,7 @@ define symbols
             return true
         let pkg symbols.package_search_dir path
         if pkg.get_length() > (0 as size_t)
-            if pkg.equals(dir) = false
+            if pkg <> dir
                 return symbols.concept_in_dir(pkg, path, name)
         false
     }
@@ -4866,7 +4866,7 @@ define symbols
                 {
                     let fpath symbols.substring(listing, line_start, i)
                     if fpath.get_length() > (0 as size_t)
-                        if fpath.equals(self_path) = false
+                        if fpath <> self_path
                             if File.exists(fpath)
                             {
                                 let fsrc File.read_to_string(fpath)
@@ -4904,7 +4904,7 @@ define symbols
             return here
         let pkg symbols.package_search_dir path
         if pkg.get_length() > (0 as size_t)
-            if pkg.equals(dir) = false
+            if pkg <> dir
                 return symbols.return_type_in_dir(pkg, path, name)
         ""
     }
@@ -4926,7 +4926,7 @@ define symbols
                 {
                     let fpath symbols.substring(listing, line_start, i)
                     if fpath.get_length() > (0 as size_t)
-                        if fpath.equals(self_path) = false
+                        if fpath <> self_path
                             if File.exists(fpath)
                             {
                                 let fsrc File.read_to_string(fpath)
@@ -4994,7 +4994,7 @@ define symbols
             ; the larger name set affordable; the symindex caches the parse).
             let pkg symbols.package_search_dir path
             if pkg.get_length() > (0 as size_t)
-                if pkg.equals(dir) = false
+                if pkg <> dir
                 {
                     let there symbols.tagged_names_in_dir(pkg, path)
                     var ti: size_t 0
@@ -5031,7 +5031,7 @@ define symbols
             {
                 let fpath symbols.substring(listing, line_start, i)
                 if fpath.get_length() > (0 as size_t)
-                    if fpath.equals(self_path) = false
+                    if fpath <> self_path
                         if File.exists(fpath)
                         {
                             let fsrc File.read_to_string(fpath)
@@ -5261,9 +5261,9 @@ define symbols
             }
             let word symbols.substring(source, wstart, i)
             var is_fn false
-            if word.equals("function")
+            if word = "function"
                 set is_fn: true
-            if word.equals("procedure")
+            if word = "procedure"
                 set is_fn: true
             if is_fn
             {
@@ -5278,7 +5278,7 @@ define symbols
                 }
                 continue
             }
-            if word.equals("define")
+            if word = "define"
             {
                 var k symbols.lex_skip_ws(source, i, n)
                 let nm symbols.lex_read_ident(source, k, n)
@@ -5300,11 +5300,11 @@ define symbols
                         if symbols.is_ident_byte(pc)
                         {
                             let cw symbols.lex_read_ident(source, k, n)
-                            if cw.equals("union")
+                            if cw = "union"
                                 set tag: (0x54 as size_t)
-                            if cw.equals("intrinsic")
+                            if cw = "intrinsic"
                                 set tag: (0x54 as size_t)
-                            if cw.equals("delegate")
+                            if cw = "delegate"
                                 set tag: (0x46 as size_t)
                         }
                     }
@@ -5342,7 +5342,7 @@ define symbols
             {
                 let fpath symbols.substring(listing, line_start, i)
                 if fpath.get_length() > (0 as size_t)
-                    if fpath.equals(self_path) = false
+                    if fpath <> self_path
                         if File.exists(fpath)
                         {
                             let fsrc File.read_to_string(fpath)
@@ -7177,7 +7177,7 @@ define symbols
                     if fpath.get_length() > (0 as size_t)
                     {
                         var skip false
-                        if fpath.equals(path)
+                        if fpath = path
                             set skip: true
                         if apply_excl
                             if skip = false
@@ -7280,7 +7280,7 @@ define symbols
         {
             let item json.array_get(jv, i)
             let lbl json.as_string(json.get(item, "label"))
-            if lbl.equals(name)
+            if lbl = name
                 return true
             set i: i + (1 as size_t)
         }
@@ -7695,7 +7695,7 @@ define symbols
                     if fpath.get_length() > (0 as size_t)
                     {
                         var skip false
-                        if fpath.equals(path)
+                        if fpath = path
                             set skip: true
                         if apply_excl
                             if skip = false
@@ -9173,7 +9173,7 @@ define symbols
         choose target
             when named: NamedSyntax
             {
-                if named.name.equals(name)
+                if named.name = name
                     return symbols.build_signature(source, String(named.name), named.routine, active)
                 return ""
             }
@@ -9221,7 +9221,7 @@ define symbols
                             {
                                 let it0 (*i0)
                                 let kw_this "this"
-                                if it0.name.equals(kw_this)
+                                if it0.name = kw_this
                                     set i: 1 as size_t
                             }
                         }
@@ -9359,7 +9359,7 @@ define symbols
                             {
                                 let it0 (*i0)
                                 let kw_this "this"
-                                if it0.name.equals(kw_this)
+                                if it0.name = kw_this
                                     set i: 1 as size_t
                             }
                         }
@@ -9655,7 +9655,7 @@ define symbols
             return here
         let pkg symbols.package_search_dir path
         if pkg.get_length() > (0 as size_t)
-            if pkg.equals(dir) = false
+            if pkg <> dir
                 return symbols.find_signature_in_dir(pkg, path, name, active)
         ""
     }
@@ -9686,7 +9686,7 @@ define symbols
                 {
                     let fpath symbols.substring(listing, line_start, i)
                     if fpath.get_length() > (0 as size_t)
-                        if fpath.equals(self_path) = false
+                        if fpath <> self_path
                             if File.exists(fpath)
                             {
                                 let fsrc File.read_to_string(fpath)

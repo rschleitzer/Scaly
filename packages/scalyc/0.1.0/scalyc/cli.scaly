@@ -129,63 +129,63 @@ define cli
             if arg.starts_with("-")
             {
                 ; Option flag
-                if arg.equals("-h") | arg.equals("--help")
+                if arg = "-h" | arg = "--help"
                 {
                     set opts.show_help: true
                 }
-                else if arg.equals("-v") | arg.equals("--verbose")
+                else if arg = "-v" | arg = "--verbose"
                 {
                     set opts.verbose: true
                 }
-                else if arg.equals("-S")
+                else if arg = "-S"
                 {
                     set opts.emit_ir: true
                 }
-                else if arg.equals("-c")
+                else if arg = "-c"
                 {
                     set opts.compile_only: true
                 }
-                else if arg.equals("-g")
+                else if arg = "-g"
                 {
                     set opts.debug: true
                 }
-                else if arg.equals("--lex")
+                else if arg = "--lex"
                 {
                     set opts.lex_only: true
                 }
-                else if arg.equals("--parse")
+                else if arg = "--parse"
                 {
                     set opts.parse_only: true
                 }
-                else if arg.equals("--model")
+                else if arg = "--model"
                 {
                     set opts.model_only: true
                 }
-                else if arg.equals("--plan")
+                else if arg = "--plan"
                 {
                     set opts.plan_only: true
                 }
-                else if arg.equals("--no-prelude")
+                else if arg = "--no-prelude"
                 {
                     set opts.no_prelude: true
                 }
-                else if arg.equals("--no-tests")
+                else if arg = "--no-tests"
                 {
                     set opts.no_tests: true
                 }
-                else if arg.equals("--use-vis")
+                else if arg = "--use-vis"
                 {
                     set opts.use_vis: true
                 }
-                else if arg.equals("--no-use-vis")
+                else if arg = "--no-use-vis"
                 {
                     set opts.no_use_vis: true
                 }
-                else if arg.equals("--jit")
+                else if arg = "--jit"
                 {
                     set opts.jit_program: true
                 }
-                else if arg.equals("-o")
+                else if arg = "-o"
                 {
                     ; Output file - next argument is the filename
                     set i: i + 1
@@ -199,7 +199,7 @@ define cli
                         set opts.error_message: "-o requires a filename"
                     }
                 }
-                else if arg.equals("--run")
+                else if arg = "--run"
                 {
                     ; JIT mode - next argument is the function name to execute
                     set i: i + 1
@@ -214,7 +214,7 @@ define cli
                         set opts.error_message: "--run requires a function name"
                     }
                 }
-                else if arg.equals("--target")
+                else if arg = "--target"
                 {
                     ; Cross-emit target triple - next argument is the triple.
                     ; Object emission (-c) uses it instead of the host default;
@@ -511,7 +511,7 @@ define cli
             {
                 for f in plan.functions
                 {
-                    if f.name.equals(opts.run_function)
+                    if f.name = opts.run_function
                     {
                         if target_mangled.get_length() = 0
                             set target_mangled: f.mangled_name
@@ -986,12 +986,12 @@ define cli
         ; Test 2: Test extract_program_name
         var path1 "/path/to/hello.scaly"
         var name1 cli.extract_program_name(path1)
-        if name1.equals("hello") = false
+        if name1 <> "hello"
             return -10
 
         var path2 "simple.scaly"
         var name2 cli.extract_program_name(path2)
-        if name2.equals("simple") = false
+        if name2 <> "simple"
             return -11
 
         ; Test 3: Test pipeline on a minimal program

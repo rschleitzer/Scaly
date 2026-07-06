@@ -778,7 +778,7 @@ define lexer
             choose token
                 when ident: Identifier
                 {
-                    if ident.name.equals(keyword)
+                    if ident.name = keyword
                     {
                         empty()
                         return true
@@ -930,7 +930,7 @@ define lexer
             choose lexer.token
                 when ident: Identifier
                 {
-                    if ident.name.equals("abc_123") = false
+                    if ident.name <> "abc_123"
                         return 3
 
                 }
@@ -948,7 +948,7 @@ define lexer
                     choose lit.value
                         when i: Integer
                         {
-                            if i.value.equals("42") = false
+                            if i.value <> "42"
                                 return 5
 
                         }
@@ -995,7 +995,7 @@ define lexer
             choose lexer.token
                 when ident: Identifier
                 {
-                    if ident.name.equals("b") = false
+                    if ident.name <> "b"
                         return 10
 
                 }
@@ -1013,7 +1013,7 @@ define lexer
                     choose lit.value
                         when s: String
                         {
-                            if s.value.equals("hello") = false
+                            if s.value <> "hello"
                                 return 12
 
                         }
@@ -1031,7 +1031,7 @@ define lexer
             choose lexer.token
                 when ident: Identifier
                 {
-                    if ident.name.equals("my identifier") = false
+                    if ident.name <> "my identifier"
                         return 15
 
                 }
@@ -1049,7 +1049,7 @@ define lexer
                     choose lit.value
                         when h: Hex
                         {
-                            if h.value.equals("0xABcd") = false
+                            if h.value <> "0xABcd"
                                 return 17
 
                         }
@@ -1091,7 +1091,7 @@ define lexer
                     choose lit.value
                         when fp: FloatingPoint
                         {
-                            if fp.value.equals("3.14") = false
+                            if fp.value <> "3.14"
                                 return 23
 
                         }
@@ -1109,7 +1109,7 @@ define lexer
             choose lexer.token
                 when ident: Identifier
                 {
-                    if ident.name.equals("<>") = false
+                    if ident.name <> "<>"
                         return 26
 
                 }
@@ -1124,7 +1124,7 @@ define lexer
             choose lexer.token
                 when attr: Attribute
                 {
-                    if attr.name.equals("summary") = false
+                    if attr.name <> "summary"
                         return 28
 
                 }
@@ -1139,7 +1139,7 @@ define lexer
             choose lexer.token
                 when ident: Identifier
                 {
-                    if ident.name.equals("x") = false
+                    if ident.name <> "x"
                         return 30
 
                 }
