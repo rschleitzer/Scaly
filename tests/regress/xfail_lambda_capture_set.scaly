@@ -1,0 +1,8 @@
+; Captures are by-value copies; a `set` on a captured name would change only
+; the closure's private copy, silently leaving the enclosing variable
+; untouched. That is now a hard error.
+; xfail: cannot assign to captured
+var count 0
+let bump \x: set count: count + x
+let r bump(5)
+print("must not compile")

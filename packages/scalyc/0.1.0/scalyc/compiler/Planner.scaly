@@ -13793,6 +13793,27 @@ define Planner
                 set fi: fi + 1
             }
 
+            ; WP9: captures are by-value copies — a `set` on a captured name
+            ; changes only the closure's private copy, silently leaving the
+            ; enclosing variable untouched (a footgun). Reject it. cap_names
+            ; holds the discovered captures; scan the lambda body's assignment
+            ; targets (Model level) for any of them.
+            var ci9: size_t 0
+            while ci9 < cap_names.length
+            {
+                let cn_ptr cap_names.get ci9
+                if cn_ptr <> null
+                    if Planner.action_assigns_name(lam.body, (*cn_ptr))
+                    {
+                        var w9 StringBuilder()
+                        w9.append "cannot assign to captured '"
+                        w9.append (*cn_ptr)
+                        w9.append "' - captures are immutable copies"
+                        this.add_diagnostic(lam.span, w9.to_string())
+                    }
+                set ci9: ci9 + 1
+            }
+
             ; ---- mangled name = base + capture type mangles + arg type mangles
             var ml_sb StringBuilder()
             ml_sb.append "_ZN6lambdaN"
@@ -28321,6 +28342,99 @@ define Planner
         if Planner.ops_have_call_life(a.source)
             return true
         Planner.ops_have_call_life(a.target)
+    }
+
+    ; WP9: does this Model Action (a lambda body) assign to `name`? Checks the
+    ; action's own store target (a `set name: ...`) and descends into a block
+    ; body's statements and if/choose arms so `\x: { set n: ... }` and
+    ; conditional assignments are caught. Bare-name targets only (a `set n:`,
+    ; not `set n.field:` — mutating a field of a captured value copy is a
+    ; separate concern and still only affects the copy).
+    function action_assigns_name(a: Action, name: String) returns bool
+    {
+        ; direct `set name: ...` — target's first operand is Type([name]).
+        if a.target.length > 0
+        {
+            let t0_ptr a.target.get 0
+            if t0_ptr <> null
+            {
+                let t0 (*t0_ptr)
+                if t0.member_access = null
+                    choose t0.expression
+                        when ty: scalyc.compiler.Model.Type
+                            if ty.name.length = 1
+                            {
+                                let n0 ty.name.get 0
+                                if n0 <> null
+                                    if (*n0).equals(name)
+                                        return true
+                            }
+                        else
+                            0
+            }
+        }
+        ; descend into a block / if / choose in the source expression.
+        var i: size_t 0
+        while i < a.source.length
+        {
+            let op_ptr a.source.get i
+            if op_ptr <> null
+                if Planner.operand_assigns_name(op_ptr.unwrap(), name)
+                    return true
+            set i: i + 1
+        }
+        false
+    }
+    function operand_assigns_name(op: Operand, name: String) returns bool
+    {
+        choose op.expression
+            when b: Block
+            {
+                var i: size_t 0
+                while i < b.statements.length
+                {
+                    let sp b.statements.get i
+                    if sp <> null
+                        if Planner.statement_assigns_name(sp.unwrap(), name)
+                            return true
+                    set i: i + 1
+                }
+            }
+            when iff: scalyc.compiler.Model.If
+            {
+                if Planner.statement_assigns_name(iff.consequent, name)
+                    return true
+                if iff.alternative <> null
+                    if Planner.statement_assigns_name((*iff.alternative), name)
+                        return true
+            }
+            when ch: Choose
+            {
+                var i: size_t 0
+                while i < ch.cases.length
+                {
+                    let wp ch.cases.get i
+                    if wp <> null
+                        if Planner.statement_assigns_name((*wp).consequent, name)
+                            return true
+                    set i: i + 1
+                }
+                if ch.alternative <> null
+                    if Planner.statement_assigns_name((*ch.alternative), name)
+                        return true
+            }
+            else
+                0
+        false
+    }
+    function statement_assigns_name(s: Statement, name: String) returns bool
+    {
+        choose s
+            when a: Action
+                return Planner.action_assigns_name(a, name)
+            else
+                0
+        false
     }
     function operand_has_call_life(op: Operand) returns bool
     {
