@@ -1,0 +1,44 @@
+; The s189 user-program instantiation hole, HashMap half: a program that
+; is not the compiler uses HashMapBuilder[String,int]/HashMap[String,int].
+; Before the s200 plan_type# denylist lift, their ctor/contains resolved
+; to declare-only symbols — undefined at link.
+; Expected: PASS
+
+var array Array[KeyValuePair[String, int]]()
+array.add(KeyValuePair[String, int]("one", 1))
+array.add(KeyValuePair[String, int]("two", 2))
+let vector Vector[KeyValuePair[String, int]](*array)
+var builder HashMapBuilder[String, int](vector)
+if builder.contains("one") = false
+{
+    print("FAIL")
+    exit 1
+}
+builder.add("three", 3)
+if builder.contains("three") = false
+{
+    print("FAIL")
+    exit 2
+}
+var map HashMap[String, int](*builder)
+if map.contains("two") = false
+{
+    print("FAIL")
+    exit 3
+}
+if *(map["one"]) <> 1
+{
+    print("FAIL")
+    exit 4
+}
+if *(map["three"]) <> 3
+{
+    print("FAIL")
+    exit 5
+}
+if map.contains("four")
+{
+    print("FAIL")
+    exit 6
+}
+print("PASS")

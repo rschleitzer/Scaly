@@ -567,6 +567,23 @@ define Planner
         ; Call/Type/… — are never explicitly used), so the self-compile hot
         ; path is unchanged.
         disambiguation_active: bool
+
+        ; s200: scope-isolation floor for nested lazy instantiation.
+        ; lookup_local_binding's reverse scan stops HERE instead of 0.
+        ; instantiate_generic sets it to scope_bindings.length while
+        ; planning an instantiation's bodies (save/restore discipline),
+        ; so a generic method's bare member names can NEVER resolve to
+        ; the ENCLOSING function's same-named locals — the s02i nested-
+        ; planning scope leak. Concretely: planning VectorIterator[BL]'s
+        ; next() nested under a user main that has a local named
+        ; `vector` resolved the body's bare `vector` (a PROPERTY) to
+        ; main's local → unplannable in the method → statements silently
+        ; dropped → the recorded instantiation had a degenerate next()
+        ; (rehash lost all entries; HashMapBuilder.add after init).
+        ; Lambdas are unaffected (planned in-function, not through
+        ; instantiate_generic — capture discovery still sees the
+        ; enclosing scope). Declared LAST (field-index stability).
+        scope_isolation_base: size_t
     )
     {
         init(filename: String)
@@ -635,6 +652,7 @@ define Planner
             set ambiguous_index: ConceptIndex.create(4096 as size_t)
             set file_explicit_names: Array[String]^this()
             set disambiguation_active: false
+            set scope_isolation_base: 0
             set registering_file: String^this("")
             set registering_path: String^this("")
             set use_vis_files: Array[String]^this()
@@ -715,13 +733,17 @@ define Planner
 
         ; lookup_local_binding: innermost-first reverse scan. Returns
         ; null if no binding with this name is live in any current scope.
+        ; The scan floor is scope_isolation_base (0 normally): while an
+        ; instantiate_generic body plan is active, bindings BELOW the
+        ; floor belong to the enclosing function and must be invisible
+        ; (s200 — see the field comment).
         function lookup_local_binding(this: Planner, name: String) returns ref[LocalBinding]?
         {
             if scope_bindings.length = 0
                 return null
 
             var i scope_bindings.length
-            while i > 0
+            while i > scope_isolation_base
             {
                 set i: i - 1
                 let kvp_ptr scope_bindings.get i
@@ -3530,6 +3552,14 @@ define Planner
                 ; s100 `register_runtime_functions^page()` pattern. Content
                 ; is identical to the rp build, so emission is byte-
                 ; identical and the bootstrap fixpoint holds.
+                ; s200: isolate the scope stack while planning the
+                ; instantiation's bodies — bare member names in a generic
+                ; method must not resolve to the ENCLOSING function's
+                ; same-named locals (see the scope_isolation_base field
+                ; comment). Save/restore so nesting composes.
+                let saved_iso_base scope_isolation_base
+                set scope_isolation_base: scope_bindings.length
+
                 choose c.definition
                     when s: Structure
                     {
@@ -3543,6 +3573,8 @@ define Planner
                     }
                     else
                         0
+
+                set scope_isolation_base: saved_iso_base
 
                 ; Pop substitutions back to what the caller had.
                 set type_substitutions.length: saved_subst_len
@@ -8177,6 +8209,27 @@ define Planner
                                     set call_is_intrinsic: false
                             }
                         }
+                        ; s200: unwrap_or on a REAL-union Option receiver
+                        ; (Option[int] — no ref/pointer generic) emits as a
+                        ; plain call to the lazily-instantiated body.
+                        ; emit_intrinsic_function's unwrap_or arm is a
+                        ; placeholder that unconditionally returns the
+                        ; DEFAULT. NPO receivers (Option[ref[T]]) keep the
+                        ; intrinsic route as before (their bodies are never
+                        ; instantiated — the fixed-point divergence trap).
+                        ; unwrap stays intrinsic always: it is declared
+                        ; `intrinsic` and has no body to call.
+                        if call_is_intrinsic
+                        {
+                            if fn_name.equals("unwrap_or")
+                            {
+                                if is_method_dispatch
+                                {
+                                    if Planner.is_lazy_real_union(receiver_op.result_type.name, receiver_op.result_type.generics)
+                                        set call_is_intrinsic: false
+                                }
+                            }
+                        }
                         ; s185 (roadmap Step C): resolution exhausted —
                         ; mangled stays "". emit_call cannot look up such
                         ; a call; it would be SILENTLY dropped from the
@@ -10156,7 +10209,10 @@ define Planner
             ; Ambient substitutions are cleared first: instantiate_generic#
             ; binds the concept params to the explicit concrete args, and a
             ; same-named ambient binding would win under first-wins lookup.
-            if Planner.is_lazy_machinery_generic(lookup_st.name)
+            var s188_lazy_fire Planner.is_lazy_machinery_generic(lookup_st.name)
+            if s188_lazy_fire = false
+                set s188_lazy_fire: Planner.is_lazy_real_union(lookup_st.name, lookup_st.generics)
+            if s188_lazy_fire
             {
                 if lookup_st.generics <> null
                 {
@@ -11673,10 +11729,21 @@ define Planner
                     ; (~line 3240) is intentionally kept: `vec.add(x)` style
                     ; method dispatch still routes via the extern-decl shim
                     ; rather than the spec'd `_ZN6VectorI...E3addE...` lookup.
-                    if canonical_name.equals("HashMap")
-                        set is_stdlib_generic: true
-                    if canonical_name.equals("HashMapBuilder")
-                        set is_stdlib_generic: true
+                    ; s200: HashMap + HashMapBuilder lifted (the s189 user-
+                    ; program instantiation hole). The s188-era blocker — the
+                    ; reallocate→page SIGSEGV when HashMapBuilder<String,
+                    ; Nameable> (Modeler symbol table) goes real — was fixed
+                    ; by the intervening s190 overload-resolution receiver-
+                    ; generic binding and s181 ^this Page.get wrap (the same
+                    ; machinery HashSetBuilder exercises since s188). With
+                    ; these denylisted, a user program's
+                    ; `HashMapBuilder[String,int](vector)` resolved to a
+                    ; mangled name only (declare, never define) → undefined
+                    ; ctor/contains at link.
+                    ; if canonical_name.equals("HashMap")
+                    ;     set is_stdlib_generic: true
+                    ; if canonical_name.equals("HashMapBuilder")
+                    ;     set is_stdlib_generic: true
                     ; s166: HashSet/HashSetBuilder lifted so
                     ; instantiate_generic# emits their init# bodies.
                     ; if canonical_name.equals("HashSet")
@@ -11728,12 +11795,20 @@ define Planner
                     ; a pure data class (plan_structure# just records layout).
                     ; if canonical_name.equals("Slot")
                     ;     set is_stdlib_generic: true
-                    if canonical_name.equals("Slice")
-                        set is_stdlib_generic: true
-                    if canonical_name.equals("Option")
-                        set is_stdlib_generic: true
-                    if canonical_name.equals("Result")
-                        set is_stdlib_generic: true
+                    ; s200: Slice lifted with HashMap/HashMapBuilder (the
+                    ; s189 user-program hole: Slice[int].get/is_empty were
+                    ; declare-only → undefined at link).
+                    ; if canonical_name.equals("Slice")
+                    ;     set is_stdlib_generic: true
+                    ; s200: Option + Result lifted (same s189 hole for user
+                    ; programs annotating Option[int]/Result[T,E]). The s188
+                    ; "Option diverges the fixed point" warning concerned the
+                    ; lookup_method# lazy-machinery allowlist, not this
+                    ; annotation path — verified by cycle.
+                    ; if canonical_name.equals("Option")
+                    ;     set is_stdlib_generic: true
+                    ; if canonical_name.equals("Result")
+                    ;     set is_stdlib_generic: true
                     ; s173: KeyValuePair lifted (like s129 Vector/Array,
                     ; s148 List). It's a pure data class — no methods, no
                     ; init bodies, nothing to drag in. With it denylisted,
@@ -26051,6 +26126,47 @@ define Planner
                                 if name.equals("Slot") = false
                                     if name.equals("KeyValuePair") = false
                                         return false
+        true
+    }
+
+    ; s200: Option/Result method calls on REAL-union instantiations
+    ; (Option[int], Result[int,bool]) may lazily instantiate — they are
+    ; UNIONS, so the plan_type# route (Structure-gated) never emits their
+    ; method bodies and a user's `o.is_some()` linked against nothing (the
+    ; s189 user-program hole). GATED on every generic arg being non-ref/
+    ; non-pointer: adding Option to is_lazy_machinery_generic blanketly
+    ; instantiates the compiler's own NPO `ref[T]?` Options, whose generic
+    ; bodies hit the escape checker (Emitter.scaly:37 "reference into a
+    ; local page escapes via return", rc 4) and DIVERGE the fixed point —
+    ; the s188 warning, reproduced 2026-07-06. NPO Options stay on the
+    ; intrinsic unwrap path.
+    function is_lazy_real_union(name: String, generics: ref[Vector[PlannedType]]?) returns bool
+    {
+        var is_or: bool false
+        if name.equals("Option")
+            set is_or: true
+        if name.equals("Result")
+            set is_or: true
+        if is_or = false
+            return false
+        if generics = null
+            return false
+        let gens (*generics)
+        if gens.length = 0
+            return false
+        var gi: size_t 0
+        while gi < gens.length
+        {
+            let gp gens.get gi
+            if gp <> null
+            {
+                if (*gp).name.equals("ref")
+                    return false
+                if (*gp).name.equals("pointer")
+                    return false
+            }
+            set gi: gi + 1
+        }
         true
     }
 

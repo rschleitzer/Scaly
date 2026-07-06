@@ -1,0 +1,84 @@
+; The s189 user-program instantiation hole, union/Slice half: Option[int]
+; and Result[int,bool] are UNIONS, so the plan_type# route (Structure-
+; gated) never emitted their method bodies; Slice[int] methods were
+; denylisted. Before s200: is_some/is_ok/Slice.get were undefined at
+; link, `var o: Option[int] ...` bindings were silently dropped, and
+; unwrap_or returned the DEFAULT unconditionally (placeholder intrinsic).
+; Expected: PASS
+
+let some_val Some(42)
+var o: Option[int] some_val
+if o.is_some() = false
+{
+    print("FAIL")
+    exit 1
+}
+if o.unwrap() <> 42
+{
+    print("FAIL")
+    exit 2
+}
+if o.unwrap_or(7) <> 42
+{
+    print("FAIL")
+    exit 3
+}
+var n: Option[int] None()
+if n.is_none() = false
+{
+    print("FAIL")
+    exit 4
+}
+if n.unwrap_or(7) <> 7
+{
+    print("FAIL")
+    exit 5
+}
+let q Option[int].Some(9)
+choose q
+    when v: Some
+    {
+        if v <> 9
+        {
+            print("FAIL")
+            exit 6
+        }
+    }
+    else
+    {
+        print("FAIL")
+        exit 7
+    }
+var res: Result[int, bool] Ok(9)
+if res.is_ok() = false
+{
+    print("FAIL")
+    exit 8
+}
+if res.unwrap() <> 9
+{
+    print("FAIL")
+    exit 9
+}
+var arr Array[int]()
+arr.add 10
+arr.add 20
+arr.add 30
+let s Slice[int]((*arr.vector).data, arr.length)
+if s.is_empty()
+{
+    print("FAIL")
+    exit 10
+}
+if *(s.get(1)) <> 20
+{
+    print("FAIL")
+    exit 11
+}
+let sub s.subslice(1, 3)
+if sub.length <> 2
+{
+    print("FAIL")
+    exit 12
+}
+print("PASS")
