@@ -974,6 +974,28 @@ define Planner
             null
         }
 
+        ; lookup_concept_for_layout: concept lookup for PHYSICAL-LAYOUT
+        ; computation (compute_payload_size#, ensure_member_layout#,
+        ; ensure_union_layout#). Visibility is a USER name-resolution concern,
+        ; NOT a layout one: a cross-package by-value field/variant type the
+        ; consumer did not `use` is invisible to lookup_concept (returns null),
+        ; so it would size to the 8-byte get_primitive_alignment default and
+        ; UNDER-SIZE the enclosing struct/union — the defining package lays it
+        ; out at its real size, so json.get's sret store overruns the caller's
+        ; slot and smashes the adjacent stack (the JsonValue.Array→JsonArray
+        ; by-value case). Gated-first so glob-disambiguation still steers the
+        ; visible case; the raw-registry fallback fires ONLY where
+        ; lookup_concept already returns null, so the compiler's own emission
+        ; is byte-identical (fixpoint-safe) and the fix is strictly additive
+        ; (null-default-8 → real-size). Genuinely-unknown names stay null.
+        function lookup_concept_for_layout(this: Planner, name: String) returns ref[Concept]?
+        {
+            let c this.lookup_concept(name)
+            if c <> null
+                return c
+            this.lookup_concept_any(name)
+        }
+
         ; s177: like lookup_concept but only matches a concept whose
         ; definition is a Namespace. `define Planner { define Planner(...) }`
         ; registers both under one name, and lookup_concept's backward
@@ -22100,7 +22122,7 @@ define Planner
                         return
                 set gi: gi + 1
             }
-            let concept_ref this.lookup_concept(name)
+            let concept_ref this.lookup_concept_for_layout(name)
             if concept_ref = null
                 return
             let c (*concept_ref)
@@ -22180,7 +22202,7 @@ define Planner
                         return
                 set gi: gi + 1
             }
-            let concept_ref this.lookup_concept(name)
+            let concept_ref this.lookup_concept_for_layout(name)
             if concept_ref = null
                 return
             let c (*concept_ref)
@@ -23027,7 +23049,7 @@ define Planner
                 return 8
             if name.equals("HashSetBuilder")
                 return 8
-            let c_ref this.lookup_concept(name)
+            let c_ref this.lookup_concept_for_layout(name)
             if c_ref <> null
             {
                 let c (*c_ref)
